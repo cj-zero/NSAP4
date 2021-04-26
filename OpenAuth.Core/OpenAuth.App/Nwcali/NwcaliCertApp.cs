@@ -66,6 +66,13 @@ namespace OpenAuth.App.Nwcali
             return info;
         }
 
+        public async Task<List<NwcaliBaseInfo>> GetInfoList(List<string> certNo)
+        {
+            var info = await UnitWork.Find<NwcaliBaseInfo>(b=> certNo.Contains(b.CertificateNumber)).Include(b => b.NwcaliTurs).Include(b => b.NwcaliPlcDatas).Include(b => b.PcPlcs).Include(b => b.Etalons)
+                .ToListAsync();
+            return info;
+        }
+
         public async Task<dynamic> GetPcPlcs(string guid)
         {
             var ids = await UnitWork.Find<PcPlc>(p => p.Guid.Equals(guid)).Select(o=>o.NwcaliBaseInfoId).ToListAsync();

@@ -1,47 +1,111 @@
 ﻿<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title></title>
-    <style type="text/css">
-        * {
-            padding: 0;
-            margin: 0;
-        }
 
-        hr {
-            margin-top: 3px;
-            height: 0px;
-            border-top: 1px solid black;
-            border-right: 0px;
-            border-bottom: 0px;
-            border-left: 0px;
-        }
+<style>
+    * {
+        padding: 0;
+        margin: 0;
+    }
 
-        body {
-            font-family: '华文宋体';
-            font-size: 12pt;
-        }
-    </style>
-</head>
-<body>
-    <div style="margin-top:20px;">
-        <span>申请人签字:</span>
-        <span style="border-bottom: 1px solid black;" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>申请部门主管签字:</span>
-        <span style="border-bottom: 1px solid black;" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>仓库主管签字:</span>
-        <span style="border-bottom: 1px solid black;" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>仓库(帐/物)经办人:</span>
-        <span style="border-bottom: 1px solid black;" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+    /*body {
+        width: 1000px;
+        margin: 0 auto;
+        margin-top: 10px;
+        font-size: 13.5px;
+        font-family: "微软雅黑";
+        color: black;
+    }*/
+
+    hr {
+        margin-top: 3px;
+        height: 0px;
+        border-top: 1px solid #808A87;
+        border-right: 0px;
+        border-bottom: 0px;
+        border-left: 0px;
+    }
+
+    table {
+        border-collapse: collapse;
+    }
+
+    .TH td {
+        border-style: solid;
+        border-width: 1px;
+    }
+    footer {
+        margin-bottom:-1000px;
+    }
+</style>
+
+
+<footer style="position:relative;top:100px;">
+    <div>
+        <!-- <div style="font-weight: 800;" align="right">总金额：599999 &nbsp;</div> -->
+        <span>发货经办人：</span>
+        <div style="display: inline-block;border-bottom: 1.5px solid #000000;width:180px;">
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </div>
+        <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+        <span>仓库主管：</span>
+        <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+        <span style="display: inline-block; border-bottom: 1px solid #000000; width: 167px;">
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </span>
+        <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+        <span>品质主管：</span>
+        <span style="display: inline-block; border-bottom: 1.5px solid #000000; width: 180px;">
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </span>
+        <br />
+        <br />
+        <span>生产经办人：</span>
+        <span style="display: inline-block; border-bottom: 1.5px solid #000000; width: 180px;">
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </span>
+        <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+        <span>门卫负责人：</span>
+        <span style="display: inline-block; border-bottom: 1.5px solid #000000; width: 180px;">
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </span>
     </div>
-    <hr />
-    <div style="text-align:center; width:1000px;">
-        系统操作者：@Model.User
-    </div>
-    <div style="text-align:center; width:1000px;">
-    </div>
-    <div style="text-align:center; width:1000px;">
-    </div>
-</body>
-</html>
+    <br />
+    <table style="margin-top:6px; width:1000px;height:30px">
+        <tr class="TH" style="font-weight: 900">
+            <td style="width: 150px;" align="center">&nbsp; 产品合格证</td>
+            <td style="width: 150px;" align="center">&nbsp; 检验结论</td>
+            <td style="width: 150px;" align="center">&nbsp; 合格</td>
+            <td style="width: 150px; " align="center">&nbsp;检验员</td>
+            <td style="width: 150px; " align="center">&nbsp; </td>
+        </tr>
+    </table>
+    <table style="margin-top:6px; width:1000px;height:30px">
+        <tr class="TH" style="height:50px;">
+            <td style="width: 150px; vertical-align: top;" align="left" rowspan="4" colspan="4">
+                &nbsp; <span>备注：</span><br />
+                &nbsp; <span style="line-height:40px;">1.货物外包装完好：<span>是</span>&nbsp;&nbsp;<input type="checkbox" name="yesno" /> &nbsp;&nbsp;&nbsp;&nbsp;<span>否</span>&nbsp;&nbsp;<input type="checkbox" name="yesno" /></span><br />
+                &nbsp; <span style="line-height:40px;">2.若外包装破损，请详细注明箱号及破损情况。</span><br />
+                &nbsp; <span style="line-height:40px;">3.核对后，请签字确认，交送货人或传真至我司。</span>
+            </td>
+            <td style="width: 300px;vertical-align: top;" align="left">&nbsp;公司印章：</td>
+        </tr>
+        <tr class="TH" style="height:50px">
+            <td style="width: 300px; vertical-align: top;" align="left">&nbsp;签收人及日期：</td>
+        </tr>
+        <tr class="TH" style="height:50px">
+            <td style="width: 300px; vertical-align: top;" align="left">&nbsp;身份证号码：</td>
+        </tr>
+    </table>
+    <table style="margin-top:6px; width:1000px;height:30px;border:0px;">
+        <tr class="" style="border: 0px;">
+            <td style="width: 150px;font-size:large;border:0px;" align="left">&nbsp; 东莞新威检测技术有限公司</td>
+            <td style="width: 150px;vertical-align: bottom;" align="right" rowspan="3">&nbsp; 操作者：@Model.UserName</td>
+            <td style="width: 150px;font-weight:900;font-size:50px;" align="right" rowspan="3">&nbsp; 东莞新威</td>
+        </tr>
+        <tr class="TH" style="border: 0px;">
+            <td style="width: 200px;font-size:large;border:0px;" align="left">&nbsp; 广东省东莞市塘厦镇龙安路 5 号 5 栋 101 室</td>
+        </tr>
+        <tr class="TH" style="border: 0px;">
+            <td style="width: 150px;font-size:small;border:0px;" align="left">&nbsp; B2.20171124</td>
+        </tr>
+    </table>
+</footer>

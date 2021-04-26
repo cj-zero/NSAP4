@@ -79,6 +79,6 @@ namespace OpenAuth.Repository.Domain
         /// 审批阶段
         /// </summary>
         [Description("审批阶段")]
-        public int? ApprovalStage { get; set; }
+        public string ApprovalStage { get; set; }
     }
 }

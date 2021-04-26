@@ -19,30 +19,109 @@ namespace OpenAuth.Repository.Domain
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("sale_ordr")]
-    public partial class sale_ordr
+    [Table("store_oitl")]
+    public partial class store_oitl 
     {
-        /// <summary>
-        /// 账套
-        /// </summary>
-        [Description("")]
-        public int sbo_id { get; set; }
-        /// <summary>
-        /// 销售订单id
-        /// </summary>
-        [Description("")]
-        public int? DocEntry { get; set; }
+        public store_oitl()
+        {
+          this.ItemCode= string.Empty;
+          this.ItemName= string.Empty;
+          this.DocDate= DateTime.Now;
+          this.CardCode= string.Empty;
+          this.CardName= string.Empty;
+          this.CreateDate= DateTime.Now;
+          this.LocCode= string.Empty;
+          this.VersionNum= string.Empty;
+          this.Transfered= string.Empty;
+        }
+
 
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public uint DocNum { get; set; }
+        public int? LogEntry { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string DocType { get; set; }
+        public int? sbo_id { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        [Browsable(false)]
+        public int? TransId { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string ItemCode { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string ItemName { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? ManagedBy { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? DocEntry { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? DocLine { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? DocType { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? DocNum { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? BaseEntry { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? BaseLine { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? BaseType { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? ApplyEntry { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? ApplyLine { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? ApplyType { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public System.DateTime? DocDate { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -53,119 +132,26 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         public string CardName { get; set; }
-
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public short? SlpCode { get; set; }
+        public decimal? DocQty { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? CntctCode { get; set; }
-
+        public decimal? StockQty { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string Comments { get; set; }
+        public decimal? DefinedQty { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string Ref1 { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string U_YWY { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string U_FPLB { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string Address { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string U_SL { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string Address2 { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? DocTotal { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string Indicator { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public System.DateTime? DocDate { get; set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public System.DateTime? DocDueDate { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string PartSupply { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string Printed { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string DocStatus { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string Handwrtten { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public short? GroupNum { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public System.DateTime? TaxDate { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? DocRate { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string DocCur { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public System.DateTime UpdateDate { get; set; }
+        public int? StockEff { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -175,13 +161,81 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         [Description("")]
-        public string CANCELED { get; set; }
-
+        public short? LocType { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        [NotMapped]
-        public string U_ERPFrom { get; set; }
+        public string LocCode { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? AppDocNum { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string VersionNum { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string Transfered { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public short? Instance { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? SubLineNum { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? BSubLineNo { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? AppSubLine { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? ActBaseTp { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? ActBaseEnt { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? ActBaseLn { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? ActBasSubL { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? AllocateTp { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? AllocatEnt { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? AllocateLn { get; set; }
     }
 }

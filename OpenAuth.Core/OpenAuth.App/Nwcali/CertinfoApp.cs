@@ -11,6 +11,7 @@ using Infrastructure.Extensions;
 using Infrastructure.Wrod;
 using Microsoft.AspNetCore.Server.IIS.Core;
 using Microsoft.EntityFrameworkCore;
+using Npoi.Mapper;
 using NPOI.SS.Formula.Atp;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Nwcali.Request;
@@ -341,6 +342,13 @@ namespace OpenAuth.App
                     {
                         throw new CommonException("您无法操作此步骤。", 80011);
                     }
+                    if (flowInstance.ActivityName.Equals("待审核") || flowInstance.ActivityName.Equals("待批准"))
+                    {
+                        if (!flowInstance.MakerList.Contains(loginContext.User.Id))
+                        {
+                            throw new CommonException("您无法操作此步骤，或者该流程已经审批请刷新页面！", 80011);
+                        }
+                    }
                     var list = new List<WordModel>();
                     switch (req.Verification.VerificationFinally)
                     {
@@ -435,14 +443,230 @@ namespace OpenAuth.App
         }
 
         /// <summary>
-        /// 
+        /// 业务员证书查询列表
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
         public async Task<TableData> LoadSaleInfo(QuerySaleOrDeviceOrCertListReq request)
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
             var result = new TableData();
-            var fs = await UnitWork.Find<FlowInstance>(f => f.SchemeId == "q").ToListAsync();
+            var saleMan = await UnitWork.Find<crm_oslp>(c => c.SlpName == loginContext.User.Name).Select(c=>c.SlpCode).FirstOrDefaultAsync();
+            var saleOrder = UnitWork.Find<sale_ordr>(o => o.SlpCode == saleMan);
+            //获取该销售员下所有销售订单号
+            var saleOederIds = await saleOrder.Select(c => c.DocEntry).ToListAsync();
+            //获取销售订单下所有序列号
+            var manufacturerSerialNumber = from a in UnitWork.Find<store_oitl>(null)
+                                           join b in UnitWork.Find<store_itl1>(null) on new { a.LogEntry, a.ItemCode } equals new { b.LogEntry, b.ItemCode } into ab
+                                           from b in ab.DefaultIfEmpty()
+                                           join c in UnitWork.Find<store_osrn>(null) on new { b.ItemCode, b.SysNumber } equals new { c.ItemCode, c.SysNumber } into bc
+                                           from c in bc.DefaultIfEmpty()
+                                           where a.DocType == 15 && saleOederIds.Contains(a.BaseEntry) && !string.IsNullOrWhiteSpace(c.MnfSerial)
+                                           select new { c.MnfSerial,a.ItemCode, a.DocEntry, a.BaseEntry, a.DocType, a.CreateDate, a.BaseType };
+            
+            if (request.PageStatus == 1)//销售订单列表
+            {
+                //获取序列号下订单号
+                var idWhere = new List<int?>();
+                if (!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers))
+                    idWhere = manufacturerSerialNumber.Where(c => c.MnfSerial.Contains(request.ManufacturerSerialNumbers)).Select(c => c.BaseEntry).ToList();
+
+
+                saleOrder = saleOrder.WhereIf(!string.IsNullOrWhiteSpace(request.SalesOrderId), c => c.DocEntry.ToString().Contains(request.SalesOrderId))
+                                    .WhereIf(!string.IsNullOrWhiteSpace(request.CardCode), c => c.CardCode.Contains(request.CardCode))
+                                    .WhereIf(!string.IsNullOrWhiteSpace(request.CardName), c => c.CardName.Contains(request.CardName))
+                                    .WhereIf(!(request.SaleEndCreatTime == null && request.SaleEndCreatTime == null), c => c.CreateDate >= request.SaleStartCreatTime && c.CreateDate <= request.SaleEndCreatTime)
+                                    .WhereIf(idWhere.Count() > 0, c => idWhere.Contains(c.DocEntry))//序列号查询条件
+                                    ;
+
+                //分页
+                var saleOrderList = await saleOrder.OrderByDescending(c => c.CreateDate)
+                                    .Skip((request.page - 1) * request.limit)
+                                    .Take(request.limit)
+                                    .ToListAsync();
+                var dataCount = await saleOrder.CountAsync();
+                var resultData = saleOrderList.Select(c => new
+                {
+                    SalesOrderId = c.DocEntry,
+                    c.CardCode,
+                    c.CardName,
+                    CreateDate = c.CreateDate
+                }) ;
+                result.Data = resultData;
+                result.Count = dataCount;
+            }
+            else if(request.PageStatus == 2)//设备列表
+            {
+                var numList = await manufacturerSerialNumber
+                    .WhereIf(!string.IsNullOrWhiteSpace(request.SalesOrderId), c => c.BaseEntry == int.Parse(request.SalesOrderId))
+                    .WhereIf(!string.IsNullOrWhiteSpace(request.TesterModel),c=>c.ItemCode.Contains(request.TesterModel))
+                    .WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers), c => c.MnfSerial.Contains(request.ManufacturerSerialNumbers))
+                    .Select(c=>new NwcaliBaseInfo {TesterSn=c.MnfSerial,TesterModel=c.ItemCode }).ToListAsync();
+
+                var cerlist = await UnitWork.Find<NwcaliBaseInfo>(null)
+                    //.WhereIf(!string.IsNullOrWhiteSpace(request.CertNo),c=>c.CertificateNumber.Contains(request.CertNo))
+                    //.WhereIf(!(request.StartCalibrationDate == null && request.EndCalibrationDate == null), c => c.Time >= request.StartCalibrationDate && c.Time <= request.EndCalibrationDate)
+                    .ToListAsync();
+                var test= cerlist.OrderByDescending(c => c.Time).GroupBy(c => c.TesterSn).Select(c => c.First()).ToList();
+
+                //var da = numList.Select(c => 
+                //{
+                //    var te = test.FirstOrDefault(o => o.TesterSn.Equals(c.MnfSerial));
+                //    return new
+                //    {
+                //        c.MnfSerial,
+                //        c.ItemCode,
+                //        AssetNo= te==null?null:te.AssetNo,
+                //        CertificateNumber = te == null ? null : te.CertificateNumber,
+                //        Time = te == null ? null : te.Time,
+                //        ExpirationDate = te == null ? null : te.ExpirationDate,
+                //        Operator = te == null ? null : te.Operator,
+                //    };
+                //});
+
+                var devicelist1 = from a in numList
+                                  join b in cerlist on a.TesterSn equals b.TesterSn into ab
+                                  from b in ab.DefaultIfEmpty()
+                                  select new NwcaliBaseInfo
+                                  {
+                                      TesterSn=a.TesterSn,
+                                      TesterModel=a.TesterModel,
+                                      AssetNo = b?.AssetNo,
+                                      CertificateNumber=b?.CertificateNumber,
+                                      Time=b?.Time,
+                                      ExpirationDate=b?.ExpirationDate,
+                                      Operator=b?.Operator 
+                                  };
+
+                devicelist1= devicelist1.OrderByDescending(c => c.Time).GroupBy(c => c.TesterSn).Select(c => c.First()).ToList();
+
+                if (!string.IsNullOrWhiteSpace(request.CertNo))
+                    devicelist1 = devicelist1.Where(c =>!string.IsNullOrWhiteSpace(c.CertificateNumber) && c.CertificateNumber.Contains(request.CertNo)).ToList();
+                if (!(request.StartCalibrationDate == null && request.EndCalibrationDate == null))
+                    devicelist1 = devicelist1.Where(c => c.Time >= request.StartCalibrationDate && c.Time <= request.EndCalibrationDate).ToList();
+
+                //var view1 = await devicelist1
+                //                .WhereIf(!string.IsNullOrEmpty(request.ManufacturerSerialNumbers), c => c.MnfSerial.Contains(request.ManufacturerSerialNumbers))
+                //                .WhereIf(!string.IsNullOrEmpty(request.TesterModel), c => c.ItemCode.Contains(request.TesterModel))
+                //                .WhereIf(!string.IsNullOrEmpty(request.CertNo), c => c.CertificateNumber.Contains(request.CertNo))
+                //                .WhereIf(!(request.StartCalibrationDate == null && request.EndCalibrationDate == null), c => c.Time >= request.StartCalibrationDate && c.Time <= request.EndCalibrationDate).ToListAsync();
+                //var view1List = await view1.OrderByDescending(c => c.Time).Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+                //var viewCount1 = await view1.CountAsync();
+                //result.Count = viewCount1;
+                #region 老数据
+                //序列号下最新的校验证书
+                var testNo = numList.Select(c => c.TesterSn).ToList();
+                var old = await UnitWork.Find<Certinfo>(c=> testNo.Contains(c.Sn)).ToListAsync();
+                if (old.Count>0)
+                {
+                    old = old.OrderByDescending(c => c.CalibrationDate).GroupBy(c => c.Sn).Select(c => c.First()).ToList();
+                    //条件
+                    if (!string.IsNullOrWhiteSpace(request.CertNo))
+                        old = old.Where(c => c.CertNo == request.CertNo).ToList();
+                    if (!(request.StartCalibrationDate == null && request.EndCalibrationDate == null))
+                        old = old.Where(c => c.CalibrationDate >= request.StartCalibrationDate && c.CalibrationDate <= request.EndCalibrationDate).ToList();
+
+
+                    devicelist1.ForEach(q =>
+                    {
+                        var a = old.Where(c => c.Sn == q.TesterSn).FirstOrDefault();
+                        if (a != null && a.CalibrationDate > q.Time)
+                        {
+                            q.AssetNo = a.AssetNo;
+                            q.CertificateNumber = a.CertNo;
+                            q.Time = a.CalibrationDate;
+                            q.ExpirationDate = a.ExpirationDate;
+                            q.Operator = a.Operator;
+                        }
+                    });
+                }
+
+                #endregion
+
+                result.Count = devicelist1.Count();
+                result.Data = devicelist1.Select(c=> 
+                {
+                    return new
+                    {
+                        TesterSn = c.TesterSn,
+                        TesterModel = c.TesterModel,
+                        AssetNo = c.AssetNo,
+                        CertificateNumber = c.CertificateNumber,
+                        Time = c.Time,
+                        ExpirationDate = c.ExpirationDate,
+                        Operator = c.Operator
+                    };
+                })
+                .OrderByDescending(c => c.Time)
+                .Skip((request.page - 1) * request.limit)
+                .Take(request.limit)
+                .ToList();
+            }
+            else if (request.PageStatus == 3)//证书列表
+            {
+                var cerinfo = await UnitWork.Find<NwcaliBaseInfo>(null)
+                                .WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers), c => c.TesterSn.Equals(request.ManufacturerSerialNumbers))
+                                .WhereIf(!string.IsNullOrWhiteSpace(request.CertNo), c => c.CertificateNumber.Contains(request.CertNo))
+                                .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), c => c.Operator.Contains(request.Operator))
+                                .WhereIf(!(request.StartCalibrationDate == null && request.EndCalibrationDate == null), c => c.Time >= request.StartCalibrationDate && c.Time <= request.EndCalibrationDate)
+                                .ToListAsync();
+                                ;
+                var view = cerinfo.Select(c =>
+                 {
+                     return new CertinfoView
+                     {
+                         Id = c.Id,
+                         CertNo = c.CertificateNumber,
+                         CreateTime = c.CreateTime,
+                         AssetNo = c.AssetNo,
+                         CalibrationDate = c.Time,
+                         ExpirationDate = c.ExpirationDate,
+                         Model = c.TesterModel,
+                         Operator = c.Operator,
+                         Sn = c.TesterSn,
+                     };
+                 });
+
+                #region 老数据
+                var obj = await UnitWork.Find<Certinfo>(null)
+                                .WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers), c => c.Sn.Equals(request.ManufacturerSerialNumbers))
+                                .WhereIf(!string.IsNullOrWhiteSpace(request.CertNo), c => c.CertNo.Contains(request.CertNo))
+                                .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), c => c.Operator.Contains(request.Operator))
+                                .WhereIf(!(request.StartCalibrationDate == null && request.EndCalibrationDate == null), c => c.CalibrationDate >= request.StartCalibrationDate && c.CalibrationDate <= request.EndCalibrationDate)
+                                .ToListAsync();
+                if (obj.Count>0)
+                {
+                    var view2 = obj.Select(c =>
+                    {
+                        return new CertinfoView
+                        {
+                            Id = c.Id,
+                            CertNo = c.CertNo,
+                            CreateTime = c.CreateTime,
+                            AssetNo = c.AssetNo,
+                            CalibrationDate = c.CalibrationDate,
+                            ExpirationDate = c.ExpirationDate,
+                            Model = c.Model,
+                            Operator = c.Operator,
+                            Sn = c.Sn,
+                        };
+                    });
+                    //合并
+                    view = view.Concat(view2);
+                }
+                #endregion
+
+                result.Count = view.Count();
+                result.Data = view.OrderByDescending(c => c.CalibrationDate)
+                                    .Skip((request.page - 1) * request.limit)
+                                    .Take(request.limit)
+                                    .ToList();
+            }
+
             return result;
         }
 

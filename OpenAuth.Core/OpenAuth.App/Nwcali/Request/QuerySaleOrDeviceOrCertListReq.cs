@@ -12,13 +12,13 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 销售单号
         /// </summary>
-        public int? SalesOrderId { get; set; }
+        public string SalesOrderId { get; set; }
         /// <summary>
         /// 客户代码
         /// </summary>
         public string CardCode { get; set; }
         /// <summary>
-        /// 客户代码
+        /// 客户名称
         /// </summary>
         public string CardName { get; set; }
         /// <summary>
@@ -53,5 +53,9 @@ namespace OpenAuth.App.Request
         /// 校准时间结束
         /// </summary>
         public DateTime? EndCalibrationDate { get; set; }
+        /// <summary>
+        /// 页面选择1.销售订单 2.设备列表 3.证书列表
+        /// </summary>
+        public int PageStatus { get; set; }
     }
 }

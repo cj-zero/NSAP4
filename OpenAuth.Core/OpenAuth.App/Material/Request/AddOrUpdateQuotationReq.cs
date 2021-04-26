@@ -94,7 +94,7 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         ///报价单审批状态
         /// </summary>
-        public int? QuotationStatus { get; set; }
+        public decimal? QuotationStatus { get; set; }
 
         /// <summary>
         ///备注
@@ -169,6 +169,11 @@ namespace OpenAuth.App.Material.Request
         ///部门名称
         /// </summary>
         public string OrgName { get; set; }
+
+        /// <summary>
+        ///劳务关系
+        /// </summary>
+        public string ServiceRelations { get; set; }
 
         /// <summary>
         ///税率

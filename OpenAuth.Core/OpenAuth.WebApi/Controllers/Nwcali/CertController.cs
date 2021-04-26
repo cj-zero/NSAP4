@@ -317,6 +317,123 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 批量下载证书
+        /// </summary>
+        /// <param name="serialNumber"></param>
+        /// <param name="sign"></param>
+        /// <param name="timespan"></param>
+        /// <returns></returns>
+        [ServiceFilter(typeof(CertAuthFilter))]
+        [HttpGet]
+        public async Task<IActionResult> BatchDownloadCertPdf(string serialNumber, string sign, string timespan)
+        {
+            //System.IO.Compression.ZipFile.
+            //if (System.IO.File.Exists(Directory.GetCurrentDirectory() + "/wwwroot/ziliao.zip"))
+            //{
+            //    System.IO.File.Delete(Directory.GetCurrentDirectory() + "/wwwroot/ziliao.zip");
+            //}
+            //准备用来存放下载的多个文件流目录
+            var time=DateTime.Now.ToString("yyyyMMddHHmmss", System.Globalization.DateTimeFormatInfo.InvariantInfo);
+            string pathZip = Directory.GetCurrentDirectory() + "/wwwroot/downfile/downfile-" + time + "/";
+
+            var num = serialNumber.Split(',').ToList();
+            var bases = await _nwcaliCertApp.GetInfoList(num);
+            foreach (var baseInfo in bases)
+            {
+                //var baseInfo = await _nwcaliCertApp.GetInfo(item);
+                if (baseInfo != null)
+                {
+                    var model = await BuildModel(baseInfo);
+                    var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Header.html");
+                    var text = System.IO.File.ReadAllText(url);
+                    text = text.Replace("@Model.Data.BarCode", model.BarCode);
+                    var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"Header{Guid.NewGuid()}.html");
+                    System.IO.File.WriteAllText(tempUrl, text);
+                    var footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Footer.html");
+                    var datas = await ExportAllHandler.Exporterpdf(model, "Calibration Certificate.cshtml", pdf =>
+                    {
+                        pdf.IsWriteHtml = true;
+                        pdf.PaperKind = PaperKind.A4;
+                        pdf.Orientation = Orientation.Portrait;
+                        pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                        pdf.FooterSettings = new FooterSettings() { FontSize = 6, Right = "Page [page] of [toPage] ", Line = false, Spacing = 2.812, HtmUrl = footerUrl };
+                    });
+                    System.IO.File.Delete(tempUrl);
+                    Bytes2File(datas, pathZip, baseInfo.CertificateNumber + ".pdf");
+                    //Stream ms = new MemoryStream(datas);
+                    //var fils = File(ms, "application/pdf", baseInfo.CertificateNumber + ".pdf");
+                }
+            }
+            var certs = await _certinfoApp.GetAllAsync(c => num.Contains(c.CertNo));
+            if (certs.Count>0)
+            {
+                foreach (var cert in certs)
+                {
+                    if (!string.IsNullOrWhiteSpace(cert.PdfPath) && System.IO.File.Exists(cert.PdfPath))
+                    {
+                        DirectoryInfo directoryInfo = new DirectoryInfo(pathZip);
+                        string filename = Path.GetFileName(cert.PdfPath);
+                        if (!directoryInfo.Exists)
+                        {
+                            directoryInfo.Create();
+                        }
+                        System.IO.File.Copy(cert.PdfPath, directoryInfo.FullName + @"\" + filename, true);
+                    }
+                    var pdfPath = WordHandler.DocConvertToPdf(cert.CertPath);
+                    if (!pdfPath.Equals("false"))
+                    {
+                        cert.PdfPath = pdfPath;
+                        await _certinfoApp.UpdateAsync(cert.MapTo<AddOrUpdateCertinfoReq>());
+
+                        DirectoryInfo directory = new DirectoryInfo(pathZip);
+                        string filename = Path.GetFileName(pdfPath);
+                        if (!directory.Exists)
+                        {
+                            directory.Create();
+                        }
+                        System.IO.File.Copy(pdfPath, directory.FullName + @"\" + filename, true);
+                    }
+                }
+            }
+            var outname = $"/wwwroot/downfile/ziliao{time}.zip";
+            System.IO.Compression.ZipFile.CreateFromDirectory(pathZip, Directory.GetCurrentDirectory() + outname);
+            //存在即删除
+            if (Directory.Exists(pathZip))
+            {
+                Directory.Delete(pathZip, true);
+            }
+            var stream = new FileStream(Directory.GetCurrentDirectory() + outname, FileMode.Open);
+            //stream.Dispose();
+            //System.IO.File.Delete(Directory.GetCurrentDirectory() + outname);
+            return File(stream, "application/octet-stream", "ziliao.zip");
+            //Stream stream = new MemoryStream(datas);
+            //stream.Flush();
+            //stream.Position = 0;
+            ////return File(stream, "application/pdf");
+            ////return File(stream, "application/pdf");
+            //ZipHelper zipHelper = new ZipHelper();
+            //return File(stream, "application/octet-stream ; Charset=UTF8", System.Web.HttpUtility.UrlEncode("123.pdf", System.Text.Encoding.UTF8));
+        }
+
+        /// <summary>
+        /// 将byte数组转换为文件并保存到指定地址
+        /// </summary>
+        /// <param name="buff">byte数组</param>
+        /// <param name="savepath">保存地址</param>
+        public static void Bytes2File(byte[] buff, string savepath,string name)
+        {
+            if (!Directory.Exists(savepath))
+            {
+                Directory.CreateDirectory(savepath);
+            }
+
+            FileStream fs = new FileStream(savepath+name, FileMode.Create);
+            BinaryWriter bw = new BinaryWriter(fs);
+            bw.Write(buff, 0, buff.Length);
+            bw.Close();
+            fs.Close();
+        }
 
         [ServiceFilter(typeof(CertAuthFilter))]
         [HttpGet]

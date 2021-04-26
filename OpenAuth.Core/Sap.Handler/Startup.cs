@@ -40,7 +40,7 @@ namespace Sap.Handler
             services.AddNewareCAP(Configuration);
 
             services.AddSingleton<ServiceOrderSapHandler>();
-            services.AddSingleton<SellOrderSapHandler>();
+            services.AddScoped<SellOrderSapHandler>();
             services.AddSingleton<MaterialSapHandler>();
             services.AddSingleton<AfterSaleReturnHandler>();
             services.AddControllersWithViews();

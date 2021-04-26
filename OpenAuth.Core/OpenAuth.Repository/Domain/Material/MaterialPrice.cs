@@ -38,6 +38,13 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("固定价格")]
         public decimal? SettlementPrice { get; set; }
+
+        /// <summary>
+        /// 结算价格模式
+        /// </summary>
+        [Description("结算价格模式")]
+        public decimal? SalesMultiple { get; set; }
+        
         /// <summary>
         /// 创建人id
         /// </summary>
