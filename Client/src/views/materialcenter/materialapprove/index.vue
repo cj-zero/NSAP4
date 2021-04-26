@@ -39,7 +39,6 @@
     <my-dialog 
       class="dialog-clss"
       ref="quotationDialog"
-      width="1180px"
       :loading="dialogLoading"
       :title="`${title}销售合同`"
       :btnList="btnList"

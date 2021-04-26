@@ -140,6 +140,7 @@ export let tableMixin = {
         item.remburseStatusText = this.reimburseStatusMap[item.remburseStatus]
         item.responsibility = this.responsibilityMap[item.responsibility]
         item.totalMoney = toThousands(item.totalMoney)
+        item.fillTime = formatDate(item.fillTime, 'YYYY-MM-DD HH:mm')
         item.themeList = JSON.parse(item.fromTheme.replace(reg, '')).map(item => item.description)
         item.fromTheme = item.themeList.join(' ')
         return item

@@ -21,7 +21,7 @@ f<template>
         <p style="margin-bottom: 4px">报销ID: <span>{{ formData.mainId }}</span></p>
         <!-- <p class="pointer" style="text-decoration: underline;" @click="_openServiceOrHistory(true)">服务ID: <span>{{ formData.serviceOrderSapId }}</span></p> -->
       </div>
-      <div class="pointer" style="text-decoration: underline;">申请人: <span>{{ formData.serviceRelations }}-{{ formData.orgName }}-{{ formData.userName }}</span></div>
+      <div>申请人: <span>{{ formData.serviceRelations }}-{{ formData.orgName }}-{{ formData.userName }}</span></div>
     </el-row>
     <!-- 时间进度轴，仅总经理可看 timelineList -->
     <template v-if="title === 'approve'">
