@@ -1489,6 +1489,7 @@ namespace OpenAuth.App.Material
                 qoh.QuotationId = obj.ExpressageReqs.QuotationId;
                 qoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds);
                 await UnitWork.AddAsync<QuotationOperationHistory>(qoh);
+                await UnitWork.SaveAsync();
             }
             if (isEXwarehouse == 0)
             {
