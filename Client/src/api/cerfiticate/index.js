@@ -8,6 +8,20 @@ export function queryLoad(params) { // 证书查询列表
   })
 }
 
+export function querySalesLoad (params) { // 业务员证书查询列表
+  return request({
+    url: '/Certinfos/LoadSaleManLoad',
+    method: 'get',
+    params
+  })
+}
+export function downloadTest (params) {
+  return request({
+    url: '/Cert/DownloadTest',
+    method: 'get',
+    params
+  })
+}
 export function loadApprover (params) { // 证书审批流程列表 (送审/审核)
   return request({
     url: '/Certinfos/LoadApprover',

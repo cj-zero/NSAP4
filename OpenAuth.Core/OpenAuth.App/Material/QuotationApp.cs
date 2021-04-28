@@ -70,6 +70,7 @@ namespace OpenAuth.App.Material
                                 .WhereIf(request.StartCreateTime != null, q => q.CreateTime > request.StartCreateTime)
                                 .WhereIf(request.EndCreateTime != null, q => q.CreateTime < request.EndCreateTime)
                                 .WhereIf(request.Status != null, q => q.Status == request.Status)
+                                .WhereIf(request.QuotationStatus != null, q => q.QuotationStatus == request.QuotationStatus)
                                 .WhereIf(request.SalesOrderId != null, q => q.SalesOrderId == request.SalesOrderId)
                                 .WhereIf(ServiceOrderids.Count() > 0, q => ServiceOrderids.Contains(q.ServiceOrderId));
             if (!loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginUser.Account.Equals(Define.SYSTEM_USERNAME))
@@ -251,7 +252,7 @@ namespace OpenAuth.App.Material
                 q.a.CreateUser,
                 q.a.Remark,
                 q.a.SalesOrderId,
-                q.a.CreateTime,
+                CreateTime = Convert.ToDateTime(q.a.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 q.a.QuotationStatus,
                 q.a.Tentative,
                 q.a.IsProtected,
@@ -475,7 +476,7 @@ namespace OpenAuth.App.Material
                 //4.0存在物料价格，取4.0的价格为售后结算价，销售价取售后结算价*销售价倍数，不存在就当前进货价*1.2 为售后结算价。销售价为售后结算价*3
                 if (Prices != null)
                 {
-                    e.UnitPrice = Prices?.SettlementPrice==null||Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
+                    e.UnitPrice = Prices?.SettlementPrice == null || Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
                     //var s = e.UnitPrice.ToDouble().ToString();
                     //if (s.IndexOf(".") > 0)
                     //{
@@ -505,7 +506,7 @@ namespace OpenAuth.App.Material
                     e.UnitPrice = decimal.Parse(e.UnitPrice.ToString("#0.0000"));
                     e.lastPurPrc = e.UnitPrice * 3;
                 }
-                
+
             });
 
             result.Data = EquipmentsList;
@@ -591,7 +592,7 @@ namespace OpenAuth.App.Material
             var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(request.QuotationId)).ToListAsync();
             QuotationMergeMaterials = QuotationMergeMaterials.OrderBy(q => q.MaterialCode).ToList();
             Quotations.QuotationOperationHistorys = Quotations.QuotationOperationHistorys.Where(q => q.ApprovalStage != "-1").OrderBy(q => q.CreateTime).ToList();
-            Quotations.ServiceRelations = (await UnitWork.Find<User>(u=>u.Id.Equals(Quotations.CreateUserId)).FirstOrDefaultAsync()).ServiceRelations;
+            Quotations.ServiceRelations = (await UnitWork.Find<User>(u => u.Id.Equals(Quotations.CreateUserId)).FirstOrDefaultAsync()).ServiceRelations;
             var result = new TableData();
             if (Quotations.Status == 2)
             {
@@ -816,7 +817,7 @@ namespace OpenAuth.App.Material
                 //4.0存在物料价格，取4.0的价格为售后结算价，不存在就当前进货价*1.2 为售后结算价。销售价均为售后结算价*3
                 if (Prices != null)
                 {
-                    e.UnitPrice = Prices?.SettlementPrice==null|| Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
+                    e.UnitPrice = Prices?.SettlementPrice == null || Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
                     //var s = e.UnitPrice.ToDouble().ToString();
                     //if (s.IndexOf(".") > 0)
                     //{
@@ -846,7 +847,7 @@ namespace OpenAuth.App.Material
                     e.UnitPrice = decimal.Parse(e.UnitPrice.ToString("#0.0000"));
                     e.lastPurPrc = e.UnitPrice * 3;
                 }
-               
+
             });
             result.Data = Equipments.ToList();
             return result;
@@ -1368,9 +1369,9 @@ namespace OpenAuth.App.Material
             var expressageMap = obj.ExpressageReqs.MapTo<Expressage>();
 
             #region 判断条件
-            var quotationObj=await UnitWork.Find<Quotation>(q => q.Id == expressageMap.QuotationId).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
+            var quotationObj = await UnitWork.Find<Quotation>(q => q.Id == expressageMap.QuotationId).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
             var mergeMaterialList = quotationObj.QuotationMergeMaterials.Select(q => new { q.MaterialCode, q.Id, q.WhsCode }).ToList();
-            if (quotationObj.SalesOrderId == null || quotationObj.SalesOrderId <= 0) 
+            if (quotationObj.SalesOrderId == null || quotationObj.SalesOrderId <= 0)
             {
                 throw new Exception("暂未生成销售订单，不可出库，请联系管理员。");
             }
@@ -1475,37 +1476,47 @@ namespace OpenAuth.App.Material
                     isEXwarehouse++;
                 }
             }
-            QuotationOperationHistory qoh = new QuotationOperationHistory();
+            List<QuotationOperationHistory> qoh = new List<QuotationOperationHistory>();
             var selqoh = await UnitWork.Find<QuotationOperationHistory>(r => r.QuotationId.Equals(obj.ExpressageReqs.QuotationId)).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
-            if (selqoh.ApprovalStage != "12") 
+            if (selqoh.ApprovalStage != "12")
             {
-                qoh.Action = "开始出库";
-                qoh.ApprovalResult = "出库成功";
-                qoh.ApprovalStage = "12";
-                qoh.CreateUser = loginContext.User.Name;
-                qoh.CreateUserId = loginContext.User.Id;
-                qoh.CreateTime = DateTime.Now;
-                qoh.QuotationId = obj.ExpressageReqs.QuotationId;
-                qoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds);
-                await UnitWork.AddAsync<QuotationOperationHistory>(qoh);
+                qoh.Add(new QuotationOperationHistory
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Action = "开始出库",
+                    ApprovalResult = "出库成功",
+                    ApprovalStage = "12",
+                    CreateUser = loginContext.User.Name,
+                    CreateUserId = loginContext.User.Id,
+                    CreateTime = DateTime.Now,
+                    QuotationId = obj.ExpressageReqs.QuotationId,
+                    IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds)
+                });
             }
+
+
             if (isEXwarehouse == 0)
             {
                 await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(obj.ExpressageReqs.QuotationId), q => new Quotation { QuotationStatus = 11 });
-                qoh.Action = "出库完成";
-                qoh.ApprovalResult = "出库成功";
-                qoh.ApprovalStage = "11";
-                qoh.CreateUser = loginContext.User.Name;
-                qoh.CreateUserId = loginContext.User.Id;
-                qoh.CreateTime = DateTime.Now;
-                qoh.QuotationId = obj.ExpressageReqs.QuotationId;
-                qoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds);
-                await UnitWork.AddAsync<QuotationOperationHistory>(qoh);
+                qoh.Add(new QuotationOperationHistory
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Action = "出库完成",
+                    ApprovalResult = "出库成功",
+                    ApprovalStage = "11",
+                    CreateUser = loginContext.User.Name,
+                    CreateUserId = loginContext.User.Id,
+                    CreateTime = DateTime.Now,
+                    QuotationId = obj.ExpressageReqs.QuotationId,
+                    IntervalTime = qoh.Count>0?0:Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds)
+
+                });
             }
             else
             {
                 await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(obj.ExpressageReqs.QuotationId), q => new Quotation { QuotationStatus = 12 });
             }
+            await UnitWork.BatchAddAsync<QuotationOperationHistory>(qoh.ToArray());
             await UnitWork.SaveAsync();
             var result = new TableData();
             var MergeMaterials = from a in QuotationMergeMaterialLists
@@ -1968,8 +1979,9 @@ namespace OpenAuth.App.Material
         public async Task<byte[]> PrintSalesOrder(string QuotationId)
         {
             var quotationId = int.Parse(QuotationId);
-            var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId) && q.QuotationStatus<10).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
-            if (model == null) {
+            var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId) && q.QuotationStatus < 10).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
+            if (model == null)
+            {
                 throw new Exception("已出库，不可打印。");
             }
             var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
@@ -2249,7 +2261,7 @@ namespace OpenAuth.App.Material
             var text = System.IO.File.ReadAllText(url);
             text = text.Replace("@Model.QuotationId", model.Id.ToString());
             text = text.Replace("@Model.SalesOrderId", model.SalesOrderId.ToString());
-            text = text.Replace("@Model.CreateTime",DateTime.Now.ToString("yyyy.MM.dd hh:mm"));//model.CreateTime.ToString("yyyy.MM.dd hh:mm")
+            text = text.Replace("@Model.CreateTime", DateTime.Now.ToString("yyyy.MM.dd hh:mm"));//model.CreateTime.ToString("yyyy.MM.dd hh:mm")
             text = text.Replace("@Model.SalesUser", model?.CreateUser.ToString());
             text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.Id.ToString()));
             text = text.Replace("@Model.CustomerId", serverOrder?.TerminalCustomerId.ToString());

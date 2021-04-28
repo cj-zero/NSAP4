@@ -64,7 +64,7 @@ namespace OpenAuth.App
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ServiceRelations") && u.Enable == false).Select(u => u.Name).ToListAsync();
 
             var result = new TableData();
-            var objs = UnitWork.Find<ReimburseInfo>(null).Include(r => r.ReimburseTravellingAllowances);
+            var objs = UnitWork.Find<ReimburseInfo>(null).Include(r => r.ReimburseTravellingAllowances).Include(r=>r.ReimurseOperationHistories);
             var ReimburseInfos = objs.WhereIf(!string.IsNullOrWhiteSpace(request.MainId), r => r.MainId.ToString().Contains(request.MainId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId), r => r.ServiceOrderSapId.ToString().Contains(request.ServiceOrderId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.BearToPay), r => r.BearToPay.Contains(request.BearToPay))
@@ -281,17 +281,17 @@ namespace OpenAuth.App
             var ReimburseRespList = ReimburseResps.Select(r => new
             {
                 ReimburseResp = r.a,
-                fillTime = r.a.CreateTime.ToString("yyyy-MM-dd"),
+                fillTime = r.a.CreateTime.ToString("yyyy.MM.dd HH:mm:ss"),
                 r.b.TerminalCustomerId,
                 r.b.TerminalCustomer,
-                BusinessTripDate = serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).FirstOrDefault() == null ? CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c => c.BusinessTripDate)==null? Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.CreateTime)).ToString("yyyy-MM-dd") : Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c => c.BusinessTripDate)).ToString("yyyy-MM-dd") : Convert.ToDateTime(serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).Min(s => s.EditTime)).ToString("yyyy-MM-dd"),
-                EndDate = serviceDailyReports.Where(s=>s.ServiceOrderId== r.a.ServiceOrderId).FirstOrDefault()==null? CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate)==null? Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.CreateTime)).ToString("yyyy-MM-dd") : Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate)).ToString("yyyy-MM-dd"): Convert.ToDateTime(serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).Max(s=>s.EditTime)).ToString("yyyy-MM-dd"),
+                BusinessTripDate = serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).FirstOrDefault() == null ? CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c => c.BusinessTripDate)==null? Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.CreateTime)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c => c.BusinessTripDate)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).Min(s => s.EditTime)).ToString("yyyy.MM.dd HH:mm:ss"),
+                EndDate = serviceDailyReports.Where(s=>s.ServiceOrderId== r.a.ServiceOrderId).FirstOrDefault()==null? CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate)==null? Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.CreateTime)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).Max(s=>s.EditTime)).ToString("yyyy.MM.dd HH:mm:ss"),
                 r.a.ReimburseTravellingAllowances.FirstOrDefault()?.Days,
                 r.b.FromTheme,
                 r.c.SalesMan,
                 UserName = r.d.Name,
                 OrgName = r.f.Name,
-                UpdateTime=r.a.UpdateTime.ToString("yyyy-MM-dd HH:mm:ss")
+                UpdateTime= r.a.ReimurseOperationHistories.OrderByDescending(r => r.CreateTime).FirstOrDefault()!=null?Convert.ToDateTime(r.a.ReimurseOperationHistories.OrderByDescending(r=>r.CreateTime).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"):Convert.ToDateTime(r.a.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss")
             }).ToList();
             result.Data = ReimburseRespList;
             return result;

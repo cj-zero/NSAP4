@@ -1,6 +1,41 @@
 <template>
   <div class="quotation-wrapper" v-loading.fullscreen="contentLoading">
-    <el-row type="flex" class="title-wrapper">
+    <template v-if="ifShowServiceDetail">
+      <!-- 进度条 -->
+      <el-row type="flex" justify="space-between" align="middle">
+        <div class="sales-timeline-progress-wrapper">
+          <el-row class="content-wrapper" type="flex" align="middle" justify="space-between">
+            <el-row type="flex" class="interval-content">
+              <template v-for="item in timeList" >
+                <span class="interval-time success" :key="item.text">{{ item.intervalTime | s2HMS }}</span>
+              </template>
+            </el-row>
+            <template v-for="(item, index) in timeList">
+              <div class="content-item" :key="item.text">
+                <div class="line" v-show="index !== 0" :class="{ 'finished': item.isFinished, 'current': item.isCurrent }"></div>
+                <el-tooltip  palcement="top-center" :disabled="!item.isFinished" :content="item.createTime">
+                  <svg-icon class="icon-status finished" iconClass="white-tick" v-if="item.isFinished"></svg-icon>
+                  <div v-else class="icon-status" :class="{ 'not-current': !item.isCurrent }"></div>
+                </el-tooltip>
+                <p class="text">{{ item.text }}</p>
+                <div class="time">
+                  <div>{{ item.ymd }}</div>
+                  <div>{{ item.hms }}</div>
+                </div>
+              </div>
+            </template>
+          </el-row>
+        </div>
+        <!-- 工单信息 -->
+        <el-row type="flex" align="middle" class="title-service-wrapper">
+          <el-row class="item" type="flex" align="middle">销售员: <div v-infotooltip.ellipsis>{{ formData.salesMan }}</div></el-row>
+          <el-row class="item" type="flex" align="middle">领料单号: <div v-infotooltip.ellipsis>{{ formData.id }}</div></el-row>
+          <el-row class="item" type="flex" align="middle">销售员: <div v-infotooltip.ellipsis>{{ formData.serviceRelations }}-{{ formData.orgName }}-{{ formData.createUser }}</div></el-row>
+        </el-row>
+      </el-row>
+    </template>
+    
+    <el-row type="flex" class="title-wrapper" v-else>
       <p v-if="formData.salesOrderId && isSales"><span>销售订单</span><span>{{ formData.salesOrderId }}</span></p>
       <p v-if="!isSales"><span>{{ isSales ? '报价单号' : '领料单号' }}</span><span>{{ formData.id || '' }}</span></p>
       <p><span>申请人</span><span v-if="formData.createUser">{{ formData.orgName }}-{{ formData.createUser || createUser }}</span></p>
@@ -10,8 +45,106 @@
     </el-row>
     <!-- 主题内容 -->
     <el-scrollbar class="scroll-bar">
+      <template v-if="ifShowServiceDetail">
+        <!-- 服务单详情 -->
+        <div class="service-wrapper title-content-wrapper">
+          <el-row type="flex" align="middle" class="title-wrapper">
+            <div class="icon"></div>
+            <span>服务详情</span>
+            <span>{{ formData.serviceOrderId }}</span>
+          </el-row>
+          <el-row type="flex" align="middle" class="title-text-wrapper">
+            <el-row class="item" type="flex" align="middle">终端代码<div v-infotooltip.ellipsis>{{ serviceOrders.terminalCustomerId }}</div></el-row>
+            <el-row class="item" type="flex" align="middle">终端客户<div v-infotooltip.ellipsis>{{ serviceOrders.terminalCustomer }}</div></el-row>
+            <el-row class="item" type="flex" align="middle">联系人<div v-infotooltip.ellipsis>{{ serviceOrders.newestContacter }}</div></el-row>
+            <el-row class="item" type="flex" align="middle">联系方式<div v-infotooltip.ellipsis>{{ serviceOrders.newestContactTel }}</div></el-row>
+            <el-row class="item" type="flex" align="middle">呼叫来源<div v-infotooltip.ellipsis>{{ serviceOrders.fromId }}</div></el-row>
+            <el-row class="item" type="flex" align="middle">现地址<div v-infotooltip.ellipsis>{{ allArea }}</div><div v-infotooltip.ellipsis>{{ serviceOrders.addr }}</div></el-row>
+          </el-row>
+          <common-table 
+            class="service-detail-table-wrapper"
+            :data="serviceOrders.serviceWorkOrders" 
+            :columns="serviceWorkOrdersColumns"
+          ></common-table>
+          <div class="arrow"></div>
+        </div>
+      </template>
+      <div style="margin-top: 20px;" class="title-content-wrapper" v-if="ifShowServiceDetail">
+        <el-row type="flex" align="middle" class="title-wrapper">
+          <div class="icon"></div>
+          <span>销售订单</span>
+          <span>{{ formData.salesOrderId || formData.id }}</span>
+        </el-row>
+        <common-form
+          ref="form"
+          :model="formData"
+          :formItems="salesApproveFormItems"
+          class="my-form-wrapper my-form-view"
+          label-width="70px"
+          :disabled="true"
+          label-position="left"
+          :show-message="false"
+          :isCustomerEnd="true"
+          :hide-required-asterisk="true"
+        >
+          <template v-slot:balance>
+            <el-form-item label="应收科目" style="height: 18px;">
+              <div v-infotooltip.top.ellipsis>{{ formData.balance }}</div>
+            </el-form-item>
+          </template>
+          <template v-slot:totalBalance>
+            <el-form-item label="总应收科目" style="height: 18px;">
+              <div v-infotooltip.top.ellipsis>{{ formData.totalBalance }}</div>
+            </el-form-item>
+          </template>
+          <template v-slot:collectionAddress>
+            <el-form-item label="交货地址" style="height: 18px;">
+              <div v-infotooltip.top.ellipsis>{{ formData.collectionAddress }}{{ formData.collectionDA }}</div>
+            </el-form-item>
+          </template>
+          <template v-slot:taxRate>
+            <el-form-item
+              label="税率"
+              style="height: 18px;"
+              prop="taxRate"
+              :rules="formRules['taxRate'] || { required: false }">
+              <div v-infotooltip.top.ellipsis>{{ taxRateMap[formData.taxRate] }}{{ formData.taxRate ? '%' : '' }}</div>
+            </el-form-item>
+          </template>
+          <template v-slot:acceptancePeriod>
+            <el-form-item
+              label="收货期限"
+              style="height: 18px;"
+              prop="acceptancePeriod"
+              :rules="formRules['acceptancePeriod'] || { required: false }">
+              <div v-infotooltip.top.ellipsis>{{ formData.acceptancePeriod }}{{ formData.acceptancePeriod ? '天' : '' }}</div>
+            </el-form-item>
+          </template>
+          <template v-slot:prepay>
+            <el-form-item label="预付" style="height: 18px;"  v-if="formData.deliveryMethod === '3'">
+              <div v-infotooltip.top.ellipsis>{{ formData.prepay }}{{ formData.prepay ? '%' : '' }}</div>
+            </el-form-item>
+          </template>
+          <template v-slot:cashBeforeFelivery>
+            <el-form-item label="发货前" style="height: 18px;" v-if="formData.deliveryMethod === '3'">
+              <div v-infotooltip.top.ellipsis>{{ formData.cashBeforeFelivery }}{{ formData.cashBeforeFelivery ? '%' : '' }}</div>
+            </el-form-item>
+          </template>
+          <template v-slot:payOnReceipt>
+            <el-form-item label="货到验收" style="height: 18px;" v-if="formData.deliveryMethod === '3'">
+              <div v-infotooltip.top.ellipsis>{{ formData.payOnReceipt }}{{ formData.payOnReceipt ? '%' : '' }}</div>
+            </el-form-item>
+          </template>
+          <template v-slot:paymentAfterWarranty>
+            <el-form-item label="质保后" style="height: 18px;" v-if="formData.deliveryMethod === '3'">
+              <div v-infotooltip.top.ellipsis>{{ formData.paymentAfterWarranty }}{{ formData.paymentAfterWarranty ? '%' : '' }}</div>
+            </el-form-item>
+          </template>
+        </common-form>
+      </div>
       <!-- 表单 -->
       <common-form
+        v-if="!ifShowServiceDetail"
         :model="formData"
         :formItems="formItems"
         ref="form"
@@ -75,12 +208,12 @@
             质保后<el-input-number v-model="formData.paymentAfterWarranty" :controls="false" :min="0"></el-input-number>%
           </el-row>
         </template>
-        <template v-else>
+        <!-- <template v-else>
           <span>预付{{ formData.prepay || 0 }}%</span>
           <span>发货前{{ formData.cashBeforeFelivery || 0 }}%</span>
           <span>货到验收{{ formData.payOnReceipt || 0 }}%</span>
           <span>质保后{{ formData.paymentAfterWarranty || 0 }}%</span>
-        </template>
+        </template> -->
       </el-row>
       <!-- 技术员回传文件 -->
       <el-row class="upload-file-wrapper" type="flex" v-if="status === 'upload' && isSales">
@@ -100,15 +233,6 @@
       <!-- 工程和总经理审批报价单 -->
       <template v-if="ifShowSerialTable">
         <div class="approve-class">
-          <!-- <el-form v-if="formData.quotationProducts.length" class="approve-search-wrapper" :inline="true" :model="listQueryApprove" size="mini">
-            <el-form-item label="序列号">
-              <el-input v-model.trim="listQueryApprove.manufacturerSerialNumbers" @keyup.enter.native="_getSerialDetail"></el-input>
-            </el-form-item>
-            <el-form-item label="物料编码">
-              <el-input v-model.trim="listQueryApprove.materialCode" @keyup.enter.native="_getSerialDetail"></el-input>
-            </el-form-item>
-            <el-button type="primary" @click.native="_getSerialDetail" size="mini">搜索</el-button>
-          </el-form> -->
           <ul class="serial-table-list" v-loading="serialLoading">
             <li class="serial-item" v-for="item in formData.quotationProducts" :key="item.id">
               <el-row class="info-title" type="flex">
@@ -117,10 +241,10 @@
                 <div>物料编码<span>{{ item.materialCode }}</span></div>
                 <div v-if="item.warrantyExpirationTime">保修到期<span>{{ item.warrantyExpirationTime | formatDateFilter }}</span></div>
               </el-row>
-              <el-row type="flex" style="margin: 6px 0;">
+              <!-- <el-row type="flex" style="margin: 6px 0;">
                 <div style="flex: 50px 0 0;color: #cbcbcb; margin-right: 10px;">呼叫主题</div>
                <div style="max-width: 100%;" v-infotooltip.top.ellipsis>{{ item.fromTheme }}</div>
-              </el-row>
+              </el-row> -->
               <common-table
                 :data="item.quotationMaterials" 
                 :columns="approveColumns" 
@@ -561,7 +685,7 @@
             </template>
           </common-table>
         </div>
-        <div class="timeline-progress-wrapper" v-if="isTechnical" :class="{ pay: !formData.isMaterialType }">
+        <div class="timeline-progress-wrapper" v-if="ifShowTechTimeList" :class="{ pay: !formData.isMaterialType }">
           <el-row class="content-wrapper" type="flex" align="middle" justify="space-between">
             <template v-for="(item, index) in timeList">
               <div class="content-item" :key="index">
@@ -820,6 +944,7 @@ import { flatten } from '@/utils/utils'
 import rightImg from '@/assets/table/right.png'
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import { s2HMS } from '@/filter/time'
+import { deepClone } from '@/utils'
 const NOT_EDIT_STATUS_LIST = ['edit', 'upload', 'pay'] // 不可编辑的状态 1.查看 2.审批 3.支付
 const CONFIRM_TYPE_MAP = {
   upload: '上传',
@@ -900,6 +1025,12 @@ export default {
     }
   },
   props: {
+    serviceDetailData: {
+      type: Array,
+      default () {
+        return []
+      }
+    },
     customerList: {
       type: Array,
       default () { () => [] }
@@ -963,6 +1094,7 @@ export default {
         if (this.status !== 'create') {
           this.isPreview = true
           Object.assign(this.formData, val)
+          this.serviceOrders = val.serviceOrders || []
           // 设置服务费和差旅费
           const { 
             serviceCharge = undefined, travelExpense = undefined, deliveryMethod, 
@@ -1020,7 +1152,7 @@ export default {
         }
         // 如果有历史记录的话
         if (this.formData.quotationOperationHistorys && this.formData.quotationOperationHistorys.length) {
-          this.timeList = this._normalizeTimeList(this.formData.quotationOperationHistorys)
+          this.timeList = this._normalizeTimeList(deepClone(this.formData.quotationOperationHistorys))
         }
       }
     }
@@ -1057,6 +1189,18 @@ export default {
       previewVisible: false,
       contentLoading: false, // 弹窗内容loading
       rightImg,
+      serviceOrders: {}, // 服务单数据
+      serviceWorkOrdersColumns: [
+        { label: '工单ID', prop: 'id' },
+        { label: '序列号', prop: 'manufacturerSerialNumber' },
+        { label: '物料编码', prop: 'materialCode' },
+        { label: '物料描述', prop: 'materialDescription' },
+        { label: '客服备注', prop: 'remark' },
+        { label: '开始时间', prop: 'createTime' },
+        { label: '结束时间', prop: 'completeDate' },
+        { label: '问题描述', prop: 'troubleDescription' },
+        { label: '售后方案', prop: 'processDescription'}
+      ],
       // 表单数据
       formData: {
         salesOrderId: '', // 销售单号
@@ -1342,6 +1486,10 @@ export default {
     }
   },
   computed: {
+    allArea () {
+      const { province, city, area } = this.serviceOrders
+      return province + city + area
+    },
     // 表单规则
     formRules () {
       return {
@@ -1387,6 +1535,12 @@ export default {
         : this.formData.isMaterialType
           ? { 1: '更换', 3: '赠送' }
           : { 2: '购买', 3: '赠送'}
+    },
+    ifShowTechTimeList () { // 在提交报价单页面的技术员进度条
+      return this.isTechnical && this.$route.path === '/materialcenter/quotation/index'
+    },
+    ifShowServiceDetail () { // 审批销售合同的模块
+      return this.$route.path === '/materialcenter/materialapprove/index'
     },
     ifInApprovePage () { // 是否在审批页面
       return this.$route.path === '/materialcenter/salesorder/index' || this.$route.path === '/materialcenter/materialapprove/index'
@@ -1537,71 +1691,120 @@ export default {
         row.warehouseQuantity = ''
       }
     },
-    _normalizeTimeList (timeList) {
-      timeList = timeList.filter(item => item.approvalResult !== '暂定') // 把暂定的状态排除掉
-      const { quotationStatus, totalMoney } = this.formData
-      const HAS_TOTAL_MONEY_MAP = { // 有服务费的
-        4: -1,
-        5: -2,
-        6: -3,
-        7: -4,
-        8: -5,
-        // 9: -6,
-        10: -6,
-        11: -8,
-        12: -7,
+    _normalizeTimeList (originTimeList) { 
+      /* eslint-disable */
+      originTimeList = originTimeList.filter(item => item.approvalResult !== '暂定') // 把暂定的状态排除掉
+      // 提交报价单 业务员审批 工程审批 总经理审批 客户确认报价单 确认生成销售订单 财务审批 总经理审批
+      this.startIndex = undefined
+      for (let i = originTimeList.length - 1; i >= 0; i--) {
+        if (originTimeList[i].action === '报价单提交审批') {
+          this.startIndex = i
+          break
+        }
       }
-      const NO_TOTAL_MONEY_MAP = { // 没服务费的
-        4: -1,
-        5: -2,
-        // 9: -3,
-        10: -3,
-        11: -5,
-        12: -4
-      }
-      const isMaterialType = this.formData.isMaterialType
-      console.log(isMaterialType, 'isMaterialType')
-      let maxLen
+      const { isMaterialType, totalMoney, quotationStatus } = this.formData
       const isBoolean = typeof isMaterialType === 'boolean'
-      if (isBoolean) {
-        maxLen = isMaterialType ? 7 : 10
-      } else {
-        maxLen = Number(totalMoney) ? 10 : 7
+      const hasMoney = Number(totalMoney) > 0
+      let newTimeList = []
+      let PROCESS_TEXT = []
+      if (typeof this.startIndex === 'number' && +quotationStatus > 3) {
+        newTimeList = originTimeList.slice(this.startIndex)
       }
-      const HAS_TOTAL_MONEY_TEXT = ['报价单提交审批', '工程审批', '总经理审批', '客户确认报价', '销售订单成立', '财务审批', '待出库', '部分出库', '已出库']
-      const NO_TOTAL_MONEY_TEXT = ['报价单提交审批', '工程审批', '总经理审批', '待出库', '部分出库', '已出库']
-      let TEXT_MAP, TOTAL_MONEY_MAP
-      if (isBoolean) {
-        TEXT_MAP = !isMaterialType ?  HAS_TOTAL_MONEY_TEXT : NO_TOTAL_MONEY_TEXT
-        TOTAL_MONEY_MAP = !isMaterialType ? HAS_TOTAL_MONEY_MAP : NO_TOTAL_MONEY_MAP
+      // if (!newTimeList.length) {
+      //   return newTimeList
+      // }
+      let isToOutbound = +quotationStatus <= 10 // 判断这个单子是不是未出库的状态
+      let isGC = +quotationStatus === 4 // 判断当前状态是不是工程审批
+      let cwIndex = findIndex(newTimeList, item => item.action === '财务审批') // 判断有没有财务审批
+      let ywIndex = findIndex(newTimeList, item => Number(item.approvalStage) === 3.1) // 判断有没有业务员审批
+      let gcIndex = findIndex(newTimeList, item => item.action === '工程审批') // 判断有没有出现工程审批
+      let startOutboundIndex = findIndex(newTimeList, item => item.action === '开始出库') // 判断有没有出现开始出库的单子
+      let endOutboundIndex = findIndex(newTimeList, item => item.action === '全部出库') // 判断有没有
+      const REPLACE_HAS_SALES = ['提交审批', '业务员审批', '工程审批', '总经理审批', '开始出库', '全部出库'] // 更换并且有业务员审批流程
+      const REPLACE_NOT_SALES = ['提交审批', '工程审批', '总经理审批', '开始出库', '全部出库']
+      const BUY_HAS_SALES = ['提交审批', '业务员审批', '工程审批', '总经理审批', '客户确认报价单', '确认生成销售订单', '财务审批', '开始出库', '全部出库']
+      const REPLACE_HAS_OUTBOUND = ['提交审批', '业务员审批', '工程审批', '总经理审批']
+      const BUY_NOT_SALES = ['提交审批', '工程审批', '总经理审批', '客户确认报价单', '确认生成销售订单', '财务审批']
+      const BUY_HAS_MANAGER_SALES = ['提交审批', '业务员审批', '工程审批', '总经理审批', '客户确认报价单', '确认生成销售订单', '财务审批', '总经理审批']
+      const BUY_HAS_SALES_NOT_MANAGER = ['提交审批', '业务员审批', '工程审批', '总经理审批', '客户确认报价单', '确认生成销售订单', '财务审批']
+      if (cwIndex === -1) { // 还没到财务审批
+        if (ywIndex !== -1) { 
+          // 有业务员审批的单子
+          PROCESS_TEXT = ((isBoolean && isMaterialType) || !hasMoney) 
+          //  工程审批 总经理审批 客户确认报价单 确认生成销售订单 财务审批 总经理审批
+            ? REPLACE_HAS_SALES
+            : BUY_HAS_SALES
+        } else {
+          // 没有业务员审批
+            PROCESS_TEXT = ((isBoolean && isMaterialType) || !hasMoney) 
+          //  工程审批 总经理审批 客户确认报价单 确认生成销售订单 财务审批 总经理审批
+            ? (gcIndex === -1 && !isGC ? REPLACE_HAS_SALES : REPLACE_NOT_SALES)
+            : (gcIndex === -1 && !isGC
+                ? BUY_HAS_SALES 
+                : BUY_NOT_SALES.concat(['开始出库', '全部出库'])
+              )
+        }
       } else {
-        TEXT_MAP = totalMoney ? HAS_TOTAL_MONEY_TEXT : NO_TOTAL_MONEY_TEXT
-        TOTAL_MONEY_MAP = totalMoney ? HAS_TOTAL_MONEY_MAP : NO_TOTAL_MONEY_MAP
+        const nextInfo = newTimeList[cwIndex + 1]
+        const ifShowOutboundProcess = isToOutbound || (startOutboundIndex !== -1) || (endOutboundIndex !== -1)
+        if (ywIndex !== -1) { // 有业务员
+          if (nextInfo && nextInfo.action === '总经理审批') {
+            PROCESS_TEXT = ((isBoolean && isMaterialType) || !hasMoney) 
+            //  工程审批 总经理审批 客户确认报价单 确认生成销售订单 财务审批 总经理审批
+              ? (ifShowOutboundProcess ? REPLACE_HAS_SALES : REPLACE_HAS_OUTBOUND)
+              : (ifShowOutboundProcess 
+                ?  BUY_HAS_MANAGER_SALES.concat(['开始出库', '全部出库'])
+                : BUY_HAS_MANAGER_SALES)
+          } else {
+            PROCESS_TEXT = ((isBoolean && isMaterialType) || !hasMoney) 
+            //  工程审批 总经理审批 客户确认报价单 确认生成销售订单 财务审批 总经理审批
+              ? (ifShowOutboundProcess ? REPLACE_HAS_SALES : REPLACE_HAS_OUTBOUND)
+              : (ifShowOutboundProcess 
+                ? BUY_HAS_SALES
+                : BUY_HAS_SALES_NOT_MANAGER)
+          }
+        } else {
+          if (nextInfo && nextInfo.action === '总经理审批') {
+            PROCESS_TEXT = ((isBoolean && isMaterialType) || !hasMoney) 
+            //  工程审批 总经理审批 客户确认报价单 确认生成销售订单 财务审批 总经理审批
+              ? (ifShowOutboundProcess ? REPLACE_NOT_SALES : ['提交审批', '工程审批', '总经理审批'])
+              : (ifShowOutboundProcess 
+                ? BUY_NOT_SALES.contact(['总经理审批', '开始出库', '全部出库']) 
+                : BUY_NOT_SALES.contact(['总经理审批']))
+          } else {
+            PROCESS_TEXT = ((isBoolean && isMaterialType) || !hasMoney) 
+            //  工程审批 总经理审批 客户确认报价单 确认生成销售订单 财务审批 总经理审批
+              ? (ifShowOutboundProcess ? REPLACE_NOT_SALES : ['提交审批', '工程审批', '总经理审批'])
+              : (ifShowOutboundProcess 
+                ? BUY_NOT_SALES.contact(['开始出库', '全部出库']) 
+                : BUY_NOT_SALES)
+          }
+        }
       }
-      // const TEXT_MAP = (isBoolean && !isMaterialType || totalMoney) ? HAS_TOTAL_MONEY_TEXT : NO_TOTAL_MONEY_TEXT
-      // const TOTAL_MONEY_MAP = (isBoolean && !isMaterialType || totalMoney) ? HAS_TOTAL_MONEY_MAP : NO_TOTAL_MONEY_MAP
-      if (TOTAL_MONEY_MAP[quotationStatus]) {
-        const length = TOTAL_MONEY_MAP[quotationStatus]
-        console.log(length, 'length')
-        timeList = TEXT_MAP.slice(length).map(() => {
-          return { isFinished: true }
-        })
-        timeList = this.setFinishedStatus(timeList.slice(length))
-      } else {
-        timeList = []
-      }
-      let isCurrent = +quotationStatus !== 11
-      while (timeList.length < maxLen) {
-        timeList.push({
+      newTimeList.forEach((item, index) => {
+        const { createTime } = item
+        const [ymd, hms] = createTime.split(' ')
+        item.ymd = ymd
+        item.hms = hms
+        item.intervalTime = newTimeList[index + 1] ? newTimeList[index + 1].intervalTime : ''
+        item.isFinished = true
+      })
+      let isCurrent = +quotationStatus !== 11 // 判断是不是已经出库
+      while (newTimeList.length < PROCESS_TEXT.length) {
+        newTimeList.push({
           isFinished: +quotationStatus === 11,
-          isCurrent
+          isCurrent,
+          intervalTime: '',
+          ymd: '',
+          hms: ''
         })
         isCurrent = false
       }
-      timeList.forEach((item, index) => {
-        item.text = TEXT_MAP[index]
+      newTimeList.forEach((item, index) => {
+        item.text = PROCESS_TEXT[index]
       })
-      return timeList
+      console.log(newTimeList, 'newTimeList')
+      return newTimeList
     },
     setFinishedStatus (list) { // 设置状态
       return list.map(item => {
@@ -2351,6 +2554,163 @@ export default {
   .warning {
     font-size: 14px;
     color: rgba(255, 165, 0, 1);
+  }
+  /* 模块的头部样式 */
+  .title-content-wrapper {
+    .title-wrapper {
+      position: relative;
+      .icon {
+        position: absolute;
+        width: 8px;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        border-radius: 4px;
+        background-color: #F8B500;
+      }
+      span {
+        margin-left: 10px;
+        font-size: 14px;
+        font-weight: bold;
+      }
+    }
+  }
+  /* 服务单详情 */
+  .service-wrapper {
+    margin-top: 10px;
+    
+    .title-text-wrapper {
+      margin: 10px 0;
+      > .item {
+        color: #BFBFBF;
+        margin-right: 20px;
+        div {
+          color: #000;
+          margin-left: 10px;
+          max-width: 200px;
+        }
+      }
+    }
+  }
+  /* 销售合同审批进度条 */
+  .sales-timeline-progress-wrapper {
+    position: absolute;
+    left: 167px;
+    top: -53px;
+    width: 1000px;
+    height: 1px;
+    .content-wrapper {
+      position: absolute;
+      z-index: 2;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      top: 0;
+      .interval-content {
+        position: absolute;
+        z-index: 2;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: 0;
+        .interval-time {
+          position: relative;
+          top: -12px;
+          flex: 1;
+          font-size: 12px;
+          text-align: center;
+          color: #3ef551;
+          &:nth-last-child(1) {
+            opacity: 0;
+          }
+        }
+      }
+      .content-item {
+        display: flex;
+        align-items: center;
+        position: relative;
+        flex: 1;
+        &:nth-child(1) {
+          .line {
+            opacity: 0;
+          }
+        }
+        .line {
+          position: absolute;
+          left: 0;
+          top: 6px;
+          width: 100%;
+          transform: translate3d(-100%, 0, 0);
+          height: 1px;
+          background-color: rgba(206, 206, 206, 1); 
+          &.finished {
+            background-color: #3fcf15;
+          }
+          &.current {
+            background-color: #ffa724;
+            // background: linear-gradient(to right, #3fcf15 50%, #ffa724 50%);
+          }
+        }
+        .icon-status {
+          position: relative;
+          z-index: 100;
+          display: inline-block;
+          width: 12px;
+          height: 12px;
+          line-height: 12px;
+          font-size: 12px;
+          background-color: #fff;
+          border-radius: 50%;
+          border: 1px solid #ffa724;
+          &.finished {
+            border: none;
+            background-color: #3fcf15;
+          }
+          &.not-current {
+            border: 1px solid rgba(206, 206, 206, 1);  
+          }
+          &.text-content {
+            border: 1px solid rgba(206, 206, 206, 1);  
+          }
+        }
+        .text {
+          position: absolute;
+          left: 0;
+          top: -22px;
+          font-size: 12px;
+          white-space: nowrap;
+          color: #000;
+          transform: translate3d(-36%, 0, 0);
+        }
+        .time {
+          position: absolute;
+          left: 0;
+          top: 17px;
+          font-size: 12px;
+          color: #000;
+          text-align: center;
+          white-space: nowrap;
+          transform: translate3d(-36%, 0, 0);
+        }
+        // background-color: #fff;
+      }
+    }
+  }
+  /* 销售合同表头 */
+  .title-service-wrapper {
+    position: absolute;
+    top: -61px;
+    right: 10px;
+    font-size: 16px;
+    .item {
+      color: #BFBFBF;
+      margin-right: 20px;
+      div {
+        max-width: 300px;
+        color: #000;
+        margin-left: 10px;
+      }
+    }
   }
   /* 表头文案 */
   > .title-wrapper { 

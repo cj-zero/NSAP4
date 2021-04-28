@@ -1,6 +1,7 @@
 import rightImg from '@/assets/table/right.png'
 import { getReportDetail } from '@/api/serve/callservesure'
 import { getCategoryName } from '@/api/reimburse'
+import { getCategoryNameList } from '@/api/directory'
 import { accommodationConfig } from './config'
 import { toThousands } from '@/utils/format'
 import { getList, getDetails } from '@/api/reimburse'
@@ -11,6 +12,7 @@ export { chatMixin }
 import { loadBMap } from '@/utils/remoteLoad'
 import { formatDate } from '@/utils/date'
 import { print } from '@/utils/utils'
+import { callSourseMap, callStatusMap, callTypeMap, priorityMap } from './serviceConfig'
 // import imageConversion from 'image-conversion'
 export let tableMixin = {
   provide () {
@@ -56,7 +58,8 @@ export let tableMixin = {
         { label: '报销部门', prop: 'orgName', width: 70 },
         { label: '报销人', prop: 'userName', width: 70 },
         { label: '业务员', prop: 'salesMan', width: 80 },
-        { label: '填报日期', prop: 'fillTime', width: 85 }
+        { label: '填报日期', prop: 'fillTime', width: 85 },
+        { label: '更新日期', prop: 'updateTime' }
       ],
       tableData: [],
       total: 0, // 表格数据的总数量
@@ -137,6 +140,7 @@ export let tableMixin = {
         item.remburseStatusText = this.reimburseStatusMap[item.remburseStatus]
         item.responsibility = this.responsibilityMap[item.responsibility]
         item.totalMoney = toThousands(item.totalMoney)
+        item.fillTime = formatDate(item.fillTime, 'YYYY-MM-DD HH:mm')
         item.themeList = JSON.parse(item.fromTheme.replace(reg, '')).map(item => item.description)
         item.fromTheme = item.themeList.join(' ')
         return item
@@ -168,9 +172,9 @@ export let tableMixin = {
       getDetails({
         reimburseInfoId: id
       }).then(async res => {
-        let { reimburseResp } = res.data
+        let { reimburseResp, serviceOrders } = res.data
         delete res.data.reimburseResp
-        this.detailData = Object.assign({}, res.data, { ...reimburseResp })
+        this.detailData = Object.assign({}, res.data, { ...serviceOrders }, { ...reimburseResp })
         // 如果是审核流程、则判断当前用户是不是客服主管
         // this.title = tableClick ? 'view' : val.type
         this.title = val.type
@@ -325,7 +329,34 @@ export let tableMixin = {
       console.log(result, 'result')
       // data.expenseCategoryList = result
     },
+    _normalizeServiceOrders (serviceOrder) {
+      const { fromId } = serviceOrder
+      serviceOrder.fromId = callSourseMap[fromId]
+      let reg = /[\r|\r\n|\n\t\v]/g
+      serviceOrder.serviceWorkOrders.forEach(serviceOrder => {
+        let { warrantyEndDate, bookingDate, visitTime, liquidationDate, completeDate, status, fromType, priority } = serviceOrder
+        serviceOrder.status = callStatusMap[status]
+        serviceOrder.fromType = callTypeMap[fromType]
+        serviceOrder.priority = priorityMap[priority]
+        console.log('forEach')
+        serviceOrder.warrantyEndDate = formatDate(warrantyEndDate, 'YYYY-MM-DD HH:mm')
+        serviceOrder.bookingDate = formatDate(bookingDate, 'YYYY-MM-DD HH:mm')
+        serviceOrder.visitTime = formatDate(visitTime, 'YYYY-MM-DD HH:mm')
+        serviceOrder.liquidationDate = formatDate(liquidationDate, 'YYYY-MM-DD HH:mm')
+        serviceOrder.completeDate = formatDate(completeDate, 'YYYY-MM-DD HH:mm')
+        try {
+          const themeList = JSON.parse(serviceOrder.fromTheme.replace(reg, ''))
+          serviceOrder.newFormTheme = ''
+          themeList.forEach((item, index) => {
+            serviceOrder.newFormTheme += `${index}.${item.description}`
+          })
+        } catch (err) {
+          serviceOrder.newFormTheme = ''
+        }
+      })
+    },
     _normalizeDetail (data) { 
+      this._normalizeServiceOrders(data.serviceOrders)
       let reg = /[\r|\r\n|\n\t\v]/g
       let { 
         reimburseAttachments,
@@ -454,6 +485,16 @@ const SYS_Transportation = 'SYS_Transportation' // 交通方式
 const SYS_OtherExpenses = 'SYS_OtherExpenses' // 其它费用
 const SYS_ReimburseAccraditation = 'SYS_ReimburseAccraditation' // 备注弹窗的标签按钮 报销审批常用语
 const SYS_ReimburseAccommodation = 'SYS_ReimburseAccommodation' // 报销住宿标准
+const SYS_InvoiceCompany = 'SYS_InvoiceCompany' // 开票单位
+const SYS_MaterialInvoiceCategory = 'SYS_MaterialInvoiceCategory' // 发票类别
+const SYS_DeliveryMethod = 'SYS_DeliveryMethod' // 快递方式
+const SYS_AcquisitionWay = 'SYS_AcquisitionWay' // 
+const SYS_MoneyMeans = 'SYS_MoneyMeans' // 预付方式
+const SYS_MaterialTaxRate = 'SYS_MaterialTaxRate' // 税率
+const IDS = [SYS_ReimburseType, SYS_RemburseStatus, SYS_ProjectName, SYS_EXPENSE, SYS_Responsibility, SYS_ServiceRelations, SYS_TravellingAllowance,
+  SYS_TransportationAllowance, SYS_Transportation, SYS_OtherExpenses, SYS_ReimburseAccraditation, SYS_ReimburseAccommodation, SYS_InvoiceCompany,
+  SYS_MaterialInvoiceCategory, SYS_DeliveryMethod, SYS_AcquisitionWay, SYS_MoneyMeans, SYS_MaterialTaxRate
+]
 const W_100 = { width: '100px' }
 const W_150 = { width: '150px' }
 export let categoryMixin = {
@@ -471,11 +512,20 @@ export let categoryMixin = {
   },
   methods: {
     _getCategoryName () {
-      getCategoryName().then(res => {
+      getCategoryNameList({
+        ids: IDS
+      }).then(res => {
         this.categoryList = res.data
+        console.log(res, 'res')
       }).catch(() => {
         this.$message.error('获取字典分类失败')
       })
+      console.log(getCategoryName)
+      // getCategoryName().then(res => {
+      //   this.categoryList = res.data
+      // }).catch(() => {
+      //   this.$message.error('获取字典分类失败')
+      // })
     },
     buildSelectOptions (list, isName = false) {
       if (isName) {
@@ -512,6 +562,24 @@ export let categoryMixin = {
     }
   },
   computed: {
+    invoiceCompanyList () {
+      return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_InvoiceCompany))
+    },
+    invoiceCategoryList () {
+      return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_MaterialInvoiceCategory))
+    },
+    deliveryMethodList () {
+      return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_DeliveryMethod))
+    },
+    acquisitionWayList () {
+      return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_AcquisitionWay))
+    },
+    moneyMeansList () {
+      return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_MoneyMeans))
+    },
+    taxRateMap () {
+      return this.buildMap(this.categoryList.filter(item => item.typeId === SYS_MaterialTaxRate))
+    },
     reimburseTypeList () {
       return this.buildSelectOptions(this.categoryList.filter(item => item.typeId === SYS_ReimburseType))
     },

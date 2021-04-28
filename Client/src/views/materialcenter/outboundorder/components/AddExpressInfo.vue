@@ -209,7 +209,7 @@ export default {
           try {
             // const { data } = await getSign({ serialNumber: this.formData.id, timespan: NOW_DATE })
             await printPickingList(params.quotationMergeMaterialReqs)
-            const url = '/Material/Quotation/PrintPicking'
+            const url = '/Material/Quotation/PrintStockRequisition'
             const printParams = { serialNumber: this.formData.id, 'X-token': this.$store.state.user.token, isTrue: false }
             window.open(`${process.env.VUE_APP_BASE_API}${url}?${serializeParams(printParams)}`)
             this.formData.row.printWarehouse = 3

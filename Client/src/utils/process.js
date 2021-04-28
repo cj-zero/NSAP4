@@ -84,7 +84,7 @@ export function findIndex (list, fn) {
 export function serializeParams (params) {
   let result = []
   for (let key in params) {
-    if (params[key]) {
+    if (params[key] !== undefined) {
       result.push(`${key}=${params[key]}`)
     } 
   }
