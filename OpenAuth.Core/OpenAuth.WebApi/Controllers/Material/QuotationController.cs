@@ -571,15 +571,57 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <summary>
         /// 同步销售订单
         /// </summary>
-        /// <param name="SalesOrderId"></param>
+        /// <param name="QuotationId"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> SyncSalesOrder(string SalesOrderId) 
+        public async Task<Response> SyncSalesOrder(string QuotationId) 
         {
             var result = new Response();
             try
             {
-                await _app.SyncSalesOrder(SalesOrderId);
+                await _app.SyncSalesOrder(QuotationId);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 同步销售交货
+        /// </summary>
+        /// <param name="SalesOfDeliveryId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> SyncSalesOfDelivery(string SalesOfDeliveryId)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.SyncSalesOfDelivery(SalesOfDeliveryId);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 清空交货记录
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> EmptyDeliveryRecord(string QuotationId) 
+        {
+            var result = new Response();
+            try
+            {
+                await _app.EmptyDeliveryRecord(QuotationId);
             }
             catch (Exception e)
             {

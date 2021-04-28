@@ -2321,13 +2321,42 @@ namespace OpenAuth.App.Material
         /// <summary>
         /// 同步销售订单
         /// </summary>
-        /// <param name="SalesOrderId"></param>
+        /// <param name="QuotationId"></param>
         /// <returns></returns>
-        public async Task SyncSalesOrder(string SalesOrderId)
-        {
-            _capBus.Publish("Serve.SellOrder.ERPCreate", int.Parse(SalesOrderId));
+        public async Task SyncSalesOrder(string QuotationId)
+        { 
+            _capBus.Publish("Serve.SellOrder.ERPCreate", int.Parse(QuotationId));
         }
 
+        /// <summary>
+        /// 同步销售交货
+        /// </summary>
+        /// <param name="SalesOfDeliveryId"></param>
+        /// <returns></returns>
+        public async Task SyncSalesOfDelivery(string SalesOfDeliveryId)
+        {
+           _capBus.Publish("Serve.SalesOfDelivery.ERPCreate", int.Parse(SalesOfDeliveryId));
+        }
+
+        /// <summary>
+        /// 清空交货记录
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        /// <returns></returns>
+        public async Task EmptyDeliveryRecord(string QuotationId)
+        {
+            var expressages =await UnitWork.Find<Expressage>(e => e.QuotationId == int.Parse(QuotationId)).Include(e=>e.ExpressagePicture).Include(e=>e.LogisticsRecords).ToListAsync();
+            var picture = new List<ExpressagePicture>();
+            expressages.ForEach(e => picture.AddRange(e.ExpressagePicture));
+            var logisticsRecords = new List<LogisticsRecord>();
+            expressages.ForEach(e => logisticsRecords.AddRange(e.LogisticsRecords));
+            await UnitWork.BatchDeleteAsync<ExpressagePicture>(picture.ToArray());
+            await UnitWork.BatchDeleteAsync<LogisticsRecord>(logisticsRecords.ToArray());
+            await UnitWork.BatchDeleteAsync<Expressage>(expressages.ToArray());
+            await UnitWork.UpdateAsync<Quotation>(q => q.Id == int.Parse(QuotationId), q => new Quotation { QuotationStatus = 10 });
+            await UnitWork.UpdateAsync<QuotationMergeMaterial>(q => q.QuotationId == int.Parse(QuotationId), q => new QuotationMergeMaterial { SentQuantity=0});
+            await UnitWork.SaveAsync();
+        }
         //, FlowInstanceApp flowInstanceApp, ModuleFlowSchemeApp moduleFlowSchemeApp
         public QuotationApp(IUnitWork unitWork, ICapPublisher capBus, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
         {
