@@ -3871,7 +3871,7 @@ namespace OpenAuth.App
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
             }
             //判断当天是否已经填写日费 再次填写则数据清空
-            var serviceDailyExpend = await UnitWork.Find<ServiceDailyExpends>(w => w.ServiceOrderId == req.ServiceOrderId && w.CreateUserId == userInfo.UserID && w.CreateTime.Value.Day == DateTime.Now.Day).ToListAsync();
+            var serviceDailyExpend = await UnitWork.Find<ServiceDailyExpends>(w => w.ServiceOrderId == req.ServiceOrderId && w.CreateUserId == userInfo.UserID &&  w.CreateTime.Value.Day == DateTime.Now.Day && w.CreateTime.Value.Month == DateTime.Now.Month && w.CreateTime.Value.Year == DateTime.Now.Year).ToListAsync();
             if (serviceDailyExpend.Count > 0)
             {
                 //同步删除附件
@@ -3887,7 +3887,7 @@ namespace OpenAuth.App
             //差旅费
             if (req.travelExpense.Days == 1)
             {
-                var num = await UnitWork.Find<ServiceDailyExpends>(w =>w.ServiceOrderId!= req.ServiceOrderId && w.CreateUserId == userInfo.UserID && w.CreateTime.Value.Day == DateTime.Now.Day && w.DailyExpenseType==1).CountAsync();
+                var num = await UnitWork.Find<ServiceDailyExpends>(w =>w.ServiceOrderId!= req.ServiceOrderId && w.CreateUserId == userInfo.UserID &&  w.CreateTime.Value.Day == DateTime.Now.Day && w.CreateTime.Value.Month == DateTime.Now.Month && w.CreateTime.Value.Year == DateTime.Now.Year && w.DailyExpenseType==1).CountAsync();
                 if (num > 0) 
                 {
                     throw new Exception("已添加当天出差补贴，不可重复提交。");
@@ -4052,7 +4052,7 @@ namespace OpenAuth.App
                 var subsidies = await GetUserSubsides(userInfo.UserID);
                 travelExpense = new TravelExpense { CreateTime = DateTime.Now, Days = 0, Money = subsidies, Remark = string.Empty };
             }
-            var IsDailyExpend = (await UnitWork.Find<ServiceDailyExpends>(w => w.ServiceOrderId != req.ServiceOrderId && w.CreateUserId == userInfo.UserID && w.CreateTime.Value.Day == DateTime.Now.Day && w.DailyExpenseType == 1).CountAsync())>0?false:true;
+            var IsDailyExpend = (await UnitWork.Find<ServiceDailyExpends>(w => w.ServiceOrderId != req.ServiceOrderId && w.CreateUserId == userInfo.UserID && w.CreateTime.Value.Day == DateTime.Now.Day && w.CreateTime.Value.Month == DateTime.Now.Month && w.CreateTime.Value.Year == DateTime.Now.Year && w.DailyExpenseType == 1).CountAsync())>0?false:true;
             var dailyExpendResp = new DailyExpendResp { DailyDates = dailyExpendDates, TravelExpense = travelExpense, TransportExpenses = transportExpenses, HotelExpenses = hotelExpenses, OtherExpenses = otherExpenses, IsFinish = data.Count > 0, IsDailyExpend= IsDailyExpend };
             result.Data = dailyExpendResp;
             return result;
