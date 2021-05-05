@@ -1006,17 +1006,17 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-GSF",
                                 MaterialDescription = "维修费",
                                 Unit = "PCS",
-                                SalesPrice = QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour,
+                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour).ToString("#0.00")),
                                 CostPrice = 0,
                                 Count = 1,
-                                TotalPrice = QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour,
+                                TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
-                                Margin = QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour,
+                                Margin = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour).ToString("#0.00")),
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour,
+                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour).ToString("#0.00")),
                                 WhsCode = "37"
                             });
                         }
@@ -1027,17 +1027,17 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-CLF",
                                 MaterialDescription = "差旅费",
                                 Unit = "PCS",
-                                SalesPrice = QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour,
+                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 CostPrice = 0,
                                 Count = 1,
-                                TotalPrice = QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour,
+                                TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
-                                Margin = QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour,
+                                Margin = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour,
+                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 WhsCode = "37"
                             });
                         }
@@ -1201,17 +1201,17 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-GSF",
                                 MaterialDescription = "维修费",
                                 Unit = "PCS",
-                                SalesPrice = QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour,
+                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour).ToString("#0.00")),
                                 CostPrice = 0,
                                 Count = 1,
-                                TotalPrice = QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour,
+                                TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
-                                Margin = QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour,
+                                Margin = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour).ToString("#0.00")),
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour,
+                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour).ToString("#0.00")),
                                 WhsCode = "37"
                             });
                         }
@@ -1222,17 +1222,17 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-CLF",
                                 MaterialDescription = "差旅费",
                                 Unit = "PCS",
-                                SalesPrice = QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour,
+                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 CostPrice = 0,
                                 Count = 1,
-                                TotalPrice = QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour,
+                                TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
-                                Margin = QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour,
+                                Margin = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour,
+                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 WhsCode = "37"
                             });
                         }
@@ -1960,7 +1960,7 @@ namespace OpenAuth.App.Material
             });
             if (QuotationObj.ServiceCharge != null && QuotationObj.ServiceCharge > 0 && QuotationObj.ServiceChargeManHour != null && QuotationObj.ServiceChargeManHour > 0)
             {
-                QuotationObj.TotalMoney += QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour;
+                QuotationObj.TotalMoney += Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour).ToString("#0.00"));
             }
             else
             {
@@ -1969,7 +1969,7 @@ namespace OpenAuth.App.Material
             }
             if (QuotationObj.TravelExpense != null && QuotationObj.TravelExpense > 0 && QuotationObj.TravelExpenseManHour != null && QuotationObj.TravelExpenseManHour > 0)
             {
-                QuotationObj.TotalMoney += QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour;
+                QuotationObj.TotalMoney += Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00"));
             }
             else
             {
