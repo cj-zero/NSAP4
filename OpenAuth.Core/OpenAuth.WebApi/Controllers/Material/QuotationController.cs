@@ -609,7 +609,26 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
-
+        /// <summary>
+        /// 取消销售订单
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> CancellationSalesOrder(string QuotationId)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.CancellationSalesOrder(QuotationId);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
         /// <summary>
         /// 清空交货记录
         /// </summary>

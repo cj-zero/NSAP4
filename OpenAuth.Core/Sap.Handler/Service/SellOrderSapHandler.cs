@@ -375,5 +375,36 @@ namespace Sap.Handler.Service
                 throw new Exception(message.ToString());
             }
         }
+
+        [CapSubscribe("Serve.SellOrder.Cancel")]
+        public async Task HandleCancelSellOrder(int theQuotationId)
+        {
+            string message = "",  eMesg="";
+            int eCode = 0;
+            var quotation = await UnitWork.Find<Quotation>(q => q.Id.Equals(theQuotationId)).AsNoTracking().FirstOrDefaultAsync();
+            SAPbobsCOM.Documents dts = (SAPbobsCOM.Documents)company.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oOrders);
+            
+            dts.GetByKey(Convert.ToInt32(quotation.SalesOrderId));
+            var res = dts.Cancel();
+            if (res != 0)
+            {
+                company.GetLastError(out eCode, out eMesg);
+                message += string.Format("取消销售订单:([单号{2}])时调接口发生异常[异常代码:{0},异常信息:{1}]", eCode, eMesg, quotation.SalesOrderId);
+                Log.Logger.Error(message.ToString(), typeof(SellOrderSapHandler));
+                throw new Exception(message);
+            }
+            else 
+            {
+                //如果同步成功则修改SellOrder
+                await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(quotation.Id), q => new Quotation
+                {
+                    QuotationStatus = -1
+                });
+                await UnitWork.SaveAsync();
+                Log.Logger.Warning($"取消成功，SAP_ID：{quotation.SalesOrderId}", typeof(SellOrderSapHandler));
+            }
+            
+        }
+
     }
 }

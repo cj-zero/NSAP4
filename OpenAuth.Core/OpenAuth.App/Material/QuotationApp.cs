@@ -420,8 +420,7 @@ namespace OpenAuth.App.Material
                 }).ToList();
                 #endregion
 
-                result.Data = ServiceWorkOrderList.Skip((request.page - 1) * request.limit)
-                .Take(request.limit).Select(s => new ProductCodeListResp
+                result.Data = ServiceWorkOrderList.Select(s => new ProductCodeListResp
                 {
                     SalesOrder = MnfSerialList.Where(m => m.MnfSerial.Equals(s.ManufacturerSerialNumber) && m.BaseType == 17)?.Max(m => m.BaseEntry),
                     ProductionOrder = MnfSerialList.Where(m => m.MnfSerial.Equals(s.ManufacturerSerialNumber) && m.BaseType == 202)?.Max(m => m.BaseEntry),
@@ -695,7 +694,7 @@ namespace OpenAuth.App.Material
             quotationsMap.OrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Id.Equals(SecondId)).Select(o => o.Name).FirstOrDefaultAsync();
 
             List<QuotationMaterialReq> QuotationMergeMaterial = new List<QuotationMaterialReq>();
-            List<ProductCodeListResp> serialNumberList = (await GetSerialNumberList(new QueryQuotationListReq { ServiceOrderId = quotationsMap.ServiceOrderId, CreateUserId = quotationsMap.CreateUserId, limit = 200 })).Data;
+            List<ProductCodeListResp> serialNumberList = (await GetSerialNumberList(new QueryQuotationListReq { ServiceOrderId = quotationsMap.ServiceOrderId, CreateUserId = quotationsMap.CreateUserId})).Data;
             var count = 0;
             if (((quotationsMap.ServiceCharge != null && quotationsMap.ServiceCharge > 0) || (quotationsMap.TravelExpense != null && quotationsMap.TravelExpense > 0)) && (IsUpdate == null || IsUpdate == false))
             {
@@ -1356,18 +1355,26 @@ namespace OpenAuth.App.Material
         /// <param name="obj"></param>
         public async Task<TableData> UpdateMaterial(AddOrUpdateQuotationReq obj)
         {
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-            if (!loginContext.Roles.Any(r => r.Name.Equals("仓库")))
-            {
-                throw new Exception("无仓库人员权限，不可出库。");
-            }
             var expressageobj = new Expressage();
             var expressageMap = obj.ExpressageReqs.MapTo<Expressage>();
-
+            var loginUser = new User();
+            if (expressageMap.ExpressNumber == "自动出库")
+            {
+                loginUser = await UnitWork.Find<User>(u => u.Account.Equals("Admin")).FirstOrDefaultAsync();
+            }
+            else 
+            {
+                var loginContext = _auth.GetCurrentUser();
+                if (loginContext == null)
+                {
+                    throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+                }
+                loginUser = loginContext.User;
+                if (!loginContext.Roles.Any(r => r.Name.Equals("仓库")))
+                {
+                    throw new Exception("无仓库人员权限，不可出库。");
+                }
+            }
             #region 判断条件
             var quotationObj = await UnitWork.Find<Quotation>(q => q.Id == expressageMap.QuotationId).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
             var mergeMaterialList = quotationObj.QuotationMergeMaterials.Select(q => new { q.MaterialCode, q.Id, q.WhsCode }).ToList();
@@ -1437,8 +1444,8 @@ namespace OpenAuth.App.Material
                         LogisticsRecords.Add(new LogisticsRecord
                         {
                             CreateTime = DateTime.Now,
-                            CreateUser = loginContext.User.Name,
-                            CreateUserId = loginContext.User.Id,
+                            CreateUser = loginUser.Name,
+                            CreateUserId = loginUser.Id,
                             Quantity = item.SentQuantity,
                             QuotationId = item.QuotationId,
                             QuotationMaterialId = item.Id,
@@ -1468,14 +1475,7 @@ namespace OpenAuth.App.Material
 
             _capBus.Publish("Serve.SalesOfDelivery.Create", obj);
 
-            int isEXwarehouse = 0;
-            foreach (var item in QuotationMergeMaterialLists)
-            {
-                if (item.SentQuantity != item.Count)
-                {
-                    isEXwarehouse++;
-                }
-            }
+            int isEXwarehouse = QuotationMergeMaterialLists.Where(q => q.SentQuantity != q.Count).Count();
             List<QuotationOperationHistory> qoh = new List<QuotationOperationHistory>();
             var selqoh = await UnitWork.Find<QuotationOperationHistory>(r => r.QuotationId.Equals(obj.ExpressageReqs.QuotationId)).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
             if (selqoh.ApprovalStage != "12")
@@ -1486,8 +1486,8 @@ namespace OpenAuth.App.Material
                     Action = "开始出库",
                     ApprovalResult = "出库成功",
                     ApprovalStage = "12",
-                    CreateUser = loginContext.User.Name,
-                    CreateUserId = loginContext.User.Id,
+                    CreateUser = loginUser.Name,
+                    CreateUserId = loginUser.Id,
                     CreateTime = DateTime.Now,
                     QuotationId = obj.ExpressageReqs.QuotationId,
                     IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds)
@@ -1504,8 +1504,8 @@ namespace OpenAuth.App.Material
                     Action = "出库完成",
                     ApprovalResult = "出库成功",
                     ApprovalStage = "11",
-                    CreateUser = loginContext.User.Name,
-                    CreateUserId = loginContext.User.Id,
+                    CreateUser = loginUser.Name,
+                    CreateUserId = loginUser.Id,
                     CreateTime = DateTime.Now,
                     QuotationId = obj.ExpressageReqs.QuotationId,
                     IntervalTime = qoh.Count>0?0:Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds)
@@ -1548,6 +1548,44 @@ namespace OpenAuth.App.Material
                 }).ToList()
             };
             return result;
+        }
+        /// <summary>
+        /// 维修费差旅费定时交货
+        /// </summary>
+        /// <returns></returns>
+        public async Task TimeOfDelivery() 
+        {
+            var quotations= await UnitWork.Find<Quotation>(q => q.QuotationStatus == 10).Include(q => q.QuotationMergeMaterials)
+                .Where(q=>q.QuotationMergeMaterials.Where(m=>!m.MaterialCode.Equals("S111-SERVICE-GSF")&&!m.MaterialCode.Equals("S111-SERVICE-CLF")).Count()<=0 && q.SalesOrderId!=null).ToListAsync();
+            foreach (var item in quotations)
+            {
+
+                var pictures = "68cc3412-492b-4f39-b7de-3ab3a957017b";
+                if (item.ServiceCharge > 0 && item.TravelExpense > 0)
+                {
+                    pictures = "701d519b-5c0a-4369-adf4-8c0a2b7f0b16";
+                }
+                else if (item.TravelExpense > 0)
+                {
+                    pictures = "01a62877-1961-4f0e-9f39-2dab2cb2eb4a";
+                }
+                AddOrUpdateQuotationReq obj = new AddOrUpdateQuotationReq();
+                obj.ExpressageReqs = new ExpressageReq
+                {
+                    ExpressNumber = "自动出库",
+                    Freight = "0",
+                    QuotationId = item.Id,
+                    ExpressagePictures = new List<string>() { pictures }
+                };
+                obj.QuotationMergeMaterialReqs = item.QuotationMergeMaterials.MapToList<QuotationMergeMaterialReq>();
+                int num = 0;
+                obj.QuotationMergeMaterialReqs.ForEach(q => q.SentQuantity = 1);
+                if (num == 0 && item.IsMaterialType != null) 
+                {
+                    await UpdateMaterial(obj);
+                }
+            }
+            
         }
 
         /// <summary>
@@ -1980,14 +2018,14 @@ namespace OpenAuth.App.Material
         {
             var quotationId = int.Parse(QuotationId);
             var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId) && q.QuotationStatus < 10).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
-            if (model == null)
+            if (model != null || model == null)
             {
-                throw new Exception("已出库，不可打印。");
+                throw new Exception("暂未开放销售订单打印，请前往3.0打印。");
+                //throw new Exception("已出库，不可打印。");
             }
             var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_AcquisitionWay") || u.TypeId.Equals("SYS_DeliveryMethod")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
-
-            var createTime = Convert.ToDateTime(model.QuotationOperationHistorys.Where(q => q.ApprovalStage.Equals(4)).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd");
+            var createTime = Convert.ToDateTime(model.QuotationOperationHistorys.Where(q => q.ApprovalStage == "6.0").FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd");
             var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderHeader.html");
             var text = System.IO.File.ReadAllText(url);
             text = text.Replace("@Model.SalesOrderId", model.SalesOrderId.ToString());
@@ -2367,6 +2405,39 @@ namespace OpenAuth.App.Material
             await UnitWork.BatchDeleteAsync<Expressage>(expressages.ToArray());
             await UnitWork.UpdateAsync<Quotation>(q => q.Id == int.Parse(QuotationId), q => new Quotation { QuotationStatus = 10 });
             await UnitWork.UpdateAsync<QuotationMergeMaterial>(q => q.QuotationId == int.Parse(QuotationId), q => new QuotationMergeMaterial { SentQuantity=0});
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 取消销售订单
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        /// <returns></returns>
+        public async Task CancellationSalesOrder(string QuotationId)
+        {
+            _capBus.Publish("Serve.SellOrder.Cancel", int.Parse(QuotationId));
+        }
+
+        /// <summary>
+        /// 同步销售订单
+        /// </summary>
+        /// <returns></returns>
+        public async Task SyncSalesOrderStatus()
+        {
+            var salesOrderIds = await UnitWork.Find<Quotation>(q => string.IsNullOrWhiteSpace(q.SalesOrderId.ToString())&& q.QuotationStatus!=-1M).Select(q=>q.SalesOrderId).ToListAsync();
+            var oRDRS= await UnitWork.Find<ORDR>(o => salesOrderIds.Contains(o.DocEntry)&& (o.DocStatus=="C"||o.CANCELED=="Y")).Select(o=>new { o.DocEntry,o.DocStatus,o.CANCELED}).ToListAsync();
+            var cANCELEDORDR = oRDRS.Where(o => o.CANCELED == "Y").ToList();
+            if (cANCELEDORDR.Count() > 0)
+            {
+                var cANCELEDORDRIds = cANCELEDORDR.Select(c => c.DocEntry).ToList();
+                await UnitWork.UpdateAsync<Quotation>(q => q.QuotationStatus != -1M && cANCELEDORDRIds.Contains((int)q.SalesOrderId), q => new Quotation { QuotationStatus = -1 });
+            }
+            var statusORDR = oRDRS.Where(o => o.DocStatus == "C").ToList();
+            if (statusORDR.Count() > 0) 
+            {
+                var statusORDRIds = statusORDR.Select(c => c.DocEntry).ToList();
+                await UnitWork.UpdateAsync<Quotation>(q => q.QuotationStatus != 11M && statusORDRIds.Contains((int)q.SalesOrderId), q => new Quotation { QuotationStatus = 11 });
+            }
             await UnitWork.SaveAsync();
         }
         //, FlowInstanceApp flowInstanceApp, ModuleFlowSchemeApp moduleFlowSchemeApp
