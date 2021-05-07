@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App.Material;
 using OpenAuth.App.Material.Request;
 using OpenAuth.App.Response;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,6 +42,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -62,6 +64,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -83,6 +86,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
