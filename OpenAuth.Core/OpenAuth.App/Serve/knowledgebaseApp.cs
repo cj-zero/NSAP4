@@ -135,7 +135,9 @@ namespace OpenAuth.App
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
             var ids = knowledgeBases.Select(k => k.ParentId);
-            var codes = await UnitWork.Find<KnowledgeBase>(k => ids.Contains(k.Id)).Select(k => new { k.Id, k.Code }).ToListAsync();
+            var parentCodes = await UnitWork.Find<KnowledgeBase>(k => ids.Contains(k.Id)).Select(k => new { k.Id, k.Code,k.ParentId }).ToListAsync();
+            ids = parentCodes.Select(k => k.ParentId);
+            var grandpaCodes = await UnitWork.Find<KnowledgeBase>(k => ids.Contains(k.Id)).Select(k => new { k.Id, k.Code, k.ParentId }).ToListAsync();
             result.Data = knowledgeBases.Select(k => new
             {
                 k.Id,
@@ -145,7 +147,8 @@ namespace OpenAuth.App
                 k.ParentId,
                 Rank = k.Rank.ToString(),
                 k.ParentName,
-                ParentCode = codes.Where(c => c.Id.Equals(k.ParentId)).FirstOrDefault()?.Code,
+                ParentCode = parentCodes.Where(c => c.Id.Equals(k.ParentId)).FirstOrDefault()?.Code,
+                GrandpaCode= grandpaCodes.Where(c => c.Id.Equals(parentCodes.Where(c => c.Id.Equals(k.ParentId)).FirstOrDefault()?.ParentId)).FirstOrDefault()?.Code,
                 k.CreateTime,
                 k.UpdateTime
             });

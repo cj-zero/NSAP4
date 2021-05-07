@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Infrastructure.Extensions;
 using OpenAuth.Repository.Domain;
-using OpenAuth.App.Response;
+using System.Text.RegularExpressions;
 
 namespace OpenAuth.App.Sap.Service
 {
@@ -74,6 +74,7 @@ namespace OpenAuth.App.Sap.Service
                     ItemCode = q.itemCode,
                     ItemName = q.itemName
                 });
+            var knowledgebases = await UnitWork.Find<KnowledgeBase>(k => k.Rank == 1 && k.IsNew == true && !string.IsNullOrWhiteSpace(k.Content)).ToListAsync();
 
             if (!string.IsNullOrWhiteSpace(req.CardCode))
             {
@@ -81,23 +82,58 @@ namespace OpenAuth.App.Sap.Service
                 var data2 = await qqq.ToListAsync();
                 data1.AddRange(data2);
                 var SerialNumbers = data1.GroupBy(d => new{ d.ManufSN,d.ItemCode}).Select(g => g.First()).ToList();
-                result.Data = SerialNumbers.Skip((req.page - 1) * req.limit)
+                var serials= SerialNumbers.Skip((req.page - 1) * req.limit)
                 .Take(req.limit).ToList();
+                result.Data = serials.Select(q => new
+                {
+                    q.ContractID,
+                    q.CustmrName,
+                    q.Customer,
+                    q.DlvryDate,
+                    q.InternalSN,
+                    q.ItemCode,
+                    q.ItemName,
+                    q.ManufSN,
+                    Code = knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault() == null ? q.ItemCode.Substring(0, 1) == "M" ? "023" : null : knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault()
+                }).ToList();
                 result.Count = SerialNumbers.Count();
                 return result;
             }
-
-            result.Data = await query2//.OrderBy(u => u.Id)
+            var objs= await query2//.OrderBy(u => u.Id)
                 .Skip((req.page - 1) * req.limit)
                 .Take(req.limit).ToListAsync(); ///Select($"new ({propertyStr})");
+            result.Data = objs.Select(q => new
+            {
+                q.ContractID,
+                q.CustmrName,
+                q.Customer,
+                q.DlvryDate,
+                q.InternalSN,
+                q.ItemCode,
+                q.ItemName,
+                q.ManufSN,
+                Code = knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault() == null ? q.ItemCode.Substring(0, 1) == "M" ? "023" : null : knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault()
+            }).ToList();
             result.Count = await query2.CountAsync();
 
             if (result.Count == 0)
             {
 
-                result.Data = await qqq//.OrderBy(u => u.Id)
+                objs = await qqq//.OrderBy(u => u.Id)
                     .Skip((req.page - 1) * req.limit)
                     .Take(req.limit).ToListAsync(); ///Select($"new ({propertyStr})");
+                result.Data = objs.Select(q => new
+                {
+                    q.ContractID,
+                    q.CustmrName,
+                    q.Customer,
+                    q.DlvryDate,
+                    q.InternalSN,
+                    q.ItemCode,
+                    q.ItemName,
+                    q.ManufSN,
+                    Code = knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault() == null ? q.ItemCode.Substring(0, 1) == "M" ? "023" : null : knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault()
+                }).ToList();
                 result.Count = await qqq.CountAsync();
             }
 
