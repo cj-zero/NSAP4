@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using OpenAuth.App.SignalR;
 using OpenAuth.App.SignalR.Request;
+using Serilog;
 
 namespace OpenAuth.WebApi.Controllers.SignalR
 {
@@ -39,6 +40,7 @@ namespace OpenAuth.WebApi.Controllers.SignalR
             {
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
             }
             return result;
         }
@@ -59,6 +61,7 @@ namespace OpenAuth.WebApi.Controllers.SignalR
             {
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
             }
             return result;
         }
@@ -79,6 +82,7 @@ namespace OpenAuth.WebApi.Controllers.SignalR
             {
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
             }
             return result;
         }

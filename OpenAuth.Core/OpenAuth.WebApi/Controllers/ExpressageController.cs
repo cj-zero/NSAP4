@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Response;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -33,6 +34,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{trackNumber}， 错误：{result.Message}");
             }
             return result;
         }
@@ -52,6 +54,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{trackNumbers}， 错误：{result.Message}");
             }
             return result;
         }

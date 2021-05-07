@@ -23,6 +23,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using OpenAuth.App.Request;
+using Serilog;
 
 namespace OpenAuth.WebApi.Controllers
 {
@@ -35,13 +36,13 @@ namespace OpenAuth.WebApi.Controllers
     public class CheckController : ControllerBase
     {
         private readonly IAuth _authUtil;
-        private ILogger _logger;
+        //private ILogger _logger;
         private AuthStrategyContext _authStrategyContext;
         private CorpApp _corpApp;
         public CheckController(IAuth authUtil, ILogger<CheckController> logger, CorpApp corpApp)
         {
             _authUtil = authUtil;
-            _logger = logger;
+           // _logger = logger;
             _authStrategyContext = _authUtil.GetCurrentUser();
             _corpApp = corpApp;
         }
@@ -53,7 +54,7 @@ namespace OpenAuth.WebApi.Controllers
         [HttpGet]
         public Response<UserView> GetUserProfile()
         {
-            var resp = new Response<UserView>();
+               var resp = new Response<UserView>();
             try
             {
                 resp.Result = _authStrategyContext.User.MapTo<UserView>();
@@ -62,6 +63,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 resp.Code = 500;
                 resp.Message = e.Message;
+                Log.Logger.Error($"地址：{Request.Path}， 错误：{resp.Message}");
             }
 
             return resp;
@@ -85,6 +87,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 result.Code = Define.INVALID_TOKEN;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
             }
 
             return result;
@@ -113,6 +116,7 @@ namespace OpenAuth.WebApi.Controllers
                     result.Message = ex.InnerException != null
                         ? "OpenAuth.WebAPI数据库访问失败:" + ex.InnerException.Message
                         : "OpenAuth.WebAPI数据库访问失败:" + ex.Message;
+                    Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
                 }
 
             }
@@ -137,6 +141,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{moduleCode}， 错误：{result.Message}");
             }
 
             return result;
@@ -165,6 +170,7 @@ namespace OpenAuth.WebApi.Controllers
                     result.Message = ex.InnerException != null
                         ? "OpenAuth.WebAPI数据库访问失败:" + ex.InnerException.Message
                         : "OpenAuth.WebAPI数据库访问失败:" + ex.Message;
+                    Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
                 }
 
             }
@@ -190,6 +196,7 @@ namespace OpenAuth.WebApi.Controllers
                 {
                     result.Code = ex.Code;
                     result.Message = ex.Message;
+                    Log.Logger.Error($"地址：{Request.Path}，参数：{corpId}， 错误：{result.Message}");
                 }
                 else
                 {
@@ -197,6 +204,7 @@ namespace OpenAuth.WebApi.Controllers
                     result.Message = ex.InnerException != null
                         ? "OpenAuth.WebAPI数据库访问失败:" + ex.InnerException.Message
                         : "OpenAuth.WebAPI数据库访问失败:" + ex.Message;
+                    Log.Logger.Error($"地址：{Request.Path}，参数：{corpId}， 错误：{result.Message}");
                 }
 
             }
@@ -264,6 +272,7 @@ namespace OpenAuth.WebApi.Controllers
                     result.Message = ex.InnerException != null
                         ? "OpenAuth.WebAPI数据库访问失败:" + ex.InnerException.Message
                         : "OpenAuth.WebAPI数据库访问失败:" + ex.Message;
+                    Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
                 }
 
             }
@@ -296,6 +305,7 @@ namespace OpenAuth.WebApi.Controllers
                     result.Message = ex.InnerException != null
                         ? "OpenAuth.WebAPI数据库访问失败:" + ex.InnerException.Message
                         : "OpenAuth.WebAPI数据库访问失败:" + ex.Message;
+                    Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
                 }
 
             }
@@ -327,6 +337,7 @@ namespace OpenAuth.WebApi.Controllers
                     result.Message = ex.InnerException != null
                         ? "OpenAuth.WebAPI数据库访问失败:" + ex.InnerException.Message
                         : "OpenAuth.WebAPI数据库访问失败:" + ex.Message;
+                    Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
                 }
 
             }
@@ -358,6 +369,7 @@ namespace OpenAuth.WebApi.Controllers
                     result.Message = ex.InnerException != null
                         ? "OpenAuth.WebAPI数据库访问失败:" + ex.InnerException.Message
                         : "OpenAuth.WebAPI数据库访问失败:" + ex.Message;
+                    Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
                 }
                
             }
@@ -388,6 +400,7 @@ namespace OpenAuth.WebApi.Controllers
                     result.Code = 500;
                     result.Message = ex.InnerException != null
                         ?  ex.InnerException.Message :  ex.Message;
+                    Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
                 }
 
             }
@@ -413,6 +426,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}， 错误：{result.Message}");
             }
 
             return result;
@@ -435,6 +449,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 resp.Result = false;
                 resp.Message = e.Message;
+                Log.Logger.Error($"地址：{Request.Path}， 错误：{resp.Message}");
             }
 
             return resp;

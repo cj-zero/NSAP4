@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Serve.Response;
+using Serilog;
 using SharpDX.Direct3D11;
 using System;
 using System.Collections.Generic;
@@ -249,6 +250,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}， 错误：{result.Message}");
             }
             return result;
         }
