@@ -71,7 +71,7 @@ namespace OpenAuth.App.Serve
 
             #endregion
             #region 报价单
-            var quotations = await UnitWork.Find<Quotation>(q => q.QuotationStatus > 3 && q.QuotationStatus < 10).ToListAsync();
+            var quotations = await UnitWork.Find<Quotation>(q => q.QuotationStatus > 3 && q.QuotationStatus <= 10).ToListAsync();
             var serviceOrderIds = quotations.Where(q=>q.QuotationStatus==3.1M).Select(q => q.ServiceOrderId).ToList();
             var quotationCounts = quotations.GroupBy(q => q.QuotationStatus).Select(r => new { status = r.Key, count = r.Count() }).ToList();
             foreach (var item in quotationCounts)
