@@ -94,7 +94,7 @@ namespace OpenAuth.App.Sap.Service
                     q.ItemCode,
                     q.ItemName,
                     q.ManufSN,
-                    Code = knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault() == null ? q.ItemCode.Substring(0, 1) == "M" ? "023" : null : knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault()
+                    Code = knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault() == null ? q.ItemCode.Substring(0, 1) == "M" ? "023" : "024" : knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault()
                 }).ToList();
                 result.Count = SerialNumbers.Count();
                 return result;
@@ -112,7 +112,7 @@ namespace OpenAuth.App.Sap.Service
                 q.ItemCode,
                 q.ItemName,
                 q.ManufSN,
-                Code = knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault() == null ? q.ItemCode.Substring(0, 1) == "M" ? "023" : null : knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault()
+                Code = knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault() == null ? q.ItemCode.Substring(0, 1) == "M" ? "023" : "024" : knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault()
             }).ToList();
             result.Count = await query2.CountAsync();
 
@@ -132,7 +132,7 @@ namespace OpenAuth.App.Sap.Service
                     q.ItemCode,
                     q.ItemName,
                     q.ManufSN,
-                    Code = knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault() == null ? q.ItemCode.Substring(0, 1) == "M" ? "023" : null : knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault()
+                    Code = knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault() == null ? q.ItemCode.Substring(0, 1) == "M" ? "023" : "024" : knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault()
                 }).ToList();
                 result.Count = await qqq.CountAsync();
             }
