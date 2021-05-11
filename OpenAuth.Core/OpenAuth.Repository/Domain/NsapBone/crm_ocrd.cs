@@ -175,7 +175,7 @@ namespace OpenAuth.Repository.Domain
           this.U_Prefix= string.Empty;
           this.U_Suffix= string.Empty;
           this.CreateDate= DateTime.Now;
-          this.upd_dt= DateTime.Now;
+          this.upd_dt = DateTime.Now;
           this.IntrntSite= string.Empty;
           this.U_is_reseller= string.Empty;
           this.U_EndCustomerName= string.Empty;
@@ -183,12 +183,10 @@ namespace OpenAuth.Repository.Domain
           this.CardCode = string.Empty;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <summary>
-        /// 
-        /// </summary>
+        public int? sbo_id { get; set; }
+        public DateTime upd_dt { get; set; }
+        public string CardCode { get; set; }
+        public int? SlpCode { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -306,7 +304,6 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 
         /// </summary>
-        [Description("")]
         public string Currency { get; set; }
         /// <summary>
         /// 
@@ -1091,7 +1088,6 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 
         /// </summary>
-        [Description("")]
         public string IntrntSite { get; set; }
         /// <summary>
         /// 
