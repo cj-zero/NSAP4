@@ -30,6 +30,9 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<store_osrn>().HasKey(o => new { o.sbo_id, o.AbsEntry });
             modelBuilder.Entity<sale_odln>().HasKey(o => new { o.sbo_id, o.DocEntry });
             modelBuilder.Entity<crm_oslp>().HasKey(o => new { o.sbo_id, o.SlpCode });
+            modelBuilder.Entity<crm_ocrd>().HasKey(o => new { o.sbo_id, o.CardCode });
+            modelBuilder.Entity<crm_ocry>().HasKey(o => new { o.Code });
+            modelBuilder.Entity<crm_ocst>().HasKey(o => new { o.Code, o.Country });
         }
         public virtual DbSet<sale_transport> sale_transports { get; set; }
 
@@ -50,6 +53,9 @@ namespace OpenAuth.Repository
         public virtual DbSet<store_oitl> store_oitl { get; set; }
         public virtual DbSet<store_osrn> store_osrn { get; set; }
         public virtual DbSet<crm_oslp> crm_oslp { get; set; }
+        public virtual DbSet<crm_ocrd> crm_ocrd { get; set; }
+        public virtual DbSet<crm_ocry> crm_ocry { get; set; }
+        public virtual DbSet<crm_ocst> crm_ocst { get; set; }
 
         //非数据库表格
         public virtual DbSet<v_storeitemstock>  v_storeitemstocks { get; set; }

@@ -261,6 +261,17 @@ namespace OpenAuth.App
 
             return await users.ToListAsync();
         }
+        public async Task<List<User>> LoadByRoleName(string[] roleName)
+        {
+            var role = await UnitWork.Find<Role>(r => roleName.Contains(r.Name)).FirstOrDefaultAsync();
+            var users = from userRole in UnitWork.Find<Relevance>(u =>
+                    u.SecondId == role.Id && u.Key == Define.USERROLE)
+                        join user in UnitWork.Find<User>(null) on userRole.FirstId equals user.Id into temp
+                        from c in temp.DefaultIfEmpty()
+                        select c;
+
+            return await users.ToListAsync();
+        }
         /// <summary>
         /// 根据用户角色查询用户，可用用户名做条件搜索
         /// </summary>
