@@ -470,21 +470,21 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 根据服务单id判断是否撤销服务单
         /// </summary>
-        /// <param name="ServiceOrderId"></param>
+        /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> UpDateServiceOrderStatus(int ServiceOrderId)
+        public async Task<TableData> UpDateServiceOrderStatus([FromQuery]QueryServiceOrderListReq req)
         {
             var result = new TableData();
             try
             {
-                result = await _serviceOrderApp.UpDateServiceOrderStatus(ServiceOrderId);
+                result = await _serviceOrderApp.UpDateServiceOrderStatus(req);
             }
             catch (Exception ex)
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
-                Log.Logger.Error($"地址：{Request.Path}，参数：{ServiceOrderId}， 错误：{result.Message}");
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req}， 错误：{result.Message}");
             }
             return result;
         }

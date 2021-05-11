@@ -45,6 +45,7 @@ namespace OpenAuth.Repository.Domain
             this.Address = string.Empty;
             this.AddressDesignator = string.Empty;
             this.TerminalCustomerId = string.Empty;
+            this.Remark = string.Empty;
         }
 
         /// <summary>
@@ -235,6 +236,13 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("问题类型名称")]
         public string ProblemTypeName { get; set; }
+
+        /// <summary>
+        /// 撤回备注
+        /// </summary>
+        [Description("撤回备注")]
+        public string Remark { get; set; }
+        
         /// <summary>
         /// 服务单关联的工单
         /// </summary>

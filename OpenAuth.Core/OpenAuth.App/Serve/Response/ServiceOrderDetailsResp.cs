@@ -163,6 +163,10 @@ namespace OpenAuth.App.Response
         /// 是否全部填写了完工报告
         /// </summary>
         public bool IsFinish { get; set; }
+        /// <summary>
+        /// 撤回备注
+        /// </summary>
+        public string Remark { get; set; }
 
 
         /// <summary>
