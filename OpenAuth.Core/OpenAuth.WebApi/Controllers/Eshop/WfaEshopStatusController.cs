@@ -39,7 +39,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result.Data =await  _wfastatusapp.GetOrderStatusByRegMobile(req);
+                result.Data = await _wfastatusapp.GetOrderStatusByRegMobile(req);
             }
             catch (Exception ex)
             {
@@ -70,6 +70,23 @@ namespace OpenAuth.WebApi.Controllers
                 Log.Logger.Error($"接口：{Request.Path}，参数：{DocumentId}, 错误：{result.Message}");
             }
 
+            return result;
+        }
+
+        [HttpGet]
+        public async Task<Response<string>> GetSalesPersonTelByCardCode(string CardCode)
+        {
+            var result = new Response<string>();
+            try
+            {
+                result.Result = await _wfastatusapp.GetSalesPersonTelByCardCode(CardCode);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"接口：{Request.Path}，参数：{CardCode}, 错误：{result.Message}");
+            }
             return result;
         }
 

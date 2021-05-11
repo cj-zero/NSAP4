@@ -41,7 +41,7 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         [Description("")]
-        public uint sale_id { get; set; }
+        public int? sale_id { get; set; }
         /// <summary>
         /// 
         /// </summary>
