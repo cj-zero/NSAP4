@@ -109,6 +109,11 @@ namespace OpenAuth.App.Request
         public int? FromId { get; set; }
 
         /// <summary>
+        /// appid
+        /// </summary>
+        public int? AppUserId { get; set; }
+
+        /// <summary>
         /// 服务单关联的工单
         /// </summary>
         public virtual List<AddServiceWorkOrderReq> ServiceWorkOrders { get; set; }

@@ -1740,7 +1740,7 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         private async Task<User> GetUserId(int AppId)
         {
-            var userid = UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(AppId)).Select(u => u.UserID).FirstOrDefault();
+            var userid = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(AppId)).Select(u => u.UserID).FirstOrDefaultAsync();
 
             return await UnitWork.Find<User>(u => u.Id.Equals(userid)).FirstOrDefaultAsync();
         }

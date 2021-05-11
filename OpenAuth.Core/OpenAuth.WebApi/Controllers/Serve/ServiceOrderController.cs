@@ -275,7 +275,27 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
-
+        /// <summary>
+        /// 客服新建服务单
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> CISECreateServiceOrder(CustomerServiceAgentCreateOrderReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.CISECreateServiceOrder(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
+        }
+        
         /// <summary>
         /// 获取服务单详情
         /// </summary>

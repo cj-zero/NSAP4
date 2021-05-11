@@ -712,6 +712,7 @@ namespace OpenAuth.App
             obj.CreateUserId = loginContext.User.Id;
             obj.Status = 2;
             obj.SalesMan = d.SlpName;
+            obj.VestInOrg = 1;
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
             //obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(req.Supervisor)))?.Id;
@@ -797,6 +798,90 @@ namespace OpenAuth.App
                 });
                 await _signalrmessage.SendSystemMessage(SignalRSendType.User, $"系统已自动分配了{assignedWorks.Count()}个新的售后服务，请尽快处理", new List<string>() { obj.Supervisor });
             }
+        }
+        /// <summary>
+        /// 工程部新建服务单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task CISECreateServiceOrder(CustomerServiceAgentCreateOrderReq req) 
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            if (loginUser.Account == Define.USERAPP && req.AppUserId != null) 
+            {
+                var userid = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(req.AppUserId)).Select(u => u.UserID).FirstOrDefaultAsync();
+                loginUser= await UnitWork.Find<User>(u => u.Id.Equals(userid)).FirstOrDefaultAsync();
+            }
+            var d = await _businessPartnerApp.GetDetails(req.CustomerId.ToUpper());
+            var obj = req.MapTo<ServiceOrder>();
+            obj.CustomerId = req.CustomerId.ToUpper();
+            obj.TerminalCustomerId = req.TerminalCustomerId.ToUpper();
+            obj.RecepUserName = loginContext.User.Name;
+            obj.RecepUserId = loginContext.User.Id;
+            obj.CreateUserId = loginContext.User.Id;
+            obj.Status = 2;
+            obj.SalesMan = d.SlpName;
+            obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
+            obj.FromId = 7;
+            obj.VestInOrg = 2;
+            //obj.Supervisor = d.TechName;
+            obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(req.Supervisor)))?.Id;
+            var workOrders = obj.ServiceWorkOrders.Select(s => new { s.ManufacturerSerialNumber, s.FromTheme }).ToList();
+            var msNumbers = workOrders.Select(s => s.ManufacturerSerialNumber).ToList();
+            var serviceOrders = await UnitWork.Find<ServiceWorkOrder>(s => msNumbers.Contains(s.ManufacturerSerialNumber) && s.Status < 7).Select(s => new { s.ServiceOrderId, s.ManufacturerSerialNumber, s.FromTheme }).ToListAsync();
+            serviceOrders = serviceOrders.Where(s => s.FromTheme.Equals(workOrders.Where(w => w.ManufacturerSerialNumber.Equals(s.ManufacturerSerialNumber)).FirstOrDefault().FromTheme)).ToList();
+            var serviceOrderIds = serviceOrders.Select(s => s.ServiceOrderId).ToList();
+            var serviceOrderCount = await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Equals(obj.TerminalCustomer) && s.TerminalCustomerId.Equals(obj.TerminalCustomerId) && serviceOrderIds.Contains(s.Id) && s.Status == 2).Select(s => s.CreateTime).ToListAsync();
+            var count = serviceOrderCount.Where(s => ((TimeSpan)(DateTime.Now - s)).Days < 5).Count();
+            if (count > 0)
+            {
+                throw new Exception("该客户在5天内已有服务ID，请不要重复建单");
+            }
+            if (string.IsNullOrWhiteSpace(obj.NewestContacter) && string.IsNullOrWhiteSpace(obj.NewestContactTel))
+            {
+                obj.NewestContacter = obj.Contacter;
+                obj.NewestContactTel = obj.ContactTel;
+            }
+            //获取"其他"问题类型及其子类
+            //var otherProblemType = await UnitWork.Find<ProblemType>(o => o.Name.Equals("其他") && string.IsNullOrWhiteSpace(o.ParentId)).FirstOrDefaultAsync();
+            //var ChildTypes = new List<ProblemType>();
+            //if (otherProblemType != null && !string.IsNullOrEmpty(otherProblemType.Id))
+            //{
+            //    ChildTypes = await UnitWork.Find<ProblemType>(null).Where(o1 => o1.ParentId.Equals(otherProblemType.Id)).ToListAsync();
+            //}
+            //var AppUser = await UnitWork.Find<AppUserMap>(s => s.UserID == obj.SupervisorId).Include(s => s.User).FirstOrDefaultAsync();
+            var AppUserId = req.AppUserId;
+            if (req.AppUserId != null) 
+            {
+                AppUserId = await UnitWork.Find<AppUserMap>(s => s.UserID == loginUser.Id).Select(s => s.AppUserId).FirstOrDefaultAsync();
+            }
+            obj.ServiceWorkOrders.ForEach(s =>
+            {
+                s.SubmitDate = DateTime.Now;
+                s.SubmitUserId = loginContext.User.Id;
+                s.Status = 2;
+                s.CurrentUserNsapId = loginUser.Id;
+                s.CurrentUserId = AppUserId;
+                s.FromType = 1;
+                s.FeeType = 1;
+                s.CurrentUser = loginUser.Name;
+            });
+            var e = await UnitWork.AddAsync<ServiceOrder, int>(obj);
+            await UnitWork.SaveAsync();
+            var pictures = req.Pictures.MapToList<ServiceOrderPicture>();
+            pictures.ForEach(p => { p.ServiceOrderId = e.Id; p.PictureType = p.PictureType == 3 ? 3 : 2; });
+            await UnitWork.BatchAddAsync(pictures.ToArray());
+            await UnitWork.SaveAsync();
+
+            await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"工程部:{loginContext.User.Name}创建服务单", ActionType = "创建服务单", ServiceOrderId = e.Id });
+            #region 同步到SAP 并拿到服务单主键
+            _capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
+            #endregion
         }
         /// <summary>
         /// 派单工单列表
