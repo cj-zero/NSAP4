@@ -75,6 +75,13 @@ namespace OpenAuth.Repository.Domain
         public bool? IsPass { get; set; }
 
         /// <summary>
+        /// 序列号
+        /// </summary>
+        [Description("序列号")]
+        public string MnfSerial { get; set; }
+        
+
+        /// <summary>
         /// 操作记录表
         /// </summary>
         public virtual List<SalesOrderWarrantyDateRecord> SalesOrderWarrantyDateRecords { get; set; }

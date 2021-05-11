@@ -9,6 +9,7 @@ using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.App.Sap.BusinessPartner;
 using OpenAuth.App.Sap.Request;
+using Serilog;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -45,6 +46,7 @@ namespace OpenAuth.WebApi.Controllers.Sap
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -66,6 +68,7 @@ namespace OpenAuth.WebApi.Controllers.Sap
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{cardCode}, 错误：{result.Message}");
             }
 
             return result;
@@ -88,6 +91,7 @@ namespace OpenAuth.WebApi.Controllers.Sap
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{CardCode}, 错误：{result.Message}");
             }
 
             return result;
@@ -121,6 +125,7 @@ namespace OpenAuth.WebApi.Controllers.Sap
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{cardCode},{custName},{userName},{passWord},{appUserId}， 错误：{result.Message}");
             }
 
             return result;

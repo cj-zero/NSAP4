@@ -9,6 +9,7 @@ using OpenAuth.App.Response;
 using OpenAuth.App.Serve.Request;
 using OpenAuth.App.Serve.Response;
 using OpenAuth.WebApi.Model;
+using Serilog;
 
 namespace OpenAuth.WebApi.Controllers.Serve
 {
@@ -45,6 +46,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}， 错误：{result.Message}");
             }
 
             return result;
@@ -67,6 +69,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}， 错误：{result.Message}");
             }
 
             return result;
@@ -88,6 +91,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}， 错误：{result.Message}");
             }
 
             return result;
@@ -109,6 +113,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}， 错误：{result.Message}");
             }
 
             return result;
@@ -129,6 +134,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{ReimburseInfoId}， 错误：{result.Message}");
             }
 
             return result;
@@ -151,6 +157,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
             }
 
             return result;
@@ -173,6 +180,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{obj.ToJson()}， 错误：{result.Message}");
             }
 
             return result;
@@ -194,6 +202,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{obj.ToJson()}， 错误：{result.Message}");
             }
 
             return result;
@@ -215,6 +224,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{obj.ToJson()}， 错误：{result.Message}");
             }
 
             return result;
@@ -236,6 +246,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
             }
 
             return result;
@@ -258,6 +269,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
             }
 
             return result;
@@ -280,6 +292,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
             }
 
             return result;
@@ -302,6 +315,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
             }
 
             return result;
@@ -327,6 +341,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{InvoiceNumber.ToJson()}， 错误：{result.Message}");
             }
 
             return result;
@@ -347,6 +362,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             }
             catch (Exception ex)
             {
+                Log.Logger.Error($"地址：{Request.Path}，参数：{serialNumber},{sign},{timespan}， 错误：{ex.Message}");
                 throw new Exception("导出失败！" + ex.ToString());
             }
         }
@@ -369,6 +385,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
             }
 
             return result;
@@ -390,6 +407,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
             }
 
             return result;
@@ -411,6 +429,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
             }
 
             return result;

@@ -96,5 +96,18 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         public string UpdateUserName { get; set; }
+
+        /// <summary>
+        /// 是否是新知识库
+        /// </summary>
+        [Description("是否是新知识库")]
+        public bool? IsNew { get; set; }
+
+        /// <summary>
+        /// 编码等级
+        /// </summary>
+        [Description("编码等级")]
+        public int? Rank { get; set; }
+        
     }
 }

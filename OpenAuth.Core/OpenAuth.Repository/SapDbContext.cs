@@ -48,7 +48,10 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<OITL>().HasKey(o => o.LogEntry);
             modelBuilder.Entity<ITL1>().HasKey(o => new { o.LogEntry, o.ItemCode, o.SysNumber, });
             modelBuilder.Entity<OSRN>().HasKey(o => o.AbsEntry);
+            #region 销售交货
             modelBuilder.Entity<ODLN>().HasKey(o => o.DocEntry);
+            modelBuilder.Entity<DLN1>().HasKey(o => new { o.DocEntry,o.LineNum});
+            #endregion
         }
         //非数据库表格
         public virtual DbSet<SysEquipmentColumn> SysEquipmentColumns { get; set; }

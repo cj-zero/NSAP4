@@ -34,7 +34,8 @@ namespace Sap.Handler.Service
             var quotation = await UnitWork.Find<Quotation>(q => q.Id.Equals(theQuotationId)).AsNoTracking()
                .Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
             var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(quotation.ServiceOrderId)).FirstOrDefaultAsync();
-            var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").FirstOrDefaultAsync();
+            var oCPRs = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").ToListAsync();
+            var oCPR = oCPRs.Where(o => o.Name.Equals(serviceOrder.NewestContacter)).FirstOrDefault() == null ? oCPRs.FirstOrDefault() : oCPRs.Where(o => o.Name.Equals(serviceOrder.NewestContacter)).FirstOrDefault();
             var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
             var ywy = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => o.SlpCode).FirstOrDefaultAsync();
             List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };
@@ -375,5 +376,36 @@ namespace Sap.Handler.Service
                 throw new Exception(message.ToString());
             }
         }
+
+        [CapSubscribe("Serve.SellOrder.Cancel")]
+        public async Task HandleCancelSellOrder(int theQuotationId)
+        {
+            string message = "",  eMesg="";
+            int eCode = 0;
+            var quotation = await UnitWork.Find<Quotation>(q => q.Id.Equals(theQuotationId)).AsNoTracking().FirstOrDefaultAsync();
+            SAPbobsCOM.Documents dts = (SAPbobsCOM.Documents)company.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oOrders);
+            
+            dts.GetByKey(Convert.ToInt32(quotation.SalesOrderId));
+            var res = dts.Cancel();
+            if (res != 0)
+            {
+                company.GetLastError(out eCode, out eMesg);
+                message += string.Format("取消销售订单:([单号{2}])时调接口发生异常[异常代码:{0},异常信息:{1}]", eCode, eMesg, quotation.SalesOrderId);
+                Log.Logger.Error(message.ToString(), typeof(SellOrderSapHandler));
+                throw new Exception(message);
+            }
+            else 
+            {
+                //如果同步成功则修改SellOrder
+                await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(quotation.Id), q => new Quotation
+                {
+                    QuotationStatus = -1
+                });
+                await UnitWork.SaveAsync();
+                Log.Logger.Warning($"取消成功，SAP_ID：{quotation.SalesOrderId}", typeof(SellOrderSapHandler));
+            }
+            
+        }
+
     }
 }

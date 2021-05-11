@@ -39,9 +39,9 @@ namespace OpenAuth.App.Material
                 .WhereIf(!string.IsNullOrWhiteSpace(req.Customer), q => q.CustomerId.Contains(req.Customer) || q.CustomerName.Contains(req.Customer))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()), q => q.SalesOrderId.Equals(req.SalesOrderId))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.SalesMan), q => q.SalesOrderName.Equals(req.SalesMan));
-            if (req.State!=null&&req.State == 2) 
+            if (req.State != null && req.State == 2)
             {
-                SalesOrderWarrantyDates = SalesOrderWarrantyDates.Where(q => q.IsPass==false);
+                SalesOrderWarrantyDates = SalesOrderWarrantyDates.Where(q => q.IsPass == false);
             }
             if (!loginContext.Roles.Any(r => r.Name.Equals("总助")))
             {
@@ -115,30 +115,38 @@ namespace OpenAuth.App.Material
         /// <summary>
         /// 保修时间同步
         /// </summary>
-        /// <param name="DocEntry"></param>
         /// <returns></returns>
         public async Task SynchronizationSalesOrder()
         {
             var docEntry = await UnitWork.Find<SalesOrderWarrantyDate>(null).OrderByDescending(s => s.SalesOrderId).Select(s => s.SalesOrderId).FirstOrDefaultAsync();
-            var query = from a in UnitWork.Find<ORDR>(null)
-                        join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode
-                        join c in UnitWork.Find<ODLN>(null) on a.DocEntry equals c.DocEntry
-                        select new { a, b, c };
-            docEntry = docEntry == null?0:docEntry;
-            var model = await query.Where(q => q.a.DocEntry > docEntry).ToListAsync();
+            docEntry = docEntry == null ? 0 : docEntry;
 
-            var salesOrderWarrantyDates = model.Select(m => new SalesOrderWarrantyDate
+
+            var query = from a in UnitWork.Find<ORDR>(null)
+                        join b in UnitWork.Find<OITL>(null) on new { BaseEntry=a.DocEntry, BaseType =17 } equals new { BaseEntry=(int)b.BaseEntry, BaseType=(int)b.BaseType } into ab
+                        from b in ab.DefaultIfEmpty()
+                        join c in UnitWork.Find<ITL1>(null) on new { b.LogEntry, b.ItemCode } equals new { c.LogEntry, c.ItemCode } into bc
+                        from c in bc.DefaultIfEmpty()
+                        join d in UnitWork.Find<OSRN>(null) on new { c.ItemCode, SysNumber = c.SysNumber.Value } equals new { d.ItemCode, d.SysNumber } into cd
+                        from d in cd.DefaultIfEmpty()
+                        join e in UnitWork.Find<OSLP>(null) on a.SlpCode equals e.SlpCode into ae
+                        from e in ae.DefaultIfEmpty()
+                        where (b.DocType == 15 || b.DocType == 59) && a.DocEntry > docEntry && a.DocEntry < (docEntry+10000)
+                        select new { d.MnfSerial, b.BaseEntry, b.CardCode, b.CardName, b.DocType, b.CreateDate,e.SlpName };
+
+            var model = await query.Select(m => new SalesOrderWarrantyDate
             {
-                SalesOrderId = m.a.DocEntry,
-                CustomerId = m.a.CardCode,
-                CustomerName = m.a.CardName,
-                SalesOrderName = m.b.SlpName,
-                DeliveryDate = m.c.CreateDate,
+                SalesOrderId = m.BaseEntry,
+                CustomerId = m.CardCode,
+                CustomerName = m.CardName,
+                SalesOrderName = m.SlpName,
+                MnfSerial=m.MnfSerial,
+                DeliveryDate = m.CreateDate,
                 CreateTime = DateTime.Now,
-                WarrantyPeriod = Convert.ToDateTime(m.c.CreateDate).AddMonths(13),
+                WarrantyPeriod = Convert.ToDateTime(m.CreateDate).AddMonths(13),
                 IsPass = true
-            }).ToList();
-            await UnitWork.BatchAddAsync<SalesOrderWarrantyDate>(salesOrderWarrantyDates.ToArray());
+            }).ToListAsync();
+            await UnitWork.BatchAddAsync<SalesOrderWarrantyDate>(model.ToArray());
             await UnitWork.SaveAsync();
         }
 

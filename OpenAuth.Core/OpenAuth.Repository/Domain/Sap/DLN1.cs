@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("DLN1")]
-    public partial class DLN1 : Entity
+    public partial class DLN1
     {
         public DLN1()
         {
@@ -160,6 +160,13 @@ namespace OpenAuth.Repository.Domain.Sap
         /// </summary>
         [Description("")]
         public int? DocEntry { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? LineNum { get; set; }
+        
         /// <summary>
         /// 
         /// </summary>

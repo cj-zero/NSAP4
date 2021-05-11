@@ -7,17 +7,17 @@ using System.Threading.Tasks;
 
 namespace OpenAuth.App.Jobs
 {
-    public class SynSalesOrderJob : IJob
+    public class SalesOfDeliveryJob : IJob
     {
         private readonly OpenJobApp _openJobApp;
-        private readonly SalesOrderWarrantyDateApp _salesOrderWarrantyDateApp;
-        public SynSalesOrderJob(OpenJobApp openJobApp, SalesOrderWarrantyDateApp salesOrderWarrantyDateApp)
+        private readonly QuotationApp _quotationApp;
+        public SalesOfDeliveryJob(OpenJobApp openJobApp, QuotationApp quotationApp)
         {
             _openJobApp = openJobApp;
-            _salesOrderWarrantyDateApp = salesOrderWarrantyDateApp;
+            _quotationApp = quotationApp;
         }
         /// <summary>
-        /// 定时同步销售订单保修时间到4.0
+        /// 定时维修费和差旅费交货
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>
@@ -25,8 +25,7 @@ namespace OpenAuth.App.Jobs
         {
             var jobId = context.MergedJobDataMap.GetString(Define.JOBMAPKEY);
             //todo:这里可以加入自己的自动任务逻辑
-            await _salesOrderWarrantyDateApp.SynchronizationSalesOrder();
-
+            await _quotationApp.TimeOfDelivery();
             _openJobApp.RecordRun(jobId);
         }
     }

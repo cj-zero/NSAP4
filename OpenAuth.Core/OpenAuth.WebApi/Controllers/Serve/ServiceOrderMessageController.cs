@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using NPOI.OpenXml4Net.OPC.Internal;
 using OpenAuth.App.Request;
 using OpenAuth.App.Serve;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,6 +37,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{serviceOrderId}， 错误：{result.Message}");
             }
             return result;
         }
@@ -56,6 +58,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
             }
             return result;
         }

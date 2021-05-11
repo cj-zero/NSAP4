@@ -58,7 +58,7 @@ namespace OpenAuth.App.SignalR
         /// <returns></returns>
         public override async Task OnConnectedAsync()
         {
-            Logger.LogWarning(Context.UserIdentifier + "连接成功");
+            Logger.LogInformation(Context.UserIdentifier + "连接成功");
             if (_auth.CheckLogin())
             {
                 var roles = _auth.GetCurrentUser().Roles;
@@ -76,7 +76,7 @@ namespace OpenAuth.App.SignalR
         /// <returns></returns>
         public override Task OnDisconnectedAsync(Exception exception)
         {
-            Logger.LogWarning(Context.UserIdentifier + "连接中止");
+            Logger.LogInformation(Context.UserIdentifier + "连接中止");
             return base.OnDisconnectedAsync(exception);
         }
     }

@@ -4,6 +4,7 @@ using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using Org.BouncyCastle.Ocsp;
+using Serilog;
 using System;
 using System.Threading.Tasks;
 
@@ -58,6 +59,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}， 错误：{result.Message}");
             }
             return result;
         }

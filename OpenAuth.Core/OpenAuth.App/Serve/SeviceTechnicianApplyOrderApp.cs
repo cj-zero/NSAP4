@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Infrastructure;
 using Infrastructure.Extensions;
@@ -355,7 +356,9 @@ namespace OpenAuth.App
                         from b in ab.DefaultIfEmpty()
                         select new { a, b };
             query = query.Where(q => q.b.U_SAP_ID == sapOrderId);
-            var data = await query.OrderByDescending(o => o.a.CreateTime).Select(s => new
+            var knowledgebases = await UnitWork.Find<KnowledgeBase>(k => k.Rank == 1 && k.IsNew == true && !string.IsNullOrWhiteSpace(k.Content)).ToListAsync();
+            var queryList = await query.ToListAsync();
+            var data = queryList.OrderByDescending(o => o.a.CreateTime).Select(s => new
             {
                 s.a.OrginalWorkOrderId,
                 s.a.OrginalManufSN,
@@ -373,8 +376,10 @@ namespace OpenAuth.App
                 s.a.WarrantyEndDate,
                 s.a.InternalSerialNumber,
                 s.a.MaterialDescription,
-                s.a.ContractId
-            }).ToListAsync();
+                s.a.ContractId,
+                Code = knowledgebases.Where(k => Regex.IsMatch(s.a.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault() == null ? s.a.ItemCode.Substring(0, 1) == "M" ? "023" : "024" : knowledgebases.Where(k => Regex.IsMatch(s.a.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault()
+            }).ToList();
+
             result.Data = data;
             return result;
         }
