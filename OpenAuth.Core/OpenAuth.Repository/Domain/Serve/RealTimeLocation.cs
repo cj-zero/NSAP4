@@ -42,13 +42,23 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 经度
         /// </summary>
-        [Description("经度")]
+        [Description("经度")] 
         public decimal? Longitude { get; set; }
         /// <summary>
         /// 纬度
         /// </summary>
         [Description("纬度")]
         public decimal? Latitude { get; set; }
+        /// <summary>
+        /// 经度
+        /// </summary>
+        [Description("百度地图经度")] 
+        public decimal? BaiduLongitude { get; set; }
+        /// <summary>
+        /// 纬度
+        /// </summary>
+        [Description("百度地图纬度")]
+        public decimal? BaiduLatitude { get; set; }
         /// <summary>
         /// 省
         /// </summary>

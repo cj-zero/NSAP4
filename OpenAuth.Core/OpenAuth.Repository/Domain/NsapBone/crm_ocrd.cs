@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain
 	/// 
 	/// </summary>
     [Table("crm_ocrd")]
-    public partial class crm_ocrd : Entity
+    public partial class crm_ocrd 
     {
         public crm_ocrd()
         {
@@ -186,13 +186,9 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 
         /// </summary>
-        [Description("")]
-        public string CardCode { get; set; }
         /// <summary>
         /// 
         /// </summary>
-        [Description("")]
-        public int? sbo_id { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -307,7 +303,6 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         [Description("")]
-        public int? SlpCode { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -1093,7 +1088,6 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         [Description("")]
-        public System.DateTime upd_dt { get; set; }
         /// <summary>
         /// 
         /// </summary>
