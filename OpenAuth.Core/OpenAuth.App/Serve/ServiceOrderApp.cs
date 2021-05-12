@@ -1110,10 +1110,10 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task<TableData> UpDateServiceOrderStatus(QueryServiceOrderListReq req)
+        public async Task<TableData> UpDateServiceOrderStatus(SendServiceOrderMessageReq req)
         {
             var user = _auth.GetCurrentUser().User;
-            var obj = await UnitWork.Find<ServiceOrder>(u => u.Id == Convert.ToInt32(req.QryServiceOrderId) && u.Status<7).FirstOrDefaultAsync();
+            var obj = await UnitWork.Find<ServiceOrder>(u => u.Id == Convert.ToInt32(req.ServiceOrderId) && u.Status<7).FirstOrDefaultAsync();
             if (obj == null) 
             {
                 throw new Exception("服务单已完成不可撤销。");
@@ -1131,14 +1131,14 @@ namespace OpenAuth.App
             }
             else
             {
-                await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id == Convert.ToInt32(req.QryServiceOrderId), u => new ServiceOrder { Status = 3,Remark=req.Remark });
-                await UnitWork.DeleteAsync<ServiceWorkOrder>(s => s.ServiceOrderId.Equals(Convert.ToInt32(req.QryServiceOrderId)));
+                await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id == Convert.ToInt32(req.ServiceOrderId), u => new ServiceOrder { Status = 3,Remark=req.Remark });
+                await UnitWork.DeleteAsync<ServiceWorkOrder>(s => s.ServiceOrderId.Equals(Convert.ToInt32(req.ServiceOrderId)));
                 await UnitWork.SaveAsync();
                 //保存日志
                 await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq
                 {
-                    ServiceOrderId = Convert.ToInt32(req.QryServiceOrderId),
-                    Action = $"{user.Name}执行撤销操作，撤销ID为{ Convert.ToInt32(req.QryServiceOrderId)}的服务单",
+                    ServiceOrderId = Convert.ToInt32(req.ServiceOrderId),
+                    Action = $"{user.Name}执行撤销操作，撤销ID为{ Convert.ToInt32(req.ServiceOrderId)}的服务单",
                     ActionType = "撤销操作",
                 });
             }
@@ -1292,7 +1292,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var orgs = loginContext.Orgs.Select(o => o.Id).ToArray();
-            var tUsers = await UnitWork.Find<AppUserMap>(null).WhereIf(!loginContext.Roles.Any(a => a.Name == "管理员" || a.Name == "呼叫中心"), w => (w.AppUserRole == 1 || w.AppUserRole == 2)).ToListAsync();
+            var tUsers = await UnitWork.Find<AppUserMap>(null).WhereIf(!loginContext.Roles.Any(a => a.Name == "管理员" || a.Name == "呼叫中心"), w => (w.AppUserRole == 1 || w.AppUserRole == 2 || w.AppUserRole == 3)).ToListAsync();
             var ids = tUsers.Select(u => u.UserID);
             var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
             if (!loginContext.Roles.Any(a => a.Name == "管理员" || a.Name == "呼叫中心"))
