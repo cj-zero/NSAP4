@@ -244,6 +244,13 @@ namespace OpenAuth.Repository.Domain
         public string Remark { get; set; }
         
         /// <summary>
+        /// 归属部门
+        /// </summary>
+        [Description("归属部门")]
+        public int? VestInOrg { get; set; }
+        
+        
+        /// <summary>
         /// 服务单关联的工单
         /// </summary>
         public virtual List<ServiceWorkOrder> ServiceWorkOrders { get; set; }
