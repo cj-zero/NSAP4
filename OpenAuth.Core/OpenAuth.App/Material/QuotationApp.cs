@@ -114,17 +114,18 @@ namespace OpenAuth.App.Material
                     }
                     else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
                     {
+                        ServiceOrderids = await UnitWork.Find<ServiceOrder>(null).Where(q => q.SalesManId.Equals(loginContext.User.Id)).Select(s => s.Id).ToListAsync();
                         switch (request.StartType)
                         {
                             case 1:
-                                Quotations = Quotations.Where(q => q.QuotationStatus == 5);
+                                Quotations = Quotations.Where(q => q.QuotationStatus == 5 || (ServiceOrderids.Contains(q.ServiceOrderId) && q.QuotationStatus == 3.1M));
                                 break;
 
                             case 2:
-                                Quotations = Quotations.Where(q => q.QuotationStatus > 5);
+                                Quotations = Quotations.Where(q => q.QuotationStatus > 5 || (ServiceOrderids.Contains(q.ServiceOrderId) && q.QuotationStatus > 3.1M));
                                 break;
                             default:
-                                Quotations = Quotations.Where(q => q.QuotationStatus >= 5);
+                                Quotations = Quotations.Where(q => q.QuotationStatus >= 5 || (ServiceOrderids.Contains(q.ServiceOrderId) && q.QuotationStatus >= 3.1M));
                                 break;
                         }
                     }
@@ -1555,7 +1556,7 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         public async Task TimeOfDelivery() 
         {
-            var quotations= await UnitWork.Find<Quotation>(q => q.QuotationStatus == 10).Include(q => q.QuotationMergeMaterials)
+            var quotations= await UnitWork.Find<Quotation>(q => q.QuotationStatus == 10 && q.CreateTime>Convert.ToDateTime("2021.05.10")).Include(q => q.QuotationMergeMaterials)
                 .Where(q=>q.QuotationMergeMaterials.Where(m=>!m.MaterialCode.Equals("S111-SERVICE-GSF")&&!m.MaterialCode.Equals("S111-SERVICE-CLF")).Count()<=0 && q.SalesOrderId!=null).ToListAsync();
             foreach (var item in quotations)
             {
@@ -1632,7 +1633,7 @@ namespace OpenAuth.App.Material
             }
             else
             {
-                if (loginContext.Roles.Any(r => r.Name.Equals("销售员")) && obj.QuotationStatus == 3.1M)
+                if ((loginContext.Roles.Any(r => r.Name.Equals("销售员"))|| loginContext.Roles.Any(r => r.Name.Equals("总经理"))) && obj.QuotationStatus == 3.1M)
                 {
                     qoh.Action = "销售员审批";
                     obj.QuotationStatus = 4;
@@ -1924,23 +1925,20 @@ namespace OpenAuth.App.Material
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
-            if (loginUser.Account == Define.USERAPP)
-            {
-                loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
-            }
 
             var QuotationObj = obj.MapTo<Quotation>();
-            QuotationObj.TotalMoney = 0;
-            QuotationObj.TotalCostPrice = 0;
-            QuotationObj.Tentative = false;
             QuotationObj.ErpOrApp = 1;
-            QuotationObj.PrintNo = Guid.NewGuid().ToString();
-            QuotationObj.PrintTheNumber = 0;
             if (loginUser.Account == Define.USERAPP)
             {
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
                 QuotationObj.ErpOrApp = 2;
+                throw new Exception("APP暂时不可领料，请前往ERP4.0进行领料。");
             }
+            QuotationObj.TotalMoney = 0;
+            QuotationObj.TotalCostPrice = 0;
+            QuotationObj.Tentative = false;
+            QuotationObj.PrintNo = Guid.NewGuid().ToString();
+            QuotationObj.PrintTheNumber = 0;
             QuotationObj.IsProtected = true;
             QuotationObj.QuotationProducts.ForEach(q =>
             {

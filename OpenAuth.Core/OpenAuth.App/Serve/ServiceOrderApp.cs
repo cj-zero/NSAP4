@@ -715,7 +715,17 @@ namespace OpenAuth.App
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
             //obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(req.Supervisor)))?.Id;
-
+            var workOrders = obj.ServiceWorkOrders.Select(s => new { s.ManufacturerSerialNumber, s.FromTheme }).ToList();
+            var msNumbers = workOrders.Select(s => s.ManufacturerSerialNumber).ToList();
+            var serviceOrders = await UnitWork.Find<ServiceWorkOrder>(s => msNumbers.Contains(s.ManufacturerSerialNumber) && s.Status < 7).Select(s =>new { s.ServiceOrderId,s.ManufacturerSerialNumber,s.FromTheme}).ToListAsync();
+            serviceOrders= serviceOrders.Where(s => s.FromTheme.Equals(workOrders.Where(w => w.ManufacturerSerialNumber.Equals(s.ManufacturerSerialNumber)).FirstOrDefault().FromTheme)).ToList();
+            var serviceOrderIds = serviceOrders.Select(s => s.ServiceOrderId).ToList();
+            var serviceOrderCount = await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Equals(obj.TerminalCustomer) && s.TerminalCustomerId.Equals(obj.TerminalCustomerId) && serviceOrderIds.Contains(s.Id) &&  s.Status == 2).Select(s=>s.CreateTime).ToListAsync();
+            var count=serviceOrderCount.Where(s => ((TimeSpan)(DateTime.Now - s)).Days < 5).Count();
+            if (count > 0)
+            {
+                throw new Exception("该客户在5天内已有服务ID，请不要重复建单");
+            }
             if (string.IsNullOrWhiteSpace(obj.NewestContacter) && string.IsNullOrWhiteSpace(obj.NewestContactTel))
             {
                 obj.NewestContacter = obj.Contacter;
@@ -1004,7 +1014,9 @@ namespace OpenAuth.App
                     s.NewestContacter,
                     s.NewestContactTel,
                     s.U_SAP_ID,
-                    s.CreateTime
+                    s.CreateTime,
+                    IsWarning = ((TimeSpan)(DateTime.Now - s.CreateTime)).Days <= 5 ? true : false,
+                    Day=5
                 })
                 .Skip(0).Take(10).ToListAsync();
             var newestNotCloseOrder = await UnitWork.Find<ServiceOrder>(s => s.CustomerId.Equals(code) && s.Status == 2 && s.ServiceWorkOrders.Any(o => o.Status < 7)).OrderByDescending(s => s.CreateTime)
@@ -1020,9 +1032,12 @@ namespace OpenAuth.App
                     s.NewestContacter,
                     s.NewestContactTel,
                     s.U_SAP_ID,
-                    s.CreateTime
+                    s.CreateTime,
+                    IsWarning = ((TimeSpan)(DateTime.Now - s.CreateTime)).Days <= 5 ? true : false,
+                    Day = 5
                 })
                 .Skip(0).Take(10).ToListAsync();
+
             return new { newestOrder, newestNotCloseOrder };
         }
 
@@ -1093,29 +1108,37 @@ namespace OpenAuth.App
         /// <summary>
         /// 根据服务单id判断是否撤销服务单 by zlg 2020.08.13
         /// </summary>
-        /// <param name="ServiceOrderId"></param>
+        /// <param name="req"></param>
         /// <returns></returns>
-        public async Task<TableData> UpDateServiceOrderStatus(int ServiceOrderId)
+        public async Task<TableData> UpDateServiceOrderStatus(SendServiceOrderMessageReq req)
         {
             var user = _auth.GetCurrentUser().User;
-            var obj = UnitWork.Find<ServiceOrder>(u => u.Id == ServiceOrderId).FirstOrDefault();
+            var obj = await UnitWork.Find<ServiceOrder>(u => u.Id == Convert.ToInt32(req.ServiceOrderId) && u.Status<7).FirstOrDefaultAsync();
+            if (obj == null) 
+            {
+                throw new Exception("服务单已完成不可撤销。");
+            }
+            var num=await UnitWork.Find<Quotation>(q =>q.ServiceOrderId==obj.Id).CountAsync();
+            if (num > 0) 
+            {
+                throw new Exception("该服务单已领料不可撤销。");
+            }
             TimeSpan timeSpan = DateTime.Now - Convert.ToDateTime(obj.CreateTime);
             var result = new TableData();
-            if (timeSpan.TotalMinutes > 5)
+            if (timeSpan.Days > 5)
             {
-                result.Code = 500;
-                result.Message = "服务单已超出撤销时间，不可撤销！";
+                throw new Exception("服务单已超出撤销时间不可撤销。");
             }
             else
             {
-                await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id == ServiceOrderId, u => new ServiceOrder { Status = 3 });
-                await UnitWork.DeleteAsync<ServiceWorkOrder>(s => s.ServiceOrderId.Equals(ServiceOrderId));
+                await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id == Convert.ToInt32(req.ServiceOrderId), u => new ServiceOrder { Status = 3,Remark=req.Remark });
+                await UnitWork.DeleteAsync<ServiceWorkOrder>(s => s.ServiceOrderId.Equals(Convert.ToInt32(req.ServiceOrderId)));
                 await UnitWork.SaveAsync();
                 //保存日志
                 await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq
                 {
-                    ServiceOrderId = ServiceOrderId,
-                    Action = $"{user.Name}执行撤销操作，撤销ID为{ServiceOrderId}的服务单",
+                    ServiceOrderId = Convert.ToInt32(req.ServiceOrderId),
+                    Action = $"{user.Name}执行撤销操作，撤销ID为{ Convert.ToInt32(req.ServiceOrderId)}的服务单",
                     ActionType = "撤销操作",
                 });
             }
@@ -1269,7 +1292,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var orgs = loginContext.Orgs.Select(o => o.Id).ToArray();
-            var tUsers = await UnitWork.Find<AppUserMap>(null).WhereIf(!loginContext.Roles.Any(a => a.Name == "管理员" || a.Name == "呼叫中心"), w => (w.AppUserRole == 1 || w.AppUserRole == 2)).ToListAsync();
+            var tUsers = await UnitWork.Find<AppUserMap>(null).WhereIf(!loginContext.Roles.Any(a => a.Name == "管理员" || a.Name == "呼叫中心"), w => (w.AppUserRole == 1 || w.AppUserRole == 2 || w.AppUserRole == 3)).ToListAsync();
             var ids = tUsers.Select(u => u.UserID);
             var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
             if (!loginContext.Roles.Any(a => a.Name == "管理员" || a.Name == "呼叫中心"))
