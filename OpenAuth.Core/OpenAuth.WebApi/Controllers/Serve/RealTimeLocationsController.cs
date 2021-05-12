@@ -71,5 +71,38 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
+
+        /// <summary>
+        /// 智慧大屏接口数据
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> LoadLocationInfo([FromQuery] QueryLocationInfoReq req)
+        {
+            var result = new TableData();
+            result = await _realTimeLocationApp.LoadLocationInfo(req);
+            return result;
+        }
+
+        /// <summary>
+        ///获取所有客户
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetCustomer()
+        {
+            var res = new TableData();
+            res = await _realTimeLocationApp.GetCustomer();
+            return res;
+        }
+
+        [HttpGet]
+        public async Task<Response> UpdateLoca()
+        {
+            var result = new Response();
+            await _realTimeLocationApp.UpdateLoca();
+            return result;
+        }
     }
 }

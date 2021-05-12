@@ -493,7 +493,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> UpDateServiceOrderStatus([FromQuery]QueryServiceOrderListReq req)
+        public async Task<TableData> UpDateServiceOrderStatus([FromQuery]SendServiceOrderMessageReq req)
         {
             var result = new TableData();
             try
