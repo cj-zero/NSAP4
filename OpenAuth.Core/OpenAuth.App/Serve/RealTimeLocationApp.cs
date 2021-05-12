@@ -244,7 +244,7 @@ namespace OpenAuth.App
 
         public async Task UpdateLoca()
         {
-            var loca = await UnitWork.Find<RealTimeLocation>(null).ToListAsync();
+            var loca = await UnitWork.Find<RealTimeLocation>(c => string.IsNullOrWhiteSpace(c.BaiduLatitude.ToString())).Take(5000).ToListAsync();
             foreach (var item in loca)
             {
                 var zuob = Gcj02ToBd09(item.Latitude.ToDouble(), item.Longitude.ToDouble());

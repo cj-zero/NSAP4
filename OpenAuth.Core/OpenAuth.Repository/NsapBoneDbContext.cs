@@ -53,6 +53,9 @@ namespace OpenAuth.Repository
         public virtual DbSet<store_oitl> store_oitl { get; set; }
         public virtual DbSet<store_osrn> store_osrn { get; set; }
         public virtual DbSet<crm_oslp> crm_oslp { get; set; }
+        public virtual DbSet<crm_ocrd> crm_ocrd { get; set; }
+        public virtual DbSet<crm_ocry> crm_ocry { get; set; }
+        public virtual DbSet<crm_ocst> crm_ocst { get; set; }
 
         //非数据库表格
         public virtual DbSet<v_storeitemstock>  v_storeitemstocks { get; set; }
