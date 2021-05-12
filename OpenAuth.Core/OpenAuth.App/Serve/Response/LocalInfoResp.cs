@@ -33,7 +33,7 @@ namespace OpenAuth.App.Response
         /// <summary>
         /// 历史轨迹
         /// </summary>
-        public List<Trajectory> HistoryPositions { get; set; }
+        //public List<Trajectory> HistoryPositions { get; set; }
         /// <summary>
         /// 当天轨迹
         /// </summary>
@@ -42,6 +42,10 @@ namespace OpenAuth.App.Response
         /// 在线间隔
         /// </summary>
         public string Interval { get; set; }
+        /// <summary>
+        /// 间隔总时长
+        /// </summary>
+        public double? TotalHour { get; set; }
         /// <summary>
         /// 服务ID
         /// </summary>
@@ -56,6 +60,14 @@ namespace OpenAuth.App.Response
         public DateTime? SignOutDate { get; set; }
 
     }
+
+    public class HistoryPositions
+    {
+        public string Date { get; set; }
+        public List<Position> Pos { get; set; }
+    }
+
+
     public class Position
     {
         /// <summary>
