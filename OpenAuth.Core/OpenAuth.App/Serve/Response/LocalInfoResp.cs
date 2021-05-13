@@ -47,10 +47,6 @@ namespace OpenAuth.App.Response
         /// </summary>
         public double? TotalHour { get; set; }
         /// <summary>
-        /// 服务ID
-        /// </summary>
-        public string ServiceOrderId { get; set; }
-        /// <summary>
         /// 签到时间
         /// </summary>
         public DateTime? SignInDate { get; set; }
@@ -63,8 +59,14 @@ namespace OpenAuth.App.Response
 
     public class HistoryPositions
     {
-        public string Date { get; set; }
-        public List<Position> Pos { get; set; }
+        /// <summary>
+        /// 服务ID
+        /// </summary>
+        public string ServiceOrderId { get; set; }
+
+        public List<Trajectory> Trajectory { get; set; }
+        //public string Date { get; set; }
+        //public List<Position> Pos { get; set; }
     }
 
 

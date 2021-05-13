@@ -1,7 +1,9 @@
 ﻿using Infrastructure.Cache;
+using Infrastructure.Extensions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.App.SignalR;
 using OpenAuth.Repository.Domain;
@@ -53,64 +55,45 @@ namespace OpenAuth.App.Serve
                                     .ToListAsync();
             userIds.AddRange(noComplete);
 
-            DateTime start = Convert.ToDateTime(DateTime.Now.ToString("D").ToString());
             DateTime end = Convert.ToDateTime(DateTime.Now.AddDays(1).ToString("D").ToString()).AddSeconds(-1);
-            DateTime monthAgo = Convert.ToDateTime(DateTime.Now.AddDays(-30).ToString("D").ToString());
 
-            var pppUserMap = UnitWork.Find<AppUserMap>(null).ToList();
-            //按指定时间过滤（筛选轨迹）
-            //var realTimeLocation = UnitWork.Find<RealTimeLocation>(null)
-            //                                .WhereIf(dateWhere, c => c.CreateTime >= req.StartDate && c.CreateTime <= req.EndDate)
-            //                                .WhereIf(!dateWhere, c => c.CreateTime >= start && c.CreateTime <= end).ToList();
+            var pppUserMap = await UnitWork.Find<AppUserMap>(null).ToListAsync();
 
-            //一个月前定位历史（筛选最新在线时间等）
-            var realTimeLocationHis = UnitWork.Find<RealTimeLocation>(null)
-                                            .Where(c => c.CreateTime >= monthAgo && c.CreateTime <= end).ToList();
 
-            //var locaotionInfo = from a in realTimeLocation
-            //                    join b in pppUserMap on a.AppUserId equals b.AppUserId
-            //                    select new { a, b.UserID };
+            //所有人最新定位信息
+            var realTimeLocationHis = await UnitWork.FromSql<RealTimeLocation>(@$"SELECT * from nsap4_serve.realtimelocation where Id in  (
+                                        SELECT max(Id) as Id from nsap4_serve.realtimelocation GROUP BY AppUserId
+                                        ) ORDER BY CreateTime desc").ToListAsync();
 
 
             var locaotionInfoHistory = from a in realTimeLocationHis
                                        join b in pppUserMap on a.AppUserId equals b.AppUserId
                                        select new { a, b.UserID };
 
-
+            var now = DateTime.Now;
             var data = await UnitWork.Find<User>(c => userIds.Contains(c.Id)).ToListAsync();
             var da1 = data.Select(c =>
             {
-                //var loca = locaotionInfo.Where(q => q.UserID.Equals(c.Id)).OrderByDescending(q => q.a.CreateTime).ToList();
                 //当天是否有定位记录
-                var currentLoca = locaotionInfoHistory.Where(q => q.UserID.Equals(c.Id) && q.a.CreateTime.ToString("yyyy-MM-dd").Equals(DateTime.Now.ToString("yyyy-MM-dd"))).ToList();
-                var currLocation = currentLoca.OrderByDescending(q => q.a.CreateTime).FirstOrDefault();
+                var currentLoca = locaotionInfoHistory.Where(q => q.UserID.Equals(c.Id)).FirstOrDefault();
+                var currentDate = locaotionInfoHistory.Where(q => q.UserID.Equals(c.Id) && q.a.CreateTime.ToString("yyyy-MM-dd").Equals(DateTime.Now.ToString("yyyy-MM-dd"))).ToList();
+
                 var onlineState = "离线";
                 var interv = "30天前";
                 decimal? longi = 0, lati = 0;
                 double? totalHour = 0;
-                //获取轨迹
 
-                //System.Collections.Generic.List<Trajectory> HistoryPositions = currentLoca?.GroupBy(c => c.a.CreateTime.ToString("yyyy-MM-dd")).Select(c => new Trajectory
-                //{
-                //    Date = c.Key,
-                //    Pos = c.Select(p => new Position { Longitude = p.a.BaiduLongitude, Latitude = p.a.BaiduLatitude }).ToList()
-                //}).ToList();
-
-                //当天轨迹
-
-                //System.Collections.Generic.List<Position> CurrPositions = loca?.Select(c => new Position { Longitude = c.a.Longitude, Latitude = c.a.Latitude }).ToList();
-
-                if (currLocation != null && currLocation.a.CreateTime != null)
+                if (currentLoca != null)
                 {
                     //当天 / 最新定位
+                    longi = currentLoca.a.BaiduLongitude;
+                    lati = currentLoca.a.BaiduLatitude;
 
-                    longi = currLocation.a.BaiduLongitude;
-                    lati = currLocation.a.BaiduLatitude;
-
-                    var now = DateTime.Now;
-                    TimeSpan ts = now.Subtract(currLocation.a.CreateTime);
+                    TimeSpan ts = now.Subtract(currentLoca.a.CreateTime);
                     totalHour = Math.Round(ts.TotalHours, 2);
-                    if (ts.Hours > 0)
+                    if (totalHour > 24)
+                        interv = ts.Days + "天前";
+                    else if (totalHour >= 1 && totalHour <= 24)
                         interv = ts.Hours + "小时前";
                     else
                     {
@@ -118,41 +101,19 @@ namespace OpenAuth.App.Serve
                         interv = ts.Minutes + "分钟前";
                     }
                 }
-                else//当天无，则取历史最新
-                {
-                    var his = locaotionInfoHistory.Where(q => q.UserID.Equals(c.Id)).OrderByDescending(q => q.a.CreateTime).FirstOrDefault();
-                    if (his != null)
-                    {
-                        currLocation = his;
-                        //历史最新定位
-                        longi = his.a.BaiduLongitude;
-                        lati = his.a.BaiduLatitude;
-
-                        var now = DateTime.Now;
-                        TimeSpan ts = now.Subtract(his.a.CreateTime);
-                        totalHour = Math.Round(ts.TotalHours, 2);
-                        interv = ts.Hours + "小时前";
-                        if (ts.Days > 0) interv = ts.Days + "天前";
-                    }
-                }
-                var sorder = serviceWorkOrder.Where(q => q.CurrentUserNsapId.Equals(c.Id)).Select(q => q.ServiceOrderId).Take(3).ToArray();
-                var orderIds = sorder.Length > 0 ? string.Join(",", sorder) : "";
 
                 return new LocalInfoResp
                 {
                     Name = c.Name,
-                    Address = currLocation?.a.Province + currLocation?.a.City + currLocation?.a.Area + currLocation?.a.Addr,
+                    Address = currentLoca?.a.Province + currentLoca?.a.City + currentLoca?.a.Area + currentLoca?.a.Addr,
                     Mobile = c.Mobile,
                     Status = onlineState,
                     Interval = interv,
                     Longitude = longi,
                     Latitude = lati,
                     TotalHour = totalHour,
-                    //CurrPositions = CurrPositions,
-                   // HistoryPositions = HistoryPositions,
-                    ServiceOrderId = orderIds,
-                    SignInDate = currentLoca.Count > 0 ? currentLoca.Min(q => q.a.CreateTime) : (DateTime?)null,
-                    SignOutDate = currentLoca.Count > 1 ? currentLoca.Max(q => q.a.CreateTime) : (DateTime?)null
+                    SignInDate = currentDate.Count > 0 ? currentDate.Min(q => q.a.CreateTime) : (DateTime?)null,
+                    SignOutDate = currentDate.Count > 1 ? currentDate.Max(q => q.a.CreateTime) : (DateTime?)null
                 };
 
             });
@@ -161,17 +122,10 @@ namespace OpenAuth.App.Serve
             #region 技术员离线消息
             //技术员离线or在线
             var userList = da1.Where(c => c.Status == "离线" && c.TotalHour >= 1).Select(c => c.Name).ToList();
-            //var userLocation = locaotionInfoHistory.GroupBy(c => c.UserID).Select(c => new OffLineList
-            //{
-            //    Id = c.Key,
-            //    Time = c.OrderByDescending(c => c.a.CreateTime).Select(c => c.a.CreateTime).FirstOrDefault()
-            //});
-
-            //var userList = userLocation.Where(c => DateTime.Now.Subtract(c.Time).TotalHours >= 1).Select(c => c.Id).ToList();
             var oldList = _cacheContext.Get<List<string>>("OffLineUserList");
             if (oldList != null)
             {
-                _cacheContext.Remove("OffLineUserList");
+                var aa=_cacheContext.Remove("OffLineUserList");
                 _cacheContext.Set<List<string>>("OffLineUserList", userList, end);
                 //未推送过的人员Id
                 userList = userList.Except(oldList).ToList();
@@ -212,10 +166,4 @@ namespace OpenAuth.App.Serve
         }
     }
 
-    [Serializable]
-    public class OffLineList
-    {
-        public string Id { get; set; }
-        public DateTime Time { get; set; }
-    }
 }

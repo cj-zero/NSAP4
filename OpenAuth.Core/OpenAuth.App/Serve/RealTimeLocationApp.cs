@@ -125,64 +125,45 @@ namespace OpenAuth.App
                                     .ToListAsync();
             userIds.AddRange(noComplete);
 
-            //var dateWhere = req.StartDate != null && req.EndDate != null ? true : false;
-            //DateTime start = Convert.ToDateTime(DateTime.Now.ToString("D").ToString());
             DateTime end = Convert.ToDateTime(DateTime.Now.AddDays(1).ToString("D").ToString()).AddSeconds(-1);
             DateTime monthAgo = Convert.ToDateTime(DateTime.Now.AddDays(-30).ToString("D").ToString());
-            var pppUserMap = UnitWork.Find<AppUserMap>(null).ToList();
-            ////按指定时间过滤（筛选轨迹）
-            //var realTimeLocation = UnitWork.Find<RealTimeLocation>(null)
-            //                                .WhereIf(dateWhere, c => c.CreateTime >= req.StartDate && c.CreateTime <= req.EndDate)
-            //                                .WhereIf(!dateWhere, c => c.CreateTime >= start && c.CreateTime <= end).ToList();
+            var pppUserMap = await UnitWork.Find<AppUserMap>(null).ToListAsync();
 
-            //一个月前定位历史（筛选最新在线时间等）
-            var realTimeLocationHis= UnitWork.Find<RealTimeLocation>(null)
-                                            .Where(c => c.CreateTime >= monthAgo && c.CreateTime <= end).ToList();
+            //所有人最新定位信息
+            var realTimeLocationHis = await UnitWork.FromSql<RealTimeLocation>(@$"SELECT * from nsap4_serve.realtimelocation where Id in  (
+                                        SELECT max(Id) as Id from nsap4_serve.realtimelocation GROUP BY AppUserId
+                                        ) ORDER BY CreateTime desc").ToListAsync();
 
-            //var locaotionInfo = from a in realTimeLocation
-            //                    join b in pppUserMap on a.AppUserId equals b.AppUserId
-            //                    select new { a, b.UserID };
-            
 
             var locaotionInfoHistory = from a in realTimeLocationHis
                                        join b in pppUserMap on a.AppUserId equals b.AppUserId
                                        select new { a, b.UserID };
 
 
+            var now = DateTime.Now;
             var data = await UnitWork.Find<User>(c => userIds.Contains(c.Id)).WhereIf(!string.IsNullOrWhiteSpace(req.Name), c => c.Name.Equals(req.Name)).ToListAsync();
             var da1 = data.Select(c =>
              {
-                 //var loca = locaotionInfo.Where(q => q.UserID.Equals(c.Id)).OrderByDescending(q => q.a.CreateTime).ToList();
                  //当天是否有定位记录
-                 var currentLoca = locaotionInfoHistory.Where(q => q.UserID.Equals(c.Id) && q.a.CreateTime.ToString("yyyy-MM-dd").Equals(DateTime.Now.ToString("yyyy-MM-dd"))).ToList();
-                 var currLocation = currentLoca.OrderByDescending(q => q.a.CreateTime).FirstOrDefault();
+                 var currentLoca = locaotionInfoHistory.Where(q => q.UserID.Equals(c.Id)).FirstOrDefault();
+                 var currentDate = locaotionInfoHistory.Where(q => q.UserID.Equals(c.Id) && q.a.CreateTime.ToString("yyyy-MM-dd").Equals(DateTime.Now.ToString("yyyy-MM-dd"))).ToList();
+
                  var onlineState = "离线";
                  var interv = "30天前";
                  decimal? longi = 0, lati = 0;
                  double? totalHour = 0;
-                 //获取轨迹
 
-                 //System.Collections.Generic.List<Trajectory> HistoryPositions = loca?.GroupBy(c => c.a.CreateTime.ToString("yyyy-MM-dd")).Select(c => new Trajectory
-                 //{
-                 //    Date = c.Key,
-                 //    Pos = c.Select(p => new Position { Longitude = p.a.BaiduLongitude, Latitude = p.a.BaiduLatitude }).ToList()
-                 //}).ToList();
-
-                 //当天轨迹
-
-                 //System.Collections.Generic.List<Position> CurrPositions = loca?.Select(c => new Position { Longitude = c.a.Longitude, Latitude = c.a.Latitude }).ToList();
-
-                 if (currLocation != null && currLocation.a.CreateTime != null)
+                 if (currentLoca != null)
                  {
                      //当天 / 最新定位
+                     longi = currentLoca.a.BaiduLongitude;
+                     lati = currentLoca.a.BaiduLatitude;
 
-                     longi = currLocation.a.BaiduLongitude;
-                     lati = currLocation.a.BaiduLatitude;
-
-                     var now = DateTime.Now;
-                     TimeSpan ts = now.Subtract(currLocation.a.CreateTime);
+                     TimeSpan ts = now.Subtract(currentLoca.a.CreateTime);
                      totalHour = Math.Round(ts.TotalHours, 2);
-                     if (ts.Hours > 0)
+                     if (totalHour > 24)
+                         interv = ts.Days + "天前";
+                     else if (totalHour >= 1 && totalHour <= 24)
                          interv = ts.Hours + "小时前";
                      else
                      {
@@ -190,41 +171,20 @@ namespace OpenAuth.App
                          interv = ts.Minutes + "分钟前";
                      }
                  }
-                 else//当天无，则取历史最新
-                 {
-                     var his = locaotionInfoHistory.Where(q => q.UserID.Equals(c.Id)).OrderByDescending(q => q.a.CreateTime).FirstOrDefault();
-                     if (his != null)
-                     {
-                         currLocation = his;
-                         //历史最新定位
-                         longi = his.a.BaiduLongitude;
-                         lati = his.a.BaiduLatitude;
-
-                         var now = DateTime.Now;
-                         TimeSpan ts = now.Subtract(his.a.CreateTime);
-                         totalHour =Math.Round(ts.TotalHours,2);
-                         interv = ts.Hours + "小时前";
-                         if (ts.Days > 0) interv = ts.Days + "天前";
-                     }
-                 }
-                 var sorder = serviceWorkOrder.Where(q => q.CurrentUserNsapId.Equals(c.Id)).Select(q => q.ServiceOrderId).Take(3).ToArray();
-                 var orderIds = sorder.Length > 0 ? string.Join(",", sorder) : "";
 
                  return new LocalInfoResp
                  {
                      Name = c.Name,
-                     Address = currLocation?.a.Province + currLocation?.a.City + currLocation?.a.Area + currLocation?.a.Addr,
+                     Address = currentLoca?.a.Province + currentLoca?.a.City + currentLoca?.a.Area + currentLoca?.a.Addr,
                      Mobile = c.Mobile,
                      Status = onlineState,
                      Interval = interv,
                      Longitude = longi,
                      Latitude = lati,
                      TotalHour= totalHour,
-                     //CurrPositions = CurrPositions,
-                     //HistoryPositions = HistoryPositions,
-                     ServiceOrderId = orderIds,
-                     SignInDate = currentLoca.Count > 0 ? currentLoca.Min(q => q.a.CreateTime) : (DateTime?)null,
-                     SignOutDate = currentLoca.Count > 1 ? currentLoca.Max(q => q.a.CreateTime) : (DateTime?)null
+                     //ServiceOrderId = orderIds,
+                     SignInDate = currentDate.Count > 0 ? currentDate.Min(q => q.a.CreateTime) : (DateTime?)null,
+                     SignOutDate = currentDate.Count > 1 ? currentDate.Max(q => q.a.CreateTime) : (DateTime?)null
                  };
 
              });
@@ -252,12 +212,14 @@ namespace OpenAuth.App
                 result.Message = "查询不到该技术员";
                 return result;
             }
+
+            var sorder = await UnitWork.Find<ServiceWorkOrder>(c => c.Status < 7).Where(c=>c.CurrentUserNsapId==userId).Select(c => c.ServiceOrderId).Take(3).ToArrayAsync();
+            var orderIds = sorder.Length > 0 ? string.Join(",", sorder) : "";
+
             req.StartDate = req.StartDate ?? DateTime.Now;
             req.EndDate = req.EndDate ?? DateTime.Now;
             var start = Convert.ToDateTime(req.StartDate.Value.Date.ToString());
-            //DateTime start = new DateTime(req.StartDate.Value.Year, req.StartDate.Value.Month, req.StartDate.Value.Day);
             DateTime end = Convert.ToDateTime(req.EndDate.ToDateTime().AddDays(1).ToString("D").ToString()).AddSeconds(-1);
-            //DateTime monthAgo = Convert.ToDateTime(DateTime.Now.AddDays(-30).ToString("D").ToString());
             var pppUserMap = UnitWork.Find<AppUserMap>(c=>c.UserID==userId).FirstOrDefault();
             //按指定时间过滤（筛选轨迹）
             var realTimeLocation = await UnitWork.Find<RealTimeLocation>(null)
@@ -266,13 +228,18 @@ namespace OpenAuth.App
                                             .ToListAsync();
 
 
-            var data = realTimeLocation?.GroupBy(c=>c.CreateTime.ToString("yyyy-MM-dd")).Select(c=>new HistoryPositions
+            var data = realTimeLocation?.GroupBy(c=>c.CreateTime.ToString("yyyy-MM-dd")).Select(c=>new Trajectory
             {
                 Date = c.Key,
                 Pos = c.Select(p => new Position { Longitude = p.BaiduLongitude, Latitude = p.BaiduLatitude }).ToList()
             }).ToList();
 
-            result.Data = data;
+            HistoryPositions history = new HistoryPositions();
+            history.ServiceOrderId = orderIds;
+            history.Trajectory = data;
+
+
+            result.Data = history;
             return result;
         }
         /// <summary>
