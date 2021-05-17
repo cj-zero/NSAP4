@@ -604,7 +604,7 @@ namespace OpenAuth.App
                          .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.b.ContactTel.Equals(req.ContactTel) || q.b.NewestContactTel.Equals(req.ContactTel))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.b.Supervisor.Contains(req.QrySupervisor))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryMaterialCode), q => q.a.MaterialCode.Contains(req.QryMaterialCode))
-                         .Where(q => q.b.U_SAP_ID != null && q.b.Status == 2 && q.a.FromType != 2);
+                         .Where(q => q.b.U_SAP_ID != null && q.b.Status == 2 && q.a.FromType != 2 && q.b.VestInOrg!=2);
             if (!string.IsNullOrWhiteSpace(req.QryStatusBar.ToString()) && req.QryStatusBar != 0)
             {
                 if (req.QryStatusBar == 1)
@@ -827,18 +827,20 @@ namespace OpenAuth.App
                 var userid = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(req.AppUserId)).Select(u => u.UserID).FirstOrDefaultAsync();
                 loginUser= await UnitWork.Find<User>(u => u.Id.Equals(userid)).FirstOrDefaultAsync();
             }
+            req.Supervisor = "樊静涛";//默认售后主管为E3主管
             var d = await _businessPartnerApp.GetDetails(req.CustomerId.ToUpper());
             var obj = req.MapTo<ServiceOrder>();
             obj.CustomerId = req.CustomerId.ToUpper();
             obj.TerminalCustomerId = req.TerminalCustomerId.ToUpper();
-            obj.RecepUserName = loginContext.User.Name;
-            obj.RecepUserId = loginContext.User.Id;
-            obj.CreateUserId = loginContext.User.Id;
+            obj.RecepUserName = loginUser.Name;
+            obj.RecepUserId = loginUser.Id;
+            obj.CreateUserId = loginUser.Id;
             obj.Status = 2;
             obj.SalesMan = d.SlpName;
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
             obj.FromId = 7;
             obj.VestInOrg = 2;
+            obj.Supervisor = req.Supervisor;
             //obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(req.Supervisor)))?.Id;
             var workOrders = obj.ServiceWorkOrders.Select(s => new { s.ManufacturerSerialNumber, s.FromTheme }).ToList();
@@ -866,14 +868,14 @@ namespace OpenAuth.App
             //}
             //var AppUser = await UnitWork.Find<AppUserMap>(s => s.UserID == obj.SupervisorId).Include(s => s.User).FirstOrDefaultAsync();
             var AppUserId = req.AppUserId;
-            if (req.AppUserId != null) 
+            if (req.AppUserId == null) 
             {
                 AppUserId = await UnitWork.Find<AppUserMap>(s => s.UserID == loginUser.Id).Select(s => s.AppUserId).FirstOrDefaultAsync();
             }
             obj.ServiceWorkOrders.ForEach(s =>
             {
                 s.SubmitDate = DateTime.Now;
-                s.SubmitUserId = loginContext.User.Id;
+                s.SubmitUserId = loginUser.Id;
                 s.Status = 2;
                 s.CurrentUserNsapId = loginUser.Id;
                 s.CurrentUserId = AppUserId;
@@ -926,9 +928,10 @@ namespace OpenAuth.App
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.Supervisor.Contains(req.QrySupervisor))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryVestInOrg),q=>q.VestInOrg== Convert.ToInt32(req.QryVestInOrg))
                 .Where(q => ids.Contains(q.Id) && q.Status == 2);
 
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.User.Account.Equals("wanghaitao") && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看服务ID")))
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("工程主管")) && !loginContext.User.Account.Equals("wanghaitao") && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看服务ID")))
             {
                 if (loginContext.Roles.Any(r => r.Name.Equals("售后文员")))
                 {
@@ -959,6 +962,7 @@ namespace OpenAuth.App
                 q.SalesMan,
                 TechName = "",
                 q.U_SAP_ID,
+                q.VestInOrg,
                 ServiceStatus = q.Status,
                 ServiceCreateTime = q.CreateTime,
                 ServiceWorkOrders = q.ServiceWorkOrders.Where(a => (string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId) || a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
@@ -1012,7 +1016,7 @@ namespace OpenAuth.App
                          .WhereIf(req.QryMaterialTypes != null && req.QryMaterialTypes.Count > 0, q => req.QryMaterialTypes.Contains(q.a.MaterialCode == "无序列号" ? "无序列号" : q.a.MaterialCode.Substring(0, q.a.MaterialCode.IndexOf("-"))))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.b.Supervisor.Contains(req.QrySupervisor))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QryMaterialCode), q => q.a.MaterialCode.Contains(req.QryMaterialCode))
-                         .Where(q => q.b.U_SAP_ID != null && q.b.Status == 2 && q.a.FromType != 2);
+                         .Where(q => q.b.U_SAP_ID != null && q.b.Status == 2 && q.a.FromType != 2 && q.b.VestInOrg!=2);
 
             if (!string.IsNullOrWhiteSpace(req.QryStatusBar.ToString()) && req.QryStatusBar != 0)
             {
@@ -1100,6 +1104,7 @@ namespace OpenAuth.App
                     s.NewestContactTel,
                     s.U_SAP_ID,
                     s.CreateTime,
+                    s.VestInOrg,
                     IsWarning = ((TimeSpan)(DateTime.Now - s.CreateTime)).Days <= 5 ? true : false,
                     Day=5
                 })
@@ -1118,6 +1123,7 @@ namespace OpenAuth.App
                     s.NewestContactTel,
                     s.U_SAP_ID,
                     s.CreateTime,
+                    s.VestInOrg,
                     IsWarning = ((TimeSpan)(DateTime.Now - s.CreateTime)).Days <= 5 ? true : false,
                     Day = 5
                 })

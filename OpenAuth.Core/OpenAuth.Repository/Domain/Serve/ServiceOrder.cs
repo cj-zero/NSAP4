@@ -249,11 +249,6 @@ namespace OpenAuth.Repository.Domain
         [Description("归属部门")]
         public int? VestInOrg { get; set; }
         
-        /// <summary>
-        /// 撤回备注
-        /// </summary>
-        [Description("撤回备注")]
-        public string Remark { get; set; }
         
         /// <summary>
         /// 服务单关联的工单

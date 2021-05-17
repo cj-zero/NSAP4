@@ -105,14 +105,34 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         #endregion
-        //修改
+        ////修改
+        //[HttpPost]
+        //public Response Update(AddOrUpdateCompletionReportReq obj)
+        //{
+        //    var result = new Response();
+        //    try
+        //    {
+        //        _app.Update(obj);
+
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Code = 500;
+        //        result.Message = ex.InnerException?.Message ?? ex.Message;
+        //        Log.Logger.Error($"地址：{Request.Path}，参数：{obj.ToJson()}, 错误：{result.Message}");
+        //    }
+
+        //    return result;
+        //}
+
+        //修改(E3)
         [HttpPost]
-        public Response Update(AddOrUpdateCompletionReportReq obj)
+        public async Task<Response> CISEUpdate(AddOrUpdateCompletionReportReq obj)
         {
             var result = new Response();
             try
             {
-                _app.Update(obj);
+                await _app.CISEUpdate(obj);
 
             }
             catch (Exception ex)
@@ -124,14 +144,15 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
+       
 
         /// <summary>
         /// 加载列表
         /// </summary>
         [HttpGet]
-        public TableData Load([FromQuery] QueryCompletionReportListReq request)
+        public async Task<TableData> Load([FromQuery] QueryCompletionReportListReq request)
         {
-            return _app.Load(request);
+            return await _app.Load(request);
         }
 
         /// <summary>
@@ -180,7 +201,27 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
+        /// <summary>
+        /// 工程部提交完工报告
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> CISEAdd(AddOrUpdateCompletionReportReq obj)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.CISEAdd(obj);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
 
+            return result;
+        }
         /// <summary>
         /// 获取完工报告详情Web
         /// </summary>

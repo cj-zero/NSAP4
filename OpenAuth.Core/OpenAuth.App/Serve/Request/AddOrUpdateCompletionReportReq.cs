@@ -12,7 +12,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
+using OpenAuth.App.Serve.Request;
 using OpenAuth.Repository.Core;
+using OpenAuth.Repository.Domain.Serve;
 
 namespace OpenAuth.App.Request
 {
@@ -145,9 +147,11 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 技术员Id
         /// </summary>
-        public int CurrentUserId { get; set; }
+        public int? CurrentUserId { get; set; }
         //todo:添加自己的请求字段
-        //todo:添加自己的请求字段
+        /// <summary>
+        /// 图片
+        /// </summary>
         public List<FileBind> Pictures { get; set; }
 
         /// <summary>
@@ -212,5 +216,34 @@ namespace OpenAuth.App.Request
         /// 是否转派
         /// </summary>
         public int IsRedeploy { get; set; }
+
+
+        /// <summary>
+        /// 故障现象（E3）
+        /// </summary>
+        public string  FaultPhenomenon { get; set; }
+
+        // <summary>
+        /// 不良原因（E3）
+        /// </summary>
+        public string CauseOfDefect { get; set; }
+
+        /// <summary>
+        /// 更换元件位置（E3）
+        /// </summary>
+        public string ChangeTheLocation { get; set; }
+
+        /// <summary>
+        /// 完工报告关联的更换物料和数量
+        /// </summary>
+        public virtual List<ChangeTheMaterial> ChangeTheMaterials { get; set; }
+        /// <summary>
+        /// 删除文件id
+        /// </summary>
+        public List<string> DelFileIds { get; set; }
+        /// <summary>
+        /// 删除更换零件id
+        /// </summary>
+        public List<string> DelChangeTheMaterialIds { get; set; }
     }
 }

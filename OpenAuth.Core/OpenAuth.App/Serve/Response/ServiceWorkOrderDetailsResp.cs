@@ -22,7 +22,7 @@ namespace OpenAuth.App.Response
         /// <summary>
         /// 优先级 4-紧急 3-高 2-中 1-低
         /// </summary>
-        public int? Priority { get; set; }
+        public string Priority { get; set; }
         /// <summary>
         /// 服务类型 1-免费 2-收费
         /// </summary>
@@ -58,7 +58,7 @@ namespace OpenAuth.App.Response
         /// <summary>
         /// 呼叫状态 1-待处理 2-已排配 3-已外出 4-已挂起 5-已接收 6-已解决 7-已回访
         /// </summary>
-        public int? Status { get; set; }
+        public string Status { get; set; }
         /// <summary>
         /// 呼叫主题
         /// </summary>
@@ -67,7 +67,7 @@ namespace OpenAuth.App.Response
         /// 呼叫来源  1-电话 2-APP 
         /// </summary>
         //[Browsable(false)]
-        public int? FromId { get; set; }
+        public string FromId { get; set; }
         /// <summary>
         /// 问题类型Id
         /// </summary>
@@ -80,7 +80,7 @@ namespace OpenAuth.App.Response
         /// <summary>
         /// 呼叫类型1-提交呼叫 2-在线解答（已解决）
         /// </summary>
-        public int? FromType { get; set; }
+        public string FromType { get; set; }
         /// <summary>
         /// 物料编码
         /// </summary>
@@ -148,9 +148,6 @@ namespace OpenAuth.App.Response
         /// </summary>
         public int? ServiceMode { get; set; }
 
-        /// <summary>
-        /// 服务单Id
-        /// </summary>
         /// <summary>
         /// 服务单
         /// </summary>
