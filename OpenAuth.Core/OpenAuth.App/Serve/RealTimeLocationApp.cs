@@ -213,7 +213,8 @@ namespace OpenAuth.App
                 return result;
             }
 
-            var sorder = await UnitWork.Find<ServiceWorkOrder>(c => c.Status < 7).Where(c=>c.CurrentUserNsapId==userId).Select(c => c.ServiceOrderId).Take(3).ToArrayAsync();
+            var sorderwork = await UnitWork.Find<ServiceWorkOrder>(c => c.Status < 7).Where(c=>c.CurrentUserNsapId==userId).Select(c => c.ServiceOrderId).Distinct().ToListAsync();
+            var sorder = await UnitWork.Find<ServiceOrder>(c => sorderwork.Contains(c.Id)).Take(3).Select(c => c.U_SAP_ID).ToArrayAsync();
             var orderIds = sorder.Length > 0 ? string.Join(",", sorder) : "";
 
             req.StartDate = req.StartDate ?? DateTime.Now;

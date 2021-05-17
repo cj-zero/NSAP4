@@ -138,7 +138,7 @@ namespace OpenAuth.App.Serve
 
             if (userList.Count>0)
             {
-                var users = await _userManagerApp.LoadByRoleName(new string[] { "呼叫中心", "总经理" });
+                var users = await _userManagerApp.LoadByRoleName(new string[] { "呼叫中心"});
                 var message = $"技术员:{string.Join(",", userList.ToArray())}已离线一小时，请及时处理。";
                 foreach (var user in users)
                 {
@@ -158,7 +158,7 @@ namespace OpenAuth.App.Serve
                     });
                 }
 
-                await _hubContext.Clients.Groups(new List<string>() { "呼叫中心", "总经理" }).SendAsync("TechnicianOfflineMessage", "系统", message);//离线消息
+                await _hubContext.Clients.Groups(new List<string>() { "呼叫中心"}).SendAsync("TechnicianOfflineMessage", "系统", message);//离线消息
             }
             #endregion
 
