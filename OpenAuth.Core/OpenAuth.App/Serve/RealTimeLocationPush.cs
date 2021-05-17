@@ -162,7 +162,7 @@ namespace OpenAuth.App.Serve
             }
             #endregion
 
-            await _hubContext.Clients.Groups(new List<string>() { "呼叫中心", "总经理" }).SendAsync("SmartScreenInfo", "系统", da1.ToList());//大屏数据
+            await _hubContext.Clients.Groups(new List<string>() { "呼叫中心"}).SendAsync("SmartScreenInfo", "系统", da1.ToList());//大屏数据
         }
     }
 
