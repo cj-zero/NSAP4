@@ -2463,7 +2463,7 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         public async Task SyncSalesOrderStatus()
         {
-            var salesOrderIds = await UnitWork.Find<Quotation>(q => string.IsNullOrWhiteSpace(q.SalesOrderId.ToString()) && q.QuotationStatus != -1M).Select(q => q.SalesOrderId).ToListAsync();
+            var salesOrderIds = await UnitWork.Find<Quotation>(q => string.IsNullOrWhiteSpace(q.SalesOrderId.ToString()) && q.QuotationStatus != -1M && q.CreateTime>Convert.ToDateTime("2021.05.10")).Select(q => q.SalesOrderId).ToListAsync();
             var oRDRS = await UnitWork.Find<ORDR>(o => salesOrderIds.Contains(o.DocEntry) && (o.DocStatus == "C" || o.CANCELED == "Y")).Select(o => new { o.DocEntry, o.DocStatus, o.CANCELED }).ToListAsync();
             var cANCELEDORDR = oRDRS.Where(o => o.CANCELED == "Y").ToList();
             if (cANCELEDORDR.Count() > 0)
