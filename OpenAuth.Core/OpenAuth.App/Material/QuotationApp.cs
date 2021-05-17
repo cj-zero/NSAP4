@@ -679,6 +679,31 @@ namespace OpenAuth.App.Material
                 materialCodes.AddRange(q.QuotationMaterials.Select(m => m.MaterialCode).ToList());
             });
             var ItemCodes = await UnitWork.Find<OITW>(o => materialCodes.Contains(o.ItemCode) && WhsCode.Contains(o.WhsCode)).Select(o => new { o.ItemCode, o.WhsCode, o.OnHand }).ToListAsync();
+            List<QuotationMaterialReq> quotationMaterials = new List<QuotationMaterialReq>();
+            if (IsUpdate != null && (bool)IsUpdate)
+            {
+                var oITMS = await UnitWork.Find<OITM>(o => materialCodes.Contains(o.ItemCode)).Select(o => new QuotationMaterialReq { MaterialCode = o.ItemCode, SalesPrice = o.LastPurPrc }).ToListAsync();
+                var MaterialPrices = await UnitWork.Find<MaterialPrice>(m => materialCodes.Contains(m.MaterialCode)).ToListAsync();
+                oITMS.ForEach(o =>
+                {
+                    var Prices = MaterialPrices.Where(m => m.MaterialCode.Equals(o.MaterialCode)).FirstOrDefault();
+                    //4.0存在物料价格，取4.0的价格为售后结算价，销售价取售后结算价*销售价倍数，不存在就当前进货价*1.2 为售后结算价。销售价为售后结算价*3
+                    if (Prices != null)
+                    {
+                        o.UnitPrice = Prices?.SettlementPrice == null || Prices?.SettlementPrice <= 0 ? o.SalesPrice * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
+
+                        o.UnitPrice = decimal.Parse(o.UnitPrice.ToString("#0.0000"));
+                        o.SalesPrice = o.UnitPrice * Prices.SalesMultiple;
+                    }
+                    else
+                    {
+                        o.UnitPrice = o.SalesPrice * 1.2M;
+                        o.UnitPrice = decimal.Parse(o.UnitPrice.ToString("#0.0000"));
+                        o.SalesPrice = o.UnitPrice * 3;
+                    }
+                });
+                quotationMaterials.AddRange(oITMS.ToList());
+            }
             quotationsMap.QuotationProducts.ForEach(p =>
                 p.QuotationMaterials.ForEach(m =>
                 {
@@ -687,6 +712,8 @@ namespace OpenAuth.App.Material
                     m.TotalPrice = m.TotalPrice == 0 && m.MaterialType != "3" ? decimal.Parse(Convert.ToDecimal((m.UnitPrice * 3 * (m.Discount / 100) * m.Count)).ToString("#0.00")) : m.TotalPrice;
                     m.SalesPrice = m.SalesPrice == 0 && m.MaterialType != "3" ? decimal.Parse(Convert.ToDecimal(m.UnitPrice * 3).ToString("#0.00")) : m.SalesPrice;
                     if (m.DiscountPrices < 0) m.DiscountPrices = m.SalesPrice == 0 && m.MaterialType != "3" ? decimal.Parse(Convert.ToDecimal(m.UnitPrice * 3 * (m.Discount / 100)).ToString("#0.00")) : decimal.Parse(Convert.ToDecimal(m.SalesPrice * (m.Discount / 100)).ToString("#0.00"));
+                    if (IsUpdate != null && (bool)IsUpdate) m.UnitPrice = quotationMaterials.Where(q => q.MaterialCode.Equals(m.MaterialCode)).FirstOrDefault()?.UnitPrice;
+                    if (IsUpdate != null && (bool)IsUpdate) m.SalesPrice = quotationMaterials.Where(q => q.MaterialCode.Equals(m.MaterialCode)).FirstOrDefault()?.SalesPrice;
                 }
                 )
             );
@@ -1948,7 +1975,7 @@ namespace OpenAuth.App.Material
                     {
                         throw new Exception("金额有误请重新输入");
                     }
-
+                    m.Discount= m.MaterialType != 3 ? m.Discount : 100;
                     m.SalesPrice = m.MaterialType != 3 ? m.SalesPrice : 0;
                     m.DiscountPrices = m.MaterialType != 3 ? m.DiscountPrices : 0;
                     m.TotalPrice = m.MaterialType != 3 ? Convert.ToDecimal(Convert.ToDecimal(m.DiscountPrices * m.Count).ToString("#0.00")) : 0;

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using OpenAuth.App.Serve;
 using OpenAuth.Repository.Domain;
 using Serilog;
 
@@ -18,9 +19,11 @@ namespace OpenAuth.WebApi.Controllers
     public class RealTimeLocationsController : ControllerBase
     {
         private readonly RealTimeLocationApp _realTimeLocationApp;
-        public RealTimeLocationsController(RealTimeLocationApp realTimeLocationApp)
+        private readonly RealTimeLocationPush _realTimeLocationPush;
+        public RealTimeLocationsController(RealTimeLocationApp realTimeLocationApp, RealTimeLocationPush realTimeLocationPush)
         {
             _realTimeLocationApp = realTimeLocationApp;
+            _realTimeLocationPush = realTimeLocationPush;
         }
 
         /// <summary>
@@ -86,6 +89,19 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 查询技术员轨迹
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> LoadTrajectory([FromQuery] QueryLocationInfoReq req)
+        {
+            var result = new TableData();
+            result = await _realTimeLocationApp.HistoryTrajectory(req);
+            return result;
+        }
+
+        /// <summary>
         ///获取所有客户
         /// </summary>
         /// <returns></returns>
@@ -104,5 +120,6 @@ namespace OpenAuth.WebApi.Controllers
             await _realTimeLocationApp.UpdateLoca();
             return result;
         }
+
     }
 }

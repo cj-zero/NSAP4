@@ -138,14 +138,14 @@ namespace OpenAuth.App
                          where a.sbo_id.Equals(1) && a.CardCode.Equals(cardCode)
                          select new { a, b };
             var objslp = await objslpstr.Select(o => new { o.a.SlpCode, o.b.SlpName,o.a.sbo_id }).FirstOrDefaultAsync();
-            if (objslp.SlpCode > 0)
+            if (objslp!=null && objslp.SlpCode > 0)
             {
                 var objuser = from a in UnitWork.Find<sbo_user>(null)
                               join b in UnitWork.Find<base_user>(null) on a.user_id equals b.user_id into ab
                               from b in ab.DefaultIfEmpty()
                               select new { a, b };
                 var telobj = await objuser.Where(o => o.a.sbo_id==objslp.sbo_id && o.a.sale_id==objslp.SlpCode && o.b.user_nm.Equals(objslp.SlpName)).Select(q => q.b.mobile).FirstOrDefaultAsync();
-                return telobj.ToString();
+                return telobj==0? "":telobj.ToString();
             }
             else
             {
