@@ -307,6 +307,21 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 多个序列号获取证书
+        /// </summary>
+        /// <param name="serialNumber"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetCertNoByMultiNum(List<string> serialNumber)
+        {
+            TableData result = new TableData();
+            var query =await( from a in UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId))
+                        join b in UnitWork.Find<PcPlc>(c => serialNumber.Contains(c.Guid) && c.ExpirationDate >= DateTime.Now)
+                        on a.Id equals b.NwcaliBaseInfoId
+                        select new { CertNo = a.CertificateNumber, No = b.No, TesterModel = a.TesterModel, CalibrationDate = a.Time, ExpirationDate = a.ExpirationDate }).ToListAsync();
+            result.Data = query;
+            return result;
+        }
+        /// <summary>
         /// 证书审批操作
         /// </summary>
         /// <param name="req"></param>
