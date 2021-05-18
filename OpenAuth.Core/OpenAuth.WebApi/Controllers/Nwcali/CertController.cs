@@ -497,6 +497,19 @@ namespace OpenAuth.WebApi.Controllers
             }
             return Ok(certNos);
         }
+
+        /// <summary>
+        /// APP批量获取证书
+        /// </summary>
+        /// <param name="serialNumber"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> GetCertNoByMultiNum(List<string> serialNumber)
+        {
+            TableData res = new TableData();
+            res = await _certinfoApp.GetCertNoByMultiNum(serialNumber);
+            return res;
+        }
         /// <summary>
         /// 构建证书模板参数
         /// </summary>
