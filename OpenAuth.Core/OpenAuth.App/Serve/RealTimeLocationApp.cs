@@ -125,6 +125,7 @@ namespace OpenAuth.App
                                     .ToListAsync();
             userIds.AddRange(noComplete);
 
+            DateTime start = DateTime.Now.Date;
             DateTime end = Convert.ToDateTime(DateTime.Now.AddDays(1).ToString("D").ToString()).AddSeconds(-1);
             DateTime monthAgo = Convert.ToDateTime(DateTime.Now.AddDays(-30).ToString("D").ToString());
             var pppUserMap = await UnitWork.Find<AppUserMap>(null).ToListAsync();
@@ -146,8 +147,6 @@ namespace OpenAuth.App
              {
                  //当天是否有定位记录
                  var currentLoca = locaotionInfoHistory.Where(q => q.UserID.Equals(c.Id)).FirstOrDefault();
-                 var currentDate = locaotionInfoHistory.Where(q => q.UserID.Equals(c.Id) && q.a.CreateTime.ToString("yyyy-MM-dd").Equals(DateTime.Now.ToString("yyyy-MM-dd"))).ToList();
-
                  var onlineState = "离线";
                  var interv = "30天前";
                  decimal? longi = 0, lati = 0;
@@ -182,9 +181,6 @@ namespace OpenAuth.App
                      Longitude = longi,
                      Latitude = lati,
                      TotalHour= totalHour,
-                     //ServiceOrderId = orderIds,
-                     SignInDate = currentDate.Count > 0 ? currentDate.Min(q => q.a.CreateTime) : (DateTime?)null,
-                     SignOutDate = currentDate.Count > 1 ? currentDate.Max(q => q.a.CreateTime) : (DateTime?)null
                  };
 
              });
@@ -227,7 +223,8 @@ namespace OpenAuth.App
                                             .Where(c =>(c.CreateTime >= start && c.CreateTime <= end) && c.AppUserId==pppUserMap.AppUserId)
                                             .OrderByDescending(c => c.CreateTime)
                                             .ToListAsync();
-
+            //当天定位数据
+            var currentDate = await UnitWork.FromSql<RealTimeLocation>(@$"SELECT * from nsap4_serve.realtimelocation where AppUserId={pppUserMap.AppUserId} AND TO_DAYS(CreateTime)=TO_DAYS(NOW())").ToListAsync();
 
             var data = realTimeLocation?.GroupBy(c=>c.CreateTime.ToString("yyyy-MM-dd")).Select(c=>new Trajectory
             {
@@ -235,9 +232,12 @@ namespace OpenAuth.App
                 Pos = c.Select(p => new Position { Longitude = p.BaiduLongitude, Latitude = p.BaiduLatitude }).ToList()
             }).ToList();
 
+
             HistoryPositions history = new HistoryPositions();
             history.ServiceOrderId = orderIds;
             history.Trajectory = data;
+            history.SignInDate = currentDate.Count > 0 ? currentDate.Min(q => q.CreateTime) : (DateTime?)null;
+            history.SignOutDate = currentDate.Count > 1 ? currentDate.Max(q => q.CreateTime) : (DateTime?)null;
 
 
             result.Data = history;

@@ -76,7 +76,7 @@ namespace OpenAuth.App.Serve
             {
                 //当天是否有定位记录
                 var currentLoca = locaotionInfoHistory.Where(q => q.UserID.Equals(c.Id)).FirstOrDefault();
-                var currentDate = locaotionInfoHistory.Where(q => q.UserID.Equals(c.Id) && q.a.CreateTime.ToString("yyyy-MM-dd").Equals(DateTime.Now.ToString("yyyy-MM-dd"))).ToList();
+                //var currentDate = locaotionInfoHistory.Where(q => q.UserID.Equals(c.Id) && q.a.CreateTime.ToString("yyyy-MM-dd").Equals(DateTime.Now.ToString("yyyy-MM-dd"))).ToList();
 
                 var onlineState = "离线";
                 var interv = "30天前";
@@ -111,9 +111,7 @@ namespace OpenAuth.App.Serve
                     Interval = interv,
                     Longitude = longi,
                     Latitude = lati,
-                    TotalHour = totalHour,
-                    SignInDate = currentDate.Count > 0 ? currentDate.Min(q => q.a.CreateTime) : (DateTime?)null,
-                    SignOutDate = currentDate.Count > 1 ? currentDate.Max(q => q.a.CreateTime) : (DateTime?)null
+                    TotalHour = totalHour
                 };
 
             });
