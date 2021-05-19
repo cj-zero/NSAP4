@@ -46,6 +46,7 @@ namespace OpenAuth.Repository.Domain
             this.AddressDesignator = string.Empty;
             this.TerminalCustomerId = string.Empty;
             this.Remark = string.Empty;
+            this.VestInOrg = 1;
         }
 
         /// <summary>

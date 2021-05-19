@@ -288,7 +288,7 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
         /// <summary>
-        /// 客服新建服务单
+        /// 工程部新建服务单
         /// </summary>
         /// <returns></returns>
         [HttpPost]

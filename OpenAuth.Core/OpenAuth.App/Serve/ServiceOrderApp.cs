@@ -825,6 +825,10 @@ namespace OpenAuth.App
             if (loginUser.Account == Define.USERAPP && req.AppUserId != null) 
             {
                 var userid = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(req.AppUserId)).Select(u => u.UserID).FirstOrDefaultAsync();
+                if (userid == null) 
+                {
+                    throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+                }
                 loginUser= await UnitWork.Find<User>(u => u.Id.Equals(userid)).FirstOrDefaultAsync();
             }
             req.Supervisor = "樊静涛";//默认售后主管为E3主管
@@ -838,9 +842,10 @@ namespace OpenAuth.App
             obj.Status = 2;
             obj.SalesMan = d.SlpName;
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
-            obj.FromId = 7;
             obj.VestInOrg = 2;
             obj.Supervisor = req.Supervisor;
+            obj.NewestContacter= loginUser.Name;
+            obj.Contacter= loginUser.Name;
             //obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(req.Supervisor)))?.Id;
             var workOrders = obj.ServiceWorkOrders.Select(s => new { s.ManufacturerSerialNumber, s.FromTheme }).ToList();
@@ -890,7 +895,7 @@ namespace OpenAuth.App
             await UnitWork.BatchAddAsync(pictures.ToArray());
             await UnitWork.SaveAsync();
 
-            await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"工程部:{loginContext.User.Name}创建服务单", ActionType = "创建服务单", ServiceOrderId = e.Id });
+            await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"工程部:{loginUser.Name}创建服务单", ActionType = "创建服务单", ServiceOrderId = e.Id });
             #region 同步到SAP 并拿到服务单主键
             _capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
             #endregion

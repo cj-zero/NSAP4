@@ -125,7 +125,11 @@ namespace OpenAuth.WebApi.Controllers
         //    return result;
         //}
 
-        //修改(E3)
+        /// <summary>
+        /// 工程主管修改完工报告
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<Response> CISEUpdate(AddOrUpdateCompletionReportReq obj)
         {

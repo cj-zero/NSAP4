@@ -103,7 +103,7 @@ namespace OpenAuth.App.Request
         /// </summary>
         public decimal? Latitude { get; set; }
         /// <summary>
-        /// 呼叫来源  1-电话 2-APP 
+        /// 呼叫来源
         /// </summary>
         //[Browsable(false)]
         public int? FromId { get; set; }
