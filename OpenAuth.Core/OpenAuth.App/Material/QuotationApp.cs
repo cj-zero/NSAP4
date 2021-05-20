@@ -1077,7 +1077,8 @@ namespace OpenAuth.App.Material
                             CreateUser = loginUser.Name,
                             CreateUserId = loginUser.Id,
                             CreateTime = DateTime.Now,
-                            QuotationId = QuotationObj.Id
+                            QuotationId = QuotationObj.Id,
+                            ApprovalStage = "3"
                         });
                         await UnitWork.SaveAsync();
                         #endregion
@@ -1333,7 +1334,8 @@ namespace OpenAuth.App.Material
                             CreateUser = loginUser.Name,
                             CreateUserId = loginUser.Id,
                             CreateTime = DateTime.Now,
-                            QuotationId = QuotationObj.Id
+                            QuotationId = QuotationObj.Id,
+                            ApprovalStage = "3"
                         });
                         await UnitWork.SaveAsync();
 
@@ -1380,6 +1382,7 @@ namespace OpenAuth.App.Material
             qoh.QuotationId = QuotationId;
             qoh.ApprovalResult = "撤回";
             qoh.Action = "撤回报价单";
+            qoh.ApprovalStage = "2";
             qoh.IntervalTime = selqoh != null ? Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds) : 0;
             await UnitWork.AddAsync<QuotationOperationHistory>(qoh);
             await UnitWork.SaveAsync();
@@ -1663,6 +1666,7 @@ namespace OpenAuth.App.Material
                 obj.QuotationStatus = 1;
                 qoh.ApprovalResult = "驳回";
                 obj.FlowInstanceId = "";
+                qoh.ApprovalStage = "1";
                 var delQuotationMergeMaterial = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(obj.Id)).ToListAsync();
                 await UnitWork.BatchDeleteAsync<QuotationMergeMaterial>(delQuotationMergeMaterial.ToArray());
             }
