@@ -225,6 +225,12 @@ namespace OpenAuth.App.Material.Request
         public int? TravelExpenseManHour { get; set; }
 
         /// <summary>
+        ///应收发票DocEntry
+        /// </summary>
+        public int? InvoiceDocEntry { get; set; }
+
+
+        /// <summary>
         /// 报价单设备列表
         /// </summary>
         public virtual List<QuotationProductReq> QuotationProducts { get; set; }

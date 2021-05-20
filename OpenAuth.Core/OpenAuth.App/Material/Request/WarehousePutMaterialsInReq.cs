@@ -16,6 +16,16 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public string ExpressageId { get; set; }
 
+        /// <summary>
+        ///销售单号
+        /// </summary>
+        public int? SalesOrderId { get; set; }
+
+        /// <summary>
+        ///应收发票DocEntry
+        /// </summary>
+        public int? InvoiceDocEntry { get; set; }
+
         public List<PutInMaterial> putInMaterials { get; set; }
     }
     public class PutInMaterial

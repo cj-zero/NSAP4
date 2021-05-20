@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository.Interface;
+using Sap.Handler.Sap;
 using Sap.Handler.Service.Request;
 using SAPbobsCOM;
 using Serilog;
@@ -59,7 +60,8 @@ namespace Sap.Handler.Service
 
                     dts.CardCode = serviceOrder.TerminalCustomerId;
 
-                    dts.DocDate = quotation.CreateTime;
+                    dts.DocDate = DateTime.Now;
+                    dts.TaxDate= DateTime.Now;
 
                     dts.Comments = quotation.Remark +"基于销售订单"+ quotation.SalesOrderId;
 
@@ -259,7 +261,7 @@ namespace Sap.Handler.Service
 
                         dts.Lines.Price = double.Parse(string.IsNullOrWhiteSpace(materials.DiscountPrices.ToString()) ? "0" : materials.DiscountPrices.ToString());
 
-                        dts.Lines.LineTotal = string.IsNullOrWhiteSpace(materials.TotalPrice.ToString()) ? 0.00 : double.Parse(materials.TotalPrice.ToString());//总计
+                        dts.Lines.LineTotal = double.Parse((materials.DiscountPrices * dln1.SentQuantity).ToString("#0.00"));//string.IsNullOrWhiteSpace(materials.TotalPrice.ToString()) ? 0.00 : double.Parse(materials.TotalPrice.ToString());//总计
                         //dts.Lines.DiscountPercent = string.IsNullOrWhiteSpace(materials.Discount.ToString()) ? 0 : Convert.ToDouble(materials.Discount);     //折扣
 
                         //if (!string.IsNullOrEmpty(dln1.U_PDXX) && (dln1.U_PDXX == "AC220" || dln1.U_PDXX == "AC380" || dln1.U_PDXX == "AC110"))
@@ -286,6 +288,7 @@ namespace Sap.Handler.Service
                     }
                     else
                     {
+                        company.GetNewObjectCode(out docNum);
                         Log.Logger.Warning("添加销售交货到SAP成功");
                     }
                 }
@@ -304,7 +307,88 @@ namespace Sap.Handler.Service
             {
                 throw new Exception(eMesg.ToString());
             }
+            try
+            {
+                await HandleSalesOfDeliveryERP(int.Parse(docNum));
+            }
+            catch (Exception e)
+            {
+
+                Log.Logger.Warning(e.Message);
+            }
+            
         }
 
+        [CapSubscribe("Serve.SalesOfDelivery.ERPCreate")]
+        public async Task HandleSalesOfDeliveryERP(int? docNum)
+        {
+            string Message = "";
+            try
+            {
+                var ODLNmodel = await UnitWork.Find<ODLN>(o => o.DocEntry == docNum).ToListAsync();
+                var DLN1model = await UnitWork.Find<DLN1>(o => o.DocEntry == docNum).ToListAsync();
+                foreach (var item in ODLNmodel)
+                {
+                    if (item.PartSupply == "true") { item.PartSupply = "Y"; } else { item.PartSupply = "N"; }
+
+                    if (item.DocCur == "") { item.DocCur = "RMB"; }
+
+                    //if (dtRowODLN.Rows[0][3].ToString() == "") { model.DocRate = 1; }
+
+                    if (item.DocTotal == null) { item.DocTotal = 0; }
+
+                    if (item.OwnerCode == null) { item.OwnerCode = -1; }
+
+                    if (item.SlpCode == null) { item.SlpCode = -1; }
+                }
+
+
+                List<sale_odln> sale_Odln = ODLNmodel.MapToList<sale_odln>();
+                List<sale_dln1> sale_Dln1 = DLN1model.MapToList<sale_dln1>();
+                sale_Odln.ForEach(s => s.sbo_id = Define.SBO_ID);
+                sale_Dln1.ForEach(s => s.sbo_id = Define.SBO_ID);
+                await UnitWork.BatchAddAsync<sale_odln, int>(sale_Odln.ToArray());
+                await UnitWork.BatchAddAsync<sale_dln1, int>(sale_Dln1.ToArray());
+
+                List<string> itemcodes = sale_Dln1.Select(s => s.ItemCode).ToList();
+                List<string> WhsCodes = sale_Dln1.Select(s => s.WhsCode).ToList();
+                var oitwList = await UnitWork.Find<OITW>(o => itemcodes.Contains(o.ItemCode) && WhsCodes.Contains(o.WhsCode)).Select(o => new { o.ItemCode, o.IsCommited, o.OnHand, o.OnOrder }).ToListAsync();
+                foreach (var item in oitwList)
+                {
+                    var WhsCode = sale_Dln1.Where(q => q.ItemCode.Equals(item.ItemCode)).FirstOrDefault().WhsCode;
+                    await UnitWork.UpdateAsync<store_oitw>(o => o.sbo_id == Define.SBO_ID && o.ItemCode == item.ItemCode && o.WhsCode == WhsCode, o => new store_oitw
+                    {
+                        OnHand = item.OnHand,
+                        IsCommited = item.IsCommited,
+                        OnOrder = item.OnOrder
+                    });
+                }
+                var oitmList = await UnitWork.Find<OITM>(o => itemcodes.Contains(o.ItemCode)).Select(o => new { o.ItemCode, o.IsCommited, o.OnHand, o.OnOrder, o.LastPurCur, o.LastPurPrc, o.LastPurDat, o.UpdateDate }).ToListAsync();
+                foreach (var item in oitmList)
+                {
+                    await UnitWork.UpdateAsync<store_oitm>(o => o.sbo_id == Define.SBO_ID && o.ItemCode == item.ItemCode, o => new store_oitm
+                    {
+                        OnHand = item.OnHand,
+                        IsCommited = item.IsCommited,
+                        OnOrder = item.OnOrder,
+                        LastPurDat = item.LastPurDat,
+                        LastPurPrc = item.LastPurPrc,
+                        LastPurCur = item.LastPurCur,
+                        UpdateDate = item.UpdateDate
+                    });
+                }
+                await UnitWork.SaveAsync();
+                Log.Logger.Warning("添加销售交货到erp3.0成功");
+            }
+            catch (Exception e)
+            {
+                Message = $"添加销售交货:{docNum}到erp3.0时异常！错误信息：" + e.Message;
+                Log.Logger.Warning($"添加销售交货:{docNum}到erp3.0时异常！错误信息：" + e.Message);
+            }
+            if (Message != "") 
+            {
+                throw new Exception(Message.ToString());
+            }
+        }
     }
 }

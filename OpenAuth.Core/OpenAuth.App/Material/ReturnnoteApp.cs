@@ -593,7 +593,6 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> GetServiceOrderInfo(PageReq req)
         {
-            Dictionary<string, dynamic> outData = new Dictionary<string, dynamic>();
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
@@ -603,18 +602,27 @@ namespace OpenAuth.App
             //查询当前技术员所有可退料服务Id
             var query = from a in UnitWork.Find<QuotationMergeMaterial>(null)
                         join b in UnitWork.Find<Quotation>(null) on a.QuotationId equals b.Id
-                        where b.CreateUserId == loginContext.User.Id && a.MaterialType == 2
-                        select new { b.ServiceOrderId };
-            var serviceorderIds = (await query.ToListAsync()).Select(s => s.ServiceOrderId).Distinct().ToList();
-            //排除已生成退料单的服务Id
-            var returnOrderIds = await UnitWork.Find<ReturnNote>(w => w.CreateUserId == loginContext.User.Id).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
-            if (returnOrderIds.Count > 0)
+                        where b.CreateUserId == loginContext.User.Id && a.MaterialType == 1 && b.QuotationStatus == 11 && b.SalesOrderId!=null
+                        select new { a,b };
+            var queryList = await query.ToListAsync();
+            var salesOrderIds = queryList.Select(s => s.b.SalesOrderId).ToList();
+            var oinvquery = from a in UnitWork.Find<sale_dln1>(null)
+                            join b in UnitWork.Find<sale_inv1>(null) on a.DocEntry equals b.BaseEntry into ab
+                            from b in ab.DefaultIfEmpty()
+                            where salesOrderIds.Contains(a.BaseEntry) && a.BaseType == 17 && b.BaseType == 15
+                            select new { a, b };
+            var oinvqueryList = await oinvquery.ToListAsync();
+            var oinvList = oinvqueryList.Select(o => new
             {
-                returnOrderIds.ForEach(f => serviceorderIds.Remove(f));
-            }
-            var data = await UnitWork.Find<ServiceOrder>(s => serviceorderIds.Contains(s.Id)).Select(s => new { s.Id, CustomerId = s.TerminalCustomerId, CustomerName = s.TerminalCustomer, Contacter = s.NewestContacter, ContactTel = s.NewestContactTel, s.U_SAP_ID }).ToListAsync();
-            result.Data = data.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
-            result.Count = data.Count;
+                SalesOrderId=o.a.BaseEntry,
+                o.b.ItemCode,
+                o.b.Quantity,
+                o.b.Dscription,
+                o.b.Price,
+                o.b.DocEntry,
+                MergeMaterialId= queryList.Where(q=>q.a.MaterialCode.Equals(o.b.ItemCode)&& q.a.DiscountPrices.ToString("#0.00") == o.b.Price.ToString()&&q.b.SalesOrderId==o.a.BaseEntry).FirstOrDefault()?.a.Id
+            });
+            result.Data = oinvList.GroupBy(o => o.DocEntry).Select(o=>new { docEntry=o.Key, oinvList=o }).ToList();
             return result;
         }
 
@@ -769,27 +777,29 @@ namespace OpenAuth.App
                     }
                 }
             }
-            //推送到SAP
-            _capBus.Publish("Serve.AfterSaleReturn.Create", new AddOrUpdateQuotationReq { QuotationMergeMaterialReqs = returnMergeMaterialReqs });
-            //更新退料明细状态
-            await UnitWork.UpdateAsync<ReturnnoteMaterial>(w => GoodDetailIds.Contains(w.Id), u => new ReturnnoteMaterial { IsGoodFinish = 1 });
-            await UnitWork.UpdateAsync<ReturnnoteMaterial>(w => SecondDetailIds.Contains(w.Id), u => new ReturnnoteMaterial { IsSecondFinish = 1 });
-            await UnitWork.SaveAsync();
-            //判断是否全部入库 仓库状态更新为已仓库入库
-            var returnnoteMaterials = await UnitWork.Find<ReturnnoteMaterial>(w => w.ExpressId == req.ExpressageId).ToListAsync();
-            var goodNotFinishCount = returnnoteMaterials.Where(w => w.GoodQty > 0 && w.IsGoodFinish == 0).ToList().Count;
-            var secondNotFinishCount = returnnoteMaterials.Where(w => w.SecondQty > 0 && w.IsSecondFinish == 0).ToList().Count;
-            if (secondNotFinishCount == 0 && goodNotFinishCount == 0)
-            {
-                await UnitWork.UpdateAsync<Expressage>(w => w.Id == req.ExpressageId, u => new Expressage { Status = 3 });
-            }
-            //判断是否所有退料都已入库
-            var isExist = (await UnitWork.Find<Expressage>(w => w.ReturnNoteId == req.ReturnNoteId && w.Status < 3).ToListAsync()).Count > 0 ? false : true;
-            if (isExist)
-            {
-                await UnitWork.UpdateAsync<ReturnNote>(w => w.Id == req.ReturnNoteId, u => new ReturnNote { IsCanClear = 1 });
-            }
-            await UnitWork.SaveAsync();
+            ////推送到SAP
+            //_capBus.Publish("Serve.AfterSaleReturn.Create", new AddOrUpdateQuotationReq { QuotationMergeMaterialReqs = returnMergeMaterialReqs });
+            ////更新退料明细状态
+            //await UnitWork.UpdateAsync<ReturnnoteMaterial>(w => GoodDetailIds.Contains(w.Id), u => new ReturnnoteMaterial { IsGoodFinish = 1 });
+            //await UnitWork.UpdateAsync<ReturnnoteMaterial>(w => SecondDetailIds.Contains(w.Id), u => new ReturnnoteMaterial { IsSecondFinish = 1 });
+            //await UnitWork.SaveAsync();
+            ////判断是否全部入库 仓库状态更新为已仓库入库
+            //var returnnoteMaterials = await UnitWork.Find<ReturnnoteMaterial>(w => w.ExpressId == req.ExpressageId).ToListAsync();
+            //var goodNotFinishCount = returnnoteMaterials.Where(w => w.GoodQty > 0 && w.IsGoodFinish == 0).ToList().Count;
+            //var secondNotFinishCount = returnnoteMaterials.Where(w => w.SecondQty > 0 && w.IsSecondFinish == 0).ToList().Count;
+            //if (secondNotFinishCount == 0 && goodNotFinishCount == 0)
+            //{
+            //    await UnitWork.UpdateAsync<Expressage>(w => w.Id == req.ExpressageId, u => new Expressage { Status = 3 });
+            //}
+            ////判断是否所有退料都已入库
+            //var isExist = (await UnitWork.Find<Expressage>(w => w.ReturnNoteId == req.ReturnNoteId && w.Status < 3).ToListAsync()).Count > 0 ? false : true;
+            //if (isExist)
+            //{
+            //    await UnitWork.UpdateAsync<ReturnNote>(w => w.Id == req.ReturnNoteId, u => new ReturnNote { IsCanClear = 1 });
+            //}
+            //await UnitWork.SaveAsync();
+
+            _capBus.Publish("Serve.ReceiptCreditVouchers.Create", new AddOrUpdateQuotationReq {InvoiceDocEntry=req.InvoiceDocEntry,SalesOrderId=req.SalesOrderId,QuotationMergeMaterialReqs= returnMergeMaterialReqs });
         }
 
     }

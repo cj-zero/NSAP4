@@ -28,7 +28,15 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<store_oitl>().HasKey(o => new { o.sbo_id, o.LogEntry });
             modelBuilder.Entity<store_itl1>().HasKey(o => new { o.sbo_id, o.LogEntry,o.SysNumber,o.ItemCode });
             modelBuilder.Entity<store_osrn>().HasKey(o => new { o.sbo_id, o.AbsEntry });
+            modelBuilder.Entity<sale_odln>().HasKey(o => new { o.sbo_id, o.DocEntry });
             modelBuilder.Entity<crm_oslp>().HasKey(o => new { o.sbo_id, o.SlpCode });
+            modelBuilder.Entity<crm_ocrd>().HasKey(o => new { o.sbo_id, o.CardCode });
+            modelBuilder.Entity<crm_ocry>().HasKey(o => new { o.Code });
+            modelBuilder.Entity<crm_ocst>().HasKey(o => new { o.Code, o.Country });
+            modelBuilder.Entity<sale_orin>().HasKey(o => new { o.sbo_id,o.DocEntry });
+            modelBuilder.Entity<sale_rin1>().HasKey(o => new { o.sbo_id, o.DocEntry,o.LineNum });
+            modelBuilder.Entity<sale_oinv>().HasKey(o => new { o.sbo_id, o.DocEntry });
+            modelBuilder.Entity<sale_inv1>().HasKey(o => new { o.sbo_id, o.DocEntry, o.LineNum });
         }
         public virtual DbSet<sale_transport> sale_transports { get; set; }
 
@@ -40,16 +48,22 @@ namespace OpenAuth.Repository
 
         public virtual DbSet<sale_rdr1> sale_rdr1s { get; set; }
 
-
+        public virtual DbSet<sale_odln> sale_odln { get; set; }
+        
         public virtual DbSet<store_oitm> store_oitms { get; set; }
-
 
         public virtual DbSet<store_oitw> store_oitws { get; set; }
         public virtual DbSet<store_itl1> store_itl1 { get; set; }
         public virtual DbSet<store_oitl> store_oitl { get; set; }
         public virtual DbSet<store_osrn> store_osrn { get; set; }
         public virtual DbSet<crm_oslp> crm_oslp { get; set; }
-
+        public virtual DbSet<crm_ocrd> crm_ocrd { get; set; }
+        public virtual DbSet<crm_ocry> crm_ocry { get; set; }
+        public virtual DbSet<crm_ocst> crm_ocst { get; set; }
+        public virtual DbSet<sale_orin> sale_orins { get; set; }
+        public virtual DbSet<sale_rin1> sale_rin1s { get; set; }
+        public virtual DbSet<sale_oinv> sale_oinvs { get; set; }
+        public virtual DbSet<sale_inv1> sale_inv1s { get; set; }
         //非数据库表格
         public virtual DbSet<v_storeitemstock>  v_storeitemstocks { get; set; }
     }

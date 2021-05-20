@@ -48,7 +48,16 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<OITL>().HasKey(o => o.LogEntry);
             modelBuilder.Entity<ITL1>().HasKey(o => new { o.LogEntry, o.ItemCode, o.SysNumber, });
             modelBuilder.Entity<OSRN>().HasKey(o => o.AbsEntry);
+            #region 销售交货
             modelBuilder.Entity<ODLN>().HasKey(o => o.DocEntry);
+            modelBuilder.Entity<DLN1>().HasKey(o => new { o.DocEntry,o.LineNum});
+            #endregion
+            #region 应收贷项凭证
+            modelBuilder.Entity<ORIN>().HasKey(o => o.DocEntry);
+            modelBuilder.Entity<RIN1>().HasKey(o => new { o.DocEntry,o.LineNum });
+            modelBuilder.Entity<OINV>().HasKey(o => o.DocEntry);
+            modelBuilder.Entity<INV1>().HasKey(o => new { o.DocEntry, o.LineNum });
+            #endregion
         }
         //非数据库表格
         public virtual DbSet<SysEquipmentColumn> SysEquipmentColumns { get; set; }
@@ -917,7 +926,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<INC7> Inc7s { get; set; }
         //public virtual DbSet<INC8> Inc8s { get; set; }
         //public virtual DbSet<INC9> Inc9s { get; set; }
-        //public virtual DbSet<INV1> Inv1s { get; set; }
+        public virtual DbSet<INV1> Inv1s { get; set; }
         //public virtual DbSet<INV10> Inv10s { get; set; }
         //public virtual DbSet<INV11> Inv11s { get; set; }
         //public virtual DbSet<INV12> Inv12s { get; set; }
@@ -1347,7 +1356,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<OINC> Oincs { get; set; }
         //public virtual DbSet<OIND> Oinds { get; set; }
         public virtual DbSet<OINS> Oins { get; set; }
-        //public virtual DbSet<OINV> Oinvs { get; set; }
+        public virtual DbSet<OINV> Oinvs { get; set; }
         //public virtual DbSet<OIOD> Oiods { get; set; }
         //public virtual DbSet<OIPD> Oipds { get; set; }
         //public virtual DbSet<OIPF> Oipfs { get; set; }
@@ -1516,7 +1525,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<OREQ> Oreqs { get; set; }
         //public virtual DbSet<ORER> Orers { get; set; }
         //public virtual DbSet<ORFL> Orfls { get; set; }
-        //public virtual DbSet<ORIN> Orins { get; set; }
+        public virtual DbSet<ORIN> Orins { get; set; }
         //public virtual DbSet<ORIT> Orits { get; set; }
         //public virtual DbSet<ORLD> Orlds { get; set; }
         //public virtual DbSet<ORLS> Orls { get; set; }
@@ -2001,7 +2010,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<REQ1> Req1s { get; set; }
         //public virtual DbSet<REQ2> Req2s { get; set; }
         //public virtual DbSet<REQ3> Req3s { get; set; }
-        //public virtual DbSet<RIN1> Rin1s { get; set; }
+        public virtual DbSet<RIN1> Rin1s { get; set; }
         //public virtual DbSet<RIN10> Rin10s { get; set; }
         //public virtual DbSet<RIN11> Rin11s { get; set; }
         //public virtual DbSet<RIN12> Rin12s { get; set; }

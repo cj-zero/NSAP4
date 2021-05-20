@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository.Interface;
+using Sap.Handler.Sap;
 using SAPbobsCOM;
 using Serilog;
 using System;
@@ -264,7 +265,7 @@ namespace Sap.Handler.Service
 
                     sale_ordr ordr = new sale_ordr()
                     {
-                        sbo_id = 1,
+                        sbo_id = Define.SBO_ID,
                         DocEntry = (int)quotation.SalesOrderId,
                         CardCode = serviceOrder.TerminalCustomerId, //客户id
                         CardName = serviceOrder.TerminalCustomer,//客户名称
@@ -302,7 +303,7 @@ namespace Sap.Handler.Service
                     {
                         await UnitWork.AddAsync<sale_rdr1, int>(new sale_rdr1
                         {
-                            sbo_id = 1,
+                            sbo_id = Define.SBO_ID,
                             DocEntry = (int)quotation.SalesOrderId,
                             LineNum = (int)lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode)).FirstOrDefault()?.LineNum,
                             ItemCode = dln1.MaterialCode,
@@ -339,7 +340,7 @@ namespace Sap.Handler.Service
                     foreach (var item in oitwList)
                     {
                         var WhsCode = quotation.QuotationMergeMaterials.Where(q => q.MaterialCode.Equals(item.ItemCode)).FirstOrDefault().WhsCode;
-                        await UnitWork.UpdateAsync<store_oitw>(o => o.sbo_id == 1 && o.ItemCode == item.ItemCode && o.WhsCode == WhsCode, o => new store_oitw
+                        await UnitWork.UpdateAsync<store_oitw>(o => o.sbo_id == Define.SBO_ID && o.ItemCode == item.ItemCode && o.WhsCode == WhsCode, o => new store_oitw
                         {
                             OnHand = item.OnHand,
                             IsCommited = item.IsCommited,
@@ -349,7 +350,7 @@ namespace Sap.Handler.Service
                     var oitmList = await UnitWork.Find<OITM>(o => itemcodes.Contains(o.ItemCode)).Select(o => new { o.ItemCode, o.IsCommited, o.OnHand, o.OnOrder, o.LastPurCur, o.LastPurPrc, o.LastPurDat, o.UpdateDate }).ToListAsync();
                     foreach (var item in oitmList)
                     {
-                        await UnitWork.UpdateAsync<store_oitm>(o => o.sbo_id == 1 && o.ItemCode == item.ItemCode, o => new store_oitm
+                        await UnitWork.UpdateAsync<store_oitm>(o => o.sbo_id == Define.SBO_ID && o.ItemCode == item.ItemCode, o => new store_oitm
                         {
                             OnHand = item.OnHand,
                             IsCommited = item.IsCommited,
