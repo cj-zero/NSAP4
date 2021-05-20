@@ -18,6 +18,7 @@ using Newtonsoft.Json;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
 using Quartz.Impl.Calendar;
+using Serilog;
 
 namespace OpenAuth.WebApi.Controllers
 {
@@ -91,6 +92,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 response.Code = 500;
                 response.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{userid},{rd}， 错误：{response.Message}");
             }
 
             return response;
@@ -129,6 +131,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 response.Code = 500;
                 response.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{rd}， 错误：{response.Message}");
             }
 
             return response;

@@ -21,6 +21,7 @@ using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.WebApi.Model;
+using Serilog;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -312,6 +313,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{serialNumber},{timespan}, 错误：{ex.Message}");
             }
             //获取签名进行校验
             return result;
@@ -494,6 +496,19 @@ namespace OpenAuth.WebApi.Controllers
                 return Ok(data);
             }
             return Ok(certNos);
+        }
+
+        /// <summary>
+        /// APP批量获取证书
+        /// </summary>
+        /// <param name="serialNumber"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> GetCertNoByMultiNum(List<string> serialNumber)
+        {
+            TableData res = new TableData();
+            res = await _certinfoApp.GetCertNoByMultiNum(serialNumber);
+            return res;
         }
         /// <summary>
         /// 构建证书模板参数
@@ -1158,6 +1173,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 result.Code = 500;
                 result.Message = e.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -1179,6 +1195,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 result.Code = 500;
                 result.Message = e.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -1619,6 +1636,7 @@ namespace OpenAuth.WebApi.Controllers
             }
             catch (Exception ex)
             {
+                Log.Logger.Error($"地址：{Request.Path}，参数：{certNo}, 错误：{ex.Message}");
                 return "";
             }
         }

@@ -1,4 +1,6 @@
 ﻿using DotNetCore.CAP;
+using Infrastructure;
+using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Sap;

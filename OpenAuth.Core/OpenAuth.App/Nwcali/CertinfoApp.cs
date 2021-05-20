@@ -307,6 +307,21 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 多个序列号获取证书
+        /// </summary>
+        /// <param name="serialNumber"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetCertNoByMultiNum(List<string> serialNumber)
+        {
+            TableData result = new TableData();
+            var query =await( from a in UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId))
+                        join b in UnitWork.Find<PcPlc>(c => serialNumber.Contains(c.Guid) && c.ExpirationDate >= DateTime.Now)
+                        on a.Id equals b.NwcaliBaseInfoId
+                        select new { CertNo = a.CertificateNumber, No = b.No, TesterModel = a.TesterModel, CalibrationDate = a.Time, ExpirationDate = a.ExpirationDate }).ToListAsync();
+            result.Data = query;
+            return result;
+        }
+        /// <summary>
         /// 证书审批操作
         /// </summary>
         /// <param name="req"></param>
@@ -342,17 +357,19 @@ namespace OpenAuth.App
                     {
                         throw new CommonException("您无法操作此步骤。", 80011);
                     }
-                    if (flowInstance.ActivityName.Equals("待审核") || flowInstance.ActivityName.Equals("待批准"))
-                    {
-                        if (!flowInstance.MakerList.Contains(loginContext.User.Id))
-                        {
-                            throw new CommonException("您无法操作此步骤，或者该流程已经审批请刷新页面！", 80011);
-                        }
-                    }
                     var list = new List<WordModel>();
                     switch (req.Verification.VerificationFinally)
                     {
                         case "1":
+                            //防止审批人未刷新页面操作该环节已审批过的流程
+                            if (flowInstance.ActivityName.Equals("待审核") || flowInstance.ActivityName.Equals("待批准"))
+                            {
+                                if (!flowInstance.MakerList.Contains(loginContext.User.Id))
+                                {
+                                    throw new CommonException("您无法操作此步骤，或者该流程已经审批请刷新页面！", 80011);
+                                }
+                            }
+
                             #region 签名
                             if (flowInstance.ActivityName.Equals("待送审"))
                             {

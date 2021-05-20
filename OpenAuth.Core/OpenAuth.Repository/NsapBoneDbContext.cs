@@ -52,6 +52,7 @@ namespace OpenAuth.Repository
         
         public virtual DbSet<store_oitm> store_oitms { get; set; }
 
+
         public virtual DbSet<store_oitw> store_oitws { get; set; }
         public virtual DbSet<store_itl1> store_itl1 { get; set; }
         public virtual DbSet<store_oitl> store_oitl { get; set; }

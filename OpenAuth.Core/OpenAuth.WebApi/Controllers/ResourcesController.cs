@@ -8,6 +8,7 @@ using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
+using Serilog;
 
 namespace OpenAuth.WebApi.Controllers
 {
@@ -42,6 +43,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 resp.Code = 500;
                 resp.Message = e.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{ids.ToJson()}， 错误：{resp.Message}");
             }
             return resp;
         }
@@ -59,6 +61,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 resp.Code = 500;
                 resp.Message = e.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{obj.ToJson()}， 错误：{resp.Message}");
             }
             return resp;
         }
@@ -75,6 +78,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 resp.Code = 500;
                 resp.Message = e.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{obj.ToJson()}， 错误：{resp.Message}");
             }
             return resp;
         }
@@ -97,6 +101,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 result.Code = 500;
                 result.Message = e.InnerException?.Message ?? e.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{appId},{firstId}， 错误：{result.Message}");
             }
 
             return result;

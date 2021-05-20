@@ -36,6 +36,11 @@ namespace OpenAuth.App.Material.Request
         public int? SalesOrderId { get; set; }
 
         /// <summary>
+        ///报价单审批状态
+        /// </summary>
+        public decimal? QuotationStatus { get; set; }
+
+        /// <summary>
         /// 客户
         /// </summary>
         public string CardCode { get; set; }

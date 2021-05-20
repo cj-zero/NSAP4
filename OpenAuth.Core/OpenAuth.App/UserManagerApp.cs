@@ -206,6 +206,10 @@ namespace OpenAuth.App
         /// <param name="request"></param>
         public void ChangePassword(ChangePasswordReq request)
         {
+            if (request.Password.ToLower() == "xinwei123") 
+            {
+                throw new Exception("密码与原始密码相同，请重新修改");
+            }
             Repository.Update(u => u.Account == request.Account, user => new User
             {
                 Password = Encryption.Encrypt(request.Password)
@@ -255,6 +259,17 @@ namespace OpenAuth.App
             var role = await UnitWork.Find<Role>(r => r.Name.Equals(roleName)).FirstOrDefaultAsync();
             var users = from userRole in UnitWork.Find<Relevance>(u =>
                     u.SecondId == role.Id && u.Key == Define.USERROLE)
+                        join user in UnitWork.Find<User>(null) on userRole.FirstId equals user.Id into temp
+                        from c in temp.DefaultIfEmpty()
+                        select c;
+
+            return await users.ToListAsync();
+        }
+        public async Task<List<User>> LoadByRoleName(string[] roleName)
+        {
+            var role = await UnitWork.Find<Role>(r => roleName.Contains(r.Name)).Select(r=>r.Id).ToListAsync();
+            var users = from userRole in UnitWork.Find<Relevance>(u =>
+                             role.Contains(u.SecondId) && u.Key == Define.USERROLE)
                         join user in UnitWork.Find<User>(null) on userRole.FirstId equals user.Id into temp
                         from c in temp.DefaultIfEmpty()
                         select c;
@@ -418,16 +433,17 @@ namespace OpenAuth.App
             //获取角色权限
             Relevances = _revelanceApp.Get(Define.USERROLE, true, loginUser.User.Id);
             var Roles = loginUser.Roles.Where(o => Relevances.Contains(o.Id)).Select(r=>r.Name).ToList();
-
             var result = new TableData();
             result.Data = new
             {
+                Account= loginUser.User.Account,
                 UserId = loginUser.User.Id,
                 UserName = loginUser.User.Name,
-                ServiceRelations = string.IsNullOrWhiteSpace(loginUser.User.ServiceRelations)?"未录入": loginUser.User.ServiceRelations,
-                OfficeSpace= string.IsNullOrWhiteSpace(loginUser.User.OfficeSpace) ? "未录入" : loginUser.User.ServiceRelations,
-                OrgName= OrgName,
-                Roles= Roles
+                ServiceRelations = string.IsNullOrWhiteSpace(loginUser.User.ServiceRelations) ? "未录入" : loginUser.User.ServiceRelations,
+                OfficeSpace = string.IsNullOrWhiteSpace(loginUser.User.OfficeSpace) ? "未录入" : loginUser.User.ServiceRelations,
+                OrgName = OrgName,
+                Roles = Roles,
+                IsPassword =Encryption.Decrypt(loginUser.User.Password).ToLower() == "xinwei123" ? true : false
             };
             return result;
         }

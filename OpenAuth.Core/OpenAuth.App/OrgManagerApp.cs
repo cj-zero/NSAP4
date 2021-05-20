@@ -132,6 +132,12 @@ namespace OpenAuth.App
                 case "P生产部":
                     orgname = "生产部门";
                     break;
+                case "S销售部":
+                    orgname = "销售部门";
+                    break;
+                case "M2":
+                    orgname = "M2部门";
+                    break;
             }
             return orgname;
         }

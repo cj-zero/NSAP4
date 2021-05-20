@@ -64,7 +64,7 @@ namespace OpenAuth.App
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ServiceRelations") && u.Enable == false).Select(u => u.Name).ToListAsync();
 
             var result = new TableData();
-            var objs = UnitWork.Find<ReimburseInfo>(null).Include(r => r.ReimburseTravellingAllowances);
+            var objs = UnitWork.Find<ReimburseInfo>(null).Include(r => r.ReimburseTravellingAllowances).Include(r=>r.ReimurseOperationHistories);
             var ReimburseInfos = objs.WhereIf(!string.IsNullOrWhiteSpace(request.MainId), r => r.MainId.ToString().Contains(request.MainId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId), r => r.ServiceOrderSapId.ToString().Contains(request.ServiceOrderId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.BearToPay), r => r.BearToPay.Contains(request.BearToPay))
@@ -281,17 +281,17 @@ namespace OpenAuth.App
             var ReimburseRespList = ReimburseResps.Select(r => new
             {
                 ReimburseResp = r.a,
-                fillTime = r.a.CreateTime.ToString("yyyy-MM-dd"),
+                fillTime = r.a.CreateTime.ToString("yyyy.MM.dd HH:mm:ss"),
                 r.b.TerminalCustomerId,
                 r.b.TerminalCustomer,
-                BusinessTripDate = serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).FirstOrDefault() == null ? CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c => c.BusinessTripDate)==null? Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.CreateTime)).ToString("yyyy-MM-dd") : Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c => c.BusinessTripDate)).ToString("yyyy-MM-dd") : Convert.ToDateTime(serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).Min(s => s.EditTime)).ToString("yyyy-MM-dd"),
-                EndDate = serviceDailyReports.Where(s=>s.ServiceOrderId== r.a.ServiceOrderId).FirstOrDefault()==null? CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate)==null? Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.CreateTime)).ToString("yyyy-MM-dd") : Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate)).ToString("yyyy-MM-dd"): Convert.ToDateTime(serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).Max(s=>s.EditTime)).ToString("yyyy-MM-dd"),
+                BusinessTripDate = serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).FirstOrDefault() == null ? CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c => c.BusinessTripDate)==null? Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.CreateTime)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c => c.BusinessTripDate)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).Min(s => s.EditTime)).ToString("yyyy.MM.dd HH:mm:ss"),
+                EndDate = serviceDailyReports.Where(s=>s.ServiceOrderId== r.a.ServiceOrderId).FirstOrDefault()==null? CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate)==null? Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.CreateTime)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).Max(s=>s.EditTime)).ToString("yyyy.MM.dd HH:mm:ss"),
                 r.a.ReimburseTravellingAllowances.FirstOrDefault()?.Days,
                 r.b.FromTheme,
                 r.c.SalesMan,
                 UserName = r.d.Name,
                 OrgName = r.f.Name,
-                UpdateTime=r.a.UpdateTime.ToString("yyyy-MM-dd HH:mm:ss")
+                UpdateTime= r.a.ReimurseOperationHistories.OrderByDescending(r => r.CreateTime).FirstOrDefault()!=null?Convert.ToDateTime(r.a.ReimurseOperationHistories.OrderByDescending(r=>r.CreateTime).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"):Convert.ToDateTime(r.a.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss")
             }).ToList();
             result.Data = ReimburseRespList;
             return result;
@@ -635,14 +635,14 @@ namespace OpenAuth.App
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == ReimburseResp.CreateUserId).Select(r => r.SecondId).ToListAsync();
             var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
             var serviceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id == ReimburseResp.ServiceOrderId).Include(s=>s.ServiceWorkOrders).FirstOrDefaultAsync();
-            var quotationIds = await UnitWork.Find<Quotation>(q => q.ServiceOrderId == ReimburseResp.ServiceOrderId && q.CreateUserId.Equals(ReimburseResp.CreateUserId) && q.Status==2).Select(q=>q.Id).ToListAsync();
+            var quotationIds = await UnitWork.Find<Quotation>(q => q.ServiceOrderId == ReimburseResp.ServiceOrderId && q.CreateUserId.Equals(ReimburseResp.CreateUserId) && q.QuotationStatus==11).Select(q=>q.Id).ToListAsync();
             List<AddOrUpdateQuotationReq> quotations = new List<AddOrUpdateQuotationReq>();
             foreach (var item in quotationIds)
             {
                 quotations.Add(await _quotation.GeneralDetails(item, null));
             }
-            //var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == ReimburseResp.ServiceOrderId && c.CreateUserId.Equals(ReimburseResp.CreateUserId) && c.ServiceMode == 1).ToListAsync();
-            //var completionreport = CompletionReports.FirstOrDefault();
+            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == ReimburseResp.ServiceOrderId && c.CreateUserId.Equals(ReimburseResp.CreateUserId) && c.ServiceMode == 1).ToListAsync();
+            var completionreport = CompletionReports.FirstOrDefault();
             result.Data = new
             {
                 ReimburseResp = ReimburseResp,
@@ -650,15 +650,15 @@ namespace OpenAuth.App
                 OrgName = orgname,
                 //TerminalCustomer = completionreport.TerminalCustomer,
                 //TerminalCustomerId = completionreport.TerminalCustomerId,
-                //FromTheme = completionreport.FromTheme,
-                //Becity = completionreport.Becity,
+                FromTheme = completionreport.FromTheme,
+                Becity = completionreport.Becity,
                 //CompleteAddress = ServiceOrders.Province + ServiceOrders.City + ServiceOrders.Area + ServiceOrders.Addr,
-                //Destination = completionreport.Destination,
+                Destination = completionreport.Destination,
                 //BusinessTripDate = CompletionReports.Min(c => c.BusinessTripDate),
                 //EndDate = CompletionReports.Max(c => c.EndDate),
-                //MaterialCode = completionreport.MaterialCode == "无序列号" ? "无序列号" : completionreport.MaterialCode.Substring(0, completionreport.MaterialCode.IndexOf("-"))
-                ServiceOrders= serviceOrders,
-                Quotations= quotations,
+                MaterialCode = completionreport.MaterialCode == "无序列号" ? "无序列号" : completionreport.MaterialCode.Substring(0, completionreport.MaterialCode.IndexOf("-")),
+                ServiceOrders = serviceOrders,
+                Quotations = quotations,
             };
 
             return result;
@@ -2064,7 +2064,7 @@ namespace OpenAuth.App
                 BusinessTripDate = CompletionReports.Where(c => c.CreateUserId.Equals(r.CreateUserId) && c.ServiceOrderId.Equals(r.ServiceOrderId)).Min(c => c.BusinessTripDate),
                 EndDate = CompletionReports.Where(c => c.CreateUserId.Equals(r.CreateUserId) && c.ServiceOrderId.Equals(r.ServiceOrderId)).Max(c => c.EndDate),
                 UserName = CompletionReports.Where(c => c.CreateUserId.Equals(r.CreateUserId) && c.ServiceOrderId.Equals(r.ServiceOrderId)).FirstOrDefault()?.TechnicianName,
-                OrgNnme= query.Where(q=>q.a.FirstId==r.CreateUserId).FirstOrDefault()?.b?.Name
+                OrgName= query.Where(q=>q.a.FirstId==r.CreateUserId).FirstOrDefault()?.b?.Name
             }).ToList();
 
 
@@ -2085,7 +2085,7 @@ namespace OpenAuth.App
                 r.BusinessTripDate,
                 r.EndDate,
                 r.UserName,
-                r.OrgNnme
+                r.OrgName
             }).OrderByDescending(r => r.MainId).ToList();
 
             return result;

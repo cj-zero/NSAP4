@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using OpenAuth.App.Serve;
 using OpenAuth.Repository.Domain;
+using Serilog;
 
 namespace OpenAuth.WebApi.Controllers
 {
@@ -17,9 +19,11 @@ namespace OpenAuth.WebApi.Controllers
     public class RealTimeLocationsController : ControllerBase
     {
         private readonly RealTimeLocationApp _realTimeLocationApp;
-        public RealTimeLocationsController(RealTimeLocationApp realTimeLocationApp)
+        private readonly RealTimeLocationPush _realTimeLocationPush;
+        public RealTimeLocationsController(RealTimeLocationApp realTimeLocationApp, RealTimeLocationPush realTimeLocationPush)
         {
             _realTimeLocationApp = realTimeLocationApp;
+            _realTimeLocationPush = realTimeLocationPush;
         }
 
         /// <summary>
@@ -41,6 +45,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{ServiceOrderId},{UserId}， 错误：{result.Message}");
             }
 
             return result;
@@ -64,9 +69,57 @@ namespace OpenAuth.WebApi.Controllers
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
             }
 
             return result;
         }
+
+        /// <summary>
+        /// 智慧大屏接口数据
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> LoadLocationInfo([FromQuery] QueryLocationInfoReq req)
+        {
+            var result = new TableData();
+            result = await _realTimeLocationApp.LoadLocationInfo(req);
+            return result;
+        }
+
+        /// <summary>
+        /// 查询技术员轨迹
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> LoadTrajectory([FromQuery] QueryLocationInfoReq req)
+        {
+            var result = new TableData();
+            result = await _realTimeLocationApp.HistoryTrajectory(req);
+            return result;
+        }
+
+        /// <summary>
+        ///获取所有客户
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetCustomer()
+        {
+            var res = new TableData();
+            res = await _realTimeLocationApp.GetCustomer();
+            return res;
+        }
+
+        [HttpGet]
+        public async Task<Response> UpdateLoca()
+        {
+            var result = new Response();
+            await _realTimeLocationApp.UpdateLoca();
+            return result;
+        }
+
     }
 }

@@ -17,7 +17,7 @@ namespace OpenAuth.App.Jobs
             _salesOrderWarrantyDateApp = salesOrderWarrantyDateApp;
         }
         /// <summary>
-        /// 定时同步销售订单到4.0
+        /// 定时同步销售订单保修时间到4.0
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>

@@ -10,6 +10,7 @@ using OpenAuth.App.Material;
 using OpenAuth.App.Material.Request;
 using OpenAuth.App.Response;
 using OpenAuth.WebApi.Model;
+using Serilog;
 
 namespace OpenAuth.WebApi.Controllers.Material
 {
@@ -43,6 +44,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -63,6 +65,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -83,6 +86,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -104,6 +108,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -125,6 +130,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -147,6 +153,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -168,6 +175,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -190,6 +198,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -211,6 +220,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -233,6 +243,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -255,6 +266,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{ServiceOrderId}, 错误：{result.Message}");
             }
             return result;
         }
@@ -277,6 +289,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -303,6 +316,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{obj.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -329,6 +343,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{obj.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -351,6 +366,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{obj.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -372,6 +388,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{obj.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -394,6 +411,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -416,6 +434,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -440,6 +459,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}, 错误：{result.Message}");
             }
             return result;
         }
@@ -461,6 +481,7 @@ namespace OpenAuth.WebApi.Controllers.Material
 
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -483,6 +504,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             catch (Exception e)
             {
 
+                Log.Logger.Error($"地址：{Request.Path}，参数：{serialNumber},{sign},{timespan}, 错误：{e.Message}");
                 throw new Exception(e.Message);
             }
 
@@ -505,7 +527,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             catch (Exception e)
             {
-
+                Log.Logger.Error($"地址：{Request.Path}，参数：{serialNumber},{sign},{timespan}, 错误：{e.Message}");
                 throw new Exception(e.Message);
             }
         }
@@ -526,6 +548,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             {
                 result.Code = 500;
                 result.Message = e.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
@@ -543,6 +566,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             catch (Exception e)
             {
+                Log.Logger.Error($"地址：{Request.Path}，参数：{serialNumber}, 错误：{e.Message}");
                 throw new Exception(e.Message);
             }
         }
@@ -565,26 +589,91 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             catch (Exception e)
             {
+                Log.Logger.Error($"地址：{Request.Path}，参数：{serialNumber},{IsTrue},{sign},{timespan}, 错误：{e.Message}");
                 throw new Exception(e.Message);
             }
         }
         /// <summary>
         /// 同步销售订单
         /// </summary>
-        /// <param name="SalesOrderId"></param>
+        /// <param name="QuotationId"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> SyncSalesOrder(string SalesOrderId) 
+        public async Task<Response> SyncSalesOrder(string QuotationId) 
         {
             var result = new Response();
             try
             {
-                await _app.SyncSalesOrder(SalesOrderId);
+                await _app.SyncSalesOrder(QuotationId);
             }
             catch (Exception e)
             {
                 result.Code = 500;
                 result.Message = e.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{QuotationId}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 同步销售交货
+        /// </summary>
+        /// <param name="SalesOfDeliveryId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> SyncSalesOfDelivery(string SalesOfDeliveryId)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.SyncSalesOfDelivery(SalesOfDeliveryId);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{SalesOfDeliveryId}, 错误：{result.Message}");
+            }
+            return result;
+        }
+        /// <summary>
+        /// 取消销售订单
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> CancellationSalesOrder(string QuotationId)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.CancellationSalesOrder(QuotationId);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 清空交货记录
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> EmptyDeliveryRecord(string QuotationId) 
+        {
+            var result = new Response();
+            try
+            {
+                await _app.EmptyDeliveryRecord(QuotationId);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{QuotationId}, 错误：{result.Message}");
             }
             return result;
         }

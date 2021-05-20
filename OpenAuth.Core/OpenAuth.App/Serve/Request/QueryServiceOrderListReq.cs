@@ -97,5 +97,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         public DateTime? EndCompleteDate { get; set; }
 
+        /// <summary>
+        /// 归属部门（1呼叫中心，2E3工程部）
+        /// </summary>
+        public string QryVestInOrg { get; set; }
+
     }
 }

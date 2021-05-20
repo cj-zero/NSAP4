@@ -70,6 +70,7 @@ namespace OpenAuth.App.Material
                                 .WhereIf(request.StartCreateTime != null, q => q.CreateTime > request.StartCreateTime)
                                 .WhereIf(request.EndCreateTime != null, q => q.CreateTime < request.EndCreateTime)
                                 .WhereIf(request.Status != null, q => q.Status == request.Status)
+                                .WhereIf(request.QuotationStatus != null, q => q.QuotationStatus == request.QuotationStatus)
                                 .WhereIf(request.SalesOrderId != null, q => q.SalesOrderId == request.SalesOrderId)
                                 .WhereIf(ServiceOrderids.Count() > 0, q => ServiceOrderids.Contains(q.ServiceOrderId));
             if (!loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginUser.Account.Equals(Define.SYSTEM_USERNAME))
@@ -113,17 +114,18 @@ namespace OpenAuth.App.Material
                     }
                     else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
                     {
+                        ServiceOrderids = await UnitWork.Find<ServiceOrder>(null).Where(q => q.SalesManId.Equals(loginContext.User.Id)).Select(s => s.Id).ToListAsync();
                         switch (request.StartType)
                         {
                             case 1:
-                                Quotations = Quotations.Where(q => q.QuotationStatus == 5);
+                                Quotations = Quotations.Where(q => q.QuotationStatus == 5 || (ServiceOrderids.Contains(q.ServiceOrderId) && q.QuotationStatus == 3.1M));
                                 break;
 
                             case 2:
-                                Quotations = Quotations.Where(q => q.QuotationStatus > 5);
+                                Quotations = Quotations.Where(q => q.QuotationStatus > 5 || (ServiceOrderids.Contains(q.ServiceOrderId) && q.QuotationStatus > 3.1M));
                                 break;
                             default:
-                                Quotations = Quotations.Where(q => q.QuotationStatus >= 5);
+                                Quotations = Quotations.Where(q => q.QuotationStatus >= 5 || (ServiceOrderids.Contains(q.ServiceOrderId) && q.QuotationStatus >= 3.1M));
                                 break;
                         }
                     }
@@ -251,7 +253,7 @@ namespace OpenAuth.App.Material
                 q.a.CreateUser,
                 q.a.Remark,
                 q.a.SalesOrderId,
-                q.a.CreateTime,
+                CreateTime = Convert.ToDateTime(q.a.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 q.a.QuotationStatus,
                 q.a.Tentative,
                 q.a.IsProtected,
@@ -419,8 +421,7 @@ namespace OpenAuth.App.Material
                 }).ToList();
                 #endregion
 
-                result.Data = ServiceWorkOrderList.Skip((request.page - 1) * request.limit)
-                .Take(request.limit).Select(s => new ProductCodeListResp
+                result.Data = ServiceWorkOrderList.Select(s => new ProductCodeListResp
                 {
                     SalesOrder = MnfSerialList.Where(m => m.MnfSerial.Equals(s.ManufacturerSerialNumber) && m.BaseType == 17)?.Max(m => m.BaseEntry),
                     ProductionOrder = MnfSerialList.Where(m => m.MnfSerial.Equals(s.ManufacturerSerialNumber) && m.BaseType == 202)?.Max(m => m.BaseEntry),
@@ -475,7 +476,7 @@ namespace OpenAuth.App.Material
                 //4.0存在物料价格，取4.0的价格为售后结算价，销售价取售后结算价*销售价倍数，不存在就当前进货价*1.2 为售后结算价。销售价为售后结算价*3
                 if (Prices != null)
                 {
-                    e.UnitPrice = Prices?.SettlementPrice==null||Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
+                    e.UnitPrice = Prices?.SettlementPrice == null || Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
                     //var s = e.UnitPrice.ToDouble().ToString();
                     //if (s.IndexOf(".") > 0)
                     //{
@@ -505,7 +506,7 @@ namespace OpenAuth.App.Material
                     e.UnitPrice = decimal.Parse(e.UnitPrice.ToString("#0.0000"));
                     e.lastPurPrc = e.UnitPrice * 3;
                 }
-                
+
             });
 
             result.Data = EquipmentsList;
@@ -591,7 +592,7 @@ namespace OpenAuth.App.Material
             var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(request.QuotationId)).ToListAsync();
             QuotationMergeMaterials = QuotationMergeMaterials.OrderBy(q => q.MaterialCode).ToList();
             Quotations.QuotationOperationHistorys = Quotations.QuotationOperationHistorys.Where(q => q.ApprovalStage != "-1").OrderBy(q => q.CreateTime).ToList();
-            Quotations.ServiceRelations = (await UnitWork.Find<User>(u=>u.Id.Equals(Quotations.CreateUserId)).FirstOrDefaultAsync()).ServiceRelations;
+            Quotations.ServiceRelations = (await UnitWork.Find<User>(u => u.Id.Equals(Quotations.CreateUserId)).FirstOrDefaultAsync()).ServiceRelations;
             var result = new TableData();
             if (Quotations.Status == 2)
             {
@@ -678,6 +679,31 @@ namespace OpenAuth.App.Material
                 materialCodes.AddRange(q.QuotationMaterials.Select(m => m.MaterialCode).ToList());
             });
             var ItemCodes = await UnitWork.Find<OITW>(o => materialCodes.Contains(o.ItemCode) && WhsCode.Contains(o.WhsCode)).Select(o => new { o.ItemCode, o.WhsCode, o.OnHand }).ToListAsync();
+            List<QuotationMaterialReq> quotationMaterials = new List<QuotationMaterialReq>();
+            if (IsUpdate != null && (bool)IsUpdate)
+            {
+                var oITMS = await UnitWork.Find<OITM>(o => materialCodes.Contains(o.ItemCode)).Select(o => new QuotationMaterialReq { MaterialCode = o.ItemCode, SalesPrice = o.LastPurPrc }).ToListAsync();
+                var MaterialPrices = await UnitWork.Find<MaterialPrice>(m => materialCodes.Contains(m.MaterialCode)).ToListAsync();
+                oITMS.ForEach(o =>
+                {
+                    var Prices = MaterialPrices.Where(m => m.MaterialCode.Equals(o.MaterialCode)).FirstOrDefault();
+                    //4.0存在物料价格，取4.0的价格为售后结算价，销售价取售后结算价*销售价倍数，不存在就当前进货价*1.2 为售后结算价。销售价为售后结算价*3
+                    if (Prices != null)
+                    {
+                        o.UnitPrice = Prices?.SettlementPrice == null || Prices?.SettlementPrice <= 0 ? o.SalesPrice * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
+
+                        o.UnitPrice = decimal.Parse(o.UnitPrice.ToString("#0.0000"));
+                        o.SalesPrice = o.UnitPrice * Prices.SalesMultiple;
+                    }
+                    else
+                    {
+                        o.UnitPrice = o.SalesPrice * 1.2M;
+                        o.UnitPrice = decimal.Parse(o.UnitPrice.ToString("#0.0000"));
+                        o.SalesPrice = o.UnitPrice * 3;
+                    }
+                });
+                quotationMaterials.AddRange(oITMS.ToList());
+            }
             quotationsMap.QuotationProducts.ForEach(p =>
                 p.QuotationMaterials.ForEach(m =>
                 {
@@ -686,6 +712,8 @@ namespace OpenAuth.App.Material
                     m.TotalPrice = m.TotalPrice == 0 && m.MaterialType != "3" ? decimal.Parse(Convert.ToDecimal((m.UnitPrice * 3 * (m.Discount / 100) * m.Count)).ToString("#0.00")) : m.TotalPrice;
                     m.SalesPrice = m.SalesPrice == 0 && m.MaterialType != "3" ? decimal.Parse(Convert.ToDecimal(m.UnitPrice * 3).ToString("#0.00")) : m.SalesPrice;
                     if (m.DiscountPrices < 0) m.DiscountPrices = m.SalesPrice == 0 && m.MaterialType != "3" ? decimal.Parse(Convert.ToDecimal(m.UnitPrice * 3 * (m.Discount / 100)).ToString("#0.00")) : decimal.Parse(Convert.ToDecimal(m.SalesPrice * (m.Discount / 100)).ToString("#0.00"));
+                    if (IsUpdate != null && (bool)IsUpdate) m.UnitPrice = quotationMaterials.Where(q => q.MaterialCode.Equals(m.MaterialCode)).FirstOrDefault()?.UnitPrice;
+                    if (IsUpdate != null && (bool)IsUpdate) m.SalesPrice = quotationMaterials.Where(q => q.MaterialCode.Equals(m.MaterialCode)).FirstOrDefault()?.SalesPrice;
                 }
                 )
             );
@@ -694,7 +722,7 @@ namespace OpenAuth.App.Material
             quotationsMap.OrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Id.Equals(SecondId)).Select(o => o.Name).FirstOrDefaultAsync();
 
             List<QuotationMaterialReq> QuotationMergeMaterial = new List<QuotationMaterialReq>();
-            List<ProductCodeListResp> serialNumberList = (await GetSerialNumberList(new QueryQuotationListReq { ServiceOrderId = quotationsMap.ServiceOrderId, CreateUserId = quotationsMap.CreateUserId, limit = 200 })).Data;
+            List<ProductCodeListResp> serialNumberList = (await GetSerialNumberList(new QueryQuotationListReq { ServiceOrderId = quotationsMap.ServiceOrderId, CreateUserId = quotationsMap.CreateUserId })).Data;
             var count = 0;
             if (((quotationsMap.ServiceCharge != null && quotationsMap.ServiceCharge > 0) || (quotationsMap.TravelExpense != null && quotationsMap.TravelExpense > 0)) && (IsUpdate == null || IsUpdate == false))
             {
@@ -816,7 +844,7 @@ namespace OpenAuth.App.Material
                 //4.0存在物料价格，取4.0的价格为售后结算价，不存在就当前进货价*1.2 为售后结算价。销售价均为售后结算价*3
                 if (Prices != null)
                 {
-                    e.UnitPrice = Prices?.SettlementPrice==null|| Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
+                    e.UnitPrice = Prices?.SettlementPrice == null || Prices?.SettlementPrice <= 0 ? e.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
                     //var s = e.UnitPrice.ToDouble().ToString();
                     //if (s.IndexOf(".") > 0)
                     //{
@@ -846,7 +874,7 @@ namespace OpenAuth.App.Material
                     e.UnitPrice = decimal.Parse(e.UnitPrice.ToString("#0.0000"));
                     e.lastPurPrc = e.UnitPrice * 3;
                 }
-               
+
             });
             result.Data = Equipments.ToList();
             return result;
@@ -1006,17 +1034,17 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-GSF",
                                 MaterialDescription = "维修费",
                                 Unit = "PCS",
-                                SalesPrice = QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour,
+                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour).ToString("#0.00")),
                                 CostPrice = 0,
                                 Count = 1,
-                                TotalPrice = QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour,
+                                TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
-                                Margin = QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour,
+                                Margin = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour).ToString("#0.00")),
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour,
+                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour).ToString("#0.00")),
                                 WhsCode = "37"
                             });
                         }
@@ -1027,17 +1055,17 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-CLF",
                                 MaterialDescription = "差旅费",
                                 Unit = "PCS",
-                                SalesPrice = QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour,
+                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 CostPrice = 0,
                                 Count = 1,
-                                TotalPrice = QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour,
+                                TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
-                                Margin = QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour,
+                                Margin = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour,
+                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 WhsCode = "37"
                             });
                         }
@@ -1045,11 +1073,12 @@ namespace OpenAuth.App.Material
                         await UnitWork.BatchAddAsync<QuotationMergeMaterial>(QuotationMergeMaterialListMap.ToArray());
                         await UnitWork.AddAsync<QuotationOperationHistory>(new QuotationOperationHistory
                         {
-                            Action = "报价单提交审批",
+                            Action = QuotationObj.ErpOrApp == 1 ? QuotationObj.CreateUser + "通过ERP提交审批" : QuotationObj.CreateUser + "通过APP提交审批",
                             CreateUser = loginUser.Name,
                             CreateUserId = loginUser.Id,
                             CreateTime = DateTime.Now,
-                            QuotationId = QuotationObj.Id
+                            QuotationId = QuotationObj.Id,
+                            ApprovalStage = "3"
                         });
                         await UnitWork.SaveAsync();
                         #endregion
@@ -1147,6 +1176,9 @@ namespace OpenAuth.App.Material
                             TravelExpense = QuotationObj.TravelExpense,
                             Status = 1,
                             ServiceCharge = QuotationObj.ServiceCharge,
+                            TaxRate = QuotationObj.TaxRate,
+                            InvoiceCategory = QuotationObj.InvoiceCategory,
+                            AcceptancePeriod = QuotationObj.AcceptancePeriod,
                             Prepay = QuotationObj.Prepay,
                             PaymentAfterWarranty = QuotationObj.PaymentAfterWarranty,
                             CashBeforeFelivery = QuotationObj.CashBeforeFelivery,
@@ -1158,6 +1190,7 @@ namespace OpenAuth.App.Material
                             ServiceChargeManHour = QuotationObj.ServiceChargeManHour,
                             TravelExpenseManHour = QuotationObj.TravelExpenseManHour,
                             PrintWarehouse = 1,
+                            MoneyMeans = QuotationObj.MoneyMeans,
                             //todo:要修改的字段赋值
                         });
                         await UnitWork.SaveAsync();
@@ -1201,17 +1234,17 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-GSF",
                                 MaterialDescription = "维修费",
                                 Unit = "PCS",
-                                SalesPrice = QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour,
+                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour).ToString("#0.00")),
                                 CostPrice = 0,
                                 Count = 1,
-                                TotalPrice = QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour,
+                                TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
-                                Margin = QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour,
+                                Margin = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour).ToString("#0.00")),
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour,
+                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour).ToString("#0.00")),
                                 WhsCode = "37"
                             });
                         }
@@ -1222,17 +1255,17 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-CLF",
                                 MaterialDescription = "差旅费",
                                 Unit = "PCS",
-                                SalesPrice = QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour,
+                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 CostPrice = 0,
                                 Count = 1,
-                                TotalPrice = QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour,
+                                TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
-                                Margin = QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour,
+                                Margin = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour,
+                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 WhsCode = "37"
                             });
                         }
@@ -1278,6 +1311,9 @@ namespace OpenAuth.App.Material
                             Status = 1,
                             ServiceCharge = QuotationObj.ServiceCharge,
                             Prepay = QuotationObj.Prepay,
+                            TaxRate = QuotationObj.TaxRate,
+                            InvoiceCategory = QuotationObj.InvoiceCategory,
+                            AcceptancePeriod = QuotationObj.AcceptancePeriod,
                             PaymentAfterWarranty = QuotationObj.PaymentAfterWarranty,
                             CashBeforeFelivery = QuotationObj.CashBeforeFelivery,
                             PayOnReceipt = QuotationObj.PayOnReceipt,
@@ -1287,17 +1323,19 @@ namespace OpenAuth.App.Material
                             IsMaterialType = QuotationObj.IsMaterialType,
                             ServiceChargeManHour = QuotationObj.ServiceChargeManHour,
                             TravelExpenseManHour = QuotationObj.TravelExpenseManHour,
-                            PrintWarehouse = 1
+                            PrintWarehouse = 1,
+                            MoneyMeans = QuotationObj.MoneyMeans,
                             //FlowInstanceId = FlowInstanceId,
                             //todo:要修改的字段赋值
                         });
                         await UnitWork.AddAsync<QuotationOperationHistory>(new QuotationOperationHistory
                         {
-                            Action = "报价单提交审批",
+                            Action = QuotationObj.ErpOrApp == 1 ? QuotationObj.CreateUser + "通过ERP提交审批" : QuotationObj.CreateUser + "通过APP提交审批",
                             CreateUser = loginUser.Name,
                             CreateUserId = loginUser.Id,
                             CreateTime = DateTime.Now,
-                            QuotationId = QuotationObj.Id
+                            QuotationId = QuotationObj.Id,
+                            ApprovalStage = "3"
                         });
                         await UnitWork.SaveAsync();
 
@@ -1344,6 +1382,7 @@ namespace OpenAuth.App.Material
             qoh.QuotationId = QuotationId;
             qoh.ApprovalResult = "撤回";
             qoh.Action = "撤回报价单";
+            qoh.ApprovalStage = "2";
             qoh.IntervalTime = selqoh != null ? Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds) : 0;
             await UnitWork.AddAsync<QuotationOperationHistory>(qoh);
             await UnitWork.SaveAsync();
@@ -1355,21 +1394,33 @@ namespace OpenAuth.App.Material
         /// <param name="obj"></param>
         public async Task<TableData> UpdateMaterial(AddOrUpdateQuotationReq obj)
         {
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-            if (!loginContext.Roles.Any(r => r.Name.Equals("仓库")))
-            {
-                throw new Exception("无仓库人员权限，不可出库。");
-            }
             var expressageobj = new Expressage();
             var expressageMap = obj.ExpressageReqs.MapTo<Expressage>();
-
+            var loginUser = new User();
+            if (expressageMap.ExpressNumber == "自动出库")
+            {
+                loginUser = await UnitWork.Find<User>(u => u.Account.Equals("Admin")).FirstOrDefaultAsync();
+            }
+            else
+            {
+                var loginContext = _auth.GetCurrentUser();
+                if (loginContext == null)
+                {
+                    throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+                }
+                loginUser = loginContext.User;
+                if (!loginContext.Roles.Any(r => r.Name.Equals("仓库")))
+                {
+                    throw new Exception("无仓库人员权限，不可出库。");
+                }
+            }
             #region 判断条件
-            var mergeMaterialList = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId == expressageMap.QuotationId).Select(q => new { q.MaterialCode, q.Id, q.WhsCode }).ToListAsync();
-
+            var quotationObj = await UnitWork.Find<Quotation>(q => q.Id == expressageMap.QuotationId).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
+            var mergeMaterialList = quotationObj.QuotationMergeMaterials.Select(q => new { q.MaterialCode, q.Id, q.WhsCode }).ToList();
+            if (quotationObj.SalesOrderId == null || quotationObj.SalesOrderId <= 0)
+            {
+                throw new Exception("暂未生成销售订单，不可出库，请联系管理员。");
+            }
             //判定是否存在成品
             mergeMaterialList.ForEach(m =>
             {
@@ -1432,8 +1483,8 @@ namespace OpenAuth.App.Material
                         LogisticsRecords.Add(new LogisticsRecord
                         {
                             CreateTime = DateTime.Now,
-                            CreateUser = loginContext.User.Name,
-                            CreateUserId = loginContext.User.Id,
+                            CreateUser = loginUser.Name,
+                            CreateUserId = loginUser.Id,
                             Quantity = item.SentQuantity,
                             QuotationId = item.QuotationId,
                             QuotationMaterialId = item.Id,
@@ -1463,45 +1514,48 @@ namespace OpenAuth.App.Material
 
             _capBus.Publish("Serve.SalesOfDelivery.Create", obj);
 
-            int isEXwarehouse = 0;
-            foreach (var item in QuotationMergeMaterialLists)
-            {
-                if (item.SentQuantity != item.Count)
-                {
-                    isEXwarehouse++;
-                }
-            }
-            QuotationOperationHistory qoh = new QuotationOperationHistory();
+            int isEXwarehouse = QuotationMergeMaterialLists.Where(q => q.SentQuantity != q.Count).Count();
+            List<QuotationOperationHistory> qoh = new List<QuotationOperationHistory>();
             var selqoh = await UnitWork.Find<QuotationOperationHistory>(r => r.QuotationId.Equals(obj.ExpressageReqs.QuotationId)).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
-            if (selqoh.ApprovalStage != "12") 
+            if (selqoh.ApprovalStage != "12")
             {
-                qoh.Action = "开始出库";
-                qoh.ApprovalResult = "出库成功";
-                qoh.ApprovalStage = "12";
-                qoh.CreateUser = loginContext.User.Name;
-                qoh.CreateUserId = loginContext.User.Id;
-                qoh.CreateTime = DateTime.Now;
-                qoh.QuotationId = obj.ExpressageReqs.QuotationId;
-                qoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds);
-                await UnitWork.AddAsync<QuotationOperationHistory>(qoh);
+                qoh.Add(new QuotationOperationHistory
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Action = "开始出库",
+                    ApprovalResult = "出库成功",
+                    ApprovalStage = "12",
+                    CreateUser = loginUser.Name,
+                    CreateUserId = loginUser.Id,
+                    CreateTime = DateTime.Now,
+                    QuotationId = obj.ExpressageReqs.QuotationId,
+                    IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds)
+                });
             }
+
+
             if (isEXwarehouse == 0)
             {
                 await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(obj.ExpressageReqs.QuotationId), q => new Quotation { QuotationStatus = 11 });
-                qoh.Action = "出库完成";
-                qoh.ApprovalResult = "出库成功";
-                qoh.ApprovalStage = "11";
-                qoh.CreateUser = loginContext.User.Name;
-                qoh.CreateUserId = loginContext.User.Id;
-                qoh.CreateTime = DateTime.Now;
-                qoh.QuotationId = obj.ExpressageReqs.QuotationId;
-                qoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds);
-                await UnitWork.AddAsync<QuotationOperationHistory>(qoh);
+                qoh.Add(new QuotationOperationHistory
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Action = "出库完成",
+                    ApprovalResult = "出库成功",
+                    ApprovalStage = "11",
+                    CreateUser = loginUser.Name,
+                    CreateUserId = loginUser.Id,
+                    CreateTime = DateTime.Now,
+                    QuotationId = obj.ExpressageReqs.QuotationId,
+                    IntervalTime = qoh.Count > 0 ? 0 : Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds)
+
+                });
             }
             else
             {
                 await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(obj.ExpressageReqs.QuotationId), q => new Quotation { QuotationStatus = 12 });
             }
+            await UnitWork.BatchAddAsync<QuotationOperationHistory>(qoh.ToArray());
             await UnitWork.SaveAsync();
             var result = new TableData();
             var MergeMaterials = from a in QuotationMergeMaterialLists
@@ -1533,6 +1587,44 @@ namespace OpenAuth.App.Material
                 }).ToList()
             };
             return result;
+        }
+        /// <summary>
+        /// 维修费差旅费定时交货
+        /// </summary>
+        /// <returns></returns>
+        public async Task TimeOfDelivery()
+        {
+            var quotations = await UnitWork.Find<Quotation>(q => q.QuotationStatus == 10 && q.CreateTime > Convert.ToDateTime("2021.05.10")).Include(q => q.QuotationMergeMaterials)
+                .Where(q => q.QuotationMergeMaterials.Where(m => !m.MaterialCode.Equals("S111-SERVICE-GSF") && !m.MaterialCode.Equals("S111-SERVICE-CLF")).Count() <= 0 && q.SalesOrderId != null).ToListAsync();
+            foreach (var item in quotations)
+            {
+
+                var pictures = "68cc3412-492b-4f39-b7de-3ab3a957017b";
+                if (item.ServiceCharge > 0 && item.TravelExpense > 0)
+                {
+                    pictures = "701d519b-5c0a-4369-adf4-8c0a2b7f0b16";
+                }
+                else if (item.TravelExpense > 0)
+                {
+                    pictures = "01a62877-1961-4f0e-9f39-2dab2cb2eb4a";
+                }
+                AddOrUpdateQuotationReq obj = new AddOrUpdateQuotationReq();
+                obj.ExpressageReqs = new ExpressageReq
+                {
+                    ExpressNumber = "自动出库",
+                    Freight = "0",
+                    QuotationId = item.Id,
+                    ExpressagePictures = new List<string>() { pictures }
+                };
+                obj.QuotationMergeMaterialReqs = item.QuotationMergeMaterials.MapToList<QuotationMergeMaterialReq>();
+                int num = 0;
+                obj.QuotationMergeMaterialReqs.ForEach(q => q.SentQuantity = 1);
+                if (num == 0 && item.IsMaterialType != null)
+                {
+                    await UpdateMaterial(obj);
+                }
+            }
+
         }
 
         /// <summary>
@@ -1574,12 +1666,13 @@ namespace OpenAuth.App.Material
                 obj.QuotationStatus = 1;
                 qoh.ApprovalResult = "驳回";
                 obj.FlowInstanceId = "";
+                qoh.ApprovalStage = "1";
                 var delQuotationMergeMaterial = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(obj.Id)).ToListAsync();
                 await UnitWork.BatchDeleteAsync<QuotationMergeMaterial>(delQuotationMergeMaterial.ToArray());
             }
             else
             {
-                if (loginContext.Roles.Any(r => r.Name.Equals("销售员")) && obj.QuotationStatus == 3.1M)
+                if ((loginContext.Roles.Any(r => r.Name.Equals("销售员")) || loginContext.Roles.Any(r => r.Name.Equals("总经理"))) && obj.QuotationStatus == 3.1M)
                 {
                     qoh.Action = "销售员审批";
                     obj.QuotationStatus = 4;
@@ -1735,7 +1828,7 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         private async Task<User> GetUserId(int AppId)
         {
-            var userid = UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(AppId)).Select(u => u.UserID).FirstOrDefault();
+            var userid = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(AppId)).Select(u => u.UserID).FirstOrDefaultAsync();
 
             return await UnitWork.Find<User>(u => u.Id.Equals(userid)).FirstOrDefaultAsync();
         }
@@ -1849,6 +1942,12 @@ namespace OpenAuth.App.Material
             }
             #endregion
 
+            //判定字段是否同时存在
+            if (!(!string.IsNullOrWhiteSpace(obj.TaxRate) && !string.IsNullOrWhiteSpace(obj.InvoiceCategory) && !string.IsNullOrWhiteSpace(obj.InvoiceCompany)) && !(string.IsNullOrWhiteSpace(obj.TaxRate) && string.IsNullOrWhiteSpace(obj.InvoiceCategory) && string.IsNullOrWhiteSpace(obj.InvoiceCompany)))
+            {
+                throw new Exception("请核对是否存在未填写字段");
+            }
+
             //判定人员是否有销售员code
             var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(loginUser.Name)).FirstOrDefaultAsync())?.SlpCode;
             if (slpcode == null || slpcode == 0)
@@ -1871,23 +1970,20 @@ namespace OpenAuth.App.Material
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
-            if (loginUser.Account == Define.USERAPP)
-            {
-                loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
-            }
 
             var QuotationObj = obj.MapTo<Quotation>();
-            QuotationObj.TotalMoney = 0;
-            QuotationObj.TotalCostPrice = 0;
-            QuotationObj.Tentative = false;
             QuotationObj.ErpOrApp = 1;
-            QuotationObj.PrintNo = Guid.NewGuid().ToString();
-            QuotationObj.PrintTheNumber = 0;
             if (loginUser.Account == Define.USERAPP)
             {
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
                 QuotationObj.ErpOrApp = 2;
+                throw new Exception("APP暂时不可领料，请前往ERP4.0进行领料。");
             }
+            QuotationObj.TotalMoney = 0;
+            QuotationObj.TotalCostPrice = 0;
+            QuotationObj.Tentative = false;
+            QuotationObj.PrintNo = Guid.NewGuid().ToString();
+            QuotationObj.PrintTheNumber = 0;
             QuotationObj.IsProtected = true;
             QuotationObj.QuotationProducts.ForEach(q =>
             {
@@ -1897,7 +1993,7 @@ namespace OpenAuth.App.Material
                     {
                         throw new Exception("金额有误请重新输入");
                     }
-
+                    m.Discount = m.MaterialType != 3 ? m.Discount : 100;
                     m.SalesPrice = m.MaterialType != 3 ? m.SalesPrice : 0;
                     m.DiscountPrices = m.MaterialType != 3 ? m.DiscountPrices : 0;
                     m.TotalPrice = m.MaterialType != 3 ? Convert.ToDecimal(Convert.ToDecimal(m.DiscountPrices * m.Count).ToString("#0.00")) : 0;
@@ -1907,7 +2003,7 @@ namespace OpenAuth.App.Material
             });
             if (QuotationObj.ServiceCharge != null && QuotationObj.ServiceCharge > 0 && QuotationObj.ServiceChargeManHour != null && QuotationObj.ServiceChargeManHour > 0)
             {
-                QuotationObj.TotalMoney += QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour;
+                QuotationObj.TotalMoney += Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceCharge * QuotationObj.ServiceChargeManHour).ToString("#0.00"));
             }
             else
             {
@@ -1916,7 +2012,7 @@ namespace OpenAuth.App.Material
             }
             if (QuotationObj.TravelExpense != null && QuotationObj.TravelExpense > 0 && QuotationObj.TravelExpenseManHour != null && QuotationObj.TravelExpenseManHour > 0)
             {
-                QuotationObj.TotalMoney += QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour;
+                QuotationObj.TotalMoney += Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00"));
             }
             else
             {
@@ -1952,7 +2048,7 @@ namespace OpenAuth.App.Material
                 q.Count,
                 q.Unit,
                 q.Id
-            });
+            }).OrderBy(q => q.MaterialCode).ToList();
             return result;
         }
 
@@ -1964,14 +2060,15 @@ namespace OpenAuth.App.Material
         public async Task<byte[]> PrintSalesOrder(string QuotationId)
         {
             var quotationId = int.Parse(QuotationId);
-            var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId) && q.QuotationStatus<10).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
-            if (model == null) {
-                throw new Exception("已出库，不可打印。");
+            var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId) && q.QuotationStatus < 10).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
+            if (model != null || model == null)
+            {
+                throw new Exception("暂未开放销售订单打印，请前往3.0打印。");
+                //throw new Exception("已出库，不可打印。");
             }
             var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_AcquisitionWay") || u.TypeId.Equals("SYS_DeliveryMethod")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
-
-            var createTime = Convert.ToDateTime(model.QuotationOperationHistorys.Where(q => q.ApprovalStage.Equals(4)).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd");
+            var createTime = Convert.ToDateTime(model.QuotationOperationHistorys.Where(q => q.ApprovalStage == "6.0").FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd");
             var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderHeader.html");
             var text = System.IO.File.ReadAllText(url);
             text = text.Replace("@Model.SalesOrderId", model.SalesOrderId.ToString());
@@ -2245,7 +2342,7 @@ namespace OpenAuth.App.Material
             var text = System.IO.File.ReadAllText(url);
             text = text.Replace("@Model.QuotationId", model.Id.ToString());
             text = text.Replace("@Model.SalesOrderId", model.SalesOrderId.ToString());
-            text = text.Replace("@Model.CreateTime",DateTime.Now.ToString("yyyy.MM.dd hh:mm"));//model.CreateTime.ToString("yyyy.MM.dd hh:mm")
+            text = text.Replace("@Model.CreateTime", DateTime.Now.ToString("yyyy.MM.dd hh:mm"));//model.CreateTime.ToString("yyyy.MM.dd hh:mm")
             text = text.Replace("@Model.SalesUser", model?.CreateUser.ToString());
             text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.Id.ToString()));
             text = text.Replace("@Model.CustomerId", serverOrder?.TerminalCustomerId.ToString());
@@ -2317,13 +2414,75 @@ namespace OpenAuth.App.Material
         /// <summary>
         /// 同步销售订单
         /// </summary>
-        /// <param name="SalesOrderId"></param>
+        /// <param name="QuotationId"></param>
         /// <returns></returns>
-        public async Task SyncSalesOrder(string SalesOrderId)
+        public async Task SyncSalesOrder(string QuotationId)
         {
-            _capBus.Publish("Serve.SellOrder.ERPCreate", int.Parse(SalesOrderId));
+            _capBus.Publish("Serve.SellOrder.ERPCreate", int.Parse(QuotationId));
         }
 
+        /// <summary>
+        /// 同步销售交货
+        /// </summary>
+        /// <param name="SalesOfDeliveryId"></param>
+        /// <returns></returns>
+        public async Task SyncSalesOfDelivery(string SalesOfDeliveryId)
+        {
+            _capBus.Publish("Serve.SalesOfDelivery.ERPCreate", int.Parse(SalesOfDeliveryId));
+        }
+
+        /// <summary>
+        /// 清空交货记录
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        /// <returns></returns>
+        public async Task EmptyDeliveryRecord(string QuotationId)
+        {
+            var expressages = await UnitWork.Find<Expressage>(e => e.QuotationId == int.Parse(QuotationId)).Include(e => e.ExpressagePicture).Include(e => e.LogisticsRecords).ToListAsync();
+            var picture = new List<ExpressagePicture>();
+            expressages.ForEach(e => picture.AddRange(e.ExpressagePicture));
+            var logisticsRecords = new List<LogisticsRecord>();
+            expressages.ForEach(e => logisticsRecords.AddRange(e.LogisticsRecords));
+            await UnitWork.BatchDeleteAsync<ExpressagePicture>(picture.ToArray());
+            await UnitWork.BatchDeleteAsync<LogisticsRecord>(logisticsRecords.ToArray());
+            await UnitWork.BatchDeleteAsync<Expressage>(expressages.ToArray());
+            await UnitWork.UpdateAsync<Quotation>(q => q.Id == int.Parse(QuotationId), q => new Quotation { QuotationStatus = 10 });
+            await UnitWork.UpdateAsync<QuotationMergeMaterial>(q => q.QuotationId == int.Parse(QuotationId), q => new QuotationMergeMaterial { SentQuantity = 0 });
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 取消销售订单
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        /// <returns></returns>
+        public async Task CancellationSalesOrder(string QuotationId)
+        {
+            _capBus.Publish("Serve.SellOrder.Cancel", int.Parse(QuotationId));
+        }
+
+        /// <summary>
+        /// 同步销售订单
+        /// </summary>
+        /// <returns></returns>
+        public async Task SyncSalesOrderStatus()
+        {
+            var salesOrderIds = await UnitWork.Find<Quotation>(q => string.IsNullOrWhiteSpace(q.SalesOrderId.ToString()) && q.QuotationStatus != -1M && q.CreateTime>Convert.ToDateTime("2021.05.10")).Select(q => q.SalesOrderId).ToListAsync();
+            var oRDRS = await UnitWork.Find<ORDR>(o => salesOrderIds.Contains(o.DocEntry) && (o.DocStatus == "C" || o.CANCELED == "Y")).Select(o => new { o.DocEntry, o.DocStatus, o.CANCELED }).ToListAsync();
+            var cANCELEDORDR = oRDRS.Where(o => o.CANCELED == "Y").ToList();
+            if (cANCELEDORDR.Count() > 0)
+            {
+                var cANCELEDORDRIds = cANCELEDORDR.Select(c => c.DocEntry).ToList();
+                await UnitWork.UpdateAsync<Quotation>(q => q.QuotationStatus != -1M && cANCELEDORDRIds.Contains((int)q.SalesOrderId), q => new Quotation { QuotationStatus = -1 });
+            }
+            var statusORDR = oRDRS.Where(o => o.DocStatus == "C").ToList();
+            if (statusORDR.Count() > 0)
+            {
+                var statusORDRIds = statusORDR.Select(c => c.DocEntry).ToList();
+                await UnitWork.UpdateAsync<Quotation>(q => q.QuotationStatus != 11M && statusORDRIds.Contains((int)q.SalesOrderId), q => new Quotation { QuotationStatus = 11 });
+            }
+            await UnitWork.SaveAsync();
+        }
         //, FlowInstanceApp flowInstanceApp, ModuleFlowSchemeApp moduleFlowSchemeApp
         public QuotationApp(IUnitWork unitWork, ICapPublisher capBus, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
         {

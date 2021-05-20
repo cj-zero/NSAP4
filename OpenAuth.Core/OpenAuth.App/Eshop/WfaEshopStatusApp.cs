@@ -123,5 +123,34 @@ namespace OpenAuth.App
             }
             return result;
         }
+
+        /// <summary>
+        /// 根据客户编码取得对应业务员手机号
+        /// </summary>
+        /// <param name="cardCode"></param>
+        /// <param name="sboId"></param>
+        /// <returns></returns>
+        public async Task<string> GetSalesPersonTelByCardCode(string cardCode)
+        {
+            //业务员Id
+            var objslpstr = from a in UnitWork.Find<crm_ocrd>(null)
+                         join b in UnitWork.Find<crm_oslp>(null) on new { a.sbo_id, a.SlpCode } equals new { sbo_id=b.sbo_id, SlpCode=b.SlpCode }
+                         where a.sbo_id.Equals(1) && a.CardCode.Equals(cardCode)
+                         select new { a, b };
+            var objslp = await objslpstr.Select(o => new { o.a.SlpCode, o.b.SlpName,o.a.sbo_id }).FirstOrDefaultAsync();
+            if (objslp!=null && objslp.SlpCode > 0)
+            {
+                var objuser = from a in UnitWork.Find<sbo_user>(null)
+                              join b in UnitWork.Find<base_user>(null) on a.user_id equals b.user_id into ab
+                              from b in ab.DefaultIfEmpty()
+                              select new { a, b };
+                var telobj = await objuser.Where(o => o.a.sbo_id==objslp.sbo_id && o.a.sale_id==objslp.SlpCode && o.b.user_nm.Equals(objslp.SlpName)).Select(q => q.b.mobile).FirstOrDefaultAsync();
+                return telobj==0? "":telobj.ToString();
+            }
+            else
+            {
+                return "";
+            }
+        }
     }
 }

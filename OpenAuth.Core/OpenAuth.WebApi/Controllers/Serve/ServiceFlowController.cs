@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Serve.Request;
+using Serilog;
 
 namespace OpenAuth.WebApi.Controllers.Serve
 {
@@ -41,6 +42,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             {
                 result.Code = 500;
                 result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}， 错误：{result.Message}");
             }
             return result;
         }
