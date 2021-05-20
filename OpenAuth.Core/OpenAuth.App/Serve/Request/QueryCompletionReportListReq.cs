@@ -11,5 +11,11 @@
         /// 物料编码
         /// </summary>
         public string MaterialCode { get; set; }
+
+        /// <summary>
+        /// app用户id
+        /// </summary>
+        public int? CurrentUserId { get; set; }
+        
     }
 }

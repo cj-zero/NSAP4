@@ -39,20 +39,32 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-
+            var loginUser = loginContext.User;
+            if (loginUser.Account == Define.USERAPP && request.CurrentUserId != null)
+            {
+                var userid = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(request.CurrentUserId)).Select(u => u.UserID).FirstOrDefaultAsync();
+                loginUser = await UnitWork.Find<User>(u => u.Id.Equals(userid)).FirstOrDefaultAsync();
+            }
             var result = new TableData();
             var sericeWorkOrderList = UnitWork.Find<ServiceWorkOrder>(s => s.CompletionReportId != null && s.CompleteDate != null).Include(s=>s.ServiceOrder).Where(s=>s.ServiceOrder.VestInOrg==2)
-                                        .WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumber),s=>s.ManufacturerSerialNumber.Contains(request.ManufacturerSerialNumber))
-                                        .WhereIf(!string.IsNullOrWhiteSpace(request.MaterialCode), s => s.MaterialCode.Contains(request.MaterialCode));
+                                       .WhereIf(!string.IsNullOrWhiteSpace(request.MaterialCode), s => s.MaterialCode.Contains(request.MaterialCode));
+            if (loginContext.User.Account == Define.USERAPP && request.CurrentUserId != null)
+            {
+                sericeWorkOrderList = sericeWorkOrderList.WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumber), s => s.ManufacturerSerialNumber.Equals(request.ManufacturerSerialNumber));
+            }
+            else
+            {
+                sericeWorkOrderList = sericeWorkOrderList.WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumber), s => s.ManufacturerSerialNumber.Contains(request.ManufacturerSerialNumber));
+            }
             if (!loginContext.Roles.Any(r => r.Name.Equals("工程主管"))&& !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心"))) 
             {
-                sericeWorkOrderList=sericeWorkOrderList.Where(s => s.CurrentUserNsapId.Equals(loginContext.User.Id));
+                sericeWorkOrderList=sericeWorkOrderList.Where(s => s.CurrentUserNsapId.Equals(loginUser.Id));
             }
             var completionReportIds = await sericeWorkOrderList.Skip((request.page - 1) * request.limit).Take(request.limit).Select(s => s.CompletionReportId).ToListAsync();
 
 
             var query = from a in UnitWork.Find<CompletionReport>(c => completionReportIds.Contains(c.Id)).Include(c => c.ChangeTheMaterials).Include(c => c.CompletionReportPictures)
-                       join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
+                       join b in UnitWork.Find<ServiceOrder>(null).Include(s=>s.ServiceWorkOrders) on a.ServiceOrderId equals b.Id into ab
                        from b in ab.DefaultIfEmpty()
                        select new { a,b};
             var objs = await query.ToListAsync();
@@ -60,6 +72,7 @@ namespace OpenAuth.App
             objs.ForEach(o => { var material = ""; o.a.ChangeTheMaterials.ForEach(c=>material+=c.Material+"*"+c.Count+","); changeTheMaterials.Add(o.a.Id, material); });
             result.Data = objs.Select(o => new
             {
+                MaterialCode=o.b.ServiceWorkOrders.FirstOrDefault()?.MaterialCode,
                 o.a.CreateTime,
                 o.a.FaultPhenomenon,
                 o.a.CauseOfDefect,
