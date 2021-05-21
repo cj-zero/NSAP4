@@ -312,7 +312,7 @@ namespace OpenAuth.App.Material
             ServiceOrders = ServiceOrders.WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId.ToString()), s => s.a.Id.Equals(request.ServiceOrderId))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderSapId.ToString()), s => s.a.U_SAP_ID.Equals(request.ServiceOrderSapId));
             var ServiceOrderList = (await ServiceOrders.Where(s => s.b.CurrentUserNsapId.Equals(loginUser.Id)).ToListAsync()).GroupBy(s => s.a.Id).Select(s => s.First());
-            var CustomerIds = ServiceOrderList.Select(s => s.a.CustomerId).ToList();
+            var CustomerIds = ServiceOrderList.Select(s => s.a.TerminalCustomerId).ToList();
             var CardAddress = from a in UnitWork.Find<OCRD>(null)
                               join c in UnitWork.Find<OCRY>(null) on a.Country equals c.Code into ac
                               from c in ac.DefaultIfEmpty()
