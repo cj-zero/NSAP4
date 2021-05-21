@@ -452,10 +452,16 @@ namespace OpenAuth.App
         /// <param name="ServiceOrderId"></param>
         /// <param name="UserId"></param>
         /// <returns></returns>
-        public async Task<TableData> GetCompletionReportDetailsWeb(int ServiceOrderId, string UserId)
+        public async Task<TableData> GetCompletionReportDetailsWeb(int ServiceOrderId, string UserId, int? currentUserId)
         {
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
+            var loginUser = loginContext.User;
+            if (loginUser.Account == Define.USERAPP && currentUserId != null)
+            {
+                var userid = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(currentUserId)).Select(u => u.UserID).FirstOrDefaultAsync();
+                loginUser = await UnitWork.Find<User>(u => u.Id.Equals(userid)).FirstOrDefaultAsync();
+            }
             var CompletionReports = await UnitWork.Find<CompletionReport>(u => u.ServiceOrderId == ServiceOrderId).Include(u => u.CompletionReportPictures).Include(u => u.ChangeTheMaterials).ToListAsync();
             var ServiceWorkOrders = await UnitWork.Find<ServiceWorkOrder>(w => w.ServiceOrderId.Equals(ServiceOrderId)).ToListAsync();
             var serviceOrderObj = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(ServiceOrderId)).Select(s => new { s.U_SAP_ID, s.VestInOrg }).FirstOrDefaultAsync();
@@ -463,8 +469,8 @@ namespace OpenAuth.App
             {
                 if (UserId == null)
                 {
-                    CompletionReports = CompletionReports.Where(c => c.CreateUserId.Equals(loginContext.User.Id)).ToList();
-                    ServiceWorkOrders = ServiceWorkOrders.Where(c => c.CurrentUserNsapId.Equal(loginContext.User.Id)).ToList();
+                    CompletionReports = CompletionReports.Where(c => c.CreateUserId.Equals(loginUser.Id)).ToList();
+                    ServiceWorkOrders = ServiceWorkOrders.Where(c => c.CurrentUserNsapId.Equal(loginUser.Id)).ToList();
                 }
             }
             if (UserId != null)
