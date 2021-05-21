@@ -19,6 +19,11 @@ namespace OpenAuth.App.Request
         [Required]
         public int Type { get; set; }
 
+        /// <summary>
+        /// 技术员类型 1-普通 2-E3 
+        /// </summary>
+        public int TechOrg { get; set; }
+
         ///// <summary>
         ///// 经度
         ///// </summary>
