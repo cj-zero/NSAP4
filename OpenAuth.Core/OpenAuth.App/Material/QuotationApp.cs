@@ -593,6 +593,7 @@ namespace OpenAuth.App.Material
             QuotationMergeMaterials = QuotationMergeMaterials.OrderBy(q => q.MaterialCode).ToList();
             Quotations.QuotationOperationHistorys = Quotations.QuotationOperationHistorys.Where(q => q.ApprovalStage != "-1").OrderBy(q => q.CreateTime).ToList();
             Quotations.ServiceRelations = (await UnitWork.Find<User>(u => u.Id.Equals(Quotations.CreateUserId)).FirstOrDefaultAsync()).ServiceRelations;
+            var ocrds = await UnitWork.Find<OCRD>(o => ServiceOrders.TerminalCustomerId.Equals(o.CardCode)).FirstOrDefaultAsync();
             var result = new TableData();
             if (Quotations.Status == 2)
             {
@@ -641,6 +642,7 @@ namespace OpenAuth.App.Material
                 }).ToList();
                 result.Data = new
                 {
+                    Balance = ocrds?.Balance,
                     Expressages,
                     Quotations = Quotations,
                     QuotationMergeMaterials,
@@ -652,6 +654,7 @@ namespace OpenAuth.App.Material
             {
                 result.Data = new
                 {
+                    Balance = ocrds?.Balance,
                     Quotations = Quotations,
                     QuotationMergeMaterials,
                     ServiceOrders,
