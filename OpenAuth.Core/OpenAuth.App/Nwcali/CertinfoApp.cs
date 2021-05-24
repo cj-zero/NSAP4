@@ -314,11 +314,21 @@ namespace OpenAuth.App
         public async Task<TableData> GetCertNoByMultiNum(List<string> serialNumber)
         {
             TableData result = new TableData();
-            var query =await( from a in UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId))
-                        join b in UnitWork.Find<PcPlc>(c => serialNumber.Contains(c.Guid) && c.ExpirationDate >= DateTime.Now)
-                        on a.Id equals b.NwcaliBaseInfoId
-                        select new { CertNo = a.CertificateNumber, No = b.No, TesterModel = a.TesterModel, CalibrationDate = a.Time, ExpirationDate = a.ExpirationDate }).ToListAsync();
+            var query = await (from a in UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId))
+                               join b in UnitWork.Find<PcPlc>(c => serialNumber.Contains(c.Guid) && c.ExpirationDate >= DateTime.Now)
+                               on a.Id equals b.NwcaliBaseInfoId
+                               select new NwcailView { CertNo = a.CertificateNumber, No = b.No, TesterModel = a.TesterModel, CalibrationDate = a.Time, ExpirationDate = a.ExpirationDate }).ToListAsync();
+
             result.Data = query;
+            var certNos = await UnitWork.Find<Certplc>(p => serialNumber.Contains(p.PlcGuid)).Select(c => c.CertNo).ToListAsync();
+            if (certNos.Count > 0)
+            {
+                var nos = string.Join("','", certNos);
+                var certinfo = await UnitWork.FromSql<Certinfo>($@"SELECT a.* from nsap4_nwcali.certinfo a JOIN nsap4.flowinstance b on a.FlowInstanceId=b.Id
+                                    where CertNo in ('{nos}') and ActivityName='结束'").Select(c => new NwcailView { CertNo = c.CertNo, No = null, TesterModel = c.Model, CalibrationDate = c.CalibrationDate, ExpirationDate = c.ExpirationDate }).ToListAsync();
+
+                if (certinfo.Count > 0) result.Data = query.Concat(certinfo);
+            }
             return result;
         }
         /// <summary>
