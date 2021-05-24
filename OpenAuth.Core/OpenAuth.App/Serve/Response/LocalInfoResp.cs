@@ -46,14 +46,6 @@ namespace OpenAuth.App.Response
         /// 间隔总时长
         /// </summary>
         public double? TotalHour { get; set; }
-        /// <summary>
-        /// 签到时间
-        /// </summary>
-        public DateTime? SignInDate { get; set; }
-        /// <summary>
-        /// 签退时间
-        /// </summary>
-        public DateTime? SignOutDate { get; set; }
 
     }
 
@@ -63,6 +55,14 @@ namespace OpenAuth.App.Response
         /// 服务ID
         /// </summary>
         public string ServiceOrderId { get; set; }
+        /// <summary>
+        /// 签到时间
+        /// </summary>
+        public DateTime? SignInDate { get; set; }
+        /// <summary>
+        /// 签退时间
+        /// </summary>
+        public DateTime? SignOutDate { get; set; }
 
         public List<Trajectory> Trajectory { get; set; }
         //public string Date { get; set; }
