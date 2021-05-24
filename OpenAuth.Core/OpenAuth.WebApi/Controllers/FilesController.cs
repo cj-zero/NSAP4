@@ -112,7 +112,15 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response<IList<UploadFileResp>>();
             try
             {
-                result.Result = await _app.Add(files);
+                if (files.Count() <= 0)
+                {
+                    result.Code = 500;
+                    result.Message = "传入文件为空，请检查。";
+                }
+                else 
+                {
+                    result.Result = await _app.Add(files);
+                }
             }
             catch (Exception ex)
             {

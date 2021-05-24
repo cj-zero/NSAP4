@@ -563,8 +563,9 @@ namespace OpenAuth.App
                         .Include(r => r.ReimburseFares)
                         .Include(r => r.ReimburseAccommodationSubsidies)
                         .Include(r => r.ReimburseOtherCharges)
-                        .Include(r => r.ReimurseOperationHistories)
+                        //.Include(r => r.ReimurseOperationHistories)
                         .FirstOrDefaultAsync();
+            Reimburse.ReimurseOperationHistories = await UnitWork.Find<ReimurseOperationHistory>(r => r.ReimburseInfoId == ReimburseInfoId).OrderBy(o => o.CreateTime).ToListAsync();
             #region 获取附件
             Reimburse.ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId == ReimburseInfoId && r.ReimburseType == 0).ToListAsync();
             var ReimburseResp = Reimburse.MapTo<ReimburseInfoResp>();
@@ -604,8 +605,7 @@ namespace OpenAuth.App
                     AttachmentType = r.AttachmentType
                 }).ToList());
             }
-            foreach (var item in ReimburseResp.ReimburseAccommodationSubsidies)
-            {
+            if (ReimburseResp.ReimburseAccommodationSubsidies != null && ReimburseResp.ReimburseAccommodationSubsidies.Count > 0) {
                 ReimburseResp.ReimburseAccommodationSubsidies.ForEach(r => r.ReimburseAttachments = rffilemodel.Where(f => f.ReimburseId.Equals(r.Id) && f.ReimburseType == 3).Select(r => new ReimburseAttachmentResp
                 {
                     Id = r.Id,
@@ -617,7 +617,7 @@ namespace OpenAuth.App
                     AttachmentType = r.AttachmentType
                 }).ToList());
             }
-            foreach (var item in ReimburseResp.ReimburseOtherCharges)
+            if (ReimburseResp.ReimburseOtherCharges != null && ReimburseResp.ReimburseOtherCharges.Count > 0)
             {
                 ReimburseResp.ReimburseOtherCharges.ForEach(r => r.ReimburseAttachments = rffilemodel.Where(f => f.ReimburseId.Equals(r.Id) && f.ReimburseType == 4).Select(r => new ReimburseAttachmentResp
                 {
@@ -630,7 +630,8 @@ namespace OpenAuth.App
                     AttachmentType = r.AttachmentType
                 }).ToList());
             }
-            ReimburseResp.ReimurseOperationHistories = ReimburseResp.ReimurseOperationHistories.OrderBy(r => r.CreateTime).ToList();
+                
+            //ReimburseResp.ReimurseOperationHistories = ReimburseResp.ReimurseOperationHistories.OrderBy(r => r.CreateTime).ToList();
             #endregion
 
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == ReimburseResp.CreateUserId).Select(r => r.SecondId).ToListAsync();
