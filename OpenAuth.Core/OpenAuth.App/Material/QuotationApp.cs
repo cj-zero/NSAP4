@@ -552,7 +552,9 @@ namespace OpenAuth.App.Material
                     .WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), s => request.PartDescribe.Contains(s.ItemName))
                     .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
             }
-            Equipments = Equipments.Where(e => !e.ItemCode.Equals("S111-SERVICE-GSF") && !e.ItemCode.Equals("S111-SERVICE-CLF")).ToList();
+            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ShieldingMaterials")).Select(u => u.Name).ToListAsync();
+
+            Equipments = Equipments.Where(e => !CategoryList.Contains(e.ItemCode)).ToList();
             return Equipments;
         }
 
@@ -836,8 +838,9 @@ namespace OpenAuth.App.Material
                         where b.WhsCode == request.WhsCode
                         select new SysEquipmentColumn { ItemCode = a.ItemCode, ItemName = a.ItemName, lastPurPrc = a.LastPurPrc, BuyUnitMsr = a.SalUnitMsr, OnHand = b.OnHand, WhsCode = b.WhsCode };
             result.Count = await query.CountAsync();
+            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ShieldingMaterials")).Select(u => u.Name).ToListAsync();
 
-            var Equipments = await query.Where(e => !e.ItemCode.Equals("S111-SERVICE-GSF") && !e.ItemCode.Equals("S111-SERVICE-CLF")).Skip((request.page - 1) * request.limit)
+            var Equipments = await query.Where(e => !CategoryList.Contains(e.ItemCode)).Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
             var ItemCodes = Equipments.Select(e => e.ItemCode).ToList();
             var MaterialPrices = await UnitWork.Find<MaterialPrice>(m => ItemCodes.Contains(m.MaterialCode)).ToListAsync();

@@ -113,6 +113,11 @@ namespace OpenAuth.App
                 Label="公司",
                 Value= "公司",
             });
+            reimburseOrgResps.Add(new ReimburseOrgResp
+            {
+                Label = "T1",
+                Value = "T1",
+            });
             result.Data = reimburseOrgResps;
             return result;
         }
