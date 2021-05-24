@@ -622,14 +622,15 @@ namespace NSAP.App.WebApi.Controllers
         /// 获取技术员单据数量列表
         /// </summary>
         /// <param name="CurrentUserId"></param>
+        /// <param name="TechType">技术员类型 1-普通 2-E3 </param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetTechnicianServiceOrderCount(int CurrentUserId)
+        public async Task<TableData> GetTechnicianServiceOrderCount(int CurrentUserId,int TechOrg)
         {
             var result = new TableData();
             try
             {
-                result = await _serviceOrderApp.GetTechnicianServiceOrderCount(CurrentUserId);
+                result = await _serviceOrderApp.GetTechnicianServiceOrderCount(CurrentUserId, TechOrg);
             }
             catch (Exception ex)
             {

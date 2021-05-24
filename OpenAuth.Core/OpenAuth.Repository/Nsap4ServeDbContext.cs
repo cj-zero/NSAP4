@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Serve;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -26,6 +27,8 @@ namespace OpenAuth.Repository
         public virtual DbSet<AttendanceClock> Attendanceclocks { get; set; }
         public virtual DbSet<AttendanceClockPicture> Attendanceclockpictures { get; set; }
         public virtual DbSet<CompletionReport> Completionreports { get; set; }
+        public virtual DbSet<ChangeTheMaterial> ChangeTheMaterials { get; set; }
+        
         public virtual DbSet<CompletionReportPicture> Completionreportpictures { get; set; }
         public virtual DbSet<ServiceOrder> Serviceorders { get; set; }
         public virtual DbSet<ServiceOrderMessage> Serviceordermessages { get; set; }

@@ -122,14 +122,14 @@ namespace OpenAuth.App.Serve
                            join c in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals c.Id
                            where a.CreateTime>=DateTime.Now.AddMonths(-1) && b.FromUserId != "0" && b.FroUserId!=null
                            select new { a, b, c };
-            var MessageList = await Messages.Select(m => new { m.a.Content, m.a.ServiceOrderId, m.a.Replier, CreateTime = m.a.CreateTime.ToString(), m.b.FroUserId, m.c.U_SAP_ID,m.b.HasRead }).ToListAsync();
-            var DistinctMessage = MessageList.OrderByDescending(m => m.CreateTime).GroupBy(m => new { m.ServiceOrderId, m.FroUserId }).Select(m => m.First()).ToList();
-            var AppUserIds = DistinctMessage.Select(m => m.FroUserId).Distinct().ToList();
+            var MessageList = await Messages.Select(m => new { content=m.a.Content, serviceOrderId = m.a.ServiceOrderId, replier = m.a.Replier, createTime = m.a.CreateTime.ToString(), froUserId = m.b.FroUserId, u_SAP_ID = m.c.U_SAP_ID, hasRead = m.b.HasRead , vestInOrg=m.c.VestInOrg}).ToListAsync();
+            var DistinctMessage = MessageList.OrderByDescending(m => m.createTime).GroupBy(m => new { m.serviceOrderId, m.froUserId }).Select(m => m.First()).ToList();
+            var AppUserIds = DistinctMessage.Select(m => m.froUserId).Distinct().ToList();
             var AppUserMaps = await UnitWork.Find<AppUserMap>(u => AppUserIds.Contains(u.AppUserId.ToString())).Include(u => u.User).ToListAsync();
             var UserNames = AppUserMaps.Select(u => new { u.User.Name, u.AppUserId }).ToList();
             foreach (var item in UserNames)
             {
-                var Message = DistinctMessage.Where(m => m.FroUserId.Equals(item.AppUserId.ToString())).ToList();
+                var Message = DistinctMessage.Where(m => m.froUserId.Equals(item.AppUserId.ToString())).ToList();
                 await _hubContext.Clients.User(item.Name).SendAsync("ServiceOrderMessage", "消息", Message);
             }
         }

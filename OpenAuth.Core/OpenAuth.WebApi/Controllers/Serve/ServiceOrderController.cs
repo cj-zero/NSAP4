@@ -287,7 +287,27 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
-
+        /// <summary>
+        /// 工程部新建服务单
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> CISECreateServiceOrder(CustomerServiceAgentCreateOrderReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.CISECreateServiceOrder(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
+        }
+        
         /// <summary>
         /// 获取服务单详情
         /// </summary>
@@ -1049,6 +1069,7 @@ namespace OpenAuth.WebApi.Controllers
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("TechnicianId", req.TechnicianId);
                 parameters.Add("Type", req.Type);
+                parameters.Add("TechOrg", req.TechOrg);
                 parameters.Add("limit", req.limit);
                 parameters.Add("page", req.page);
                 parameters.Add("key", req.key);
@@ -1344,13 +1365,14 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="CurrentUserId"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetTechnicianServiceOrderCount(int CurrentUserId)
+        public async Task<TableData> GetTechnicianServiceOrderCount(int CurrentUserId, int TechOrg)
         {
             var result = new TableData();
             try
             {
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("CurrentUserId", CurrentUserId);
+                parameters.Add("TechOrg", TechOrg);
 
                 var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetTechnicianServiceOrderCount");
                 result = JsonConvert.DeserializeObject<TableData>(r);

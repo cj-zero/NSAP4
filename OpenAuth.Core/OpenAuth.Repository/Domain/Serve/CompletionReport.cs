@@ -15,6 +15,7 @@ using System.Text;
 using AutoMapper.Configuration.Annotations;
 using OpenAuth.Repository.Core;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Serve;
 
 namespace OpenAuth.Repository.Domain
 {
@@ -265,11 +266,34 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("责任环节")]
         public string Responsibility { get; set; }
+
+        /// <summary>
+        /// 故障现象（E3）
+        /// </summary>
+        [Description("故障现象（E3）")]
+        public string FaultPhenomenon { get; set; }
+
+        // <summary>
+        /// 不良原因（E3）
+        /// </summary>
+        [Description("不良原因（E3）")]
+        public string CauseOfDefect { get; set; }
+
+        /// <summary>
+        /// 更换元件位置（E3）
+        /// </summary>
+        [Description("更换元件位置（E3）")]
+        public string ChangeTheLocation { get; set; }
         /// <summary>
         /// 完工报告关联的图片
         /// </summary>
         [Ignore]
         public virtual List<CompletionReportPicture> CompletionReportPictures { get; set; }
 
+        /// <summary>
+        /// 完工报告关联的更换物料和数量
+        /// </summary>
+        public virtual List<ChangeTheMaterial> ChangeTheMaterials { get; set; }
+        
     }
 }

@@ -137,7 +137,7 @@ namespace OpenAuth.App.Response
         /// <summary>
         /// 服务单状态 1-待确认 2-已确认 3-已取消
         /// </summary>
-        public int Status { get; set; }
+        public string Status { get; set; }
         /// <summary>
         /// App技术主管Id
         /// </summary>
@@ -157,7 +157,7 @@ namespace OpenAuth.App.Response
         /// <summary>
         /// 呼叫来源  1-电话 2-APP 
         /// </summary>
-        public int? FromId { get; set; }
+        public string FromId { get; set; }
 
         /// <summary>
         /// 是否全部填写了完工报告

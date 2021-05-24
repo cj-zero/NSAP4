@@ -17,6 +17,7 @@ using OpenAuth.App.Response;
 using OpenAuth.App.Serve.Request;
 using OpenAuth.App.Serve.Response;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository.Interface;
 
 namespace OpenAuth.App
@@ -406,7 +407,7 @@ namespace OpenAuth.App
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.CreateUserId.Equals(loginUser.Id) && c.IsReimburse < 2).OrderByDescending(c => c.CreateTime).ToListAsync();
 
             var ServiceOrderids = CompletionReports.Select(c => c.ServiceOrderId).Distinct().ToList();
-            var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ServiceOrderids.Contains(s.Id)).Include(s => s.ServiceWorkOrders).ToListAsync();
+            var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ServiceOrderids.Contains(s.Id) && s.VestInOrg<=1).Include(s => s.ServiceWorkOrders).ToListAsync();
             List<ServiceOrder> ServiceOrderList = new List<ServiceOrder>();
             foreach (var item in ServiceOrders)
             {
@@ -641,13 +642,16 @@ namespace OpenAuth.App
             {
                 quotations.Add(await _quotation.GeneralDetails(item, null));
             }
+            quotations.ForEach(q => q.QuotationOperationHistorys = q.QuotationOperationHistorys.OrderBy(o => o.CreateTime).ToList());
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == ReimburseResp.ServiceOrderId && c.CreateUserId.Equals(ReimburseResp.CreateUserId) && c.ServiceMode == 1).ToListAsync();
             var completionreport = CompletionReports.FirstOrDefault();
+            var ocrds = await UnitWork.Find<OCRD>(o => serviceOrders.TerminalCustomerId.Equals(o.CardCode)).FirstOrDefaultAsync();
             result.Data = new
             {
                 ReimburseResp = ReimburseResp,
                 UserName = await UnitWork.Find<User>(u => u.Id.Equals(ReimburseResp.CreateUserId)).Select(u => u.Name).FirstOrDefaultAsync(),
                 OrgName = orgname,
+                Balance = ocrds?.Balance,
                 //TerminalCustomer = completionreport.TerminalCustomer,
                 //TerminalCustomerId = completionreport.TerminalCustomerId,
                 FromTheme = completionreport.FromTheme,
