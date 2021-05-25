@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
@@ -133,7 +134,10 @@ namespace OpenAuth.App
             //所有人最新定位信息
             var realTimeLocationHis = await UnitWork.FromSql<RealTimeLocation>(@$"SELECT * from nsap4_serve.realtimelocation where Id in  (
                                         SELECT max(Id) as Id from nsap4_serve.realtimelocation GROUP BY AppUserId
-                                        ) ORDER BY CreateTime desc").ToListAsync();
+                                        ) ORDER BY CreateTime desc")
+                                        .WhereIf(!string.IsNullOrWhiteSpace(req.Province),c=>c.Province==req.Province)
+                                        .WhereIf(!string.IsNullOrWhiteSpace(req.City),c=>c.City==req.City)
+                                        .ToListAsync();
 
 
             var locaotionInfoHistory = from a in realTimeLocationHis
@@ -142,7 +146,7 @@ namespace OpenAuth.App
 
 
             var now = DateTime.Now;
-            var data = await UnitWork.Find<User>(c => userIds.Contains(c.Id)).WhereIf(!string.IsNullOrWhiteSpace(req.Name), c => c.Name.Equals(req.Name)).ToListAsync();
+            var data = await UnitWork.Find<User>(c => userIds.Contains(c.Id)).WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)).ToListAsync();
             var da1 = data.Select(c =>
              {
                  //当天是否有定位记录
@@ -150,7 +154,7 @@ namespace OpenAuth.App
                  var onlineState = "离线";
                  var interv = "30天前";
                  decimal? longi = 0, lati = 0;
-                 double? totalHour = 0;
+                 double? totalHour = 720;
 
                  if (currentLoca != null)
                  {
@@ -183,16 +187,21 @@ namespace OpenAuth.App
                      TotalHour= totalHour,
                  };
 
-             });
+             }).OrderBy(c=>c.TotalHour);
 
-            if (string.IsNullOrWhiteSpace(req.Name) && !string.IsNullOrWhiteSpace(req.Status)) da1.Where(c => c.Status == req.Status);
+            //if (string.IsNullOrWhiteSpace(req.Name) && !string.IsNullOrWhiteSpace(req.Status)) da1.Where(c => c.Status == req.Status);
 
+            result.Count = da1.Count();
             result.Data = da1;
             return result;
         }
 
-
-        public async Task<TableData> HistoryTrajectory(QueryLocationInfoReq req)
+        /// <summary>
+        /// 查询技术员轨迹
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> HistoryTrajectory(QueryTrajectoryReq req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -229,7 +238,13 @@ namespace OpenAuth.App
             var data = realTimeLocation?.GroupBy(c=>c.CreateTime.ToString("yyyy-MM-dd")).Select(c=>new Trajectory
             {
                 Date = c.Key,
-                Pos = c.Select(p => new Position { Longitude = p.BaiduLongitude, Latitude = p.BaiduLatitude }).ToList()
+                Pos = c.Select(p => new Position 
+                { 
+                    Longitude = p.BaiduLongitude, 
+                    Latitude = p.BaiduLatitude,
+                    Address= p?.Province + p?.City + p?.Area + p?.Addr,
+                    PosDate=p?.CreateTime
+                }).OrderBy(q=>q.PosDate).ToList()
             }).ToList();
 
 

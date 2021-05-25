@@ -80,6 +80,14 @@ namespace OpenAuth.App.Response
         /// 纬度
         /// </summary>
         public decimal? Latitude { get; set; }
+        /// <summary>
+        /// 定位地址
+        /// </summary>
+        public string Address { get; set; }
+        /// <summary>
+        /// 定位时间
+        /// </summary>
+        public DateTime? PosDate { get; set; }
 
     }
 

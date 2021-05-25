@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
@@ -80,8 +81,8 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> LoadLocationInfo([FromQuery] QueryLocationInfoReq req)
+        [HttpPost]
+        public async Task<TableData> LoadLocationInfo([FromBody] QueryLocationInfoReq req)
         {
             var result = new TableData();
             result = await _realTimeLocationApp.LoadLocationInfo(req);
@@ -94,7 +95,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> LoadTrajectory([FromQuery] QueryLocationInfoReq req)
+        public async Task<TableData> LoadTrajectory([FromQuery] QueryTrajectoryReq req)
         {
             var result = new TableData();
             result = await _realTimeLocationApp.HistoryTrajectory(req);
@@ -111,14 +112,6 @@ namespace OpenAuth.WebApi.Controllers
             var res = new TableData();
             res = await _realTimeLocationApp.GetCustomer();
             return res;
-        }
-
-        [HttpGet]
-        public async Task<Response> UpdateLoca()
-        {
-            var result = new Response();
-            await _realTimeLocationApp.UpdateLoca();
-            return result;
         }
 
     }
