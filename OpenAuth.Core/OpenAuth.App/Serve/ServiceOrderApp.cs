@@ -1544,7 +1544,7 @@ namespace OpenAuth.App
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.Supervisor.Contains(req.QrySupervisor))
-                .Where(q => q.SalesManId.Equals(loginContext.User.Id) && q.CustomerId.Equals(q.TerminalCustomerId) && q.CustomerName.Equals(q.TerminalCustomer) && ids.Contains(q.Id) && q.Status == 2);
+                .Where(q => q.SalesManId.Equals(loginContext.User.Id) && ids.Contains(q.Id) && q.Status == 2);
 
             var resultsql = query.OrderByDescending(q => q.CreateTime).Select(q => new
             {

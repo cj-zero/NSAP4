@@ -41,7 +41,7 @@ namespace Sap.Handler.Service
                     SAPbobsCOM.Documents dts = (SAPbobsCOM.Documents)company.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oDeliveryNotes);
                     var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").FirstOrDefaultAsync();
                     var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
-                    var ordr = await UnitWork.Find<RDR1>(o => o.DocEntry.Equals(quotation.SalesOrderId)).Select(o => new { o.LineNum, o.ItemCode }).ToListAsync();
+                    var ordr = await UnitWork.Find<RDR1>(o => o.DocEntry.Equals(quotation.SalesOrderId)).Select(o => new { o.LineNum, o.ItemCode,o.Price }).ToListAsync();
                     var ywy = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => o.SlpCode).FirstOrDefaultAsync();
                     List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };
                     var categoryList = await UnitWork.Find<Category>(c => typeids.Contains(c.TypeId)).ToListAsync();
@@ -242,6 +242,7 @@ namespace Sap.Handler.Service
                     foreach (var dln1 in obj.QuotationMergeMaterialReqs)
                     {
                         var materials = quotation.QuotationMergeMaterials.Where(q => q.Id.Equals(dln1.Id)).FirstOrDefault();
+                        
                         dts.Lines.ItemCode = materials.MaterialCode.Replace("&#92;", "■");
 
                         dts.Lines.ItemDescription = materials.MaterialDescription;
@@ -251,18 +252,35 @@ namespace Sap.Handler.Service
                         dts.Lines.WarehouseCode = materials.WhsCode;
 
                         dts.Lines.BaseEntry = (int)quotation?.SalesOrderId;
-
-                        dts.Lines.BaseLine = (int)ordr.Where(o=>o.ItemCode.Equals(materials.MaterialCode)).FirstOrDefault()?.LineNum;
+                        #region 获取行标数
+                        var lineNum = 0;
+                        if (ordr.Where(o => o.ItemCode.Equals(materials.MaterialCode)).Count() > 1)
+                        {
+                            if (ordr.Where(o => o.ItemCode.Equals(materials.MaterialCode) && o.Price == materials.DiscountPrices).Count() <= 0)
+                            {
+                                lineNum = (int)ordr.Where(o => o.ItemCode.Equals(materials.MaterialCode) && o.Price == decimal.Parse(Convert.ToDecimal(materials.DiscountPrices).ToString("#0.00"))).FirstOrDefault()?.LineNum;
+                            }
+                            else
+                            {
+                                lineNum = (int)ordr.Where(o => o.ItemCode.Equals(materials.MaterialCode) && o.Price == materials.DiscountPrices).FirstOrDefault()?.LineNum;
+                            }
+                        }
+                        else
+                        {
+                            lineNum = (int)ordr.Where(o => o.ItemCode.Equals(materials.MaterialCode)).FirstOrDefault()?.LineNum;
+                        }
+                        #endregion
+                        dts.Lines.BaseLine = lineNum;
 
                         dts.Lines.BaseType = 17;
 
                         dts.Lines.SalesPersonCode = (int)slpcode;
 
-                        dts.Lines.UnitPrice = string.IsNullOrWhiteSpace(materials.DiscountPrices.ToString()) ? 0 : Convert.ToDouble(materials.DiscountPrices);            //单价
+                        //dts.Lines.UnitPrice = string.IsNullOrWhiteSpace(materials.DiscountPrices.ToString()) ? 0 : Convert.ToDouble(materials.DiscountPrices);            //单价
 
                         dts.Lines.Price = double.Parse(string.IsNullOrWhiteSpace(materials.DiscountPrices.ToString()) ? "0" : materials.DiscountPrices.ToString());
 
-                        dts.Lines.LineTotal = string.IsNullOrWhiteSpace(materials.TotalPrice.ToString()) ? 0.00 : double.Parse(Convert.ToDecimal(dln1.SentQuantity* materials.DiscountPrices).ToString("#0.00"));//总计
+                        //dts.Lines.LineTotal = string.IsNullOrWhiteSpace(materials.TotalPrice.ToString()) ? 0.00 : double.Parse(Convert.ToDecimal(dln1.SentQuantity* materials.DiscountPrices).ToString("#0.00"));//总计
                         //dts.Lines.DiscountPercent = string.IsNullOrWhiteSpace(materials.Discount.ToString()) ? 0 : Convert.ToDouble(materials.Discount);     //折扣
 
                         //if (!string.IsNullOrEmpty(dln1.U_PDXX) && (dln1.U_PDXX == "AC220" || dln1.U_PDXX == "AC380" || dln1.U_PDXX == "AC110"))
