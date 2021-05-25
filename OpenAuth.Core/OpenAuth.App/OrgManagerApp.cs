@@ -89,6 +89,88 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 获取部门树和用户
+        /// </summary>
+        /// <param name="corpId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetOrgTreeAndUser()
+        {
+            TableData result = new TableData();
+            var org = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).ToListAsync();
+            //var user = await UnitWork.Find<OpenAuth.Repository.Domain.User>(null).ToListAsync();
+
+            var query = from a in UnitWork.Find<OpenAuth.Repository.Domain.User>(null)
+                        join b in UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.Key == Define.USERORG)
+                        on a.Id equals b.FirstId into ab
+                        from b in ab.DefaultIfEmpty()
+                        select new UserOrg { Name=a.Name, SecondId=b.SecondId };
+
+            List<object> trees = new List<object>();
+            GetTree(trees, "", org, query);
+
+            void GetTree(List<object> trees, string pid,List<OpenAuth.Repository.Domain.Org> org,IQueryable<UserOrg> user)
+            {
+                var child = org.Where(c => c.ParentId == pid).ToList();
+                if (string.IsNullOrWhiteSpace(pid))
+                    child = org.Where(c => c.ParentName == "根节点").ToList();
+
+                if (child.Count > 0)
+                {
+                    foreach (var item in child)
+                    {
+                        OrgTree tree = new OrgTree();
+                        tree.Name = item.Name;
+                        List<object> childtree = new List<object>();
+                        tree.Node = childtree;
+                        trees.Add(tree);
+                        GetTree(tree.Node, item.Id, org, user);
+                    }
+                }
+                else
+                {
+                    user.Where(c => !string.IsNullOrWhiteSpace(c.SecondId) && c.SecondId == pid).ToList().ForEach(c => { trees.Add(c); });
+                }
+
+            }
+            //var data = org.Where(c => c.ParentName == "根节点").Select(c => new
+            //{
+            //    Name = c.Name,
+            //    Child = org.Where(o => o.ParentId == c.Id).Count() > 0 ? org.Where(o => o.ParentId == c.Id).Select(o => new
+            //    {
+            //        Name = o.Name,
+            //        Type="org",
+            //        Child = 1
+            //    }) : query.Where(o =>!string.IsNullOrWhiteSpace(o.SecondId) && o.SecondId == c.Id).Select(c => new { Name = c.Name, Type = "user", Child = 1 })
+            //});
+            result.Data = trees;
+            return result;
+        }
+
+        //private void GetTree(List<Tree> trees,string pid)
+        //{
+        //    var child = UnitWork.Find<OpenAuth.Repository.Domain.Org>(c=>c.ParentId==pid).ToList();
+        //    if (child.Count > 0)
+        //    {
+        //        foreach (var item in child)
+        //        {
+        //            Tree tree = new Tree();
+        //            tree.Name = item.Name;
+        //            List<Tree> childtree = new List<Tree>();
+        //            tree.Node = childtree;
+        //            trees.Add(tree);
+        //            GetTree(tree.Node, item.Id);
+        //        }
+        //        //trees.Add(tree);
+        //    }
+        //    else
+        //    {
+
+        //    }
+        //    //var child = org.Where(c => c.ParentId == pid).ToList();
+            
+        //}
+
+        /// <summary>
         /// 按名称模糊查询部门 by zlg 2020.7.31
         /// </summary>
         /// <param name="name">部门名称</param>

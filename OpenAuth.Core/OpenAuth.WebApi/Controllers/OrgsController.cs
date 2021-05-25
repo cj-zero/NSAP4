@@ -74,6 +74,19 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 获取部门树和用户
+        /// </summary>
+        /// <param name="corpId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async System.Threading.Tasks.Task<App.Response.TableData> GetOrgTreeAndUser()
+        {
+            App.Response.TableData result = new App.Response.TableData();
+            result = await _app.GetOrgTreeAndUser();
+            return result;
+        }
+
 
         /// <summary>
         /// 删除选中的部门及所有的子部门
