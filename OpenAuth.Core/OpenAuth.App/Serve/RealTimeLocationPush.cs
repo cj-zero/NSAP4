@@ -119,46 +119,46 @@ namespace OpenAuth.App.Serve
             #endregion
 
             #region 技术员离线消息
-            //技术员离线or在线
-            var userList = da1.Where(c => c.Status == "离线" && c.TotalHour >= 1).Select(c => c.Name).ToList();
-            var oldList = _cacheContext.Get<List<string>>("OffLineUserList");
-            if (oldList!=null)
-            {
-                var aa=_cacheContext.Remove("OffLineUserList");
-                _cacheContext.Set<List<string>>("OffLineUserList", userList, end);
-                //未推送过的人员Id
-                userList = userList.Except(oldList).ToList();
-            }
-            else
-                _cacheContext.Set<List<string>>("OffLineUserList", userList, end);
+            ////技术员离线or在线
+            //var userList = da1.Where(c => c.Status == "离线" && c.TotalHour >= 1).Select(c => c.Name).ToList();
+            //var oldList = _cacheContext.Get<List<string>>("OffLineUserList");
+            //if (oldList!=null)
+            //{
+            //    var aa=_cacheContext.Remove("OffLineUserList");
+            //    _cacheContext.Set<List<string>>("OffLineUserList", userList, end);
+            //    //未推送过的人员Id
+            //    userList = userList.Except(oldList).ToList();
+            //}
+            //else
+            //    _cacheContext.Set<List<string>>("OffLineUserList", userList, end);
 
 
-            //var noPushUserInfo = await UnitWork.Find<User>(c => userList.Contains(c.Id)).Select(c => c.Name).ToArrayAsync();
+            ////var noPushUserInfo = await UnitWork.Find<User>(c => userList.Contains(c.Id)).Select(c => c.Name).ToArrayAsync();
 
-            if (userList.Count>0)
-            {
-                var users = await _userManagerApp.LoadByRoleName(new string[] { "呼叫中心"});
-                var message = $"技术员:{string.Join(",", userList.ToArray())}已离线，请及时处理。";
-                foreach (var user in users)
-                {
-                    //保存推送记录
-                    await _sysMessageApp.AddAsync(new Repository.Domain.SysMessage
-                    {
-                        Title = "技术员离线消息通知",
-                        Content = message,
-                        CreateId = Guid.Empty.ToString(),
-                        CreateTime = DateTime.Now,
-                        FromId = Guid.Empty.ToString(),
-                        FromName = "系统通知",
-                        ToId = user.Id,
-                        ToName = user.Name,
-                        TypeName = "技术员离线消息通知",
-                        TypeId = Guid.Empty.ToString()
-                    });
-                }
+            //if (userList.Count>0)
+            //{
+            //    var users = await _userManagerApp.LoadByRoleName(new string[] { "呼叫中心"});
+            //    var message = $"技术员:{string.Join(",", userList.ToArray())}已离线，请及时处理。";
+            //    foreach (var user in users)
+            //    {
+            //        //保存推送记录
+            //        await _sysMessageApp.AddAsync(new Repository.Domain.SysMessage
+            //        {
+            //            Title = "技术员离线消息通知",
+            //            Content = message,
+            //            CreateId = Guid.Empty.ToString(),
+            //            CreateTime = DateTime.Now,
+            //            FromId = Guid.Empty.ToString(),
+            //            FromName = "系统通知",
+            //            ToId = user.Id,
+            //            ToName = user.Name,
+            //            TypeName = "技术员离线消息通知",
+            //            TypeId = Guid.Empty.ToString()
+            //        });
+            //    }
 
-                await _hubContext.Clients.Groups(new List<string>() { "呼叫中心"}).SendAsync("TechnicianOfflineMessage", "系统", message);//离线消息
-            }
+            //    await _hubContext.Clients.Groups(new List<string>() { "呼叫中心"}).SendAsync("TechnicianOfflineMessage", "系统", message);//离线消息
+            //}
             #endregion
 
             await _hubContext.Clients.Groups(new List<string>() { "呼叫中心"}).SendAsync("SmartScreenInfo", "系统", da1.ToList());//大屏数据
