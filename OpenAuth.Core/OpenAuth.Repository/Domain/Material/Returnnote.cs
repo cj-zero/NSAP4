@@ -75,6 +75,13 @@ namespace OpenAuth.Repository.Domain
         public int? Status { get; set; }
 
         /// <summary>
+        ///应收发票id
+        /// </summary>
+        [Description("应收发票id")]
+        public int? InvoiceDocEntry { get; set; }
+        
+
+        /// <summary>
         ///创建人Id
         /// </summary>
         [Description("创建人Id")]

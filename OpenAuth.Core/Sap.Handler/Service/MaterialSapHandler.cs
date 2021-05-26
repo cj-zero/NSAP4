@@ -42,7 +42,7 @@ namespace Sap.Handler.Service
                     SAPbobsCOM.Documents dts = (SAPbobsCOM.Documents)company.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oDeliveryNotes);
                     var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").FirstOrDefaultAsync();
                     var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
-                    var ordr = await UnitWork.Find<RDR1>(o => o.DocEntry.Equals(quotation.SalesOrderId)).Select(o => new { o.LineNum, o.ItemCode }).ToListAsync();
+                    var ordr = await UnitWork.Find<RDR1>(o => o.DocEntry.Equals(quotation.SalesOrderId)).Select(o => new { o.LineNum, o.ItemCode,o.Price }).ToListAsync();
                     var ywy = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => o.SlpCode).FirstOrDefaultAsync();
                     List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };
                     var categoryList = await UnitWork.Find<Category>(c => typeids.Contains(c.TypeId)).ToListAsync();
@@ -239,7 +239,7 @@ namespace Sap.Handler.Service
                     #endregion
 
                     #region [添加行明细]
-                    //int num = 0;
+                    decimal TotalMoney = 0;
                     foreach (var dln1 in obj.QuotationMergeMaterialReqs)
                     {
                         var materials = quotation.QuotationMergeMaterials.Where(q => q.Id.Equals(dln1.Id)).FirstOrDefault();
@@ -253,17 +253,18 @@ namespace Sap.Handler.Service
 
                         dts.Lines.BaseEntry = (int)quotation?.SalesOrderId;
 
-                        dts.Lines.BaseLine = (int)ordr.Where(o=>o.ItemCode.Equals(materials.MaterialCode)).FirstOrDefault()?.LineNum;
+                        dts.Lines.BaseLine = (int)ordr.Where(o=>o.ItemCode.Equals(materials.MaterialCode) && o.Price==materials.DiscountPrices).FirstOrDefault()?.LineNum;
 
                         dts.Lines.BaseType = 17;
 
                         dts.Lines.SalesPersonCode = (int)slpcode;
 
-                        dts.Lines.UnitPrice = string.IsNullOrWhiteSpace(materials.DiscountPrices.ToString()) ? 0 : Convert.ToDouble(materials.DiscountPrices);            //单价
+                        //dts.Lines.UnitPrice = string.IsNullOrWhiteSpace(materials.DiscountPrices.ToString()) ? 0 : Convert.ToDouble(materials.DiscountPrices);            //单价
 
                         dts.Lines.Price = double.Parse(string.IsNullOrWhiteSpace(materials.DiscountPrices.ToString()) ? "0" : materials.DiscountPrices.ToString());
 
-                        dts.Lines.LineTotal = double.Parse((materials.DiscountPrices * dln1.SentQuantity).ToString("#0.00"));//string.IsNullOrWhiteSpace(materials.TotalPrice.ToString()) ? 0.00 : double.Parse(materials.TotalPrice.ToString());//总计
+                        //dts.Lines.LineTotal = double.Parse(Convert.ToDecimal(materials.DiscountPrices * dln1.SentQuantity).ToString("#0.00"));//string.IsNullOrWhiteSpace(materials.TotalPrice.ToString()) ? 0.00 : double.Parse(materials.TotalPrice.ToString());//总计
+                        TotalMoney +=materials.MaterialType==1?Convert.ToDecimal(Convert.ToDecimal(materials.DiscountPrices * dln1.SentQuantity).ToString("#0.00")):0;
                         //dts.Lines.DiscountPercent = string.IsNullOrWhiteSpace(materials.Discount.ToString()) ? 0 : Convert.ToDouble(materials.Discount);     //折扣
 
                         //if (!string.IsNullOrEmpty(dln1.U_PDXX) && (dln1.U_PDXX == "AC220" || dln1.U_PDXX == "AC380" || dln1.U_PDXX == "AC110"))
@@ -292,6 +293,20 @@ namespace Sap.Handler.Service
                     {
                         company.GetNewObjectCode(out docNum);
                         Log.Logger.Warning("添加销售交货到SAP成功");
+                        if (TotalMoney > 0) 
+                        {
+                            var userCount = await UnitWork.Find<amountinarear>(a => a.UserId.Equals(quotation.CreateUserId)).FirstOrDefaultAsync();
+                            if (userCount != null)
+                            {
+                                await UnitWork.UpdateAsync<amountinarear>(a => a.Id.Equals(userCount.Id), a => new amountinarear { Money = a.Money + TotalMoney });
+
+                            }
+                            else
+                            {
+                                userCount = await UnitWork.AddAsync<amountinarear>(new amountinarear { Money = TotalMoney, Id = Guid.NewGuid().ToString(), UserId = quotation.CreateUserId, UserName = quotation.CreateUser });
+                            }
+                            await UnitWork.AddAsync<amountinarearlog>(new amountinarearlog { Id = Guid.NewGuid().ToString(), Money = TotalMoney, PlusOrMinus = true, SalesOrderId = quotation.SalesOrderId, CreateTime = DateTime.Now, CreateUserId = quotation.CreateUserId, CreateUserName = quotation.CreateUser, AmountInArearId = userCount.Id, Liaison = int.Parse(docNum), Remark = "销售交货增加挂账金额" });
+                        }
                     }
                 }
                 else 

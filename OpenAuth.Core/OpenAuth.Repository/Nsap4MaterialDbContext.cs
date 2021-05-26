@@ -51,6 +51,9 @@ namespace OpenAuth.Repository
         public virtual DbSet<QuotationPicture> QuotationPictures { get; set; }
 
         public virtual DbSet<LogisticsRecord> LogisticsRecords { get; set; }
+        public virtual DbSet<amountinarear> amountinarears { get; set; }
+        public virtual DbSet<amountinarearlog> amountinarearlogs { get; set; }
+
         #endregion
     }
 }

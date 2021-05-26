@@ -1,5 +1,6 @@
 ﻿using DotNetCore.CAP;
 using Infrastructure;
+using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Sap;
@@ -437,7 +438,7 @@ namespace Sap.Handler.Service
             var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(quotation.ServiceOrderId)).FirstOrDefaultAsync();
             var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").FirstOrDefaultAsync();
             var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
-            var ordr = await UnitWork.Find<RDR1>(o => o.DocEntry.Equals(quotation.SalesOrderId)).Select(o => new { o.LineNum, o.ItemCode }).ToListAsync();
+            var inv1 = await UnitWork.Find<INV1>(o => o.DocEntry.Equals(obj.InvoiceDocEntry)).Select(o => new { o.LineNum, o.ItemCode}).ToListAsync();
             var ywy = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => o.SlpCode).FirstOrDefaultAsync();
             List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };
             var categoryList = await UnitWork.Find<Category>(c => typeids.Contains(c.TypeId)).ToListAsync();
@@ -464,7 +465,7 @@ namespace Sap.Handler.Service
 
             dts.Comments = quotation.Remark+"基于应收发票"+obj.InvoiceDocEntry;
 
-            dts.ContactPersonCode = int.Parse(string.IsNullOrWhiteSpace(oCPR.CntctCode.ToString()) ? "0" : oCPR.CntctCode.ToString()); ;
+            dts.ContactPersonCode = int.Parse(string.IsNullOrWhiteSpace(oCPR.CntctCode.ToString()) ? "0" : oCPR.CntctCode.ToString());
 
             dts.SalesPersonCode = (int)slpcode;
 
@@ -636,7 +637,7 @@ namespace Sap.Handler.Service
             #endregion
 
             #region [添加行明细]
-            //int num = 0;
+            decimal TotalMoney = 0;
             foreach (var dln1 in obj.QuotationMergeMaterialReqs)
             {
                 var materials = quotation.QuotationMergeMaterials.Where(q => q.Id.Equals(dln1.Id)).FirstOrDefault();
@@ -644,25 +645,25 @@ namespace Sap.Handler.Service
 
                 dts.Lines.ItemDescription = materials.MaterialDescription;
 
-                dts.Lines.Quantity = string.IsNullOrEmpty(dln1.SentQuantity.ToString()) ? '1' : double.Parse(dln1.SentQuantity.ToString());
+                dts.Lines.Quantity = string.IsNullOrEmpty(dln1.InventoryQuantity.ToString()) ? '0' : double.Parse(dln1.InventoryQuantity.ToString());
 
-                dts.Lines.WarehouseCode = materials.WhsCode;
+                dts.Lines.WarehouseCode = dln1.WhsCode;
 
                 dts.Lines.BaseEntry = (int)obj?.InvoiceDocEntry;
 
-                dts.Lines.BaseLine = (int)ordr.Where(o => o.ItemCode.Equals(materials.MaterialCode)).FirstOrDefault()?.LineNum;
+                dts.Lines.BaseLine = (int)inv1.Where(o => o.ItemCode.Equals(materials.MaterialCode)).FirstOrDefault()?.LineNum;
 
                 dts.Lines.BaseType = 13;
 
                 dts.Lines.SalesPersonCode = (int)slpcode;
 
-                dts.Lines.UnitPrice = string.IsNullOrWhiteSpace(materials.DiscountPrices.ToString()) ? 0 : Convert.ToDouble(materials.DiscountPrices);            //单价
+                //dts.Lines.UnitPrice = string.IsNullOrWhiteSpace(materials.DiscountPrices.ToString()) ? 0 : Convert.ToDouble(materials.DiscountPrices);            //单价
 
                 dts.Lines.Price = double.Parse(string.IsNullOrWhiteSpace(materials.DiscountPrices.ToString()) ? "0" : materials.DiscountPrices.ToString());
 
-                dts.Lines.LineTotal = string.IsNullOrWhiteSpace(materials.TotalPrice.ToString()) ? 0.00 : double.Parse(materials.TotalPrice.ToString());//总计
-                                                                                                                                                        //dts.Lines.DiscountPercent = string.IsNullOrWhiteSpace(materials.Discount.ToString()) ? 0 : Convert.ToDouble(materials.Discount);     //折扣
-
+                //dts.Lines.LineTotal = double.Parse(Convert.ToDecimal(materials.DiscountPrices * dln1.InventoryQuantity).ToString("#0.00"));//总计
+                                                                                                                                           //dts.Lines.DiscountPercent = string.IsNullOrWhiteSpace(materials.Discount.ToString()) ? 0 : Convert.ToDouble(materials.Discount);     //折扣
+                TotalMoney+=materials.MaterialType==1?decimal.Parse(Convert.ToDecimal(materials.DiscountPrices * dln1.InventoryQuantity).ToString("#0.00")):0;//总计
                 //if (!string.IsNullOrEmpty(dln1.U_PDXX) && (dln1.U_PDXX == "AC220" || dln1.U_PDXX == "AC380" || dln1.U_PDXX == "AC110"))
 
                 //{
@@ -693,7 +694,16 @@ namespace Sap.Handler.Service
             {
                 company.GetNewObjectCode(out docNum);
                 errorMsg += string.Format("调用接口添加应收贷项凭证操作成功,ID[{0}", docNum);
-                await HandleReceiptCreditVouchersERP(docNum);
+                if (TotalMoney > 0) 
+                {
+                    var userCount = await UnitWork.Find<amountinarear>(a => a.UserId.Equals(quotation.CreateUserId)).FirstOrDefaultAsync();
+                    if (userCount != null)
+                    {
+                        await UnitWork.UpdateAsync<amountinarear>(a => a.Id.Equals(userCount.Id), a => new amountinarear { Money = a.Money - TotalMoney });
+                        await UnitWork.AddAsync<amountinarearlog>(new amountinarearlog { Id = Guid.NewGuid().ToString(), Money = TotalMoney, PlusOrMinus = false, SalesOrderId = quotation.SalesOrderId, CreateTime = DateTime.Now, CreateUserId = quotation.CreateUserId, CreateUserName = quotation.CreateUser, AmountInArearId = userCount.Id, Liaison = int.Parse(docNum), Remark = "应收贷项凭证减少挂账金额" });
+                    }
+                }
+                await HandleReceiptCreditVouchersERP(docNum,obj.InvoiceDocEntry);
             }
         }
 
@@ -702,7 +712,7 @@ namespace Sap.Handler.Service
         /// </summary>
         /// <returns></returns>
         [CapSubscribe("Serve.ReceiptCreditVouchers.ERPCreate")]
-        public async Task HandleReceiptCreditVouchersERP(string docNum)
+        public async Task HandleReceiptCreditVouchersERP(string docNum,int? InvoiceDocEntry)
         {
             string Message = "";
             try
@@ -758,8 +768,8 @@ namespace Sap.Handler.Service
                     });
                 }
                 //应收发票
-                var OINVmodel = await UnitWork.Find<OINV>(o => o.DocEntry == int.Parse(docNum)).AsNoTracking().FirstOrDefaultAsync();
-                var INV1model = await UnitWork.Find<INV1>(o => o.DocEntry == int.Parse(docNum)).AsNoTracking().ToListAsync();
+                var OINVmodel = await UnitWork.Find<OINV>(o => o.DocEntry == InvoiceDocEntry).AsNoTracking().FirstOrDefaultAsync();
+                var INV1model = await UnitWork.Find<INV1>(o => o.DocEntry == InvoiceDocEntry).AsNoTracking().ToListAsync();
                 sale_oinv sale_Oinv = OINVmodel.MapTo<sale_oinv>();
                 List<sale_inv1> sale_Inv1 = INV1model.MapToList<sale_inv1>();
                 List<uint> docenrtys = new List<uint>(), lineNums = new List<uint>();

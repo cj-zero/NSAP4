@@ -33,6 +33,8 @@ namespace OpenAuth.App
             _expressageApp = expressageApp;
             _capBus = capBus;
         }
+        
+        #region App退料
         /// <summary>
         /// 退料
         /// </summary>
@@ -310,7 +312,7 @@ namespace OpenAuth.App
             result.Data = detailList;
             return result;
         }
-
+        
         /// <summary>
         /// 获取物流信息
         /// </summary>
@@ -342,6 +344,9 @@ namespace OpenAuth.App
             return result;
         }
 
+        #endregion
+
+        #region 旧erp
         /// <summary>
         /// 获取退料单列表(ERP 技术员退料)
         /// </summary>
@@ -606,22 +611,28 @@ namespace OpenAuth.App
                         select new { a,b };
             var queryList = await query.ToListAsync();
             var salesOrderIds = queryList.Select(s => s.b.SalesOrderId).ToList();
-            var oinvquery = from a in UnitWork.Find<sale_dln1>(null)
-                            join b in UnitWork.Find<sale_inv1>(null) on a.DocEntry equals b.BaseEntry into ab
-                            from b in ab.DefaultIfEmpty()
-                            where salesOrderIds.Contains(a.BaseEntry) && a.BaseType == 17 && b.BaseType == 15
-                            select new { a, b };
-            var oinvqueryList = await oinvquery.ToListAsync();
-            var oinvList = oinvqueryList.Select(o => new
+            var saledln1 = await UnitWork.Find<sale_dln1>(s=> salesOrderIds.Contains(s.BaseEntry) && s.BaseType == 17).ToListAsync();
+            var saledln1Ids = saledln1.Select(s => s.DocEntry).ToList();
+            var saleinv1 = await UnitWork.Find<sale_inv1>(s => saledln1Ids.Contains((int)s.BaseEntry) && s.BaseType == 15 && s.LineStatus=="O").ToListAsync();
+
+            //var oinvquery = from a in UnitWork.Find<sale_dln1>(null)
+            //                join b in UnitWork.Find<sale_inv1>(null) on a.DocEntry equals b.BaseEntry into ab
+            //                from b in ab.DefaultIfEmpty()
+            //                where salesOrderIds.Contains(a.BaseEntry) && a.BaseType == 17 && b.BaseType == 15 
+            //                select new { a, b };
+            //var oinvqueryList = await oinvquery.ToListAsync();
+
+            var docentrys = saleinv1.Select(s => (int)s.DocEntry).ToList();
+            var oinvList = saleinv1.Select(o => new
             {
-                SalesOrderId=o.a.BaseEntry,
-                o.b.ItemCode,
-                o.b.Quantity,
-                o.b.Dscription,
-                o.b.Price,
-                o.b.DocEntry,
-                MergeMaterialId= queryList.Where(q=>q.a.MaterialCode.Equals(o.b.ItemCode)&& q.a.DiscountPrices.ToString("#0.00") == o.b.Price.ToString()&&q.b.SalesOrderId==o.a.BaseEntry).FirstOrDefault()?.a.Id
-            });
+                SalesOrderId= saledln1.Where(s=>s.DocEntry==o.BaseEntry).FirstOrDefault()?.BaseEntry,
+                o.ItemCode,
+                Quantity= o.Quantity,
+                o.Dscription,
+                o.Price,
+                o.DocEntry,
+                MergeMaterialId= queryList.Where(q=>q.a.MaterialCode.Equals(o.ItemCode)&&q.b.SalesOrderId== saledln1.Where(s => s.DocEntry == o.BaseEntry).FirstOrDefault()?.BaseEntry).FirstOrDefault()?.a.Id
+            }).ToList();
             result.Data = oinvList.GroupBy(o => o.DocEntry).Select(o=>new { docEntry=o.Key, oinvList=o }).ToList();
             return result;
         }
@@ -801,6 +812,51 @@ namespace OpenAuth.App
 
             _capBus.Publish("Serve.ReceiptCreditVouchers.Create", new AddOrUpdateQuotationReq {InvoiceDocEntry=req.InvoiceDocEntry,SalesOrderId=req.SalesOrderId,QuotationMergeMaterialReqs= returnMergeMaterialReqs });
         }
+        #endregion
 
+        #region app和erp通用
+        /// <summary>
+        /// 获取可退料的物料集合(ERP)
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetMaterialList(PageReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+            //查询当前技术员所有可退料服务Id
+            var query = from a in UnitWork.Find<QuotationMergeMaterial>(null)
+                        join b in UnitWork.Find<Quotation>(null) on a.QuotationId equals b.Id
+                        where b.CreateUserId == loginContext.User.Id && a.MaterialType == 1 && b.QuotationStatus == 11 && b.SalesOrderId != null
+                        select new { a, b };
+            var queryList = await query.ToListAsync();
+            var salesOrderIds = queryList.Select(s => s.b.SalesOrderId).ToList();
+            var saledln1 = await UnitWork.Find<sale_dln1>(s => salesOrderIds.Contains(s.BaseEntry) && s.BaseType == 17).ToListAsync();
+            var saledln1Ids = saledln1.Select(s => s.DocEntry).ToList();
+            var saleinv1 = await UnitWork.Find<sale_inv1>(s => saledln1Ids.Contains((int)s.BaseEntry) && s.BaseType == 15 && s.LineStatus == "O").ToListAsync();
+            var inv1Ids = saleinv1.Select(s => (int)s.DocEntry).Distinct().ToList();
+            var returnNotes=await UnitWork.Find<ReturnNote>(r => inv1Ids.Contains((int)r.InvoiceDocEntry)).Include(r=>r.ReturnnoteMaterials).ToListAsync();
+            var docentrys = saleinv1.Select(s => (int)s.DocEntry).ToList();
+            var oinvList = saleinv1.Select(o => new
+            {
+                SalesOrderId = saledln1.Where(s => s.DocEntry == o.BaseEntry).FirstOrDefault()?.BaseEntry,
+                o.ItemCode,
+                Quantity = returnNotes.Where(r=>r.InvoiceDocEntry==o.DocEntry).Select(r=>r.ReturnnoteMaterials.Sum(m=>m.Count)).Sum(r=>r)==0?o.Quantity: o.Quantity- returnNotes.Where(r => r.InvoiceDocEntry == o.DocEntry).Select(r => r.ReturnnoteMaterials.Sum(m => m.Count)).Sum(r => r),
+                o.Dscription,
+                o.Price,
+                InvoiceDocEntry=o.DocEntry,
+                MergeMaterialId = queryList.Where(q => o.Price==q.a.DiscountPrices && q.a.MaterialCode.Equals(o.ItemCode) && q.b.SalesOrderId == saledln1.Where(s => s.DocEntry == o.BaseEntry).FirstOrDefault()?.BaseEntry).FirstOrDefault()?.a.Id
+            }).ToList();
+            oinvList = oinvList.Where(o => o.Quantity != 0).ToList();
+            result.Data = oinvList.GroupBy(o => o.InvoiceDocEntry).Select(o => new { InvoiceDocEntry = o.Key, oinvList = o }).ToList();
+            return result;
+        }
+
+
+        #endregion
     }
 }

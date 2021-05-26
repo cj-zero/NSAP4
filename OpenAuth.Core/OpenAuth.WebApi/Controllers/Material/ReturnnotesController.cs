@@ -21,7 +21,7 @@ namespace OpenAuth.WebApi.Controllers
     public class ReturnNotesController : ControllerBase
     {
         private readonly ReturnNoteApp _returnnoteApp;
-
+        #region 暂时废弃
         /// <summary>
         /// 退料
         /// </summary>
@@ -346,6 +346,21 @@ namespace OpenAuth.WebApi.Controllers
                 Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
             }
 
+            return result;
+        }
+
+        #endregion
+        
+        /// <summary>
+        /// 获取带退料物料明细
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetMaterialList([FromQuery]PageReq req)
+        {
+            var result = new TableData();
+            result = await _returnnoteApp.GetMaterialList(req);
             return result;
         }
         public ReturnNotesController(ReturnNoteApp app)
