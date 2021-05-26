@@ -170,6 +170,8 @@ namespace OpenAuth.App.Serve
         /// <returns></returns>
         public async Task OnlineNotice()
         {
+            var now = DateTime.Now;
+            DateTime start = now.Date;
             DateTime end = Convert.ToDateTime(DateTime.Now.AddDays(1).ToString("D").ToString()).AddSeconds(-1);
 
             var data = await GetData();
@@ -203,7 +205,25 @@ namespace OpenAuth.App.Serve
 
             //上线
             var online = data.Where(c => c.Status == "在线" && (c.TotalHour >= 0 && c.TotalHour < 0.1)).ToList();
-            var onlineName = online.Select(c => c.Name).ToList();
+            var aaa = await UnitWork.Find<RealTimeLocation>(c => online.Select(q => q.AppUserId).ToList().Contains(c.AppUserId) && (c.CreateTime >= start && c.CreateTime <= end)).ToListAsync();
+            //查询上一次定位时间
+            var bb = aaa.GroupBy(c => c.AppUserId).Select(c => new { c.Key, Createtime = c?.OrderByDescending(o => o.CreateTime).Skip(1).Take(1).Select(c => c.CreateTime).FirstOrDefault() }).ToList();
+
+            List<int?> idList = new List<int?>();
+            foreach (var item in bb)
+            {
+                if (item.Createtime == null) idList.Add(item.Key);//第一次定位
+                else
+                {
+                    TimeSpan ts = now.Subtract((DateTime)item.Createtime);
+                    if (ts.TotalHours>1) idList.Add(item.Key);
+                }
+            }
+
+            var param = string.Join("','", idList);
+            var query = await UnitWork.FromSql<User>($@"SELECT * from nsap4.`user` where Id in (SELECT UserId from nsap4.appusermap where AppUserId in ('{param}'))").Select(c => c.Name).ToListAsync();
+
+            var onlineName = query;
             var oldOnList= _cacheContext.Get<List<string>>("OnLineRemindInfo");
             if (oldOnList != null)
             {
@@ -297,6 +317,7 @@ namespace OpenAuth.App.Serve
                 return new LocalInfoResp
                 {
                     Name = c.Name,
+                    AppUserId= currentLoca?.a.AppUserId,
                     Address = currentLoca?.a.Province + currentLoca?.a.City + currentLoca?.a.Area + currentLoca?.a.Addr,
                     Mobile = c.Mobile,
                     Status = onlineState,
