@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
@@ -125,6 +126,7 @@ namespace OpenAuth.App
                                     .ToListAsync();
             userIds.AddRange(noComplete);
 
+            DateTime start = DateTime.Now.Date;
             DateTime end = Convert.ToDateTime(DateTime.Now.AddDays(1).ToString("D").ToString()).AddSeconds(-1);
             DateTime monthAgo = Convert.ToDateTime(DateTime.Now.AddDays(-30).ToString("D").ToString());
             var pppUserMap = await UnitWork.Find<AppUserMap>(null).ToListAsync();
@@ -132,7 +134,10 @@ namespace OpenAuth.App
             //所有人最新定位信息
             var realTimeLocationHis = await UnitWork.FromSql<RealTimeLocation>(@$"SELECT * from nsap4_serve.realtimelocation where Id in  (
                                         SELECT max(Id) as Id from nsap4_serve.realtimelocation GROUP BY AppUserId
-                                        ) ORDER BY CreateTime desc").ToListAsync();
+                                        ) ORDER BY CreateTime desc")
+                                        .WhereIf(!string.IsNullOrWhiteSpace(req.Province),c=>c.Province==req.Province)
+                                        .WhereIf(!string.IsNullOrWhiteSpace(req.City),c=>c.City==req.City)
+                                        .ToListAsync();
 
 
             var locaotionInfoHistory = from a in realTimeLocationHis
@@ -141,17 +146,15 @@ namespace OpenAuth.App
 
 
             var now = DateTime.Now;
-            var data = await UnitWork.Find<User>(c => userIds.Contains(c.Id)).WhereIf(!string.IsNullOrWhiteSpace(req.Name), c => c.Name.Equals(req.Name)).ToListAsync();
+            var data = await UnitWork.Find<User>(c => userIds.Contains(c.Id)).WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)).ToListAsync();
             var da1 = data.Select(c =>
              {
                  //当天是否有定位记录
                  var currentLoca = locaotionInfoHistory.Where(q => q.UserID.Equals(c.Id)).FirstOrDefault();
-                 var currentDate = locaotionInfoHistory.Where(q => q.UserID.Equals(c.Id) && q.a.CreateTime.ToString("yyyy-MM-dd").Equals(DateTime.Now.ToString("yyyy-MM-dd"))).ToList();
-
                  var onlineState = "离线";
                  var interv = "30天前";
                  decimal? longi = 0, lati = 0;
-                 double? totalHour = 0;
+                 double? totalHour = 720;
 
                  if (currentLoca != null)
                  {
@@ -182,21 +185,23 @@ namespace OpenAuth.App
                      Longitude = longi,
                      Latitude = lati,
                      TotalHour= totalHour,
-                     //ServiceOrderId = orderIds,
-                     SignInDate = currentDate.Count > 0 ? currentDate.Min(q => q.a.CreateTime) : (DateTime?)null,
-                     SignOutDate = currentDate.Count > 1 ? currentDate.Max(q => q.a.CreateTime) : (DateTime?)null
                  };
 
-             });
+             }).OrderBy(c=>c.TotalHour);
 
-            if (string.IsNullOrWhiteSpace(req.Name) && !string.IsNullOrWhiteSpace(req.Status)) da1.Where(c => c.Status == req.Status);
+            //if (string.IsNullOrWhiteSpace(req.Name) && !string.IsNullOrWhiteSpace(req.Status)) da1.Where(c => c.Status == req.Status);
 
+            result.Count = da1.Count();
             result.Data = da1;
             return result;
         }
 
-
-        public async Task<TableData> HistoryTrajectory(QueryLocationInfoReq req)
+        /// <summary>
+        /// 查询技术员轨迹
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> HistoryTrajectory(QueryTrajectoryReq req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -227,17 +232,27 @@ namespace OpenAuth.App
                                             .Where(c =>(c.CreateTime >= start && c.CreateTime <= end) && c.AppUserId==pppUserMap.AppUserId)
                                             .OrderByDescending(c => c.CreateTime)
                                             .ToListAsync();
-
+            //当天定位数据
+            var currentDate = await UnitWork.FromSql<RealTimeLocation>(@$"SELECT * from nsap4_serve.realtimelocation where AppUserId={pppUserMap.AppUserId} AND TO_DAYS(CreateTime)=TO_DAYS(NOW())").ToListAsync();
 
             var data = realTimeLocation?.GroupBy(c=>c.CreateTime.ToString("yyyy-MM-dd")).Select(c=>new Trajectory
             {
                 Date = c.Key,
-                Pos = c.Select(p => new Position { Longitude = p.BaiduLongitude, Latitude = p.BaiduLatitude }).ToList()
+                Pos = c.Select(p => new Position 
+                { 
+                    Longitude = p.BaiduLongitude, 
+                    Latitude = p.BaiduLatitude,
+                    Address= p?.Province + p?.City + p?.Area + p?.Addr,
+                    PosDate=p?.CreateTime
+                }).OrderBy(q=>q.PosDate).ToList()
             }).ToList();
+
 
             HistoryPositions history = new HistoryPositions();
             history.ServiceOrderId = orderIds;
             history.Trajectory = data;
+            history.SignInDate = currentDate.Count > 0 ? currentDate.Min(q => q.CreateTime) : (DateTime?)null;
+            history.SignOutDate = currentDate.Count > 1 ? currentDate.Max(q => q.CreateTime) : (DateTime?)null;
 
 
             result.Data = history;

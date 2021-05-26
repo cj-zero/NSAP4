@@ -721,17 +721,18 @@ namespace OpenAuth.App
             var serviceOrders = await UnitWork.Find<ServiceWorkOrder>(s => msNumbers.Contains(s.ManufacturerSerialNumber) && s.Status < 7).Select(s =>new { s.ServiceOrderId,s.ManufacturerSerialNumber,s.FromTheme}).ToListAsync();
             serviceOrders= serviceOrders.Where(s => s.FromTheme.Equals(workOrders.Where(w => w.ManufacturerSerialNumber.Equals(s.ManufacturerSerialNumber)).FirstOrDefault().FromTheme)).ToList();
             var serviceOrderIds = serviceOrders.Select(s => s.ServiceOrderId).ToList();
-            var serviceOrderCount = await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Equals(obj.TerminalCustomer) && s.TerminalCustomerId.Equals(obj.TerminalCustomerId) && serviceOrderIds.Contains(s.Id) &&  s.Status == 2).Select(s=>s.CreateTime).ToListAsync();
-            var count=serviceOrderCount.Where(s => ((TimeSpan)(DateTime.Now - s)).Days < 5).Count();
-            if (count > 0)
-            {
-                throw new Exception("该客户在5天内已有服务ID，请不要重复建单");
-            }
             if (string.IsNullOrWhiteSpace(obj.NewestContacter) && string.IsNullOrWhiteSpace(obj.NewestContactTel))
             {
                 obj.NewestContacter = obj.Contacter;
                 obj.NewestContactTel = obj.ContactTel;
             }
+            var serviceOrderCount = await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Equals(obj.TerminalCustomer) && s.TerminalCustomerId.Equals(obj.TerminalCustomerId) && serviceOrderIds.Contains(s.Id) &&  s.Status == 2 && obj.NewestContacter.Equals(s.NewestContacter)&& obj.NewestContactTel.Equals(s.NewestContactTel)).Select(s=>s.CreateTime).ToListAsync();
+            var count=serviceOrderCount.Where(s => ((TimeSpan)(DateTime.Now - s)).Days < 5).Count();
+            if (count > 0)
+            {
+                throw new Exception("该客户在5天内已有服务ID，请不要重复建单");
+            }
+            
             //获取"其他"问题类型及其子类
             var otherProblemType = await UnitWork.Find<ProblemType>(o => o.Name.Equals("其他") && string.IsNullOrWhiteSpace(o.ParentId)).FirstOrDefaultAsync();
             var ChildTypes = new List<ProblemType>();
@@ -887,6 +888,7 @@ namespace OpenAuth.App
                 s.FromType = 1;
                 s.FeeType = 1;
                 s.CurrentUser = loginUser.Name;
+                s.OrderTakeType = 1;
             });
             var e = await UnitWork.AddAsync<ServiceOrder, int>(obj);
             await UnitWork.SaveAsync();
@@ -1542,7 +1544,7 @@ namespace OpenAuth.App
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.Supervisor.Contains(req.QrySupervisor))
-                .Where(q => q.SalesManId.Equals(loginContext.User.Id) && q.CustomerId.Equals(q.TerminalCustomerId) && q.CustomerName.Equals(q.TerminalCustomer) && ids.Contains(q.Id) && q.Status == 2);
+                .Where(q => q.SalesManId.Equals(loginContext.User.Id) && ids.Contains(q.Id) && q.Status == 2);
 
             var resultsql = query.OrderByDescending(q => q.CreateTime).Select(q => new
             {
@@ -2469,6 +2471,7 @@ namespace OpenAuth.App
             obj.RecepUserId = loginContext.User.Id;
             obj.RecepUserName = loginContext.User.Name;
             obj.Status = 1;
+            obj.VestInOrg = 1;
             obj.FromId = 6;//APP提交
 
             var obj2 = from a in UnitWork.Find<OCRD>(null)
@@ -3579,6 +3582,7 @@ namespace OpenAuth.App
             //获取当前技术员的服务单集合 排除在线解答的单子
             var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.TechnicianId && s.FromType == 1)
                 .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+
             List<int> workIds = new List<int>();
             //获取转派的已完成的单据
             if (req.Type == 3)
@@ -3603,9 +3607,11 @@ namespace OpenAuth.App
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                 .Include(s => s.ServiceFlows)
                 .WhereIf(req.Type == 1, s => s.ServiceWorkOrders.All(a => a.OrderTakeType == 0))//待处理 所有设备类型都未操作
+                //.WhereIf(req.Type == 1 && req.TechOrg == 2, s => s.VestInOrg!=2)//过滤掉E3的单
                 .WhereIf(req.Type == 2, s => !s.ServiceWorkOrders.All(a => a.OrderTakeType == 0) && !s.ServiceWorkOrders.All(a => a.Status >= 7))//进行中 有任意一个设备类型进行了操作
                 .WhereIf(req.Type == 3, s => s.ServiceWorkOrders.All(a => a.Status >= 7)) //已完成 所有设备类型都已完成
                  .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => s.U_SAP_ID == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key)))
+                 .WhereIf(req.TechOrg != 2, s => s.VestInOrg == 1)//E3技术员可查看e3的单
                 .Select(s => new
                 {
                     s.Id,
@@ -3627,6 +3633,9 @@ namespace OpenAuth.App
                     s.CustomerId,
                     s.CustomerName,
                     s.TerminalCustomer,
+                    s.VestInOrg,
+                    MaterialCode = s.VestInOrg == 2 ? s.ServiceWorkOrders.Where(c => c.ServiceOrderId == s.Id).FirstOrDefault().MaterialCode : "",
+                    ManufacturerSerialNumber = s.VestInOrg == 2 ? s.ServiceWorkOrders.Where(c => c.ServiceOrderId == s.Id).FirstOrDefault().ManufacturerSerialNumber : "",
                     Count = s.ServiceWorkOrders.Where(w => w.ServiceOrderId == s.Id && w.CurrentUserId == req.TechnicianId).Count(),
                     MaterialInfo = s.ServiceWorkOrders.Where(w => req.Type == 3 ? workIds.Contains(w.Id) : w.CurrentUserId == req.TechnicianId).Select(o => new
                     {
@@ -3666,9 +3675,12 @@ namespace OpenAuth.App
                 s.CustomerName,
                 s.TerminalCustomer,
                 s.Count,
-                ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ProblemType.Name : s.ProblemTypeName,
-                MaterialTypeQty = s.MaterialInfo.GroupBy(o => o.MaterialType).Select(i => i.Key).ToList().Count,
-                MaterialInfo = s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
+                s.VestInOrg,
+                s.MaterialCode,
+                s.ManufacturerSerialNumber,
+                ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ProblemType?.Name : s.ProblemTypeName,
+                MaterialTypeQty = s.VestInOrg == 1 ? s.MaterialInfo.GroupBy(o => o.MaterialType).Select(i => i.Key).ToList().Count:0,
+                MaterialInfo = s.VestInOrg==1? s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
                 .Select(o => new
                 {
                     MaterialType = o.Key,
@@ -3677,12 +3689,12 @@ namespace OpenAuth.App
                     OrderTakeType = o.ToList().Select(s => s.OrderTakeType).Distinct().FirstOrDefault(),
                     ServiceMode = o.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault(),
                     flowInfo = s.ServiceFlows.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToList()
-                }),
-                IsReimburse = req.Type == 3 ? completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1 && w.TechnicianId == req.TechnicianId.ToString()).FirstOrDefault() == null ? 0 : completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1 && w.TechnicianId == req.TechnicianId.ToString()).FirstOrDefault().IsReimburse : 0,
-                MaterialType = req.Type == 3 ? completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == req.TechnicianId.ToString()).FirstOrDefault() == null ? string.Empty : completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == req.TechnicianId.ToString()).OrderBy(o => o.ServiceMode).FirstOrDefault().MaterialType : string.Empty,
-                ReimburseId = req.Type == 3 ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.Id).FirstOrDefault() : 0,
-                RemburseStatus = req.Type == 3 ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.RemburseStatus).FirstOrDefault() : 0,
-                RemburseIsRead = req.Type == 3 ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.IsRead).FirstOrDefault() : 0
+                }): new object() ,
+                IsReimburse = req.Type == 3 && s.VestInOrg==1 ? completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1 && w.TechnicianId == req.TechnicianId.ToString()).FirstOrDefault() == null ? 0 : completeReportList.Where(w => w.ServiceOrderId == s.Id && w.ServiceMode == 1 && w.TechnicianId == req.TechnicianId.ToString()).FirstOrDefault().IsReimburse : 0,
+                MaterialType = req.Type == 3 && s.VestInOrg == 1 ? completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == req.TechnicianId.ToString()).FirstOrDefault() == null ? string.Empty : completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == req.TechnicianId.ToString()).OrderBy(o => o.ServiceMode).FirstOrDefault().MaterialType : string.Empty,
+                ReimburseId = req.Type == 3 && s.VestInOrg == 1 ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.Id).FirstOrDefault() : 0,
+                RemburseStatus = req.Type == 3 && s.VestInOrg == 1 ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.RemburseStatus).FirstOrDefault() : 0,
+                RemburseIsRead = req.Type == 3 && s.VestInOrg == 1 ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.IsRead).FirstOrDefault() : 0
             }).ToList();
 
             var count = await query.CountAsync();
@@ -3695,8 +3707,9 @@ namespace OpenAuth.App
         /// 获取技术员单据数量
         /// </summary>
         /// <param name="TechnicianId"></param>
+        /// <param name="TechType">技术员类型 1-普通 2-E3 </param>
         /// <returns></returns>
-        public async Task<TableData> GetTechnicianServiceOrderCount(int TechnicianId)
+        public async Task<TableData> GetTechnicianServiceOrderCount(int TechnicianId,int TechType)
         {
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
@@ -3708,10 +3721,15 @@ namespace OpenAuth.App
             var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == TechnicianId && s.FromType == 1)
                .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
             var serviceWorkOrderList = await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
-               .Include(s => s.ServiceWorkOrders).ToListAsync();
+               .Include(s => s.ServiceWorkOrders)
+               .WhereIf(TechType != 2, w => w.VestInOrg == 1)//普通技术员只查看呼叫中心数据
+               .ToListAsync();
             //获取待处理单据数量
             var pendingQty = (serviceWorkOrderList.Where(s => s.ServiceWorkOrders.All(a => a.OrderTakeType == 0))
                .ToList()).Count;
+            if (TechType == 2) pendingQty = (serviceWorkOrderList.Where(s => s.ServiceWorkOrders.All(a => a.OrderTakeType == 0) && s.VestInOrg != 2)
+               .ToList()).Count;//未处理过滤掉E3的单
+
             //获取进行中的单据数量
             var goingQty = (serviceWorkOrderList
                .Where(s => !s.ServiceWorkOrders.All(a => a.OrderTakeType == 0) && !s.ServiceWorkOrders.All(a => a.Status >= 7))
@@ -3731,7 +3749,7 @@ namespace OpenAuth.App
                 redeployIds.ForEach(f => serviceOrderIds.Add((int)f));
                 serviceOrderIds = serviceOrderIds.Distinct().ToList();
             }
-            var finishList = await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
+            var finishList = await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id)).WhereIf(TechType != 2, w => w.VestInOrg == 1)//普通技术员只查看呼叫中心数据
                .Include(s => s.ServiceWorkOrders).ToListAsync();
             var finishQty = finishList
               .Where(s => s.ServiceWorkOrders.All(a => a.Status >= 7)).ToList().Count;

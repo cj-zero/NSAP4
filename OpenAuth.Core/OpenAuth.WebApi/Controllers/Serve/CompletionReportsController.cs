@@ -231,15 +231,16 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="ServiceOrderId"></param>
         /// <param name="UserId"></param>
+        /// <param name="currentUserId"></param>
         /// <returns></returns>
 
         [HttpGet]
-        public async Task<Response<TableData>> GetCompletionReportDetailsWeb(int ServiceOrderId,string UserId)
+        public async Task<Response<TableData>> GetCompletionReportDetailsWeb(int ServiceOrderId,string UserId,int? currentUserId=null)
         {
             var result = new Response<TableData>();
             try
             {
-                result.Result = await _app.GetCompletionReportDetailsWeb(ServiceOrderId, UserId);
+                result.Result = await _app.GetCompletionReportDetailsWeb(ServiceOrderId, UserId, currentUserId);
             }
             catch (Exception ex)
             {

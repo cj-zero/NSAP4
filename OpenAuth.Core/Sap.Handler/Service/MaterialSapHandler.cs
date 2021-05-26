@@ -243,6 +243,7 @@ namespace Sap.Handler.Service
                     foreach (var dln1 in obj.QuotationMergeMaterialReqs)
                     {
                         var materials = quotation.QuotationMergeMaterials.Where(q => q.Id.Equals(dln1.Id)).FirstOrDefault();
+                        
                         dts.Lines.ItemCode = materials.MaterialCode.Replace("&#92;", "■");
 
                         dts.Lines.ItemDescription = materials.MaterialDescription;
@@ -252,8 +253,25 @@ namespace Sap.Handler.Service
                         dts.Lines.WarehouseCode = materials.WhsCode;
 
                         dts.Lines.BaseEntry = (int)quotation?.SalesOrderId;
-
-                        dts.Lines.BaseLine = (int)ordr.Where(o=>o.ItemCode.Equals(materials.MaterialCode) && o.Price==materials.DiscountPrices).FirstOrDefault()?.LineNum;
+                        #region 获取行标数
+                        var lineNum = 0;
+                        if (ordr.Where(o => o.ItemCode.Equals(materials.MaterialCode)).Count() > 1)
+                        {
+                            if (ordr.Where(o => o.ItemCode.Equals(materials.MaterialCode) && o.Price == materials.DiscountPrices).Count() <= 0)
+                            {
+                                lineNum = (int)ordr.Where(o => o.ItemCode.Equals(materials.MaterialCode) && o.Price == decimal.Parse(Convert.ToDecimal(materials.DiscountPrices).ToString("#0.00"))).FirstOrDefault()?.LineNum;
+                            }
+                            else
+                            {
+                                lineNum = (int)ordr.Where(o => o.ItemCode.Equals(materials.MaterialCode) && o.Price == materials.DiscountPrices).FirstOrDefault()?.LineNum;
+                            }
+                        }
+                        else
+                        {
+                            lineNum = (int)ordr.Where(o => o.ItemCode.Equals(materials.MaterialCode)).FirstOrDefault()?.LineNum;
+                        }
+                        #endregion
+                        dts.Lines.BaseLine = lineNum;
 
                         dts.Lines.BaseType = 17;
 

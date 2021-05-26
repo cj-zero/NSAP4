@@ -299,14 +299,31 @@ namespace Sap.Handler.Service
                         U_ERPFrom = "4"
                     };
                     ordr = await UnitWork.AddAsync<sale_ordr, int>(ordr);
-                    var lineNums = await UnitWork.Find<RDR1>(o => o.DocEntry == quotation.SalesOrderId).Select(o => new { o.LineNum, o.ItemCode }).ToListAsync();
+                    var lineNums = await UnitWork.Find<RDR1>(o => o.DocEntry == quotation.SalesOrderId).Select(o => new { o.LineNum, o.ItemCode,o.Price }).ToListAsync();
                     foreach (QuotationMergeMaterial dln1 in quotation.QuotationMergeMaterials)
                     {
+                        var lineNum = 0;
+                        if (lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode)).Count() > 1)
+                        {
+                            if (lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode) && o.Price == dln1.DiscountPrices).Count() <= 0) 
+                            {
+                                lineNum = (int)lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode) && o.Price == decimal.Parse(Convert.ToDecimal(dln1.DiscountPrices).ToString("#0.00"))).FirstOrDefault()?.LineNum;
+                            }
+                            else
+                            {
+                                lineNum = (int)lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode) && o.Price == dln1.DiscountPrices).FirstOrDefault()?.LineNum;
+                            }
+                        }
+                        else 
+                        {
+                            lineNum = (int)lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode)).FirstOrDefault()?.LineNum;
+                        }
+                        
                         await UnitWork.AddAsync<sale_rdr1, int>(new sale_rdr1
                         {
                             sbo_id = Define.SBO_ID,
                             DocEntry = (int)quotation.SalesOrderId,
-                            LineNum = (int)lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode)).FirstOrDefault()?.LineNum,
+                            LineNum = lineNum,
                             ItemCode = dln1.MaterialCode,
                             LineStatus = "O",
                             Rate = 1,//后期增加货币需要更改

@@ -132,9 +132,13 @@ namespace OpenAuth.App.Material.Request
         public int? AcceptancePeriod { get; set; }
 
         /// <summary>
-        ///服务费
+        ///寄回维修费
         /// </summary>
-        public decimal? ServiceCharge { get; set; }
+        public decimal? ServiceChargeJH { get; set; }
+        /// <summary>
+        ///上门维修费
+        /// </summary>
+        public decimal? ServiceChargeSM { get; set; }
 
         /// <summary>
         ///删除报价单
@@ -213,10 +217,16 @@ namespace OpenAuth.App.Material.Request
         public bool? IsMaterialType { get; set; }
 
         /// <summary>
-        ///维修费工时
+        ///寄回维修费工时
         /// </summary>
 
-        public int? ServiceChargeManHour { get; set; }
+        public int? ServiceChargeManHourJH { get; set; }
+
+        /// <summary>
+        ///上门维修费工时
+        /// </summary>
+
+        public int? ServiceChargeManHourSM { get; set; }
 
         /// <summary>
         ///差旅费工时

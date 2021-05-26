@@ -1069,6 +1069,7 @@ namespace OpenAuth.WebApi.Controllers
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("TechnicianId", req.TechnicianId);
                 parameters.Add("Type", req.Type);
+                parameters.Add("TechOrg", req.TechOrg);
                 parameters.Add("limit", req.limit);
                 parameters.Add("page", req.page);
                 parameters.Add("key", req.key);
@@ -1364,13 +1365,14 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="CurrentUserId"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetTechnicianServiceOrderCount(int CurrentUserId)
+        public async Task<TableData> GetTechnicianServiceOrderCount(int CurrentUserId, int TechOrg)
         {
             var result = new TableData();
             try
             {
                 Dictionary<string, object> parameters = new Dictionary<string, object>();
                 parameters.Add("CurrentUserId", CurrentUserId);
+                parameters.Add("TechOrg", TechOrg);
 
                 var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetTechnicianServiceOrderCount");
                 result = JsonConvert.DeserializeObject<TableData>(r);

@@ -190,10 +190,15 @@ namespace OpenAuth.Repository.Domain
         public decimal? TotalCostPrice { get; set; }
 
         /// <summary>
-        ///服务费
+        ///寄回维修费
         /// </summary>
-        [Description("服务费")]
-        public decimal? ServiceCharge { get; set; }
+        [Description("寄回维修费")]
+        public decimal? ServiceChargeJH { get; set; }
+        /// <summary>
+        ///上门维修费
+        /// </summary>
+        [Description("上门维修费")]
+        public decimal? ServiceChargeSM { get; set; }
 
         /// <summary>
         ///是否暂定
@@ -272,11 +277,18 @@ namespace OpenAuth.Repository.Domain
         public int? PrintTheNumber { get; set; }
 
         /// <summary>
-        ///维修费工时
+        ///寄回维修费工时
         /// </summary>
-        [Description("维修费工时")]
+        [Description("寄回维修费工时")]
 
-        public int? ServiceChargeManHour { get; set; }
+        public int? ServiceChargeManHourJH { get; set; }
+
+        /// <summary>
+        ///上门维修费工时
+        /// </summary>
+        [Description("上门维修费工时")]
+
+        public int? ServiceChargeManHourSM { get; set; }
 
         /// <summary>
         ///差旅费工时
