@@ -36,6 +36,5 @@ namespace OpenAuth.App
 
         public const string JOBMAPKEY = "OpenJob";
 
-        public const string Version = "V1.0.2";
     }
 }
