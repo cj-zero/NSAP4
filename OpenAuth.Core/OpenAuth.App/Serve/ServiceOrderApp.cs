@@ -716,23 +716,25 @@ namespace OpenAuth.App
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
             //obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(req.Supervisor)))?.Id;
-            var workOrders = obj.ServiceWorkOrders.Select(s => new { s.ManufacturerSerialNumber, s.FromTheme }).ToList();
-            var msNumbers = workOrders.Select(s => s.ManufacturerSerialNumber).ToList();
-            var serviceOrders = await UnitWork.Find<ServiceWorkOrder>(s => msNumbers.Contains(s.ManufacturerSerialNumber) && s.Status < 7).Select(s =>new { s.ServiceOrderId,s.ManufacturerSerialNumber,s.FromTheme}).ToListAsync();
-            serviceOrders= serviceOrders.Where(s => s.FromTheme.Equals(workOrders.Where(w => w.ManufacturerSerialNumber.Equals(s.ManufacturerSerialNumber)).FirstOrDefault().FromTheme)).ToList();
-            var serviceOrderIds = serviceOrders.Select(s => s.ServiceOrderId).ToList();
+            
             if (string.IsNullOrWhiteSpace(obj.NewestContacter) && string.IsNullOrWhiteSpace(obj.NewestContactTel))
             {
                 obj.NewestContacter = obj.Contacter;
                 obj.NewestContactTel = obj.ContactTel;
             }
-            var serviceOrderCount = await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Equals(obj.TerminalCustomer) && s.TerminalCustomerId.Equals(obj.TerminalCustomerId) && serviceOrderIds.Contains(s.Id) &&  s.Status == 2 && obj.NewestContacter.Equals(s.NewestContacter)&& obj.NewestContactTel.Equals(s.NewestContactTel)).Select(s=>s.CreateTime).ToListAsync();
-            var count=serviceOrderCount.Where(s => ((TimeSpan)(DateTime.Now - s)).Days < 5).Count();
-            if (count > 0)
-            {
-                throw new Exception("该客户在5天内已有服务ID，请不要重复建单");
-            }
-            
+            #region 该客户在5天内已有服务ID
+            //var workOrders = obj.ServiceWorkOrders.Select(s => new { s.ManufacturerSerialNumber, s.FromTheme }).ToList();
+            //var msNumbers = workOrders.Select(s => s.ManufacturerSerialNumber).ToList();
+            //var serviceOrders = await UnitWork.Find<ServiceWorkOrder>(s => msNumbers.Contains(s.ManufacturerSerialNumber) && s.Status < 7).Select(s =>new { s.ServiceOrderId,s.ManufacturerSerialNumber,s.FromTheme}).ToListAsync();
+            //serviceOrders= serviceOrders.Where(s => s.FromTheme.Equals(workOrders.Where(w => w.ManufacturerSerialNumber.Equals(s.ManufacturerSerialNumber)).FirstOrDefault().FromTheme)).ToList();
+            //var serviceOrderIds = serviceOrders.Select(s => s.ServiceOrderId).ToList();
+            //var serviceOrderCount = await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Equals(obj.TerminalCustomer) && s.TerminalCustomerId.Equals(obj.TerminalCustomerId) && serviceOrderIds.Contains(s.Id) &&  s.Status == 2 && obj.NewestContacter.Equals(s.NewestContacter)&& obj.NewestContactTel.Equals(s.NewestContactTel)).Select(s=>s.CreateTime).ToListAsync();
+            //var count=serviceOrderCount.Where(s => ((TimeSpan)(DateTime.Now - s)).Days < 5).Count();
+            //if (count > 0)
+            //{
+            //    throw new Exception("该客户在5天内已有服务ID，请不要重复建单");
+            //}
+            #endregion
             //获取"其他"问题类型及其子类
             var otherProblemType = await UnitWork.Find<ProblemType>(o => o.Name.Equals("其他") && string.IsNullOrWhiteSpace(o.ParentId)).FirstOrDefaultAsync();
             var ChildTypes = new List<ProblemType>();
@@ -849,17 +851,19 @@ namespace OpenAuth.App
             obj.Contacter= loginUser.Name;
             //obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(req.Supervisor)))?.Id;
-            var workOrders = obj.ServiceWorkOrders.Select(s => new { s.ManufacturerSerialNumber, s.FromTheme }).ToList();
-            var msNumbers = workOrders.Select(s => s.ManufacturerSerialNumber).ToList();
-            var serviceOrders = await UnitWork.Find<ServiceWorkOrder>(s => msNumbers.Contains(s.ManufacturerSerialNumber) && s.Status < 7).Select(s => new { s.ServiceOrderId, s.ManufacturerSerialNumber, s.FromTheme }).ToListAsync();
-            serviceOrders = serviceOrders.Where(s => s.FromTheme.Equals(workOrders.Where(w => w.ManufacturerSerialNumber.Equals(s.ManufacturerSerialNumber)).FirstOrDefault().FromTheme)).ToList();
-            var serviceOrderIds = serviceOrders.Select(s => s.ServiceOrderId).ToList();
-            var serviceOrderCount = await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Equals(obj.TerminalCustomer) && s.TerminalCustomerId.Equals(obj.TerminalCustomerId) && serviceOrderIds.Contains(s.Id) && s.Status == 2).Select(s => s.CreateTime).ToListAsync();
-            var count = serviceOrderCount.Where(s => ((TimeSpan)(DateTime.Now - s)).Days < 5).Count();
-            if (count > 0)
-            {
-                throw new Exception("该客户在5天内已有服务ID，请不要重复建单");
-            }
+            #region 该客户在5天内已有服务ID
+            //var workOrders = obj.ServiceWorkOrders.Select(s => new { s.ManufacturerSerialNumber, s.FromTheme }).ToList();
+            //var msNumbers = workOrders.Select(s => s.ManufacturerSerialNumber).ToList();
+            //var serviceOrders = await UnitWork.Find<ServiceWorkOrder>(s => msNumbers.Contains(s.ManufacturerSerialNumber) && s.Status < 7).Select(s => new { s.ServiceOrderId, s.ManufacturerSerialNumber, s.FromTheme }).ToListAsync();
+            //serviceOrders = serviceOrders.Where(s => s.FromTheme.Equals(workOrders.Where(w => w.ManufacturerSerialNumber.Equals(s.ManufacturerSerialNumber)).FirstOrDefault().FromTheme)).ToList();
+            //var serviceOrderIds = serviceOrders.Select(s => s.ServiceOrderId).ToList();
+            //var serviceOrderCount = await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Equals(obj.TerminalCustomer) && s.TerminalCustomerId.Equals(obj.TerminalCustomerId) && serviceOrderIds.Contains(s.Id) && s.Status == 2).Select(s => s.CreateTime).ToListAsync();
+            //var count = serviceOrderCount.Where(s => ((TimeSpan)(DateTime.Now - s)).Days < 5).Count();
+            //if (count > 0)
+            //{
+            //    throw new Exception("该客户在5天内已有服务ID，请不要重复建单");
+            //}
+            #endregion
             if (string.IsNullOrWhiteSpace(obj.NewestContacter) && string.IsNullOrWhiteSpace(obj.NewestContactTel))
             {
                 obj.NewestContacter = obj.Contacter;

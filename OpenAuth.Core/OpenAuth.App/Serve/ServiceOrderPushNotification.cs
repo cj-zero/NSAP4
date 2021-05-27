@@ -108,6 +108,8 @@ namespace OpenAuth.App.Serve
                 }
             }
             #endregion
+            //推送版本号
+            await _hubContext.Clients.All.SendAsync("Version", "系统", Define.Version);
         }
 
         /// <summary>
