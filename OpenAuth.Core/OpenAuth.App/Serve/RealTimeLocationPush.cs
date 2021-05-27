@@ -2,6 +2,7 @@
 using Infrastructure.Extensions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -21,19 +22,21 @@ namespace OpenAuth.App.Serve
         private readonly IHubContext<MessageHub> _hubContext;
         private readonly SysMessageApp _sysMessageApp;
         private readonly ICacheContext _cacheContext;
-        private readonly UserManagerApp _userManagerApp;
+        private readonly UserManagerApp _userManagerApp; 
+        private ILogger<RealTimeLocationPush> _logger;
 
         public RealTimeLocationPush(IUnitWork unitWork, 
             IHubContext<MessageHub> hubContext, 
             IAuth auth, 
             SysMessageApp sysMessageApp,
             ICacheContext cacheContext,
-            UserManagerApp userManagerApp) : base(unitWork, auth)
+            UserManagerApp userManagerApp, ILogger<RealTimeLocationPush> logger) : base(unitWork, auth)
         {
             _hubContext = hubContext;
             _sysMessageApp = sysMessageApp;
             _cacheContext = cacheContext;
             _userManagerApp = userManagerApp;
+            _logger = logger;
         }
 
         /// <summary>
@@ -205,6 +208,9 @@ namespace OpenAuth.App.Serve
 
             //上线
             var online = data.Where(c => c.Status == "在线" && (c.TotalHour >= 0 && c.TotalHour < 0.1)).ToList();
+
+            //_logger.LogInformation($"本次上线的人员：{string.Join(",", online.Select(c=>c.Name).ToList())}，数量：{online.Count}");
+
             var aaa = await UnitWork.Find<RealTimeLocation>(c => online.Select(q => q.AppUserId).ToList().Contains(c.AppUserId) && (c.CreateTime >= start && c.CreateTime <= end)).ToListAsync();
             //查询上一次定位时间
             var bb = aaa.GroupBy(c => c.AppUserId).Select(c => new { c.Key, Createtime = c?.OrderByDescending(o => o.CreateTime).Skip(1).Take(1).Select(c => c.CreateTime).FirstOrDefault() }).ToList();
@@ -224,31 +230,40 @@ namespace OpenAuth.App.Serve
             var query = await UnitWork.FromSql<User>($@"SELECT * from nsap4.`user` where Id in (SELECT UserId from nsap4.appusermap where AppUserId in ('{param}'))").Select(c => c.Name).ToListAsync();
 
             var onlineName = query;
-            var oldOnList= _cacheContext.Get<List<string>>("OnLineRemindInfo");
-            if (oldOnList != null)
+            if (onlineName.Count>0)
             {
-                var aa = _cacheContext.Remove("OnLineRemindInfo");
-                _cacheContext.Set<List<string>>("OnLineRemindInfo", onlineName, end);
-                //未推送过的人员Id
-                onlineName = onlineName.Except(oldOnList).ToList();
-            }
-            else
-                _cacheContext.Set<List<string>>("OnLineRemindInfo", onlineName, end);
-
-            if (onlineName.Count<5)
-            {
-                foreach (var item in onlineName)
+                //_logger.LogInformation($"刚刚上线且上次上线为一小时前人员：{string.Join(",", onlineName)}，数量：{onlineName.Count}");
+                var oldOnList = _cacheContext.Get<List<string>>("OnLineRemindInfo");
+                if (oldOnList != null)
                 {
-                    var items = online.Where(c => c.Name == item).FirstOrDefault();
-                    var message = $"{items.Name}，上线了！/n/r地址：{items.Address}";
+                   // _logger.LogInformation($"从Redis缓存取出的人员：{string.Join(",", oldOnList)}，数量：{oldOnList.Count}");
+                    var aa = _cacheContext.Remove("OnLineRemindInfo");
+                    _cacheContext.Set<List<string>>("OnLineRemindInfo", onlineName, end);
+                    //未推送过的人员Id
+                    onlineName = onlineName.Except(oldOnList).ToList();
+                    //_logger.LogInformation($"取差集后的人员：{string.Join(",", onlineName)}，数量：{onlineName.Count}");
+                }
+                else
+                    _cacheContext.Set<List<string>>("OnLineRemindInfo", onlineName, end); 
+
+                if (onlineName.Count < 5 && onlineName.Count >0)
+                {
+                    foreach (var item in onlineName)
+                    {
+                        var items = online.Where(c => c.Name == item).FirstOrDefault();
+                        var message = $"{items.Name}，上线了！/n/r地址：{items.Address}";
+                        await _hubContext.Clients.Groups(new List<string>() { "呼叫中心" }).SendAsync("OnlineRemindMessage", "系统", message);//离线消息
+                        _logger.LogInformation($"推送：{message}");
+                    }
+                }
+                else if (onlineName.Count>=5)
+                {
+                    //var names = Offline.Select(c => c.Name).ToList();
+                    var message = $"{string.Join(",", onlineName)},上线了";
                     await _hubContext.Clients.Groups(new List<string>() { "呼叫中心" }).SendAsync("OnlineRemindMessage", "系统", message);//离线消息
                 }
-            }
-            else
-            {
-                //var names = Offline.Select(c => c.Name).ToList();
-                var message = $"{string.Join(",", onlineName)},上线了";
-                await _hubContext.Clients.Groups(new List<string>() { "呼叫中心" }).SendAsync("OnlineRemindMessage", "系统", message);//离线消息
+
+                //_logger.LogInformation($"本次推送的人员：{string.Join(",", onlineName)}，redis缓存中的人员:{string.Join(",", oldOnList)}");
             }
 
         }
