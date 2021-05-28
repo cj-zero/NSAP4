@@ -346,6 +346,18 @@ namespace OpenAuth.WebApi.Controllers
                 //var baseInfo = await _nwcaliCertApp.GetInfo(item);
                 if (baseInfo != null)
                 {
+                    if (!string.IsNullOrWhiteSpace(baseInfo.PdfPath))
+                    {
+                        DirectoryInfo directoryInfo = new DirectoryInfo(pathZip);
+                        string filename = Path.GetFileName(baseInfo.PdfPath);
+                        if (!directoryInfo.Exists)
+                        {
+                            directoryInfo.Create();
+                        }
+                        System.IO.File.Copy(baseInfo.PdfPath, directoryInfo.FullName + @"\" + filename, true);
+                        continue;
+                    }
+
                     var model = await BuildModel(baseInfo);
                     var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Header.html");
                     var text = System.IO.File.ReadAllText(url);
@@ -444,6 +456,11 @@ namespace OpenAuth.WebApi.Controllers
             var baseInfo = await _nwcaliCertApp.GetInfo(serialNumber);
             if (baseInfo != null)
             {
+                if (!string.IsNullOrWhiteSpace(baseInfo.PdfPath))
+                {
+                    var filestream =new FileStream(baseInfo.PdfPath, FileMode.Open);
+                    return File(filestream, "application/pdf");
+                }
                 var model = await BuildModel(baseInfo);
                 var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Header.html");
                 var text = System.IO.File.ReadAllText(url);
