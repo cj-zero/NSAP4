@@ -36,6 +36,15 @@ namespace Sap.Handler.Service.Request
         /// 仓库号
         /// </summary>
         public string WhsCode { get; set; }
-        
+
+        /// <summary>
+        /// 物料编码
+        /// </summary>
+        public string MaterialCode { get; set; }
+        /// <summary>
+        /// 物料详情
+        /// </summary>
+        public string MaterialDescription { get; set; }
+
     }
 }

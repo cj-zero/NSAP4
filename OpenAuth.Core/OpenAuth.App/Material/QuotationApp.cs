@@ -2004,11 +2004,11 @@ namespace OpenAuth.App.Material
             #endregion
 
             #region 判断是否已经开始退料 则不允许领料
-            var isExist = (await UnitWork.Find<ReturnNote>(w => w.ServiceOrderId == obj.ServiceOrderId && w.CreateUserId == loginUser.Id).ToListAsync()).Count > 0 ? true : false;
-            if (isExist)
-            {
-                throw new Exception("该服务单已开始退料，不可领料。");
-            }
+            //var isExist = (await UnitWork.Find<ReturnNote>(w => w.ServiceOrderId == obj.ServiceOrderId && w.CreateUserId == loginUser.Id).ToListAsync()).Count > 0 ? true : false;
+            //if (isExist)
+            //{
+            //    throw new Exception("该服务单已开始退料，不可领料。");
+            //}
             #endregion
 
             //判定字段是否同时存在
