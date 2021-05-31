@@ -135,8 +135,6 @@ namespace OpenAuth.App
             var realTimeLocationHis = await UnitWork.FromSql<RealTimeLocation>(@$"SELECT * from nsap4_serve.realtimelocation where Id in  (
                                         SELECT max(Id) as Id from nsap4_serve.realtimelocation GROUP BY AppUserId
                                         ) ORDER BY CreateTime desc")
-                                        .WhereIf(!string.IsNullOrWhiteSpace(req.Province),c=>c.Province==req.Province)
-                                        .WhereIf(!string.IsNullOrWhiteSpace(req.City),c=>c.City==req.City)
                                         .ToListAsync();
 
 
@@ -179,6 +177,9 @@ namespace OpenAuth.App
                  {
                      Name = c.Name,
                      Address = currentLoca?.a.Province + currentLoca?.a.City + currentLoca?.a.Area + currentLoca?.a.Addr,
+                     Province= currentLoca?.a.Province,
+                     City = currentLoca?.a.City,
+                     Area = currentLoca?.a.Area,
                      Mobile = c.Mobile,
                      Status = onlineState,
                      Interval = interv,
@@ -187,12 +188,16 @@ namespace OpenAuth.App
                      TotalHour= totalHour,
                  };
 
-             }).OrderBy(c=>c.TotalHour);
+             });
+            
 
-            //if (string.IsNullOrWhiteSpace(req.Name) && !string.IsNullOrWhiteSpace(req.Status)) da1.Where(c => c.Status == req.Status);
+            if (!string.IsNullOrWhiteSpace(req.Province)) da1=da1.Where(c => c.Province==req.Province && !string.IsNullOrWhiteSpace(c.Province));
+            if (!string.IsNullOrWhiteSpace(req.City)) da1 = da1.Where(c => c.City == req.City && !string.IsNullOrWhiteSpace(c.City));
+            if (!string.IsNullOrWhiteSpace(req.Area)) da1=da1.Where(c => c.Area == req.Area && !string.IsNullOrWhiteSpace(c.Area));
+
 
             result.Count = da1.Count();
-            result.Data = da1;
+            result.Data = da1.OrderBy(c => c.TotalHour);
             return result;
         }
 

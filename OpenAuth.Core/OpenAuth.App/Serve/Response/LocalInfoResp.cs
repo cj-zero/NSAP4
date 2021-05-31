@@ -11,6 +11,10 @@ namespace OpenAuth.App.Response
         /// </summary>
         public string Name { get; set; }
         /// <summary>
+        /// AppUserId
+        /// </summary>
+        public int? AppUserId { get; set; }
+        /// <summary>
         /// 电话
         /// </summary>
         public string Mobile { get; set; }
@@ -30,6 +34,18 @@ namespace OpenAuth.App.Response
         /// 纬度
         /// </summary>
         public decimal? Latitude { get; set; }
+        /// <summary>
+        /// 省份
+        /// </summary>
+        public string Province { get; set; }
+        /// <summary>
+        /// 城市
+        /// </summary>
+        public string City { get; set; }
+        /// <summary>
+        /// 区域
+        /// </summary>
+        public string Area { get; set; }
         /// <summary>
         /// 历史轨迹
         /// </summary>

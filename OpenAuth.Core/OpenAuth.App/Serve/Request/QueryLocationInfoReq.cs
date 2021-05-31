@@ -8,6 +8,7 @@ namespace OpenAuth.App.Request
     {
         public string Province { get; set; }
         public string City { get; set; }
+        public string Area { get; set; }
         public List<string> Name { get; set; }
     }
 }
