@@ -270,7 +270,7 @@ namespace OpenAuth.App
         public async Task<TableData> GetCustomer() 
         {
             TableData result = new TableData();
-            var data = await UnitWork.Find<crm_ocrd>(null).Select(c => new { Name = c.CardName, Code = c.CardCode }).ToListAsync();
+            var data = await UnitWork.Find<crm_ocrd>(null).Select(c => new { Name = c.CardName, Code = c.CardCode }).Distinct().ToListAsync();
             result.Data = data;
             return result;
         }
