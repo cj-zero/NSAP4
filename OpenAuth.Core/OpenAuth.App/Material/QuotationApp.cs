@@ -254,6 +254,7 @@ namespace OpenAuth.App.Material
                 q.a.Remark,
                 q.a.SalesOrderId,
                 CreateTime = Convert.ToDateTime(q.a.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
+                UpDateTime = Convert.ToDateTime(q.a.UpDateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 q.a.QuotationStatus,
                 q.a.Tentative,
                 q.a.IsProtected,
@@ -1235,6 +1236,7 @@ namespace OpenAuth.App.Material
                             TravelExpenseManHour = QuotationObj.TravelExpenseManHour,
                             PrintWarehouse = 1,
                             MoneyMeans = QuotationObj.MoneyMeans,
+                            UpDateTime=DateTime.Now
                             //todo:要修改的字段赋值
                         });
                         await UnitWork.SaveAsync();
@@ -1392,6 +1394,7 @@ namespace OpenAuth.App.Material
                             TravelExpenseManHour = QuotationObj.TravelExpenseManHour,
                             PrintWarehouse = 1,
                             MoneyMeans = QuotationObj.MoneyMeans,
+                            UpDateTime = DateTime.Now
                             //FlowInstanceId = FlowInstanceId,
                             //todo:要修改的字段赋值
                         });
