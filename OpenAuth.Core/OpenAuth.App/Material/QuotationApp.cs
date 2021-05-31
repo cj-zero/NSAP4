@@ -254,6 +254,7 @@ namespace OpenAuth.App.Material
                 q.a.Remark,
                 q.a.SalesOrderId,
                 CreateTime = Convert.ToDateTime(q.a.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
+                UpDateTime = Convert.ToDateTime(q.a.UpDateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 q.a.QuotationStatus,
                 q.a.Tentative,
                 q.a.IsProtected,
@@ -998,6 +999,7 @@ namespace OpenAuth.App.Material
                     QuotationObj.Status = 1;
                     QuotationObj.QuotationStatus = 3;
                     QuotationObj.PrintWarehouse = 1;
+                    QuotationObj.UpDateTime = DateTime.Now;
                     QuotationObj = await UnitWork.AddAsync<Quotation, int>(QuotationObj);
                     await UnitWork.SaveAsync();
                     if (!obj.IsDraft)
@@ -1235,6 +1237,7 @@ namespace OpenAuth.App.Material
                             TravelExpenseManHour = QuotationObj.TravelExpenseManHour,
                             PrintWarehouse = 1,
                             MoneyMeans = QuotationObj.MoneyMeans,
+                            UpDateTime=DateTime.Now
                             //todo:要修改的字段赋值
                         });
                         await UnitWork.SaveAsync();
@@ -1392,6 +1395,7 @@ namespace OpenAuth.App.Material
                             TravelExpenseManHour = QuotationObj.TravelExpenseManHour,
                             PrintWarehouse = 1,
                             MoneyMeans = QuotationObj.MoneyMeans,
+                            UpDateTime = DateTime.Now
                             //FlowInstanceId = FlowInstanceId,
                             //todo:要修改的字段赋值
                         });
@@ -1499,7 +1503,8 @@ namespace OpenAuth.App.Material
             string message = null;
             //判定库存数量
             var mergeMaterialIds = obj.QuotationMergeMaterialReqs.Select(q => q.Id).ToList();
-            mergeMaterialList = mergeMaterialList.Where(q => mergeMaterialIds.Contains(q.Id) && !q.MaterialCode.Equals("S111-SERVICE-GSF") && !q.MaterialCode.Equals("S111-SERVICE-CLF")).ToList();
+            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ShieldingMaterials")).Select(u => u.Name).ToListAsync();
+            mergeMaterialList = mergeMaterialList.Where(q => mergeMaterialIds.Contains(q.Id) && !CategoryList.Contains(q.MaterialCode)).ToList();
             var mergeMaterials = mergeMaterialList.Select(m => m.MaterialCode).ToList();
             var whscodes = mergeMaterialList.Select(m => m.WhsCode).Distinct();
             var onHand = await UnitWork.Find<OITW>(o => mergeMaterials.Contains(o.ItemCode) && whscodes.Contains(o.WhsCode)).Select(o => new { o.ItemCode, o.OnHand, o.WhsCode }).ToListAsync();

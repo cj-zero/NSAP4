@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Response;
 using OpenAuth.App.SignalR;
@@ -17,10 +18,12 @@ namespace OpenAuth.App.Serve
     public class ServiceOrderPushNotification: OnlyUnitWorkBaeApp
     {
         private readonly IHubContext<MessageHub> _hubContext;
+        private IOptions<AppSetting> _appConfiguration;
 
-        public ServiceOrderPushNotification(IUnitWork unitWork, IHubContext<MessageHub> hubContext, IAuth auth) : base(unitWork, auth)
+        public ServiceOrderPushNotification(IUnitWork unitWork, IHubContext<MessageHub> hubContext, IAuth auth, IOptions<AppSetting> appConfiguration) : base(unitWork, auth)
         {
             _hubContext = hubContext;
+            _appConfiguration=appConfiguration;
         }
 
         #region 定时推送
@@ -109,7 +112,7 @@ namespace OpenAuth.App.Serve
             }
             #endregion
             //推送版本号
-            await _hubContext.Clients.All.SendAsync("Version", "系统", Define.Version);
+            await _hubContext.Clients.All.SendAsync("Version", "系统", _appConfiguration.Value.Version);
         }
 
         /// <summary>
