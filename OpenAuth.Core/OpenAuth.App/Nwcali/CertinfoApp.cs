@@ -38,6 +38,7 @@ namespace OpenAuth.App
         private readonly NwcaliCertApp _nwcaliCertApp;
         private readonly FileApp _fileApp;
         private readonly UserSignApp _userSignApp;
+        private readonly ServiceOrderApp _serviceOrderApp;
         private static readonly string BaseCertDir = Path.Combine(Directory.GetCurrentDirectory(), "certs");
         private static readonly Dictionary<int, double> PoorCoefficients = new Dictionary<int, double>()
         {
@@ -756,6 +757,21 @@ namespace OpenAuth.App
             return result;
         }
 
+        /// <summary>
+        /// 推送过期前一个月的校准证书关联的GUID
+        /// </summary>
+        /// <returns></returns>
+        public async Task PushCertGuidToApp()
+        {
+            var plcguid = await UnitWork.FromSql<PcPlc>(@$"SELECT * from pcplc where timestampdiff(day,ExpirationDate,NOW())=30 or timestampdiff(day,ExpirationDate,NOW())=20 or timestampdiff(day,ExpirationDate,NOW())=10").Select(c => new { c.Guid, DueTime=c.ExpirationDate }).ToListAsync();
+
+            var guid = await UnitWork.FromSql<Certplc>(@$"SELECT * from certplc where timestampdiff(day,ExpirationDate,NOW())=30 or timestampdiff(day,ExpirationDate,NOW())=20 or timestampdiff(day,ExpirationDate,NOW())=10").Select(c => new { Guid=c.PlcGuid, DueTime = c.ExpirationDate } ).ToListAsync();
+
+            if (guid.Count>0) plcguid = plcguid.Concat(guid).ToList();
+
+
+           await _serviceOrderApp.PushMessageToApp(0, "", "", "1", plcguid);
+        }
 
         public void Add(AddOrUpdateCertinfoReq req)
         {
@@ -1655,7 +1671,7 @@ namespace OpenAuth.App
 
 
         public CertinfoApp(IUnitWork unitWork, IRepository<Certinfo> repository,
-            RevelanceManagerApp app, IAuth auth, FlowInstanceApp flowInstanceApp, CertOperationHistoryApp certOperationHistoryApp, ModuleFlowSchemeApp moduleFlowSchemeApp, NwcaliCertApp nwcaliCertApp, FileApp fileApp, UserSignApp userSignApp) : base(unitWork, repository, auth)
+            RevelanceManagerApp app, IAuth auth, FlowInstanceApp flowInstanceApp, CertOperationHistoryApp certOperationHistoryApp, ModuleFlowSchemeApp moduleFlowSchemeApp, NwcaliCertApp nwcaliCertApp, FileApp fileApp, UserSignApp userSignApp, ServiceOrderApp serviceOrderApp) : base(unitWork, repository, auth)
         {
             _revelanceApp = app;
             _flowInstanceApp = flowInstanceApp;
@@ -1664,6 +1680,7 @@ namespace OpenAuth.App
             _nwcaliCertApp = nwcaliCertApp;
             _userSignApp = userSignApp;
             _fileApp = fileApp;
+            _serviceOrderApp = serviceOrderApp;
         }
     }
 }
