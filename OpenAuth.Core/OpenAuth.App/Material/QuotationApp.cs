@@ -236,7 +236,7 @@ namespace OpenAuth.App.Material
 
             var file = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
             ServiceOrderids = QuotationDate.Select(q => q.ServiceOrderId).ToList();
-            var ServiceOrders = await UnitWork.Find<ServiceOrder>(null).Where(q => ServiceOrderids.Contains(q.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId }).ToListAsync();
+            var ServiceOrders = await UnitWork.Find<ServiceOrder>(null).Where(q => ServiceOrderids.Contains(q.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId,s.CustomerId }).ToListAsync();
             var query = from a in QuotationDate
                         join b in ServiceOrders on a.ServiceOrderId equals b.Id
                         select new { a, b };
@@ -248,6 +248,7 @@ namespace OpenAuth.App.Material
                 q.a.ServiceOrderSapId,
                 q.a.ServiceOrderId,
                 q.b.TerminalCustomer,
+                q.b.CustomerId,
                 q.b.TerminalCustomerId,
                 q.a.TotalMoney,
                 q.a.CreateUser,
