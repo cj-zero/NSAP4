@@ -44,11 +44,12 @@ namespace OpenAuth.App
             {
                 throw new Exception("当前登录用户没有访问该模块字段的权限，请联系管理员配置");
             }
+            if (request.Org.Count > 0) request.Org.ForEach(c => c.ToUpper());
             var result = new TableData();
             var objs = UnitWork.Find<AttendanceClock>(null).Include(a => a.AttendanceClockPictures);
             var ClockModels = objs.WhereIf(!string.IsNullOrEmpty(request.key), u => u.Id.Contains(request.key))
                 .WhereIf(!string.IsNullOrEmpty(request.Name), u => u.Name.Contains(request.Name))
-                .WhereIf(!string.IsNullOrEmpty(request.Org), u => u.Org.Contains(request.Org.ToUpper()))
+                .WhereIf(request.Org.Count>0, u => request.Org.Contains(u.Org))
                 .WhereIf(!string.IsNullOrEmpty(request.VisitTo), u => u.VisitTo.Contains(request.VisitTo))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Location), u => u.Location.Contains(request.Location))
                 .WhereIf(request.DateFrom != null && request.DateTo != null, u => u.ClockDate >= request.DateFrom && u.ClockDate < Convert.ToDateTime(request.DateTo).AddMinutes(1440))
@@ -189,11 +190,12 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            if (request.Org.Count > 0) request.Org.ForEach(c => c.ToUpper());
             #region 查询条件
             var objs = UnitWork.Find<AttendanceClock>(null).Include(a => a.AttendanceClockPictures);
             var ClockModels = objs.WhereIf(!string.IsNullOrEmpty(request.key), u => u.Id.Contains(request.key))
                 .WhereIf(!string.IsNullOrEmpty(request.Name), u => u.Name.Contains(request.Name))
-                .WhereIf(!string.IsNullOrEmpty(request.Org), u => u.Org.Contains(request.Org.ToUpper()))
+                .WhereIf(request.Org.Count > 0, u => request.Org.Contains(u.Org))
                 .WhereIf(!string.IsNullOrEmpty(request.VisitTo), u => u.VisitTo.Contains(request.VisitTo))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Location), u => u.Location.Contains(request.Location))
                 .WhereIf(request.DateFrom != null && request.DateTo != null, u => u.ClockDate >= request.DateFrom && u.ClockDate < Convert.ToDateTime(request.DateTo).AddMinutes(1440))

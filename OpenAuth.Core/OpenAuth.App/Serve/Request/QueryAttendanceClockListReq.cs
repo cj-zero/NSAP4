@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace OpenAuth.App.Request
 {
@@ -12,7 +13,7 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 部门Id
         /// </summary>
-        public string Org { get; set; }
+        public List<string> Org { get; set; }
         /// <summary>
         /// 拜访对象
         /// </summary>
