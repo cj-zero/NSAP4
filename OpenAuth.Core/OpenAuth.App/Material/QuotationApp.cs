@@ -64,7 +64,7 @@ namespace OpenAuth.App.Material
                 ServiceOrderids = await UnitWork.Find<ServiceOrder>(null).Where(q => q.CustomerId.Contains(request.CardCode) || q.CustomerName.Contains(request.CardCode)).Select(s => s.Id).ToListAsync();
 
             }
-            var Quotations = UnitWork.Find<Quotation>(null).Include(q => q.QuotationPictures).WhereIf(request.QuotationId.ToString() != null, q => q.Id.ToString().Contains(request.QuotationId.ToString()))
+            var Quotations = UnitWork.Find<Quotation>(null).Include(q => q.QuotationPictures).Include(q=>q.QuotationOperationHistorys).WhereIf(request.QuotationId.ToString() != null, q => q.Id.ToString().Contains(request.QuotationId.ToString()))
                                 .WhereIf(request.ServiceOrderSapId != null, q => q.ServiceOrderSapId.ToString().Contains(request.ServiceOrderSapId.ToString()))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUser), q => q.CreateUser.Contains(request.CreateUser))
                                 .WhereIf(request.StartCreateTime != null, q => q.CreateTime > request.StartCreateTime)
@@ -255,7 +255,7 @@ namespace OpenAuth.App.Material
                 q.a.Remark,
                 q.a.SalesOrderId,
                 CreateTime = Convert.ToDateTime(q.a.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
-                UpDateTime = Convert.ToDateTime(q.a.UpDateTime).ToString("yyyy.MM.dd HH:mm:ss"),
+                UpDateTime =q.a.QuotationOperationHistorys.FirstOrDefault()!=null?Convert.ToDateTime(q.a.QuotationOperationHistorys.OrderByDescending(h=>h.CreateTime).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"): Convert.ToDateTime(q.a.UpDateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 q.a.QuotationStatus,
                 q.a.Tentative,
                 q.a.IsProtected,
@@ -1844,6 +1844,7 @@ namespace OpenAuth.App.Material
                 }
                 //_flowInstanceApp.Verification(VerificationReqModle);
             }
+            obj.UpDateTime = DateTime.Now;
             await UnitWork.UpdateAsync<Quotation>(obj);
             if (req.PictureIds != null && req.PictureIds.Count > 0)
             {
