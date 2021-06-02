@@ -594,26 +594,14 @@ namespace OpenAuth.App
                     .WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers), c => c.MnfSerial.Contains(request.ManufacturerSerialNumbers))
                     .Select(c=>new NwcaliBaseInfo {TesterSn=c.MnfSerial,TesterModel=c.ItemCode }).ToListAsync();
 
-                var cerlist = await UnitWork.Find<NwcaliBaseInfo>(null)
-                    //.WhereIf(!string.IsNullOrWhiteSpace(request.CertNo),c=>c.CertificateNumber.Contains(request.CertNo))
-                    //.WhereIf(!(request.StartCalibrationDate == null && request.EndCalibrationDate == null), c => c.Time >= request.StartCalibrationDate && c.Time <= request.EndCalibrationDate)
+                var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("校准证书"));
+                var fs = await UnitWork.Find<FlowInstance>(null)
+                    .Where(o => o.SchemeId == mf.FlowSchemeId && (o.ActivityName.Contains("已完成") || o.IsFinish == 1))//校准证书已完成流程,IsFinish==1为流程改动前真实结束的数据
                     .ToListAsync();
-                var test= cerlist.OrderByDescending(c => c.Time).GroupBy(c => c.TesterSn).Select(c => c.First()).ToList();
+                var fsid = fs.Select(f => f.Id).ToList();
 
-                //var da = numList.Select(c => 
-                //{
-                //    var te = test.FirstOrDefault(o => o.TesterSn.Equals(c.MnfSerial));
-                //    return new
-                //    {
-                //        c.MnfSerial,
-                //        c.ItemCode,
-                //        AssetNo= te==null?null:te.AssetNo,
-                //        CertificateNumber = te == null ? null : te.CertificateNumber,
-                //        Time = te == null ? null : te.Time,
-                //        ExpirationDate = te == null ? null : te.ExpirationDate,
-                //        Operator = te == null ? null : te.Operator,
-                //    };
-                //});
+                var cerlist = await UnitWork.Find<NwcaliBaseInfo>(o => fsid.Contains(o.FlowInstanceId)).ToListAsync();
+                var test= cerlist.OrderByDescending(c => c.Time).GroupBy(c => c.TesterSn).Select(c => c.First()).ToList();
 
                 var devicelist1 = from a in numList
                                   join b in cerlist on a.TesterSn equals b.TesterSn into ab
@@ -636,18 +624,10 @@ namespace OpenAuth.App
                 if (!(request.StartCalibrationDate == null && request.EndCalibrationDate == null))
                     devicelist1 = devicelist1.Where(c => c.Time >= request.StartCalibrationDate && c.Time <= request.EndCalibrationDate).ToList();
 
-                //var view1 = await devicelist1
-                //                .WhereIf(!string.IsNullOrEmpty(request.ManufacturerSerialNumbers), c => c.MnfSerial.Contains(request.ManufacturerSerialNumbers))
-                //                .WhereIf(!string.IsNullOrEmpty(request.TesterModel), c => c.ItemCode.Contains(request.TesterModel))
-                //                .WhereIf(!string.IsNullOrEmpty(request.CertNo), c => c.CertificateNumber.Contains(request.CertNo))
-                //                .WhereIf(!(request.StartCalibrationDate == null && request.EndCalibrationDate == null), c => c.Time >= request.StartCalibrationDate && c.Time <= request.EndCalibrationDate).ToListAsync();
-                //var view1List = await view1.OrderByDescending(c => c.Time).Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
-                //var viewCount1 = await view1.CountAsync();
-                //result.Count = viewCount1;
                 #region 老数据
                 //序列号下最新的校验证书
                 var testNo = numList.Select(c => c.TesterSn).ToList();
-                var old = await UnitWork.Find<Certinfo>(c=> testNo.Contains(c.Sn)).ToListAsync();
+                var old = await UnitWork.Find<Certinfo>(c=> testNo.Contains(c.Sn) && fsid.Contains(c.FlowInstanceId)).ToListAsync();
                 if (old.Count>0)
                 {
                     old = old.OrderByDescending(c => c.CalibrationDate).GroupBy(c => c.Sn).Select(c => c.First()).ToList();
@@ -695,7 +675,13 @@ namespace OpenAuth.App
             }
             else if (request.PageStatus == 3)//证书列表
             {
-                var cerinfo = await UnitWork.Find<NwcaliBaseInfo>(null)
+                var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("校准证书"));
+                var fs = await UnitWork.Find<FlowInstance>(null)
+                    .Where(o => o.SchemeId == mf.FlowSchemeId && (o.ActivityName.Contains("已完成") || o.IsFinish == 1))//校准证书已完成流程,IsFinish==1为流程改动前真实结束的数据
+                    .ToListAsync();
+                var fsid = fs.Select(f => f.Id).ToList();
+
+                var cerinfo = await UnitWork.Find<NwcaliBaseInfo>(o=>fsid.Contains(o.FlowInstanceId))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers), c => c.TesterSn.Equals(request.ManufacturerSerialNumbers))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.CertNo), c => c.CertificateNumber.Contains(request.CertNo))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), c => c.Operator.Contains(request.Operator))
@@ -719,7 +705,7 @@ namespace OpenAuth.App
                  });
 
                 #region 老数据
-                var obj = await UnitWork.Find<Certinfo>(null)
+                var obj = await UnitWork.Find<Certinfo>(o => fsid.Contains(o.FlowInstanceId))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers), c => c.Sn.Equals(request.ManufacturerSerialNumbers))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.CertNo), c => c.CertNo.Contains(request.CertNo))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), c => c.Operator.Contains(request.Operator))
