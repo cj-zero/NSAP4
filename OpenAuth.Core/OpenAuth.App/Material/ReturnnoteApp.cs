@@ -874,9 +874,11 @@ namespace OpenAuth.App
                 {
                     r.Id,
                     r.ServiceOrderId,
+                    r.SalesOrderId,
+                    r.ServiceOrderSapId,
                     r.CreateUser,
-                    r.CreateTime,
-                    r.UpdateTime,
+                    CreateTime = Convert.ToDateTime(r.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
+                    UpdateTime = Convert.ToDateTime(r.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     r.TotalMoney,
                     StatusName = CategoryList.Where(c => c.DtValue == r.Status.ToString()).FirstOrDefault()?.Name,
                     r.Status,
@@ -896,6 +898,8 @@ namespace OpenAuth.App
                 {
                     r.Id,
                     r.ServiceOrderId,
+                    r.SalesOrderId,
+                    r.ServiceOrderSapId,
                     r.CreateUser,
                     CreateTime = Convert.ToDateTime(r.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     UpdateTime = Convert.ToDateTime(r.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
@@ -1019,10 +1023,10 @@ namespace OpenAuth.App
             {
                 MaterialCode = s.ItemCode,
                 MaterialDescription = s.Dscription,
-                //s.Price,
+                s.Price,
                 Quantity = s.Quantity,//总数量
                 ResidueQuantity = materials.Where(m => m.MaterialCode.Equals(s.ItemCode) && m.InvoiceDocEntry == s.DocEntry).Sum(m => m.Count) > 0 ? s.Quantity - materials.Where(m => m.MaterialCode.Equals(s.ItemCode) && m.InvoiceDocEntry == s.DocEntry).Sum(m => m.Count) : s.Quantity,//应退数量
-                QuotationMaterialId = quotationObj.QuotationMergeMaterials.Where(q => q.MaterialCode.Equals(s.ItemCode) && (s.Price == q.DiscountPrices || s.Price == decimal.Parse(q.DiscountPrices.ToString("@0.00")))).FirstOrDefault()?.Id,
+                QuotationMaterialId = quotationObj.QuotationMergeMaterials.Where(q => q.MaterialCode.Equals(s.ItemCode) && (s.Price == q.DiscountPrices || s.Price == decimal.Parse(Convert.ToDecimal(q.DiscountPrices).ToString("#0.00")))).FirstOrDefault()?.Id,
             }).Where(s => s.QuotationMaterialId != null).ToList();
 
             return result;
@@ -1068,7 +1072,7 @@ namespace OpenAuth.App
             returnNotes.ReturnnoteMaterials.ForEach(r =>
                 {
                     var Price = quotationObj.QuotationMergeMaterials.Where(q => q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.DiscountPrices;
-                    var Quantity = saleinv1.Where(s => r.MaterialCode.Equals(s.ItemCode) && (s.Price == Price || s.Price == decimal.Parse(Price.ToString("@0.00")))).FirstOrDefault()?.Quantity;
+                    var Quantity = saleinv1.Where(s => r.MaterialCode.Equals(s.ItemCode) && (s.Price == Price || s.Price == decimal.Parse(Convert.ToDecimal(Price).ToString("@0.00")))).FirstOrDefault()?.Quantity;
                     var num = materials.Where(m => m.b.QuotationMaterialId.Equals(r.QuotationMaterialId)).Sum(m=>m.b.Count);
                     var ResidueQuantity = num>0 ? Quantity - num: Quantity;
                     returnnoteMaterials.Add(new
@@ -1457,28 +1461,32 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            //List<QuotationMergeMaterialReq> returnMergeMaterialReqs = new List<QuotationMergeMaterialReq>();
-            //List<string> GoodDetailIds = new List<string>();
-            //List<string> SecondDetailIds = new List<string>();
-            //if (req.putInMaterials != null)
-            //{
-            //    foreach (var item in req.putInMaterials)
-            //    {
-            //        if (item.Qty > 0)
-            //        {
-            //            var putInMaterialInfo = new QuotationMergeMaterialReq { Id = item.MaterialId, InventoryQuantity = item.Qty, ReturnNoteId = req.ReturnNoteId, WhsCode = item.WhsCode.ToString() };
-            //            returnMergeMaterialReqs.Add(putInMaterialInfo);
-            //        }
-            //        if (item.WhsCode == 37)
-            //        {
-            //            GoodDetailIds.Add(item.Id);
-            //        }
-            //        else if (item.WhsCode == 39)
-            //        {
-            //            SecondDetailIds.Add(item.Id);
-            //        }
-            //    }
-            //}
+            var returnNoteObj=await UnitWork.Find<ReturnNote>(r => r.Id == req.Id).Include(r => r.ReturnnoteMaterials).FirstOrDefaultAsync();
+            List<QuotationMergeMaterialReq> returnMergeMaterialGoodReqs = new List<QuotationMergeMaterialReq>();
+            List<QuotationMergeMaterialReq> returnMergeMaterialSecondReqs = new List<QuotationMergeMaterialReq>();
+            List<string> GoodDetailIds = new List<string>();
+            List<string> SecondDetailIds = new List<string>();
+            
+            if (req.returnnoteMaterials != null)
+            {
+                foreach (var item in req.returnnoteMaterials)
+                {
+                    var returnnoteMaterialObj=returnNoteObj.ReturnnoteMaterials.Where(r => r.Id.Equals(item.MaterialsId)).FirstOrDefault();
+                    if (item.GoodQty > 0)
+                    {
+                        var putInMaterialInfo = new QuotationMergeMaterialReq { Id = item.MaterialsId, InventoryQuantity = item.GoodQty, ReturnNoteId = req.Id, WhsCode = item.GoodWhsCode,MaterialCode= returnnoteMaterialObj.MaterialCode,MaterialDescription= returnnoteMaterialObj.MaterialDescription};
+                        returnMergeMaterialGoodReqs.Add(putInMaterialInfo);
+                    }
+                    if (item.SecondQty > 0) 
+                    {
+                        var putInMaterialInfo = new QuotationMergeMaterialReq { Id = item.MaterialsId, InventoryQuantity = item.SecondQty, ReturnNoteId = req.Id, WhsCode = item.SecondWhsCode, MaterialCode = returnnoteMaterialObj.MaterialCode, MaterialDescription = returnnoteMaterialObj.MaterialDescription };
+                        returnMergeMaterialSecondReqs.Add(putInMaterialInfo);
+                    }
+                }
+            }
+            //推送到SAP
+            _capBus.Publish("Serve.ReceiptCreditVouchers.Create", new AddOrUpdateQuotationReq { InvoiceDocEntry = returnNoteObj.ReturnnoteMaterials.FirstOrDefault()?.InvoiceDocEntry, SalesOrderId = returnNoteObj.SalesOrderId, QuotationMergeMaterialReqs = returnMergeMaterialGoodReqs });
+            _capBus.Publish("Serve.ReceiptCreditVouchers.Create", new AddOrUpdateQuotationReq { InvoiceDocEntry = returnNoteObj.ReturnnoteMaterials.FirstOrDefault()?.InvoiceDocEntry, SalesOrderId = returnNoteObj.SalesOrderId, QuotationMergeMaterialReqs = returnMergeMaterialSecondReqs });
             ////推送到SAP
             //_capBus.Publish("Serve.AfterSaleReturn.Create", new AddOrUpdateQuotationReq { QuotationMergeMaterialReqs = returnMergeMaterialReqs });
             ////更新退料明细状态
@@ -1501,7 +1509,7 @@ namespace OpenAuth.App
             //}
             //await UnitWork.SaveAsync();
 
-            //_capBus.Publish("Serve.ReceiptCreditVouchers.Create", new AddOrUpdateQuotationReq { InvoiceDocEntry = req.InvoiceDocEntry, SalesOrderId = req.SalesOrderId, QuotationMergeMaterialReqs = returnMergeMaterialReqs });
+
         }
         #endregion
     }
