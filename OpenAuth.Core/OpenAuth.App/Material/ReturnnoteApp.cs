@@ -789,15 +789,15 @@ namespace OpenAuth.App
                     {
                         if (req.PageStatus == 1)
                         {
-                            returnNotes.Where(r => r.Status == 4);
+                            returnNotes=returnNotes.Where(r => r.Status == 4);
                         }
                         else if (req.PageStatus == 2)
                         {
-                            returnNotes.Where(r => r.Status > 4);
+                            returnNotes = returnNotes.Where(r => r.Status > 4);
                         }
                         else
                         {
-                            returnNotes.Where(r => r.Status >= 4);
+                            returnNotes = returnNotes.Where(r => r.Status >= 4);
                         }
                         num++;
                     }
@@ -807,15 +807,15 @@ namespace OpenAuth.App
                     {
                         if (req.PageStatus == 1)
                         {
-                            returnNotes.Where(r => r.Status == 5);
+                            returnNotes = returnNotes.Where(r => r.Status == 5);
                         }
                         else if (req.PageStatus == 2)
                         {
-                            returnNotes.Where(r => r.Status > 5);
+                            returnNotes = returnNotes.Where(r => r.Status > 5);
                         }
                         else
                         {
-                            returnNotes.Where(r => r.Status >= 5);
+                            returnNotes = returnNotes.Where(r => r.Status >= 5);
                         }
                         num++;
                     }
@@ -825,15 +825,15 @@ namespace OpenAuth.App
                     {
                         if (req.PageStatus == 1)
                         {
-                            returnNotes.Where(r => r.Status == 6);
+                            returnNotes = returnNotes.Where(r => r.Status == 6);
                         }
                         else if (req.PageStatus == 2)
                         {
-                            returnNotes.Where(r => r.Status > 6);
+                            returnNotes = returnNotes.Where(r => r.Status > 6);
                         }
                         else
                         {
-                            returnNotes.Where(r => r.Status >= 6);
+                            returnNotes = returnNotes.Where(r => r.Status >= 6);
                         }
                         num++;
                     }
@@ -843,21 +843,21 @@ namespace OpenAuth.App
                     {
                         if (req.PageStatus == 1)
                         {
-                            returnNotes.Where(r => r.Status == 7);
+                            returnNotes = returnNotes.Where(r => r.Status == 7);
                         }
                         else if (req.PageStatus == 2)
                         {
-                            returnNotes.Where(r => r.Status > 7);
+                            returnNotes = returnNotes.Where(r => r.Status > 7);
                         }
                         else
                         {
-                            returnNotes.Where(r => r.Status >= 7);
+                            returnNotes = returnNotes.Where(r => r.Status >= 7);
                         }
                         num++;
                     }
                     break;
                 default:
-                    returnNotes.Where(r => r.CreateUserId.Equals(loginUser.Id));
+                    returnNotes = returnNotes.Where(r => r.CreateUserId.Equals(loginUser.Id));
                     break;
             }
             var result = new TableData();
@@ -878,7 +878,8 @@ namespace OpenAuth.App
                     r.CreateTime,
                     r.UpdateTime,
                     r.TotalMoney,
-                    Status = CategoryList.Where(c => c.DtValue == r.Status.ToString()).FirstOrDefault()?.Name,
+                    StatusName = CategoryList.Where(c => c.DtValue == r.Status.ToString()).FirstOrDefault()?.Name,
+                    r.Status,
                     r.IsLiquidated,
                     r.Remark,
                     InvoiceDocEntry = r.ReturnnoteMaterials.FirstOrDefault()?.InvoiceDocEntry,
@@ -899,7 +900,8 @@ namespace OpenAuth.App
                     CreateTime = Convert.ToDateTime(r.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     UpdateTime = Convert.ToDateTime(r.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     r.TotalMoney,
-                    Status = CategoryList.Where(c => c.DtValue == r.Status.ToString()).FirstOrDefault()?.Name,
+                    StatusName = CategoryList.Where(c => c.DtValue == r.Status.ToString()).FirstOrDefault()?.Name,
+                    r.Status,
                     r.IsLiquidated,
                     r.Remark,
                     InvoiceDocEntry = r.ReturnnoteMaterials.FirstOrDefault()?.InvoiceDocEntry,
@@ -972,7 +974,7 @@ namespace OpenAuth.App
                 SalesOrderId = q.c?.SalesOrderId,
                 U_SAP_ID = q.d?.U_SAP_ID,
                 ServiceOrderId = q.d?.Id,
-                TotalMoney = q.e.DocTotal,
+                DocTotal = q.e.DocTotal,
                 OutstandingAmount = salerin1s.Where(s => s.BaseEntry == q.a.DocEntry)?.Sum(s => s.TotalMoney) != null ? q.e.DocTotal - salerin1s.Where(s => s.BaseEntry == q.a.DocEntry)?.Sum(s => s.TotalMoney) : q.e.DocTotal,
                 UpdateTime = Convert.ToDateTime(q.e.UpdateDate).ToString("yyyy.MM.dd HH:mm:ss"),
                 CreateTime = Convert.ToDateTime(q.a?.DocDate).ToString("yyyy.MM.dd HH:mm:ss"),
@@ -1052,13 +1054,16 @@ namespace OpenAuth.App
             var serviceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id == returnNotes.ServiceOrderId).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.NewestContacter, s.NewestContactTel, s.U_SAP_ID }).FirstOrDefaultAsync();
             //查询应收发票  && s.LineStatus == "O"
             var saleinv1 = await UnitWork.Find<sale_inv1>(s => s.DocEntry == InvoiceDocEntry).ToListAsync();
+            var DocTotal = saleinv1.Sum(s => s.LineTotal);
             //是否存在退料记录
             var query = from a in UnitWork.Find<ReturnNote>(r => r.Status > 3)
                         join b in UnitWork.Find<ReturnnoteMaterial>(r => InvoiceDocEntry == r.InvoiceDocEntry) on a.Id equals b.ReturnNoteId into ab
                         from b in ab.DefaultIfEmpty()
                         select new { b };
             var materials = await query.Where(q=>q.b!=null).ToListAsync();
-
+            List<string> fileIds = new List<string>();
+            returnNotes.ReturnnoteMaterials.ForEach(r=> fileIds.AddRange(r.ReturnNoteMaterialPictures.Select(n=>n.PictureId).ToList()));
+            var fileList=await UnitWork.Find<UploadFile>(f => fileIds.Contains(f.Id)).ToListAsync();
             List<object> returnnoteMaterials = new List<object>();
             returnNotes.ReturnnoteMaterials.ForEach(r =>
                 {
@@ -1078,10 +1083,15 @@ namespace OpenAuth.App
                         r.QuotationMaterialId,
                         r.ReceivingRemark,
                         r.ReturnNoteId,
-                        r.ReturnNoteMaterialPictures,
+                        ReturnNoteMaterialPictures=r.ReturnNoteMaterialPictures.Select(p=>new { 
+                            FileName= fileList.Where(f=>f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileName,
+                            FileType = fileList.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileType,
+                            p.PictureId
+                        }),
                         r.SecondQty,
                         r.SecondWhsCode,
                         r.ShippingRemark,
+                        TotalPrice = r.Count*Price,
                         Price = Price,
                         Quantity= Quantity,
                         ResidueQuantity= ResidueQuantity
@@ -1092,6 +1102,7 @@ namespace OpenAuth.App
             result.Data = new
             {
                 InvoiceDocEntry,
+                DocTotal = DocTotal,
                 returnNotes,
                 returnnoteMaterials,
                 serviceOrders
@@ -1339,8 +1350,8 @@ namespace OpenAuth.App
                         returnnoteMaterials.ForEach(r =>
                         {
                             var materialObj = req.returnnoteMaterials.Where(m => m.MaterialsId.Equals(r.Id)).FirstOrDefault();
-                            r.GoodQty = materialObj?.GoodQty;
-                            r.SecondQty = materialObj?.SecondQty;
+                            r.GoodQty = materialObj?.GoodQty>0? materialObj?.GoodQty:0;
+                            r.SecondQty = materialObj?.SecondQty>0 ? materialObj?.SecondQty : 0;
                         });
                         await UnitWork.BatchUpdateAsync<ReturnnoteMaterial>(returnnoteMaterials.ToArray());
                     }
