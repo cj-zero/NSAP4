@@ -76,7 +76,11 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public DateTime? EndDate { get; set; }
 
-        
+        /// <summary>
+        /// 是否修改
+        /// </summary>
+        public bool? IsUpDate { get; set; }
+
         /// <summary>
         /// 物流图片
         /// </summary>

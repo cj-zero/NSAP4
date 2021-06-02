@@ -438,7 +438,7 @@ namespace Sap.Handler.Service
             var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(quotation.ServiceOrderId)).FirstOrDefaultAsync();
             var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").FirstOrDefaultAsync();
             var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
-            var inv1 = await UnitWork.Find<INV1>(o => o.DocEntry.Equals(obj.InvoiceDocEntry)).Select(o => new { o.LineNum, o.ItemCode}).ToListAsync();
+            var inv1 = await UnitWork.Find<INV1>(o => o.DocEntry.Equals(obj.InvoiceDocEntry)).Select(o => new { o.LineNum, o.ItemCode,o.Price}).ToListAsync();
             var ywy = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => o.SlpCode).FirstOrDefaultAsync();
             List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };
             var categoryList = await UnitWork.Find<Category>(c => typeids.Contains(c.TypeId)).ToListAsync();
@@ -651,7 +651,7 @@ namespace Sap.Handler.Service
 
                 dts.Lines.BaseEntry = (int)obj?.InvoiceDocEntry;
 
-                dts.Lines.BaseLine = (int)inv1.Where(o => o.ItemCode.Equals(materials.MaterialCode)).FirstOrDefault()?.LineNum;
+                dts.Lines.BaseLine = (int)inv1.Where(o => o.ItemCode.Equals(materials.MaterialCode)&& (o.Price == materials.DiscountPrices || o.Price == decimal.Parse(Convert.ToDecimal(materials.DiscountPrices).ToString("#0.00")))).FirstOrDefault()?.LineNum;
 
                 dts.Lines.BaseType = 13;
 
