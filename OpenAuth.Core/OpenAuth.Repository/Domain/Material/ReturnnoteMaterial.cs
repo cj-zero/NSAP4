@@ -26,9 +26,7 @@ namespace OpenAuth.Repository.Domain
             this.ReceivingRemark = "";
             this.ShippingRemark = "";
             this.ReturnNoteId = 0;
-            this.Check = 0;
             this.MaterialDescription = "";
-            this.TotalCount = 0;
             this.GoodQty = 0;
             this.SecondQty = 0;
 
@@ -63,11 +61,6 @@ namespace OpenAuth.Repository.Domain
         [Description("退料单Id")]
         public int? ReturnNoteId { get; set; }
 
-        /// <summary>
-        ///核对验收
-        /// </summary>
-        [Description("核对验收")]
-        public int? Check { get; set; }
 
         /// <summary>
         ///物料描述
@@ -75,18 +68,6 @@ namespace OpenAuth.Repository.Domain
         [Description("物料描述")]
         public string MaterialDescription { get; set; }
 
-
-        /// <summary>
-        ///成本价
-        /// </summary>
-        [Description("成本价")]
-        public decimal? CostPrice { get; set; }
-
-        /// <summary>
-        ///需退总计
-        /// </summary>
-        [Description("需退总计")]
-        public int? TotalCount { get; set; }
 
         /// <summary>
         ///良品数量
@@ -101,16 +82,28 @@ namespace OpenAuth.Repository.Domain
         public int? SecondQty { get; set; }
 
         /// <summary>
+        ///应收发票id
+        /// </summary>
+        [Description("应收发票id")]
+        public int? InvoiceDocEntry { get; set; }
+
+        /// <summary>
+        ///良品仓库
+        /// </summary>
+        [Description("良品仓库")]
+        public string GoodWhsCode { get; set; }
+
+        /// <summary>
+        ///次品仓库
+        /// </summary>
+        [Description("次品仓库")]
+        public string SecondWhsCode { get; set; }
+
+        /// <summary>
         ///退料图片
         /// </summary>
         [Description("退料图片")]
         public List<ReturnNoteMaterialPicture> ReturnNoteMaterialPictures { get; set; }
-
-        /// <summary>
-        /// 物流Id
-        /// </summary>
-        [Description("物流Id")]
-        public string ExpressId { get; set; }
 
         /// <summary>
         /// 领料明细Id
@@ -118,22 +111,5 @@ namespace OpenAuth.Repository.Domain
         [Description("领料明细Id")]
         public string QuotationMaterialId { get; set; }
 
-        /// <summary>
-        /// 是否入库（良品） 1已入库
-        /// </summary>
-        [Description("是否入库（良品） 1已入库")]
-        public int? IsGoodFinish { get; set; }
-
-        /// <summary>
-        /// 是否入库（次品） 1已入库
-        /// </summary>
-        [Description("是否入库（次品） 1已入库")]
-        public int? IsSecondFinish { get; set; }
-
-        /// <summary>
-        /// 折后价格
-        /// </summary>
-        [Description("折后价格")]
-        public decimal DiscountPrices { get; set; }
     }
 }

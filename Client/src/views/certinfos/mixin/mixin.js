@@ -67,18 +67,21 @@ export let commonMixin = {
         { prop: 'activityStatus', component: { tag: 'select', attrs: { options: activityStatusOptions, placeholder: '状态', style: W_100 } }, isShow: this.type === 'review' },
         { prop: 'date', component: { 
           tag: 'date',
-          attrs: { type: 'daterange', 'range-separator': '至', 'start-placeholder': '开始日期', 'end-placeholder': '结束日期', style: W_370, clearable: true }, 
+          attrs: { type: 'daterange', 'range-separator': '至', 'start-placeholder': '开始日期', 'end-placeholder': '结束日期', style: W_370 }, 
           on: { change: this.onDateChange } } 
         },
         { component: { tag: 's-button', attrs: { btnText: '搜索', type: 'primary' }, on: { click: this.onSearch } } },
-        { component: { tag: 's-button', attrs: { btnText: this.type === 'submit' ? '一键送审' : '一键审批', type: 'primary' }, on: { click: this.onApprove } }, isShow: this.type === 'review' || this.type === 'submit' },
+        { component: { tag: 's-button', attrs: { btnText: '一键审批', type: 'primary' }, on: { click: this.onApprove } }, isShow: this.type === 'review' },
       ]
     }
   },
   methods: {
     onDateChange (val) {
-      this.pageConfig.calibrationDateFrom = val ? val[0] : ''
-      this.pageConfig.calibrationDateTo = val ? val[1] : ''
+      if (val) {
+        this.pageConfig.calibrationDateFrom = val[0]
+        this.pageConfig.calibrationDateTo = val[1]
+      }
+      console.log(val, 'dateVal', this.form)
     },
     _certVerificateList (list) { // 批量审批
       if (this.isBtnLock) return

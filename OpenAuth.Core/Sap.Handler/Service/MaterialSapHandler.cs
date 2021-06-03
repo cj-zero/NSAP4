@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository.Interface;
+using Sap.Handler.Sap;
 using Sap.Handler.Service.Request;
 using SAPbobsCOM;
 using Serilog;
@@ -238,7 +239,7 @@ namespace Sap.Handler.Service
                     #endregion
 
                     #region [添加行明细]
-                    //int num = 0;
+                    decimal TotalMoney = 0;
                     foreach (var dln1 in obj.QuotationMergeMaterialReqs)
                     {
                         var materials = quotation.QuotationMergeMaterials.Where(q => q.Id.Equals(dln1.Id)).FirstOrDefault();
@@ -280,7 +281,8 @@ namespace Sap.Handler.Service
 
                         dts.Lines.Price = double.Parse(string.IsNullOrWhiteSpace(materials.DiscountPrices.ToString()) ? "0" : materials.DiscountPrices.ToString());
 
-                        //dts.Lines.LineTotal = string.IsNullOrWhiteSpace(materials.TotalPrice.ToString()) ? 0.00 : double.Parse(Convert.ToDecimal(dln1.SentQuantity* materials.DiscountPrices).ToString("#0.00"));//总计
+                        //dts.Lines.LineTotal = double.Parse(Convert.ToDecimal(materials.DiscountPrices * dln1.SentQuantity).ToString("#0.00"));//string.IsNullOrWhiteSpace(materials.TotalPrice.ToString()) ? 0.00 : double.Parse(materials.TotalPrice.ToString());//总计
+                        TotalMoney +=materials.MaterialType==1?Convert.ToDecimal(Convert.ToDecimal(materials.DiscountPrices * dln1.SentQuantity).ToString("#0.00")):0;
                         //dts.Lines.DiscountPercent = string.IsNullOrWhiteSpace(materials.Discount.ToString()) ? 0 : Convert.ToDouble(materials.Discount);     //折扣
 
                         //if (!string.IsNullOrEmpty(dln1.U_PDXX) && (dln1.U_PDXX == "AC220" || dln1.U_PDXX == "AC380" || dln1.U_PDXX == "AC110"))
@@ -309,6 +311,20 @@ namespace Sap.Handler.Service
                     {
                         company.GetNewObjectCode(out docNum);
                         Log.Logger.Warning("添加销售交货到SAP成功");
+                        if (TotalMoney > 0) 
+                        {
+                            var userCount = await UnitWork.Find<amountinarear>(a => a.UserId.Equals(quotation.CreateUserId)).FirstOrDefaultAsync();
+                            if (userCount != null)
+                            {
+                                await UnitWork.UpdateAsync<amountinarear>(a => a.Id.Equals(userCount.Id), a => new amountinarear { Money = a.Money + TotalMoney });
+
+                            }
+                            else
+                            {
+                                userCount = await UnitWork.AddAsync<amountinarear>(new amountinarear { Money = TotalMoney, Id = Guid.NewGuid().ToString(), UserId = quotation.CreateUserId, UserName = quotation.CreateUser });
+                            }
+                            await UnitWork.AddAsync<amountinarearlog>(new amountinarearlog { Id = Guid.NewGuid().ToString(), Money = TotalMoney, PlusOrMinus = true, SalesOrderId = quotation.SalesOrderId, CreateTime = DateTime.Now, CreateUserId = quotation.CreateUserId, CreateUserName = quotation.CreateUser, AmountInArearId = userCount.Id, Liaison = int.Parse(docNum), Remark = "销售交货增加挂账金额" });
+                        }
                     }
                 }
                 else 
@@ -364,8 +380,8 @@ namespace Sap.Handler.Service
 
                 List<sale_odln> sale_Odln = ODLNmodel.MapToList<sale_odln>();
                 List<sale_dln1> sale_Dln1 = DLN1model.MapToList<sale_dln1>();
-                sale_Odln.ForEach(s => s.sbo_id = 1);
-                sale_Dln1.ForEach(s => s.sbo_id = 1);
+                sale_Odln.ForEach(s => s.sbo_id = Define.SBO_ID);
+                sale_Dln1.ForEach(s => s.sbo_id = Define.SBO_ID);
                 await UnitWork.BatchAddAsync<sale_odln, int>(sale_Odln.ToArray());
                 await UnitWork.BatchAddAsync<sale_dln1, int>(sale_Dln1.ToArray());
 
@@ -375,7 +391,7 @@ namespace Sap.Handler.Service
                 foreach (var item in oitwList)
                 {
                     var WhsCode = sale_Dln1.Where(q => q.ItemCode.Equals(item.ItemCode)).FirstOrDefault().WhsCode;
-                    await UnitWork.UpdateAsync<store_oitw>(o => o.sbo_id == 1 && o.ItemCode == item.ItemCode && o.WhsCode == WhsCode, o => new store_oitw
+                    await UnitWork.UpdateAsync<store_oitw>(o => o.sbo_id == Define.SBO_ID && o.ItemCode == item.ItemCode && o.WhsCode == WhsCode, o => new store_oitw
                     {
                         OnHand = item.OnHand,
                         IsCommited = item.IsCommited,
@@ -385,7 +401,7 @@ namespace Sap.Handler.Service
                 var oitmList = await UnitWork.Find<OITM>(o => itemcodes.Contains(o.ItemCode)).Select(o => new { o.ItemCode, o.IsCommited, o.OnHand, o.OnOrder, o.LastPurCur, o.LastPurPrc, o.LastPurDat, o.UpdateDate }).ToListAsync();
                 foreach (var item in oitmList)
                 {
-                    await UnitWork.UpdateAsync<store_oitm>(o => o.sbo_id == 1 && o.ItemCode == item.ItemCode, o => new store_oitm
+                    await UnitWork.UpdateAsync<store_oitm>(o => o.sbo_id == Define.SBO_ID && o.ItemCode == item.ItemCode, o => new store_oitm
                     {
                         OnHand = item.OnHand,
                         IsCommited = item.IsCommited,

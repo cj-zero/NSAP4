@@ -64,7 +64,7 @@ namespace OpenAuth.App.Material
                 ServiceOrderids = await UnitWork.Find<ServiceOrder>(null).Where(q => q.CustomerId.Contains(request.CardCode) || q.CustomerName.Contains(request.CardCode)).Select(s => s.Id).ToListAsync();
 
             }
-            var Quotations = UnitWork.Find<Quotation>(null).Include(q => q.QuotationPictures).WhereIf(request.QuotationId.ToString() != null, q => q.Id.ToString().Contains(request.QuotationId.ToString()))
+            var Quotations = UnitWork.Find<Quotation>(null).Include(q => q.QuotationPictures).Include(q=>q.QuotationOperationHistorys).WhereIf(request.QuotationId.ToString() != null, q => q.Id.ToString().Contains(request.QuotationId.ToString()))
                                 .WhereIf(request.ServiceOrderSapId != null, q => q.ServiceOrderSapId.ToString().Contains(request.ServiceOrderSapId.ToString()))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUser), q => q.CreateUser.Contains(request.CreateUser))
                                 .WhereIf(request.StartCreateTime != null, q => q.CreateTime > request.StartCreateTime)
@@ -236,7 +236,7 @@ namespace OpenAuth.App.Material
 
             var file = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
             ServiceOrderids = QuotationDate.Select(q => q.ServiceOrderId).ToList();
-            var ServiceOrders = await UnitWork.Find<ServiceOrder>(null).Where(q => ServiceOrderids.Contains(q.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId }).ToListAsync();
+            var ServiceOrders = await UnitWork.Find<ServiceOrder>(null).Where(q => ServiceOrderids.Contains(q.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId,s.CustomerId }).ToListAsync();
             var query = from a in QuotationDate
                         join b in ServiceOrders on a.ServiceOrderId equals b.Id
                         select new { a, b };
@@ -248,12 +248,14 @@ namespace OpenAuth.App.Material
                 q.a.ServiceOrderSapId,
                 q.a.ServiceOrderId,
                 q.b.TerminalCustomer,
+                q.b.CustomerId,
                 q.b.TerminalCustomerId,
                 q.a.TotalMoney,
                 q.a.CreateUser,
                 q.a.Remark,
                 q.a.SalesOrderId,
                 CreateTime = Convert.ToDateTime(q.a.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
+                UpDateTime =q.a.QuotationOperationHistorys.FirstOrDefault()!=null?Convert.ToDateTime(q.a.QuotationOperationHistorys.OrderByDescending(h=>h.CreateTime).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"): Convert.ToDateTime(q.a.UpDateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 q.a.QuotationStatus,
                 q.a.Tentative,
                 q.a.IsProtected,
@@ -998,6 +1000,7 @@ namespace OpenAuth.App.Material
                     QuotationObj.Status = 1;
                     QuotationObj.QuotationStatus = 3;
                     QuotationObj.PrintWarehouse = 1;
+                    QuotationObj.UpDateTime = DateTime.Now;
                     QuotationObj = await UnitWork.AddAsync<Quotation, int>(QuotationObj);
                     await UnitWork.SaveAsync();
                     if (!obj.IsDraft)
@@ -1235,6 +1238,7 @@ namespace OpenAuth.App.Material
                             TravelExpenseManHour = QuotationObj.TravelExpenseManHour,
                             PrintWarehouse = 1,
                             MoneyMeans = QuotationObj.MoneyMeans,
+                            UpDateTime=DateTime.Now
                             //todo:要修改的字段赋值
                         });
                         await UnitWork.SaveAsync();
@@ -1392,6 +1396,7 @@ namespace OpenAuth.App.Material
                             TravelExpenseManHour = QuotationObj.TravelExpenseManHour,
                             PrintWarehouse = 1,
                             MoneyMeans = QuotationObj.MoneyMeans,
+                            UpDateTime = DateTime.Now
                             //FlowInstanceId = FlowInstanceId,
                             //todo:要修改的字段赋值
                         });
@@ -1499,7 +1504,8 @@ namespace OpenAuth.App.Material
             string message = null;
             //判定库存数量
             var mergeMaterialIds = obj.QuotationMergeMaterialReqs.Select(q => q.Id).ToList();
-            mergeMaterialList = mergeMaterialList.Where(q => mergeMaterialIds.Contains(q.Id) && !q.MaterialCode.Equals("S111-SERVICE-GSF") && !q.MaterialCode.Equals("S111-SERVICE-CLF")).ToList();
+            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ShieldingMaterials")).Select(u => u.Name).ToListAsync();
+            mergeMaterialList = mergeMaterialList.Where(q => mergeMaterialIds.Contains(q.Id) && !CategoryList.Contains(q.MaterialCode)).ToList();
             var mergeMaterials = mergeMaterialList.Select(m => m.MaterialCode).ToList();
             var whscodes = mergeMaterialList.Select(m => m.WhsCode).Distinct();
             var onHand = await UnitWork.Find<OITW>(o => mergeMaterials.Contains(o.ItemCode) && whscodes.Contains(o.WhsCode)).Select(o => new { o.ItemCode, o.OnHand, o.WhsCode }).ToListAsync();
@@ -1838,6 +1844,7 @@ namespace OpenAuth.App.Material
                 }
                 //_flowInstanceApp.Verification(VerificationReqModle);
             }
+            obj.UpDateTime = DateTime.Now;
             await UnitWork.UpdateAsync<Quotation>(obj);
             if (req.PictureIds != null && req.PictureIds.Count > 0)
             {
@@ -2004,11 +2011,11 @@ namespace OpenAuth.App.Material
             #endregion
 
             #region 判断是否已经开始退料 则不允许领料
-            var isExist = (await UnitWork.Find<ReturnNote>(w => w.ServiceOrderId == obj.ServiceOrderId && w.CreateUserId == loginUser.Id).ToListAsync()).Count > 0 ? true : false;
-            if (isExist)
-            {
-                throw new Exception("该服务单已开始退料，不可领料。");
-            }
+            //var isExist = (await UnitWork.Find<ReturnNote>(w => w.ServiceOrderId == obj.ServiceOrderId && w.CreateUserId == loginUser.Id).ToListAsync()).Count > 0 ? true : false;
+            //if (isExist)
+            //{
+            //    throw new Exception("该服务单已开始退料，不可领料。");
+            //}
             #endregion
 
             //判定字段是否同时存在

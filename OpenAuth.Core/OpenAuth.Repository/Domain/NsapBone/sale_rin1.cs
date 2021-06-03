@@ -14,15 +14,15 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using OpenAuth.Repository.Core;
 
-namespace OpenAuth.Repository.Domain.Sap
+namespace OpenAuth.Repository.Domain
 {
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("RIN1")]
-    public partial class RIN1 
+    [Table("sale_rin1")]
+    public partial class sale_rin1 
     {
-        public RIN1()
+        public sale_rin1()
         {
           this.BaseRef= string.Empty;
           this.LineStatus= string.Empty;
@@ -50,10 +50,7 @@ namespace OpenAuth.Repository.Domain.Sap
           this.SWW= string.Empty;
           this.ObjType= string.Empty;
           this.BlockNum= string.Empty;
-          this.ImportLog= string.Empty;
           this.IsAqcuistn= string.Empty;
-          this.PoTrgEntry= string.Empty;
-          this.DropShip= string.Empty;
           this.Address= string.Empty;
           this.TaxCode= string.Empty;
           this.TaxType= string.Empty;
@@ -64,80 +61,21 @@ namespace OpenAuth.Repository.Domain.Sap
           this.WtLiable= string.Empty;
           this.DeferrTax= string.Empty;
           this.unitMsr= string.Empty;
-          this.CEECFlag= string.Empty;
-          this.CountryOrg= string.Empty;
           this.LineType= string.Empty;
           this.TranType= string.Empty;
           this.Text= string.Empty;
-          this.ConsumeFCT= string.Empty;
           this.ShipToCode= string.Empty;
           this.ShipToDesc= string.Empty;
           this.BasePrice= string.Empty;
           this.DistribExp= string.Empty;
-          this.DescOW= string.Empty;
-          this.DetailsOW= string.Empty;
-          this.CFOPCode= string.Empty;
-          this.CSTCode= string.Empty;
-          this.TaxOnly= string.Empty;
-          this.WtCalced= string.Empty;
-          this.CogsOcrCod= string.Empty;
-          this.CogsAcct= string.Empty;
-          this.ChgAsmBoMW= string.Empty;
           this.ActDelDate= DateTime.Now;
-          this.OcrCode2= string.Empty;
-          this.OcrCode3= string.Empty;
-          this.OcrCode4= string.Empty;
-          this.OcrCode5= string.Empty;
           this.PostTax= string.Empty;
           this.Excisable= string.Empty;
-          this.CogsOcrCo2= string.Empty;
-          this.CogsOcrCo3= string.Empty;
-          this.CogsOcrCo4= string.Empty;
-          this.CogsOcrCo5= string.Empty;
           this.LnExcised= string.Empty;
-          this.unitMsr2= string.Empty;
-          this.SpecPrice= string.Empty;
-          this.CSTfIPI= string.Empty;
-          this.CSTfPIS= string.Empty;
-          this.CSTfCOFINS= string.Empty;
-          this.ExLineNo= string.Empty;
           this.isSrvCall= string.Empty;
           this.PQTReqDate= DateTime.Now;
           this.LinManClsd= string.Empty;
-          this.VatGrpSrc= string.Empty;
           this.NoInvtryMv= string.Empty;
-          this.CredOrigin= string.Empty;
-          this.UomCode= string.Empty;
-          this.UomCode2= string.Empty;
-          this.FromWhsCod= string.Empty;
-          this.NeedQty= string.Empty;
-          this.PartRetire= string.Empty;
-          this.EnSetCost= string.Empty;
-          this.LineVendor= string.Empty;
-          this.DistribIS= string.Empty;
-          this.IsByPrdct= string.Empty;
-          this.PriceEdit= string.Empty;
-          this.LinePoPrss= string.Empty;
-          this.FreeChrgBP= string.Empty;
-          this.TaxRelev= string.Empty;
-          this.LegalText= string.Empty;
-          this.ThirdParty= string.Empty;
-          this.LicTradNum= string.Empty;
-          this.InvQtyOnly= string.Empty;
-          this.ShipFromCo= string.Empty;
-          this.ShipFromDe= string.Empty;
-          this.FisrtBin= string.Empty;
-          this.AllocBinC= string.Empty;
-          this.ExpType= string.Empty;
-          this.ExpUUID= string.Empty;
-          this.ExpOpType= string.Empty;
-          this.DIOTNat= string.Empty;
-          this.MYFtype= string.Empty;
-          this.StgDesc= string.Empty;
-          this.ItmTaxType= string.Empty;
-          this.IsPrscGood= string.Empty;
-          this.IsCstmAct= string.Empty;
-          this.EncryptIV= string.Empty;
           this.U_WLLY= string.Empty;
           this.U_YYFX= string.Empty;
           this.U_XWJBH= string.Empty;
@@ -148,24 +86,51 @@ namespace OpenAuth.Repository.Domain.Sap
           this.U_CPH= string.Empty;
           this.U_TYSL= string.Empty;
           this.U_PRX_SID= string.Empty;
+          this.U_PRX_VMas= string.Empty;
+          this.U_PRX_VNum= string.Empty;
+          this.U_PRX_Note= string.Empty;
+          this.U_A_CCNo= string.Empty;
+          this.U_A_EDATE= string.Empty;
+          this.U_A_SECCOD= string.Empty;
+          this.U_A_ADDR1= string.Empty;
+          this.U_A_ADDR2= string.Empty;
+          this.U_A_ADDR3= string.Empty;
+          this.U_A_CITY= string.Empty;
+          this.U_A_ZIP= string.Empty;
+          this.U_A_CTYPE= string.Empty;
+          this.U_A_CREFNO= string.Empty;
+          this.U_A_ADATE= string.Empty;
+          this.U_A_ACODE= string.Empty;
+          this.U_A_STATE= string.Empty;
+          this.U_A_CAMT= string.Empty;
+          this.U_A_PAYT= string.Empty;
+          this.U_BNIncTrm= string.Empty;
+          this.U_BNTrnMod= string.Empty;
           this.U_PDXX= string.Empty;
           this.U_BXSJ= string.Empty;
           this.U_ZS= string.Empty;
-          this.U_PSD= string.Empty;
-          this.U_RelDoc= string.Empty;
+          this.U_XSTCBL= 0;
+          this.U_SCTCBL= 0;
+          this.U_YFTCBL= 0;
+          this.U_YWF= 0;
+          this.U_FWF= 0;
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public uint sbo_id { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public uint DocEntry { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public uint LineNum { get; set; }
 
-        
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? DocEntry { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? LineNum { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -285,7 +250,7 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
-        public int? SlpCode { get; set; }
+        public short? SlpCode { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -346,16 +311,6 @@ namespace OpenAuth.Repository.Domain.Sap
         /// </summary>
         [Description("")]
         public string BaseCard { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? TotalSumSy { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? OpenSumSys { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -540,11 +495,6 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
-        public decimal? VatSumSy { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
         public int? FinncPriod { get; set; }
         /// <summary>
         /// 
@@ -555,17 +505,7 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
-        public int? LogInstanc { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
         public string BlockNum { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string ImportLog { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -576,11 +516,6 @@ namespace OpenAuth.Repository.Domain.Sap
         /// </summary>
         [Description("")]
         public decimal? DedVatSumF { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? DedVatSumS { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -600,17 +535,7 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
-        public decimal? DstrbSumSC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
         public decimal? GrssProfit { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? GrssProfSC { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -626,26 +551,6 @@ namespace OpenAuth.Repository.Domain.Sap
         /// </summary>
         [Description("")]
         public decimal? INMPrice { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? PoTrgNum { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string PoTrgEntry { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string DropShip { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? PoLineNum { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -711,11 +616,6 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
-        public decimal? VatAppldSC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
         public decimal? BaseQty { get; set; }
         /// <summary>
         /// 
@@ -756,11 +656,6 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
-        public decimal? EquVatSumS { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
         public decimal? LineVat { get; set; }
         /// <summary>
         /// 
@@ -771,32 +666,12 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
-        public decimal? LineVatS { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
         public string unitMsr { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
         public decimal? NumPerMsr { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CEECFlag { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? ToStock { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? ToDiff { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -812,11 +687,6 @@ namespace OpenAuth.Repository.Domain.Sap
         /// </summary>
         [Description("")]
         public decimal? TotInclTax { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CountryOrg { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -846,52 +716,7 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
-        public int? OwnerCode { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
         public decimal? StockPrice { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string ConsumeFCT { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? LstByDsSum { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? StckINMPr { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? LstBINMPr { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? StckDstFc { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? StckDstSc { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? LstByDsFc { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? LstByDsSc { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -902,26 +727,6 @@ namespace OpenAuth.Repository.Domain.Sap
         /// </summary>
         [Description("")]
         public decimal? StockSumFc { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? StockSumSc { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? StckSumApp { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? StckAppFc { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? StckAppSc { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -946,11 +751,6 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
-        public decimal? StckAppDSC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
         public string BasePrice { get; set; }
         /// <summary>
         /// 
@@ -966,67 +766,7 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
-        public decimal? GTotalSC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
         public string DistribExp { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string DescOW { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string DetailsOW { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public short? GrossBase { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? VatWoDpm { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? VatWoDpmFc { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? VatWoDpmSc { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CFOPCode { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CSTCode { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? Usage { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string TaxOnly { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string WtCalced { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -1046,47 +786,7 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
-        public string CogsOcrCod { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? CiOppLineN { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CogsAcct { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string ChgAsmBoMW { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
         public System.DateTime? ActDelDate { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string OcrCode2 { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string OcrCode3 { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string OcrCode4 { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string OcrCode5 { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -1097,11 +797,6 @@ namespace OpenAuth.Repository.Domain.Sap
         /// </summary>
         [Description("")]
         public decimal? TaxDistSFC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? TaxDistSSC { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -1117,46 +812,6 @@ namespace OpenAuth.Repository.Domain.Sap
         /// </summary>
         [Description("")]
         public decimal? AssblValue { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? RG23APart1 { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? RG23APart2 { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? RG23CPart1 { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? RG23CPart2 { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CogsOcrCo2 { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CogsOcrCo3 { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CogsOcrCo4 { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CogsOcrCo5 { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -1177,41 +832,6 @@ namespace OpenAuth.Repository.Domain.Sap
         /// </summary>
         [Description("")]
         public decimal? GPTtlBasPr { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string unitMsr2 { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? NumPerMsr2 { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string SpecPrice { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CSTfIPI { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CSTfPIS { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CSTfCOFINS { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string ExLineNo { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -1246,357 +866,12 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
-        public string VatGrpSrc { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
         public string NoInvtryMv { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? ActBaseEnt { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? ActBaseLn { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? ActBaseNum { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
         public decimal? OpenRtnQty { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? AgrNo { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? AgrLnNum { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CredOrigin { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? Surpluses { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? DefBreak { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? Shortages { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? UomEntry { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? UomEntry2 { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string UomCode { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string UomCode2 { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string FromWhsCod { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string NeedQty { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string PartRetire { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? RetireQty { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? RetireAPC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? RetirAPCFC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? RetirAPCSC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? InvQty { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? OpenInvQty { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string EnSetCost { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? RetCost { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? Incoterms { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? TransMod { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string LineVendor { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string DistribIS { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? ISDistrb { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? ISDistrbFC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? ISDistrbSC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string IsByPrdct { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? ItemType { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string PriceEdit { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? PrntLnNum { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string LinePoPrss { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string FreeChrgBP { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string TaxRelev { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string LegalText { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string ThirdParty { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string LicTradNum { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string InvQtyOnly { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? UnencReasn { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string ShipFromCo { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string ShipFromDe { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string FisrtBin { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string AllocBinC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string ExpType { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string ExpUUID { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string ExpOpType { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string DIOTNat { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string MYFtype { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? GPBefDisc { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public short? ReturnRsn { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public short? ReturnAct { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? StgSeqNum { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? StgEntry { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string StgDesc { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string ItmTaxType { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? SacEntry { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? NCMCode { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? HsnEntry { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? OriBAbsEnt { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? OriBLinNum { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? OriBDocTyp { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string IsPrscGood { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string IsCstmAct { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string EncryptIV { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -1656,6 +931,106 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
+        public string U_PRX_VMas { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_PRX_VNum { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_PRX_Note { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_A_CCNo { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_A_EDATE { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_A_SECCOD { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_A_ADDR1 { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_A_ADDR2 { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_A_ADDR3 { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_A_CITY { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_A_ZIP { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_A_CTYPE { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_A_CREFNO { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_A_ADATE { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_A_ACODE { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_A_STATE { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_A_CAMT { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_A_PAYT { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_BNIncTrm { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_BNTrnMod { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
         public short? U_CCSJ { get; set; }
         /// <summary>
         /// 
@@ -1681,11 +1056,46 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
-        public string U_PSD { get; set; }
+        public decimal U_XSTCBL { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string U_RelDoc { get; set; }
+        public decimal U_SCTCBL { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal U_YFTCBL { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal U_YWF { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal U_FWF { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? U_SHJSDJ { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? U_SHJSJ { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? U_SHTC { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? U_YF { get; set; }
     }
 }

@@ -303,6 +303,11 @@ namespace OpenAuth.Repository.Domain
         [Description("仓库打印状态")]
         public int? PrintWarehouse { get; set; }
 
+        /// <summary>
+        ///修改日期
+        /// </summary>
+        [Description("修改日期")]
+        public DateTime? UpDateTime { get; set; }
 
         /// <summary>
         /// 物流表

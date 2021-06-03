@@ -47,5 +47,14 @@ namespace OpenAuth.App.Material.Request
         ///折后价格
         /// </summary>
         public decimal? DiscountPrices { get; set; }
+
+        /// <summary>
+        /// 物料编码
+        /// </summary>
+        public string MaterialCode { get; set; }
+        /// <summary>
+        /// 物料详情
+        /// </summary>
+        public string MaterialDescription { get; set; }
     }
 }

@@ -1183,29 +1183,22 @@ export default {
               this.form.serviceWorkOrders.forEach(workOrder => {
                 workOrder.fromTheme = JSON.stringify(workOrder.themeList)
               })
-              const areaText = `当前地址为${this.allArea}${this.form.addr}`
-              this.$confirm(areaText, '提示', {
-                confirmButtonText: '确定',
-                cancelButtonText: '取消',
-                type: 'warning'
-              }).then(() => {
-                callservesure
-                  .CreateOrder(this.form)
-                  .then(() => {
-                    this.$message({
-                      message: "创建服务单成功",
-                      type: "success",
-                    });
-                    this.$emit("close-Dia", "y");
-                  })
-                  .catch((res) => {
-                    this.$message({
-                      message: `${res}`,
-                      type: "error",
-                    });
-                    this.$emit("close-Dia", "N");
+              callservesure
+                .CreateOrder(this.form)
+                .then(() => {
+                  this.$message({
+                    message: "创建服务单成功",
+                    type: "success",
                   });
-              }).catch(() => this.$emit("close-Dia", "N"))
+                  this.$emit("close-Dia", "y");
+                })
+                .catch((res) => {
+                  this.$message({
+                    message: `${res}`,
+                    type: "error",
+                  });
+                  this.$emit("close-Dia", "N");
+                });
             } else {
               let formInitailList = this.$refs.formAdd.formInitailList;
               let targetList = this.form.serviceWorkOrders.filter((item) => {
@@ -1367,7 +1360,7 @@ export default {
       this.listQuerySearch.CardCodeOrCardName = this.inputSearch;
       this.listQuerySearch.ManufSN = this.inputSerial
       // this.form.customerId = this.inputSearch;
-      this.listQuerySearch.slpName = this.inputSlpName
+      this.listQuerySearch.slpName = this.inputName
       this.listQuerySearch.Technician = this.inputTech
       this.listQuerySearch.Address = this.inputAddress
       this.getPartnerList(this.listQuerySearch, 'search')

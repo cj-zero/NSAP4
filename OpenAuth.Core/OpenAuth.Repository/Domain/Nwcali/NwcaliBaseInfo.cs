@@ -55,6 +55,10 @@ namespace OpenAuth.Repository.Domain
         [Description("")]
         public DateTime? Time { get; set; }
         /// <summary>
+        /// PDF路径
+        /// </summary>
+        public string PdfPath { get; set; }
+        /// <summary>
         /// 
         /// </summary>
         [Description("")]
