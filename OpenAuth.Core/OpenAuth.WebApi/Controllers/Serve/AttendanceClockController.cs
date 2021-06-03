@@ -33,8 +33,8 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 加载列表
         /// </summary>
-        [HttpGet]
-        public TableData Load([FromQuery] QueryAttendanceClockListReq request)
+        [HttpPost]
+        public TableData Load([FromBody] QueryAttendanceClockListReq request)
         {
             return _app.Load(request);
         }
@@ -44,8 +44,8 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<IActionResult> ExportAttendanceClock([FromQuery] QueryAttendanceClockListReq req)
+        [HttpPost]
+        public async Task<IActionResult> ExportAttendanceClock([FromBody] QueryAttendanceClockListReq req)
         {
             var data = await _app.ExportAttendanceClock(req);
 

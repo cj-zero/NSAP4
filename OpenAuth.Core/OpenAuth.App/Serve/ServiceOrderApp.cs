@@ -2268,6 +2268,27 @@ namespace OpenAuth.App
                 Content = content
             }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg");
         }
+
+        /// <summary>
+        /// 推送消息至新威智能app，推送即将过期校准证书关联的guid
+        /// </summary>
+        /// <param name="userId">app用户Id</param>
+        /// <param name="title">消息标题</param>
+        /// <param name="content">消息内容</param>
+        /// <param name="type">消息类型</param>
+        /// <param name="guid">下位机GUID</param>
+        /// <returns></returns>
+        public async Task<string> PushMessageToApp(int userId, string title, string content,string type,dynamic guidInfo)
+        {
+            return _helper.Post(new
+            {
+                UserId = userId,
+                Title = title,
+                Content = content,
+                Type = type,
+                GuidInfos = guidInfo
+            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg");
+        }
         #endregion
 
         #region<<Customer>>
