@@ -17,6 +17,7 @@ namespace OpenAuth.WebApi.Controllers
     /// </summary>
     [Route("api/Serve/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Serve")]
     public class KnowledgeBasesController : ControllerBase
     {
         private readonly KnowledgeBaseApp _app;

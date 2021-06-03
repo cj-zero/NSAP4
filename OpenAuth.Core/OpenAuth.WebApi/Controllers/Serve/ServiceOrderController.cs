@@ -27,6 +27,7 @@ namespace OpenAuth.WebApi.Controllers
     /// </summary>
     [Route("api/serve/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Serve")]
     public class ServiceOrderController : Controller
     {
         private readonly ServiceOrderApp _serviceOrderApp;

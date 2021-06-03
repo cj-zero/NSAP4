@@ -32,6 +32,7 @@ namespace OpenAuth.WebApi.Controllers
     /// </summary>
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Nwcali")]
     public class CertController : Controller
     {
         private readonly IAuth _authUtil;

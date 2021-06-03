@@ -17,6 +17,7 @@ namespace OpenAuth.WebApi.Controllers.Material
     /// </summary>
     [Route("api/Material/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Material")]
     public class SalesOrderWarrantyDateController : ControllerBase
     {
         private readonly SalesOrderWarrantyDateApp _app;

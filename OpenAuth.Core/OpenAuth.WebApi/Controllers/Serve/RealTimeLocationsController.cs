@@ -17,6 +17,7 @@ namespace OpenAuth.WebApi.Controllers
     /// </summary>
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Serve")]
     public class RealTimeLocationsController : ControllerBase
     {
         private readonly RealTimeLocationApp _realTimeLocationApp;

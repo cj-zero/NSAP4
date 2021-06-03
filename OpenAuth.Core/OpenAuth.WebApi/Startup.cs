@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
+using System.Reflection;
 using Autofac;
 using IdentityServer4.AccessTokenValidation;
 using Infrastructure;
@@ -13,6 +14,7 @@ using Infrastructure.HuaweiOCR;
 using Infrastructure.TecentOCR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
@@ -73,12 +75,16 @@ namespace OpenAuth.WebApi
 
             services.AddSwaggerGen(option =>
             {
-                option.SwaggerDoc("v1", new OpenApiInfo
+                foreach (var controller in GetControllers())
                 {
-                    Version = "v1",
-                    Title = " NSAP4 API",
-                    Description = "By Neware-R7"
-                });
+                    option.SwaggerDoc(controller, new OpenApiInfo
+                    {
+                        Version = controller,
+                        Title = " NSAP4 API",
+                        Description = "By Neware-R7"
+                    });
+                }
+                
 
                 logger.LogInformation($"api doc basepath:{AppContext.BaseDirectory}");
                 foreach (var name in Directory.GetFiles(AppContext.BaseDirectory, "*.*",
@@ -193,7 +199,15 @@ namespace OpenAuth.WebApi
             services.AddSingleton<HuaweiOCR>();
             services.AddScoped<CertAuthFilter>();
         }
-
+        private List<string> GetControllers()
+        {
+            Assembly asm = Assembly.GetExecutingAssembly();
+            var controlleractionlist = asm.GetTypes().Where(type => typeof(ControllerBase).IsAssignableFrom(type)).Select(a=>a.CustomAttributes.LastOrDefault()?.NamedArguments.FirstOrDefault().TypedValue.Value.ToString()).Distinct().ToList();
+            //var controlleractionlist = asm.GetTypes()
+            //    .Where(type => typeof(ControllerBase).IsAssignableFrom(type))
+            //    .OrderBy(x => x.Name).ToList();
+            return controlleractionlist;
+        }
         public void ConfigureContainer(ContainerBuilder builder)
         {
             AutofacExt.InitAutofac(builder, Configuration);
@@ -234,8 +248,14 @@ namespace OpenAuth.WebApi
             // specifying the Swagger JSON endpoint.
             app.UseSwaggerUI(c =>
             {
+                //c.IndexStream = () => GetType().GetTypeInfo().Assembly.GetManifestResourceStream("OpenAuth.WebApi.index.html");
+
+                foreach (var controller in GetControllers())
+                {
+                    c.SwaggerEndpoint($"/swagger/{controller}/swagger.json", controller);
+                }
                 c.DocumentTitle = "NSAP4 API";
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "V1 Docs");
+                //c.SwaggerEndpoint("/swagger/v1/swagger.json", "V1 Docs");
                 c.DocExpansion(DocExpansion.None);
                 c.OAuthClientId("OpenAuth.WebApi");  //oauth客户端名称
                 c.OAuthAppName("开源版webapi认证"); // 描述

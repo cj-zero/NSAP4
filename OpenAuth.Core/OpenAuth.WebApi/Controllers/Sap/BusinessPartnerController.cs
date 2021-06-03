@@ -20,6 +20,7 @@ namespace OpenAuth.WebApi.Controllers.Sap
     /// </summary>
     [Route("api/Sap/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Sap")]
     public class BusinessPartnerController : ControllerBase
     {
         private readonly BusinessPartnerApp _businessPartnerApp;

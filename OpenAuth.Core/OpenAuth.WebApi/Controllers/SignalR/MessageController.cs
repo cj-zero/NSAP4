@@ -14,6 +14,7 @@ namespace OpenAuth.WebApi.Controllers.SignalR
 {
     [Route("api/SignalR/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "SignalR")]
     public class MessageController : ControllerBase
     {
         private readonly SignalRMessageApp _messageApp;

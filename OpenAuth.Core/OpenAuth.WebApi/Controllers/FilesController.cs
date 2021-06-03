@@ -25,6 +25,7 @@ namespace OpenAuth.WebApi.Controllers
 
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "General")]
     public class FilesController :ControllerBase
     {
 

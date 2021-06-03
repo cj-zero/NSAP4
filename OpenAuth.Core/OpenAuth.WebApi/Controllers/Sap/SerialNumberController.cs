@@ -21,6 +21,7 @@ namespace OpenAuth.WebApi.Controllers.Sap
     /// </summary>
     [Route("api/Sap/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Sap")]
     public class SerialNumberController : ControllerBase
     {
         private readonly SerialNumberApp _serialNumberApp;

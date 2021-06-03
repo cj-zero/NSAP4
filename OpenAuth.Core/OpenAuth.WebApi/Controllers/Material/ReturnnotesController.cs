@@ -18,6 +18,7 @@ namespace OpenAuth.WebApi.Controllers
     /// </summary>
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Material")]
     public class ReturnNotesController : ControllerBase
     {
         private readonly ReturnNoteApp _returnnoteApp;

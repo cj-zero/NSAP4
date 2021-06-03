@@ -17,6 +17,7 @@ namespace OpenAuth.WebApi.Controllers
     /// </summary>
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Eshop")]
     public class WfaEshopStatusController : Controller
     {
         private readonly WfaEshopStatusApp _wfastatusapp;

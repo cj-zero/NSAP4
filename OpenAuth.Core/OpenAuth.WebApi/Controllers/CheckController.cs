@@ -33,6 +33,7 @@ namespace OpenAuth.WebApi.Controllers
     /// </summary>
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "General")]
     public class CheckController : ControllerBase
     {
         private readonly IAuth _authUtil;

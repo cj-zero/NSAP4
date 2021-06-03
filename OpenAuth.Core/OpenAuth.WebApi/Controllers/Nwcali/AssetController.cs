@@ -19,6 +19,7 @@ namespace OpenAuth.WebApi.Controllers
     /// </summary>
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Nwcali")]
     public class AssetController : ControllerBase
     {
         private readonly AssetApp _app;

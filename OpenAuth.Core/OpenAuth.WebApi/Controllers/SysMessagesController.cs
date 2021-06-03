@@ -15,6 +15,7 @@ namespace OpenAuth.WebApi.Controllers
     /// </summary>
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "General")]
     public class SysMessagesController : ControllerBase
     {
         private readonly SysMessageApp _app;
