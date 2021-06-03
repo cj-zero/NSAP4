@@ -56,10 +56,10 @@ namespace OpenAuth.App
             {
                 sericeWorkOrderList = sericeWorkOrderList.WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumber), s => s.ManufacturerSerialNumber.Contains(request.ManufacturerSerialNumber));
             }
-            if (!loginContext.Roles.Any(r => r.Name.Equals("工程主管"))&& !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心"))) 
-            {
-                sericeWorkOrderList=sericeWorkOrderList.Where(s => s.CurrentUserNsapId.Equals(loginUser.Id));
-            }
+            //if (!loginContext.Roles.Any(r => r.Name.Equals("工程主管"))&& !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心"))) 
+            //{
+            //    sericeWorkOrderList=sericeWorkOrderList.Where(s => s.CurrentUserNsapId.Equals(loginUser.Id));
+            //}
             var completionReportIds = await sericeWorkOrderList.Skip((request.page - 1) * request.limit).Take(request.limit).Select(s => s.CompletionReportId).ToListAsync();
 
 
