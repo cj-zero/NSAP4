@@ -1003,6 +1003,7 @@ namespace OpenAuth.App
                     UpdateTime = Convert.ToDateTime(r.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     TotalMoney = r.TotalMoney,
                     Status = flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Rejected ? flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.ActivityName : "驳回",
+                    IsUpDate = flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Running ? flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Running ? true : false : false,
                     IsLiquidated = r.IsLiquidated,
                     Remark = r.Remark,
                     InvoiceDocEntry = r.ReturnnoteMaterials.FirstOrDefault()?.InvoiceDocEntry,
@@ -1026,6 +1027,7 @@ namespace OpenAuth.App
                     UpdateTime = Convert.ToDateTime(r.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     TotalMoney = r.TotalMoney,
                     Status = flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Rejected ? flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.ActivityName : "驳回",
+                    IsUpDate= flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Running? flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Running?true:false:false,
                     IsLiquidated = r.IsLiquidated,
                     Remark = r.Remark,
                     InvoiceDocEntry = r.ReturnnoteMaterials.FirstOrDefault()?.InvoiceDocEntry,
@@ -1187,6 +1189,7 @@ namespace OpenAuth.App
             var query = from a in UnitWork.Find<ReturnNote>(null)
                         join b in UnitWork.Find<ReturnnoteMaterial>(r => InvoiceDocEntry == r.InvoiceDocEntry) on a.Id equals b.ReturnNoteId into ab
                         from b in ab.DefaultIfEmpty()
+                        where a.Id != req.returnNoteId
                         select new { b };
             var materials = await query.Where(q => q.b != null).ToListAsync();
             List<string> fileIds = new List<string>();
