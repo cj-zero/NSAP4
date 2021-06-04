@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
@@ -35,6 +36,23 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        [HttpGet]
+        public Response<List<OpenAuth.Repository.Domain.Org>> GetAllOrg()
+        {
+            var result = new Response<List<OpenAuth.Repository.Domain.Org>>();
+            try
+            {
+                result.Result = _app.GetAll(null);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
         //添加或修改
         [HttpPost]
         public Response<OpenAuth.Repository.Domain.Org> Add(OpenAuth.Repository.Domain.Org obj)
