@@ -64,7 +64,7 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         /// 退料单状态
         /// </summary>
-        public int? Status { get; set; }
+        public string Status { get; set; }
 
         /// <summary>
         /// 开始日期

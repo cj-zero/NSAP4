@@ -106,6 +106,7 @@ namespace OpenAuth.App
                 Content = "【创建】"
                           + user.User.Name
                           + addFlowInstanceReq.CustomName,
+                ActivityId= flowInstance.ActivityId,
             };
             await UnitWork.AddAsync(processOperationHistoryEntity);
 
@@ -187,9 +188,8 @@ namespace OpenAuth.App
                 CreateUserId = user.User.Id,
                 CreateUserName = user.User.Name,
                 CreateDate = DateTime.Now,
-                Content = "【创建】"
-                          + user.User.Name
-                          + addFlowInstanceReq.CustomName,
+                Content = "【提交】",
+                ActivityId= flowInstance.ActivityId,
             };
             await UnitWork.AddAsync(processOperationHistoryEntity);
 
@@ -230,7 +230,8 @@ namespace OpenAuth.App
                 InstanceId = instanceId,
                 CreateUserId = tag.UserId,
                 CreateUserName = tag.UserName,
-                CreateDate = DateTime.Now
+                CreateDate = DateTime.Now,
+                ActivityId= flowInstance.ActivityId,
             }; //操作记录
             FlowRuntime wfruntime = new FlowRuntime(flowInstance);
 
@@ -259,7 +260,7 @@ namespace OpenAuth.App
                 flowInstanceOperationHistory.Content = "【" + wfruntime.Nodes[canCheckId].name + "】";
                 flowInstanceOperationHistory.ApprovalResult = tag.Taged == 1 ? "同意" : "不同意";
                 flowInstanceOperationHistory.Remark = tag.Description;
-
+                flowInstanceOperationHistory.ActivityId = wfruntime.currentNodeId;
                 wfruntime.MakeTagNode(canCheckId, tag); //标记审核节点状态
                 string res = await wfruntime.NodeConfluence(canCheckId, tag);
                 if (res == TagState.No.ToString("D"))
@@ -319,6 +320,7 @@ namespace OpenAuth.App
                 flowInstanceOperationHistory.Content = "【" + wfruntime.currentNode.name + "】";
                 flowInstanceOperationHistory.ApprovalResult = tag.Taged == 1 ? "同意" : "不同意";
                 flowInstanceOperationHistory.Remark = tag.Description;
+                flowInstanceOperationHistory.ActivityId = wfruntime.currentNodeId;
             }
 
             #endregion 一般审核
@@ -412,6 +414,7 @@ namespace OpenAuth.App
                 Content = "【" + wfruntime.currentNode.name + "】",
                 Remark= reqest.VerificationOpinion,
                 ApprovalResult="驳回",
+                ActivityId= flowInstance.ActivityId,
             };
             var fioh = await UnitWork.Find<FlowInstanceOperationHistory>(r => r.InstanceId.Equals(reqest.FlowInstanceId)).OrderByDescending(r => r.CreateDate).FirstOrDefaultAsync();
             if (fioh != null)
@@ -856,9 +859,10 @@ namespace OpenAuth.App
                 CreateUserId = user.Id,
                 CreateUserName = user.Name,
                 CreateDate = DateTime.Now,
-                Content = $"【撤销】",
+                Content = $"【撤回】",
                 Remark= request.Description,
-                ApprovalResult="撤销"
+                ApprovalResult= "撤回",
+                ActivityId= flowInstance.ActivityId,
             };
             var fioh = await UnitWork.Find<FlowInstanceOperationHistory>(r => r.InstanceId.Equals(request.FlowInstanceId)).OrderByDescending(r => r.CreateDate).FirstOrDefaultAsync();
             if (fioh != null)
@@ -876,7 +880,7 @@ namespace OpenAuth.App
         public async Task Start(StartFlowInstanceReq request)
         {
             FlowInstance flowInstance = Get(request.FlowInstanceId);
-            if (flowInstance.IsFinish != FlowInstanceStatus.Draft)
+            if (flowInstance.IsFinish != FlowInstanceStatus.Draft && flowInstance.IsFinish!=FlowInstanceStatus.Rejected)
             {
                 throw new Exception("当前流程不是草稿状态，不能启动");
             }
@@ -899,15 +903,21 @@ namespace OpenAuth.App
             #endregion 根据运行实例改变当前节点状态
 
             #region 流程操作记录
-
             FlowInstanceOperationHistory processOperationHistoryEntity = new FlowInstanceOperationHistory
             {
                 InstanceId = flowInstance.Id,
                 CreateUserId = user.User.Id,
                 CreateUserName = user.User.Name,
                 CreateDate = DateTime.Now,
-                Content = $"【启动】由用户{user.User.Name}启动"
+                Content = $"【提交】",
+                ActivityId= wfruntime.currentNodeId,
             };
+            var fioh = await UnitWork.Find<FlowInstanceOperationHistory>(r => r.InstanceId.Equals(request.FlowInstanceId)).OrderByDescending(r => r.CreateDate).FirstOrDefaultAsync();
+            if (fioh != null)
+            {
+                processOperationHistoryEntity.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalSeconds);
+            }
+            
             await UnitWork.AddAsync(processOperationHistoryEntity);
 
             #endregion 流程操作记录

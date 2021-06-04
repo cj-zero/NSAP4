@@ -134,7 +134,7 @@ namespace OpenAuth.App.Flow
 
             foreach (var l in lines)
             {
-                if (!(l.Compares.IsNullOrEmpty()) && l.Compare(frmDataJson))
+                if (!(l.Compares.IsNullOrEmpty())&&!string.IsNullOrWhiteSpace(l.Compares.FirstOrDefault()?.Value) && l.Compare(frmDataJson))
                 {
                     return l.to;
                 }
@@ -321,7 +321,7 @@ namespace OpenAuth.App.Flow
             }
             if (rejectType == "1")
             {
-                return GetNextNodeId(startNodeId);
+                return startNodeId;//GetNextNodeId(startNodeId);
             }
             return previousId;
         }

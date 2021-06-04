@@ -26,7 +26,7 @@ namespace OpenAuth.Repository.Domain
             this.ServiceOrderId = 0;
             this.ServiceOrderSapId = 0;
             this.CreateUser = "";
-            this.Status = 0;
+            //this.Status = 0;
             this.CreateUserId = "";
 
         }
@@ -68,13 +68,7 @@ namespace OpenAuth.Repository.Domain
         [Description("创建人名")]
         public string CreateUser { get; set; }
 
-        /// <summary>
-        ///退料单状态
-        /// </summary>
-        [Description("退料单状态")]
-        public int? Status { get; set; }
 
-        
         /// <summary>
         ///创建人Id
         /// </summary>
@@ -134,11 +128,6 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public virtual List<ReturnNotePicture> ReturnNotePictures { get; set; }
 
-        /// <summary>
-        /// 退料操作记录表
-        /// </summary>
-        public virtual List<ReturnnoteOperationHistory> ReturnnoteOperationHistorys { get; set; }
-        
         public override void GenerateDefaultKeyVal()
         {
 

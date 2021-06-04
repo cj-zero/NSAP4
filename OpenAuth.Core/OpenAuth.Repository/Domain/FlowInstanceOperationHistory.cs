@@ -76,5 +76,12 @@ namespace OpenAuth.Repository.Domain
         [Description("审批阶段")]
         public string ApprovalStage { get; set; }
 
+        /// <summary>
+        /// 当前节点id
+        /// </summary>
+        [Description("当前节点id")]
+        public string ActivityId { get; set; }
+        
+
     }
 }

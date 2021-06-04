@@ -1,8 +1,5 @@
 using Infrastructure;
-using KuaiDi100.Common.Request;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Material.Request;
 using OpenAuth.App.Request;
@@ -14,8 +11,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure.Extensions;
-using OpenAuth.App.Material.Response;
 using DotNetCore.CAP;
+using Infrastructure.Const;
+using OpenAuth.App.Material.Response;
 
 namespace OpenAuth.App
 {
@@ -753,8 +751,6 @@ namespace OpenAuth.App
         //    result.Data = outData;
         //    return result;
         //}
-
-
         #endregion
 
         #region app和erp通用
@@ -775,29 +771,50 @@ namespace OpenAuth.App
             {
                 loginUser = await GetUserId((int)req.AppUserId);
             }
-            var returnNotes = UnitWork.Find<ReturnNote>(null).Include(r => r.ReturnnoteOperationHistorys).Include(r => r.ReturnNotePictures).Include(r => r.ReturnnoteMaterials).ThenInclude(r => r.ReturnNoteMaterialPictures)
+            var returnNotes = UnitWork.Find<ReturnNote>(null).Include(r => r.ReturnNotePictures).Include(r => r.ReturnnoteMaterials).ThenInclude(r => r.ReturnNoteMaterialPictures)
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.SapId.ToString()), r => r.ServiceOrderSapId == req.SapId)
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()), r => r.SalesOrderId == req.SalesOrderId)
-                                .WhereIf(!string.IsNullOrWhiteSpace(req.Status.ToString()), r => r.Status == req.Status)
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), r => r.CreateTime > req.StartDate)
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), r => r.CreateTime < Convert.ToDateTime(req.EndDate).AddDays(1));
             int num = 0;
+            var schemeContent = await UnitWork.Find<FlowScheme>(f => f.SchemeName.Equals("退料单审批")).Select(f => f.SchemeContent).FirstOrDefaultAsync();
+            SchemeContentJson schemeJson = JsonHelper.Instance.Deserialize<SchemeContentJson>(schemeContent);
+            List<string> Lines = new List<string>();
             switch (req.PageType)
             {
                 case 1:
                     if (loginContext.Roles.Any(r => r.Name.Equals("仓库")))
                     {
+                        var lineId = schemeJson.Nodes.Where(n => n.name.Equals("仓库收货")).FirstOrDefault()?.id;
+                        List<string> lineIds = new List<string>();
+                        var lineIdTo = lineId;
+                        foreach (var item in schemeJson.Lines)
+                        {
+                            if (schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to != null)
+                            {
+                                lineIdTo = schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to;
+                                lineIds.Add(lineIdTo);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
                         if (req.PageStatus == 1)
                         {
-                            returnNotes=returnNotes.Where(r => r.Status == 4);
+                            Lines.Add(lineId);
+                            //returnNotes =returnNotes.Where(r => r.Status == 4);
                         }
                         else if (req.PageStatus == 2)
                         {
-                            returnNotes = returnNotes.Where(r => r.Status > 4);
+                            Lines.AddRange(lineIds);
+                            //returnNotes = returnNotes.Where(r => r.Status > 4);
                         }
                         else
                         {
-                            returnNotes = returnNotes.Where(r => r.Status >= 4);
+                            Lines.Add(lineId);
+                            Lines.AddRange(lineIds);
+                            //returnNotes = returnNotes.Where(r => r.Status >= 4);
                         }
                         num++;
                     }
@@ -805,17 +822,36 @@ namespace OpenAuth.App
                 case 2:
                     if (loginContext.Roles.Any(r => r.Name.Equals("品质")))
                     {
+                        var lineId = schemeJson.Nodes.Where(n => n.name.Equals("品质检验")).FirstOrDefault()?.id;
+                        List<string> lineIds = new List<string>();
+                        var lineIdTo = lineId;
+                        foreach (var item in schemeJson.Lines)
+                        {
+                            if (schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to != null)
+                            {
+                                lineIdTo = schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to;
+                                lineIds.Add(lineIdTo);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
                         if (req.PageStatus == 1)
                         {
-                            returnNotes = returnNotes.Where(r => r.Status == 5);
+                            Lines.Add(lineId);
+                            //returnNotes = returnNotes.Where(r => r.Status == 5);
                         }
                         else if (req.PageStatus == 2)
                         {
-                            returnNotes = returnNotes.Where(r => r.Status > 5);
+                            Lines.AddRange(lineIds);
+                            //returnNotes = returnNotes.Where(r => r.Status > 5);
                         }
                         else
                         {
-                            returnNotes = returnNotes.Where(r => r.Status >= 5);
+                            Lines.Add(lineId);
+                            Lines.AddRange(lineIds);
+                            //returnNotes = returnNotes.Where(r => r.Status >= 5);
                         }
                         num++;
                     }
@@ -823,17 +859,36 @@ namespace OpenAuth.App
                 case 3:
                     if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
                     {
+                        var lineId = schemeJson.Nodes.Where(n => n.name.Equals("总经理审批")).FirstOrDefault()?.id;
+                        List<string> lineIds = new List<string>();
+                        var lineIdTo = lineId;
+                        foreach (var item in schemeJson.Lines)
+                        {
+                            if (schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to != null)
+                            {
+                                lineIdTo = schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to;
+                                lineIds.Add(lineIdTo);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
                         if (req.PageStatus == 1)
                         {
-                            returnNotes = returnNotes.Where(r => r.Status == 6);
+                            Lines.Add(lineId);
+                            //returnNotes = returnNotes.Where(r => r.Status == 6);
                         }
                         else if (req.PageStatus == 2)
                         {
-                            returnNotes = returnNotes.Where(r => r.Status > 6);
+                            Lines.AddRange(lineIds);
+                            //returnNotes = returnNotes.Where(r => r.Status > 6);
                         }
                         else
                         {
-                            returnNotes = returnNotes.Where(r => r.Status >= 6);
+                            Lines.Add(lineId);
+                            Lines.AddRange(lineIds);
+                            //returnNotes = returnNotes.Where(r => r.Status >= 6);
                         }
                         num++;
                     }
@@ -841,17 +896,36 @@ namespace OpenAuth.App
                 case 4:
                     if (loginContext.Roles.Any(r => r.Name.Equals("仓库")))
                     {
+                        var lineId = schemeJson.Nodes.Where(n => n.name.Equals("仓库入库")).FirstOrDefault()?.id;
+                        List<string> lineIds = new List<string>();
+                        var lineIdTo = lineId;
+                        foreach (var item in schemeJson.Lines)
+                        {
+                            if (schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to != null)
+                            {
+                                lineIdTo = schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to;
+                                lineIds.Add(lineIdTo);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
                         if (req.PageStatus == 1)
                         {
-                            returnNotes = returnNotes.Where(r => r.Status == 7);
+                            Lines.Add(lineId);
+                            //returnNotes = returnNotes.Where(r => r.Status == 7);
                         }
                         else if (req.PageStatus == 2)
                         {
-                            returnNotes = returnNotes.Where(r => r.Status > 7);
+                            Lines.AddRange(lineIds);
+                            //returnNotes = returnNotes.Where(r => r.Status > 7);
                         }
                         else
                         {
-                            returnNotes = returnNotes.Where(r => r.Status >= 7);
+                            Lines.Add(lineId);
+                            Lines.AddRange(lineIds);
+                            //returnNotes = returnNotes.Where(r => r.Status >= 7);
                         }
                         num++;
                     }
@@ -861,29 +935,76 @@ namespace OpenAuth.App
                     break;
             }
             var result = new TableData();
-            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ReturnnoteStatus")).Select(u => new { u.Name, u.DtValue }).ToListAsync();
+            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ReturnNoteTypeName")).Select(u => new { u.Name, u.DtValue }).ToListAsync();
             result.Count = await returnNotes.CountAsync();
+            List<string> flowInstanceIds = new List<string>();
+            if (Lines.Count > 0 && !string.IsNullOrWhiteSpace(req.Status))
+            {
+                if (req.Status == "驳回")
+                {
+                    flowInstanceIds.AddRange(await UnitWork.Find<FlowInstance>(f => Lines.Contains(f.ActivityId) && f.IsFinish == FlowInstanceStatus.Rejected).Select(s => s.Id).ToListAsync());
+                }
+                else
+                {
+                    flowInstanceIds.AddRange(await UnitWork.Find<FlowInstance>(f => Lines.Contains(f.ActivityId) && f.ActivityName.Equals(req.Status)).Select(s => s.Id).ToListAsync());
+                }
+                if (req.Status == "开始")
+                {
+                    returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId) || string.IsNullOrEmpty(r.FlowInstanceId));
+                }
+                else
+                {
+                    returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId));
+                }
+
+            }
+            else if (Lines.Count > 0)
+            {
+                flowInstanceIds.AddRange(await UnitWork.Find<FlowInstance>(f => Lines.Contains(f.ActivityId)).Select(s => s.Id).ToListAsync());
+                returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId));
+            }
+            else if (!string.IsNullOrWhiteSpace(req.Status))
+            {
+                if (req.Status == "驳回")
+                {
+                    flowInstanceIds.AddRange(await UnitWork.Find<FlowInstance>(f => f.IsFinish == FlowInstanceStatus.Rejected).Select(s => s.Id).ToListAsync());
+                }
+                else
+                {
+                    flowInstanceIds.AddRange(await UnitWork.Find<FlowInstance>(f => f.ActivityName.Equals(req.Status)).Select(s => s.Id).ToListAsync());
+                }
+                if (req.Status == "开始")
+                {
+                    returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId) || string.IsNullOrEmpty(r.FlowInstanceId));
+                }
+                else
+                {
+                    returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId));
+                }
+            }
             var returnNoteList = await returnNotes.ToListAsync();
+            flowInstanceIds = returnNoteList.Select(r => r.FlowInstanceId).ToList();
+            var flowInstanceList = await UnitWork.Find<FlowInstance>(f => flowInstanceIds.Contains(f.Id)).ToListAsync();
+            List<ReturnNoteMainResp> returnNoteMainRespList = new List<ReturnNoteMainResp>();
             if (!string.IsNullOrWhiteSpace(req.Customer))
             {
                 var serviceOrders = await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Contains(req.Customer) && s.TerminalCustomerId.Contains(req.Customer)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.NewestContacter, s.NewestContactTel }).ToListAsync();
                 var serviceOrderIds = serviceOrders.Select(s => s.Id).ToList();
                 result.Count = returnNoteList.Where(r => serviceOrderIds.Contains(r.ServiceOrderId)).Count();
                 returnNoteList = returnNoteList.Where(r => serviceOrderIds.Contains(r.ServiceOrderId)).Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
-                result.Data = returnNoteList.Select(r => new
+                returnNoteMainRespList = returnNoteList.Select(r => new ReturnNoteMainResp
                 {
-                    r.Id,
-                    r.ServiceOrderId,
-                    r.SalesOrderId,
-                    r.ServiceOrderSapId,
-                    r.CreateUser,
+                    returnNoteId = r.Id,
+                    ServiceOrderId = r.ServiceOrderId,
+                    SalesOrderId = r.SalesOrderId,
+                    ServiceOrderSapId = r.ServiceOrderSapId,
+                    CreateUser = r.CreateUser,
                     CreateTime = Convert.ToDateTime(r.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     UpdateTime = Convert.ToDateTime(r.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
-                    r.TotalMoney,
-                    StatusName = CategoryList.Where(c => c.DtValue == r.Status.ToString()).FirstOrDefault()?.Name,
-                    r.Status,
-                    r.IsLiquidated,
-                    r.Remark,
+                    TotalMoney = r.TotalMoney,
+                    Status = flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Rejected ? flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.ActivityName : "驳回",
+                    IsLiquidated = r.IsLiquidated,
+                    Remark = r.Remark,
                     InvoiceDocEntry = r.ReturnnoteMaterials.FirstOrDefault()?.InvoiceDocEntry,
                     TerminalCustomer = serviceOrders.Where(s => s.Id == r.ServiceOrderId).FirstOrDefault()?.TerminalCustomer,
                     TerminalCustomerId = serviceOrders.Where(s => s.Id == r.ServiceOrderId).FirstOrDefault()?.TerminalCustomerId,
@@ -894,25 +1015,27 @@ namespace OpenAuth.App
                 returnNoteList = returnNoteList.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
                 var serviceOrderIds = returnNoteList.Select(r => r.ServiceOrderId).ToList();
                 var serviceOrders = await UnitWork.Find<ServiceOrder>(s => serviceOrderIds.Contains(s.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId }).ToListAsync();
-                result.Data = returnNoteList.Select(r => new
+                returnNoteMainRespList = returnNoteList.Select(r => new ReturnNoteMainResp
                 {
-                    r.Id,
-                    r.ServiceOrderId,
-                    r.SalesOrderId,
-                    r.ServiceOrderSapId,
-                    r.CreateUser,
+                    returnNoteId = r.Id,
+                    ServiceOrderId = r.ServiceOrderId,
+                    SalesOrderId = r.SalesOrderId,
+                    ServiceOrderSapId = r.ServiceOrderSapId,
+                    CreateUser = r.CreateUser,
                     CreateTime = Convert.ToDateTime(r.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     UpdateTime = Convert.ToDateTime(r.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
-                    r.TotalMoney,
-                    StatusName = CategoryList.Where(c => c.DtValue == r.Status.ToString()).FirstOrDefault()?.Name,
-                    r.Status,
-                    r.IsLiquidated,
-                    r.Remark,
+                    TotalMoney = r.TotalMoney,
+                    Status = flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Rejected ? flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.ActivityName : "驳回",
+                    IsLiquidated = r.IsLiquidated,
+                    Remark = r.Remark,
                     InvoiceDocEntry = r.ReturnnoteMaterials.FirstOrDefault()?.InvoiceDocEntry,
                     TerminalCustomer = serviceOrders.Where(s => s.Id == r.ServiceOrderId).FirstOrDefault()?.TerminalCustomer,
                     TerminalCustomerId = serviceOrders.Where(s => s.Id == r.ServiceOrderId).FirstOrDefault()?.TerminalCustomerId,
                 }).ToList();
+
             }
+            returnNoteMainRespList.ForEach(r => { r.StatusName = r.Status != null ? CategoryList.Where(c => c.DtValue.Equals(r.Status)).FirstOrDefault()?.Name : "未提交"; r.Status = r.Status != null ? r.Status : "开始"; });
+            result.Data = returnNoteMainRespList;
             return result;
         }
 
@@ -1049,8 +1172,9 @@ namespace OpenAuth.App
             {
                 loginUser = await GetUserId((int)req.AppUserId);
             }
-            var returnNotes = await UnitWork.Find<ReturnNote>(r => r.Id == req.returnNoteId).Include(r => r.ReturnnoteOperationHistorys).Include(r => r.ReturnNotePictures).Include(r => r.ReturnnoteMaterials).ThenInclude(r => r.ReturnNoteMaterialPictures).FirstOrDefaultAsync();
-
+            //.Include(r => r.ReturnnoteOperationHistorys)
+            var returnNotes = await UnitWork.Find<ReturnNote>(r => r.Id == req.returnNoteId).Include(r => r.ReturnNotePictures).Include(r => r.ReturnnoteMaterials).ThenInclude(r => r.ReturnNoteMaterialPictures).FirstOrDefaultAsync();
+            var History = await UnitWork.Find<FlowInstanceOperationHistory>(f => f.InstanceId.Equals(returnNotes.FlowInstanceId)).OrderBy(f => f.CreateDate).ToListAsync();
             //查询当前技术员所有可退料服务Id
             var quotationObj = await UnitWork.Find<Quotation>(q => q.SalesOrderId == returnNotes.SalesOrderId).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
             var InvoiceDocEntry = returnNotes.ReturnnoteMaterials.Select(r => r.InvoiceDocEntry).FirstOrDefault();
@@ -1064,17 +1188,17 @@ namespace OpenAuth.App
                         join b in UnitWork.Find<ReturnnoteMaterial>(r => InvoiceDocEntry == r.InvoiceDocEntry) on a.Id equals b.ReturnNoteId into ab
                         from b in ab.DefaultIfEmpty()
                         select new { b };
-            var materials = await query.Where(q=>q.b!=null).ToListAsync();
+            var materials = await query.Where(q => q.b != null).ToListAsync();
             List<string> fileIds = new List<string>();
-            returnNotes.ReturnnoteMaterials.ForEach(r=> fileIds.AddRange(r.ReturnNoteMaterialPictures.Select(n=>n.PictureId).ToList()));
-            var fileList=await UnitWork.Find<UploadFile>(f => fileIds.Contains(f.Id)).ToListAsync();
+            returnNotes.ReturnnoteMaterials.ForEach(r => fileIds.AddRange(r.ReturnNoteMaterialPictures.Select(n => n.PictureId).ToList()));
+            var fileList = await UnitWork.Find<UploadFile>(f => fileIds.Contains(f.Id)).ToListAsync();
             List<object> returnnoteMaterials = new List<object>();
             returnNotes.ReturnnoteMaterials.ForEach(r =>
                 {
                     var Price = quotationObj.QuotationMergeMaterials.Where(q => q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.DiscountPrices;
                     var Quantity = saleinv1.Where(s => r.MaterialCode.Equals(s.ItemCode) && (s.Price == Price || s.Price == decimal.Parse(Convert.ToDecimal(Price).ToString("#0.00")))).FirstOrDefault()?.Quantity;
-                    var num = materials.Where(m => m.b.QuotationMaterialId.Equals(r.QuotationMaterialId)).Sum(m=>m.b.Count);
-                    var ResidueQuantity = num>0 ? Quantity - num: Quantity;
+                    var num = materials.Where(m => m.b.QuotationMaterialId.Equals(r.QuotationMaterialId)).Sum(m => m.b.Count);
+                    var ResidueQuantity = num > 0 ? Quantity - num : Quantity;
                     returnnoteMaterials.Add(new
                     {
                         r.Id,
@@ -1087,28 +1211,32 @@ namespace OpenAuth.App
                         r.QuotationMaterialId,
                         r.ReceivingRemark,
                         r.ReturnNoteId,
-                        ReturnNoteMaterialPictures=r.ReturnNoteMaterialPictures.Select(p=>new { 
-                            FileName= fileList.Where(f=>f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileName,
+                        ReturnNoteMaterialPictures = r.ReturnNoteMaterialPictures.Select(p => new
+                        {
+                            FileName = fileList.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileName,
                             FileType = fileList.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileType,
                             p.PictureId
                         }),
                         r.SecondQty,
                         r.SecondWhsCode,
                         r.ShippingRemark,
-                        TotalPrice = r.Count*Price,
+                        TotalPrice = r.Count * Price,
                         Price = Price,
-                        Quantity= Quantity,
-                        ResidueQuantity= ResidueQuantity
+                        Quantity = Quantity,
+                        ResidueQuantity = ResidueQuantity
                     });
 
                 }
             );
-            if (req.IsUpDate != null && (bool)req.IsUpDate) 
+            if (req.IsUpDate != null && (bool)req.IsUpDate)
             {
-                var ReturnnoteMaterialList =returnNotes.ReturnnoteMaterials.Select(r => new { r.MaterialCode, 
-                Price= quotationObj.QuotationMergeMaterials.Where(q=>q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.DiscountPrices
+                var ReturnnoteMaterialList = returnNotes.ReturnnoteMaterials.Select(r => new
+                {
+                    r.MaterialCode,
+                    Price = quotationObj.QuotationMergeMaterials.Where(q => q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.DiscountPrices
                 }).ToList();
-                ReturnnoteMaterialList.ForEach(r => {
+                ReturnnoteMaterialList.ForEach(r =>
+                {
                     saleinv1 = saleinv1.Where(s => s.ItemCode != r.MaterialCode && s.Price != r.Price && s.Price != decimal.Parse(Convert.ToDecimal(r.Price).ToString("#0.00"))).ToList();
                 });
                 saleinv1.ForEach(s =>
@@ -1117,7 +1245,7 @@ namespace OpenAuth.App
                     {
                         MaterialCode = s.ItemCode,
                         MaterialDescription = s.Dscription,
-                        InvoiceDocEntry=s.DocEntry,
+                        InvoiceDocEntry = s.DocEntry,
                         s.Price,
                         Quantity = s.Quantity,//总数量
                         ResidueQuantity = materials.Where(m => m.b.MaterialCode.Equals(s.ItemCode) && m.b.InvoiceDocEntry == s.DocEntry).Sum(m => m.b.Count) > 0 ? s.Quantity - materials.Where(m => m.b.MaterialCode.Equals(s.ItemCode) && m.b.InvoiceDocEntry == s.DocEntry).Sum(m => m.b.Count) : s.Quantity,//应退数量
@@ -1126,13 +1254,18 @@ namespace OpenAuth.App
                 });
             }
             returnNotes.ReturnnoteMaterials = null;
+            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ReturnNoteTypeName")).Select(u => new { u.Name, u.DtValue }).ToListAsync();
+            var flowInstanceObj = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(returnNotes.FlowInstanceId)).FirstOrDefaultAsync();
             result.Data = new
             {
                 InvoiceDocEntry,
                 DocTotal = DocTotal,
+                Status = flowInstanceObj?.IsFinish == FlowInstanceStatus.Rejected ? "驳回" : flowInstanceObj?.ActivityName == null ? "开始" : flowInstanceObj?.ActivityName,
+                returnNoteId = returnNotes.Id,
                 returnNotes,
                 returnnoteMaterials,
-                serviceOrders
+                serviceOrders,
+                ReturnnoteOperationHistorys = History.OrderBy(h => h.CreateDate).ToList()
             };
             return result;
         }
@@ -1150,9 +1283,11 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
+            var loginOrg = loginContext.Orgs;
             if (loginUser.Account == Define.USERAPP)
             {
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppUserId));
+                loginOrg = await GetOrgs(loginUser.Id);
             }
             //事务保证数据一致
             var dbContext = UnitWork.GetDbContext<Quotation>();
@@ -1167,29 +1302,31 @@ namespace OpenAuth.App
                     returnnotrObj.UpdateTime = DateTime.Now;
                     returnnotrObj.IsLiquidated = false;
                     returnnotrObj.TotalMoney = await CalculatePrice(obj);
-                    if (obj.IsDraft)
-                    {
-                        returnnotrObj.Status = 3;//未提交
-                    }
-                    else
-                    {
-                        returnnotrObj.Status = 4;//仓库审批
-
-                    }
                     returnnotrObj = await UnitWork.AddAsync<ReturnNote, int>(returnnotrObj);
                     await UnitWork.SaveAsync();
                     if (!obj.IsDraft)
                     {
+                        //创建报销流程
+                        var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("物料退料单"));
+                        var afir = new AddFlowInstanceReq();
+                        afir.SchemeId = mf.FlowSchemeId;
+                        afir.FrmType = 2;
+                        afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
+                        afir.CustomName = $"退料单";
+                        afir.FrmData = "{\"ReturnnoteId\":\"" + returnnotrObj.Id + "\"}";
+                        afir.OrgId = loginOrg.FirstOrDefault()?.Id;
+                        var FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
+                        await UnitWork.UpdateAsync<ReturnNote>(r => r.Id == returnnotrObj.Id, r => new ReturnNote { FlowInstanceId = FlowInstanceId });
                         //添加提交记录
-                        await UnitWork.AddAsync<ReturnnoteOperationHistory>(new ReturnnoteOperationHistory
-                        {
-                            Action = "提交退料单",
-                            ApprovalStage = "3",
-                            CreateTime = DateTime.Now,
-                            CreateUser = loginUser.Name,
-                            CreateUserId = loginUser.Id,
-                            ReturnNoteId = returnnotrObj.Id
-                        });
+                        //await UnitWork.AddAsync<ReturnnoteOperationHistory>(new ReturnnoteOperationHistory
+                        //{
+                        //    Action = "提交退料单",
+                        //    ApprovalStage = "3",
+                        //    CreateTime = DateTime.Now,
+                        //    CreateUser = loginUser.Name,
+                        //    CreateUserId = loginUser.Id,
+                        //    ReturnNoteId = returnnotrObj.Id
+                        //});
                     }
                     await UnitWork.SaveAsync();
                     await transaction.CommitAsync();
@@ -1216,9 +1353,11 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
+            var loginOrg = loginContext.Orgs;
             if (loginUser.Account == Define.USERAPP)
             {
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppUserId));
+                loginOrg = await GetOrgs(loginUser.Id);
             }
             var dbContext = UnitWork.GetDbContext<Quotation>();
             //事务
@@ -1252,39 +1391,55 @@ namespace OpenAuth.App
                     await UnitWork.BatchAddAsync<ReturnNotePicture>(obj.ReturnNotePictures.ToArray());
                     await UnitWork.SaveAsync();
                     #endregion
-                    var returnnotrStatus = 0;
-                    if (obj.IsDraft)
+                    //var returnnotrStatus = 0;
+                    var FlowInstanceId = "";
+                    if (!obj.IsDraft)
                     {
-                        returnnotrStatus = 3;//未提交
-                    }
-                    else
-                    {
-                        returnnotrStatus = 4;//仓库收货
+                        //returnnotrStatus = 3;//未提交
+                        if (string.IsNullOrWhiteSpace(returnNoteObj.FlowInstanceId))
+                        {
+                            //创建报销流程
+                            var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("物料退料单"));
+                            var afir = new AddFlowInstanceReq();
+                            afir.SchemeId = mf.FlowSchemeId;
+                            afir.FrmType = 2;
+                            afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
+                            afir.CustomName = $"退料单";
+                            afir.FrmData = "{\"ReturnnoteId\":\"" + obj.ReturnNoteId + "\"}";
+                            afir.OrgId = loginOrg.FirstOrDefault()?.Id;
+                            FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
+                        }
+                        else
+                        {
+                            FlowInstanceId = returnNoteObj.FlowInstanceId;
+                            await _flowInstanceApp.Start(new StartFlowInstanceReq() { FlowInstanceId = returnNoteObj.FlowInstanceId });
+                        }
                     }
                     obj.TotalMoney = await CalculatePrice(obj);
                     await UnitWork.UpdateAsync<ReturnNote>(r => r.Id == obj.ReturnNoteId, r => new ReturnNote
                     {
-                        Status = returnnotrStatus,
+                        // Status = returnnotrStatus,
                         UpdateTime = DateTime.Now,
                         FreightCharge = obj.FreightCharge,
                         DeliveryMethod = int.Parse(obj.DeliveryMethod),
                         Remark = obj.Remark,
                         ExpressNumber = obj.ExpressNumber,
                         TotalMoney = obj.TotalMoney,
+                        FlowInstanceId = FlowInstanceId
                     });
 
-                    if (!obj.IsDraft)
-                    {
-                        await UnitWork.AddAsync<ReturnnoteOperationHistory>(new ReturnnoteOperationHistory
-                        {
-                            Action = "提交退料单",
-                            ApprovalStage = "3",
-                            CreateTime = DateTime.Now,
-                            CreateUser = loginUser.Name,
-                            CreateUserId = loginUser.Id,
-                            ReturnNoteId = obj.ReturnNoteId
-                        });
-                    }
+                    //if (!obj.IsDraft)
+                    //{
+                    //    await UnitWork.AddAsync<ReturnnoteOperationHistory>(new ReturnnoteOperationHistory
+                    //    {
+                    //        Action = "提交退料单",
+                    //        ApprovalStage = "3",
+                    //        CreateTime = DateTime.Now,
+                    //        CreateUser = loginUser.Name,
+                    //        CreateUserId = loginUser.Id,
+                    //        ReturnNoteId = obj.ReturnNoteId
+                    //    });
+                    //}
                     await UnitWork.SaveAsync();
                     await transaction.CommitAsync();
                 }
@@ -1308,7 +1463,12 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var returnNoteObj = await UnitWork.Find<ReturnNote>(r => r.Id == returnNoteId).Include(r => r.ReturnnoteOperationHistorys).Include(r => r.ReturnNotePictures).Include(r => r.ReturnnoteMaterials).ThenInclude(r => r.ReturnNoteMaterialPictures).FirstOrDefaultAsync();
+            var returnNoteObj = await UnitWork.Find<ReturnNote>(r => r.Id == returnNoteId).Include(r => r.ReturnNotePictures).Include(r => r.ReturnnoteMaterials).ThenInclude(r => r.ReturnNoteMaterialPictures).FirstOrDefaultAsync();
+            var flowInstanceObj = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(returnNoteObj.FlowInstanceId)).FirstOrDefaultAsync();
+            if (flowInstanceObj.IsFinish == FlowInstanceStatus.Finished || flowInstanceObj.IsFinish == FlowInstanceStatus.Running)
+            {
+                throw new Exception("此退料单已完成或正在进行中不可删除。");
+            }
             var materialPictures = new List<ReturnNoteMaterialPicture>();
             returnNoteObj.ReturnnoteMaterials.ForEach(r => materialPictures.AddRange(r.ReturnNoteMaterialPictures.ToList()));
             //删除所有关联数据
@@ -1322,15 +1482,12 @@ namespace OpenAuth.App
                 {
                     await UnitWork.BatchDeleteAsync<ReturnnoteMaterial>(returnNoteObj.ReturnnoteMaterials.ToArray());
                 }
-                if (returnNoteObj.ReturnnoteOperationHistorys != null && returnNoteObj.ReturnnoteOperationHistorys.Count > 0)
-                {
-                    await UnitWork.BatchDeleteAsync<ReturnnoteOperationHistory>(returnNoteObj.ReturnnoteOperationHistorys.ToArray());
-                }
                 if (returnNoteObj.ReturnNotePictures != null && returnNoteObj.ReturnNotePictures.Count > 0)
                 {
                     await UnitWork.BatchDeleteAsync<ReturnNotePicture>(returnNoteObj.ReturnNotePictures.ToArray());
                 }
                 await UnitWork.DeleteAsync<ReturnNote>(returnNoteObj);
+                await UnitWork.DeleteAsync<FlowInstance>(flowInstanceObj);
                 await UnitWork.SaveAsync();
             }
             else
@@ -1357,17 +1514,19 @@ namespace OpenAuth.App
             {
                 throw new Exception("退料单为空，请核对。");
             }
-            var returnNoteStatus = 0;
-            ReturnnoteOperationHistory qoh = new ReturnnoteOperationHistory();
-            qoh.ApprovalResult = "同意";
-            if (loginContext.Roles.Any(r => r.Name.Equals("仓库")) && returnNotes.Status == 4)
+            //var returnNoteStatus = 0;
+            //ReturnnoteOperationHistory qoh = new ReturnnoteOperationHistory();
+            //qoh.ApprovalResult = "同意";
+            //if (loginContext.Roles.Any(r => r.Name.Equals("仓库")) && returnNotes.Status == 4)
+            //{
+            //    //qoh.Action = "仓库收货";
+            //    returnNoteStatus = 5;
+            //}
+            //else 
+            var flowInstanceObj = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(returnNotes.FlowInstanceId)).FirstOrDefaultAsync();
+            if (loginContext.Roles.Any(r => r.Name.Equals("品质")) && flowInstanceObj.ActivityName.Equals("品质检验"))
             {
-                qoh.Action = "仓库收货";
-                returnNoteStatus = 5;
-            }
-            else if (loginContext.Roles.Any(r => r.Name.Equals("品质")) && returnNotes.Status == 5)
-            {
-                qoh.Action = "品质检验";
+                //qoh.Action = "品质检验";
                 if (!req.IsReject)
                 {
                     var materialIds = req.returnnoteMaterials.Select(r => r.MaterialsId).ToList();
@@ -1377,25 +1536,26 @@ namespace OpenAuth.App
                         returnnoteMaterials.ForEach(r =>
                         {
                             var materialObj = req.returnnoteMaterials.Where(m => m.MaterialsId.Equals(r.Id)).FirstOrDefault();
-                            r.GoodQty = materialObj?.GoodQty>0? materialObj?.GoodQty:0;
-                            r.SecondQty = materialObj?.SecondQty>0 ? materialObj?.SecondQty : 0;
+                            r.GoodQty = materialObj?.GoodQty > 0 ? materialObj?.GoodQty : 0;
+                            r.SecondQty = materialObj?.SecondQty > 0 ? materialObj?.SecondQty : 0;
                         });
                         await UnitWork.BatchUpdateAsync<ReturnnoteMaterial>(returnnoteMaterials.ToArray());
                     }
 
                 }
-                returnNoteStatus = 6;
+                //returnNoteStatus = 6;
             }
-            else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && returnNotes.Status == 6)
+            //else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && returnNotes.Status == 6)
+            //{
+            //    //qoh.Action = "总经理审批";
+            //    returnNoteStatus = 7;
+            //}
+            //else 
+            if (loginContext.Roles.Any(r => r.Name.Equals("仓库")) && flowInstanceObj.ActivityName.Equals("仓库入库"))
             {
-                qoh.Action = "总经理审批";
-                returnNoteStatus = 7;
-            }
-            else if (loginContext.Roles.Any(r => r.Name.Equals("仓库")) && returnNotes.Status == 7)
-            {
-                qoh.Action = "仓库入库";
-                qoh.ApprovalResult = "入库成功";
-                returnNoteStatus = 8;
+                //qoh.Action = "仓库入库";
+                //qoh.ApprovalResult = "入库成功";
+                //returnNoteStatus = 8;
                 if (!req.IsReject)
                 {
                     var materialIds = req.returnnoteMaterials.Select(r => r.MaterialsId).ToList();
@@ -1412,37 +1572,50 @@ namespace OpenAuth.App
                     }
                 }
             }
-            else
+            //else
+            //{
+            //    throw new Exception("暂无审批该流程权限，不可审批");
+            //}
+            VerificationReq VerificationReqModle = new VerificationReq
             {
-                throw new Exception("暂无审批该流程权限，不可审批");
-            }
+                NodeRejectStep = "",
+                NodeRejectType = "0",
+                FlowInstanceId = returnNotes.FlowInstanceId,
+                VerificationFinally = "1",
+                VerificationOpinion = req.Remark,
+            };
             if (req.IsReject)
             {
-                returnNoteStatus = 2;
-                qoh.ApprovalResult = "驳回";
-                qoh.ApprovalStage = "1";
+                VerificationReqModle.VerificationFinally = "3";
+                VerificationReqModle.VerificationOpinion = req.Remark;
+                VerificationReqModle.NodeRejectType = "1";
+                await _flowInstanceApp.Verification(VerificationReqModle);
+                //returnNoteStatus = 2;
+                //qoh.ApprovalResult = "驳回";
+                //qoh.ApprovalStage = "1";
             }
             else
             {
-                qoh.ApprovalStage = returnNotes.Status.ToString();
+                //qoh.ApprovalStage = returnNotes.Status.ToString();
+                await _flowInstanceApp.Verification(VerificationReqModle);
             }
             await UnitWork.UpdateAsync<ReturnNote>(r => r.Id == returnNotes.Id, r => new ReturnNote
             {
-                Status = returnNoteStatus,
+                //Status = returnNoteStatus,
                 UpdateTime = DateTime.Now
             });
-            var selqoh = await UnitWork.Find<ReturnnoteOperationHistory>(r => r.ReturnNoteId.Equals(returnNotes.Id)).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
-            qoh.CreateUser = loginContext.User.Name;
-            qoh.CreateUserId = loginContext.User.Id;
-            qoh.CreateTime = DateTime.Now;
-            qoh.ReturnNoteId = returnNotes.Id;
-            qoh.Remark = req.Remark;
-            qoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds);
-            await UnitWork.AddAsync<ReturnnoteOperationHistory>(qoh);
+            //var selqoh = await UnitWork.Find<ReturnnoteOperationHistory>(r => r.ReturnNoteId.Equals(returnNotes.Id)).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
+            //qoh.CreateUser = loginContext.User.Name;
+            //qoh.CreateUserId = loginContext.User.Id;
+            //qoh.CreateTime = DateTime.Now;
+            //qoh.ReturnNoteId = returnNotes.Id;
+            //qoh.Remark = req.Remark;
+            //qoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds);
+            //await UnitWork.AddAsync<ReturnnoteOperationHistory>(qoh);
             await UnitWork.SaveAsync();
-            if (loginContext.Roles.Any(r => r.Name.Equals("仓库")) && returnNotes.Status == 7) 
+            if (loginContext.Roles.Any(r => r.Name.Equals("仓库")) && flowInstanceObj.ActivityName.Equals("仓库入库"))
             {
-                if (!req.IsReject) 
+                if (!req.IsReject)
                 {
                     await WarehousePutMaterialsIn(req);
                 }
@@ -1457,7 +1630,7 @@ namespace OpenAuth.App
         private async Task<decimal> CalculatePrice(AddOrUpdateReturnnoteReq obj)
         {
             var quotationMaterialIds = obj.ReturnnoteMaterials.Select(r => r.QuotationMaterialId).ToList();
-            var quotationMaterials = await UnitWork.Find<QuotationMaterial>(q => quotationMaterialIds.Contains(q.Id)).Select(q => new { q.Id, q.DiscountPrices }).ToListAsync();
+            var quotationMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => quotationMaterialIds.Contains(q.Id)).Select(q => new { q.Id, q.DiscountPrices }).ToListAsync();
             decimal TotalMoney = 0;
             obj.ReturnnoteMaterials.ForEach(r =>
             {
@@ -1478,6 +1651,18 @@ namespace OpenAuth.App
             return await UnitWork.Find<User>(u => u.Id.Equals(userid)).FirstOrDefaultAsync();
         }
 
+        /// <summary>
+        /// 获取用户部门
+        /// </summary>
+        /// <param name="UserId"></param>
+        /// <returns></returns>
+        private async Task<List<OpenAuth.Repository.Domain.Org>> GetOrgs(string UserId)
+        {
+            var orgids = await UnitWork.Find<Relevance>(
+                    u => u.FirstId == UserId && u.Key == Define.USERORG).Select(u => u.SecondId).ToListAsync();
+            var orgs = (await UnitWork.Find<OpenAuth.Repository.Domain.Org>(u => orgids.Contains(u.Id)).ToListAsync()).Min(o => o.CascadeId);
+            return await UnitWork.Find<OpenAuth.Repository.Domain.Org>(u => u.CascadeId.Contains(orgs)).ToListAsync();
+        }
 
         /// <summary>
         /// 仓库入库
@@ -1491,23 +1676,23 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var returnNoteObj=await UnitWork.Find<ReturnNote>(r => r.Id == req.Id).Include(r => r.ReturnnoteMaterials).FirstOrDefaultAsync();
+            var returnNoteObj = await UnitWork.Find<ReturnNote>(r => r.Id == req.Id).Include(r => r.ReturnnoteMaterials).FirstOrDefaultAsync();
             List<QuotationMergeMaterialReq> returnMergeMaterialGoodReqs = new List<QuotationMergeMaterialReq>();
             List<QuotationMergeMaterialReq> returnMergeMaterialSecondReqs = new List<QuotationMergeMaterialReq>();
             List<string> GoodDetailIds = new List<string>();
             List<string> SecondDetailIds = new List<string>();
-            
+
             if (req.returnnoteMaterials != null)
             {
                 foreach (var item in req.returnnoteMaterials)
                 {
-                    var returnnoteMaterialObj=returnNoteObj.ReturnnoteMaterials.Where(r => r.Id.Equals(item.MaterialsId)).FirstOrDefault();
+                    var returnnoteMaterialObj = returnNoteObj.ReturnnoteMaterials.Where(r => r.Id.Equals(item.MaterialsId)).FirstOrDefault();
                     if (item.GoodQty > 0)
                     {
-                        var putInMaterialInfo = new QuotationMergeMaterialReq { Id = returnnoteMaterialObj.QuotationMaterialId, InventoryQuantity = item.GoodQty, ReturnNoteId = req.Id, WhsCode = item.GoodWhsCode,MaterialCode= returnnoteMaterialObj.MaterialCode,MaterialDescription= returnnoteMaterialObj.MaterialDescription};
+                        var putInMaterialInfo = new QuotationMergeMaterialReq { Id = returnnoteMaterialObj.QuotationMaterialId, InventoryQuantity = item.GoodQty, ReturnNoteId = req.Id, WhsCode = item.GoodWhsCode, MaterialCode = returnnoteMaterialObj.MaterialCode, MaterialDescription = returnnoteMaterialObj.MaterialDescription };
                         returnMergeMaterialGoodReqs.Add(putInMaterialInfo);
                     }
-                    if (item.SecondQty > 0) 
+                    if (item.SecondQty > 0)
                     {
                         var putInMaterialInfo = new QuotationMergeMaterialReq { Id = returnnoteMaterialObj.QuotationMaterialId, InventoryQuantity = item.SecondQty, ReturnNoteId = req.Id, WhsCode = item.SecondWhsCode, MaterialCode = returnnoteMaterialObj.MaterialCode, MaterialDescription = returnnoteMaterialObj.MaterialDescription };
                         returnMergeMaterialSecondReqs.Add(putInMaterialInfo);
@@ -1515,7 +1700,7 @@ namespace OpenAuth.App
                 }
             }
             //推送到SAP
-            if (returnMergeMaterialGoodReqs.Count > 0) 
+            if (returnMergeMaterialGoodReqs.Count > 0)
             {
                 _capBus.Publish("Serve.ReceiptCreditVouchers.Create", new AddOrUpdateQuotationReq { InvoiceDocEntry = returnNoteObj.ReturnnoteMaterials.FirstOrDefault()?.InvoiceDocEntry, SalesOrderId = returnNoteObj.SalesOrderId, QuotationMergeMaterialReqs = returnMergeMaterialGoodReqs });
             }

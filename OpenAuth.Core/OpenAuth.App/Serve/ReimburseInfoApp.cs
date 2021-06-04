@@ -1271,28 +1271,28 @@ namespace OpenAuth.App
                     if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && obj.RemburseStatus == 4)
                     {
                         obj.RemburseStatus = 5;
-                        _flowInstanceApp.Verification(VerificationReqModle);
+                        await _flowInstanceApp.Verification(VerificationReqModle);
                     }
                     else if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")) && obj.RemburseStatus == 5)
                     {
                         obj.RemburseStatus = 6;
-                        _flowInstanceApp.Verification(VerificationReqModle);
+                        await _flowInstanceApp.Verification(VerificationReqModle);
                     }
                     else if (loginContext.Roles.Any(r => r.Name.Equals("财务复审")) && obj.RemburseStatus == 6)
                     {
                         obj.RemburseStatus = 7;
-                        _flowInstanceApp.Verification(VerificationReqModle);
+                        await _flowInstanceApp.Verification(VerificationReqModle);
                     }
                     else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && obj.RemburseStatus == 7)
                     {
                         obj.RemburseStatus = 8;
-                        _flowInstanceApp.Verification(VerificationReqModle);
+                        await _flowInstanceApp.Verification(VerificationReqModle);
                     }
                     else if (loginContext.Roles.Any(r => r.Name.Equals("出纳")) && obj.RemburseStatus == 8)
                     {
                         obj.RemburseStatus = 9;
                         obj.PayTime = DateTime.Now;
-                        _flowInstanceApp.Verification(VerificationReqModle);
+                        await _flowInstanceApp.Verification(VerificationReqModle);
                     }
                     else
                     {
