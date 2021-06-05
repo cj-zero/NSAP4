@@ -152,5 +152,27 @@ namespace OpenAuth.App
                 return "";
             }
         }
+        /// <summary>
+        /// 通知物流已签收状态
+        /// </summary>
+        /// <param name="EshopPOrderNo">商城订单号</param>
+        /// <returns></returns>
+        public async Task<TableData> UpdateShipStatusForOrder(string EshopPOrderNo)
+        {
+            var result = new TableData();
+            var thisorder = await UnitWork.Find<sale_ordr>(w => w.U_EshopNo == EshopPOrderNo && w.sbo_id.Equals(1)).FirstOrDefaultAsync();
+            if (thisorder != null && thisorder.DocEntry>0)
+            {
+                await UnitWork.UpdateAsync<sale_ordr>(w => w.DocEntry == thisorder.DocEntry && w.sbo_id==thisorder.sbo_id, u => new sale_ordr { U_ShipStatus = 1 });
+                await UnitWork.SaveAsync();
+                result.Message = "更新成功";
+            }
+            else
+            {
+                result.Code = 400;
+                result.Message = "没有找到相关记录";
+            }
+            return result;
+        }
     }
 }
