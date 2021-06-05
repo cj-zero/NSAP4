@@ -225,7 +225,7 @@ namespace OpenAuth.App
 
                 //驳回/撤回状态
                 if (c.FlowInstance.IsFinish == 4) c.FlowInstance.ActivityName = "驳回";
-                else if (c.FlowInstance.IsFinish == 2) c.FlowInstance.ActivityName = "撤回";
+                else if (c.FlowInstance.IsFinish == -1) c.FlowInstance.ActivityName = "撤回";
                 //c.FlowInstance.ActivityName = c.FlowInstance.IsFinish == 4 ? "驳回" : c.FlowInstance.ActivityName;
             });
             var view = certList.Select(c =>
@@ -401,7 +401,7 @@ namespace OpenAuth.App
                             #region 签名
                             if (flowInstance.ActivityName.Equals("待送审"))
                             {
-                                _flowInstanceApp.Verification(req.Verification);
+                                await _flowInstanceApp.Verification(req.Verification);
                                 await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
                                 {
                                     CertInfoId = id,
@@ -412,7 +412,7 @@ namespace OpenAuth.App
                             }
                             else if (flowInstance.ActivityName.Equals("待审核"))
                             {
-                                _flowInstanceApp.Verification(req.Verification);
+                                await _flowInstanceApp.Verification(req.Verification);
                                 await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
                                 {
                                     CertInfoId = id,
@@ -423,7 +423,7 @@ namespace OpenAuth.App
                             }
                             else if (flowInstance.ActivityName.Equals("待批准"))
                             {
-                                _flowInstanceApp.Verification(req.Verification);
+                                await _flowInstanceApp.Verification(req.Verification);
                                 await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
                                 {
                                     CertInfoId = id,
@@ -436,7 +436,7 @@ namespace OpenAuth.App
                             #endregion
                             break;
                         case "2":
-                            _flowInstanceApp.Verification(req.Verification);
+                            await _flowInstanceApp.Verification(req.Verification);
                             await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
                             {
                                 CertInfoId = id,
@@ -444,7 +444,7 @@ namespace OpenAuth.App
                             });
                             break;
                         case "3":
-                            _flowInstanceApp.Verification(req.Verification);
+                            await _flowInstanceApp.Verification(req.Verification);
                             await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
                             {
                                 CertInfoId = id,
@@ -463,7 +463,8 @@ namespace OpenAuth.App
                             break;
                         //撤回
                         case "4":
-                            _flowInstanceApp.Verification(req.Verification);
+                            //await _flowInstanceApp.Verification(req.Verification);
+                            await _flowInstanceApp.ReCall(new RecallFlowInstanceReq { FlowInstanceId = req.Verification.FlowInstanceId, Description = "" });
                             await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
                             {
                                 CertInfoId = id,
