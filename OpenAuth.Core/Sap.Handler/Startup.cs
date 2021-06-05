@@ -41,8 +41,8 @@ namespace Sap.Handler
 
             services.AddSingleton<ServiceOrderSapHandler>();
             services.AddScoped<SellOrderSapHandler>();
-            services.AddSingleton<MaterialSapHandler>();
-            services.AddSingleton<AfterSaleReturnHandler>();
+            services.AddScoped<MaterialSapHandler>();
+            services.AddScoped<AfterSaleReturnHandler>();
             services.AddControllersWithViews();
         }
 

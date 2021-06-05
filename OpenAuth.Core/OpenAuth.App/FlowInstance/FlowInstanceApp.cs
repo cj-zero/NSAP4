@@ -103,7 +103,7 @@ namespace OpenAuth.App
                 CreateUserId = user.User.Id,
                 CreateUserName = user.User.Name,
                 CreateDate = DateTime.Now,
-                Content = "【创建】"
+                Content = "创建"
                           + user.User.Name
                           + addFlowInstanceReq.CustomName,
                 ActivityId= flowInstance.ActivityId,
@@ -188,7 +188,7 @@ namespace OpenAuth.App
                 CreateUserId = user.User.Id,
                 CreateUserName = user.User.Name,
                 CreateDate = DateTime.Now,
-                Content = "【提交】",
+                Content = "提交",
                 ActivityId= flowInstance.ActivityId,
             };
             await UnitWork.AddAsync(processOperationHistoryEntity);
@@ -257,7 +257,7 @@ namespace OpenAuth.App
                     throw (new Exception("审核异常,找不到审核节点"));
                 }
 
-                flowInstanceOperationHistory.Content = "【" + wfruntime.Nodes[canCheckId].name + "】";
+                flowInstanceOperationHistory.Content = wfruntime.Nodes[canCheckId].name;
                 flowInstanceOperationHistory.ApprovalResult = tag.Taged == 1 ? "同意" : "不同意";
                 flowInstanceOperationHistory.Remark = tag.Description;
                 flowInstanceOperationHistory.ActivityId = wfruntime.currentNodeId;
@@ -317,7 +317,7 @@ namespace OpenAuth.App
                 //                                           + "】【" + DateTime.Now.ToString("yyyy-MM-dd HH:mm")
                 //                                           + "】" + (tag.Taged == 1 ? "同意" : "不同意") + ",备注："
                 //                                           + tag.Description;
-                flowInstanceOperationHistory.Content = "【" + wfruntime.currentNode.name + "】";
+                flowInstanceOperationHistory.Content = wfruntime.currentNode.name;
                 flowInstanceOperationHistory.ApprovalResult = tag.Taged == 1 ? "同意" : "不同意";
                 flowInstanceOperationHistory.Remark = tag.Description;
                 flowInstanceOperationHistory.ActivityId = wfruntime.currentNodeId;
@@ -411,7 +411,7 @@ namespace OpenAuth.App
                 CreateUserId = user.Id,
                 CreateUserName = user.Name,
                 CreateDate = DateTime.Now,
-                Content = "【" + wfruntime.currentNode.name + "】",
+                Content = wfruntime.currentNode.name,
                 Remark= reqest.VerificationOpinion,
                 ApprovalResult="驳回",
                 ActivityId= flowInstance.ActivityId,
@@ -859,7 +859,7 @@ namespace OpenAuth.App
                 CreateUserId = user.Id,
                 CreateUserName = user.Name,
                 CreateDate = DateTime.Now,
-                Content = $"【撤回】",
+                Content = $"撤回",
                 Remark= request.Description,
                 ApprovalResult= "撤回",
                 ActivityId= flowInstance.ActivityId,
@@ -909,7 +909,7 @@ namespace OpenAuth.App
                 CreateUserId = user.User.Id,
                 CreateUserName = user.User.Name,
                 CreateDate = DateTime.Now,
-                Content = $"【提交】",
+                Content = $"提交",
                 ActivityId= wfruntime.currentNodeId,
             };
             var fioh = await UnitWork.Find<FlowInstanceOperationHistory>(r => r.InstanceId.Equals(request.FlowInstanceId)).OrderByDescending(r => r.CreateDate).FirstOrDefaultAsync();
