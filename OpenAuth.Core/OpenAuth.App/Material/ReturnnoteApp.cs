@@ -14,6 +14,7 @@ using Infrastructure.Extensions;
 using DotNetCore.CAP;
 using Infrastructure.Const;
 using OpenAuth.App.Material.Response;
+using System.Linq.Dynamic.Core;
 
 namespace OpenAuth.App
 {
@@ -957,16 +958,17 @@ namespace OpenAuth.App
                         join b in UnitWork.Find<Quotation>(null) on a.QuotationId equals b.Id
                         where b.CreateUserId == loginUser.Id && b.QuotationStatus == 11 && b.SalesOrderId != null
                         select new { b };
+            query = query.WhereIf(!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()),q=>q.b.SalesOrderId == req.SalesOrderId);
             var queryList = await query.Select(q => new { q.b.ServiceOrderId, q.b.SalesOrderId, q.b.CreateUser }).Distinct().ToListAsync();
             //获取服务单id集合
             var serviceOrderIds = queryList.Select(s => s.ServiceOrderId).ToList();
             //获取销售订单id集合
             var salesOrderIds = queryList.Select(s => s.SalesOrderId).ToList();
             //查询交货记录
-            var saledln1 = await UnitWork.Find<sale_dln1>(s => salesOrderIds.Contains(s.BaseEntry) && s.BaseType == 17).Select(s => new { s.DocEntry, s.BaseEntry }).Distinct().ToListAsync();
+            var saledln1 = await UnitWork.Find<sale_dln1>(s => salesOrderIds.Contains(s.BaseEntry) && s.BaseType == 17).WhereIf(!string.IsNullOrWhiteSpace(req.InvoiceDocEntry.ToString()),s=> s.DocEntry == req.InvoiceDocEntry).Select(s => new { s.DocEntry, s.BaseEntry }).Distinct().ToListAsync();
             var saledln1Ids = saledln1.Select(s => s.DocEntry).ToList();
             //查询应收发票
-            var saleinv1 = await UnitWork.Find<sale_inv1>(s => saledln1Ids.Contains((int)s.BaseEntry) && s.BaseType == 15 && s.LineStatus == "O").Select(s => new { s.DocEntry, s.BaseEntry, s.DocDate, s.U_A_ADATE }).Distinct().ToListAsync();
+            var saleinv1 = await UnitWork.Find<sale_inv1>(s => saledln1Ids.Contains((int)s.BaseEntry) && s.BaseType == 15 && s.LineStatus == "C").Select(s => new { s.DocEntry, s.BaseEntry, s.DocDate, s.U_A_ADATE }).Distinct().ToListAsync();
             var oinvIds = saleinv1.Select(s => s.DocEntry).ToList();
             var saleoinvs = await UnitWork.Find<sale_oinv>(s => oinvIds.Contains(s.DocEntry)).Select(s => new { s.DocEntry, s.DocTotal, s.UpdateDate }).Distinct().ToListAsync();
             var salerin1s = await UnitWork.Find<sale_rin1>(s => oinvIds.Contains((uint)s.BaseEntry) && s.BaseType == 13).Select(s => new { s.BaseEntry, TotalMoney = s.Price * s.Quantity }).ToListAsync();
@@ -976,7 +978,7 @@ namespace OpenAuth.App
             //var returnNotes = await UnitWork.Find<ReturnNote>(r => inv1Ids.Contains((int)r.InvoiceDocEntry)).Include(r => r.ReturnnoteMaterials).ToListAsync();
             //var docentrys = saleinv1.Select(s => (int)s.DocEntry).ToList();
             //查询服务单
-            var serviceOrders = await UnitWork.Find<ServiceOrder>(s => serviceOrderIds.Contains(s.Id)).Select(s => new { s.Id, s.U_SAP_ID, s.TerminalCustomer, s.TerminalCustomerId, s.NewestContacter, s.NewestContactTel }).ToListAsync();
+            var serviceOrders = await UnitWork.Find<ServiceOrder>(s => serviceOrderIds.Contains(s.Id)).WhereIf(!string.IsNullOrWhiteSpace(req.Customer),s=> s.TerminalCustomerId.Contains(req.Customer) || s.TerminalCustomer.Contains(req.Customer)).Select(s => new { s.Id, s.U_SAP_ID, s.TerminalCustomer, s.TerminalCustomerId, s.NewestContacter, s.NewestContactTel }).ToListAsync();
 
             var oinvList = from a in saleinv1
                            join b in saledln1 on a.BaseEntry equals b.DocEntry into ab
