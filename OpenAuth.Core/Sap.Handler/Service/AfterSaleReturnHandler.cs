@@ -690,7 +690,7 @@ namespace Sap.Handler.Service
 
                 company.GetLastError(out eCode, out eMesg);
 
-                errorMsg += string.Format("添加应收贷项凭证调接口发生异常[异常代码:{1},异常信息:{2}]", eCode, eMesg);
+                errorMsg += string.Format("添加应收贷项凭证调接口发生异常[异常代码:{0},异常信息:{1}]", eCode, eMesg);
 
             }
             else

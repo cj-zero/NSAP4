@@ -1428,7 +1428,7 @@ namespace OpenAuth.App
             //}
             //else 
             var flowInstanceObj = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(returnNotes.FlowInstanceId)).FirstOrDefaultAsync();
-            if (loginContext.Roles.Any(r => r.Name.Equals("品质")) && flowInstanceObj.ActivityName.Equals("品质检验"))
+            if (loginContext.Roles.Any(r => r.Name.Equals("物料品质")) && flowInstanceObj.ActivityName.Equals("品质检验"))
             {
                 //qoh.Action = "品质检验";
                 if (!req.IsReject)
