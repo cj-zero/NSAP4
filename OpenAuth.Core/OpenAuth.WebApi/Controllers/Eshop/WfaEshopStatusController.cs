@@ -98,7 +98,7 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="EshopPOrderNo"></param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost]
         public async Task<TableData> UpdateShipStatusForOrder(string EshopPOrderNo)
         {
             var result = new TableData();
@@ -111,6 +111,27 @@ namespace OpenAuth.WebApi.Controllers
                 result.Code = 500;
                 result.Message = ex.Message;
                 Log.Logger.Error($"地址：{Request.Path}，参数：{EshopPOrderNo}， 错误：{result.Message}");
+            }
+            return result;
+        }
+        /// <summary>
+        /// 保存商城订单传来的开票信息
+        /// </summary>
+        /// <param name="theReq">开票信息实体</param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> UpdateEshopBillInfo(AddOrUpdatesale_ordr_pluginReq theReq)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _wfastatusapp.UpdateEshopBillInfo(theReq);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{theReq.ToJson()}， 错误：{result.Message}");
             }
             return result;
         }
