@@ -229,7 +229,7 @@ namespace OpenAuth.App.Material
                 }
             }
 
-            var QuotationDate = await Quotations.Skip((request.page - 1) * request.limit)
+            var QuotationDate = await Quotations.OrderByDescending(q=>q.UpDateTime).Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
             List<string> fileids = new List<string>();
             QuotationDate.ForEach(q => fileids.AddRange(q.QuotationPictures.Select(p => p.PictureId).ToList()));
@@ -267,7 +267,7 @@ namespace OpenAuth.App.Material
                     fileType = file.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileType,
                     fileId = p?.PictureId
                 }).ToList()
-            }).ToList();
+            }).OrderByDescending(q=>Convert.ToDateTime(q.UpDateTime)).ToList();
             result.Count = await Quotations.CountAsync();
 
             return result;
