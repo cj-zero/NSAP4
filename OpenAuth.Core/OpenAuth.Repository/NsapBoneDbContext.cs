@@ -37,6 +37,7 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<sale_rin1>().HasKey(o => new { o.sbo_id, o.DocEntry,o.LineNum });
             modelBuilder.Entity<sale_oinv>().HasKey(o => new { o.sbo_id, o.DocEntry });
             modelBuilder.Entity<sale_inv1>().HasKey(o => new { o.sbo_id, o.DocEntry, o.LineNum });
+            modelBuilder.Entity<sale_ordr_plugin>().HasKey(o => new { o.sbo_id, o.DocEntry });
         }
         public virtual DbSet<sale_transport> sale_transports { get; set; }
 
@@ -67,5 +68,6 @@ namespace OpenAuth.Repository
         public virtual DbSet<sale_inv1> sale_inv1s { get; set; }
         //非数据库表格
         public virtual DbSet<v_storeitemstock>  v_storeitemstocks { get; set; }
+        public virtual DbSet<sale_ordr_plugin> SaleOrdrPlugins { get; set; }
     }
 }

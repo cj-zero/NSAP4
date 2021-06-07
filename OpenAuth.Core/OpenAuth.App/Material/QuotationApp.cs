@@ -1609,7 +1609,7 @@ namespace OpenAuth.App.Material
 
             if (isEXwarehouse == 0)
             {
-                await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(obj.ExpressageReqs.QuotationId), q => new Quotation { QuotationStatus = 11 });
+                await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(obj.ExpressageReqs.QuotationId), q => new Quotation { QuotationStatus = 11, UpDateTime = DateTime.Now });
                 qoh.Add(new QuotationOperationHistory
                 {
                     Id = Guid.NewGuid().ToString(),
@@ -1626,7 +1626,7 @@ namespace OpenAuth.App.Material
             }
             else
             {
-                await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(obj.ExpressageReqs.QuotationId), q => new Quotation { QuotationStatus = 12 });
+                await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(obj.ExpressageReqs.QuotationId), q => new Quotation { QuotationStatus = 12,UpDateTime=DateTime.Now });
             }
             await UnitWork.BatchAddAsync<QuotationOperationHistory>(qoh.ToArray());
             await UnitWork.SaveAsync();
