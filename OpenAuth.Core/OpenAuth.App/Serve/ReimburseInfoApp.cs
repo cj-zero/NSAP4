@@ -226,7 +226,7 @@ namespace OpenAuth.App
             ReimburseInfos = ReimburseInfos.OrderByDescending(r => r.UpdateTime);
             if (request.PageType == 2)
             {
-                ReimburseInfos = ReimburseInfos.OrderBy(r => r.UpdateTime);
+                ReimburseInfos = ReimburseInfos.OrderByDescending(r => r.UpdateTime);
             }
             else if (request.PageType == 5)
             {
@@ -272,7 +272,7 @@ namespace OpenAuth.App
 
             if (request.PageType == 2)
             {
-                ReimburseResps = ReimburseResps.OrderBy(r => r.a.UpdateTime);
+                ReimburseResps = ReimburseResps.OrderByDescending(r => r.a.UpdateTime);
             }
             else if (request.PageType == 5)
             {
@@ -293,7 +293,7 @@ namespace OpenAuth.App
                 UserName = r.d.Name,
                 OrgName = r.f.Name,
                 UpdateTime= r.a.ReimurseOperationHistories.OrderByDescending(r => r.CreateTime).FirstOrDefault()!=null?Convert.ToDateTime(r.a.ReimurseOperationHistories.OrderByDescending(r=>r.CreateTime).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"):Convert.ToDateTime(r.a.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss")
-            }).ToList();
+            }).OrderByDescending(r => r.UpdateTime).ToList();
             result.Data = ReimburseRespList;
             return result;
         }
@@ -1169,6 +1169,7 @@ namespace OpenAuth.App
             obj.BearToPay = req.BearToPay;
             obj.ReimburseType = req.ReimburseType;
             obj.Responsibility = req.Responsibility;
+            obj.UpdateTime = DateTime.Now;
             eoh.ApprovalStage = obj.RemburseStatus;
 
             if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && obj.RemburseStatus == 4)
@@ -1397,6 +1398,7 @@ namespace OpenAuth.App
                             obj.PayTime = DateTime.Now;
                             _flowInstanceApp.Verification(VerificationReqModle);
                         }
+                        obj.UpdateTime = DateTime.Now;
                         await UnitWork.UpdateAsync<ReimburseInfo>(obj);
                         var seleoh = await UnitWork.Find<ReimurseOperationHistory>(r => r.ReimburseInfoId.Equals(obj.Id)).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
                         eoh.CreateUser = loginContext.User.Name;

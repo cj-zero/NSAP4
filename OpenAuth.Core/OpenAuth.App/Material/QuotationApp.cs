@@ -229,7 +229,7 @@ namespace OpenAuth.App.Material
                 }
             }
 
-            var QuotationDate = await Quotations.Skip((request.page - 1) * request.limit)
+            var QuotationDate = await Quotations.OrderByDescending(q=>q.UpDateTime).Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
             List<string> fileids = new List<string>();
             QuotationDate.ForEach(q => fileids.AddRange(q.QuotationPictures.Select(p => p.PictureId).ToList()));
@@ -267,7 +267,7 @@ namespace OpenAuth.App.Material
                     fileType = file.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileType,
                     fileId = p?.PictureId
                 }).ToList()
-            }).ToList();
+            }).OrderByDescending(q=>Convert.ToDateTime(q.UpDateTime)).ToList();
             result.Count = await Quotations.CountAsync();
 
             return result;
@@ -2011,11 +2011,11 @@ namespace OpenAuth.App.Material
             #endregion
 
             #region 判断是否已经开始退料 则不允许领料
-            var isExist = (await UnitWork.Find<ReturnNote>(w => w.ServiceOrderId == obj.ServiceOrderId && w.CreateUserId == loginUser.Id).ToListAsync()).Count > 0 ? true : false;
-            if (isExist)
-            {
-                throw new Exception("该服务单已开始退料，不可领料。");
-            }
+            //var isExist = (await UnitWork.Find<ReturnNote>(w => w.ServiceOrderId == obj.ServiceOrderId && w.CreateUserId == loginUser.Id).ToListAsync()).Count > 0 ? true : false;
+            //if (isExist)
+            //{
+                //throw new Exception("该服务单已开始退料，不可领料。");
+            //}
             #endregion
 
             //判定字段是否同时存在
