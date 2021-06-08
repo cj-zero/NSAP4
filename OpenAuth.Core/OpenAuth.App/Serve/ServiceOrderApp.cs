@@ -1634,9 +1634,9 @@ namespace OpenAuth.App
         /// <param name="ServiceOrderId"></param>
         /// <param name="startDate"></param>
         /// <param name="endDate"></param>
-        /// <param name="reimburseId"></param>
+        /// <param name="UserId"></param>
         /// <returns></returns>
-        public async Task<TableData> GetErpTechnicianDailyReport(int ServiceOrderId, string startDate, string endDate, string reimburseId)
+        public async Task<TableData> GetErpTechnicianDailyReport(int ServiceOrderId, string startDate, string endDate, string UserId)
         {
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
@@ -1644,17 +1644,17 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            string creater = string.Empty;
-            if (!string.IsNullOrEmpty(reimburseId))
-            {
-                //获取该报销单的创建者Id
-                creater = (await UnitWork.Find<ReimburseInfo>(w => w.Id == Convert.ToInt32(reimburseId)).FirstOrDefaultAsync()).CreateUserId;
-            }
+            //string creater = string.Empty;
+            //if (!string.IsNullOrEmpty(reimburseId))
+            //{
+            //    //获取该报销单的创建者Id
+            //    creater = (await UnitWork.Find<ReimburseInfo>(w => w.Id == Convert.ToInt32(reimburseId)).FirstOrDefaultAsync()).CreateUserId;
+            //}
             //获取当月的所有日报信息
             var dailyReports = (await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == ServiceOrderId)
                 .WhereIf(!string.IsNullOrEmpty(startDate), w => w.CreateTime.Value.Date >= Convert.ToDateTime(startDate).Date)
                 .WhereIf(!string.IsNullOrEmpty(endDate), w => w.CreateTime.Value.Date <= Convert.ToDateTime(endDate).Date)
-                .WhereIf(!string.IsNullOrEmpty(creater), w => w.CreateUserId == creater)
+                .WhereIf(!string.IsNullOrEmpty(UserId), w => w.CreateUserId == UserId)
                 .ToListAsync()).Select(s => new ReportDetail { CreateTime = s.CreateTime, MaterialCode = s.MaterialCode, ManufacturerSerialNumber = s.ManufacturerSerialNumber, TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription), ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription) }).OrderByDescending(o => o.CreateTime).ToList();
             var dailyReportDates = dailyReports.OrderByDescending(o => o.CreateTime).Select(s => s.CreateTime?.Date.ToString("yyyy-MM-dd")).Distinct().ToList();
 
