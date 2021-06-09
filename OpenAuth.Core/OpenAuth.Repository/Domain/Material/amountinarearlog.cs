@@ -60,7 +60,7 @@ namespace OpenAuth.Repository.Domain
         [Browsable(false)]
         public string Remark { get; set; }
         /// <summary>
-        /// 销售订单id
+        /// 关联id
         /// </summary>
         [Description("")]
         [Browsable(false)]
