@@ -714,21 +714,21 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="ServiceOrderId"></param>
         /// <param name="startDate"></param>
         /// <param name="endDate"></param>
-        /// <param name="reimburseId"></param>
+        /// <param name="UserId"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetErpTechnicianDailyReport(int ServiceOrderId, string startDate, string endDate, string reimburseId)
+        public async Task<TableData> GetErpTechnicianDailyReport(int ServiceOrderId, string startDate, string endDate, string UserId)
         {
             var result = new TableData();
             try
             {
-                return await _serviceOrderApp.GetErpTechnicianDailyReport(ServiceOrderId, startDate, endDate, reimburseId);
+                return await _serviceOrderApp.GetErpTechnicianDailyReport(ServiceOrderId, startDate, endDate, UserId);
             }
             catch (Exception ex)
             {
                 result.Code = 500;
                 result.Message = ex.Message;
-                Log.Logger.Error($"地址：{Request.Path}，参数：{ServiceOrderId},{startDate},{endDate},{reimburseId}， 错误：{result.Message}");
+                Log.Logger.Error($"地址：{Request.Path}，参数：{ServiceOrderId},{startDate},{endDate},{UserId}， 错误：{result.Message}");
             }
             return result;
         }
