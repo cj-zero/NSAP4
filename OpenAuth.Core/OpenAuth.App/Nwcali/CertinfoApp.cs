@@ -285,7 +285,7 @@ namespace OpenAuth.App
 
                     //驳回/撤回状态
                     if (c.FlowInstance.IsFinish == 4) c.FlowInstance.ActivityName = "驳回";
-                    else if (c.FlowInstance.IsFinish == 2) c.FlowInstance.ActivityName = "撤回";
+                    else if (c.FlowInstance.IsFinish == -1) c.FlowInstance.ActivityName = "撤回";
                     //c.FlowInstance.ActivityName = c.FlowInstance.IsFinish == 4 ? "驳回" : c.FlowInstance.ActivityName;
                 });
                 var view2 = list.Select(c =>
