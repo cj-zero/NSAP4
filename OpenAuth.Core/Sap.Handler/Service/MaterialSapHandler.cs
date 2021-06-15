@@ -326,6 +326,7 @@ namespace Sap.Handler.Service
                                     userCount = await UnitWork.AddAsync<amountinarear>(new amountinarear { Money = TotalMoney, Id = Guid.NewGuid().ToString(), UserId = quotation.CreateUserId, UserName = quotation.CreateUser });
                                 }
                                 await UnitWork.AddAsync<amountinarearlog>(new amountinarearlog { Id = Guid.NewGuid().ToString(), Money = TotalMoney, PlusOrMinus = true, SalesOrderId = quotation.SalesOrderId, CreateTime = DateTime.Now, CreateUserId = quotation.CreateUserId, CreateUserName = quotation.CreateUser, AmountInArearId = userCount.Id, Liaison = int.Parse(docNum), Remark = "销售交货增加挂账金额" });
+                                await UnitWork.SaveAsync();
                             }
                         }
                         catch (Exception ex)
