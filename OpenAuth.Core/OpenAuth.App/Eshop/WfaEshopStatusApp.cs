@@ -152,5 +152,91 @@ namespace OpenAuth.App
                 return "";
             }
         }
+        /// <summary>
+        /// 通知物流已签收状态
+        /// </summary>
+        /// <param name="EshopPOrderNo">商城订单号</param>
+        /// <returns></returns>
+        public async Task<TableData> UpdateShipStatusForOrder(string EshopPOrderNo)
+        {
+            var result = new TableData();
+            var thisorder = await UnitWork.Find<sale_ordr>(w => w.U_EshopNo == EshopPOrderNo && w.sbo_id.Equals(1)).FirstOrDefaultAsync();
+            if (thisorder != null && thisorder.DocEntry>0)
+            {
+                await UnitWork.UpdateAsync<sale_ordr>(w => w.DocEntry == thisorder.DocEntry && w.sbo_id==thisorder.sbo_id, u => new sale_ordr { U_ShipStatus = 1 });
+                await UnitWork.SaveAsync();
+                result.Message = "更新成功";
+            }
+            else
+            {
+                result.Code = 400;
+                result.Message = "没有找到相关记录";
+            }
+            return result;
+        }
+        /// <summary>
+        /// 保存商城订单传来的开票信息
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> UpdateEshopBillInfo(AddOrUpdatesale_ordr_pluginReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+            if (!string.IsNullOrEmpty(req.EshopOrderNo))
+            {
+                var thisorder = await UnitWork.Find<sale_ordr>(w => w.U_EshopNo == req.EshopOrderNo).FirstOrDefaultAsync();
+                if (thisorder != null && thisorder.DocEntry > 0)
+                {
+                    var newobj=new sale_ordr_plugin();
+                    var theorderplugin= await UnitWork.Find<sale_ordr_plugin>(w => w.DocEntry == thisorder.DocEntry && w.sbo_id == thisorder.sbo_id).FirstOrDefaultAsync();
+                    if (theorderplugin != null && theorderplugin.DocEntry > 0)
+                    {
+                        await UnitWork.UpdateAsync<sale_ordr_plugin>(w => w.DocEntry == thisorder.DocEntry && w.sbo_id == thisorder.sbo_id, u => new sale_ordr_plugin
+                        {
+                            InvoiceTitle = req.InvoiceTitle,
+                            InvoiceName = req.InvoiceName,
+                            InvoiceTaxSignNo = req.InvoiceTaxSignNo,
+                            InvoiceReceivePhone = req.InvoiceReceivePhone,
+                            InvoiceReceiveEmail = req.InvoiceReceiveEmail,
+                            InvoiceReceiveAddress = req.InvoiceReceiveAddress
+                        });
+                    }
+                    else
+                    {
+                        var newplugin = new sale_ordr_plugin
+                        {
+                            DocEntry = thisorder.DocEntry,
+                            sbo_id = thisorder.sbo_id,
+                            InvoiceTitle = req.InvoiceTitle,
+                            InvoiceName = req.InvoiceName,
+                            InvoiceTaxSignNo = req.InvoiceTaxSignNo,
+                            InvoiceReceivePhone = req.InvoiceReceivePhone,
+                            InvoiceReceiveEmail = req.InvoiceReceiveEmail,
+                            InvoiceReceiveAddress = req.InvoiceReceiveAddress
+                        };
+                        newobj = await UnitWork.AddAsync<sale_ordr_plugin,int>(newplugin);
+                    }
+                    await UnitWork.SaveAsync();
+                    result.Data = newobj.DocEntry;
+                    result.Message = "保存成功";
+                }
+                else
+                {
+                    result.Code = 400;
+                    result.Message = "没有找到相关记录";
+                }
+            }
+            else
+            {
+                result.Code = 0;
+                result.Message = "缺少关键字商城订单号 EshopOrderNo";
+            }
+            return result;
+        }
     }
 }

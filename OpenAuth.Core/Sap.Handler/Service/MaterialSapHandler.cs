@@ -311,20 +311,29 @@ namespace Sap.Handler.Service
                     {
                         company.GetNewObjectCode(out docNum);
                         Log.Logger.Warning("添加销售交货到SAP成功");
-                        if (TotalMoney > 0) 
+                        try
                         {
-                            var userCount = await UnitWork.Find<amountinarear>(a => a.UserId.Equals(quotation.CreateUserId)).FirstOrDefaultAsync();
-                            if (userCount != null)
+                            if (TotalMoney > 0)
                             {
-                                await UnitWork.UpdateAsync<amountinarear>(a => a.Id.Equals(userCount.Id), a => new amountinarear { Money = a.Money + TotalMoney });
+                                var userCount = await UnitWork.Find<amountinarear>(a => a.UserId.Equals(quotation.CreateUserId)).FirstOrDefaultAsync();
+                                if (userCount != null)
+                                {
+                                    await UnitWork.UpdateAsync<amountinarear>(a => a.Id.Equals(userCount.Id), a => new amountinarear { Money = a.Money + TotalMoney });
 
+                                }
+                                else
+                                {
+                                    userCount = await UnitWork.AddAsync<amountinarear>(new amountinarear { Money = TotalMoney, Id = Guid.NewGuid().ToString(), UserId = quotation.CreateUserId, UserName = quotation.CreateUser });
+                                }
+                                await UnitWork.AddAsync<amountinarearlog>(new amountinarearlog { Id = Guid.NewGuid().ToString(), Money = TotalMoney, PlusOrMinus = true, SalesOrderId = quotation.SalesOrderId, CreateTime = DateTime.Now, CreateUserId = quotation.CreateUserId, CreateUserName = quotation.CreateUser, AmountInArearId = userCount.Id, Liaison = int.Parse(docNum), Remark = "销售交货增加挂账金额" });
                             }
-                            else
-                            {
-                                userCount = await UnitWork.AddAsync<amountinarear>(new amountinarear { Money = TotalMoney, Id = Guid.NewGuid().ToString(), UserId = quotation.CreateUserId, UserName = quotation.CreateUser });
-                            }
-                            await UnitWork.AddAsync<amountinarearlog>(new amountinarearlog { Id = Guid.NewGuid().ToString(), Money = TotalMoney, PlusOrMinus = true, SalesOrderId = quotation.SalesOrderId, CreateTime = DateTime.Now, CreateUserId = quotation.CreateUserId, CreateUserName = quotation.CreateUser, AmountInArearId = userCount.Id, Liaison = int.Parse(docNum), Remark = "销售交货增加挂账金额" });
                         }
+                        catch (Exception ex)
+                        {
+
+                            Log.Logger.Warning("增加金额失败"+ex.Message);
+                        }
+                        
                     }
                 }
                 else 

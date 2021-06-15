@@ -441,7 +441,7 @@ namespace Sap.Handler.Service
             var serviceOrder =  UnitWork.Find<ServiceOrder>(s => s.Id.Equals(quotation.ServiceOrderId)).FirstOrDefault();
             var oCPR =  UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").FirstOrDefault();
             var slpcode = ( UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefault())?.SlpCode;
-            var inv1 =  UnitWork.Find<INV1>(o => o.DocEntry.Equals(obj.InvoiceDocEntry)).Select(o => new { o.LineNum, o.ItemCode, o.Price }).ToList();
+            var inv1 =  UnitWork.Find<INV1>(o => o.DocEntry.Equals(obj.InvoiceDocEntry)).Select(o => new { o.LineNum, o.ItemCode, o.Price ,o.BaseEntry}).ToList();
             var ywy =  UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => o.SlpCode).FirstOrDefault();
             List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };
             var categoryList =  UnitWork.Find<Category>(c => typeids.Contains(c.TypeId)).ToList();
@@ -466,7 +466,7 @@ namespace Sap.Handler.Service
             dts.DocDate = DateTime.Now;
             dts.TaxDate = DateTime.Now;
 
-            dts.Comments = quotation.Remark + "基于应收发票" + obj.InvoiceDocEntry;
+            dts.Comments = quotation.Remark + "基于销售订单" + quotation.SalesOrderId + "基于销售交货"+ inv1.FirstOrDefault()?.BaseEntry+ "基于应收发票" + obj.InvoiceDocEntry;
 
             dts.ContactPersonCode = int.Parse(string.IsNullOrWhiteSpace(oCPR.CntctCode.ToString()) ? "0" : oCPR.CntctCode.ToString());
 
@@ -690,13 +690,14 @@ namespace Sap.Handler.Service
 
                 company.GetLastError(out eCode, out eMesg);
 
-                errorMsg += string.Format("添加应收贷项凭证调接口发生异常[异常代码:{1},异常信息:{2}]", eCode, eMesg);
+                errorMsg += string.Format("添加应收贷项凭证调接口发生异常[异常代码:{0},异常信息:{1}]", eCode, eMesg);
 
             }
             else
             {
                 company.GetNewObjectCode(out docNum);
                 errorMsg += string.Format("调用接口添加应收贷项凭证操作成功,ID[{0}", docNum);
+                HandleReceiptCreditVouchersERP(docNum, obj.InvoiceDocEntry);
                 if (TotalMoney > 0)
                 {
                     var userCount = UnitWork.Find<amountinarear>(a => a.UserId.Equals(quotation.CreateUserId)).FirstOrDefault();
@@ -706,7 +707,6 @@ namespace Sap.Handler.Service
                         UnitWork.Add<amountinarearlog>(new amountinarearlog { Id = Guid.NewGuid().ToString(), Money = TotalMoney, PlusOrMinus = false, SalesOrderId = quotation.SalesOrderId, CreateTime = DateTime.Now, CreateUserId = quotation.CreateUserId, CreateUserName = quotation.CreateUser, AmountInArearId = userCount.Id, Liaison = int.Parse(docNum), Remark = "应收贷项凭证减少挂账金额" });
                     }
                 }
-                HandleReceiptCreditVouchersERP(docNum, obj.InvoiceDocEntry);
             }
 
         }

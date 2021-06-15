@@ -19,68 +19,66 @@ namespace OpenAuth.Repository.Domain
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("amountinarearlog")]
-    public partial class amountinarearlog : Entity
+    [Table("sale_ordr_plugin")]
+    public partial class sale_ordr_plugin 
     {
-        public amountinarearlog()
+        /// <summary>
+        /// 
+        /// </summary>
+        public sale_ordr_plugin()
         {
-          this.AmountInArearId= string.Empty;
-          this.CreateUserId= string.Empty;
-          this.CreateUserName= string.Empty;
-          this.CreateTime= DateTime.Now;
+          this.InvoiceName= string.Empty;
+          this.InvoiceTaxSignNo= string.Empty;
+          this.InvoiceReceivePhone= string.Empty;
+          this.InvoiceReceiveEmail= string.Empty;
+          this.InvoiceReceiveAddress= string.Empty;
         }
 
         
         /// <summary>
-        /// 挂账金额表id
+        /// 
         /// </summary>
         [Description("")]
-        [Browsable(false)]
-        public string AmountInArearId { get; set; }
+        public int? DocEntry { get; set; }
         /// <summary>
-        /// 销售订单id
+        /// 
         /// </summary>
         [Description("")]
-        [Browsable(false)]
-        public int? SalesOrderId { get; set; }
+        public int? sbo_id { get; set; }
         /// <summary>
-        /// 金额
+        /// 
         /// </summary>
         [Description("")]
-        public decimal? Money { get; set; }
+        public int? PayTransactionID { get; set; }
         /// <summary>
-        /// 减少or增加
+        /// 
         /// </summary>
         [Description("")]
-        public bool? PlusOrMinus { get; set; }
+        public int? InvoiceTitle { get; set; }
         /// <summary>
-        /// 备注
+        /// 
         /// </summary>
         [Description("")]
-        [Browsable(false)]
-        public string Remark { get; set; }
+        public string InvoiceName { get; set; }
         /// <summary>
-        /// 关联id
+        /// 
         /// </summary>
         [Description("")]
-        [Browsable(false)]
-        public int? Liaison { get; set; }
-        
+        public string InvoiceTaxSignNo { get; set; }
         /// <summary>
-        /// 创建人id
+        /// 
         /// </summary>
         [Description("")]
-        [Browsable(false)]
-        public string CreateUserId { get; set; }
+        public string InvoiceReceivePhone { get; set; }
         /// <summary>
-        /// 创建人姓名
+        /// 
         /// </summary>
         [Description("")]
-        public string CreateUserName { get; set; }
+        public string InvoiceReceiveEmail { get; set; }
         /// <summary>
-        /// 创建时间
+        /// 
         /// </summary>
         [Description("")]
-        public System.DateTime? CreateTime { get; set; }
+        public string InvoiceReceiveAddress { get; set; }
     }
 }

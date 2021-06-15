@@ -229,7 +229,7 @@ namespace OpenAuth.App.Material
                 }
             }
 
-            var QuotationDate = await Quotations.Skip((request.page - 1) * request.limit)
+            var QuotationDate = await Quotations.OrderByDescending(q=>q.UpDateTime).Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
             List<string> fileids = new List<string>();
             QuotationDate.ForEach(q => fileids.AddRange(q.QuotationPictures.Select(p => p.PictureId).ToList()));
@@ -267,7 +267,7 @@ namespace OpenAuth.App.Material
                     fileType = file.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileType,
                     fileId = p?.PictureId
                 }).ToList()
-            }).ToList();
+            }).OrderByDescending(q=>Convert.ToDateTime(q.UpDateTime)).ToList();
             result.Count = await Quotations.CountAsync();
 
             return result;
@@ -843,6 +843,7 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            //限制查不出bom的数据，暂时屏蔽
             //var equipmentList = await EquipmentList(request);
             //var codeList = equipmentList.Select(e => e.ItemCode).ToList();
             var result = new TableData();
@@ -854,6 +855,12 @@ namespace OpenAuth.App.Material
                         from b in ab.DefaultIfEmpty()
                         where b.WhsCode == request.WhsCode
                         select new SysEquipmentColumn { ItemCode = a.ItemCode, ItemName = a.ItemName, lastPurPrc = a.LastPurPrc, BuyUnitMsr = a.SalUnitMsr, OnHand = b.OnHand, WhsCode = b.WhsCode };
+            //退料获取可替换物料编码
+            if (!string.IsNullOrWhiteSpace(request.ItemCode)) 
+            {
+                var code = request.ItemCode.Substring(0, request.ItemCode.IndexOf("-") + 1);
+                query = query.Where(q => q.ItemCode.Substring(0, q.ItemCode.IndexOf("-") + 1).Equals(code) && !q.ItemCode.Equals(request.ItemCode));
+            }
             result.Count = await query.CountAsync();
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ShieldingMaterials")).Select(u => u.Name).ToListAsync();
 
@@ -1058,9 +1065,9 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-GSF-JH",
                                 MaterialDescription = "寄回维修费 20210518",
                                 Unit = "PCS",
-                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeJH * QuotationObj.ServiceChargeManHourJH).ToString("#0.00")),
+                                SalesPrice = QuotationObj.ServiceChargeJH,
                                 CostPrice = 0,
-                                Count = 1,
+                                Count = QuotationObj.ServiceChargeManHourJH,
                                 TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeJH * QuotationObj.ServiceChargeManHourJH).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
@@ -1068,7 +1075,7 @@ namespace OpenAuth.App.Material
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeJH * QuotationObj.ServiceChargeManHourJH).ToString("#0.00")),
+                                DiscountPrices = QuotationObj.ServiceChargeJH,
                                 WhsCode = "37"
                             });
                         }
@@ -1079,9 +1086,9 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-GSF-SM",
                                 MaterialDescription = "上门维修费 20210518",
                                 Unit = "PCS",
-                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeSM * QuotationObj.ServiceChargeManHourSM).ToString("#0.00")),
+                                SalesPrice = QuotationObj.ServiceChargeSM,
                                 CostPrice = 0,
-                                Count = 1,
+                                Count = QuotationObj.ServiceChargeManHourSM,
                                 TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeSM * QuotationObj.ServiceChargeManHourSM).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
@@ -1089,7 +1096,7 @@ namespace OpenAuth.App.Material
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeSM * QuotationObj.ServiceChargeManHourSM).ToString("#0.00")),
+                                DiscountPrices = QuotationObj.ServiceChargeSM,
                                 WhsCode = "37"
                             });
                         }
@@ -1100,9 +1107,9 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-CLF",
                                 MaterialDescription = "差旅费",
                                 Unit = "PCS",
-                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
+                                SalesPrice = QuotationObj.TravelExpense,
                                 CostPrice = 0,
-                                Count = 1,
+                                Count = QuotationObj.TravelExpenseManHour,
                                 TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
@@ -1110,7 +1117,7 @@ namespace OpenAuth.App.Material
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
+                                DiscountPrices = QuotationObj.TravelExpense,
                                 WhsCode = "37"
                             });
                         }
@@ -1282,9 +1289,9 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-GSF-JH",
                                 MaterialDescription = "寄回维修费 20210518",
                                 Unit = "PCS",
-                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeJH * QuotationObj.ServiceChargeManHourJH).ToString("#0.00")),
+                                SalesPrice = QuotationObj.ServiceChargeJH,
                                 CostPrice = 0,
-                                Count = 1,
+                                Count = QuotationObj.ServiceChargeManHourJH,
                                 TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeJH * QuotationObj.ServiceChargeManHourJH).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
@@ -1292,7 +1299,7 @@ namespace OpenAuth.App.Material
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeJH * QuotationObj.ServiceChargeManHourJH).ToString("#0.00")),
+                                DiscountPrices = QuotationObj.ServiceChargeJH,
                                 WhsCode = "37"
                             });
                         }
@@ -1303,9 +1310,9 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-GSF-SM",
                                 MaterialDescription = "上门维修费 20210518",
                                 Unit = "PCS",
-                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeSM * QuotationObj.ServiceChargeManHourSM).ToString("#0.00")),
+                                SalesPrice = QuotationObj.ServiceChargeSM,
                                 CostPrice = 0,
-                                Count = 1,
+                                Count = QuotationObj.ServiceChargeManHourSM,
                                 TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeSM * QuotationObj.ServiceChargeManHourSM).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
@@ -1313,7 +1320,7 @@ namespace OpenAuth.App.Material
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeSM * QuotationObj.ServiceChargeManHourSM).ToString("#0.00")),
+                                DiscountPrices = QuotationObj.ServiceChargeSM,
                                 WhsCode = "37"
                             });
                         }
@@ -1324,9 +1331,9 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-CLF",
                                 MaterialDescription = "差旅费",
                                 Unit = "PCS",
-                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
+                                SalesPrice = QuotationObj.TravelExpense,
                                 CostPrice = 0,
-                                Count = 1,
+                                Count = QuotationObj.TravelExpenseManHour,
                                 TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
@@ -1334,7 +1341,7 @@ namespace OpenAuth.App.Material
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
+                                DiscountPrices = QuotationObj.TravelExpense,
                                 WhsCode = "37"
                             });
                         }
@@ -1609,7 +1616,7 @@ namespace OpenAuth.App.Material
 
             if (isEXwarehouse == 0)
             {
-                await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(obj.ExpressageReqs.QuotationId), q => new Quotation { QuotationStatus = 11 });
+                await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(obj.ExpressageReqs.QuotationId), q => new Quotation { QuotationStatus = 11, UpDateTime = DateTime.Now });
                 qoh.Add(new QuotationOperationHistory
                 {
                     Id = Guid.NewGuid().ToString(),
@@ -1626,7 +1633,7 @@ namespace OpenAuth.App.Material
             }
             else
             {
-                await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(obj.ExpressageReqs.QuotationId), q => new Quotation { QuotationStatus = 12 });
+                await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(obj.ExpressageReqs.QuotationId), q => new Quotation { QuotationStatus = 12,UpDateTime=DateTime.Now });
             }
             await UnitWork.BatchAddAsync<QuotationOperationHistory>(qoh.ToArray());
             await UnitWork.SaveAsync();

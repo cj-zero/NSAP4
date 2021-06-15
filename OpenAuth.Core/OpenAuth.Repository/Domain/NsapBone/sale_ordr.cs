@@ -183,5 +183,15 @@ namespace OpenAuth.Repository.Domain
         [Description("")]
         [NotMapped]
         public string U_ERPFrom { get; set; }
+        /// <summary>
+        /// 如果是商城订单记录商城单号
+        /// </summary>
+        [Description("")]
+        public string U_EshopNo { get; set; }
+        /// <summary>
+        /// 订单货物签收状态 1为已签收 否则为0
+        /// </summary>
+        [Description("")]
+        public int? U_ShipStatus { get; set; }
     }
 }

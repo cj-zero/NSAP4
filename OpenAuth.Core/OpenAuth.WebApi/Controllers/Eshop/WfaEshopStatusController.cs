@@ -73,7 +73,11 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
-
+        /// <summary>
+        /// 找到业务伙伴当前对应业务员的手机号
+        /// </summary>
+        /// <param name="CardCode"></param>
+        /// <returns></returns>
         [HttpGet]
         public async Task<Response<string>> GetSalesPersonTelByCardCode(string CardCode)
         {
@@ -90,6 +94,47 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
-
+        /// <summary>
+        /// 通知物流已签收状态
+        /// </summary>
+        /// <param name="EshopPOrderNo"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> UpdateShipStatusForOrder(string EshopPOrderNo)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _wfastatusapp.UpdateShipStatusForOrder(EshopPOrderNo);
+    }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{EshopPOrderNo}， 错误：{result.Message}");
+            }
+            return result;
+        }
+        /// <summary>
+        /// 保存商城订单传来的开票信息
+        /// </summary>
+        /// <param name="theReq">开票信息实体</param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> UpdateEshopBillInfo(AddOrUpdatesale_ordr_pluginReq theReq)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _wfastatusapp.UpdateEshopBillInfo(theReq);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{theReq.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
+        }
     }
 }
