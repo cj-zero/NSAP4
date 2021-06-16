@@ -1058,9 +1058,9 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-GSF-JH",
                                 MaterialDescription = "寄回维修费 20210518",
                                 Unit = "PCS",
-                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeJH * QuotationObj.ServiceChargeManHourJH).ToString("#0.00")),
+                                SalesPrice = QuotationObj.ServiceChargeJH,
                                 CostPrice = 0,
-                                Count = 1,
+                                Count = QuotationObj.ServiceChargeManHourJH,
                                 TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeJH * QuotationObj.ServiceChargeManHourJH).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
@@ -1068,7 +1068,7 @@ namespace OpenAuth.App.Material
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeJH * QuotationObj.ServiceChargeManHourJH).ToString("#0.00")),
+                                DiscountPrices = QuotationObj.ServiceChargeJH,
                                 WhsCode = "37"
                             });
                         }
@@ -1079,9 +1079,9 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-GSF-SM",
                                 MaterialDescription = "上门维修费 20210518",
                                 Unit = "PCS",
-                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeSM * QuotationObj.ServiceChargeManHourSM).ToString("#0.00")),
+                                SalesPrice = QuotationObj.ServiceChargeSM,
                                 CostPrice = 0,
-                                Count = 1,
+                                Count = QuotationObj.ServiceChargeManHourSM,
                                 TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeSM * QuotationObj.ServiceChargeManHourSM).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
@@ -1089,7 +1089,7 @@ namespace OpenAuth.App.Material
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeSM * QuotationObj.ServiceChargeManHourSM).ToString("#0.00")),
+                                DiscountPrices = QuotationObj.ServiceChargeSM,
                                 WhsCode = "37"
                             });
                         }
@@ -1100,9 +1100,9 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-CLF",
                                 MaterialDescription = "差旅费",
                                 Unit = "PCS",
-                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
+                                SalesPrice = QuotationObj.TravelExpense,
                                 CostPrice = 0,
-                                Count = 1,
+                                Count = QuotationObj.TravelExpenseManHour,
                                 TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
@@ -1110,7 +1110,7 @@ namespace OpenAuth.App.Material
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
+                                DiscountPrices = QuotationObj.TravelExpense,
                                 WhsCode = "37"
                             });
                         }
@@ -1282,9 +1282,9 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-GSF-JH",
                                 MaterialDescription = "寄回维修费 20210518",
                                 Unit = "PCS",
-                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeJH * QuotationObj.ServiceChargeManHourJH).ToString("#0.00")),
+                                SalesPrice = QuotationObj.ServiceChargeJH,
                                 CostPrice = 0,
-                                Count = 1,
+                                Count = QuotationObj.ServiceChargeManHourJH,
                                 TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeJH * QuotationObj.ServiceChargeManHourJH).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
@@ -1292,7 +1292,7 @@ namespace OpenAuth.App.Material
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeJH * QuotationObj.ServiceChargeManHourJH).ToString("#0.00")),
+                                DiscountPrices = QuotationObj.ServiceChargeJH,
                                 WhsCode = "37"
                             });
                         }
@@ -1303,9 +1303,9 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-GSF-SM",
                                 MaterialDescription = "上门维修费 20210518",
                                 Unit = "PCS",
-                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeSM * QuotationObj.ServiceChargeManHourSM).ToString("#0.00")),
+                                SalesPrice = QuotationObj.ServiceChargeSM,
                                 CostPrice = 0,
-                                Count = 1,
+                                Count = QuotationObj.ServiceChargeManHourSM,
                                 TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeSM * QuotationObj.ServiceChargeManHourSM).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
@@ -1313,7 +1313,7 @@ namespace OpenAuth.App.Material
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeSM * QuotationObj.ServiceChargeManHourSM).ToString("#0.00")),
+                                DiscountPrices = QuotationObj.ServiceChargeSM,
                                 WhsCode = "37"
                             });
                         }
@@ -1324,9 +1324,9 @@ namespace OpenAuth.App.Material
                                 MaterialCode = "S111-SERVICE-CLF",
                                 MaterialDescription = "差旅费",
                                 Unit = "PCS",
-                                SalesPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
+                                SalesPrice = QuotationObj.TravelExpense,
                                 CostPrice = 0,
-                                Count = 1,
+                                Count = QuotationObj.TravelExpenseManHour,
                                 TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                                 IsProtected = false,
                                 QuotationId = QuotationObj.Id,
@@ -1334,7 +1334,7 @@ namespace OpenAuth.App.Material
                                 Discount = 100,
                                 SentQuantity = 0,
                                 MaterialType = 2,
-                                DiscountPrices = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
+                                DiscountPrices = QuotationObj.TravelExpense,
                                 WhsCode = "37"
                             });
                         }
