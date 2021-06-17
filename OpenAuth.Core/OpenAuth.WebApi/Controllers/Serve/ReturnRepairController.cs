@@ -17,6 +17,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
     /// </summary>
     [Route("api/Serve/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Serve")]
     public class ReturnRepairController : ControllerBase
     {
         private readonly ReturnRepairApp _returnRepairApp;

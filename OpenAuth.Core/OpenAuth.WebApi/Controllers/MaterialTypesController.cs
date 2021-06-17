@@ -14,6 +14,7 @@ namespace OpenAuth.WebApi.Controllers
     /// </summary>
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "General")]
     public class MaterialTypesController : ControllerBase
     {
         private readonly MaterialTypeApp _app;

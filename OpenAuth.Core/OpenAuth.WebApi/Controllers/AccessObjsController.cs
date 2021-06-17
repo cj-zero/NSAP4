@@ -13,7 +13,8 @@ namespace OpenAuth.WebApi.Controllers
     /// 分配资源/分配字段等
     /// </summary>
     [Route("api/[controller]/[action]")]
-    [ApiController]
+    [ApiController] 
+    [ApiExplorerSettings(GroupName = "General")]
     public class AccessObjsController : ControllerBase
     {
         private readonly RevelanceManagerApp _app;

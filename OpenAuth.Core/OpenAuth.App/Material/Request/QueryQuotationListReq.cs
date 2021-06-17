@@ -78,6 +78,11 @@ namespace OpenAuth.App.Material.Request
         /// 设备名称
         /// </summary>
         public string MaterialCode { get; set; }
+
+        /// <summary>
+        /// 退料传递设备类型
+        /// </summary>
+        public string ItemCode { get; set; }
         /// <summary>
         /// 序列号
         /// </summary>
@@ -88,12 +93,12 @@ namespace OpenAuth.App.Material.Request
         public string PartCode { get; set; }
 
         /// <summary>
-        /// 零件描述
+        /// 被替换零件描述
         /// </summary>
         public string PartDescribe { get; set; }
 
         /// <summary>
-        /// 被替换零件零件描述
+        /// 被替换零件编码
         /// </summary>
         public string ReplacePartCode { get; set; }
 

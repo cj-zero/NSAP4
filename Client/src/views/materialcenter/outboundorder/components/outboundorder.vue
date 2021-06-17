@@ -51,7 +51,7 @@
         <span>质保后{{ formData.paymentAfterWarranty || 0 }}%</span>
       </el-row>
       <div class="divider"></div>
-      <div class="courier-wrapper" :class="{ 'tech': !this.isStorekeeper }">
+      <div class="courier-wrapper">
         <el-row class="title" type="flex" justify="space-between" align="middle">
           <el-row type="felx" align="middle">
             <span class="line"></span>
@@ -85,9 +85,6 @@
           </template>
           <template v-slot:picture="{ row }">
             <span class="picture"  @click="showExpressPicture(row)">查看</span>
-          </template>
-          <template v-slot:print="{ row }">
-            <el-button size="mini" type="warning" @click="toPrint(row)">打印</el-button>
           </template>
         </common-table>
         <el-row type="flex" class="freight" justify="end">
@@ -177,7 +174,6 @@ import AddExpressInfo from './AddExpressInfo'
 import { processDownloadUrl } from '@/utils/file'
 import { findIndex, accAdd } from '@/utils/process'
 import { formatDate } from '@/utils/date'
-import { print } from '@/utils/utils'
 // import { toThousands } from '@/utils/format'
 import ElImageViewer from 'element-ui/packages/image/src/image-viewer'
 import rightImg from '@/assets/table/right.png'
@@ -270,8 +266,7 @@ export default {
         { label: `${this.title}单号`, prop: 'expressNumber', width: '100px' },
         { label: this.descriptionTitle, prop: 'expressInformation', slotName: 'expressInformation', width: 200, 'show-overflow-tooltip': false },
         { label: '运费￥', prop: 'freight', slotName: 'freight', align: 'right', width: 100, 'show-overflow-tooltip': false },
-        { label: '图片', type: 'slot', slotName: 'picture', prop: 'expressagePicture', width: 70 },
-        { label: '打印', slotName: 'print', width: 70, ifRender: this.isStorekeeper },
+        { label: '图片', type: 'slot', slotName: 'picture', prop: 'expressagePicture', width: 70 }
       ]
     },
     materialList () {
@@ -397,14 +392,6 @@ export default {
     onExpressRowClick (row) {
       this.currentIndex = findIndex(this.expressList, item => item.id === row.id)
       console.log(this.currentIndex, 'rowclick')
-    },
-    toPrint (row) {
-      const { id } = row
-      if (!id) {
-        return this.$message.warning('无物流ID')
-      }
-      console.log('TOPRINT')
-      print('/Material/Quotation/PrintPickingList', { serialNumber: id, isTrue: false })
     },
     showExpressPicture (row) {
       let { expressagePicture } = row
@@ -582,14 +569,12 @@ export default {
     /* 物流表格 */
     .courier-wrapper {
       // display: flex;
-      width: 591px;
       margin-top: 10px;
-      &.tech { /* 技术员的宽度 */
+      > .title {
         width: 522px;
       }
-      > .title {
-      }
       .courier-table {
+        width: 522px;
         .search-icon {
           cursor: pointer;
         }

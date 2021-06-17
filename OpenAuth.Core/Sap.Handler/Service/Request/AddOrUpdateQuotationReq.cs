@@ -125,7 +125,11 @@ namespace Sap.Handler.Service.Request
         /// </summary>
         public int? AcceptancePeriod { get; set; }
 
-        
+        /// <summary>
+        ///应收发票DocEntry
+        /// </summary>
+        public int? InvoiceDocEntry { get; set; }
+
         /// <summary>
         /// 报价单零件合并列表
         /// </summary>

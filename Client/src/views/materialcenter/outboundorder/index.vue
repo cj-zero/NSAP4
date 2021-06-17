@@ -96,7 +96,8 @@ import zxform from "@/views/serve/callserve/form";
 import zxchat from '@/views/serve/callserve/chat/index'
 import { getQuotationList } from '@/api/material/quotation'
 import {  quotationTableMixin, chatMixin, categoryMixin, rolesMixin } from '../common/js/mixins'
-import { print } from '@/utils/utils'
+import { serializeParams } from '@/utils/process'
+// import { print } from '@/utils/utils'
 import elDragDialog from "@/directive/el-dragDialog";
 import addExpressInfo from './components/AddExpressInfo'
 const W_100 = { width: '100px' }
@@ -190,8 +191,10 @@ export default {
         return this.$message.warning('请先选择数据')
       }
       const { id, quotationStatus } = currentRow
-      if (!this.isStorekeeper) { // 技术员
-        print('/Material/Quotation/PrintPickingList', { serialNumber: id, isTrue: true })
+      if (!this.isStorekeeper) {
+        const url = '/Material/Quotation/PrintPicking'
+        const printParams = { serialNumber: id, 'X-token': this.$store.state.user.token, isTrue: true }
+        window.open(`${process.env.VUE_APP_BASE_API}${url}?${serializeParams(printParams)}`)
         if (Number(currentRow.printWarehouse) === 1) {
           currentRow.printWarehouse = 2
         }

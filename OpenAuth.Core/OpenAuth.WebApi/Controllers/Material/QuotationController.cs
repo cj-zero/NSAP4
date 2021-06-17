@@ -19,6 +19,7 @@ namespace OpenAuth.WebApi.Controllers.Material
     /// </summary>
     [Route("api/Material/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Material")]
     public class QuotationController : ControllerBase
     {
         private readonly QuotationApp _app;

@@ -13,29 +13,29 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-       ///
-       /// </summary>
-       [Table("returnnotematerialpicture")]
+    ///
+    /// </summary>
+    [Table("returnnotematerialpicture")]
     public class ReturnNoteMaterialPicture : Entity
     {
         public ReturnNoteMaterialPicture()
         {
-           this.PictureId="";
-       this.ReturnnoteMaterialId="";
+            this.PictureId = "";
+            this.ReturnnoteMaterialId = "";
 
         }
-    /// <summary>
-       ///图片Id
-       /// </summary>
-       [Description("图片Id")]
-       public string PictureId { get; set; }
+        /// <summary>
+        ///图片Id
+        /// </summary>
+        [Description("图片Id")]
+        public string PictureId { get; set; }
 
-       /// <summary>
-       ///退料物料Id
-       /// </summary>
-       [Description("退料物料Id")]
-       public string ReturnnoteMaterialId { get; set; }
+        /// <summary>
+        ///退料物料Id
+        /// </summary>
+        [Description("退料物料Id")]
+        public string ReturnnoteMaterialId { get; set; }
 
-       
+
     }
 }

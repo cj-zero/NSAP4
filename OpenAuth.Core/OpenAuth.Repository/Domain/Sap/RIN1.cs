@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("RIN1")]
-    public partial class RIN1 : Entity
+    public partial class RIN1 
     {
         public RIN1()
         {
@@ -156,6 +156,16 @@ namespace OpenAuth.Repository.Domain.Sap
         }
 
         
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? DocEntry { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? LineNum { get; set; }
         /// <summary>
         /// 
         /// </summary>

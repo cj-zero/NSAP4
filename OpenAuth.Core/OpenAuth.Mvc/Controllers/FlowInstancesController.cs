@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
@@ -118,7 +119,7 @@ namespace OpenAuth.Mvc.Controllers
 
         //添加或修改
        [HttpPost]
-        public string Update(FlowInstance obj)
+        public string Update(UpdateFlowInstanceReq obj)
         {
             try
             {
@@ -145,12 +146,12 @@ namespace OpenAuth.Mvc.Controllers
         /// 获取一个流程实例的操作历史记录
         /// </summary>
         [HttpGet]
-        public string QueryHistories([FromQuery]QueryFlowInstanceHistoryReq request)
+        public async Task<string> QueryHistories([FromQuery] QueryFlowInstanceHistoryReq request)
         {
             var result = new Response<List<FlowInstanceOperationHistory>>();
             try
             {
-                result.Result = _app.QueryHistories(request);
+                result.Result =  await _app.QueryHistories(request);
             }
             catch (Exception ex)
             {

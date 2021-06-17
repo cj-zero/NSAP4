@@ -18,6 +18,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
     /// </summary>
     [Route("api/serve/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Serve")]
     public class ReimburseController : ControllerBase
     {
         private readonly ReimburseInfoApp _reimburseinfoapp;

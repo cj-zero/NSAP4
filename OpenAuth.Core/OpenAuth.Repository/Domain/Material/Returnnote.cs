@@ -26,7 +26,7 @@ namespace OpenAuth.Repository.Domain
             this.ServiceOrderId = 0;
             this.ServiceOrderSapId = 0;
             this.CreateUser = "";
-            this.Status = 0;
+            //this.Status = 0;
             this.CreateUserId = "";
 
         }
@@ -57,22 +57,17 @@ namespace OpenAuth.Repository.Domain
         public int ServiceOrderSapId { get; set; }
 
         /// <summary>
-        ///出库单Id
+        ///销售订单
         /// </summary>
-        [Description("出库单Id")]
-        public string StockOutId { get; set; }
-
+        [Description("销售订单")]
+        public int SalesOrderId { get; set; }
+        
         /// <summary>
         ///创建人名
         /// </summary>
         [Description("创建人名")]
         public string CreateUser { get; set; }
 
-        /// <summary>
-        ///退料单状态 1 待退料 2 已退料
-        /// </summary>
-        [Description("退料单状态 1 待退料 2 已退料")]
-        public int? Status { get; set; }
 
         /// <summary>
         ///创建人Id
@@ -81,39 +76,57 @@ namespace OpenAuth.Repository.Domain
         public string CreateUserId { get; set; }
 
         /// <summary>
-        /// 是否最后一次退料
-        /// </summary>
-        [Description("是否最后一次退料")]
-        public int IsLast { get; set; }
-
-        /// <summary>
-        /// 是否可以结算 0不可结算 1可结算
-        /// </summary>
-        [Description("是否可以结算 0不可结算 1可结算")]
-        public int IsCanClear { get; set; }
-
-        /// <summary>
         /// 签收备注
         /// </summary>
         [Description("签收备注")]
         public string Remark { get; set; }
 
         /// <summary>
-        /// 出库单总金额
+        /// 修改时间
         /// </summary>
-        [Description("出库单总金额")]
-        public decimal? TotalMoney { get; set; }
+        [Description("修改时间")]
+        public DateTime? UpdateTime { get; set; }
+
+        
+        /// <summary>
+        /// 总金额
+        /// </summary>
+        [Description("总金额")]
+        public decimal TotalMoney { get; set; }
 
         /// <summary>
-        /// 物流表
+        /// 是否已清
         /// </summary>
-        public virtual List<Expressage> Expressages { get; set; }
+        [Description("是否已清")]
+        public bool? IsLiquidated { get; set; }
 
+        /// <summary>
+        /// 退货方式  1自带 2快递
+        /// </summary>
+        [Description("退货方式")]
+        public int? DeliveryMethod { get; set; }
+
+        /// <summary>
+        ///运费
+        /// </summary>
+        [Description("运费")]
+        public decimal? FreightCharge { get; set; }
+
+        /// <summary>
+        ///快递单号
+        /// </summary>
+        [Description("快递单号")]
+        public string ExpressNumber { get; set; }
 
         /// <summary>
         /// 退料单详细列表
         /// </summary>
         public virtual List<ReturnnoteMaterial> ReturnnoteMaterials { get; set; }
+
+        /// <summary>
+        /// 退料文件表
+        /// </summary>
+        public virtual List<ReturnNotePicture> ReturnNotePictures { get; set; }
 
         public override void GenerateDefaultKeyVal()
         {

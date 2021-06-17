@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("INV1")]
-    public partial class INV1 : Entity
+    public partial class INV1 
     {
         public INV1()
         {
@@ -155,7 +155,17 @@ namespace OpenAuth.Repository.Domain.Sap
           this.U_RelDoc= string.Empty;
         }
 
-        
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? DocEntry { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? LineNum { get; set; }
+
         /// <summary>
         /// 
         /// </summary>

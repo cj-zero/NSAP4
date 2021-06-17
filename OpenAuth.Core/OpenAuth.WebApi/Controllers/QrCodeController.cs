@@ -26,6 +26,7 @@ namespace OpenAuth.WebApi.Controllers
     /// 二维码
     /// </summary>
     [Route("api/[controller]/[action]")]
+    [ApiExplorerSettings(GroupName = "General")]
     public class QrCodeController : ControllerBase
     {
         private readonly UserManagerApp _app;

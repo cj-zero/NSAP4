@@ -18,6 +18,7 @@ namespace OpenAuth.WebApi.Controllers
     /// </summary>
     [Route("api/Serve/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Serve")]
     public class ServiceEvaluatesController : ControllerBase
     {
         private readonly ServiceEvaluateApp _app;

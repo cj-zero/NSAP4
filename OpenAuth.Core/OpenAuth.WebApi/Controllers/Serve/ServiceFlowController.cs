@@ -16,6 +16,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
     /// </summary>
     [Route("api/serve/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Serve")]
     public class ServiceFlowController : ControllerBase
     {
         private readonly ServiceFlowApp _serviceFlowApp;

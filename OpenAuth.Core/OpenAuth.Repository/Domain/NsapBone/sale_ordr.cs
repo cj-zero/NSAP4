@@ -181,7 +181,6 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         [Description("")]
-        [NotMapped]
         public string U_ERPFrom { get; set; }
         /// <summary>
         /// 如果是商城订单记录商城单号

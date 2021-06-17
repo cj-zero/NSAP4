@@ -10,6 +10,7 @@ namespace OpenAuth.WebApi.Controllers
 {
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "General")]
     public class ExpressageController : Controller
     {
         private readonly ExpressageApp _app;

@@ -55,5 +55,33 @@ namespace OpenAuth.Repository.Domain
          [Description("创建用户")]
         public string CreateUserName { get; set; }
 
+        /// <summary>
+        /// 审批时常（分钟）
+        /// </summary>
+        [Description("审批时常（分钟）")]
+        public int? IntervalTime { get; set; }
+        /// <summary>
+        /// 审批结果
+        /// </summary>
+        [Description("审批结果")]
+        public string ApprovalResult { get; set; }
+        /// <summary>
+        /// 备注
+        /// </summary>
+        [Description("备注")]
+        public string Remark { get; set; }
+        /// <summary>
+        /// 审批阶段
+        /// </summary>
+        [Description("审批阶段")]
+        public string ApprovalStage { get; set; }
+
+        /// <summary>
+        /// 当前节点id
+        /// </summary>
+        [Description("当前节点id")]
+        public string ActivityId { get; set; }
+        
+
     }
 }

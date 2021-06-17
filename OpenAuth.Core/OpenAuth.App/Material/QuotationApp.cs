@@ -843,6 +843,7 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            //限制查不出bom的数据，暂时屏蔽
             //var equipmentList = await EquipmentList(request);
             //var codeList = equipmentList.Select(e => e.ItemCode).ToList();
             var result = new TableData();
@@ -854,6 +855,12 @@ namespace OpenAuth.App.Material
                         from b in ab.DefaultIfEmpty()
                         where b.WhsCode == request.WhsCode
                         select new SysEquipmentColumn { ItemCode = a.ItemCode, ItemName = a.ItemName, lastPurPrc = a.LastPurPrc, BuyUnitMsr = a.SalUnitMsr, OnHand = b.OnHand, WhsCode = b.WhsCode };
+            //退料获取可替换物料编码
+            if (!string.IsNullOrWhiteSpace(request.ItemCode)) 
+            {
+                var code = request.ItemCode.Substring(0, request.ItemCode.IndexOf("-") + 1);
+                query = query.Where(q => q.ItemCode.Substring(0, q.ItemCode.IndexOf("-") + 1).Equals(code) && !q.ItemCode.Equals(request.ItemCode));
+            }
             result.Count = await query.CountAsync();
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ShieldingMaterials")).Select(u => u.Name).ToListAsync();
 
@@ -2014,7 +2021,7 @@ namespace OpenAuth.App.Material
             //var isExist = (await UnitWork.Find<ReturnNote>(w => w.ServiceOrderId == obj.ServiceOrderId && w.CreateUserId == loginUser.Id).ToListAsync()).Count > 0 ? true : false;
             //if (isExist)
             //{
-                //throw new Exception("该服务单已开始退料，不可领料。");
+            //    throw new Exception("该服务单已开始退料，不可领料。");
             //}
             #endregion
 

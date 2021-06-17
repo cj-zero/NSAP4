@@ -15,7 +15,6 @@ namespace OpenAuth.App
 {
     public class FormApp : BaseApp<Form>
     {
-        private IAuth _auth;
         private IOptions<AppSetting> _appConfiguration;
         /// <summary>
         /// 加载列表
@@ -85,7 +84,6 @@ namespace OpenAuth.App
         public FormApp(IUnitWork unitWork, IRepository<Form> repository,
             IAuth auth, IOptions<AppSetting> appConfiguration) : base(unitWork, repository, auth)
         {
-            _auth = auth;
             _appConfiguration = appConfiguration;
         }
     }

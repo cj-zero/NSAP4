@@ -12,6 +12,7 @@ namespace OpenAuth.WebApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "General")]
     public class TestCapController : ControllerBase
     {
         private ICapPublisher _capBus;

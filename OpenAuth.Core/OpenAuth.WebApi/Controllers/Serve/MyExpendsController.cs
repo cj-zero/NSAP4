@@ -17,6 +17,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
     /// </summary>
     [Route("api/serve/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Serve")]
     public class MyExpendsController : ControllerBase
     {
         private readonly MyExpendsApp _app;

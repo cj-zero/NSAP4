@@ -1,11 +1,16 @@
-﻿using System;
+﻿using OpenAuth.App.Request;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace OpenAuth.App.Material.Request
 {
-    public class ReturnMaterialReq
+    public class ReturnMaterialReq: PageReq
     {
+        /// <summary>
+        /// 退料单id
+        /// </summary>
+        public int? returnNoteId { get; set; }
         /// <summary>
         /// 服务单主键Id
         /// </summary>
@@ -14,32 +19,67 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         /// SAP服务Id
         /// </summary>
-        public int SapId { get; set; }
+        public int? SapId { get; set; }
 
         /// <summary>
-        /// 出库单Id集合
+        /// 客户代码or客户名称
         /// </summary>
-        public List<int> StockOutIds { get; set; }
-
+        public string Customer { get; set; }
         /// <summary>
         /// 当前登陆者用户Id
         /// </summary>
-        public int AppUserId { get; set; }
+        public int? AppUserId { get; set; }
 
         /// <summary>
         /// 快递单号
         /// </summary>
-        public string TrackNumber { get; set; }
+        public string ExpressNumber { get; set; }
 
-        /// <summary>
-        /// 是否最后一次退料
-        /// </summary>
-        public int IsLastReturn { get; set; }
 
         /// <summary>
         /// 运费
         /// </summary>
-        public decimal Freight { get; set; }
+        public decimal FreightCharge { get; set; }
+
+        /// <summary>
+        /// 销售订单id
+        /// </summary>
+        public int? SalesOrderId { get; set; }
+
+        /// <summary>
+        /// 应收发票ID
+        /// </summary>
+        public int? InvoiceDocEntry { get; set; }
+
+        /// <summary>
+        /// 页面类型 1.仓库收货 2.品质检验 3.老板审批 4.仓库入库
+        /// </summary>
+        public int? PageType { get; set; }
+
+        /// <summary>
+        /// 页面状态 1.未审批 2.已审批
+        /// </summary>
+        public int? PageStatus { get; set; }
+
+        /// <summary>
+        /// 退料单状态
+        /// </summary>
+        public string Status { get; set; }
+
+        /// <summary>
+        /// 开始日期
+        /// </summary>
+        public DateTime? StartDate { get; set; }
+
+        /// <summary>
+        /// 结束日期
+        /// </summary>
+        public DateTime? EndDate { get; set; }
+
+        /// <summary>
+        /// 是否修改
+        /// </summary>
+        public bool? IsUpDate { get; set; }
 
         /// <summary>
         /// 物流图片

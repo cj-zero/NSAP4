@@ -14,6 +14,7 @@ namespace OpenAuth.WebApi.Controllers
     /// </summary>
     [Route("api/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "General")]
     public class DataPrivilegeRulesController : ControllerBase
     {
         private readonly DataPrivilegeRuleApp _app;

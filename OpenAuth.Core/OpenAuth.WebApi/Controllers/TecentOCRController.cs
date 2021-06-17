@@ -22,6 +22,7 @@ namespace OpenAuth.WebApi.Controllers
     /// </summary>
     [Route("api/ocr/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "General")]
     public class TecentOCRController : ControllerBase
     {
         private readonly TecentOCR _tecentOCR;

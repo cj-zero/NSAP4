@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("ORIN")]
-    public partial class ORIN : Entity
+    public partial class ORIN 
     {
         public ORIN()
         {
@@ -263,8 +263,11 @@ namespace OpenAuth.Repository.Domain.Sap
           this.U_TSYQ= string.Empty;
           this.U_EshopNo= string.Empty;
         }
-
-        
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? DocEntry { get; set; }
         /// <summary>
         /// 
         /// </summary>

@@ -15,6 +15,7 @@ namespace OpenAuth.WebApi.Controllers
     /// </summary>
     [Route("api/serve/[controller]/[action]")]
     [ApiController]
+    [ApiExplorerSettings(GroupName = "Serve")]
     public class ServiceOrderLogsController : ControllerBase
     {
         private readonly ServiceOrderLogApp _app;
