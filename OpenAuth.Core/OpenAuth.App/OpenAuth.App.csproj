@@ -52,4 +52,8 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Settlement\Response\" />
+  </ItemGroup>
+
 </Project>

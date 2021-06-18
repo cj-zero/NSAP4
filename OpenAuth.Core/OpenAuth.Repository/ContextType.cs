@@ -10,6 +10,7 @@ namespace OpenAuth.Repository
         public static Type Nsap4NwcaliDbContextType => typeof(Nsap4NwcaliDbContext);
         public static Type Nsap4MaterialDbContextType => typeof(Nsap4MaterialDbContext);
         public static Type Nsap4ServeDbContextType => typeof(Nsap4ServeDbContext);
+        public static Type Nsap4SettlementContextType => typeof(Nsap4SettlementContext);
 
         public static Type NsapBoneDbContextType => typeof(NsapBoneDbContext);
         public static Type SapDbContextType => typeof(SapDbContext);

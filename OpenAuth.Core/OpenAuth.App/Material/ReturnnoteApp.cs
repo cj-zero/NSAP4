@@ -1221,7 +1221,7 @@ namespace OpenAuth.App
                     await UnitWork.SaveAsync();
                     if (!obj.IsDraft)
                     {
-                        //创建报销流程
+                        //创建退料流程
                         var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("物料退料单"));
                         var afir = new AddFlowInstanceReq();
                         afir.SchemeId = mf.FlowSchemeId;
@@ -1313,7 +1313,7 @@ namespace OpenAuth.App
                         //returnnotrStatus = 3;//未提交
                         if (string.IsNullOrWhiteSpace(returnNoteObj.FlowInstanceId))
                         {
-                            //创建报销流程
+                            //创建结算流程
                             var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("物料退料单"));
                             var afir = new AddFlowInstanceReq();
                             afir.SchemeId = mf.FlowSchemeId;
