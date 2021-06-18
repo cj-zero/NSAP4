@@ -2076,9 +2076,9 @@ namespace OpenAuth.App.Material
                     {
                         throw new Exception("金额有误请重新输入");
                     }
-                    m.Discount = m.MaterialType != 3 ? m.Discount : 100;
                     m.SalesPrice = m.MaterialType != 3 ? m.SalesPrice : 0;
                     m.DiscountPrices = m.MaterialType != 3 ? m.DiscountPrices : 0;
+                    m.Discount = m.MaterialType != 3 ? (m.DiscountPrices/ m.SalesPrice)*100 : 100;
                     m.TotalPrice = m.MaterialType != 3 ? Convert.ToDecimal(Convert.ToDecimal(m.DiscountPrices * m.Count).ToString("#0.00")) : 0;
                     QuotationObj.TotalCostPrice += m.MaterialType != 3 ? Convert.ToDecimal(Convert.ToDecimal(m.DiscountPrices * m.Count).ToString("#0.00")) : 0;
                     QuotationObj.TotalMoney += m.MaterialType != 3 ? Convert.ToDecimal(Convert.ToDecimal(m.DiscountPrices * m.Count).ToString("#0.00")) : 0;
