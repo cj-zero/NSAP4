@@ -49,7 +49,7 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         [Description("")]
-        public int? PayTransactionID { get; set; }
+        public string PayTransactionID { get; set; }
         /// <summary>
         /// 
         /// </summary>

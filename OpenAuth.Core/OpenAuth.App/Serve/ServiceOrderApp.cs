@@ -500,7 +500,7 @@ namespace OpenAuth.App
                 }
                 else
                 {
-                    var workOrderObj = ServiceWorkOrders.Where(s => s.MaterialCode.Equals(typename) || s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")).Equals(typename)).FirstOrDefault();
+                    var workOrderObj = ServiceWorkOrders.Where(s => s.MaterialCode.Equals(typename) || (s.MaterialCode != "无序列号" && s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")).Equals(typename))).FirstOrDefault();
                     if (workOrderObj != null)
                     {
                         obj.CurrentUser = workOrderObj.CurrentUser;

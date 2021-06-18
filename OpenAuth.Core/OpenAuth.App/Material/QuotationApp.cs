@@ -1676,7 +1676,7 @@ namespace OpenAuth.App.Material
         {
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ShieldingMaterials")).Select(u => u.Name).ToListAsync();
 
-            var quotations = await UnitWork.Find<Quotation>(q => q.QuotationStatus == 10 && q.CreateTime > Convert.ToDateTime("2021.05.25")).Include(q => q.QuotationMergeMaterials)
+            var quotations = await UnitWork.Find<Quotation>(q => q.QuotationStatus == 10 && q.CreateTime > Convert.ToDateTime("2021.05.01")).Include(q => q.QuotationMergeMaterials)
                 .Where(q => q.QuotationMergeMaterials.Where(m => !CategoryList.Contains(m.MaterialCode)).Count() <= 0 && q.SalesOrderId != null).ToListAsync();
             foreach (var item in quotations)
             {
@@ -1698,10 +1698,22 @@ namespace OpenAuth.App.Material
                     QuotationId = item.Id,
                     ExpressagePictures = new List<string>() { pictures }
                 };
-                obj.QuotationMergeMaterialReqs = item.QuotationMergeMaterials.MapToList<QuotationMergeMaterialReq>();
-                int num = 0;
-                obj.QuotationMergeMaterialReqs.ForEach(q => q.SentQuantity = 1);
-                if (num == 0 && item.IsMaterialType != null)
+                obj.QuotationMergeMaterialReqs = new List<QuotationMergeMaterialReq>();
+                item.QuotationMergeMaterials.ForEach(q =>
+                {
+                    obj.QuotationMergeMaterialReqs.Add(new QuotationMergeMaterialReq
+                    {
+                        DiscountPrices=q.DiscountPrices,
+                        MaterialDescription=q.MaterialDescription,
+                        MaterialCode=q.MaterialCode,
+                        WhsCode=q.WhsCode,
+                        SentQuantity=q.Count,
+                        QuotationId=q.QuotationId,
+                        Id=q.Id,
+                        MaterialType=q.MaterialType.ToString()
+                    });
+                });
+                if (item.IsMaterialType != null)
                 {
                     await UpdateMaterial(obj);
                 }
@@ -2076,9 +2088,9 @@ namespace OpenAuth.App.Material
                     {
                         throw new Exception("金额有误请重新输入");
                     }
-                    m.Discount = m.MaterialType != 3 ? m.Discount : 100;
                     m.SalesPrice = m.MaterialType != 3 ? m.SalesPrice : 0;
                     m.DiscountPrices = m.MaterialType != 3 ? m.DiscountPrices : 0;
+                    m.Discount = m.MaterialType != 3 ? m.SalesPrice!=0?(m.DiscountPrices/ m.SalesPrice)*100:100 : 100;
                     m.TotalPrice = m.MaterialType != 3 ? Convert.ToDecimal(Convert.ToDecimal(m.DiscountPrices * m.Count).ToString("#0.00")) : 0;
                     QuotationObj.TotalCostPrice += m.MaterialType != 3 ? Convert.ToDecimal(Convert.ToDecimal(m.DiscountPrices * m.Count).ToString("#0.00")) : 0;
                     QuotationObj.TotalMoney += m.MaterialType != 3 ? Convert.ToDecimal(Convert.ToDecimal(m.DiscountPrices * m.Count).ToString("#0.00")) : 0;
