@@ -676,7 +676,7 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         public async Task<AddOrUpdateQuotationReq> GeneralDetails(int QuotationId, bool? IsUpdate)
         {
-            var Quotations = await UnitWork.Find<Quotation>(q => q.Id == QuotationId).Include(q => q.QuotationPictures).Include(q => q.QuotationProducts).ThenInclude(p => p.QuotationMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
+            var Quotations = await UnitWork.Find<Quotation>(q => q.Id == QuotationId).Include(q => q.QuotationPictures).Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).ThenInclude(q=>q.QuotationMaterialPictures).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
             var quotationsMap = Quotations.MapTo<AddOrUpdateQuotationReq>();
             List<string> materialCodes = new List<string>();
             List<string> WhsCode = new List<string>();
@@ -1178,10 +1178,21 @@ namespace OpenAuth.App.Material
                     if (QuotationProducts != null && QuotationProducts.Count > 0)
                     {
                         var QuotationMaterials = new List<QuotationMaterial>();
-                        QuotationProducts.ForEach(q => QuotationMaterials.AddRange(q.QuotationMaterials));
+                        var QuotationMaterialPictures = new List<QuotationMaterialPicture>();
+                        QuotationProducts.ForEach(q => {
+                            QuotationMaterials.AddRange(q.QuotationMaterials);
+                            q.QuotationMaterials.ForEach(m =>
+                            {
+                                QuotationMaterialPictures.AddRange(m.QuotationMaterialPictures);
+                            });
+                        });
                         if (QuotationMaterials != null && QuotationMaterials.Count > 0)
                         {
                             await UnitWork.BatchDeleteAsync<QuotationMaterial>(QuotationMaterials.ToArray());
+                        }
+                        if (QuotationMaterialPictures != null && QuotationMaterialPictures.Count > 0) 
+                        {
+                            await UnitWork.BatchDeleteAsync<QuotationMaterialPicture>(QuotationMaterialPictures.ToArray());
                         }
                         await UnitWork.BatchDeleteAsync<QuotationProduct>(QuotationProducts.ToArray());
                     }
@@ -1203,7 +1214,7 @@ namespace OpenAuth.App.Material
                         var QuotationProductMap = QuotationObj.QuotationProducts.MapToList<QuotationProduct>();
                         QuotationProductMap.ForEach(q =>
                         {
-                            q.QuotationMaterials.ForEach(m => m.Id = Guid.NewGuid().ToString());
+                            q.QuotationMaterials.ForEach(m => { m.Id = Guid.NewGuid().ToString();m.QuotationMaterialPictures.ForEach(p => { p.Id = Guid.NewGuid().ToString(); }); });
                         });
                         await UnitWork.BatchAddAsync<QuotationProduct>(QuotationProductMap.ToArray());
                     }
