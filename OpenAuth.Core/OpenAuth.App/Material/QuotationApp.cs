@@ -1183,16 +1183,20 @@ namespace OpenAuth.App.Material
                             QuotationMaterials.AddRange(q.QuotationMaterials);
                             q.QuotationMaterials.ForEach(m =>
                             {
-                                QuotationMaterialPictures.AddRange(m.QuotationMaterialPictures);
+                                if (m.QuotationMaterialPictures!=null) 
+                                {
+                                    QuotationMaterialPictures.AddRange(m.QuotationMaterialPictures);
+                                }
                             });
                         });
+                        if (QuotationMaterialPictures != null && QuotationMaterialPictures.Count > 0)
+                        {
+                            await UnitWork.BatchDeleteAsync<QuotationMaterialPicture>(QuotationMaterialPictures.ToArray());
+                        }
+                        await UnitWork.SaveAsync();
                         if (QuotationMaterials != null && QuotationMaterials.Count > 0)
                         {
                             await UnitWork.BatchDeleteAsync<QuotationMaterial>(QuotationMaterials.ToArray());
-                        }
-                        if (QuotationMaterialPictures != null && QuotationMaterialPictures.Count > 0) 
-                        {
-                            await UnitWork.BatchDeleteAsync<QuotationMaterialPicture>(QuotationMaterialPictures.ToArray());
                         }
                         await UnitWork.BatchDeleteAsync<QuotationProduct>(QuotationProducts.ToArray());
                     }

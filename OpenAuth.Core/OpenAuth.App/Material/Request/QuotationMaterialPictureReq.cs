@@ -10,6 +10,10 @@ namespace OpenAuth.App.Material.Request
     public class QuotationMaterialPictureReq
     {
         /// <summary>
+        ///物料报价单Id
+        /// </summary>
+        public string Id { get; set; }
+        /// <summary>
         /// 附件id
         /// </summary>
         public string PictureId { get; set; }
