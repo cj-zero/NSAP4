@@ -26,7 +26,7 @@ namespace OpenAuth.App.Request
     public partial class AddOrUpdateoutsourcReq 
     {
         /// <summary>
-        /// 支付时间
+        /// 结算id
         /// </summary>
         public int? outsourcId { get; set; }
         /// <summary>

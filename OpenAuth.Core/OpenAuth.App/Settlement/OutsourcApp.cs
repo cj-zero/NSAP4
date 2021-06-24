@@ -262,8 +262,9 @@ namespace OpenAuth.App
             else
             {
                 var serviceOrderIds = await UnitWork.Find<ServiceOrder>(s => request.ServiceOrderIds.Contains(s.Id)).ToListAsync();
-                var thisMonth = await UnitWork.Find<outsourcexpenses>(e => e.CompleteTime.Value.Year == DateTime.Now.Year && e.CompleteTime.Value.Month == DateTime.Now.Month && e.ExpensesType == 4).CountAsync();
-                var lastMonth = await UnitWork.Find<outsourcexpenses>(e => e.CompleteTime.Value.Year == DateTime.Now.Year && e.CompleteTime.Value.Month == DateTime.Now.Month - 1 && e.ExpensesType == 4).CountAsync();
+                var outsourcIds = await UnitWork.Find<outsourc>(o => o.CreateUserId.Equals(loginContext.User.Id)).WhereIf(!string.IsNullOrWhiteSpace(request.OutsourcId), e => e.Id != int.Parse(request.OutsourcId)).Select(s => s.Id).ToListAsync();
+                var thisMonth = await UnitWork.Find<outsourcexpenses>(e => outsourcIds.Contains((int)e.OutsourcId) && e.CompleteTime.Value.Year == DateTime.Now.Year && e.CompleteTime.Value.Month == DateTime.Now.Month && e.ExpensesType == 4 && e.IsOverseas == false).CountAsync();
+                var lastMonth = await UnitWork.Find<outsourcexpenses>(e => outsourcIds.Contains((int)e.OutsourcId) && e.CompleteTime.Value.Year == DateTime.Now.Year && e.CompleteTime.Value.Month == DateTime.Now.Month - 1 && e.ExpensesType == 4 && e.IsOverseas == false).CountAsync();
                 var number = 0;
                 var completionReportList = await UnitWork.Find<CompletionReport>(c => request.ServiceOrderIds.Contains(c.ServiceOrderId)).ToListAsync();
                 var globalarea = await UnitWork.Find<GlobalArea>(g => g.AreaLevel == "3" && g.Pid == "99").Select(g => g.AreaName).ToListAsync();
@@ -567,8 +568,9 @@ namespace OpenAuth.App
                 }
                 if (flowInstanceObj.ActivityName.Equals("总经理审批") && outsourcObj.ServiceMode == 2)
                 {
-                    var thisMonth = await UnitWork.Find<outsourcexpenses>(e => e.CompleteTime.Value.Year == DateTime.Now.Year && e.CompleteTime.Value.Month == DateTime.Now.Month && e.ExpensesType == 4 && e.SerialNumber != null && e.SerialNumber > 0 && e.IsOverseas == false).CountAsync();
-                    var lastMonth = await UnitWork.Find<outsourcexpenses>(e => e.CompleteTime.Value.Year == DateTime.Now.Year && e.CompleteTime.Value.Month == DateTime.Now.Month - 1 && e.ExpensesType == 4 && e.SerialNumber != null && e.SerialNumber > 0 && e.IsOverseas == false).CountAsync();
+                    var outsourcIds = await UnitWork.Find<outsourc>(o => o.CreateUserId.Equals(outsourcObj.CreateUserId) && o.Id!= outsourcObj.Id).Select(s => s.Id).ToListAsync();
+                    var thisMonth = await UnitWork.Find<outsourcexpenses>(e => outsourcIds.Contains((int)e.OutsourcId) && e.CompleteTime.Value.Year == DateTime.Now.Year && e.CompleteTime.Value.Month == DateTime.Now.Month && e.ExpensesType == 4 && e.SerialNumber != null && e.SerialNumber > 0 && e.IsOverseas == false).CountAsync();
+                    var lastMonth = await UnitWork.Find<outsourcexpenses>(e => outsourcIds.Contains((int)e.OutsourcId) && e.CompleteTime.Value.Year == DateTime.Now.Year && e.CompleteTime.Value.Month == DateTime.Now.Month - 1 && e.ExpensesType == 4 && e.SerialNumber != null && e.SerialNumber > 0 && e.IsOverseas == false).CountAsync();
                     outsourcObj.TotalMoney = 0;
                     outsourcObj.outsourcexpenses.ForEach(o =>
                     {
@@ -778,6 +780,12 @@ namespace OpenAuth.App
         /// <returns name="req"></returns>
         public async Task<outsourc> Condition(AddOrUpdateoutsourcReq req)
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
             var obj = req.MapTo<outsourc>();
             obj.UpdateTime = DateTime.Now;
             obj.IsRejected = false;
@@ -798,8 +806,9 @@ namespace OpenAuth.App
             else
             {
                 var serviceOrderIds = await  UnitWork.Find<ServiceOrder>(s => obj.outsourcexpenses.Select(o => o.ServiceOrderId).ToList().Contains(s.Id)).ToListAsync();
-                var thisMonth = await UnitWork.Find<outsourcexpenses>(e => e.CompleteTime.Value.Year == DateTime.Now.Year && e.CompleteTime.Value.Month == DateTime.Now.Month && e.ExpensesType == 4 && e.IsOverseas == false).CountAsync();
-                var lastMonth = await UnitWork.Find<outsourcexpenses>(e => e.CompleteTime.Value.Year == DateTime.Now.Year && e.CompleteTime.Value.Month == DateTime.Now.Month - 1 && e.ExpensesType == 4 && e.IsOverseas == false).CountAsync();
+                var outsourcIds=await UnitWork.Find<outsourc>(o => o.CreateUserId.Equals(loginUser.Id)).WhereIf(!string.IsNullOrWhiteSpace(req.outsourcId.ToString()), e => e.Id != req.outsourcId).Select(s => s.Id).ToListAsync();
+                var thisMonth = await UnitWork.Find<outsourcexpenses>(e => outsourcIds.Contains((int)e.OutsourcId)&&e.CompleteTime.Value.Year == DateTime.Now.Year && e.CompleteTime.Value.Month == DateTime.Now.Month && e.ExpensesType == 4 && e.IsOverseas == false).CountAsync();
+                var lastMonth = await UnitWork.Find<outsourcexpenses>(e => outsourcIds.Contains((int)e.OutsourcId) && e.CompleteTime.Value.Year == DateTime.Now.Year && e.CompleteTime.Value.Month == DateTime.Now.Month - 1 && e.ExpensesType == 4 && e.IsOverseas == false).CountAsync();
                 var globalarea = await UnitWork.Find<GlobalArea>(g => g.AreaLevel == "3" && g.Pid == "99").Select(g=>g.AreaName).ToListAsync();
                 var number = 0;
                 obj.outsourcexpenses.ForEach(o =>

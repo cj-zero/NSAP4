@@ -67,7 +67,11 @@ namespace OpenAuth.WebApi.Controllers
         {
             return await _app.ASingleRejection(req);
         }
-        //修改
+        /// <summary>
+        /// 修改
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<Response> Update(AddOrUpdateoutsourcReq obj)
         {
