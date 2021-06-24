@@ -9,7 +9,7 @@ using OpenAuth.Repository.Domain.Settlement;
 namespace OpenAuth.Repository
 {
     [ConnectionString("Nsap4SettlementContext")]
-    public partial class Nsap4SettlementContext : DbContext
+    public  class Nsap4SettlementContext : DbContext
     {
         public Nsap4SettlementContext(DbContextOptions<Nsap4SettlementContext> options) : base(options)
         {

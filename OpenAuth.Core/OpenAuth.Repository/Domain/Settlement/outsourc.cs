@@ -80,6 +80,12 @@ namespace OpenAuth.Repository.Domain.Settlement
         /// </summary>
         [Description("")]
         public string FlowInstanceId { get; set; }
+
+        /// <summary>
+        /// 是否存在部分驳回
+        /// </summary>
+        [Description("")]
+        public bool IsRejected { get; set; }
         
 
         /// <summary>

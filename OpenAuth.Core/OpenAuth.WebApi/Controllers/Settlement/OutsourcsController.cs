@@ -69,12 +69,12 @@ namespace OpenAuth.WebApi.Controllers
         }
         //修改
         [HttpPost]
-        public Response Update(AddOrUpdateoutsourcReq obj)
+        public async Task<Response> Update(AddOrUpdateoutsourcReq obj)
         {
             var result = new Response();
             try
             {
-                _app.Update(obj);
+                await _app.Update(obj);
 
             }
             catch (Exception ex)

@@ -25,7 +25,15 @@ namespace OpenAuth.App.Request
     [AutoMapTo(typeof(outsourcexpenses))]
     public partial class AddOrUpdateoutsourcexpensesReq 
     {
-
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Id { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public int? OutsourcId { get; set; }
+        
         /// <summary>
         /// 
         /// </summary>

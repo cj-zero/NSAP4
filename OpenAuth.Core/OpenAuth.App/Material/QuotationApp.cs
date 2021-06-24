@@ -800,7 +800,7 @@ namespace OpenAuth.App.Material
                 q.QuotationMaterials.AddRange(QuotationMergeMaterial.ToList());
                 q.QuotationMaterials = q.QuotationMaterials.OrderBy(m => m.MaterialCode).ToList();
             });
-
+            quotationsMap.QuotationOperationHistorys = quotationsMap.QuotationOperationHistorys.Where(q => q.ApprovalStage != "-1").OrderBy(o => o.CreateTime).ThenByDescending(o => o.Action).ToList();
             return quotationsMap;
         }
 

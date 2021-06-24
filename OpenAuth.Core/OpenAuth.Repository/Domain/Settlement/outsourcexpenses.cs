@@ -24,12 +24,13 @@ namespace OpenAuth.Repository.Domain.Settlement
     {
         public outsourcexpenses()
         {
-          this.From= string.Empty;
-          this.To= string.Empty;
-          this.FromLng= string.Empty;
-          this.FromLat= string.Empty;
-          this.ToLng= string.Empty;
-          this.ToLat= string.Empty;
+            this.From = string.Empty;
+            this.To = string.Empty;
+            this.FromLng = string.Empty;
+            this.FromLat = string.Empty;
+            this.ToLng = string.Empty;
+            this.ToLat = string.Empty;
+            this.IsOverseas = false;
         }
 
 
@@ -136,6 +137,13 @@ namespace OpenAuth.Repository.Domain.Settlement
         /// </summary>
         [Description("结束时间")]
         public DateTime? EndTime { get; set; }
+
+        /// <summary>
+        /// 是否海外
+        /// </summary>
+        [Description("是否海外")]
+        public bool IsOverseas { get; set; }
+
         /// <summary>
         /// 附件表
         /// </summary>

@@ -25,6 +25,10 @@ namespace OpenAuth.App.Request
     [AutoMapTo(typeof(outsourcexpensespicture))]
     public partial class AddOrUpdateoutsourcexpensespictureReq 
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Id { get; set; }
 
         /// <summary>
         /// 

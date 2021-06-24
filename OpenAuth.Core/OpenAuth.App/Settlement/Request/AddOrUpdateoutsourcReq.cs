@@ -67,6 +67,11 @@ namespace OpenAuth.App.Request
         /// </summary>
         public bool IsDraft { get; set; }
 
+        /// <summary>
+        /// 需要删除附件id
+        /// </summary>
+        public List<string> DelFileIds { get; set; }
+
         public List<AddOrUpdateoutsourcexpensesReq> outsourcexpenses { get; set; }
         //todo:添加自己的请求字段
     }
