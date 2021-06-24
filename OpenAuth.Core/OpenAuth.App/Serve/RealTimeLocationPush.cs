@@ -227,7 +227,7 @@ namespace OpenAuth.App.Serve
             }
 
             var param = string.Join("','", idList);
-            var query = await UnitWork.FromSql<User>($@"SELECT * from nsap4.`user` where Id in (SELECT UserId from nsap4.appusermap where AppUserId in ('{param}'))").Select(c => c.Name).ToListAsync();
+            var query = await UnitWork.FromSql<User>($@"SELECT * from `user` where Id in (SELECT UserId from appusermap where AppUserId in ('{param}'))").Select(c => c.Name).ToListAsync();
 
             var onlineName = query;
             if (onlineName.Count>0)
@@ -288,8 +288,8 @@ namespace OpenAuth.App.Serve
 
 
             //所有人最新定位信息
-            var realTimeLocationHis = await UnitWork.FromSql<RealTimeLocation>(@$"SELECT * from nsap4_serve.realtimelocation where Id in  (
-                                        SELECT max(Id) as Id from nsap4_serve.realtimelocation GROUP BY AppUserId
+            var realTimeLocationHis = await UnitWork.FromSql<RealTimeLocation>(@$"SELECT * from realtimelocation where Id in  (
+                                        SELECT max(Id) as Id from realtimelocation GROUP BY AppUserId
                                         ) ORDER BY CreateTime desc").ToListAsync();
 
 

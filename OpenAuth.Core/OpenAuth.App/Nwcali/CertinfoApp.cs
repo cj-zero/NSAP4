@@ -342,7 +342,7 @@ namespace OpenAuth.App
             if (certNos.Count > 0)
             {
                 var nos = string.Join("','", certNos);
-                var certinfo = await UnitWork.FromSql<Certinfo>($@"SELECT a.* from nsap4_nwcali.certinfo a JOIN nsap4.flowinstance b on a.FlowInstanceId=b.Id
+                var certinfo = await UnitWork.FromSql<Certinfo>($@"SELECT a.* from certinfo a JOIN erp4.flowinstance b on a.FlowInstanceId=b.Id
                                     where CertNo in ('{nos}') and ActivityName='结束'").Select(c => new NwcailView { CertNo = c.CertNo, No = null, TesterModel = c.Model, CalibrationDate = c.CalibrationDate, ExpirationDate = c.ExpirationDate }).ToListAsync();
 
                 if (certinfo.Count > 0) result.Data = query.Concat(certinfo);
@@ -494,7 +494,7 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="certNo"></param>
         /// <returns></returns>
-        private async Task CreateNwcailFile(string certNo)
+        public async Task CreateNwcailFile(string certNo)
         {
             var baseInfo = await _nwcaliCertApp.GetInfo(certNo);
             if (baseInfo != null)
