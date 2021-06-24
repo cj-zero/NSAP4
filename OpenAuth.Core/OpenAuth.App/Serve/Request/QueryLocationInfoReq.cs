@@ -10,5 +10,8 @@ namespace OpenAuth.App.Request
         public string City { get; set; }
         public string Area { get; set; }
         public List<string> Name { get; set; }
+
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
     }
 }

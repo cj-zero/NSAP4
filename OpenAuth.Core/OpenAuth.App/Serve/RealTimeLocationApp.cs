@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
 using Infrastructure.Extensions;
+using Magicodes.ExporterAndImporter.Core;
+using Magicodes.ExporterAndImporter.Excel;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
@@ -263,6 +265,273 @@ namespace OpenAuth.App
             result.Data = history;
             return result;
         }
+
+        /// <summary>
+        /// 导出数据
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<byte[]> ExcelAttendanceInfo(QueryLocationInfoReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG).ToListAsync();
+            var orgs = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).ToListAsync();
+
+            //技术员角色
+            var roleId = await UnitWork.Find<Role>(c => c.Name.Equals("售后技术员")).Select(c => c.Id).FirstOrDefaultAsync();
+            var userIds = await UnitWork.Find<Relevance>(c => c.Key.Equals(Define.USERROLE) && c.SecondId.Equals(roleId)).Select(c => c.FirstId).ToListAsync();
+            //未完成服务id的
+            var serviceWorkOrder = UnitWork.Find<ServiceWorkOrder>(c => c.Status < 7);
+            var noComplete = await serviceWorkOrder
+                                    .Where(c => !string.IsNullOrWhiteSpace(c.CurrentUserNsapId))
+                                    .Select(c => c.CurrentUserNsapId)
+                                    .Distinct()
+                                    .ToListAsync();
+            userIds.AddRange(noComplete);
+
+            var pppUserMap = await UnitWork.Find<AppUserMap>(null).ToListAsync();
+
+            req.StartDate = req.StartDate ?? DateTime.Now;
+            req.EndDate = req.EndDate ?? DateTime.Now;
+            var start = Convert.ToDateTime(req.StartDate.Value.Date.ToString());
+            DateTime end = Convert.ToDateTime(req.EndDate.ToDateTime().AddDays(1).ToString("D").ToString()).AddSeconds(-1);
+
+            var realTimeLocation = await UnitWork.Find<RealTimeLocation>(c => c.CreateTime >= start && c.CreateTime <= end)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.Province), c => c.Province == req.Province)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.City), c => c.City == req.City).Select(c => new
+                {
+                    c.AppUserId,
+                    c.Province,
+                    c.City,
+                    CreateTime = c.CreateTime.ToString("yyyy-MM-dd")
+                }).ToListAsync();
+
+            var query = from a in realTimeLocation
+                        join b in pppUserMap on a.AppUserId equals b.AppUserId
+                        select new { a, b.UserID };
+
+            //考勤记录
+            var clock = await UnitWork.Find<AttendanceClock>(c => c.ClockDate >= req.StartDate.Value.Date && c.ClockDate < req.EndDate.Value.Date.AddDays(1)).ToListAsync();
+            var clockinfo = clock.GroupBy(c => new { c.Name, c.AppUserId, c.ClockDate, c.Org }).Select(c => new
+            {
+                c.Key.AppUserId,
+                ClockDate=c.Key.ClockDate,
+                Count = c.Count() >= 2 ? 1 : 0//两条打卡算考勤
+            }).ToList();
+
+            //定位数据
+            var group = query.GroupBy(g => new { g.a.AppUserId, g.a.CreateTime, g.a.Province, g.a.City, g.UserID }).Select(g => new
+            {
+                g.Key.UserID,
+                g.Key.CreateTime,
+                g.Key.Province,
+                g.Key.City,
+                Count = clockinfo.Where(q => q.AppUserId == g.Key.AppUserId).Sum(q => q.Count)
+            }).ToList();
+
+            var data = await UnitWork.Find<User>(c => userIds.Contains(c.Id)).WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)).ToListAsync();
+            List<RealTimeLocationExcelDto> excelDtos = new List<RealTimeLocationExcelDto>();
+            foreach (var datauser in data)
+            {
+                var secondId = relevances.Where(r => r.FirstId == datauser.Id).Select(r => r.SecondId).ToList();
+                var orgname = orgs.Where(org => secondId.Contains(org.Id)).OrderByDescending(org => org.CascadeId).Select(org => org.Name).FirstOrDefault();
+                foreach (var item in group.Where(o => datauser.Id == o.UserID))
+                {
+                    excelDtos.Add(new RealTimeLocationExcelDto
+                    {
+                        Org = orgname,
+                        Name = datauser.Name,
+                        CreateDate = item.CreateTime,
+                        Province = item.Province,
+                        City = item.City,
+                        Count = item.Count
+                    });
+                }
+            }
+
+            IExporter exporter = new ExcelExporter();
+            var bytes = await exporter.ExportAsByteArray(excelDtos);
+            return bytes;
+        }
+
+        /// <summary>
+        /// 分析报表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> OnlineDurationReport(QueryLocationInfoReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+
+            //技术员角色
+            var roleId = await UnitWork.Find<Role>(c => c.Name.Equals("售后技术员")).Select(c => c.Id).FirstOrDefaultAsync();
+            var userIds = await UnitWork.Find<Relevance>(c => c.Key.Equals(Define.USERROLE) && c.SecondId.Equals(roleId)).Select(c => c.FirstId).ToListAsync();
+            //未完成服务id的
+            var serviceWorkOrder = UnitWork.Find<ServiceWorkOrder>(c => c.Status < 7);
+            var noComplete = await serviceWorkOrder
+                                    .Where(c => !string.IsNullOrWhiteSpace(c.CurrentUserNsapId))
+                                    .Select(c => c.CurrentUserNsapId)
+                                    .Distinct()
+                                    .ToListAsync();
+            userIds.AddRange(noComplete);
+
+            var pppUserMap = await UnitWork.Find<AppUserMap>(null).ToListAsync();
+
+            req.StartDate = req.StartDate ?? DateTime.Now;
+            req.EndDate = req.EndDate ?? DateTime.Now;
+            var start = Convert.ToDateTime(req.StartDate.Value.Date.ToString());
+            DateTime end = Convert.ToDateTime(req.EndDate.ToDateTime().AddDays(1).ToString("D").ToString()).AddSeconds(-1);
+
+            var realTimeLocation = await UnitWork.Find<RealTimeLocation>(c => c.CreateTime >= start && c.CreateTime <= end)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.Province), c => c.Province == req.Province)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.City), c => c.City == req.City)
+                .ToListAsync();
+
+            //部门
+            var OrgNames = from b in UnitWork.Find<Relevance>(r => userIds.Contains(r.FirstId))
+                           join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id into bc
+                           from c in bc.DefaultIfEmpty()
+                           join u in UnitWork.Find<User>(c => userIds.Contains(c.Id))
+                                    .WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)) on b.FirstId equals u.Id into bu
+                           from u in bu.DefaultIfEmpty()
+                           where b.Key.Equals(Define.USERORG)
+                           select new { OrgId = c.Id, OrgName = c.Name, c.CascadeId, UserId = u.Id, UserName = u.Name };
+            var OrgNameList = await OrgNames.OrderByDescending(o => o.CascadeId).ToListAsync();
+            OrgNameList = OrgNameList.GroupBy(o => o.UserId).Select(o => o.First()).ToList();
+
+
+            var query = from a in realTimeLocation
+                        join b in pppUserMap on a.AppUserId equals b.AppUserId
+                        join c in OrgNameList on b.UserID equals c.UserId
+                        select new GroupByInfoResp
+                        {
+                            UserId = c.UserId,
+                            UserName = c.UserName,
+                            OrgName = c.OrgName,
+                            Province = a.Province,
+                            City = a.City,
+                            CreateTime = a.CreateTime
+                        };
+
+            List<RealTimeLocationReportResp> reportResps = new List<RealTimeLocationReportResp>();
+
+            var list1 = query.GroupBy(c => c.OrgName).Select(c =>
+            {
+                var list = c.OrderByDescending(o => o.CreateTime).ToList();
+                return new RealTimeLocationReportSubtableResp
+                {
+                    StatName = c.Key,
+                    Duration = GetDuration(list)
+                };
+            }).ToList();
+            reportResps.Add(new RealTimeLocationReportResp { StatType = "Department", StatList = list1 });
+
+            var list2 = query.GroupBy(c => new { c.UserId, c.UserName }).Select(c =>
+            {
+                var list = c.OrderByDescending(o => o.CreateTime).ToList();
+                return new RealTimeLocationReportSubtableResp
+                {
+                    StatId = c.Key.UserId,
+                    StatName = c.Key.UserName,
+                    Duration = GetDuration(list)
+                };
+            }).ToList();
+            reportResps.Add(new RealTimeLocationReportResp { StatType = "Staff", StatList = list2 });
+
+            var list3 = query.GroupBy(c => c.Province).Select(c =>
+            {
+                var list = c.OrderByDescending(o => o.CreateTime).ToList();
+                return new RealTimeLocationReportSubtableResp
+                {
+                    StatName = c.Key,
+                    Duration = GetDuration(list)
+                };
+            }).ToList();
+            reportResps.Add(new RealTimeLocationReportResp { StatType = "Province", StatList = list3 });
+
+            var list4 = query.GroupBy(c => c.City).Select(c =>
+            {
+                var list = c.OrderByDescending(o => o.CreateTime).ToList();
+                return new RealTimeLocationReportSubtableResp
+                {
+                    StatName = c.Key,
+                    Duration = GetDuration(list)
+                };
+            }).ToList();
+            reportResps.Add(new RealTimeLocationReportResp { StatType = "City", StatList = list4 });
+
+
+            var maxhour = list2.Count > 0 ? list2.Max(c => c.Duration) : 0;
+            for (int i = 0; i < array.Length; i++)
+            {
+                if (maxhour>= array[i,0] && maxhour< array[i,1])
+                {
+                    maxhour = array[i, 1];
+                    break;
+                }
+            }
+
+            var inter = maxhour / 10;//间隔
+            double temp = 0;
+            List<RealTimeLocationReportSubtableResp> list5 = new List<RealTimeLocationReportSubtableResp>();
+            for (int i = 0; i < 10; i++)
+            {
+                //时长间隔内数据
+                var countinfo = list2.Where(c => c.Duration >= temp && c.Duration < (temp + inter)).ToList();
+                //if (countinfo.Count>0)
+                //{
+                    list5.Add(new RealTimeLocationReportSubtableResp
+                    {
+                        StatName = $"{(temp + inter)}",
+                        Duration = countinfo.Count,//人数
+                        ReportList = countinfo.Select(c => new RealTimeLocationReportSubtableResp
+                        {
+                            StatName = c.StatName //姓名
+                        }).ToList()
+                    });
+                //}
+                temp += inter;
+            }
+            reportResps.Add(new RealTimeLocationReportResp { StatType = "NumberOfEmployees", StatList = list5 });
+            result.Data = reportResps;
+            return result;
+        }
+
+        private static readonly int[,] array = new int[,] {
+            { 0,10 },{ 10,20 },{ 20,30 },{ 30,40 },{ 40,50 },{ 50,100 },{ 100,200 },{ 200,400 },{ 400, 600 },{ 600, 800 },{ 800, 1000 },
+            { 1000,2000 },{ 2000,3000 },{ 3000,4000 },{ 4000,5000 },{ 5000,6000 },
+            { 6000,7000 },{ 7000,8000 },{ 8000,9000 },{ 9000,10000 },
+        };
+
+        private double GetDuration(List<GroupByInfoResp> list)
+        {
+            double total = 0;
+            if (list.Count==1) return 0.02;//1分钟约等于0.02时
+            for (int i = 0; i < list.Count - 1; i++)
+            {
+                var date1 = list[i].CreateTime;
+                var date2 = list[i + 1].CreateTime;
+                var timespan = date1.Subtract(date2);
+
+                if (timespan.TotalMinutes > 10)
+                    total += 1;
+                else
+                    total += timespan.TotalMinutes;
+            }
+            TimeSpan ts = TimeSpan.FromMinutes(total);
+            return Math.Round(ts.TotalHours, 2);
+        }
+
         /// <summary>
         /// 获取所有客户
         /// </summary>

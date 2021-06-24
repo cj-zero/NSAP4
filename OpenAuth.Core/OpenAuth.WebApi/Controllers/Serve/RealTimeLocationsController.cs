@@ -104,6 +104,31 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 导出Excel
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<IActionResult> ExportExcel([FromBody] QueryLocationInfoReq req)
+        {
+            var data =await _realTimeLocationApp.ExcelAttendanceInfo(req);
+            return File(data, "application/vnd.ms-excel");
+        }
+
+        /// <summary>
+        /// 分析报表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> OnlineDurationReport([FromBody] QueryLocationInfoReq req)
+        {
+            var result = new TableData();
+            result = await _realTimeLocationApp.OnlineDurationReport(req);
+            return result;
+        }
+
+        /// <summary>
         ///获取所有客户
         /// </summary>
         /// <returns></returns>
