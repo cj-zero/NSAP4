@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Infrastructure.Extensions;
 using OpenAuth.Repository.Domain;
+using System.Linq.Dynamic.Core;
 
 namespace OpenAuth.App.Sap.BusinessPartner
 {
@@ -64,6 +65,17 @@ namespace OpenAuth.App.Sap.BusinessPartner
         }
         public async Task<TableData> Get(QueryBusinessPartnerListReq req)
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var slpCode = 0;
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME) 
+            {
+                var userId=(await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
+                slpCode = (int)(await UnitWork.Find<sbo_user>(s => s.user_id == userId).FirstOrDefaultAsync())?.tech_id;
+            }
             var result = new TableData();
             var query = from a in UnitWork.Find<OCRD>(null)
                         join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode into ab
@@ -79,6 +91,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
                         join g in UnitWork.Find<OCST>(null) on a.State1 equals g.Code into ag
                         from g in ag.DefaultIfEmpty()
                         select new { a, b, c, d, e, f, g };
+            query = query.WhereIf(slpCode>0,q => q.a.SlpCode == slpCode);
             List<string> carCode = new List<string>();
             if (!string.IsNullOrWhiteSpace(req.ManufSN))
             {
