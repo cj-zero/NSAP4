@@ -1000,7 +1000,7 @@ namespace OpenAuth.App.Material
             {
                 try
                 {
-                    QuotationObj.QuotationProducts.ForEach(q => q.QuotationMaterials.ForEach(m => m.Id = Guid.NewGuid().ToString()));
+                    QuotationObj.QuotationProducts.ForEach(q => q.QuotationMaterials.ForEach(m => { m.Id = Guid.NewGuid().ToString(); m.QuotationMaterialPictures.ForEach(p => p.Id = Guid.NewGuid().ToString()); }));
                     QuotationObj.CreateTime = DateTime.Now;
                     QuotationObj.CreateUser = loginUser.Name;
                     QuotationObj.CreateUserId = loginUser.Id;
