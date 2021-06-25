@@ -411,7 +411,6 @@ namespace OpenAuth.App
             obj.CreateTime = DateTime.Now;
             obj.CreateUser = loginUser.Name;
             obj.CreateUserId = loginUser.Id;
-            obj.outsourcexpenses.ForEach(o => { o.Id = Guid.NewGuid().ToString(); o.outsourcexpensespictures.ForEach(p => p.Id = Guid.NewGuid().ToString()); });
             var serviceOrderIds = obj.outsourcexpenses.Select(s => s.ServiceOrderId).Distinct().ToList();
             //事务保证数据一致
             var dbContext = UnitWork.GetDbContext<outsourc>();
@@ -734,13 +733,7 @@ namespace OpenAuth.App
                 }
                 if (status)
                 {
-                    List<outsourcexpensespicture> pictureList = new List<outsourcexpensespicture>();
-                    outsourcObj.outsourcexpenses.ForEach(o => pictureList.AddRange(o.outsourcexpensespictures));
-                    await UnitWork.BatchDeleteAsync<outsourcexpensespicture>(pictureList.ToArray());
-                    await UnitWork.BatchDeleteAsync<outsourcexpenses>(outsourcObj.outsourcexpenses.ToArray());
-                    await UnitWork.DeleteAsync<outsourc>(outsourcObj);
-                    var serviceOrderids = outsourcObj.outsourcexpenses.Select(o => o.ServiceOrderId).Distinct().ToList();
-                    await UnitWork.UpdateAsync<CompletionReport>(c => c.CreateUserId.Equals(outsourcObj.CreateUserId) && serviceOrderids.Contains(c.ServiceOrderId), c => new CompletionReport { IsReimburse = 1 });
+                    await UnitWork.DeleteAsync<outsourc>(o=>o.Id==int.Parse(req.OutsourcId));
                     await UnitWork.SaveAsync();
                 }
                 else
@@ -768,12 +761,11 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var outsourcexpensesObj = await UnitWork.Find<outsourcexpenses>(o => o.Id.Equals(req.OutsourcExpensesId)).Include(o => o.outsourcexpensespictures).FirstOrDefaultAsync();
+            var outsourcexpensesObj = await UnitWork.Find<outsourcexpenses>(o => o.Id.Equals(req.OutsourcExpensesId)).FirstOrDefaultAsync();
 
             if (outsourcexpensesObj != null)
             {
-                await UnitWork.BatchDeleteAsync<outsourcexpensespicture>(outsourcexpensesObj.outsourcexpensespictures.ToArray());
-                await UnitWork.DeleteAsync<outsourcexpenses>(outsourcexpensesObj);
+                await UnitWork.DeleteAsync<outsourcexpenses>(o=>o.Id.Equals(req.OutsourcExpensesId));
                 await UnitWork.UpdateAsync<outsourc>(o => o.Id == outsourcexpensesObj.OutsourcId, o => new outsourc { TotalMoney = o.TotalMoney - outsourcexpensesObj.Money });
                 await UnitWork.SaveAsync();
             }
@@ -796,7 +788,7 @@ namespace OpenAuth.App
             var obj = req.MapTo<outsourc>();
             obj.UpdateTime = DateTime.Now;
             obj.IsRejected = false;
-            var completionReportList = await UnitWork.Find<CompletionReport>(c => obj.outsourcexpenses.Select(o => o.ServiceOrderId).ToList().Contains(c.ServiceOrderId)).ToListAsync();
+            var completionReportList = await UnitWork.Find<CompletionReport>(c => (obj.ServiceMode==1&& c.ServiceOrderId == req.ServiceOrderId) || (obj.ServiceMode==2&& obj.outsourcexpenses.Select(o => o.ServiceOrderId).ToList().Contains(c.ServiceOrderId))).ToListAsync();
             obj.TotalMoney = 0;
             if (obj.ServiceMode == 1)
             {

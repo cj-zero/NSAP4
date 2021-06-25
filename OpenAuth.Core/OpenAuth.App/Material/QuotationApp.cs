@@ -1172,44 +1172,9 @@ namespace OpenAuth.App.Material
                 try
                 {
                     #region 删除
-
-                    var QuotationProducts = await UnitWork.Find<QuotationProduct>(q => q.QuotationId.Equals(QuotationObj.Id)).Include(q => q.QuotationMaterials).ToListAsync();
-
-                    if (QuotationProducts != null && QuotationProducts.Count > 0)
-                    {
-                        var QuotationMaterials = new List<QuotationMaterial>();
-                        var QuotationMaterialPictures = new List<QuotationMaterialPicture>();
-                        QuotationProducts.ForEach(q => {
-                            QuotationMaterials.AddRange(q.QuotationMaterials);
-                            q.QuotationMaterials.ForEach(m =>
-                            {
-                                if (m.QuotationMaterialPictures!=null) 
-                                {
-                                    QuotationMaterialPictures.AddRange(m.QuotationMaterialPictures);
-                                }
-                            });
-                        });
-                        if (QuotationMaterialPictures != null && QuotationMaterialPictures.Count > 0)
-                        {
-                            await UnitWork.BatchDeleteAsync<QuotationMaterialPicture>(QuotationMaterialPictures.ToArray());
-                        }
-                        await UnitWork.SaveAsync();
-                        if (QuotationMaterials != null && QuotationMaterials.Count > 0)
-                        {
-                            await UnitWork.BatchDeleteAsync<QuotationMaterial>(QuotationMaterials.ToArray());
-                        }
-                        await UnitWork.BatchDeleteAsync<QuotationProduct>(QuotationProducts.ToArray());
-                    }
-
-                    var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(QuotationObj.Id)).ToListAsync();
-
-                    if (QuotationMergeMaterials != null && QuotationMergeMaterials.Count > 0)
-                    {
-                        await UnitWork.BatchDeleteAsync<QuotationMergeMaterial>(QuotationMergeMaterials.ToArray());
-                    }
-
+                    await UnitWork.DeleteAsync<QuotationProduct>(q=>q.QuotationId== QuotationObj.Id);
+                    await UnitWork.DeleteAsync<QuotationMergeMaterial>(q => q.QuotationId.Equals(QuotationObj.Id));
                     await UnitWork.SaveAsync();
-
                     #endregion
 
                     #region 新增
@@ -1909,25 +1874,7 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var loginUser = loginContext.User;
-            if (loginUser.Account == Define.USERAPP)
-            {
-                loginUser = await GetUserId(Convert.ToInt32(req.AppId));
-            }
-            var obj = await UnitWork.Find<Quotation>(q => q.Id.Equals(req.QuotationId)).Include(q => q.QuotationOperationHistorys)
-                .Include(q => q.Expressages).Include(q => q.QuotationProducts).ThenInclude(p => p.QuotationMaterials).FirstOrDefaultAsync();
-            var Materials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(req.QuotationId)).ToListAsync();
-            List<QuotationMaterial> QuotationMaterials = new List<QuotationMaterial>();
-            foreach (var item in obj.QuotationProducts)
-            {
-                QuotationMaterials.AddRange(item.QuotationMaterials.ToList());
-            }
-            await UnitWork.BatchDeleteAsync<QuotationProduct>(obj.QuotationProducts.ToArray());
-            await UnitWork.BatchDeleteAsync<QuotationMaterial>(QuotationMaterials.ToArray());
-            await UnitWork.BatchDeleteAsync<Expressage>(obj.Expressages.ToArray());
-            await UnitWork.BatchDeleteAsync<QuotationOperationHistory>(obj.QuotationOperationHistorys.ToArray());
-            await UnitWork.BatchDeleteAsync<QuotationMergeMaterial>(Materials.ToArray());
-            await UnitWork.DeleteAsync<Quotation>(obj);
+            await UnitWork.DeleteAsync<Quotation>(q=>q.Id== req.QuotationId);
             await UnitWork.SaveAsync();
         }
 
