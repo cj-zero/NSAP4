@@ -61,7 +61,7 @@ namespace OpenAuth.App.Material
             List<int> ServiceOrderids = new List<int>();
             if (!string.IsNullOrWhiteSpace(request.CardCode))
             {
-                ServiceOrderids = await UnitWork.Find<ServiceOrder>(null).Where(q => q.CustomerId.Contains(request.CardCode) || q.CustomerName.Contains(request.CardCode)).Select(s => s.Id).ToListAsync();
+                ServiceOrderids = await UnitWork.Find<ServiceOrder>(null).Where(q => q.TerminalCustomer.Contains(request.CardCode) || q.TerminalCustomerId.Contains(request.CardCode)).Select(s => s.Id).ToListAsync();
 
             }
             var Quotations = UnitWork.Find<Quotation>(null).Include(q => q.QuotationPictures).Include(q=>q.QuotationOperationHistorys).WhereIf(request.QuotationId.ToString() != null, q => q.Id.ToString().Contains(request.QuotationId.ToString()))
