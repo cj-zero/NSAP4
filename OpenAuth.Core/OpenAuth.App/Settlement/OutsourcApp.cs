@@ -412,6 +412,14 @@ namespace OpenAuth.App
             obj.CreateUser = loginUser.Name;
             obj.CreateUserId = loginUser.Id;
             var serviceOrderIds = obj.outsourcexpenses.Select(s => s.ServiceOrderId).Distinct().ToList();
+            obj.outsourcexpenses.ForEach(o =>
+            {
+                o.Id = Guid.NewGuid().ToString();
+                if (o.outsourcexpensespictures != null && o.outsourcexpensespictures.Count() > 0) 
+                {
+                    o.outsourcexpensespictures.ForEach(p => p.Id = Guid.NewGuid().ToString());
+                }
+            });
             //事务保证数据一致
             var dbContext = UnitWork.GetDbContext<outsourc>();
             using (var transaction = await dbContext.Database.BeginTransactionAsync())
@@ -473,7 +481,16 @@ namespace OpenAuth.App
                     await UnitWork.BatchDeleteAsync<outsourcexpensespicture>(pictureList.ToArray());
                     await UnitWork.BatchDeleteAsync<outsourcexpenses>(outsourcObj.outsourcexpenses.ToArray());
                     await UnitWork.SaveAsync();
-                    obj.outsourcexpenses.ForEach(o => { o.OutsourcId = req.outsourcId; o.outsourcexpensespictures.ForEach(p => { p.Id = Guid.NewGuid().ToString(); p.OutsourcExpensesId = o.Id; }); });
+                    obj.outsourcexpenses.ForEach(o => {
+                        o.OutsourcId = req.outsourcId;
+                        if (o.outsourcexpensespictures != null&& o.outsourcexpensespictures.Count()>0) 
+                        {
+                            o.outsourcexpensespictures.ForEach(p => {
+                                p.Id = Guid.NewGuid().ToString();
+                                p.OutsourcExpensesId = o.Id;
+                            });
+                        }
+                    });
                     await UnitWork.BatchAddAsync<outsourcexpenses>(obj.outsourcexpenses.ToArray());
                     await UnitWork.SaveAsync();
                     #endregion
@@ -544,7 +561,7 @@ namespace OpenAuth.App
                 VerificationReqModle.VerificationOpinion = req.Remark;
                 VerificationReqModle.NodeRejectType = "1";
                 await _flowInstanceApp.Verification(VerificationReqModle);
-                await UnitWork.DeleteAsync<outsourcexpenses>(o => o.OutsourcId == outsourcObj.Id && o.ExpensesType == 3);
+                await UnitWork.UpdateAsync<outsourcexpenses>(o => o.OutsourcId == outsourcObj.Id && o.ExpensesType == 3,o=>new outsourcexpenses { Money=0});
             }
             else
             {
@@ -733,7 +750,9 @@ namespace OpenAuth.App
                 }
                 if (status)
                 {
-                    await UnitWork.DeleteAsync<outsourc>(o=>o.Id==int.Parse(req.OutsourcId));
+                    await UnitWork.DeleteAsync<outsourc>(o => o.Id == int.Parse(req.OutsourcId));
+                    var serviceOrderids = outsourcObj.outsourcexpenses.Select(o => o.ServiceOrderId).Distinct().ToList();
+                    await UnitWork.UpdateAsync<CompletionReport>(c => c.CreateUserId.Equals(outsourcObj.CreateUserId) && serviceOrderids.Contains(c.ServiceOrderId), c => new CompletionReport { IsReimburse = 1 });
                     await UnitWork.SaveAsync();
                 }
                 else

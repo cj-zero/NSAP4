@@ -1000,7 +1000,13 @@ namespace OpenAuth.App.Material
             {
                 try
                 {
-                    QuotationObj.QuotationProducts.ForEach(q => q.QuotationMaterials.ForEach(m => { m.Id = Guid.NewGuid().ToString(); m.QuotationMaterialPictures.ForEach(p => p.Id = Guid.NewGuid().ToString()); }));
+                    QuotationObj.QuotationProducts.ForEach(q => q.QuotationMaterials.ForEach(m => { 
+                        m.Id = Guid.NewGuid().ToString();
+                        if (m.QuotationMaterialPictures != null && m.QuotationMaterialPictures.Count() > 0) 
+                        {
+                            m.QuotationMaterialPictures.ForEach(p => p.Id = Guid.NewGuid().ToString());
+                        }
+                    }));
                     QuotationObj.CreateTime = DateTime.Now;
                     QuotationObj.CreateUser = loginUser.Name;
                     QuotationObj.CreateUserId = loginUser.Id;
@@ -1183,7 +1189,13 @@ namespace OpenAuth.App.Material
                         var QuotationProductMap = QuotationObj.QuotationProducts.MapToList<QuotationProduct>();
                         QuotationProductMap.ForEach(q =>
                         {
-                            q.QuotationMaterials.ForEach(m => { m.Id = Guid.NewGuid().ToString();m.QuotationMaterialPictures.ForEach(p => { p.Id = Guid.NewGuid().ToString(); }); });
+                            q.QuotationMaterials.ForEach(m => { 
+                                m.Id = Guid.NewGuid().ToString();
+                                if (m.QuotationMaterialPictures != null && m.QuotationMaterialPictures.Count()>0) 
+                                {
+                                    m.QuotationMaterialPictures.ForEach(p => { p.Id = Guid.NewGuid().ToString(); });
+                                }
+                            });
                         });
                         await UnitWork.BatchAddAsync<QuotationProduct>(QuotationProductMap.ToArray());
                     }
