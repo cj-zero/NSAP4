@@ -551,20 +551,27 @@ namespace OpenAuth.App
             {
                 var flowInstanceObj = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(outsourcObj.FlowInstanceId)).FirstOrDefaultAsync();
                 await _flowInstanceApp.Verification(VerificationReqModle);
-                if (flowInstanceObj.ActivityName.Equals("客服主管审批") && !string.IsNullOrWhiteSpace(req.Money))
+                if (flowInstanceObj.ActivityName.Equals("客服主管审批") && !string.IsNullOrWhiteSpace(req.Money) && outsourcObj.ServiceMode==1)
                 {
-                    var outsourcexpensesObj = outsourcObj.outsourcexpenses.FirstOrDefault();
-                    outsourcObj.TotalMoney += decimal.Parse(req.Money);
-                    await UnitWork.AddAsync<outsourcexpenses>(new outsourcexpenses
+                    if (outsourcObj.TotalMoney <= 0) 
                     {
-                        ExpensesType = 3,
-                        Money = decimal.Parse(req.Money),
-                        ServiceOrderId = outsourcexpensesObj?.ServiceOrderId,
-                        ServiceOrderSapId = outsourcexpensesObj.ServiceOrderSapId,
-                        TerminalCustomer = outsourcexpensesObj.TerminalCustomer,
-                        TerminalCustomerId = outsourcexpensesObj.TerminalCustomerId,
-                        OutsourcId = outsourcObj.Id
-                    });
+                        await UnitWork.UpdateAsync<outsourcexpenses>(o => o.ExpensesType == 3 && o.OutsourcId == outsourcObj.Id, o => new outsourcexpenses { Money = decimal.Parse(req.Money)});
+                    }
+                    else
+                    {
+                        var outsourcexpensesObj = outsourcObj.outsourcexpenses.FirstOrDefault();
+                        await UnitWork.AddAsync<outsourcexpenses>(new outsourcexpenses
+                        {
+                            ExpensesType = 3,
+                            Money = decimal.Parse(req.Money),
+                            ServiceOrderId = outsourcexpensesObj?.ServiceOrderId,
+                            ServiceOrderSapId = outsourcexpensesObj.ServiceOrderSapId,
+                            TerminalCustomer = outsourcexpensesObj.TerminalCustomer,
+                            TerminalCustomerId = outsourcexpensesObj.TerminalCustomerId,
+                            OutsourcId = outsourcObj.Id
+                        });
+                    }
+                    outsourcObj.TotalMoney += decimal.Parse(req.Money);
                 }
                 if (flowInstanceObj.ActivityName.Equals("总经理审批") && outsourcObj.ServiceMode == 2)
                 {
@@ -793,10 +800,22 @@ namespace OpenAuth.App
             obj.TotalMoney = 0;
             if (obj.ServiceMode == 1)
             {
+                var completionReportObj = completionReportList.Where(c => c.ServiceOrderId == req.ServiceOrderId).OrderByDescending(c => c.CreateTime).FirstOrDefault();
 
+                if (obj.outsourcexpenses==null||obj.outsourcexpenses.Count() <= 0) 
+                {
+                    obj.outsourcexpenses.Add(new outsourcexpenses
+                    {
+                        ExpensesType = 3,
+                        Money = 0,
+                        ServiceOrderId = completionReportObj?.ServiceOrderId,
+                        ServiceOrderSapId = req.ServiceOrderSapId,
+                        TerminalCustomer = completionReportObj.TerminalCustomer,
+                        TerminalCustomerId = completionReportObj.TerminalCustomerId,
+                    });
+                }
                 obj.outsourcexpenses.ForEach(o =>
                 {
-                    var completionReportObj = completionReportList.Where(c => c.ServiceOrderId == o.ServiceOrderId).OrderByDescending(c => c.CreateTime).FirstOrDefault();
                     obj.TotalMoney += o.Money;
                     o.CompleteTime = completionReportObj?.CreateTime;
                     o.TerminalCustomer = completionReportObj.TerminalCustomer;
