@@ -66,7 +66,14 @@ namespace OpenAuth.App.Request
         /// 是否草稿状态
         /// </summary>
         public bool IsDraft { get; set; }
-
+        /// <summary>
+        /// 服务单id
+        /// </summary>
+        public int? ServiceOrderId { get; set; }
+        /// <summary>
+        /// 服务单Sapid
+        /// </summary>
+        public int? ServiceOrderSapId { get; set; }
         /// <summary>
         /// 需要删除附件id
         /// </summary>
