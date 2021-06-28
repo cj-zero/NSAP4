@@ -750,6 +750,7 @@ namespace OpenAuth.App.Material
                 {
                     QuotationMergeMaterial.Add(new QuotationMaterialReq
                     {
+                        Id=Guid.NewGuid().ToString(),
                         MaterialCode = "S111-SERVICE-GSF-JH",
                         MaterialDescription = "寄回维修费 20210518",
                         Unit = "PCS",
@@ -758,6 +759,7 @@ namespace OpenAuth.App.Material
                         TotalPrice = quotationsMap.ServiceChargeManHourJH != null ? (Convert.ToDecimal(quotationsMap.ServiceChargeManHourJH) / count) * quotationsMap.ServiceChargeJH : quotationsMap.ServiceChargeJH / count,
                         Discount = 100,
                         DiscountPrices = quotationsMap.ServiceChargeJH,
+                        QuotationMaterialPictures=new List<QuotationMaterialPictureReq>(),
                         MaterialType = "2"
                     });
                 }
@@ -765,6 +767,7 @@ namespace OpenAuth.App.Material
                 {
                     QuotationMergeMaterial.Add(new QuotationMaterialReq
                     {
+                        Id = Guid.NewGuid().ToString(),
                         MaterialCode = "S111-SERVICE-GSF-SM",
                         MaterialDescription = "上门维修费 20210518",
                         Unit = "PCS",
@@ -772,6 +775,7 @@ namespace OpenAuth.App.Material
                         Count = quotationsMap.ServiceChargeManHourSM != null ? Convert.ToDecimal(quotationsMap.ServiceChargeManHourSM) / count : 1,
                         TotalPrice = quotationsMap.ServiceChargeManHourSM != null ? (Convert.ToDecimal(quotationsMap.ServiceChargeManHourSM) / count) * quotationsMap.ServiceChargeSM : quotationsMap.ServiceChargeSM / count,
                         Discount = 100,
+                        QuotationMaterialPictures = new List<QuotationMaterialPictureReq>(),
                         DiscountPrices = quotationsMap.ServiceChargeSM,
                         MaterialType = "2"
                     });
@@ -780,6 +784,7 @@ namespace OpenAuth.App.Material
                 {
                     QuotationMergeMaterial.Add(new QuotationMaterialReq
                     {
+                        Id = Guid.NewGuid().ToString(),
                         MaterialCode = "S111-SERVICE-CLF",
                         MaterialDescription = "差旅费",
                         Unit = "PCS",
@@ -787,6 +792,7 @@ namespace OpenAuth.App.Material
                         Count = quotationsMap.TravelExpenseManHour != null ? Convert.ToDecimal(quotationsMap.TravelExpenseManHour) / count : 1,
                         TotalPrice = quotationsMap.TravelExpenseManHour != null ? (Convert.ToDecimal(quotationsMap.TravelExpenseManHour) / count) * quotationsMap.TravelExpense : quotationsMap.TravelExpense / count,
                         Discount = 100,
+                        QuotationMaterialPictures = new List<QuotationMaterialPictureReq>(),
                         DiscountPrices = quotationsMap.TravelExpense,
                         MaterialType = "2"
                     });
