@@ -482,7 +482,7 @@ namespace OpenAuth.App
                 }
                 if (request.Count > 1) 
                 {
-                    await Task.Delay(30000);
+                    //await Task.Delay(30000);
                 }
             }
             result.Message= string.IsNullOrWhiteSpace(Message.ToString()) ? "审批成功" : Message.ToString();

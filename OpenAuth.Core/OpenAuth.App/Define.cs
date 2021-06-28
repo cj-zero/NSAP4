@@ -36,5 +36,7 @@ namespace OpenAuth.App
 
         public const string JOBMAPKEY = "OpenJob";
 
+        public const int SBO_ID = 1;//ERP3.0当前账套
+
     }
 }

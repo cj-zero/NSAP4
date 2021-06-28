@@ -42,7 +42,16 @@ namespace OpenAuth.Repository
                 {
                     if (DbContexts.TryGetValue(ctType, out DbContext ct))
                         return ct;
-                    ct = (DbContext)_serviceProvider.CreateScope().ServiceProvider.GetRequiredService(ctType);
+                    try
+                    {
+                        ct = (DbContext)_serviceProvider.CreateScope().ServiceProvider.GetRequiredService(ctType);
+
+                    }
+                    catch (Exception ex)
+                    {
+
+                        var Message = ex.Message;
+                    }
                     ContextTypes.TryAdd(typeof(T), ctType);
                     DbContexts.TryAdd(ctType, ct);
                     return ct;

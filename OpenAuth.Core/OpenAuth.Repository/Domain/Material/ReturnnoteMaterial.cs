@@ -100,6 +100,18 @@ namespace OpenAuth.Repository.Domain
         public string SecondWhsCode { get; set; }
 
         /// <summary>
+        ///产品编号
+        /// </summary>
+        [Description("产品编号")]
+        public string ProductCode { get; set; }
+
+        /// <summary>
+        ///原产品编码
+        /// </summary>
+        [Description("原产品编码")]
+        public string ReplaceProductCode { get; set; }
+
+        /// <summary>
         ///退料图片
         /// </summary>
         [Description("退料图片")]

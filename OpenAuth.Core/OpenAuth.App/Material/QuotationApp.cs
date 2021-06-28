@@ -676,7 +676,7 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         public async Task<AddOrUpdateQuotationReq> GeneralDetails(int QuotationId, bool? IsUpdate)
         {
-            var Quotations = await UnitWork.Find<Quotation>(q => q.Id == QuotationId).Include(q => q.QuotationPictures).Include(q => q.QuotationProducts).ThenInclude(p => p.QuotationMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
+            var Quotations = await UnitWork.Find<Quotation>(q => q.Id == QuotationId).Include(q => q.QuotationPictures).Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).ThenInclude(q=>q.QuotationMaterialPictures).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
             var quotationsMap = Quotations.MapTo<AddOrUpdateQuotationReq>();
             List<string> materialCodes = new List<string>();
             List<string> WhsCode = new List<string>();
@@ -750,6 +750,7 @@ namespace OpenAuth.App.Material
                 {
                     QuotationMergeMaterial.Add(new QuotationMaterialReq
                     {
+                        Id=Guid.NewGuid().ToString(),
                         MaterialCode = "S111-SERVICE-GSF-JH",
                         MaterialDescription = "寄回维修费 20210518",
                         Unit = "PCS",
@@ -758,6 +759,7 @@ namespace OpenAuth.App.Material
                         TotalPrice = quotationsMap.ServiceChargeManHourJH != null ? (Convert.ToDecimal(quotationsMap.ServiceChargeManHourJH) / count) * quotationsMap.ServiceChargeJH : quotationsMap.ServiceChargeJH / count,
                         Discount = 100,
                         DiscountPrices = quotationsMap.ServiceChargeJH,
+                        QuotationMaterialPictures=new List<QuotationMaterialPictureReq>(),
                         MaterialType = "2"
                     });
                 }
@@ -765,6 +767,7 @@ namespace OpenAuth.App.Material
                 {
                     QuotationMergeMaterial.Add(new QuotationMaterialReq
                     {
+                        Id = Guid.NewGuid().ToString(),
                         MaterialCode = "S111-SERVICE-GSF-SM",
                         MaterialDescription = "上门维修费 20210518",
                         Unit = "PCS",
@@ -772,6 +775,7 @@ namespace OpenAuth.App.Material
                         Count = quotationsMap.ServiceChargeManHourSM != null ? Convert.ToDecimal(quotationsMap.ServiceChargeManHourSM) / count : 1,
                         TotalPrice = quotationsMap.ServiceChargeManHourSM != null ? (Convert.ToDecimal(quotationsMap.ServiceChargeManHourSM) / count) * quotationsMap.ServiceChargeSM : quotationsMap.ServiceChargeSM / count,
                         Discount = 100,
+                        QuotationMaterialPictures = new List<QuotationMaterialPictureReq>(),
                         DiscountPrices = quotationsMap.ServiceChargeSM,
                         MaterialType = "2"
                     });
@@ -780,6 +784,7 @@ namespace OpenAuth.App.Material
                 {
                     QuotationMergeMaterial.Add(new QuotationMaterialReq
                     {
+                        Id = Guid.NewGuid().ToString(),
                         MaterialCode = "S111-SERVICE-CLF",
                         MaterialDescription = "差旅费",
                         Unit = "PCS",
@@ -787,6 +792,7 @@ namespace OpenAuth.App.Material
                         Count = quotationsMap.TravelExpenseManHour != null ? Convert.ToDecimal(quotationsMap.TravelExpenseManHour) / count : 1,
                         TotalPrice = quotationsMap.TravelExpenseManHour != null ? (Convert.ToDecimal(quotationsMap.TravelExpenseManHour) / count) * quotationsMap.TravelExpense : quotationsMap.TravelExpense / count,
                         Discount = 100,
+                        QuotationMaterialPictures = new List<QuotationMaterialPictureReq>(),
                         DiscountPrices = quotationsMap.TravelExpense,
                         MaterialType = "2"
                     });
@@ -800,7 +806,7 @@ namespace OpenAuth.App.Material
                 q.QuotationMaterials.AddRange(QuotationMergeMaterial.ToList());
                 q.QuotationMaterials = q.QuotationMaterials.OrderBy(m => m.MaterialCode).ToList();
             });
-
+            quotationsMap.QuotationOperationHistorys = quotationsMap.QuotationOperationHistorys.Where(q => q.ApprovalStage != "-1").OrderBy(o => o.CreateTime).ThenByDescending(o => o.Action).ToList();
             return quotationsMap;
         }
 
@@ -1000,7 +1006,13 @@ namespace OpenAuth.App.Material
             {
                 try
                 {
-                    QuotationObj.QuotationProducts.ForEach(q => q.QuotationMaterials.ForEach(m => m.Id = Guid.NewGuid().ToString()));
+                    QuotationObj.QuotationProducts.ForEach(q => q.QuotationMaterials.ForEach(m => { 
+                        m.Id = Guid.NewGuid().ToString();
+                        if (m.QuotationMaterialPictures != null && m.QuotationMaterialPictures.Count() > 0) 
+                        {
+                            m.QuotationMaterialPictures.ForEach(p => p.Id = Guid.NewGuid().ToString());
+                        }
+                    }));
                     QuotationObj.CreateTime = DateTime.Now;
                     QuotationObj.CreateUser = loginUser.Name;
                     QuotationObj.CreateUserId = loginUser.Id;
@@ -1172,29 +1184,9 @@ namespace OpenAuth.App.Material
                 try
                 {
                     #region 删除
-
-                    var QuotationProducts = await UnitWork.Find<QuotationProduct>(q => q.QuotationId.Equals(QuotationObj.Id)).Include(q => q.QuotationMaterials).ToListAsync();
-
-                    if (QuotationProducts != null && QuotationProducts.Count > 0)
-                    {
-                        var QuotationMaterials = new List<QuotationMaterial>();
-                        QuotationProducts.ForEach(q => QuotationMaterials.AddRange(q.QuotationMaterials));
-                        if (QuotationMaterials != null && QuotationMaterials.Count > 0)
-                        {
-                            await UnitWork.BatchDeleteAsync<QuotationMaterial>(QuotationMaterials.ToArray());
-                        }
-                        await UnitWork.BatchDeleteAsync<QuotationProduct>(QuotationProducts.ToArray());
-                    }
-
-                    var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(QuotationObj.Id)).ToListAsync();
-
-                    if (QuotationMergeMaterials != null && QuotationMergeMaterials.Count > 0)
-                    {
-                        await UnitWork.BatchDeleteAsync<QuotationMergeMaterial>(QuotationMergeMaterials.ToArray());
-                    }
-
+                    await UnitWork.DeleteAsync<QuotationProduct>(q=>q.QuotationId== QuotationObj.Id);
+                    await UnitWork.DeleteAsync<QuotationMergeMaterial>(q => q.QuotationId.Equals(QuotationObj.Id));
                     await UnitWork.SaveAsync();
-
                     #endregion
 
                     #region 新增
@@ -1203,7 +1195,13 @@ namespace OpenAuth.App.Material
                         var QuotationProductMap = QuotationObj.QuotationProducts.MapToList<QuotationProduct>();
                         QuotationProductMap.ForEach(q =>
                         {
-                            q.QuotationMaterials.ForEach(m => m.Id = Guid.NewGuid().ToString());
+                            q.QuotationMaterials.ForEach(m => { 
+                                m.Id = Guid.NewGuid().ToString();
+                                if (m.QuotationMaterialPictures != null && m.QuotationMaterialPictures.Count()>0) 
+                                {
+                                    m.QuotationMaterialPictures.ForEach(p => { p.Id = Guid.NewGuid().ToString(); });
+                                }
+                            });
                         });
                         await UnitWork.BatchAddAsync<QuotationProduct>(QuotationProductMap.ToArray());
                     }
@@ -1894,25 +1892,7 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var loginUser = loginContext.User;
-            if (loginUser.Account == Define.USERAPP)
-            {
-                loginUser = await GetUserId(Convert.ToInt32(req.AppId));
-            }
-            var obj = await UnitWork.Find<Quotation>(q => q.Id.Equals(req.QuotationId)).Include(q => q.QuotationOperationHistorys)
-                .Include(q => q.Expressages).Include(q => q.QuotationProducts).ThenInclude(p => p.QuotationMaterials).FirstOrDefaultAsync();
-            var Materials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(req.QuotationId)).ToListAsync();
-            List<QuotationMaterial> QuotationMaterials = new List<QuotationMaterial>();
-            foreach (var item in obj.QuotationProducts)
-            {
-                QuotationMaterials.AddRange(item.QuotationMaterials.ToList());
-            }
-            await UnitWork.BatchDeleteAsync<QuotationProduct>(obj.QuotationProducts.ToArray());
-            await UnitWork.BatchDeleteAsync<QuotationMaterial>(QuotationMaterials.ToArray());
-            await UnitWork.BatchDeleteAsync<Expressage>(obj.Expressages.ToArray());
-            await UnitWork.BatchDeleteAsync<QuotationOperationHistory>(obj.QuotationOperationHistorys.ToArray());
-            await UnitWork.BatchDeleteAsync<QuotationMergeMaterial>(Materials.ToArray());
-            await UnitWork.DeleteAsync<Quotation>(obj);
+            await UnitWork.DeleteAsync<Quotation>(q=>q.Id== req.QuotationId);
             await UnitWork.SaveAsync();
         }
 

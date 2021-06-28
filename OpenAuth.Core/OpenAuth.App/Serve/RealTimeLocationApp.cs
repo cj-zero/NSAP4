@@ -236,11 +236,12 @@ namespace OpenAuth.App
             var pppUserMap = UnitWork.Find<AppUserMap>(c=>c.UserID==userId).FirstOrDefault();
             //按指定时间过滤（筛选轨迹）
             var realTimeLocation = await UnitWork.Find<RealTimeLocation>(null)
-                                            .Where(c =>(c.CreateTime >= start && c.CreateTime <= end) && c.AppUserId==pppUserMap.AppUserId)
+                                            .Where(c =>(c.CreateTime >= start && c.CreateTime <= end) && c.AppUserId==pppUserMap.AppUserId && !string.IsNullOrWhiteSpace(c.Province))
                                             .OrderByDescending(c => c.CreateTime)
                                             .ToListAsync();
             //当天定位数据
-            var currentDate = await UnitWork.FromSql<RealTimeLocation>(@$"SELECT * from realtimelocation where AppUserId={pppUserMap.AppUserId} AND TO_DAYS(CreateTime)=TO_DAYS(NOW())").ToListAsync();
+            var currentDate = await UnitWork.Find<RealTimeLocation>(c => c.AppUserId == pppUserMap.AppUserId && !string.IsNullOrWhiteSpace(c.Province) && c.CreateTime>=DateTime.Now.Date && c.CreateTime< DateTime.Now.AddDays(1).Date).ToListAsync();
+            //var currentDate = await UnitWork.FromSql<RealTimeLocation>(@$"SELECT * from realtimelocation where AppUserId={pppUserMap.AppUserId} AND TO_DAYS(CreateTime)=TO_DAYS(NOW())").ToListAsync();
 
             var data = realTimeLocation?.GroupBy(c=>c.CreateTime.ToString("yyyy-MM-dd")).Select(c=>new Trajectory
             {
@@ -301,7 +302,7 @@ namespace OpenAuth.App
             var start = Convert.ToDateTime(req.StartDate.Value.Date.ToString());
             DateTime end = Convert.ToDateTime(req.EndDate.ToDateTime().AddDays(1).ToString("D").ToString()).AddSeconds(-1);
 
-            var realTimeLocation = await UnitWork.Find<RealTimeLocation>(c => c.CreateTime >= start && c.CreateTime <= end)
+            var realTimeLocation = await UnitWork.Find<RealTimeLocation>(c => (c.CreateTime >= start && c.CreateTime <= end) && !string.IsNullOrWhiteSpace(c.Province))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.Province), c => c.Province == req.Province)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.City), c => c.City == req.City).Select(c => new
                 {
@@ -325,13 +326,13 @@ namespace OpenAuth.App
             }).ToList();
 
             //定位数据
-            var group = query.GroupBy(g => new { g.a.AppUserId, g.a.CreateTime, g.a.Province, g.a.City, g.UserID }).Select(g => new
+            var group = query.Select(g => new
             {
-                g.Key.UserID,
-                g.Key.CreateTime,
-                g.Key.Province,
-                g.Key.City,
-                Count = clockinfo.Where(q => q.AppUserId == g.Key.AppUserId).Sum(q => q.Count)
+                g.UserID,
+                g.a.CreateTime,
+                g.a.Province,
+                g.a.City,
+                Count = clockinfo.Where(q => q.AppUserId == g.a.AppUserId).Sum(q => q.Count)
             }).ToList();
 
             var data = await UnitWork.Find<User>(c => userIds.Contains(c.Id)).WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)).ToListAsync();
@@ -392,7 +393,7 @@ namespace OpenAuth.App
             var start = Convert.ToDateTime(req.StartDate.Value.Date.ToString());
             DateTime end = Convert.ToDateTime(req.EndDate.ToDateTime().AddDays(1).ToString("D").ToString()).AddSeconds(-1);
 
-            var realTimeLocation = await UnitWork.Find<RealTimeLocation>(c => c.CreateTime >= start && c.CreateTime <= end)
+            var realTimeLocation = await UnitWork.Find<RealTimeLocation>(c => c.CreateTime >= start && c.CreateTime <= end && !string.IsNullOrWhiteSpace(c.Province))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.Province), c => c.Province == req.Province)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.City), c => c.City == req.City)
                 .ToListAsync();

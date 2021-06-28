@@ -6,9 +6,11 @@
 //     Author:Yubao Li
 //------------------------------------------------------------------------------
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using OpenAuth.Repository.Core;
+using OpenAuth.Repository.Domain.Material;
 
 namespace OpenAuth.Repository.Domain
 {
@@ -132,6 +134,9 @@ namespace OpenAuth.Repository.Domain
         [Description("仓库号")]
         public string WhsCode { get; set; }
 
-
+        /// <summary>
+        /// 物料附件
+        /// </summary>
+        public virtual List<QuotationMaterialPicture> QuotationMaterialPictures { get; set; }
     }
 }

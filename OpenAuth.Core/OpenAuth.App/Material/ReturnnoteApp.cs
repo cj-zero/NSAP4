@@ -15,6 +15,7 @@ using DotNetCore.CAP;
 using Infrastructure.Const;
 using OpenAuth.App.Material.Response;
 using System.Linq.Dynamic.Core;
+using OpenAuth.App.Material;
 
 namespace OpenAuth.App
 {
@@ -24,13 +25,15 @@ namespace OpenAuth.App
         private readonly ExpressageApp _expressageApp;
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
         private ICapPublisher _capBus;
+        private readonly QuotationApp _quotation;
 
-        public ReturnNoteApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, ModuleFlowSchemeApp moduleFlowSchemeApp, ExpressageApp expressageApp, IAuth auth, ICapPublisher capBus) : base(unitWork, auth)
+        public ReturnNoteApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, QuotationApp quotation, ModuleFlowSchemeApp moduleFlowSchemeApp, ExpressageApp expressageApp, IAuth auth, ICapPublisher capBus) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _expressageApp = expressageApp;
             _capBus = capBus;
+            _quotation = quotation;
         }
 
         #region App退料
@@ -1083,14 +1086,11 @@ namespace OpenAuth.App
             var result = new TableData();
             var serviceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id == returnNotes.ServiceOrderId).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.NewestContacter, s.NewestContactTel, s.U_SAP_ID }).FirstOrDefaultAsync();
             //查询应收发票  && s.LineStatus == "O"
-            var saleinv1 = await UnitWork.Find<sale_inv1>(s => s.DocEntry == InvoiceDocEntry).ToListAsync();
+            var saleinv1 = await UnitWork.Find<sale_inv1>(s => s.DocEntry == InvoiceDocEntry && s.sbo_id==Define.SBO_ID).ToListAsync();
             var DocTotal = saleinv1.Sum(s => s.LineTotal);
             //是否存在退料记录
-            var query = from a in UnitWork.Find<ReturnNote>(null)
-                        join b in UnitWork.Find<ReturnnoteMaterial>(r => InvoiceDocEntry == r.InvoiceDocEntry) on a.Id equals b.ReturnNoteId into ab
-                        from b in ab.DefaultIfEmpty()
-                        select new { a,b };
-            var materials = await query.Where(q => q.b != null).ToListAsync();
+            var materials = await UnitWork.Find<ReturnnoteMaterial>(r => r.ReturnNoteId!= returnNotes.Id&& InvoiceDocEntry == r.InvoiceDocEntry).ToListAsync();
+            
             List<string> fileIds = new List<string>();
             returnNotes.ReturnnoteMaterials.ForEach(r => fileIds.AddRange(r.ReturnNoteMaterialPictures.Select(n => n.PictureId).ToList()));
             var fileList = await UnitWork.Find<UploadFile>(f => fileIds.Contains(f.Id)).ToListAsync();
@@ -1099,7 +1099,7 @@ namespace OpenAuth.App
                 {
                     var QuotationMergeMaterialObj = quotationObj.QuotationMergeMaterials.Where(q => q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault();
                     var Quantity = saleinv1.Where(s => s.ItemCode.Equals(QuotationMergeMaterialObj.MaterialCode) && ( Convert.ToDouble(s.Price) == Convert.ToDouble(QuotationMergeMaterialObj.DiscountPrices) || s.Price == decimal.Parse(Convert.ToDecimal(QuotationMergeMaterialObj.DiscountPrices).ToString("#0.00")))).FirstOrDefault()?.Quantity;
-                    var num = materials.Where(m => m.b.QuotationMaterialId.Equals(r.QuotationMaterialId)).Sum(m => m.b.Count);
+                    var num = materials.Where(m => m.QuotationMaterialId.Equals(r.QuotationMaterialId)).Sum(m => m.Count);
                     var ResidueQuantity = num > 0 ? Quantity - num : Quantity;
                     returnnoteMaterials.Add(new
                     {
@@ -1113,6 +1113,8 @@ namespace OpenAuth.App
                         r.QuotationMaterialId,
                         r.ReceivingRemark,
                         r.ReturnNoteId,
+                        r.ProductCode,
+                        r.ReplaceProductCode,
                         ReturnNoteMaterialPictures = r.ReturnNoteMaterialPictures.Select(p => new
                         {
                             FileName = fileList.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileName,
@@ -1127,15 +1129,14 @@ namespace OpenAuth.App
                         Quantity = Quantity,
                         ResidueQuantity = ResidueQuantity,
                         IfReplace = QuotationMergeMaterialObj.MaterialCode.Equals(r.MaterialCode) ? false : true,
-                        ReplacePartCode = QuotationMergeMaterialObj.MaterialCode.Equals(r.MaterialCode) ? null : QuotationMergeMaterialObj.MaterialCode,
-                        ReplacePartDescription = QuotationMergeMaterialObj.MaterialCode.Equals(r.MaterialCode) ? null : QuotationMergeMaterialObj.MaterialDescription
+                        ReplacePartCode =  QuotationMergeMaterialObj.MaterialCode,
+                        ReplacePartDescription =  QuotationMergeMaterialObj.MaterialDescription
                     });
 
                 }
             );
             if (req.IsUpDate != null && (bool)req.IsUpDate)
             {
-                materials = materials.Where(m => m.a.Id != req.returnNoteId).ToList();
                 var ReturnnoteMaterialList = returnNotes.ReturnnoteMaterials.Select(r => new
                 {
                     MaterialCode= quotationObj.QuotationMergeMaterials.Where(q=>q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.MaterialCode,
@@ -1145,7 +1146,7 @@ namespace OpenAuth.App
                 {
                     saleinv1 = saleinv1.Where(s => s.ItemCode != r.MaterialCode && s.Price != r.Price && s.Price != decimal.Parse(Convert.ToDecimal(r.Price).ToString("#0.00"))).ToList();
                 });
-                materials.ForEach(m => m.b.MaterialCode = quotationObj.QuotationMergeMaterials.Where(q => q.Id.Equals(m.b.QuotationMaterialId)).FirstOrDefault()?.MaterialCode);
+                materials.ForEach(m => m.MaterialCode = quotationObj.QuotationMergeMaterials.Where(q => q.Id.Equals(m.QuotationMaterialId)).FirstOrDefault()?.MaterialCode);
                 saleinv1.ForEach(s =>
                 {
                     returnnoteMaterials.Add(new
@@ -1155,7 +1156,7 @@ namespace OpenAuth.App
                         InvoiceDocEntry = s.DocEntry,
                         s.Price,
                         Quantity = s.Quantity,//总数量
-                        ResidueQuantity = materials.Where(m => m.b.MaterialCode.Equals(s.ItemCode) && m.b.InvoiceDocEntry == s.DocEntry).Sum(m => m.b.Count) > 0 ? s.Quantity - materials.Where(m => m.b.MaterialCode.Equals(s.ItemCode) && m.b.InvoiceDocEntry == s.DocEntry).Sum(m => m.b.Count) : s.Quantity,//应退数量
+                        ResidueQuantity = materials.Where(m => m.MaterialCode.Equals(s.ItemCode) && m.InvoiceDocEntry == s.DocEntry).Sum(m => m.Count) > 0 ? s.Quantity - materials.Where(m => m.MaterialCode.Equals(s.ItemCode) && m.InvoiceDocEntry == s.DocEntry).Sum(m => m.Count) : s.Quantity,//应退数量
                         QuotationMaterialId = quotationObj.QuotationMergeMaterials.Where(q => q.MaterialCode.Equals(s.ItemCode) && (s.Price == q.DiscountPrices || s.Price == decimal.Parse(Convert.ToDecimal(q.DiscountPrices).ToString("#0.00")))).FirstOrDefault()?.Id,
                     });
                 });
@@ -1163,6 +1164,16 @@ namespace OpenAuth.App
             returnNotes.ReturnnoteMaterials = null;
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ReturnNoteTypeName")).Select(u => new { u.Name, u.DtValue }).ToListAsync();
             var flowInstanceObj = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(returnNotes.FlowInstanceId)).FirstOrDefaultAsync();
+            var ReturnnoteOperationHistorys = History.Select(h => new
+            {
+                CreateDate = h.CreateDate.ToString("yyyy.MM.dd HH:mm:ss"),
+                h.Remark,
+                IntervalTime = h.IntervalTime != null && h.IntervalTime > 0 ? h.IntervalTime / 60 : null,
+                h.CreateUserName,
+                h.Content,
+                h.ApprovalResult,
+            });
+            var qoutationReq = await _quotation.GeneralDetails(quotationObj.Id, null);
             result.Data = new
             {
                 InvoiceDocEntry,
@@ -1172,15 +1183,8 @@ namespace OpenAuth.App
                 returnNotes,
                 returnnoteMaterials,
                 serviceOrders,
-                ReturnnoteOperationHistorys = History.Select(h => new
-                {
-                    CreateDate = h.CreateDate.ToString("yyyy.MM.dd HH:mm:ss"),
-                    h.Remark,
-                    IntervalTime = h.IntervalTime != null && h.IntervalTime > 0 ? h.IntervalTime / 60 : null,
-                    h.CreateUserName,
-                    h.Content,
-                    h.ApprovalResult,
-                })
+                ReturnnoteOperationHistorys,
+                Quotations= qoutationReq
             };
             return result;
         }
@@ -1221,7 +1225,7 @@ namespace OpenAuth.App
                     await UnitWork.SaveAsync();
                     if (!obj.IsDraft)
                     {
-                        //创建报销流程
+                        //创建退料流程
                         var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("物料退料单"));
                         var afir = new AddFlowInstanceReq();
                         afir.SchemeId = mf.FlowSchemeId;
@@ -1313,7 +1317,7 @@ namespace OpenAuth.App
                         //returnnotrStatus = 3;//未提交
                         if (string.IsNullOrWhiteSpace(returnNoteObj.FlowInstanceId))
                         {
-                            //创建报销流程
+                            //创建结算流程
                             var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("物料退料单"));
                             var afir = new AddFlowInstanceReq();
                             afir.SchemeId = mf.FlowSchemeId;
