@@ -643,7 +643,6 @@ namespace OpenAuth.App
             {
                 quotations.Add(await _quotation.GeneralDetails(item, null));
             }
-            quotations.ForEach(q => q.QuotationOperationHistorys = q.QuotationOperationHistorys.Where(q => q.ApprovalStage != "-1").OrderBy(o => o.CreateTime).ThenByDescending(o=>o.Action).ToList());
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == ReimburseResp.ServiceOrderId && c.CreateUserId.Equals(ReimburseResp.CreateUserId) && c.ServiceMode == 1).ToListAsync();
             var completionreport = CompletionReports.FirstOrDefault();
             var ocrds = await UnitWork.Find<OCRD>(o => serviceOrders.TerminalCustomerId.Equals(o.CardCode)).FirstOrDefaultAsync();

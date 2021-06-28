@@ -12,6 +12,10 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         ///物料报价单Id
         /// </summary>
+        public string Id { get; set; }
+        /// <summary>
+        ///物料报价单Id
+        /// </summary>
         public int QuotationId { get; set; }
 
         /// <summary>
@@ -98,5 +102,10 @@ namespace OpenAuth.App.Material.Request
         ///物料状态 1-更换 2-购买 3-赠送
         /// </summary>
         public string MaterialType { get; set; }
+
+        /// <summary>
+        /// 物料附件
+        /// </summary>
+        public virtual List<QuotationMaterialPictureReq> QuotationMaterialPictures { get; set; }
     }
 }
