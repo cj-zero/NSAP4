@@ -1659,7 +1659,7 @@ namespace OpenAuth.App
             var dailyReportDates = dailyReports.OrderByDescending(o => o.CreateTime).Select(s => s.CreateTime?.Date.ToString("yyyy-MM-dd")).Distinct().ToList();
 
             var data = dailyReports.GroupBy(g => g.CreateTime?.Date).Select(s => new ReportResult { DailyDate = s.Key?.Date.ToString("yyyy-MM-dd"), ReportDetails = s.ToList() }).ToList();
-            result.Data = new DailyReportResp { DailyDates = dailyReportDates, ReportResults = data };
+            result.Data = new DailyReportResp { DailyDates = dailyReportDates, ReportResults = data.OrderBy(d=>d.DailyDate).ToList() };
             return result;
         }
 
