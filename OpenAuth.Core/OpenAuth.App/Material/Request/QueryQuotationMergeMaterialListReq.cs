@@ -18,6 +18,7 @@
         /// 物料单位
         /// </summary>
         public string Unit { get; set; }
+
         /// <summary>
         /// 总数量
         /// </summary>
