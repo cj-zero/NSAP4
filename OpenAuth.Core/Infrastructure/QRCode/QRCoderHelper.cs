@@ -135,6 +135,23 @@ namespace Infrastructure
             }
         }
 
+
+        /// <summary>
+        /// 图片转为base64编码的字符串
+        /// </summary>
+        /// <param name="bitmap"></param>
+        /// <returns></returns>
+        public static string BitmapToBase64(Bitmap bitmap)
+        {
+            MemoryStream ms = new MemoryStream();
+            bitmap.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
+            byte[] arr = new byte[ms.Length];
+            ms.Position = 0;
+            ms.Read(arr, 0, (int)ms.Length);
+            ms.Close();
+            String strbaser64 = Convert.ToBase64String(arr);
+            return strbaser64;
+        }
     }
 
     /// <summary>
