@@ -64,6 +64,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         /// <value>The organizations.</value>
         public string OrganizationIds { get; set; }
+        /// <summary>
+        /// 3.0用户ID
+        /// </summary>
+        public int NsapUserId { get; set; }
 
         public static implicit operator UpdateUserReq(User user)
         {
