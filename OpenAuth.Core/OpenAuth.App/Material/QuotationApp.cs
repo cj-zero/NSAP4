@@ -433,7 +433,7 @@ namespace OpenAuth.App.Material
                     IsProtected = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).FirstOrDefault()?.DocDate > DateTime.Now ? true : false,
                     DocDate = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).OrderByDescending(s => s.DocDate).FirstOrDefault()?.DocDate,
                     FromTheme = s.FromTheme
-                }).ToList();
+                }).OrderBy(s=>s.MaterialCode).ToList();
             }
             result.Count = ServiceWorkOrderList.Count();
             return result;
