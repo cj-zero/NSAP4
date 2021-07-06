@@ -76,7 +76,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
             var slpCode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
 
             var result = new TableData();
-            var query = from a in UnitWork.Find<OCRD>(null).WhereIf(loginContext.User.Account != Define.SYSTEM_USERNAME, q => q.SlpCode == slpCode)
+            var query = from a in UnitWork.Find<OCRD>(null).WhereIf((loginContext.User.Account != Define.SYSTEM_USERNAME && loginContext.User.Account!="lijianmei"), q => q.SlpCode == slpCode)
                         join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode into ab
                         from b in ab.DefaultIfEmpty()
                         join c in UnitWork.Find<OCRG>(null) on (int)a.GroupCode equals c.GroupCode into ac
@@ -397,7 +397,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
             if (!vaild) return "";
 
 
-            string url = "http://app.neware.work/appshare.html";
+            string url = "https://app.neware.work/appshare.html"; 
             var timespan = Infrastructure.Helpers.DateTimeHelper.GetTimeStamp(DateTime.Now, true);
             url = $"{url}?CardCode={req.CardCode}" +
                 $"&CardName={System.Web.HttpUtility.UrlEncode(req.CardName)}" +
