@@ -12,6 +12,8 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Infrastructure.Extensions;
 using OpenAuth.Repository.Domain;
+using System.Linq.Dynamic.Core;
+using System.IO;
 
 namespace OpenAuth.App.Sap.BusinessPartner
 {
@@ -64,8 +66,17 @@ namespace OpenAuth.App.Sap.BusinessPartner
         }
         public async Task<TableData> Get(QueryBusinessPartnerListReq req)
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
+            var slpCode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
+
             var result = new TableData();
-            var query = from a in UnitWork.Find<OCRD>(null)
+            var query = from a in UnitWork.Find<OCRD>(null).WhereIf((loginContext.User.Account != Define.SYSTEM_USERNAME && loginContext.User.Account!="lijianmei"), q => q.SlpCode == slpCode)
                         join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode into ab
                         from b in ab.DefaultIfEmpty()
                         join c in UnitWork.Find<OCRG>(null) on (int)a.GroupCode equals c.GroupCode into ac
@@ -355,6 +366,57 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 clearUserId
             };
             result.Data = data;
+            return result;
+        }
+
+        /// <summary>
+        /// 生成二维码
+        /// </summary>
+        /// <param name="cardCode"></param>
+        /// <returns></returns>
+        public async Task<dynamic> GenerateQRCode(GenerateQRCodeReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var globainfo = await UnitWork.Find<GlobalArea>(c => c.Pid != "99").ToListAsync();
+            var province = globainfo.Where(c => c.AreaName == req.Province && c.AreaLevel == "1").FirstOrDefault();
+            var vaild = false;
+            //验证省市区是否正确
+            if (province!=null)
+            {
+                var cityinfo = globainfo.Where(c => c.Pid == province.Id && c.AreaName == req.City).FirstOrDefault();
+                if (cityinfo!=null)
+                {
+                    var area = globainfo.Where(c => c.Pid == cityinfo.Id && c.AreaName == req.Area).FirstOrDefault();
+                    if (area != null) vaild = true;
+                }
+            }
+            if (!vaild) return "";
+
+
+            string url = "https://app.neware.work/appshare.html"; 
+            var timespan = Infrastructure.Helpers.DateTimeHelper.GetTimeStamp(DateTime.Now, true);
+            url = $"{url}?CardCode={req.CardCode}" +
+                $"&CardName={System.Web.HttpUtility.UrlEncode(req.CardName)}" +
+                $"&Province={System.Web.HttpUtility.UrlEncode(req.Province)}" +
+                $"&City={System.Web.HttpUtility.UrlEncode(req.City)}" +
+                $"&Area={System.Web.HttpUtility.UrlEncode(req.Area)}" +
+                $"&Address={System.Web.HttpUtility.UrlEncode(req.Address)}" +
+                $"&Contacter={System.Web.HttpUtility.UrlEncode(req.Contacter)}" +
+                $"&Tel={req.Tel}" +
+                $"&timespan={timespan}";
+            //url = System.Web.HttpUtility.UrlEncode(url);
+            string result = url;
+            if (req.IsQRCode)
+            {
+                var logo = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "新威智能logo.png");
+                var bitmap = QRCoderHelper.GetLogoQRCode(url, logo, 10);
+                result = QRCoderHelper.BitmapToBase64(bitmap);
+            }
+
             return result;
         }
     }
