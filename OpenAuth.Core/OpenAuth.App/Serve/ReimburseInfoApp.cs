@@ -108,7 +108,7 @@ namespace OpenAuth.App
                         break;
                 }
             }
-            if (request.PageType == 1 && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
+            if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && request.PageType == 1 && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
                 ReimburseInfos = ReimburseInfos.Where(r => r.CreateUserId.Equals(loginContext.User.Id));
             };

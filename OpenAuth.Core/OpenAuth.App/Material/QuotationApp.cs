@@ -73,7 +73,7 @@ namespace OpenAuth.App.Material
                                 .WhereIf(request.QuotationStatus != null, q => q.QuotationStatus == request.QuotationStatus)
                                 .WhereIf(request.SalesOrderId != null, q => q.SalesOrderId == request.SalesOrderId)
                                 .WhereIf(ServiceOrderids.Count() > 0, q => ServiceOrderids.Contains(q.ServiceOrderId));
-            if (!loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginUser.Account.Equals(Define.SYSTEM_USERNAME))
+            if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginUser.Account.Equals(Define.SYSTEM_USERNAME))
             {
                 if (request.PageStart != null && request.PageStart == 1)
                 {
@@ -433,7 +433,7 @@ namespace OpenAuth.App.Material
                     IsProtected = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).FirstOrDefault()?.DocDate > DateTime.Now ? true : false,
                     DocDate = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).OrderByDescending(s => s.DocDate).FirstOrDefault()?.DocDate,
                     FromTheme = s.FromTheme
-                }).ToList();
+                }).OrderBy(s=>s.MaterialCode).ToList();
             }
             result.Count = ServiceWorkOrderList.Count();
             return result;

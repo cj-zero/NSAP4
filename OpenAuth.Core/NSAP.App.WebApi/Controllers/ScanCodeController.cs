@@ -24,7 +24,7 @@ namespace NSAP.App.WebApi.Controllers
             _appScanCodeApp = appScanCodeApp;
         }
         /// <summary>
-        /// 扫描出厂码获取guid集合
+        /// 根据序列号获取guid集合
         /// </summary>
         /// <param name="serialNumber"></param>
         /// <returns></returns>
@@ -34,14 +34,67 @@ namespace NSAP.App.WebApi.Controllers
             var result = new TableData();
             try
             {
-                if (serialNumber.ToLower().Contains("zwj"))
-                {
-                  result = await _appScanCodeApp.GetGuidBySn(serialNumber);
-                }
-                else
-                {
-                    result = await _appScanCodeApp.GetCertInfoBySn(serialNumber);
-                }
+                result = await _appScanCodeApp.GetGuidBySn(serialNumber);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 根据guid集合获取序列号集合
+        /// </summary>
+        /// <param name="guids"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetSnListByGuidList(string guids)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _appScanCodeApp.GetSnListByGuidList(guids);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 根据序列号获取订单信息
+        /// </summary>
+        /// <param name="sn"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetOrderInfoBySn(string sn)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _appScanCodeApp.GetOrderInfoBySn(sn);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 判断用户是否有服务单
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> IsExistServerOrder(int userId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _appScanCodeApp.IsExistServerOrder(userId);
             }
             catch (Exception e)
             {
