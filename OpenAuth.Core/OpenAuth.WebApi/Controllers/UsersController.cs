@@ -232,6 +232,23 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        [HttpGet]
+        public async Task<TableData> GetErp3User([FromQuery] QueryUserListReq request)
+        {
+            return await _app.GetErp3User(request);
+        }
+        /// <summary>
+        /// 获取单个erp3.0用户
+        /// </summary>
+        /// <param name="account"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetErp3UserSingle(string id)
+        {
+            return await _app.GetErp3UserSingle(id);
+        }
+
         public UsersController(UserManagerApp app)
         {
             _app = app;
