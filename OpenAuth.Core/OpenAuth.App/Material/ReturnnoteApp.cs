@@ -16,6 +16,7 @@ using Infrastructure.Const;
 using OpenAuth.App.Material.Response;
 using System.Linq.Dynamic.Core;
 using OpenAuth.App.Material;
+using OpenAuth.Repository.Domain.Workbench;
 
 namespace OpenAuth.App
 {
@@ -1236,16 +1237,22 @@ namespace OpenAuth.App
                         afir.OrgId = loginOrg.FirstOrDefault()?.Id;
                         var FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
                         await UnitWork.UpdateAsync<ReturnNote>(r => r.Id == returnnotrObj.Id, r => new ReturnNote { FlowInstanceId = FlowInstanceId });
-                        //添加提交记录
-                        //await UnitWork.AddAsync<ReturnnoteOperationHistory>(new ReturnnoteOperationHistory
-                        //{
-                        //    Action = "提交退料单",
-                        //    ApprovalStage = "3",
-                        //    CreateTime = DateTime.Now,
-                        //    CreateUser = loginUser.Name,
-                        //    CreateUserId = loginUser.Id,
-                        //    ReturnNoteId = returnnotrObj.Id
-                        //});
+                        //增加全局待处理
+                        var serviceOrederObj = await UnitWork.Find<ServiceOrder>(s => s.Id == obj.ServiceOrderId).FirstOrDefaultAsync();
+                        await _quotation.AddOrUpdate(new WorkbenchPending
+                        {
+                            OrderType = 1,
+                            TerminalCustomer = serviceOrederObj.TerminalCustomer,
+                            TerminalCustomerId = serviceOrederObj.TerminalCustomerId,
+                            ServiceOrderId = serviceOrederObj.Id,
+                            ServiceOrderSapId = (int)serviceOrederObj.U_SAP_ID,
+                            UpdateTime = returnnotrObj.UpdateTime,
+                            Remark = returnnotrObj.Remark,
+                            FlowInstanceId = returnnotrObj.FlowInstanceId,
+                            TotalMoney = returnnotrObj.TotalMoney,
+                            Petitioner = loginUser.Name,
+                            SourceNumbers = returnnotrObj.Id
+                        });
                     }
                     await UnitWork.SaveAsync();
                     await transaction.CommitAsync();
@@ -1333,6 +1340,22 @@ namespace OpenAuth.App
                             FlowInstanceId = returnNoteObj.FlowInstanceId;
                             await _flowInstanceApp.Start(new StartFlowInstanceReq() { FlowInstanceId = returnNoteObj.FlowInstanceId });
                         }
+                        //增加全局待处理
+                        var serviceOrederObj = await UnitWork.Find<ServiceOrder>(s => s.Id == obj.ServiceOrderId).FirstOrDefaultAsync();
+                        await _quotation.AddOrUpdate(new WorkbenchPending
+                        {
+                            OrderType = 1,
+                            TerminalCustomer = serviceOrederObj.TerminalCustomer,
+                            TerminalCustomerId = serviceOrederObj.TerminalCustomerId,
+                            ServiceOrderId = serviceOrederObj.Id,
+                            ServiceOrderSapId = (int)serviceOrederObj.U_SAP_ID,
+                            UpdateTime = DateTime.Now,
+                            Remark = returnNoteObj.Remark,
+                            FlowInstanceId = FlowInstanceId,
+                            TotalMoney = returnNoteObj.TotalMoney,
+                            Petitioner = loginUser.Name,
+                            SourceNumbers = returnNoteObj.Id
+                        });
                     }
                     obj.TotalMoney = await CalculatePrice(obj);
                     await UnitWork.UpdateAsync<ReturnNote>(r => r.Id == obj.ReturnNoteId, r => new ReturnNote
@@ -1433,19 +1456,9 @@ namespace OpenAuth.App
             {
                 throw new Exception("退料单为空，请核对。");
             }
-            //var returnNoteStatus = 0;
-            //ReturnnoteOperationHistory qoh = new ReturnnoteOperationHistory();
-            //qoh.ApprovalResult = "同意";
-            //if (loginContext.Roles.Any(r => r.Name.Equals("仓库")) && returnNotes.Status == 4)
-            //{
-            //    //qoh.Action = "仓库收货";
-            //    returnNoteStatus = 5;
-            //}
-            //else 
             var flowInstanceObj = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(returnNotes.FlowInstanceId)).FirstOrDefaultAsync();
             if (loginContext.Roles.Any(r => r.Name.Equals("物料品质")) && flowInstanceObj.ActivityName.Equals("品质检验"))
             {
-                //qoh.Action = "品质检验";
                 if (!req.IsReject)
                 {
                     var materialIds = req.returnnoteMaterials.Select(r => r.MaterialsId).ToList();
@@ -1462,19 +1475,9 @@ namespace OpenAuth.App
                     }
 
                 }
-                //returnNoteStatus = 6;
             }
-            //else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && returnNotes.Status == 6)
-            //{
-            //    //qoh.Action = "总经理审批";
-            //    returnNoteStatus = 7;
-            //}
-            //else 
             if (loginContext.Roles.Any(r => r.Name.Equals("仓库")) && flowInstanceObj.ActivityName.Equals("仓库入库"))
             {
-                //qoh.Action = "仓库入库";
-                //qoh.ApprovalResult = "入库成功";
-                //returnNoteStatus = 8;
                 if (!req.IsReject)
                 {
                     var materialIds = req.returnnoteMaterials.Select(r => r.MaterialsId).ToList();
@@ -1491,10 +1494,6 @@ namespace OpenAuth.App
                     }
                 }
             }
-            //else
-            //{
-            //    throw new Exception("暂无审批该流程权限，不可审批");
-            //}
             VerificationReq VerificationReqModle = new VerificationReq
             {
                 NodeRejectStep = "",
@@ -1509,28 +1508,20 @@ namespace OpenAuth.App
                 VerificationReqModle.VerificationOpinion = req.Remark;
                 VerificationReqModle.NodeRejectType = "1";
                 await _flowInstanceApp.Verification(VerificationReqModle);
-                //returnNoteStatus = 2;
-                //qoh.ApprovalResult = "驳回";
-                //qoh.ApprovalStage = "1";
             }
             else
             {
-                //qoh.ApprovalStage = returnNotes.Status.ToString();
                 await _flowInstanceApp.Verification(VerificationReqModle);
             }
             await UnitWork.UpdateAsync<ReturnNote>(r => r.Id == returnNotes.Id, r => new ReturnNote
             {
-                //Status = returnNoteStatus,
                 UpdateTime = DateTime.Now
+            }); 
+            //修改全局待处理
+            await UnitWork.UpdateAsync<WorkbenchPending>(w => w.SourceNumbers == returnNotes.Id && w.OrderType == 2, w => new WorkbenchPending
+            {
+                UpdateTime = DateTime.Now,
             });
-            //var selqoh = await UnitWork.Find<ReturnnoteOperationHistory>(r => r.ReturnNoteId.Equals(returnNotes.Id)).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
-            //qoh.CreateUser = loginContext.User.Name;
-            //qoh.CreateUserId = loginContext.User.Id;
-            //qoh.CreateTime = DateTime.Now;
-            //qoh.ReturnNoteId = returnNotes.Id;
-            //qoh.Remark = req.Remark;
-            //qoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds);
-            //await UnitWork.AddAsync<ReturnnoteOperationHistory>(qoh);
             await UnitWork.SaveAsync();
             if (loginContext.Roles.Any(r => r.Name.Equals("仓库")) && flowInstanceObj.ActivityName.Equals("仓库入库"))
             {

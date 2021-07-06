@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Workbench;
 
 namespace OpenAuth.Repository
 {
@@ -16,6 +17,9 @@ namespace OpenAuth.Repository
         {
             modelBuilder.Entity<DataPrivilegeRule>()
                 .HasKey(c => new { c.Id });
+            modelBuilder.Entity<WorkbenchPending>()
+                .HasKey(c => new { c.ApprovalNumber });
+            
         }
 
         public virtual DbSet<Application> Applications { get; set; }
@@ -56,6 +60,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<AppUserBind> AppUserBinds { get; set; }
         public virtual DbSet<BuilderTable> BuilderTables { get; set; }
         public virtual DbSet<BuilderTableColumn> BuilderTableColumns { get; set; }
+        public virtual DbSet<WorkbenchPending> WorkbenchPendings { get; set; }
 
         //非数据库表格
         public virtual DbQuery<SysTableColumn> SysTableColumns { get; set; }

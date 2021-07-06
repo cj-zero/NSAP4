@@ -26,6 +26,8 @@ using DotNetCore.CAP;
 using System.Threading;
 using OpenAuth.Repository.Domain.NsapBone;
 using Microsoft.Data.SqlClient;
+using OpenAuth.Repository.Domain.Workbench;
+using OpenAuth.App.Workbench;
 
 namespace OpenAuth.App.Material
 {
@@ -39,6 +41,8 @@ namespace OpenAuth.App.Material
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
 
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
+
+        private readonly PendingApp _pendingApp;
 
         private ICapPublisher _capBus;
 
@@ -1056,6 +1060,22 @@ namespace OpenAuth.App.Material
                             ApprovalStage = "3"
                         });
                         await UnitWork.UpdateAsync<Quotation>(QuotationObj);
+                        //增加全局待处理
+                        var serviceOrederObj = await UnitWork.Find<ServiceOrder>(s => s.Id == obj.ServiceOrderId).FirstOrDefaultAsync();
+                        await AddOrUpdate(new WorkbenchPending
+                        {
+                            OrderType = 1,
+                            TerminalCustomer = serviceOrederObj.TerminalCustomer,
+                            TerminalCustomerId = serviceOrederObj.TerminalCustomerId,
+                            ServiceOrderId = serviceOrederObj.Id,
+                            ServiceOrderSapId = (int)serviceOrederObj.U_SAP_ID,
+                            UpdateTime = QuotationObj.UpDateTime,
+                            Remark = QuotationObj.Remark,
+                            FlowInstanceId = QuotationObj.FlowInstanceId,
+                            TotalMoney = QuotationObj.TotalMoney,
+                            Petitioner = loginUser.Name,
+                            SourceNumbers = QuotationObj.Id
+                        });
                         await UnitWork.SaveAsync();
                     }
                     await transaction.CommitAsync();
@@ -1087,7 +1107,6 @@ namespace OpenAuth.App.Material
             }
             var Message = await Condition(obj);
             var QuotationObj = await CalculatePrice(obj);
-
             var dbContext = UnitWork.GetDbContext<Quotation>();
             using (var transaction = dbContext.Database.BeginTransaction())
             {
@@ -1161,8 +1180,6 @@ namespace OpenAuth.App.Material
                             //todo:要修改的字段赋值
                         });
                         await UnitWork.SaveAsync();
-
-
                     }
                     else
                     {
@@ -1186,8 +1203,6 @@ namespace OpenAuth.App.Material
                         {
                             await _flowInstanceApp.Start(new StartFlowInstanceReq { FlowInstanceId = QuotationObj.FlowInstanceId });
                         }
-
-
                         await UnitWork.UpdateAsync<Quotation>(u => u.Id == QuotationObj.Id, u => new Quotation
                         {
                             QuotationStatus = 3.1M,
@@ -1235,6 +1250,22 @@ namespace OpenAuth.App.Material
                             CreateTime = DateTime.Now,
                             QuotationId = QuotationObj.Id,
                             ApprovalStage = "3"
+                        });
+                        //增加全局待处理
+                        var serviceOrederObj = await UnitWork.Find<ServiceOrder>(s => s.Id == obj.ServiceOrderId).FirstOrDefaultAsync();
+                        await AddOrUpdate(new WorkbenchPending
+                        {
+                            OrderType = 1,
+                            TerminalCustomer = serviceOrederObj.TerminalCustomer,
+                            TerminalCustomerId = serviceOrederObj.TerminalCustomerId,
+                            ServiceOrderId = serviceOrederObj.Id,
+                            ServiceOrderSapId = (int)serviceOrederObj.U_SAP_ID,
+                            UpdateTime = DateTime.Now,
+                            Remark = QuotationObj.Remark,
+                            FlowInstanceId = QuotationObj.FlowInstanceId,
+                            TotalMoney = QuotationObj.TotalMoney,
+                            Petitioner = loginUser.Name,
+                            SourceNumbers = QuotationObj.Id
                         });
                         await UnitWork.SaveAsync();
 
@@ -1828,6 +1859,11 @@ namespace OpenAuth.App.Material
             qoh.Remark = req.Remark;
             qoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds);
             await UnitWork.AddAsync<QuotationOperationHistory>(qoh);
+            //修改全局待处理
+            await UnitWork.UpdateAsync<WorkbenchPending>(w => w.SourceNumbers == obj.Id && w.OrderType == 1, w => new WorkbenchPending
+            {
+                UpdateTime = obj.UpDateTime,
+            });
             await UnitWork.SaveAsync();
         }
 
@@ -2514,6 +2550,11 @@ namespace OpenAuth.App.Material
         public async Task CancellationSalesOrder(string QuotationId)
         {
             _capBus.Publish("Serve.SellOrder.Cancel", int.Parse(QuotationId));
+            var quotationObj = await UnitWork.Find<Quotation>(q => q.Id == int.Parse(QuotationId)).FirstOrDefaultAsync();
+            if (!string.IsNullOrWhiteSpace(quotationObj.FlowInstanceId))
+            {
+                await _flowInstanceApp.ReCall(new RecallFlowInstanceReq { FlowInstanceId = quotationObj.FlowInstanceId });
+            }
         }
 
         /// <summary>
@@ -2539,11 +2580,21 @@ namespace OpenAuth.App.Material
             await UnitWork.SaveAsync();
         }
 
-        public QuotationApp(IUnitWork unitWork, ICapPublisher capBus, FlowInstanceApp flowInstanceApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
+        /// <summary>
+        ///判断增加还是修改待处理
+        /// </summary>
+        /// <returns></returns>
+        public async Task AddOrUpdate(WorkbenchPending obj)
+        {
+           await _pendingApp.AddOrUpdate(obj);
+        }
+
+        public QuotationApp(IUnitWork unitWork, ICapPublisher capBus, PendingApp pendingApp, FlowInstanceApp flowInstanceApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _capBus = capBus;
+            _pendingApp = pendingApp;
         }
 
     }
