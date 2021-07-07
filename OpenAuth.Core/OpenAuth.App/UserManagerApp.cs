@@ -155,14 +155,24 @@ namespace OpenAuth.App
             }
 
             //保存erp3.0关联用户
-            UnitWork.Delete<NsapUserMap>(c => c.UserID == requser.Id);
-            UnitWork.Add(new NsapUserMap
+            if (request.NsapUserId > 0)
             {
-                UserID = requser.Id,
-                NsapUserId = request.NsapUserId
-            });
-
+                var nusermap = UnitWork.Find<NsapUserMap>(c => c.UserID == requser.Id).FirstOrDefault();
+                if (nusermap == null)
+                {
+                    UnitWork.Add(new NsapUserMap
+                    {
+                        UserID = requser.Id,
+                        NsapUserId = request.NsapUserId
+                    });
+                }
+                else
+                {
+                    UnitWork.Update<NsapUserMap>(c => c.UserID == requser.Id, c => new NsapUserMap { NsapUserId = request.NsapUserId });
+                }
+            }
             UnitWork.Save();
+
             string[] orgIds = request.OrganizationIds.Split(',').ToArray();
 
             _revelanceApp.DeleteBy(Define.USERORG, requser.Id);

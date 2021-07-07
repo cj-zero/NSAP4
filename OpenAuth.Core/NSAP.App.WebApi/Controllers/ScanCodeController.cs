@@ -34,7 +34,7 @@ namespace NSAP.App.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result = await _appScanCodeApp.GetGuidBySn(serialNumber);
+                result = await _appScanCodeApp.GetGuidBySn(serialNumber); 
             }
             catch (Exception e)
             {
@@ -54,7 +54,7 @@ namespace NSAP.App.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result = await _appScanCodeApp.GetSnListByGuidList(guids);
+                result = await _appScanCodeApp.GetSnListByGuidList(guids); 
             }
             catch (Exception e)
             {
