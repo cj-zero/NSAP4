@@ -154,10 +154,10 @@ namespace OpenAuth.App
 
 
             var now = DateTime.Now;
-            var data = await UnitWork.Find<User>(null)
-                .WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name))
-                .WhereIf(userIds.Count > 0, c => userIds.Contains(c.Id))
-                .ToListAsync();
+            var data = await (from a in UnitWork.Find<AppUserMap>(null)
+                              join b in UnitWork.Find<User>(c => c.Status == 0).WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)).WhereIf(userIds.Count > 0, c => userIds.Contains(c.Id)) on a.UserID equals b.Id
+                              select new User { Id = b.Id, Name = b.Name, Mobile = b.Mobile }).ToListAsync();
+
             var da1 = data.Select(c =>
              {
                  //当天是否有定位记录
