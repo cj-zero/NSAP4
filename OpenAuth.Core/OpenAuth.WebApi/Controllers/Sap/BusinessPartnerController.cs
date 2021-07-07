@@ -131,5 +131,18 @@ namespace OpenAuth.WebApi.Controllers.Sap
 
             return result;
         }
+
+        /// <summary>
+        /// 生成客户二维码
+        /// </summary>
+        /// <param name="cardCode"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GenerateQRCode([FromQuery]GenerateQRCodeReq req)
+        {
+            TableData res = new TableData();
+            res.Data = await _businessPartnerApp.GenerateQRCode(req);
+            return res;
+        }
     }
 }

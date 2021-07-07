@@ -62,6 +62,8 @@ namespace OpenAuth.Repository
         public virtual DbSet<BuilderTableColumn> BuilderTableColumns { get; set; }
         public virtual DbSet<WorkbenchPending> WorkbenchPendings { get; set; }
 
+        public virtual DbSet<NsapUserMap> NsapUserMaps { get; set; }
+        
         //非数据库表格
         public virtual DbQuery<SysTableColumn> SysTableColumns { get; set; }
     }
