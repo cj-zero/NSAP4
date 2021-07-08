@@ -131,6 +131,7 @@ namespace OpenAuth.App
                 requser.CreateTime = DateTime.Now;
                 requser.Password = Encryption.Encrypt(requser.Password);
                 UnitWork.Add(requser);
+                UnitWork.Save();
                 request.Id = requser.Id; //要把保存后的ID存入view
             }
             else
