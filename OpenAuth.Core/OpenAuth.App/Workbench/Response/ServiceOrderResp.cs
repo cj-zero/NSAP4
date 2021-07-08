@@ -32,6 +32,10 @@ namespace OpenAuth.App.Workbench.Response
         /// </summary>
         public string Petitioner { get; set; }
         /// <summary>
+        /// 申请人id
+        /// </summary>
+        public string PetitionerId { get; set; }
+        /// <summary>
         /// 地址
         /// </summary>
         public string Address { get; set; }

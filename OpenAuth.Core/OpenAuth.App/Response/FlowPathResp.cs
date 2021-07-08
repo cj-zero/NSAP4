@@ -26,6 +26,11 @@ namespace OpenAuth.App.Response
         /// </summary>
 
         public bool IsNode  { get; set; }
+
+        /// <summary>
+        /// 排序
+        /// </summary>
+        public int Number { get; set; }
     }
     public class FlowInstanceJson
     {
@@ -54,7 +59,7 @@ namespace OpenAuth.App.Response
         /// 排序
         /// </summary>
 
-        public string Number { get; set; }
+        public int Number { get; set; }
     }
     public class FlowInstanceLines
     {

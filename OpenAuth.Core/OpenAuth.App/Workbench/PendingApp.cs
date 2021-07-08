@@ -43,7 +43,7 @@ namespace OpenAuth.App.Workbench
                                     from b in ab.DefaultIfEmpty()
                                     join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id into bc
                                     from c in bc.DefaultIfEmpty()
-                                    select new { a.Name, OrgName = c.Name, c.CascadeId }).OrderByDescending(u => u.CascadeId).FirstOrDefaultAsync();
+                                    select new { a.Name,a.Id, OrgName = c.Name, c.CascadeId }).OrderByDescending(u => u.CascadeId).FirstOrDefaultAsync();
             var serviceDailyReportList = await UnitWork.Find<ServiceDailyReport>(s => ServiceOrderId == s.ServiceOrderId).ToListAsync();
             var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId).Include(s => s.ServiceWorkOrders).Select(s => new ServiceOrderResp
             {
@@ -59,7 +59,7 @@ namespace OpenAuth.App.Workbench
                 ServiceWorkOrders = s.ServiceWorkOrders.Select(w => new ServiceWorkOrderResp
                 {
                     ManufacturerSerialNumber = w.ManufacturerSerialNumber,
-                    CreateTime = w.CreateTime.ToString("yyyy.MM.dd HH:mm:ss"),
+                    CreateTime =Convert.ToDateTime(w.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     MaterialCode = w.MaterialCode,
                     WorkOrderNumber = w.WorkOrderNumber,
                     FromTheme = w.FromTheme,
@@ -68,9 +68,10 @@ namespace OpenAuth.App.Workbench
                 }).ToList()
             }).FirstOrDefaultAsync();
             serviceOrder.Petitioner = petitioner.OrgName + "-" + petitioner.Name;
+            serviceOrder.PetitionerId = petitioner.Id;
             serviceOrder.ServiceDailyReports = serviceDailyReportList.Select(s => new ServiceDailyReportResp
             {
-                CreateTime = s.CreateTime.ToString("yyyy.MM.dd HH:mm:ss"),
+                CreateTime = Convert.ToDateTime(s.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 ManufacturerSerialNumber = s.ManufacturerSerialNumber,
                 MaterialCode = s.MaterialCode,
                 ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription),
@@ -86,7 +87,7 @@ namespace OpenAuth.App.Workbench
         {
             var quotationObj = await UnitWork.Find<Quotation>(q => q.Id == QuotationId).Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).ThenInclude(q => q.QuotationMaterialPictures).Include(q => q.QuotationOperationHistorys)
                 .FirstOrDefaultAsync();
-            if (quotationObj == null) 
+            if (quotationObj == null)
             {
                 return null;
             }
@@ -108,7 +109,7 @@ namespace OpenAuth.App.Workbench
                 Prepay = quotationObj.Prepay,
                 Remark = quotationObj.Remark,
                 Tentative = quotationObj.Tentative,
-                UpDateTime = quotationObj.UpDateTime.ToString("yyyy.MM.dd HH:mm:ss"),
+                UpDateTime = Convert.ToDateTime(quotationObj.UpDateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 PayOnReceipt = quotationObj.PayOnReceipt,
                 TotalCostPrice = quotationObj.TotalCostPrice,
                 TotalMoney = quotationObj.TotalMoney,
@@ -116,11 +117,11 @@ namespace OpenAuth.App.Workbench
                 {
                     ApprovalResult = o.ApprovalResult,
                     Content = o.Action,
-                    CreateTime = o.CreateTime.ToString("yyyy.MM.dd HH:mm:ss"),
+                    CreateTime = Convert.ToDateTime(o.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     CreateUserName = o.CreateUser,
                     IntervalTime = o.IntervalTime.ToString(),
                     Remark = o.Remark
-                }).OrderBy(o=>o.CreateTime).ToList(),
+                }).OrderBy(o => o.CreateTime).ToList(),
                 QuotationProducts = quotationObj.QuotationProducts.Select(p => new QuotationProductResp
                 {
                     IsProtected = p.IsProtected,
@@ -152,22 +153,52 @@ namespace OpenAuth.App.Workbench
                             FileType = p.FileType
                         }).ToList()
                     }).OrderBy(m => m.MaterialCode).ToList()
-                }).OrderBy(p=>p.MaterialCode).ToList()
+                }).OrderBy(p => p.MaterialCode).ToList(),
+                FlowPathResp = new List<FlowPathResp>()
             };
-            //var schemeContent=await UnitWork.Find<FlowInstance>(f => f.Id.Equals(quotationObj.FlowInstanceId)).Select(f=>f.SchemeContent).FirstOrDefaultAsync();
-            //var schemeContentJson = JsonHelper.Instance.Deserialize<FlowInstanceJson>(schemeContent);
-            //List<FlowInstanceNodes> flowInstanceNodes = new List<FlowInstanceNodes>();
-            //var stratid = schemeContentJson.nodes.Where(s => s.id.Contains("start")).FirstOrDefault().id;
-            //schemeContentJson.nodes.ForEach(s =>
-            //{
-                
-            //    flowInstanceNodes.Add(new FlowInstanceNodes { Name= });
+            var schemeContent = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(quotationObj.FlowInstanceId)).Select(f => f.SchemeContent).FirstOrDefaultAsync();
+            var schemeContentJson = JsonHelper.Instance.Deserialize<FlowInstanceJson>(schemeContent);
+            List<FlowInstanceNodes> flowInstanceNodes = new List<FlowInstanceNodes>();
+            int number = 1;
+            flowInstanceNodes.Add(new FlowInstanceNodes { Name = "提交审批", Number = number });
+            string toId = null;
+            schemeContentJson.lines.ForEach(s =>
+            {
+                toId = schemeContentJson.lines.Where(s => (toId == null && s.from.Contains("start")) || s.from.Equals(toId)).FirstOrDefault()?.to;
+                if (schemeContentJson.nodes.Where(n => n.id.Equals(toId)).FirstOrDefault() != null)
+                {
+                    flowInstanceNodes.Add(new FlowInstanceNodes { Name = schemeContentJson.nodes.Where(n => n.id.Equals(toId)).FirstOrDefault().Name, Number = ++number });
+                }
+            });
+            flowInstanceNodes = flowInstanceNodes.OrderBy(f => f.Number).ToList();
+            string historys = null;
+            flowInstanceNodes.ForEach(f =>
+            {
+                var operationHistorys = quotationDetails.QuotationOperationHistorys.Where(q => q.Content.Contains(f.Name)).FirstOrDefault();
 
-            //});
+                if (historys == null || (operationHistorys?.CreateTime != null && DateTime.Parse(historys) < DateTime.Parse(operationHistorys.CreateTime)))
+                {
+                    historys = operationHistorys?.CreateTime;
+                    quotationDetails.FlowPathResp.Add(new FlowPathResp
+                    {
+                        ActivityName = f.Name,
+                        Number = f.Number,
+                        CreateTime = operationHistorys?.CreateTime,
+                        IntervalTime = operationHistorys?.IntervalTime,
+                        IsNode = true
+                    });
+                }
+                else
+                {
+                    quotationDetails.FlowPathResp.Add(new FlowPathResp
+                    {
+                        ActivityName = f.Name,
+                        Number = f.Number,
+                        IsNode = false
+                    });
+                }
 
-            //quotationDetails.FlowPathResp= schemeContentJson.nodes.Select(s=>new FlowPathResp { 
-            //    ActivityName=s.Name,
-            //}).ToList();
+            });
             return quotationDetails;
         }
         /// <summary>
@@ -197,10 +228,10 @@ namespace OpenAuth.App.Workbench
                 ServiceMode = outsourcObj.ServiceMode,
                 Remark = outsourcObj.Remark,
                 TotalMoney = outsourcObj.TotalMoney,
-                UpdateTime = outsourcObj.UpdateTime.ToString("yyyy.MM.dd HH:mm:ss"),
+                UpdateTime = Convert.ToDateTime(outsourcObj.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 OutsourcExpenses = outsourcObj.outsourcexpenses.Select(e => new OutsourcExpensesResp
                 {
-                    Id=e.Id,
+                    Id = e.Id,
                     FromLat = e.FromLat,
                     Days = e.Days,
                     From = e.From,
@@ -217,20 +248,19 @@ namespace OpenAuth.App.Workbench
                         FileName = p.FileName,
                         FileType = p.FileType
                     }).ToList()
-                }).OrderBy(r=>r.ExpensesType).ToList()
+                }).OrderBy(r => r.ExpensesType).ToList()
             };
-            outsourcDetails.OutsourcOperationHistory = await UnitWork.Find<FlowInstanceOperationHistory>(f => f.InstanceId.Equals(outsourcObj.FlowInstanceId)).OrderBy(f => f.CreateDate)
-                .Select(f => new OperationHistoryResp
-                {
-                    ApprovalResult = f.ApprovalResult,
-                    Content = f.Content,
-                    CreateTime = f.CreateDate.ToString("yyyy.MM.dd HH:mm:ss"),
-                    CreateUserName = f.CreateUserName,
-                    IntervalTime = f.IntervalTime.ToString(),
-                    Remark = f.Remark
-                }
-                ).OrderBy(f=>f.CreateTime).ToListAsync();
-
+            var outsourcOperationHistorys = await UnitWork.Find<FlowInstanceOperationHistory>(f => f.InstanceId.Equals(outsourcObj.FlowInstanceId)).OrderBy(f => f.CreateDate)
+                .ToListAsync();
+            outsourcDetails.OutsourcOperationHistory = outsourcOperationHistorys.Select(f => new OperationHistoryResp
+            {
+                ApprovalResult = f.ApprovalResult,
+                Content = f.Content,
+                CreateTime = f?.CreateDate.ToString("yyyy.MM.dd HH:mm:ss"),
+                CreateUserName = f?.CreateUserName,
+                IntervalTime = f?.IntervalTime.ToString(),
+                Remark = f.Remark
+            }).OrderBy(f => f.CreateTime).ToList();
             return outsourcDetails;
         }
         /// <summary>
@@ -267,10 +297,10 @@ namespace OpenAuth.App.Workbench
                 UpdateTime = reimburseObj.UpdateTime,
                 Remark = reimburseObj.Remark,
                 TotalMoney = reimburseObj.TotalMoney,
-                ReimburseMainId= reimburseObj.MainId,
+                ReimburseMainId = reimburseObj.MainId,
                 ReimburseFares = reimburseObj.ReimburseFares.Select(f => new ReimburseFareResp
                 {
-                    Id=f.Id,
+                    Id = f.Id,
                     SerialNumber = f.SerialNumber,
                     CreateTime = f.CreateTime.ToString("yyyy.MM.dd HH:mm:ss"),
                     ExpenseOrg = f.ExpenseOrg,
@@ -278,7 +308,7 @@ namespace OpenAuth.App.Workbench
                     FromLat = f.FromLat,
                     FromLng = f.FromLng,
                     InvoiceNumber = f.InvoiceNumber,
-                    InvoiceTime = f.InvoiceTime.ToString("yyyy.MM.dd HH:mm:ss"),
+                    InvoiceTime = Convert.ToDateTime(f.InvoiceTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     Money = f.Money,
                     Remark = f.Remark,
                     To = f.To,
@@ -292,7 +322,7 @@ namespace OpenAuth.App.Workbench
                         FileName = file.Where(s => s.Id.Equals(m.Id)).FirstOrDefault().FileName,
                         FileType = file.Where(s => s.Id.Equals(m.Id)).FirstOrDefault().FileType,
                     }).ToList()
-                }).OrderBy(r=>r.InvoiceTime).ToList(),
+                }).OrderBy(r => r.InvoiceTime).ToList(),
                 ReimburseAccommodationSubsidies = reimburseObj.ReimburseAccommodationSubsidies.Select(a => new ReimburseAccommodationSubsidyResp
                 {
                     Id = a.Id,
@@ -301,7 +331,7 @@ namespace OpenAuth.App.Workbench
                     Days = a.Days,
                     ExpenseOrg = a.ExpenseOrg,
                     InvoiceNumber = a.InvoiceNumber,
-                    InvoiceTime = a.InvoiceTime.ToString("yyyy.MM.dd HH:mm:ss"),
+                    InvoiceTime = Convert.ToDateTime(a.InvoiceTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     Money = a.Money,
                     TotalMoney = a.TotalMoney,
                     Remark = a.Remark,
@@ -321,7 +351,7 @@ namespace OpenAuth.App.Workbench
                     ExpenseOrg = o.ExpenseOrg,
                     SerialNumber = o.SerialNumber,
                     InvoiceNumber = o.InvoiceNumber,
-                    InvoiceTime = o.InvoiceTime.ToString("yyyy.MM.dd HH:mm:ss"),
+                    InvoiceTime = Convert.ToDateTime(o.InvoiceTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     Money = o.Money,
                     Remark = o.Remark,
                     Files = filemodel.Where(m => m.ReimburseId == o.Id && m.ReimburseType == 4).Select(m => new FileResp
@@ -335,7 +365,7 @@ namespace OpenAuth.App.Workbench
                 {
                     Id = t.Id,
                     SerialNumber = t.SerialNumber,
-                    CreateTime = t.CreateTime.ToString("yyyy.MM.dd HH:mm:ss"),
+                    CreateTime = Convert.ToDateTime(t.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     Days = t.Days,
                     ExpenseOrg = t.ExpenseOrg,
                     Money = t.Money,
@@ -345,7 +375,7 @@ namespace OpenAuth.App.Workbench
                 {
                     Content = o.Action,
                     ApprovalResult = o.ApprovalResult,
-                    CreateTime = o.CreateTime.ToString("yyyy.MM.dd HH:mm:ss"),
+                    CreateTime = Convert.ToDateTime(o.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     CreateUserName = o.CreateUser,
                     Remark = o.Remark,
                     IntervalTime = o.IntervalTime.ToString()
