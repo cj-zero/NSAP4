@@ -490,10 +490,11 @@ namespace OpenAuth.App
             }
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToListAsync();
             var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).ToListAsync();
-            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_TravellingAllowance") && orgname.Contains(u.Name)).Select(u => new { u.Name, u.DtValue }).ToListAsync();
-            if (CategoryList != null && CategoryList.Count() >= 1)
+            var categoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_TravellingAllowance")).Select(u => new { u.Name, u.DtValue,u.Description }).ToListAsync();
+            categoryList = categoryList.Where(u => orgname.Contains(u.Name)|| u.Description.Split(",").Contains(loginUser.Name)).ToList();
+            if (categoryList != null && categoryList.Count() >= 1)
             {
-                subsidies = Convert.ToDecimal(CategoryList.FirstOrDefault().DtValue);
+                subsidies = Convert.ToDecimal(categoryList.FirstOrDefault().DtValue);
             }
             else
             {
