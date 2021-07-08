@@ -10,7 +10,7 @@ namespace NSAP.App.WebApi.Controllers
     /// <summary>
     /// App扫码接口
     /// </summary>
-    [Route("api/scanCode/[controller]/[action]")]
+    [Route("ErpAppApi/scanCode/[controller]/[action]")]
     [ApiController]
     public class ScanCodeController : Controller
     {
