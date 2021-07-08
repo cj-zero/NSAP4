@@ -11,37 +11,13 @@ namespace OpenAuth.App.Workbench.Response
     public class ReimburseDetailsResp
     {
         /// <summary>
-        /// 报销单号
+        /// 报销单Id
         /// </summary>
         public int ReimburseId { get; set; }
         /// <summary>
-        /// 客户简称
+        /// 报销单号
         /// </summary>
-        public string ShortCustomerName { get; set; }
-        /// <summary>
-        /// 报销类别
-        /// </summary>
-        public string ReimburseType { get; set; }
-        /// <summary>
-        /// 项目名称
-        /// </summary>
-        public string ProjectName { get; set; }
-        /// <summary>
-        /// 报销状态
-        /// </summary>
-        public int RemburseStatus { get; set; }
-        /// <summary>
-        /// 费用承担
-        /// </summary>
-        public string BearToPay { get; set; }
-        /// <summary>
-        /// 责任承担
-        /// </summary>
-        public string Responsibility { get; set; }
-        /// <summary>
-        /// 劳务关系
-        /// </summary>
-        public string ServiceRelations { get; set; }
+        public int ReimburseMainId { get; set; }
         /// <summary>
         /// 备注
         /// </summary>
@@ -51,21 +27,13 @@ namespace OpenAuth.App.Workbench.Response
         /// </summary>
         public decimal? TotalMoney { get; set; }
         /// <summary>
-        /// 支付时间
-        /// </summary>
-        public System.DateTime? PayTime { get; set; }
-        /// <summary>
-        /// 创建时间
-        /// </summary>
-        public System.DateTime CreateTime { get; set; }
-        /// <summary>
-        /// 创建人Id
-        /// </summary>
-        public string CreateUserId { get; set; }
-        /// <summary>
         /// 更新时间
         /// </summary>
         public System.DateTime UpdateTime { get; set; }
+        /// <summary>
+        /// 流程
+        /// </summary>
+        public List<FlowPathResp> FlowPathResp { get; set; }
         /// <summary>
         /// 出差补贴
         /// </summary>
@@ -86,10 +54,6 @@ namespace OpenAuth.App.Workbench.Response
         /// 差旅报销单操作历史
         /// </summary>
         public virtual List<OperationHistoryResp> ReimurseOperationHistories { get; set; }
-        /// <summary>
-        /// 差旅报销单附件表
-        /// </summary>
-        public virtual List<FileResp> Files { get; set; }
     }
     /// <summary>
     /// 出差补贴
@@ -97,9 +61,9 @@ namespace OpenAuth.App.Workbench.Response
     public class ReimburseTravellingAllowanceResp 
     {
         /// <summary>
-        /// 报销单ID
+        /// 费用id
         /// </summary>
-        public int? ReimburseInfoId { get; set; }
+        public int Id { get; set; }
         /// <summary>
         /// 序号
         /// </summary>
@@ -119,7 +83,7 @@ namespace OpenAuth.App.Workbench.Response
         /// <summary>
         /// 创建时间
         /// </summary>
-        public DateTime? CreateTime { get; set; }
+        public string CreateTime { get; set; }
 
         /// <summary>
         /// 费用归属
@@ -132,6 +96,10 @@ namespace OpenAuth.App.Workbench.Response
     /// </summary>
     public class ReimburseOtherChargesResp
     {
+        /// <summary>
+        /// 费用id
+        /// </summary>
+        public int Id { get; set; }
         /// <summary>
         /// 序号
         /// </summary>
@@ -161,12 +129,12 @@ namespace OpenAuth.App.Workbench.Response
         /// <summary>
         /// 创建时间
         /// </summary>
-        public DateTime? CreateTime { get; set; }
+        public string CreateTime { get; set; }
 
         /// <summary>
         /// 开票日期
         /// </summary>
-        public DateTime? InvoiceTime { get; set; }
+        public string InvoiceTime { get; set; }
 
         /// <summary>
         /// 费用归属
@@ -183,6 +151,10 @@ namespace OpenAuth.App.Workbench.Response
     /// </summary>
     public class ReimburseFareResp
     {
+        /// <summary>
+        /// 费用id
+        /// </summary>
+        public int Id { get; set; }
         /// <summary>
         /// 序号
         /// </summary>
@@ -223,12 +195,12 @@ namespace OpenAuth.App.Workbench.Response
         /// <summary>
         /// 创建时间
         /// </summary>
-        public DateTime? CreateTime { get; set; }
+        public string CreateTime { get; set; }
 
         /// <summary>
         /// 开票日期
         /// </summary>
-        public DateTime? InvoiceTime { get; set; }
+        public string InvoiceTime { get; set; }
 
 
         /// <summary>
@@ -267,6 +239,10 @@ namespace OpenAuth.App.Workbench.Response
     public class ReimburseAccommodationSubsidyResp
     {
         /// <summary>
+        /// 费用id
+        /// </summary>
+        public int Id { get; set; }
+        /// <summary>
         /// 序号
         /// </summary>
         public int? SerialNumber { get; set; }
@@ -298,12 +274,12 @@ namespace OpenAuth.App.Workbench.Response
         /// <summary>
         /// 创建时间
         /// </summary>
-        public DateTime? CreateTime { get; set; }
+        public string CreateTime { get; set; }
         
         /// <summary>
         /// 开票日期
         /// </summary>
-        public DateTime? InvoiceTime { get; set; }
+        public string InvoiceTime { get; set; }
 
         /// <summary>
         /// 开票单位

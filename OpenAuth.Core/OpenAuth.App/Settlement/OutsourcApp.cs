@@ -457,17 +457,18 @@ namespace OpenAuth.App
                         var serviceOrederObj = await UnitWork.Find<ServiceOrder>(s => s.Id == outsourcObj.outsourcexpenses.FirstOrDefault().ServiceOrderId).FirstOrDefaultAsync();
                         await _pendingApp.AddOrUpdate(new WorkbenchPending
                         {
-                            OrderType = 1,
+                            OrderType = 3,
                             TerminalCustomer = serviceOrederObj.TerminalCustomer,
                             TerminalCustomerId = serviceOrederObj.TerminalCustomerId,
                             ServiceOrderId = serviceOrederObj.Id,
                             ServiceOrderSapId = (int)serviceOrederObj.U_SAP_ID,
                             UpdateTime = outsourcObj.UpdateTime,
                             Remark = outsourcObj.Remark,
-                            FlowInstanceId = outsourcObj.FlowInstanceId,
+                            FlowInstanceId = FlowInstanceId,
                             TotalMoney = outsourcObj.TotalMoney,
                             Petitioner = loginUser.Name,
-                            SourceNumbers = outsourcObj.Id
+                            SourceNumbers = outsourcObj.Id,
+                            PetitionerId = loginUser.Id
                         });
                     }
                     await UnitWork.UpdateAsync<CompletionReport>(c => serviceOrderIds.Contains(c.ServiceOrderId) && c.CreateUserId.Equals(loginUser.Id), c => new CompletionReport { IsReimburse = 4 });
@@ -540,7 +541,7 @@ namespace OpenAuth.App
                             var serviceOrederObj = await UnitWork.Find<ServiceOrder>(s => s.Id == outsourcObj.outsourcexpenses.FirstOrDefault().ServiceOrderId).FirstOrDefaultAsync();
                             await _pendingApp.AddOrUpdate(new WorkbenchPending
                             {
-                                OrderType = 1,
+                                OrderType = 3,
                                 TerminalCustomer = serviceOrederObj.TerminalCustomer,
                                 TerminalCustomerId = serviceOrederObj.TerminalCustomerId,
                                 ServiceOrderId = serviceOrederObj.Id,
@@ -550,7 +551,8 @@ namespace OpenAuth.App
                                 FlowInstanceId = obj.FlowInstanceId,
                                 TotalMoney = obj.TotalMoney,
                                 Petitioner = loginUser.Name,
-                                SourceNumbers = outsourcObj.Id
+                                SourceNumbers = outsourcObj.Id,
+                                PetitionerId = loginUser.Id
                             });
                         }
                         else

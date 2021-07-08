@@ -1,4 +1,5 @@
-﻿using OpenAuth.App.Response;
+﻿using Infrastructure.AutoMapper;
+using OpenAuth.App.Response;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -26,6 +27,14 @@ namespace OpenAuth.App.Workbench.Response
         /// 终端客户代码
         /// </summary>
         public string TerminalCustomerId { get; set; }
+        /// <summary>
+        /// 申请人
+        /// </summary>
+        public string Petitioner { get; set; }
+        /// <summary>
+        /// 地址
+        /// </summary>
+        public string Address { get; set; }
 
         /// <summary>
         /// 销售审核
@@ -87,7 +96,7 @@ namespace OpenAuth.App.Workbench.Response
         /// <summary>
         /// 创建日期
         /// </summary>
-        public System.DateTime? CreateTime { get; set; }
+        public string CreateTime { get; set; }
         /// <summary>
         /// 工单号
         /// </summary>
@@ -114,11 +123,11 @@ namespace OpenAuth.App.Workbench.Response
         /// <summary>
         /// 解决方案
         /// </summary>
-        public string ProcessDescription { get; set; }
+        public List<string> ProcessDescription { get; set; }
         /// <summary>
         /// 问题类型
         /// </summary>
-        public string TroubleDescription { get; set; }
+        public List<string> TroubleDescription { get; set; }
 
     }
     /// <summary>

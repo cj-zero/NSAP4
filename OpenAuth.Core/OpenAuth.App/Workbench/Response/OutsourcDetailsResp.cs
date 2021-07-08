@@ -8,9 +8,9 @@ namespace OpenAuth.App.Workbench.Response
     public class OutsourcDetailsResp
     {
         /// <summary>
-        /// 支付时间
+        /// 结算单号
         /// </summary>
-        public System.DateTime? PayTime { get; set; }
+        public string OutsourcId { get; set; }
         /// <summary>
         /// 总金额
         /// </summary>
@@ -23,18 +23,20 @@ namespace OpenAuth.App.Workbench.Response
         /// 备注
         /// </summary>
         public string Remark { get; set; }
-        /// <summary>
-        /// 创建人姓名
-        /// </summary>
-        public string CreateUser { get; set; }
-        /// <summary>
-        /// 创建时间
-        /// </summary>
-        public System.DateTime? CreateTime { get; set; }
+        
         /// <summary>
         /// 修改时间
         /// </summary>
-        public System.DateTime? UpdateTime { get; set; }
+        public string UpdateTime { get; set; }
+        /// <summary>
+        /// 流程
+        /// </summary>
+        public List<FlowPathResp> FlowPathResp { get; set; }
+
+        /// <summary>
+        /// 操作明细表
+        /// </summary>
+        public List<OperationHistoryResp> OutsourcOperationHistory { get; set; }
 
         /// <summary>
         /// 费用明细表
@@ -46,6 +48,10 @@ namespace OpenAuth.App.Workbench.Response
     /// </summary>
     public class OutsourcExpensesResp
     {
+        /// <summary>
+        /// 费用类型
+        /// </summary>
+        public string Id { get; set; }
         /// <summary>
         /// 费用类型
         /// </summary>

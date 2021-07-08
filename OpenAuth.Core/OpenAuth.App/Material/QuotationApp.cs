@@ -1265,7 +1265,8 @@ namespace OpenAuth.App.Material
                             FlowInstanceId = QuotationObj.FlowInstanceId,
                             TotalMoney = QuotationObj.TotalMoney,
                             Petitioner = loginUser.Name,
-                            SourceNumbers = QuotationObj.Id
+                            SourceNumbers = QuotationObj.Id,
+                            PetitionerId=loginUser.Id,
                         });
                         await UnitWork.SaveAsync();
 

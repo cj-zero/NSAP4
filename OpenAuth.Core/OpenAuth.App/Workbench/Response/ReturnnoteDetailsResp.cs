@@ -7,41 +7,11 @@ namespace OpenAuth.App.Workbench.Response
 {
     public class ReturnnoteDetailsResp
     {
+        
         /// <summary>
-        ///创建时间
+        ///退料单id
         /// </summary>
-        public DateTime CreateTime { get; set; }
-
-        /// <summary>
-        ///工作流程Id
-        /// </summary>
-        public string FlowInstanceId { get; set; }
-
-        /// <summary>
-        ///服务单主键Id
-        /// </summary>
-        public int ServiceOrderId { get; set; }
-
-        /// <summary>
-        ///SAP服务Id
-        /// </summary>
-        public int ServiceOrderSapId { get; set; }
-
-        /// <summary>
-        ///销售订单
-        /// </summary>
-        public int SalesOrderId { get; set; }
-
-        /// <summary>
-        ///创建人名
-        /// </summary>
-        public string CreateUser { get; set; }
-
-
-        /// <summary>
-        ///创建人Id
-        /// </summary>
-        public string CreateUserId { get; set; }
+        public DateTime ReturnnoteId { get; set; }
 
         /// <summary>
         /// 签收备注
@@ -51,18 +21,13 @@ namespace OpenAuth.App.Workbench.Response
         /// <summary>
         /// 修改时间
         /// </summary>
-        public DateTime? UpdateTime { get; set; }
+        public string UpdateTime { get; set; }
 
 
         /// <summary>
         /// 总金额
         /// </summary>
         public decimal TotalMoney { get; set; }
-
-        /// <summary>
-        /// 是否已清
-        /// </summary>
-        public bool? IsLiquidated { get; set; }
 
         /// <summary>
         /// 退货方式  1自带 2快递
@@ -78,6 +43,11 @@ namespace OpenAuth.App.Workbench.Response
         ///快递单号
         /// </summary>
         public string ExpressNumber { get; set; }
+
+        /// <summary>
+        /// 流程
+        /// </summary>
+        public List<FlowPathResp> FlowPathResp { get; set; }
 
         /// <summary>
         /// 退料单详细列表

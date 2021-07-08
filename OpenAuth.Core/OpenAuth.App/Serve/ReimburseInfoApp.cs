@@ -752,7 +752,8 @@ namespace OpenAuth.App
                             FlowInstanceId = obj.FlowInstanceId,
                             TotalMoney = obj.TotalMoney,
                             Petitioner = loginUser.Name,
-                            SourceNumbers = obj.MainId
+                            SourceNumbers = obj.MainId,
+                            PetitionerId = loginUser.Id
                         }).ConfigureAwait(false).GetAwaiter().GetResult();
                         UnitWork.Save();
                     }
@@ -927,7 +928,8 @@ namespace OpenAuth.App
                             PayTime = obj.PayTime,
                             IsDraft = obj.IsDraft,
                             FlowInstanceId = obj.FlowInstanceId,
-                            MainId = obj.MainId
+                            MainId = obj.MainId,
+
                         });
                         UnitWork.Save();
                         //添加操作日志
@@ -953,7 +955,8 @@ namespace OpenAuth.App
                             FlowInstanceId = obj.FlowInstanceId,
                             TotalMoney = obj.TotalMoney,
                             Petitioner = loginUser.Name,
-                            SourceNumbers = obj.MainId
+                            SourceNumbers = obj.MainId,
+                            PetitionerId = loginUser.Id,
                         }).ConfigureAwait(false).GetAwaiter().GetResult();
                         UnitWork.Save();
                     }

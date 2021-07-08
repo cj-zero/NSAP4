@@ -57,6 +57,13 @@ namespace OpenAuth.Repository.Domain.Workbench
         /// </summary>
         [Description("申请人")]
         public string Petitioner { get; set; }
+
+        /// <summary>
+        /// 申请人Id
+        /// </summary>
+        [Description("申请人Id")]
+        public string PetitionerId { get; set; }
+        
         /// <summary>
         /// 终端客户名称
         /// </summary>

@@ -1241,7 +1241,7 @@ namespace OpenAuth.App
                         var serviceOrederObj = await UnitWork.Find<ServiceOrder>(s => s.Id == obj.ServiceOrderId).FirstOrDefaultAsync();
                         await _quotation.AddOrUpdate(new WorkbenchPending
                         {
-                            OrderType = 1,
+                            OrderType = 2,
                             TerminalCustomer = serviceOrederObj.TerminalCustomer,
                             TerminalCustomerId = serviceOrederObj.TerminalCustomerId,
                             ServiceOrderId = serviceOrederObj.Id,
@@ -1251,7 +1251,8 @@ namespace OpenAuth.App
                             FlowInstanceId = returnnotrObj.FlowInstanceId,
                             TotalMoney = returnnotrObj.TotalMoney,
                             Petitioner = loginUser.Name,
-                            SourceNumbers = returnnotrObj.Id
+                            SourceNumbers = returnnotrObj.Id,
+                            PetitionerId=loginUser.Id
                         });
                     }
                     await UnitWork.SaveAsync();
@@ -1344,7 +1345,7 @@ namespace OpenAuth.App
                         var serviceOrederObj = await UnitWork.Find<ServiceOrder>(s => s.Id == obj.ServiceOrderId).FirstOrDefaultAsync();
                         await _quotation.AddOrUpdate(new WorkbenchPending
                         {
-                            OrderType = 1,
+                            OrderType = 2,
                             TerminalCustomer = serviceOrederObj.TerminalCustomer,
                             TerminalCustomerId = serviceOrederObj.TerminalCustomerId,
                             ServiceOrderId = serviceOrederObj.Id,
@@ -1354,7 +1355,8 @@ namespace OpenAuth.App
                             FlowInstanceId = FlowInstanceId,
                             TotalMoney = returnNoteObj.TotalMoney,
                             Petitioner = loginUser.Name,
-                            SourceNumbers = returnNoteObj.Id
+                            SourceNumbers = returnNoteObj.Id,
+                            PetitionerId = loginUser.Id
                         });
                     }
                     obj.TotalMoney = await CalculatePrice(obj);
