@@ -30,9 +30,15 @@ namespace OpenAuth.App.Response
         /// </summary>
         public string Content { get; set; }
         /// <summary>
-        /// 审批阶段
+        /// 审批结果
         /// </summary>
         public string ApprovalResult { get; set; }
+
+        /// <summary>
+        /// 审批阶段
+        /// </summary>
+        public string ApprovalStage { get; set; }
+        
 
     }
 }

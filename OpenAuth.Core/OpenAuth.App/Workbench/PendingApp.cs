@@ -116,6 +116,7 @@ namespace OpenAuth.App.Workbench
                 QuotationOperationHistorys = quotationObj.QuotationOperationHistorys.Select(o => new OperationHistoryResp
                 {
                     ApprovalResult = o.ApprovalResult,
+                    ApprovalStage = o.ApprovalStage,
                     Content = o.Action,
                     CreateTime = Convert.ToDateTime(o.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     CreateUserName = o.CreateUser,
@@ -156,49 +157,7 @@ namespace OpenAuth.App.Workbench
                 }).OrderBy(p => p.MaterialCode).ToList(),
                 FlowPathResp = new List<FlowPathResp>()
             };
-            var schemeContent = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(quotationObj.FlowInstanceId)).Select(f => f.SchemeContent).FirstOrDefaultAsync();
-            var schemeContentJson = JsonHelper.Instance.Deserialize<FlowInstanceJson>(schemeContent);
-            List<FlowInstanceNodes> flowInstanceNodes = new List<FlowInstanceNodes>();
-            int number = 1;
-            flowInstanceNodes.Add(new FlowInstanceNodes { Name = "提交审批", Number = number });
-            string toId = null;
-            schemeContentJson.lines.ForEach(s =>
-            {
-                toId = schemeContentJson.lines.Where(s => (toId == null && s.from.Contains("start")) || s.from.Equals(toId)).FirstOrDefault()?.to;
-                if (schemeContentJson.nodes.Where(n => n.id.Equals(toId)).FirstOrDefault() != null)
-                {
-                    flowInstanceNodes.Add(new FlowInstanceNodes { Name = schemeContentJson.nodes.Where(n => n.id.Equals(toId)).FirstOrDefault().Name, Number = ++number });
-                }
-            });
-            flowInstanceNodes = flowInstanceNodes.OrderBy(f => f.Number).ToList();
-            string historys = null;
-            flowInstanceNodes.ForEach(f =>
-            {
-                var operationHistorys = quotationDetails.QuotationOperationHistorys.Where(q => q.Content.Contains(f.Name)).FirstOrDefault();
-
-                if (historys == null || (operationHistorys?.CreateTime != null && DateTime.Parse(historys) < DateTime.Parse(operationHistorys.CreateTime)))
-                {
-                    historys = operationHistorys?.CreateTime;
-                    quotationDetails.FlowPathResp.Add(new FlowPathResp
-                    {
-                        ActivityName = f.Name,
-                        Number = f.Number,
-                        CreateTime = operationHistorys?.CreateTime,
-                        IntervalTime = operationHistorys?.IntervalTime,
-                        IsNode = true
-                    });
-                }
-                else
-                {
-                    quotationDetails.FlowPathResp.Add(new FlowPathResp
-                    {
-                        ActivityName = f.Name,
-                        Number = f.Number,
-                        IsNode = false
-                    });
-                }
-
-            });
+            quotationDetails.FlowPathResp = await FlowPathRespList(quotationDetails.QuotationOperationHistorys, quotationObj.FlowInstanceId, (int)quotationObj.IsMaterialType);
             return quotationDetails;
         }
         /// <summary>
@@ -242,18 +201,21 @@ namespace OpenAuth.App.Workbench
                     To = e.To,
                     ToLat = e.ToLat,
                     ToLng = e.ToLng,
+                    StartTime=e.StartTime,
+                    EndTime=e.EndTime,
                     Files = e.outsourcexpensespictures.Select(p => new FileResp
                     {
                         FileId = p.PictureId,
                         FileName = p.FileName,
                         FileType = p.FileType
                     }).ToList()
-                }).OrderBy(r => r.ExpensesType).ToList()
+                }).OrderBy(r => r.StartTime).ToList()
             };
             var outsourcOperationHistorys = await UnitWork.Find<FlowInstanceOperationHistory>(f => f.InstanceId.Equals(outsourcObj.FlowInstanceId)).OrderBy(f => f.CreateDate)
                 .ToListAsync();
             outsourcDetails.OutsourcOperationHistory = outsourcOperationHistorys.Select(f => new OperationHistoryResp
             {
+                ApprovalStage = f.ApprovalStage,
                 ApprovalResult = f.ApprovalResult,
                 Content = f.Content,
                 CreateTime = f?.CreateDate.ToString("yyyy.MM.dd HH:mm:ss"),
@@ -261,6 +223,7 @@ namespace OpenAuth.App.Workbench
                 IntervalTime = f?.IntervalTime.ToString(),
                 Remark = f.Remark
             }).OrderBy(f => f.CreateTime).ToList();
+            outsourcDetails.FlowPathResp= await FlowPathRespList(outsourcDetails.OutsourcOperationHistory, outsourcObj.FlowInstanceId);
             return outsourcDetails;
         }
         /// <summary>
@@ -373,6 +336,7 @@ namespace OpenAuth.App.Workbench
                 }).OrderBy(r => r.CreateTime).ToList(),
                 ReimurseOperationHistories = reimburseObj.ReimurseOperationHistories.Select(o => new OperationHistoryResp
                 {
+                    ApprovalStage = o.ApprovalStage.ToString(),
                     Content = o.Action,
                     ApprovalResult = o.ApprovalResult,
                     CreateTime = Convert.ToDateTime(o.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
@@ -381,6 +345,7 @@ namespace OpenAuth.App.Workbench
                     IntervalTime = o.IntervalTime.ToString()
                 }).OrderBy(r => r.CreateTime).ToList()
             };
+            reimburseDetails.FlowPathResp = await FlowPathRespList(reimburseDetails.ReimurseOperationHistories, reimburseObj.FlowInstanceId);
             return reimburseDetails;
         }
 
@@ -551,6 +516,87 @@ namespace OpenAuth.App.Workbench
             }
             return result;
         }
+
+        /// <summary>
+        /// 获取生命周期
+        /// </summary>
+        /// <param name="reqp"></param>
+        /// <param name="FlowInstanceId"></param>
+        /// <param name="IsMaterialType"></param>
+        /// <returns></returns>
+        private async Task<List<FlowPathResp>> FlowPathRespList(List<OperationHistoryResp> reqp,string FlowInstanceId,int IsMaterialType=0)
+        {
+            var schemeContent = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(FlowInstanceId)).Select(f => f.SchemeContent).FirstOrDefaultAsync();
+            var schemeContentJson = JsonHelper.Instance.Deserialize<FlowInstanceJson>(schemeContent);
+            List<FlowInstanceNodes> flowInstanceNodes = new List<FlowInstanceNodes>();
+            List<FlowPathResp> flowPathResps = new List<FlowPathResp>();
+            int number = 1;
+            flowInstanceNodes.Add(new FlowInstanceNodes { Name = "提交审批", Number = number });
+            string toId = schemeContentJson.lines.Where(s => s.from.Contains("start")).FirstOrDefault()?.to;
+            var query = from a in schemeContentJson.lines
+                        join b in schemeContentJson.nodes on a.@from equals b.id
+                        select new { a.to, b.id, b.Name,a.Compares };
+            query = query.Where(q => !q.id.Contains("start") && !q.id.Contains("end")).ToList();
+            foreach (var item in query)
+            {
+                if (query.Where(n => n.id.Equals(toId)).FirstOrDefault() != null)
+                {
+                    string toName = "";
+                    if (IsMaterialType != 0)
+                    {
+                        if (IsMaterialType == 1 || IsMaterialType == 3)
+                        {
+                            toName= query.Where(n => n.id.Equals(toId) && (n.Compares==null ||string.IsNullOrWhiteSpace(n.Compares.FirstOrDefault()?.Value)||n.Compares.Select(c => c.Value).FirstOrDefault() == "2")).FirstOrDefault().Name;
+                            toId = query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.FirstOrDefault()?.Value) || n.Compares.Select(c => c.Value).FirstOrDefault() == "2")).FirstOrDefault().to;
+                        }
+                        else 
+                        {
+                            toName= query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.FirstOrDefault()?.Value) || n.Compares.Select(c => c.Value).FirstOrDefault() == "1")).FirstOrDefault().Name;
+                            toId = query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.FirstOrDefault()?.Value) || n.Compares.Select(c => c.Value).FirstOrDefault() == "1")).FirstOrDefault().to;
+                        }
+                    }
+                    else 
+                    {
+                        toName = query.Where(n => n.id.Equals(toId)).FirstOrDefault().Name;
+                        toId = query.Where(n => n.id.Equals(toId)).FirstOrDefault().to;
+                    }
+                    flowInstanceNodes.Add(new FlowInstanceNodes { Name = toName, Number = ++number });
+                    
+                }
+            }
+            flowInstanceNodes.Add(new FlowInstanceNodes { Name = "结束", Number = ++number });
+            flowInstanceNodes = flowInstanceNodes.OrderBy(f => f.Number).ToList();
+            string historys = null;
+            flowInstanceNodes.ForEach(f =>
+            {
+                var operationHistorys = reqp.Where(q => q.Content.Contains(f.Name) ||(f.Name=="审批结束"&&(q.Content=="已支付"||q.Content=="出库完成" ||q.Content=="结束"))).FirstOrDefault();
+
+                if (historys == null || (operationHistorys?.CreateTime != null && DateTime.Parse(historys) < DateTime.Parse(operationHistorys.CreateTime)))
+                {
+                    historys = operationHistorys?.CreateTime;
+                    flowPathResps.Add(new FlowPathResp
+                    {
+                        ActivityName = f.Name,
+                        Number = f.Number,
+                        CreateTime = operationHistorys?.CreateTime,
+                        IntervalTime = operationHistorys?.IntervalTime,
+                        IsNode = true
+                    });
+                }
+                else
+                {
+                    flowPathResps.Add(new FlowPathResp
+                    {
+                        ActivityName = f.Name,
+                        Number = f.Number,
+                        IsNode = false
+                    });
+                }
+
+            });
+            return flowPathResps;
+        }
+
 
     }
 }
