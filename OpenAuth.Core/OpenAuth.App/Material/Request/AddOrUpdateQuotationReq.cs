@@ -211,10 +211,10 @@ namespace OpenAuth.App.Material.Request
         public decimal? PaymentAfterWarranty { get; set; }
 
         /// <summary>
-        ///领料类型 ture 更换 false 购买
+        ///领料类型 1更换 2.销售  3.成本
         /// </summary>
 
-        public bool? IsMaterialType { get; set; }
+        public string IsMaterialType { get; set; }
 
         /// <summary>
         ///寄回维修费工时
@@ -238,6 +238,20 @@ namespace OpenAuth.App.Material.Request
         ///应收发票DocEntry
         /// </summary>
         public int? InvoiceDocEntry { get; set; }
+
+        /// <summary>
+        ///上门维修费成本
+        /// </summary>
+        public decimal? ServiceChargeSMCost { get; set; }
+
+        /// <summary>
+        ///寄回维修费成本
+        /// </summary>
+        public decimal? ServiceChargeJHCost { get; set; }
+        /// <summary>
+        ///差旅费成本
+        /// </summary>
+        public decimal? TravelExpenseCost { get; set; }
 
 
         /// <summary>
