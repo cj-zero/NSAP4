@@ -531,7 +531,7 @@ namespace OpenAuth.App.Workbench
             List<FlowInstanceNodes> flowInstanceNodes = new List<FlowInstanceNodes>();
             List<FlowPathResp> flowPathResps = new List<FlowPathResp>();
             int number = 1;
-            flowInstanceNodes.Add(new FlowInstanceNodes { Name = "提交审批", Number = number });
+            flowInstanceNodes.Add(new FlowInstanceNodes { Name = "提交", Number = number });
             string toId = schemeContentJson.lines.Where(s => s.from.Contains("start")).FirstOrDefault()?.to;
             var query = from a in schemeContentJson.lines
                         join b in schemeContentJson.nodes on a.@from equals b.id
