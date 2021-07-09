@@ -1,4 +1,6 @@
-﻿using System;
+﻿using AutoMapper.Configuration.Annotations;
+using OpenAuth.Repository.Domain;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
@@ -31,5 +33,10 @@ namespace OpenAuth.App.Request
         /// 撤回备注
         /// </summary>
         public string Remark { get; set; }
+        /// <summary>
+        /// 服务单消息流水记录表
+        /// </summary>
+        [Ignore]
+        public virtual List<ServiceOrderMessagePicture> ServiceOrderMessagePictures { get; set; }
     }
 }
