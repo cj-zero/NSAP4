@@ -1189,11 +1189,11 @@ namespace OpenAuth.App
             {
                 throw new Exception("报销单已撤回，不可操作。");
             }
-            obj.ShortCustomerName = req.ShortCustomerName;
-            obj.ProjectName = req.ProjectName;
-            obj.BearToPay = req.BearToPay;
-            obj.ReimburseType = req.ReimburseType;
-            obj.Responsibility = req.Responsibility;
+            //obj.ShortCustomerName = req.ShortCustomerName;
+            //obj.ProjectName = req.ProjectName;
+            //obj.BearToPay = req.BearToPay;
+            //obj.ReimburseType = req.ReimburseType;
+            //obj.Responsibility = req.Responsibility;
             obj.UpdateTime = DateTime.Now;
             eoh.ApprovalStage = obj.RemburseStatus;
             if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && obj.RemburseStatus == 4)

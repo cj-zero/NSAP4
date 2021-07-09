@@ -284,6 +284,7 @@ namespace OpenAuth.App.Workbench
                         FileId = m.FileId,
                         FileName = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileName,
                         FileType = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileType,
+                        AttachmentType=m.AttachmentType.ToString()
                     }).ToList()
                 }).OrderBy(r => r.InvoiceTime).ToList(),
                 ReimburseAccommodationSubsidies = reimburseObj.ReimburseAccommodationSubsidies.Select(a => new ReimburseAccommodationSubsidyResp
@@ -304,6 +305,7 @@ namespace OpenAuth.App.Workbench
                         FileId = m.FileId,
                         FileName = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileName,
                         FileType = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileType,
+                        AttachmentType = m.AttachmentType.ToString()
                     }).ToList()
                 }).OrderBy(r => r.InvoiceTime).ToList(),
                 ReimburseOtherCharges = reimburseObj.ReimburseOtherCharges.Select(o => new ReimburseOtherChargesResp
@@ -322,6 +324,7 @@ namespace OpenAuth.App.Workbench
                         FileId = m.FileId,
                         FileName = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileName,
                         FileType = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileType,
+                        AttachmentType = m.AttachmentType.ToString()
                     }).ToList()
                 }).OrderBy(r => r.InvoiceTime).ToList(),
                 ReimburseTravellingAllowances = reimburseObj.ReimburseTravellingAllowances.Select(t => new ReimburseTravellingAllowanceResp

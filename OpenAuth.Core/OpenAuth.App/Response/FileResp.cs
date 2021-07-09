@@ -6,6 +6,10 @@ namespace OpenAuth.App.Response
 {
     public class FileResp
     {
+        public FileResp() 
+        {
+            AttachmentType = string.Empty;
+        }
         /// <summary>
         /// 附件id
         /// </summary>
@@ -18,5 +22,10 @@ namespace OpenAuth.App.Response
         /// 附件类型
         /// </summary>
         public string FileType { get; set; }
+
+        /// <summary>
+        /// 附件类型（1.发票2.普通附件）
+        /// </summary>
+        public string AttachmentType { get; set; }
     }
 }
