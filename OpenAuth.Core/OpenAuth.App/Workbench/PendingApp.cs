@@ -282,8 +282,8 @@ namespace OpenAuth.App.Workbench
                     Files = filemodel.Where(m => m.ReimburseId == f.Id && m.ReimburseType == 2).Select(m => new FileResp
                     {
                         FileId = m.FileId,
-                        FileName = file.Where(s => s.Id.Equals(m.Id)).FirstOrDefault().FileName,
-                        FileType = file.Where(s => s.Id.Equals(m.Id)).FirstOrDefault().FileType,
+                        FileName = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileName,
+                        FileType = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileType,
                     }).ToList()
                 }).OrderBy(r => r.InvoiceTime).ToList(),
                 ReimburseAccommodationSubsidies = reimburseObj.ReimburseAccommodationSubsidies.Select(a => new ReimburseAccommodationSubsidyResp
@@ -302,8 +302,8 @@ namespace OpenAuth.App.Workbench
                     Files = filemodel.Where(m => m.ReimburseId == a.Id && m.ReimburseType == 3).Select(m => new FileResp
                     {
                         FileId = m.FileId,
-                        FileName = file.Where(s => s.Id.Equals(m.Id)).FirstOrDefault().FileName,
-                        FileType = file.Where(s => s.Id.Equals(m.Id)).FirstOrDefault().FileType,
+                        FileName = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileName,
+                        FileType = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileType,
                     }).ToList()
                 }).OrderBy(r => r.InvoiceTime).ToList(),
                 ReimburseOtherCharges = reimburseObj.ReimburseOtherCharges.Select(o => new ReimburseOtherChargesResp
@@ -320,8 +320,8 @@ namespace OpenAuth.App.Workbench
                     Files = filemodel.Where(m => m.ReimburseId == o.Id && m.ReimburseType == 4).Select(m => new FileResp
                     {
                         FileId = m.FileId,
-                        FileName = file.Where(s => s.Id.Equals(m.Id)).FirstOrDefault().FileName,
-                        FileType = file.Where(s => s.Id.Equals(m.Id)).FirstOrDefault().FileType,
+                        FileName = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileName,
+                        FileType = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileType,
                     }).ToList()
                 }).OrderBy(r => r.InvoiceTime).ToList(),
                 ReimburseTravellingAllowances = reimburseObj.ReimburseTravellingAllowances.Select(t => new ReimburseTravellingAllowanceResp
