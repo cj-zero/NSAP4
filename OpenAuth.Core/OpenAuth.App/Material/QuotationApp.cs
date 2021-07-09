@@ -1829,19 +1829,20 @@ namespace OpenAuth.App.Material
                 else
                 {
                     qoh.ApprovalResult = "同意";
+                    VerificationReqModle = new VerificationReq
+                    {
+                        NodeRejectStep = "",
+                        NodeRejectType = "0",
+                        FlowInstanceId = obj.FlowInstanceId,
+                        VerificationFinally = "1",
+                        VerificationOpinion = req.Remark,
+                    };
+                    if (!string.IsNullOrWhiteSpace(obj.FlowInstanceId))
+                    {
+                        await _flowInstanceApp.Verification(VerificationReqModle);
+                    }
                 }
-                VerificationReqModle = new VerificationReq
-                {
-                    NodeRejectStep = "",
-                    NodeRejectType = "0",
-                    FlowInstanceId = obj.FlowInstanceId,
-                    VerificationFinally = "1",
-                    VerificationOpinion = req.Remark,
-                };
-                if (!string.IsNullOrWhiteSpace(obj.FlowInstanceId))
-                {
-                    await _flowInstanceApp.Verification(VerificationReqModle);
-                }
+                
             }
             obj.UpDateTime = DateTime.Now;
             await UnitWork.UpdateAsync<Quotation>(obj);

@@ -28,7 +28,7 @@ namespace OpenAuth.App
             }
 
             var result = new TableData();
-            var objs = await UnitWork.Find<VersionsLog>(v=>v.IsDelete==false).OrderBy(u => u.VersionsNumber)
+            var objs = await UnitWork.Find<VersionsLog>(v=>v.IsDelete==false).OrderByDescending(u => u.CreateTime)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
 
