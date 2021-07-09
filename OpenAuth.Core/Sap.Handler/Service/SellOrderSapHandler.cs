@@ -236,6 +236,7 @@ namespace Sap.Handler.Service
                     SalesOrderId = int.Parse(docNum)
                 });
                 await UnitWork.SaveAsync();
+                await HandleSellOrderERP(quotation.Id);
                 Log.Logger.Warning($"同步成功，SAP_ID：{docNum}", typeof(SellOrderSapHandler));
             }
             if (!string.IsNullOrWhiteSpace(allerror.ToString()))
