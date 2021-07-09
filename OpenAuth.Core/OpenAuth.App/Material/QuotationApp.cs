@@ -1738,7 +1738,6 @@ namespace OpenAuth.App.Material
                             obj.Status = 2;
                             #region 报价单同步到SAP，ERP3.0
                             _capBus.Publish("Serve.SellOrder.Create", obj.Id);
-                            _capBus.Publish("Serve.SellOrder.ERPCreate", obj.Id);
                             #endregion
                         }
 
@@ -1755,7 +1754,6 @@ namespace OpenAuth.App.Material
                     obj.QuotationStatus = 7;
                     #region 报价单同步到SAP，ERP3.0 
                     _capBus.Publish("Serve.SellOrder.Create", obj.Id);
-                    _capBus.Publish("Serve.SellOrder.ERPCreate", obj.Id);
                     #endregion
                 }
                 else if (obj.CreateUserId.Equals(loginUser.Id) && obj.QuotationStatus == 7)
