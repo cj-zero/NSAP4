@@ -32,7 +32,11 @@ namespace OpenAuth.App
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
 
-            result.Data = objs;
+            result.Data = objs.Select(v=>new {
+                CreateTime=v.CreateTime.ToString("yyyy.MM.dd"),
+                v.VersionsNumber,
+                v.Content
+            });
             result.Count = objs.Count();
             return result;
         }
