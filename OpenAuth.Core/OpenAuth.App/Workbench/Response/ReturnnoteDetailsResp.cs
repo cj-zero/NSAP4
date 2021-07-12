@@ -52,17 +52,21 @@ namespace OpenAuth.App.Workbench.Response
         /// <summary>
         /// 退料单详细列表
         /// </summary>
-        public virtual List<ReturnnoteMaterialResp> ReturnnoteMaterials { get; set; }
+        public virtual List<ReturnNoteMaterialResp> ReturnNoteMaterials { get; set; }
 
         /// <summary>
         /// 退料文件表
         /// </summary>
         public virtual List<FileResp> ReturnNotePictures { get; set; }
+        /// <summary>
+        /// 退料单操作历史
+        /// </summary>
+        public virtual List<OperationHistoryResp> ReturnNoteHistoryResp { get; set; }
     }
     /// <summary>
     /// 退料单详细列表
     /// </summary>
-    public class ReturnnoteMaterialResp 
+    public class ReturnNoteMaterialResp 
     {
         /// <summary>
         ///物料编码
@@ -136,6 +140,28 @@ namespace OpenAuth.App.Workbench.Response
         /// </summary>
         public List<FileResp> Files { get; set; }
 
-    }
+        /// <summary>
+        ///退料图片
+        /// </summary>
+        public List<ReturnnoteMaterialNumberResp> ReturnnoteMaterialNumberResps { get; set; }
 
+
+    }
+    public class ReturnnoteMaterialNumberResp 
+    {
+        /// <summary>
+        ///退料单物料d
+        /// </summary>
+        public string ReturnnoteMaterialId { get; set; }
+
+        /// <summary>
+        ///退仓的序列号
+        /// </summary>
+        public string ReturnNumber { get; set; }
+
+        /// <summary>
+        ///领取的序列号
+        /// </summary>
+        public string RemoveNumber { get; set; }
+    }
 }

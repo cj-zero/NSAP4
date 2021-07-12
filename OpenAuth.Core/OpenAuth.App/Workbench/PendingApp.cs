@@ -43,7 +43,7 @@ namespace OpenAuth.App.Workbench
                                     from b in ab.DefaultIfEmpty()
                                     join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id into bc
                                     from c in bc.DefaultIfEmpty()
-                                    select new { a.Name,a.Id, OrgName = c.Name, c.CascadeId }).OrderByDescending(u => u.CascadeId).FirstOrDefaultAsync();
+                                    select new { a.Name, a.Id, OrgName = c.Name, c.CascadeId }).OrderByDescending(u => u.CascadeId).FirstOrDefaultAsync();
             var serviceDailyReportList = await UnitWork.Find<ServiceDailyReport>(s => ServiceOrderId == s.ServiceOrderId).ToListAsync();
             var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId).Include(s => s.ServiceWorkOrders).Select(s => new ServiceOrderResp
             {
@@ -59,7 +59,7 @@ namespace OpenAuth.App.Workbench
                 ServiceWorkOrders = s.ServiceWorkOrders.Select(w => new ServiceWorkOrderResp
                 {
                     ManufacturerSerialNumber = w.ManufacturerSerialNumber,
-                    CreateTime =Convert.ToDateTime(w.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
+                    CreateTime = Convert.ToDateTime(w.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     MaterialCode = w.MaterialCode,
                     WorkOrderNumber = w.WorkOrderNumber,
                     FromTheme = w.FromTheme,
@@ -166,12 +166,65 @@ namespace OpenAuth.App.Workbench
         /// <returns></returns>
         public async Task<ReturnnoteDetailsResp> ReturnnoteDetails(int ReturnnoteId)
         {
-            //var returnnoteDetails=await UnitWork.Find<ReturnNote>(r => r.Id == int.Parse(ReturnnoteId)).Include(r=>r.ReturnnoteMaterials).ThenInclude(r=>r.ReturnNoteMaterialPictures)
-            //    .Select(r=>new ReturnnoteDetailsResp { 
+            var returNnoteObj = await UnitWork.Find<ReturnNote>(r => r.Id == ReturnnoteId).Include(r => r.ReturnnoteMaterials)
+                .ThenInclude(r => r.ReturnNoteMaterialPictures).FirstOrDefaultAsync();
 
-            //    })
-            //    .FirstOrDefaultAsync();
-            return null;
+            List<string> fileIds = new List<string>();
+            var  numberIds = returNnoteObj.ReturnnoteMaterials.Select(r=>r.Id).ToList();
+            var numbers = await UnitWork.Find<ReturnnoteMaterialNumber>(r => numberIds.Contains(r.ReturnnoteMaterialId)).ToListAsync();
+            returNnoteObj.ReturnnoteMaterials.ForEach(r => { fileIds.AddRange(r.ReturnNoteMaterialPictures.Select(n => n.PictureId).ToList());r.ReturnnoteMaterialNumbers = numbers.Where(n => n.ReturnnoteMaterialId == r.Id).ToList(); });
+            var fileList = await UnitWork.Find<UploadFile>(f => fileIds.Contains(f.Id)).ToListAsync();
+            var returnnoteDetails = new ReturnnoteDetailsResp
+            {
+                DeliveryMethod = returNnoteObj.DeliveryMethod,
+                ExpressNumber = returNnoteObj.ExpressNumber,
+                FreightCharge = returNnoteObj.FreightCharge,
+                Remark = returNnoteObj.Remark,
+                TotalMoney = returNnoteObj.TotalMoney,
+                UpdateTime = returNnoteObj.UpdateTime.ToString("yyyy.MM.dd HH:mm:ss"),
+                ReturnNoteMaterials = returNnoteObj.ReturnnoteMaterials.Select(r => new ReturnNoteMaterialResp
+                {
+                    Count = r.Count,
+                    SecondQty = r.SecondQty,
+                    ReceivingRemark = r.ReceivingRemark,
+                    ShippingRemark = r.ShippingRemark,
+                    ReplaceProductCode = r.ReplaceProductCode,
+                    GoodQty = r.GoodQty,
+                    GoodWhsCode = r.GoodWhsCode,
+                    InvoiceDocEntry = r.InvoiceDocEntry,
+                    MaterialDescription = r.MaterialDescription,
+                    MaterialCode = r.MaterialCode,
+                    ProductCode = r.ProductCode,
+                    SecondWhsCode = r.SecondWhsCode,
+                    ReturnnoteMaterialNumberResps = r.ReturnnoteMaterialNumbers.Select(n => new ReturnnoteMaterialNumberResp
+                    {
+                        RemoveNumber = n.ReturnNumber,
+                        ReturnNumber = n.ReturnNumber,
+                        ReturnnoteMaterialId = n.ReturnnoteMaterialId
+                    }).ToList(),
+                    ReturnNoteId = r.ReturnNoteId,
+                    Files = r.ReturnNoteMaterialPictures.Select(p => new FileResp
+                    {
+                        FileId = p.PictureId,
+                        FileName = fileList.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileName,
+                        FileType = fileList.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileType,
+                    }).ToList()
+                }).ToList()
+            };
+            var History = await UnitWork.Find<FlowInstanceOperationHistory>(f => f.InstanceId.Equals(returNnoteObj.FlowInstanceId)).OrderBy(f => f.CreateDate).ToListAsync();
+            returnnoteDetails.ReturnNoteHistoryResp = History.Select(h => new OperationHistoryResp
+            {
+                CreateTime = h.CreateDate.ToString("yyyy.MM.dd HH:mm:ss"),
+                Remark = h.Remark,
+                IntervalTime = h.IntervalTime.ToString(),
+                CreateUserName = h.CreateUserName,
+                Content = h.Content,
+                ApprovalResult = h.ApprovalResult,
+                ApprovalStage = h.ApprovalStage
+            }).ToList();
+            returnnoteDetails.FlowPathResp = await FlowPathRespList(returnnoteDetails.ReturnNoteHistoryResp, returNnoteObj.FlowInstanceId);
+
+            return returnnoteDetails;
         }
         /// <summary>
         /// 结算单详情
@@ -201,8 +254,8 @@ namespace OpenAuth.App.Workbench
                     To = e.To,
                     ToLat = e.ToLat,
                     ToLng = e.ToLng,
-                    StartTime=e.StartTime,
-                    EndTime=e.EndTime,
+                    StartTime = e.StartTime,
+                    EndTime = e.EndTime,
                     Files = e.outsourcexpensespictures.Select(p => new FileResp
                     {
                         FileId = p.PictureId,
@@ -223,7 +276,7 @@ namespace OpenAuth.App.Workbench
                 IntervalTime = f?.IntervalTime.ToString(),
                 Remark = f.Remark
             }).OrderBy(f => f.CreateTime).ToList();
-            outsourcDetails.FlowPathResp= await FlowPathRespList(outsourcDetails.OutsourcOperationHistory, outsourcObj.FlowInstanceId);
+            outsourcDetails.FlowPathResp = await FlowPathRespList(outsourcDetails.OutsourcOperationHistory, outsourcObj.FlowInstanceId);
             return outsourcDetails;
         }
         /// <summary>
@@ -284,7 +337,7 @@ namespace OpenAuth.App.Workbench
                         FileId = m.FileId,
                         FileName = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileName,
                         FileType = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileType,
-                        AttachmentType=m.AttachmentType.ToString()
+                        AttachmentType = m.AttachmentType.ToString()
                     }).ToList()
                 }).OrderBy(r => r.InvoiceTime).ToList(),
                 ReimburseAccommodationSubsidies = reimburseObj.ReimburseAccommodationSubsidies.Select(a => new ReimburseAccommodationSubsidyResp
@@ -527,7 +580,7 @@ namespace OpenAuth.App.Workbench
         /// <param name="FlowInstanceId"></param>
         /// <param name="IsMaterialType"></param>
         /// <returns></returns>
-        private async Task<List<FlowPathResp>> FlowPathRespList(List<OperationHistoryResp> reqp,string FlowInstanceId,int IsMaterialType=0)
+        private async Task<List<FlowPathResp>> FlowPathRespList(List<OperationHistoryResp> reqp, string FlowInstanceId, int IsMaterialType = 0)
         {
             var schemeContent = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(FlowInstanceId)).Select(f => f.SchemeContent).FirstOrDefaultAsync();
             var schemeContentJson = JsonHelper.Instance.Deserialize<FlowInstanceJson>(schemeContent);
@@ -538,7 +591,7 @@ namespace OpenAuth.App.Workbench
             string toId = schemeContentJson.lines.Where(s => s.from.Contains("start")).FirstOrDefault()?.to;
             var query = from a in schemeContentJson.lines
                         join b in schemeContentJson.nodes on a.@from equals b.id
-                        select new { a.to, b.id, b.Name,a.Compares };
+                        select new { a.to, b.id, b.Name, a.Compares };
             query = query.Where(q => !q.id.Contains("start") && !q.id.Contains("end")).ToList();
             foreach (var item in query)
             {
@@ -549,22 +602,22 @@ namespace OpenAuth.App.Workbench
                     {
                         if (IsMaterialType == 1 || IsMaterialType == 3)
                         {
-                            toName= query.Where(n => n.id.Equals(toId) && (n.Compares==null ||string.IsNullOrWhiteSpace(n.Compares.FirstOrDefault()?.Value)||n.Compares.Select(c => c.Value).FirstOrDefault() == "2")).FirstOrDefault().Name;
+                            toName = query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.FirstOrDefault()?.Value) || n.Compares.Select(c => c.Value).FirstOrDefault() == "2")).FirstOrDefault().Name;
                             toId = query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.FirstOrDefault()?.Value) || n.Compares.Select(c => c.Value).FirstOrDefault() == "2")).FirstOrDefault().to;
                         }
-                        else 
+                        else
                         {
-                            toName= query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.FirstOrDefault()?.Value) || n.Compares.Select(c => c.Value).FirstOrDefault() == "1")).FirstOrDefault().Name;
+                            toName = query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.FirstOrDefault()?.Value) || n.Compares.Select(c => c.Value).FirstOrDefault() == "1")).FirstOrDefault().Name;
                             toId = query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.FirstOrDefault()?.Value) || n.Compares.Select(c => c.Value).FirstOrDefault() == "1")).FirstOrDefault().to;
                         }
                     }
-                    else 
+                    else
                     {
                         toName = query.Where(n => n.id.Equals(toId)).FirstOrDefault().Name;
                         toId = query.Where(n => n.id.Equals(toId)).FirstOrDefault().to;
                     }
                     flowInstanceNodes.Add(new FlowInstanceNodes { Name = toName, Number = ++number });
-                    
+
                 }
             }
             flowInstanceNodes.Add(new FlowInstanceNodes { Name = "结束", Number = ++number });
@@ -572,7 +625,7 @@ namespace OpenAuth.App.Workbench
             string historys = null;
             flowInstanceNodes.ForEach(f =>
             {
-                var operationHistorys = reqp.Where(q => q.Content.Contains(f.Name) ||(f.Name=="审批结束"&&(q.Content=="已支付"||q.Content=="出库完成" ||q.Content=="结束"))).FirstOrDefault();
+                var operationHistorys = reqp.Where(q => q.Content.Contains(f.Name) || (f.Name == "审批结束" && (q.Content == "已支付" || q.Content == "出库完成" || q.Content == "结束"))).FirstOrDefault();
 
                 if (historys == null || (operationHistorys?.CreateTime != null && DateTime.Parse(historys) < DateTime.Parse(operationHistorys.CreateTime)))
                 {

@@ -1078,7 +1078,7 @@ namespace OpenAuth.App
                 loginUser = await GetUserId((int)req.AppUserId);
             }
             //.Include(r => r.ReturnnoteOperationHistorys)
-            var returnNotes = await UnitWork.Find<ReturnNote>(r => r.Id == req.returnNoteId).Include(r => r.ReturnNotePictures).Include(r => r.ReturnnoteMaterials).ThenInclude(r => r.ReturnNoteMaterialPictures).FirstOrDefaultAsync();
+            var returnNotes = await UnitWork.Find<ReturnNote>(r => r.Id == req.returnNoteId).Include(r => r.ReturnNotePictures).Include(r => r.ReturnnoteMaterials).ThenInclude(r =>r.ReturnNoteMaterialPictures).FirstOrDefaultAsync();
             var History = await UnitWork.Find<FlowInstanceOperationHistory>(f => f.InstanceId.Equals(returnNotes.FlowInstanceId)).OrderBy(f => f.CreateDate).ToListAsync();
 
             //查询当前技术员所有可退料服务Id
@@ -1093,7 +1093,10 @@ namespace OpenAuth.App
             var materials = await UnitWork.Find<ReturnnoteMaterial>(r => r.ReturnNoteId!= returnNotes.Id&& InvoiceDocEntry == r.InvoiceDocEntry).ToListAsync();
             
             List<string> fileIds = new List<string>();
-            returnNotes.ReturnnoteMaterials.ForEach(r => fileIds.AddRange(r.ReturnNoteMaterialPictures.Select(n => n.PictureId).ToList()));
+            var numberIds = returnNotes.ReturnnoteMaterials.Select(r => r.Id).ToList();
+            var numbers = await UnitWork.Find<ReturnnoteMaterialNumber>(r => numberIds.Contains(r.ReturnnoteMaterialId)).ToListAsync();
+            returnNotes.ReturnnoteMaterials.ForEach(r => { fileIds.AddRange(r.ReturnNoteMaterialPictures.Select(n => n.PictureId).ToList()); r.ReturnnoteMaterialNumbers = numbers.Where(n => n.ReturnnoteMaterialId == r.Id).ToList(); });
+
             var fileList = await UnitWork.Find<UploadFile>(f => fileIds.Contains(f.Id)).ToListAsync();
             List<object> returnnoteMaterials = new List<object>();
             returnNotes.ReturnnoteMaterials.ForEach(r =>
@@ -1248,7 +1251,7 @@ namespace OpenAuth.App
                             ServiceOrderSapId = (int)serviceOrederObj.U_SAP_ID,
                             UpdateTime = returnnotrObj.UpdateTime,
                             Remark = returnnotrObj.Remark,
-                            FlowInstanceId = returnnotrObj.FlowInstanceId,
+                            FlowInstanceId = FlowInstanceId,
                             TotalMoney = returnnotrObj.TotalMoney,
                             Petitioner = loginUser.Name,
                             SourceNumbers = returnnotrObj.Id,
