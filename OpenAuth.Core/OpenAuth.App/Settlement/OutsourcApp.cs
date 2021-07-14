@@ -208,7 +208,7 @@ namespace OpenAuth.App
                         ServiceOrderId = s.Id,
                         s.TerminalCustomer,
                         s.TerminalCustomerId,
-                        CompleteDate=s.CreateTime,
+                        CompleteDate=Convert.ToDateTime(s.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                         ServiceOrderSapId = s.U_SAP_ID,
                         serviceWorkOrderObj?.FromTheme,
                         serviceWorkOrderObj?.ManufacturerSerialNumber,
