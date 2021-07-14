@@ -45,6 +45,7 @@ namespace OpenAuth.App.Workbench
                                     from c in bc.DefaultIfEmpty()
                                     select new { a.Name, a.Id, OrgName = c.Name, c.CascadeId }).OrderByDescending(u => u.CascadeId).FirstOrDefaultAsync();
             var serviceDailyReportList = await UnitWork.Find<ServiceDailyReport>(s => ServiceOrderId == s.ServiceOrderId).ToListAsync();
+            
             var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId).Include(s => s.ServiceWorkOrders).Select(s => new ServiceOrderResp
             {
                 ServiceOrderId = s.Id.ToString(),
@@ -113,6 +114,7 @@ namespace OpenAuth.App.Workbench
                 PayOnReceipt = quotationObj.PayOnReceipt,
                 TotalCostPrice = quotationObj.TotalCostPrice,
                 TotalMoney = quotationObj.TotalMoney,
+                QuotationStatus=quotationObj.QuotationStatus.ToString(),
                 QuotationOperationHistorys = quotationObj.QuotationOperationHistorys.Select(o => new OperationHistoryResp
                 {
                     ApprovalResult = o.ApprovalResult,
@@ -166,16 +168,20 @@ namespace OpenAuth.App.Workbench
         /// <returns></returns>
         public async Task<ReturnnoteDetailsResp> ReturnnoteDetails(int ReturnnoteId)
         {
-            var returNnoteObj = await UnitWork.Find<ReturnNote>(r => r.Id == ReturnnoteId).Include(r => r.ReturnnoteMaterials)
+            var returNnoteObj = await UnitWork.Find<ReturnNote>(r => r.Id == ReturnnoteId).Include(r=>r.ReturnNotePictures).Include(r => r.ReturnnoteMaterials)
                 .ThenInclude(r => r.ReturnNoteMaterialPictures).FirstOrDefaultAsync();
 
             List<string> fileIds = new List<string>();
             var  numberIds = returNnoteObj.ReturnnoteMaterials.Select(r=>r.Id).ToList();
             var numbers = await UnitWork.Find<ReturnnoteMaterialNumber>(r => numberIds.Contains(r.ReturnnoteMaterialId)).ToListAsync();
             returNnoteObj.ReturnnoteMaterials.ForEach(r => { fileIds.AddRange(r.ReturnNoteMaterialPictures.Select(n => n.PictureId).ToList());r.ReturnnoteMaterialNumbers = numbers.Where(n => n.ReturnnoteMaterialId == r.Id).ToList(); });
+            fileIds.AddRange(returNnoteObj.ReturnNotePictures.Select(r => r.PictureId).ToList());
             var fileList = await UnitWork.Find<UploadFile>(f => fileIds.Contains(f.Id)).ToListAsync();
+            var materialIds = returNnoteObj.ReturnnoteMaterials.Select(r => r.QuotationMaterialId).ToList();
+            var quotationMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => materialIds.Contains(q.Id)).ToListAsync();
             var returnnoteDetails = new ReturnnoteDetailsResp
             {
+                ReturnnoteId= returNnoteObj.Id.ToString(),
                 DeliveryMethod = returNnoteObj.DeliveryMethod,
                 ExpressNumber = returNnoteObj.ExpressNumber,
                 FreightCharge = returNnoteObj.FreightCharge,
@@ -184,18 +190,21 @@ namespace OpenAuth.App.Workbench
                 UpdateTime = returNnoteObj.UpdateTime.ToString("yyyy.MM.dd HH:mm:ss"),
                 ReturnNoteMaterials = returNnoteObj.ReturnnoteMaterials.Select(r => new ReturnNoteMaterialResp
                 {
+                    MaterialsId=r.Id,
                     Count = r.Count,
                     SecondQty = r.SecondQty,
                     ReceivingRemark = r.ReceivingRemark,
                     ShippingRemark = r.ShippingRemark,
-                    ReplaceProductCode = r.ReplaceProductCode,
                     GoodQty = r.GoodQty,
                     GoodWhsCode = r.GoodWhsCode,
                     InvoiceDocEntry = r.InvoiceDocEntry,
                     MaterialDescription = r.MaterialDescription,
                     MaterialCode = r.MaterialCode,
-                    ProductCode = r.ProductCode,
                     SecondWhsCode = r.SecondWhsCode,
+                    ReplacePartCode = quotationMaterials.Where(q => q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.MaterialCode,
+                    ReplacePartDescription = quotationMaterials.Where(q => q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.MaterialDescription,
+                    TotalPrice =r.Count* quotationMaterials.Where(q => q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.DiscountPrices,
+                    Price = quotationMaterials.Where(q=>q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.DiscountPrices,
                     ReturnnoteMaterialNumberResps = r.ReturnnoteMaterialNumbers.Select(n => new ReturnnoteMaterialNumberResp
                     {
                         RemoveNumber = n.ReturnNumber,
@@ -223,7 +232,12 @@ namespace OpenAuth.App.Workbench
                 ApprovalStage = h.ApprovalStage
             }).ToList();
             returnnoteDetails.FlowPathResp = await FlowPathRespList(returnnoteDetails.ReturnNoteHistoryResp, returNnoteObj.FlowInstanceId);
-
+            returnnoteDetails.ReturnNotePictures = returNnoteObj.ReturnNotePictures.Select(r => new FileResp
+            {
+                FileId=r.PictureId,
+                FileName= fileList.Where(f => f.Id.Equals(r.PictureId)).FirstOrDefault()?.FileName,
+                FileType= fileList.Where(f => f.Id.Equals(r.PictureId)).FirstOrDefault()?.FileType
+            }).ToList();
             return returnnoteDetails;
         }
         /// <summary>
@@ -232,7 +246,7 @@ namespace OpenAuth.App.Workbench
         /// <returns></returns>
         public async Task<OutsourcDetailsResp> OutsourcDetails(int OutsourcId)
         {
-            var outsourcObj = await UnitWork.Find<outsourc>(o => o.Id == OutsourcId).Include(o => o.outsourcexpenses).ThenInclude(o => o.outsourcexpensespictures)
+            var outsourcObj = await UnitWork.Find<Outsourc>(o => o.Id == OutsourcId).Include(o => o.OutsourcExpenses).ThenInclude(o => o.outsourcexpensespictures)
                 .FirstOrDefaultAsync();
             var outsourcDetails = new OutsourcDetailsResp
             {
@@ -241,7 +255,7 @@ namespace OpenAuth.App.Workbench
                 Remark = outsourcObj.Remark,
                 TotalMoney = outsourcObj.TotalMoney,
                 UpdateTime = Convert.ToDateTime(outsourcObj.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
-                OutsourcExpenses = outsourcObj.outsourcexpenses.Select(e => new OutsourcExpensesResp
+                OutsourcExpenses = outsourcObj.OutsourcExpenses.Select(e => new OutsourcExpensesResp
                 {
                     Id = e.Id,
                     FromLat = e.FromLat,
@@ -290,20 +304,29 @@ namespace OpenAuth.App.Workbench
 
             List<string> fileids = new List<string>();
             List<ReimburseAttachment> filemodel = new List<ReimburseAttachment>();
+            List<ReimburseExpenseOrg> expenseOrg = new List<ReimburseExpenseOrg>();
+            if (reimburseObj.ReimburseTravellingAllowances != null && reimburseObj.ReimburseTravellingAllowances.Count > 0)
+            {
+                var rtaids = reimburseObj.ReimburseTravellingAllowances.Select(r => r.Id).ToList();
+                expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rtaids.Contains(int.Parse(r.ExpenseId)) && r.ExpenseType == 1).ToListAsync());
+            }
             if (reimburseObj.ReimburseFares != null && reimburseObj.ReimburseFares.Count > 0)
             {
                 var rfids = reimburseObj.ReimburseFares.Select(r => r.Id).ToList();
                 filemodel = await UnitWork.Find<ReimburseAttachment>(r => rfids.Contains(r.ReimburseId) && r.ReimburseType == 2).ToListAsync();
+                expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rfids.Contains(int.Parse(r.ExpenseId)) && r.ExpenseType == 2).ToListAsync());
             }
             if (reimburseObj.ReimburseAccommodationSubsidies != null && reimburseObj.ReimburseAccommodationSubsidies.Count > 0)
             {
                 var rasids = reimburseObj.ReimburseAccommodationSubsidies.Select(r => r.Id).ToList();
                 filemodel.AddRange(await UnitWork.Find<ReimburseAttachment>(r => rasids.Contains(r.ReimburseId) && r.ReimburseType == 3).ToListAsync());
+                expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rasids.Contains(int.Parse(r.ExpenseId)) && r.ExpenseType == 3).ToListAsync());
             }
             if (reimburseObj.ReimburseOtherCharges != null && reimburseObj.ReimburseOtherCharges.Count > 0)
             {
                 var rocids = reimburseObj.ReimburseOtherCharges.Select(r => r.Id).ToList();
                 filemodel.AddRange(await UnitWork.Find<ReimburseAttachment>(r => rocids.Contains(r.ReimburseId) && r.ReimburseType == 4).ToListAsync());
+                expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rocids.Contains(int.Parse(r.ExpenseId)) && r.ExpenseType == 4).ToListAsync());
             }
             fileids.AddRange(filemodel.Select(f => f.FileId).ToList());
             var file = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
@@ -338,7 +361,8 @@ namespace OpenAuth.App.Workbench
                         FileName = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileName,
                         FileType = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileType,
                         AttachmentType = m.AttachmentType.ToString()
-                    }).ToList()
+                    }).ToList(),
+                    ReimburseExpenseOrgs= expenseOrg.Where(e=>e.ExpenseType==2&& e.ExpenseId==f.Id.ToString()).ToList()
                 }).OrderBy(r => r.InvoiceTime).ToList(),
                 ReimburseAccommodationSubsidies = reimburseObj.ReimburseAccommodationSubsidies.Select(a => new ReimburseAccommodationSubsidyResp
                 {
@@ -359,7 +383,8 @@ namespace OpenAuth.App.Workbench
                         FileName = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileName,
                         FileType = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileType,
                         AttachmentType = m.AttachmentType.ToString()
-                    }).ToList()
+                    }).ToList(),
+                    ReimburseExpenseOrgs = expenseOrg.Where(e => e.ExpenseType == 3 && e.ExpenseId == a.Id.ToString()).ToList()
                 }).OrderBy(r => r.InvoiceTime).ToList(),
                 ReimburseOtherCharges = reimburseObj.ReimburseOtherCharges.Select(o => new ReimburseOtherChargesResp
                 {
@@ -378,7 +403,8 @@ namespace OpenAuth.App.Workbench
                         FileName = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileName,
                         FileType = file.Where(s => s.Id.Equals(m.FileId)).FirstOrDefault().FileType,
                         AttachmentType = m.AttachmentType.ToString()
-                    }).ToList()
+                    }).ToList(),
+                    ReimburseExpenseOrgs = expenseOrg.Where(e => e.ExpenseType == 4 && e.ExpenseId == o.Id.ToString()).ToList()
                 }).OrderBy(r => r.InvoiceTime).ToList(),
                 ReimburseTravellingAllowances = reimburseObj.ReimburseTravellingAllowances.Select(t => new ReimburseTravellingAllowanceResp
                 {
@@ -388,7 +414,8 @@ namespace OpenAuth.App.Workbench
                     Days = t.Days,
                     ExpenseOrg = t.ExpenseOrg,
                     Money = t.Money,
-                    Remark = t.Remark
+                    Remark = t.Remark,
+                    ReimburseExpenseOrgs = expenseOrg.Where(e => e.ExpenseType == 1 && e.ExpenseId == t.Id.ToString()).ToList()
                 }).OrderBy(r => r.CreateTime).ToList(),
                 ReimurseOperationHistories = reimburseObj.ReimurseOperationHistories.Select(o => new OperationHistoryResp
                 {
@@ -452,6 +479,12 @@ namespace OpenAuth.App.Workbench
                     reimburseDetails = await ReimburseDetails(pendingObj.SourceNumbers);
                     break;
             }
+            if (pendingObj.OrderType == 3 || pendingObj.OrderType == 4) 
+            {
+                var completionReport= await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId.ToString() == serviceOrderDetails.ServiceOrderId && c.CreateUserId.Equals(pendingObj.PetitionerId)).FirstOrDefaultAsync();
+                serviceOrderDetails.Destination = completionReport.Destination;
+                serviceOrderDetails.Becity = completionReport.Becity;
+            }
             reult.Data = new
             {
                 serviceOrderDetails,
@@ -513,44 +546,82 @@ namespace OpenAuth.App.Workbench
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var reult = new TableData();
-            var query = from a in UnitWork.Find<WorkbenchPending>(null)
-                        join b in UnitWork.Find<FlowInstance>(null) on a.FlowInstanceId equals b.Id
-                        where b.MakerList.Contains(loginContext.User.Id)
-                        select new { a, b };
-            query = query.WhereIf(!string.IsNullOrWhiteSpace(req.ApprovalNumber), q => q.a.ApprovalNumber == int.Parse(req.ApprovalNumber))
-                        .WhereIf(!string.IsNullOrWhiteSpace(req.Petitioner), q => q.a.Petitioner.Contains(req.Petitioner))
-                        .WhereIf(!string.IsNullOrWhiteSpace(req.TerminalCustomer), q => q.a.TerminalCustomer.Contains(req.TerminalCustomer))
-                        .WhereIf(!string.IsNullOrWhiteSpace(req.TerminalCustomerId), q => q.a.TerminalCustomerId.Contains(req.TerminalCustomerId))
-                        .WhereIf(!string.IsNullOrWhiteSpace(req.StartTime.ToString()), q => q.a.UpdateTime > req.StartTime)
-                        .WhereIf(!string.IsNullOrWhiteSpace(req.EndTime.ToString()), q => q.a.UpdateTime > Convert.ToDateTime(req.EndTime).AddDays(1));
-            var pending = await query.Select(q => new
+            
+            if (req.PageType == 1)
             {
-                q.a.TotalMoney,
-                q.a.ApprovalNumber,
-                q.a.TerminalCustomer,
-                q.a.TerminalCustomerId,
-                q.a.SourceNumbers,
-                q.a.ServiceOrderSapId,
-                q.a.Remark,
-                q.a.Petitioner,
-                q.a.OrderType,
-                q.b.ActivityName,
-                q.a.UpdateTime
-            }).ToListAsync();
-            List<int> salesManIds = new List<int>();
-            foreach (var p in pending)
-            {
-                if (p.OrderType == 1 && p.ActivityName == "销售员审批")
+                //待处理
+                var query = from a in UnitWork.Find<WorkbenchPending>(null)
+                            join b in UnitWork.Find<FlowInstance>(null) on a.FlowInstanceId equals b.Id
+                            where b.MakerList.Contains(loginContext.User.Id) || (b.MakerList == "1" && b.CustomName.Contains("物料报价单"))
+                            select new { a, b };
+                query = query.WhereIf(!string.IsNullOrWhiteSpace(req.ApprovalNumber), q => q.a.ApprovalNumber == int.Parse(req.ApprovalNumber))
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.Petitioner), q => q.a.Petitioner.Contains(req.Petitioner))
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.OrderType), q => q.a.OrderType==int.Parse(req.OrderType))
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.TerminalCustomer), q => q.a.TerminalCustomer.Contains(req.TerminalCustomer))
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.TerminalCustomerId), q => q.a.TerminalCustomerId.Contains(req.TerminalCustomerId))
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.StartTime.ToString()), q => q.a.UpdateTime > req.StartTime)
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.EndTime.ToString()), q => q.a.UpdateTime > Convert.ToDateTime(req.EndTime).AddDays(1));
+                var pending = await query.Select(q => new
                 {
-                    var salesManId = (await UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == p.ServiceOrderSapId).FirstOrDefaultAsync())?.SalesManId;
-                    if (!loginContext.User.Id.Equals(salesManId))
+                    q.a.TotalMoney,
+                    q.a.ApprovalNumber,
+                    q.a.TerminalCustomer,
+                    q.a.TerminalCustomerId,
+                    q.a.SourceNumbers,
+                    q.a.ServiceOrderSapId,
+                    q.a.Remark,
+                    q.a.Petitioner,
+                    q.a.OrderType,
+                    q.b.ActivityName,
+                    q.a.UpdateTime
+                }).ToListAsync();
+                List<int> salesManIds = new List<int>();
+                foreach (var p in pending)
+                {
+                    if (p.OrderType == 1 && p.ActivityName == "销售员审批")
                     {
-                        salesManIds.Add(p.ApprovalNumber);
+                        var salesManId = (await UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == p.ServiceOrderSapId).FirstOrDefaultAsync())?.SalesManId;
+                        if (!loginContext.User.Id.Equals(salesManId))
+                        {
+                            salesManIds.Add(p.ApprovalNumber);
+                        }
                     }
                 }
+                reult.Data = pending.Where(p => !salesManIds.Contains(p.ApprovalNumber)).Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+                reult.Count = pending.Where(p => !salesManIds.Contains(p.ApprovalNumber)).Count();
             }
-            reult.Data = pending.Where(p => !salesManIds.Contains(p.ApprovalNumber)).Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
-            reult.Count = await query.CountAsync();
+            else if (req.PageType == 2) 
+            {
+                //已处理
+                var query = from a in UnitWork.Find<WorkbenchPending>(null)
+                            join b in UnitWork.Find<FlowInstance>(null) on a.FlowInstanceId equals b.Id into ab
+                            from b in ab.DefaultIfEmpty()
+                            join c in UnitWork.Find<FlowInstanceOperationHistory>(null).Select(f => new { f.InstanceId, f.CreateUserId }).Distinct() on b.Id equals c.InstanceId into bc
+                            from c in bc.DefaultIfEmpty()
+                            where c.CreateUserId.Equals(loginContext.User.Id)
+                            select new { a, b };
+                query = query.WhereIf(!string.IsNullOrWhiteSpace(req.ApprovalNumber), q => q.a.ApprovalNumber == int.Parse(req.ApprovalNumber))
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.Petitioner), q => q.a.Petitioner.Contains(req.Petitioner))
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.TerminalCustomer), q => q.a.TerminalCustomer.Contains(req.TerminalCustomer))
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.TerminalCustomerId), q => q.a.TerminalCustomerId.Contains(req.TerminalCustomerId))
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.StartTime.ToString()), q => q.a.UpdateTime > req.StartTime)
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.EndTime.ToString()), q => q.a.UpdateTime > Convert.ToDateTime(req.EndTime).AddDays(1));
+                reult.Data = await query.Select(q => new
+                {
+                    q.a.TotalMoney,
+                    q.a.ApprovalNumber,
+                    q.a.TerminalCustomer,
+                    q.a.TerminalCustomerId,
+                    q.a.SourceNumbers,
+                    q.a.ServiceOrderSapId,
+                    q.a.Remark,
+                    q.a.Petitioner,
+                    q.a.OrderType,
+                    q.b.ActivityName,
+                    q.a.UpdateTime
+                }).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+                reult.Count = await query.CountAsync();
+            }
             return reult;
         }
 

@@ -11,7 +11,7 @@ namespace OpenAuth.App.Workbench.Response
         /// <summary>
         ///退料单id
         /// </summary>
-        public DateTime ReturnnoteId { get; set; }
+        public string ReturnnoteId { get; set; }
 
         /// <summary>
         /// 签收备注
@@ -38,7 +38,7 @@ namespace OpenAuth.App.Workbench.Response
         ///运费
         /// </summary>
         public decimal? FreightCharge { get; set; }
-
+        
         /// <summary>
         ///快递单号
         /// </summary>
@@ -69,6 +69,10 @@ namespace OpenAuth.App.Workbench.Response
     public class ReturnNoteMaterialResp 
     {
         /// <summary>
+        ///物料ID
+        /// </summary>
+        public string MaterialsId { get; set; }
+        /// <summary>
         ///物料编码
         /// </summary>
         public string MaterialCode { get; set; }
@@ -98,8 +102,16 @@ namespace OpenAuth.App.Workbench.Response
         ///物料描述
         /// </summary>
         public string MaterialDescription { get; set; }
-
-
+        
+        /// <summary>
+        ///总金额
+        /// </summary>
+        public decimal? TotalPrice { get; set; }
+        /// <summary>
+        ///金额
+        /// </summary>
+        public decimal? Price { get; set; }
+        
         /// <summary>
         ///良品数量
         /// </summary>
@@ -115,6 +127,14 @@ namespace OpenAuth.App.Workbench.Response
         /// </summary>
         public int? InvoiceDocEntry { get; set; }
 
+        /// <summary>
+        ///领料的物料编码
+        /// </summary>
+        public string ReplacePartCode { get; set; }
+        /// <summary>
+        ///领料的物料备注
+        /// </summary>
+        public string ReplacePartDescription { get; set; }
         /// <summary>
         ///良品仓库
         /// </summary>

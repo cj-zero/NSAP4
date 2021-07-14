@@ -19,10 +19,10 @@ namespace OpenAuth.Repository.Domain.Settlement
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("outsourcexpensespicture")]
-    public partial class outsourcexpensespicture : Entity
+    [Table("OutsourcExpensesPicture")]
+    public partial class OutsourcExpensesPicture : Entity
     {
-        public outsourcexpensespicture()
+        public OutsourcExpensesPicture()
         {
           this.PictureId= string.Empty;
           this.OutsourcExpensesId = string.Empty;

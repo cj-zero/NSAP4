@@ -21,8 +21,8 @@ namespace OpenAuth.App.Request
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("outsourcexpensespicture")]
-    [AutoMapTo(typeof(outsourcexpensespicture))]
+    [Table("OutsourcExpensesPicture")]
+    [AutoMapTo(typeof(OutsourcExpensesPicture))]
     public partial class AddOrUpdateoutsourcexpensespictureReq 
     {
         /// <summary>

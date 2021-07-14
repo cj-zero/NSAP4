@@ -36,5 +36,16 @@ namespace OpenAuth.App.Workbench.Request
         /// 更新时间结束
         /// </summary>
         public DateTime? EndTime { get; set; }
+
+        /// <summary>
+        /// 页面类型
+        /// </summary>
+        public int PageType { get; set; }
+
+        /// <summary>
+        /// 单据类型
+        /// </summary>
+        public string OrderType { get; set; }
+        
     }
 }

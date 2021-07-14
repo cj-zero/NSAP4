@@ -19,10 +19,10 @@ namespace OpenAuth.Repository.Domain.Settlement
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("outsourcexpenses")]
-    public partial class outsourcexpenses : Entity
+    [Table("OutsourcExpenses")]
+    public partial class OutsourcExpenses : Entity
     {
-        public outsourcexpenses()
+        public OutsourcExpenses()
         {
             this.From = string.Empty;
             this.To = string.Empty;
@@ -147,6 +147,6 @@ namespace OpenAuth.Repository.Domain.Settlement
         /// <summary>
         /// 附件表
         /// </summary>
-        public List<outsourcexpensespicture> outsourcexpensespictures { get; set; }
+        public List<OutsourcExpensesPicture> outsourcexpensespictures { get; set; }
     }
 }

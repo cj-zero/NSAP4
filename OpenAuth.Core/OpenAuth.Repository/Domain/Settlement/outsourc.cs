@@ -19,10 +19,10 @@ namespace OpenAuth.Repository.Domain.Settlement
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("outsourc")]
-    public partial class outsourc : BaseEntity<int>
+    [Table("Outsourc")]
+    public partial class Outsourc : BaseEntity<int>
     {
-        public outsourc()
+        public Outsourc()
         {
           this.PayTime= DateTime.Now;
           this.Remark= string.Empty;
@@ -91,7 +91,7 @@ namespace OpenAuth.Repository.Domain.Settlement
         /// <summary>
         /// 费用明细表
         /// </summary>
-        public List<outsourcexpenses> outsourcexpenses { get; set; }
+        public List<OutsourcExpenses> OutsourcExpenses { get; set; }
 
         public override void GenerateDefaultKeyVal()
         {

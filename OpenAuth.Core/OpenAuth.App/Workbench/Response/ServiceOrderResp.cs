@@ -41,6 +41,16 @@ namespace OpenAuth.App.Workbench.Response
         public string Address { get; set; }
 
         /// <summary>
+        /// 开始地址
+        /// </summary>
+        public string Becity { get; set; }
+
+        /// <summary>
+        /// 到达地址
+        /// </summary>
+        public string Destination { get; set; }
+
+        /// <summary>
         /// 销售审核
         /// </summary>
         public string SalesMan { get; set; }

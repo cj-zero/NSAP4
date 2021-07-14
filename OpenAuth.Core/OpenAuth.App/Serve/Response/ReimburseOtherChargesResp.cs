@@ -66,5 +66,9 @@ namespace OpenAuth.App.Serve.Response
         /// 附件
         /// </summary>
         public List<ReimburseAttachmentResp> ReimburseAttachments { get; set; }
+        /// <summary>
+        /// 费用归属
+        /// </summary>
+        public List<ReimburseExpenseOrgResp> ReimburseExpenseOrgs { get; set; }
     }
 }

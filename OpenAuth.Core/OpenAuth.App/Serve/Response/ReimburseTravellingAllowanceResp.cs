@@ -47,5 +47,10 @@ namespace OpenAuth.App.Serve.Response
         /// 是否客服新增
         /// </summary>
         public bool? IsAdded { get; set; }
+
+        /// <summary>
+        /// 费用归属
+        /// </summary>
+        public List<ReimburseExpenseOrgResp> ReimburseExpenseOrgs { get; set; }
     }
 }

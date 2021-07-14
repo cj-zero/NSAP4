@@ -1125,6 +1125,7 @@ namespace OpenAuth.App
                             FileType = fileList.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileType,
                             p.PictureId
                         }),
+                        r.ReturnnoteMaterialNumbers,
                         r.SecondQty,
                         r.SecondWhsCode,
                         r.ShippingRemark,
@@ -1297,17 +1298,8 @@ namespace OpenAuth.App
                 {
                     //先删后增
                     #region 删除
-                    var returnNoteObj = await UnitWork.Find<ReturnNote>(r => r.Id == obj.ReturnNoteId).Include(r => r.ReturnNotePictures).Include(r => r.ReturnnoteMaterials).ThenInclude(r => r.ReturnNoteMaterialPictures).FirstOrDefaultAsync();
-                    var materialPictures = new List<ReturnNoteMaterialPicture>();
-                    returnNoteObj.ReturnnoteMaterials.ForEach(r => materialPictures.AddRange(r.ReturnNoteMaterialPictures.ToList()));
-                    if (materialPictures != null && materialPictures.Count > 0)
-                    {
-                        await UnitWork.BatchDeleteAsync<ReturnNoteMaterialPicture>(materialPictures.ToArray());
-                    }
-                    if (returnNoteObj.ReturnnoteMaterials != null && returnNoteObj.ReturnnoteMaterials.Count > 0)
-                    {
-                        await UnitWork.BatchDeleteAsync<ReturnnoteMaterial>(returnNoteObj.ReturnnoteMaterials.ToArray());
-                    }
+                    var returnNoteObj = await UnitWork.Find<ReturnNote>(r => r.Id == obj.ReturnNoteId).Include(r => r.ReturnNotePictures).FirstOrDefaultAsync();
+                    await UnitWork.DeleteAsync<ReturnnoteMaterial>(r=>r.ReturnNoteId== returnNoteObj.Id);
                     if (returnNoteObj.ReturnNotePictures != null && returnNoteObj.ReturnNotePictures.Count > 0)
                     {
                         await UnitWork.BatchDeleteAsync<ReturnNotePicture>(returnNoteObj.ReturnNotePictures.ToArray());

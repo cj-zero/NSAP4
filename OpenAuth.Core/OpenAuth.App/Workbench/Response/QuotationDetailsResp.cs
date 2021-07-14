@@ -33,6 +33,12 @@ namespace OpenAuth.App.Workbench.Response
         public string DeliveryMethod { get; set; }
 
         /// <summary>
+        ///报价单状态
+        /// </summary>
+        public string QuotationStatus { get; set; }
+        
+
+        /// <summary>
         ///备注
         /// </summary>
         public string Remark { get; set; }

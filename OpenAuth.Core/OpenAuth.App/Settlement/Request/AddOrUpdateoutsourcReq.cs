@@ -21,8 +21,8 @@ namespace OpenAuth.App.Request
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("outsourc")]
-    [AutoMapTo(typeof(outsourc))]
+    [Table("Outsourc")]
+    [AutoMapTo(typeof(Outsourc))]
     public partial class AddOrUpdateoutsourcReq 
     {
         /// <summary>
@@ -79,7 +79,7 @@ namespace OpenAuth.App.Request
         /// </summary>
         public List<string> DelFileIds { get; set; }
 
-        public List<AddOrUpdateoutsourcexpensesReq> outsourcexpenses { get; set; }
+        public List<AddOrUpdateoutsourcexpensesReq> OutsourcExpenses { get; set; }
         //todo:添加自己的请求字段
     }
 }

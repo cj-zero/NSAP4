@@ -1,4 +1,5 @@
 ﻿using OpenAuth.App.Response;
+using OpenAuth.Repository.Domain;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -89,6 +90,10 @@ namespace OpenAuth.App.Workbench.Response
         /// 费用归属
         /// </summary>
         public string ExpenseOrg { get; set; }
+        /// <summary>
+        /// 费用归属
+        /// </summary>
+        public List<ReimburseExpenseOrg> ReimburseExpenseOrgs { get; set; }
 
     }
     /// <summary>
@@ -145,6 +150,10 @@ namespace OpenAuth.App.Workbench.Response
         /// 附件
         /// </summary>
         public List<FileResp> Files { get; set; }
+        /// <summary>
+        /// 费用归属
+        /// </summary>
+        public List<ReimburseExpenseOrg> ReimburseExpenseOrgs { get; set; }
     }
     /// <summary>
     /// 差旅报销交通费用
@@ -232,6 +241,10 @@ namespace OpenAuth.App.Workbench.Response
         /// 附件
         /// </summary>
         public List<FileResp> Files { get; set; }
+        /// <summary>
+        /// 费用归属
+        /// </summary>
+        public List<ReimburseExpenseOrg> ReimburseExpenseOrgs { get; set; }
     }
     /// <summary>
     /// 差旅报销住宿补贴
@@ -295,5 +308,9 @@ namespace OpenAuth.App.Workbench.Response
         /// 附件
         /// </summary>
         public List<FileResp> Files { get; set; }
+        /// <summary>
+        /// 费用归属
+        /// </summary>
+        public List<ReimburseExpenseOrg> ReimburseExpenseOrgs { get; set; }
     }
 }
