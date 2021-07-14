@@ -576,25 +576,25 @@ namespace OpenAuth.App
             if (Reimburse.ReimburseTravellingAllowances != null && Reimburse.ReimburseTravellingAllowances.Count > 0) 
             {
                 var rtaids = ReimburseResp.ReimburseTravellingAllowances.Select(r => r.Id).ToList();
-                expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rtaids.Contains(int.Parse(r.ExpenseId)) && r.ExpenseType == 1).ToListAsync());
+                expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rtaids.Contains(r.ExpenseId) && r.ExpenseType == 1).ToListAsync());
             }
             if (ReimburseResp.ReimburseFares != null && ReimburseResp.ReimburseFares.Count > 0)
             {
                 var rfids = ReimburseResp.ReimburseFares.Select(r => r.Id).ToList();
                 rffilemodel = await UnitWork.Find<ReimburseAttachment>(r => rfids.Contains(r.ReimburseId) && r.ReimburseType == 2).ToListAsync();
-                expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rfids.Contains(int.Parse(r.ExpenseId)) && r.ExpenseType == 2).ToListAsync());
+                expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rfids.Contains(r.ExpenseId) && r.ExpenseType == 2).ToListAsync());
             }
             if (ReimburseResp.ReimburseAccommodationSubsidies != null && ReimburseResp.ReimburseAccommodationSubsidies.Count > 0)
             {
                 var rasids = ReimburseResp.ReimburseAccommodationSubsidies.Select(r => r.Id).ToList();
                 rffilemodel.AddRange(await UnitWork.Find<ReimburseAttachment>(r => rasids.Contains(r.ReimburseId) && r.ReimburseType == 3).ToListAsync());
-                expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rasids.Contains(int.Parse(r.ExpenseId)) && r.ExpenseType == 3).ToListAsync());
+                expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rasids.Contains(r.ExpenseId) && r.ExpenseType == 3).ToListAsync());
             }
             if (ReimburseResp.ReimburseOtherCharges != null && ReimburseResp.ReimburseOtherCharges.Count > 0)
             {
                 var rocids = ReimburseResp.ReimburseOtherCharges.Select(r => r.Id).ToList();
                 rffilemodel.AddRange(await UnitWork.Find<ReimburseAttachment>(r => rocids.Contains(r.ReimburseId) && r.ReimburseType == 4).ToListAsync());
-                expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rocids.Contains(int.Parse(r.ExpenseId)) && r.ExpenseType == 4).ToListAsync());
+                expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rocids.Contains(r.ExpenseId) && r.ExpenseType == 4).ToListAsync());
             }
             fileids.AddRange(rffilemodel.Select(f => f.FileId).ToList());
 
@@ -604,7 +604,7 @@ namespace OpenAuth.App
             if (Reimburse.ReimburseTravellingAllowances != null && Reimburse.ReimburseTravellingAllowances.Count > 0)
             {
                 ReimburseResp.ReimburseTravellingAllowances.ForEach(r => {
-                    r.ReimburseExpenseOrgs = (expenseOrg.Where(e => e.ExpenseId == r.Id.ToString() && e.ExpenseType == 1).ToList()).MapToList<ReimburseExpenseOrgResp>();
+                    r.ReimburseExpenseOrgs = (expenseOrg.Where(e => e.ExpenseId == r.Id && e.ExpenseType == 1).ToList()).MapToList<ReimburseExpenseOrgResp>();
                 });
             }
             if (ReimburseResp.ReimburseFares != null && ReimburseResp.ReimburseFares.Count > 0)
@@ -621,7 +621,7 @@ namespace OpenAuth.App
                         ReimburseType = r.ReimburseType,
                         AttachmentType = r.AttachmentType
                     }).ToList();
-                    r.ReimburseExpenseOrgs = (expenseOrg.Where(e => e.ExpenseId == r.Id.ToString() && e.ExpenseType == 2).ToList()).MapToList<ReimburseExpenseOrgResp>();
+                    r.ReimburseExpenseOrgs = (expenseOrg.Where(e => e.ExpenseId == r.Id && e.ExpenseType == 2).ToList()).MapToList<ReimburseExpenseOrgResp>();
                 });
             }
             if (ReimburseResp.ReimburseAccommodationSubsidies != null && ReimburseResp.ReimburseAccommodationSubsidies.Count > 0) {
@@ -636,7 +636,7 @@ namespace OpenAuth.App
                         ReimburseType = r.ReimburseType,
                         AttachmentType = r.AttachmentType
                     }).ToList();
-                    r.ReimburseExpenseOrgs = (expenseOrg.Where(e => e.ExpenseId == r.Id.ToString() && e.ExpenseType == 3).ToList()).MapToList<ReimburseExpenseOrgResp>();
+                    r.ReimburseExpenseOrgs = (expenseOrg.Where(e => e.ExpenseId == r.Id && e.ExpenseType == 3).ToList()).MapToList<ReimburseExpenseOrgResp>();
                 });
             }
             if (ReimburseResp.ReimburseOtherCharges != null && ReimburseResp.ReimburseOtherCharges.Count > 0)
@@ -652,7 +652,7 @@ namespace OpenAuth.App
                         ReimburseType = r.ReimburseType,
                         AttachmentType = r.AttachmentType
                     }).ToList();
-                    r.ReimburseExpenseOrgs = (expenseOrg.Where(e => e.ExpenseId == r.Id.ToString() && e.ExpenseType == 4).ToList()).MapToList<ReimburseExpenseOrgResp>();
+                    r.ReimburseExpenseOrgs = (expenseOrg.Where(e => e.ExpenseId == r.Id && e.ExpenseType == 4).ToList()).MapToList<ReimburseExpenseOrgResp>();
                 });
             }
                 

@@ -27,7 +27,6 @@ namespace OpenAuth.Repository.Domain
           this.OrgName= string.Empty;
           this.OrgId= string.Empty;
           this.Remark= string.Empty;
-          this.ExpenseId= string.Empty;
           this.UpdateTime= DateTime.Now;
           this.CreateTime= DateTime.Now;
         }
@@ -69,7 +68,7 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         [Browsable(false)]
-        public string ExpenseId { get; set; }
+        public int ExpenseId { get; set; }
         /// <summary>
         /// 费用类型
         /// </summary>
