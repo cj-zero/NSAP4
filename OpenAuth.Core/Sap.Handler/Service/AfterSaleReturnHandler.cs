@@ -689,14 +689,13 @@ namespace Sap.Handler.Service
             {
 
                 company.GetLastError(out eCode, out eMesg);
-
-                errorMsg += string.Format("添加应收贷项凭证调接口发生异常[异常代码:{0},异常信息:{1}]", eCode, eMesg);
-
+                Log.Logger.Error("添加销售交货到SAP时异常！错误代码：" + eCode + "错误信息：" + eMesg);
+                throw new Exception(errorMsg);
             }
             else
             {
                 company.GetNewObjectCode(out docNum);
-                errorMsg += string.Format("调用接口添加应收贷项凭证操作成功,ID[{0}", docNum);
+                Log.Logger.Warning("添加销售交货到SAP成功");
                 HandleReceiptCreditVouchersERP(docNum, obj.InvoiceDocEntry);
                 if (TotalMoney > 0)
                 {
