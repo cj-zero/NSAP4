@@ -191,7 +191,7 @@ namespace OpenAuth.App
                     query = query.WhereIf(!(bool)request.IsMonth, c => c.a.CreateTime.Value.Month == DateTime.Now.Month - 1);
                 }
             }
-            var serviceOrderList = await query.Select(q => new { q.b.Id, q.b.U_SAP_ID, q.b.TerminalCustomer, q.b.TerminalCustomerId, q.b.ServiceWorkOrders }).OrderByDescending(u => u.Id).ToListAsync();
+            var serviceOrderList = await query.Select(q => new { q.b.Id, q.b.U_SAP_ID, q.b.TerminalCustomer, q.b.TerminalCustomerId, q.b.ServiceWorkOrders,q.a.CreateTime }).OrderByDescending(u => u.Id).ToListAsync();
             serviceOrderList = serviceOrderList.GroupBy(s => s.U_SAP_ID).Select(s => s.First()).ToList();
             List<dynamic> objs = new List<dynamic>();
             serviceOrderIds = serviceOrderList.Select(s => s.Id).ToList();
@@ -208,6 +208,7 @@ namespace OpenAuth.App
                         ServiceOrderId = s.Id,
                         s.TerminalCustomer,
                         s.TerminalCustomerId,
+                        CompleteDate=s.CreateTime,
                         ServiceOrderSapId = s.U_SAP_ID,
                         serviceWorkOrderObj?.FromTheme,
                         serviceWorkOrderObj?.ManufacturerSerialNumber,
