@@ -38,6 +38,7 @@ namespace OpenAuth.App.Material
             var SalesOrderWarrantyDates = UnitWork.Find<SalesOrderWarrantyDate>(null).Include(s => s.SalesOrderWarrantyDateRecords)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.Customer), q => q.CustomerId.Contains(req.Customer) || q.CustomerName.Contains(req.Customer))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()), q => q.SalesOrderId.Equals(req.SalesOrderId))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.ManufacturerSerialNumber), q => q.MnfSerial.Contains(req.ManufacturerSerialNumber))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.SalesMan), q => q.SalesOrderName.Equals(req.SalesMan));
             if (req.State != null && req.State == 2)
             {
