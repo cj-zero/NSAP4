@@ -160,5 +160,6 @@ namespace OpenAuth.WebApi.Controllers
             _app = app;
             _categoryTypeApp = categoryTypeApp;
         }
+
     }
 }
