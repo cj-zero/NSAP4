@@ -48,8 +48,11 @@ namespace OpenAuth.App.Nwcali
                 baseInfo.CreateUser = user.Name;
                 baseInfo.CreateUserId = user.Id;
                 var testerModel = await UnitWork.Find<OINS>(o => o.manufSN.Equals(baseInfo.TesterSn)).Select(o => o.itemCode).ToListAsync();
-                if (testerModel != null && testerModel.Count == 1 && !testerModel.Contains("ZWJ"))
-                    baseInfo.TesterModel = testerModel.FirstOrDefault();
+                if (testerModel != null && testerModel.Count == 1 && !testerModel.Contains("ZWJ")) 
+                {
+                    if (testerModel.FirstOrDefault().Contains(baseInfo.TesterModel))
+                        baseInfo.TesterModel = testerModel.FirstOrDefault();
+                }
                 await UnitWork.AddAsync(baseInfo);
                 await UnitWork.SaveAsync();
             }

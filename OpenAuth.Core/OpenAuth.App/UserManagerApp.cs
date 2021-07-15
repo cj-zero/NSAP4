@@ -131,6 +131,7 @@ namespace OpenAuth.App
                 requser.CreateTime = DateTime.Now;
                 requser.Password = Encryption.Encrypt(requser.Password);
                 UnitWork.Add(requser);
+                UnitWork.Save();
                 request.Id = requser.Id; //要把保存后的ID存入view
             }
             else
@@ -154,11 +155,30 @@ namespace OpenAuth.App
                 }
             }
 
+            //保存erp3.0关联用户
+            if (request.NsapUserId > 0)
+            {
+                var nusermap = UnitWork.Find<NsapUserMap>(c => c.UserID == requser.Id).FirstOrDefault();
+                if (nusermap == null)
+                {
+                    UnitWork.Add(new NsapUserMap
+                    {
+                        UserID = requser.Id,
+                        NsapUserId = request.NsapUserId
+                    });
+                }
+                else
+                {
+                    UnitWork.Update<NsapUserMap>(c => c.UserID == requser.Id, c => new NsapUserMap { NsapUserId = request.NsapUserId });
+                }
+            }
             UnitWork.Save();
+
             string[] orgIds = request.OrganizationIds.Split(',').ToArray();
 
             _revelanceApp.DeleteBy(Define.USERORG, requser.Id);
             _revelanceApp.Assign(Define.USERORG, orgIds.ToLookup(u => requser.Id));
+
         }
 
         public async Task BlockUp(BlockUpUserReq req)
@@ -457,6 +477,40 @@ namespace OpenAuth.App
             var result = new TableData();
             var userInfo = await UnitWork.Find<AppUserMap>(null).Include(a => a.User).Where(w => w.AppUserId == AppUserId).Select(s => new { s.User.Name, s.User.Id, s.AppUserId }).FirstOrDefaultAsync();
             result.Data = userInfo;
+            return result;
+        }
+
+        /// <summary>
+        /// 获取erp3.0人员
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetErp3User(QueryUserListReq request)
+        {
+            TableData result = new TableData();
+            var list = UnitWork.Find<base_user>(null)
+                .WhereIf(!string.IsNullOrWhiteSpace(request.account), c => c.log_nm.Contains(request.account))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.name), c => c.user_nm.Contains(request.name));
+
+            result.Count = await list.CountAsync();
+            result.Data = await list.Select(c => new { c.user_id, c.log_nm, c.user_nm }).Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+            return result;
+        }
+
+        /// <summary>
+        /// 获取单个erp3.0用户
+        /// </summary>
+        /// <param name="account"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetErp3UserSingle(string id)
+        {
+            TableData result = new TableData();
+            var map = await UnitWork.Find<NsapUserMap>(c => c.UserID == id).FirstOrDefaultAsync();
+            if (map!=null)
+            {
+                var user = await UnitWork.Find<base_user>(c => c.user_id == map.NsapUserId).Select(c => new { c.user_id, c.log_nm, c.user_nm }).FirstOrDefaultAsync();
+                result.Data = user;
+            }
             return result;
         }
     }

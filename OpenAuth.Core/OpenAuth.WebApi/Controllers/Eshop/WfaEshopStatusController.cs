@@ -79,18 +79,18 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="CardCode"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<string>> GetSalesPersonTelByCardCode(string CardCode)
+        public async Task<Response<SlpInfoOfClientResp>> GetSalesPersonTelByCardCode(string CardCode)
         {
-            var result = new Response<string>();
+            var result = new Response<SlpInfoOfClientResp>();
             try
             {
-                result.Result = await _wfastatusapp.GetSalesPersonTelByCardCode(CardCode);
+                result.Result= await _wfastatusapp.GetSalesPersonTelByCardCode(CardCode);
             }
             catch (Exception ex)
             {
                 result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-                Log.Logger.Error($"接口：{Request.Path}，参数：{CardCode}, 错误：{result.Message}");
+                result.Message = ex.Message;
+                Log.Logger.Error($"错误：{result.Message}");
             }
             return result;
         }
@@ -106,7 +106,7 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 result = await _wfastatusapp.UpdateShipStatusForOrder(EshopPOrderNo);
-    }
+            }
             catch (Exception ex)
             {
                 result.Code = 500;

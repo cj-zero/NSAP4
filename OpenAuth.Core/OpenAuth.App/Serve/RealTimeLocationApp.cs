@@ -117,16 +117,16 @@ namespace OpenAuth.App
             TableData result = new TableData();
 
             //技术员角色
-            var roleId = await UnitWork.Find<Role>(c => c.Name.Equals("售后技术员")).Select(c => c.Id).FirstOrDefaultAsync();
-            var userIds = await UnitWork.Find<Relevance>(c => c.Key.Equals(Define.USERROLE) && c.SecondId.Equals(roleId)).Select(c => c.FirstId).ToListAsync();
-            //未完成服务id的
-            var serviceWorkOrder = UnitWork.Find<ServiceWorkOrder>(c => c.Status < 7);
-            var noComplete = await serviceWorkOrder
-                                    .Where(c => !string.IsNullOrWhiteSpace(c.CurrentUserNsapId))
-                                    .Select(c => c.CurrentUserNsapId)
-                                    .Distinct()
-                                    .ToListAsync();
-            userIds.AddRange(noComplete);
+            //var roleId = await UnitWork.Find<Role>(c => c.Name.Equals("售后技术员")).Select(c => c.Id).FirstOrDefaultAsync();
+            //var userIds = await UnitWork.Find<Relevance>(c => c.Key.Equals(Define.USERROLE) && c.SecondId.Equals(roleId)).Select(c => c.FirstId).ToListAsync();
+            ////未完成服务id的
+            //var serviceWorkOrder = UnitWork.Find<ServiceWorkOrder>(c => c.Status < 7);
+            //var noComplete = await serviceWorkOrder
+            //                        .Where(c => !string.IsNullOrWhiteSpace(c.CurrentUserNsapId))
+            //                        .Select(c => c.CurrentUserNsapId)
+            //                        .Distinct()
+            //                        .ToListAsync();
+            //userIds.AddRange(noComplete);
 
             DateTime start = DateTime.Now.Date;
             DateTime end = Convert.ToDateTime(DateTime.Now.AddDays(1).ToString("D").ToString()).AddSeconds(-1);
@@ -144,9 +144,20 @@ namespace OpenAuth.App
                                        join b in pppUserMap on a.AppUserId equals b.AppUserId
                                        select new { a, b.UserID };
 
+            List<string> userIds = new List<string>();
+            if (loginContext.Roles.Any(c => c.Name == "智慧大屏查看-部门主管") && loginContext.User.Account!=Define.SYSTEM_USERNAME)
+            {
+                var orgId = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault().Id;
+                var userid = await UnitWork.Find<Relevance>(c => c.Key == Define.USERORG && c.SecondId == orgId).Select(c => c.FirstId).ToListAsync();
+                userIds.AddRange(userid);
+            }
+
 
             var now = DateTime.Now;
-            var data = await UnitWork.Find<User>(c => userIds.Contains(c.Id)).WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)).ToListAsync();
+            var data = await (from a in UnitWork.Find<AppUserMap>(null)
+                              join b in UnitWork.Find<User>(c => c.Status == 0).WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)).WhereIf(userIds.Count > 0, c => userIds.Contains(c.Id)) on a.UserID equals b.Id
+                              select new User { Id = b.Id, Name = b.Name, Mobile = b.Mobile }).ToListAsync();
+
             var da1 = data.Select(c =>
              {
                  //当天是否有定位记录
@@ -234,6 +245,12 @@ namespace OpenAuth.App
             var start = Convert.ToDateTime(req.StartDate.Value.Date.ToString());
             DateTime end = Convert.ToDateTime(req.EndDate.ToDateTime().AddDays(1).ToString("D").ToString()).AddSeconds(-1);
             var pppUserMap = UnitWork.Find<AppUserMap>(c=>c.UserID==userId).FirstOrDefault();
+            if (pppUserMap==null)
+            {
+                result.Code = 500;
+                result.Message = "该用户暂未绑定APP";
+                return result;
+            }
             //按指定时间过滤（筛选轨迹）
             var realTimeLocation = await UnitWork.Find<RealTimeLocation>(null)
                                             .Where(c =>(c.CreateTime >= start && c.CreateTime <= end) && c.AppUserId==pppUserMap.AppUserId && !string.IsNullOrWhiteSpace(c.Province))
@@ -375,16 +392,16 @@ namespace OpenAuth.App
             var result = new TableData();
 
             //技术员角色
-            var roleId = await UnitWork.Find<Role>(c => c.Name.Equals("售后技术员")).Select(c => c.Id).FirstOrDefaultAsync();
-            var userIds = await UnitWork.Find<Relevance>(c => c.Key.Equals(Define.USERROLE) && c.SecondId.Equals(roleId)).Select(c => c.FirstId).ToListAsync();
-            //未完成服务id的
-            var serviceWorkOrder = UnitWork.Find<ServiceWorkOrder>(c => c.Status < 7);
-            var noComplete = await serviceWorkOrder
-                                    .Where(c => !string.IsNullOrWhiteSpace(c.CurrentUserNsapId))
-                                    .Select(c => c.CurrentUserNsapId)
-                                    .Distinct()
-                                    .ToListAsync();
-            userIds.AddRange(noComplete);
+            //var roleId = await UnitWork.Find<Role>(c => c.Name.Equals("售后技术员")).Select(c => c.Id).FirstOrDefaultAsync();
+            //var userIds = await UnitWork.Find<Relevance>(c => c.Key.Equals(Define.USERROLE) && c.SecondId.Equals(roleId)).Select(c => c.FirstId).ToListAsync();
+            ////未完成服务id的
+            //var serviceWorkOrder = UnitWork.Find<ServiceWorkOrder>(c => c.Status < 7);
+            //var noComplete = await serviceWorkOrder
+            //                        .Where(c => !string.IsNullOrWhiteSpace(c.CurrentUserNsapId))
+            //                        .Select(c => c.CurrentUserNsapId)
+            //                        .Distinct()
+            //                        .ToListAsync();
+            //userIds.AddRange(noComplete);
 
             var pppUserMap = await UnitWork.Find<AppUserMap>(null).ToListAsync();
 
@@ -398,11 +415,20 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.City), c => c.City == req.City)
                 .ToListAsync();
 
+            //数据权限
+            List<string> userIds = new List<string>();
+            if (loginContext.Roles.Any(c => c.Name == "智慧大屏查看-部门主管") && loginContext.User.Account != Define.SYSTEM_USERNAME)
+            {
+                var orgId = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault().Id;
+                var userid = await UnitWork.Find<Relevance>(c => c.Key == Define.USERORG && c.SecondId == orgId).Select(c => c.FirstId).ToListAsync();
+                userIds.AddRange(userid);
+            }
+
             //部门
-            var OrgNames = from b in UnitWork.Find<Relevance>(r => userIds.Contains(r.FirstId))
+            var OrgNames = from b in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG).WhereIf(userIds.Count > 0, r => userIds.Contains(r.FirstId))
                            join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id into bc
                            from c in bc.DefaultIfEmpty()
-                           join u in UnitWork.Find<User>(c => userIds.Contains(c.Id))
+                           join u in UnitWork.Find<User>(null).WhereIf(userIds.Count > 0, r => userIds.Contains(r.Id))
                                     .WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)) on b.FirstId equals u.Id into bu
                            from u in bu.DefaultIfEmpty()
                            where b.Key.Equals(Define.USERORG)

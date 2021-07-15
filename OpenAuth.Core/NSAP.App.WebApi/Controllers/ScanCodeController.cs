@@ -10,7 +10,7 @@ namespace NSAP.App.WebApi.Controllers
     /// <summary>
     /// App扫码接口
     /// </summary>
-    [Route("api/scanCode/[controller]/[action]")]
+    [Route("ErpAppApi/scanCode/[controller]/[action]")]
     [ApiController]
     public class ScanCodeController : Controller
     {
@@ -34,7 +34,7 @@ namespace NSAP.App.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result = await _appScanCodeApp.GetGuidBySn(serialNumber);
+                result = await _appScanCodeApp.GetGuidBySn(serialNumber); 
             }
             catch (Exception e)
             {
@@ -54,7 +54,7 @@ namespace NSAP.App.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result = await _appScanCodeApp.GetSnListByGuidList(guids);
+                result = await _appScanCodeApp.GetSnListByGuidList(guids); 
             }
             catch (Exception e)
             {

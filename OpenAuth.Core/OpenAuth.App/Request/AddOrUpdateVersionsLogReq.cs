@@ -14,43 +14,44 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using OpenAuth.Repository.Core;
 
-namespace OpenAuth.Repository.Domain
+namespace OpenAuth.App.Request
 {
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("sbo_user")]
-    public partial class sbo_user 
+    [Table("VersionsLog")]
+    public partial class AddOrUpdateVersionsLogReq
     {
-        public sbo_user()
-        {
-          this.upd_dt= DateTime.Now;
-        }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public uint sbo_id { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public uint user_id { get; set; }
 
         /// <summary>
         /// 
         /// </summary>
-        [Description("")]
-        public int? sale_id { get; set; }
+        public string Id { get; set; }
         /// <summary>
         /// 
         /// </summary>
-        [Description("")]
-        public uint tech_id { get; set; }
+        public string VersionsNumber { get; set; }
         /// <summary>
         /// 
         /// </summary>
-        [Description("")]
-        public System.DateTime upd_dt { get; set; }
+        public string Content { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string IsDelete { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public System.DateTime? CreateTime { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string CreateUser { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string CreateUserId { get; set; }
+        
+         //todo:添加自己的请求字段
     }
 }

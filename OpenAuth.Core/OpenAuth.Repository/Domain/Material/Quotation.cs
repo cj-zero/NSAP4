@@ -263,11 +263,11 @@ namespace OpenAuth.Repository.Domain
         [Description("质保后付款百分比")]
         public decimal? PaymentAfterWarranty { get; set; }
         /// <summary>
-        ///领料类型 ture 更换 false 购买
+        ///领料类型 1更换 2.销售  3.成本
         /// </summary>
         [Description("领料类型")]
 
-        public bool?  IsMaterialType { get; set; }
+        public int? IsMaterialType { get; set; }
 
         /// <summary>
         ///打印次数
@@ -308,6 +308,23 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("修改日期")]
         public DateTime? UpDateTime { get; set; }
+
+        /// <summary>
+        ///上门维修费成本
+        /// </summary>
+        [Description("上门维修费成本")]
+        public decimal? ServiceChargeSMCost { get; set; }
+
+        /// <summary>
+        ///寄回维修费成本
+        /// </summary>
+        [Description("寄回维修费成本")]
+        public decimal? ServiceChargeJHCost { get; set; }
+        /// <summary>
+        ///差旅费成本
+        /// </summary>
+        [Description("差旅费成本")]
+        public decimal? TravelExpenseCost { get; set; }
 
         /// <summary>
         /// 物流表

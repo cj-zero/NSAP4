@@ -2060,8 +2060,16 @@ namespace OpenAuth.App
             obj.FroTechnicianName = name;
             obj.Replier = name;
             obj.ReplierId = userId;
+            var pictures = req.ServiceOrderMessagePictures;
+            obj.ServiceOrderMessagePictures = null;
             await UnitWork.AddAsync<ServiceOrderMessage, int>(obj);
             await UnitWork.SaveAsync();
+            if (pictures != null && pictures?.Count > 0)
+            {
+                pictures?.ForEach(p => { p.ServiceOrderMessageId = obj.Id; p.Id = Guid.NewGuid().ToString(); });
+                await UnitWork.BatchAddAsync(pictures?.ToArray());
+                await UnitWork.SaveAsync();
+            }
             string msgId = (await UnitWork.Find<ServiceOrderMessage>(s => s.AppUserId == req.AppUserId).OrderByDescending(o => o.CreateTime).FirstOrDefaultAsync()).Id;
             await SendMessageToRelatedUsers(req.Content, req.ServiceOrderId, req.AppUserId, msgId);
         }
@@ -2163,17 +2171,17 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-
-            var query = UnitWork.Find<ServiceOrderMessage>(o => o.ServiceOrderId == req.ServiceOrderId);
-            var resultsql = query.OrderByDescending(r => r.CreateTime).Select(s => new
+            //获取聊天信息
+            var messageList =  UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == req.ServiceOrderId).Include(s => s.ServiceOrderMessagePictures);
+            var resultsql = messageList.OrderByDescending(r => r.CreateTime).Select(s => new
             {
                 s.Content,
                 s.CreateTime,
                 s.FroTechnicianName,
                 s.AppUserId,
-                s.Replier
+                s.Replier,
+                s.ServiceOrderMessagePictures
             });
-
             result.Data =
             (await resultsql
             .Skip((req.page - 1) * req.limit)
@@ -2183,9 +2191,10 @@ namespace OpenAuth.App
                 CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
                 s.FroTechnicianName,
                 s.AppUserId,
-                s.Replier
+                s.Replier,
+                s.ServiceOrderMessagePictures
             });
-            result.Count = await query.CountAsync();
+            result.Count = await messageList.CountAsync();
             await ReadMsg(req.CurrentUserId, req.ServiceOrderId);
             return result;
         }
