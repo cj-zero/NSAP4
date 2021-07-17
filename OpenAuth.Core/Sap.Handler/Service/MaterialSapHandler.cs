@@ -12,6 +12,7 @@ using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Sap.Handler.Service
@@ -20,6 +21,7 @@ namespace Sap.Handler.Service
     {
         private readonly IUnitWork UnitWork;
         private readonly Company company;
+        static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
 
         public MaterialSapHandler(IUnitWork unitWork, Company company)
         {
@@ -352,6 +354,8 @@ namespace Sap.Handler.Service
             {
                 throw new Exception(eMesg.ToString());
             }
+            //用信号量代替锁
+            await semaphoreSlim.WaitAsync();
             try
             {
                 await HandleSalesOfDeliveryERP(int.Parse(docNum));
@@ -361,7 +365,10 @@ namespace Sap.Handler.Service
 
                 Log.Logger.Warning(e.Message);
             }
-            
+            finally
+            {
+                semaphoreSlim.Release();
+            }
         }
 
         [CapSubscribe("Serve.SalesOfDelivery.ERPCreate")]

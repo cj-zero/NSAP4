@@ -1738,7 +1738,6 @@ namespace OpenAuth.App.Material
                             obj.Status = 2;
                             #region 报价单同步到SAP，ERP3.0
                             _capBus.Publish("Serve.SellOrder.Create", obj.Id);
-                            _capBus.Publish("Serve.SellOrder.ERPCreate", obj.Id);
                             #endregion
                         }
 
@@ -1755,7 +1754,6 @@ namespace OpenAuth.App.Material
                     obj.QuotationStatus = 7;
                     #region 报价单同步到SAP，ERP3.0 
                     _capBus.Publish("Serve.SellOrder.Create", obj.Id);
-                    _capBus.Publish("Serve.SellOrder.ERPCreate", obj.Id);
                     #endregion
                 }
                 else if (obj.CreateUserId.Equals(loginUser.Id) && obj.QuotationStatus == 7)
@@ -1798,19 +1796,20 @@ namespace OpenAuth.App.Material
                 else
                 {
                     qoh.ApprovalResult = "同意";
+                    VerificationReqModle = new VerificationReq
+                    {
+                        NodeRejectStep = "",
+                        NodeRejectType = "0",
+                        FlowInstanceId = obj.FlowInstanceId,
+                        VerificationFinally = "1",
+                        VerificationOpinion = req.Remark,
+                    };
+                    if (!string.IsNullOrWhiteSpace(obj.FlowInstanceId))
+                    {
+                        await _flowInstanceApp.Verification(VerificationReqModle);
+                    }
                 }
-                VerificationReqModle = new VerificationReq
-                {
-                    NodeRejectStep = "",
-                    NodeRejectType = "0",
-                    FlowInstanceId = obj.FlowInstanceId,
-                    VerificationFinally = "1",
-                    VerificationOpinion = req.Remark,
-                };
-                if (!string.IsNullOrWhiteSpace(obj.FlowInstanceId))
-                {
-                    await _flowInstanceApp.Verification(VerificationReqModle);
-                }
+                
             }
             obj.UpDateTime = DateTime.Now;
             await UnitWork.UpdateAsync<Quotation>(obj);

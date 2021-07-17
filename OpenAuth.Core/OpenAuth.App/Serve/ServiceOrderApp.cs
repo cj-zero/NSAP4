@@ -1116,7 +1116,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<dynamic> GetCustomerNewestOrders(string code)
         {
-            var newestOrder = await UnitWork.Find<ServiceOrder>(s => s.CustomerId.Equals(code)).OrderByDescending(s => s.CreateTime)
+            var newestOrder = await UnitWork.Find<ServiceOrder>(s => s.CustomerId.Equals(code)).Include(s => s.ServiceWorkOrders).OrderByDescending(s => s.CreateTime)
                 .Select(s => new
                 {
                     s.Id,
@@ -1131,11 +1131,14 @@ namespace OpenAuth.App
                     s.U_SAP_ID,
                     s.CreateTime,
                     s.VestInOrg,
+                    FromTheme=s.ServiceWorkOrders.FirstOrDefault().FromTheme,
+                    WorkOrderStatus = s.ServiceWorkOrders.FirstOrDefault().Status,
+                    CurrentUser = s.ServiceWorkOrders.FirstOrDefault().CurrentUser,
                     IsWarning = ((TimeSpan)(DateTime.Now - s.CreateTime)).Days <= 5 ? true : false,
                     Day = 5
                 })
                 .Skip(0).Take(10).ToListAsync();
-            var newestNotCloseOrder = await UnitWork.Find<ServiceOrder>(s => s.CustomerId.Equals(code) && s.Status == 2 && s.ServiceWorkOrders.Any(o => o.Status < 7)).OrderByDescending(s => s.CreateTime)
+            var newestNotCloseOrder = await UnitWork.Find<ServiceOrder>(s => s.CustomerId.Equals(code) && s.Status == 2 && s.ServiceWorkOrders.Any(o => o.Status < 7)).Include(s=>s.ServiceWorkOrders).OrderByDescending(s => s.CreateTime)
                 .Select(s => new
                 {
                     s.Id,
@@ -1150,6 +1153,9 @@ namespace OpenAuth.App
                     s.U_SAP_ID,
                     s.CreateTime,
                     s.VestInOrg,
+                    FromTheme = s.ServiceWorkOrders.FirstOrDefault().FromTheme,
+                    WorkOrderStatus = s.ServiceWorkOrders.FirstOrDefault().Status,
+                    CurrentUser = s.ServiceWorkOrders.FirstOrDefault().CurrentUser,
                     IsWarning = ((TimeSpan)(DateTime.Now - s.CreateTime)).Days <= 5 ? true : false,
                     Day = 5
                 })

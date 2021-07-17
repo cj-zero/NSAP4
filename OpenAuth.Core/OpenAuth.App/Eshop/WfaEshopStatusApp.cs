@@ -130,8 +130,13 @@ namespace OpenAuth.App
         /// <param name="cardCode"></param>
         /// <param name="sboId"></param>
         /// <returns></returns>
-        public async Task<string> GetSalesPersonTelByCardCode(string cardCode)
+        public async Task<SlpInfoOfClientResp> GetSalesPersonTelByCardCode(string cardCode)
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
             //业务员Id
             var objslpstr = from a in UnitWork.Find<crm_ocrd>(null)
                          join b in UnitWork.Find<crm_oslp>(null) on new { a.sbo_id, a.SlpCode } equals new { sbo_id=b.sbo_id, SlpCode=b.SlpCode }
@@ -143,13 +148,21 @@ namespace OpenAuth.App
                 var objuser = from a in UnitWork.Find<sbo_user>(null)
                               join b in UnitWork.Find<base_user>(null) on a.user_id equals b.user_id into ab
                               from b in ab.DefaultIfEmpty()
-                              select new { a, b };
-                var telobj = await objuser.Where(o => o.a.sbo_id==objslp.sbo_id && o.a.sale_id==objslp.SlpCode && o.b.user_nm.Equals(objslp.SlpName)).Select(q => q.b.mobile).FirstOrDefaultAsync();
-                return telobj==0? "":telobj.ToString();
+                              join c in UnitWork.Find<base_user_detail>(null) on b.user_id equals c.user_id into bc
+                              from c in bc.DefaultIfEmpty()
+                              select new { a, b,c };
+                var telobj = await objuser.Where(o => o.a.sbo_id==objslp.sbo_id && o.a.sale_id==objslp.SlpCode && o.b.user_nm.Equals(objslp.SlpName))
+                    .Select(q =>new { 
+                        UserName=q.b.user_nm,
+                        Sex=q.c.sex==1? "女":"男",
+                        Email=q.b.email,
+                        Mobile=q.b.mobile }).FirstOrDefaultAsync();
+                var result = telobj.MapTo<SlpInfoOfClientResp>();
+                return result;
             }
             else
             {
-                return "";
+                return new SlpInfoOfClientResp();
             }
         }
         /// <summary>

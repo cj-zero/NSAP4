@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Sap.Handler.Service
@@ -18,6 +19,8 @@ namespace Sap.Handler.Service
     {
         private readonly IUnitWork UnitWork;
         private readonly Company company;
+
+        static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
 
         public SellOrderSapHandler(IUnitWork unitWork, Company company)
         {
@@ -230,12 +233,22 @@ namespace Sap.Handler.Service
 
             if (!string.IsNullOrEmpty(docNum))
             {
-                //如果同步成功则修改SellOrder
-                await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(quotation.Id), q => new Quotation
+                //用信号量代替锁
+                await semaphoreSlim.WaitAsync();
+                try
                 {
-                    SalesOrderId = int.Parse(docNum)
-                });
-                await UnitWork.SaveAsync();
+                    //如果同步成功则修改SellOrder
+                    await UnitWork.UpdateAsync<Quotation>(q => q.Id==quotation.Id, q => new Quotation
+                    {
+                        SalesOrderId = int.Parse(docNum)
+                    });
+                    await UnitWork.SaveAsync();
+                    await HandleSellOrderERP(quotation.Id);
+                }
+                finally
+                {
+                    semaphoreSlim.Release();
+                }
                 Log.Logger.Warning($"同步成功，SAP_ID：{docNum}", typeof(SellOrderSapHandler));
             }
             if (!string.IsNullOrWhiteSpace(allerror.ToString()))
@@ -247,7 +260,7 @@ namespace Sap.Handler.Service
         }
 
         [CapSubscribe("Serve.SellOrder.ERPCreate")]
-        public async Task HandleSellOrderERP(int theQuotationId) 
+        public async Task HandleSellOrderERP(int theQuotationId)
         {
             string message = "";
             var quotation = await UnitWork.Find<Quotation>(q => q.Id.Equals(theQuotationId)).AsNoTracking()
@@ -299,13 +312,13 @@ namespace Sap.Handler.Service
                         U_ERPFrom = "4"
                     };
                     ordr = await UnitWork.AddAsync<sale_ordr, int>(ordr);
-                    var lineNums = await UnitWork.Find<RDR1>(o => o.DocEntry == quotation.SalesOrderId).Select(o => new { o.LineNum, o.ItemCode,o.Price }).ToListAsync();
+                    var lineNums = await UnitWork.Find<RDR1>(o => o.DocEntry == quotation.SalesOrderId).Select(o => new { o.LineNum, o.ItemCode, o.Price }).ToListAsync();
                     foreach (QuotationMergeMaterial dln1 in quotation.QuotationMergeMaterials)
                     {
                         var lineNum = 0;
                         if (lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode)).Count() > 1)
                         {
-                            if (lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode) && o.Price == dln1.DiscountPrices).Count() <= 0) 
+                            if (lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode) && o.Price == dln1.DiscountPrices).Count() <= 0)
                             {
                                 lineNum = (int)lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode) && o.Price == decimal.Parse(Convert.ToDecimal(dln1.DiscountPrices).ToString("#0.00"))).FirstOrDefault()?.LineNum;
                             }
@@ -314,11 +327,11 @@ namespace Sap.Handler.Service
                                 lineNum = (int)lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode) && o.Price == dln1.DiscountPrices).FirstOrDefault()?.LineNum;
                             }
                         }
-                        else 
+                        else
                         {
                             lineNum = (int)lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode)).FirstOrDefault()?.LineNum;
                         }
-                        
+
                         await UnitWork.AddAsync<sale_rdr1, int>(new sale_rdr1
                         {
                             sbo_id = Define.SBO_ID,
@@ -389,7 +402,7 @@ namespace Sap.Handler.Service
                     Log.Logger.Warning($"同步3.0失败，SAP_ID：{quotation.SalesOrderId}" + ex.Message, typeof(SellOrderSapHandler));
                 }
             }
-            if (message != "") 
+            if (message != "")
             {
                 throw new Exception(message.ToString());
             }
@@ -398,11 +411,11 @@ namespace Sap.Handler.Service
         [CapSubscribe("Serve.SellOrder.Cancel")]
         public async Task HandleCancelSellOrder(int theQuotationId)
         {
-            string message = "",  eMesg="";
+            string message = "", eMesg = "";
             int eCode = 0;
             var quotation = await UnitWork.Find<Quotation>(q => q.Id.Equals(theQuotationId)).AsNoTracking().FirstOrDefaultAsync();
             SAPbobsCOM.Documents dts = (SAPbobsCOM.Documents)company.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oOrders);
-            
+
             dts.GetByKey(Convert.ToInt32(quotation.SalesOrderId));
             var res = dts.Cancel();
             if (res != 0)
@@ -412,7 +425,7 @@ namespace Sap.Handler.Service
                 Log.Logger.Error(message.ToString(), typeof(SellOrderSapHandler));
                 throw new Exception(message);
             }
-            else 
+            else
             {
                 //如果同步成功则修改SellOrder
                 await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(quotation.Id), q => new Quotation
@@ -422,7 +435,7 @@ namespace Sap.Handler.Service
                 await UnitWork.SaveAsync();
                 Log.Logger.Warning($"取消成功，SAP_ID：{quotation.SalesOrderId}", typeof(SellOrderSapHandler));
             }
-            
+
         }
 
     }
