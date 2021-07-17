@@ -39,10 +39,9 @@ namespace OpenAuth.App.Material
         private readonly FlowInstanceApp _flowInstanceApp;
 
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
+        public readonly WorkbenchApp _workbenchApp;
 
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
-
-        private readonly PendingApp _pendingApp;
 
         private ICapPublisher _capBus;
 
@@ -1062,7 +1061,7 @@ namespace OpenAuth.App.Material
                         await UnitWork.UpdateAsync<Quotation>(QuotationObj);
                         //增加全局待处理
                         var serviceOrederObj = await UnitWork.Find<ServiceOrder>(s => s.Id == obj.ServiceOrderId).FirstOrDefaultAsync();
-                        await AddOrUpdate(new WorkbenchPending
+                        await _workbenchApp.AddOrUpdate(new WorkbenchPending
                         {
                             OrderType = 1,
                             TerminalCustomer = serviceOrederObj.TerminalCustomer,
@@ -1254,7 +1253,7 @@ namespace OpenAuth.App.Material
                         });
                         //增加全局待处理
                         var serviceOrederObj = await UnitWork.Find<ServiceOrder>(s => s.Id == obj.ServiceOrderId).FirstOrDefaultAsync();
-                        await AddOrUpdate(new WorkbenchPending
+                        await _workbenchApp.AddOrUpdate(new WorkbenchPending
                         {
                             OrderType = 1,
                             TerminalCustomer = serviceOrederObj.TerminalCustomer,
@@ -1737,7 +1736,6 @@ namespace OpenAuth.App.Material
                 }
                 obj.QuotationStatus = 1;
                 qoh.ApprovalResult = "驳回";
-                obj.FlowInstanceId = "";
                 qoh.ApprovalStage = "1";
                 var delQuotationMergeMaterial = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(obj.Id)).ToListAsync();
                 await UnitWork.BatchDeleteAsync<QuotationMergeMaterial>(delQuotationMergeMaterial.ToArray());
@@ -2581,21 +2579,12 @@ namespace OpenAuth.App.Material
             await UnitWork.SaveAsync();
         }
 
-        /// <summary>
-        ///判断增加还是修改待处理
-        /// </summary>
-        /// <returns></returns>
-        public async Task AddOrUpdate(WorkbenchPending obj)
-        {
-           await _pendingApp.AddOrUpdate(obj);
-        }
-
-        public QuotationApp(IUnitWork unitWork, ICapPublisher capBus, PendingApp pendingApp, FlowInstanceApp flowInstanceApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
+        public QuotationApp(IUnitWork unitWork, ICapPublisher capBus, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _capBus = capBus;
-            _pendingApp = pendingApp;
+            _workbenchApp = workbenchApp;
         }
 
     }

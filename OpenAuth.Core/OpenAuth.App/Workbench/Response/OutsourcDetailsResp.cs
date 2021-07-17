@@ -1,4 +1,5 @@
 ﻿using OpenAuth.App.Response;
+using OpenAuth.Repository.Domain;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -55,7 +56,7 @@ namespace OpenAuth.App.Workbench.Response
         /// <summary>
         /// 费用类型
         /// </summary>
-        public int? ExpensesType { get; set; }
+        public int? ExpenseType { get; set; }
         /// <summary>
         /// 金额
         /// </summary>
@@ -117,5 +118,11 @@ namespace OpenAuth.App.Workbench.Response
         /// 附件表
         /// </summary>
         public List<FileResp> Files { get; set; }
+
+        /// <summary>
+        /// 费用归属
+        /// </summary>
+        public List<OutsourcExpenseOrg> OutsourcExpenseOrgs { get; set; }
+        
     }
 }

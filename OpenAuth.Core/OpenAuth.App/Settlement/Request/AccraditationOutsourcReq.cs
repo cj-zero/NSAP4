@@ -33,7 +33,7 @@ namespace OpenAuth.App.Settlement.Request
         /// <summary>
         /// 费用归属
         /// </summary>
-        public List<ReimburseExpenseOrgReq> OutsourcExpenseOrgReqs { get; set; }
+        public List<OutsourcExpenseOrgReq> OutsourcExpenseOrgReqs { get; set; }
 
         /// <summary>
         /// 费用单id

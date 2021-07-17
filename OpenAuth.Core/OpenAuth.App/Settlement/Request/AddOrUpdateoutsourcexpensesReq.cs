@@ -37,7 +37,7 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 
         /// </summary>
-        public int? ExpensesType { get; set; }
+        public int? ExpenseType { get; set; }
         /// <summary>
         /// 
         /// </summary>

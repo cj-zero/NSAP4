@@ -392,6 +392,11 @@ namespace Sap.Handler.Service
                             UpdateDate = item.UpdateDate
                         });
                     }
+                    //如果同步成功则修改SellOrder
+                    await UnitWork.UpdateAsync<Quotation>(q => q.Id == quotation.Id, q => new Quotation
+                    {
+                        SalesOrderId = quotation.SalesOrderId
+                    });
                     await UnitWork.SaveAsync();
                     await transaction.CommitAsync();
                 }

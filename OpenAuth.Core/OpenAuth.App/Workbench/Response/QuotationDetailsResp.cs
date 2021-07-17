@@ -104,12 +104,16 @@ namespace OpenAuth.App.Workbench.Response
         ///领料类型 1更换 2.销售  3.成本
         /// </summary>
 
-        public int? IsMaterialType { get; set; }
+        public string IsMaterialType { get; set; }
 
         /// <summary>
         ///修改日期
         /// </summary>
         public string UpDateTime { get; set; }
+        /// <summary>
+        /// 物料回传附件
+        /// </summary>
+        public virtual List<FileResp> Files { get; set; }
         /// <summary>
         /// 流程
         /// </summary>
@@ -243,7 +247,11 @@ namespace OpenAuth.App.Workbench.Response
         ///仓库号
         /// </summary>
         public string WhsCode { get; set; }
-
+        /// <summary>
+        ///仓库库存
+        /// </summary>
+        public string WarehouseQuantity { get; set; }
+        
         /// <summary>
         /// 物料附件
         /// </summary>

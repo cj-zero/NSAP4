@@ -43,7 +43,7 @@ namespace OpenAuth.Repository.Domain.Settlement
         /// 费用类型
         /// </summary>
         [Description("费用类型")]
-        public int? ExpensesType { get; set; }
+        public int? ExpenseType { get; set; }
         /// <summary>
         /// 服务单id
         /// </summary>

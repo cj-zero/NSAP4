@@ -17,6 +17,7 @@ using OpenAuth.App.Material.Response;
 using System.Linq.Dynamic.Core;
 using OpenAuth.App.Material;
 using OpenAuth.Repository.Domain.Workbench;
+using OpenAuth.App.Workbench;
 
 namespace OpenAuth.App
 {
@@ -27,14 +28,16 @@ namespace OpenAuth.App
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
         private ICapPublisher _capBus;
         private readonly QuotationApp _quotation;
+        private readonly WorkbenchApp _workbenchApp;
 
-        public ReturnNoteApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, QuotationApp quotation, ModuleFlowSchemeApp moduleFlowSchemeApp, ExpressageApp expressageApp, IAuth auth, ICapPublisher capBus) : base(unitWork, auth)
+        public ReturnNoteApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, QuotationApp quotation, ModuleFlowSchemeApp moduleFlowSchemeApp, ExpressageApp expressageApp, IAuth auth, ICapPublisher capBus) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _expressageApp = expressageApp;
             _capBus = capBus;
             _quotation = quotation;
+            _workbenchApp = workbenchApp;
         }
 
         #region App退料
@@ -881,7 +884,7 @@ namespace OpenAuth.App
             var result = new TableData();
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ReturnNoteTypeName")).Select(u => new { u.Name, u.DtValue }).ToListAsync();
             result.Count = await returnNotes.CountAsync();
-            var returnNoteList = await returnNotes.ToListAsync();
+            var returnNoteList = await returnNotes.OrderByDescending(r => r.UpdateTime).ToListAsync();
             flowInstanceIds = returnNoteList.Select(r => r.FlowInstanceId).ToList();
             var flowInstanceList = await UnitWork.Find<FlowInstance>(f => flowInstanceIds.Contains(f.Id)).ToListAsync();
             List<ReturnNoteMainResp> returnNoteMainRespList = new List<ReturnNoteMainResp>();
@@ -1078,7 +1081,7 @@ namespace OpenAuth.App
                 loginUser = await GetUserId((int)req.AppUserId);
             }
             //.Include(r => r.ReturnnoteOperationHistorys)
-            var returnNotes = await UnitWork.Find<ReturnNote>(r => r.Id == req.returnNoteId).Include(r => r.ReturnNotePictures).Include(r => r.ReturnnoteMaterials).ThenInclude(r =>r.ReturnNoteMaterialPictures).FirstOrDefaultAsync();
+            var returnNotes = await UnitWork.Find<ReturnNote>(r => r.Id == req.returnNoteId).Include(r => r.ReturnNotePictures).Include(r => r.ReturnnoteMaterials).ThenInclude(r => r.ReturnNoteMaterialPictures).FirstOrDefaultAsync();
             var History = await UnitWork.Find<FlowInstanceOperationHistory>(f => f.InstanceId.Equals(returnNotes.FlowInstanceId)).OrderBy(f => f.CreateDate).ToListAsync();
 
             //查询当前技术员所有可退料服务Id
@@ -1087,11 +1090,11 @@ namespace OpenAuth.App
             var result = new TableData();
             var serviceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id == returnNotes.ServiceOrderId).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.NewestContacter, s.NewestContactTel, s.U_SAP_ID }).FirstOrDefaultAsync();
             //查询应收发票  && s.LineStatus == "O"
-            var saleinv1 = await UnitWork.Find<sale_inv1>(s => s.DocEntry == InvoiceDocEntry && s.sbo_id==Define.SBO_ID).ToListAsync();
+            var saleinv1 = await UnitWork.Find<sale_inv1>(s => s.DocEntry == InvoiceDocEntry && s.sbo_id == Define.SBO_ID).ToListAsync();
             var DocTotal = saleinv1.Sum(s => s.LineTotal);
             //是否存在退料记录
-            var materials = await UnitWork.Find<ReturnnoteMaterial>(r => r.ReturnNoteId!= returnNotes.Id&& InvoiceDocEntry == r.InvoiceDocEntry).ToListAsync();
-            
+            var materials = await UnitWork.Find<ReturnnoteMaterial>(r => r.ReturnNoteId != returnNotes.Id && InvoiceDocEntry == r.InvoiceDocEntry).ToListAsync();
+
             List<string> fileIds = new List<string>();
             var numberIds = returnNotes.ReturnnoteMaterials.Select(r => r.Id).ToList();
             var numbers = await UnitWork.Find<ReturnnoteMaterialNumber>(r => numberIds.Contains(r.ReturnnoteMaterialId)).ToListAsync();
@@ -1102,7 +1105,7 @@ namespace OpenAuth.App
             returnNotes.ReturnnoteMaterials.ForEach(r =>
                 {
                     var QuotationMergeMaterialObj = quotationObj.QuotationMergeMaterials.Where(q => q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault();
-                    var Quantity = saleinv1.Where(s => s.ItemCode.Equals(QuotationMergeMaterialObj.MaterialCode) && ( Convert.ToDouble(s.Price) == Convert.ToDouble(QuotationMergeMaterialObj.DiscountPrices) || s.Price == decimal.Parse(Convert.ToDecimal(QuotationMergeMaterialObj.DiscountPrices).ToString("#0.00")))).FirstOrDefault()?.Quantity;
+                    var Quantity = saleinv1.Where(s => s.ItemCode.Equals(QuotationMergeMaterialObj.MaterialCode) && (Convert.ToDouble(s.Price) == Convert.ToDouble(QuotationMergeMaterialObj.DiscountPrices) || s.Price == decimal.Parse(Convert.ToDecimal(QuotationMergeMaterialObj.DiscountPrices).ToString("#0.00")))).FirstOrDefault()?.Quantity;
                     var num = materials.Where(m => m.QuotationMaterialId.Equals(r.QuotationMaterialId)).Sum(m => m.Count);
                     var ResidueQuantity = num > 0 ? Quantity - num : Quantity;
                     returnnoteMaterials.Add(new
@@ -1134,8 +1137,8 @@ namespace OpenAuth.App
                         Quantity = Quantity,
                         ResidueQuantity = ResidueQuantity,
                         IfReplace = QuotationMergeMaterialObj.MaterialCode.Equals(r.MaterialCode) ? false : true,
-                        ReplacePartCode =  QuotationMergeMaterialObj.MaterialCode,
-                        ReplacePartDescription =  QuotationMergeMaterialObj.MaterialDescription
+                        ReplacePartCode = QuotationMergeMaterialObj.MaterialCode,
+                        ReplacePartDescription = QuotationMergeMaterialObj.MaterialDescription
                     });
 
                 }
@@ -1144,7 +1147,7 @@ namespace OpenAuth.App
             {
                 var ReturnnoteMaterialList = returnNotes.ReturnnoteMaterials.Select(r => new
                 {
-                    MaterialCode= quotationObj.QuotationMergeMaterials.Where(q=>q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.MaterialCode,
+                    MaterialCode = quotationObj.QuotationMergeMaterials.Where(q => q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.MaterialCode,
                     Price = quotationObj.QuotationMergeMaterials.Where(q => q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.DiscountPrices
                 }).ToList();
                 ReturnnoteMaterialList.ForEach(r =>
@@ -1189,7 +1192,7 @@ namespace OpenAuth.App
                 returnnoteMaterials,
                 serviceOrders,
                 ReturnnoteOperationHistorys,
-                Quotations= qoutationReq
+                Quotations = qoutationReq
             };
             return result;
         }
@@ -1243,7 +1246,7 @@ namespace OpenAuth.App
                         await UnitWork.UpdateAsync<ReturnNote>(r => r.Id == returnnotrObj.Id, r => new ReturnNote { FlowInstanceId = FlowInstanceId });
                         //增加全局待处理
                         var serviceOrederObj = await UnitWork.Find<ServiceOrder>(s => s.Id == obj.ServiceOrderId).FirstOrDefaultAsync();
-                        await _quotation.AddOrUpdate(new WorkbenchPending
+                        await _workbenchApp.AddOrUpdate(new WorkbenchPending
                         {
                             OrderType = 2,
                             TerminalCustomer = serviceOrederObj.TerminalCustomer,
@@ -1256,7 +1259,7 @@ namespace OpenAuth.App
                             TotalMoney = returnnotrObj.TotalMoney,
                             Petitioner = loginUser.Name,
                             SourceNumbers = returnnotrObj.Id,
-                            PetitionerId=loginUser.Id
+                            PetitionerId = loginUser.Id
                         });
                     }
                     await UnitWork.SaveAsync();
@@ -1299,7 +1302,7 @@ namespace OpenAuth.App
                     //先删后增
                     #region 删除
                     var returnNoteObj = await UnitWork.Find<ReturnNote>(r => r.Id == obj.ReturnNoteId).Include(r => r.ReturnNotePictures).FirstOrDefaultAsync();
-                    await UnitWork.DeleteAsync<ReturnnoteMaterial>(r=>r.ReturnNoteId== returnNoteObj.Id);
+                    await UnitWork.DeleteAsync<ReturnnoteMaterial>(r => r.ReturnNoteId == returnNoteObj.Id);
                     if (returnNoteObj.ReturnNotePictures != null && returnNoteObj.ReturnNotePictures.Count > 0)
                     {
                         await UnitWork.BatchDeleteAsync<ReturnNotePicture>(returnNoteObj.ReturnNotePictures.ToArray());
@@ -1338,7 +1341,7 @@ namespace OpenAuth.App
                         }
                         //增加全局待处理
                         var serviceOrederObj = await UnitWork.Find<ServiceOrder>(s => s.Id == obj.ServiceOrderId).FirstOrDefaultAsync();
-                        await _quotation.AddOrUpdate(new WorkbenchPending
+                        await _workbenchApp.AddOrUpdate(new WorkbenchPending
                         {
                             OrderType = 2,
                             TerminalCustomer = serviceOrederObj.TerminalCustomer,
@@ -1513,7 +1516,7 @@ namespace OpenAuth.App
             await UnitWork.UpdateAsync<ReturnNote>(r => r.Id == returnNotes.Id, r => new ReturnNote
             {
                 UpdateTime = DateTime.Now
-            }); 
+            });
             //修改全局待处理
             await UnitWork.UpdateAsync<WorkbenchPending>(w => w.SourceNumbers == returnNotes.Id && w.OrderType == 2, w => new WorkbenchPending
             {
@@ -1539,7 +1542,7 @@ namespace OpenAuth.App
             #region 判定是否和报价单有关联
             obj.ReturnnoteMaterials.ForEach(r =>
             {
-                if (string.IsNullOrWhiteSpace(r.QuotationMaterialId)) 
+                if (string.IsNullOrWhiteSpace(r.QuotationMaterialId))
                 {
                     throw new Exception("未找到关联销售订单，请联系管理员。");
                 }

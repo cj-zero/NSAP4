@@ -91,6 +91,10 @@ namespace OpenAuth.App.Workbench.Response
         /// </summary>
         public string ExpenseOrg { get; set; }
         /// <summary>
+        /// 费用类型
+        /// </summary>
+        public string ExpenseType { get; set; }
+        /// <summary>
         /// 费用归属
         /// </summary>
         public List<ReimburseExpenseOrg> ReimburseExpenseOrgs { get; set; }
@@ -145,6 +149,10 @@ namespace OpenAuth.App.Workbench.Response
         /// 费用归属
         /// </summary>
         public string ExpenseOrg { get; set; }
+        /// <summary>
+        /// 费用类型
+        /// </summary>
+        public string ExpenseType { get; set; }
 
         /// <summary>
         /// 附件
@@ -236,6 +244,10 @@ namespace OpenAuth.App.Workbench.Response
         /// 费用归属
         /// </summary>
         public string ExpenseOrg { get; set; }
+        /// <summary>
+        /// 费用类型
+        /// </summary>
+        public string ExpenseType { get; set; }
 
         /// <summary>
         /// 附件
@@ -303,6 +315,11 @@ namespace OpenAuth.App.Workbench.Response
         /// 费用归属
         /// </summary>
         public string ExpenseOrg { get; set; }
+        /// <summary>
+        /// 费用类型
+        /// </summary>
+        public string ExpenseType { get; set; }
+        
 
         /// <summary>
         /// 附件
