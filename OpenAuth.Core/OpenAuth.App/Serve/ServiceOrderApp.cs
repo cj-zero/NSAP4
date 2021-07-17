@@ -4009,12 +4009,34 @@ namespace OpenAuth.App
             {
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
             }
-            var data = await UnitWork.Find<PersonProblemAndSolution>(w => w.CreaterId == userInfo.UserID && w.Type == Type).Select(s => new { s.Description, s.Id }).ToListAsync();
+            var data = await UnitWork.Find<PersonProblemAndSolution>(w => w.CreaterId == userInfo.UserID && w.Type == Type && w.IsDelete==0).Select(s => new { s.Description, s.Id }).ToListAsync();
             result.Data = data;
             return result;
         }
 
-
+        /// <summary>
+        /// 清空自定义问题描述和解决方案
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task ClearProblemOrSolution(AddProblemOrSolutionReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.AppUserId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            var PersonProblemAndSolution = await UnitWork.Find<PersonProblemAndSolution>(c => c.CreaterId == userInfo.UserID && c.IsDelete == 0 && c.Type==req.Type).ToListAsync();
+            PersonProblemAndSolution.ForEach(c => c.IsDelete = 1);
+            await UnitWork.BatchUpdateAsync(PersonProblemAndSolution.ToArray());
+            await UnitWork.SaveAsync();
+        }
         /// <summary>
         /// 获取用户差旅费
         /// </summary>

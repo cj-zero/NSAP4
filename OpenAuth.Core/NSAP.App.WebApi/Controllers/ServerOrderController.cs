@@ -771,7 +771,27 @@ namespace NSAP.App.WebApi.Controllers
             }
             return result;
         }
+        /// <summary>
+        /// 清空自定义问题描述和解决方案
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> ClearProblemOrSolution(AddProblemOrSolutionReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.ClearProblemOrSolution(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
 
+            return result;
+        }
 
         /// <summary>
         /// 添加日费
