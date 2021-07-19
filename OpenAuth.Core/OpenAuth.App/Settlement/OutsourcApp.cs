@@ -643,7 +643,7 @@ namespace OpenAuth.App
             {
                 var flowInstanceObj = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(outsourcObj.FlowInstanceId)).FirstOrDefaultAsync();
                 await _flowInstanceApp.Verification(VerificationReqModle);
-                if (flowInstanceObj.ActivityName.Equals("客服主管审批") && outsourcObj.ServiceMode==1)
+                if (flowInstanceObj.ActivityName.Equals("客服主管审批"))
                 {
                     var expensesOrg = new OutsourcExpenses();
                     if (!string.IsNullOrWhiteSpace(req.Money)) 

@@ -238,17 +238,18 @@ namespace Sap.Handler.Service
                 try
                 {
                     //如果同步成功则修改SellOrder
-                    await UnitWork.UpdateAsync<Quotation>(q => q.Id==quotation.Id, q => new Quotation
+                    UnitWork.Update<Quotation>(q => q.Id == quotation.Id, q => new Quotation
                     {
-                        SalesOrderId = int.Parse(docNum)
+                        SalesOrderId = quotation.SalesOrderId
                     });
-                    await UnitWork.SaveAsync();
-                    await HandleSellOrderERP(quotation.Id);
+                    UnitWork.Save();
+                    Log.Logger.Debug($"反写4.0成功，SAP_ID：{docNum}", typeof(SellOrderSapHandler));
                 }
                 finally
                 {
                     semaphoreSlim.Release();
                 }
+                await HandleSellOrderERP(quotation.Id);
                 Log.Logger.Warning($"同步成功，SAP_ID：{docNum}", typeof(SellOrderSapHandler));
             }
             if (!string.IsNullOrWhiteSpace(allerror.ToString()))
@@ -392,21 +393,18 @@ namespace Sap.Handler.Service
                             UpdateDate = item.UpdateDate
                         });
                     }
-                    //如果同步成功则修改SellOrder
-                    await UnitWork.UpdateAsync<Quotation>(q => q.Id == quotation.Id, q => new Quotation
-                    {
-                        SalesOrderId = quotation.SalesOrderId
-                    });
                     await UnitWork.SaveAsync();
                     await transaction.CommitAsync();
+                    Log.Logger.Debug($"同步3.0成功，SAP_ID：{quotation.SalesOrderId}", typeof(SellOrderSapHandler));
                 }
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
                     message = $"同步3.0失败，SAP_ID：{quotation.SalesOrderId}" + ex.Message;
-                    Log.Logger.Warning($"同步3.0失败，SAP_ID：{quotation.SalesOrderId}" + ex.Message, typeof(SellOrderSapHandler));
+                    Log.Logger.Error($"同步3.0失败，SAP_ID：{quotation.SalesOrderId}" + ex.Message, typeof(SellOrderSapHandler));
                 }
             }
+            
             if (message != "")
             {
                 throw new Exception(message.ToString());
