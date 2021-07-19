@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MessagePack.Resolvers;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -14,5 +15,6 @@ namespace OpenAuth.Repository
 
         public static Type NsapBoneDbContextType => typeof(NsapBoneDbContext);
         public static Type SapDbContextType => typeof(SapDbContext);
+        public static Type NsapBaseDbContext => typeof(NsapBaseDbContext);
     }
 }
