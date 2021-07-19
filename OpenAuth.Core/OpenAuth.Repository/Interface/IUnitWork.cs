@@ -10,6 +10,8 @@
 // ***********************************************************************
 
 using System;
+using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -48,7 +50,7 @@ namespace OpenAuth.Repository.Interface
         Task<T> AddAsync<T, Tkey>(T entity, CancellationToken cancellationToken = default) where T : class;
 
         void BatchAdd<T>(T[] entities) where T : BaseEntity;
-        void BatchAdd<T, TKey>(T[] entities ) where T : class;
+        void BatchAdd<T, TKey>(T[] entities) where T : class;
         Task BatchAddAsync<T>(T[] entities, CancellationToken cancellationToken = default) where T : BaseEntity;
         Task BatchAddAsync<T, TKey>(T[] entities, CancellationToken cancellationToken = default) where T : class;
 
@@ -102,5 +104,25 @@ namespace OpenAuth.Repository.Interface
         /// <typeparam name="T"> T为非数据库实体，需要在DbContext中增加对应的DbQuery</typeparam>
         /// <returns></returns>
         IQueryable<T> Query<T>(string sql, params object[] parameters) where T : class;
+        /// <summary>
+        ///  执行sql语句不需要(建立实体)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="contextType"></param>
+        /// <param name="sql"></param>
+        /// <param name="commandType"></param>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        List<T> ExcuteSql<T>(Type contextType, string sql, CommandType commandType, params object[] param) where T : class, new();
+        /// <summary>
+        ///  执行sql语句不需要(建立实体)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="contextType"></param>
+        /// <param name="sql"></param>
+        /// <param name="commandType"></param>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        DataTable ExcuteSqlTable(Type contextType, string sql, CommandType commandType, params object[] param);
     }
 }
