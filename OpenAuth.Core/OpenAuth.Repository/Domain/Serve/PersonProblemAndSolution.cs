@@ -18,6 +18,7 @@ namespace OpenAuth.Repository.Domain
         {
             this.Description = string.Empty;
             this.CreateTime = DateTime.Now;
+            this.IsDelete = 0;
         }
 
 
@@ -41,5 +42,10 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("创建时间")]
         public System.DateTime? CreateTime { get; set; }
+        /// <summary>
+        /// 是否删除
+        /// </summary>
+        [Description("是否删除 0:未删除  1：已删除")]
+        public int? IsDelete { get; set; }
     }
 }
