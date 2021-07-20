@@ -115,4 +115,18 @@ namespace OpenAuth.App.Order
         /// </summary>
         public object SlpCode { get; set; }
     }
+    /// <summary>
+    /// 业务经理对象
+    /// </summary>
+    public class ManagerDto
+    {
+        /// <summary>
+        /// Id
+        /// </summary>
+        public int EmpId { get; set; }
+        /// <summary>
+        /// 名称
+        /// </summary>
+        public string Name { get; set; }
+    }
 }

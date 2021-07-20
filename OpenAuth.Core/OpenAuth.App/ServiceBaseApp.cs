@@ -56,7 +56,7 @@ namespace OpenAuth.App
             return loginContext.User.User_Id;
         }
         /// <summary>
-        /// 获取NsapId
+        /// 获取sboId
         /// </summary>
         /// <returns></returns>
         public int GetUserNaspSboID(int UserID)
