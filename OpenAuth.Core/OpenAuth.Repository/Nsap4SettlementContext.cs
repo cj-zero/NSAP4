@@ -19,8 +19,9 @@ namespace OpenAuth.Repository
             //当主键为联合主键时，需要把这里的内容拷贝到对应的位置
         }
 
-        public virtual DbSet<outsourc> Outsourcs { get; set; }
-        public virtual DbSet<outsourcexpenses> Outsourcexpenses { get; set; }
-        public virtual DbSet<outsourcexpensespicture> Outsourcexpensespictures { get; set; }
+        public virtual DbSet<Outsourc> Outsourcs { get; set; }
+        public virtual DbSet<OutsourcExpenses> Outsourcexpenses { get; set; }
+        public virtual DbSet<OutsourcExpenseOrg> OutsourcExpenseOrgs { get; set; }
+        public virtual DbSet<OutsourcExpensesPicture> Outsourcexpensespictures { get; set; }
     }
 }

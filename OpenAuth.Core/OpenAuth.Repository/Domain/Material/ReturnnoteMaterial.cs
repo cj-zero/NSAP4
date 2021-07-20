@@ -118,6 +118,12 @@ namespace OpenAuth.Repository.Domain
         public List<ReturnNoteMaterialPicture> ReturnNoteMaterialPictures { get; set; }
 
         /// <summary>
+        ///退料物料序列号表
+        /// </summary>
+        [Description("退料物料序列号表")]
+        public List<ReturnnoteMaterialNumber> ReturnnoteMaterialNumbers { get; set; }
+
+        /// <summary>
         /// 领料明细Id
         /// </summary>
         [Description("领料明细Id")]

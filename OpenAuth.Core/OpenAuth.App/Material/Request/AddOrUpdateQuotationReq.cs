@@ -253,7 +253,10 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public decimal? TravelExpenseCost { get; set; }
 
-
+        /// <summary>
+        ///修改时间
+        /// </summary>
+        public DateTime? UpDateTime { get; set; }
         /// <summary>
         /// 报价单设备列表
         /// </summary>
