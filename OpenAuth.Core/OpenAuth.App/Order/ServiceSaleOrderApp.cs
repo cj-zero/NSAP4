@@ -35,7 +35,7 @@ namespace OpenAuth.App.Order
         private ICapPublisher _capBus;
         private readonly ServiceFlowApp _serviceFlowApp;
         ServiceBaseApp _serviceBaseApp;
-        public ServiceSaleOrderApp(IUnitWork unitWork, RevelanceManagerApp app, ServiceBaseApp serviceBaseApp,ServiceOrderLogApp serviceOrderLogApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
+        public ServiceSaleOrderApp(IUnitWork unitWork, RevelanceManagerApp app, ServiceBaseApp serviceBaseApp, ServiceOrderLogApp serviceOrderLogApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
             _revelanceApp = app;
@@ -553,12 +553,8 @@ namespace OpenAuth.App.Order
         public List<SelectOption> GetSalesSelect(int sboId)
         {
             var loginContext = _auth.GetCurrentUser();
-            //if (loginContext == null)
-            //{
-            //    throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            //}
             //业务员Id
-            var selectOption = UnitWork.Find<crm_oslp>(null).Select(zw => new SelectOption { Key = zw.SlpCode.ToString(), Option = zw.SlpName }).ToList();
+            var selectOption = UnitWork.Find<crm_oslp>(s => s.sbo_id == sboId).Select(zw => new SelectOption { Key = zw.SlpCode.ToString(), Option = zw.SlpName }).ToList();
             return selectOption;
         }
 

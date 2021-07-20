@@ -47,10 +47,11 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns></returns>
         [HttpGet]
         [Route("dboinfo")]
-        public async Task<List<SboInfoDto>> DboInfo()
+        public async Task<Response<List<SboInfoDto>>> DboInfo()
         {
-            List<SboInfoDto> sboList = UnitWork.ExcuteSql<SboInfoDto>(ContextType.NsapBaseDbContext, "SELECT sbo_id AS id,sbo_nm AS name FROM nsap_base.sbo_info;", CommandType.Text, null).OrderBy(s => s.Id).ToList();
-            return sboList;
+            var result = new Response<List<SboInfoDto>>();
+            result.Result = UnitWork.ExcuteSql<SboInfoDto>(ContextType.NsapBaseDbContext, "SELECT sbo_id AS id,sbo_nm AS name FROM nsap_base.sbo_info;", CommandType.Text, null).OrderBy(s => s.Id).ToList();
+            return result;
         }
         /// <summary>
         /// 销售报价单经理列表
@@ -58,12 +59,13 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns></returns>
         [HttpGet]
         [Route("managerinfo")]
-        public async Task<List<ManagerDto>> ManagerInfo()
+        public async Task<Response<List<ManagerDto>>> ManagerInfo()
         {
+            var result = new Response<List<ManagerDto>>();
             var userId = _serviceBaseApp.GetUserNaspId();
             var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
-            List<ManagerDto> sboList = UnitWork.ExcuteSql<ManagerDto>(ContextType.NsapBaseDbContext, $@"SELECT empID,CONCAT(lastName,+firstName) AS name FROM nsap_bone.crm_ohem WHERE sbo_id={sboid}", CommandType.Text, null).OrderBy(s => s.EmpId).ToList();
-            return sboList;
+            result.Result = UnitWork.ExcuteSql<ManagerDto>(ContextType.NsapBaseDbContext, $@"SELECT empID,CONCAT(lastName,+firstName) AS name FROM nsap_bone.crm_ohem WHERE sbo_id={sboid}", CommandType.Text, null).OrderBy(s => s.EmpId).ToList();
+            return result;
         }
         /// <summary>
         /// 业务伙伴列表
@@ -288,21 +290,14 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        [Route("SalesManInfo")]
-        //  [AllowAnonymous]
+        [Route("salesmaninfo")]
+        [AllowAnonymous]
         public async Task<Response<List<SelectOption>>> GetSalesManInfo()
         {
             var result = new Response<List<SelectOption>>();
-            try
-            {
-                result.Result = _serviceSaleOrderApp.GetSalesSelect(0);
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-                Log.Logger.Error($"地址：{Request.Path}, 错误：{result.Message}");
-            }
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result.Result = _serviceSaleOrderApp.GetSalesSelect(sboid);
             return result;
         }
         /// <summary>
