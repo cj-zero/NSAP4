@@ -21,7 +21,10 @@ namespace OpenAuth.Repository.Extensions
         {
             var conn = facade.GetDbConnection();
             connection = conn;
-            conn.Open();
+            if (conn.State != ConnectionState.Open)
+            {
+                conn.Open();
+            }
             var cmd = conn.CreateCommand();
             if (parameters != null)
             {
@@ -48,9 +51,9 @@ namespace OpenAuth.Repository.Extensions
         public static DataTable SqlQuery(this DatabaseFacade facade, string sql, CommandType commandType, params object[] parameters)
         {
             var dt = new DataTable();
+            var command = CreateCommand(facade, sql, out DbConnection conn, commandType, parameters);
             try
             {
-                var command = CreateCommand(facade, sql, out DbConnection conn, commandType, parameters);
                 var reader = command.ExecuteReader();
                 dt.Load(reader);
                 reader.Close();
@@ -58,6 +61,7 @@ namespace OpenAuth.Repository.Extensions
             }
             catch (Exception ex)
             {
+                conn.Close();
                 string msg = ex.Message;
                 throw ex;
             }
@@ -136,5 +140,30 @@ namespace OpenAuth.Repository.Extensions
             }
             return result;
         }
+        /// <summary>
+        /// 执行仓储过程
+        /// </summary>
+        /// <param name="facade"></param>
+        /// <param name="sql"></param>
+        /// <param name="commandType"></param>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
+        public static object ExecuteScalar(this DatabaseFacade facade, string sql, CommandType commandType, params object[] parameters)
+        {
+            var command = CreateCommand(facade, sql, out DbConnection conn, commandType, parameters);
+            bool flag = false;
+            if (command.Connection.State != ConnectionState.Open)
+            {
+                command.Connection.Open();
+                flag = true;
+            }
+            object result = command.ExecuteScalar();
+            if (flag)
+            {
+                conn.Close();
+            }
+            return result;
+        }
+
     }
 }

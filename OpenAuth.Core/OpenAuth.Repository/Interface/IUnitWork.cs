@@ -124,5 +124,14 @@ namespace OpenAuth.Repository.Interface
         /// <param name="param"></param>
         /// <returns></returns>
         DataTable ExcuteSqlTable(Type contextType, string sql, CommandType commandType, params object[] param);
+        /// <summary>
+        /// 执行存储过程
+        /// </summary>
+        /// <param name="contextType"></param>
+        /// <param name="sql"></param>
+        /// <param name="commandType"></param>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        object ExecuteScalar(Type contextType, string sql, CommandType commandType, params object[] param);
     }
 }

@@ -7,6 +7,7 @@ using NPOI.OpenXml4Net.OPC.Internal;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Order;
+using OpenAuth.App.Order.Request;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository;
@@ -66,7 +67,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// </summary>
         [HttpGet]
         [Route("cardcodeview")]
-        public async Task<TableData> LoadCardCodeViewAsync([FromQuery]CardCodeRequest request)
+        public async Task<TableData> LoadCardCodeViewAsync([FromQuery] CardCodeRequest request)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -219,7 +220,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             else
             {
-                result = _serviceSaleOrderApp.SelectCardCodeInfo(request, sortString, filterString, sboname);
+              //  return NSAP.Data.Sales.BillDelivery.SelectCardCodeList(out rowCount, pageSize, pageIndex, filterString, sortString, sboname, sqlconn).FelxgridDataToJSON(pageIndex.ToString(), rowCount.ToString());
             }
             return result;
         }
@@ -228,7 +229,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// </summary>pp
         [HttpGet]
         [Route("sales")]
-        public async Task<TableData> LoadAsync([FromQuery]QuerySalesQuotationReq request)
+        public async Task<TableData> LoadAsync([FromQuery] QuerySalesQuotationReq request)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -284,7 +285,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        [Route("salesmaninfo")]
+        [Route("SalesManInfo")]
         //  [AllowAnonymous]
         public async Task<Response<List<SelectOption>>> GetSalesManInfo()
         {
@@ -292,6 +293,27 @@ namespace OpenAuth.WebApi.Controllers.Order
             try
             {
                 result.Result = _serviceSaleOrderApp.GetSalesSelect(0);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}, 错误：{result.Message}");
+            }
+            return result;
+        }
+        /// <summary>
+        /// 销售报价单保存
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("Save")]
+        public async Task<Response<string>> Save(AddOrUpdateOrderReq orderReq)
+        {
+            var result = new Response<string>();
+            try
+            {
+                result.Result = _serviceSaleOrderApp.Save(orderReq);
             }
             catch (Exception ex)
             {
