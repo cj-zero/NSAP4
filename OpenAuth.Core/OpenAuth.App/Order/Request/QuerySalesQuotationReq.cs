@@ -50,7 +50,7 @@ namespace OpenAuth.App.Request
     public class CardCodeRequest : PageReq
     {
         /// <summary>
-        /// 排序字段
+        /// 排序字段 客户代码：a.cardcode,客户名称:a.cardname,销售员员：b.slpname,货币：a.currency，金额：a.balance
         /// </summary>
         public string SortName { get; set; }
         /// <summary>

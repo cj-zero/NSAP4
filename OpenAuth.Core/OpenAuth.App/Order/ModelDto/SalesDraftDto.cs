@@ -65,4 +65,54 @@ namespace OpenAuth.App.Order
         /// </summary>
         public string Name { get; set; }
     }
+    /// <summary>
+    /// 伙伴
+    /// </summary>
+    public class CardCodeDto
+    {
+        /// <summary>
+        /// 行号
+        /// </summary>
+        public int RowNumber { get; set; }
+        /// <summary>
+        /// 客户代码
+        /// </summary>
+        public string CardCode { get; set; }
+        /// <summary>
+        /// 客户名称
+        /// </summary>
+        public string CardName { get; set; }
+        /// <summary>
+        /// 联系人
+        /// </summary>
+        public string CntctPrsn { get; set; }
+        /// <summary>
+        /// 销售员
+        /// </summary>
+        public string SlpName { get; set; }
+        /// <summary>
+        /// 货币
+        /// </summary>
+        public string Currency { get; set; }
+        /// <summary>
+        /// 科目余额
+        /// </summary>
+        public decimal Balance { get; set; }
+        /// <summary>
+        /// 收货地址
+        /// </summary>
+        public string Address { get; set; }
+        /// <summary>
+        /// 开票地址
+        /// </summary>
+        public string Address2 { get; set; }
+        /// <summary>
+        /// 发票类型
+        /// </summary>
+        public string U_FPLB { get; set; }
+        /// <summary>
+        /// 销售员代码
+        /// </summary>
+        public object SlpCode { get; set; }
+    }
 }

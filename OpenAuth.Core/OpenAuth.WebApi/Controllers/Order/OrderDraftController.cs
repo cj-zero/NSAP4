@@ -73,6 +73,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             string sboname = string.Empty;
             string sortString = string.Empty;
             string filterString = string.Empty;
+            string sortName = string.Empty;
             if (dt.Rows.Count > 0)
             {
                 isOpen = dt.Rows[0][6].ToString();
@@ -82,6 +83,11 @@ namespace OpenAuth.WebApi.Controllers.Order
             if (!string.IsNullOrEmpty(request.SortName) && !string.IsNullOrEmpty(request.SortName))
             {
                 sortString = string.Format("{0} {1}", request.SortName, request.SortOrder.ToUpper());
+                //sortName = " " + request.SortName + " " + request.SortOrder;
+            }
+            else
+            {
+                sortString = " a.cardcode asc ";
             }
             if (!string.IsNullOrWhiteSpace(request.CardCode))
             {
@@ -201,13 +207,13 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             else
             {
-              //  return NSAP.Data.Sales.BillDelivery.SelectCardCodeList(out rowCount, pageSize, pageIndex, filterString, sortString, sboname, sqlconn).FelxgridDataToJSON(pageIndex.ToString(), rowCount.ToString());
+                result = _serviceSaleOrderApp.SelectCardCodeInfo(request, sortString, filterString, sboname);
             }
             return result;
         }
         /// <summary>
         /// 加载销售报价单列表
-        /// </summary>
+        /// </summary>pp
         [HttpGet]
         [Route("sales")]
         public async Task<TableData> LoadAsync([FromQuery]QuerySalesQuotationReq request)
