@@ -7,6 +7,12 @@ using NPOI.OpenXml4Net.OPC.Internal;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Order;
+using OpenAuth.App.Order.Request;
+using OpenAuth.App.Request;
+using OpenAuth.App.Response;
+using OpenAuth.Repository;
+using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Interface;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -49,7 +55,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// </summary>
         [HttpGet]
         [Route("cardcodeview")]
-        public async Task<TableData> LoadCardCodeViewAsync([FromQuery]CardCodeRequest request)
+        public async Task<TableData> LoadCardCodeViewAsync([FromQuery] CardCodeRequest request)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -196,7 +202,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             else
             {
-              //  return NSAP.Data.Sales.BillDelivery.SelectCardCodeList(out rowCount, pageSize, pageIndex, filterString, sortString, sboname, sqlconn).FelxgridDataToJSON(pageIndex.ToString(), rowCount.ToString());
+                //  return NSAP.Data.Sales.BillDelivery.SelectCardCodeList(out rowCount, pageSize, pageIndex, filterString, sortString, sboname, sqlconn).FelxgridDataToJSON(pageIndex.ToString(), rowCount.ToString());
             }
             return result;
         }
@@ -205,7 +211,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// </summary>
         [HttpGet]
         [Route("sales")]
-        public async Task<TableData> LoadAsync([FromQuery]QuerySalesQuotationReq request)
+        public async Task<TableData> LoadAsync([FromQuery] QuerySalesQuotationReq request)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -262,7 +268,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns></returns>
         [HttpGet]
         [Route("SalesManInfo")]
-      //  [AllowAnonymous]
+        //  [AllowAnonymous]
         public async Task<Response<List<SelectOption>>> GetSalesManInfo()
         {
             var result = new Response<List<SelectOption>>();
@@ -282,7 +288,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// 销售报价单保存
         /// </summary>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost]
         [Route("Save")]
         public async Task<Response<string>> Save(AddOrUpdateOrderReq orderReq)
         {

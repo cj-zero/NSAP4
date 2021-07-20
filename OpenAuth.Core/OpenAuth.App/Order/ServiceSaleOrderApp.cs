@@ -1,17 +1,24 @@
 ﻿extern alias MySqlConnectorAlias;
 using DotNetCore.CAP;
 using Infrastructure;
+using Infrastructure.Extensions;
 using Microsoft.Extensions.Options;
-using MySql.Data.MySqlClient;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Order.Request;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.NsapBase;
+using Microsoft.Data.SqlClient;
+using OpenAuth.App.Request;
+using OpenAuth.App.Response;
+using OpenAuth.Repository;
+using OpenAuth.Repository.Extensions;
 using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using OpenAuth.App.Order.ModelDto;
 
 namespace OpenAuth.App.Order
 {
@@ -500,79 +507,76 @@ namespace OpenAuth.App.Order
         public string Save(AddOrUpdateOrderReq orderReq)
         {
             var userInfo = _auth.GetCurrentUser();
+
+            int UserID = userInfo.User.User_Id;
             string funcId = "0";
             string logstring = "";
             string jobname = "";
             string result = "";
-            int sboID = GetUserNaspSboID();
-            byte[] job_data = ByteExtension.ToSerialize(orderReq.Order);
-            if (orderReq.Copy == "1")
+            try
             {
-                funcId = GetFuncsByUserID("sales/SalesOrder.aspx").ToString();
-                logstring = "根据销售报价单下销售订单";
-                jobname = "销售订单";
-                //  billNo = NSAP.Biz.Sales.BillDelivery.SalesDeliverySave_ORDR(rData, ations, JobId, UserID, int.Parse(funcId), "0", jobname, SboID, IsTemplate);
-            }
-            else
-            {
-                string className = "NSAP.B1Api.BOneOQUT";
-                funcId = GetFuncsByUserID("sales/SalesQuotation.aspx").ToString();
-                logstring = "新建销售报价单";
-                jobname = "销售报价单";
-                //  billNo = NSAP.Biz.Sales.BillDelivery.SalesDeliverySave_OQUT(rData, ations, JobId, UserID, int.Parse(funcId), "0", jobname, SboID, IsTemplate);
-                int FuncID = int.Parse(funcId);
-                int UserID = 0;
-                if (orderReq.Ations == OrderAtion.Draft)
+                int sboID = GetUserNaspSboID();
+                byte[] job_data = ByteExtension.ToSerialize(orderReq.Order);
+                if (orderReq.Copy == "1")
                 {
-                    result = OrderWorkflowBuild(jobname, FuncID, UserID, job_data, orderReq.Order.Remark, int.Parse(orderReq.Order.SboId), orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), int.Parse(orderReq.Order.billBaseType), int.Parse(orderReq.Order.billBaseEntry), "BOneAPI", className);
+                    funcId = GetFuncsByUserID("sales/SalesOrder.aspx").ToString();
+                    logstring = "根据销售报价单下销售订单";
+                    jobname = "销售订单";
+                    //  billNo = NSAP.Biz.Sales.BillDelivery.SalesDeliverySave_ORDR(rData, ations, JobId, UserID, int.Parse(funcId), "0", jobname, SboID, IsTemplate);
                 }
-                else if (orderReq.Ations == OrderAtion.Submit)
+                else
                 {
-                    result = OrderWorkflowBuild(jobname, FuncID, UserID, job_data, orderReq.Order.Remark, int.Parse(orderReq.Order.SboId), orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), int.Parse(orderReq.Order.billBaseType), int.Parse(orderReq.Order.billBaseEntry), "BOneAPI", className);
-                    if (int.Parse(result) > 0)
+                    string className = "NSAP.B1Api.BOneOQUT";
+                    funcId = GetFuncsByUserID("sales/SalesQuotation.aspx").ToString();
+                    logstring = "新建销售报价单";
+                    jobname = "销售报价单";
+                    int FuncID = int.Parse(funcId);
+                    if (orderReq.Ations == OrderAtion.Draft)
                     {
-                        var par = SaveJobPara(result, orderReq.IsTemplate);
-                        if (par)
+                        result = OrderWorkflowBuild(jobname, FuncID, UserID, job_data, orderReq.Order.Remark, int.Parse(orderReq.Order.SboId), orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), int.Parse(orderReq.Order.billBaseType), int.Parse(orderReq.Order.billBaseEntry), "BOneAPI", className);
+                    }
+                    else if (orderReq.Ations == OrderAtion.Submit)
+                    {
+                        result = OrderWorkflowBuild(jobname, FuncID, UserID, job_data, orderReq.Order.Remark, int.Parse(orderReq.Order.SboId), orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), int.Parse(orderReq.Order.billBaseType), int.Parse(orderReq.Order.billBaseEntry), "BOneAPI", className);
+                        if (int.Parse(result) > 0)
                         {
-                            //string _jobID = result;
-                            //if ("0" != NSAP.Data.MyWork.MyWork.WorkflowSubmit(int.Parse(result), UserID, orderReq.Order.Remark, "", 0))
-                            //{
-                            //    #region 更新商城订单状态
-                            //    Entity.Mywork.WfaEshopStatus thisinfo = new Entity.Mywork.WfaEshopStatus();
-                            //    thisinfo.job_id = _jobID;
-                            //    thisinfo.user_id = UserID.ToString();
-                            //    thisinfo.slp_code = Model.SlpCode;
-                            //    thisinfo.card_code = Model.CardCode;
-                            //    thisinfo.card_name = Model.CardName;
-                            //    thisinfo.cur_status = "0";
-                            //    thisinfo.order_phase = "0000";
-                            //    thisinfo.shipping_phase = "0000";
-                            //    thisinfo.complete_phase = "0";
-                            //    thisinfo.order_lastdate = DateTime.Now.ToString();
-                            //    thisinfo.first_createdate = DateTime.Now.ToString();
-                            //    //设置报价单提交
-                            //    result = NSAP.Data.Sales.BillDelivery.Eshop_SetOrderStatusFlow(thisinfo, Model.billSalesDetails, Model.U_New_ORDRID);
-                            //    #endregion
-                            //}
-                            //else { result = "0"; }
+                            var par = SaveJobPara(result, orderReq.IsTemplate);
+                            if (par)
+                            {
+                                //string _jobID = result;
+                                //if ("0" != NSAP.Data.MyWork.MyWork.WorkflowSubmit(int.Parse(result), UserID, orderReq.Order.Remark, "", 0))
+                                //{
+                                //    #region 更新商城订单状态
+                                //    Entity.Mywork.WfaEshopStatus thisinfo = new Entity.Mywork.WfaEshopStatus();
+                                //    thisinfo.job_id = _jobID;
+                                //    thisinfo.user_id = UserID.ToString();
+                                //    thisinfo.slp_code = Model.SlpCode;
+                                //    thisinfo.card_code = Model.CardCode;
+                                //    thisinfo.card_name = Model.CardName;
+                                //    thisinfo.cur_status = "0";
+                                //    thisinfo.order_phase = "0000";
+                                //    thisinfo.shipping_phase = "0000";
+                                //    thisinfo.complete_phase = "0";
+                                //    thisinfo.order_lastdate = DateTime.Now.ToString();
+                                //    thisinfo.first_createdate = DateTime.Now.ToString();
+                                //    //设置报价单提交
+                                //    result = NSAP.Data.Sales.BillDelivery.Eshop_SetOrderStatusFlow(thisinfo, Model.billSalesDetails, Model.U_New_ORDRID);
+                                //    #endregion
+                                //}
+                                //else { result = "0"; }
+                            }
+                            else { result = "0"; }
                         }
-                        else { result = "0"; }
+                    }
+                    else if (orderReq.Ations == OrderAtion.Resubmit)
+                    {
+                        result = WorkflowSubmit(orderReq.JobId, UserID, orderReq.Order.Remark, "", 0);
                     }
                 }
-                else if (orderReq.Ations == OrderAtion.Resubmit)
-                {
-                    //if (jobdata == "1")
-                    //{
-                    //    if (NSAP.Data.Sales.BillDelivery.UpdateAudit(JobId, job_data, Model.Remark, Model.DocTotal, Model.CardCode, Model.CardName))
-                    //    {
-                    //        result = NSAP.Data.MyWork.MyWork.WorkflowSubmit(JobId, UserID, Model.Remark, "", 0);
-                    //    }
-                    //}
-                    //else
-                    //{
-                    //    result = NSAP.Data.MyWork.MyWork.WorkflowSubmit(JobId, UserID, Model.Remark, "", 0);
-                    //}
-                }
+            }
+            catch (Exception ex)
+            {
+                string msg = ex.Message;
             }
             string log = string.Format("{1}：{0}", result, logstring);
             AddUserOperateLog(log);
@@ -606,23 +610,23 @@ namespace OpenAuth.App.Order
                     carName = crmOcrd.CardName;
                 }
             }
-            //IDataParameter[] parameters =
-            //{
-            //    Sql.Action.GetParameter("?pJobName",    jobName),
-            //    Sql.Action.GetParameter("?pFuncID",     funcID),
-            //    Sql.Action.GetParameter("?pUserID",     userID),
-            //    Sql.Action.GetParameter("?pJobData",    jobdata),
-            //    Sql.Action.GetParameter("?pRemarks",    remarks),
-            //    Sql.Action.GetParameter("?pSboID",      sboID),
-            //    Sql.Action.GetParameter("?pCarCode",    carCode),
-            //    Sql.Action.GetParameter("?pCarName",    carName),
-            //    Sql.Action.GetParameter("?pDocTotal",   docTotal),
-            //    Sql.Action.GetParameter("?pBaseType",   baseType),
-            //    Sql.Action.GetParameter("?pBaseEntry",  baseEntry),
-            //    Sql.Action.GetParameter("?pAssemblyName",  assemblyName),
-            //    Sql.Action.GetParameter("?pClassName",  className)
-            //};
-            //string code = Sql.Action.ExecuteScalar(Sql.UTF8ConnectionString, CommandType.StoredProcedure, string.Format("{0}.sp_process_build", Sql.BaseDatabaseName), parameters).ToString();
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobName",    jobName),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pFuncID",     funcID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pUserID",     userID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobData",    jobdata),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pRemarks",    remarks),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pSboID",      sboID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCarCode",    carCode),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCarName",    carName),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pDocTotal",   docTotal),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pBaseType",   baseType),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pBaseEntry",  baseEntry),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pAssemblyName",  assemblyName),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pClassName",  className)
+            };
+            code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_build", CommandType.Text, sqlParameters).ToString();
             return code;
         }
         /// <summary>
@@ -674,6 +678,11 @@ namespace OpenAuth.App.Order
         {
             int functionId = 0;
             string sql = string.Format("SELECT a.func_id funcID,b.page_url pageUrl,a.auth_map authMap FROM (SELECT a.func_id,a.page_id,b.auth_map FROM {0}.base_func a INNER JOIN (SELECT t.func_id,BIT_OR(t.auth_map) auth_map FROM (SELECT func_id,BIT_OR(auth_map) auth_map FROM {0}.base_role_func WHERE role_id IN (SELECT role_id FROM {0}.base_user_role WHERE user_id=?userID) GROUP BY func_id UNION ALL SELECT func_id,auth_map FROM {0}.base_user_func WHERE user_id=?userID) t GROUP BY t.func_id) b ON a.func_id=b.func_id) AS a INNER JOIN {0}.base_page AS b ON a.page_id=b.page_id", "nsap_base");
+            DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
+            if (dataTable != null)
+            {
+                functionId = int.Parse(dataTable.Rows[0][0].ToString());
+            }
             return functionId;
         }
         /// <summary>
@@ -691,8 +700,25 @@ namespace OpenAuth.App.Order
         /// <returns></returns>
         private int GetUserNaspSboID()
         {
+            var userInfo = _auth.GetCurrentUser();
+            int UserID = userInfo.User.User_Id;
             int sboID = 0;
-            string sql = "SELECT sbo_id FROM nsap_base.sbo_info WHERE is_curr = 1 AND valid = 1 LIMIT 1";
+            string sql = $@"SELECT (
+                    SELECT a.user_id FROM nsap_base.base_user a
+                    INNER JOIN nsap_base.base_user_detail b ON a.user_id = b.user_id
+                    INNER JOIN nsap_base.base_dep c ON b.dep_id = c.dep_id
+                    WHERE a.user_id = {UserID} AND a.valid = 1 AND b.status < 2 AND c.valid = 1
+                    ) UserId,
+                    (SELECT sbo_id FROM nsap_base.sbo_info WHERE is_curr = 1 AND valid = 1 LIMIT 1
+                    )SboID";
+            SboModelDto sboModel = UnitWork.ExcuteSql<SboModelDto>(ContextType.NsapBaseDbContext, sql, CommandType.Text, null).FirstOrDefault();
+            if (sboModel != null)
+            {
+                if (sboModel.UserId.HasValue)
+                {
+                    sboID = sboModel.SboID;
+                }
+            }
             return sboID;
         }
         /// <summary>
@@ -714,6 +740,46 @@ namespace OpenAuth.App.Order
             {
                 string errormsg = ex.Message;
             }
+        }
+        /// <summary>
+        /// 修改审核数据
+        /// </summary>
+        public bool UpdateAudit(int jobId, byte[] jobData, string remarks, string doc_total, string card_code, string card_name)
+        {
+            bool isSave = false;
+            //string strSql = string.Format("UPDATE {0}.wfa_job SET job_data=?job_data,remarks=?remarks,job_state=?job_state,doc_total=?doc_total,", Sql.BaseDatabaseName);
+            //strSql += string.Format("card_code=?card_code,card_name=?card_name WHERE job_id = ?job_id", Sql.BaseDatabaseName);
+            //IDataParameter[] parameters =
+            //{
+            //    Sql.Action.GetParameter("?job_data", jobData),
+            //    Sql.Action.GetParameter("?remarks", remarks),
+            //    Sql.Action.GetParameter("?job_state", "0"),
+            //    Sql.Action.GetParameter("?doc_total", doc_total==""?"0":doc_total),
+            //    Sql.Action.GetParameter("?card_code", card_code),
+            //    Sql.Action.GetParameter("?card_name", card_name),
+            //    Sql.Action.GetParameter("?job_id",  jobId)
+            //};
+            //isSave = Sql.Action.ExecuteNonQuery(Sql.UTF8ConnectionString, CommandType.Text, strSql, parameters) > 0 ? true : false;
+            return isSave;
+        }
+
+        /// <summary>
+        /// 审核（提交）
+        /// </summary>
+        /// <returns>返回  提交失败 0   提交成功 1   流程完成 2</returns>
+        public string WorkflowSubmit(int jobID, int userID, string remarks, string cont, int auditor)
+        {
+            string code = "";
+            //IDataParameter[] parameters =
+            //{
+            //    Sql.Action.GetParameter("?pJobID",      jobID),
+            //    Sql.Action.GetParameter("?pUserID",     userID),
+            //    Sql.Action.GetParameter("?pRemarks",    remarks),
+            //    Sql.Action.GetParameter("?pCont",       cont),
+            //    Sql.Action.GetParameter("?pAuditor",    auditor)
+            //};
+            //code = Sql.Action.ExecuteScalar(Sql.UTF8ConnectionString, CommandType.StoredProcedure, string.Format("{0}.sp_process_submit", Sql.BaseDatabaseName), parameters).ToString();
+            return code;
         }
     }
 }
