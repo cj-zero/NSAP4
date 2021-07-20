@@ -3,6 +3,7 @@ using DotNetCore.CAP;
 using Infrastructure;
 using Infrastructure.Extensions;
 using Microsoft.Extensions.Options;
+using MySql.Data.MySqlClient;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Order.Request;
 using OpenAuth.Repository.Domain;
@@ -25,7 +26,7 @@ namespace OpenAuth.App.Order
     /// <summary>
     /// 销售订单业务
     /// </summary>
-    public class ServiceSaleOrderApp : OnlyUnitWorkBaeApp
+    public partial class ServiceSaleOrderApp : OnlyUnitWorkBaeApp
     {
         private readonly RevelanceManagerApp _revelanceApp;
         private readonly AppServiceOrderLogApp _appServiceOrderLogApp;
@@ -485,6 +486,61 @@ namespace OpenAuth.App.Order
                 }
             }
             tableData.Data = dt.Tolist<SalesDraftDto>();
+            return tableData;
+        }
+        /// <summary>
+        /// 业务伙伴获取
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="filterQuery"></param>
+        /// <param name="sqlcont"></param>
+        /// <param name="sboname"></param>
+        /// <returns></returns>
+        public TableData SelectCardCodeInfo(CardCodeRequest query, string sortSt, string filterQuery, string sboname)
+        {
+            TableData tableData = new TableData();
+            StringBuilder filefName = new StringBuilder();
+            StringBuilder tableName = new StringBuilder();
+            if (string.IsNullOrEmpty(sboname))
+            {
+                sboname = "";
+            }
+            else
+            {
+                sboname = sboname + ".dbo.";
+            }
+            string U_FPLB = string.Empty;
+            var syscolumn = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.SapDbContextType, $@"SELECT COUNT(*) value FROM syscolumns WHERE id=object_id('OCRD') AND name='U_FPLB'", CommandType.Text, null).FirstOrDefault();
+            if (syscolumn != null && syscolumn.Value.ToString() != "0")
+            {
+                U_FPLB = ",a.U_FPLB";
+            }
+            filefName.AppendFormat(" a.CardCode,a.CardName,a.CntctPrsn,b.SlpName,a.Currency,a.Balance,(ISNULL(ZipCode,'')+ISNULL(c.Name,'')+ISNULL(d.Name,'')+ISNULL(City,'')+ISNULL(CONVERT(VARCHAR(100),Building),'''')) AS Address,(ISNULL(MailZipCod,'')+ISNULL(e.Name,'')+ISNULL(f.Name,'')+ISNULL(MailCity,'')+ISNULL(CONVERT(VARCHAR(100),MailBuildi),'''')) AS Address2{0},a.SlpCode", U_FPLB);
+            tableName.AppendFormat(" " + sboname + "OCRD a");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OSLP b ON a.SlpCode=b.SlpCode");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OCRY c ON a.Country=c.Code");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OCST d ON a.State1=c.Code");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OCRY e ON a.MailCountr=e.Code");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OCST f ON a.State1=f.Code");
+            List<SqlParameter> sqlParameters = new List<SqlParameter>()
+            {
+                new SqlParameter("@strFrom",tableName.ToString()),
+                new SqlParameter("@strSelect",filefName.ToString()),
+                new SqlParameter("@pageSize",query.limit),
+                new SqlParameter("@pageIndex",query.page),
+                new SqlParameter("@strOrder",sortSt),
+                new SqlParameter("@strWhere",filterQuery),
+            };
+            SqlParameter isStats = new SqlParameter("@isStats", SqlDbType.Int);
+            isStats.Value = 1;
+            sqlParameters.Add(isStats);
+            SqlParameter paramOut = new SqlParameter("@rowCount", SqlDbType.Int);
+            paramOut.Value = 0;
+            paramOut.Direction = ParameterDirection.Output;
+            sqlParameters.Add(paramOut);
+            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, $"sp_common_pager", CommandType.StoredProcedure, sqlParameters);
+            tableData.Data = dt.Tolist<CardCodeDto>();
+            tableData.Count = Convert.ToInt32(paramOut.Value);
             return tableData;
         }
         /// <summary>
