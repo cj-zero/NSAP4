@@ -54,6 +54,20 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         /// <summary>
+        /// 销售报价单生产部门列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("productiondepartment")]
+        public async Task<Response<List<DropDownOption>>> ProductionDepartment()
+        {
+            var result = new Response<List<DropDownOption>>();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result.Result = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@"	SELECT FldValue AS id,Descr AS name FROM nsap_bone.base_ufd1 WHERE TableID='sale_oqut' AND FieldID='36' order by  FldDate ", CommandType.Text, null);
+            return result;
+        }
+        /// <summary>
         /// 销售报价单经理列表
         /// </summary>
         /// <returns></returns>
@@ -65,6 +79,63 @@ namespace OpenAuth.WebApi.Controllers.Order
             var userId = _serviceBaseApp.GetUserNaspId();
             var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
             result.Result = UnitWork.ExcuteSql<ManagerDto>(ContextType.NsapBaseDbContext, $@"SELECT empID,CONCAT(lastName,+firstName) AS name FROM nsap_bone.crm_ohem WHERE sbo_id={sboid}", CommandType.Text, null).OrderBy(s => s.EmpId).ToList();
+            return result;
+        }
+        /// <summary>
+        /// 发票类别查询列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("InvoiceTypeinfo")]
+        public async Task<Response<List<DropDownOption>>> InvoiceTypeInfo()
+        {
+            var result = new Response<List<DropDownOption>>();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result.Result = new List<DropDownOption>() {
+                new DropDownOption(){ Id=0,Name="增值税普通发票"},
+                new DropDownOption(){Id=1,Name="增值税专用发票" }
+            };
+            return result;
+        }
+        /// <summary>
+        /// 付款条件查询列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("paycondinfo")]
+        public async Task<Response<List<DropDownOption>>> PayCondcInfo()
+        {
+            var result = new Response<List<DropDownOption>>();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result.Result = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@"SELECT GroupNum AS id,PymntGroup AS name FROM nsap_bone.crm_octg WHERE sbo_id={sboid}", CommandType.Text, null).ToList();
+            return result;
+        }
+        /// <summary>
+        /// 标识查询列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("oidcinfo")]
+        public async Task<Response<List<DropDownOption>>> OidcInfo()
+        {
+            var result = new Response<List<DropDownOption>>();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result.Result = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@" SELECT Code as id,Name AS name FROM nsap_bone.crm_oidc WHERE sbo_id={sboid}", CommandType.Text, null).ToList();
+            return result;
+        }
+        /// <summary>
+        /// 货币查询列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("crminfo")]
+        public async Task<Response<List<DropDownOption>>> CrmInfo()
+        {
+            var result = new Response<List<DropDownOption>>();
+            result.Result = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@" SELECT CurrCode AS Id,CurrName AS Name FROM nsap_bone.crm_ocrn", CommandType.Text, null).ToList();
             return result;
         }
         /// <summary>
