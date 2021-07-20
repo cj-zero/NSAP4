@@ -34,7 +34,8 @@ namespace OpenAuth.App.Order
         private IOptions<AppSetting> _appConfiguration;
         private ICapPublisher _capBus;
         private readonly ServiceFlowApp _serviceFlowApp;
-        public ServiceSaleOrderApp(IUnitWork unitWork, RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
+        ServiceBaseApp _serviceBaseApp;
+        public ServiceSaleOrderApp(IUnitWork unitWork, RevelanceManagerApp app, ServiceBaseApp serviceBaseApp,ServiceOrderLogApp serviceOrderLogApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
             _revelanceApp = app;
@@ -42,6 +43,7 @@ namespace OpenAuth.App.Order
             _capBus = capBus;
             _ServiceOrderLogApp = ServiceOrderLogApp;
             _serviceFlowApp = serviceFlowApp;
+            _serviceBaseApp = serviceBaseApp;
         }
         /// <summary>
         /// 
@@ -562,18 +564,18 @@ namespace OpenAuth.App.Order
 
         public string Save(AddOrUpdateOrderReq orderReq)
         {
-            int UserID = GetUserNaspId();
+            int UserID = _serviceBaseApp.GetUserNaspId();
             string funcId = "0";
             string logstring = "";
             string jobname = "";
             string result = "";
             try
             {
-                int sboID = GetUserNaspSboID(UserID);
+                int sboID = _serviceBaseApp.GetUserNaspSboID(UserID);
                 byte[] job_data = ByteExtension.ToSerialize(orderReq.Order);
                 if (orderReq.Copy == "1")
                 {
-                    funcId = GetFuncsByUserID("sales/SalesOrder.aspx", UserID).ToString();
+                    funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesOrder.aspx", UserID).ToString();
                     logstring = "根据销售报价单下销售订单";
                     jobname = "销售订单";
                     //  billNo = NSAP.Biz.Sales.BillDelivery.SalesDeliverySave_ORDR(rData, ations, JobId, UserID, int.Parse(funcId), "0", jobname, SboID, IsTemplate);
@@ -581,7 +583,7 @@ namespace OpenAuth.App.Order
                 else
                 {
                     string className = "NSAP.B1Api.BOneOQUT";
-                    funcId = GetFuncsByUserID("sales/SalesQuotation.aspx", UserID).ToString();
+                    funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesQuotation.aspx", UserID).ToString();
                     logstring = "新建销售报价单";
                     jobname = "销售报价单";
                     int FuncID = int.Parse(funcId);
@@ -723,56 +725,6 @@ namespace OpenAuth.App.Order
 
         }
         #endregion
-        /// <summary>
-        /// 获取权限Id 
-        /// </summary>
-        /// <param name="functonUrl"></param>
-        /// <returns></returns>
-        private int GetFuncsByUserID(string functonUrl, int userId)
-        {
-            int functionId = 0;
-            string sql = string.Format("SELECT a.func_id funcID,b.page_url pageUrl,a.auth_map authMap FROM (SELECT a.func_id,a.page_id,b.auth_map FROM {0}.base_func a INNER JOIN (SELECT t.func_id,BIT_OR(t.auth_map) auth_map FROM (SELECT func_id,BIT_OR(auth_map) auth_map FROM {0}.base_role_func WHERE role_id IN (SELECT role_id FROM {0}.base_user_role WHERE user_id={1}) GROUP BY func_id UNION ALL SELECT func_id,auth_map FROM {0}.base_user_func WHERE user_id={1}) t GROUP BY t.func_id) b ON a.func_id=b.func_id) AS a INNER JOIN {0}.base_page AS b ON a.page_id=b.page_id", "nsap_base", userId);
-            DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
-            if (dataTable != null)
-            {
-                functionId = int.Parse(dataTable.Rows[0][0].ToString());
-            }
-            return functionId;
-        }
-        /// <summary>
-        /// 获取NsapId
-        /// </summary>
-        /// <returns></returns>
-        private int GetUserNaspId()
-        {
-            var loginContext = _auth.GetCurrentUser();
-            return loginContext.User.User_Id;
-        }
-        /// <summary>
-        /// 获取NsapId
-        /// </summary>
-        /// <returns></returns>
-        private int GetUserNaspSboID(int UserID)
-        {
-            int sboID = 0;
-            string sql = $@"SELECT (
-                    SELECT a.user_id FROM nsap_base.base_user a
-                    INNER JOIN nsap_base.base_user_detail b ON a.user_id = b.user_id
-                    INNER JOIN nsap_base.base_dep c ON b.dep_id = c.dep_id
-                    WHERE a.user_id = {UserID} AND a.valid = 1 AND b.status < 2 AND c.valid = 1
-                    ) UserId,
-                    (SELECT sbo_id FROM nsap_base.sbo_info WHERE is_curr = 1 AND valid = 1 LIMIT 1
-                    )SboID";
-            SboModelDto sboModel = UnitWork.ExcuteSql<SboModelDto>(ContextType.NsapBaseDbContext, sql, CommandType.Text, null).FirstOrDefault();
-            if (sboModel != null)
-            {
-                if (sboModel.UserId > 0)
-                {
-                    sboID = sboModel.SboID;
-                }
-            }
-            return sboID;
-        }
         /// <summary>
         /// 操作日志
         /// </summary>
