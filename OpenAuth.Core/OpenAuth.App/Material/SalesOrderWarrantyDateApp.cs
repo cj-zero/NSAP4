@@ -135,7 +135,7 @@ namespace OpenAuth.App.Material
                         where (b.DocType == 15 || b.DocType == 59) && a.DocEntry > docEntry && a.DocEntry < (docEntry+10000)
                         select new { d.MnfSerial, b.BaseEntry, b.CardCode, b.CardName, b.DocType, b.CreateDate,e.SlpName };
 
-            var model = await query.Select(m => new SalesOrderWarrantyDate
+            var model = await query.Where(q=>!string.IsNullOrWhiteSpace(q.MnfSerial)).Select(m => new SalesOrderWarrantyDate
             {
                 SalesOrderId = m.BaseEntry,
                 CustomerId = m.CardCode,

@@ -19,10 +19,10 @@ namespace OpenAuth.Repository.Domain.Settlement
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("outsourcexpenses")]
-    public partial class outsourcexpenses : Entity
+    [Table("OutsourcExpenses")]
+    public partial class OutsourcExpenses : Entity
     {
-        public outsourcexpenses()
+        public OutsourcExpenses()
         {
             this.From = string.Empty;
             this.To = string.Empty;
@@ -43,7 +43,7 @@ namespace OpenAuth.Repository.Domain.Settlement
         /// 费用类型
         /// </summary>
         [Description("费用类型")]
-        public int? ExpensesType { get; set; }
+        public int? ExpenseType { get; set; }
         /// <summary>
         /// 服务单id
         /// </summary>
@@ -147,6 +147,6 @@ namespace OpenAuth.Repository.Domain.Settlement
         /// <summary>
         /// 附件表
         /// </summary>
-        public List<outsourcexpensespicture> outsourcexpensespictures { get; set; }
+        public List<OutsourcExpensesPicture> outsourcexpensespictures { get; set; }
     }
 }

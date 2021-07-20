@@ -19,10 +19,10 @@ namespace OpenAuth.Repository.Domain.Settlement
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("outsourc")]
-    public partial class outsourc : BaseEntity<int>
+    [Table("Outsourc")]
+    public partial class Outsourc : BaseEntity<int>
     {
-        public outsourc()
+        public Outsourc()
         {
           this.PayTime= DateTime.Now;
           this.Remark= string.Empty;
@@ -36,62 +36,62 @@ namespace OpenAuth.Repository.Domain.Settlement
         /// <summary>
         /// 支付时间
         /// </summary>
-        [Description("")]
+        [Description("支付时间")]
         public System.DateTime? PayTime { get; set; }
         /// <summary>
         /// 总金额
         /// </summary>
-        [Description("")]
+        [Description("总金额")]
         public decimal? TotalMoney { get; set; }
         /// <summary>
         /// 结算方式
         /// </summary>
-        [Description("")]
+        [Description("结算方式")]
         public int? ServiceMode { get; set; }
         /// <summary>
         /// 备注
         /// </summary>
-        [Description("")]
+        [Description("备注")]
         public string Remark { get; set; }
         /// <summary>
         /// 创建人姓名
         /// </summary>
-        [Description("")]
+        [Description("创建人姓名")]
         public string CreateUser { get; set; }
         /// <summary>
         /// 创建人id
         /// </summary>
-        [Description("")]
+        [Description("创建人id")]
         [Browsable(false)]
         public string CreateUserId { get; set; }
         /// <summary>
         /// 创建时间
         /// </summary>
-        [Description("")]
+        [Description("创建时间")]
         public System.DateTime? CreateTime { get; set; }
         /// <summary>
         /// 修改时间
         /// </summary>
-        [Description("")]
+        [Description("修改时间")]
         public System.DateTime? UpdateTime { get; set; }
 
         /// <summary>
         /// 审批流程id
         /// </summary>
-        [Description("")]
+        [Description("审批流程id")]
         public string FlowInstanceId { get; set; }
 
         /// <summary>
         /// 是否存在部分驳回
         /// </summary>
-        [Description("")]
+        [Description("是否存在部分驳回")]
         public bool IsRejected { get; set; }
         
 
         /// <summary>
         /// 费用明细表
         /// </summary>
-        public List<outsourcexpenses> outsourcexpenses { get; set; }
+        public List<OutsourcExpenses> OutsourcExpenses { get; set; }
 
         public override void GenerateDefaultKeyVal()
         {

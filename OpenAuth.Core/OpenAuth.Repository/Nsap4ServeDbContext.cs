@@ -59,9 +59,10 @@ namespace OpenAuth.Repository
         public virtual DbSet<ReimburseOtherCharges> Reimburseordercharges { get; set; }
         public virtual DbSet<ReimburseTravellingAllowance> Reimbursetravellingallowances { get; set; }
         public virtual DbSet<ReimurseOperationHistory> Reimurseoperationhistories { get; set; }
+        public virtual DbSet<ReimburseExpenseOrg> ReimburseExpenseOrgs { get; set; }
 
         public virtual DbSet<ServiceOrderParticipationRecord> ServiceOrderParticipationRecords { get; set; }
-
+        
         public virtual DbSet<MyExpends> Myexpends { get; set; }
         #endregion
 
