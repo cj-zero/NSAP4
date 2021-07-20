@@ -12,7 +12,7 @@ namespace OpenAuth.App.Order.ModelDto
         /// <summary>
         /// 用户Id
         /// </summary>
-        public int? UserId { get; set; }
+        public int UserId { get; set; }
         /// <summary>
         ///账套Id
         /// </summary>

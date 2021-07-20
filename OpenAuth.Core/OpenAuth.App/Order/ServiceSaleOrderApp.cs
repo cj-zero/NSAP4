@@ -562,20 +562,18 @@ namespace OpenAuth.App.Order
 
         public string Save(AddOrUpdateOrderReq orderReq)
         {
-            var userInfo = _auth.GetCurrentUser();
-
-            int UserID = userInfo.User.User_Id;
+            int UserID = GetUserNaspId();
             string funcId = "0";
             string logstring = "";
             string jobname = "";
             string result = "";
             try
             {
-                int sboID = GetUserNaspSboID();
+                int sboID = GetUserNaspSboID(UserID);
                 byte[] job_data = ByteExtension.ToSerialize(orderReq.Order);
                 if (orderReq.Copy == "1")
                 {
-                    funcId = GetFuncsByUserID("sales/SalesOrder.aspx").ToString();
+                    funcId = GetFuncsByUserID("sales/SalesOrder.aspx", UserID).ToString();
                     logstring = "根据销售报价单下销售订单";
                     jobname = "销售订单";
                     //  billNo = NSAP.Biz.Sales.BillDelivery.SalesDeliverySave_ORDR(rData, ations, JobId, UserID, int.Parse(funcId), "0", jobname, SboID, IsTemplate);
@@ -583,7 +581,7 @@ namespace OpenAuth.App.Order
                 else
                 {
                     string className = "NSAP.B1Api.BOneOQUT";
-                    funcId = GetFuncsByUserID("sales/SalesQuotation.aspx").ToString();
+                    funcId = GetFuncsByUserID("sales/SalesQuotation.aspx", UserID).ToString();
                     logstring = "新建销售报价单";
                     jobname = "销售报价单";
                     int FuncID = int.Parse(funcId);
@@ -682,7 +680,7 @@ namespace OpenAuth.App.Order
                 new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pAssemblyName",  assemblyName),
                 new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pClassName",  className)
             };
-            code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_build", CommandType.Text, sqlParameters).ToString();
+            code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_build", CommandType.StoredProcedure, sqlParameters).ToString();
             return code;
         }
         /// <summary>
@@ -730,10 +728,10 @@ namespace OpenAuth.App.Order
         /// </summary>
         /// <param name="functonUrl"></param>
         /// <returns></returns>
-        private int GetFuncsByUserID(string functonUrl)
+        private int GetFuncsByUserID(string functonUrl, int userId)
         {
             int functionId = 0;
-            string sql = string.Format("SELECT a.func_id funcID,b.page_url pageUrl,a.auth_map authMap FROM (SELECT a.func_id,a.page_id,b.auth_map FROM {0}.base_func a INNER JOIN (SELECT t.func_id,BIT_OR(t.auth_map) auth_map FROM (SELECT func_id,BIT_OR(auth_map) auth_map FROM {0}.base_role_func WHERE role_id IN (SELECT role_id FROM {0}.base_user_role WHERE user_id=?userID) GROUP BY func_id UNION ALL SELECT func_id,auth_map FROM {0}.base_user_func WHERE user_id=?userID) t GROUP BY t.func_id) b ON a.func_id=b.func_id) AS a INNER JOIN {0}.base_page AS b ON a.page_id=b.page_id", "nsap_base");
+            string sql = string.Format("SELECT a.func_id funcID,b.page_url pageUrl,a.auth_map authMap FROM (SELECT a.func_id,a.page_id,b.auth_map FROM {0}.base_func a INNER JOIN (SELECT t.func_id,BIT_OR(t.auth_map) auth_map FROM (SELECT func_id,BIT_OR(auth_map) auth_map FROM {0}.base_role_func WHERE role_id IN (SELECT role_id FROM {0}.base_user_role WHERE user_id={1}) GROUP BY func_id UNION ALL SELECT func_id,auth_map FROM {0}.base_user_func WHERE user_id={1}) t GROUP BY t.func_id) b ON a.func_id=b.func_id) AS a INNER JOIN {0}.base_page AS b ON a.page_id=b.page_id", "nsap_base", userId);
             DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
             if (dataTable != null)
             {
@@ -754,10 +752,8 @@ namespace OpenAuth.App.Order
         /// 获取NsapId
         /// </summary>
         /// <returns></returns>
-        private int GetUserNaspSboID()
+        private int GetUserNaspSboID(int UserID)
         {
-            var userInfo = _auth.GetCurrentUser();
-            int UserID = userInfo.User.User_Id;
             int sboID = 0;
             string sql = $@"SELECT (
                     SELECT a.user_id FROM nsap_base.base_user a
@@ -770,7 +766,7 @@ namespace OpenAuth.App.Order
             SboModelDto sboModel = UnitWork.ExcuteSql<SboModelDto>(ContextType.NsapBaseDbContext, sql, CommandType.Text, null).FirstOrDefault();
             if (sboModel != null)
             {
-                if (sboModel.UserId.HasValue)
+                if (sboModel.UserId > 0)
                 {
                     sboID = sboModel.SboID;
                 }
