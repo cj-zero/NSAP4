@@ -240,7 +240,7 @@ namespace Sap.Handler.Service
                     //如果同步成功则修改SellOrder
                     UnitWork.Update<Quotation>(q => q.Id == quotation.Id, q => new Quotation
                     {
-                        SalesOrderId = quotation.SalesOrderId
+                        SalesOrderId = int.Parse(docNum)
                     });
                     UnitWork.Save();
                     Log.Logger.Debug($"反写4.0成功，SAP_ID：{docNum}", typeof(SellOrderSapHandler));
@@ -433,7 +433,8 @@ namespace Sap.Handler.Service
                 //如果同步成功则修改SellOrder
                 await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(quotation.Id), q => new Quotation
                 {
-                    QuotationStatus = -1
+                    QuotationStatus = -1,
+                    UpDateTime = DateTime.Now
                 });
                 await UnitWork.SaveAsync();
                 Log.Logger.Warning($"取消成功，SAP_ID：{quotation.SalesOrderId}", typeof(SellOrderSapHandler));
