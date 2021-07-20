@@ -51,6 +51,18 @@ namespace OpenAuth.WebApi.Controllers.Order
             return sboList;
         }
         /// <summary>
+        /// 销售报价单经理列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("managerinfo")]
+        public async Task<List<SboInfoDto>> ManagerInfo()
+        {
+            var sboid = UnitWork.ExcuteSql<sbo_info>(ContextType.Nsap4ServeDbContextType, "SELECT sbo_id FROM nsap_base.sbo_info WHERE is_curr = 1 AND valid = 1 LIMIT 1;", CommandType.Text, null).FirstOrDefault()?.sbo_id;
+            List<SboInfoDto> sboList = UnitWork.ExcuteSql<SboInfoDto>(ContextType.NsapBaseDbContext, "SELECT sbo_id AS id,sbo_nm AS name FROM nsap_base.sbo_info;", CommandType.Text, null).OrderBy(s => s.Id).ToList();
+            return sboList;
+        }
+        /// <summary>
         /// 业务伙伴列表
         /// </summary>
         [HttpGet]
