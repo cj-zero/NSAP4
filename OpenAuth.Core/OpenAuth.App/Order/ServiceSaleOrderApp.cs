@@ -553,12 +553,8 @@ namespace OpenAuth.App.Order
         public List<SelectOption> GetSalesSelect(int sboId)
         {
             var loginContext = _auth.GetCurrentUser();
-            //if (loginContext == null)
-            //{
-            //    throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            //}
             //业务员Id
-            var selectOption = UnitWork.Find<crm_oslp>(null).Select(zw => new SelectOption { Key = zw.SlpCode.ToString(), Option = zw.SlpName }).ToList();
+            var selectOption = UnitWork.Find<crm_oslp>(s => s.sbo_id == sboId).Select(zw => new SelectOption { Key = zw.SlpCode.ToString(), Option = zw.SlpName }).ToList();
             return selectOption;
         }
         /// <summary>

@@ -33,9 +33,11 @@ namespace OpenAuth.WebApi.Controllers.Order
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
         IAuth _auth;
         IUnitWork UnitWork;
-        public OrderDraftController(IUnitWork UnitWork, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
+        ServiceBaseApp _serviceBaseApp;
+        public OrderDraftController(IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
         {
             this.UnitWork = UnitWork;
+            this._serviceBaseApp = _serviceBaseApp;
             this._auth = _auth;
             _serviceSaleOrderApp = serviceSaleOrderApp;
         }
@@ -45,10 +47,25 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns></returns>
         [HttpGet]
         [Route("dboinfo")]
-        public async Task<List<SboInfoDto>> DboInfo()
+        public async Task<Response<List<SboInfoDto>>> DboInfo()
         {
-            List<SboInfoDto> sboList = UnitWork.ExcuteSql<SboInfoDto>(ContextType.NsapBaseDbContext, "SELECT sbo_id AS id,sbo_nm AS name FROM nsap_base.sbo_info;", CommandType.Text, null).OrderBy(s => s.Id).ToList();
-            return sboList;
+            var result = new Response<List<SboInfoDto>>();
+            result.Result = UnitWork.ExcuteSql<SboInfoDto>(ContextType.NsapBaseDbContext, "SELECT sbo_id AS id,sbo_nm AS name FROM nsap_base.sbo_info;", CommandType.Text, null).OrderBy(s => s.Id).ToList();
+            return result;
+        }
+        /// <summary>
+        /// 销售报价单生产部门列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("productiondepartment")]
+        public async Task<Response<List<DropDownOption>>> ProductionDepartment()
+        {
+            var result = new Response<List<DropDownOption>>();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result.Result = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@"	SELECT FldValue AS id,Descr AS name FROM nsap_bone.base_ufd1 WHERE TableID='sale_oqut' AND FieldID='36' order by  FldDate ", CommandType.Text, null);
+            return result;
         }
         /// <summary>
         /// 销售报价单经理列表
@@ -56,11 +73,70 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns></returns>
         [HttpGet]
         [Route("managerinfo")]
-        public async Task<List<SboInfoDto>> ManagerInfo()
+        public async Task<Response<List<ManagerDto>>> ManagerInfo()
         {
-            var sboid = UnitWork.ExcuteSql<sbo_info>(ContextType.Nsap4ServeDbContextType, "SELECT sbo_id FROM nsap_base.sbo_info WHERE is_curr = 1 AND valid = 1 LIMIT 1;", CommandType.Text, null).FirstOrDefault()?.sbo_id;
-            List<SboInfoDto> sboList = UnitWork.ExcuteSql<SboInfoDto>(ContextType.NsapBaseDbContext, "SELECT sbo_id AS id,sbo_nm AS name FROM nsap_base.sbo_info;", CommandType.Text, null).OrderBy(s => s.Id).ToList();
-            return sboList;
+            var result = new Response<List<ManagerDto>>();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result.Result = UnitWork.ExcuteSql<ManagerDto>(ContextType.NsapBaseDbContext, $@"SELECT empID,CONCAT(lastName,+firstName) AS name FROM nsap_bone.crm_ohem WHERE sbo_id={sboid}", CommandType.Text, null).OrderBy(s => s.EmpId).ToList();
+            return result;
+        }
+        /// <summary>
+        /// 发票类别查询列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("InvoiceTypeinfo")]
+        public async Task<Response<List<DropDownOption>>> InvoiceTypeInfo()
+        {
+            var result = new Response<List<DropDownOption>>();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result.Result = new List<DropDownOption>() {
+                new DropDownOption(){ Id=0,Name="增值税普通发票"},
+                new DropDownOption(){Id=1,Name="增值税专用发票" }
+            };
+            return result;
+        }
+        /// <summary>
+        /// 付款条件查询列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("paycondinfo")]
+        public async Task<Response<List<DropDownOption>>> PayCondcInfo()
+        {
+            var result = new Response<List<DropDownOption>>();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result.Result = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@"SELECT GroupNum AS id,PymntGroup AS name FROM nsap_bone.crm_octg WHERE sbo_id={sboid}", CommandType.Text, null).ToList();
+            return result;
+        }
+        /// <summary>
+        /// 标识查询列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("oidcinfo")]
+        public async Task<Response<List<DropDownOption>>> OidcInfo()
+        {
+            var result = new Response<List<DropDownOption>>();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result.Result = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@" SELECT Code as id,Name AS name FROM nsap_bone.crm_oidc WHERE sbo_id={sboid}", CommandType.Text, null).ToList();
+            return result;
+        }
+        /// <summary>
+        /// 货币查询列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("crminfo")]
+        public async Task<Response<List<DropDownOption>>> CrmInfo()
+        {
+            var result = new Response<List<DropDownOption>>();
+            result.Result = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@" SELECT CurrCode AS Id,CurrName AS Name FROM nsap_bone.crm_ocrn", CommandType.Text, null).ToList();
+            return result;
         }
         /// <summary>
         /// 业务伙伴列表
@@ -75,10 +151,10 @@ namespace OpenAuth.WebApi.Controllers.Order
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var result = new TableData();
-            var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
+            var userId = _serviceBaseApp.GetUserNaspId();
             var depId = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT dep_id value FROM base_user_detail WHERE user_id = {userId}", CommandType.Text, null).FirstOrDefault();
             string type = "SQO";
-            var sboid = UnitWork.ExcuteSql<sbo_info>(ContextType.Nsap4ServeDbContextType, "SELECT sbo_id FROM nsap_base.sbo_info WHERE is_curr = 1 AND valid = 1 LIMIT 1;", CommandType.Text, null).FirstOrDefault()?.sbo_id;
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);//UnitWork.ExcuteSql<sbo_info>(ContextType.Nsap4ServeDbContextType, "SELECT sbo_id FROM nsap_base.sbo_info WHERE is_curr = 1 AND valid = 1 LIMIT 1;", CommandType.Text, null).FirstOrDefault()?.sbo_id;
             var dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM nsap_base.sbo_info WHERE sbo_id={sboid}", CommandType.Text, null);
             string dRowData = string.Empty;
             string isOpen = "0";
@@ -220,7 +296,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             else
             {
-              //  return NSAP.Data.Sales.BillDelivery.SelectCardCodeList(out rowCount, pageSize, pageIndex, filterString, sortString, sboname, sqlconn).FelxgridDataToJSON(pageIndex.ToString(), rowCount.ToString());
+                result = _serviceSaleOrderApp.SelectCardCodeInfo(request, sortString, filterString, sboname);
             }
             return result;
         }
@@ -237,10 +313,10 @@ namespace OpenAuth.WebApi.Controllers.Order
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var result = new TableData();
-            var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
+            var userId = _serviceBaseApp.GetUserNaspId();//(await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
             var depId = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT dep_id value FROM base_user_detail WHERE user_id = {userId}", CommandType.Text, null).FirstOrDefault();
             string type = "OQUT";
-            var sboid = UnitWork.ExcuteSql<sbo_info>(ContextType.Nsap4ServeDbContextType, "SELECT sbo_id FROM nsap_base.sbo_info WHERE is_curr = 1 AND valid = 1 LIMIT 1;", CommandType.Text, null).FirstOrDefault()?.sbo_id;
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);//UnitWork.ExcuteSql<sbo_info>(ContextType.Nsap4ServeDbContextType, "SELECT sbo_id FROM nsap_base.sbo_info WHERE is_curr = 1 AND valid = 1 LIMIT 1;", CommandType.Text, null).FirstOrDefault()?.sbo_id;
             var dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM nsap_base.sbo_info WHERE sbo_id={sboid}", CommandType.Text, null);
             string dRowData = string.Empty;
             string isOpen = "0";
@@ -275,7 +351,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             else
             {
-                result = _serviceSaleOrderApp.SelectOrderDraftInfo(request.limit, request.page, request, type, viewFull, viewSelf, userId.Value, sboid.Value, viewSelfDepartment, Convert.ToInt32(depId.Value), viewCustom, viewSales, sqlcont, sboname);
+                result = _serviceSaleOrderApp.SelectOrderDraftInfo(request.limit, request.page, request, type, viewFull, viewSelf, userId, sboid, viewSelfDepartment, Convert.ToInt32(depId.Value), viewCustom, viewSales, sqlcont, sboname);
                 // return NSAP.Biz.Sales.BillDelivery.SelectBillListInfo(int.Parse(rp), int.Parse(page), query, sortname, sortorder, type, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewFull, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewSelf, UserID, SboID, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewSelfDepartment, DepID, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewCustom, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewSales, sqlcont, sboname);
             }
             return result;
@@ -285,21 +361,14 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        [Route("SalesManInfo")]
-        //  [AllowAnonymous]
+        [Route("salesmaninfo")]
+        [AllowAnonymous]
         public async Task<Response<List<SelectOption>>> GetSalesManInfo()
         {
             var result = new Response<List<SelectOption>>();
-            try
-            {
-                result.Result = _serviceSaleOrderApp.GetSalesSelect(0);
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-                Log.Logger.Error($"地址：{Request.Path}, 错误：{result.Message}");
-            }
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result.Result = _serviceSaleOrderApp.GetSalesSelect(sboid);
             return result;
         }
         /// <summary>

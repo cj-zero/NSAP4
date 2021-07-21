@@ -21,8 +21,8 @@ namespace OpenAuth.App.Request
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("outsourcexpenses")]
-    [AutoMapTo(typeof(outsourcexpenses))]
+    [Table("OutsourcExpenses")]
+    [AutoMapTo(typeof(OutsourcExpenses))]
     public partial class AddOrUpdateoutsourcexpensesReq 
     {
         /// <summary>
@@ -37,7 +37,7 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 
         /// </summary>
-        public int? ExpensesType { get; set; }
+        public int? ExpenseType { get; set; }
         /// <summary>
         /// 
         /// </summary>
