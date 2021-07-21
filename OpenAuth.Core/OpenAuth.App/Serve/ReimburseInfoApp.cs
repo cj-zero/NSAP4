@@ -289,7 +289,7 @@ namespace OpenAuth.App
                 r.b.TerminalCustomer,
                 BusinessTripDate = serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).FirstOrDefault() == null ? CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c => c.BusinessTripDate)==null? Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.CreateTime)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c => c.BusinessTripDate)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).Min(s => s.EditTime)).ToString("yyyy.MM.dd HH:mm:ss"),
                 EndDate = serviceDailyReports.Where(s=>s.ServiceOrderId== r.a.ServiceOrderId).FirstOrDefault()==null? CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate)==null? Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.CreateTime)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).Max(s=>s.EditTime)).ToString("yyyy.MM.dd HH:mm:ss"),
-                r.a.ReimburseTravellingAllowances.FirstOrDefault()?.Days,
+                Days=r.a.ReimburseTravellingAllowances?.Sum(r=>r.Days),
                 r.b.FromTheme,
                 r.c.SalesMan,
                 UserName = r.d.Name,
@@ -2089,6 +2089,14 @@ namespace OpenAuth.App
             }
             #endregion
 
+            #region 计算金额
+            decimal totalMoeny = 0;
+            req.ReimburseTravellingAllowances.ForEach(r => totalMoeny+=(decimal)(r.Days*r.Money));
+            req.ReimburseOtherCharges.ForEach(r => totalMoeny += (decimal)r.Money);
+            req.ReimburseFares.ForEach(r => totalMoeny += (decimal)r.Money);
+            req.ReimburseAccommodationSubsidies.ForEach(r => totalMoeny += (decimal)r.TotalMoney);
+            req.TotalMoney = totalMoeny;
+            #endregion
             return req.MapTo<ReimburseInfo>();
         }
 
