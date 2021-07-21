@@ -558,7 +558,7 @@ namespace OpenAuth.App.Order
             return selectOption;
         }
         /// <summary>
-        /// 
+        /// 销售报价单保存
         /// </summary>
         /// <param name="orderReq"></param>
         /// <returns></returns>
@@ -578,7 +578,7 @@ namespace OpenAuth.App.Order
                     funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesOrder.aspx", UserID).ToString();
                     logstring = "根据销售报价单下销售订单";
                     jobname = "销售订单";
-                    //  billNo = NSAP.Biz.Sales.BillDelivery.SalesDeliverySave_ORDR(rData, ations, JobId, UserID, int.Parse(funcId), "0", jobname, SboID, IsTemplate);
+                    SalesOrderSave_ORDR(orderReq);
                 }
                 else
                 {
@@ -629,7 +629,6 @@ namespace OpenAuth.App.Order
                         result = WorkflowSubmit(orderReq.JobId, UserID, orderReq.Order.Remark, "", 0);
                     }
                 }
-                UnitWork.Save();
             }
             catch (Exception ex)
             {
