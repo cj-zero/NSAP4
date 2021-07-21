@@ -27,5 +27,10 @@ namespace Infrastructure
             }
             return hexString.ToString();
         }
+        public static string FilterString(this string Text)
+        {
+            Text = Text.Replace("\r", "").Replace("\n", " ").Replace("<", "&#60;").Replace(">", "&#62;").Replace("'", "&#39;").Replace("\"", "&#34;").Replace(@"\", "&#92;");
+            return Text;
+        }
     }
 }

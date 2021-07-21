@@ -794,5 +794,122 @@ namespace OpenAuth.App.Order
             code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_submit", CommandType.StoredProcedure, sqlParameters).ToString();
             return code;
         }
+        /// <summary>
+        /// 客户代码数据
+        /// </summary>
+        /// <param name="CardCode"></param>
+        /// <param name="SboID"></param>
+        /// <param name="isSql"></param>
+        /// <param name="ViewSelf"></param>
+        /// <param name="ViewSelfDepartment"></param>
+        /// <param name="ViewFull"></param>
+        /// <param name="UserId"></param>
+        /// <param name="DepId"></param>
+        /// <returns></returns>
+        public CardInfoDto CardInfo(string CardCode, int SboID, bool isSql, bool ViewSelf, bool ViewSelfDepartment, bool ViewFull, int UserId, int DepId)
+        {
+            var dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM nsap_base.sbo_info WHERE sbo_id={SboID}", CommandType.Text, null);
+            string dRowData = string.Empty;
+            string isOpen = "0";
+            string sboname = "0";
+            string sqlconn = "0";
+            if (dt.Rows.Count > 0)
+            {
+                isOpen = dt.Rows[0][6].ToString();
+                sboname = dt.Rows[0][0].ToString();
+                sqlconn = dt.Rows[0][5].ToString();
+            }
+            string filterString = string.Empty;
+            if (ViewSelfDepartment && !ViewFull)
+            {
+                DataTable rDataRows = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT a.sale_id,a.tech_id FROM nsap_base.sbo_user a LEFT JOIN nsap_base.base_user_detail b ON a.user_id=b.user_id WHERE b.dep_id={DepId} AND a.sbo_id={SboID}", CommandType.Text, null); ;
+                if (rDataRows.Rows.Count > 0)
+                {
+                    filterString += string.Format(" AND (a.SlpCode IN(");
+                    for (int i = 0; i < rDataRows.Rows.Count; i++)
+                    {
+                        filterString += string.Format("{0},", rDataRows.Rows[i][0]);
+                    }
+                    if (!string.IsNullOrEmpty(filterString))
+                        filterString = filterString.Substring(0, filterString.Length - 1);
+                    filterString += string.Format(") OR a.DfTcnician IN (");
+                    for (int i = 0; i < rDataRows.Rows.Count; i++)
+                    {
+                        filterString += string.Format("{0},", rDataRows.Rows[i][1]);
+                    }
+                    if (!string.IsNullOrEmpty(filterString))
+                        filterString = filterString.Substring(0, filterString.Length - 1);
+                    filterString += string.Format(") {0})", " OR a.SlpCode = -1 ");
+                }
+
+            }
+            if (ViewSelf && !ViewFull && !ViewSelfDepartment)
+            {
+                DataTable rDataRowsSlp = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sale_id,tech_id FROM nsap_base.sbo_user WHERE user_id={UserId} AND sbo_id={SboID}", CommandType.Text, null);
+                if (rDataRowsSlp.Rows.Count > 0)
+                {
+                    string slpCode = rDataRowsSlp.Rows[0][0].ToString();
+                    string slpTcnician = rDataRowsSlp.Rows[0][1].ToString();
+                    string SlpCodeViewSelf = "";
+                    if (CardCode.Substring(0, 1) == "V") { SlpCodeViewSelf = " OR a.SlpCode = -1"; } else { SlpCodeViewSelf = ""; }
+                    filterString += string.Format(" AND (a.SlpCode = {0} OR a.DfTcnician={1} {2}) ", slpCode, slpTcnician, SlpCodeViewSelf);
+                }
+                else
+                {
+                    filterString += string.Format(" a.SlpCode =0  AND ");
+                }
+            }
+            if (isSql && isOpen == "1")
+            {
+                if (string.IsNullOrEmpty(sboname))
+                {
+                    sboname = "";
+                }
+                else
+                {
+                    sboname = sboname + ".dbo.";
+                }
+                string U_FPLB = string.Empty;
+                var syscolumn = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.SapDbContextType, $@"SELECT COUNT(*) value FROM syscolumns WHERE id=object_id('OCRD') AND name='U_FPLB'", CommandType.Text, null).FirstOrDefault();
+                if (syscolumn != null && syscolumn.Value.ToString() != "0")
+                {
+                    U_FPLB = ",a.U_FPLB";
+                }
+                string strSql = string.Format("SELECT CardName,Currency,Building,MailBuildi{0},CntctPrsn,BillToDef AS PayToCode,ShipToDef AS ShipToCode,", U_FPLB);
+                strSql += string.Format("(ISNULL(ZipCode,'')+ISNULL(b.Name,'')+ISNULL(c.Name,'')+ISNULL(City,'')+ISNULL(CONVERT(VARCHAR(1000),Building),'''')) AS Address,");
+                strSql += string.Format("(ISNULL(MailZipCod,'')+ISNULL(d.Name,'')+ISNULL(e.Name,'')+ISNULL(MailCity,'')+ISNULL(CONVERT(VARCHAR(8000),MailBuildi),'''')) AS Address2,");
+                strSql += string.Format("a.MailZipCod,a.State2,a.HsBnkIBAN,a.SlpCode AS U_YWY,a.QryGroup1 as IsTransport,U_is_reseller,U_EndCustomerName,U_EndCustomerContact FROM " + sboname + "OCRD a ");
+                strSql += string.Format(" LEFT JOIN " + sboname + "OCRY b ON a.Country=b.Code");
+                strSql += string.Format(" LEFT JOIN " + sboname + "OCST c ON a.State1=c.Code");
+                strSql += string.Format(" LEFT JOIN " + sboname + "OCRY d ON a.MailCountr=d.Code");
+                strSql += string.Format(" LEFT JOIN " + sboname + "OCST e ON a.State2=e.Code");
+                strSql += string.Format(" WHERE CardCode='{0}'", CardCode);
+                if (!string.IsNullOrEmpty(filterString))
+                {
+                    strSql += string.Format("{0}", filterString);
+                }
+                return UnitWork.ExcuteSql<CardInfoDto>(ContextType.SapDbContextType, strSql, CommandType.Text, null).FirstOrDefault();
+            }
+            else
+            {
+                filterString += string.Format(" AND a.sbo_id={0}", SboID);
+                string strSql = string.Format("SELECT CardName,Currency,Building,MailBuildi,U_FPLB,CntctPrsn,CONCAT(IFNULL(a.ZipCode,''),IFNULL(b.Name,''),");
+                strSql += string.Format("IFNULL(c.Name,''),IFNULL(a.City,''),IFNULL(a.Building,'')) AS Address,CONCAT(IFNULL(a.MailZipCod,''),IFNULL(d.Name,''),");
+                strSql += string.Format("IFNULL(e.Name,''),IFNULL(a.MailCity,''),IFNULL(a.MailBuildi,'')) AS Address2,a.MailZipCod,a.State2,a.HsBnkIBAN,a.QryGroup1 as IsTransport,U_is_reseller,U_EndCustomerName,U_EndCustomerContact");
+                strSql += string.Format(",a.SlpCode");
+                strSql += string.Format(" FROM {0}.crm_ocrd a", "nsap_bone");
+                strSql += string.Format(" LEFT JOIN {0}.store_ocry b ON a.Country=b.Code", "nsap_bone");
+                strSql += string.Format(" LEFT JOIN {0}.store_ocst c ON a.State1=c.Code", "nsap_bone");
+                strSql += string.Format(" LEFT JOIN {0}.store_ocry d ON a.MailCountr=d.Code", "nsap_bone");
+                strSql += string.Format(" LEFT JOIN {0}.store_ocst e ON a.State2=e.Code", "nsap_bone");
+
+                strSql += string.Format(" WHERE CardCode='{0}'", CardCode);
+                if (!string.IsNullOrEmpty(filterString))
+                {
+                    strSql += string.Format("{0}", filterString);
+                }
+                return UnitWork.ExcuteSql<CardInfoDto>(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).FirstOrDefault();
+            }
+        }
     }
 }
