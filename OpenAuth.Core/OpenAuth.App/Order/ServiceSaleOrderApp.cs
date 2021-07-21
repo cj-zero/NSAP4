@@ -75,7 +75,14 @@ namespace OpenAuth.App.Order
             string line = string.Empty;
             int uSboId = SboID;
             //排序
-            sortString = string.Format("{0} {1}", "a.docentry", "desc".ToUpper());
+            if (string.IsNullOrWhiteSpace(query.SortName))
+            {
+                sortString = string.Format("{0} {1}", "a.docentry", "desc".ToUpper());
+            }
+            else
+            {
+                sortString = string.Format("{0} {1}", "a.docentry", query.SortName, query.SortOrder);
+            }
             string dRowData = string.Empty;
             #region 搜索条件
             //账
