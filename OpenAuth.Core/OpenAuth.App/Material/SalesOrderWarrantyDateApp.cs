@@ -46,7 +46,9 @@ namespace OpenAuth.App.Material
             }
             if (!loginContext.Roles.Any(r => r.Name.Equals("总助")))
             {
-                SalesOrderWarrantyDates = SalesOrderWarrantyDates.Where(q => q.SalesOrderName.Equals(loginContext.User.Name));
+                var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
+                var slpCode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
+                SalesOrderWarrantyDates = SalesOrderWarrantyDates.WhereIf(string.IsNullOrWhiteSpace(slpCode.ToString()),q => q.SalesOrderName.Equals(loginContext.User.Name)).WhereIf(!string.IsNullOrWhiteSpace(slpCode.ToString()), q => q.SlpCode== slpCode);
             }
             result.Count = await SalesOrderWarrantyDates.CountAsync();
             result.Data = await SalesOrderWarrantyDates.Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
@@ -122,18 +124,16 @@ namespace OpenAuth.App.Material
             var docEntry = await UnitWork.Find<SalesOrderWarrantyDate>(null).OrderByDescending(s => s.SalesOrderId).Select(s => s.SalesOrderId).FirstOrDefaultAsync();
             docEntry = docEntry == null ? 0 : docEntry;
 
-
             var query = from a in UnitWork.Find<ORDR>(null)
                         join b in UnitWork.Find<OITL>(null) on new { BaseEntry=a.DocEntry, BaseType =17 } equals new { BaseEntry=(int)b.BaseEntry, BaseType=(int)b.BaseType } into ab
                         from b in ab.DefaultIfEmpty()
-                        join c in UnitWork.Find<ITL1>(null) on new { b.LogEntry, b.ItemCode } equals new { c.LogEntry, c.ItemCode } into bc
-                        from c in bc.DefaultIfEmpty()
+                        join c in UnitWork.Find<ITL1>(null) on new { b.LogEntry, b.ItemCode } equals new { c.LogEntry, c.ItemCode }
                         join d in UnitWork.Find<OSRN>(null) on new { c.ItemCode, SysNumber = c.SysNumber.Value } equals new { d.ItemCode, d.SysNumber } into cd
                         from d in cd.DefaultIfEmpty()
                         join e in UnitWork.Find<OSLP>(null) on a.SlpCode equals e.SlpCode into ae
                         from e in ae.DefaultIfEmpty()
-                        where (b.DocType == 15 || b.DocType == 59) && a.DocEntry > docEntry && a.DocEntry < (docEntry+10000)
-                        select new { d.MnfSerial, b.BaseEntry, b.CardCode, b.CardName, b.DocType, b.CreateDate,e.SlpName };
+                        where b.DocType == 15  && a.DocEntry > docEntry && a.DocEntry < (docEntry+10000)
+                        select new { d.MnfSerial, b.BaseEntry, b.CardCode, b.CardName, b.DocType, b.CreateDate,e.SlpName,e.SlpCode };
 
             var model = await query.Where(q=>!string.IsNullOrWhiteSpace(q.MnfSerial)).Select(m => new SalesOrderWarrantyDate
             {
@@ -144,6 +144,7 @@ namespace OpenAuth.App.Material
                 MnfSerial=m.MnfSerial,
                 DeliveryDate = m.CreateDate,
                 CreateTime = DateTime.Now,
+                SlpCode=m.SlpCode,
                 WarrantyPeriod = Convert.ToDateTime(m.CreateDate).AddMonths(13),
                 IsPass = true
             }).ToListAsync();

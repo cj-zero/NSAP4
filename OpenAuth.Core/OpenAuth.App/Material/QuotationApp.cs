@@ -2008,10 +2008,12 @@ namespace OpenAuth.App.Material
             {
                 throw new Exception("请核对是否存在未填写字段");
             }
-
+            var nsapUserId = await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).Select(n => n.NsapUserId).FirstOrDefaultAsync();
             //判定人员是否有销售员code
-            var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(loginUser.Name)).FirstOrDefaultAsync())?.SlpCode;
-            if (slpcode == null || slpcode == 0)
+            var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
+            var slpCode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
+
+            if (slpCode == null || slpCode == 0)
             {
                 throw new Exception("暂无销售权限，请联系呼叫中心");
             }
