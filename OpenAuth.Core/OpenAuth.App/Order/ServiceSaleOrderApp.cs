@@ -35,7 +35,7 @@ namespace OpenAuth.App.Order
         private ICapPublisher _capBus;
         private readonly ServiceFlowApp _serviceFlowApp;
         ServiceBaseApp _serviceBaseApp;
-        public ServiceSaleOrderApp(IUnitWork unitWork, RevelanceManagerApp app, ServiceBaseApp serviceBaseApp,ServiceOrderLogApp serviceOrderLogApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
+        public ServiceSaleOrderApp(IUnitWork unitWork, RevelanceManagerApp app, ServiceBaseApp serviceBaseApp, ServiceOrderLogApp serviceOrderLogApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
             _revelanceApp = app;
@@ -561,7 +561,11 @@ namespace OpenAuth.App.Order
             var selectOption = UnitWork.Find<crm_oslp>(null).Select(zw => new SelectOption { Key = zw.SlpCode.ToString(), Option = zw.SlpName }).ToList();
             return selectOption;
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="orderReq"></param>
+        /// <returns></returns>
         public string Save(AddOrUpdateOrderReq orderReq)
         {
             int UserID = _serviceBaseApp.GetUserNaspId();
@@ -599,27 +603,27 @@ namespace OpenAuth.App.Order
                             var par = SaveJobPara(result, orderReq.IsTemplate);
                             if (par)
                             {
-                                //string _jobID = result;
-                                //if ("0" != NSAP.Data.MyWork.MyWork.WorkflowSubmit(int.Parse(result), UserID, orderReq.Order.Remark, "", 0))
-                                //{
-                                //    #region 更新商城订单状态
-                                //    Entity.Mywork.WfaEshopStatus thisinfo = new Entity.Mywork.WfaEshopStatus();
-                                //    thisinfo.job_id = _jobID;
-                                //    thisinfo.user_id = UserID.ToString();
-                                //    thisinfo.slp_code = Model.SlpCode;
-                                //    thisinfo.card_code = Model.CardCode;
-                                //    thisinfo.card_name = Model.CardName;
-                                //    thisinfo.cur_status = "0";
-                                //    thisinfo.order_phase = "0000";
-                                //    thisinfo.shipping_phase = "0000";
-                                //    thisinfo.complete_phase = "0";
-                                //    thisinfo.order_lastdate = DateTime.Now.ToString();
-                                //    thisinfo.first_createdate = DateTime.Now.ToString();
-                                //    //设置报价单提交
-                                //    result = NSAP.Data.Sales.BillDelivery.Eshop_SetOrderStatusFlow(thisinfo, Model.billSalesDetails, Model.U_New_ORDRID);
-                                //    #endregion
-                                //}
-                                //else { result = "0"; }
+                                string _jobID = result;
+                                if ("0" != WorkflowSubmit(int.Parse(result), UserID, orderReq.Order.Remark, "", 0))
+                                {
+                                    #region 更新商城订单状态
+                                    WfaEshopStatus thisinfo = new WfaEshopStatus();
+                                    thisinfo.JobId = int.Parse(result);
+                                    thisinfo.UserId = UserID;
+                                    thisinfo.SlpCode = int.Parse(orderReq.Order.SboId);
+                                    thisinfo.CardCode = orderReq.Order.CardCode;
+                                    thisinfo.CardName = orderReq.Order.CardName;
+                                    thisinfo.CurStatus = 0;
+                                    thisinfo.OrderPhase = "0000";
+                                    thisinfo.ShippingPhase = "0000";
+                                    thisinfo.CompletePhase = "0";
+                                    thisinfo.OrderLastDate = DateTime.Now;
+                                    thisinfo.FirstCreateDate = DateTime.Now;
+                                    //设置报价单提交
+                                    result = Eshop_OrderStatusFlow(thisinfo, int.Parse(orderReq.Order.U_New_ORDRID));
+                                    #endregion
+                                }
+                                else { result = "0"; }
                             }
                             else { result = "0"; }
                         }
@@ -629,6 +633,7 @@ namespace OpenAuth.App.Order
                         result = WorkflowSubmit(orderReq.JobId, UserID, orderReq.Order.Remark, "", 0);
                     }
                 }
+                UnitWork.Save();
             }
             catch (Exception ex)
             {
@@ -692,15 +697,15 @@ namespace OpenAuth.App.Order
         private string OrderWorkflowSubmit(int jobID, int userID, string remarks, string cont, int auditor)
         {
             string code = "";
-            //IDataParameter[] parameters =
-            //{
-            //    Sql.Action.GetParameter("?pJobID",      jobID),
-            //    Sql.Action.GetParameter("?pUserID",     userID),
-            //    Sql.Action.GetParameter("?pRemarks",    remarks),
-            //    Sql.Action.GetParameter("?pCont",       cont),
-            //    Sql.Action.GetParameter("?pAuditor",    auditor)
-            //};
-            //return Sql.Action.ExecuteScalar(Sql.UTF8ConnectionString, CommandType.StoredProcedure, string.Format("{0}.sp_process_submit", Sql.BaseDatabaseName), parameters).ToString();
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobID",      jobID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pUserID",     userID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pRemarks",    remarks),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCont",       cont),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pAuditor",    auditor)
+            };
+            code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_submit", CommandType.StoredProcedure, sqlParameters).ToString();
             return code;
         }
         #region 保存审核参数
@@ -710,7 +715,6 @@ namespace OpenAuth.App.Order
         /// <returns></returns>
         public bool SaveJobPara(string jobID, string setNumber)
         {
-            int executeRow = 0;
             //string strSql = string.Format("INSERT INTO {0}.wfa_job_para (job_id,para_idx,para_val) VALUES(?job_id,?para_idx,?para_val)", Sql.BaseDatabaseName);
             //IDataParameter[] parameters =
             //{
@@ -721,8 +725,16 @@ namespace OpenAuth.App.Order
             //strSql += string.Format(" ON Duplicate KEY UPDATE ");
             //strSql += string.Format("para_val=VALUES(para_val)");
             //executeRow = Sql.Action.ExecuteNonQuery(Sql.GB2312ConnectionString, CommandType.Text, strSql, parameters) > 0 ? "1" : "0";
-            return executeRow > 0;
 
+            WfaJobPara wfaJobPara = new WfaJobPara()
+            {
+                job_id = int.Parse(jobID),
+                para_idx = 1,
+                para_val = setNumber == "" ? "1" : setNumber,
+                upd_dt = DateTime.Now
+            };
+            UnitWork.Add<WfaJobPara, int>(wfaJobPara);
+            return true;
         }
         #endregion
         /// <summary>
@@ -739,6 +751,7 @@ namespace OpenAuth.App.Order
                 log.func_id = 0;
                 log.user_id = 1;
                 UnitWork.Add<base_user_log>(log);
+                UnitWork.Save();
             }
             catch (Exception ex)
             {
@@ -774,15 +787,15 @@ namespace OpenAuth.App.Order
         public string WorkflowSubmit(int jobID, int userID, string remarks, string cont, int auditor)
         {
             string code = "";
-            //IDataParameter[] parameters =
-            //{
-            //    Sql.Action.GetParameter("?pJobID",      jobID),
-            //    Sql.Action.GetParameter("?pUserID",     userID),
-            //    Sql.Action.GetParameter("?pRemarks",    remarks),
-            //    Sql.Action.GetParameter("?pCont",       cont),
-            //    Sql.Action.GetParameter("?pAuditor",    auditor)
-            //};
-            //code = Sql.Action.ExecuteScalar(Sql.UTF8ConnectionString, CommandType.StoredProcedure, string.Format("{0}.sp_process_submit", Sql.BaseDatabaseName), parameters).ToString();
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobID",      jobID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pUserID",     userID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pRemarks",    remarks),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCont",       cont),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pAuditor",    auditor)
+            };
+            code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_submit", CommandType.StoredProcedure, sqlParameters).ToString();
             return code;
         }
     }

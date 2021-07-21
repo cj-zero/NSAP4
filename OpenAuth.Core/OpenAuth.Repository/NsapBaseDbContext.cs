@@ -24,6 +24,7 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<wfa_eshop_canceledstatus>().HasOne(s => s.wfa_Eshop_Status).WithMany(s => s.wfa_eshop_canceledstatuss).HasForeignKey(s => s.document_id);
             modelBuilder.Entity<base_user_detail>().HasKey(o => o.user_id);
             modelBuilder.Entity<base_user_log>().HasKey(o => o.Id);
+            modelBuilder.Entity<WfaJobPara>().HasKey(o => new { o.job_id, o.para_idx });
         }
         public virtual DbSet<base_user> BaseUsers { get; set; }
         public virtual DbSet<wfa_eshop_canceledstatus> WfaEshopCanceledstatuses { get; set; }
@@ -32,6 +33,8 @@ namespace OpenAuth.Repository
         public virtual DbSet<sbo_user> SboUsers { get; set; }
         public virtual DbSet<base_user_detail> BaseUserDetails { get; set; }
         public virtual DbSet<base_user_log> BaseUserLog { get; set; }
+        public virtual DbSet<WfaJobPara> WfaJobPara { get; set; }
+        
 
 
     }
