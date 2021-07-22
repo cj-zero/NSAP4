@@ -79,7 +79,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("序列号")]
         public string MnfSerial { get; set; }
-        
+
+        /// <summary>
+        /// 销售人员code
+        /// </summary>
+        [Description("销售人员code")]
+        public int? SlpCode { get; set; }
 
         /// <summary>
         /// 操作记录表

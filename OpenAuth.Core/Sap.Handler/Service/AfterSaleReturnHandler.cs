@@ -440,7 +440,8 @@ namespace Sap.Handler.Service
             var quotation =  UnitWork.Find<Quotation>(q => q.SalesOrderId == obj.SalesOrderId).Include(q => q.QuotationMergeMaterials).FirstOrDefault();
             var serviceOrder =  UnitWork.Find<ServiceOrder>(s => s.Id.Equals(quotation.ServiceOrderId)).FirstOrDefault();
             var oCPR =  UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").FirstOrDefault();
-            var slpcode = ( UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefault())?.SlpCode;
+            var userId = ( UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(quotation.CreateUserId)).FirstOrDefault())?.NsapUserId;
+            var slpcode = ( UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefault())?.sale_id;
             var inv1 =  UnitWork.Find<INV1>(o => o.DocEntry.Equals(obj.InvoiceDocEntry)).Select(o => new { o.LineNum, o.ItemCode, o.Price ,o.BaseEntry}).ToList();
             var ywy =  UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => o.SlpCode).FirstOrDefault();
             List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };

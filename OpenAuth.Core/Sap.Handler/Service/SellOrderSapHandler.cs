@@ -40,7 +40,8 @@ namespace Sap.Handler.Service
             var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(quotation.ServiceOrderId)).FirstOrDefaultAsync();
             var oCPRs = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").ToListAsync();
             var oCPR = oCPRs.Where(o => o.Name.Equals(serviceOrder.NewestContacter)).FirstOrDefault() == null ? oCPRs.FirstOrDefault() : oCPRs.Where(o => o.Name.Equals(serviceOrder.NewestContacter)).FirstOrDefault();
-            var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
+            var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(quotation.CreateUserId)).FirstOrDefaultAsync())?.NsapUserId;
+            var slpcode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
             var ywy = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => o.SlpCode).FirstOrDefaultAsync();
             List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };
             var categoryList = await UnitWork.Find<Category>(c => typeids.Contains(c.TypeId)).ToListAsync();
@@ -248,8 +249,9 @@ namespace Sap.Handler.Service
                 finally
                 {
                     semaphoreSlim.Release();
+                    await HandleSellOrderERP(quotation.Id);
                 }
-                await HandleSellOrderERP(quotation.Id);
+                
                 Log.Logger.Warning($"同步成功，SAP_ID：{docNum}", typeof(SellOrderSapHandler));
             }
             if (!string.IsNullOrWhiteSpace(allerror.ToString()))
@@ -268,7 +270,8 @@ namespace Sap.Handler.Service
               .Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
             var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(quotation.ServiceOrderId)).FirstOrDefaultAsync();
             var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").FirstOrDefaultAsync();
-            var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
+            var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(quotation.CreateUserId)).FirstOrDefaultAsync())?.NsapUserId;
+            var slpcode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
             var ywy = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => o.SlpCode).FirstOrDefaultAsync();
             List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };
             var categoryList = await UnitWork.Find<Category>(c => typeids.Contains(c.TypeId)).ToListAsync();
@@ -404,7 +407,12 @@ namespace Sap.Handler.Service
                     Log.Logger.Error($"同步3.0失败，SAP_ID：{quotation.SalesOrderId}" + ex.Message, typeof(SellOrderSapHandler));
                 }
             }
-            
+            //如果同步成功则修改SellOrder
+            await UnitWork.UpdateAsync<Quotation>(q => q.Id == quotation.Id, q => new Quotation
+            {
+                SalesOrderId = quotation.SalesOrderId
+            });
+            await UnitWork.SaveAsync();
             if (message != "")
             {
                 throw new Exception(message.ToString());
