@@ -7,6 +7,10 @@ namespace OpenAuth.App.Response
     public class LocalInfoResp
     {
         /// <summary>
+        /// ID
+        /// </summary>
+        public string Id { get; set; }
+        /// <summary>
         /// 名称
         /// </summary>
         public string Name { get; set; }
@@ -113,4 +117,17 @@ namespace OpenAuth.App.Response
         public List<Position> Pos { get; set; }
     }
 
+    public class CountInfo 
+    {
+        public int HasIdUser { get; set; }
+        public int HasIdTech { get; set; }
+        public int NoIdTech { get; set; }
+        public int HasIdOnline { get; set; }
+        public int HasIdOffline { get; set; }
+    }
+    public class DataInfo
+    {
+        public List<LocalInfoResp> LocalInfoResp { get; set; }
+        public CountInfo CountInfo { get; set; }
+    }
 }
