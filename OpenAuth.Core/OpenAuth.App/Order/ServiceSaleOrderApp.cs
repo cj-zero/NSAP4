@@ -490,8 +490,8 @@ namespace OpenAuth.App.Order
                     string strSql2 = string.Format("SELECT 1 value FROM nsap_oa.file_main AS T0 ");
                     strSql2 += string.Format("LEFT JOIN nsap_oa.file_type AS T1 ON T0.file_type_id = T1.type_id ");
                     strSql2 += string.Format("WHERE T0.file_type_id = {0} AND T0.docEntry = {1} limit 1", int.Parse(fileType), int.Parse(temprow["DocEntry"].ToString()));
-                    object fileflag = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, strSql2, CommandType.Text, null).FirstOrDefault();
-                    temprow["AttachFlag"] = fileflag == null ? "0" : fileflag.ToString();
+                    ResultOrderDto fileflag = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, strSql2, CommandType.Text, null).FirstOrDefault();
+                    temprow["AttachFlag"] = fileflag == null ? "0" : fileflag.Value.ToString();
                 }
             }
             tableData.Data = dt.Tolist<SalesDraftDto>();
