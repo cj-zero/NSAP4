@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
@@ -10,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using OpenAuth.Repository.Core;
+using OpenAuth.Repository.Extensions;
 using OpenAuth.Repository.Interface;
 using Z.EntityFramework.Plus;
 
@@ -20,7 +22,7 @@ namespace OpenAuth.Repository
 
         private readonly IDictionary<Type, Type> ContextTypes = new Dictionary<Type, Type>();
 
-        private readonly IDictionary<Type,DbContext> DbContexts = new Dictionary<Type, DbContext>();
+        private readonly IDictionary<Type, DbContext> DbContexts = new Dictionary<Type, DbContext>();
 
         private readonly IServiceProvider _serviceProvider;
 
@@ -31,7 +33,7 @@ namespace OpenAuth.Repository
 
         public DbContext GetDbContext<T>() where T : class
         {
-            if(ContextTypes.TryGetValue(typeof(T), out Type contextType))
+            if (ContextTypes.TryGetValue(typeof(T), out Type contextType))
             {
                 if (DbContexts.TryGetValue(contextType, out DbContext context))
                     return context;
@@ -127,9 +129,9 @@ namespace OpenAuth.Repository
             }
             GetDbContext<T>().Set<T>().Add(entity);
         }
-        public T Add<T,TKey>(T entity) where T : class
+        public T Add<T, TKey>(T entity) where T : class
         {
-            var e=GetDbContext<T>().Set<T>().Add(entity);
+            var e = GetDbContext<T>().Set<T>().Add(entity);
 
             return e.Entity;
         }
@@ -176,7 +178,7 @@ namespace OpenAuth.Repository
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entity"></param>
-        public void BatchDelete<T>(T [] entity) where T : class
+        public void BatchDelete<T>(T[] entity) where T : class
         {
             foreach (var item in entity)
             {
@@ -292,7 +294,7 @@ namespace OpenAuth.Repository
             return e.Entity;
         }
 
-        
+
 
         public async Task BatchAddAsync<T>(T[] entities, CancellationToken cancellationToken = default) where T : BaseEntity
         {
@@ -415,11 +417,50 @@ namespace OpenAuth.Repository
         /// <param name="entity"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public Task BatchUpdateAsync<T>(T [] entity, CancellationToken cancellationToken = default) where T : class
+        public Task BatchUpdateAsync<T>(T[] entity, CancellationToken cancellationToken = default) where T : class
         {
             BatchUpdate(entity);
             return Task.CompletedTask;
         }
-
+        /// <summary>
+        /// 执行Sql语句
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="contextType"></param>
+        /// <param name="sql"></param>
+        /// <param name="commandType"></param>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        public List<T> ExcuteSql<T>(Type contextType, string sql, CommandType commandType, params object[] param) where T : class, new()
+        {
+            var dataContext = GetDbContext(contextType);
+            return dataContext.Database.SqlQuery<T>(sql, commandType, param).ToList();
+        }
+        /// <summary>
+        /// 执行Sql语句
+        /// </summary>
+        /// <param name="contextType"></param>
+        /// <param name="sql"></param>
+        /// <param name="commandType"></param>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        public DataTable ExcuteSqlTable(Type contextType, string sql, CommandType commandType, params object[] param)
+        {
+            var dataContext = GetDbContext(contextType);
+            return dataContext.Database.SqlQueryDataTable(sql, commandType, param);
+        }
+        /// <summary>
+        /// 执行Sql语句
+        /// </summary>
+        /// <param name="contextType"></param>
+        /// <param name="sql"></param>
+        /// <param name="commandType"></param>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        public object ExecuteScalar(Type contextType, string sql, CommandType commandType, params object[] param)
+        {
+            var dataContext = GetDbContext(contextType);
+            return dataContext.Database.ExecuteScalar(sql, commandType, param);
+        }
     }
 }

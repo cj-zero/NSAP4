@@ -26,6 +26,8 @@ using DotNetCore.CAP;
 using System.Threading;
 using OpenAuth.Repository.Domain.NsapBone;
 using Microsoft.Data.SqlClient;
+using OpenAuth.Repository.Domain.Workbench;
+using OpenAuth.App.Workbench;
 
 namespace OpenAuth.App.Material
 {
@@ -37,6 +39,7 @@ namespace OpenAuth.App.Material
         private readonly FlowInstanceApp _flowInstanceApp;
 
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
+        public readonly WorkbenchApp _workbenchApp;
 
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
 
@@ -1056,6 +1059,23 @@ namespace OpenAuth.App.Material
                             ApprovalStage = "3"
                         });
                         await UnitWork.UpdateAsync<Quotation>(QuotationObj);
+                        //增加全局待处理
+                        var serviceOrederObj = await UnitWork.Find<ServiceOrder>(s => s.Id == obj.ServiceOrderId).FirstOrDefaultAsync();
+                        await _workbenchApp.AddOrUpdate(new WorkbenchPending
+                        {
+                            OrderType = 1,
+                            TerminalCustomer = serviceOrederObj.TerminalCustomer,
+                            TerminalCustomerId = serviceOrederObj.TerminalCustomerId,
+                            ServiceOrderId = serviceOrederObj.Id,
+                            ServiceOrderSapId = (int)serviceOrederObj.U_SAP_ID,
+                            UpdateTime = QuotationObj.UpDateTime,
+                            Remark = QuotationObj.Remark,
+                            FlowInstanceId = QuotationObj.FlowInstanceId,
+                            TotalMoney = QuotationObj.TotalMoney,
+                            Petitioner = loginUser.Name,
+                            SourceNumbers = QuotationObj.Id,
+                            PetitionerId= loginUser.Id,
+                        });
                         await UnitWork.SaveAsync();
                     }
                     await transaction.CommitAsync();
@@ -1087,7 +1107,6 @@ namespace OpenAuth.App.Material
             }
             var Message = await Condition(obj);
             var QuotationObj = await CalculatePrice(obj);
-
             var dbContext = UnitWork.GetDbContext<Quotation>();
             using (var transaction = dbContext.Database.BeginTransaction())
             {
@@ -1161,8 +1180,6 @@ namespace OpenAuth.App.Material
                             //todo:要修改的字段赋值
                         });
                         await UnitWork.SaveAsync();
-
-
                     }
                     else
                     {
@@ -1186,8 +1203,6 @@ namespace OpenAuth.App.Material
                         {
                             await _flowInstanceApp.Start(new StartFlowInstanceReq { FlowInstanceId = QuotationObj.FlowInstanceId });
                         }
-
-
                         await UnitWork.UpdateAsync<Quotation>(u => u.Id == QuotationObj.Id, u => new Quotation
                         {
                             QuotationStatus = 3.1M,
@@ -1235,6 +1250,23 @@ namespace OpenAuth.App.Material
                             CreateTime = DateTime.Now,
                             QuotationId = QuotationObj.Id,
                             ApprovalStage = "3"
+                        });
+                        //增加全局待处理
+                        var serviceOrederObj = await UnitWork.Find<ServiceOrder>(s => s.Id == obj.ServiceOrderId).FirstOrDefaultAsync();
+                        await _workbenchApp.AddOrUpdate(new WorkbenchPending
+                        {
+                            OrderType = 1,
+                            TerminalCustomer = serviceOrederObj.TerminalCustomer,
+                            TerminalCustomerId = serviceOrederObj.TerminalCustomerId,
+                            ServiceOrderId = serviceOrederObj.Id,
+                            ServiceOrderSapId = (int)serviceOrederObj.U_SAP_ID,
+                            UpdateTime = DateTime.Now,
+                            Remark = QuotationObj.Remark,
+                            FlowInstanceId = QuotationObj.FlowInstanceId,
+                            TotalMoney = QuotationObj.TotalMoney,
+                            Petitioner = loginUser.Name,
+                            SourceNumbers = QuotationObj.Id,
+                            PetitionerId=loginUser.Id,
                         });
                         await UnitWork.SaveAsync();
 
@@ -1704,7 +1736,6 @@ namespace OpenAuth.App.Material
                 }
                 obj.QuotationStatus = 1;
                 qoh.ApprovalResult = "驳回";
-                obj.FlowInstanceId = "";
                 qoh.ApprovalStage = "1";
                 var delQuotationMergeMaterial = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(obj.Id)).ToListAsync();
                 await UnitWork.BatchDeleteAsync<QuotationMergeMaterial>(delQuotationMergeMaterial.ToArray());
@@ -1827,6 +1858,11 @@ namespace OpenAuth.App.Material
             qoh.Remark = req.Remark;
             qoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds);
             await UnitWork.AddAsync<QuotationOperationHistory>(qoh);
+            //修改全局待处理
+            await UnitWork.UpdateAsync<WorkbenchPending>(w => w.SourceNumbers == obj.Id && w.OrderType == 1, w => new WorkbenchPending
+            {
+                UpdateTime = obj.UpDateTime,
+            });
             await UnitWork.SaveAsync();
         }
 
@@ -1972,10 +2008,12 @@ namespace OpenAuth.App.Material
             {
                 throw new Exception("请核对是否存在未填写字段");
             }
-
+            var nsapUserId = await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).Select(n => n.NsapUserId).FirstOrDefaultAsync();
             //判定人员是否有销售员code
-            var slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(loginUser.Name)).FirstOrDefaultAsync())?.SlpCode;
-            if (slpcode == null || slpcode == 0)
+            var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
+            var slpCode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
+
+            if (slpCode == null || slpCode == 0)
             {
                 throw new Exception("暂无销售权限，请联系呼叫中心");
             }
@@ -2513,6 +2551,11 @@ namespace OpenAuth.App.Material
         public async Task CancellationSalesOrder(string QuotationId)
         {
             _capBus.Publish("Serve.SellOrder.Cancel", int.Parse(QuotationId));
+            var quotationObj = await UnitWork.Find<Quotation>(q => q.Id == int.Parse(QuotationId)).FirstOrDefaultAsync();
+            if (!string.IsNullOrWhiteSpace(quotationObj.FlowInstanceId))
+            {
+                await _flowInstanceApp.ReCall(new RecallFlowInstanceReq { FlowInstanceId = quotationObj.FlowInstanceId });
+            }
         }
 
         /// <summary>
@@ -2538,11 +2581,12 @@ namespace OpenAuth.App.Material
             await UnitWork.SaveAsync();
         }
 
-        public QuotationApp(IUnitWork unitWork, ICapPublisher capBus, FlowInstanceApp flowInstanceApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
+        public QuotationApp(IUnitWork unitWork, ICapPublisher capBus, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _capBus = capBus;
+            _workbenchApp = workbenchApp;
         }
 
     }

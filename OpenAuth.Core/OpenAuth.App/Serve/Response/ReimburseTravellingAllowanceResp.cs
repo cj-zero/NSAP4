@@ -42,10 +42,19 @@ namespace OpenAuth.App.Serve.Response
         /// 费用归属
         /// </summary>
         public string ExpenseOrg { get; set; }
-
+        /// <summary>
+        /// 费用类型
+        /// </summary>
+        public string ExpenseType { get; set; }
+        
         /// <summary>
         /// 是否客服新增
         /// </summary>
         public bool? IsAdded { get; set; }
+       
+        /// <summary>
+        /// 费用归属
+        /// </summary>
+        public List<ReimburseExpenseOrgResp> ReimburseExpenseOrgs { get; set; }
     }
 }

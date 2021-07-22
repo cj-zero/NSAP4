@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OpenAuth.App.Request;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -29,6 +30,10 @@ namespace OpenAuth.App.Settlement.Request
         /// 金额
         /// </summary>
         public string Money { get; set; }
+        /// <summary>
+        /// 费用归属
+        /// </summary>
+        public List<OutsourcExpenseOrgReq> OutsourcExpenseOrgReqs { get; set; }
 
         /// <summary>
         /// 费用单id

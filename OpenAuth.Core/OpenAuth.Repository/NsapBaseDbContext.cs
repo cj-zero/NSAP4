@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.NsapBase;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -19,9 +20,11 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<wfa_eshop_status>().HasKey(o => o.document_id);
             modelBuilder.Entity<sbo_user>().HasKey(o => new { o.sbo_id, o.user_id });
             modelBuilder.Entity<base_user>().HasKey(o => o.user_id);
-            modelBuilder.Entity<wfa_eshop_oqutdetail>().HasOne(s => s.wfa_Eshop_Status).WithMany(s => s.wfa_eshop_oqutdetails).HasForeignKey(s=>s.document_id);
+            modelBuilder.Entity<wfa_eshop_oqutdetail>().HasOne(s => s.wfa_Eshop_Status).WithMany(s => s.wfa_eshop_oqutdetails).HasForeignKey(s => s.document_id);
             modelBuilder.Entity<wfa_eshop_canceledstatus>().HasOne(s => s.wfa_Eshop_Status).WithMany(s => s.wfa_eshop_canceledstatuss).HasForeignKey(s => s.document_id);
             modelBuilder.Entity<base_user_detail>().HasKey(o => o.user_id);
+            modelBuilder.Entity<base_user_log>().HasKey(o => o.Id);
+            modelBuilder.Entity<WfaJobPara>().HasKey(o => new { o.job_id, o.para_idx });
         }
         public virtual DbSet<base_user> BaseUsers { get; set; }
         public virtual DbSet<wfa_eshop_canceledstatus> WfaEshopCanceledstatuses { get; set; }
@@ -29,5 +32,10 @@ namespace OpenAuth.Repository
         public virtual DbSet<wfa_eshop_status> WfaEshopStatuses { get; set; }
         public virtual DbSet<sbo_user> SboUsers { get; set; }
         public virtual DbSet<base_user_detail> BaseUserDetails { get; set; }
+        public virtual DbSet<base_user_log> BaseUserLog { get; set; }
+        public virtual DbSet<WfaJobPara> WfaJobPara { get; set; }
+        
+
+
     }
 }

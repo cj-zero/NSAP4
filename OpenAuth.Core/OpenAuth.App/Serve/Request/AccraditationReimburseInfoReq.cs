@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OpenAuth.App.Request;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
@@ -64,6 +65,10 @@ namespace OpenAuth.App.Serve.Request
         public List<OrgResult> hotelOrgResults { get; set; }
         public List<OrgResult> otherOrgResults { get; set; }
 
+        /// <summary>
+        /// 费用归属
+        /// </summary>
+        public List<ReimburseExpenseOrgReq> ReimburseExpenseOrgs { get; set; }
     }
 
     public class OrgResult

@@ -2526,6 +2526,7 @@ namespace OpenAuth.App
             obj.RecepUserId = loginContext.User.Id;
             obj.RecepUserName = loginContext.User.Name;
             obj.Status = 1;
+            obj.FromAppUserId = req.AppUserId;
             obj.VestInOrg = 1;
             obj.FromId = 6;//APP提交
 

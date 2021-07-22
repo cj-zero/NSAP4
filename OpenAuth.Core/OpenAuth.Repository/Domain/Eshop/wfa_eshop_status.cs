@@ -20,18 +20,18 @@ namespace OpenAuth.Repository.Domain
 	/// 
 	/// </summary>
     [Table("wfa_eshop_status")]
-    public partial class wfa_eshop_status 
+    public partial class wfa_eshop_status
     {
         public wfa_eshop_status()
         {
             this.document_id = 0;
-          this.job_id= 0;
-          this.card_code= string.Empty;
-          this.card_name= string.Empty;
-          this.order_phase= string.Empty;
-          this.shipping_phase= string.Empty;
-          this.complete_phase= string.Empty;
-          this.first_createdate= DateTime.Now;
+            this.job_id = 0;
+            this.card_code = string.Empty;
+            this.card_name = string.Empty;
+            this.order_phase = string.Empty;
+            this.shipping_phase = string.Empty;
+            this.complete_phase = string.Empty;
+            this.first_createdate = DateTime.Now;
         }
 
         /// <summary>

@@ -15,4 +15,15 @@ namespace OpenAuth.App.Order
         /// </summary>
         public string Option { get; set; }
     }
+    public class DropDownOption
+    {
+        /// <summary>
+        /// Key
+        /// </summary>
+        public object Id { get; set; }
+        /// <summary>
+        /// 选项
+        /// </summary>
+        public object Name { get; set; }
+    }
 }
