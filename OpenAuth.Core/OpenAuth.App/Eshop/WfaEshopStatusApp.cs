@@ -19,29 +19,29 @@ namespace OpenAuth.App
 
         public enum CurStatus
         {
-            Submit=0,
-            PendingShip=1,
-            Shipping=2,
-            Complete=3
+            Submit = 0,
+            PendingShip = 1,
+            Shipping = 2,
+            Complete = 3
         }
 
         public WfaEshopStatusApp(IUnitWork unitWork,
-            RevelanceManagerApp app, IAuth auth) : base(unitWork,auth)
+            RevelanceManagerApp app, IAuth auth) : base(unitWork, auth)
         {
             _revelanceApp = app;
         }
-      
+
         /// <summary>
         /// 根据商城注册电话查对应订单状态列表
         /// </summary>
         /// <param name="RegisterMobile"></param>
         /// <param name="request"></param>
         /// <returns></returns>
-        public async Task<TableData> GetOrderStatusByRegMobile (QryWfaEshopStatusListReq request)
+        public async Task<TableData> GetOrderStatusByRegMobile(QryWfaEshopStatusListReq request)
         {
             var result = new TableData();
             //如果是客户类型则查该客户的列表
-            if (request.QryType.ToString()=="1")
+            if (request.QryType.ToString() == "1")
             {
                 //查是否为客户
                 var objclient = from a in UnitWork.Find<OCRD>(null)
@@ -51,7 +51,7 @@ namespace OpenAuth.App
                 string cardcode = await objclient.Where(o => o.b.Cellolar.Equals(request.QryMobile) || o.b.Tel1.Equals(request.QryMobile) || o.b.Tel2.Equals(request.QryMobile)).Select(s => s.a.CardCode).FirstOrDefaultAsync();
 
                 var qrystatus = UnitWork.Find<wfa_eshop_status>(o => o.card_code.Equals(cardcode)).Include(s => s.wfa_eshop_oqutdetails)
-                    .WhereIf(! string.IsNullOrEmpty(request.QryStatus.ToString()), q=>q.cur_status.Equals(request.QryStatus))
+                    .WhereIf(!string.IsNullOrEmpty(request.QryStatus.ToString()), q => q.cur_status.Equals(request.QryStatus))
                     .WhereIf(!string.IsNullOrWhiteSpace(request.key), q => q.card_code.Equals(request.key) || q.card_name.Contains(request.key) || q.job_id.ToString().Equals(request.key)
                     || q.order_entry.ToString().Equals(request.key) || q.quotation_entry.ToString().Equals(request.key));
                 var resultStatus = qrystatus.OrderByDescending(o => o.first_createdate).Select(q => new
@@ -98,7 +98,7 @@ namespace OpenAuth.App
                 return result;
             }
         }
-            
+
         /// <summary>
         /// 根据主键获取相应进度明细信息
         /// </summary>
@@ -106,17 +106,17 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<WfaEshopStatusResp> GetStatusInfoById(int documentId)
         {
-            var obj =await UnitWork.Find<wfa_eshop_status>(o => o.document_id.Equals(documentId)).Include(s => s.wfa_eshop_oqutdetails)
-                .Include(d=>d.wfa_eshop_canceledstatuss).FirstOrDefaultAsync();
+            var obj = await UnitWork.Find<wfa_eshop_status>(o => o.document_id.Equals(documentId)).Include(s => s.wfa_eshop_oqutdetails)
+                .Include(d => d.wfa_eshop_canceledstatuss).FirstOrDefaultAsync();
             var result = obj.MapTo<WfaEshopStatusResp>();
 
             //已发货,已结束状态赋上物流信息
-            if (obj.cur_status== (int)CurStatus.Shipping || obj.cur_status== (int)CurStatus.Complete)
+            if (obj.cur_status == (int)CurStatus.Shipping || obj.cur_status == (int)CurStatus.Complete)
             {
                 var logsql = from a in UnitWork.Find<buy_opor>(null)
                              join b in UnitWork.Find<sale_transport>(null) on new { a.sbo_id, a.DocEntry } equals new { sbo_id = b.SboId, DocEntry = b.Buy_DocEntry }
                              join c in UnitWork.Find<sale_dln1>(null) on new { b.SboId, b.Base_DocEntry } equals new { SboId = c.sbo_id, Base_DocEntry = c.DocEntry }
-                             where b.Base_DocType == 24 && c.BaseType == 17 && a.CANCELED=="N" && c.BaseEntry.Equals(obj.order_entry)
+                             where b.Base_DocType == 24 && c.BaseType == 17 && a.CANCELED == "N" && c.BaseEntry.Equals(obj.order_entry)
                              select new { a, b, c };
                 var logobj = await logsql.Select(o => new { CoName = o.a.CardName, ExpNum = o.a.LicTradNum, CreateDate = o.a.CreateDate }).Distinct().ToListAsync();
                 result.wfa_eshop_Logs = logobj.MapToList<LogInfo>();
@@ -139,24 +139,26 @@ namespace OpenAuth.App
             }
             //业务员Id
             var objslpstr = from a in UnitWork.Find<crm_ocrd>(null)
-                         join b in UnitWork.Find<crm_oslp>(null) on new { a.sbo_id, a.SlpCode } equals new { sbo_id=b.sbo_id, SlpCode=b.SlpCode }
-                         where a.sbo_id.Equals(1) && a.CardCode.Equals(cardCode)
-                         select new { a, b };
-            var objslp = await objslpstr.Select(o => new { o.a.SlpCode, o.b.SlpName,o.a.sbo_id }).FirstOrDefaultAsync();
-            if (objslp!=null && objslp.SlpCode > 0)
+                            join b in UnitWork.Find<crm_oslp>(null) on new { a.sbo_id, a.SlpCode } equals new { sbo_id = b.sbo_id, SlpCode = b.SlpCode }
+                            where a.sbo_id.Equals(1) && a.CardCode.Equals(cardCode)
+                            select new { a, b };
+            var objslp = await objslpstr.Select(o => new { o.a.SlpCode, o.b.SlpName, o.a.sbo_id }).FirstOrDefaultAsync();
+            if (objslp != null && objslp.SlpCode > 0)
             {
                 var objuser = from a in UnitWork.Find<sbo_user>(null)
                               join b in UnitWork.Find<base_user>(null) on a.user_id equals b.user_id into ab
                               from b in ab.DefaultIfEmpty()
                               join c in UnitWork.Find<base_user_detail>(null) on b.user_id equals c.user_id into bc
                               from c in bc.DefaultIfEmpty()
-                              select new { a, b,c };
-                var telobj = await objuser.Where(o => o.a.sbo_id==objslp.sbo_id && o.a.sale_id==objslp.SlpCode && o.b.user_nm.Equals(objslp.SlpName))
-                    .Select(q =>new { 
-                        UserName=q.b.user_nm,
-                        Sex=q.c.sex==1? "女":"男",
-                        Email=q.b.email,
-                        Mobile=q.b.mobile }).FirstOrDefaultAsync();
+                              select new { a, b, c };
+                var telobj = await objuser.Where(o => o.a.sbo_id == objslp.sbo_id && o.a.sale_id == objslp.SlpCode && o.b.user_nm.Equals(objslp.SlpName))
+                    .Select(q => new
+                    {
+                        UserName = q.b.user_nm,
+                        Sex = q.c.sex == 1 ? "女" : "男",
+                        Email = q.b.email,
+                        Mobile = q.b.mobile
+                    }).FirstOrDefaultAsync();
                 var result = telobj.MapTo<SlpInfoOfClientResp>();
                 return result;
             }
@@ -174,9 +176,9 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var thisorder = await UnitWork.Find<sale_ordr>(w => w.U_EshopNo == EshopPOrderNo && w.sbo_id.Equals(1)).FirstOrDefaultAsync();
-            if (thisorder != null && thisorder.DocEntry>0)
+            if (thisorder != null && thisorder.DocEntry > 0)
             {
-                await UnitWork.UpdateAsync<sale_ordr>(w => w.DocEntry == thisorder.DocEntry && w.sbo_id==thisorder.sbo_id, u => new sale_ordr { U_ShipStatus = 1 });
+                await UnitWork.UpdateAsync<sale_ordr>(w => w.DocEntry == thisorder.DocEntry && w.sbo_id == thisorder.sbo_id, u => new sale_ordr { U_ShipStatus = 1 });
                 await UnitWork.SaveAsync();
                 result.Message = "更新成功";
             }
@@ -205,8 +207,8 @@ namespace OpenAuth.App
                 var thisorder = await UnitWork.Find<sale_ordr>(w => w.U_EshopNo == req.EshopOrderNo).FirstOrDefaultAsync();
                 if (thisorder != null && thisorder.DocEntry > 0)
                 {
-                    var newobj=new sale_ordr_plugin();
-                    var theorderplugin= await UnitWork.Find<sale_ordr_plugin>(w => w.DocEntry == thisorder.DocEntry && w.sbo_id == thisorder.sbo_id).FirstOrDefaultAsync();
+                    var newobj = new sale_ordr_plugin();
+                    var theorderplugin = await UnitWork.Find<sale_ordr_plugin>(w => w.DocEntry == thisorder.DocEntry && w.sbo_id == thisorder.sbo_id).FirstOrDefaultAsync();
                     if (theorderplugin != null && theorderplugin.DocEntry > 0)
                     {
                         await UnitWork.UpdateAsync<sale_ordr_plugin>(w => w.DocEntry == thisorder.DocEntry && w.sbo_id == thisorder.sbo_id, u => new sale_ordr_plugin
@@ -232,7 +234,7 @@ namespace OpenAuth.App
                             InvoiceReceiveEmail = req.InvoiceReceiveEmail,
                             InvoiceReceiveAddress = req.InvoiceReceiveAddress
                         };
-                        newobj = await UnitWork.AddAsync<sale_ordr_plugin,int>(newplugin);
+                        newobj = await UnitWork.AddAsync<sale_ordr_plugin, int>(newplugin);
                     }
                     await UnitWork.SaveAsync();
                     result.Data = newobj.DocEntry;
@@ -251,5 +253,11 @@ namespace OpenAuth.App
             }
             return result;
         }
+
+        public string Eshop_AddOrderStatusFlow()
+        {
+            return "";
+        }
+
     }
 }

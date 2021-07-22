@@ -107,5 +107,9 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("银行卡号")]
         public string CardNo { get; set; }
+        /// <summary>
+        /// Nasp ID
+        /// </summary>
+        public int? User_Id { get; set; }
     }
 }

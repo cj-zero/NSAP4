@@ -59,6 +59,18 @@ namespace OpenAuth.Repository.Domain
         [Description("")]
         public int? order_entry { get; set; }
 
+        public int? user_id { get; set; }
+        public int? slp_code { get; set; }
+        public string card_code { get; set; }
+        public string card_name { get; set; }
+        public string order_phase { get; set; }
+        public string shipping_phase { get; set; }
+        public string complete_phase { get; set; }
+        public DateTime? first_createdate { get; set; }
+        public DateTime? order_lastdate { get; set; }
+        public DateTime? shipping_lastdate { get; set; }
+        public DateTime? complete_lastdate { get; set; }
+
         public virtual wfa_eshop_status wfa_Eshop_Status { get; set; }
         public override void GenerateDefaultKeyVal()
         {

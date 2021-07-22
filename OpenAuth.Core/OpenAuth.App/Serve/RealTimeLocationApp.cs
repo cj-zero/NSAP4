@@ -117,15 +117,15 @@ namespace OpenAuth.App
             TableData result = new TableData();
 
             //技术员角色
-            //var roleId = await UnitWork.Find<Role>(c => c.Name.Equals("售后技术员")).Select(c => c.Id).FirstOrDefaultAsync();
-            //var userIds = await UnitWork.Find<Relevance>(c => c.Key.Equals(Define.USERROLE) && c.SecondId.Equals(roleId)).Select(c => c.FirstId).ToListAsync();
-            ////未完成服务id的
-            //var serviceWorkOrder = UnitWork.Find<ServiceWorkOrder>(c => c.Status < 7);
-            //var noComplete = await serviceWorkOrder
-            //                        .Where(c => !string.IsNullOrWhiteSpace(c.CurrentUserNsapId))
-            //                        .Select(c => c.CurrentUserNsapId)
-            //                        .Distinct()
-            //                        .ToListAsync();
+            var roleId = await UnitWork.Find<Role>(c => c.Name.Equals("售后技术员")).Select(c => c.Id).FirstOrDefaultAsync();
+            var techuserIds = await UnitWork.Find<Relevance>(c => c.Key.Equals(Define.USERROLE) && c.SecondId.Equals(roleId)).Select(c => c.FirstId).ToListAsync();
+            //未完成服务id的
+            var serviceWorkOrder = UnitWork.Find<ServiceWorkOrder>(c => c.Status < 7);
+            var noComplete = await serviceWorkOrder
+                                    .Where(c => !string.IsNullOrWhiteSpace(c.CurrentUserNsapId))
+                                    .Select(c => c.CurrentUserNsapId)
+                                    .Distinct()
+                                    .ToListAsync();
             //userIds.AddRange(noComplete);
 
             DateTime start = DateTime.Now.Date;
@@ -175,22 +175,27 @@ namespace OpenAuth.App
 
                      TimeSpan ts = now.Subtract(currentLoca.a.CreateTime);
                      totalHour = Math.Round(ts.TotalHours, 2);
+                     //var totalMin = Math.Round(ts.TotalMinutes, 2);
                      if (totalHour > 24)
                          interv = ts.Days + "天前";
                      else if (totalHour >= 1 && totalHour <= 24)
                          interv = ts.Hours + "小时前";
                      else
                      {
-                         onlineState = "在线";
+                         if (ts.Minutes <= 3)
+                         {
+                             onlineState = "在线";
+                         }
                          interv = ts.Minutes + "分钟前";
                      }
                  }
 
                  return new LocalInfoResp
                  {
+                     Id = c.Id,
                      Name = c.Name,
                      Address = currentLoca?.a.Province + currentLoca?.a.City + currentLoca?.a.Area + currentLoca?.a.Addr,
-                     Province= currentLoca?.a.Province,
+                     Province = currentLoca?.a.Province,
                      City = currentLoca?.a.City,
                      Area = currentLoca?.a.Area,
                      Mobile = c.Mobile,
@@ -198,7 +203,7 @@ namespace OpenAuth.App
                      Interval = interv,
                      Longitude = longi,
                      Latitude = lati,
-                     TotalHour= totalHour,
+                     TotalHour = totalHour,
                  };
 
              });
@@ -208,9 +213,26 @@ namespace OpenAuth.App
             if (!string.IsNullOrWhiteSpace(req.City)) da1 = da1.Where(c => c.City == req.City && !string.IsNullOrWhiteSpace(c.City));
             if (!string.IsNullOrWhiteSpace(req.Area)) da1=da1.Where(c => c.Area == req.Area && !string.IsNullOrWhiteSpace(c.Area));
 
+            //有ID员工
+            var hasIdUserList = data.Where(c => noComplete.Contains(c.Id)).Select(c=>c.Id).ToList();
+            var hasIdUser = hasIdUserList.Count();
+            //无ID的员工
+            //var noIdUser = da1.Count() - hasIdUser;
+            //有ID技术员
+            var hasIdTech = techuserIds.Intersect(noComplete).Count();
+            //无ID技术员
+            var noIdTech = techuserIds.Except(noComplete).Count();
 
+            // 有ID在线数
+            var hasIdOnline = da1.Where(c => c.Status == "在线" && hasIdUserList.Contains(c.Id)).Count();
+            // 有ID离线数
+            var hasIdOffOline = da1.Where(c => c.Status == "离线" && hasIdUserList.Contains(c.Id)).Count();
+
+            var countinfo = new CountInfo { HasIdUser = hasIdUser, HasIdTech = hasIdTech, NoIdTech = noIdTech, HasIdOnline = hasIdOnline, HasIdOffline = hasIdOffOline };
+
+            var res = new DataInfo { LocalInfoResp = da1.OrderBy(c => c.TotalHour).ToList(), CountInfo = countinfo };
             result.Count = da1.Count();
-            result.Data = da1.OrderBy(c => c.TotalHour);
+            result.Data = res;
             return result;
         }
 

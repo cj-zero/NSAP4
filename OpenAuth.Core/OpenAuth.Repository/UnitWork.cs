@@ -449,5 +449,18 @@ namespace OpenAuth.Repository
             var dataContext = GetDbContext(contextType);
             return dataContext.Database.SqlQueryDataTable(sql, commandType, param);
         }
+        /// <summary>
+        /// 执行Sql语句
+        /// </summary>
+        /// <param name="contextType"></param>
+        /// <param name="sql"></param>
+        /// <param name="commandType"></param>
+        /// <param name="param"></param>
+        /// <returns></returns>
+        public object ExecuteScalar(Type contextType, string sql, CommandType commandType, params object[] param)
+        {
+            var dataContext = GetDbContext(contextType);
+            return dataContext.Database.ExecuteScalar(sql, commandType, param);
+        }
     }
 }

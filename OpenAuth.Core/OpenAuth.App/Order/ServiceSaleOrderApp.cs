@@ -1,14 +1,17 @@
 ﻿extern alias MySqlConnectorAlias;
 using DotNetCore.CAP;
 using Infrastructure;
-using Microsoft.Data.SqlClient;
+using Infrastructure.Extensions;
 using Microsoft.Extensions.Options;
 using MySql.Data.MySqlClient;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Order.Request;
+using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.NsapBase;
+using Microsoft.Data.SqlClient;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository;
-using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Extensions;
 using OpenAuth.Repository.Interface;
 using System;
@@ -16,14 +19,14 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using OpenAuth.App.Order.ModelDto;
 
 namespace OpenAuth.App.Order
 {
     /// <summary>
     /// 销售订单业务
     /// </summary>
-    public class ServiceSaleOrderApp : OnlyUnitWorkBaeApp
+    public partial class ServiceSaleOrderApp : OnlyUnitWorkBaeApp
     {
         private readonly RevelanceManagerApp _revelanceApp;
         private readonly AppServiceOrderLogApp _appServiceOrderLogApp;
@@ -31,7 +34,8 @@ namespace OpenAuth.App.Order
         private IOptions<AppSetting> _appConfiguration;
         private ICapPublisher _capBus;
         private readonly ServiceFlowApp _serviceFlowApp;
-        public ServiceSaleOrderApp(IUnitWork unitWork, RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
+        ServiceBaseApp _serviceBaseApp;
+        public ServiceSaleOrderApp(IUnitWork unitWork, RevelanceManagerApp app, ServiceBaseApp serviceBaseApp, ServiceOrderLogApp serviceOrderLogApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
             _revelanceApp = app;
@@ -39,6 +43,7 @@ namespace OpenAuth.App.Order
             _capBus = capBus;
             _ServiceOrderLogApp = ServiceOrderLogApp;
             _serviceFlowApp = serviceFlowApp;
+            _serviceBaseApp = serviceBaseApp;
         }
         /// <summary>
         /// 
@@ -70,7 +75,14 @@ namespace OpenAuth.App.Order
             string line = string.Empty;
             int uSboId = SboID;
             //排序
-            sortString = string.Format("{0} {1}", "a.docentry", "desc".ToUpper());
+            if (string.IsNullOrWhiteSpace(query.SortName))
+            {
+                sortString = string.Format("{0} {1}", "a.docentry", "desc".ToUpper());
+            }
+            else
+            {
+                sortString = string.Format("{0} {1}", "a.docentry", query.SortName, query.SortOrder);
+            }
             string dRowData = string.Empty;
             #region 搜索条件
             //账
@@ -486,6 +498,61 @@ namespace OpenAuth.App.Order
             return tableData;
         }
         /// <summary>
+        /// 业务伙伴获取
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="filterQuery"></param>
+        /// <param name="sqlcont"></param>
+        /// <param name="sboname"></param>
+        /// <returns></returns>
+        public TableData SelectCardCodeInfo(CardCodeRequest query, string sortSt, string filterQuery, string sboname)
+        {
+            TableData tableData = new TableData();
+            StringBuilder filefName = new StringBuilder();
+            StringBuilder tableName = new StringBuilder();
+            if (string.IsNullOrEmpty(sboname))
+            {
+                sboname = "";
+            }
+            else
+            {
+                sboname = sboname + ".dbo.";
+            }
+            string U_FPLB = string.Empty;
+            var syscolumn = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.SapDbContextType, $@"SELECT COUNT(*) value FROM syscolumns WHERE id=object_id('OCRD') AND name='U_FPLB'", CommandType.Text, null).FirstOrDefault();
+            if (syscolumn != null && syscolumn.Value.ToString() != "0")
+            {
+                U_FPLB = ",a.U_FPLB";
+            }
+            filefName.AppendFormat(" a.CardCode,a.CardName,a.CntctPrsn,b.SlpName,a.Currency,a.Balance,(ISNULL(ZipCode,'')+ISNULL(c.Name,'')+ISNULL(d.Name,'')+ISNULL(City,'')+ISNULL(CONVERT(VARCHAR(100),Building),'''')) AS Address,(ISNULL(MailZipCod,'')+ISNULL(e.Name,'')+ISNULL(f.Name,'')+ISNULL(MailCity,'')+ISNULL(CONVERT(VARCHAR(100),MailBuildi),'''')) AS Address2{0},a.SlpCode", U_FPLB);
+            tableName.AppendFormat(" " + sboname + "OCRD a");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OSLP b ON a.SlpCode=b.SlpCode");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OCRY c ON a.Country=c.Code");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OCST d ON a.State1=c.Code");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OCRY e ON a.MailCountr=e.Code");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OCST f ON a.State1=f.Code");
+            List<SqlParameter> sqlParameters = new List<SqlParameter>()
+            {
+                new SqlParameter("@strFrom",tableName.ToString()),
+                new SqlParameter("@strSelect",filefName.ToString()),
+                new SqlParameter("@pageSize",query.limit),
+                new SqlParameter("@pageIndex",query.page),
+                new SqlParameter("@strOrder",sortSt),
+                new SqlParameter("@strWhere",filterQuery),
+            };
+            SqlParameter isStats = new SqlParameter("@isStats", SqlDbType.Int);
+            isStats.Value = 1;
+            sqlParameters.Add(isStats);
+            SqlParameter paramOut = new SqlParameter("@rowCount", SqlDbType.Int);
+            paramOut.Value = 0;
+            paramOut.Direction = ParameterDirection.Output;
+            sqlParameters.Add(paramOut);
+            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, $"sp_common_pager", CommandType.StoredProcedure, sqlParameters);
+            tableData.Data = dt.Tolist<CardCodeDto>();
+            tableData.Count = Convert.ToInt32(paramOut.Value);
+            return tableData;
+        }
+        /// <summary>
         /// 获取业务员信息
         /// </summary>
         /// <param name="sboId"></param>
@@ -493,13 +560,362 @@ namespace OpenAuth.App.Order
         public List<SelectOption> GetSalesSelect(int sboId)
         {
             var loginContext = _auth.GetCurrentUser();
-            //if (loginContext == null)
-            //{
-            //    throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            //}
             //业务员Id
-            var selectOption = UnitWork.Find<crm_oslp>(null).Select(zw => new SelectOption { Key = zw.SlpCode.ToString(), Option = zw.SlpName }).ToList();
+            var selectOption = UnitWork.Find<crm_oslp>(s => s.sbo_id == sboId).Select(zw => new SelectOption { Key = zw.SlpCode.ToString(), Option = zw.SlpName }).ToList();
             return selectOption;
+        }
+        /// <summary>
+        /// 销售报价单保存
+        /// </summary>
+        /// <param name="orderReq"></param>
+        /// <returns></returns>
+        public string Save(AddOrUpdateOrderReq orderReq)
+        {
+            int UserID = _serviceBaseApp.GetUserNaspId();
+            string funcId = "0";
+            string logstring = "";
+            string jobname = "";
+            string result = "";
+            try
+            {
+                int sboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+                byte[] job_data = ByteExtension.ToSerialize(orderReq.Order);
+                if (orderReq.Copy == "1")
+                {
+                    funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesOrder.aspx", UserID).ToString();
+                    logstring = "根据销售报价单下销售订单";
+                    jobname = "销售订单";
+                    SalesOrderSave_ORDR(orderReq);
+                }
+                else
+                {
+                    string className = "NSAP.B1Api.BOneOQUT";
+                    funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesQuotation.aspx", UserID).ToString();
+                    logstring = "新建销售报价单";
+                    jobname = "销售报价单";
+                    int FuncID = int.Parse(funcId);
+                    if (orderReq.Ations == OrderAtion.Draft)
+                    {
+                        result = OrderWorkflowBuild(jobname, FuncID, UserID, job_data, orderReq.Order.Remark, int.Parse(orderReq.Order.SboId), orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), int.Parse(orderReq.Order.billBaseType), int.Parse(orderReq.Order.billBaseEntry), "BOneAPI", className);
+                    }
+                    else if (orderReq.Ations == OrderAtion.Submit)
+                    {
+                        result = OrderWorkflowBuild(jobname, FuncID, UserID, job_data, orderReq.Order.Remark, int.Parse(orderReq.Order.SboId), orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), int.Parse(orderReq.Order.billBaseType), int.Parse(orderReq.Order.billBaseEntry), "BOneAPI", className);
+                        if (int.Parse(result) > 0)
+                        {
+                            var par = SaveJobPara(result, orderReq.IsTemplate);
+                            if (par)
+                            {
+                                string _jobID = result;
+                                if ("0" != WorkflowSubmit(int.Parse(result), UserID, orderReq.Order.Remark, "", 0))
+                                {
+                                    #region 更新商城订单状态
+                                    WfaEshopStatus thisinfo = new WfaEshopStatus();
+                                    thisinfo.JobId = int.Parse(result);
+                                    thisinfo.UserId = UserID;
+                                    thisinfo.SlpCode = int.Parse(orderReq.Order.SboId);
+                                    thisinfo.CardCode = orderReq.Order.CardCode;
+                                    thisinfo.CardName = orderReq.Order.CardName;
+                                    thisinfo.CurStatus = 0;
+                                    thisinfo.OrderPhase = "0000";
+                                    thisinfo.ShippingPhase = "0000";
+                                    thisinfo.CompletePhase = "0";
+                                    thisinfo.OrderLastDate = DateTime.Now;
+                                    thisinfo.FirstCreateDate = DateTime.Now;
+                                    //设置报价单提交
+                                    result = Eshop_OrderStatusFlow(thisinfo, int.Parse(orderReq.Order.U_New_ORDRID));
+                                    #endregion
+                                }
+                                else { result = "0"; }
+                            }
+                            else { result = "0"; }
+                        }
+                    }
+                    else if (orderReq.Ations == OrderAtion.Resubmit)
+                    {
+                        result = WorkflowSubmit(orderReq.JobId, UserID, orderReq.Order.Remark, "", 0);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                string msg = ex.Message;
+            }
+            string log = string.Format("{1}：{0}", result, logstring);
+            AddUserOperateLog(log);
+            return result;
+        }
+        /// <summary>
+        /// 草稿
+        /// </summary>
+        /// <param name="jobName"></param>
+        /// <param name="funcID"></param>
+        /// <param name="userID"></param>
+        /// <param name="jobdata"></param>
+        /// <param name="remarks"></param>
+        /// <param name="sboID"></param>
+        /// <param name="carCode"></param>
+        /// <param name="carName"></param>
+        /// <param name="docTotal"></param>
+        /// <param name="baseType"></param>
+        /// <param name="baseEntry"></param>
+        /// <param name="assemblyName"></param>
+        /// <param name="className"></param>
+        /// <returns></returns>
+        private string OrderWorkflowBuild(string jobName, int funcID, int userID, byte[] jobdata, string remarks, int sboID, string carCode, string carName, double docTotal, int baseType, int baseEntry, string assemblyName, string className)
+        {
+            string code = "";
+            if (carCode != "")
+            {
+                var crmOcrd = UnitWork.FindSingle<crm_ocrd>(zw => zw.sbo_id == sboID && zw.CardCode == carCode);
+                if (crmOcrd != null)
+                {
+                    carName = crmOcrd.CardName;
+                }
+            }
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobName",    jobName),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pFuncID",     funcID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pUserID",     userID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobData",    jobdata),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pRemarks",    remarks),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pSboID",      sboID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCarCode",    carCode),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCarName",    carName),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pDocTotal",   docTotal),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pBaseType",   baseType),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pBaseEntry",  baseEntry),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pAssemblyName",  assemblyName),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pClassName",  className)
+            };
+            code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_build", CommandType.StoredProcedure, sqlParameters).ToString();
+            return code;
+        }
+        /// <summary>
+        /// 审核（提交）
+        /// </summary>
+        /// <returns>返回  提交失败 0   提交成功 1   流程完成 2</returns>
+        private string OrderWorkflowSubmit(int jobID, int userID, string remarks, string cont, int auditor)
+        {
+            string code = "";
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobID",      jobID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pUserID",     userID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pRemarks",    remarks),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCont",       cont),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pAuditor",    auditor)
+            };
+            code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_submit", CommandType.StoredProcedure, sqlParameters).ToString();
+            return code;
+        }
+        #region 保存审核参数
+        /// <summary>
+        /// 保存审核参数
+        /// </summary>
+        /// <returns></returns>
+        public bool SaveJobPara(string jobID, string setNumber)
+        {
+            //string strSql = string.Format("INSERT INTO {0}.wfa_job_para (job_id,para_idx,para_val) VALUES(?job_id,?para_idx,?para_val)", Sql.BaseDatabaseName);
+            //IDataParameter[] parameters =
+            //{
+            //    Sql.Action.GetParameter("?job_id",  jobID),
+            //    Sql.Action.GetParameter("?para_idx",  "1"),
+            //    Sql.Action.GetParameter("?para_val",  setNumber==""?"1":setNumber)
+            //};
+            //strSql += string.Format(" ON Duplicate KEY UPDATE ");
+            //strSql += string.Format("para_val=VALUES(para_val)");
+            //executeRow = Sql.Action.ExecuteNonQuery(Sql.GB2312ConnectionString, CommandType.Text, strSql, parameters) > 0 ? "1" : "0";
+
+            WfaJobPara wfaJobPara = new WfaJobPara()
+            {
+                job_id = int.Parse(jobID),
+                para_idx = 1,
+                para_val = setNumber == "" ? "1" : setNumber,
+                upd_dt = DateTime.Now
+            };
+            UnitWork.Add<WfaJobPara, int>(wfaJobPara);
+            return true;
+        }
+        #endregion
+        /// <summary>
+        /// 操作日志
+        /// </summary>
+        /// <param name="msg"></param>
+        private void AddUserOperateLog(string msg)
+        {
+            try
+            {
+                base_user_log log = new base_user_log();
+                log.opt_cont = msg;
+                log.rec_dt = DateTime.Now;
+                log.func_id = 0;
+                log.user_id = 1;
+                UnitWork.Add<base_user_log>(log);
+                UnitWork.Save();
+            }
+            catch (Exception ex)
+            {
+                string errormsg = ex.Message;
+            }
+        }
+        /// <summary>
+        /// 修改审核数据
+        /// </summary>
+        public bool UpdateAudit(int jobId, byte[] jobData, string remarks, string doc_total, string card_code, string card_name)
+        {
+            bool isSave = false;
+            //string strSql = string.Format("UPDATE {0}.wfa_job SET job_data=?job_data,remarks=?remarks,job_state=?job_state,doc_total=?doc_total,", Sql.BaseDatabaseName);
+            //strSql += string.Format("card_code=?card_code,card_name=?card_name WHERE job_id = ?job_id", Sql.BaseDatabaseName);
+            //IDataParameter[] parameters =
+            //{
+            //    Sql.Action.GetParameter("?job_data", jobData),
+            //    Sql.Action.GetParameter("?remarks", remarks),
+            //    Sql.Action.GetParameter("?job_state", "0"),
+            //    Sql.Action.GetParameter("?doc_total", doc_total==""?"0":doc_total),
+            //    Sql.Action.GetParameter("?card_code", card_code),
+            //    Sql.Action.GetParameter("?card_name", card_name),
+            //    Sql.Action.GetParameter("?job_id",  jobId)
+            //};
+            //isSave = Sql.Action.ExecuteNonQuery(Sql.UTF8ConnectionString, CommandType.Text, strSql, parameters) > 0 ? true : false;
+            return isSave;
+        }
+
+        /// <summary>
+        /// 审核（提交）
+        /// </summary>
+        /// <returns>返回  提交失败 0   提交成功 1   流程完成 2</returns>
+        public string WorkflowSubmit(int jobID, int userID, string remarks, string cont, int auditor)
+        {
+            string code = "";
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobID",      jobID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pUserID",     userID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pRemarks",    remarks),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCont",       cont),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pAuditor",    auditor)
+            };
+            code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_submit", CommandType.StoredProcedure, sqlParameters).ToString();
+            return code;
+        }
+        /// <summary>
+        /// 客户代码数据
+        /// </summary>
+        /// <param name="CardCode"></param>
+        /// <param name="SboID"></param>
+        /// <param name="isSql"></param>
+        /// <param name="ViewSelf"></param>
+        /// <param name="ViewSelfDepartment"></param>
+        /// <param name="ViewFull"></param>
+        /// <param name="UserId"></param>
+        /// <param name="DepId"></param>
+        /// <returns></returns>
+        public CardInfoDto CardInfo(string CardCode, int SboID, bool isSql, bool ViewSelf, bool ViewSelfDepartment, bool ViewFull, int UserId, int DepId)
+        {
+            var dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM nsap_base.sbo_info WHERE sbo_id={SboID}", CommandType.Text, null);
+            string dRowData = string.Empty;
+            string isOpen = "0";
+            string sboname = "0";
+            string sqlconn = "0";
+            if (dt.Rows.Count > 0)
+            {
+                isOpen = dt.Rows[0][6].ToString();
+                sboname = dt.Rows[0][0].ToString();
+                sqlconn = dt.Rows[0][5].ToString();
+            }
+            string filterString = string.Empty;
+            if (ViewSelfDepartment && !ViewFull)
+            {
+                DataTable rDataRows = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT a.sale_id,a.tech_id FROM nsap_base.sbo_user a LEFT JOIN nsap_base.base_user_detail b ON a.user_id=b.user_id WHERE b.dep_id={DepId} AND a.sbo_id={SboID}", CommandType.Text, null); ;
+                if (rDataRows.Rows.Count > 0)
+                {
+                    filterString += string.Format(" AND (a.SlpCode IN(");
+                    for (int i = 0; i < rDataRows.Rows.Count; i++)
+                    {
+                        filterString += string.Format("{0},", rDataRows.Rows[i][0]);
+                    }
+                    if (!string.IsNullOrEmpty(filterString))
+                        filterString = filterString.Substring(0, filterString.Length - 1);
+                    filterString += string.Format(") OR a.DfTcnician IN (");
+                    for (int i = 0; i < rDataRows.Rows.Count; i++)
+                    {
+                        filterString += string.Format("{0},", rDataRows.Rows[i][1]);
+                    }
+                    if (!string.IsNullOrEmpty(filterString))
+                        filterString = filterString.Substring(0, filterString.Length - 1);
+                    filterString += string.Format(") {0})", " OR a.SlpCode = -1 ");
+                }
+
+            }
+            if (ViewSelf && !ViewFull && !ViewSelfDepartment)
+            {
+                DataTable rDataRowsSlp = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sale_id,tech_id FROM nsap_base.sbo_user WHERE user_id={UserId} AND sbo_id={SboID}", CommandType.Text, null);
+                if (rDataRowsSlp.Rows.Count > 0)
+                {
+                    string slpCode = rDataRowsSlp.Rows[0][0].ToString();
+                    string slpTcnician = rDataRowsSlp.Rows[0][1].ToString();
+                    string SlpCodeViewSelf = "";
+                    if (CardCode.Substring(0, 1) == "V") { SlpCodeViewSelf = " OR a.SlpCode = -1"; } else { SlpCodeViewSelf = ""; }
+                    filterString += string.Format(" AND (a.SlpCode = {0} OR a.DfTcnician={1} {2}) ", slpCode, slpTcnician, SlpCodeViewSelf);
+                }
+                else
+                {
+                    filterString += string.Format(" a.SlpCode =0  AND ");
+                }
+            }
+            if (isSql && isOpen == "1")
+            {
+                if (string.IsNullOrEmpty(sboname))
+                {
+                    sboname = "";
+                }
+                else
+                {
+                    sboname = sboname + ".dbo.";
+                }
+                string U_FPLB = string.Empty;
+                var syscolumn = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.SapDbContextType, $@"SELECT COUNT(*) value FROM syscolumns WHERE id=object_id('OCRD') AND name='U_FPLB'", CommandType.Text, null).FirstOrDefault();
+                if (syscolumn != null && syscolumn.Value.ToString() != "0")
+                {
+                    U_FPLB = ",a.U_FPLB";
+                }
+                string strSql = string.Format("SELECT CardName,Currency,Building,MailBuildi{0},CntctPrsn,BillToDef AS PayToCode,ShipToDef AS ShipToCode,", U_FPLB);
+                strSql += string.Format("(ISNULL(ZipCode,'')+ISNULL(b.Name,'')+ISNULL(c.Name,'')+ISNULL(City,'')+ISNULL(CONVERT(VARCHAR(1000),Building),'''')) AS Address,");
+                strSql += string.Format("(ISNULL(MailZipCod,'')+ISNULL(d.Name,'')+ISNULL(e.Name,'')+ISNULL(MailCity,'')+ISNULL(CONVERT(VARCHAR(8000),MailBuildi),'''')) AS Address2,");
+                strSql += string.Format("a.MailZipCod,a.State2,a.HsBnkIBAN,a.SlpCode AS U_YWY,a.QryGroup1 as IsTransport,U_is_reseller,U_EndCustomerName,U_EndCustomerContact FROM " + sboname + "OCRD a ");
+                strSql += string.Format(" LEFT JOIN " + sboname + "OCRY b ON a.Country=b.Code");
+                strSql += string.Format(" LEFT JOIN " + sboname + "OCST c ON a.State1=c.Code");
+                strSql += string.Format(" LEFT JOIN " + sboname + "OCRY d ON a.MailCountr=d.Code");
+                strSql += string.Format(" LEFT JOIN " + sboname + "OCST e ON a.State2=e.Code");
+                strSql += string.Format(" WHERE CardCode='{0}'", CardCode);
+                if (!string.IsNullOrEmpty(filterString))
+                {
+                    strSql += string.Format("{0}", filterString);
+                }
+                return UnitWork.ExcuteSql<CardInfoDto>(ContextType.SapDbContextType, strSql, CommandType.Text, null).FirstOrDefault();
+            }
+            else
+            {
+                filterString += string.Format(" AND a.sbo_id={0}", SboID);
+                string strSql = string.Format("SELECT CardName,Currency,Building,MailBuildi,U_FPLB,CntctPrsn,CONCAT(IFNULL(a.ZipCode,''),IFNULL(b.Name,''),");
+                strSql += string.Format("IFNULL(c.Name,''),IFNULL(a.City,''),IFNULL(a.Building,'')) AS Address,CONCAT(IFNULL(a.MailZipCod,''),IFNULL(d.Name,''),");
+                strSql += string.Format("IFNULL(e.Name,''),IFNULL(a.MailCity,''),IFNULL(a.MailBuildi,'')) AS Address2,a.MailZipCod,a.State2,a.HsBnkIBAN,a.QryGroup1 as IsTransport,U_is_reseller,U_EndCustomerName,U_EndCustomerContact");
+                strSql += string.Format(",a.SlpCode");
+                strSql += string.Format(" FROM {0}.crm_ocrd a", "nsap_bone");
+                strSql += string.Format(" LEFT JOIN {0}.store_ocry b ON a.Country=b.Code", "nsap_bone");
+                strSql += string.Format(" LEFT JOIN {0}.store_ocst c ON a.State1=c.Code", "nsap_bone");
+                strSql += string.Format(" LEFT JOIN {0}.store_ocry d ON a.MailCountr=d.Code", "nsap_bone");
+                strSql += string.Format(" LEFT JOIN {0}.store_ocst e ON a.State2=e.Code", "nsap_bone");
+
+                strSql += string.Format(" WHERE CardCode='{0}'", CardCode);
+                if (!string.IsNullOrEmpty(filterString))
+                {
+                    strSql += string.Format("{0}", filterString);
+                }
+                return UnitWork.ExcuteSql<CardInfoDto>(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).FirstOrDefault();
+            }
         }
     }
 }

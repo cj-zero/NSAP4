@@ -7,7 +7,7 @@ namespace OpenAuth.App.Request
     public class QuerySalesQuotationReq : PageReq
     {
         /// <summary>
-        /// 排序字段
+        /// 排序字段 更新日期：a.updatedate,单据：a.docentry，客户代码:a.cardcode,订单总金额：doctotal，销售员:a.slpcode
         /// </summary>
         public string SortName { get; set; }
         /// <summary>
@@ -50,7 +50,7 @@ namespace OpenAuth.App.Request
     public class CardCodeRequest : PageReq
     {
         /// <summary>
-        /// 排序字段
+        /// 排序字段 客户代码：a.cardcode,客户名称:a.cardname,销售员员：b.slpname,货币：a.currency，金额：a.balance
         /// </summary>
         public string SortName { get; set; }
         /// <summary>
