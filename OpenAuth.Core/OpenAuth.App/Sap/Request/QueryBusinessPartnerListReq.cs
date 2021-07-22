@@ -31,5 +31,13 @@ namespace OpenAuth.App.Sap.Request
         /// 收货地址
         /// </summary>
         public string Address { get; set; }
+        /// <summary>
+        /// 页面类型1.所有客户2.共享客户3.普通客户
+        /// </summary>
+        public int PageType { get; set; }
+        /// <summary>
+        /// 客户代码集合
+        /// </summary>
+        public List<string> CardCodes { get; set; }
     }
 }

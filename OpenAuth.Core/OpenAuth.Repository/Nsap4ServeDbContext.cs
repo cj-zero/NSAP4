@@ -49,7 +49,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<ServiceDailyReport> Servicedailyreports { get; set; }
 
         public virtual DbSet<ServiceDailyExpends> Servicedailyexpends { get; set; }
-
+        
         public virtual DbSet<DailyAttachment> Dailyattachments { get; set; }
         #region 报销
         public virtual DbSet<ReimburseAccommodationSubsidy> Reimburseaccommodationsubsidies { get; set; }
@@ -80,5 +80,8 @@ namespace OpenAuth.Repository
         public virtual DbSet<ReturnRepair> Returnrepairs { get; set; }
 
         public virtual DbSet<ServiceRedeploy> Serviceredeploys { get; set; }
+
+        public virtual DbSet<SharingPartner> SharingPartners { get; set; }
+        
     }
 }

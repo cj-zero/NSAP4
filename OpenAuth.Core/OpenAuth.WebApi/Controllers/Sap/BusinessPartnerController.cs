@@ -41,7 +41,7 @@ namespace OpenAuth.WebApi.Controllers.Sap
             var result = new TableData();
             try
             {
-                result = await _businessPartnerApp.Get(req);
+                result = await _businessPartnerApp.Load(req);
             }
             catch (Exception ex)
             {
@@ -142,6 +142,31 @@ namespace OpenAuth.WebApi.Controllers.Sap
         {
             TableData res = new TableData();
             res.Data = await _businessPartnerApp.GenerateQRCode(req);
+            return res;
+        }
+
+        /// <summary>
+        /// 转为共享伙伴
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> AddSharingPartner(QueryBusinessPartnerListReq req)
+        {
+            Response res = new Response();
+            await _businessPartnerApp.AddSharingPartner(req);
+            return res;
+        }
+        /// <summary>
+        /// 转为普通伙伴
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> DeleteSharingPartner(QueryBusinessPartnerListReq req)
+        {
+            Response res = new Response();
+            await _businessPartnerApp.DeleteSharingPartner(req);
             return res;
         }
     }

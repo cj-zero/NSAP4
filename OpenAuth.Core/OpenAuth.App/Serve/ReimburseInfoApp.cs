@@ -409,7 +409,7 @@ namespace OpenAuth.App
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.CreateUserId.Equals(loginUser.Id) && c.IsReimburse < 2).OrderByDescending(c => c.CreateTime).ToListAsync();
 
             var ServiceOrderids = CompletionReports.Select(c => c.ServiceOrderId).Distinct().ToList();
-            var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ServiceOrderids.Contains(s.Id) && s.VestInOrg<=1).Include(s => s.ServiceWorkOrders).ToListAsync();
+            var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ServiceOrderids.Contains(s.Id) && (s.VestInOrg==1 || s.VestInOrg == 3)).Include(s => s.ServiceWorkOrders).ToListAsync();
             List<ServiceOrder> ServiceOrderList = new List<ServiceOrder>();
             foreach (var item in ServiceOrders)
             {

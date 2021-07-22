@@ -29,22 +29,22 @@ namespace Sap.Handler.Service
         }
 
         [CapSubscribe("Serve.SellOrder.Create")]
-        public async Task HandleSellOrder(int theQuotationId)
+        public void HandleSellOrder(int theQuotationId)
         {
             StringBuilder allerror = new StringBuilder();
             int eCode;
             string eMesg;
             string docNum = string.Empty;
-            var quotation = await UnitWork.Find<Quotation>(q => q.Id.Equals(theQuotationId)).AsNoTracking()
-               .Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
-            var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(quotation.ServiceOrderId)).FirstOrDefaultAsync();
-            var oCPRs = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").ToListAsync();
+            var quotation =  UnitWork.Find<Quotation>(q => q.Id.Equals(theQuotationId)).AsNoTracking()
+               .Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).Include(q => q.QuotationMergeMaterials).FirstOrDefault();
+            var serviceOrder =  UnitWork.Find<ServiceOrder>(s => s.Id.Equals(quotation.ServiceOrderId)).FirstOrDefault();
+            var oCPRs =  UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").ToList();
             var oCPR = oCPRs.Where(o => o.Name.Equals(serviceOrder.NewestContacter)).FirstOrDefault() == null ? oCPRs.FirstOrDefault() : oCPRs.Where(o => o.Name.Equals(serviceOrder.NewestContacter)).FirstOrDefault();
-            var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(quotation.CreateUserId)).FirstOrDefaultAsync())?.NsapUserId;
-            var slpcode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
-            var ywy = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => o.SlpCode).FirstOrDefaultAsync();
+            var userId = ( UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(quotation.CreateUserId)).FirstOrDefault())?.NsapUserId;
+            var slpcode = ( UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefault())?.sale_id;
+            var ywy =  UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => o.SlpCode).FirstOrDefault();
             List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };
-            var categoryList = await UnitWork.Find<Category>(c => typeids.Contains(c.TypeId)).ToListAsync();
+            var categoryList =  UnitWork.Find<Category>(c => typeids.Contains(c.TypeId)).ToList();
             try
             {
                 if (quotation != null)
@@ -234,24 +234,14 @@ namespace Sap.Handler.Service
 
             if (!string.IsNullOrEmpty(docNum))
             {
-                //用信号量代替锁
-                await semaphoreSlim.WaitAsync();
-                try
+                //如果同步成功则修改SellOrder
+                UnitWork.Update<Quotation>(q => q.Id == quotation.Id, q => new Quotation
                 {
-                    //如果同步成功则修改SellOrder
-                    UnitWork.Update<Quotation>(q => q.Id == quotation.Id, q => new Quotation
-                    {
-                        SalesOrderId = int.Parse(docNum)
-                    });
-                    UnitWork.Save();
-                    Log.Logger.Debug($"反写4.0成功，SAP_ID：{docNum}", typeof(SellOrderSapHandler));
-                }
-                finally
-                {
-                    semaphoreSlim.Release();
-                    await HandleSellOrderERP(quotation.Id);
-                }
-                
+                    SalesOrderId = int.Parse(docNum)
+                });
+                UnitWork.Save();
+                Log.Logger.Debug($"反写4.0成功，SAP_ID：{docNum}", typeof(SellOrderSapHandler));
+                HandleSellOrderERP(quotation.Id).ConfigureAwait(false).GetAwaiter().GetResult();
                 Log.Logger.Warning($"同步成功，SAP_ID：{docNum}", typeof(SellOrderSapHandler));
             }
             if (!string.IsNullOrWhiteSpace(allerror.ToString()))

@@ -763,6 +763,13 @@ namespace OpenAuth.App
             {
                 s.SubmitDate = DateTime.Now;
                 s.SubmitUserId = loginContext.User.Id;
+                if (req.IsSend != null && (bool)req.IsSend) 
+                {
+                    s.CurrentUser = loginContext.User.Name;
+                    s.CurrentUserId = AppUserId;
+                    s.CurrentUserNsapId = loginContext.User.Id;
+                    s.Status = 2;
+                }
                 #region 问题类型是其他的子类型直接分配给售后主管
                 //if (!string.IsNullOrEmpty(s.ProblemTypeId))
                 //{
@@ -796,7 +803,7 @@ namespace OpenAuth.App
 
             var MaterialType = string.Join(",", obj.ServiceWorkOrders.Select(s => s.MaterialCode == "无序列号" ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-"))).Distinct().ToArray());
 
-            await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"客服:{loginContext.User.Name}创建服务单", ActionType = "创建服务单", ServiceOrderId = e.Id, MaterialType = MaterialType });
+            await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"用户:{loginContext.User.Name}创建服务单", ActionType = "创建服务单", ServiceOrderId = e.Id, MaterialType = MaterialType });
             #region 同步到SAP 并拿到服务单主键
 
             _capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
@@ -917,6 +924,78 @@ namespace OpenAuth.App
             await UnitWork.SaveAsync();
 
             await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"工程部:{loginUser.Name}创建服务单", ActionType = "创建服务单", ServiceOrderId = e.Id });
+            #region 同步到SAP 并拿到服务单主键
+            _capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
+            #endregion
+        }
+        /// <summary>
+        /// 新建行政单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task CreateAdministrativeOrder(CustomerServiceAgentCreateOrderReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            if (loginUser.Account == Define.USERAPP && req.AppUserId != null)
+            {
+                var userid = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(req.AppUserId)).Select(u => u.UserID).FirstOrDefaultAsync();
+                if (userid == null)
+                {
+                    throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+                }
+                loginUser = await UnitWork.Find<User>(u => u.Id.Equals(userid)).FirstOrDefaultAsync();
+            }
+            var d = await _businessPartnerApp.GetDetails(req.CustomerId.ToUpper());
+            var obj = req.MapTo<ServiceOrder>();
+            obj.CustomerId = req.CustomerId.ToUpper();
+            obj.TerminalCustomerId = req.TerminalCustomerId.ToUpper();
+            obj.RecepUserName = loginUser.Name;
+            obj.RecepUserId = loginUser.Id;
+            obj.CreateUserId = loginUser.Id;
+            obj.Status = 2;
+            obj.SalesMan = d.SlpName;
+            obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
+            obj.VestInOrg = 3;
+            obj.Supervisor = req.Supervisor;
+            obj.NewestContacter = loginUser.Name;
+            obj.Contacter = loginUser.Name;
+            obj.Supervisor = d.TechName;
+            obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(req.Supervisor)))?.Id;
+            if (string.IsNullOrWhiteSpace(obj.NewestContacter) && string.IsNullOrWhiteSpace(obj.NewestContactTel))
+            {
+                obj.NewestContacter = obj.Contacter;
+                obj.NewestContactTel = obj.ContactTel;
+            }
+            var AppUserId = req.AppUserId;
+            if (req.AppUserId == null)
+            {
+                AppUserId = await UnitWork.Find<AppUserMap>(s => s.UserID == loginUser.Id).Select(s => s.AppUserId).FirstOrDefaultAsync();
+            }
+            obj.ServiceWorkOrders.ForEach(s =>
+            {
+                s.SubmitDate = DateTime.Now;
+                s.SubmitUserId = loginUser.Id;
+                s.Status = 2;
+                s.CurrentUserNsapId = loginUser.Id;
+                s.CurrentUserId = AppUserId;
+                s.FromType = 1;
+                s.FeeType = 1;
+                s.CurrentUser = loginUser.Name;
+                s.OrderTakeType = 1;
+            });
+            var e = await UnitWork.AddAsync<ServiceOrder, int>(obj);
+            await UnitWork.SaveAsync();
+            var pictures = req.Pictures.MapToList<ServiceOrderPicture>();
+            pictures.ForEach(p => { p.ServiceOrderId = e.Id; p.PictureType = p.PictureType == 3 ? 3 : 2; });
+            await UnitWork.BatchAddAsync(pictures.ToArray());
+            await UnitWork.SaveAsync();
+
+            await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"用户:{loginUser.Name}创建服务单", ActionType = "创建服务单", ServiceOrderId = e.Id });
             #region 同步到SAP 并拿到服务单主键
             _capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
             #endregion
