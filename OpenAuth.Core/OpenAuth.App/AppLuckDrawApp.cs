@@ -42,7 +42,7 @@ namespace OpenAuth.App
             var allRepaorList = await (from a in UnitWork.Find<ServiceWorkOrder>(null)
                                        join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id
                                        where b.FromId == 6 && b.Status == 2 && a.Status >= 2
-                                       && a.CreateTime >= Mon && a.CreateTime <= Sun && a.ManufacturerSerialNumber!="无序列号" && b.FromAppUserId!=null
+                                       && a.CreateTime >= Mon && a.CreateTime <= Sun && a.ManufacturerSerialNumber!="无序列号" && b.VestInOrg==1 && b.FromAppUserId!=null
                                        select new { a.ManufacturerSerialNumber, a.ServiceOrderId, b.U_SAP_ID, b.FromAppUserId }).ToListAsync();
             var ListSn = allRepaorList.GroupBy(c => c.ManufacturerSerialNumber).Select(c => c.Key).ToList();
             for (int i = 0; i < ListSn.Count; i++)
