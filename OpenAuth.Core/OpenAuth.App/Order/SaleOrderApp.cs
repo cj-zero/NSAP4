@@ -1,5 +1,7 @@
-﻿using OpenAuth.App.Order.Request;
+﻿using Infrastructure.Extensions;
+using OpenAuth.App.Order.Request;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.NsapBone;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +11,7 @@ namespace OpenAuth.App.Order
 {
     public partial class ServiceSaleOrderApp
     {
+        #region 商城订单审核流程
         /// <summary>
         /// 添加订单流程
         /// </summary>
@@ -157,5 +160,186 @@ namespace OpenAuth.App.Order
                 return Eshop_AddOrderStatusFlow(wfaEshopStatus);
             }
         }
+        #endregion
+
+        #region 根据销售报价单下销售订单
+        /// <summary>
+        /// 根据销售报价单下销售订单
+        /// </summary>
+        /// <param name="orderReq"></param>
+        /// <returns></returns>
+        public string SalesOrderSave_ORDR(AddOrUpdateOrderReq orderReq)
+        {
+            int UserID = _serviceBaseApp.GetUserNaspId();
+            string result = "";
+            string className = "NSAP.B1Api.BOneORDR";
+            string jobname = "";
+            string funcId = "0";
+            byte[] job_data = ByteExtension.ToSerialize(orderReq.Order);
+            #region 售后人员(部门名称“售后”开头）下的销售订单如果没有设备（物料编号C开头),则审批流程改成呼叫中心审批
+            bool shslp = false; bool shc = false;
+            //判断销售员是否是售后部门
+            if (!string.IsNullOrEmpty(orderReq.Order.SlpCode))
+            {
+                string depnm = _serviceBaseApp.GetSalesDepname(orderReq.Order.SlpCode, orderReq.Order.SboId);
+                if (depnm.IndexOf("售后") == 0)
+                {
+                    shslp = true;
+                }
+            }
+            //判断销售明细里面物料是否存在设备
+            foreach (OrderDetails orderDetails in orderReq.Order.billSalesDetails)
+            {
+                if (!string.IsNullOrEmpty(orderDetails.ItemCode))
+                {
+                    if (orderDetails.ItemCode.StartsWith("C", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        shc = true;
+                        break;
+                    }
+                }
+            }
+            if (shslp && !shc)
+            {
+                jobname = "售后订单";
+                funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesOrder_AfterSale.aspx", UserID).ToString();
+            }
+            #endregion
+            int FuncID = int.Parse(funcId);
+            int basetype = int.Parse(orderReq.Order.billBaseType);
+            if (!string.IsNullOrEmpty(orderReq.Order.U_EshopNo))
+            {
+                basetype = -2;//商城订单统一基本类别 方便审批列表标识出来
+            }
+            if (orderReq.Ations == OrderAtion.Draft)
+            {
+                result = OrderWorkflowBuild(jobname, FuncID, UserID, job_data, orderReq.Order.Remark, int.Parse(orderReq.Order.SboId), orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), int.Parse(orderReq.Order.billBaseType), int.Parse(orderReq.Order.billBaseEntry), "BOneAPI", className);
+            }
+            if (orderReq.Ations == OrderAtion.Submit)
+            {
+                result = OrderWorkflowBuild(jobname, FuncID, UserID, job_data, orderReq.Order.Remark, int.Parse(orderReq.Order.SboId), orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), basetype, int.Parse(orderReq.Order.billBaseEntry), "BOneAPI", className);
+                if (int.Parse(result) > 0)
+                {
+                    var par = SaveJobPara(result, orderReq.IsTemplate);
+                    if (par)
+                    {
+                        string _jobID = result;
+                        if ("0" != WorkflowSubmit(int.Parse(result), UserID, orderReq.Order.Remark, "", 0))
+                        {
+                            result = SaveProOrder(orderReq.Order, int.Parse(_jobID)).ToString();
+                            if (orderReq.Order.serialNumber.Count > 0)
+                            {
+                                if (UpdateSerialNumber(orderReq.Order.serialNumber, int.Parse(_jobID))) { result = "1"; }
+                            }
+                        }
+                        else { result = "0"; }
+                    }
+                    else { result = "0"; }
+                }
+            }
+            if (orderReq.Ations == OrderAtion.Resubmit)
+            {
+                result = WorkflowSubmit(orderReq.JobId, UserID, orderReq.Order.Remark, "", 0);
+            }
+            return result;
+        }
+        public int SaveProOrder(SaleOrder Model, int jobid)
+        {
+            string SaleOrder = "0";
+            string sfileCpbm = "";
+            string sNum = "";
+            string sTp = "";
+            int bresult = 0;
+            foreach (var item in Model.billSalesDetails)
+            {
+                sfileCpbm += item.ItemCode.Replace('★', '"') + ",";
+                sNum += item.Quantity + ",";
+                if (item.U_TDS == "0" && item.U_DL == "0")
+                {
+                    sTp += "0" + ",";
+                }
+                else
+                {
+                    sTp += "2" + ",";
+                }
+            }
+
+            if (sfileCpbm != "" && sNum != "")
+            {
+                sfileCpbm = sfileCpbm.TrimEnd(',');
+                sNum = sNum.TrimEnd(',');
+                sTp = sTp.TrimEnd(',');
+                bresult = WorkOrderJob(Model.SboId, jobid, "0", sfileCpbm, SaleOrder, sNum, Model.WhsCode, sTp) ? 1 : 0;
+            }
+            else
+            {
+                bresult = 1;
+            }
+            return bresult;
+        }
+        //修改已选择序列号状态
+        public bool UpdateSerialNumber(IList<SerialNumber> serialNumbers, int submitjobid)
+        {
+            try
+            {
+                foreach (SerialNumber item in serialNumbers)
+                {
+                    List<store_osrn_alreadyexists> list = new List<store_osrn_alreadyexists>();
+                    foreach (SerialNumberChooseItem serial in item.Details)
+                    {
+                        store_osrn_alreadyexists storeOsrn = new store_osrn_alreadyexists();
+                        storeOsrn.ItemCode = item.ItemCode;
+                        storeOsrn.SysNumber = int.Parse(serial.SysSerial);
+                        storeOsrn.DistNumber = serial.IntrSerial;
+                        storeOsrn.MnfSerial = serial.SuppSerial;
+                        storeOsrn.IsChange = "1";
+                        storeOsrn.JobId = submitjobid;
+                        UnitWork.Add<store_osrn_alreadyexists, string>(storeOsrn);
+                    }
+                }
+                UnitWork.Save();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public bool WorkOrderJob(string sbo_id, int jobID, string proNum, string sfileCpbm, string jobidNew, string sNum, string WhsCode, string sTp)
+        {
+            try
+            {
+                store_drawing_job wfaEshopStatus = UnitWork.FindSingle<store_drawing_job>(zw => zw.job_idMe == jobID && zw.Typeid == 3 && zw.SalesId == int.Parse(jobidNew));
+                UnitWork.Delete<store_drawing_job>(wfaEshopStatus);
+                string[] itemcode = sfileCpbm.Split(',');
+                string[] projhsl = sNum.Split(',');
+                string[] _sTp = sTp.Split(',');
+                for (int i = 0; i < itemcode.Length; i++)
+                {
+                    store_drawing_job storeDrawingJob = new store_drawing_job()
+                    {
+                        sbo_id = int.Parse(sbo_id),
+                        job_idMe = jobID,
+                        productNum = int.Parse(proNum),
+                        itemcode = itemcode[i].Replace("\"", "\\\"").Replace("\'", "\\\'"),
+                        SalesId = int.Parse(jobidNew),
+                        projhsl = projhsl[i],
+                        WhsCode = WhsCode,
+                        Typeid = 3,
+                        TypeTP = int.Parse(_sTp[i]),
+                        upd_date = DateTime.Now
+                    };
+                    UnitWork.Add<store_drawing_job, int>(storeDrawingJob);
+                }
+                UnitWork.Save();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+        #endregion
     }
 }

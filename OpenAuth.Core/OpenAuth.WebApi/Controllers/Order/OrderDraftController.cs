@@ -2,8 +2,6 @@
 using Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using NPOI.OpenXml4Net.OPC.Internal;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Order;
@@ -11,7 +9,6 @@ using OpenAuth.App.Order.Request;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository;
-using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 using Serilog;
 using System;
@@ -42,6 +39,119 @@ namespace OpenAuth.WebApi.Controllers.Order
             _serviceSaleOrderApp = serviceSaleOrderApp;
         }
         /// <summary>
+        /// 获取业务伙伴账款
+        /// </summary>
+        /// <param name="cardCode">客户代码</param>
+        /// <param name="slpCode"></param>
+        /// <param name="type">C</param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("sumbaldue")]
+        public async Task<Response<CardInfoDto>> SumBalDue(string cardCode, string slpCode, string type = "C")
+        {
+            var result = new Response<CardInfoDto>();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            var depId = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT dep_id value FROM base_user_detail WHERE user_id = {userId}", CommandType.Text, null).FirstOrDefault();
+            string balstr = "";
+            decimal BalDue = 0;
+            decimal Total = 0;
+            DataTable sbotable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, "SELECT sbo_id AS id,sbo_nm AS name FROM nsap_base.sbo_info;", CommandType.Text, null);
+            sbotable.Columns.Add("BalSboAmount", typeof(decimal));
+            foreach (DataRow sborow in sbotable.Rows)
+            {
+                DataTable baltable = new DataTable();
+                if (!string.IsNullOrEmpty(slpCode))
+                {
+                    //baltable = NSAP.Data.Sales.BillDelivery.GetSalesSboBalPercent(slpCode, type, sborow["id"].ToString());
+                    //if (baltable.Rows.Count > 0)
+                    //{
+                    //    decimal tempDue = 0, tempTotal = 0;
+                    //    if (!string.IsNullOrEmpty(baltable.Rows[0]["BalDue"].ToString()) && decimal.TryParse(baltable.Rows[0]["BalDue"].ToString(), out tempDue))
+                    //    {
+                    //        BalDue += tempDue;
+                    //    }
+                    //    if (!string.IsNullOrEmpty(baltable.Rows[0]["Total"].ToString()) && decimal.TryParse(baltable.Rows[0]["Total"].ToString(), out tempTotal))
+                    //    {
+                    //        Total += tempTotal;
+                    //    }
+                    //    sborow["BalSboAmount"] = tempDue.ToString("#0.00");
+                    //}
+                }
+                else if (!string.IsNullOrEmpty(cardCode))
+                {
+                    baltable = null;//NSAP.Data.Client.ClientInfo.GetClientSboBalPercent(cardCode, sborow["id"].ToString());
+                    if (baltable.Rows.Count > 0)
+                    {
+                        decimal tempBalance = 0, tempINVtotal = 0, tempRINtotal = 0;
+                        if (!string.IsNullOrEmpty(baltable.Rows[0]["Balance"].ToString()) && decimal.TryParse(baltable.Rows[0]["Balance"].ToString(), out tempBalance))
+                        {
+                            BalDue += tempBalance;
+                        }
+                        if (!string.IsNullOrEmpty(baltable.Rows[0]["INVtotal"].ToString()) && decimal.TryParse(baltable.Rows[0]["INVtotal"].ToString(), out tempINVtotal))
+                        {
+                            Total += tempINVtotal;
+                        }
+                        if (!string.IsNullOrEmpty(baltable.Rows[0]["RINtotal"].ToString()) && decimal.TryParse(baltable.Rows[0]["RINtotal"].ToString(), out tempRINtotal))
+                        {
+                            Total -= tempRINtotal;
+                        }
+
+                        sborow["BalSboAmount"] = tempBalance.ToString("#0.00");
+                    }
+                }
+            }
+            //当前账套金额
+            decimal due90 = 0; decimal total90 = 0;
+            DataTable curbaltab = null;//NSAP.Data.Client.ClientInfo.GetClientSboBalPercent(cardCode, SboId.ToString());
+            decimal sboBalance = 0, rctBalance90 = 0, invBalance90 = 0, rinBalance90 = 0, invTotal90P = 0, invBalance90P = 0, rctBalance90P = 0, rinBalance90P = 0;
+            if (!string.IsNullOrEmpty(curbaltab.Rows[0]["Balance"].ToString()) && decimal.TryParse(curbaltab.Rows[0]["Balance"].ToString(), out sboBalance))
+            {
+                due90 += sboBalance;
+            }
+            if (!string.IsNullOrEmpty(curbaltab.Rows[0]["RCTBal90"].ToString()) && decimal.TryParse(curbaltab.Rows[0]["RCTBal90"].ToString(), out rctBalance90))
+            {
+                due90 += rctBalance90;
+            }
+            if (!string.IsNullOrEmpty(curbaltab.Rows[0]["INVBal90"].ToString()) && decimal.TryParse(curbaltab.Rows[0]["INVBal90"].ToString(), out invBalance90))
+            {
+                due90 -= invBalance90;
+            }
+            if (!string.IsNullOrEmpty(curbaltab.Rows[0]["RINBal90"].ToString()) && decimal.TryParse(curbaltab.Rows[0]["RINBal90"].ToString(), out rinBalance90))
+            {
+                due90 += rinBalance90;
+            }
+            if (!string.IsNullOrEmpty(curbaltab.Rows[0]["INVTotal90P"].ToString()) && decimal.TryParse(curbaltab.Rows[0]["INVTotal90P"].ToString(), out invTotal90P))
+            {
+                total90 += invTotal90P;
+            }
+           // balstr = "[{\"BalDue\":\"" + BalDue.ToString("#0.00").FilterString() + "\",\"Total\":\"" + Total.ToString("#0.00").FilterString() + "\",\"BalSboDetails\":" + sbotable.DataTableToJSON() + ",\"Due90\":\"" + due90.ToString("#0.00").FilterString() + "\",\"Total90\":\"" + total90.ToString("#0.00").FilterString() + "\"}]";
+            return result;
+        }
+        /// <summary>
+        /// 业务伙伴联系人
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("cardcontacts")]
+        public async Task<Response<List<DropDownOption>>> CardContacts(string code, int sboId)
+        {
+            var result = new Response<List<DropDownOption>>();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            int billSboId = 0;
+            if (sboId == sboid || sboId == 0)
+            {
+                billSboId = sboid;
+            }
+            else
+            {
+                billSboId = sboId;
+            }
+            result.Result = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@"	SELECT b.CntctCode AS id,b.Name AS name FROM  nsap_bone.crm_ocrd a LEFT JOIN  nsap_bone.crm_ocpr b ON a.CardCode=b.CardCode and a.sbo_id=b.sbo_id WHERE a.CardCode='{code}' and a.sbo_id={billSboId} ", CommandType.Text, null);
+            return result;
+        }
+        /// <summary>
         /// 获取账套数据
         /// </summary>
         /// <returns></returns>
@@ -51,6 +161,46 @@ namespace OpenAuth.WebApi.Controllers.Order
         {
             var result = new Response<List<SboInfoDto>>();
             result.Result = UnitWork.ExcuteSql<SboInfoDto>(ContextType.NsapBaseDbContext, "SELECT sbo_id AS id,sbo_nm AS name FROM nsap_base.sbo_info;", CommandType.Text, null).OrderBy(s => s.Id).ToList();
+            return result;
+        }
+        /// <summary>
+        /// 获取客户代码详细数据
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("cardinfo")]
+        public async Task<Response<CardInfoDto>> CardInfo(string cardCode, int sboId)
+        {
+            var result = new Response<CardInfoDto>();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            var depId = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT dep_id value FROM base_user_detail WHERE user_id = {userId}", CommandType.Text, null).FirstOrDefault();
+            bool isSql = true;
+            if (sboId == sboid || sboId == 0)
+            {
+                sboId = sboid;
+            }
+            else
+            {
+                isSql = false;
+            }
+            var powerList = UnitWork.ExcuteSql<PowerDto>(ContextType.NsapBaseDbContext, $@"SELECT a.func_id funcID,b.page_url pageUrl,a.auth_map authMap FROM (SELECT a.func_id,a.page_id,b.auth_map FROM nsap_base.base_func a INNER JOIN (SELECT t.func_id,BIT_OR(t.auth_map) auth_map FROM (SELECT func_id,BIT_OR(auth_map) auth_map FROM nsap_base.base_role_func WHERE role_id IN (SELECT role_id FROM nsap_base.base_user_role WHERE user_id={userId}) GROUP BY func_id UNION ALL SELECT func_id,auth_map FROM nsap_base.base_user_func WHERE user_id={userId}) t GROUP BY t.func_id) b ON a.func_id=b.func_id) AS a INNER JOIN nsap_base.base_page AS b ON a.page_id=b.page_id", CommandType.Text, null);
+            bool viewFull = false;
+            bool viewSelf = false;
+            bool viewSelfDepartment = false;
+            bool viewSales = false;
+            bool viewCustom = false;
+            var power = powerList.FirstOrDefault(s => s.PageUrl == "sales/SalesQuotation.aspx");
+            if (power != null)
+            {
+                Powers powers = new Powers(power.AuthMap);
+                viewFull = powers.ViewFull;
+                viewSelf = powers.ViewSelf;
+                viewSelfDepartment = powers.ViewSelfDepartment;
+                viewSales = powers.ViewSales;
+                viewCustom = powers.ViewCustom;
+            }
+            result.Result = _serviceSaleOrderApp.CardInfo(cardCode, sboId, isSql, viewSelf, viewSelfDepartment, viewFull, userId, Convert.ToInt32(depId.Value));
             return result;
         }
         /// <summary>
@@ -86,7 +236,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        [Route("InvoiceTypeinfo")]
+        [Route("invoicetypeinfo")]
         public async Task<Response<List<DropDownOption>>> InvoiceTypeInfo()
         {
             var result = new Response<List<DropDownOption>>();
@@ -141,9 +291,9 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <summary>
         /// 业务伙伴列表
         /// </summary>
-        [HttpGet]
+        [HttpPost]
         [Route("cardcodeview")]
-        public async Task<TableData> LoadCardCodeViewAsync([FromQuery] CardCodeRequest request)
+        public async Task<TableData> LoadCardCodeViewAsync(CardCodeRequest request)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -303,9 +453,9 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <summary>
         /// 加载销售报价单列表
         /// </summary>pp
-        [HttpGet]
+        [HttpPost]
         [Route("sales")]
-        public async Task<TableData> LoadAsync([FromQuery] QuerySalesQuotationReq request)
+        public async Task<TableData> LoadAsync(QuerySalesQuotationReq request)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)

@@ -80,5 +80,28 @@ namespace OpenAuth.App
             }
             return sboID;
         }
+        #region 获取销售员所属部门
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="slpCode"></param>
+        /// <param name="sboId"></param>
+        /// <returns></returns>
+        public string GetSalesDepname(string slpCode, string sboId)
+        {
+            string depName = "";
+            string sql = string.Format(@"SELECT c.dep_nm FROM
+                                            nsap_base.sbo_user a 
+                                            LEFT JOIN nsap_base.base_user_detail b ON a.user_id=b.user_id 
+                                            LEFT JOIN nsap_base.base_dep c ON c.dep_id=b.dep_id
+                                            WHERE a.sale_id={0} AND a.sbo_id ={1} limit 1 ;", slpCode, sboId);
+            DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
+            if (dataTable != null && dataTable.Rows.Count > 0)
+            {
+                depName = dataTable.Rows[0][0].ToString();
+            }
+            return depName;
+        }
+        #endregion
     }
 }
