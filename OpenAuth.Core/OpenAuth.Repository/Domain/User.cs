@@ -110,6 +110,6 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// Nasp ID
         /// </summary>
-        public int User_Id { get; set; }
+        public int? User_Id { get; set; }
     }
 }

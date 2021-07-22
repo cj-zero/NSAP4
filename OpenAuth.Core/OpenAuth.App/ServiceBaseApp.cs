@@ -53,7 +53,7 @@ namespace OpenAuth.App
         public int GetUserNaspId()
         {
             var loginContext = _auth.GetCurrentUser();
-            return loginContext.User.User_Id;
+            return Convert.ToInt32(loginContext.User.User_Id);
         }
         /// <summary>
         /// 获取sboId
