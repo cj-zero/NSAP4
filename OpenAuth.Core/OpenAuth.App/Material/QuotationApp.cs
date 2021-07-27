@@ -96,7 +96,7 @@ namespace OpenAuth.App.Material
                                 Quotations = Quotations.Where(q => q.QuotationStatus >= 3.1M);
                                 break;
                         }
-                        ServiceOrderids = await UnitWork.Find<ServiceOrder>(null).Where(q => q.SalesManId.Equals(loginContext.User.Id)).Select(s => s.Id).ToListAsync();
+                        ServiceOrderids = await UnitWork.Find<ServiceOrder>(null).Where(q => q.SalesManId.Equals(loginContext.User.Id)).WhereIf(ServiceOrderids.Count() > 0, s => ServiceOrderids.Contains(s.Id)).Select(s => s.Id).ToListAsync();
                         Quotations = Quotations.Where(q => ServiceOrderids.Contains(q.ServiceOrderId));
                     }
                     else if (loginContext.Roles.Any(r => r.Name.Equals("物料工程审批")))
@@ -1293,27 +1293,45 @@ namespace OpenAuth.App.Material
             List<QuotationMaterial> QuotationMaterials = new List<QuotationMaterial>();
             QuotationObj.QuotationProducts.ToList().ForEach(q => QuotationMaterials.AddRange(q.QuotationMaterials));
 
-            var MaterialsT = from a in QuotationMaterials
-                             group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.SalesPrice, a.UnitPrice, a.Discount, a.MaterialType, a.DiscountPrices, a.WhsCode } into g
-                             select new QueryQuotationMergeMaterialListReq
-                             {
-                                 MaterialCode = g.Key.MaterialCode,
-                                 MaterialDescription = g.Key.MaterialDescription,
-                                 Unit = g.Key.Unit,
-                                 SalesPrice = g.Key.SalesPrice,
-                                 CostPrice = g.Key.UnitPrice,
-                                 Count = g.Sum(a => a.Count),
-                                 TotalPrice = (g.Key.DiscountPrices * g.Sum(a => a.Count)),
-                                 IsProtected = QuotationObj.IsMaterialType==2? false : true,
-                                 QuotationId = QuotationObj.Id,
-                                 Margin = (g.Key.DiscountPrices * g.Sum(a => a.Count)) - (g.Key.UnitPrice * g.Sum(a => a.Count)),
-                                 Discount = g.Key.Discount,
-                                 SentQuantity = 0,
-                                 MaterialType = (int)g.Key.MaterialType,
-                                 DiscountPrices = g.Key.DiscountPrices,
-                                 WhsCode = g.Key.WhsCode
-                             };
-
+            //var MaterialsT = from a in QuotationMaterials
+            //                 group a by new { a.MaterialCode, a.MaterialDescription, a.Unit, a.SalesPrice, a.UnitPrice, a.Discount, a.MaterialType, a.DiscountPrices, a.WhsCode } into g
+            //                 select new QueryQuotationMergeMaterialListReq
+            //                 {
+            //                     MaterialCode = g.Key.MaterialCode,
+            //                     MaterialDescription = g.Key.MaterialDescription,
+            //                     Unit = g.Key.Unit,
+            //                     SalesPrice = g.Key.SalesPrice,
+            //                     CostPrice = g.Key.UnitPrice,
+            //                     Count = g.Sum(a => a.Count),
+            //                     TotalPrice = (g.Key.DiscountPrices * g.Sum(a => a.Count)),
+            //                     IsProtected = QuotationObj.IsMaterialType==2? false : true,
+            //                     QuotationId = QuotationObj.Id,
+            //                     Margin = (g.Key.DiscountPrices * g.Sum(a => a.Count)) - (g.Key.UnitPrice * g.Sum(a => a.Count)),
+            //                     Discount = g.Key.Discount,
+            //                     SentQuantity = 0,
+            //                     MaterialType = (int)g.Key.MaterialType,
+            //                     DiscountPrices = g.Key.DiscountPrices,
+            //                     WhsCode = g.Key.WhsCode
+            //                 };
+            var quotationMaterialsList = QuotationMaterials.GroupBy(q => new { q.MaterialCode, q.MaterialDescription, q.Unit, q.MaterialType, q.DiscountPrices, q.WhsCode }).Select(q => new { mergeMaterial = q.First(), count = q.Sum(s => s.Count) }).ToList();
+            var MaterialsT = quotationMaterialsList.Select(q => new QueryQuotationMergeMaterialListReq
+            {
+                MaterialCode = q.mergeMaterial.MaterialCode,
+                MaterialDescription = q.mergeMaterial.MaterialDescription,
+                Unit = q.mergeMaterial.Unit,
+                SalesPrice = q.mergeMaterial.SalesPrice,
+                CostPrice = q.mergeMaterial.UnitPrice,
+                Count = q.count,
+                TotalPrice = (q.mergeMaterial.DiscountPrices * q.count),
+                IsProtected = QuotationObj.IsMaterialType == 2 ? false : true,
+                QuotationId = QuotationObj.Id,
+                Margin = (q.mergeMaterial.DiscountPrices * q.count) - (q.mergeMaterial.UnitPrice * q.count),
+                Discount = q.mergeMaterial.Discount,
+                SentQuantity = 0,
+                MaterialType = (int)q.mergeMaterial.MaterialType,
+                DiscountPrices = q.mergeMaterial.DiscountPrices,
+                WhsCode = q.mergeMaterial.WhsCode
+            });
             var QuotationMergeMaterialList = MaterialsT.ToList();
 
             if ((QuotationObj.ServiceChargeJH != null && QuotationObj.ServiceChargeJH > 0) || (QuotationObj.ServiceChargeJHCost != null && QuotationObj.ServiceChargeJHCost > 0))
