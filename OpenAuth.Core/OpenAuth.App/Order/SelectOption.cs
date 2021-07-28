@@ -26,4 +26,8 @@ namespace OpenAuth.App.Order
         /// </summary>
         public object Name { get; set; }
     }
+    public class CountDto
+    {
+        public int Count { get; set; }
+    }
 }
