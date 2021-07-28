@@ -1074,7 +1074,7 @@ namespace OpenAuth.App.Material
                             TotalMoney = QuotationObj.TotalMoney,
                             Petitioner = loginUser.Name,
                             SourceNumbers = QuotationObj.Id,
-                            PetitionerId= loginUser.Id,
+                            PetitionerId = loginUser.Id,
                         });
                         await UnitWork.SaveAsync();
                     }
@@ -1199,7 +1199,7 @@ namespace OpenAuth.App.Material
 
                             #endregion
                         }
-                        else 
+                        else
                         {
                             await _flowInstanceApp.Start(new StartFlowInstanceReq { FlowInstanceId = QuotationObj.FlowInstanceId });
                         }
@@ -1266,7 +1266,7 @@ namespace OpenAuth.App.Material
                             TotalMoney = QuotationObj.TotalMoney,
                             Petitioner = loginUser.Name,
                             SourceNumbers = QuotationObj.Id,
-                            PetitionerId=loginUser.Id,
+                            PetitionerId = loginUser.Id,
                         });
                         await UnitWork.SaveAsync();
 
@@ -1347,7 +1347,7 @@ namespace OpenAuth.App.Material
                     TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeJH * QuotationObj.ServiceChargeManHourJH).ToString("#0.00")),
                     IsProtected = QuotationObj.IsMaterialType == 2 ? false : true,
                     QuotationId = QuotationObj.Id,
-                    Margin = QuotationObj.ServiceChargeJH !=null && QuotationObj.ServiceChargeJH>0? QuotationObj.ServiceChargeJH* QuotationObj.ServiceChargeManHourJH : -(QuotationObj.ServiceChargeManHourJH* QuotationObj.ServiceChargeJHCost),
+                    Margin = QuotationObj.ServiceChargeJH != null && QuotationObj.ServiceChargeJH > 0 ? QuotationObj.ServiceChargeJH * QuotationObj.ServiceChargeManHourJH : -(QuotationObj.ServiceChargeManHourJH * QuotationObj.ServiceChargeJHCost),
                     Discount = 100,
                     SentQuantity = 0,
                     MaterialType = 2,
@@ -1389,7 +1389,7 @@ namespace OpenAuth.App.Material
                     TotalPrice = Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00")),
                     IsProtected = QuotationObj.IsMaterialType == 2 ? false : true,
                     QuotationId = QuotationObj.Id,
-                    Margin = QuotationObj.TravelExpense!=null && QuotationObj.TravelExpense>0? QuotationObj.TravelExpense* QuotationObj.TravelExpenseManHour: -(QuotationObj.TravelExpenseManHour* QuotationObj.TravelExpenseCost),
+                    Margin = QuotationObj.TravelExpense != null && QuotationObj.TravelExpense > 0 ? QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour : -(QuotationObj.TravelExpenseManHour * QuotationObj.TravelExpenseCost),
                     Discount = 100,
                     SentQuantity = 0,
                     MaterialType = 2,
@@ -1415,7 +1415,7 @@ namespace OpenAuth.App.Material
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var quotationObj = await UnitWork.Find<Quotation>(q => q.Id == QuotationId && q.QuotationStatus <= 5).FirstOrDefaultAsync();
-            if (quotationObj ==null)
+            if (quotationObj == null)
             {
                 throw new Exception("该报价单状态不可撤销。");
             }
@@ -1436,7 +1436,7 @@ namespace OpenAuth.App.Material
             qoh.ApprovalStage = "2";
             qoh.IntervalTime = selqoh != null ? Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds) : 0;
             await UnitWork.AddAsync<QuotationOperationHistory>(qoh);
-            if (!string.IsNullOrWhiteSpace(quotationObj.FlowInstanceId)) 
+            if (!string.IsNullOrWhiteSpace(quotationObj.FlowInstanceId))
             {
                 await _flowInstanceApp.ReCall(new RecallFlowInstanceReq { FlowInstanceId = quotationObj.FlowInstanceId });
             }
@@ -1559,12 +1559,12 @@ namespace OpenAuth.App.Material
                     Expressages.ForEach(e => LogisticsRecords.AddRange(e.LogisticsRecords));
                     var QuotationMergeMaterialLists = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(obj.ExpressageReqs.QuotationId)).ToListAsync();
                     #region 写入sap和反写记录
-                   
+
 
                     int isEXwarehouse = QuotationMergeMaterialLists.Where(q => q.SentQuantity != q.Count).Count();
                     List<QuotationOperationHistory> qoh = new List<QuotationOperationHistory>();
                     var selqoh = await UnitWork.Find<QuotationOperationHistory>(r => r.QuotationId.Equals(obj.ExpressageReqs.QuotationId)).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
-                    
+
                     if (selqoh.ApprovalStage != "12")
                     {
                         qoh.Add(new QuotationOperationHistory
@@ -1748,7 +1748,7 @@ namespace OpenAuth.App.Material
                     VerificationFinally = "3",
                     VerificationOpinion = req.Remark,
                 };
-                if (!string.IsNullOrWhiteSpace(obj.FlowInstanceId)) 
+                if (!string.IsNullOrWhiteSpace(obj.FlowInstanceId))
                 {
                     await _flowInstanceApp.Verification(VerificationReqModle);
                 }
@@ -1835,7 +1835,7 @@ namespace OpenAuth.App.Material
                 {
                     throw new Exception("暂无审批该流程权限，不可审批");
                 }
-                
+
                 if (req.IsTentative == true)
                 {
                     obj.QuotationStatus = decimal.Parse(qoh.ApprovalStage);
@@ -1858,10 +1858,15 @@ namespace OpenAuth.App.Material
                         await _flowInstanceApp.Verification(VerificationReqModle);
                     }
                 }
-                
+
             }
-            obj.UpDateTime = DateTime.Now;
-            await UnitWork.UpdateAsync<Quotation>(obj);
+            await UnitWork.UpdateAsync<Quotation>(q => q.Id == obj.Id, q => new Quotation
+            {
+                UpDateTime = DateTime.Now,
+                Tentative=obj.Tentative,
+                QuotationStatus=obj.QuotationStatus,
+                Status=obj.Status,
+            });
             if (req.PictureIds != null && req.PictureIds.Count > 0)
             {
                 List<QuotationPicture> QuotationPictures = new List<QuotationPicture>();
@@ -2092,11 +2097,11 @@ namespace OpenAuth.App.Material
             {
                 QuotationObj.ServiceChargeJH = 0;
             }
-            else 
+            else
             {
                 QuotationObj.ServiceChargeJH = null;
                 QuotationObj.ServiceChargeJHCost = null;
-                QuotationObj.ServiceChargeManHourJH =null;
+                QuotationObj.ServiceChargeManHourJH = null;
             }
             if (QuotationObj.ServiceChargeSM != null && QuotationObj.ServiceChargeSM > 0 && QuotationObj.ServiceChargeManHourSM != null && QuotationObj.ServiceChargeManHourSM > 0 && QuotationObj.IsMaterialType == 2)
             {
@@ -2107,7 +2112,7 @@ namespace OpenAuth.App.Material
             {
                 QuotationObj.ServiceChargeSM = 0;
             }
-            else 
+            else
             {
                 QuotationObj.ServiceChargeSMCost = null;
                 QuotationObj.ServiceChargeSM = null;
@@ -2122,7 +2127,7 @@ namespace OpenAuth.App.Material
             {
                 QuotationObj.TravelExpense = 0;
             }
-            else 
+            else
             {
                 QuotationObj.TravelExpenseCost = null;
                 QuotationObj.TravelExpense = null;

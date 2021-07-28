@@ -419,42 +419,6 @@ namespace Sap.Handler.Service
                     Log.Logger.Error($"同步3.0失败，SAP_ID：{quotation.SalesOrderId}" + ex.Message, typeof(SellOrderSapHandler));
                 }
             }
-            //用信号量代替锁
-            await semaphoreSlim.WaitAsync();
-            try
-            {
-                if (string.IsNullOrWhiteSpace(quotation.SalesOrderId.ToString()))
-                {
-                    Log.Logger.Error($"第二次反写4.0失败，SAP_ID：{quotation.SalesOrderId}", typeof(SellOrderSapHandler));
-                }
-                else
-                {
-                    //如果同步成功则修改SellOrder
-                    UnitWork.Update<Quotation>(q => q.Id == quotation.Id, q => new Quotation
-                    {
-                        SalesOrderId = quotation.SalesOrderId
-                    });
-                    UnitWork.Save();
-                    var quotationObj = UnitWork.Find<Quotation>(q => q.Id == quotation.Id).FirstOrDefault();
-                    if (string.IsNullOrWhiteSpace(quotationObj.SalesOrderId.ToString()))
-                    {
-                        Log.Logger.Error($"第二次反写4.0失败，无SAP_ID", typeof(SellOrderSapHandler));
-                    }
-                    else
-                    {
-                        Log.Logger.Warning($"第二次反写4.0成功，SAP_ID：{quotationObj.SalesOrderId}", typeof(SellOrderSapHandler));
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Logger.Error($"反写4.0失败，SAP_ID：{quotation.SalesOrderId}失败原因:{ex.Message}", typeof(SellOrderSapHandler));
-            }
-            finally
-            {
-                semaphoreSlim.Release();
-            }
-
             if (message != "")
             {
                 throw new Exception(message.ToString());
