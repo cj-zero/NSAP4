@@ -587,7 +587,7 @@ namespace OpenAuth.App
             obj.CreateUserId = (workOrderList.FirstOrDefault())?.CurrentUserNsapId;
             obj.TechnicianId = req.CurrentUserId.ToString();
             obj.TechnicianName = loginUser.Name;
-            obj.IsReimburse = 3;
+            obj.IsReimburse=serviceOrderObj.VestInOrg==3?  1: 3;
             obj.CompletionReportPictures = req.Pictures.MapToList<CompletionReportPicture>();
             //obj.CreateUserName = user.Name;
             //todo:补充或调整自己需要的字段
@@ -597,7 +597,7 @@ namespace OpenAuth.App
             {
                 workorder.Add(item.Id);
             }
-            string logMessage = $"工程部:{loginUser.Name}完成了服务";
+            string logMessage = $"用户:{loginUser.Name}完成了服务";
             //判断为非草稿提交 则修改对应状态和发送消息
             if (req.IsDraft == 0)
             {
@@ -625,8 +625,8 @@ namespace OpenAuth.App
                 {
                     await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
                     {
-                        Title = $"工程主管{loginUser.Name}修改完工报告",
-                        Details = $"修改了《行为服务报告单》",
+                        Title = $"用户{loginUser.Name}修改完工报告",
+                        Details = $"用户修改了《行为服务报告单》",
                         LogType = 2,
                         ServiceOrderId = req.ServiceOrderId,
                         ServiceWorkOrder = string.Join(',', workorder.ToArray()),
