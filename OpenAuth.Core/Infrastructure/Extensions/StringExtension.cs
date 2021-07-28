@@ -606,5 +606,20 @@ namespace Infrastructure.Extensions
             }
             return hexString.ToString();
         }
+        public static string FilterESC(this string Text)
+        {
+            if (string.IsNullOrEmpty(Text)) return string.Empty;
+            return Text.Replace("&#60;", "<").Replace("&#62;", ">").Replace("&#34;", "\"").Replace("&#39;", "'");
+        }
+        public static string FilterWildCard(this string Text)
+        {
+            if (string.IsNullOrEmpty(Text)) return string.Empty;
+            return Text.FilterSQL().Replace('*', '%');
+        }
+        public static string FilterSQL(this string Text)
+        {
+            if (string.IsNullOrEmpty(Text)) return string.Empty;
+            return Text.FilterESC().Replace("'", "''").Replace("/*", "").Replace("*/", "");
+        }
     }
 }
