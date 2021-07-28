@@ -138,6 +138,10 @@ namespace OpenAuth.App.Sap.BusinessPartner
                     var userNames = await UnitWork.Find<User>(u => userIds.Contains(u.Id)).Select(u => u.Name).ToListAsync();
                     query = query.Where(q => userNames.Contains($"{q.e.lastName ?? ""}{q.e.firstName}") || cardCodes.Contains(q.a.CardCode));
                 }
+                else
+                {
+                    query = query.Where(q => cardCodes.Contains(q.a.CardCode));
+                }
             }
             var query2 = await query.Select(q => new
             {

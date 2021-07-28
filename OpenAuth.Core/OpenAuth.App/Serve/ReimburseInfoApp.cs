@@ -413,7 +413,7 @@ namespace OpenAuth.App
             List<ServiceOrder> ServiceOrderList = new List<ServiceOrder>();
             foreach (var item in ServiceOrders)
             {
-                var WorkOrders = item.ServiceWorkOrders.Where(s => s.CurrentUserNsapId == loginUser.Id && s.ServiceMode == 1 && s.Status > 6).Count();
+                var WorkOrders = item.ServiceWorkOrders.Where(s => s.CurrentUserNsapId == loginUser.Id && (s.ServiceMode == 1 || item.VestInOrg == 3) && s.Status > 6).Count();
                 var WorkOrderCount = item.ServiceWorkOrders.Where(s => s.CurrentUserNsapId == loginUser.Id && s.Status <= 6).Count();
                 if (WorkOrders > 0 && WorkOrderCount <= 0)
                 {
@@ -433,7 +433,7 @@ namespace OpenAuth.App
             }
             var ServiceOrderLists = from a in ServiceOrderList
                                     join b in CompletionReports on a.Id equals b.ServiceOrderId
-                                    where b.ServiceMode == 1
+                                    where (b.ServiceMode == 1||a.VestInOrg==3)
                                     select new { a, b };
 
 
@@ -462,7 +462,7 @@ namespace OpenAuth.App
                 s.b.Destination,
                 BusinessTripDate = CompletionReports.Where(c => c.ServiceOrderId.Equals(s.a.Id) && c.ServiceMode == 1).Min(c => c.BusinessTripDate),
                 EndDate = CompletionReports.Where(c => c.ServiceOrderId.Equals(s.a.Id) && c.ServiceMode == 1).Max(c => c.EndDate),
-                MaterialCode = s.b.MaterialCode == "无序列号" ? "无序列号" : s.b.MaterialCode.Substring(0, s.b.MaterialCode.IndexOf("-"))
+                MaterialCode =string.IsNullOrWhiteSpace(s.b.MaterialCode)?"":s.b.MaterialCode == "无序列号" ? "无序列号" : s.b.MaterialCode.Substring(0, s.b.MaterialCode.IndexOf("-"))
             }).ToList();
             result.Count = ServiceOrderLists.Count();
             return result;
@@ -673,7 +673,7 @@ namespace OpenAuth.App
             }
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == ReimburseResp.ServiceOrderId && c.CreateUserId.Equals(ReimburseResp.CreateUserId) && c.ServiceMode == 1).ToListAsync();
             var completionreport = CompletionReports.FirstOrDefault();
-            var ocrds = await UnitWork.Find<OCRD>(o => serviceOrders.TerminalCustomerId.Equals(o.CardCode)).FirstOrDefaultAsync();
+            var ocrds = await UnitWork.Find<crm_ocrd>(o => serviceOrders.TerminalCustomerId.Equals(o.CardCode)).FirstOrDefaultAsync();
             result.Data = new
             {
                 ReimburseResp = ReimburseResp,
@@ -688,7 +688,7 @@ namespace OpenAuth.App
                 Destination = completionreport.Destination,
                 //BusinessTripDate = CompletionReports.Min(c => c.BusinessTripDate),
                 //EndDate = CompletionReports.Max(c => c.EndDate),
-                MaterialCode = completionreport.MaterialCode == "无序列号" ? "无序列号" : completionreport.MaterialCode.Substring(0, completionreport.MaterialCode.IndexOf("-")),
+                MaterialCode = string.IsNullOrWhiteSpace(completionreport.MaterialCode)?"":completionreport.MaterialCode == "无序列号" ? "无序列号" : completionreport.MaterialCode.Substring(0, completionreport.MaterialCode.IndexOf("-")),
                 ServiceOrders = serviceOrders,
                 Quotations = quotations,
             };

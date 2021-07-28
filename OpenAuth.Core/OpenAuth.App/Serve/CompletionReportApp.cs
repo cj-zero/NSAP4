@@ -483,7 +483,7 @@ namespace OpenAuth.App
                 throw new Exception("暂无完工报告");
             }
 
-            if (serviceOrderObj.VestInOrg != 2)
+            if (serviceOrderObj.VestInOrg == 2)
             {
                 var CompletionReportResps = CompletionReports.MapToList<CompletionReportDetailsResp>();
                 var Materialworks = ServiceWorkOrders.Select(w => w.MaterialCode == "无序列号" ? "无序列号" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-"))).ToList();
@@ -521,7 +521,7 @@ namespace OpenAuth.App
                 }
                 result.Data = CompletionReportResps;
             }
-            else
+            else if(serviceOrderObj.VestInOrg == 2)
             {
                 var fileids = CompletionReports.FirstOrDefault().CompletionReportPictures.Select(p => p.PictureId).ToArray();
                 var picfiles = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
@@ -543,6 +543,20 @@ namespace OpenAuth.App
                     //    s.Remark
                     //}),
                     c.ChangeTheMaterials,
+                    files = files
+                });
+            }
+            else if (serviceOrderObj.VestInOrg == 3)
+            {
+                var fileids = CompletionReports.FirstOrDefault().CompletionReportPictures.Select(p => p.PictureId).ToArray();
+                var picfiles = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
+                var files = picfiles.MapToList<UploadFileResp>();
+                result.Data = CompletionReports.Select(c => new
+                {
+                    c.Id,
+                    c.Destination,
+                    c.Becity,
+                    c.BusinessTripDays,
                     files = files
                 });
             }

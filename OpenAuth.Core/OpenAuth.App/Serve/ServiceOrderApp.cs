@@ -1000,6 +1000,7 @@ namespace OpenAuth.App
                 s.FeeType = 1;
                 s.CurrentUser = loginUser.Name;
                 s.OrderTakeType = 2;
+                s.ServiceMode = 1;
             });
             var e = await UnitWork.AddAsync<ServiceOrder, int>(obj);
             await UnitWork.SaveAsync();
@@ -1062,7 +1063,7 @@ namespace OpenAuth.App
                 {
                     var sIds = await UnitWork.Find<ServiceWorkOrder>(q => q.CurrentUserNsapId.Contains(loginContext.User.Id)).OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
                    
-                    query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id) || sIds.Contains(q.Id) ||(loginContext.Roles.Any(r => r.Name.Equals("销售员")) && q.SalesManId.Equals(loginContext.User.Id)));
+                    query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id) || sIds.Contains(q.Id) ||q.SalesManId.Equals(loginContext.User.Id));
                 }
             }
             var resultsql = query.OrderByDescending(q => q.CreateTime).Select(q => new
