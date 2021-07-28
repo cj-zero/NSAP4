@@ -325,6 +325,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("差旅费成本")]
         public decimal? TravelExpenseCost { get; set; }
+        /// <summary>
+        ///延保类型 1更新 2销售
+        /// </summary>
+        [Description("延保类型")]
+        public decimal? WarrantyType { get; set; }
 
         /// <summary>
         /// 物流表

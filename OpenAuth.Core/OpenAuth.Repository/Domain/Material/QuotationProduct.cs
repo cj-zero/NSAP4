@@ -63,8 +63,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("保内保外")]
         public bool? IsProtected { get; set; }
+        /// <summary>
+        ///延保时间
+        /// </summary>
+        [Description("延保时间")]
+        public DateTime? WarrantyTime { get; set; }
         
-
         /// <summary>
         /// 物料报价单物料列表
         /// </summary>

@@ -121,7 +121,11 @@ namespace OpenAuth.App.Material.Request
         /// 是否修改
         /// </summary>
         public bool? IsUpdate { get; set; }
-
+        /// <summary>
+        /// 是否延保
+        /// </summary>
+        public bool? IsWarranty { get; set; }
+        
         /// <summary>
         /// 仓库号
         /// </summary>

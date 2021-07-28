@@ -454,6 +454,10 @@ namespace OpenAuth.App.Material
             }
             var result = new TableData();
             var Equipments = await EquipmentList(request);
+            if (request.IsWarranty!=null && (bool)request.IsWarranty) 
+            {
+                Equipments = Equipments.Where(e => e.ItemCode.Equals("S111-SERVICE-GSF")).ToList();
+            }
             var quotations = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(request.ServiceOrderId)).Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).ToListAsync();
             if (quotations != null && quotations.Count > 0)
             {
@@ -876,6 +880,11 @@ namespace OpenAuth.App.Material
             {
                 var code = request.ItemCode.Substring(0, request.ItemCode.IndexOf("-") + 1);
                 query = query.Where(q => q.ItemCode.Substring(0, q.ItemCode.IndexOf("-") + 1).Equals(code) && !q.ItemCode.Equals(request.ItemCode));
+            }
+            //是否延保
+            if (request.IsWarranty != null && (bool)request.IsWarranty)
+            {
+                query = query.Where(e => e.ItemCode.Equals("S111-SERVICE-GSF"));
             }
             result.Count = await query.CountAsync();
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ShieldingMaterials")).Select(u => u.Name).ToListAsync();
