@@ -1063,7 +1063,7 @@ namespace OpenAuth.App
                 {
                     var sIds = await UnitWork.Find<ServiceWorkOrder>(q => q.CurrentUserNsapId.Contains(loginContext.User.Id)).OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
                    
-                    query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id) || sIds.Contains(q.Id) ||q.SalesManId.Equals(loginContext.User.Id));
+                    query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id) || sIds.Contains(q.Id) ||q.SalesManId.Equals(loginContext.User.Id) || q.CreateUserId.Equals(loginContext.User.Id));
                 }
             }
             var resultsql = query.OrderByDescending(q => q.CreateTime).Select(q => new
