@@ -42,6 +42,10 @@ namespace Sap.Handler.Service
             var oCPR = oCPRs.Where(o => o.Name.Equals(serviceOrder.NewestContacter)).FirstOrDefault() == null ? oCPRs.FirstOrDefault() : oCPRs.Where(o => o.Name.Equals(serviceOrder.NewestContacter)).FirstOrDefault();
             var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(quotation.CreateUserId)).FirstOrDefaultAsync())?.NsapUserId;
             var slpcode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
+            if (string.IsNullOrWhiteSpace(slpcode.ToString()))
+            {
+                slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
+            }
             var ywy = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => o.SlpCode).FirstOrDefaultAsync();
             List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };
             var categoryList = await UnitWork.Find<Category>(c => typeids.Contains(c.TypeId)).ToListAsync();
@@ -284,7 +288,11 @@ namespace Sap.Handler.Service
             var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").FirstOrDefaultAsync();
             var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(quotation.CreateUserId)).FirstOrDefaultAsync())?.NsapUserId;
             var slpcode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
-            var ocrdObj = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => new { o.SlpCode, o.CardName }).FirstOrDefaultAsync();
+            if (string.IsNullOrWhiteSpace(slpcode.ToString()))
+            {
+                slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
+            }
+            var ocrdObj = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => new { o.SlpCode ,o.CardName}).FirstOrDefaultAsync();
             List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };
             var categoryList = await UnitWork.Find<Category>(c => typeids.Contains(c.TypeId)).ToListAsync();
             var dbContext = UnitWork.GetDbContext<sale_ordr>();
@@ -328,11 +336,11 @@ namespace Sap.Handler.Service
                         U_ERPFrom = "4"
                     };
                     ordr = await UnitWork.AddAsync<sale_ordr, int>(ordr);
-                    var lineNums = await UnitWork.Find<RDR1>(o => o.DocEntry == quotation.SalesOrderId).Select(o => new { o.LineNum, o.ItemCode, o.Price }).ToListAsync();
+                    var lineNums = await UnitWork.Find<RDR1>(o => o.DocEntry == quotation.SalesOrderId).Select(o => new { o.LineNum, o.ItemCode, o.Price,o.WhsCode }).ToListAsync();
                     foreach (QuotationMergeMaterial dln1 in quotation.QuotationMergeMaterials)
                     {
                         var lineNum = 0;
-                        if (lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode)).Count() > 1)
+                        if (lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode) && o.WhsCode==dln1.WhsCode).Count() > 1)
                         {
                             if (lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode) && o.Price == dln1.DiscountPrices).Count() <= 0)
                             {
@@ -345,7 +353,7 @@ namespace Sap.Handler.Service
                         }
                         else
                         {
-                            lineNum = (int)lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode)).FirstOrDefault()?.LineNum;
+                            lineNum = (int)lineNums.Where(o => o.ItemCode.Equals(dln1.MaterialCode) && o.WhsCode == dln1.WhsCode).FirstOrDefault()?.LineNum;
                         }
 
                         await UnitWork.AddAsync<sale_rdr1, int>(new sale_rdr1
