@@ -665,6 +665,21 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         /// <summary>
+        /// 获取汇率数据
+        /// </summary>
+        /// <param name="currency"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("currency")]
+        public async Task<Response<object>> Currency(string currency)
+        {
+            var result = new Response<object>();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result.Result = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.SapDbContextType, $@"SELECT Rate value From ORTT WHERE Currency='{currency}' AND RateDate='{DateTime.Now.ToString("yyyy-MM-dd")}'", CommandType.Text, null).FirstOrDefault()?.Value;
+            return result;
+        }
+        /// <summary>
         /// 查询指定业务伙伴的科目余额与百分比数据
         /// </summary>
         /// <param name="cardCode"></param>
