@@ -580,7 +580,7 @@ namespace OpenAuth.App.Order
             {
                 int sboID = _serviceBaseApp.GetUserNaspSboID(UserID);
                 byte[] job_data = ByteExtension.ToSerialize(orderReq.Order);
-                if (orderReq.Copy == "1")
+                if (orderReq.IsCopy)
                 {
                     funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesOrder.aspx", UserID).ToString();
                     logstring = "根据销售报价单下销售订单";
@@ -715,7 +715,7 @@ namespace OpenAuth.App.Order
         /// 保存审核参数
         /// </summary>
         /// <returns></returns>
-        public bool SaveJobPara(string jobID, string setNumber)
+        public bool SaveJobPara(string jobID, bool setNumber)
         {
             //string strSql = string.Format("INSERT INTO {0}.wfa_job_para (job_id,para_idx,para_val) VALUES(?job_id,?para_idx,?para_val)", Sql.BaseDatabaseName);
             //IDataParameter[] parameters =
@@ -732,7 +732,7 @@ namespace OpenAuth.App.Order
             {
                 job_id = int.Parse(jobID),
                 para_idx = 1,
-                para_val = setNumber == "" ? "1" : setNumber,
+                para_val = setNumber ? "" : "1",
                 upd_dt = DateTime.Now
             };
             UnitWork.Add<WfaJobPara, int>(wfaJobPara);
@@ -916,6 +916,163 @@ namespace OpenAuth.App.Order
                 }
                 return UnitWork.ExcuteSql<CardInfoDto>(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).FirstOrDefault();
             }
+        }
+        /// <summary>
+        /// 物料数据获取
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="sboid"></param>
+        /// <returns></returns>
+        public TableData SalesItems(ItemRequest query, string sboid)
+        {
+            TableData tableData = new TableData();
+            string sortString = string.Empty;
+            string filterString = string.Empty;
+            if (!string.IsNullOrEmpty(query.SortName) && !string.IsNullOrEmpty(query.SortOrder))
+            {
+                sortString = string.Format("{0} {1}", query.SortName, query.SortOrder.ToUpper());
+            }
+            if (!string.IsNullOrEmpty(query.ItemCode))
+            {
+                filterString += string.Format("(m.ItemCode LIKE '%{0}%' OR m.ItemName LIKE '%{0}%') AND ", query.ItemCode);
+            }
+            if (query.TypeId == "1")
+            {
+                filterString += string.Format("(m.ItemCode NOT LIKE 'CT%') AND ");
+            }
+            if (query.TypeId == "2")
+            {
+                filterString += string.Format("(m.ItemCode NOT LIKE 'CT%' AND m.ItemCode NOT LIKE 'CE%' AND m.ItemCode NOT LIKE 'CG%') AND ");
+            }
+            filterString += string.Format("w.WhsCode='{0}' AND m.sbo_id={1} AND ", query.WhsCode == "" ? "01" : query.WhsCode, sboid);
+            if (!string.IsNullOrEmpty(filterString))
+            {
+                filterString = filterString.Substring(0, filterString.Length - 5);
+            }
+            StringBuilder tableName = new StringBuilder();
+            StringBuilder filedName = new StringBuilder();
+            filedName.Append(" '',m.ItemCode,m.ItemName,IFNULL(c.high_price,0) AS high_price,IFNULL(c.low_price,0) AS low_price,w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,(w.OnHand-w.IsCommited+w.OnOrder) AS OnAvailable,");
+            filedName.Append("(m.OnHand-m.IsCommited+m.OnOrder) AS Available,w.WhsCode,IFNULL(U_TDS,'0') AS U_TDS,IFNULL(U_DL,0) AS U_DL,");
+            filedName.Append("IFNULL(U_DY,0) AS U_DY,m.U_JGF,m.LastPurPrc,IFNULL(c.item_cfg_id,0),IFNULL(c.pic_path,m.PicturName),");
+            filedName.Append("((CASE m.QryGroup1 WHEN 'N' then 0 else 0.5 END)");
+            filedName.Append("+(CASE m.QryGroup2 WHEN 'N' then 0 else 3 END)");
+            filedName.Append("+(CASE m.QryGroup3 WHEN 'N' then 0 else 2 END)) AS QryGroup,c.item_desp,IFNULL(m.U_US,0),IFNULL(m.U_FS,0),m.QryGroup3,m.SVolume,m.SWeight1,");
+            filedName.Append("(CASE m.QryGroup1 WHEN 'N' THEN 0 ELSE '0.5' END) AS QryGroup1,");
+            filedName.Append("(CASE m.QryGroup2 WHEN 'N' THEN 0 ELSE '3' END) AS QryGroup2,");
+            filedName.Append("(CASE m.QryGroup3 WHEN 'N' THEN 0 ELSE '2' END) AS _QryGroup3,m.U_JGF1,IFNULL(m.U_YFCB,'0'),m.MinLevel,m.PurPackUn,c.item_counts,m.buyunitmsr");
+            tableName.AppendFormat(" {0}.store_oitm m", "nsap_bone");
+            tableName.AppendFormat(" LEFT JOIN {0}.store_oitw w ON m.ItemCode = w.ItemCode AND m.sbo_id=w.sbo_id ", "nsap_bone");
+            tableName.AppendFormat(" LEFT JOIN {0}.base_item_cfg c ON m.ItemCode = c.ItemCode AND type_id={1} ", "nsap_bone", query.TypeId);
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pTableName",tableName.ToString()),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pFieldName",filedName.ToString()),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pPageSize",query.limit),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pPageIndex",query.page),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pStrOrder",sortString),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pStrWhere",filterString)
+            };
+            MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter isStats = new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("@pIsTotal", SqlDbType.Int);
+            isStats.Value = 1;
+            sqlParameters.Add(isStats);
+            MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter paramOut = new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("@rowsCount", SqlDbType.Int);
+            paramOut.Value = 0;
+            paramOut.Direction = ParameterDirection.Output;
+            sqlParameters.Add(paramOut);
+            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"nsap_base.sp_common_pager", CommandType.StoredProcedure, sqlParameters);
+            DataTable dtsbo = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM nsap_base.sbo_info WHERE sbo_id={sboid}", CommandType.Text, null); ;
+            string IsOpen = "0";
+            if (dtsbo.Rows.Count > 0)
+            {
+                IsOpen = dtsbo.Rows[0]["is_open"].ToString();
+            }
+            if (IsOpen == "1")
+            {
+                foreach (DataRow tempr in dt.Rows)
+                {
+                    string tempsql = string.Format(@"select w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,(w.OnHand-w.IsCommited+w.OnOrder) AS OnAvailable,(m.OnHand-m.IsCommited+m.OnOrder) AS Available 
+                                              from OITM M LEFT OUTER JOIN OITW W ON m.ItemCode = w.ItemCode where m.ItemCode='{0}' and w.WhsCode={1}", tempr["ItemCode"].ToString().FilterWildCard(), tempr["WhsCode"].ToString());
+                    DataTable tempt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, tempsql, CommandType.Text, null);
+                    if (tempt.Rows.Count > 0)
+                    {
+                        tempr["OnHand"] = tempt.Rows[0]["OnHand"] == null ? 0 : tempt.Rows[0]["OnHand"];
+                        tempr["SumOnHand"] = tempt.Rows[0]["SumOnHand"] == null ? 0 : tempt.Rows[0]["SumOnHand"];
+                        tempr["IsCommited"] = tempt.Rows[0]["IsCommited"] == null ? 0 : tempt.Rows[0]["IsCommited"];
+                        tempr["OnOrder"] = tempt.Rows[0]["OnOrder"] == null ? 0 : tempt.Rows[0]["OnOrder"];
+                        tempr["OnAvailable"] = tempt.Rows[0]["OnAvailable"] == null ? 0 : tempt.Rows[0]["OnAvailable"];
+                        tempr["Available"] = tempt.Rows[0]["Available"] == null ? 0 : tempt.Rows[0]["Available"];
+                    }
+                }
+            }
+            tableData.Data = dt.Tolist<SaleItemDto>();
+            tableData.Count = Convert.ToInt32(paramOut.Value);
+            return tableData;
+        }
+        /// <summary>
+        /// 物料数据获取
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        public TableData RelORDR(RelORDRRequest query)
+        {
+            TableData tableData = new TableData();
+            string sortString = string.Empty;
+            string filterString = "(Canceled = 'Y' or DocStatus = 'O') and SlpCode =" + query.SlpCode;
+            if (!string.IsNullOrEmpty(query.SortName) && !string.IsNullOrEmpty(query.SortOrder))
+            {
+                sortString = string.Format("{0} {1}", query.SortName, query.SortOrder.ToUpper());
+            }
+            else
+            {
+                sortString = " docentry desc";
+            }
+            string dRowData = string.Empty;
+
+            if (!string.IsNullOrEmpty(query.DocEntry))
+            {
+                filterString += "and docentry=" + query.DocEntry;
+            }
+            if (!string.IsNullOrEmpty(query.CardCode))
+            {
+                filterString += string.Format("and cardcode LIKE '%{0}%'", query.CardCode.FilterSQL().Trim());
+            }
+            SqlParameter paramOut;
+            DataTable dt;
+            SqlStore("ORDR", "docentry,cardcode,doctotal,CreateDate,docstatus,Printed,CANCELED,Comments", query.limit, query.page, sortString, filterString, out paramOut, out dt);
+            tableData.Data = dt.Tolist<RelORDRRDto>();
+            tableData.Count = Convert.ToInt32(paramOut.Value);
+            return tableData;
+        }
+        /// <summary>
+        /// 执行存储过程
+        /// </summary>
+        /// <param name="tableName"></param>
+        /// <param name="filefName"></param>
+        /// <param name="pageSize"></param>
+        /// <param name="pageIndex"></param>
+        /// <param name="sort"></param>
+        /// <param name="where"></param>
+        /// <param name="paramOut"></param>
+        /// <param name="dt"></param>
+        private void SqlStore(string tableName, string filefName, int pageSize, int pageIndex, string sort, string where, out SqlParameter paramOut, out DataTable dt)
+        {
+            List<SqlParameter> sqlParameters = new List<SqlParameter>()
+            {
+                new SqlParameter("@strFrom",tableName),
+                new SqlParameter("@strSelect",filefName),
+                new SqlParameter("@pageSize",pageSize),
+                new SqlParameter("@pageIndex",pageIndex),
+                new SqlParameter("@strOrder",sort),
+                new SqlParameter("@strWhere",where),
+            };
+            SqlParameter isStats = new SqlParameter("@isStats", SqlDbType.Int);
+            isStats.Value = 1;
+            sqlParameters.Add(isStats);
+            paramOut = new SqlParameter("@rowCount", SqlDbType.Int);
+            paramOut.Value = 0;
+            paramOut.Direction = ParameterDirection.Output;
+            sqlParameters.Add(paramOut);
+            dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, $"sp_common_pager", CommandType.StoredProcedure, sqlParameters);
         }
     }
 }
