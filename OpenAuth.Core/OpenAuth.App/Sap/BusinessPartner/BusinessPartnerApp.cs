@@ -99,9 +99,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
             }
             query = query.WhereIf(!string.IsNullOrWhiteSpace(req.CardCodeOrCardName), q => q.a.CardCode.Contains(req.CardCodeOrCardName) || q.a.CardName.Contains(req.CardCodeOrCardName))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), q => carCode.Contains(q.a.CardCode))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.slpName), q => q.b.SlpName.Contains(req.slpName))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.Technician),q=> $"{q.e.lastName ?? ""}{q.e.firstName}".Contains(req.Technician))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.Address), q => $"{ q.f.Name ?? "" }{ q.g.Name ?? "" }{ q.a.MailCity ?? "" }{ q.a.MailBuildi ?? "" }".Contains(req.Address));
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.slpName), q => q.b.SlpName.Contains(req.slpName));
             if (req.PageType == 2)
             {
                 var cardCodes = await UnitWork.Find<SharingPartner>(null).Select(s => s.CardCode).ToListAsync();
@@ -111,37 +109,6 @@ namespace OpenAuth.App.Sap.BusinessPartner
             {
                 var cardCodes = await UnitWork.Find<SharingPartner>(null).Select(s => s.CardCode).ToListAsync();
                 query = query.Where(q => !cardCodes.Contains(q.a.CardCode));
-            }
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(c => c.Name == "呼叫中心")) 
-            {
-                var cardCodes = await UnitWork.Find<SharingPartner>(null).Select(s => s.CardCode).ToListAsync();
-                if (loginContext.Roles.Any(r => r.Name == "销售员") && loginContext.Roles.Any(r => r.Name == "售后技术员"))
-                {
-                    var orgIds = loginContext.Orgs.Select(o => o.Id).ToList();
-                    var userIds = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && orgIds.Contains(r.SecondId)).Select(r => r.FirstId).ToListAsync();
-                    var userNames = await UnitWork.Find<User>(u => userIds.Contains(u.Id)).Select(u => u.Name).ToListAsync();
-                    var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
-                    var slpCode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
-                    query = query.Where(q => q.a.SlpCode == slpCode || userNames.Contains($"{q.e.lastName ?? ""}{q.e.firstName}") || cardCodes.Contains(q.a.CardCode));
-                }
-                else if (loginContext.Roles.Any(r => r.Name == "销售员"))
-                {
-                    var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
-                    var slpCode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
-                    query = query.Where(q => q.a.SlpCode == slpCode || cardCodes.Contains(q.a.CardCode));
-
-                }
-                else if (loginContext.Roles.Any(r => r.Name == "售后技术员"))
-                {
-                    var orgIds = loginContext.Orgs.Select(o => o.Id).ToList();
-                    var userIds = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && orgIds.Contains(r.SecondId)).Select(r => r.FirstId).ToListAsync();
-                    var userNames = await UnitWork.Find<User>(u => userIds.Contains(u.Id)).Select(u => u.Name).ToListAsync();
-                    query = query.Where(q => userNames.Contains($"{q.e.lastName ?? ""}{q.e.firstName}") || cardCodes.Contains(q.a.CardCode));
-                }
-                else
-                {
-                    query = query.Where(q => cardCodes.Contains(q.a.CardCode));
-                }
             }
             var query2 = await query.Select(q => new
             {
@@ -177,11 +144,43 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 q.a.U_FPLB,
                 q.a.SlpCode,
                 q.a.U_Name,
-            }).Skip((req.page - 1) * req.limit)
-                .Take(req.limit).ToListAsync();
+            }).ToListAsync();
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(c => c.Name == "呼叫中心"))
+            {
+                var cardCodes = await UnitWork.Find<SharingPartner>(null).Select(s => s.CardCode).ToListAsync();
+                if (loginContext.Roles.Any(r => r.Name == "销售员") && loginContext.Roles.Any(r => r.Name == "售后技术员"))
+                {
+                    var orgIds = loginContext.Orgs.Select(o => o.Id).ToList();
+                    var userIds = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && orgIds.Contains(r.SecondId)).Select(r => r.FirstId).ToListAsync();
+                    var userNames = await UnitWork.Find<User>(u => userIds.Contains(u.Id)).Select(u => u.Name).ToListAsync();
+                    var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
+                    var slpCode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
+                    query2 = query2.Where(q => q.SlpCode == slpCode || userNames.Contains(q.Technician) || cardCodes.Contains(q.CardCode)).ToList();
+                }
+                else if (loginContext.Roles.Any(r => r.Name == "销售员"))
+                {
+                    var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
+                    var slpCode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
+                    query2 = query2.Where(q => q.SlpCode == slpCode || cardCodes.Contains(q.CardCode)).ToList();
 
-            result.Data = query2;
-            result.Count = await query.CountAsync();
+                }
+                else if (loginContext.Roles.Any(r => r.Name == "售后技术员"))
+                {
+                    var secondId = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && loginContext.User.Id.Contains(r.FirstId)).Select(r => r.SecondId).FirstOrDefaultAsync();
+                    var userIds = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && secondId.Contains(r.SecondId)).Select(r => r.FirstId).ToListAsync();
+                    var userNames = await UnitWork.Find<User>(u => userIds.Contains(u.Id)).Select(u => u.Name).ToListAsync();
+                    query2 = query2.Where(q => userNames.Contains(q.Technician) || cardCodes.Contains(q.CardCode)).ToList();
+                }
+                else
+                {
+                    query2 = query2.Where(q => cardCodes.Contains(q.CardCode)).ToList();
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(req.Technician)) query2 = query2.Where(q => q.Technician.Contains(req.Technician)).ToList();
+            if (!string.IsNullOrWhiteSpace(req.Address)) query2 = query2.Where(q => q.Address2.Contains(req.Address)).ToList();
+
+            result.Data = query2.Skip((req.page - 1) * req.limit).Take(req.limit);
+            result.Count = query2.Count;
 
             return result;
         }
@@ -417,10 +416,10 @@ namespace OpenAuth.App.Sap.BusinessPartner
             var province = globainfo.Where(c => c.AreaName == req.Province && c.AreaLevel == "1").FirstOrDefault();
             var vaild = false;
             //验证省市区是否正确
-            if (province!=null)
+            if (province != null)
             {
                 var cityinfo = globainfo.Where(c => c.Pid == province.Id && c.AreaName == req.City).FirstOrDefault();
-                if (cityinfo!=null)
+                if (cityinfo != null)
                 {
                     var area = globainfo.Where(c => c.Pid == cityinfo.Id && c.AreaName == req.Area).FirstOrDefault();
                     if (area != null) vaild = true;
@@ -429,7 +428,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
             if (!vaild) return "";
 
 
-            string url = "https://app.neware.work/appshare.html"; 
+            string url = "https://app.neware.work/appshare.html";
             var timespan = Infrastructure.Helpers.DateTimeHelper.GetTimeStamp(DateTime.Now, true);
             url = $"{url}?CardCode={req.CardCode}" +
                 $"&CardName={System.Web.HttpUtility.UrlEncode(req.CardName)}" +
@@ -464,8 +463,8 @@ namespace OpenAuth.App.Sap.BusinessPartner
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var cardCodes=await UnitWork.Find<SharingPartner>(null).Select(s=>s.CardCode).ToListAsync();
-            var sharingPartners = req.CardCodes.Where(c=> !cardCodes.Contains(c)).Select(c => new SharingPartner {CardCode=c,CreateTime=DateTime.Now,CreateUserId= loginContext.User.Id,CreateUserName= loginContext.User.Name,Id=Guid.NewGuid().ToString() }).ToList();
+            var cardCodes = await UnitWork.Find<SharingPartner>(null).Select(s => s.CardCode).ToListAsync();
+            var sharingPartners = req.CardCodes.Where(c => !cardCodes.Contains(c)).Select(c => new SharingPartner { CardCode = c, CreateTime = DateTime.Now, CreateUserId = loginContext.User.Id, CreateUserName = loginContext.User.Name, Id = Guid.NewGuid().ToString() }).ToList();
             await UnitWork.BatchAddAsync<SharingPartner>(sharingPartners.ToArray());
             await UnitWork.SaveAsync();
         }
