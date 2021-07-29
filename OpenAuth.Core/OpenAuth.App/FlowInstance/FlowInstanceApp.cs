@@ -926,6 +926,138 @@ namespace OpenAuth.App
             await UnitWork.SaveAsync();
         }
 
+        /// <summary>
+        /// 获取生命周期
+        /// </summary>
+        /// <param name="reqp"></param>
+        /// <param name="FlowInstanceId"></param>
+        /// <returns></returns>
+        public async Task<List<FlowPathResp>> FlowPathRespList(List<OperationHistoryResp> reqp, string FlowInstanceId)
+        {
+            var flowInstance = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(FlowInstanceId)).Select(f => new { f.SchemeContent, f.ActivityName, f.FrmData }).FirstOrDefaultAsync();
+            var schemeContentJson = JsonHelper.Instance.Deserialize<FlowInstanceJson>(flowInstance.SchemeContent);
+            List<FlowInstanceNodes> flowInstanceNodes = new List<FlowInstanceNodes>();
+            List<FlowPathResp> flowPathResps = new List<FlowPathResp>();
+            int number = 1;
+            flowInstanceNodes.Add(new FlowInstanceNodes { Name = "提交", Number = number });
+            string toId = schemeContentJson.lines.Where(s => s.from.Contains("start")).FirstOrDefault()?.to;
+            var query = from a in schemeContentJson.lines
+                        join b in schemeContentJson.nodes on a.@from equals b.id
+                        select new { a.to, b.id, b.Name, a.Compares };
+            query = query.Where(q => !q.id.Contains("start") && !q.id.Contains("end")).ToList();
+            List<FlowInstanceCompares> commpares = new List<FlowInstanceCompares>();
+            foreach (var item in query)
+            {
+                if (query.Where(n => n.id.Equals(toId)).FirstOrDefault() != null)
+                {
+
+                    string toName = "";
+                    commpares = new List<FlowInstanceCompares>();
+                    query.Where(n => n.id.Equals(toId)).ToList().ForEach(q => {
+                        if (q.Compares != null) commpares.AddRange(q.Compares.Where(c => !string.IsNullOrWhiteSpace(c.FieldName)).ToList());
+                    });
+                    if (commpares != null && commpares.Count() > 0 && commpares.FirstOrDefault()?.Value != null)
+                    {
+                        var frmDate = flowInstance.FrmData.ToLower().ToJObject();
+                        dynamic tonode = null;
+                        foreach (var toitem in query.Where(n => n.id.Equals(toId)).ToList())
+                        {
+                            var isTrue = false;
+                            foreach (var compareitem in toitem.Compares)
+                            {
+                                //compareitem.Value == frmDate.GetValue(compareitem.FieldName.ToLower(), StringComparison.OrdinalIgnoreCase).ToString();
+                                List<DataCompare> dataCompares = new List<DataCompare>();
+                                dataCompares.Add(compareitem.MapTo<DataCompare>());
+                                FlowLine flowLine = new FlowLine();
+                                flowLine.Compares = dataCompares;
+                                if (flowLine.Compare(frmDate))
+                                {
+                                    isTrue = true;
+                                }
+                                else 
+                                {
+                                    isTrue = false;
+                                    break;
+                                }
+                            }
+                            if (isTrue == true) 
+                            {
+                                tonode = toitem;
+                                break;
+                            }
+                        }
+                        toName = tonode?.Name;
+                        toId = tonode?.to;
+                    }
+                    else
+                    {
+                        toName = query.Where(n => n.id.Equals(toId)).FirstOrDefault().Name;
+                        toId = query.Where(n => n.id.Equals(toId)).FirstOrDefault().to;
+                    }
+
+                    //if (IsMaterialType != 0)
+                    //{
+                    //    if (IsMaterialType == 1 || IsMaterialType == 3)
+                    //    {
+                    //        toName = query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.Where(c => c.FieldName == "IsProtected").FirstOrDefault()?.Value) || n.Compares.Where(c => c.FieldName == "IsProtected").Select(c => c.Value).FirstOrDefault() == "2")).FirstOrDefault().Name;
+                    //        toId = query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.Where(c => c.FieldName == "IsProtected").FirstOrDefault()?.Value) || n.Compares.Where(c => c.FieldName == "IsProtected").Select(c => c.Value).FirstOrDefault() == "2")).FirstOrDefault().to;
+                    //    }
+                    //    else if (IsMaterialType == 2)
+                    //    {
+                    //        toName = query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.Where(c => c.FieldName == "IsProtected").FirstOrDefault()?.Value) || n.Compares.Where(c => c.FieldName == "IsProtected").Select(c => c.Value).FirstOrDefault() == "1")).FirstOrDefault().Name;
+                    //        toId = query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.Where(c => c.FieldName == "IsProtected").FirstOrDefault()?.Value) || n.Compares.Where(c => c.FieldName == "IsProtected").Select(c => c.Value).FirstOrDefault() == "1")).FirstOrDefault().to;
+                    //    }
+                    //}
+                    flowInstanceNodes.Add(new FlowInstanceNodes { Name = toName, Number = ++number });
+
+                }
+            }
+            flowInstanceNodes.Add(new FlowInstanceNodes { Name = "结束", Number = ++number });
+            flowInstanceNodes = flowInstanceNodes.OrderBy(f => f.Number).ToList();
+            string historys = null;
+            flowInstanceNodes.ForEach(f =>
+            {
+                var operationHistorys = reqp.Where(q => q.Content.Contains(f.Name) || (f.Name == "审批结束" && (q.Content == "已支付" || q.Content == "出库完成" || q.Content == "结束")) || (f.Name == "待出库" && q.Content == "开始出库")).OrderByDescending(q => q.CreateTime).FirstOrDefault();
+
+                if (historys == null || (operationHistorys?.CreateTime != null && DateTime.Parse(historys) < DateTime.Parse(operationHistorys.CreateTime)))
+                {
+                    historys = operationHistorys?.CreateTime;
+                    flowPathResps.Add(new FlowPathResp
+                    {
+                        ActivityName = f.Name,
+                        Number = f.Number,
+                        CreateTime = operationHistorys?.CreateTime,
+                        IntervalTime = operationHistorys?.IntervalTime,
+                        IsNode = true
+                    });
+                }
+                else
+                {
+                    if (flowInstance.ActivityName == "结束")
+                    {
+                        flowPathResps.Add(new FlowPathResp
+                        {
+                            ActivityName = f.Name,
+                            Number = f.Number,
+                            IsNode = true
+                        });
+                    }
+                    else
+                    {
+                        flowPathResps.Add(new FlowPathResp
+                        {
+                            ActivityName = f.Name,
+                            Number = f.Number,
+                            IsNode = false
+                        });
+                    }
+
+                }
+
+            });
+            return flowPathResps;
+        }
+
         public FlowInstanceApp(IUnitWork unitWork, IRepository<FlowInstance> repository
         , RevelanceManagerApp app, FlowSchemeApp flowSchemeApp, FormApp formApp, IHttpClientFactory httpClientFactory, IAuth auth, IServiceProvider serviceProvider)
             : base(unitWork, repository, auth)
