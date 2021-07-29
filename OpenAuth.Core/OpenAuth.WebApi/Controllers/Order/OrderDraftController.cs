@@ -125,7 +125,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 total90 += invTotal90P;
             }
-           // balstr = "[{\"BalDue\":\"" + BalDue.ToString("#0.00").FilterString() + "\",\"Total\":\"" + Total.ToString("#0.00").FilterString() + "\",\"BalSboDetails\":" + sbotable.DataTableToJSON() + ",\"Due90\":\"" + due90.ToString("#0.00").FilterString() + "\",\"Total90\":\"" + total90.ToString("#0.00").FilterString() + "\"}]";
+            // balstr = "[{\"BalDue\":\"" + BalDue.ToString("#0.00").FilterString() + "\",\"Total\":\"" + Total.ToString("#0.00").FilterString() + "\",\"BalSboDetails\":" + sbotable.DataTableToJSON() + ",\"Due90\":\"" + due90.ToString("#0.00").FilterString() + "\",\"Total90\":\"" + total90.ToString("#0.00").FilterString() + "\"}]";
             return result;
         }
         /// <summary>
@@ -541,6 +541,135 @@ namespace OpenAuth.WebApi.Controllers.Order
                 Log.Logger.Error($"地址：{Request.Path}, 错误：{result.Message}");
             }
             return result;
+        }
+        /// <summary>
+        /// 仓库下拉列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("warehouseinfo")]
+        public async Task<Response<List<DropDownOption>>> WarehouseInfo(int sboid = 1)
+        {
+            var result = new Response<List<DropDownOption>>();
+            result.Result = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@" SELECT WhsCode AS id,WhsName AS name FROM nsap_bone.store_owhs WHERE sbo_id={sboid}", CommandType.Text, null).ToList();
+            return result;
+        }
+        /// <summary>
+        /// 加载物料数据
+        /// </summary>pp
+        [HttpPost]
+        [Route("saleitem")]
+        public async Task<TableData> SaleItem(ItemRequest request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result = _serviceSaleOrderApp.SalesItems(request, sboid.ToString());
+            return result;
+        }
+        /// <summary>
+        /// 客户未处理订单数
+        /// </summary>
+        /// <param name="cardCode"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("untreatedorder")]
+        public async Task<Response<int>> UntreatedOrder(string cardCode)
+        {
+            var result = new Response<int>();
+            result.Result = UnitWork.ExcuteSql<CountDto>(ContextType.SapDbContextType, $@"select count(1) count from ordr where CANCELED='N' AND DocStatus='O' and CardCode='{cardCode}'", CommandType.Text, null).FirstOrDefault().Count;
+            return result;
+        }
+        /// <summary>
+        /// 客户类型
+        /// </summary>
+        /// <param name="cardCode"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("cardtype")]
+        public async Task<Response<object>> CardType(string cardCode)
+        {
+            var result = new Response<object>();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result.Result = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $@"select b.GroupName value from nsap_bone.crm_ocrd a left join nsap_bone.crm_OCRG b on a.GroupCode = b.GroupCode and a.sbo_id = b.sbo_id where a.sbo_id ='{sboid}' and a.CardCode = '{cardCode}'", CommandType.Text, null).FirstOrDefault()?.Value;
+            return result;
+        }
+        /// <summary>
+        /// 获取当前登录业务员
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("saleuser")]
+        public async Task<Response<DropDownOption>> GetSalesUser()
+        {
+            var result = new Response<DropDownOption>();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result.Result = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@"SELECT b.SlpCode  id,b.SlpName name FROM nsap_base.sbo_user a LEFT JOIN nsap_bone.crm_oslp b ON a.sale_id=b.SlpCode AND a.sbo_id=b.sbo_id WHERE a.sbo_id={sboid} AND a.user_id={userId}", CommandType.Text, null).FirstOrDefault();
+            return result;
+        }
+        /// <summary>
+        /// 获取拟取消订单
+        /// </summary>pp
+        [HttpPost]
+        [Route("relordr")]
+        public async Task<TableData> RelORDR(RelORDRRequest request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result = _serviceSaleOrderApp.RelORDR(request);
+            return result;
+        }
+        /// <summary>
+        /// 查询指定业务伙伴的科目余额与百分比数据
+        /// </summary>
+        /// <param name="cardCode"></param>
+        /// <param name="sboId"></param>
+        /// <returns></returns>
+        private DataTable GetClientSboBalPercent(string cardCode, string sboId)
+        {
+            ResultOrderDto resultDto = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $@"SELECT is_open value FROM nsap_base.sbo_info WHERE sbo_id={sboId}", CommandType.Text, null).FirstOrDefault();
+            if (resultDto != null && resultDto.Value.ToString() == "1")
+            {
+                string sapConn = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $@"SELECT sql_conn value FROM nsap_base.sbo_info WHERE  sbo_id={sboId}", CommandType.Text, null).FirstOrDefault()?.Value.ToString();
+                string strSql = $@"SELECT (Select sum(Balance) from OCRD where CardCode='{cardCode}') as Balance
+                                  ,(select sum(DocTotal) from OINV WHERE CANCELED ='N' and CardCode='{cardCode}') as INVtotal
+                                  ,(select SUM(DocTOTal) from ORIN where CANCELED<>'Y' and CardCode='{cardCode}') as RINtotal
+                                --90天内未清收款
+                                ,(select SUM(openBal) from ORCT WHERE CANCELED='N' AND openBal<>0 AND CardCode='{cardCode}' and datediff(DAY,docdate,getdate())<=90) as RCTBal90
+                                --90天内未清发票金额
+                                ,(select SUM(DocTotal-PaidToDate) from OINV WHERE CANCELED ='N' and CardCode='{cardCode}' and DocTotal-PaidToDate>0 and datediff(DAY,docdate,getdate())<=90) as INVBal90
+                                --90天内未清贷项金额
+                                ,(select SUM(DocTotal-PaidToDate) from ORIN where CANCELED ='N' and CardCode='{cardCode}' and DocTotal-PaidToDate>0 and datediff(DAY,docdate,getdate())<=90) as RINBal90
+                                --90天前未清发票的发票总额
+                                ,(select SUM(DocTotal) from OINV WHERE CANCELED ='N' and CardCode = '{cardCode}' and DocTotal-PaidToDate > 0 and datediff(DAY, docdate, getdate())> 90) as INVTotal90P
+                ";
+                return null;//UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql);
+            }
+            else
+            {
+                string strSql = string.Format($@"SELECT(Select sum(Balance) from nsap_bone.crm_ocrd_oldsbo_balance where sbo_id=?sbo_id and CardCode='{cardCode}') as Balance
+                                               , (select sum(DocTotal) from nsap_bone.sale_oinv WHERE CANCELED ='N' and sbo_id=?sbo_id and CardCode ='{cardCode}') as INVtotal
+                                               ,(select SUM(DocTOTal) from nsap_bone.sale_orin where CANCELED ='N' and sbo_id=?sbo_id and CardCode ='{cardCode}') as RINtotal
+                                            ,'' as RCTBal90
+                                            ,'' as INVBal90
+                                            ,'' as RINBal90
+                                            ,'' as INVTotal90P
+                                            ");
+                return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            }
         }
     }
 }

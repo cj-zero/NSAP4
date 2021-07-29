@@ -11,12 +11,21 @@ namespace OpenAuth.App.Order.Request
     {
         /// <summary>
         /// 提交类型
+        /// 草稿/提交
         /// </summary>
         public OrderAtion Ations { get; set; }
-
+        /// <summary>
+        /// 销售报价单ID
+        /// </summary>
         public int JobId { get; set; }
-        public string Copy { get; set; }
-        public string IsTemplate { get; set; }
+        /// <summary>
+        /// 是否来源销售订单
+        /// </summary>
+        public bool IsCopy { get; set; }
+        /// <summary>
+        /// 商品配置模板（1;有配置清单,0：无配置清单 ）
+        /// </summary>
+        public bool IsTemplate { get; set; }
         /// <summary>
         /// 订单
         /// </summary>

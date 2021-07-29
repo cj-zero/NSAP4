@@ -62,4 +62,56 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string CardCode { get; set; }
     }
+    /// <summary>
+    /// 物料
+    /// </summary>
+    public class ItemRequest : PageReq
+    {
+        /// <summary>
+        /// 排序字段 客户代码：a.cardcode,客户名称:a.cardname,销售员员：b.slpname,货币：a.currency，金额：a.balance
+        /// </summary>
+        public string SortName { get; set; }
+        /// <summary>
+        /// desc 降序，asc 升序
+        /// </summary>
+        public string SortOrder { get; set; }
+        /// <summary>
+        /// 物料代码
+        /// </summary>
+        public string ItemCode { get; set; }
+        /// <summary>
+        /// 仓库代码
+        /// </summary>
+        public string WhsCode { get; set; }
+        /// <summary>
+        /// 类型id
+        /// </summary>
+        public string TypeId { get; set; }
+    }
+    /// <summary>
+    /// 取消订单列表查询
+    /// </summary>
+    public class RelORDRRequest : PageReq
+    {
+        /// <summary>
+        /// 排序字段 订单号:docentry,客户代码：a.cardcode
+        /// </summary>
+        public string SortName { get; set; }
+        /// <summary>
+        /// desc 降序，asc 升序
+        /// </summary>
+        public string SortOrder { get; set; }
+        /// <summary>
+        /// 订单号
+        /// </summary>
+        public string DocEntry { get; set; }
+        /// <summary>
+        /// 仓库代码
+        /// </summary>
+        public string CardCode { get; set; }
+        /// <summary>
+        /// 业务员Id
+        /// </summary>
+        public string SlpCode { get; set; }
+    }
 }
