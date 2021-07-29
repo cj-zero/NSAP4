@@ -1043,6 +1043,78 @@ namespace OpenAuth.App.Order
             tableData.Count = Convert.ToInt32(paramOut.Value);
             return tableData;
         }
+        public List<CardCodeCheckDto> GetCardCodeCheck(string type, string q, bool ViewFull, bool ViewSelf, int UserId, int SboId, bool ViewSelfDepartment, int DepId)
+        {
+            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM nsap_base.sbo_info WHERE sbo_id={SboId}", CommandType.Text, null);
+            string dRowData = string.Empty; string isOpen = "0";
+            if (dt.Rows.Count > 0) { isOpen = dt.Rows[0][6].ToString(); }
+            string strWhere = string.Empty;
+            if (ViewSelfDepartment && !ViewFull)
+            {
+                DataTable rDataRows = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT a.sale_id,a.tech_id FROM nsap_base.sbo_user a LEFT JOIN nsap_base.base_user_detail b ON a.user_id = b.user_id WHERE b.dep_id in ({DepId}) AND a.sbo_id = {SboId}", CommandType.Text, null);
+                if (rDataRows.Rows.Count > 0)
+                {
+                    strWhere += string.Format(" AND (SlpCode IN(");
+                    for (int i = 0; i < rDataRows.Rows.Count; i++)
+                    {
+                        strWhere += string.Format("{0},", rDataRows.Rows[i][0]);
+                    }
+                    if (!string.IsNullOrEmpty(strWhere))
+                        strWhere = strWhere.Substring(0, strWhere.Length - 1);
+                    strWhere += string.Format(") OR DfTcnician IN (");
+                    for (int i = 0; i < rDataRows.Rows.Count; i++)
+                    {
+                        strWhere += string.Format("{0},", rDataRows.Rows[i][1]);
+                    }
+                    if (!string.IsNullOrEmpty(strWhere))
+                        strWhere = strWhere.Substring(0, strWhere.Length - 1);
+                    strWhere += string.Format(")) ");
+                }
+
+            }
+            if (ViewSelf && !ViewFull && !ViewSelfDepartment)
+            {
+                DataTable rDataRowsSlp = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sale_id,tech_id FROM nsap_base.sbo_user WHERE user_id={UserId} AND sbo_id={SboId}", CommandType.Text, null);
+                if (rDataRowsSlp.Rows.Count > 0)
+                {
+                    string slpTcnician = rDataRowsSlp.Rows[0][1].ToString();
+                    string slpCode = rDataRowsSlp.Rows[0][0].ToString();
+                    string SlpCodeViewSelf = "";
+                    if (type == "P") { SlpCodeViewSelf = " OR a.SlpCode = -1"; } else { SlpCodeViewSelf = ""; }
+                    strWhere += string.Format(" AND (SlpCode = {0} OR DfTcnician={1} {2}) ", slpCode, slpTcnician, SlpCodeViewSelf);
+                }
+                else
+                {
+                    strWhere += string.Format(" AND SlpCode =0 ");
+                }
+            }
+            string strSql = string.Format("SELECT TOP 10 CardCode,CardName,(DATALENGTH(CardCode)-DATALENGTH('{0}')) as CardCodelike FROM OCRD ", q);
+
+            #region 根据不同的单据类型获取不同的业务伙伴
+            if (!string.IsNullOrEmpty(type))
+            {
+                if (type == "SQO")//销售报价单\订单
+                {
+                    strSql += string.Format(" WHERE (CardType='C' OR CardType='L') AND (CardCode LIKE '%{0}%' OR CardName LIKE '%{0}%')", q.Replace('*', '%'));
+                }
+                else if (type == "SDR")//销售交货\退货,应收发票\贷项凭证
+                {
+                    strSql += string.Format(" WHERE CardType='C' AND (CardCode LIKE '%{0}%' OR CardName LIKE '%{0}%')", q.Replace('*', '%'));
+                }
+                else if (type == "P")//采购
+                {
+                    strSql += string.Format(" WHERE CardType='S' AND (CardCode LIKE '%{0}%' OR CardName LIKE '%{0}%')", q.Replace('*', '%'));
+                }
+                else if (type == "ST")//库存转储
+                {
+                    strSql += string.Format(" WHERE (CardType='S' OR CardType='C') AND frozenFor='N' AND (CardCode LIKE '%{0}%' OR CardName LIKE '%{0}%')", q);
+                }
+            }
+            #endregion
+            if (!string.IsNullOrEmpty(strWhere)) { strSql += string.Format("{0}", strWhere); }
+            strSql += string.Format("GROUP BY CardCode,CardName ORDER BY CardCodelike");
+            return UnitWork.ExcuteSql<CardCodeCheckDto>(ContextType.SapDbContextType, strSql, CommandType.Text, null);
+        }
         /// <summary>
         /// 执行存储过程
         /// </summary>

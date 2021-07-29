@@ -26,6 +26,24 @@ namespace OpenAuth.App.Order
         /// </summary>
         public object Name { get; set; }
     }
+    /// <summary>
+    /// 
+    /// </summary>
+    public class CardCodeCheckDto
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        public string CardCode { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string CardName { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public object CardCodelike { get; set; }
+    }
     public class CountDto
     {
         public int Count { get; set; }
