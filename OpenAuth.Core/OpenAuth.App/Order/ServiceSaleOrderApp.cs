@@ -580,7 +580,7 @@ namespace OpenAuth.App.Order
             {
                 int sboID = _serviceBaseApp.GetUserNaspSboID(UserID);
                 byte[] job_data = ByteExtension.ToSerialize(orderReq.Order);
-                if (orderReq.Copy == "1")
+                if (orderReq.IsCopy)
                 {
                     funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesOrder.aspx", UserID).ToString();
                     logstring = "根据销售报价单下销售订单";
@@ -715,7 +715,7 @@ namespace OpenAuth.App.Order
         /// 保存审核参数
         /// </summary>
         /// <returns></returns>
-        public bool SaveJobPara(string jobID, string setNumber)
+        public bool SaveJobPara(string jobID, bool setNumber)
         {
             //string strSql = string.Format("INSERT INTO {0}.wfa_job_para (job_id,para_idx,para_val) VALUES(?job_id,?para_idx,?para_val)", Sql.BaseDatabaseName);
             //IDataParameter[] parameters =
@@ -732,7 +732,7 @@ namespace OpenAuth.App.Order
             {
                 job_id = int.Parse(jobID),
                 para_idx = 1,
-                para_val = setNumber == "" ? "1" : setNumber,
+                para_val = setNumber ? "" : "1",
                 upd_dt = DateTime.Now
             };
             UnitWork.Add<WfaJobPara, int>(wfaJobPara);
