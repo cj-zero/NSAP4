@@ -329,7 +329,7 @@ namespace OpenAuth.Repository.Domain
         ///延保类型 1更新 2销售
         /// </summary>
         [Description("延保类型")]
-        public decimal? WarrantyType { get; set; }
+        public int? WarrantyType { get; set; }
 
         /// <summary>
         /// 物流表
