@@ -483,7 +483,7 @@ namespace OpenAuth.App
                 throw new Exception("暂无完工报告");
             }
 
-            if (serviceOrderObj.VestInOrg == 2)
+            if (serviceOrderObj.VestInOrg == 1)
             {
                 var CompletionReportResps = CompletionReports.MapToList<CompletionReportDetailsResp>();
                 var Materialworks = ServiceWorkOrders.Select(w => w.MaterialCode == "无序列号" ? "无序列号" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-"))).ToList();
