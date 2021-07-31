@@ -633,6 +633,53 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         /// <summary>
+        /// 客户代码模糊查询
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("cardcodecheck")]
+        public async Task<Response<List<CardCodeCheckDto>>> GetCardCodeCheeck(string cardCode)
+        {
+            var result = new Response<List<CardCodeCheckDto>>();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            var depId = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT dep_id value FROM base_user_detail WHERE user_id = {userId}", CommandType.Text, null).FirstOrDefault();
+            string type = "SDR";
+            var powerList = UnitWork.ExcuteSql<PowerDto>(ContextType.NsapBaseDbContext, $@"SELECT a.func_id funcID,b.page_url pageUrl,a.auth_map authMap FROM (SELECT a.func_id,a.page_id,b.auth_map FROM nsap_base.base_func a INNER JOIN (SELECT t.func_id,BIT_OR(t.auth_map) auth_map FROM (SELECT func_id,BIT_OR(auth_map) auth_map FROM nsap_base.base_role_func WHERE role_id IN (SELECT role_id FROM nsap_base.base_user_role WHERE user_id={userId}) GROUP BY func_id UNION ALL SELECT func_id,auth_map FROM nsap_base.base_user_func WHERE user_id={userId}) t GROUP BY t.func_id) b ON a.func_id=b.func_id) AS a INNER JOIN nsap_base.base_page AS b ON a.page_id=b.page_id", CommandType.Text, null);
+            bool viewFull = false;
+            bool viewSelf = false;
+            bool viewSelfDepartment = false;
+            bool viewSales = false;
+            bool viewCustom = false;
+            var power = powerList.FirstOrDefault(s => s.PageUrl == "sales/SalesQuotation.aspx");
+            if (power != null)
+            {
+                Powers powers = new Powers(power.AuthMap);
+                viewFull = powers.ViewFull;
+                viewSelf = powers.ViewSelf;
+                viewSelfDepartment = powers.ViewSelfDepartment;
+                viewSales = powers.ViewSales;
+                viewCustom = powers.ViewCustom;
+            }
+            result.Result = _serviceSaleOrderApp.GetCardCodeCheck(type, cardCode, viewFull, viewSelf, userId, sboid, viewSelfDepartment, Convert.ToInt32(depId.Value));
+            return result;
+        }
+        /// <summary>
+        /// 获取汇率数据
+        /// </summary>
+        /// <param name="currency"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("currency")]
+        public async Task<Response<object>> Currency(string currency)
+        {
+            var result = new Response<object>();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result.Result = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.SapDbContextType, $@"SELECT Rate value From ORTT WHERE Currency='{currency}' AND RateDate='{DateTime.Now.ToString("yyyy-MM-dd")}'", CommandType.Text, null).FirstOrDefault()?.Value;
+            return result;
+        }
+        /// <summary>
         /// 查询指定业务伙伴的科目余额与百分比数据
         /// </summary>
         /// <param name="cardCode"></param>
