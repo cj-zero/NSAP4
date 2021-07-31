@@ -940,11 +940,19 @@ namespace OpenAuth.App
             List<FlowPathResp> flowPathResps = new List<FlowPathResp>();
             int number = 1;
             flowInstanceNodes.Add(new FlowInstanceNodes { Name = "提交", Number = number });
-            string toId = schemeContentJson.lines.Where(s => s.from.Contains("start")).FirstOrDefault()?.to;
+            string toId = "";
             var query = from a in schemeContentJson.lines
                         join b in schemeContentJson.nodes on a.@from equals b.id
                         select new { a.to, b.id, b.Name, a.Compares };
-            query = query.Where(q => !q.id.Contains("start") && !q.id.Contains("end")).ToList();
+            if (schemeContentJson.lines.Where(s => s.from.Contains("start")).Count() ==1) 
+            {
+                query = query.Where(q => !q.id.Contains("start")).ToList();
+            }
+            else
+            {
+                toId = schemeContentJson.lines.Where(s => s.from.Contains("start")).FirstOrDefault()?.from;
+            }
+            query = query.Where(q =>!q.id.Contains("end")).ToList();
             List<FlowInstanceCompares> commpares = new List<FlowInstanceCompares>();
             foreach (var item in query)
             {
@@ -965,7 +973,6 @@ namespace OpenAuth.App
                             var isTrue = false;
                             foreach (var compareitem in toitem.Compares)
                             {
-                                //compareitem.Value == frmDate.GetValue(compareitem.FieldName.ToLower(), StringComparison.OrdinalIgnoreCase).ToString();
                                 List<DataCompare> dataCompares = new List<DataCompare>();
                                 dataCompares.Add(compareitem.MapTo<DataCompare>());
                                 FlowLine flowLine = new FlowLine();
@@ -994,22 +1001,10 @@ namespace OpenAuth.App
                         toName = query.Where(n => n.id.Equals(toId)).FirstOrDefault().Name;
                         toId = query.Where(n => n.id.Equals(toId)).FirstOrDefault().to;
                     }
-
-                    //if (IsMaterialType != 0)
-                    //{
-                    //    if (IsMaterialType == 1 || IsMaterialType == 3)
-                    //    {
-                    //        toName = query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.Where(c => c.FieldName == "IsProtected").FirstOrDefault()?.Value) || n.Compares.Where(c => c.FieldName == "IsProtected").Select(c => c.Value).FirstOrDefault() == "2")).FirstOrDefault().Name;
-                    //        toId = query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.Where(c => c.FieldName == "IsProtected").FirstOrDefault()?.Value) || n.Compares.Where(c => c.FieldName == "IsProtected").Select(c => c.Value).FirstOrDefault() == "2")).FirstOrDefault().to;
-                    //    }
-                    //    else if (IsMaterialType == 2)
-                    //    {
-                    //        toName = query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.Where(c => c.FieldName == "IsProtected").FirstOrDefault()?.Value) || n.Compares.Where(c => c.FieldName == "IsProtected").Select(c => c.Value).FirstOrDefault() == "1")).FirstOrDefault().Name;
-                    //        toId = query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.Where(c => c.FieldName == "IsProtected").FirstOrDefault()?.Value) || n.Compares.Where(c => c.FieldName == "IsProtected").Select(c => c.Value).FirstOrDefault() == "1")).FirstOrDefault().to;
-                    //    }
-                    //}
-                    flowInstanceNodes.Add(new FlowInstanceNodes { Name = toName, Number = ++number });
-
+                    if (toName != "开始") 
+                    {
+                        flowInstanceNodes.Add(new FlowInstanceNodes { Name = toName, Number = ++number });
+                    }
                 }
             }
             flowInstanceNodes.Add(new FlowInstanceNodes { Name = "结束", Number = ++number });

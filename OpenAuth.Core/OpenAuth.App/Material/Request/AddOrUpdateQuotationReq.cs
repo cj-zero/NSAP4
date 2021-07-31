@@ -261,7 +261,7 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         ///延保类型 1更新 2销售
         /// </summary>
-        public int? WarrantyType { get; set; }
+        public  string WarrantyType { get; set; }
         /// <summary>
         /// 报价单设备列表
         /// </summary>

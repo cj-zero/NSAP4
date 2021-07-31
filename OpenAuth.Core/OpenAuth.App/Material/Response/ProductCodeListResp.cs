@@ -16,5 +16,7 @@ namespace OpenAuth.App.Material.Response
         public DateTime? DocDate { get; set; }
 
         public string FromTheme { get; set; }
+        public DateTime? WarrantyTime { get; set; }
+        
     }
 }

@@ -453,7 +453,11 @@ namespace OpenAuth.App.Material
                     DocDate = SalesOrderWarrantyDates.Where(s => s.SalesOrderId.Equals(e.BaseEntry)).Count() > 0 ? SalesOrderWarrantyDates.Where(s => s.SalesOrderId.Equals(e.BaseEntry)).FirstOrDefault()?.WarrantyPeriod : Convert.ToDateTime(e.CreateDate).AddMonths(13)
                 }).ToList();
                 #endregion
-
+                List<QuotationProduct> quotationProducts = new List<QuotationProduct>();
+                if (!string.IsNullOrWhiteSpace(request.QuotationId.ToString())) 
+                {
+                    quotationProducts = await UnitWork.Find<QuotationProduct>(q => q.QuotationId == request.QuotationId).ToListAsync();
+                }
                 result.Data = ServiceWorkOrderList.Select(s => new ProductCodeListResp
                 {
                     SalesOrder = MnfSerialList.Where(m => m.MnfSerial.Equals(s.ManufacturerSerialNumber) && m.BaseType == 17)?.Max(m => m.BaseEntry),
@@ -463,7 +467,8 @@ namespace OpenAuth.App.Material
                     MaterialDescription = s.MaterialDescription,
                     IsProtected = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).FirstOrDefault()?.DocDate > DateTime.Now ? true : false,
                     DocDate = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).OrderByDescending(s => s.DocDate).FirstOrDefault()?.DocDate,
-                    FromTheme = s.FromTheme
+                    FromTheme = s.FromTheme,
+                    WarrantyTime= quotationProducts.Where(q=>q.ProductCode.Equals(s.ManufacturerSerialNumber)).FirstOrDefault()?.WarrantyTime
                 }).OrderBy(s => s.MaterialCode).ToList();
             }
             result.Count = ServiceWorkOrderList.Count();
@@ -1053,7 +1058,10 @@ namespace OpenAuth.App.Material
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
             }
             var Message = await Condition(obj);
-            obj.QuotationProducts = obj.QuotationProducts.Where(q => q.QuotationMaterials.Count > 0).ToList();
+            if (obj.IsMaterialType != "4") 
+            {
+                obj.QuotationProducts = obj.QuotationProducts.Where(q => q.QuotationMaterials.Count > 0).ToList();
+            }
             var QuotationObj = await CalculatePrice(obj);
             var dbContext = UnitWork.GetDbContext<Quotation>();
             using (var transaction = await dbContext.Database.BeginTransactionAsync())
