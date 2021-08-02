@@ -3878,7 +3878,7 @@ namespace OpenAuth.App
                .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
             var serviceWorkOrderList = await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
                .Include(s => s.ServiceWorkOrders)
-               .WhereIf(TechType != 2, w => w.VestInOrg == 1)//普通技术员只查看呼叫中心数据
+               .WhereIf(TechType != 2, w => (w.VestInOrg == 1|| w.VestInOrg==3))//普通技术员只查看呼叫中心数据
                .ToListAsync();
             //获取待处理单据数量
             var pendingQty = (serviceWorkOrderList.Where(s => s.ServiceWorkOrders.All(a => a.OrderTakeType == 0))
@@ -3905,7 +3905,7 @@ namespace OpenAuth.App
                 redeployIds.ForEach(f => serviceOrderIds.Add((int)f));
                 serviceOrderIds = serviceOrderIds.Distinct().ToList();
             }
-            var finishList = await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id)).WhereIf(TechType != 2, w => w.VestInOrg == 1)//普通技术员只查看呼叫中心数据
+            var finishList = await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id)).WhereIf(TechType != 2, w => (w.VestInOrg == 1 || w.VestInOrg == 3))//普通技术员只查看呼叫中心数据
                .Include(s => s.ServiceWorkOrders).ToListAsync();
             var finishQty = finishList
               .Where(s => s.ServiceWorkOrders.All(a => a.Status >= 7)).ToList().Count;
