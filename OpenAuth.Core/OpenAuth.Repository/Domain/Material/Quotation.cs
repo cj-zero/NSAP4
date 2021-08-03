@@ -263,7 +263,7 @@ namespace OpenAuth.Repository.Domain
         [Description("质保后付款百分比")]
         public decimal? PaymentAfterWarranty { get; set; }
         /// <summary>
-        ///领料类型 1更换 2.销售  3.成本
+        ///领料类型 1更换 2.销售  3.成本 4延保
         /// </summary>
         [Description("领料类型")]
 

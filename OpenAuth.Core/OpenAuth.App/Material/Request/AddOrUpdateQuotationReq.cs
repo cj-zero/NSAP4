@@ -1,4 +1,5 @@
 ﻿using Infrastructure.AutoMapper;
+using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using System;
 using System.Collections.Generic;
@@ -281,7 +282,10 @@ namespace OpenAuth.App.Material.Request
         /// 操作详情表
         /// </summary>
         public virtual List<QuotationOperationHistory> QuotationOperationHistorys { get; set; }
-        
 
+        /// <summary>
+        /// 生命周期
+        /// </summary>
+        public virtual List<FlowPathResp> FlowPathResp { get; set; }
     }
 }

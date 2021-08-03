@@ -85,7 +85,7 @@ namespace OpenAuth.App.Material
             var flowinstanceList = await flowinstanceObjs.ToListAsync();
             if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginUser.Account.Equals(Define.SYSTEM_USERNAME))
             {
-                
+
                 if (request.PageStart != null && request.PageStart == 1)
                 {
                     if (loginContext.Roles.Any(r => r.Name.Equals("销售员")))
@@ -217,7 +217,7 @@ namespace OpenAuth.App.Material
                                 break;
 
                             case 2:
-                                flowInstanceIds = flowinstanceList.Where(f => (f.b.CreateUserId.Equals(loginContext.User.Id) && f.b.Content== "回传销售订单")).Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => (f.b.CreateUserId.Equals(loginContext.User.Id) && f.b.Content == "回传销售订单")).Select(f => f.a.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId) && q.CreateUserId.Equals(loginUser.Id));
                                 break;
                             default:
@@ -236,7 +236,7 @@ namespace OpenAuth.App.Material
                     switch (request.StartType)
                     {
                         case 1:
-                            flowInstanceIds = flowinstanceList.Where(f => f.a.ActivityName == "未出库").Select(f => f.a.Id).Distinct().ToList();
+                            flowInstanceIds = flowinstanceList.Where(f => f.a.ActivityName == "待出库").Select(f => f.a.Id).Distinct().ToList();
                             Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId));
                             break;
                         case 2:
@@ -244,7 +244,7 @@ namespace OpenAuth.App.Material
                             Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId));
                             break;
                         default:
-                            flowInstanceIds = flowinstanceList.Where(f => f.a.ActivityName == "未出库" || f.a.ActivityName == "结束").Select(f => f.a.Id).Distinct().ToList();
+                            flowInstanceIds = flowinstanceList.Where(f => f.a.ActivityName == "待出库" || f.a.ActivityName == "结束").Select(f => f.a.Id).Distinct().ToList();
                             Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId));
                             break;
                     }
@@ -287,7 +287,7 @@ namespace OpenAuth.App.Material
                 CreateTime = Convert.ToDateTime(q.a.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 UpDateTime = q.a.QuotationOperationHistorys.FirstOrDefault() != null ? Convert.ToDateTime(q.a.QuotationOperationHistorys.OrderByDescending(h => h.CreateTime).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(q.a.UpDateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 q.a.QuotationStatus,
-                StatusName= flowinstanceObjs.Where(f=>f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish== FlowInstanceStatus.Rejected?"驳回" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish ==null||q.a.IsDraft==true? "未提交": flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Draft ?"撤回":flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.ActivityName,
+                StatusName = flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Rejected ? "驳回" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == null || q.a.IsDraft == true ? "未提交" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Draft ? "撤回" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.ActivityName,
                 q.a.Tentative,
                 q.a.IsProtected,
                 q.a.PrintWarehouse,
@@ -454,7 +454,7 @@ namespace OpenAuth.App.Material
                 }).ToList();
                 #endregion
                 List<QuotationProduct> quotationProducts = new List<QuotationProduct>();
-                if (!string.IsNullOrWhiteSpace(request.QuotationId.ToString())) 
+                if (!string.IsNullOrWhiteSpace(request.QuotationId.ToString()))
                 {
                     quotationProducts = await UnitWork.Find<QuotationProduct>(q => q.QuotationId == request.QuotationId).ToListAsync();
                 }
@@ -468,7 +468,7 @@ namespace OpenAuth.App.Material
                     IsProtected = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).FirstOrDefault()?.DocDate > DateTime.Now ? true : false,
                     DocDate = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).OrderByDescending(s => s.DocDate).FirstOrDefault()?.DocDate,
                     FromTheme = s.FromTheme,
-                    WarrantyTime= quotationProducts.Where(q=>q.ProductCode.Equals(s.ManufacturerSerialNumber)).FirstOrDefault()?.WarrantyTime
+                    WarrantyTime = quotationProducts.Where(q => q.ProductCode.Equals(s.ManufacturerSerialNumber)).FirstOrDefault()?.WarrantyTime
                 }).OrderBy(s => s.MaterialCode).ToList();
             }
             result.Count = ServiceWorkOrderList.Count();
@@ -596,7 +596,7 @@ namespace OpenAuth.App.Material
 
                 Equipments = Equipments.Where(e => !CategoryList.Contains(e.ItemCode)).ToList();
             }
-            else 
+            else
             {
                 Equipments = Equipments.Where(e => e.ItemCode.Equals("S111-SERVICE-GSF")).ToList();
             }
@@ -638,7 +638,6 @@ namespace OpenAuth.App.Material
             var CustomerInformation = await UnitWork.Find<crm_ocrd>(o => o.CardCode.Equals(ServiceOrders.TerminalCustomerId)).Select(o => new { frozenFor = o.frozenFor == "N" ? "正常" : "冻结" }).FirstOrDefaultAsync();
             var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(request.QuotationId)).ToListAsync();
             QuotationMergeMaterials = QuotationMergeMaterials.OrderBy(q => q.MaterialCode).ToList();
-            Quotations.QuotationOperationHistorys = Quotations.QuotationOperationHistorys.Where(q => q.ApprovalStage != "-1").OrderBy(q => q.CreateTime).ThenByDescending(o => o.Action).ToList();
             Quotations.ServiceRelations = (await UnitWork.Find<User>(u => u.Id.Equals(Quotations.CreateUserId)).FirstOrDefaultAsync()).ServiceRelations;
             var ocrds = await UnitWork.Find<crm_ocrd>(o => ServiceOrders.TerminalCustomerId.Equals(o.CardCode)).FirstOrDefaultAsync();
             var result = new TableData();
@@ -857,6 +856,8 @@ namespace OpenAuth.App.Material
                 q.QuotationMaterials = q.QuotationMaterials.OrderBy(m => m.MaterialCode).ToList();
             });
             quotationsMap.QuotationOperationHistorys = quotationsMap.QuotationOperationHistorys.Where(q => q.ApprovalStage != "-1").OrderBy(o => o.CreateTime).ThenByDescending(o => o.Action).ToList();
+            var operationHistorys = Quotations.QuotationOperationHistorys.Select(q => new OperationHistoryResp { ApprovalResult = q.ApprovalResult, ApprovalStage = q.ApprovalStage, Content = q.Action, CreateTime = q.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"), Remark = q.Remark, CreateUserName = q.CreateUser, IntervalTime = q.IntervalTime.ToString() }).ToList();
+            quotationsMap.FlowPathResp = await _flowInstanceApp.FlowPathRespList(operationHistorys, Quotations.FlowInstanceId);
             return quotationsMap;
         }
 
@@ -917,13 +918,13 @@ namespace OpenAuth.App.Material
                 var code = request.ItemCode.Substring(0, request.ItemCode.IndexOf("-") + 1);
                 query = query.Where(q => q.ItemCode.Substring(0, q.ItemCode.IndexOf("-") + 1).Equals(code) && !q.ItemCode.Equals(request.ItemCode));
             }
-            
+
             //是否延保
             if (request.IsWarranty != null && (bool)request.IsWarranty)
             {
                 query = query.Where(e => e.ItemCode.Equals("S111-SERVICE-GSF"));
             }
-            else 
+            else
             {
                 var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ShieldingMaterials")).Select(u => u.Name).ToListAsync();
                 query = query.Where(e => !CategoryList.Contains(e.ItemCode));
@@ -1058,10 +1059,6 @@ namespace OpenAuth.App.Material
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppId));
             }
             var Message = await Condition(obj);
-            if (obj.IsMaterialType != "4") 
-            {
-                obj.QuotationProducts = obj.QuotationProducts.Where(q => q.QuotationMaterials.Count > 0).ToList();
-            }
             var QuotationObj = await CalculatePrice(obj);
             var dbContext = UnitWork.GetDbContext<Quotation>();
             using (var transaction = await dbContext.Database.BeginTransactionAsync())
@@ -1259,7 +1256,8 @@ namespace OpenAuth.App.Material
                             {
                                 IsWarranty = "1";
                             }
-                            else {
+                            else
+                            {
                                 IsWarranty = "2";
                             }
                             afir.FrmData = "{ \"QuotationId\":\"" + QuotationObj.Id + "\",\"IsProtected\":\"" + IsProtected + "\",\"IsWarranty\":\"" + IsWarranty + "\",\"WarrantyType\":\"" + QuotationObj.WarrantyType + "\"}";
@@ -1717,6 +1715,27 @@ namespace OpenAuth.App.Material
                         }).ToList()
                     };
                     #endregion
+                    if (obj.IsMaterialType =="4")
+                    {
+                        var quotation=await UnitWork.Find<Quotation>(q => q.Id == obj.Id).Include(q=>q.QuotationProducts).ThenInclude(q=>q.QuotationMaterials).FirstOrDefaultAsync();
+                        var prodctCodes=quotation.QuotationProducts.Select(q => q.ProductCode).ToList();
+                        var warrantyDates= await UnitWork.Find<SalesOrderWarrantyDate>(s => prodctCodes.Contains(s.MnfSerial)).ToListAsync();
+                        foreach (var item in quotation.QuotationProducts)
+                        {
+                            await UnitWork.UpdateAsync<SalesOrderWarrantyDate>(s => s.MnfSerial.Equals(item.ProductCode), s => new SalesOrderWarrantyDate { WarrantyPeriod = item.WarrantyTime });
+                            await UnitWork.AddAsync<SalesOrderWarrantyDateRecord>(new SalesOrderWarrantyDateRecord
+                            {
+                                Id=Guid.NewGuid().ToString(),
+                                SalesOrderWarrantyDateId = warrantyDates.Where(w => w.MnfSerial.Equals(item.ProductCode)).FirstOrDefault()?.Id,
+                                CreateTime = DateTime.Now,
+                                QuotationId = quotation.Id,
+                                WarrantyExpense = item.QuotationMaterials != null && item.QuotationMaterials.Count() > 0 ? item.QuotationMaterials.Sum(q => q.DiscountPrices * q.Count) : 0,
+                                CreateUser=quotation.CreateUser,
+                                CreateUserId=quotation.CreateUserId,
+                                WarrantyPeriod=item.WarrantyTime
+                            });
+                        }
+                    }
                     transaction.Commit();
                     _capBus.Publish("Serve.SalesOfDelivery.Create", obj);
                 }
@@ -1729,37 +1748,46 @@ namespace OpenAuth.App.Material
             return result;
         }
         /// <summary>
-        /// 维修费差旅费定时交货
+        /// 维修费差旅费自动交货
         /// </summary>
         /// <returns></returns>
-        public async Task TimeOfDelivery()
+        public async Task TimeOfDelivery(int QuotationId)
         {
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ShieldingMaterials")).Select(u => u.Name).ToListAsync();
 
-            var quotations = await UnitWork.Find<Quotation>(q => q.QuotationStatus == 10 && q.CreateTime > Convert.ToDateTime("2021.05.01")).Include(q => q.QuotationMergeMaterials)
-                .Where(q => q.QuotationMergeMaterials.Where(m => !CategoryList.Contains(m.MaterialCode)).Count() <= 0 && q.SalesOrderId != null).ToListAsync();
-            foreach (var item in quotations)
+            var quotations = await UnitWork.Find<Quotation>(q => q.Id == QuotationId && q.Status == 2).Include(q => q.QuotationMergeMaterials)
+                .Where(q => (q.QuotationMergeMaterials.Where(m => !CategoryList.Contains(m.MaterialCode)).Count() <= 0 || q.IsMaterialType == 4) && q.SalesOrderId != null).FirstOrDefaultAsync();
+            if (quotations != null)
             {
-
                 var pictures = "68cc3412-492b-4f39-b7de-3ab3a957017b";
-                if ((item.ServiceChargeJH > 0 || item.ServiceChargeSM > 0) && item.TravelExpense > 0)
+                if (quotations.IsMaterialType == 4)
                 {
-                    pictures = "701d519b-5c0a-4369-adf4-8c0a2b7f0b16";
+
                 }
-                else if (item.TravelExpense > 0)
+                else
                 {
-                    pictures = "01a62877-1961-4f0e-9f39-2dab2cb2eb4a";
+                    if ((quotations.ServiceChargeJH > 0 || quotations.ServiceChargeSM > 0) && quotations.TravelExpense > 0)
+                    {
+                        pictures = "701d519b-5c0a-4369-adf4-8c0a2b7f0b16";
+                    }
+                    else if (quotations.TravelExpense > 0)
+                    {
+                        pictures = "01a62877-1961-4f0e-9f39-2dab2cb2eb4a";
+                    }
                 }
+
                 AddOrUpdateQuotationReq obj = new AddOrUpdateQuotationReq();
+                obj.Id = quotations.Id;
+                obj.IsMaterialType = quotations.IsMaterialType.ToString();
                 obj.ExpressageReqs = new ExpressageReq
                 {
                     ExpressNumber = "自动出库",
                     Freight = "0",
-                    QuotationId = item.Id,
+                    QuotationId = quotations.Id,
                     ExpressagePictures = new List<string>() { pictures }
                 };
                 obj.QuotationMergeMaterialReqs = new List<QuotationMergeMaterialReq>();
-                item.QuotationMergeMaterials.ForEach(q =>
+                quotations.QuotationMergeMaterials.ForEach(q =>
                 {
                     obj.QuotationMergeMaterialReqs.Add(new QuotationMergeMaterialReq
                     {
@@ -1773,12 +1801,11 @@ namespace OpenAuth.App.Material
                         MaterialType = q.MaterialType.ToString()
                     });
                 });
-                if (item.IsMaterialType != null)
+                if (quotations.IsMaterialType != null)
                 {
                     await UpdateMaterial(obj);
                 }
             }
-
         }
 
         /// <summary>
@@ -1802,7 +1829,7 @@ namespace OpenAuth.App.Material
             QuotationOperationHistory qoh = new QuotationOperationHistory();
 
             var obj = await UnitWork.Find<Quotation>(q => q.Id == req.Id).Include(q => q.QuotationProducts).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
-            var flowInstanceObj=await UnitWork.Find<FlowInstance>(f => f.Id.Equals(obj.FlowInstanceId)).FirstOrDefaultAsync();
+            var flowInstanceObj = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(obj.FlowInstanceId)).FirstOrDefaultAsync();
             qoh.ApprovalStage = obj.QuotationStatus.ToString();
 
             VerificationReq VerificationReqModle = new VerificationReq();
@@ -1856,6 +1883,7 @@ namespace OpenAuth.App.Material
                             #region 报价单同步到SAP，ERP3.0
                             _capBus.Publish("Serve.SellOrder.Create", obj.Id);
                             #endregion
+                            await TimeOfDelivery(obj.Id);
                         }
 
                     }
@@ -1890,13 +1918,34 @@ namespace OpenAuth.App.Material
                     {
                         obj.QuotationStatus = 10;
                         obj.Status = 2;
+                        await TimeOfDelivery(obj.Id);
                     }
 
                 }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("销售总助")) && flowInstanceObj.ActivityName == "销售总助审批") 
+                else if (loginContext.Roles.Any(r => r.Name.Equals("销售总助")) && flowInstanceObj.ActivityName == "销售总助审批")
                 {
                     qoh.Action = "销售总助审批";
                     obj.QuotationStatus = 5;
+                    if (obj.WarrantyType == 1)
+                    {
+                        var prodctCodes = obj.QuotationProducts.Select(q => q.ProductCode).ToList();
+                        var warrantyDates = await UnitWork.Find<SalesOrderWarrantyDate>(s => prodctCodes.Contains(s.MnfSerial)).ToListAsync();
+                        foreach (var item in obj.QuotationProducts)
+                        {
+                            await UnitWork.UpdateAsync<SalesOrderWarrantyDate>(s => s.MnfSerial.Equals(item.ProductCode), s => new SalesOrderWarrantyDate { WarrantyPeriod = item.WarrantyTime });
+                            await UnitWork.AddAsync<SalesOrderWarrantyDateRecord>(new SalesOrderWarrantyDateRecord
+                            {
+                                Id = Guid.NewGuid().ToString(),
+                                SalesOrderWarrantyDateId = warrantyDates.Where(w => w.MnfSerial.Equals(item.ProductCode)).FirstOrDefault()?.Id,
+                                CreateTime = DateTime.Now,
+                                QuotationId = obj.Id,
+                                WarrantyExpense = item.QuotationMaterials!=null&&item.QuotationMaterials.Count()>0?item.QuotationMaterials.Sum(q => q.DiscountPrices * q.Count):0,
+                                CreateUser = obj.CreateUser,
+                                CreateUserId = obj.CreateUserId,
+                                WarrantyPeriod = item.WarrantyTime
+                            });
+                        }
+                    }
                 }
                 else
                 {
@@ -1935,9 +1984,9 @@ namespace OpenAuth.App.Material
             await UnitWork.UpdateAsync<Quotation>(q => q.Id == obj.Id, q => new Quotation
             {
                 UpDateTime = DateTime.Now,
-                Tentative=obj.Tentative,
-                QuotationStatus=obj.QuotationStatus,
-                Status=obj.Status,
+                Tentative = obj.Tentative,
+                QuotationStatus = obj.QuotationStatus,
+                Status = obj.Status,
             });
             if (req.PictureIds != null && req.PictureIds.Count > 0)
             {
@@ -2097,7 +2146,17 @@ namespace OpenAuth.App.Material
             //    throw new Exception("该服务单已开始退料，不可领料。");
             //}
             #endregion
-
+            #region  判断序列号数据是否存在
+            if (obj.IsMaterialType == "4")
+            {
+                var productCodes = obj.QuotationProducts.Where(q => q.WarrantyExpirationTime != null).Select(q => q.ProductCode).ToList();
+                var dateCount = await UnitWork.Find<SalesOrderWarrantyDate>(s => productCodes.Contains(s.MnfSerial)).CountAsync();
+                if (dateCount < productCodes.Count())
+                {
+                    throw new Exception("暂时不可更改此服务单，请联系管理员");
+                }
+            }
+            #endregion
             //判定字段是否同时存在
             if (!(!string.IsNullOrWhiteSpace(obj.TaxRate) && !string.IsNullOrWhiteSpace(obj.InvoiceCategory) && !string.IsNullOrWhiteSpace(obj.InvoiceCompany)) && !(string.IsNullOrWhiteSpace(obj.TaxRate) && string.IsNullOrWhiteSpace(obj.InvoiceCategory) && string.IsNullOrWhiteSpace(obj.InvoiceCompany)))
             {
@@ -2130,6 +2189,10 @@ namespace OpenAuth.App.Material
             var loginUser = loginContext.User;
 
             var QuotationObj = obj.MapTo<Quotation>();
+            if (QuotationObj.IsMaterialType != 4 && QuotationObj.WarrantyType == 2)
+            {
+                QuotationObj.QuotationProducts = QuotationObj.QuotationProducts.Where(q => q.QuotationMaterials.Count > 0).ToList();
+            }
             QuotationObj.ErpOrApp = 1;
             if (loginUser.Account == Define.USERAPP)
             {
@@ -2142,7 +2205,7 @@ namespace OpenAuth.App.Material
             QuotationObj.Tentative = false;
             QuotationObj.PrintNo = Guid.NewGuid().ToString();
             QuotationObj.PrintTheNumber = 0;
-            QuotationObj.IsProtected = QuotationObj.IsMaterialType == 2 || (QuotationObj .IsMaterialType==4&& QuotationObj.WarrantyType==2) ? true : false;
+            QuotationObj.IsProtected = QuotationObj.IsMaterialType == 2 || (QuotationObj.IsMaterialType == 4 && QuotationObj.WarrantyType == 2) ? true : false;
             QuotationObj.QuotationProducts.ForEach(q =>
             {
                 q.QuotationMaterials.ForEach(m =>
@@ -2206,6 +2269,10 @@ namespace OpenAuth.App.Material
                 QuotationObj.TravelExpenseManHour = null;
             }
             #endregion
+            if (QuotationObj.IsMaterialType == 4)
+            {
+                QuotationObj.QuotationProducts = QuotationObj.QuotationProducts.Where(q => q.WarrantyTime != null).ToList();
+            }
             return QuotationObj;
         }
 
