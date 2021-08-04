@@ -1762,7 +1762,7 @@ namespace OpenAuth.App.Material
                 var pictures = "68cc3412-492b-4f39-b7de-3ab3a957017b";
                 if (quotations.IsMaterialType == 4)
                 {
-
+                    pictures = "9fda9864-6d40-46bc-a94b-3f2d45d2d3c7";
                 }
                 else
                 {
@@ -1883,7 +1883,7 @@ namespace OpenAuth.App.Material
                             #region 报价单同步到SAP，ERP3.0
                             _capBus.Publish("Serve.SellOrder.Create", obj.Id);
                             #endregion
-                            await TimeOfDelivery(obj.Id);
+                            
                         }
 
                     }
@@ -1903,7 +1903,7 @@ namespace OpenAuth.App.Material
                 }
                 else if (obj.CreateUserId.Equals(loginUser.Id) && flowInstanceObj.ActivityName == "回传销售订单")
                 {
-                    qoh.Action = "销售订单成立";
+                    qoh.Action = "回传销售订单";
                     obj.QuotationStatus = 8;
                 }
                 else if (loginContext.Roles.Any(r => r.Name.Equals("物料财务")) && flowInstanceObj.ActivityName == "财务审批")
@@ -1918,7 +1918,6 @@ namespace OpenAuth.App.Material
                     {
                         obj.QuotationStatus = 10;
                         obj.Status = 2;
-                        await TimeOfDelivery(obj.Id);
                     }
 
                 }
@@ -2008,6 +2007,10 @@ namespace OpenAuth.App.Material
                 UpdateTime = obj.UpDateTime,
             });
             await UnitWork.SaveAsync();
+            if (obj.Status == 2) 
+            {
+                await TimeOfDelivery(obj.Id);
+            }
         }
 
         /// <summary>

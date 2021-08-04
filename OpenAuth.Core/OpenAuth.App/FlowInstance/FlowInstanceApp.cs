@@ -1012,7 +1012,7 @@ namespace OpenAuth.App
             string historys = null;
             flowInstanceNodes.ForEach(f =>
             {
-                var operationHistorys = reqp.Where(q => q.Content.Contains(f.Name) || (f.Name == "审批结束" && (q.Content == "已支付" || q.Content == "出库完成" || q.Content == "结束")) || (f.Name == "待出库" && q.Content == "开始出库")).OrderByDescending(q => q.CreateTime).FirstOrDefault();
+                var operationHistorys = reqp.Where(q => q.Content.Contains(f.Name) || (f.Name == "审批结束" && (q.Content == "已支付" || q.Content == "出库完成" || q.Content == "结束")) || (f.Name == "待出库" && q.Content == "开始出库") || (f.Name == "回传销售订单" && q.Content == "销售订单成立")).OrderByDescending(q => q.CreateTime).FirstOrDefault();
 
                 if (historys == null || (operationHistorys?.CreateTime != null && DateTime.Parse(historys) < DateTime.Parse(operationHistorys.CreateTime)))
                 {
