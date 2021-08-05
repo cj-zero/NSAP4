@@ -332,7 +332,7 @@ namespace OpenAuth.App
                                     .Select(c => c.CurrentUserNsapId)
                                     .Distinct()
                                     .ToListAsync();
-            userIds.AddRange(noComplete);
+            //userIds.AddRange(noComplete);
 
             var pppUserMap = await UnitWork.Find<AppUserMap>(null).ToListAsync();
 
@@ -374,7 +374,10 @@ namespace OpenAuth.App
                 Count = clockinfo.Where(q => q.AppUserId == g.a.AppUserId).Sum(q => q.Count)
             }).ToList();
 
-            var data = await UnitWork.Find<User>(c => userIds.Contains(c.Id)).WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)).ToListAsync();
+            //var data = await UnitWork.Find<User>(c => userIds.Contains(c.Id)).WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)).ToListAsync();
+            var data = await (from a in UnitWork.Find<AppUserMap>(null)
+                              join b in UnitWork.Find<User>(c => c.Status == 0).WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)) on a.UserID equals b.Id
+                              select new User { Id = b.Id, Name = b.Name, Mobile = b.Mobile }).ToListAsync();
             List<RealTimeLocationExcelDto> excelDtos = new List<RealTimeLocationExcelDto>();
             foreach (var datauser in data)
             {

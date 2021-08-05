@@ -3,6 +3,7 @@ using Quartz;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace OpenAuth.App.Jobs
@@ -11,6 +12,7 @@ namespace OpenAuth.App.Jobs
     {
         private readonly OpenJobApp _openJobApp;
         private readonly SalesOrderWarrantyDateApp _salesOrderWarrantyDateApp;
+        static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
         public SynSalesOrderJob(OpenJobApp openJobApp, SalesOrderWarrantyDateApp salesOrderWarrantyDateApp)
         {
             _openJobApp = openJobApp;
@@ -24,9 +26,15 @@ namespace OpenAuth.App.Jobs
         public async Task Execute(IJobExecutionContext context)
         {
             var jobId = context.MergedJobDataMap.GetString(Define.JOBMAPKEY);
-            //todo:这里可以加入自己的自动任务逻辑
-            await _salesOrderWarrantyDateApp.SynchronizationSalesOrder();
-
+            await semaphoreSlim.WaitAsync();
+            try
+            {
+                _salesOrderWarrantyDateApp.SynchronizationSalesOrder();
+            }
+            finally
+            {
+                semaphoreSlim.Release();
+            }
             _openJobApp.RecordRun(jobId);
         }
     }
