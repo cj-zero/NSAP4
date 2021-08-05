@@ -2152,11 +2152,15 @@ namespace OpenAuth.App.Material
             #region  判断序列号数据是否存在
             if (obj.IsMaterialType == "4")
             {
-                var productCodes = obj.QuotationProducts.Where(q => q.WarrantyExpirationTime != null).Select(q => q.ProductCode).ToList();
-                var dateCount = await UnitWork.Find<SalesOrderWarrantyDate>(s => productCodes.Contains(s.MnfSerial)).CountAsync();
-                if (dateCount < productCodes.Count())
+                var productCodes = obj.QuotationProducts.Where(q => q.WarrantyTime != null).Select(q => q.ProductCode).ToList();
+                var warrantyDates = await UnitWork.Find<SalesOrderWarrantyDate>(s => productCodes.Contains(s.MnfSerial)).ToListAsync();
+                if (warrantyDates.Count() < productCodes.Count())
                 {
-                    throw new Exception("暂时不可更改此服务单，请联系管理员");
+                    StringBuilder mnfSerials = new StringBuilder();
+                    productCodes.Where(p => warrantyDates.Select(w => w.MnfSerial).ToList().Contains(p)).ForEach(p=> {
+                        mnfSerials.Append(p+"、");
+                    });
+                    throw new Exception($"{mnfSerials.ToString().Substring(0, mnfSerials.ToString().Length-2)}序列号暂不支持延保，请联系管理员处理");
                 }
             }
             #endregion
