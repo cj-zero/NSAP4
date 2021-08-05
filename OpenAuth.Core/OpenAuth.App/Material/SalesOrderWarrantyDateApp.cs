@@ -158,8 +158,19 @@ namespace OpenAuth.App.Material
                     if (w.WarrantyPeriod < model.Where(m => m.MnfSerial.Equals(w.MnfSerial)).FirstOrDefault().WarrantyPeriod) 
                     {
                         var modelObj= model.Where(m => m.MnfSerial.Equals(w.MnfSerial)).FirstOrDefault();
-                        modelObj.Id = w.Id;
-                        UnitWork.Update<SalesOrderWarrantyDate>(modelObj);
+                        UnitWork.Update<SalesOrderWarrantyDate>(s=>s.Id==w.Id,s=>new SalesOrderWarrantyDate { 
+                            CustomerId= modelObj.CustomerId,
+                            CreateTime= modelObj.CreateTime,
+                            CustomerName= modelObj.CustomerName,
+                            SlpCode= modelObj.SlpCode,
+                            SalesOrderId= modelObj.SalesOrderId,
+                            SalesOrderName= modelObj.SalesOrderName,
+                            DeliveryDate= modelObj.DeliveryDate,
+                            MnfSerial= modelObj.MnfSerial,
+                            IsPass= modelObj.IsPass,
+                            WarrantyPeriod= modelObj.WarrantyPeriod,
+                            Remark= modelObj.Remark
+                        });
                         mnfSerials.Add(w.MnfSerial);
                     }
                 });
