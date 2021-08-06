@@ -167,8 +167,25 @@ namespace OpenAuth.App.Response
         /// 撤回备注
         /// </summary>
         public string Remark { get; set; }
+        /// <summary>
+        /// 费用归属
+        /// </summary>
+        public int? VestInOrg { get; set; }
 
+        /// <summary>
+        /// 行程天数
+        /// </summary>
+        public int? dailyReportNum { get; set; }
 
+        /// <summary>
+        /// 出发地点
+        /// </summary>
+        public string Becity { get; set; }
+        /// <summary>
+        /// 到达地点
+        /// </summary>
+        public string Destination { get; set; }
+        
         /// <summary>
         /// 服务单关联的工单
         /// </summary>

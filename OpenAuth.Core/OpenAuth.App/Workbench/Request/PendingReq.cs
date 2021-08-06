@@ -26,7 +26,11 @@ namespace OpenAuth.App.Workbench.Request
         /// 申请人
         /// </summary>
         public string Petitioner { get; set; }
-
+        /// <summary>
+        /// 原单据
+        /// </summary>
+        public string SourceNumbers { get; set; }
+        
         /// <summary>
         /// 更新时间开始
         /// </summary>

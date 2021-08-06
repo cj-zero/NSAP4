@@ -173,7 +173,7 @@ namespace OpenAuth.App
             }
             //var serviceOrderIds = await UnitWork.Find<OutsourcExpenses>(null).Select(o => (int)o.ServiceOrderId).ToListAsync();
             var query = from a in UnitWork.Find<CompletionReport>(c => c.CreateUserId.Equals(loginContext.User.Id) && (c.IsReimburse <= 1 || serviceOrderIds.Contains((int)c.ServiceOrderId)))
-                        join b in UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceWorkOrders) on a.ServiceOrderId equals b.Id into ab
+                        join b in UnitWork.Find<ServiceOrder>(c=>c.VestInOrg==1).Include(s => s.ServiceWorkOrders) on a.ServiceOrderId equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
                             //where !serviceOrderIds.Contains(b.Id)
                         select new { a, b };

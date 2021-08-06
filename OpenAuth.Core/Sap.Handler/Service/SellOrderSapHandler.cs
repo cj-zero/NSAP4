@@ -267,7 +267,7 @@ namespace Sap.Handler.Service
                     semaphoreSlim.Release();
                     await HandleSellOrderERP(quotation.Id);
                 }
-                
+
                 Log.Logger.Warning($"同步成功，SAP_ID：{docNum}", typeof(SellOrderSapHandler));
             }
             if (!string.IsNullOrWhiteSpace(allerror.ToString()))

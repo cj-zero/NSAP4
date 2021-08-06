@@ -248,6 +248,26 @@ namespace OpenAuth.Repository.Domain
         public int IsStopOrder { get; set; }
 
         /// <summary>
+        /// 开始时间
+        /// </summary>
+        [Description("开始时间")]
+        public DateTime? StartTime { get; set; }
+        /// <summary>
+        /// 结束时间
+        /// </summary>
+        [Description("结束时间")]
+        public DateTime? EndTime { get; set; }
+        /// <summary>
+        /// 出差时常
+        /// </summary>
+        [Description("出差时常")]
+        public decimal? TravelTime { get; set; }
+        /// <summary>
+        /// 事务类型
+        /// </summary>
+        [Description("事务类型")]
+        public int? TransactionType { get; set; }
+        /// <summary>
         /// 技术员留言消息
         /// </summary>
         [Description("技术员留言消息")]
