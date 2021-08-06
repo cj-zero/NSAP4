@@ -34,5 +34,14 @@ namespace OpenAuth.App.Order
         /// 业务员
         /// </summary>
         public object U_YWY { get; set; }
+        /// <summary>
+        /// 货币类型
+        /// </summary>
+
+        public string Currency { get; set; }
+        /// <summary>
+        /// 发票类型
+        /// </summary>
+        public string U_FPLB { get; set; }
     }
 }

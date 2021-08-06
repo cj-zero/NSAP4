@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Order;
+using OpenAuth.App.Order.ModelDto;
 using OpenAuth.App.Order.Request;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -15,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace OpenAuth.WebApi.Controllers.Order
@@ -288,6 +290,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             result.Result = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@" SELECT CurrCode AS Id,CurrName AS Name FROM nsap_bone.crm_ocrn", CommandType.Text, null).ToList();
             return result;
         }
+
         /// <summary>
         /// 业务伙伴列表
         /// </summary>
@@ -319,10 +322,10 @@ namespace OpenAuth.WebApi.Controllers.Order
                 sqlcont = dt.Rows[0][5].ToString();
                 sboname = dt.Rows[0][0].ToString();
             }
-            if (!string.IsNullOrEmpty(request.SortName) && !string.IsNullOrEmpty(request.SortName))
+            if (!string.IsNullOrEmpty(request.SortOrder) && !string.IsNullOrEmpty(request.SortName))
             {
+                request.SortName = request.SortName.Replace("cardcode", "a.cardcode").Replace("cardname", "a.cardname").Replace("slpname", "b.slpname").Replace("currency", "a.currency").Replace("balance", "a.balance");
                 sortString = string.Format("{0} {1}", request.SortName, request.SortOrder.ToUpper());
-                //sortName = " " + request.SortName + " " + request.SortOrder;
             }
             else
             {
@@ -566,6 +569,8 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            request.TypeId = "0";
+            request.IsbillCfg = "1";
             var result = new TableData();
             var userId = _serviceBaseApp.GetUserNaspId();
             var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
@@ -573,7 +578,8 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         /// <summary>
-        /// 客户未处理订单数
+        /// 客户未清销售订单
+        /// GetOpenORDRsByCustomer
         /// </summary>
         /// <param name="cardCode"></param>
         /// <returns></returns>
@@ -586,7 +592,8 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         /// <summary>
-        /// 客户类型
+        /// 客户类型（国内外客户）
+        /// GetClientEconomicNature
         /// </summary>
         /// <param name="cardCode"></param>
         /// <returns></returns>
@@ -717,6 +724,175 @@ namespace OpenAuth.WebApi.Controllers.Order
                                             ");
                 return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
             }
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="TableID"></param>
+        /// <param name="AliasID"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetQUTCustomeValueByFN")]
+        public Response<List<SelectOption>> GetQUTCustomeValueByFN(string TableID, string AliasID = "ZS")
+        {
+
+            //客户端设置的自定义字段U_ZS
+            //string TableID = "QUT1";string AliasID = "ZS";
+            string saptabname = "";
+            switch (TableID)
+            {
+                case "sale_qut1":
+                    saptabname = "QUT1";
+                    break;
+                case "sale_rdr1":
+                    saptabname = "RDR1";
+                    break;
+                default:
+                    saptabname = TableID.Split('_')[1];
+                    break;
+            }
+            string strSql = string.Format(@"select t1.FldValue as id,t1.Descr as name from ufd1 t1 LEFT JOIN cufd t0 on t0.TableID=t1.TableID and t0.FieldID=t1.FieldID
+                                            where t0.TableID='{0}' AND t0.AliasID='{1}' order by t1.IndexID asc ", saptabname, AliasID);
+            var result = new Response<List<SelectOption>>();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result.Result = UnitWork.ExcuteSql<SelectOption>(ContextType.SapDbContextType, strSql, CommandType.Text, null);
+            return result;
+
+        }
+        /// <summary>
+        /// 获取后勤信息接口
+        /// </summary>
+        /// <param name="CardCode">客户编码</param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetAddress")]
+        ///[AllowAnonymous]
+        public Response<List<AddresTypeDto>> GetAddress(string CardCode)
+        {
+            var result = new Response<List<AddresTypeDto>>();
+            try
+            {
+                if (!string.IsNullOrEmpty(CardCode))
+                {
+                    List<AddresTypeDto> addresTypeList = new List<AddresTypeDto>();
+                    List<string> addresTypes = new List<string>() { "B", "S" };
+                    var userId = _serviceBaseApp.GetUserNaspId();
+                    var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+                    string strSql = string.Format("SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM {0}.sbo_info WHERE sbo_id={1}", "nsap_base", sboid);
+                    DataTable dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+                    string dRowData = string.Empty;
+                    string isOpen = "0";
+                    if (dt.Rows.Count > 0)
+                    {
+                        isOpen = dt.Rows[0][6].ToString();
+                    }
+                    foreach (var item in addresTypes)
+                    {
+                        if (isOpen == "0")
+                        {
+                            StringBuilder sql = new StringBuilder();
+                            sql.Append(" SELECT Address AS name,CONCAT(IFNULL(ZipCode,''),IFNULL(b.Name,''),IFNULL(c.Name,''),IFNULL(City,''),IFNULL(Building,'')) AS id,a.ZipCode,a.State ");
+                            sql.AppendFormat(" FROM {0}.crm_crd1 a", "nsap_bone");
+                            sql.AppendFormat(" LEFT JOIN {0}.store_ocry b ON a.Country=b.Code", "nsap_bone");
+                            sql.AppendFormat(" LEFT JOIN {0}.store_ocst c ON a.State=c.Code", "nsap_bone");
+                            sql.AppendFormat(" WHERE AdresType='{0}' AND CardCode='{1}'", item, CardCode);
+                            //  UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql.ToString(), CommandType.Text, null);
+                            //item.Address = UnitWork.ExcuteSql<AddressDto>(ContextType.NsapBaseDbContext, sql.ToString(), CommandType.Text, null).FirstOrDefault();
+                            addresTypeList.Add(new AddresTypeDto()
+                            {
+                                AddresType = item,
+                                Address = UnitWork.ExcuteSql<AddressDto>(ContextType.NsapBaseDbContext, sql.ToString(), CommandType.Text, null)
+                            });
+                        }
+                        else
+                        {
+                            //string strsql = string.Format("SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM {0}.sbo_info WHERE sbo_id={1}", "nsap_base", sboid);
+                            //DataTable dtsql = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strsql, CommandType.Text, null);
+                            //string sqlconn = "";
+                            //if (dt.Rows.Count > 0)
+                            //{
+                            //    sqlconn = dt.Rows[0][5].ToString();
+                            //}
+                            StringBuilder sql = new StringBuilder();
+                            sql.Append(" SELECT Address AS name,(ISNULL(ZipCode,'') + ISNULL(b.Name,'')+ISNULL(c.Name,'')+ISNULL(City,'')+ISNULL(CONVERT(VARCHAR(1000),Building),'')) AS id,a.ZipCode,a.State ");
+                            sql.Append(" FROM CRD1 a ");
+                            sql.Append(" LEFT JOIN OCRY b ON a.Country=b.Code");
+                            sql.Append(" LEFT JOIN OCST c ON a.State=c.Code");
+                            sql.AppendFormat(" WHERE AdresType='{0}' AND CardCode='{1}'", item, CardCode);
+                            addresTypeList.Add(new AddresTypeDto()
+                            {
+                                AddresType = item,
+                                Address = UnitWork.ExcuteSql<AddressDto>(ContextType.SapDbContextType, sql.ToString(), CommandType.Text, null)
+                            });
+                        }
+                    }
+                    result.Result = addresTypeList;
+                }
+                return result;
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+        /// <summary>
+        /// 付款条件
+        /// </summary>
+        /// <param name="GroupNum"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetPayMentInfo")]
+        public Response<PayMentInfoDto> GetPayMentInfo(string GroupNum)
+        {
+            try
+            {
+                var result = new Response<PayMentInfoDto>();
+                string strSql = string.Format("SELECT PrepaDay,PrepaPro,PayBefShip,GoodsToPro,GoodsToDay");
+                strSql += string.Format(" FROM {0}.crm_octg_cfg", "nsap_bone");
+                strSql += string.Format(" WHERE GroupNum={0}", GroupNum);
+                result.Result = UnitWork.ExcuteSql<PayMentInfoDto>(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).FirstOrDefault();
+                return result;
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+        /// <summary>
+        /// 装运类型
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("DropPopupTrnspCode")]
+        public Response<List<PopupTrnspDto>> DropPopupTrnspCode(int SboId)
+        {
+            var result = new Response<List<PopupTrnspDto>>();
+            string strSql = " SELECT TrnspCode,TrnspName FROM nsap_bone.crm_oshp WHERE sbo_id=" + SboId + "";
+            result.Result = UnitWork.ExcuteSql<PopupTrnspDto>(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            return result;
+        }
+        /// <summary>
+        /// 税率是否启用
+        /// IsSwitching
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("EnableTaxRate")]
+        public Response<bool> EnableTaxRate()
+        {
+            var result = new Response<bool>() { Result = false };
+            StringBuilder strSql = new StringBuilder();
+            strSql.AppendFormat("SELECT is_valid FROM nsap_bone.base_sys_switch WHERE table_nm='sale_oqut' AND fld_nm='U_FPLB'");
+            DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
+            if (dataTable != null && dataTable.Rows.Count > 0)
+            {
+                if (dataTable.Rows[0][0].ToString() == "1")
+                {
+                    result.Result = true;
+                }
+            }
+            return result;
         }
     }
 }

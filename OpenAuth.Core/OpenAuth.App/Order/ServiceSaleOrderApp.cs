@@ -930,7 +930,7 @@ namespace OpenAuth.App.Order
             string filterString = string.Empty;
             if (!string.IsNullOrEmpty(query.SortName) && !string.IsNullOrEmpty(query.SortOrder))
             {
-                sortString = string.Format("{0} {1}", query.SortName, query.SortOrder.ToUpper());
+                sortString = string.Format("{0} {1}", query.SortName.Replace("itemcode", "m.itemcode"), query.SortOrder.ToUpper());
             }
             if (!string.IsNullOrEmpty(query.ItemCode))
             {
@@ -1020,7 +1020,7 @@ namespace OpenAuth.App.Order
             string filterString = "(Canceled = 'Y' or DocStatus = 'O') and SlpCode =" + query.SlpCode;
             if (!string.IsNullOrEmpty(query.SortName) && !string.IsNullOrEmpty(query.SortOrder))
             {
-                sortString = string.Format("{0} {1}", query.SortName, query.SortOrder.ToUpper());
+                sortString = string.Format("{0} {1}", query.SortName.Replace("cardcode", "a.cardcode"), query.SortOrder.ToUpper());
             }
             else
             {

@@ -462,5 +462,21 @@ namespace OpenAuth.Repository
             var dataContext = GetDbContext(contextType);
             return dataContext.Database.ExecuteScalar(sql, commandType, param);
         }
+        //public  DataSet ExecuteDataset(string connectionString, CommandType commandType, string commandText)
+        //{
+        //    return ExecuteDataset(connectionString, commandType, commandText, (IDataParameter[])null);
+        //}
+        //public  DataSet ExecuteDataset(string connectionString, CommandType commandType, string commandText, params IDataParameter[] commandParameters)
+        //{
+        //    if (connectionString == null || connectionString.Length == 0)
+        //    {
+        //        throw new ArgumentNullException("connectionString");
+        //    }
+        //    using (IDbConnection dbConnection = GetConnection(connectionString))
+        //    {
+        //        dbConnection.Open();
+        //        return ExecuteDataset(dbConnection, commandType, commandText, commandParameters);
+        //    }
+        //}
     }
 }
