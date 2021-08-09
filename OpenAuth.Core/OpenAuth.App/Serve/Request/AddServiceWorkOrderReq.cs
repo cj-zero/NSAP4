@@ -101,5 +101,22 @@ namespace OpenAuth.App.Request
         /// 服务方式
         /// </summary>
         public int? ServiceMode { get; set; }
+
+        /// <summary>
+        /// 开始时间
+        /// </summary>
+        public DateTime? StartTime { get; set; }
+        /// <summary>
+        /// 结束时间
+        /// </summary>
+        public DateTime? EndTime { get; set; }
+        /// <summary>
+        /// 出差时常
+        /// </summary>
+        public decimal? TravelTime { get; set; }
+        /// <summary>
+        /// 事务类型
+        /// </summary>
+        public int? TransactionType { get; set; }
     }
 }

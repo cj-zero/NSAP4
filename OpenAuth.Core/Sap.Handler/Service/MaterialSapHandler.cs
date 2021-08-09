@@ -45,6 +45,10 @@ namespace Sap.Handler.Service
                     var oCPR = await UnitWork.Find<OCPR>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId) && o.Active == "Y").FirstOrDefaultAsync();
                     var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(quotation.CreateUserId)).FirstOrDefaultAsync())?.NsapUserId;
                     var slpcode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
+                    if (string.IsNullOrWhiteSpace(slpcode.ToString())) 
+                    {
+                        slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
+                    }
                     var ordr = await UnitWork.Find<RDR1>(o => o.DocEntry.Equals(quotation.SalesOrderId)).Select(o => new { o.LineNum, o.ItemCode,o.Price }).ToListAsync();
                     var ywy = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => o.SlpCode).FirstOrDefaultAsync();
                     List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };

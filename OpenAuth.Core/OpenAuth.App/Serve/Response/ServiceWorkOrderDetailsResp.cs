@@ -193,6 +193,23 @@ namespace OpenAuth.App.Response
         ///核对设备 0未核对 1正确 2失败
         /// </summary>
         public int IsCheck { get; set; }
+        /// <summary>
+        /// 开始时间
+        /// </summary>
+        public DateTime? StartTime { get; set; }
+        /// <summary>
+        /// 结束时间
+        /// </summary>
+        public DateTime? EndTime { get; set; }
+        /// <summary>
+        /// 出差时常
+        /// </summary>
+        public decimal? TravelTime { get; set; }
+        /// <summary>
+        /// 事务类型
+        /// </summary>
+        public int? TransactionType { get; set; }
+        
 
         /// <summary>
         /// 完工时间

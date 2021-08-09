@@ -112,7 +112,10 @@ namespace OpenAuth.App.Request
         /// appid
         /// </summary>
         public int? AppUserId { get; set; }
-
+        /// <summary>
+        /// 是否自动派单
+        /// </summary>
+        public bool? IsSend { get; set; }
         /// <summary>
         /// 服务单关联的工单
         /// </summary>

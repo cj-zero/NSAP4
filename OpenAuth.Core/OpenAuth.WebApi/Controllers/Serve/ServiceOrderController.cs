@@ -308,7 +308,17 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
-        
+        /// <summary>
+        /// 新建行政单
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> CreateAdministrativeOrder(CustomerServiceAgentCreateOrderReq req)
+        {
+            var result = new Response();
+            await _serviceOrderApp.CreateAdministrativeOrder(req);
+            return result;
+        }
         /// <summary>
         /// 获取服务单详情
         /// </summary>

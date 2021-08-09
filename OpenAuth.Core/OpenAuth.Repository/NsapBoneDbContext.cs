@@ -40,7 +40,11 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<sale_ordr_plugin>().HasKey(o => new { o.sbo_id, o.DocEntry });
             modelBuilder.Entity<store_osrn_alreadyexists>().HasKey(o => new { o.ItemCode, o.SysNumber });
             modelBuilder.Entity<store_drawing_job>().HasKey(o => new { o.Id });
-
+            modelBuilder.Entity<crm_ocrg>().HasKey(o => new { o.sbo_id,o.GroupCode });
+            modelBuilder.Entity<crm_oidc>().HasKey(o => new { o.sbo_id,o.Code });
+            modelBuilder.Entity<crm_ohem>().HasKey(o => new { o.empID,o.sbo_id });
+            modelBuilder.Entity<crm_ocry>().HasKey(o => new { o.Code});
+            modelBuilder.Entity<crm_ocst>().HasKey(o => new { o.Code,o.Country });
         }
 
         public virtual DbSet<sale_transport> sale_transports { get; set; }
@@ -70,6 +74,11 @@ namespace OpenAuth.Repository
         public virtual DbSet<sale_rin1> sale_rin1s { get; set; }
         public virtual DbSet<sale_oinv> sale_oinvs { get; set; }
         public virtual DbSet<sale_inv1> sale_inv1s { get; set; }
+        public virtual DbSet<crm_ocrg> crm_ocrgs { get; set; }
+        public virtual DbSet<crm_oidc> crm_oidc { get; set; }
+        public virtual DbSet<crm_ohem> crm_ohem { get; set; }
+        public virtual DbSet<service_oins> service_oins { get; set; }
+
         //非数据库表格
         public virtual DbSet<v_storeitemstock> v_storeitemstocks { get; set; }
         public virtual DbSet<sale_ordr_plugin> SaleOrdrPlugins { get; set; }
