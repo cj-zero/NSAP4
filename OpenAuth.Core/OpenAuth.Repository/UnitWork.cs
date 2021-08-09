@@ -81,7 +81,14 @@ namespace OpenAuth.Repository
         {
             return Filter(exp);
         }
-
+        /// <summary>
+        /// 根据过滤条件，获取记录
+        /// </summary>
+        /// <param name="exp">The exp.</param>
+        public IQueryable<T> FindTrack<T>(Expression<Func<T, bool>> exp = null) where T : class
+        {
+            return FilterTrack(exp);
+        }
         public bool IsExist<T>(Expression<Func<T, bool>> exp) where T : class
         {
             return GetDbContext<T>().Set<T>().Any(exp);
@@ -253,7 +260,13 @@ namespace OpenAuth.Repository
                 dbSet = dbSet.Where(exp);
             return dbSet;
         }
-
+        private IQueryable<T> FilterTrack<T>(Expression<Func<T, bool>> exp) where T : class
+        {
+            var dbSet = GetDbContext<T>().Set<T>().AsQueryable();
+            if (exp != null)
+                dbSet = dbSet.Where(exp);
+            return dbSet;
+        }
         public int ExecuteSql(string sql, Type contextType)
         {
             return GetDbContext(contextType).Database.ExecuteSqlRaw(sql);

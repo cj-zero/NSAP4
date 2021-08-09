@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using OpenAuth.Repository.Domain;
+using System.Collections.Generic;
 
 namespace OpenAuth.App.Request
 {
@@ -24,6 +25,11 @@ namespace OpenAuth.App.Request
         /// 驳回类型。null:使用节点配置的驳回类型/0:前一步/1:第一步/2：指定节点，使用NodeRejectStep
         /// </summary>
         public string NodeRejectType { get; set; }
-        
+
+        /// <summary>
+        /// 指定操作人用户
+        /// </summary>
+        public User Operator { get; set; }
+
     }
 }

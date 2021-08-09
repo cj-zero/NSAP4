@@ -287,7 +287,7 @@ namespace OpenAuth.App.Material
                 CreateTime = Convert.ToDateTime(q.a.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 UpDateTime = q.a.QuotationOperationHistorys.FirstOrDefault() != null ? Convert.ToDateTime(q.a.QuotationOperationHistorys.OrderByDescending(h => h.CreateTime).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(q.a.UpDateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 q.a.QuotationStatus,
-                StatusName = flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Rejected ? "驳回" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == null || q.a.IsDraft == true ? "未提交" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Draft ? "撤回" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.ActivityName,
+                StatusName =q.a.QuotationStatus==12?"部分出库":flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Rejected ? "驳回" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == null || q.a.IsDraft == true ? "未提交" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Draft ? "撤回" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.ActivityName,
                 q.a.Tentative,
                 q.a.IsProtected,
                 q.a.PrintWarehouse,
@@ -413,14 +413,14 @@ namespace OpenAuth.App.Material
             if (ServiceWorkOrderList != null && ServiceWorkOrderList.Count > 0)
             {
                 #region 获取交货创建时间
-                var MnfSerials = ServiceWorkOrderList.Select(s => s.ManufacturerSerialNumber).ToList();
+                var mnfSerials = ServiceWorkOrderList.Select(s => s.ManufacturerSerialNumber).ToList();
 
                 var manufacturerSerialNumber = from a in UnitWork.Find<OITL>(null)
                                                join b in UnitWork.Find<ITL1>(null) on new { a.LogEntry, a.ItemCode } equals new { b.LogEntry, b.ItemCode } into ab
                                                from b in ab.DefaultIfEmpty()
                                                join c in UnitWork.Find<OSRN>(null) on new { b.ItemCode, SysNumber = b.SysNumber.Value } equals new { c.ItemCode, c.SysNumber } into bc
                                                from c in bc.DefaultIfEmpty()
-                                               where (a.DocType == 15 || a.DocType == 59) && MnfSerials.Contains(c.MnfSerial)
+                                               where (a.DocType == 15 || a.DocType == 59) && mnfSerials.Contains(c.MnfSerial)
                                                select new { c.MnfSerial, a.DocEntry, a.BaseEntry, a.DocType, a.CreateDate, a.BaseType };
                 #region 暂时废弃
                 //var Equipments = from a in manufacturerSerialNumber
@@ -445,12 +445,11 @@ namespace OpenAuth.App.Material
 
                 var MnfSerialList = await manufacturerSerialNumber.ToListAsync();
                 var docdate = await manufacturerSerialNumber.Where(m => m.BaseType == 17).ToListAsync();
-                var SalesOrderIds = docdate.Select(d => d.BaseEntry).ToList();
-                var SalesOrderWarrantyDates = await UnitWork.Find<SalesOrderWarrantyDate>(s => SalesOrderIds.Contains(s.SalesOrderId) && s.IsPass == true).ToListAsync();
+                var SalesOrderWarrantyDates = await UnitWork.Find<SalesOrderWarrantyDate>(s => mnfSerials.Contains(s.MnfSerial)).ToListAsync();
                 var IsProtecteds = docdate.Select(e => new
                 {
                     MnfSerial = e.MnfSerial,
-                    DocDate = SalesOrderWarrantyDates.Where(s => s.SalesOrderId.Equals(e.BaseEntry)).Count() > 0 ? SalesOrderWarrantyDates.Where(s => s.SalesOrderId.Equals(e.BaseEntry)).FirstOrDefault()?.WarrantyPeriod : Convert.ToDateTime(e.CreateDate).AddMonths(13)
+                    DocDate = SalesOrderWarrantyDates.Where(s => s.MnfSerial.Equals(e.MnfSerial)).Count() > 0 ? SalesOrderWarrantyDates.Where(s => s.MnfSerial.Equals(e.MnfSerial)).FirstOrDefault()?.WarrantyPeriod : Convert.ToDateTime(e.CreateDate).AddMonths(13)
                 }).ToList();
                 #endregion
                 List<QuotationProduct> quotationProducts = new List<QuotationProduct>();
@@ -466,7 +465,7 @@ namespace OpenAuth.App.Material
                     MaterialCode = s.MaterialCode,
                     MaterialDescription = s.MaterialDescription,
                     IsProtected = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).FirstOrDefault()?.DocDate > DateTime.Now ? true : false,
-                    DocDate = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).OrderByDescending(s => s.DocDate).FirstOrDefault()?.DocDate,
+                    DocDate = IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).OrderByDescending(s => s.DocDate).FirstOrDefault()?.DocDate==null ? SalesOrderWarrantyDates.Where(w => w.MnfSerial.Equals(s.ManufacturerSerialNumber)).FirstOrDefault()?.WarrantyPeriod: IsProtecteds.Where(i => i.MnfSerial.Equals(s.ManufacturerSerialNumber)).OrderByDescending(s => s.DocDate).FirstOrDefault()?.DocDate,
                     FromTheme = s.FromTheme,
                     WarrantyTime = quotationProducts.Where(q => q.ProductCode.Equals(s.ManufacturerSerialNumber)).FirstOrDefault()?.WarrantyTime
                 }).OrderBy(s => s.MaterialCode).ToList();
@@ -1675,6 +1674,7 @@ namespace OpenAuth.App.Material
                                 FlowInstanceId = quotationObj.FlowInstanceId,
                                 VerificationFinally = "1",
                                 VerificationOpinion = "出库成功",
+                                Operator= loginUser,
                             });
                         }
                     }
@@ -1735,6 +1735,7 @@ namespace OpenAuth.App.Material
                                 WarrantyPeriod=item.WarrantyTime
                             });
                         }
+                        await UnitWork.SaveAsync();
                     }
                     transaction.Commit();
                     _capBus.Publish("Serve.SalesOfDelivery.Create", obj);
@@ -1999,7 +2000,7 @@ namespace OpenAuth.App.Material
             qoh.CreateTime = DateTime.Now;
             qoh.QuotationId = obj.Id;
             qoh.Remark = req.Remark;
-            qoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalSeconds);
+            qoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(selqoh.CreateTime)).TotalMinutes);
             await UnitWork.AddAsync<QuotationOperationHistory>(qoh);
             //修改全局待处理
             await UnitWork.UpdateAsync<WorkbenchPending>(w => w.SourceNumbers == obj.Id && w.OrderType == 1, w => new WorkbenchPending
@@ -2157,7 +2158,8 @@ namespace OpenAuth.App.Material
                 if (warrantyDates.Count() < productCodes.Count())
                 {
                     StringBuilder mnfSerials = new StringBuilder();
-                    productCodes.Where(p => warrantyDates.Select(w => w.MnfSerial).ToList().Contains(p)).ForEach(p=> {
+                    var mnfSerialList= warrantyDates.Select(w => w.MnfSerial).ToList();
+                    productCodes.Where(p => !mnfSerialList.Contains(p)).ForEach(p=> {
                         mnfSerials.Append(p+"、");
                     });
                     throw new Exception($"{mnfSerials.ToString().Substring(0, mnfSerials.ToString().Length-2)}序列号暂不支持延保，请联系管理员处理");
@@ -2194,7 +2196,7 @@ namespace OpenAuth.App.Material
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
-
+            if (string.IsNullOrWhiteSpace(obj.WarrantyType)) obj.WarrantyType = null;
             var QuotationObj = obj.MapTo<Quotation>();
             if (QuotationObj.IsMaterialType != 4 && QuotationObj.WarrantyType == 2)
             {

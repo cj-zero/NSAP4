@@ -207,7 +207,11 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<bool> NodeVerification(VerificationReq request)
         {
-            var user = _auth.GetCurrentUser().User;
+            var user = request.Operator;
+            if (request.Operator == null) 
+            {
+                user = _auth.GetCurrentUser().User;
+            }
             var instanceId = request.FlowInstanceId;
 
             var tag = new Tag
@@ -218,7 +222,7 @@ namespace OpenAuth.App
                 Taged = Int32.Parse(request.VerificationFinally)
             };
 
-            FlowInstance flowInstance = Get(instanceId);
+            FlowInstance flowInstance = await UnitWork.FindTrack<FlowInstance>(f=>f.Id.Equals(instanceId)).FirstOrDefaultAsync();//Get(instanceId);
 
             if (flowInstance.MakerList != "1" && !flowInstance.MakerList.Contains(user.Id))
             {
@@ -331,7 +335,7 @@ namespace OpenAuth.App
             var fioh = await UnitWork.Find<FlowInstanceOperationHistory>(r => r.InstanceId.Equals(instanceId)).OrderByDescending(r => r.CreateDate).FirstOrDefaultAsync();
             if (fioh != null)
             {
-                flowInstanceOperationHistory.IntervalTime= Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalSeconds);
+                flowInstanceOperationHistory.IntervalTime= Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalMinutes);
             }
             await UnitWork.AddAsync(flowInstanceOperationHistory);
 
@@ -369,7 +373,11 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<bool> NodeReject(VerificationReq reqest)
         {
-            var user = _auth.GetCurrentUser().User;
+            var user = reqest.Operator;
+            if (reqest.Operator == null)
+            {
+                user = _auth.GetCurrentUser().User;
+            }
             FlowInstance flowInstance = Get(reqest.FlowInstanceId);
             if (flowInstance.MakerList != "1" && !flowInstance.MakerList.Contains(user.Id))
             {
@@ -419,7 +427,7 @@ namespace OpenAuth.App
             var fioh = await UnitWork.Find<FlowInstanceOperationHistory>(r => r.InstanceId.Equals(reqest.FlowInstanceId)).OrderByDescending(r => r.CreateDate).FirstOrDefaultAsync();
             if (fioh != null)
             {
-                flowInstanceOperationHistory.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalSeconds);
+                flowInstanceOperationHistory.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalMinutes);
             }
 
             await UnitWork.AddAsync(flowInstanceOperationHistory);
@@ -867,7 +875,7 @@ namespace OpenAuth.App
             var fioh = await UnitWork.Find<FlowInstanceOperationHistory>(r => r.InstanceId.Equals(request.FlowInstanceId)).OrderByDescending(r => r.CreateDate).FirstOrDefaultAsync();
             if (fioh != null)
             {
-                flowInstanceOperationHistory.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalSeconds);
+                flowInstanceOperationHistory.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalMinutes);
             }
 
             await UnitWork.AddAsync(flowInstanceOperationHistory);
@@ -915,7 +923,7 @@ namespace OpenAuth.App
             var fioh = await UnitWork.Find<FlowInstanceOperationHistory>(r => r.InstanceId.Equals(request.FlowInstanceId)).OrderByDescending(r => r.CreateDate).FirstOrDefaultAsync();
             if (fioh != null)
             {
-                processOperationHistoryEntity.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalSeconds);
+                processOperationHistoryEntity.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalMinutes);
             }
             
             await UnitWork.AddAsync(processOperationHistoryEntity);
