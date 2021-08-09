@@ -335,7 +335,7 @@ namespace OpenAuth.App
             var fioh = await UnitWork.Find<FlowInstanceOperationHistory>(r => r.InstanceId.Equals(instanceId)).OrderByDescending(r => r.CreateDate).FirstOrDefaultAsync();
             if (fioh != null)
             {
-                flowInstanceOperationHistory.IntervalTime= Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalMinutes);
+                flowInstanceOperationHistory.IntervalTime= Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalSeconds);
             }
             await UnitWork.AddAsync(flowInstanceOperationHistory);
 
@@ -427,7 +427,7 @@ namespace OpenAuth.App
             var fioh = await UnitWork.Find<FlowInstanceOperationHistory>(r => r.InstanceId.Equals(reqest.FlowInstanceId)).OrderByDescending(r => r.CreateDate).FirstOrDefaultAsync();
             if (fioh != null)
             {
-                flowInstanceOperationHistory.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalMinutes);
+                flowInstanceOperationHistory.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalSeconds);
             }
 
             await UnitWork.AddAsync(flowInstanceOperationHistory);
@@ -875,7 +875,7 @@ namespace OpenAuth.App
             var fioh = await UnitWork.Find<FlowInstanceOperationHistory>(r => r.InstanceId.Equals(request.FlowInstanceId)).OrderByDescending(r => r.CreateDate).FirstOrDefaultAsync();
             if (fioh != null)
             {
-                flowInstanceOperationHistory.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalMinutes);
+                flowInstanceOperationHistory.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalSeconds);
             }
 
             await UnitWork.AddAsync(flowInstanceOperationHistory);
@@ -923,7 +923,7 @@ namespace OpenAuth.App
             var fioh = await UnitWork.Find<FlowInstanceOperationHistory>(r => r.InstanceId.Equals(request.FlowInstanceId)).OrderByDescending(r => r.CreateDate).FirstOrDefaultAsync();
             if (fioh != null)
             {
-                processOperationHistoryEntity.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalMinutes);
+                processOperationHistoryEntity.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalSeconds);
             }
             
             await UnitWork.AddAsync(processOperationHistoryEntity);
@@ -942,7 +942,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<List<FlowPathResp>> FlowPathRespList(List<OperationHistoryResp> reqp, string FlowInstanceId)
         {
-            var flowInstance = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(FlowInstanceId)).Select(f => new { f.SchemeContent, f.ActivityName, f.FrmData }).FirstOrDefaultAsync();
+            var flowInstance = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(FlowInstanceId)).Select(f => new { f.SchemeContent, f.ActivityName, f.FrmData,f.IsFinish }).FirstOrDefaultAsync();
             var schemeContentJson = JsonHelper.Instance.Deserialize<FlowInstanceJson>(flowInstance.SchemeContent);
             List<FlowInstanceNodes> flowInstanceNodes = new List<FlowInstanceNodes>();
             List<FlowPathResp> flowPathResps = new List<FlowPathResp>();
@@ -1018,25 +1018,26 @@ namespace OpenAuth.App
             flowInstanceNodes.Add(new FlowInstanceNodes { Name = "结束", Number = ++number });
             flowInstanceNodes = flowInstanceNodes.OrderBy(f => f.Number).ToList();
             string historys = null;
+            List<FlowInstanceOperationHistory> operationHistoryList = await UnitWork.Find<FlowInstanceOperationHistory>(f => f.InstanceId.Equals(FlowInstanceId)).ToListAsync();
             flowInstanceNodes.ForEach(f =>
             {
-                var operationHistorys = reqp.Where(q => q.Content.Contains(f.Name) || (f.Name == "审批结束" && (q.Content == "已支付" || q.Content == "出库完成" || q.Content == "结束")) || (f.Name == "待出库" && q.Content == "开始出库") || (f.Name == "回传销售订单" && q.Content == "销售订单成立")).OrderByDescending(q => q.CreateTime).FirstOrDefault();
+                var operationHistorys = operationHistoryList.Where(q => q.Content.Equals(f.Name)).OrderByDescending(q => q.CreateDate).FirstOrDefault();
 
-                if (historys == null || (operationHistorys?.CreateTime != null && DateTime.Parse(historys) < DateTime.Parse(operationHistorys.CreateTime)))
+                if (historys == null || (operationHistorys?.CreateDate != null && DateTime.Parse(historys) < operationHistorys.CreateDate))
                 {
-                    historys = operationHistorys?.CreateTime;
+                    historys = operationHistorys?.CreateDate.ToString();
                     flowPathResps.Add(new FlowPathResp
                     {
                         ActivityName = f.Name,
                         Number = f.Number,
-                        CreateTime = operationHistorys?.CreateTime,
-                        IntervalTime = operationHistorys?.IntervalTime,
+                        CreateTime = operationHistorys?.CreateDate.ToString(),
+                        IntervalTime = operationHistorys?.IntervalTime.ToString(),
                         IsNode = true
                     });
                 }
                 else
                 {
-                    if (flowInstance.ActivityName == "结束")
+                    if (flowInstance.IsFinish == FlowInstanceStatus.Finished)
                     {
                         flowPathResps.Add(new FlowPathResp
                         {

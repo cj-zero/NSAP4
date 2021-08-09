@@ -125,6 +125,7 @@ namespace OpenAuth.App.Workbench
                 IsMaterialType = quotationObj.IsMaterialType,
                 Prepay = quotationObj.Prepay,
                 Remark = quotationObj.Remark,
+                WarrantyType=quotationObj.WarrantyType,
                 Tentative = quotationObj.Tentative,
                 UpDateTime = Convert.ToDateTime(quotationObj.UpDateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 PayOnReceipt = quotationObj.PayOnReceipt,
@@ -148,6 +149,7 @@ namespace OpenAuth.App.Workbench
                     MaterialCode = p.MaterialCode,
                     MaterialDescription = p.MaterialDescription,
                     WarrantyExpirationTime = p.WarrantyExpirationTime,
+                    WarrantyTime=p.WarrantyTime,
                     QuotationMaterials = p.QuotationMaterials.Select(m => new QuotationMaterialResp
                     {
                         MaterialCode = m.MaterialCode,

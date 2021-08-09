@@ -1372,7 +1372,7 @@ namespace OpenAuth.App
             eoh.CreateTime = DateTime.Now;
             eoh.ReimburseInfoId = obj.Id;
             eoh.Remark = req.Remark;
-            eoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalMinutes);
+            eoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalSeconds);
             await UnitWork.AddAsync<ReimurseOperationHistory>(eoh);
             //修改全局待处理
             await UnitWork.UpdateAsync<WorkbenchPending>(w => w.SourceNumbers == obj.MainId && w.OrderType == 4, w => new WorkbenchPending
@@ -1419,7 +1419,7 @@ namespace OpenAuth.App
             eoh.CreateTime = DateTime.Now;
             eoh.ReimburseInfoId = obj.Id;
             eoh.Remark = req.Remark;
-            eoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalMinutes);
+            eoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalSeconds);
             await UnitWork.AddAsync<ReimurseOperationHistory>(eoh);
             await UnitWork.SaveAsync();
 
@@ -1471,7 +1471,7 @@ namespace OpenAuth.App
                         eoh.CreateUserId = loginContext.User.Id;
                         eoh.CreateTime = DateTime.Now;
                         eoh.ReimburseInfoId = obj.Id;
-                        eoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalMinutes);
+                        eoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalSeconds);
                         eoh.Id = Guid.NewGuid().ToString();
                         await UnitWork.AddAsync<ReimurseOperationHistory>(eoh);
                     }

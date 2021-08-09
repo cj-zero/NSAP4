@@ -105,7 +105,12 @@ namespace OpenAuth.App.Workbench.Response
         /// </summary>
 
         public string IsMaterialType { get; set; }
+        /// <summary>
+        ///领料类型 1更换 2.销售  3.成本
+        /// </summary>
 
+        public string WarrantyType { get; set; }
+        
         /// <summary>
         ///修改日期
         /// </summary>
@@ -156,13 +161,15 @@ namespace OpenAuth.App.Workbench.Response
         ///保修到期时间
         /// </summary>
         public DateTime? WarrantyExpirationTime { get; set; }
+        /// <summary>
+        ///保修到期时间
+        /// </summary>
+        public DateTime? WarrantyTime { get; set; }
 
         /// <summary>
         ///保内保外
         /// </summary>
         public bool? IsProtected { get; set; }
-
-
         /// <summary>
         /// 物料报价单物料列表
         /// </summary>
