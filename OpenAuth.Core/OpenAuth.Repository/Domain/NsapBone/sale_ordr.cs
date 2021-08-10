@@ -192,5 +192,21 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         public int? U_ShipStatus { get; set; }
+        /// <summary>
+        /// 设备编号/箱号
+        /// </summary>
+        public string U_CPH { get; set; }
+        /// <summary>
+        /// 验收期限
+        /// </summary>
+        public string U_YSQX { get; set; }
+        /// <summary>
+        /// 系统操作者
+        /// </summary>
+        public string U_YGMD { get; set; }
+        /// <summary>
+        /// 生产部门
+        /// </summary>
+        public string U_SCBM { get; set; }
     }
 }
