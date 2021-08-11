@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 
 namespace OpenAuth.App.Request
@@ -80,13 +81,23 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string ItemCode { get; set; }
         /// <summary>
-        /// 仓库代码
+        /// 仓库代码（必填）
         /// </summary>
+        [Required]
         public string WhsCode { get; set; }
         /// <summary>
         /// 类型id
         /// </summary>
         public string TypeId { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string IsStr { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string IsbillCfg { get; set; }
+
     }
     /// <summary>
     /// 取消订单列表查询
@@ -94,7 +105,7 @@ namespace OpenAuth.App.Request
     public class RelORDRRequest : PageReq
     {
         /// <summary>
-        /// 排序字段 订单号:docentry,客户代码：a.cardcode
+        /// 排序字段 订单号:docentry,客户代码：cardcode
         /// </summary>
         public string SortName { get; set; }
         /// <summary>
