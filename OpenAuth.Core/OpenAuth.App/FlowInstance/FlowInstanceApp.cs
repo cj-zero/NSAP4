@@ -955,6 +955,7 @@ namespace OpenAuth.App
             if (schemeContentJson.lines.Where(s => s.from.Contains("start")).Count() ==1) 
             {
                 query = query.Where(q => !q.id.Contains("start")).ToList();
+                toId = schemeContentJson.lines.Where(s => s.from.Contains("start")).FirstOrDefault()?.to;
             }
             else
             {

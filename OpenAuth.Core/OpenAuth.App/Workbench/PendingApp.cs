@@ -329,7 +329,7 @@ namespace OpenAuth.App.Workbench
         {
             var reimburseObj = await UnitWork.Find<ReimburseInfo>(r => r.MainId == ReimburseId).Include(r => r.ReimburseFares)
                 .Include(r => r.ReimburseOtherCharges).Include(r => r.ReimburseTravellingAllowances).Include(r => r.ReimurseOperationHistories).Include(r => r.ReimburseAccommodationSubsidies).FirstOrDefaultAsync();
-
+            reimburseObj.ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId == reimburseObj.Id && r.ReimburseType == 0).ToListAsync();
             List<string> fileids = new List<string>();
             List<ReimburseAttachment> filemodel = new List<ReimburseAttachment>();
             List<ReimburseExpenseOrg> expenseOrg = new List<ReimburseExpenseOrg>();
@@ -357,6 +357,7 @@ namespace OpenAuth.App.Workbench
                 expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rocids.Contains(r.ExpenseId) && r.ExpenseType == 4).ToListAsync());
             }
             fileids.AddRange(filemodel.Select(f => f.FileId).ToList());
+            fileids.AddRange(reimburseObj.ReimburseAttachments.Select(r => r.FileId).ToList());
             var file = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
             var reimburseDetails = new ReimburseDetailsResp
             {
@@ -365,6 +366,11 @@ namespace OpenAuth.App.Workbench
                 Remark = reimburseObj.Remark,
                 TotalMoney = reimburseObj.TotalMoney,
                 ReimburseMainId = reimburseObj.MainId,
+                Files= reimburseObj.ReimburseAttachments.Select(r=>new FileResp { 
+                    FileId=r.FileId,
+                    FileName = file.Where(s => s.Id.Equals(r.FileId)).FirstOrDefault().FileName,
+                    FileType = file.Where(s => s.Id.Equals(r.FileId)).FirstOrDefault().FileType,
+                }).ToList(),
                 ReimburseFares = reimburseObj.ReimburseFares.Select(f => new ReimburseFareResp
                 {
                     Id = f.Id,
