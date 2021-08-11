@@ -191,9 +191,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public bool IsContainsAll(List<string> ListA, List<string> ListB)
         {
-            bool flag = !ListA.Except(ListB).Any();
             int count = ListA.Except(ListB).ToList().Count;
-            var cc = ListA.All(c => ListB.Any(d => d == c));
             if (count <= 0)
             {
                 return true;
