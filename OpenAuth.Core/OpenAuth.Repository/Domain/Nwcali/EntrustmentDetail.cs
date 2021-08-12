@@ -45,5 +45,9 @@ namespace OpenAuth.Repository.Domain
         /// 证书状态
         /// </summary>
         public int Status { get; set; }
+        /// <summary>
+        /// 排序号
+        /// </summary>
+        public int? Sort { get; set; }
     }
 }

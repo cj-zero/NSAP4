@@ -790,6 +790,7 @@ namespace OpenAuth.App
             var result = new TableData();
 
             var list = await UnitWork.Find<Entrustment>(c => c.Id == id).Include(c=>c.EntrustmentDetails).FirstOrDefaultAsync();
+            list.EntrustmentDetails=list.EntrustmentDetails.OrderBy(c => c.Sort).ToList();
             result.Data = list;
             return result;
         }
@@ -945,17 +946,19 @@ namespace OpenAuth.App
                         if (model.DocType == "I")
                         {
                             single.EntrustmentDetails = new List<EntrustmentDetail>();
-                            for (int i = 0; i < model.billSalesDetails.Count; i++)
+                            int i = 0;
+                            foreach (var data in model.billSalesDetails)
                             {
-                                var data = model.billSalesDetails[i];
                                 if (data.ItemCode.StartsWith("CT") || data.ItemCode.StartsWith("CTE") || data.ItemCode.StartsWith("CE"))
                                 {
+                                    ++i;
                                     EntrustmentDetail obj = new EntrustmentDetail();
-                                    obj.LineNum = (i + 1).ToString();
+                                    obj.LineNum = i.ToString();
                                     obj.EntrustmentId = single.Id;
                                     obj.ItemName = data.Dscription.Split(',')[0].Split('-')[0];
                                     obj.ItemCode = data.ItemCode;
                                     obj.Quantity = Convert.ToInt32(data.Quantity.Split(".")[0]);
+                                    obj.Sort = i;
 
                                     single.EntrustmentDetails.Add(obj);
                                 }
@@ -986,20 +989,21 @@ namespace OpenAuth.App
                                           select new { a.DocType, a.DocNum, a.ItemCode, a.ItemName, b.SysNumber, c.MnfSerial, c.DistNumber }).ToListAsync();
 
                 //var aa = serialNumber.GroupBy(c => c.ItemCode).ToList();
-                int line = 0;
+                int line = 0, sort = 0;
                 foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
                 {
-                    ++line;
                     int line2 = 0;
                     var deletedt = await UnitWork.Find<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToArrayAsync();
                     await UnitWork.BatchDeleteAsync(deletedt);
+                    await UnitWork.SaveAsync();
 
                     if (groupItem.Key.StartsWith("CT") || groupItem.Key.StartsWith("CTE") || groupItem.Key.StartsWith("CE"))
                     {
+                        ++line;
                         List<EntrustmentDetail> detail = new List<EntrustmentDetail>();
                         foreach (var items in groupItem)
                         {
-                            ++line2;
+                            ++line2;++sort;
                             EntrustmentDetail entrustmentDetail = new EntrustmentDetail();
                             entrustmentDetail.EntrustmentId = item.Id;
                             entrustmentDetail.ItemCode = groupItem.Key;
@@ -1007,6 +1011,7 @@ namespace OpenAuth.App
                             entrustmentDetail.SerialNumber = items.MnfSerial;
                             entrustmentDetail.Quantity = 1;
                             entrustmentDetail.LineNum = line + "-" + line2;
+                            entrustmentDetail.Sort = sort;
                             detail.Add(entrustmentDetail);
                         }
 
