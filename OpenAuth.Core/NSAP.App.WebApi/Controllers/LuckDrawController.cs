@@ -23,10 +23,12 @@ namespace NSAP.App.WebApi.Controllers
         {
             _appLuckDrawApp = appLuckDrawApp;
         }
+
         #region 售后报修抽奖中奖名单生成
-        /*中奖规则：每周一从上周参与获动的用户中随机抽取20个中奖名额同一报修序列号只能参与一次*/
         /// <summary>
         /// 计算中奖名单
+        /// 中奖规则：每周一从上周参与获动的用户中随机抽取20个中奖名额
+        /// 同一服务Id参与一次，不同服务id相同序列号和呼叫主题也只参与一次,相同序列编号呼叫主题被其他的呼叫主题全包含也只参与一次
         /// </summary>
         /// <returns></returns>
         [HttpGet]

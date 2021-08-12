@@ -1798,6 +1798,18 @@ namespace OpenAuth.App
                 Reimburse = Reimburse,
                 ReimburseCosts = ReimburseCosts
             };
+            if (string.IsNullOrWhiteSpace(PrintReimburse.CompleteAddress))
+            {
+               
+                var query = from a in UnitWork.Find<OCRD>(c => c.CardCode.Equals(PrintReimburse.TerminalCustomerId))
+                              join f in UnitWork.Find<OCRY>(null) on a.Country equals f.Code into af
+                              from f in af.DefaultIfEmpty()
+                              join g in UnitWork.Find<OCST>(null) on a.State1 equals g.Code into ag
+                              from g in ag.DefaultIfEmpty()
+                              select new { ocryName=f.Name, ocstName=g.Name , a.City, a.Building };
+                var ocrdObj = await query.FirstOrDefaultAsync();
+                PrintReimburse.CompleteAddress = ocrdObj.ocryName + ocrdObj.ocstName + ocrdObj.City + ocrdObj.Building;
+            }
             return await ExportAllHandler.Exporterpdf(PrintReimburse, "PrintReimburse.cshtml");
         }
 
