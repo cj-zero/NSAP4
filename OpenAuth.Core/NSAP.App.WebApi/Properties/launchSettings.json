@@ -1,14 +1,10 @@
-﻿{
+{
   "profiles": {
-    "OpenAuthApi": {
+    "启动": {
       "commandName": "Project",
       "launchBrowser": true,
       "launchUrl": "swagger",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      },
-      "applicationUrl": "http://localhost:52787"
+      "ErrorString": "Additional text encountered after finished reading JSON content: }. Path '', line 14, position 0."
     }
   }
-}
 }
