@@ -1022,39 +1022,52 @@ namespace OpenAuth.App
             List<FlowInstanceOperationHistory> operationHistoryList = await UnitWork.Find<FlowInstanceOperationHistory>(f => f.InstanceId.Equals(FlowInstanceId)).ToListAsync();
             flowInstanceNodes.ForEach(f =>
             {
-                var operationHistorys = operationHistoryList.Where(q => q.Content.Equals(f.Name)).OrderByDescending(q => q.CreateDate).FirstOrDefault();
-
-                if (historys == null || (operationHistorys?.CreateDate != null && DateTime.Parse(historys) < operationHistorys.CreateDate))
+                if (flowInstance.IsFinish == FlowInstanceStatus.Draft || flowInstance.IsFinish == FlowInstanceStatus.Rejected)
                 {
-                    historys = operationHistorys?.CreateDate.ToString();
                     flowPathResps.Add(new FlowPathResp
                     {
                         ActivityName = f.Name,
                         Number = f.Number,
-                        CreateTime = operationHistorys?.CreateDate.ToString(),
-                        IntervalTime = operationHistorys?.IntervalTime.ToString(),
-                        IsNode = true
+                        IsNode = false
                     });
                 }
-                else
+                else 
                 {
-                    if (flowInstance.IsFinish == FlowInstanceStatus.Finished)
+                    var operationHistorys = operationHistoryList.Where(q => q.Content.Equals(f.Name)).OrderByDescending(q => q.CreateDate).FirstOrDefault();
+
+                    if (historys == null || (operationHistorys?.CreateDate != null && DateTime.Parse(historys) < operationHistorys.CreateDate))
                     {
+                        historys = operationHistorys?.CreateDate.ToString();
                         flowPathResps.Add(new FlowPathResp
                         {
                             ActivityName = f.Name,
                             Number = f.Number,
+                            CreateTime = operationHistorys?.CreateDate.ToString(),
+                            IntervalTime = operationHistorys?.IntervalTime.ToString(),
                             IsNode = true
                         });
                     }
                     else
                     {
-                        flowPathResps.Add(new FlowPathResp
+                        if (flowInstance.IsFinish == FlowInstanceStatus.Finished)
                         {
-                            ActivityName = f.Name,
-                            Number = f.Number,
-                            IsNode = false
-                        });
+                            flowPathResps.Add(new FlowPathResp
+                            {
+                                ActivityName = f.Name,
+                                Number = f.Number,
+                                IsNode = true
+                            });
+                        }
+                        else
+                        {
+                            flowPathResps.Add(new FlowPathResp
+                            {
+                                ActivityName = f.Name,
+                                Number = f.Number,
+                                IsNode = false
+                            });
+                        }
+
                     }
 
                 }

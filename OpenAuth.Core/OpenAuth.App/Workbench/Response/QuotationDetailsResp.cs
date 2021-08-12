@@ -52,7 +52,11 @@ namespace OpenAuth.App.Workbench.Response
         ///货币方式
         /// </summary>
         public string MoneyMeans { get; set; }
-
+        /// <summary>
+        ///货币方式
+        /// </summary>
+        public string FlowInstanceId { get; set; }
+        
         /// <summary>
         ///交货日期
         /// </summary>

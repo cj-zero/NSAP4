@@ -132,6 +132,7 @@ namespace OpenAuth.App.Workbench
                 TotalCostPrice = quotationObj.TotalCostPrice,
                 TotalMoney = quotationObj.TotalMoney,
                 QuotationStatus = quotationObj.QuotationStatus.ToString(),
+                FlowInstanceId=quotationObj.FlowInstanceId,
                 QuotationOperationHistorys = quotationObj.QuotationOperationHistorys.Select(o => new OperationHistoryResp
                 {
                     ApprovalResult = o.ApprovalResult,

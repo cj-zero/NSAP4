@@ -1255,7 +1255,7 @@ namespace OpenAuth.App.Material
                         }
                         var FrmData = "{ \"QuotationId\":\"" + QuotationObj.Id + "\",\"IsProtected\":\"" + IsProtected + "\",\"IsWarranty\":\"" + IsWarranty + "\",\"WarrantyType\":\"" + QuotationObj.WarrantyType + "\"}";
                         var flowInstanceObj = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(QuotationObj.FlowInstanceId)).FirstOrDefaultAsync();
-                        if (string.IsNullOrWhiteSpace(QuotationObj.FlowInstanceId) && flowInstanceObj != null && flowInstanceObj.FrmData == FrmData)
+                        if (string.IsNullOrWhiteSpace(QuotationObj.FlowInstanceId)|| (flowInstanceObj != null && flowInstanceObj.FrmData != FrmData))
                         {
                             #region 创建审批流程
                             var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("物料报价单"));
@@ -2771,12 +2771,23 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         public async Task<TableData> HistorySaleOrde(QueryQuotationListReq request)
         {
-            var ServiceOrderids = await UnitWork.Find<ServiceOrder>(null).Where(q => q.TerminalCustomer.Contains(request.CardCode) || q.TerminalCustomerId.Contains(request.CardCode)).Select(s => s.Id).ToListAsync();
-
-            var quotations = UnitWork.Find<Quotation>(q => q.SalesOrderId != null && q.QuotationStatus != -1 && ServiceOrderids.Contains(q.ServiceOrderId));
+            var serviceOrderIds = await UnitWork.Find<ServiceOrder>(null).WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderSapId.ToString()),s=>s.U_SAP_ID.ToString().Contains(request.ServiceOrderSapId.ToString())).Where(q => q.TerminalCustomer.Contains(request.CardCode) || q.TerminalCustomerId.Contains(request.CardCode)).Select(s => s.Id).ToListAsync();
+            var quotations = UnitWork.Find<Quotation>(q => q.SalesOrderId != null && q.QuotationStatus != -1 && serviceOrderIds.Contains(q.ServiceOrderId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUser),q=>q.CreateUser.Contains(request.CreateUser))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.QuotationId.ToString()), q => q.Id.ToString().Contains(request.QuotationId.ToString()))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.StartCreateTime.ToString()), q => q.CreateTime > request.StartCreateTime)
+                .WhereIf(!string.IsNullOrWhiteSpace(request.EndCreateTime.ToString()), q => q.CreateTime<Convert.ToDateTime(request.EndCreateTime).AddDays(1));
 
             var reult = new TableData();
-            reult.Data = await quotations.Skip((request.page - 1) * request.limit)
+            reult.Data = await quotations.Select(q=>new {
+                QuotationId=q.Id,
+                q.CreateUser,
+                q.CreateTime,
+                q.UpDateTime,
+                q.TotalMoney,
+                q.Remark,
+                q.ServiceOrderSapId
+            }).Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
             reult.Count = await quotations.CountAsync();
             return reult;

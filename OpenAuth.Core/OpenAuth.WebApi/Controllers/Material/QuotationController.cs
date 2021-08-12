@@ -684,7 +684,7 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public async Task<TableData> HistorySaleOrde(QueryQuotationListReq request)
+        public async Task<TableData> HistorySaleOrde([FromQuery]QueryQuotationListReq request)
         {
             return await _app.HistorySaleOrde(request);
         }

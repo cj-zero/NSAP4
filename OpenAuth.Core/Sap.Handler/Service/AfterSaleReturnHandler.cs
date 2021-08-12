@@ -483,7 +483,7 @@ namespace Sap.Handler.Service
 
             //dts.ShipToCode = model.ShipToCode;
 
-            //dts.DocCurrency = model.DocCur;
+            dts.DocCurrency = "RMB";
 
             //dts.DocDate = DateTime.Parse(model.DocDate);
 
