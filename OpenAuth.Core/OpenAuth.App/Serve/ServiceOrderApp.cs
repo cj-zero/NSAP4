@@ -455,7 +455,7 @@ namespace OpenAuth.App
             }
             var count=await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == int.Parse(req.QryServiceOrderId)).CountAsync();
             if(count<=1) throw new Exception("不可删除最后一个工单，如需删除请新建工单后重新删除。");
-            await UnitWork.DeleteAsync<ServiceWorkOrder>(s => s.Id.Equals(req.QryServiceWorkOrderId));
+            await UnitWork.DeleteAsync<ServiceWorkOrder>(s => s.Id==int.Parse(req.QryServiceWorkOrderId));
             await UnitWork.SaveAsync();
         }
 
