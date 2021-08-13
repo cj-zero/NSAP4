@@ -530,8 +530,8 @@ namespace OpenAuth.App
                         join b in UnitWork.Find<base_user_detail>(null) on a.user_id equals b.user_id into ab
                         from b in ab.DefaultIfEmpty()
                         join c in UnitWork.Find<base_dep>(null) on b.dep_id equals c.dep_id into bc
-                        from c in bc.DefaultIfEmpty()
-                        where !userAccounts.Contains(a.log_nm)
+                        from c in bc.DefaultIfEmpty() 
+                        where !userAccounts.Contains(a.log_nm) && b.out_date.ToString()== "0000-00-00"
                         select new {a.log_nm,a.user_nm,a.user_id,b.office_addr,c.dep_alias};
             var erpUsers = await query.ToListAsync();
             var orgs = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).ToListAsync();
