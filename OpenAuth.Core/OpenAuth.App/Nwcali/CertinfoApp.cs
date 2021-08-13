@@ -990,17 +990,18 @@ namespace OpenAuth.App
 
                 //var aa = serialNumber.GroupBy(c => c.ItemCode).ToList();
                 int line = 0, sort = 0;
+                List<EntrustmentDetail> detail = new List<EntrustmentDetail>();
                 foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
                 {
                     int line2 = 0;
-                    var deletedt = await UnitWork.Find<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToArrayAsync();
-                    await UnitWork.BatchDeleteAsync(deletedt);
+                    var deletedt = await UnitWork.FindTrack<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();
+                    //await UnitWork.DeleteAsync<EntrustmentDetail>(c => c.EntrustmentId == item.Id);
+                    await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deletedt.ToArray());
                     await UnitWork.SaveAsync();
 
                     if (groupItem.Key.StartsWith("CT") || groupItem.Key.StartsWith("CTE") || groupItem.Key.StartsWith("CE"))
                     {
                         ++line;
-                        List<EntrustmentDetail> detail = new List<EntrustmentDetail>();
                         foreach (var items in groupItem)
                         {
                             ++line2;++sort;
@@ -1012,12 +1013,13 @@ namespace OpenAuth.App
                             entrustmentDetail.Quantity = 1;
                             entrustmentDetail.LineNum = line + "-" + line2;
                             entrustmentDetail.Sort = sort;
+                            entrustmentDetail.Id = Guid.NewGuid().ToString();
                             detail.Add(entrustmentDetail);
                         }
 
-                        await UnitWork.BatchAddAsync(detail.ToArray());
                     }
                 }
+                await UnitWork.BatchAddAsync<EntrustmentDetail>(detail.ToArray());
 
                 await UnitWork.UpdateAsync<Entrustment>(c => c.Id == item.Id, c => new Entrustment
                 {
@@ -1039,7 +1041,7 @@ namespace OpenAuth.App
                 var details = await UnitWork.Find<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();
                 var snids = details.Select(c => c.SerialNumber).ToList();
                 var nwcert = await UnitWork.Find<NwcaliBaseInfo>(c => snids.Contains(c.TesterSn)).ToListAsync();
-                if (nwcert != null)
+                if (nwcert != null && nwcert.Count>0)
                 {
                     var status = 4;//校准中
                     SetStatus(ref details, nwcert);
