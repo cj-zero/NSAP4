@@ -319,22 +319,25 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
 
-            var relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG).ToListAsync();
-            var orgs = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).ToListAsync();
+            //var relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG).ToListAsync();
+            //var orgs = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).ToListAsync();
 
-            //技术员角色
-            var roleId = await UnitWork.Find<Role>(c => c.Name.Equals("售后技术员")).Select(c => c.Id).FirstOrDefaultAsync();
-            var userIds = await UnitWork.Find<Relevance>(c => c.Key.Equals(Define.USERROLE) && c.SecondId.Equals(roleId)).Select(c => c.FirstId).ToListAsync();
-            //未完成服务id的
-            var serviceWorkOrder = UnitWork.Find<ServiceWorkOrder>(c => c.Status < 7);
-            var noComplete = await serviceWorkOrder
-                                    .Where(c => !string.IsNullOrWhiteSpace(c.CurrentUserNsapId))
-                                    .Select(c => c.CurrentUserNsapId)
-                                    .Distinct()
-                                    .ToListAsync();
+            ////技术员角色
+            //var roleId = await UnitWork.Find<Role>(c => c.Name.Equals("售后技术员")).Select(c => c.Id).FirstOrDefaultAsync();
+            //var userIds = await UnitWork.Find<Relevance>(c => c.Key.Equals(Define.USERROLE) && c.SecondId.Equals(roleId)).Select(c => c.FirstId).ToListAsync();
+            ////未完成服务id的
+            //var serviceWorkOrder = UnitWork.Find<ServiceWorkOrder>(c => c.Status < 7);
+            //var noComplete = await serviceWorkOrder
+            //                        .Where(c => !string.IsNullOrWhiteSpace(c.CurrentUserNsapId))
+            //                        .Select(c => c.CurrentUserNsapId)
+            //                        .Distinct()
+            //                        .ToListAsync();
             //userIds.AddRange(noComplete);
 
-            var pppUserMap = await UnitWork.Find<AppUserMap>(null).ToListAsync();
+            //var pppUserMap = await UnitWork.Find<AppUserMap>(null).ToListAsync();
+            var pppUserMap = await (from a in UnitWork.Find<AppUserMap>(null)
+                                    join b in UnitWork.Find<User>(null).WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)) on a.UserID equals b.Id
+                                    select new { Id = b.Id, Name = b.Name, AppUserId = a.AppUserId }).ToListAsync();
 
             req.StartDate = req.StartDate ?? DateTime.Now;
             req.EndDate = req.EndDate ?? DateTime.Now;
@@ -343,58 +346,45 @@ namespace OpenAuth.App
 
             var realTimeLocation = await UnitWork.Find<RealTimeLocation>(c => (c.CreateTime >= start && c.CreateTime <= end) && !string.IsNullOrWhiteSpace(c.Province))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.Province), c => c.Province == req.Province)
-                .WhereIf(!string.IsNullOrWhiteSpace(req.City), c => c.City == req.City).Select(c => new
-                {
-                    c.AppUserId,
-                    c.Province,
-                    c.City,
-                    CreateTime = c.CreateTime.ToString("yyyy-MM-dd")
-                }).ToListAsync();
+                .WhereIf(!string.IsNullOrWhiteSpace(req.City), c => c.City == req.City).ToListAsync();
 
             var query = from a in realTimeLocation
                         join b in pppUserMap on a.AppUserId equals b.AppUserId
-                        select new { a, b.UserID };
+                        where !string.IsNullOrWhiteSpace(b.Name)
+                        orderby b.Name ,a.CreateTime 
+                        select new { a, b };
 
             //考勤记录
-            var clock = await UnitWork.Find<AttendanceClock>(c => c.ClockDate >= req.StartDate.Value.Date && c.ClockDate < req.EndDate.Value.Date.AddDays(1)).ToListAsync();
-            var clockinfo = clock.GroupBy(c => new { c.Name, c.AppUserId, c.ClockDate, c.Org }).Select(c => new
-            {
-                c.Key.AppUserId,
-                ClockDate=c.Key.ClockDate,
-                Count = c.Count() >= 2 ? 1 : 0//两条打卡算考勤
-            }).ToList();
+            //var clock = await UnitWork.Find<AttendanceClock>(c => c.ClockDate >= req.StartDate.Value.Date && c.ClockDate < req.EndDate.Value.Date.AddDays(1)).ToListAsync();
+            //var clockinfo = clock.GroupBy(c => new { c.Name, c.AppUserId, c.ClockDate, c.Org }).Select(c => new
+            //{
+            //    c.Key.AppUserId,
+            //    ClockDate=c.Key.ClockDate,
+            //    Count = c.Count() >= 2 ? 1 : 0//两条打卡算考勤
+            //}).ToList();
 
             //定位数据
-            var group = query.Select(g => new
-            {
-                g.UserID,
-                g.a.CreateTime,
-                g.a.Province,
-                g.a.City,
-                Count = clockinfo.Where(q => q.AppUserId == g.a.AppUserId).Sum(q => q.Count)
-            }).ToList();
+            //var group = query.Select(g => new
+            //{
+            //    g.UserID,
+            //    g.a.CreateTime,
+            //    g.a.Province,
+            //    g.a.City,
+            //    Count = clockinfo.Where(q => q.AppUserId == g.a.AppUserId).Sum(q => q.Count)
+            //}).ToList();
 
-            //var data = await UnitWork.Find<User>(c => userIds.Contains(c.Id)).WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)).ToListAsync();
-            var data = await (from a in UnitWork.Find<AppUserMap>(null)
-                              join b in UnitWork.Find<User>(c => c.Status == 0).WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)) on a.UserID equals b.Id
-                              select new User { Id = b.Id, Name = b.Name, Mobile = b.Mobile }).ToListAsync();
             List<RealTimeLocationExcelDto> excelDtos = new List<RealTimeLocationExcelDto>();
-            foreach (var datauser in data)
+            foreach (var datauser in query)
             {
-                var secondId = relevances.Where(r => r.FirstId == datauser.Id).Select(r => r.SecondId).ToList();
-                var orgname = orgs.Where(org => secondId.Contains(org.Id)).OrderByDescending(org => org.CascadeId).Select(org => org.Name).FirstOrDefault();
-                foreach (var item in group.Where(o => datauser.Id == o.UserID))
+                excelDtos.Add(new RealTimeLocationExcelDto
                 {
-                    excelDtos.Add(new RealTimeLocationExcelDto
-                    {
-                        Org = orgname,
-                        Name = datauser.Name,
-                        CreateDate = item.CreateTime,
-                        Province = item.Province,
-                        City = item.City,
-                        Count = item.Count
-                    });
-                }
+                    Name = datauser.b.Name,
+                    Province = datauser.a.Province,
+                    City = datauser.a.City,
+                    Area=datauser.a.Area,
+                    Address=datauser.a.Addr,
+                    CreateDate = datauser.a.CreateTime.ToString()
+                });
             }
 
             IExporter exporter = new ExcelExporter();
