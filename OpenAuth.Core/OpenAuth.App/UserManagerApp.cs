@@ -112,8 +112,8 @@ namespace OpenAuth.App
 
         public void AddOrUpdate(UpdateUserReq request)
         {
-            if (string.IsNullOrEmpty(request.OrganizationIds))
-                throw new Exception("请为用户分配机构");
+            //if (string.IsNullOrEmpty(request.OrganizationIds))
+            //    throw new Exception("请为用户分配机构");
             User requser = request;
             requser.CreateId = _auth.GetCurrentUser().User.Id;
             if (string.IsNullOrEmpty(request.Id))
@@ -133,6 +133,10 @@ namespace OpenAuth.App
                 UnitWork.Add(requser);
                 UnitWork.Save();
                 request.Id = requser.Id; //要把保存后的ID存入view
+                //新增的用户默认分配普通用户角色
+                var SecondId=UnitWork.Find<Role>(r => r.Name == "普通用户").FirstOrDefault()?.Id;
+                UnitWork.Add<Relevance>(new Relevance { Key = Define.USERROLE, FirstId = request.Id,OperateTime=DateTime.Now,SecondId= SecondId });
+                UnitWork.Save();
             }
             else
             {
@@ -512,6 +516,33 @@ namespace OpenAuth.App
                 result.Data = user;
             }
             return result;
+        }
+
+        /// <summary>
+        /// 同步erp3.0用户
+        /// </summary>
+        /// <param name="account"></param>
+        /// <returns></returns>
+        public async Task SysnERPUser()
+        {
+            var userAccounts = await UnitWork.Find<User>(null).Select(u => u.Account).ToListAsync();
+            var query = from a in UnitWork.Find<base_user>(null)
+                        join b in UnitWork.Find<base_user_detail>(null) on a.user_id equals b.user_id into ab
+                        from b in ab.DefaultIfEmpty()
+                        join c in UnitWork.Find<base_dep>(null) on b.dep_id equals c.dep_id into bc
+                        from c in bc.DefaultIfEmpty() 
+                        where !userAccounts.Contains(a.log_nm) && b.out_date.ToString()== "0000-00-00"
+                        select new {a.log_nm,a.user_nm,a.user_id,b.office_addr,c.dep_alias};
+            var erpUsers = await query.ToListAsync();
+            var orgs = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).ToListAsync();
+            foreach (var item in erpUsers)
+            {
+                var officeaddr = "新威尔";
+                if (item.office_addr == "东莞塘厦") officeaddr = "东莞新威";
+                if (item.office_addr == "深圳龙华") officeaddr = "新能源";
+                var orgObj = orgs.Where(o => o.Name == item.dep_alias).FirstOrDefault();
+                AddOrUpdate(new UpdateUserReq {Account= item.log_nm,Name=item.log_nm,Password="xinwei123",ServiceRelations= officeaddr, OrganizationIds= orgObj?.Id,NsapUserId=(int)item.user_id });
+            }
         }
     }
 }
