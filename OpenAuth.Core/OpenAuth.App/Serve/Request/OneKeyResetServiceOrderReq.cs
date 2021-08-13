@@ -9,5 +9,7 @@ namespace OpenAuth.App.Serve.Request
         public int serviceOrderId { get; set; }
 
         public string Message { get; set; }
+
+        public bool? IsReject { get; set; }
     }
 }

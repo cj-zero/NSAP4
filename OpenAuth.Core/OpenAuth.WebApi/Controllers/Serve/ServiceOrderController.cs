@@ -706,7 +706,18 @@ namespace OpenAuth.WebApi.Controllers
             await _serviceOrderApp.CancelServiceOrder(req);
             return result;
         }
-
+        /// <summary>
+        /// 业务员审批
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> SalesApproval(OneKeyResetServiceOrderReq req) 
+        {
+            var result = new Response();
+            await _serviceOrderApp.SalesApproval(req);
+            return result;
+        }
         /// <summary>
         /// 撤回聊天室消息
         /// </summary>

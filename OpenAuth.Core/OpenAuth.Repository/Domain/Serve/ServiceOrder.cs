@@ -254,6 +254,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("app客户id")]
         public int? FromAppUserId { get; set; }
+        /// <summary>
+        /// 是否允许服务
+        /// </summary>
+        [Description("是否允许服务")]
+        public int AllowOrNot { get; set; }
         
         /// <summary>
         /// 服务单关联的工单
