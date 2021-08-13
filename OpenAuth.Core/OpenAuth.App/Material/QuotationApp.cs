@@ -1553,6 +1553,7 @@ namespace OpenAuth.App.Material
             {
                 throw new Exception("暂未生成销售订单，不可出库，请联系管理员。");
             }
+            if(quotationObj.CancelRequest!=null) throw new Exception("已申请取消，不可出库");
             //判定是否存在成品
             mergeMaterialList.ForEach(m =>
             {
@@ -1842,6 +1843,7 @@ namespace OpenAuth.App.Material
             QuotationOperationHistory qoh = new QuotationOperationHistory();
 
             var obj = await UnitWork.Find<Quotation>(q => q.Id == req.Id).Include(q => q.QuotationProducts).Include(q => q.QuotationMergeMaterials).FirstOrDefaultAsync();
+            if(obj.CancelRequest!=null) throw new Exception("已申请取消不可审批");
             var flowInstanceObj = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(obj.FlowInstanceId)).FirstOrDefaultAsync();
             qoh.ApprovalStage = obj.QuotationStatus.ToString();
 
@@ -2811,8 +2813,8 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var quotationObj= await UnitWork.Find<Quotation>(q => q.Id == int.Parse(QuotationId) && q.CreateUserId.Equals(loginContext.User.Id)).FirstOrDefaultAsync();
-            if (quotationObj == null) throw new Exception("非提交人不可申请取消");
+            var quotationObj= await UnitWork.Find<Quotation>(q => q.Id == int.Parse(QuotationId) && q.CreateUserId.Equals(loginContext.User.Id) && q.QuotationStatus!=11 && q.QuotationStatus != 12).FirstOrDefaultAsync();
+            if (quotationObj == null) throw new Exception("暂时不可以申请取消");
             await UnitWork.UpdateAsync<Quotation>(q=>q.Id == int.Parse(QuotationId), q=>new Quotation { CancelRequest=1});
             await UnitWork.SaveAsync();
         }
