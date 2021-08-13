@@ -21,6 +21,13 @@
   <ItemGroup>
     <Compile Remove="Eshop\WfaEshopCanceledStatusApp.cs" />
     <Compile Remove="Eshop\WfaEshopOqutdetailApp.cs" />
+    <Compile Remove="Order\Request\billAttchment.cs" />
+    <Compile Remove="Order\Request\DeliveryItemAid.cs" />
+    <Compile Remove="Order\Request\IQCDetail.cs" />
+    <Compile Remove="Order\Request\OrderDetails.cs" />
+    <Compile Remove="Order\Request\SaleOrder.cs" />
+    <Compile Remove="Order\Request\SalesAcctCode.cs" />
+    <Compile Remove="Order\Request\SerialNumberChooseItem.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -50,10 +57,19 @@
     <Reference Include="aliyun-net-sdk-core">
       <HintPath>..\..\..\..\..\迅雷下载\net 2\api_demo\core2.0\aliyun-net-sdk-core.dll</HintPath>
     </Reference>
+    <Reference Include="ENTITY">
+      <HintPath>新文件夹\ENTITY.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Settlement\Response\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Nsapdll\ENTITY.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 	<Target Name="ChangeAliasesOfStrongNameAssemblies" BeforeTargets="FindReferenceAssembliesForReferences;ResolveReferences">
 		<ItemGroup>

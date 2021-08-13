@@ -102,6 +102,13 @@ namespace OpenAuth.App
             }
             return depName;
         }
+
+        public DataTable GetSboNamePwd(int SboId)
+        {
+            string strSql = string.Format("SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM {0}.sbo_info WHERE sbo_id={1}", "nsap_base", SboId);
+            DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            return dataTable;
+        }
         #endregion
     }
 }

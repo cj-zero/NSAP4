@@ -10,6 +10,7 @@ using OpenAuth.App.Order.Request;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository;
+using OpenAuth.Repository.Extensions;
 using OpenAuth.Repository.Interface;
 using Serilog;
 using System;
@@ -41,48 +42,53 @@ namespace OpenAuth.WebApi.Controllers.Order
             _serviceSaleOrderApp = serviceSaleOrderApp;
         }
         /// <summary>
-        /// 获取业务伙伴账款
+        /// 获取业务伙伴\客户 应收账款
         /// </summary>
         /// <param name="cardCode">客户代码</param>
-        /// <param name="slpCode"></param>
-        /// <param name="type">C</param>
+        /// <param name="slpCode">业务员代码</param>
         /// <returns></returns>
         [HttpGet]
         [Route("sumbaldue")]
-        public async Task<Response<CardInfoDto>> SumBalDue(string cardCode, string slpCode, string type = "C")
+        public Response<BalDueDto> SumBalDue(string cardCode, string slpCode)
         {
-            var result = new Response<CardInfoDto>();
+            var result = new Response<BalDueDto>();
             var userId = _serviceBaseApp.GetUserNaspId();
             var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
-            var depId = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT dep_id value FROM base_user_detail WHERE user_id = {userId}", CommandType.Text, null).FirstOrDefault();
-            string balstr = "";
+            // var depId = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT dep_id value FROM base_user_detail WHERE user_id = {userId}", CommandType.Text, null).FirstOrDefault();
+            BalDueDto balDueDto = new BalDueDto();
             decimal BalDue = 0;
             decimal Total = 0;
+            List<Balsbodetail> balSboDetails = new List<Balsbodetail>();
             DataTable sbotable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, "SELECT sbo_id AS id,sbo_nm AS name FROM nsap_base.sbo_info;", CommandType.Text, null);
-            sbotable.Columns.Add("BalSboAmount", typeof(decimal));
+            // sbotable.Columns.Add("BalSboAmount", typeof(decimal));
             foreach (DataRow sborow in sbotable.Rows)
             {
+                balSboDetails.Add(new Balsbodetail()
+                {
+                    id = sborow["id"].ToString(),
+                    name = sborow["name"].ToString(),
+                    BalSboAmount = "0.00"
+                });
                 DataTable baltable = new DataTable();
                 if (!string.IsNullOrEmpty(slpCode))
                 {
-                    //baltable = NSAP.Data.Sales.BillDelivery.GetSalesSboBalPercent(slpCode, type, sborow["id"].ToString());
-                    //if (baltable.Rows.Count > 0)
-                    //{
-                    //    decimal tempDue = 0, tempTotal = 0;
-                    //    if (!string.IsNullOrEmpty(baltable.Rows[0]["BalDue"].ToString()) && decimal.TryParse(baltable.Rows[0]["BalDue"].ToString(), out tempDue))
-                    //    {
-                    //        BalDue += tempDue;
-                    //    }
-                    //    if (!string.IsNullOrEmpty(baltable.Rows[0]["Total"].ToString()) && decimal.TryParse(baltable.Rows[0]["Total"].ToString(), out tempTotal))
-                    //    {
-                    //        Total += tempTotal;
-                    //    }
-                    //    sborow["BalSboAmount"] = tempDue.ToString("#0.00");
-                    //}
+                    baltable = _serviceSaleOrderApp.GetSalesSboBalPercent(slpCode, int.Parse(sborow["id"].ToString()));
+                    if (baltable.Rows.Count > 0)
+                    {
+                        decimal tempDue = 0, tempTotal = 0;
+                        if (!string.IsNullOrEmpty(baltable.Rows[0]["BalDue"].ToString()) && decimal.TryParse(baltable.Rows[0]["BalDue"].ToString(), out tempDue))
+                        {
+                            BalDue += tempDue;
+                        }
+                        if (!string.IsNullOrEmpty(baltable.Rows[0]["Total"].ToString()) && decimal.TryParse(baltable.Rows[0]["Total"].ToString(), out tempTotal))
+                        {
+                            Total += tempTotal;
+                        }
+                    }
                 }
                 else if (!string.IsNullOrEmpty(cardCode))
                 {
-                    baltable = null;//NSAP.Data.Client.ClientInfo.GetClientSboBalPercent(cardCode, sborow["id"].ToString());
+                    baltable = _serviceSaleOrderApp.GetClientSboBalPercent(cardCode, int.Parse(sborow["id"].ToString()));
                     if (baltable.Rows.Count > 0)
                     {
                         decimal tempBalance = 0, tempINVtotal = 0, tempRINtotal = 0;
@@ -98,14 +104,13 @@ namespace OpenAuth.WebApi.Controllers.Order
                         {
                             Total -= tempRINtotal;
                         }
-
-                        sborow["BalSboAmount"] = tempBalance.ToString("#0.00");
                     }
                 }
             }
             //当前账套金额
-            decimal due90 = 0; decimal total90 = 0;
-            DataTable curbaltab = null;//NSAP.Data.Client.ClientInfo.GetClientSboBalPercent(cardCode, SboId.ToString());
+            decimal due90 = 0;
+            decimal total90 = 0;
+            DataTable curbaltab = _serviceSaleOrderApp.GetClientSboBalPercent(cardCode, sboid);
             decimal sboBalance = 0, rctBalance90 = 0, invBalance90 = 0, rinBalance90 = 0, invTotal90P = 0, invBalance90P = 0, rctBalance90P = 0, rinBalance90P = 0;
             if (!string.IsNullOrEmpty(curbaltab.Rows[0]["Balance"].ToString()) && decimal.TryParse(curbaltab.Rows[0]["Balance"].ToString(), out sboBalance))
             {
@@ -127,7 +132,12 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 total90 += invTotal90P;
             }
-            // balstr = "[{\"BalDue\":\"" + BalDue.ToString("#0.00").FilterString() + "\",\"Total\":\"" + Total.ToString("#0.00").FilterString() + "\",\"BalSboDetails\":" + sbotable.DataTableToJSON() + ",\"Due90\":\"" + due90.ToString("#0.00").FilterString() + "\",\"Total90\":\"" + total90.ToString("#0.00").FilterString() + "\"}]";
+            balDueDto.BalDue = BalDue.ToString("#0.00").FilterString();
+            balDueDto.Total = Total.ToString("#0.00").FilterString();
+            balDueDto.Due90 = due90.ToString("#0.00").FilterString();
+            balDueDto.Total90 = total90.ToString("#0.00").FilterString();
+            balDueDto.BalSboDetails = balSboDetails;
+            result.Result = balDueDto;
             return result;
         }
         /// <summary>
@@ -455,10 +465,10 @@ namespace OpenAuth.WebApi.Controllers.Order
         }
         /// <summary>
         /// 加载销售报价单列表
-        /// </summary>pp
+        /// </summary>
         [HttpPost]
         [Route("sales")]
-        public async Task<TableData> LoadAsync(QuerySalesQuotationReq request)
+        public async Task<TableData> LoadOrderGridAsync(QuerySalesQuotationReq request)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -515,7 +525,6 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns></returns>
         [HttpGet]
         [Route("salesmaninfo")]
-        [AllowAnonymous]
         public async Task<Response<List<SelectOption>>> GetSalesManInfo()
         {
             var result = new Response<List<SelectOption>>();
@@ -530,7 +539,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns></returns>
         [HttpPost]
         [Route("Save")]
-        public async Task<Response<string>> Save(AddOrUpdateOrderReq orderReq)
+        public async Task<Response<string>> Save(AddOrderReq orderReq)
         {
             var result = new Response<string>();
             try
@@ -726,14 +735,14 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
         }
         /// <summary>
-        /// 
+        /// 配置类型
         /// </summary>
         /// <param name="TableID"></param>
         /// <param name="AliasID"></param>
         /// <returns></returns>
         [HttpGet]
         [Route("GetQUTCustomeValueByFN")]
-        public Response<List<SelectOption>> GetQUTCustomeValueByFN(string TableID, string AliasID = "ZS")
+        public Response<List<DropDownOption>> GetQUTCustomeValueByFN(string TableID, string AliasID = "ZS")
         {
 
             //客户端设置的自定义字段U_ZS
@@ -753,10 +762,10 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             string strSql = string.Format(@"select t1.FldValue as id,t1.Descr as name from ufd1 t1 LEFT JOIN cufd t0 on t0.TableID=t1.TableID and t0.FieldID=t1.FieldID
                                             where t0.TableID='{0}' AND t0.AliasID='{1}' order by t1.IndexID asc ", saptabname, AliasID);
-            var result = new Response<List<SelectOption>>();
+            var result = new Response<List<DropDownOption>>();
             var userId = _serviceBaseApp.GetUserNaspId();
             var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
-            result.Result = UnitWork.ExcuteSql<SelectOption>(ContextType.SapDbContextType, strSql, CommandType.Text, null);
+            result.Result = UnitWork.ExcuteSql<DropDownOption>(ContextType.SapDbContextType, strSql, CommandType.Text, null);
             return result;
 
         }
@@ -893,6 +902,145 @@ namespace OpenAuth.WebApi.Controllers.Order
                 }
             }
             return result;
+        }
+        /// <summary>
+        /// 科目代码(服务)
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("SelectAcctCodeView")]
+        public TableData GridAcctCodeList(OactRequest query)
+        {
+            return _serviceSaleOrderApp.SelectAcctCodeView(query);
+        }
+
+        //#region 查看销售报价单
+        //public Response<OrderDraftInfo> QuerySaleDeliveryDetails()
+        //{
+        //    var result = new Response<OrderDraftInfo>();
+        //    return result;
+        //}
+        //#endregion
+        /// <summary>
+        /// 查看附件
+        /// <summary>
+        /// <param name="DocNum">订单Id</param>
+        /// <param name="TypeId"></param>
+        /// <param name="fileSboId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetFilesList")]
+        public Response<List<OrderFile>> GetFilesList(string OrderId, string TypeId, string fileSboId)
+        {
+            var result = new Response<List<OrderFile>>();
+            if (!string.IsNullOrEmpty(TypeId))
+            {
+                var userId = _serviceBaseApp.GetUserNaspId();
+                var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+                int billSboId = 0;
+                if (!string.IsNullOrEmpty(fileSboId)) { billSboId = int.Parse(fileSboId); }
+                else { billSboId = sboid; }
+                string strSql = string.Format("SELECT a.file_id,b.type_nm,a.file_nm,a.remarks,a.file_path,a.upd_dt,c.user_nm,a.view_file_path,a.file_type_id,a.acct_id ");
+                strSql += string.Format(" FROM {0}.file_main a", "nsap_oa");
+                strSql += string.Format(" LEFT JOIN {0}.file_type b ON a.file_type_id=b.type_id", "nsap_oa");
+                strSql += string.Format(" LEFT JOIN {0}.base_user c ON a.acct_id=c.user_id", "nsap_base");
+                if (TypeId == "5")//销售订单附件附带销售提成附件
+                {
+                    strSql += string.Format(" WHERE a.docEntry='{0}' AND a.file_type_id in ({1},37) AND sbo_id={2}", OrderId, TypeId, sboid);
+                }
+                else
+                {
+                    //非销售订单附件
+                    strSql += string.Format(" WHERE a.docEntry='{0}' AND a.file_type_id='{1}' AND sbo_id={2}", OrderId, TypeId, sboid);
+                }
+                result.Result = UnitWork.ExcuteSql<OrderFile>(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            }
+            return result;
+        }
+        /// <summary>
+        /// 查看物料明显
+        /// </summary>
+        [HttpGet]
+        [Route("GetItemCodeList")]
+        public TableData GetItemCodeList(string DocNum, string tablename, string ations, string SboId, string billPageurl)
+        {
+            TableData tableData = new TableData();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            if (string.IsNullOrEmpty(SboId))
+            {
+                SboId = _serviceBaseApp.GetUserNaspSboID(userId).ToString();
+            }
+            bool ViewSales = false;
+            if (!string.IsNullOrEmpty(billPageurl))
+            {
+                //long AuthMap = NSAP.Senior.Ambit.GetCurrentPage(userId, billPageurl).AuthMap;
+                //NSAP.Base.Powers Powers = new NSAP.Base.Powers(AuthMap);
+                //ViewSales = Powers.ViewSales;
+            }
+            if (ations == "copy")
+            {
+                ViewSales = true;
+            }
+            int billSboId = int.Parse(SboId);
+            string U_YFTCBL = "";
+            string strSqlViewSales = string.Format("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='nsap_bone' AND table_name ='{0}' AND column_name='{1}'", tablename, "U_YFTCBL");
+            string IsU_YFTCBL = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSqlViewSales, CommandType.Text, null).ToString();
+            if (!string.IsNullOrEmpty(IsU_YFTCBL) && IsU_YFTCBL != "0")
+            {
+                U_YFTCBL = ",IF(" + ViewSales + ",d.U_YFTCBL,0)";
+            }
+            StringBuilder stringBuilder = new StringBuilder();
+            string strSql = string.Format(" SELECT d.ItemCode,Dscription,Quantity ," +
+                "IF(" + ViewSales + ",d.PriceBefDi,0)PriceBefDi," +
+                "IF(" + ViewSales + ",DiscPrcnt,0)DiscPrcnt,d.U_PDXX," +
+                "IF(" + ViewSales + ",d.U_XSTCBL,0)U_XSTCBL," +
+                "IF(" + ViewSales + ",d.U_YWF,0)U_YWF," +
+                "IF(" + ViewSales + ",d.U_FWF,0)U_FWF," +
+                "IF(" + ViewSales + ",Price,0)Price,VatGroup," +
+                "IF(" + ViewSales + ",PriceAfVAT,0)PriceAfVAT,");
+            strSql += string.Format("IF(" + ViewSales + ",LineTotal,0) LineTotal," +
+                "IF(" + ViewSales + ",TotalFrgn,0) TotalFrgn," +
+                "IF(" + ViewSales + ",d.U_SCTCBL,0) U_SCTCBL," +
+                "IF(" + ViewSales + ",StockPrice,0) StockPrice,d.U_YF,d.WhsCode,w.OnHand,d.VatPrcnt,d.LineNum,d.U_YFTCBL,");
+            strSql += string.Format("m.IsCommited,m.OnOrder,m.U_TDS,m.U_DL,m.U_DY,d.DocEntry,d.OpenQty,m.U_JGF,");
+            strSql += string.Format("(CASE m.QryGroup1 WHEN 'N' THEN 0 ELSE '0.5' END) AS QryGroup1,");
+            strSql += string.Format("(CASE m.QryGroup2 WHEN 'N' THEN 0 ELSE '3' END) AS QryGroup2,");
+            strSql += string.Format("(CASE m.QryGroup3 WHEN 'N' THEN 0 ELSE '2' END) AS QryGroup3");
+            strSql += string.Format(",m.U_JGF1,IFNULL(m.U_YFCB,0)U_YFCB," +
+                "IFNULL(d.U_SHJSDJ,0)U_SHJSDJ," +
+                "IFNULL(d.U_SHJSJ,0) U_SHJSJ ," +
+                "IFNULL(d.U_SHTC,0) U_SHTC," +
+                "IFNULL(SumQuantity,0) as SumQuantity");
+            strSql += string.Format(",(CASE m.QryGroup8 WHEN 'N' THEN 0 ELSE '1' END) AS QryGroup8");//3008n
+            strSql += string.Format(",(CASE m.QryGroup9 WHEN 'N' THEN 0 ELSE '2' END) AS QryGroup9");//9系列
+            strSql += string.Format(",(CASE m.QryGroup10 WHEN 'N' THEN 0 ELSE '1.5' END) AS QryGroup10");//ES系列 
+            strSql += string.Format(",m.buyunitmsr,d.U_ZS");
+            if (tablename.ToLower() == "sale_qut1" || tablename.ToLower() == "sale_rdr1")
+            {
+                strSql += ",d.U_RelDoc";
+            }
+            strSql += ",d.LineStatus,d.BaseEntry,d.BaseLine,d.BaseType";
+            strSql += string.Format(" FROM {0}." + tablename + " d", "nsap_bone");
+            strSql += string.Format(" LEFT JOIN {0}.store_oitw w ON d.ItemCode=w.ItemCode AND d.WhsCode=w.WhsCode AND d.sbo_id=w.sbo_id", "nsap_bone");
+            strSql += string.Format(" LEFT JOIN {0}.store_oitm m ON d.ItemCode=m.ItemCode AND d.sbo_id=m.sbo_id", "nsap_bone");
+            strSql += string.Format(" LEFT JOIN (select d1.sbo_id,d1.BaseEntry ,d1.BaseLine,SUM(d1.Quantity) as SumQuantity from {0}.sale_DLN1 d1 inner join {0}.sale_odln d0 on d0.docentry=d1.docentry and d0.sbo_id=d1.sbo_id where d0.Canceled='N' AND d1.BaseType=17 and d1.BaseEntry=" + DocNum + " GROUP BY d1.sbo_id,d1.BaseEntry,d1.BaseLine) as T on d.sbo_id=T.sbo_id and d.DocEntry=T.BaseEntry and  d.LineNum=T.BaseLine  ", "nsap_bone");
+            strSql += string.Format(" WHERE d.DocEntry=" + DocNum + " AND d.sbo_id={0}", SboId);
+            DataTable dts = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
+            //  tableData.Data = dts.Tolist<OrderItem>();
+            return tableData;
+            //int itemindex = 0;
+            //foreach (DataRow tempr in dt.Rows)
+            //{
+            //    itemindex++;
+            //    tempr[0] = itemindex.ToString();
+            //    if (tablename.ToLower() == "sale_rdr1")
+            //    {
+            //        string statusSql = string.Format("select top 1 LineStatus from RDR1 where DocEntry={0} and LineNum={1}", DocNum, tempr["LineNum"].ToString());
+            //        object statusobj = Sql.SAPAction.ExecuteScalar(Sql.SAPConnectionString, CommandType.Text, statusSql);
+            //        tempr["LineStatus"] = statusobj == null ? "" : statusobj.ToString();
+            //    }
+            //}
         }
     }
 }

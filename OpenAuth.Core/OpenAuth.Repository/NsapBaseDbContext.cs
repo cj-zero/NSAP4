@@ -34,7 +34,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<base_user_detail> BaseUserDetails { get; set; }
         public virtual DbSet<base_user_log> BaseUserLog { get; set; }
         public virtual DbSet<WfaJobPara> WfaJobPara { get; set; }
-        
+
 
 
     }
