@@ -140,21 +140,21 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 删除一个工单
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> DeleteWorkOrder(int id)
+        public async Task<Response> DeleteWorkOrder(QueryServiceOrderListReq req)
         {
             var result = new Response();
             try
             {
-                await _serviceOrderApp.DeleteWorkOrder(id);
+                await _serviceOrderApp.DeleteWorkOrder(req);
             }
             catch (Exception ex)
             {
                 result.Code = 500;
                 result.Message = ex.Message;
-                Log.Logger.Error($"地址：{Request.Path}，参数：{id}， 错误：{result.Message}");
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req}， 错误：{result.Message}");
             }
             return result;
         }

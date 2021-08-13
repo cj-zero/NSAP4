@@ -678,6 +678,18 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
+        /// <summary>
+        /// 申请取消销售订单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> CancelRequest(string QuotationId) 
+        {
+            var result = new Response();
+            await _app.CancelRequest(QuotationId);
+            return result;
+        }
         [HttpGet]
         /// <summary>
         /// 客户历史销售订单

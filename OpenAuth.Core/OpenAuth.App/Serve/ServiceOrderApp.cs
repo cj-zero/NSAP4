@@ -447,10 +447,15 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public async Task DeleteWorkOrder(int id)
+        public async Task DeleteWorkOrder(QueryServiceOrderListReq req)
         {
-            await UnitWork.DeleteAsync<ServiceWorkOrder>(s => s.Id.Equals(id));
-
+            if (req.AllowOrNot == -1) 
+            {
+                await UnitWork.UpdateAsync<ServiceOrder>(s=>s.Id==int.Parse(req.QryServiceOrderId),s=>new ServiceOrder { AllowOrNot=1});
+            }
+            var count=await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == int.Parse(req.QryServiceOrderId)).CountAsync();
+            if(count<=1) throw new Exception("不可删除最后一个工单，如需删除请新建工单后重新删除。");
+            await UnitWork.DeleteAsync<ServiceWorkOrder>(s => s.Id.Equals(req.QryServiceWorkOrderId));
             await UnitWork.SaveAsync();
         }
 
@@ -522,6 +527,10 @@ namespace OpenAuth.App
                     }
                 }
                 await UnitWork.AddAsync<ServiceWorkOrder, int>(obj);
+                if (request.AllowOrNot == -1) 
+                {
+                    await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id == request.ServiceOrderId, s => new ServiceOrder { AllowOrNot = 0 });
+                }
                 await UnitWork.SaveAsync();
 
                 //log日志与发送消息
@@ -735,9 +744,11 @@ namespace OpenAuth.App
                 {
                     var mnfSerials = req.ServiceWorkOrders.Select(s => s.ManufacturerSerialNumber).ToList();
                     var warrantyDates = await UnitWork.Find<SalesOrderWarrantyDate>(s => mnfSerials.Contains(s.MnfSerial)).ToListAsync();
-                    foreach (var item in warrantyDates)
+                    
+                    foreach (var item in mnfSerials)
                     {
-                        if (item.WarrantyPeriod == null || item.WarrantyPeriod < DateTime.Now) return 1;
+                        var warrantyDate = warrantyDates.Where(w => w.MnfSerial.Equals(item)).FirstOrDefault();
+                        if (warrantyDate == null || warrantyDate.WarrantyPeriod < DateTime.Now) return 1;
                     }
                 }
             }

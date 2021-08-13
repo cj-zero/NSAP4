@@ -2795,6 +2795,23 @@ namespace OpenAuth.App.Material
             reult.Count = await quotations.CountAsync();
             return reult;
         }
+        /// <summary>
+        /// 申请取消销售订单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task CancelRequest(string QuotationId)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var quotationObj= await UnitWork.Find<Quotation>(q => q.Id == int.Parse(QuotationId) && q.CreateUserId.Equals(loginContext.User.Id)).FirstOrDefaultAsync();
+            if (quotationObj == null) throw new Exception("非提交人不可申请取消");
+            await UnitWork.UpdateAsync<Quotation>(q=>q.Id == int.Parse(QuotationId), q=>new Quotation { CancelRequest=1});
+            await UnitWork.SaveAsync();
+        }
 
         public QuotationApp(IUnitWork unitWork, ICapPublisher capBus, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
         {
