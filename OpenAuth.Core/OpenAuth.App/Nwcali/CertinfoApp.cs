@@ -1038,7 +1038,7 @@ namespace OpenAuth.App
             var calibration = entrusted.Where(c => c.Status >= 3).ToList();
             foreach (var item in calibration)
             {
-                var details = await UnitWork.Find<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();
+                var details = await UnitWork.FindTrack<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();
                 var snids = details.Select(c => c.SerialNumber).ToList();
                 var nwcert = await UnitWork.Find<NwcaliBaseInfo>(c => snids.Contains(c.TesterSn)).ToListAsync();
                 if (nwcert != null && nwcert.Count>0)
