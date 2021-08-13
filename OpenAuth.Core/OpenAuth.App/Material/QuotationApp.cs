@@ -74,7 +74,8 @@ namespace OpenAuth.App.Material
                                 .WhereIf(request.Status != null, q => q.Status == request.Status)
                                 .WhereIf(request.QuotationStatus != null, q => q.QuotationStatus == request.QuotationStatus)
                                 .WhereIf(request.SalesOrderId != null, q => q.SalesOrderId == request.SalesOrderId)
-                                .WhereIf(ServiceOrderids.Count() > 0, q => ServiceOrderids.Contains(q.ServiceOrderId));
+                                .WhereIf(ServiceOrderids.Count() > 0, q => ServiceOrderids.Contains(q.ServiceOrderId))
+                                .WhereIf(!string.IsNullOrWhiteSpace(request.CancelRequest),q=>q.CancelRequest==int.Parse(request.CancelRequest));
             var flowInstanceIds = await Quotations.Select(q => q.FlowInstanceId).ToListAsync();
             var flowinstanceObjs = from a in UnitWork.Find<FlowInstance>(f => flowInstanceIds.Contains(f.Id))
                                    join b in UnitWork.Find<FlowInstanceOperationHistory>(null) on a.Id equals b.InstanceId into ab
@@ -290,6 +291,7 @@ namespace OpenAuth.App.Material
                 q.a.Tentative,
                 q.a.IsProtected,
                 q.a.PrintWarehouse,
+                q.a.CancelRequest,
                 Balance = ocrds.Where(o => o.CardCode.Equals(q.b.TerminalCustomerId)).FirstOrDefault()?.Balance,
                 files = q.a.QuotationPictures.Select(p => new
                 {

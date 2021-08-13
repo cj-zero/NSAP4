@@ -529,7 +529,7 @@ namespace OpenAuth.App
                 await UnitWork.AddAsync<ServiceWorkOrder, int>(obj);
                 if (request.AllowOrNot == -1) 
                 {
-                    await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id == request.ServiceOrderId, s => new ServiceOrder { AllowOrNot = 0 });
+                    await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id == request.ServiceOrderId, s => new ServiceOrder { AllowOrNot = 1 });
                 }
                 await UnitWork.SaveAsync();
 
