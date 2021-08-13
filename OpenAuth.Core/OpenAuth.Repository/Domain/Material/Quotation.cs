@@ -263,7 +263,7 @@ namespace OpenAuth.Repository.Domain
         [Description("质保后付款百分比")]
         public decimal? PaymentAfterWarranty { get; set; }
         /// <summary>
-        ///领料类型 1更换 2.销售  3.成本
+        ///领料类型 1更换 2.销售  3.成本 4延保
         /// </summary>
         [Description("领料类型")]
 
@@ -325,6 +325,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("差旅费成本")]
         public decimal? TravelExpenseCost { get; set; }
+        /// <summary>
+        ///延保类型 1更新 2销售
+        /// </summary>
+        [Description("延保类型")]
+        public int? WarrantyType { get; set; }
 
         /// <summary>
         /// 物流表

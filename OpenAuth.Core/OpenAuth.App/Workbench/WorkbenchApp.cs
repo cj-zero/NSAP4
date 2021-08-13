@@ -30,11 +30,23 @@ namespace OpenAuth.App.Workbench
             var workbenchPendingObj = await UnitWork.Find<WorkbenchPending>(w => w.SourceNumbers == obj.SourceNumbers && w.OrderType == obj.OrderType).FirstOrDefaultAsync();
             if (workbenchPendingObj != null)
             {
-                await UnitWork.UpdateAsync<WorkbenchPending>(w => w.ApprovalNumber == workbenchPendingObj.ApprovalNumber, w => new WorkbenchPending
+                if (!string.IsNullOrWhiteSpace(obj.FlowInstanceId)&& !workbenchPendingObj.FlowInstanceId.Equals(obj.FlowInstanceId))
                 {
-                    UpdateTime = obj.UpdateTime,
-                    Remark = obj.Remark,
-                });
+                    await UnitWork.UpdateAsync<WorkbenchPending>(w => w.ApprovalNumber == workbenchPendingObj.ApprovalNumber, w => new WorkbenchPending
+                    {
+                        UpdateTime = obj.UpdateTime,
+                        Remark = obj.Remark,
+                        FlowInstanceId = obj.FlowInstanceId
+                    });
+                }
+                else
+                {
+                    await UnitWork.UpdateAsync<WorkbenchPending>(w => w.ApprovalNumber == workbenchPendingObj.ApprovalNumber, w => new WorkbenchPending
+                    {
+                        UpdateTime = obj.UpdateTime,
+                        Remark = obj.Remark
+                    });
+                }
             }
             else
             {

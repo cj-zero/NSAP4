@@ -25,7 +25,7 @@ namespace OpenAuth.App.Jobs
         {
             var jobId = context.MergedJobDataMap.GetString(Define.JOBMAPKEY);
             //todo:这里可以加入自己的自动任务逻辑
-            await _quotationApp.TimeOfDelivery();
+            //await _quotationApp.TimeOfDelivery();
             _openJobApp.RecordRun(jobId);
         }
     }

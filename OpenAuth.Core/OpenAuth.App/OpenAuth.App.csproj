@@ -58,7 +58,7 @@
       <HintPath>..\..\..\..\..\迅雷下载\net 2\api_demo\core2.0\aliyun-net-sdk-core.dll</HintPath>
     </Reference>
     <Reference Include="ENTITY">
-      <HintPath>新文件夹\ENTITY.dll</HintPath>
+      <HintPath>..\package\ENTITY.dll</HintPath>
     </Reference>
   </ItemGroup>
 

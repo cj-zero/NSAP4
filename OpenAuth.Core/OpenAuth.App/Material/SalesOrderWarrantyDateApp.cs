@@ -48,10 +48,14 @@ namespace OpenAuth.App.Material
             {
                 var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
                 var slpCode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
-                SalesOrderWarrantyDates = SalesOrderWarrantyDates.WhereIf(string.IsNullOrWhiteSpace(slpCode.ToString()), q => q.SalesOrderName.Equals(loginContext.User.Name)).WhereIf(!string.IsNullOrWhiteSpace(slpCode.ToString()), q => q.SlpCode == slpCode);
+                SalesOrderWarrantyDates = SalesOrderWarrantyDates
+                                          //.WhereIf(string.IsNullOrWhiteSpace(slpCode.ToString()), q => q.SalesOrderName.Equals(loginContext.User.Name))
+                                          .WhereIf(!string.IsNullOrWhiteSpace(slpCode.ToString()), q => q.SlpCode == slpCode || q.SalesOrderWarrantyDateRecords.Any(s=>s.CreateUserId.Equals(loginContext.User.Id)));
             }
             result.Count = await SalesOrderWarrantyDates.CountAsync();
-            result.Data = await SalesOrderWarrantyDates.Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+            var warrantyDates = await SalesOrderWarrantyDates.Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+            warrantyDates.ForEach(s => s.SalesOrderWarrantyDateRecords=s.SalesOrderWarrantyDateRecords.OrderByDescending(w => w.CreateTime).ToList());
+            result.Data = warrantyDates;
             return result;
         }
 
@@ -76,7 +80,6 @@ namespace OpenAuth.App.Material
             {
                 Id = Guid.NewGuid().ToString(),
                 SalesOrderWarrantyDateId = req.Id,
-                Action = loginContext.User.Name + "修改保修时间为" + req.WarrantyPeriod,
                 CreateTime = DateTime.Now,
                 CreateUser = loginContext.User.Name,
                 CreateUserId = loginContext.User.Id
@@ -105,7 +108,6 @@ namespace OpenAuth.App.Material
             {
                 Id = Guid.NewGuid().ToString(),
                 SalesOrderWarrantyDateId = req.Id,
-                Action = (bool)req.IsPass ? "通过" : "驳回",
                 CreateTime = DateTime.Now,
                 CreateUser = loginContext.User.Name,
                 CreateUserId = loginContext.User.Id

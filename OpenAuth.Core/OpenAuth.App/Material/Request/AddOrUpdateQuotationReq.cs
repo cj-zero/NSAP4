@@ -1,4 +1,5 @@
 ﻿using Infrastructure.AutoMapper;
+using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using System;
 using System.Collections.Generic;
@@ -257,6 +258,11 @@ namespace OpenAuth.App.Material.Request
         ///修改时间
         /// </summary>
         public DateTime? UpDateTime { get; set; }
+
+        /// <summary>
+        ///延保类型 1更新 2销售
+        /// </summary>
+        public  string WarrantyType { get; set; }
         /// <summary>
         /// 报价单设备列表
         /// </summary>
@@ -276,7 +282,10 @@ namespace OpenAuth.App.Material.Request
         /// 操作详情表
         /// </summary>
         public virtual List<QuotationOperationHistory> QuotationOperationHistorys { get; set; }
-        
 
+        /// <summary>
+        /// 生命周期
+        /// </summary>
+        public virtual List<FlowPathResp> FlowPathResp { get; set; }
     }
 }

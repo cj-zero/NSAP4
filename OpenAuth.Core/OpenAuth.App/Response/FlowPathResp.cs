@@ -84,7 +84,15 @@ namespace OpenAuth.App.Response
     public class FlowInstanceCompares
     {
         /// <summary>
-        /// 审批节点
+        /// 判断名称
+        /// </summary>
+        public string FieldName { get; set; }
+        /// <summary>
+        /// 判断
+        /// </summary>
+        public string Operation { get; set; }
+        /// <summary>
+        /// 判断值
         /// </summary>
         public string Value { get; set; }
     }

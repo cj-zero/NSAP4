@@ -678,5 +678,15 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
+        [HttpGet]
+        /// <summary>
+        /// 客户历史销售订单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> HistorySaleOrde([FromQuery]QueryQuotationListReq request)
+        {
+            return await _app.HistorySaleOrde(request);
+        }
     }
 }

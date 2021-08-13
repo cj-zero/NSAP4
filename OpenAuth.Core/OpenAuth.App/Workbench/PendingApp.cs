@@ -27,15 +27,17 @@ namespace OpenAuth.App.Workbench
     public class PendingApp : OnlyUnitWorkBaeApp
     {
         public readonly QuotationApp _quotationApp;
+        public readonly FlowInstanceApp _flowInstanceApp;
         /// <summary>
         /// 构造方法
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
         /// <param name="quotationApp"></param>
-        public PendingApp(IUnitWork unitWork, IAuth auth, QuotationApp quotationApp) : base(unitWork, auth)
+        public PendingApp(IUnitWork unitWork, IAuth auth, QuotationApp quotationApp, FlowInstanceApp flowInstanceApp) : base(unitWork, auth)
         {
             _quotationApp = quotationApp;
+            _flowInstanceApp = flowInstanceApp;
         }
         /// <summary>
         /// 服务单详情
@@ -123,12 +125,14 @@ namespace OpenAuth.App.Workbench
                 IsMaterialType = quotationObj.IsMaterialType,
                 Prepay = quotationObj.Prepay,
                 Remark = quotationObj.Remark,
+                WarrantyType=quotationObj.WarrantyType,
                 Tentative = quotationObj.Tentative,
                 UpDateTime = Convert.ToDateTime(quotationObj.UpDateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 PayOnReceipt = quotationObj.PayOnReceipt,
                 TotalCostPrice = quotationObj.TotalCostPrice,
                 TotalMoney = quotationObj.TotalMoney,
                 QuotationStatus = quotationObj.QuotationStatus.ToString(),
+                FlowInstanceId=quotationObj.FlowInstanceId,
                 QuotationOperationHistorys = quotationObj.QuotationOperationHistorys.Select(o => new OperationHistoryResp
                 {
                     ApprovalResult = o.ApprovalResult,
@@ -146,6 +150,7 @@ namespace OpenAuth.App.Workbench
                     MaterialCode = p.MaterialCode,
                     MaterialDescription = p.MaterialDescription,
                     WarrantyExpirationTime = p.WarrantyExpirationTime,
+                    WarrantyTime=p.WarrantyTime,
                     QuotationMaterials = p.QuotationMaterials.Select(m => new QuotationMaterialResp
                     {
                         MaterialCode = m.MaterialCode,
@@ -180,7 +185,7 @@ namespace OpenAuth.App.Workbench
                     FileType = fileList.Where(f => f.Id.Equals(q.PictureId)).FirstOrDefault()?.FileType
                 }).ToList()
             };
-            quotationDetails.FlowPathResp = await FlowPathRespList(quotationDetails.QuotationOperationHistorys, quotationObj.FlowInstanceId,int.Parse(quotationObj.IsMaterialType));
+            quotationDetails.FlowPathResp = await _flowInstanceApp.FlowPathRespList(quotationDetails.QuotationOperationHistorys, quotationObj.FlowInstanceId);
             return quotationDetails;
         }
         /// <summary>
@@ -252,7 +257,7 @@ namespace OpenAuth.App.Workbench
                 ApprovalResult = h.ApprovalResult,
                 ApprovalStage = h.ApprovalStage
             }).ToList();
-            returnnoteDetails.FlowPathResp = await FlowPathRespList(returnnoteDetails.ReturnNoteHistoryResp, returNnoteObj.FlowInstanceId);
+            returnnoteDetails.FlowPathResp = await _flowInstanceApp.FlowPathRespList(returnnoteDetails.ReturnNoteHistoryResp, returNnoteObj.FlowInstanceId);
             returnnoteDetails.ReturnNotePictures = returNnoteObj.ReturnNotePictures.Select(r => new FileResp
             {
                 FileId = r.PictureId,
@@ -314,7 +319,7 @@ namespace OpenAuth.App.Workbench
                 IntervalTime = f?.IntervalTime.ToString(),
                 Remark = f.Remark
             }).OrderBy(f => f.CreateTime).ToList();
-            outsourcDetails.FlowPathResp = await FlowPathRespList(outsourcDetails.OutsourcOperationHistory, outsourcObj.FlowInstanceId);
+            outsourcDetails.FlowPathResp = await _flowInstanceApp.FlowPathRespList(outsourcDetails.OutsourcOperationHistory, outsourcObj.FlowInstanceId);
             return outsourcDetails;
         }
         /// <summary>
@@ -325,7 +330,7 @@ namespace OpenAuth.App.Workbench
         {
             var reimburseObj = await UnitWork.Find<ReimburseInfo>(r => r.MainId == ReimburseId).Include(r => r.ReimburseFares)
                 .Include(r => r.ReimburseOtherCharges).Include(r => r.ReimburseTravellingAllowances).Include(r => r.ReimurseOperationHistories).Include(r => r.ReimburseAccommodationSubsidies).FirstOrDefaultAsync();
-
+            reimburseObj.ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId == reimburseObj.Id && r.ReimburseType == 0).ToListAsync();
             List<string> fileids = new List<string>();
             List<ReimburseAttachment> filemodel = new List<ReimburseAttachment>();
             List<ReimburseExpenseOrg> expenseOrg = new List<ReimburseExpenseOrg>();
@@ -353,6 +358,7 @@ namespace OpenAuth.App.Workbench
                 expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rocids.Contains(r.ExpenseId) && r.ExpenseType == 4).ToListAsync());
             }
             fileids.AddRange(filemodel.Select(f => f.FileId).ToList());
+            fileids.AddRange(reimburseObj.ReimburseAttachments.Select(r => r.FileId).ToList());
             var file = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
             var reimburseDetails = new ReimburseDetailsResp
             {
@@ -361,6 +367,11 @@ namespace OpenAuth.App.Workbench
                 Remark = reimburseObj.Remark,
                 TotalMoney = reimburseObj.TotalMoney,
                 ReimburseMainId = reimburseObj.MainId,
+                Files= reimburseObj.ReimburseAttachments.Select(r=>new FileResp { 
+                    FileId=r.FileId,
+                    FileName = file.Where(s => s.Id.Equals(r.FileId)).FirstOrDefault().FileName,
+                    FileType = file.Where(s => s.Id.Equals(r.FileId)).FirstOrDefault().FileType,
+                }).ToList(),
                 ReimburseFares = reimburseObj.ReimburseFares.Select(f => new ReimburseFareResp
                 {
                     Id = f.Id,
@@ -456,7 +467,7 @@ namespace OpenAuth.App.Workbench
                     IntervalTime = o.IntervalTime.ToString()
                 }).OrderBy(r => r.CreateTime).ToList()
             };
-            reimburseDetails.FlowPathResp = await FlowPathRespList(reimburseDetails.ReimurseOperationHistories, reimburseObj.FlowInstanceId);
+            reimburseDetails.FlowPathResp = await _flowInstanceApp.FlowPathRespList(reimburseDetails.ReimurseOperationHistories, reimburseObj.FlowInstanceId);
             return reimburseDetails;
         }
 
@@ -665,99 +676,7 @@ namespace OpenAuth.App.Workbench
             return result;
         }
 
-        /// <summary>
-        /// 获取生命周期
-        /// </summary>
-        /// <param name="reqp"></param>
-        /// <param name="FlowInstanceId"></param>
-        /// <param name="IsMaterialType"></param>
-        /// <returns></returns>
-        private async Task<List<FlowPathResp>> FlowPathRespList(List<OperationHistoryResp> reqp, string FlowInstanceId, int IsMaterialType = 0)
-        {
-            var flowInstance = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(FlowInstanceId)).Select(f => new { f.SchemeContent ,f.ActivityName}).FirstOrDefaultAsync();
-            var schemeContentJson = JsonHelper.Instance.Deserialize<FlowInstanceJson>(flowInstance.SchemeContent);
-            List<FlowInstanceNodes> flowInstanceNodes = new List<FlowInstanceNodes>();
-            List<FlowPathResp> flowPathResps = new List<FlowPathResp>();
-            int number = 1;
-            flowInstanceNodes.Add(new FlowInstanceNodes { Name = "提交", Number = number });
-            string toId = schemeContentJson.lines.Where(s => s.from.Contains("start")).FirstOrDefault()?.to;
-            var query = from a in schemeContentJson.lines
-                        join b in schemeContentJson.nodes on a.@from equals b.id
-                        select new { a.to, b.id, b.Name, a.Compares };
-            query = query.Where(q => !q.id.Contains("start") && !q.id.Contains("end")).ToList();
-            foreach (var item in query)
-            {
-                if (query.Where(n => n.id.Equals(toId)).FirstOrDefault() != null)
-                {
-                    string toName = "";
-                    if (IsMaterialType != 0)
-                    {
-                        if (IsMaterialType == 1 || IsMaterialType == 3)
-                        {
-                            toName = query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.FirstOrDefault()?.Value) || n.Compares.Select(c => c.Value).FirstOrDefault() == "2")).FirstOrDefault().Name;
-                            toId = query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.FirstOrDefault()?.Value) || n.Compares.Select(c => c.Value).FirstOrDefault() == "2")).FirstOrDefault().to;
-                        }
-                        else
-                        {
-                            toName = query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.FirstOrDefault()?.Value) || n.Compares.Select(c => c.Value).FirstOrDefault() == "1")).FirstOrDefault().Name;
-                            toId = query.Where(n => n.id.Equals(toId) && (n.Compares == null || string.IsNullOrWhiteSpace(n.Compares.FirstOrDefault()?.Value) || n.Compares.Select(c => c.Value).FirstOrDefault() == "1")).FirstOrDefault().to;
-                        }
-                    }
-                    else
-                    {
-                        toName = query.Where(n => n.id.Equals(toId)).FirstOrDefault().Name;
-                        toId = query.Where(n => n.id.Equals(toId)).FirstOrDefault().to;
-                    }
-                    flowInstanceNodes.Add(new FlowInstanceNodes { Name = toName, Number = ++number });
-
-                }
-            }
-            flowInstanceNodes.Add(new FlowInstanceNodes { Name = "结束", Number = ++number });
-            flowInstanceNodes = flowInstanceNodes.OrderBy(f => f.Number).ToList();
-            string historys = null;
-            flowInstanceNodes.ForEach(f =>
-            {
-                var operationHistorys = reqp.Where(q => q.Content.Contains(f.Name) || (f.Name == "审批结束" && (q.Content == "已支付" || q.Content == "出库完成" || q.Content == "结束"))||(f.Name == "待出库"&& q.Content == "开始出库")).OrderByDescending(q=>q.CreateTime).FirstOrDefault();
-
-                if (historys == null || (operationHistorys?.CreateTime != null && DateTime.Parse(historys) < DateTime.Parse(operationHistorys.CreateTime)))
-                {
-                    historys = operationHistorys?.CreateTime;
-                    flowPathResps.Add(new FlowPathResp
-                    {
-                        ActivityName = f.Name,
-                        Number = f.Number,
-                        CreateTime = operationHistorys?.CreateTime,
-                        IntervalTime = operationHistorys?.IntervalTime,
-                        IsNode = true
-                    });
-                }
-                else
-                {
-                    if (flowInstance.ActivityName == "结束")
-                    {
-                        flowPathResps.Add(new FlowPathResp
-                        {
-                            ActivityName = f.Name,
-                            Number = f.Number,
-                            IsNode = true
-                        });
-                    }
-                    else 
-                    {
-                        flowPathResps.Add(new FlowPathResp
-                        {
-                            ActivityName = f.Name,
-                            Number = f.Number,
-                            IsNode = false
-                        });
-                    }
-                    
-                }
-
-            });
-            return flowPathResps;
-        }
-
+        
 
     }
 }

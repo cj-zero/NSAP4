@@ -1735,6 +1735,28 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 取消待确认服务单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task CancelServiceOrder(OneKeyResetServiceOrderReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //判断当前服务单是否已确认
+            var isExist = await UnitWork.Find<ServiceOrder>(s => s.Id == req.serviceOrderId && s.Status==2).FirstOrDefaultAsync() == null ? false : true;
+            if (isExist)
+            {
+                throw new CommonException("已确认不可取消", 60019);
+            }
+            await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id==req.serviceOrderId,s=>new ServiceOrder { Status=3,Remark=req.Message});
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
         /// 获取服务单日报信息
         /// </summary>
         /// <param name="ServiceOrderId"></param>

@@ -40,5 +40,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<BtsGroupModel> Btsgroupmodels { get; set; }
         public virtual DbSet<BtsGroupUser> Btsgroupusers { get; set; }
         public virtual DbSet<BtsModel> Btsmodels { get; set; }
+        public virtual DbSet<Entrustment> Entrustments { get; set; }
+        public virtual DbSet<EntrustmentDetail> EntrustmentDetails { get; set; }
     }
 }

@@ -71,7 +71,7 @@ namespace Sap.Handler.Service
 
                     //dts.ShipToCode = model.ShipToCode;//购物代码
 
-                    //dts.DocCurrency = quotation.MoneyMeans == "1" ? "RMB" : "";//货币
+                    dts.DocCurrency = "RMB";//货币
 
                     //dts.DocDate = DateTime.Parse(model.DocDate);
 
