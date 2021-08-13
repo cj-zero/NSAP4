@@ -130,6 +130,10 @@ namespace OpenAuth.App.Material.Request
         /// 仓库号
         /// </summary>
         public string WhsCode { get; set; }
+        /// <summary>
+        /// App查看物料及描述
+        /// </summary>
+        public string AppPartCode { get; set; }
 
         /// <summary>
         /// 打印物料id
