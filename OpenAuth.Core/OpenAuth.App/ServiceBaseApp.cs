@@ -38,7 +38,7 @@ namespace OpenAuth.App
         public int GetFuncsByUserID(string functonUrl, int userId)
         {
             int functionId = 0;
-            string sql = string.Format("SELECT a.func_id funcID,b.page_url pageUrl,a.auth_map authMap FROM (SELECT a.func_id,a.page_id,b.auth_map FROM {0}.base_func a INNER JOIN (SELECT t.func_id,BIT_OR(t.auth_map) auth_map FROM (SELECT func_id,BIT_OR(auth_map) auth_map FROM {0}.base_role_func WHERE role_id IN (SELECT role_id FROM {0}.base_user_role WHERE user_id={1}) GROUP BY func_id UNION ALL SELECT func_id,auth_map FROM {0}.base_user_func WHERE user_id={1}) t GROUP BY t.func_id) b ON a.func_id=b.func_id) AS a INNER JOIN {0}.base_page AS b ON a.page_id=b.page_id", "nsap_base", userId);
+            string sql = string.Format("SELECT a.func_id funcID,b.page_url pageUrl,a.auth_map authMap FROM (SELECT a.func_id,a.page_id,b.auth_map FROM {0}.base_func a INNER JOIN (SELECT t.func_id,BIT_OR(t.auth_map) auth_map FROM (SELECT func_id,BIT_OR(auth_map) auth_map FROM {0}.base_role_func WHERE role_id IN (SELECT role_id FROM {0}.base_user_role WHERE user_id={1}) GROUP BY func_id UNION ALL SELECT func_id,auth_map FROM {0}.base_user_func WHERE user_id={1}) t GROUP BY t.func_id) b ON a.func_id=b.func_id) AS a INNER JOIN {0}.base_page AS b ON a.page_id=b.page_id  WHERE page_url='" + functonUrl + "' ", "nsap_base", userId);
             DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
             if (dataTable != null)
             {
