@@ -20,6 +20,8 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using OpenAuth.App.Order.ModelDto;
+using OpenAuth.Repository.Domain.Sap;
+using NSAP.Entity.Sales;
 
 namespace OpenAuth.App.Order
 {
@@ -569,51 +571,51 @@ namespace OpenAuth.App.Order
         /// </summary>
         /// <param name="orderReq"></param>
         /// <returns></returns>
-        public string Save(AddOrUpdateOrderReq orderReq)
+        public string Save(AddOrderReq orderReq)
         {
-            int UserID = _serviceBaseApp.GetUserNaspId();
-            string funcId = "0";
+            int userID = _serviceBaseApp.GetUserNaspId();
+            int sboID = _serviceBaseApp.GetUserNaspSboID(userID);
+            int funcId = 50;
             string logstring = "";
             string jobname = "";
             string result = "";
             try
             {
-                int sboID = _serviceBaseApp.GetUserNaspSboID(UserID);
-                byte[] job_data = ByteExtension.ToSerialize(orderReq.Order);
+                billDelivery billDelivery = BulidBillDelivery(orderReq.Order);
                 if (orderReq.IsCopy)
                 {
-                    funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesOrder.aspx", UserID).ToString();
+                    funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesOrder.aspx", userID);
                     logstring = "根据销售报价单下销售订单";
                     jobname = "销售订单";
                     SalesOrderSave_ORDR(orderReq);
                 }
                 else
                 {
+                    funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesQuotation.aspx", userID);
+                    byte[] job_data = ByteExtension.ToSerialize(billDelivery);
                     string className = "NSAP.B1Api.BOneOQUT";
-                    funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesQuotation.aspx", UserID).ToString();
                     logstring = "新建销售报价单";
                     jobname = "销售报价单";
-                    int FuncID = int.Parse(funcId);
                     if (orderReq.Ations == OrderAtion.Draft)
                     {
-                        result = OrderWorkflowBuild(jobname, FuncID, UserID, job_data, orderReq.Order.Remark, int.Parse(orderReq.Order.SboId), orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), int.Parse(orderReq.Order.billBaseType), int.Parse(orderReq.Order.billBaseEntry), "BOneAPI", className);
+                        result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
                     }
                     else if (orderReq.Ations == OrderAtion.Submit)
                     {
-                        result = OrderWorkflowBuild(jobname, FuncID, UserID, job_data, orderReq.Order.Remark, int.Parse(orderReq.Order.SboId), orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), int.Parse(orderReq.Order.billBaseType), int.Parse(orderReq.Order.billBaseEntry), "BOneAPI", className);
+                        result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
                         if (int.Parse(result) > 0)
                         {
                             var par = SaveJobPara(result, orderReq.IsTemplate);
                             if (par)
                             {
                                 string _jobID = result;
-                                if ("0" != WorkflowSubmit(int.Parse(result), UserID, orderReq.Order.Remark, "", 0))
+                                if ("0" != WorkflowSubmit(int.Parse(result), userID, orderReq.Order.Remark, "", 0))
                                 {
                                     #region 更新商城订单状态
                                     WfaEshopStatus thisinfo = new WfaEshopStatus();
                                     thisinfo.JobId = int.Parse(result);
-                                    thisinfo.UserId = UserID;
-                                    thisinfo.SlpCode = int.Parse(orderReq.Order.SboId);
+                                    thisinfo.UserId = userID;
+                                    thisinfo.SlpCode = sboID;
                                     thisinfo.CardCode = orderReq.Order.CardCode;
                                     thisinfo.CardName = orderReq.Order.CardName;
                                     thisinfo.CurStatus = 0;
@@ -633,7 +635,7 @@ namespace OpenAuth.App.Order
                     }
                     else if (orderReq.Ations == OrderAtion.Resubmit)
                     {
-                        result = WorkflowSubmit(orderReq.JobId, UserID, orderReq.Order.Remark, "", 0);
+                        result = WorkflowSubmit(orderReq.JobId, userID, orderReq.Order.Remark, "", 0);
                     }
                 }
             }
@@ -665,14 +667,14 @@ namespace OpenAuth.App.Order
         private string OrderWorkflowBuild(string jobName, int funcID, int userID, byte[] jobdata, string remarks, int sboID, string carCode, string carName, double docTotal, int baseType, int baseEntry, string assemblyName, string className)
         {
             string code = "";
-            if (carCode != "")
-            {
-                var crmOcrd = UnitWork.FindSingle<crm_ocrd>(zw => zw.sbo_id == sboID && zw.CardCode == carCode);
-                if (crmOcrd != null)
-                {
-                    carName = crmOcrd.CardName;
-                }
-            }
+            //if (carCode != "")
+            //{
+            //    var crmOcrd = UnitWork.FindSingle<crm_ocrd>(zw => zw.sbo_id == sboID && zw.CardCode == carCode);
+            //    if (crmOcrd != null)
+            //    {
+            //        carName = crmOcrd.CardName;
+            //    }
+            //}
             List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
             {
                 new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobName",    jobName),
@@ -1145,6 +1147,298 @@ namespace OpenAuth.App.Order
             paramOut.Direction = ParameterDirection.Output;
             sqlParameters.Add(paramOut);
             dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, $"sp_common_pager", CommandType.StoredProcedure, sqlParameters);
+        }
+
+        /// <summary>
+        /// 科目代码查询（服务）
+        /// </summary>
+        /// <returns></returns>
+        public TableData SelectAcctCodeView(OactRequest query)
+        {
+            TableData tableData = new TableData();
+            int UserID = _serviceBaseApp.GetUserNaspId();
+            int SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            DataTable dt = _serviceBaseApp.GetSboNamePwd(SboID);
+            string isOpen = "0";
+            if (dt.Rows.Count > 0)
+            {
+                isOpen = dt.Rows[0][6].ToString();
+            }
+            string sortString = string.Empty;
+            string filterString = string.Empty;
+            string line = string.Empty;
+            if (!string.IsNullOrEmpty(query.SortName) && !string.IsNullOrEmpty(query.SortOrder))
+            {
+                sortString = string.Format("{0} {1}", query.SortName, query.SortOrder.ToUpper());
+            }
+            #region 搜索条件
+            if (!string.IsNullOrEmpty(query.key))
+            {
+                string[] fields = query.key.Split('`');
+                string[] p = fields[0].Split(':');
+                if (!string.IsNullOrEmpty(p[1]))
+                {
+                    filterString += string.Format("AcctCode LIKE '%{0}%' AND ", p[1].FilterWildCard());
+                }
+                p = fields[1].Split(':');
+                if (!string.IsNullOrEmpty(p[1]))
+                {
+                    filterString += string.Format("AcctName LIKE '%{0}%' AND ", p[1].FilterWildCard());
+                }
+            }
+            #endregion
+            if (!string.IsNullOrEmpty(filterString))
+            {
+                filterString = filterString.Substring(0, filterString.Length - 5);
+            }
+            if (isOpen == "1")
+            {
+                StringBuilder filedName = new StringBuilder();
+                StringBuilder tableName = new StringBuilder();
+                filedName.Append(" AcctCode,AcctName,CurrTotal,Details");
+                tableName.AppendFormat(" OACT ");
+                StringBuilder strWhere = new StringBuilder();
+                strWhere.Append(" (AcctCode NOT IN (SELECT AcctCode FROM OACT WHERE Postable='N' OR frozenFor='Y' OR validTo<GETDATE() OR frozenFrom>GETDATE()))");
+                if (!string.IsNullOrEmpty(filterString))
+                {
+                    strWhere.AppendFormat(" AND {0}", filterString);
+                }
+                SqlParameter paramOut;
+                DataTable dts;
+                SqlStore(tableName.ToString(), filedName.ToString(), query.limit, query.page, sortString, strWhere.ToString(), out paramOut, out dts);
+                tableData.Data = dts.Tolist<OactDto>();
+                tableData.Count = Convert.ToInt32(paramOut.Value);
+                return tableData;
+            }
+            else
+            {
+                MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter paramOut;
+                StringBuilder tableName = new StringBuilder();
+                StringBuilder filedName = new StringBuilder();
+                filedName.Append(" '',AcctCode,AcctName,CurrTotal,Details");
+                tableName.AppendFormat(" {0}.finance_oact ", "nsap_bone");
+                StringBuilder strWhere = new StringBuilder();
+                strWhere.Append(" (AcctCode NOT IN (SELECT AcctCode FROM nsap_bone.finance_oact WHERE Postable='N' OR frozenFor='Y' OR validTo<NOW() OR frozenFrom>NOW()))");
+                if (!string.IsNullOrEmpty(filterString))
+                {
+                    strWhere.AppendFormat(" AND {0}", filterString);
+                }
+                List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+                    {
+                        new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("@pTableName",tableName.ToString()),
+                        new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("@pFieldName",filedName.ToString()),
+                        new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("@pPageSize",query.limit),
+                        new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("@pPageIndex",query.page),
+                        new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("@pStrOrder",sortString),
+                        new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("@pIsTotal",1),
+                        new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("@pStrWhere",strWhere.ToString()),
+                    };
+                paramOut = new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("@rowsCount", SqlDbType.Int);
+                paramOut.Value = 0;
+                paramOut.Direction = ParameterDirection.Output;
+                sqlParameters.Add(paramOut);
+                dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, string.Format("{0}.sp_common_pager", "nsap_base"), CommandType.StoredProcedure, sqlParameters);
+                tableData.Data = dt.Tolist<OactDto>();
+                tableData.Count = Convert.ToInt32(paramOut.Value);
+            }
+            return tableData;
+        }
+        /// <summary>
+        /// 查询销售员所选账套所有客户科目余额与百分比数据
+        /// </summary>
+        /// <returns></returns>
+        public DataTable GetSalesSboBalPercent(string slpCode, int SboId)
+        {
+            DataTable dataTable = new DataTable();
+            string sql = $"SELECT * FROM sbo_info WHERE sbo_id= {SboId}";
+            sbo_info sboInfo = UnitWork.ExcuteSql<sbo_info>(ContextType.NsapBaseDbContext, sql, CommandType.Text, null)?.FirstOrDefault();
+            if (sboInfo != null && sboInfo.is_open)
+            {
+                //账套欠款（SAP）
+                string strSql = $@"select ttotal.Total,isnull((select sum(balance) from ocrd where SlpCode={slpCode}),0) as BalDue from (
+                                   select sum(isnull(ocrdbal.INVtotal,0)-isnull(ocrdbal.RINtotal,0)) as Total from ( select
+                                  (select sum(DocTotal) from OINV WHERE CANCELED = 'N' and CardCode=C.CardCode) as INVtotal
+                                  ,(select SUM(DocTOTal) from ORIN where CANCELED='N' and CardCode=c.CardCode) as RINtotal
+                                  FROM OCRD C WHERE C.SlpCode={slpCode} ) as ocrdbal) as ttotal ";
+                dataTable = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql, CommandType.Text, null);
+            }
+            else
+            {
+                //账套欠款
+                string strSql = $@"select ocrdtotal.Total,IFNULL((select sum(balance) from nsap_bone.crm_ocrd_oldsbo_balance where sbo_id={SboId} and slpname=(select SlpName from nsap_bone.crm_oslp where SlpCode={slpCode} LIMIT 1)),0) as BalDue
+                                                from (select sum(ifnull(ocrdbal.INVtotal,0)-ifnull(ocrdbal.RINtotal,0)) as Total from (
+                                                SELECT (select sum(DocTotal) from nsap_bone.sale_oinv WHERE CANCELED = 'N' AND sbo_id=C.sbo_id and CardCode=C.CardCode) as INVtotal
+                                                ,(select SUM(DocTOTal) from nsap_bone.sale_orin where CANCELED = 'N' and sbo_id=C.sbo_id and CardCode=C.CardCode) AS RINtotal 
+                                                FROM nsap_bone.crm_ocrd C
+                                                WHERE C.sbo_id={SboId} and C.SlpCode ={slpCode} ) as ocrdbal) as ocrdtotal";
+                dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            }
+            return dataTable;
+        }
+
+
+        /// <summary>
+        /// 查询指定业务伙伴的科目余额与百分比数据
+        /// </summary>
+        /// <param name="CardCode"></param>
+        /// <param name="SboId"></param>
+        /// <returns></returns>
+        public DataTable GetClientSboBalPercent(string CardCode, int SboId)
+        {
+            DataTable dataTable = new DataTable();
+            string sql = $"SELECT * FROM sbo_info WHERE sbo_id= {SboId}";
+            sbo_info sboInfo = UnitWork.ExcuteSql<sbo_info>(ContextType.NsapBaseDbContext, sql, CommandType.Text, null)?.FirstOrDefault();
+            if (sboInfo != null && sboInfo.is_open)
+            {
+                string strSql = $@"SELECT (Select sum(Balance) from OCRD where CardCode='{CardCode}') as Balance
+                                  ,(select sum(DocTotal) from OINV WHERE CANCELED ='N' and CardCode='{CardCode}') as INVtotal
+                                  ,(select SUM(DocTOTal) from ORIN where CANCELED<>'Y' and CardCode='{CardCode}') as RINtotal
+                                --90天内未清收款
+                                ,(select SUM(openBal) from ORCT WHERE CANCELED='N' AND openBal<>0 AND CardCode='{CardCode}' and datediff(DAY,docdate,getdate())<=90) as RCTBal90
+                                --90天内未清发票金额
+                                ,(select SUM(DocTotal-PaidToDate) from OINV WHERE CANCELED ='N' and CardCode='{CardCode}' and DocTotal-PaidToDate>0 and datediff(DAY,docdate,getdate())<=90) as INVBal90
+                                --90天内未清贷项金额
+                                ,(select SUM(DocTotal-PaidToDate) from ORIN where CANCELED ='N' and CardCode='{CardCode}' and DocTotal-PaidToDate>0 and datediff(DAY,docdate,getdate())<=90) as RINBal90
+                                --90天前未清发票的发票总额
+                                ,(select SUM(DocTotal) from OINV WHERE CANCELED ='N' and CardCode = '{CardCode}' and DocTotal-PaidToDate > 0 and datediff(DAY, docdate, getdate())> 90) as INVTotal90P
+                ";
+                //--90天前未清收款
+                //,(select SUM(openBal) from ORCT WHERE CANCELED = 'N' AND openBal<>0 AND CardCode = @cardcode and datediff(DAY, docdate, getdate())> 90) as RCTBal90P
+                //--90天前未清发票金额
+                //,(select SUM(DocTotal - PaidToDate) from OINV WHERE CANCELED ='N' and CardCode = @cardcode and DocTotal-PaidToDate > 0 and datediff(DAY, docdate, getdate())> 90) as INVBal90P
+                //--90天前未清贷项金额
+                //,(select SUM(DocTotal - PaidToDate) from ORIN where CANCELED ='N' and CardCode = @cardcode and DocTotal-PaidToDate > 0 and datediff(DAY, docdate, getdate())> 90) as RINBal90P
+                dataTable = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql, CommandType.Text, null);
+            }
+            else
+            {
+                string strSql = $@"SELECT(Select sum(Balance) from nsap_bone.crm_ocrd_oldsbo_balance where sbo_id={SboId}  and CardCode = '{CardCode}') as Balance
+                                               , (select sum(DocTotal) from nsap_bone.sale_oinv WHERE CANCELED ='N' and sbo_id={SboId} and CardCode = '{CardCode}') as INVtotal
+                                               ,(select SUM(DocTOTal) from nsap_bone.sale_orin where CANCELED ='N' and sbo_id={SboId} and CardCode = '{CardCode}') as RINtotal
+                                            ,'' as RCTBal90
+                                            ,'' as INVBal90
+                                            ,'' as RINBal90
+                                            ,'' as INVTotal90P
+                                            ";
+                //,'' as RCTBal90P
+                //,'' as INVBal90P
+                //,'' as RINBal90P
+
+                dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            }
+            return dataTable;
+        }
+
+        /// <summary>
+        /// 构建销售报价单草稿
+        /// </summary>
+        /// <param name="order"></param>
+        /// <returns></returns>
+        public billDelivery BulidBillDelivery(OrderDraft order)
+        {
+            int userID = _serviceBaseApp.GetUserNaspId();
+            int sboID = _serviceBaseApp.GetUserNaspSboID(userID);
+            int funcId = 50;
+            billDelivery billDelivery = new billDelivery()
+            {
+                OwnerCode = "1",//当前操作人COde
+                SboId = sboID.ToString(),
+                UserId = userID.ToString(),
+                Printed = "N",
+                LicTradNum = "0",
+                FuncId = funcId.ToString(),
+                DocStatus = "O",
+                CurSource = "",
+                billBaseType = "-1",
+                billBaseEntry = "-1",
+                Address = order.Address,
+                Address2 = order.Address2,
+                BeforeDiscSum = order.BeforeDiscSum,
+                CardCode = order.CardCode,
+                CardName = order.CardName,
+                CntctCode = order.CntctCode,
+                Comments = order.Comments,
+                CustomFields = $"U_ShipName≮1≯≮0≯U_SCBM≮1≯P3-陈友祥",
+                DiscPrcnt = order.DiscPrcnt,
+                GoodsToDay = order.GoodsToDay,
+                DiscSum = order.DiscSum,
+                DocCur = order.DocCur,
+                DocDate = order.DocDate,
+                DocDueDate = order.DocDueDate,
+                DocRate = order.DocRate,
+                DocTotal = order.DocTotal,
+                DocType = order.DocType,
+                GoodsToDate = order.GoodsToDate,
+                GoodsToPro = "0.00",
+                GroupNum = order.GroupNum,
+                Indicator = order.Indicator,
+                NumAtCard = order.NumAtCard,
+                PartSupply = order.PartSupply,
+                PayBefShip = order.PayBefShip,
+                PayToCode = order.PayToCode,
+                PeyMethod = order.PeyMethod,
+                PrepaData = order.PrepaData,
+                PrepaPro = order.PrepaPro,
+                Remark = order.Remark,
+                ShipToCode = order.ShipToCode,
+                SlpCode = order.SlpCode,
+                U_YWY = order.U_YWY,
+                TaxDate = order.TaxDate,
+                TotalExpns = order.TotalExpns,
+                TrnspCode = order.TrnspCode,
+                U_FPLB = order.U_FPLB,
+                U_SL = order.U_SL,
+                VatGroup = order.VatGroup,
+                VatSum = order.VatSum,
+                WhsCode = order.WhsCode,
+                attachmentData = new List<billAttchment>(),
+                billSalesAcctCode = new List<billSalesAcctCode>(),
+                billSalesDetails = new List<billSalesDetails>(),
+                serialNumber = new List<billSerialNumber>(),
+                billDeliveryItemAid = new List<billDeliveryItemAid>(),
+                IQCDetails = new List<NSAP.Entity.Quality.IQCDetail>(),
+            };
+
+            foreach (var item in order.OrderItems)
+            {
+                billSalesDetails billSalesDetail = new billSalesDetails()
+                {
+                    BaseEntry = item.BaseEntry,
+                    BaseLine = item.BaseLine,
+                    BaseRef = item.BaseRef,
+                    BaseType = item.BaseType,
+                    DiscPrcnt = item.DiscPrcnt,
+                    Dscription = item.Dscription,
+                    ItemCfgId = item.ItemCfgId,
+                    ItemCode = item.ItemCode,
+                    LineTotal = item.LineTotal,
+                    OnHand = item.OnHand,
+                    Price = item.Price,
+                    PriceAfVAT = item.PriceAfVAT,
+                    PriceBefDi = item.PriceBefDi,
+                    Quantity = item.Quantity,
+                    StockPrice = item.StockPrice,
+                    TargetType = item.TargetType,
+                    TotalFrgn = item.TotalFrgn,
+                    TrgetEntry = item.TrgetEntry,
+                    U_DL = item.U_DL,
+                    U_DY = item.U_DY,
+                    U_PDXX = item.U_PDXX,
+                    U_SCTCJE = item.U_SCTCJE,
+                    U_TDS = item.U_TDS,
+                    U_XSTCBL = item.U_XSTCBL,
+                    U_YF = item.U_YF,
+                    U_YFTCJE = item.U_YFTCJE,
+                    WhsCode = item.WhsCode,
+                    IsExistMo = item.IsExistMo,
+                    U_SHJSDJ = item.U_SHJSDJ,
+                    U_SHJSJ = item.U_SHJSJ,
+                    U_SHTC = item.U_SHTC,
+                    U_ZS = item.U_ZS,
+                };
+                billDelivery.billSalesDetails.Add(billSalesDetail);
+            }
+            return billDelivery;
         }
     }
 }

@@ -125,4 +125,19 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string SlpCode { get; set; }
     }
+    public class OactRequest : PageReq
+    {
+        /// <summary>
+        /// 排序字段 acctcode
+        /// </summary>
+        public string SortName { get; set; }
+        /// <summary>
+        /// desc 降序，asc 升序
+        /// </summary>
+        public string SortOrder { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Qtype { get; set; }
+    }
 }
