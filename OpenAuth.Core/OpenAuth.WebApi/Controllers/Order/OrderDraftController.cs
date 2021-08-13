@@ -1,6 +1,7 @@
 ﻿
 using Infrastructure;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
@@ -30,12 +31,14 @@ namespace OpenAuth.WebApi.Controllers.Order
     [ApiExplorerSettings(GroupName = "Order")]
     public class OrderDraftController : Controller
     {
+        private readonly FileApp _app;
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
         IAuth _auth;
         IUnitWork UnitWork;
         ServiceBaseApp _serviceBaseApp;
-        public OrderDraftController(IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
+        public OrderDraftController(FileApp app, IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
         {
+            this._app = app;
             this.UnitWork = UnitWork;
             this._serviceBaseApp = _serviceBaseApp;
             this._auth = _auth;
@@ -1042,5 +1045,85 @@ namespace OpenAuth.WebApi.Controllers.Order
             //    }
             //}
         }
+
+        /// <summary>
+		///  批量上传文件接口
+		/// </summary>
+		/// <param name="files"></param>
+		/// <returns>服务器存储的文件信息</returns>
+		[HttpPost]
+        [Route("billAttachUpload")]
+        public async Task<Response<IList<UploadFileResp>>> billAttachUpload([FromForm] IFormFileCollection files) {
+            var result = new Response<IList<UploadFileResp>>();
+            try {
+                result.Result = await _app.Add(files);
+            } catch (Exception ex) {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+        /// <summary>
+        ///  批量上传保存接口
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns>服务器存储的文件信息</returns>
+        [HttpPost]
+        [Route("UpdateSalesDocAttachment")]
+        public Response UpdateSalesDocAttachment(BillDelivery model) {
+            var result = new Response();
+            try {
+                _serviceSaleOrderApp.UpdateSalesDocAttachment(model);
+            } catch (Exception ex) {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：'', 错误：{result.Message}");
+            }
+            return result;
+        }
+		/// <summary>
+		///  合约评审
+		/// </summary>
+		/// <param name="pageSize"></param>
+		/// <param name="pageIndex"></param>
+		/// <param name="filterQuery"></param>
+		/// <param name="sortname"></param>
+		/// <param name="sortorder"></param>
+		/// <param name="itemCode"></param>
+		/// <param name="cardCode"></param>
+		/// <returns>合约评审</returns>
+		[HttpPost]
+        [Route("GridRelationContractList")]
+        public Response GridRelationContractList(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, string itemCode, string cardCode) {
+            var result = new Response();
+
+            _serviceSaleOrderApp.GridRelationContractList(pageSize, pageIndex, filterQuery, sortname, sortorder, itemCode, cardCode, "1");
+            return result;
+        }
+
+		/// <summary>
+		///  复制生产订单
+		/// </summary>
+		/// <param name="page"></param>
+		/// <param name="rp"></param>
+		/// <param name="qtype"></param>
+		/// <param name="query"></param>
+		/// <param name="sortname"></param>
+		/// <param name="sortorder"></param>
+		/// <param name="sboID"></param>
+		/// <returns>合约评审</returns>
+		[HttpPost]
+        [Route("CopyProductToSaleSelect")]
+        public Response CopyProductToSaleSelect(int page, int rp, string qtype, string query, string sortname, string sortorder, int sboID) {
+            var result = new Response();
+
+            _serviceSaleOrderApp.CopyProductToSaleSelect(pageSize: rp, pageIndex: page, filterQuery: query, sortname: sortname, sortorder: sortorder, sboID: sboID);
+            return result;
+
+
+        }
+
     }
 }

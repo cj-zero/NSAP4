@@ -1440,5 +1440,180 @@ namespace OpenAuth.App.Order
             }
             return billDelivery;
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="model"></param>
+
+        /// <returns></returns>
+        public bool UpdateSalesDocAttachment(BillDelivery model) {
+            #region 删除原附件数据
+            string sql = string.Format("DELETE FROM nsap_oa.file_main WHERE docEntry={0} AND file_type_id = {1}", model.docEntry, model.filetypeId);
+            UnitWork.ExcuteSqlTable(ContextType.NsapOaDbContextType, sql, CommandType.Text, null);
+            #endregion
+            #region 新增附件数据
+            foreach (var item in model.deatil) {
+
+                StringBuilder nSql = new StringBuilder();
+                nSql.AppendFormat("INSERT INTO nsap_oa.file_main (file_sn,file_nm,file_type_id,docEntry,job_id,file_ver,acct_id,issue_reason,file_path,content,remarks,file_status,upd_dt,view_file_path,sbo_id) VALUES");
+                nSql.AppendFormat("(1,'{0}',{1},{2},0,'A0',8,'','{3}','','',0,'{4}','{5}',{6});", item.filename, model.filetypeId, model.docEntry, item.filepath, DateTime.Now, item.filepath, item.filesboid);
+                UnitWork.ExcuteSqlTable(ContextType.NsapOaDbContextType, nSql.ToString(), CommandType.Text, null);
+            }
+            #endregion
+            return true;
+        }
+
+
+        #region 合约评审
+        public string GridRelationContractList(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, string itemCode, string cardCode, string sboID) {
+            int rowCount = 0;
+            string sortString = string.Empty;
+            string filterString = string.Empty;
+            int rowcounts = 0;
+            if (!string.IsNullOrEmpty(sortname) && !string.IsNullOrEmpty(sortorder))
+                sortString = string.Format(" {0} {1}", sortname, sortorder.ToUpper());
+            filterString = string.Format(" sbo_id={0} and itemcode='{1}' and CardCode='{2}'", sboID, itemCode.FilterSQL(), cardCode);
+            #region 搜索条件
+            if (!string.IsNullOrEmpty(filterQuery)) {
+                string[] fields = filterQuery.Split('`');
+                string[] p = fields[0].Split(':');
+                if (!string.IsNullOrEmpty(p[1])) {
+                    filterString += string.Format(" and contract_id={0} ", p[1].FilterSQL().Trim());
+                }
+            }
+            #endregion
+            return GridRelationContractListNos(out rowCount, pageSize, pageIndex, filterString, sortString);
+        }
+        public string GridRelationContractListNos(out int rowsCount, int pageSize, int pageIndex, string filterQuery, string orderName) {
+            string tablename = string.Format(" {0}.sale_contract_review", "nsap_bone");
+            string fieldname = " sbo_id,contract_id,price,qty,sum_total,deliver_dt,walts,comm_rate,custom_req";
+            return SelectPagingHaveRowsCount(tablename, fieldname, pageSize, pageIndex, orderName, filterQuery, out rowsCount);
+        }
+        public string SelectPagingHaveRowsCount(string tableName, string fieldName, int pageSize, int pageIndex, string strOrder, string strWhere, out int rowsCount) {
+            return SelectPaging(tableName, fieldName, pageSize, pageIndex, strOrder, strWhere, 1, out rowsCount);
+        }
+        private string SelectPaging(string tableName, string fieldName, int pageSize, int pageIndex, string strOrder, string strWhere, int isTotal, out int rowsCount) {
+            string code = "";
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pTableName",    tableName),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pFieldName",     fieldName),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pPageSize",     pageSize),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pPageIndex",    pageIndex),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pStrOrder",    strOrder),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pStrWhere",      strWhere),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pIsTotal",    isTotal),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?rowsCount",  0)
+            };
+            code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_common_pager", CommandType.StoredProcedure, sqlParameters)?.ToString();
+            rowsCount = isTotal == 1 ? Convert.ToInt32(sqlParameters[7].Value) : 0;
+            return code;
+
+        }
+        #endregion
+        #region 复制生产订单
+        public string CopyProductToSaleSelect(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, int sboID) {
+            int rowCount = 0;
+            string sortString = string.Empty;
+            string filterString = string.Empty;
+            string line = string.Empty;
+            filterString = " a.sbo_id = " + sboID;
+            if (!string.IsNullOrEmpty(sortname) && !string.IsNullOrEmpty(sortorder)) {
+                sortString = string.Format("{0} {1}", sortname, sortorder.ToUpper());
+            }
+            #region 搜索条件
+            if (!string.IsNullOrEmpty(filterQuery)) {
+                string[] fields = filterQuery.Split('`');
+                string[] p = fields[0].Split(':');
+                if (!string.IsNullOrEmpty(p[1])) {
+                    filterString += " AND a.DocEntry like'%" + p[1].FilterWildCard() + "%'";
+                };
+                p = fields[1].Split(':');
+                if (!string.IsNullOrEmpty(p[1])) {
+                    filterString += " AND a.ItemCode like'%" + p[1].FilterWildCard() + "%'";
+                };
+                p = fields[2].Split(':');
+                if (!string.IsNullOrEmpty(p[1])) {
+                    filterString += " AND a.U_WO_LTDW like'%" + p[1].FilterWildCard() + "%'";
+                };
+            }
+            filterString += " AND c.dep_id =58 ";
+            #endregion
+            return CopyProductToSaleSelectNos(out rowCount, pageSize, pageIndex, filterString, sortString, sboID);
+        }
+
+        public string CopyProductToSaleSelectNos(out int rowCounts, int pageSize, int pageIndex, string filterQuery, string orderName, int sboID) {
+            StringBuilder tableName = new StringBuilder();
+            StringBuilder filedName = new StringBuilder();
+            filedName.AppendFormat("a.DocEntry,a.ItemCode,b.ItemName,a.PlannedQty,a.U_WO_LTDW");
+            tableName.AppendFormat("{0}.product_owor a LEFT JOIN {0}.store_oitm b ON a.sbo_id=b.sbo_id AND a.ItemCode = b.ItemCode left join {0}.store_owhs c on c.whscode=a.Warehouse ", "nsap_bone", sboID);
+            return SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCounts);
+        }
+
+        #endregion
+
+
+        #region 查询物料的库存数据
+        /// <summary>
+        /// 查询物料的库存数据
+        /// </summary>
+        /// <returns></returns>
+        public string SelectMaterialsInventoryData(string ItemCode, string SboId, bool IsOpenSap, string Operating) {
+            DataTable dt = SelectMaterialsInventoryDataNos(ItemCode.FilterESC(), SboId, IsOpenSap, Operating);
+            if (Operating == "search" || Operating == "edit") {
+                dt.Rows.Add(ItemCode, "", "", "SUM", dt.Compute("SUM(OnHand)", "true"), dt.Compute("SUM(IsCommited)", "true"), dt.Compute("SUM(OnOrder)", "true"), dt.Compute("SUM(Available)", "true"), "0", "0", "0", "");
+            }
+            return dt.Rows.Count.ToString();
+        }
+        /// <summary>
+        /// 查询物料的库存数据
+        /// </summary>
+        /// <returns></returns>
+        public DataTable SelectMaterialsInventoryDataNos(string ItemCode, string SboId, bool IsOpenSap, string Operating) {
+            StringBuilder strSql = new StringBuilder();
+            if (IsOpenSap) {
+                if (Operating == "search" || Operating == "edit") {
+                    strSql.Append("SELECT b.ItemCode,b.WhsCode,a.WhsName,b.Locked,b.OnHand,b.IsCommited,b.OnOrder,");
+                    strSql.Append("(b.OnHand+b.OnOrder-b.IsCommited) as Available,b.MinStock,b.MaxStock,b.AvgPrice,b.U_KW ");
+                    strSql.Append("FROM OWHS a LEFT JOIN OITW b ON a.WhsCode=b.WhsCode ");
+                    strSql.Append("WHERE b.ItemCode=@ItemCode ORDER BY b.WhsCode ASC");
+                    SqlParameter[] para = {
+                        new SqlParameter("@ItemCode", ItemCode)
+                    };
+                    return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, para);
+                } else {
+                    strSql.Append("SELECT '' AS ItemCode,WhsCode,WhsName,'N' AS Locked,'0' AS OnHand,'0' AS IsCommited,");
+                    strSql.Append("'0' AS OnOrder,'0' AS Available,'' AS MinStock,'' AS MaxStock,'0' AS AvgPrice,");
+                    strSql.Append("'' AS U_KW FROM OWHS ORDER BY WhsCode ASC");
+                    return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text);
+                }
+            } else {
+                if (Operating == "search" || Operating == "edit") {
+                    strSql.Append("SELECT b.ItemCode,b.WhsCode,a.WhsName,b.Locked,b.OnHand,b.IsCommited,b.OnOrder,");
+                    strSql.Append("(b.OnHand+b.OnOrder-b.IsCommited) as Available,b.MinStock,b.MaxStock,b.AvgPrice,b.U_KW ");
+                    strSql.AppendFormat("FROM {0}.store_OWHS a LEFT JOIN {0}.store_OITW b ON a.sbo_id=b.sbo_id AND a.WhsCode=b.WhsCode ", "nsap_bone");
+                    strSql.Append("WHERE b.sbo_id=?sbo_id AND b.ItemCode=?ItemCode ORDER BY b.WhsCode ASC");
+                    SqlParameter[] para = {
+                        new SqlParameter("?sbo_id",SboId),
+                        new SqlParameter("?ItemCode",ItemCode)
+
+
+                    };
+                    return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, para);
+
+                } else {
+                    strSql.Append("SELECT '' AS ItemCode,WhsCode,WhsName,'N' AS Locked,'0' AS OnHand,'0' AS IsCommited,");
+                    strSql.Append("'0' AS OnOrder,'0' AS Available,'0' AS MinStock,'0' AS MaxStock,'0' AS AvgPrice,'' AS U_KW ");
+                    strSql.AppendFormat("FROM {0}.store_OWHS WHERE sbo_id=?sbo_id ORDER BY WhsCode ASC", "nsap_bone");
+                    IDataParameter[] para = {
+                        new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?sbo_id",    SboId)
+                    };
+                    return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, para);
+
+                }
+            }
+        }
+
+        #endregion
     }
 }
