@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Order;
+using OpenAuth.App.Response;
 using OpenAuth.Repository.Interface;
 using Serilog;
 using System;
@@ -38,15 +39,15 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// <returns></returns>
 		[HttpGet]
 		[Route("SelectMaterialsInventoryData")]
-		public Response SelectMaterialsInventoryData(string ItemCode, string Operating, string SboId, string IsOpenSap) {
-			var result = new Response();
+		public async Task<TableData> SelectMaterialsInventoryData(string ItemCode, string Operating, string SboId, string IsOpenSap) {
+			var result = new TableData();
 			try {
 				bool rIsOpenSap = IsOpenSap == "1" ? true : false;
 				if (Operating == "add") {
-					_serviceSaleOrderApp.SelectMaterialsInventoryData(ItemCode, SboId, rIsOpenSap, Operating);
+					result.Data = _serviceSaleOrderApp.SelectMaterialsInventoryData(ItemCode, SboId, rIsOpenSap, Operating);
 				} else {
 					if (!string.IsNullOrEmpty(ItemCode))
-						_serviceSaleOrderApp.SelectMaterialsInventoryData(ItemCode, SboId, rIsOpenSap, Operating);
+						result.Data = _serviceSaleOrderApp.SelectMaterialsInventoryData(ItemCode, SboId, rIsOpenSap, Operating);
 					else
 						return null;
 				}
