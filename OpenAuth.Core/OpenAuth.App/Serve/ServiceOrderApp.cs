@@ -297,10 +297,12 @@ namespace OpenAuth.App
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
             obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.TechName)))?.Id;
+            obj.AllowOrNot = await IsAllowOrNo(new CustomerServiceAgentCreateOrderReq { ServiceWorkOrders=request.ServiceWorkOrders});
             var province = string.IsNullOrWhiteSpace(request.Province) ? obj.Province : request.Province;
             var city = string.IsNullOrWhiteSpace(request.City) ? obj.City : request.City;
             var area = string.IsNullOrWhiteSpace(request.Area) ? obj.Area : request.Area;
             var addr = string.IsNullOrWhiteSpace(request.Addr) ? obj.Addr : request.Addr;
+           
             if (string.IsNullOrWhiteSpace(obj.TerminalCustomer) && string.IsNullOrWhiteSpace(obj.TerminalCustomerId))
             {
                 obj.TerminalCustomer = obj.CustomerName;
@@ -2718,6 +2720,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            if (string.IsNullOrWhiteSpace(req.Addr) || string.IsNullOrWhiteSpace(req.City) || string.IsNullOrWhiteSpace(req.Area) || string.IsNullOrWhiteSpace(req.Province))  throw new Exception("地址错误，请核对地址后重新上传。");
             var obj = req.MapTo<ServiceOrder>();
             obj.CustomerId = obj.CustomerId.ToUpper();
             obj.CreateTime = DateTime.Now;
