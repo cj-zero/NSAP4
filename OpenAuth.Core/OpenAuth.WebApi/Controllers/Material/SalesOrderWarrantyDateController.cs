@@ -91,5 +91,15 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
+        /// <summary>
+        /// 同步销售订单保修时间到4
+        /// </summary>
+        /// <param name="SalesOrderId"></param>
+        public Response SynchronizationSalesOrder(string SalesOrderId)
+        {
+            var result = new Response();
+            _app.SynchronizationSalesOrder(SalesOrderId);
+            return result;
+        }
     }
 }

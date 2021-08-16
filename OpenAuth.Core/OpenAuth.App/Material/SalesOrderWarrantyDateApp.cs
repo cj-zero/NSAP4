@@ -121,7 +121,7 @@ namespace OpenAuth.App.Material
         /// 保修时间同步
         /// </summary>
         /// <returns></returns>
-        public void SynchronizationSalesOrder()
+        public void SynchronizationSalesOrder(string SalesOrderId=null)
         {
             var docEntry = UnitWork.Find<SalesOrderWarrantyDate>(null).OrderByDescending(s => s.SalesOrderId).Select(s => s.SalesOrderId).FirstOrDefault();
             docEntry = docEntry == null ? 0 : docEntry;
@@ -137,7 +137,7 @@ namespace OpenAuth.App.Material
                         where b.DocType == 15 && a.DocEntry > docEntry && a.DocEntry < (docEntry + 10000)
                         select new { d.MnfSerial, b.BaseEntry, b.CardCode, b.CardName, b.DocType, b.CreateDate, e.SlpName, e.SlpCode };
 
-            var model = query.Where(q => !string.IsNullOrWhiteSpace(q.MnfSerial)).Select(m => new SalesOrderWarrantyDate
+            var model = query.WhereIf(!string.IsNullOrWhiteSpace(SalesOrderId),q=>q.BaseEntry==int.Parse(SalesOrderId)).Where(q => !string.IsNullOrWhiteSpace(q.MnfSerial)).Select(m => new SalesOrderWarrantyDate
             {
                 SalesOrderId = m.BaseEntry,
                 CustomerId = m.CardCode,
