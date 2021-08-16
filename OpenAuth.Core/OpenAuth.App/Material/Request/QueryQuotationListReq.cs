@@ -138,6 +138,10 @@ namespace OpenAuth.App.Material.Request
         /// App查看物料及描述
         /// </summary>
         public string CancelRequest { get; set; }
+        /// <summary>
+        /// 交货
+        /// </summary>
+        public string SalesOfDeliveryId { get; set; }
         
         /// <summary>
         /// 打印物料id
