@@ -135,7 +135,7 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public string AppPartCode { get; set; }
         /// <summary>
-        /// App查看物料及描述
+        /// 取消筛选条件
         /// </summary>
         public string CancelRequest { get; set; }
         /// <summary>

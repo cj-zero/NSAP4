@@ -105,7 +105,7 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 是否服务
         /// </summary>
-        public int? AllowOrNot { get; set; }
+        public int? QryAllowOrNot { get; set; }
 
     }
 }
