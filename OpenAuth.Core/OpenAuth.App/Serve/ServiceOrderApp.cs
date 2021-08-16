@@ -736,7 +736,7 @@ namespace OpenAuth.App
         private async Task<int> IsAllowOrNo(CustomerServiceAgentCreateOrderReq req)
         {
             //大学学院客户过滤
-            if (!req.TerminalCustomer.Contains("大学") && !req.TerminalCustomer.Contains("学院"))
+            if (!req.TerminalCustomer.Contains("大学") && !req.TerminalCustomer.Contains("学院") && !req.TerminalCustomer.Contains("中科院"))
             {
                 if (req.ServiceWorkOrders.Select(s => s.ManufacturerSerialNumber).ToList().Contains("无序列号"))
                 {
