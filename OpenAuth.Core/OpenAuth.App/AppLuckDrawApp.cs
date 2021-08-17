@@ -48,8 +48,8 @@ namespace OpenAuth.App
                 //获取工单列表
                 var allRepaorList = await (from a in UnitWork.Find<ServiceWorkOrder>(null)
                                            join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id
-                                           where b.FromId == 6 && b.Status == 2 && a.Status >= 2
-                                           && a.CreateTime >= Mon && a.CreateTime <= Sun && a.ManufacturerSerialNumber != "无序列号" && b.VestInOrg == 1 && b.FromAppUserId != null && b.CustomerId != "C00550"
+                                           where b.FromId == 6 && b.Status == 2 
+                                           && a.CreateTime >= Mon && a.CreateTime <= Sun && a.ManufacturerSerialNumber != "无序列号" && b.VestInOrg == 1 && b.FromAppUserId != null && b.FromAppUserId != 0 && b.CustomerId != "C00550"
                                            select new { a.ManufacturerSerialNumber, a.FromTheme, a.ServiceOrderId, b.U_SAP_ID, b.FromAppUserId }).ToListAsync();
                 //获取服务Id集合
                 var U_SAP_ID_List = allRepaorList.GroupBy(c => c.U_SAP_ID).Select(c => c.Key).ToList();
