@@ -337,7 +337,8 @@ namespace OpenAuth.App
                 Supervisor = obj.Supervisor,
                 SupervisorId = obj.SupervisorId,
                 RecepUserName = loginContext.User.Name,
-                RecepUserId = loginContext.User.Id
+                RecepUserId = loginContext.User.Id,
+                AllowOrNot= obj.AllowOrNot
             });
             //获取"其他"问题类型及其子类
             var otherProblemType = await UnitWork.Find<ProblemType>(o => o.Name.Equals("其他") && string.IsNullOrWhiteSpace(o.ParentId)).FirstOrDefaultAsync();
@@ -736,7 +737,7 @@ namespace OpenAuth.App
         private async Task<int> IsAllowOrNo(CustomerServiceAgentCreateOrderReq req)
         {
             //大学学院客户过滤
-            if (!req.TerminalCustomer.Contains("大学") && !req.TerminalCustomer.Contains("学院") && !req.TerminalCustomer.Contains("中科院"))
+            if (!req.TerminalCustomer.Contains("大学") && !req.TerminalCustomer.Contains("学院") && !req.TerminalCustomer.Contains("中科院") && req.ServiceWorkOrders.FirstOrDefault()?.FromType!=2)
             {
                 if (req.ServiceWorkOrders.Select(s => s.ManufacturerSerialNumber).ToList().Contains("无序列号"))
                 {
