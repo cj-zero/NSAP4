@@ -297,7 +297,6 @@ namespace OpenAuth.App
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
             obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.TechName)))?.Id;
-            obj.AllowOrNot = await IsAllowOrNo(new CustomerServiceAgentCreateOrderReq { ServiceWorkOrders=request.ServiceWorkOrders});
             var province = string.IsNullOrWhiteSpace(request.Province) ? obj.Province : request.Province;
             var city = string.IsNullOrWhiteSpace(request.City) ? obj.City : request.City;
             var area = string.IsNullOrWhiteSpace(request.Area) ? obj.Area : request.Area;
@@ -313,6 +312,7 @@ namespace OpenAuth.App
                 obj.NewestContacter = obj.Contacter;
                 obj.NewestContactTel = obj.ContactTel;
             }
+            obj.AllowOrNot = await IsAllowOrNo(new CustomerServiceAgentCreateOrderReq { TerminalCustomer = request.TerminalCustomer, ServiceWorkOrders = request.ServiceWorkOrders });
             await UnitWork.UpdateAsync<ServiceOrder>(o => o.Id.Equals(request.Id), s => new ServiceOrder
             {
                 Status = 2,
