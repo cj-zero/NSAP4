@@ -4567,7 +4567,7 @@ namespace OpenAuth.App
             bool isAdmin = "lijianmei".Equals(nsapUserInfo.Account, StringComparison.OrdinalIgnoreCase);
             //获取设备类型列表
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
-            var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2 && s.CreateTime > Convert.ToDateTime("2020-08-01") && s.CreateTime != null && (isAdmin ? true : s.SupervisorId == nsapUserId)) //服务单已确认 
+            var query = UnitWork.Find<ServiceOrder>(s => s.Status == 2 && s.CreateTime > Convert.ToDateTime("2020-08-01") && s.CreateTime != null && (isAdmin ? true : s.SupervisorId == nsapUserId) && s.AllowOrNot==0) //服务单已确认 
                          .Include(s => s.ServiceOrderSNs)
                          .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                          .WhereIf(QryState == 1, q => q.ServiceWorkOrders.Any(q => q.Status == 1))//待派单

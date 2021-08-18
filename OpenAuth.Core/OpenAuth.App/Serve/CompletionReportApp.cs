@@ -126,6 +126,10 @@ namespace OpenAuth.App
                 startDate = (DateTime)dailyReports.Min();
                 endDate = (DateTime)dailyReports.Max();
             }
+            else 
+            {
+                throw new Exception("未填写行程日报，不可填写完工报告。");
+            }
             obj.BusinessTripDate = startDate;
             obj.EndDate = endDate;
             //obj.CreateUserName = user.Name;
