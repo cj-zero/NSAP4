@@ -185,7 +185,11 @@ namespace OpenAuth.App.Response
         /// 到达地点
         /// </summary>
         public string Destination { get; set; }
-        
+        /// <summary>
+        /// 是否允许服务
+        /// </summary>
+        public int AllowOrNot { get; set; }
+
         /// <summary>
         /// 服务单关联的工单
         /// </summary>

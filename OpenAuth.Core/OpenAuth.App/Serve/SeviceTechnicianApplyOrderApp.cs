@@ -335,7 +335,7 @@ namespace OpenAuth.App
             //新增工单
             await AddDeviceAsync(request, MaterialTypes, ApplyInfo);
             //删除旧工单
-            await _serviceOrderApp.DeleteWorkOrder((int)ApplyInfo.OrginalWorkOrderId);
+            await _serviceOrderApp.DeleteWorkOrder(new QueryServiceOrderListReq { QryServiceWorkOrderId= ApplyInfo.OrginalWorkOrderId.ToString() });
         }
 
         /// <summary>

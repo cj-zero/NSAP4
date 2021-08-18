@@ -1,4 +1,5 @@
 ﻿using Infrastructure.Extensions;
+using NSAP.Entity.Sales;
 using OpenAuth.App.Order.Request;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.NsapBone;
@@ -168,27 +169,29 @@ namespace OpenAuth.App.Order
         /// </summary>
         /// <param name="orderReq"></param>
         /// <returns></returns>
-        public string SalesOrderSave_ORDR(AddOrUpdateOrderReq orderReq)
+        public string SalesOrderSave_ORDR(AddOrderReq orderReq)
         {
-            int UserID = _serviceBaseApp.GetUserNaspId();
+            int userID = _serviceBaseApp.GetUserNaspId();
+            int sboID = _serviceBaseApp.GetUserNaspSboID(userID);
+            int funcId = 50;
             string result = "";
             string className = "NSAP.B1Api.BOneORDR";
             string jobname = "";
-            string funcId = "0";
-            byte[] job_data = ByteExtension.ToSerialize(orderReq.Order);
+            billDelivery billDelivery = BulidBillDelivery(orderReq.Order);
+            byte[] job_data = ByteExtension.ToSerialize(billDelivery);
             #region 售后人员(部门名称“售后”开头）下的销售订单如果没有设备（物料编号C开头),则审批流程改成呼叫中心审批
             bool shslp = false; bool shc = false;
             //判断销售员是否是售后部门
             if (!string.IsNullOrEmpty(orderReq.Order.SlpCode))
             {
-                string depnm = _serviceBaseApp.GetSalesDepname(orderReq.Order.SlpCode, orderReq.Order.SboId);
+                string depnm = _serviceBaseApp.GetSalesDepname(orderReq.Order.SlpCode, sboID.ToString());
                 if (depnm.IndexOf("售后") == 0)
                 {
                     shslp = true;
                 }
             }
             //判断销售明细里面物料是否存在设备
-            foreach (OrderDetails orderDetails in orderReq.Order.billSalesDetails)
+            foreach (OrderItem orderDetails in orderReq.Order.OrderItems)
             {
                 if (!string.IsNullOrEmpty(orderDetails.ItemCode))
                 {
@@ -202,34 +205,33 @@ namespace OpenAuth.App.Order
             if (shslp && !shc)
             {
                 jobname = "售后订单";
-                funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesOrder_AfterSale.aspx", UserID).ToString();
+                funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesOrder_AfterSale.aspx", userID);
             }
             #endregion
-            int FuncID = int.Parse(funcId);
-            int basetype = int.Parse(orderReq.Order.billBaseType);
+            int basetype = int.Parse(orderReq.Order.BillBaseType);
             if (!string.IsNullOrEmpty(orderReq.Order.U_EshopNo))
             {
                 basetype = -2;//商城订单统一基本类别 方便审批列表标识出来
             }
             if (orderReq.Ations == OrderAtion.Draft)
             {
-                result = OrderWorkflowBuild(jobname, FuncID, UserID, job_data, orderReq.Order.Remark, int.Parse(orderReq.Order.SboId), orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), int.Parse(orderReq.Order.billBaseType), int.Parse(orderReq.Order.billBaseEntry), "BOneAPI", className);
+                result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
             }
             if (orderReq.Ations == OrderAtion.Submit)
             {
-                result = OrderWorkflowBuild(jobname, FuncID, UserID, job_data, orderReq.Order.Remark, int.Parse(orderReq.Order.SboId), orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), basetype, int.Parse(orderReq.Order.billBaseEntry), "BOneAPI", className);
+                result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), basetype, int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
                 if (int.Parse(result) > 0)
                 {
                     var par = SaveJobPara(result, orderReq.IsTemplate);
                     if (par)
                     {
                         string _jobID = result;
-                        if ("0" != WorkflowSubmit(int.Parse(result), UserID, orderReq.Order.Remark, "", 0))
+                        if ("0" != WorkflowSubmit(int.Parse(result), userID, orderReq.Order.Remark, "", 0))
                         {
-                            result = SaveProOrder(orderReq.Order, int.Parse(_jobID)).ToString();
-                            if (orderReq.Order.serialNumber.Count > 0)
+                            result = SaveProOrder(billDelivery, int.Parse(_jobID)).ToString();
+                            if (billDelivery.serialNumber.Count > 0)
                             {
-                                if (UpdateSerialNumber(orderReq.Order.serialNumber, int.Parse(_jobID))) { result = "1"; }
+                                if (UpdateSerialNumber(billDelivery.serialNumber, int.Parse(_jobID))) { result = "1"; }
                             }
                         }
                         else { result = "0"; }
@@ -239,11 +241,11 @@ namespace OpenAuth.App.Order
             }
             if (orderReq.Ations == OrderAtion.Resubmit)
             {
-                result = WorkflowSubmit(orderReq.JobId, UserID, orderReq.Order.Remark, "", 0);
+                result = WorkflowSubmit(orderReq.JobId, userID, orderReq.Order.Remark, "", 0);
             }
             return result;
         }
-        public int SaveProOrder(SaleOrder Model, int jobid)
+        public int SaveProOrder(billDelivery Model, int jobid)
         {
             string SaleOrder = "0";
             string sfileCpbm = "";
@@ -278,14 +280,14 @@ namespace OpenAuth.App.Order
             return bresult;
         }
         //修改已选择序列号状态
-        public bool UpdateSerialNumber(IList<SerialNumber> serialNumbers, int submitjobid)
+        public bool UpdateSerialNumber(IList<billSerialNumber> serialNumbers, int submitjobid)
         {
             try
             {
-                foreach (SerialNumber item in serialNumbers)
+                foreach (billSerialNumber item in serialNumbers)
                 {
                     List<store_osrn_alreadyexists> list = new List<store_osrn_alreadyexists>();
-                    foreach (SerialNumberChooseItem serial in item.Details)
+                    foreach (billSerialNumberChooseItem serial in item.Details)
                     {
                         store_osrn_alreadyexists storeOsrn = new store_osrn_alreadyexists();
                         storeOsrn.ItemCode = item.ItemCode;
@@ -341,5 +343,7 @@ namespace OpenAuth.App.Order
             }
         }
         #endregion
+
+
     }
 }

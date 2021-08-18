@@ -64,6 +64,12 @@ namespace OpenAuth.App.Request
         /// </summary>
         /// <value>The organizations.</value>
         public string OrganizationIds { get; set; }
+
+        /// <summary>
+        /// 是否同步
+        /// </summary>
+        /// <value>The organizations.</value>
+        public bool? IsSync { get; set; }
         /// <summary>
         /// 3.0用户ID
         /// </summary>

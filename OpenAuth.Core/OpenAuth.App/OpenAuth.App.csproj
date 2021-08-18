@@ -21,6 +21,13 @@
   <ItemGroup>
     <Compile Remove="Eshop\WfaEshopCanceledStatusApp.cs" />
     <Compile Remove="Eshop\WfaEshopOqutdetailApp.cs" />
+    <Compile Remove="Order\Request\billAttchment.cs" />
+    <Compile Remove="Order\Request\DeliveryItemAid.cs" />
+    <Compile Remove="Order\Request\IQCDetail.cs" />
+    <Compile Remove="Order\Request\OrderDetails.cs" />
+    <Compile Remove="Order\Request\SaleOrder.cs" />
+    <Compile Remove="Order\Request\SalesAcctCode.cs" />
+    <Compile Remove="Order\Request\SerialNumberChooseItem.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -57,6 +64,12 @@
 
   <ItemGroup>
     <Folder Include="Settlement\Response\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Nsapdll\ENTITY.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 	<Target Name="ChangeAliasesOfStrongNameAssemblies" BeforeTargets="FindReferenceAssembliesForReferences;ResolveReferences">
 		<ItemGroup>

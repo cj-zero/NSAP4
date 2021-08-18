@@ -330,7 +330,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("延保类型")]
         public int? WarrantyType { get; set; }
-
+        /// <summary>
+        ///申请取消销售订单（-1 已驳回 0.已同意 1.待处理 ）
+        /// </summary>
+        [Description("申请取消订单")]
+        public int? CancelRequest { get; set; }
+        
         /// <summary>
         /// 物流表
         /// </summary>
