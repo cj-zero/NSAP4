@@ -1092,8 +1092,8 @@ namespace OpenAuth.App.Material
                         }
                     }));
                     QuotationObj.CreateTime = DateTime.Now;
-                    QuotationObj.CreateUser = obj.IsOutsourc == null && (bool)obj.IsOutsourc? obj .CreateUser: loginUser.Name;
-                    QuotationObj.CreateUserId = obj.IsOutsourc == null && (bool)obj.IsOutsourc ? obj.CreateUserId : loginUser.Id;
+                    QuotationObj.CreateUser = obj.IsOutsourc != null && (bool)obj.IsOutsourc? obj .CreateUser: loginUser.Name;
+                    QuotationObj.CreateUserId = obj.IsOutsourc != null && (bool)obj.IsOutsourc ? obj.CreateUserId : loginUser.Id;
                     QuotationObj.Status = 1;
                     QuotationObj.QuotationStatus = 3;
                     QuotationObj.PrintWarehouse = 1;
@@ -1113,7 +1113,7 @@ namespace OpenAuth.App.Material
                             QuotationId = QuotationObj.Id,
                             ApprovalStage = "3"
                         };
-                        if (obj.IsOutsourc == null && (bool)obj.IsOutsourc)
+                        if (obj.IsOutsourc != null && (bool)obj.IsOutsourc)
                         {
                             QuotationObj.QuotationStatus = 10;
                             QuotationObj.Status = 2;
@@ -1121,7 +1121,7 @@ namespace OpenAuth.App.Material
                             await UnitWork.SaveAsync();
                             quotationOperationHistory.Action = "个代结算系统自动提交";
                             #region 报价单同步到SAP，ERP3.0
-                            await _capBus.PublishAsync("Serve.SellOrder.Create", obj.Id);
+                            await _capBus.PublishAsync("Serve.SellOrder.Create", QuotationObj.Id);
                             #endregion
                             Message = QuotationObj.Id.ToString();
                         }

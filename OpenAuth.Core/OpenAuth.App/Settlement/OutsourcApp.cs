@@ -647,7 +647,6 @@ namespace OpenAuth.App
             else
             {
                 var flowInstanceObj = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(outsourcObj.FlowInstanceId)).FirstOrDefaultAsync();
-                await _flowInstanceApp.Verification(VerificationReqModle);
                 if (flowInstanceObj.ActivityName.Equals("客服主管审批"))
                 {
                     var expensesOrg = new OutsourcExpenses();
@@ -699,7 +698,7 @@ namespace OpenAuth.App
                         CreateUser = outsourcObj.CreateUser,
                         CreateUserId = outsourcObj.CreateUserId,
                         CollectionAddress = Address.BillingAddress,
-                        ShippingAddress=Address.DeliveryAddress,
+                        ShippingAddress = Address.DeliveryAddress,
                         IsDraft = false,
                         DeliveryMethod = "1",
                         ErpOrApp = 1,
@@ -709,7 +708,8 @@ namespace OpenAuth.App
                         ServiceChargeManHourSM = 1,
                         TravelExpenseCost = outsourcObj.OutsourcExpenses.Sum(o => o.Money),
                         TravelExpenseManHour = 1,
-                    }) ;
+                        QuotationProducts = new List<QuotationProductReq>()
+                    });
                     outsourcObj.QuotationId = int.Parse(quotationId);
                 }
                 if (flowInstanceObj.ActivityName.Equals("总经理审批") && outsourcObj.ServiceMode == 2)
@@ -749,6 +749,7 @@ namespace OpenAuth.App
                     outsourcObj.PayTime = DateTime.Now;
                     await _quotationApp.TimeOfDelivery((int)outsourcObj.QuotationId);
                 }
+                await _flowInstanceApp.Verification(VerificationReqModle);
             }
             await UnitWork.UpdateAsync<Outsourc>(r => r.Id == outsourcObj.Id, r => new Outsourc
             {
