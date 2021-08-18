@@ -9,6 +9,8 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Material;
+using OpenAuth.App.Material.Request;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.App.Settlement.Request;
@@ -26,7 +28,7 @@ namespace OpenAuth.App
         private readonly FlowInstanceApp _flowInstanceApp;
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
         private readonly WorkbenchApp _workbenchApp;
-
+        private readonly QuotationApp _quotationApp;
         /// <summary>
         /// 加载列表
         /// </summary>
@@ -173,7 +175,7 @@ namespace OpenAuth.App
             }
             //var serviceOrderIds = await UnitWork.Find<OutsourcExpenses>(null).Select(o => (int)o.ServiceOrderId).ToListAsync();
             var query = from a in UnitWork.Find<CompletionReport>(c => c.CreateUserId.Equals(loginContext.User.Id) && (c.IsReimburse <= 1 || serviceOrderIds.Contains((int)c.ServiceOrderId)))
-                        join b in UnitWork.Find<ServiceOrder>(c=>c.VestInOrg==1).Include(s => s.ServiceWorkOrders) on a.ServiceOrderId equals b.Id into ab
+                        join b in UnitWork.Find<ServiceOrder>(c => c.VestInOrg == 1).Include(s => s.ServiceWorkOrders) on a.ServiceOrderId equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
                             //where !serviceOrderIds.Contains(b.Id)
                         select new { a, b };
@@ -194,7 +196,7 @@ namespace OpenAuth.App
                     query = query.WhereIf(!(bool)request.IsMonth, c => c.a.CreateTime.Value.Month == DateTime.Now.Month - 1);
                 }
             }
-            var serviceOrderList = await query.Select(q => new { q.b.Id, q.b.U_SAP_ID, q.b.TerminalCustomer, q.b.TerminalCustomerId, q.b.ServiceWorkOrders,q.a.CreateTime }).OrderByDescending(u => u.Id).ToListAsync();
+            var serviceOrderList = await query.Select(q => new { q.b.Id, q.b.U_SAP_ID, q.b.TerminalCustomer, q.b.TerminalCustomerId, q.b.ServiceWorkOrders, q.a.CreateTime }).OrderByDescending(u => u.Id).ToListAsync();
             serviceOrderList = serviceOrderList.GroupBy(s => s.U_SAP_ID).Select(s => s.First()).ToList();
             List<dynamic> objs = new List<dynamic>();
             serviceOrderIds = serviceOrderList.Select(s => s.Id).ToList();
@@ -211,7 +213,7 @@ namespace OpenAuth.App
                         ServiceOrderId = s.Id,
                         s.TerminalCustomer,
                         s.TerminalCustomerId,
-                        CompleteDate=Convert.ToDateTime(s.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
+                        CompleteDate = Convert.ToDateTime(s.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                         ServiceOrderSapId = s.U_SAP_ID,
                         serviceWorkOrderObj?.FromTheme,
                         serviceWorkOrderObj?.ManufacturerSerialNumber,
@@ -282,7 +284,7 @@ namespace OpenAuth.App
                         number = lastMonth++;
                     }
                     var Province = serviceOrderIds.Where(o => o.Id == s).FirstOrDefault()?.Province;
-                    if (globalarea.Contains(Province) || Province=="海外")
+                    if (globalarea.Contains(Province) || Province == "海外")
                     {
                         money += 50;
                     }
@@ -298,7 +300,7 @@ namespace OpenAuth.App
             {
                 baseInfo.ServiceWorkOrderList,
                 baseInfo.ServiceDailyReportList,
-                BaseInfo=new { TotalMoney = request.ServiceMode == 2 ? money : 0 }
+                BaseInfo = new { TotalMoney = request.ServiceMode == 2 ? money : 0 }
             };
             return result;
         }
@@ -328,7 +330,7 @@ namespace OpenAuth.App
                 h.Content,
                 h.ApprovalResult,
             });
-            var expenseIds = outsourcObj.OutsourcExpenses.Select(o=>o.Id).ToList();
+            var expenseIds = outsourcObj.OutsourcExpenses.Select(o => o.Id).ToList();
             var expenseOrgs = await UnitWork.Find<OutsourcExpenseOrg>(o => expenseIds.Contains(o.ExpenseId)).ToListAsync();
             var outsourcExpenses = outsourcObj.OutsourcExpenses.Select(o => new
             {
@@ -354,7 +356,7 @@ namespace OpenAuth.App
                 o.EndTime,
                 o.Days,
                 o.CompleteTime,
-                OutsourcExpenseOrgs = expenseOrgs.Where(e=>e.ExpenseId.Equals(o.Id)).ToList()
+                OutsourcExpenseOrgs = expenseOrgs.Where(e => e.ExpenseId.Equals(o.Id)).ToList()
             });
             var serviceOrderObj = await UnitWork.Find<ServiceOrder>(s => s.Id == outsourcObj.OutsourcExpenses.FirstOrDefault().ServiceOrderId).Include(s => s.ServiceWorkOrders).FirstOrDefaultAsync();
             var serviceDailyReportList = await UnitWork.Find<ServiceDailyReport>(s => outsourcObj.OutsourcExpenses.FirstOrDefault().ServiceOrderId == s.ServiceOrderId).ToListAsync();
@@ -395,11 +397,11 @@ namespace OpenAuth.App
                     TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription)
                 }).OrderBy(s => s.CreateTime).ToList(),
                 OperationHistorys
-            }; 
+            };
             #region 废弃
             //if (outsourcObj.ServiceMode == 1)
             //{
-                
+
             //}
             //else
             //{
@@ -448,7 +450,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
-            var obj =await Condition(req);
+            var obj = await Condition(req);
             obj.CreateTime = DateTime.Now;
             obj.CreateUser = loginUser.Name;
             obj.CreateUserId = loginUser.Id;
@@ -456,7 +458,7 @@ namespace OpenAuth.App
             obj.OutsourcExpenses.ForEach(o =>
             {
                 o.Id = Guid.NewGuid().ToString();
-                if (o.outsourcexpensespictures != null && o.outsourcexpensespictures.Count() > 0) 
+                if (o.outsourcexpensespictures != null && o.outsourcexpensespictures.Count() > 0)
                 {
                     o.outsourcexpensespictures.ForEach(p => p.Id = Guid.NewGuid().ToString());
                 }
@@ -539,11 +541,13 @@ namespace OpenAuth.App
                     await UnitWork.BatchDeleteAsync<OutsourcExpensesPicture>(pictureList.ToArray());
                     await UnitWork.BatchDeleteAsync<OutsourcExpenses>(outsourcObj.OutsourcExpenses.ToArray());
                     await UnitWork.SaveAsync();
-                    obj.OutsourcExpenses.ForEach(o => {
+                    obj.OutsourcExpenses.ForEach(o =>
+                    {
                         o.OutsourcId = req.outsourcId;
-                        if (o.outsourcexpensespictures != null&& o.outsourcexpensespictures.Count()>0) 
+                        if (o.outsourcexpensespictures != null && o.outsourcexpensespictures.Count() > 0)
                         {
-                            o.outsourcexpensespictures.ForEach(p => {
+                            o.outsourcexpensespictures.ForEach(p =>
+                            {
                                 p.Id = Guid.NewGuid().ToString();
                                 p.OutsourcExpensesId = o.Id;
                             });
@@ -590,7 +594,7 @@ namespace OpenAuth.App
                         }
 
                     }
-                    
+
                     await UnitWork.UpdateAsync<Outsourc>(o => o.Id == req.outsourcId, u => new Outsourc
                     {
                         TotalMoney = obj.TotalMoney,
@@ -636,8 +640,9 @@ namespace OpenAuth.App
                 VerificationReqModle.VerificationOpinion = req.Remark;
                 VerificationReqModle.NodeRejectType = "1";
                 await _flowInstanceApp.Verification(VerificationReqModle);
-                await UnitWork.UpdateAsync<OutsourcExpenses>(o => o.OutsourcId == outsourcObj.Id && o.ExpenseType == 3,o=>new OutsourcExpenses { Money=0});
+                await UnitWork.UpdateAsync<OutsourcExpenses>(o => o.OutsourcId == outsourcObj.Id && o.ExpenseType == 3, o => new OutsourcExpenses { Money = 0 });
                 await UnitWork.DeleteAsync<OutsourcExpenseOrg>(o => outsourcObj.OutsourcExpenses.Select(e => e.Id).Contains(o.ExpenseId));
+                if(!string.IsNullOrWhiteSpace(outsourcObj.QuotationId.ToString())) await _quotationApp.CancellationSalesOrder(new QueryQuotationListReq { QuotationId= outsourcObj.QuotationId });
             }
             else
             {
@@ -646,11 +651,11 @@ namespace OpenAuth.App
                 if (flowInstanceObj.ActivityName.Equals("客服主管审批"))
                 {
                     var expensesOrg = new OutsourcExpenses();
-                    if (!string.IsNullOrWhiteSpace(req.Money)) 
+                    if (!string.IsNullOrWhiteSpace(req.Money))
                     {
                         if (outsourcObj.OutsourcExpenses.Where(o => o.ExpenseType == 3).Count() > 0)
                         {
-                            await UnitWork.UpdateAsync<OutsourcExpenses>(o => o.ExpenseType == 3 && o.OutsourcId == outsourcObj.Id, o => new OutsourcExpenses { Money = decimal.Parse(req.Money),StartTime=DateTime.Now,EndTime=DateTime.Now });
+                            await UnitWork.UpdateAsync<OutsourcExpenses>(o => o.ExpenseType == 3 && o.OutsourcId == outsourcObj.Id, o => new OutsourcExpenses { Money = decimal.Parse(req.Money), StartTime = DateTime.Now, EndTime = DateTime.Now });
                             expensesOrg = outsourcObj.OutsourcExpenses.Where(o => o.ExpenseType == 3).FirstOrDefault();
                         }
                         else
@@ -665,27 +670,51 @@ namespace OpenAuth.App
                                 TerminalCustomer = outsourcexpensesObj.TerminalCustomer,
                                 TerminalCustomerId = outsourcexpensesObj.TerminalCustomerId,
                                 OutsourcId = outsourcObj.Id,
-                                StartTime=DateTime.Now,
+                                StartTime = DateTime.Now,
                                 EndTime = DateTime.Now,
                             });
                         }
                         outsourcObj.TotalMoney += decimal.Parse(req.Money);
                     }
                     var outsourcExpenseOrgs = req.OutsourcExpenseOrgReqs.MapToList<OutsourcExpenseOrg>();
-                    outsourcExpenseOrgs.ForEach(o => { 
-                        o.CreateTime = DateTime.Now; 
-                        o.UpdateTime = DateTime.Now; 
+                    outsourcExpenseOrgs.ForEach(o =>
+                    {
+                        o.CreateTime = DateTime.Now;
+                        o.UpdateTime = DateTime.Now;
                         o.ExpenseSatus = 1;
                         o.ExpenseId = string.IsNullOrWhiteSpace(o.ExpenseId) ? expensesOrg.Id : o.ExpenseId;
-                        o.ExpenseType= string.IsNullOrWhiteSpace(o.ExpenseId) ? 3 : o.ExpenseType;
-                        var moeny= string.IsNullOrWhiteSpace(o.ExpenseId) ? decimal.Parse(req.Money) : outsourcObj.OutsourcExpenses.Where(e => e.Id.Equals(o.ExpenseId)).FirstOrDefault()?.Money;
+                        o.ExpenseType = string.IsNullOrWhiteSpace(o.ExpenseId) ? 3 : o.ExpenseType;
+                        var moeny = string.IsNullOrWhiteSpace(o.ExpenseId) ? decimal.Parse(req.Money) : outsourcObj.OutsourcExpenses.Where(e => e.Id.Equals(o.ExpenseId)).FirstOrDefault()?.Money;
                         o.Money = moeny * (o.Ratio / 100);
                     });
                     await UnitWork.BatchAddAsync<OutsourcExpenseOrg>(outsourcExpenseOrgs.ToArray());
+                    var Address=(await _quotationApp.CardAddress(outsourcObj.OutsourcExpenses.Select(o => o.TerminalCustomerId).ToList())).FirstOrDefault();
+                    var quotationId = await _quotationApp.Add(new AddOrUpdateQuotationReq
+                    {
+                        IsOutsourc = true,
+                        ServiceOrderId = (int)outsourcObj.OutsourcExpenses.FirstOrDefault()?.ServiceOrderId,
+                        ServiceOrderSapId = (int)outsourcObj.OutsourcExpenses.FirstOrDefault()?.ServiceOrderSapId,
+                        AcquisitionWay = "1",
+                        AcceptancePeriod = 7,
+                        CreateUser = outsourcObj.CreateUser,
+                        CreateUserId = outsourcObj.CreateUserId,
+                        CollectionAddress = Address.BillingAddress,
+                        ShippingAddress=Address.DeliveryAddress,
+                        IsDraft = false,
+                        DeliveryMethod = "1",
+                        ErpOrApp = 1,
+                        IsMaterialType = "3",
+                        MoneyMeans = "1",
+                        ServiceChargeSM = decimal.Parse(req.Money),
+                        ServiceChargeManHourSM = 1,
+                        TravelExpenseCost = outsourcObj.OutsourcExpenses.Sum(o => o.Money),
+                        TravelExpenseManHour = 1,
+                    }) ;
+                    outsourcObj.QuotationId = int.Parse(quotationId);
                 }
                 if (flowInstanceObj.ActivityName.Equals("总经理审批") && outsourcObj.ServiceMode == 2)
                 {
-                    var outsourcIds = await UnitWork.Find<Outsourc>(o => o.CreateUserId.Equals(outsourcObj.CreateUserId) && o.Id!= outsourcObj.Id).Select(s => s.Id).ToListAsync();
+                    var outsourcIds = await UnitWork.Find<Outsourc>(o => o.CreateUserId.Equals(outsourcObj.CreateUserId) && o.Id != outsourcObj.Id).Select(s => s.Id).ToListAsync();
                     var thisMonth = await UnitWork.Find<OutsourcExpenses>(e => outsourcIds.Contains((int)e.OutsourcId) && e.CompleteTime.Value.Year == DateTime.Now.Year && e.CompleteTime.Value.Month == DateTime.Now.Month && e.ExpenseType == 4 && e.SerialNumber != null && e.SerialNumber > 0 && e.IsOverseas == false).CountAsync();
                     var lastMonth = await UnitWork.Find<OutsourcExpenses>(e => outsourcIds.Contains((int)e.OutsourcId) && e.CompleteTime.Value.Year == DateTime.Now.Year && e.CompleteTime.Value.Month == DateTime.Now.Month - 1 && e.ExpenseType == 4 && e.SerialNumber != null && e.SerialNumber > 0 && e.IsOverseas == false).CountAsync();
                     outsourcObj.TotalMoney = 0;
@@ -718,6 +747,7 @@ namespace OpenAuth.App
                 if (flowInstanceObj.ActivityName.Equals("财务支付"))
                 {
                     outsourcObj.PayTime = DateTime.Now;
+                    await _quotationApp.TimeOfDelivery((int)outsourcObj.QuotationId);
                 }
             }
             await UnitWork.UpdateAsync<Outsourc>(r => r.Id == outsourcObj.Id, r => new Outsourc
@@ -725,7 +755,8 @@ namespace OpenAuth.App
                 //Status = returnNoteStatus,
                 UpdateTime = DateTime.Now,
                 TotalMoney = outsourcObj.TotalMoney,
-                PayTime = outsourcObj.PayTime
+                PayTime = outsourcObj.PayTime,
+                QuotationId=outsourcObj.QuotationId
             });
             //修改全局待处理
             await UnitWork.UpdateAsync<WorkbenchPending>(w => w.SourceNumbers == outsourcObj.Id && w.OrderType == 3, w => new WorkbenchPending
@@ -883,7 +914,7 @@ namespace OpenAuth.App
 
             if (outsourcexpensesObj != null)
             {
-                await UnitWork.DeleteAsync<OutsourcExpenses>(o=>o.Id.Equals(req.OutsourcExpensesId));
+                await UnitWork.DeleteAsync<OutsourcExpenses>(o => o.Id.Equals(req.OutsourcExpensesId));
                 await UnitWork.UpdateAsync<Outsourc>(o => o.Id == outsourcexpensesObj.OutsourcId, o => new Outsourc { TotalMoney = o.TotalMoney - outsourcexpensesObj.Money });
                 await UnitWork.SaveAsync();
             }
@@ -906,13 +937,13 @@ namespace OpenAuth.App
             var obj = req.MapTo<Outsourc>();
             obj.UpdateTime = DateTime.Now;
             obj.IsRejected = false;
-            var completionReportList = await UnitWork.Find<CompletionReport>(c => (obj.ServiceMode==1&& c.ServiceOrderId == req.ServiceOrderId) || (obj.ServiceMode==2&& obj.OutsourcExpenses.Select(o => o.ServiceOrderId).ToList().Contains(c.ServiceOrderId))).ToListAsync();
+            var completionReportList = await UnitWork.Find<CompletionReport>(c => (obj.ServiceMode == 1 && c.ServiceOrderId == req.ServiceOrderId) || (obj.ServiceMode == 2 && obj.OutsourcExpenses.Select(o => o.ServiceOrderId).ToList().Contains(c.ServiceOrderId))).ToListAsync();
             obj.TotalMoney = 0;
             if (obj.ServiceMode == 1)
             {
                 var completionReportObj = completionReportList.Where(c => c.ServiceOrderId == req.ServiceOrderId).OrderByDescending(c => c.CreateTime).FirstOrDefault();
 
-                if (obj.OutsourcExpenses==null||obj.OutsourcExpenses.Count() <= 0) 
+                if (obj.OutsourcExpenses == null || obj.OutsourcExpenses.Count() <= 0)
                 {
                     obj.OutsourcExpenses.Add(new OutsourcExpenses
                     {
@@ -934,11 +965,11 @@ namespace OpenAuth.App
             }
             else
             {
-                var serviceOrderIds = await  UnitWork.Find<ServiceOrder>(s => obj.OutsourcExpenses.Select(o => o.ServiceOrderId).ToList().Contains(s.Id)).ToListAsync();
-                var outsourcIds=await UnitWork.Find<Outsourc>(o => o.CreateUserId.Equals(loginUser.Id)).WhereIf(!string.IsNullOrWhiteSpace(req.outsourcId.ToString()), e => e.Id != req.outsourcId).Select(s => s.Id).ToListAsync();
-                var thisMonth = await UnitWork.Find<OutsourcExpenses>(e => outsourcIds.Contains((int)e.OutsourcId)&&e.CompleteTime.Value.Year == DateTime.Now.Year && e.CompleteTime.Value.Month == DateTime.Now.Month && e.ExpenseType == 4 && e.IsOverseas == false).CountAsync();
+                var serviceOrderIds = await UnitWork.Find<ServiceOrder>(s => obj.OutsourcExpenses.Select(o => o.ServiceOrderId).ToList().Contains(s.Id)).ToListAsync();
+                var outsourcIds = await UnitWork.Find<Outsourc>(o => o.CreateUserId.Equals(loginUser.Id)).WhereIf(!string.IsNullOrWhiteSpace(req.outsourcId.ToString()), e => e.Id != req.outsourcId).Select(s => s.Id).ToListAsync();
+                var thisMonth = await UnitWork.Find<OutsourcExpenses>(e => outsourcIds.Contains((int)e.OutsourcId) && e.CompleteTime.Value.Year == DateTime.Now.Year && e.CompleteTime.Value.Month == DateTime.Now.Month && e.ExpenseType == 4 && e.IsOverseas == false).CountAsync();
                 var lastMonth = await UnitWork.Find<OutsourcExpenses>(e => outsourcIds.Contains((int)e.OutsourcId) && e.CompleteTime.Value.Year == DateTime.Now.Year && e.CompleteTime.Value.Month == DateTime.Now.Month - 1 && e.ExpenseType == 4 && e.IsOverseas == false).CountAsync();
-                var globalarea = await UnitWork.Find<GlobalArea>(g => g.AreaLevel == "3" && g.Pid == "99").Select(g=>g.AreaName).ToListAsync();
+                var globalarea = await UnitWork.Find<GlobalArea>(g => g.AreaLevel == "3" && g.Pid == "99").Select(g => g.AreaName).ToListAsync();
                 var number = 0;
                 obj.OutsourcExpenses.ForEach(o =>
                 {
@@ -1026,11 +1057,12 @@ namespace OpenAuth.App
             return result;
         }
 
-        public OutsourcApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
+        public OutsourcApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, QuotationApp quotationApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _workbenchApp = workbenchApp;
+            _quotationApp = quotationApp;
         }
     }
 }

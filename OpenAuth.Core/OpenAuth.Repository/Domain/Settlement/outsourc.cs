@@ -86,8 +86,12 @@ namespace OpenAuth.Repository.Domain.Settlement
         /// </summary>
         [Description("是否存在部分驳回")]
         public bool IsRejected { get; set; }
+        /// <summary>
+        /// 报价单id
+        /// </summary>
+        [Description("报价单id")]
+        public int? QuotationId { get; set; }
         
-
         /// <summary>
         /// 费用明细表
         /// </summary>

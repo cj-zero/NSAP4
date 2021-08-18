@@ -57,7 +57,7 @@
         public decimal? Discount { get; set; }
 
         /// <summary>
-        ///物料状态 1-更换 2-购买 3-领料
+        ///物料状态 1-更换 2-购买 3-赠送 4-成本
         /// </summary>
         public int MaterialType { get; set; }
 

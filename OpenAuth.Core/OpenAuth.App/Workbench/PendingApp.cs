@@ -481,56 +481,62 @@ namespace OpenAuth.App.Workbench
             var reult = new TableData();
             var pendingObj = await UnitWork.Find<WorkbenchPending>(w => w.ApprovalNumber == int.Parse(req.ApprovalNumber)).FirstOrDefaultAsync();
             var serviceOrderDetails = await ServiceOrderDetails(pendingObj.ServiceOrderId, pendingObj.PetitionerId);
-            QuotationDetailsResp quotationDetails = null;
-            ReturnnoteDetailsResp returnnoteDetails = null;
-            OutsourcDetailsResp outsourcDetails = null;
-            ReimburseDetailsResp reimburseDetails = null;
-            var quotation = new Quotation();
+            List<QuotationDetailsResp> quotationDetails = new List<QuotationDetailsResp>(); 
+            List<ReturnnoteDetailsResp> returnnoteDetails = new List<ReturnnoteDetailsResp>() ;
+            List<OutsourcDetailsResp> outsourcDetails = new List<OutsourcDetailsResp>();
+            List<ReimburseDetailsResp> reimburseDetails = new List<ReimburseDetailsResp>();
+            List<Quotation> quotation = new List<Quotation>();
             switch (pendingObj.OrderType)
             {
                 case 1:
-                    quotationDetails = await QuotationDetails(pendingObj.SourceNumbers);
+                    quotationDetails.Add(await QuotationDetails(pendingObj.SourceNumbers));
                     break;
                 case 2:
                     var quotationId = (await (from a in UnitWork.Find<ReturnNote>(r => r.Id == pendingObj.SourceNumbers)
                                               join b in UnitWork.Find<Quotation>(null) on a.SalesOrderId equals b.SalesOrderId
                                               select new { b.Id }).FirstOrDefaultAsync()).Id;
-                    quotationDetails = await QuotationDetails(quotationId);
-                    returnnoteDetails = await ReturnnoteDetails(pendingObj.SourceNumbers);
+                    quotationDetails.Add(await QuotationDetails(quotationId));
+                    returnnoteDetails.Add(await ReturnnoteDetails(pendingObj.SourceNumbers));
                     break;
                 case 3:
-                    var returnnoteObj = await UnitWork.Find<ReturnNote>(q => q.ServiceOrderId == pendingObj.ServiceOrderId).OrderByDescending(q => q.CreateTime).Select(q => new { q.Id, q.SalesOrderId }).FirstOrDefaultAsync();
+                    var returnnoteObj = await UnitWork.Find<ReturnNote>(q => q.ServiceOrderId == pendingObj.ServiceOrderId).OrderByDescending(q => q.CreateTime).Select(q => new { q.Id, q.SalesOrderId }).ToListAsync();
                     if (returnnoteObj != null)
                     {
-                        quotation = await UnitWork.Find<Quotation>(q => q.SalesOrderId.Equals(returnnoteObj.SalesOrderId)).OrderByDescending(q => q.CreateTime).FirstOrDefaultAsync();
-                        returnnoteDetails = await ReturnnoteDetails(returnnoteObj.Id);
+                        //quotation = await UnitWork.Find<Quotation>(q => q.SalesOrderId.Equals(returnnoteObj.SalesOrderId)).OrderByDescending(q => q.CreateTime).ToListAsync();
+                        foreach (var item in returnnoteObj)
+                        {
+                            returnnoteDetails.Add(await ReturnnoteDetails(item.Id));
+                        }
                     }
-                    else
+                    quotation = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(pendingObj.ServiceOrderId) && q.QuotationStatus>=3.1M).OrderByDescending(q => q.CreateTime).ToListAsync();
+                    if (quotation != null && quotation.Count()>0)
                     {
-                        quotation = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(pendingObj.ServiceOrderId) && q.QuotationStatus == 11).OrderByDescending(q => q.CreateTime).FirstOrDefaultAsync();
+                        foreach (var item in quotation)
+                        {
+                            quotationDetails.Add(await QuotationDetails(item.Id));
+                        }
                     }
-                    if (quotation != null)
-                    {
-                        quotationDetails = await QuotationDetails(quotation.Id);
-                    }
-                    outsourcDetails = await OutsourcDetails(pendingObj.SourceNumbers);
+                    outsourcDetails.Add(await OutsourcDetails(pendingObj.SourceNumbers));
                     break;
                 case 4:
-                    returnnoteObj = await UnitWork.Find<ReturnNote>(q => q.ServiceOrderId == pendingObj.ServiceOrderId).OrderByDescending(q => q.CreateTime).Select(q => new { q.Id, q.SalesOrderId }).FirstOrDefaultAsync();
+                    returnnoteObj = await UnitWork.Find<ReturnNote>(q => q.ServiceOrderId == pendingObj.ServiceOrderId).OrderByDescending(q => q.CreateTime).Select(q => new { q.Id, q.SalesOrderId }).ToListAsync();
                     if (returnnoteObj != null)
                     {
-                        quotation = await UnitWork.Find<Quotation>(q => q.SalesOrderId.Equals(returnnoteObj.SalesOrderId)).OrderByDescending(q => q.CreateTime).FirstOrDefaultAsync();
-                        returnnoteDetails = await ReturnnoteDetails(returnnoteObj.Id);
+                        //quotation = await UnitWork.Find<Quotation>(q => q.SalesOrderId.Equals(returnnoteObj.SalesOrderId)).OrderByDescending(q => q.CreateTime).ToListAsync();
+                        foreach (var item in returnnoteObj)
+                        {
+                            returnnoteDetails.Add(await ReturnnoteDetails(item.Id));
+                        }
                     }
-                    else 
+                    quotation = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(pendingObj.ServiceOrderId)&&q.QuotationStatus >= 3.1M).OrderByDescending(q => q.CreateTime).ToListAsync();
+                    if (quotation != null && quotation.Count() > 0)
                     {
-                        quotation = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(pendingObj.ServiceOrderId) && q.QuotationStatus==11).OrderByDescending(q => q.CreateTime).FirstOrDefaultAsync();
+                        foreach (var item in quotation)
+                        {
+                            quotationDetails.Add(await QuotationDetails(item.Id));
+                        }
                     }
-                    if (quotation != null)
-                    {
-                        quotationDetails = await QuotationDetails(quotation.Id);
-                    }
-                    reimburseDetails = await ReimburseDetails(pendingObj.SourceNumbers);
+                    reimburseDetails.Add(await ReimburseDetails(pendingObj.SourceNumbers));
                     break;
             }
             if (pendingObj.OrderType == 3 || pendingObj.OrderType == 4)

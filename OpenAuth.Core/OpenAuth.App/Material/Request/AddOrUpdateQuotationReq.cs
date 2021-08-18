@@ -264,6 +264,11 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public  string WarrantyType { get; set; }
         /// <summary>
+        ///是否个代结算
+        /// </summary>
+        public bool? IsOutsourc { get; set; }
+        
+        /// <summary>
         /// 报价单设备列表
         /// </summary>
         public virtual List<QuotationProductReq> QuotationProducts { get; set; }
@@ -277,7 +282,7 @@ namespace OpenAuth.App.Material.Request
         /// 物流表
         /// </summary>
         public virtual ExpressageReq ExpressageReqs { get; set; }
-
+        
         /// <summary>
         /// 操作详情表
         /// </summary>
