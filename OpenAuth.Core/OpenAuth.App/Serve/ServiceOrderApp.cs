@@ -312,7 +312,7 @@ namespace OpenAuth.App
                 obj.NewestContacter = obj.Contacter;
                 obj.NewestContactTel = obj.ContactTel;
             }
-            obj.AllowOrNot = await IsAllowOrNo(new CustomerServiceAgentCreateOrderReq { TerminalCustomer = request.TerminalCustomer, ServiceWorkOrders = request.ServiceWorkOrders });
+            obj.AllowOrNot = await IsAllowOrNo(new CustomerServiceAgentCreateOrderReq { TerminalCustomer = obj.TerminalCustomer, ServiceWorkOrders = request.ServiceWorkOrders });
             await UnitWork.UpdateAsync<ServiceOrder>(o => o.Id.Equals(request.Id), s => new ServiceOrder
             {
                 Status = 2,
