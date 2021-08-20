@@ -239,17 +239,7 @@ namespace OpenAuth.WebApi.Controllers
         public async Task<Response<TableData>> GetCompletionReportDetailsWeb(int ServiceOrderId,string UserId,int? currentUserId=null)
         {
             var result = new Response<TableData>();
-            try
-            {
-                result.Result = await _app.GetCompletionReportDetailsWeb(ServiceOrderId, UserId, currentUserId);
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-                Log.Logger.Error($"地址：{Request.Path}，参数：{ServiceOrderId},{UserId}， 错误：{result.Message}");
-            }
-
+            result.Result = await _app.GetCompletionReportDetailsWeb(ServiceOrderId, UserId, currentUserId);
             return result;
         }
         /// <summary>

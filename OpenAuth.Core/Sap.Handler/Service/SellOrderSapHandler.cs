@@ -71,7 +71,7 @@ namespace Sap.Handler.Service
 
                     //dts.ShipToCode = model.ShipToCode;//购物代码
 
-                    //dts.DocCurrency = quotation.MoneyMeans == "1" ? "RMB" : "";//货币
+                    dts.DocCurrency = "RMB";//货币
 
                     //dts.DocDate = DateTime.Parse(model.DocDate);
 
@@ -456,7 +456,8 @@ namespace Sap.Handler.Service
                 await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(quotation.Id), q => new Quotation
                 {
                     QuotationStatus = -1,
-                    UpDateTime = DateTime.Now
+                    UpDateTime = DateTime.Now,
+                    CancelRequest=0
                 });
                 await UnitWork.SaveAsync();
                 Log.Logger.Warning($"取消成功，SAP_ID：{quotation.SalesOrderId}", typeof(SellOrderSapHandler));

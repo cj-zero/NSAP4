@@ -32,6 +32,10 @@ namespace OpenAuth.App.Workbench.Response
         /// </summary>
         public System.DateTime UpdateTime { get; set; }
         /// <summary>
+        /// 附件
+        /// </summary>
+        public List<FileResp> Files { get; set; }
+        /// <summary>
         /// 流程
         /// </summary>
         public List<FlowPathResp> FlowPathResp { get; set; }

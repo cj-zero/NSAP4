@@ -1224,76 +1224,79 @@ namespace OpenAuth.App
             eoh.ApprovalStage = obj.RemburseStatus;
             if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && obj.RemburseStatus == 4)
             {
-                if (req.travelOrgResults != null)
+                if (!req.IsReject) 
                 {
-                    var travelExpendIds = req.travelOrgResults.Select(s => s.Id).ToList();
-                    var reimburseTravellingAllowances = await UnitWork.Find<ReimburseTravellingAllowance>(w => travelExpendIds.Contains(w.Id)).ToListAsync();
-                    foreach (var item in req.travelOrgResults)
+                    if (req.travelOrgResults != null)
                     {
-                        var detail = reimburseTravellingAllowances.Where(w => w.Id == item.Id).FirstOrDefault();
-                        detail.ExpenseOrg = item.Value;
-                    }
-                    await UnitWork.BatchUpdateAsync(reimburseTravellingAllowances.ToArray());
-                }
-                if (req.transportOrgResults != null)
-                {
-                    var transportExpendIds = req.transportOrgResults.Select(s => s.Id).ToList();
-                    var reimburseFares = await UnitWork.Find<ReimburseFare>(w => transportExpendIds.Contains(w.Id)).ToListAsync();
-                    foreach (var item in req.transportOrgResults)
-                    {
-                        var detail = reimburseFares.Where(w => w.Id == item.Id).FirstOrDefault();
-                        detail.ExpenseOrg = item.Value;
-                    }
-                    await UnitWork.BatchUpdateAsync(reimburseFares.ToArray());
-                }
-                if (req.hotelOrgResults != null)
-                {
-                    var hotelExpendIds = req.hotelOrgResults.Select(s => s.Id).ToList();
-                    var reimburseAccommodationSubsidies = await UnitWork.Find<ReimburseAccommodationSubsidy>(w => hotelExpendIds.Contains(w.Id)).ToListAsync();
-                    foreach (var item in req.hotelOrgResults)
-                    {
-                        var detail = reimburseAccommodationSubsidies.Where(w => w.Id == item.Id).FirstOrDefault();
-                        detail.ExpenseOrg = item.Value;
-                    }
-                    await UnitWork.BatchUpdateAsync(reimburseAccommodationSubsidies.ToArray());
-                }
-                if (req.otherOrgResults != null)
-                {
-                    var otherExpendIds = req.otherOrgResults.Select(s => s.Id).ToList();
-                    var reimburseOtherCharges = await UnitWork.Find<ReimburseOtherCharges>(w => otherExpendIds.Contains(w.Id)).ToListAsync();
-                    foreach (var item in req.otherOrgResults)
-                    {
-                        var detail = reimburseOtherCharges.Where(w => w.Id == item.Id).FirstOrDefault();
-                        detail.ExpenseOrg = item.Value;
-                    }
-                    await UnitWork.BatchUpdateAsync(reimburseOtherCharges.ToArray());
-                }
-                if (req.ReimburseExpenseOrgs != null && req.ReimburseExpenseOrgs.Count() > 0) 
-                {
-                    var reimburseExpenseOrgs = req.ReimburseExpenseOrgs.MapToList<ReimburseExpenseOrg>();
-                    reimburseExpenseOrgs.ForEach(o => { 
-                        o.CreateTime = DateTime.Now; o.UpdateTime = DateTime.Now; o.ExpenseSatus = 1;
-                        switch (o.ExpenseType)
+                        var travelExpendIds = req.travelOrgResults.Select(s => s.Id).ToList();
+                        var reimburseTravellingAllowances = await UnitWork.Find<ReimburseTravellingAllowance>(w => travelExpendIds.Contains(w.Id)).ToListAsync();
+                        foreach (var item in req.travelOrgResults)
                         {
-                            case 1:
-                                var rta=obj.ReimburseTravellingAllowances.Where(r => r.Id == o.ExpenseId).FirstOrDefault();
-                                o.Money = (rta.Days* rta.Money) * (o.Ratio / 100);
-                                break;
-                            case 2:
-                                var rf = obj.ReimburseFares.Where(r => r.Id == o.ExpenseId).FirstOrDefault();
-                                o.Money = rf.Money * (o.Ratio / 100);
-                                break;
-                            case 3:
-                                var ras = obj.ReimburseAccommodationSubsidies.Where(r => r.Id == o.ExpenseId).FirstOrDefault();
-                                o.Money = ras.TotalMoney * (o.Ratio / 100);
-                                break;
-                            case 4:
-                                var roc = obj.ReimburseOtherCharges.Where(r => r.Id == o.ExpenseId).FirstOrDefault();
-                                o.Money = roc.Money * (o.Ratio / 100);
-                                break;
-                        }   
-                    });
-                    await UnitWork.BatchAddAsync<ReimburseExpenseOrg>(reimburseExpenseOrgs.ToArray());
+                            var detail = reimburseTravellingAllowances.Where(w => w.Id == item.Id).FirstOrDefault();
+                            detail.ExpenseOrg = item.Value;
+                        }
+                        await UnitWork.BatchUpdateAsync(reimburseTravellingAllowances.ToArray());
+                    }
+                    if (req.transportOrgResults != null)
+                    {
+                        var transportExpendIds = req.transportOrgResults.Select(s => s.Id).ToList();
+                        var reimburseFares = await UnitWork.Find<ReimburseFare>(w => transportExpendIds.Contains(w.Id)).ToListAsync();
+                        foreach (var item in req.transportOrgResults)
+                        {
+                            var detail = reimburseFares.Where(w => w.Id == item.Id).FirstOrDefault();
+                            detail.ExpenseOrg = item.Value;
+                        }
+                        await UnitWork.BatchUpdateAsync(reimburseFares.ToArray());
+                    }
+                    if (req.hotelOrgResults != null)
+                    {
+                        var hotelExpendIds = req.hotelOrgResults.Select(s => s.Id).ToList();
+                        var reimburseAccommodationSubsidies = await UnitWork.Find<ReimburseAccommodationSubsidy>(w => hotelExpendIds.Contains(w.Id)).ToListAsync();
+                        foreach (var item in req.hotelOrgResults)
+                        {
+                            var detail = reimburseAccommodationSubsidies.Where(w => w.Id == item.Id).FirstOrDefault();
+                            detail.ExpenseOrg = item.Value;
+                        }
+                        await UnitWork.BatchUpdateAsync(reimburseAccommodationSubsidies.ToArray());
+                    }
+                    if (req.otherOrgResults != null)
+                    {
+                        var otherExpendIds = req.otherOrgResults.Select(s => s.Id).ToList();
+                        var reimburseOtherCharges = await UnitWork.Find<ReimburseOtherCharges>(w => otherExpendIds.Contains(w.Id)).ToListAsync();
+                        foreach (var item in req.otherOrgResults)
+                        {
+                            var detail = reimburseOtherCharges.Where(w => w.Id == item.Id).FirstOrDefault();
+                            detail.ExpenseOrg = item.Value;
+                        }
+                        await UnitWork.BatchUpdateAsync(reimburseOtherCharges.ToArray());
+                    }
+                    if (req.ReimburseExpenseOrgs != null && req.ReimburseExpenseOrgs.Count() > 0)
+                    {
+                        var reimburseExpenseOrgs = req.ReimburseExpenseOrgs.MapToList<ReimburseExpenseOrg>();
+                        reimburseExpenseOrgs.ForEach(o => {
+                            o.CreateTime = DateTime.Now; o.UpdateTime = DateTime.Now; o.ExpenseSatus = 1;
+                            switch (o.ExpenseType)
+                            {
+                                case 1:
+                                    var rta = obj.ReimburseTravellingAllowances.Where(r => r.Id == o.ExpenseId).FirstOrDefault();
+                                    o.Money = (rta.Days * rta.Money) * (o.Ratio / 100);
+                                    break;
+                                case 2:
+                                    var rf = obj.ReimburseFares.Where(r => r.Id == o.ExpenseId).FirstOrDefault();
+                                    o.Money = rf.Money * (o.Ratio / 100);
+                                    break;
+                                case 3:
+                                    var ras = obj.ReimburseAccommodationSubsidies.Where(r => r.Id == o.ExpenseId).FirstOrDefault();
+                                    o.Money = ras.TotalMoney * (o.Ratio / 100);
+                                    break;
+                                case 4:
+                                    var roc = obj.ReimburseOtherCharges.Where(r => r.Id == o.ExpenseId).FirstOrDefault();
+                                    o.Money = roc.Money * (o.Ratio / 100);
+                                    break;
+                            }
+                        });
+                        await UnitWork.BatchAddAsync<ReimburseExpenseOrg>(reimburseExpenseOrgs.ToArray());
+                    }
                 }
                 eoh.Action = "客服主管审批";
                 obj.RemburseStatus = 5;
@@ -1372,7 +1375,7 @@ namespace OpenAuth.App
             eoh.CreateTime = DateTime.Now;
             eoh.ReimburseInfoId = obj.Id;
             eoh.Remark = req.Remark;
-            eoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalMinutes);
+            eoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalSeconds);
             await UnitWork.AddAsync<ReimurseOperationHistory>(eoh);
             //修改全局待处理
             await UnitWork.UpdateAsync<WorkbenchPending>(w => w.SourceNumbers == obj.MainId && w.OrderType == 4, w => new WorkbenchPending
@@ -1419,7 +1422,7 @@ namespace OpenAuth.App
             eoh.CreateTime = DateTime.Now;
             eoh.ReimburseInfoId = obj.Id;
             eoh.Remark = req.Remark;
-            eoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalMinutes);
+            eoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalSeconds);
             await UnitWork.AddAsync<ReimurseOperationHistory>(eoh);
             await UnitWork.SaveAsync();
 
@@ -1471,7 +1474,7 @@ namespace OpenAuth.App
                         eoh.CreateUserId = loginContext.User.Id;
                         eoh.CreateTime = DateTime.Now;
                         eoh.ReimburseInfoId = obj.Id;
-                        eoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalMinutes);
+                        eoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalSeconds);
                         eoh.Id = Guid.NewGuid().ToString();
                         await UnitWork.AddAsync<ReimurseOperationHistory>(eoh);
                     }

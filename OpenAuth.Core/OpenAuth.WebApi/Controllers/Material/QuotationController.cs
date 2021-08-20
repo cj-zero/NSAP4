@@ -600,7 +600,7 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <param name="QuotationId"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> SyncSalesOrder(string QuotationId) 
+        public async Task<Response> SyncSalesOrder([FromBody] string QuotationId) 
         {
             var result = new Response();
             try
@@ -619,36 +619,36 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <summary>
         /// 同步销售交货
         /// </summary>
-        /// <param name="SalesOfDeliveryId"></param>
+        /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> SyncSalesOfDelivery(string SalesOfDeliveryId)
+        public async Task<Response> SyncSalesOfDelivery(QueryQuotationListReq request)
         {
             var result = new Response();
             try
             {
-                await _app.SyncSalesOfDelivery(SalesOfDeliveryId);
+                await _app.SyncSalesOfDelivery(request);
             }
             catch (Exception e)
             {
                 result.Code = 500;
                 result.Message = e.Message;
-                Log.Logger.Error($"地址：{Request.Path}，参数：{SalesOfDeliveryId}, 错误：{result.Message}");
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request}, 错误：{result.Message}");
             }
             return result;
         }
         /// <summary>
         /// 取消销售订单
         /// </summary>
-        /// <param name="QuotationId"></param>
+        /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> CancellationSalesOrder(string QuotationId)
+        public async Task<Response> CancellationSalesOrder(QueryQuotationListReq request)
         {
             var result = new Response();
             try
             {
-                await _app.CancellationSalesOrder(QuotationId);
+                await _app.CancellationSalesOrder(request);
             }
             catch (Exception e)
             {
@@ -660,23 +660,45 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <summary>
         /// 清空交货记录
         /// </summary>
-        /// <param name="QuotationId"></param>
+        /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> EmptyDeliveryRecord(string QuotationId) 
+        public async Task<Response> EmptyDeliveryRecord(QueryQuotationListReq request) 
         {
             var result = new Response();
             try
             {
-                await _app.EmptyDeliveryRecord(QuotationId);
+                await _app.EmptyDeliveryRecord(request);
             }
             catch (Exception e)
             {
                 result.Code = 500;
                 result.Message = e.Message;
-                Log.Logger.Error($"地址：{Request.Path}，参数：{QuotationId}, 错误：{result.Message}");
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request}, 错误：{result.Message}");
             }
             return result;
+        }
+        /// <summary>
+        /// 申请取消销售订单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> CancelRequest(QueryQuotationListReq request) 
+        {
+            var result = new Response();
+            await _app.CancelRequest(request);
+            return result;
+        }
+        [HttpGet]
+        /// <summary>
+        /// 客户历史销售订单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> HistorySaleOrde([FromQuery]QueryQuotationListReq request)
+        {
+            return await _app.HistorySaleOrde(request);
         }
     }
 }

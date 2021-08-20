@@ -37,9 +37,10 @@ namespace OpenAuth.Repository.Interface
         bool IsExist<T>(Expression<Func<T, bool>> exp) where T : class;
         Task<bool> IsExistAsync<T>(Expression<Func<T, bool>> exp, CancellationToken cancellationToken = default) where T : class;
         IQueryable<T> Find<T>(Expression<Func<T, bool>> exp = null) where T : class;
+        IQueryable<T> FindTrack<T>(Expression<Func<T, bool>> exp = null) where T : class;
 
         IQueryable<T> Find<T>(int pageindex = 1, int pagesize = 10, string orderby = "",
-            Expression<Func<T, bool>> exp = null) where T : class;
+             Expression<Func<T, bool>> exp = null) where T : class;
 
         int GetCount<T>(Expression<Func<T, bool>> exp = null) where T : class;
         Task<int> GetCountAsync<T>(Expression<Func<T, bool>> exp = null, CancellationToken cancellationToken = default) where T : class;

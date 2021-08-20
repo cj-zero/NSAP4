@@ -118,5 +118,9 @@ namespace OpenAuth.App.Request
         /// 事务类型
         /// </summary>
         public int? TransactionType { get; set; }
+        /// <summary>
+        /// 是否服务
+        /// </summary>
+        public int? AllowOrNot { get; set; }
     }
 }

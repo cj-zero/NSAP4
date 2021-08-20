@@ -43,7 +43,10 @@ namespace OpenAuth.App.Material.Request
         ///呼叫主题
         /// </summary>
         public string FromTheme { get; set; }
-
+        /// <summary>
+        ///延保时间
+        /// </summary>
+        public DateTime? WarrantyTime { get; set; }
         /// <summary>
         /// 物料报价单物料列表
         /// </summary>

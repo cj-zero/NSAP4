@@ -207,7 +207,11 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<bool> NodeVerification(VerificationReq request)
         {
-            var user = _auth.GetCurrentUser().User;
+            var user = request.Operator;
+            if (request.Operator == null) 
+            {
+                user = _auth.GetCurrentUser().User;
+            }
             var instanceId = request.FlowInstanceId;
 
             var tag = new Tag
@@ -218,7 +222,7 @@ namespace OpenAuth.App
                 Taged = Int32.Parse(request.VerificationFinally)
             };
 
-            FlowInstance flowInstance = Get(instanceId);
+            FlowInstance flowInstance = await UnitWork.FindTrack<FlowInstance>(f=>f.Id.Equals(instanceId)).FirstOrDefaultAsync();//Get(instanceId);
 
             if (flowInstance.MakerList != "1" && !flowInstance.MakerList.Contains(user.Id))
             {
@@ -369,7 +373,11 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<bool> NodeReject(VerificationReq reqest)
         {
-            var user = _auth.GetCurrentUser().User;
+            var user = reqest.Operator;
+            if (reqest.Operator == null)
+            {
+                user = _auth.GetCurrentUser().User;
+            }
             FlowInstance flowInstance = Get(reqest.FlowInstanceId);
             if (flowInstance.MakerList != "1" && !flowInstance.MakerList.Contains(user.Id))
             {
@@ -924,6 +932,148 @@ namespace OpenAuth.App
 
             await AddTransHistory(wfruntime);
             await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 获取生命周期
+        /// </summary>
+        /// <param name="reqp"></param>
+        /// <param name="FlowInstanceId"></param>
+        /// <returns></returns>
+        public async Task<List<FlowPathResp>> FlowPathRespList(List<OperationHistoryResp> reqp, string FlowInstanceId)
+        {
+            var flowInstance = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(FlowInstanceId)).Select(f => new { f.SchemeContent, f.ActivityName, f.FrmData,f.IsFinish }).FirstOrDefaultAsync();
+            var schemeContentJson = JsonHelper.Instance.Deserialize<FlowInstanceJson>(flowInstance.SchemeContent);
+            List<FlowInstanceNodes> flowInstanceNodes = new List<FlowInstanceNodes>();
+            List<FlowPathResp> flowPathResps = new List<FlowPathResp>();
+            int number = 1;
+            flowInstanceNodes.Add(new FlowInstanceNodes { Name = "提交", Number = number });
+            string toId = "";
+            var query = from a in schemeContentJson.lines
+                        join b in schemeContentJson.nodes on a.@from equals b.id
+                        select new { a.to, b.id, b.Name, a.Compares };
+            if (schemeContentJson.lines.Where(s => s.from.Contains("start")).Count() ==1) 
+            {
+                query = query.Where(q => !q.id.Contains("start")).ToList();
+                toId = schemeContentJson.lines.Where(s => s.from.Contains("start")).FirstOrDefault()?.to;
+            }
+            else
+            {
+                toId = schemeContentJson.lines.Where(s => s.from.Contains("start")).FirstOrDefault()?.from;
+            }
+            query = query.Where(q =>!q.id.Contains("end")).ToList();
+            List<FlowInstanceCompares> commpares = new List<FlowInstanceCompares>();
+            foreach (var item in query)
+            {
+                if (query.Where(n => n.id.Equals(toId)).FirstOrDefault() != null)
+                {
+
+                    string toName = "";
+                    commpares = new List<FlowInstanceCompares>();
+                    query.Where(n => n.id.Equals(toId)).ToList().ForEach(q => {
+                        if (q.Compares != null) commpares.AddRange(q.Compares.Where(c => !string.IsNullOrWhiteSpace(c.FieldName)).ToList());
+                    });
+                    if (commpares != null && commpares.Count() > 0 && commpares.FirstOrDefault()?.Value != null)
+                    {
+                        var frmDate = flowInstance.FrmData.ToLower().ToJObject();
+                        dynamic tonode = null;
+                        foreach (var toitem in query.Where(n => n.id.Equals(toId)).ToList())
+                        {
+                            var isTrue = false;
+                            foreach (var compareitem in toitem.Compares)
+                            {
+                                List<DataCompare> dataCompares = new List<DataCompare>();
+                                dataCompares.Add(compareitem.MapTo<DataCompare>());
+                                FlowLine flowLine = new FlowLine();
+                                flowLine.Compares = dataCompares;
+                                if (flowLine.Compare(frmDate))
+                                {
+                                    isTrue = true;
+                                }
+                                else 
+                                {
+                                    isTrue = false;
+                                    break;
+                                }
+                            }
+                            if (isTrue == true) 
+                            {
+                                tonode = toitem;
+                                break;
+                            }
+                        }
+                        toName = tonode?.Name;
+                        toId = tonode?.to;
+                    }
+                    else
+                    {
+                        toName = query.Where(n => n.id.Equals(toId)).FirstOrDefault().Name;
+                        toId = query.Where(n => n.id.Equals(toId)).FirstOrDefault().to;
+                    }
+                    if (toName != "开始") 
+                    {
+                        flowInstanceNodes.Add(new FlowInstanceNodes { Name = toName, Number = ++number });
+                    }
+                }
+            }
+            flowInstanceNodes.Add(new FlowInstanceNodes { Name = "结束", Number = ++number });
+            flowInstanceNodes = flowInstanceNodes.OrderBy(f => f.Number).ToList();
+            string historys = null;
+            List<FlowInstanceOperationHistory> operationHistoryList = await UnitWork.Find<FlowInstanceOperationHistory>(f => f.InstanceId.Equals(FlowInstanceId)).ToListAsync();
+            flowInstanceNodes.ForEach(f =>
+            {
+                if (flowInstance.IsFinish == FlowInstanceStatus.Draft || flowInstance.IsFinish == FlowInstanceStatus.Rejected)
+                {
+                    flowPathResps.Add(new FlowPathResp
+                    {
+                        ActivityName = f.Name,
+                        Number = f.Number,
+                        IsNode = false
+                    });
+                }
+                else 
+                {
+                    var operationHistorys = operationHistoryList.Where(q => q.Content.Equals(f.Name)).OrderByDescending(q => q.CreateDate).FirstOrDefault();
+
+                    if (historys == null || (operationHistorys?.CreateDate != null && DateTime.Parse(historys) < operationHistorys.CreateDate))
+                    {
+                        historys = operationHistorys?.CreateDate.ToString();
+                        flowPathResps.Add(new FlowPathResp
+                        {
+                            ActivityName = f.Name,
+                            Number = f.Number,
+                            CreateTime = operationHistorys?.CreateDate.ToString(),
+                            IntervalTime = operationHistorys?.IntervalTime.ToString(),
+                            IsNode = true
+                        });
+                    }
+                    else
+                    {
+                        if (flowInstance.IsFinish == FlowInstanceStatus.Finished)
+                        {
+                            flowPathResps.Add(new FlowPathResp
+                            {
+                                ActivityName = f.Name,
+                                Number = f.Number,
+                                IsNode = true
+                            });
+                        }
+                        else
+                        {
+                            flowPathResps.Add(new FlowPathResp
+                            {
+                                ActivityName = f.Name,
+                                Number = f.Number,
+                                IsNode = false
+                            });
+                        }
+
+                    }
+
+                }
+
+            });
+            return flowPathResps;
         }
 
         public FlowInstanceApp(IUnitWork unitWork, IRepository<FlowInstance> repository
