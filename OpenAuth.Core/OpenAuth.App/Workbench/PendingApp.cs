@@ -483,8 +483,8 @@ namespace OpenAuth.App.Workbench
             var serviceOrderDetails = await ServiceOrderDetails(pendingObj.ServiceOrderId, pendingObj.PetitionerId);
             List<QuotationDetailsResp> quotationDetails = new List<QuotationDetailsResp>(); 
             List<ReturnnoteDetailsResp> returnnoteDetails = new List<ReturnnoteDetailsResp>() ;
-            List<OutsourcDetailsResp> outsourcDetails = new List<OutsourcDetailsResp>();
-            List<ReimburseDetailsResp> reimburseDetails = new List<ReimburseDetailsResp>();
+            OutsourcDetailsResp outsourcDetails = null;
+            ReimburseDetailsResp reimburseDetails = null;
             List<Quotation> quotation = new List<Quotation>();
             switch (pendingObj.OrderType)
             {
@@ -516,7 +516,7 @@ namespace OpenAuth.App.Workbench
                             quotationDetails.Add(await QuotationDetails(item.Id));
                         }
                     }
-                    outsourcDetails.Add(await OutsourcDetails(pendingObj.SourceNumbers));
+                    outsourcDetails=await OutsourcDetails(pendingObj.SourceNumbers);
                     break;
                 case 4:
                     returnnoteObj = await UnitWork.Find<ReturnNote>(q => q.ServiceOrderId == pendingObj.ServiceOrderId).OrderByDescending(q => q.CreateTime).Select(q => new { q.Id, q.SalesOrderId }).ToListAsync();
@@ -536,7 +536,7 @@ namespace OpenAuth.App.Workbench
                             quotationDetails.Add(await QuotationDetails(item.Id));
                         }
                     }
-                    reimburseDetails.Add(await ReimburseDetails(pendingObj.SourceNumbers));
+                    reimburseDetails=await ReimburseDetails(pendingObj.SourceNumbers);
                     break;
             }
             if (pendingObj.OrderType == 3 || pendingObj.OrderType == 4)
