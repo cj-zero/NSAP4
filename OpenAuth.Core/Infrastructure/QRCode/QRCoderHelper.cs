@@ -152,6 +152,21 @@ namespace Infrastructure
             String strbaser64 = Convert.ToBase64String(arr);
             return strbaser64;
         }
+        /// <summary>
+		/// 
+		/// </summary>
+		/// <param name="url">存储内容</param>
+		/// <param name="filePath">保存地址</param>
+		/// <param name="pixel">像素大小</param>
+		/// <returns></returns>
+		public static Bitmap BuildBarcode(string url, string filePath, int pixel) {
+            QRCodeGenerator generator = new QRCodeGenerator();
+            QRCodeData codeData = generator.CreateQrCode(url, QRCodeGenerator.ECCLevel.M, true);
+            QRCoder.QRCode qrcode = new QRCoder.QRCode(codeData);
+            Bitmap qrImage = qrcode.GetGraphic(pixel, Color.Black, Color.White, true);
+            qrImage.Save(filePath, ImageFormat.Jpeg);
+            return qrImage;
+        }
     }
 
     /// <summary>

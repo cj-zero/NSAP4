@@ -118,5 +118,11 @@ namespace Infrastructure.Helpers
             return str;
         }
         #endregion
+  
+        public struct CurrentPage {
+            public int FuncID { get; set; }
+
+            public long AuthMap { get; set; }
+        }
     }
 }

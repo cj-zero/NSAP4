@@ -372,4 +372,695 @@ namespace OpenAuth.App.Order.ModelDto
         public int BaseType { get; set; }
 
     }
+	/// <summary>
+	/// 查看呼叫服务信息
+	/// </summary>
+	public class GetCustomerInfoDto {
+		/// <summary>
+		/// 编号
+		/// </summary>
+		public string CardCode { get; set; }
+		/// <summary>
+		/// 名称
+		/// </summary>
+		public string CardName { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string CardFName { get; set; }
+		public string CmpPrivate { get; set; }
+		/// <summary>
+		/// 电话1
+		/// </summary>
+		public string Phone1 { get; set; }
+		/// <summary>
+		/// 电话2
+		/// </summary>
+		public string Phone2 { get; set; }
+		/// <summary>
+		/// 传真
+		/// </summary>
+		public string Fax { get; set; }
+
+		public string Cellular { get; set; }
+		/// <summary>
+		/// 业务员
+		/// </summary>
+		public string SlpName { get; set; }
+		public string CntctPrsn { get; set; }
+		public string Notes { get; set; }
+		/// <summary>
+		/// 科目余额
+		/// </summary>
+		public decimal Balance { get; set; }
+		public string Industry { get; set; }
+		public string Business { get; set; }
+		public string ShipType { get; set; }
+		public string Address { get; set; }
+		public string Building { get; set; }
+		public string validFrom { get; set; }
+		public string validTo { get; set; }
+		/// <summary>
+		/// 技术员
+		/// </summary>
+		public string tcnician { get; set; }
+		public string MailCounty { get; set; }
+		public string VatldUnCmp { get; set; }
+		/// <summary>
+		/// 邮箱
+		/// </summary>
+		public string E_Mail { get; set; }
+		public int GroupNum { get; set; }
+		public string Currency { get; set; }
+		public string GTSRegNum { get; set; }
+		public string GTSBankAct { get; set; }
+		public string GTSBilAddr { get; set; }
+		public string U_PYSX { get; set; }
+		public string U_Name { get; set; }
+		public string U_FName { get; set; }
+		/// <summary>
+		/// 发票类别
+		/// </summary>
+		public string U_FPLB { get; set; }
+		public int U_job_id { get; set; }
+	}
+	/// <summary>
+	/// 查询单个物料信息
+	/// </summary>
+	public class SelectSingleStoreOitmInfoDto {
+		/// <summary>
+		/// 物料编码
+		/// </summary>
+		public string ItemCode { get; set; }
+		/// <summary>
+		/// 名称
+		/// </summary>
+		public string ItemName { get; set; }
+		/// <summary>
+		/// 外文名称
+		/// </summary>
+		public string FrgnName { get; set; }
+		/// <summary>
+		/// 物料组
+		/// </summary>
+		public int ItmsGrpCod { get; set; }
+		/// <summary>
+		/// 关税组
+		/// </summary>
+		public int CstGrpCode { get; set; }
+		/// <summary>
+		/// 税收组
+		/// </summary>
+		public string VatGourpSa { get; set; }
+		/// <summary>
+		/// 条形码
+		/// </summary>
+		public string BarCode { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string VATLiable { get; set; }
+		/// <summary>
+		/// 采购物料
+		/// </summary>
+		public string PrchseItem { get; set; }
+		/// <summary>
+		/// 销售物料
+		/// </summary>
+		public string SellItem { get; set; }
+		/// <summary>
+		/// 仓库物料
+		/// </summary>
+		public string InvntItem { get; set; }
+		/// <summary>
+		/// 存货量
+		/// </summary>
+		public decimal OnHand { get; set; }
+		/// <summary>
+		/// 已承诺
+		/// </summary>
+		public decimal IsCommited { get; set; }
+		/// <summary>
+		/// 已订购
+		/// </summary>
+		public decimal OnOrder { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string IncomeAcct { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string ExmptIncom { get; set; }
+		/// <summary>
+		/// 最大库存
+		/// </summary>
+		public decimal MaxLevel { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string DfltWH { get; set; }
+		/// <summary>
+		/// 首选供应商
+		/// </summary>
+		public string CardCode { get; set; }
+		/// <summary>
+		/// 制造商目录编号
+		/// </summary>
+		public string SuppCatNum { get; set; }
+		/// <summary>
+		/// 采购计量单位
+		/// </summary>
+		public string BuyUnitMsr { get; set; }
+		/// <summary>
+		/// 每采购单位数量
+		/// </summary>
+		public decimal NumInBuy { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public decimal ReorderQty { get; set; }
+		/// <summary>
+		/// 最小库存
+		/// </summary>
+		public decimal MinLevel { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public decimal LstEvlPric { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string LstEvlDate { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public decimal CustomPer { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string Canceled { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string MnufctTime { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string WholSlsTax { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string RetilrTax { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public decimal SpcialDisc { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string DscountCod { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string TrackSales { get; set; }
+		/// <summary>
+		/// 销售计量单位
+		/// </summary>
+		public string SalUnitMsr { get; set; }
+		/// <summary>
+		/// 每销售单位数量
+		/// </summary>
+		public decimal NumInSale { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public decimal Consig { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public int QueryGroup { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public decimal Counted { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public decimal OpenBlnc { get; set; }
+		/// <summary>
+		/// 评估方法
+		/// </summary>
+		public string EvalSystem { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public int UserSign { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string FREE { get; set; }
+		/// <summary>
+		/// 图片名称
+		/// </summary>
+		public string PicturName { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string Transfered { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string BlncTrnsfr { get; set; }
+		/// <summary>
+		/// 备注
+		/// </summary>
+		public string UserText { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string SerialNum { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public decimal CommisPcnt { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public decimal CommisSum { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public int CommisGrp { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string TreeType { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public decimal TreeQty { get; set; }
+		/// <summary>
+		/// 最近采购价
+		/// </summary>
+		public decimal LastPurPrc { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string LastPurCur { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public DateTime LastPurDat { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string ExitCur { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public decimal ExitPrice { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string ExitWH { get; set; }
+		/// <summary>
+		/// 固定资产
+		/// </summary>
+		public string AssetItem { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string WasCounted { get; set; }
+		/// <summary>
+		/// 物料管理
+		/// </summary>
+		public string ManSerNum { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string SHeight1 { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string SHght1Unit { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string SHeight2 { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string SHght2Unit { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string SWidth1 { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string SWdth1Unit { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string SWidth2 { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string SWdth2Unit { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string SLength1 { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string SLen1Unit { get; set; }
+		public string Slength2 { get; set; }
+		public string SLen2Unit { get; set; }
+		public decimal SVolume { get; set; }
+		public int SVolUnit { get; set; }
+		public string SWeight1 { get; set; }
+		public string SWght1Unit { get; set; }
+		public string SWeight2 { get; set; }
+		public string SWght2Unit { get; set; }
+		public string BHeight1 { get; set; }
+		public string BHght1Unit { get; set; }
+		public string BHeight2 { get; set; }
+		public string BHght2Unit { get; set; }
+		public string BWidth1 { get; set; }
+		public string BWdth1Unit { get; set; }
+		public string BWidth2 { get; set; }
+		public string BWdth2Unit { get; set; }
+		public string BLength1 { get; set; }
+		public string BLen1Unit { get; set; }
+		public string Blength2 { get; set; }
+		public string BLen2Unit { get; set; }
+		public decimal BVolume { get; set; }
+		public int BVolUnit { get; set; }
+		public string BWeight1 { get; set; }
+		public string BWght1Unit { get; set; }
+		public string BWeight2 { get; set; }
+		public string BWght2Unit { get; set; }
+		public string FixCurrCms { get; set; }
+		public int FirmCode { get; set; }
+		public string LstSalDate { get; set; }
+		public string QryGroup1 { get; set; }
+		public string QryGroup2 { get; set; }
+		public string QryGroup3 { get; set; }
+		public string QryGroup4 { get; set; }
+		public string QryGroup5 { get; set; }
+		public string QryGroup6 { get; set; }
+		public string QryGroup7 { get; set; }
+		public string QryGroup8 { get; set; }
+		public string QryGroup9 { get; set; }
+		public string QryGroup10 { get; set; }
+		public string QryGroup11 { get; set; }
+		public string QryGroup12 { get; set; }
+		public string QryGroup13 { get; set; }
+		public string QryGroup14 { get; set; }
+		public string QryGroup15 { get; set; }
+		public string QryGroup16 { get; set; }
+		public string QryGroup17 { get; set; }
+		public string QryGroup18 { get; set; }
+		public string QryGroup19 { get; set; }
+		public string QryGroup20 { get; set; }
+		public string QryGroup21 { get; set; }
+		public string QryGroup22 { get; set; }
+		public string QryGroup23 { get; set; }
+		public string QryGroup24 { get; set; }
+		public string QryGroup25 { get; set; }
+		public string QryGroup26 { get; set; }
+		public string QryGroup27 { get; set; }
+		public string QryGroup28 { get; set; }
+		public string QryGroup29 { get; set; }
+		public string QryGroup30 { get; set; }
+		public string QryGroup31 { get; set; }
+		public string QryGroup32 { get; set; }
+		public string QryGroup33 { get; set; }
+		public string QryGroup34 { get; set; }
+		public string QryGroup36 { get; set; }
+		public string QryGroup37 { get; set; }
+		public string QryGroup38 { get; set; }
+		public string QryGroup39 { get; set; }
+		public string QryGroup40 { get; set; }
+		public string QryGroup41 { get; set; }
+		public string QryGroup42 { get; set; }
+		public string QryGroup43 { get; set; }
+		public string QryGroup44 { get; set; }
+		public string QryGroup45 { get; set; }
+		public string QryGroup46 { get; set; }
+		public string QryGroup47 { get; set; }
+		public string QryGroup48 { get; set; }
+		public string QryGroup49 { get; set; }
+		public string QryGroup50 { get; set; }
+		public string QryGroup51 { get; set; }
+		public string QryGroup52 { get; set; }
+		public string QryGroup53 { get; set; }
+		public string QryGroup54 { get; set; }
+		public string QryGroup55 { get; set; }
+		public string QryGroup56 { get; set; }
+		public string QryGroup57 { get; set; }
+		public string QryGroup58 { get; set; }
+		public string QryGroup59 { get; set; }
+		public string QryGroup60 { get; set; }
+		public string QryGroup61 { get; set; }
+		public string QryGroup62 { get; set; }
+		public string QryGroup63 { get; set; }
+		public string QryGroup64 { get; set; }
+		public DateTime CreateDate { get; set; }
+		public DateTime UpdateDate { get; set; }
+		public string ExportCode { get; set; }
+		/// <summary>
+		/// 因子1
+		/// </summary>
+		public decimal SalFactor1 { get; set; }
+		/// <summary>
+		/// 因子2
+		/// </summary>
+		public decimal SalFactor2 { get; set; }
+		/// <summary>
+		/// 因子3
+		/// </summary>
+		public decimal SalFactor3 { get; set; }
+		/// <summary>
+		/// 因子4
+		/// </summary>
+		public decimal SalFactor4 { get; set; }
+		public decimal PurFactor1 { get; set; }
+		/// <summary>
+		/// 因子2
+		/// </summary>
+		public decimal PurFactor2 { get; set; }
+		/// <summary>
+		///因子3
+		/// </summary>
+		public decimal PurFactor3 { get; set; }
+		/// <summary>
+		/// 因子4
+		/// </summary>
+		public decimal PurFactor4 { get; set; }
+		public string SalFormula { get; set; }
+		public string PurFormula { get; set; }
+		/// <summary>
+		/// 税收组
+		/// </summary>
+		public string VatGroupPu { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public decimal AvgPrice { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string PurPackMsr { get; set; }
+		public decimal PurPackUn { get; set; }
+		/// <summary>
+		/// 包装计量单位
+		/// </summary>
+		public string SalPackMsr { get; set; }
+		/// <summary>
+		/// 每包装单位数量
+		/// </summary>
+		public decimal SalPackUn { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string ManBtchNum { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string ManOutOnly { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string ValidFor { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string ValidFrom { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string ValidTo { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string FrozenFor { get; set; }
+		public string FrozenFrom { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string FrozenTo { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string BlockOut { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string ValidComm { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string FrozenComm { get; set; }
+		public int ObjType { get; set; }
+		public string SWW { get; set; }
+		public string Deleted { get; set; }
+		/// <summary>
+		/// 订单号
+		/// </summary>
+		public int DocEntry { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public string ExpensAcct { get; set; }
+		public string FrgnInAcct { get; set; }
+		/// <summary>
+		/// 装运类型
+		/// </summary>
+		public string ShipType { get; set; }
+		/// <summary>
+		/// 设置总账科目
+		/// </summary>
+		public string GLMethod { get; set; }
+		public string ECInAcct { get; set; }
+		public string FrgnExpAcc { get; set; }
+		public string ECExpAcc { get; set; }
+		public string TaxType { get; set; }
+		/// <summary>
+		/// 仓库个别管理
+		/// </summary>
+		public string ByWh { get; set; }
+		public string WTLiable { get; set; }
+		public string ItemType { get; set; }
+		public string WarrntTmpl { get; set; }
+		public string BaseUnit { get; set; }
+		public decimal StockValue { get; set; }
+		/// <summary>
+		/// 虚拟物料
+		/// </summary>
+		public string Phantom { get; set; }
+		/// <summary>
+		/// 发货方式
+		/// </summary>
+		public string IssueMthd { get; set; }
+		public string FREE1 { get; set; }
+		public decimal PricingPrc { get; set; }
+		/// <summary>
+		/// 物料管理
+		/// </summary>
+		public string MngMethod { get; set; }
+		public decimal ReorderPnt { get; set; }
+		/// <summary>
+		/// 库存计量单位
+		/// </summary>
+		public string InvntryUom { get; set; }
+		public string PlaningSys { get; set; }
+		public string PrcrmntMtd { get; set; }
+		public string OrdrIntrvl { get; set; }
+		public decimal OrdrMulti { get; set; }
+		public decimal MinOrdrQty { get; set; }
+		public string LeadTime { get; set; }
+		public string IndirctTax { get; set; }
+		public string TaxCodeAR { get; set; }
+		public string TaxCodeAP { get; set; }
+		public int ServiceGrp { get; set; }
+		public int MatType { get; set; }
+		public int MatGrp { get; set; }
+		public string ProductSrc { get; set; }
+		public int ServiceCtg { get; set; }
+		public int ItemClass { get; set; }
+		public string Excisable { get; set; }
+		public int ChapterID { get; set; }
+		public string NotifyASN { get; set; }
+		public string ProAssNum { get; set; }
+		public decimal AssblValue { get; set; }
+		/// <summary>
+		/// 物料规格说明
+		/// </summary>
+		public string Spec { get; set; }
+		/// <summary>
+		/// 物料商品税目
+		/// </summary>
+		public string TaxCtg { get; set; }
+		public int Series { get; set; }
+		public string Number { get; set; }
+		public string ToleranDay { get; set; }
+		public int ItemCodeType { get; set; }
+		/// <summary>
+		/// 采购员
+		/// </summary>
+		public string SlpName { get; set; }
+		public string U_ItemCode { get; set; }
+		public decimal U_JGF1 { get; set; }
+		public int U_FS { get; set; }
+		public int U_US { get; set; }
+		public string U_YFCB { get; set; }
+		public decimal U_U_GS { get; set; }
+		public decimal U_GS_DJ { get; set; }
+		public decimal U_JGF { get; set; }
+		public int U_JGZQ { get; set; }
+		public string U_FDY { get; set; }
+	}
+	/// <summary>
+	/// 获取物料类型的示例
+	/// </summary>
+	public class GetItemTypeExpInfoDto {
+		public int type_id { get; set; }
+		public int code_rule { get; set; }
+		public string type_coding_exp { get; set; }
+		public string type_desc_exp { get; set; }
+	}
+	/// <summary>
+	/// 获取物料类型的自定义字段
+	/// </summary>
+	public class GetItemTypeCustomFieldsDto {
+		public int TypeID { get; set; }
+		public string Fld_nm { get; set; }
+		public int Fld_Alias { get; set; }
+		public string Fld_Desc { get; set; }
+		public int EditType { get; set; }
+		public int EditSizeMin { get; set; }
+		public int EditSizeMax { get; set; }
+		public string Fld_dflt { get; set; }
+		public string NotNull { get; set; }
+		public int valRows { get; set; }
+
+	}
+
+	public class GetItemTypeCustomValueDto {
+		public int SlpCode { get; set; }
+		public string SlpName { get; set; }
+
+	}
+	/// <summary>
+	/// 货币下拉
+	/// </summary>
+	public class DropPopupDocCurDto {
+		public string id { get; set; }
+		public string name { get; set; }
+
+	}
+
 }

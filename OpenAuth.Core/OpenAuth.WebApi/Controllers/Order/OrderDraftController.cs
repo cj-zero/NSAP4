@@ -1079,5 +1079,41 @@ namespace OpenAuth.WebApi.Controllers.Order
             return tableData;
         }
         #endregion
+        #region 查看单据详细信息
+        /// <summary>
+        ///  查看单据详细信息
+        /// </summary>
+        /// <param name="DocNum"></param>
+        /// <param name="tablename"></param>
+        /// <param name="ations"></param>
+        /// <param name="SboId"></param>
+        /// <param name="billPageurl"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("QuerySaleDeliveryDetails")]
+        public TableData QuerySaleDeliveryDetails(string DocNum, string tablename, string ations, string SboId, string billPageurl) {
+            var result = new TableData();
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            try {
+                bool ViewCustom = false;
+                bool ViewSales = false;
+                int billSboId = 0; bool isSql = true;
+                if (int.Parse(SboId) == SboID || SboId == "") { billSboId = SboID; } else { billSboId = int.Parse(SboId); isSql = false; }
+                if (!string.IsNullOrEmpty(billPageurl)) {
+                    long AuthMap = _serviceSaleOrderApp.GetCurrentPage(UserID, billPageurl).AuthMap;
+                    Powers Powers = new Powers(AuthMap);
+                    ViewCustom = Powers.ViewCustom;
+                    ViewSales = Powers.ViewSales;
+                }
+                if (ations == "copy") { ViewCustom = true; ViewSales = true; }
+                result.Data = _serviceSaleOrderApp.QuerySaleDeliveryDetailsV1(DocNum, ViewCustom, tablename, ViewSales, billSboId, isSql);
+            } catch (Exception e) {
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        #endregion
     }
 }

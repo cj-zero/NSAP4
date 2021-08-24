@@ -122,6 +122,20 @@ namespace OpenAuth.App
             DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
             return dataTable;
         }
+        /// <summary>
+        /// 获取部门ID
+        /// </summary>
+        /// <param name="userID"></param>
+        /// <returns></returns>
+        public int GetSalesDepID(int userID) {
+            int DepID = 0;
+            string sql = string.Format(@"SELECT c.dep_id FROM nsap_base.base_dep a INNER JOIN nsap_base.base_user_detail b ON a.dep_id=b.dep_id INNER JOIN nsap_base.base_dep c ON c.dep_id=b.dep_id WHERE b.user_id={0}", userID);
+            DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
+            if (dataTable != null && dataTable.Rows.Count > 0) {
+                DepID = int.Parse(dataTable.Rows[0][0].ToString());
+            }
+            return DepID;
+        }
         #endregion
     }
 }
