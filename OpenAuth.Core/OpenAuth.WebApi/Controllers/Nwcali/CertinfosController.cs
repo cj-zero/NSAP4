@@ -155,17 +155,19 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         [HttpGet]
-        public async Task SynSalesDelivery()
+        public async Task<Response> SynSalesDelivery()
         {
+            var result = new Response();
             try
             {
                 await _app.SynSalesDelivery();
             }
             catch (Exception ex)
             {
-
-                throw;
+                result.Code = 500;
+                result.Message = ex.Message + "，堆栈信息：" + ex.StackTrace;
             }
+            return result;
         }
 
         public CertinfosController(CertinfoApp app) 

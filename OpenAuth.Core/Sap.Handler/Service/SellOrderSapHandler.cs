@@ -456,7 +456,8 @@ namespace Sap.Handler.Service
                 await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(quotation.Id), q => new Quotation
                 {
                     QuotationStatus = -1,
-                    UpDateTime = DateTime.Now
+                    UpDateTime = DateTime.Now,
+                    CancelRequest=0
                 });
                 await UnitWork.SaveAsync();
                 Log.Logger.Warning($"取消成功，SAP_ID：{quotation.SalesOrderId}", typeof(SellOrderSapHandler));

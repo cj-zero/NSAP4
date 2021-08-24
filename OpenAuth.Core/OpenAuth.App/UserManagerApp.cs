@@ -115,7 +115,14 @@ namespace OpenAuth.App
             //if (string.IsNullOrEmpty(request.OrganizationIds))
             //    throw new Exception("请为用户分配机构");
             User requser = request;
-            requser.CreateId = _auth.GetCurrentUser().User.Id;
+            if (request.IsSync != null && (bool)request.IsSync)
+            {
+                requser.CreateId = "00000000-0000-0000-0000-000000000000";
+            }
+            else 
+            {
+                requser.CreateId = _auth.GetCurrentUser().User.Id;
+            }
             if (string.IsNullOrEmpty(request.Id))
             {
                 if (UnitWork.IsExist<User>(u => u.Account == request.Account))
@@ -541,7 +548,7 @@ namespace OpenAuth.App
                 if (item.office_addr == "东莞塘厦") officeaddr = "东莞新威";
                 if (item.office_addr == "深圳龙华") officeaddr = "新能源";
                 var orgObj = orgs.Where(o => o.Name == item.dep_alias).FirstOrDefault();
-                AddOrUpdate(new UpdateUserReq {Account= item.log_nm,Name=item.log_nm,Password="xinwei123",ServiceRelations= officeaddr, OrganizationIds= orgObj?.Id,NsapUserId=(int)item.user_id });
+                AddOrUpdate(new UpdateUserReq {Account= item.log_nm,Name=item.user_nm,Password="xinwei123",ServiceRelations= officeaddr, OrganizationIds= orgObj?.Id,NsapUserId=(int)item.user_id,IsSync=true });
             }
         }
     }
