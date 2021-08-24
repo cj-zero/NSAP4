@@ -43,14 +43,14 @@ namespace OpenAuth.WebApi.Controllers.Order {
 			var result = new TableData();
 			try {
 				bool rIsOpenSap = IsOpenSap == "1" ? true : false;
-				if (Operating == "add") {
-					result.Data = _serviceSaleOrderApp.SelectMaterialsInventoryData(ItemCode, SboId, rIsOpenSap, Operating);
-				} else {
-					if (!string.IsNullOrEmpty(ItemCode))
-						result.Data = _serviceSaleOrderApp.SelectMaterialsInventoryData(ItemCode, SboId, rIsOpenSap, Operating);
-					else
-						return null;
-				}
+				//if (Operating == "add") {
+				//	result.Data = _serviceSaleOrderApp.SelectMaterialsInventoryData(ItemCode, SboId, rIsOpenSap, Operating);
+				//} else {
+				//	if (!string.IsNullOrEmpty(ItemCode))
+				//		result.Data = _serviceSaleOrderApp.SelectMaterialsInventoryData(ItemCode, SboId, rIsOpenSap, Operating);
+				//	else
+				//		return null;
+				//}
 			} catch (Exception e) {
 				result.Code = 500;
 				result.Message = e.InnerException?.Message ?? e.Message;
