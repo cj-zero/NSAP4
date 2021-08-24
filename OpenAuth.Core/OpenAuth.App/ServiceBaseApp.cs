@@ -109,6 +109,19 @@ namespace OpenAuth.App
             DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
             return dataTable;
         }
+        /// <summary>
+        /// 获取自定义字段名
+        /// </summary>
+        public DataTable GetCustomFields(string TableName)
+        {
+            string strSql = string.Format("SELECT AliasID,Descr,FieldID,TableID,FieldID,EditSize,EditType FROM {0}.base_cufd", "nsap_bone");
+            if (!string.IsNullOrEmpty(TableName))
+            {
+                strSql += string.Format(" WHERE TableID='{0}'", TableName);
+            }
+            DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            return dataTable;
+        }
         #endregion
     }
 }

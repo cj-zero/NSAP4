@@ -63,7 +63,7 @@ namespace OpenAuth.Repository.Extensions
             {
                 conn.Close();
                 string msg = ex.Message;
-                throw ex;
+               // throw ex;
             }
             return dt;
         }
@@ -97,41 +97,44 @@ namespace OpenAuth.Repository.Extensions
                         // 属性与字段名称一致的进行赋值
                         if (pi.Name.Equals(p_Data.Columns[i].ColumnName, StringComparison.CurrentCultureIgnoreCase))
                         {
-                            // 数据库NULL值单独处理
-                            if (p_Data.Rows[j][i] != DBNull.Value)
+                            try
                             {
-                                if (pi.PropertyType.FullName == "System.Boolean")
+                                // 数据库NULL值单独处理
+                                if (p_Data.Rows[j][i] != DBNull.Value)
                                 {
-                                    var val = p_Data.Rows[j][i].ToString() == "1" ? true : false;
-                                    pi.SetValue(_t, val, null);
-                                }
-                                else if (pi.PropertyType == typeof(Int32))
-                                {
-                                    pi.SetValue(_t, Convert.ToInt32(p_Data.Rows[j][i]), null);
-                                }
-                                else if (pi.PropertyType == typeof(Int64))
-                                {
-                                    pi.SetValue(_t, Convert.ToInt64(p_Data.Rows[j][i]), null);
-                                }
-                                else if (pi.PropertyType == typeof(UInt32))
-                                {
-                                    pi.SetValue(_t, Convert.ToInt32(p_Data.Rows[j][i]), null);
-                                }
-                                else if (pi.PropertyType == typeof(UInt64))
-                                {
-                                    pi.SetValue(_t, Convert.ToInt64(p_Data.Rows[j][i]), null);
+                                    if (pi.PropertyType.FullName == "System.Boolean")
+                                    {
+                                        var val = p_Data.Rows[j][i].ToString() == "1" ? true : false;
+                                        pi.SetValue(_t, val, null);
+                                    }
+                                    else if (pi.PropertyType == typeof(Int32))
+                                    {
+                                        pi.SetValue(_t, Convert.ToInt32(p_Data.Rows[j][i]), null);
+                                    }
+                                    else if (pi.PropertyType == typeof(Int64))
+                                    {
+                                        pi.SetValue(_t, Convert.ToInt64(p_Data.Rows[j][i]), null);
+                                    }
+                                    else if (pi.PropertyType == typeof(decimal))
+                                    {
+                                        pi.SetValue(_t, Convert.ToDecimal(p_Data.Rows[j][i]), null);
+                                    }
+                                    else
+                                    {
+                                        pi.SetValue(_t, p_Data.Rows[j][i], null);
+                                    }
+
                                 }
                                 else
                                 {
-                                    pi.SetValue(_t, p_Data.Rows[j][i], null);
+                                    pi.SetValue(_t, null, null);
                                 }
 
                             }
-                            else
+                            catch (Exception ex)
                             {
-                                pi.SetValue(_t, null, null);
+                                string msg = ex.Message;
                             }
-
                             break;
                         }
                     }

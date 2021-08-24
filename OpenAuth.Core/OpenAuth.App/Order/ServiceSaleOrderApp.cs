@@ -598,40 +598,40 @@ namespace OpenAuth.App.Order
                     jobname = "销售报价单";
                     if (orderReq.Ations == OrderAtion.Draft)
                     {
-                        result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
+                        result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
                     }
                     else if (orderReq.Ations == OrderAtion.Submit)
                     {
-                        result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
-                        if (int.Parse(result) > 0)
-                        {
-                            var par = SaveJobPara(result, orderReq.IsTemplate);
-                            if (par)
-                            {
-                                string _jobID = result;
-                                if ("0" != WorkflowSubmit(int.Parse(result), userID, orderReq.Order.Remark, "", 0))
-                                {
-                                    #region 更新商城订单状态
-                                    WfaEshopStatus thisinfo = new WfaEshopStatus();
-                                    thisinfo.JobId = int.Parse(result);
-                                    thisinfo.UserId = userID;
-                                    thisinfo.SlpCode = sboID;
-                                    thisinfo.CardCode = orderReq.Order.CardCode;
-                                    thisinfo.CardName = orderReq.Order.CardName;
-                                    thisinfo.CurStatus = 0;
-                                    thisinfo.OrderPhase = "0000";
-                                    thisinfo.ShippingPhase = "0000";
-                                    thisinfo.CompletePhase = "0";
-                                    thisinfo.OrderLastDate = DateTime.Now;
-                                    thisinfo.FirstCreateDate = DateTime.Now;
-                                    //设置报价单提交
-                                    result = Eshop_OrderStatusFlow(thisinfo, int.Parse(orderReq.Order.U_New_ORDRID));
-                                    #endregion
-                                }
-                                else { result = "0"; }
-                            }
-                            else { result = "0"; }
-                        }
+                        result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
+                        //if (int.Parse(result) > 0)
+                        //{
+                        //    var par = SaveJobPara(result, orderReq.IsTemplate);
+                        //    if (par)
+                        //    {
+                        //        string _jobID = result;
+                        //        if ("0" != WorkflowSubmit(int.Parse(result), userID, orderReq.Order.Remark, "", 0))
+                        //        {
+                        //            #region 更新商城订单状态
+                        //            WfaEshopStatus thisinfo = new WfaEshopStatus();
+                        //            thisinfo.JobId = int.Parse(result);
+                        //            thisinfo.UserId = userID;
+                        //            thisinfo.SlpCode = sboID;
+                        //            thisinfo.CardCode = orderReq.Order.CardCode;
+                        //            thisinfo.CardName = orderReq.Order.CardName;
+                        //            thisinfo.CurStatus = 0;
+                        //            thisinfo.OrderPhase = "0000";
+                        //            thisinfo.ShippingPhase = "0000";
+                        //            thisinfo.CompletePhase = "0";
+                        //            thisinfo.OrderLastDate = DateTime.Now;
+                        //            thisinfo.FirstCreateDate = DateTime.Now;
+                        //            //设置报价单提交
+                        //            result = Eshop_OrderStatusFlow(thisinfo, int.Parse(orderReq.Order.U_New_ORDRID));
+                        //            #endregion
+                        //        }
+                        //        else { result = "0"; }
+                        //    }
+                        //    else { result = "0"; }
+                        //}
                     }
                     else if (orderReq.Ations == OrderAtion.Resubmit)
                     {
@@ -953,15 +953,15 @@ namespace OpenAuth.App.Order
             }
             StringBuilder tableName = new StringBuilder();
             StringBuilder filedName = new StringBuilder();
-            filedName.Append(" '',m.ItemCode,m.ItemName,IFNULL(c.high_price,0) AS high_price,IFNULL(c.low_price,0) AS low_price,w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,(w.OnHand-w.IsCommited+w.OnOrder) AS OnAvailable,");
+            filedName.Append("m.ItemCode,m.ItemName,IFNULL(c.high_price,0) AS high_price,IFNULL(c.low_price,0) AS low_price,w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,(w.OnHand-w.IsCommited+w.OnOrder) AS OnAvailable,");
             filedName.Append("(m.OnHand-m.IsCommited+m.OnOrder) AS Available,w.WhsCode,IFNULL(U_TDS,'0') AS U_TDS,IFNULL(U_DL,0) AS U_DL,");
-            filedName.Append("IFNULL(U_DY,0) AS U_DY,m.U_JGF,m.LastPurPrc,IFNULL(c.item_cfg_id,0),IFNULL(c.pic_path,m.PicturName),");
+            filedName.Append("IFNULL(U_DY,0) AS U_DY,m.U_JGF,m.LastPurPrc,IFNULL(c.item_cfg_id,0) item_cfg_id,IFNULL(c.pic_path,m.PicturName) pic_path,");
             filedName.Append("((CASE m.QryGroup1 WHEN 'N' then 0 else 0.5 END)");
             filedName.Append("+(CASE m.QryGroup2 WHEN 'N' then 0 else 3 END)");
-            filedName.Append("+(CASE m.QryGroup3 WHEN 'N' then 0 else 2 END)) AS QryGroup,c.item_desp,IFNULL(m.U_US,0),IFNULL(m.U_FS,0),m.QryGroup3,m.SVolume,m.SWeight1,");
+            filedName.Append("+(CASE m.QryGroup3 WHEN 'N' then 0 else 2 END)) AS QryGroup,c.item_desp,IFNULL(m.U_US,0) U_US,IFNULL(m.U_FS,0) U_FS,m.QryGroup3,m.SVolume,m.SWeight1,");
             filedName.Append("(CASE m.QryGroup1 WHEN 'N' THEN 0 ELSE '0.5' END) AS QryGroup1,");
             filedName.Append("(CASE m.QryGroup2 WHEN 'N' THEN 0 ELSE '3' END) AS QryGroup2,");
-            filedName.Append("(CASE m.QryGroup3 WHEN 'N' THEN 0 ELSE '2' END) AS _QryGroup3,m.U_JGF1,IFNULL(m.U_YFCB,'0'),m.MinLevel,m.PurPackUn,c.item_counts,m.buyunitmsr");
+            filedName.Append("(CASE m.QryGroup3 WHEN 'N' THEN 0 ELSE '2' END) AS _QryGroup3,m.U_JGF1,IFNULL(m.U_YFCB,'0') U_YFCB,m.MinLevel,m.PurPackUn,c.item_counts,m.buyunitmsr");
             tableName.AppendFormat(" {0}.store_oitm m", "nsap_bone");
             tableName.AppendFormat(" LEFT JOIN {0}.store_oitw w ON m.ItemCode = w.ItemCode AND m.sbo_id=w.sbo_id ", "nsap_bone");
             tableName.AppendFormat(" LEFT JOIN {0}.base_item_cfg c ON m.ItemCode = c.ItemCode AND type_id={1} ", "nsap_bone", query.TypeId);
@@ -1008,6 +1008,45 @@ namespace OpenAuth.App.Order
             }
             tableData.Data = dt.Tolist<SaleItemDto>();
             tableData.Count = Convert.ToInt32(paramOut.Value);
+            return tableData;
+        }
+        /// <summary>
+        /// 获取物料配置清单
+        /// </summary>
+        /// <param name="ItemCode"></param>
+        /// <param name="WhsCode"></param>
+        public TableData GetItemConfigList(string ItemCode, string WhsCode)
+        {
+            TableData tableData = new TableData();
+            if (!string.IsNullOrEmpty(ItemCode))
+            {
+                string sql = $@"SELECT a.ItemCode,a.item_name as ItemName,a.high_price,a.low_price,w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,
+                        (w.OnHand-w.IsCommited+w.OnOrder) AS OnAvailable,
+                        (m.OnHand-m.IsCommited+m.OnOrder) AS Available,
+                                                w.WhsCode,a.factor_1,a.factor_2,a.factor_3,
+                        IFNULL(U_TDS,0) AS U_TDS,
+                        IFNULL(U_DL,0) AS U_DL,
+                        IFNULL(U_DY,0) AS U_DY,m.U_JGF,
+                        IFNULL(m.LastPurPrc,0) LastPurPrc,
+                                                a.item_cfg_id,'' AS PicturName,b.type_id,
+                        ((IFNULL((CASE m.QryGroup1 WHEN 'N' THEN 0 ELSE '0.5' END),0))+(IFNULL((CASE m.QryGroup2 WHEN 'N' THEN 0 ELSE '3' END),0))+(IFNULL((CASE m.QryGroup3 WHEN 'N' THEN 0 ELSE '2' END),0))) AS QryGroup,
+                                                b.item_counts,0 AS IsTimes,
+                        IFNULL(m.U_US,0) U_US,
+                        IFNULL(m.U_FS,0) U_FS,m.QryGroup3,m.SVolume,m.SWeight1,
+                        (IFNULL((CASE m.QryGroup1 WHEN 'N' THEN 0 ELSE '0.5' END),0)) AS QryGroup1,
+                        (IFNULL((CASE m.QryGroup2 WHEN 'N' THEN 0 ELSE '3' END),0)) AS QryGroup2,
+                                                (IFNULL((CASE m.QryGroup3 WHEN 'N' THEN 0 ELSE '2' END),0)) AS _QryGroup3,
+                        IFNULL(m.U_JGF1,'0') U_JGF1,
+                        IFNULL(m.U_YFCB,'0') U_YFCB,
+                        m.MinLevel,m.PurPackUn,m.buyunitmsr 
+                        FROM nsap_bone.base_item_cfg_detail a  
+                        LEFT JOIN nsap_bone.base_item_cfg b ON a.item_cfg_id=b.item_cfg_id 
+                        LEFT JOIN nsap_bone.store_oitm m ON m.ItemCode=a.ItemCode AND m.sbo_id=1 
+                        LEFT JOIN nsap_bone.store_oitw w ON w.ItemCode=a.ItemCode AND w.WhsCode='{WhsCode}' AND m.sbo_id=w.sbo_id 
+                        WHERE a.item_cfg_id={ItemCode}";
+                DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
+                tableData.Data = dataTable.Tolist<SaleItemDto>();
+            }
             return tableData;
         }
         /// <summary>
@@ -1341,56 +1380,58 @@ namespace OpenAuth.App.Order
             int funcId = 50;
             billDelivery billDelivery = new billDelivery()
             {
-                OwnerCode = "1",//当前操作人COde
-                SboId = sboID.ToString(),
-                UserId = userID.ToString(),
-                Printed = "N",
-                LicTradNum = "0",
-                FuncId = funcId.ToString(),
-                DocStatus = "O",
-                CurSource = "",
-                billBaseType = "-1",
-                billBaseEntry = "-1",
                 Address = order.Address,
                 Address2 = order.Address2,
-                BeforeDiscSum = order.BeforeDiscSum,
-                CardCode = order.CardCode,
+                billBaseType = "-1",
+                billBaseEntry = "-1",
+                BeforeDiscSum = !string.IsNullOrEmpty(order.BeforeDiscSum) ? order.BeforeDiscSum : "0.0",
                 CardName = order.CardName,
-                CntctCode = order.CntctCode,
+                CardCode = !string.IsNullOrEmpty(order.CardCode) ? order.CardCode : "",
                 Comments = order.Comments,
-                CustomFields = $"U_ShipName≮1≯≮0≯U_SCBM≮1≯P3-陈友祥",
-                DiscPrcnt = order.DiscPrcnt,
-                GoodsToDay = order.GoodsToDay,
-                DiscSum = order.DiscSum,
+                CurSource = order.CurSource,//货币类型
+                CustomFields = order.CustomFields,//  $"U_ShipName≮1≯≮0≯U_SCBM≮1≯P3-陈友祥",
+                DiscPrcnt = !string.IsNullOrEmpty(order.DiscPrcnt.ToString()) ? order.DiscPrcnt.ToString() : "0.0",
+                //付款条件------------------------
+                GoodsToDay = !string.IsNullOrEmpty(order.GoodsToDay) ? order.GoodsToDay : "0",//货到付百分比
+                PrepaPro = !string.IsNullOrEmpty(order.PrepaPro) ? order.PrepaPro : "0.0",//预付百分比
+                PayBefShip = !string.IsNullOrEmpty(order.PayBefShip) ? order.PayBefShip : "0.0",//发货前付
+                GoodsToPro = !string.IsNullOrEmpty(order.GoodsToPro) ? order.GoodsToPro : "0.0",//货到付百分比
+                //------------------------------
+                DiscSum = !string.IsNullOrEmpty(order.DiscSum.ToString()) ? order.DiscSum.ToString() : "0",
                 DocCur = order.DocCur,
-                DocDate = order.DocDate,
-                DocDueDate = order.DocDueDate,
-                DocRate = order.DocRate,
-                DocTotal = order.DocTotal,
+                DocDate = order.DocDate.ToString(),
+                DocDueDate = order.DocDueDate.ToString(),
+                DocRate = order.DocRate.ToString(),
+                DocStatus = "O",
+                DocTotal = order.DocTotal.ToString(),
                 DocType = order.DocType,
                 GoodsToDate = order.GoodsToDate,
-                GoodsToPro = "0.00",
-                GroupNum = order.GroupNum,
+                FuncId = funcId.ToString(),
+                GroupNum = !string.IsNullOrEmpty(order.GroupNum.ToString()) ? order.GroupNum.ToString() : "0",
                 Indicator = order.Indicator,
+                LicTradNum = "0",//国税编号 许可的经销商号
                 NumAtCard = order.NumAtCard,
+                OwnerCode = order.OwnerCode.ToString(),//
                 PartSupply = order.PartSupply,
-                PayBefShip = order.PayBefShip,
                 PayToCode = order.PayToCode,
                 PeyMethod = order.PeyMethod,
                 PrepaData = order.PrepaData,
-                PrepaPro = order.PrepaPro,
+                Printed = "N",//未清
                 Remark = order.Remark,
+                SboId = sboID.ToString(),
                 ShipToCode = order.ShipToCode,
-                SlpCode = order.SlpCode,
+                SlpCode = order.SlpCode.ToString(),
                 U_YWY = order.U_YWY,
-                TaxDate = order.TaxDate,
-                TotalExpns = order.TotalExpns,
-                TrnspCode = order.TrnspCode,
+                TaxDate = order.TaxDate.ToString(),
+                TotalExpns = !string.IsNullOrEmpty(order.TotalExpns.ToString()) ? order.TotalExpns.ToString() : "0",
+                TrnspCode = !string.IsNullOrEmpty(order.TrnspCode.ToString()) ? order.TrnspCode.ToString() : "0",
                 U_FPLB = order.U_FPLB,
                 U_SL = order.U_SL,
+                UserId = userID.ToString(),
                 VatGroup = order.VatGroup,
-                VatSum = order.VatSum,
+                VatSum = !string.IsNullOrEmpty(order.VatSum.ToString()) ? order.VatSum.ToString() : "0",
                 WhsCode = order.WhsCode,
+                CntctCode = order.CntctCode.ToString(),
                 attachmentData = new List<billAttchment>(),
                 billSalesAcctCode = new List<billSalesAcctCode>(),
                 billSalesDetails = new List<billSalesDetails>(),
@@ -1403,42 +1444,225 @@ namespace OpenAuth.App.Order
             {
                 billSalesDetails billSalesDetail = new billSalesDetails()
                 {
-                    BaseEntry = item.BaseEntry,
-                    BaseLine = item.BaseLine,
-                    BaseRef = item.BaseRef,
-                    BaseType = item.BaseType,
-                    DiscPrcnt = item.DiscPrcnt,
-                    Dscription = item.Dscription,
-                    ItemCfgId = item.ItemCfgId,
-                    ItemCode = item.ItemCode,
-                    LineTotal = item.LineTotal,
-                    OnHand = item.OnHand,
-                    Price = item.Price,
-                    PriceAfVAT = item.PriceAfVAT,
-                    PriceBefDi = item.PriceBefDi,
-                    Quantity = item.Quantity,
-                    StockPrice = item.StockPrice,
-                    TargetType = item.TargetType,
-                    TotalFrgn = item.TotalFrgn,
-                    TrgetEntry = item.TrgetEntry,
-                    U_DL = item.U_DL,
-                    U_DY = item.U_DY,
-                    U_PDXX = item.U_PDXX,
-                    U_SCTCJE = item.U_SCTCJE,
-                    U_TDS = item.U_TDS,
-                    U_XSTCBL = item.U_XSTCBL,
-                    U_YF = item.U_YF,
-                    U_YFTCJE = item.U_YFTCJE,
+                    BaseEntry = item.BaseEntry,//基本凭证代码
+                    BaseLine = item.BaseLine,//基础行
+                    BaseRef = item.BaseRef,//基本凭证参考
+                    BaseType = item.BaseType,//基本凭证类型(-1,0,23，17，16，13，165,默认值为-1)
+                    DiscPrcnt = !string.IsNullOrEmpty(item.DiscPrcnt) ? item.DiscPrcnt : "0",// 每行折扣 %
+                    Dscription = item.Dscription,// 物料/服务描述
+                    ItemCfgId = !string.IsNullOrEmpty(item.ItemCfgId) ? item.ItemCfgId : "0",//物料配置Id
+                    ItemCode = item.ItemCode,//物料号
+                    LineTotal = !string.IsNullOrEmpty(item.LineTotal) ? item.LineTotal : "0",//行总计
+                    OnHand = !string.IsNullOrEmpty(item.OnHand) ? item.OnHand : "0",//库存量
+                    Price = !string.IsNullOrEmpty(item.Price) ? item.Price : "0",//价格
+                    PriceAfVAT = !string.IsNullOrEmpty(item.PriceAfVAT) ? item.PriceAfVAT : "0",//毛价
+                    PriceBefDi = !string.IsNullOrEmpty(item.PriceBefDi) ? item.PriceBefDi : "0",//折扣后价格
+                    Quantity = item.Quantity,//数量
+                    StockPrice = !string.IsNullOrEmpty(item.StockPrice) ? item.StockPrice : "0",//物料成本
+                    TargetType = item.TargetType,//目标凭证类型(-1,0,13,16,203,默认值为-1)
+                    TotalFrgn = !string.IsNullOrEmpty(item.TotalFrgn) ? item.TotalFrgn : "0",//以外币计的行总计
+                    TrgetEntry = item.TrgetEntry,// 目标凭证代码
+                    U_DL = !string.IsNullOrEmpty(item.U_DL) ? item.U_DL : "0",
+                    U_DY = !string.IsNullOrEmpty(item.U_DY) ? item.U_DY : "0",
+                    U_PDXX = item.U_PDXX,//配电选项
+                    U_SCTCJE = !string.IsNullOrEmpty(item.U_SCTCJE) ? item.U_SCTCJE : "0",//生产提成金额
+                    U_TDS = !string.IsNullOrEmpty(item.U_TDS) ? item.U_TDS : "0",
+                    U_XSTCBL = !string.IsNullOrEmpty(item.U_XSTCBL) ? item.U_XSTCBL : "0",//销售提成比例
+                    U_YF = !string.IsNullOrEmpty(item.U_YF) ? item.U_YF : "0",//运费
+                    U_YWF = "0",//业务费
+                    U_FWF = "0",//服务费
+                    VatGroup = "",//税定义
                     WhsCode = item.WhsCode,
+                    Lowest = "0",//每行税收百分比
+                    VatPrcnt = "",//配电选项
+                    ConfigLowest = "0",//配电选项
                     IsExistMo = item.IsExistMo,
+                    QryGroup1 = item.QryGroup1,
+                    QryGroup2 = item.QryGroup2,
+                    _QryGroup3 = item._QryGroup3,
+                    Weight = item.Weight,
+                    Volume = item.Volume,
+                    U_JGF = item.U_JGF,
+                    U_JGF1 = item.U_JGF1,
+                    U_YFCB = item.U_YFCB,
+                    QryGroup8 = item.QryGroup8,////3008n
+                    QryGroup9 = item.QryGroup9,//9系列
+                    QryGroup10 = item.QryGroup10,// ES系列
+                    U_YFTCJE = item.U_YFTCJE,//研发提成金额
                     U_SHJSDJ = item.U_SHJSDJ,
                     U_SHJSJ = item.U_SHJSJ,
                     U_SHTC = item.U_SHTC,
-                    U_ZS = item.U_ZS,
+                    U_ZS = item.U_ZS,//配置类型
                 };
                 billDelivery.billSalesDetails.Add(billSalesDetail);
             }
             return billDelivery;
         }
+
+        #region 订单详情
+        /// <summary>
+        /// 订单详情
+        /// </summary>
+        /// <param name="DocNum"></param>
+        /// <param name="ViewCustom"></param>
+        /// <param name="tablename"></param>
+        /// <param name="ViewSales"></param>
+        /// <param name="SboId"></param>
+        /// <param name="isSql"></param>
+        /// <returns></returns>
+        public OrderDraftInfo QuerySaleDeliveryDetails(string DocNum, bool ViewCustom, string tablename, bool ViewSales, int SboId, bool isSql)
+        {
+            DataTable orderDraftInfo = new DataTable();
+            DataTable dtConfig = _serviceBaseApp.GetSboNamePwd(SboId);
+            string dRowData = string.Empty;
+            string sqlconn = "";
+            string sboname = "";
+            string isOpen = "1";
+            if (dtConfig.Rows.Count > 0)
+            {
+                isOpen = dtConfig.Rows[0][6].ToString();
+                sqlconn = dtConfig.Rows[0][5].ToString();
+                sboname = dtConfig.Rows[0][0].ToString();
+            }
+            DataTable dt = _serviceBaseApp.GetCustomFields(tablename);
+            if (isSql && isOpen == "1")
+            {
+                if (tablename == "sale_ordr") { tablename = "ORDR"; }
+                if (tablename == "sale_odln") { tablename = "ODLN"; }
+                if (tablename == "sale_oqut") { tablename = "OQUT"; }
+                if (tablename == "sale_oinv") { tablename = "OINV"; }
+                if (tablename == "sale_orin") { tablename = "ORIN"; }
+                if (tablename == "sale_ordn") { tablename = "ORDN"; }
+                if (tablename == "buy_opqt") { tablename = "OPQT"; }
+                if (tablename == "buy_opor") { tablename = "OPOR"; }
+                if (tablename == "buy_opdn") { tablename = "OPDN"; }
+                if (tablename == "buy_opch") { tablename = "OPCH"; }
+                if (tablename == "buy_orpc") { tablename = "ORPC"; }
+                if (tablename == "buy_orpd") { tablename = "ORPD"; }
+                string CustomFields = "";
+                if (dt.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dt.Rows.Count; i++)
+                    {
+                        if (IsExist(tablename, dt.Rows[i][0].ToString()))
+                        {
+                            CustomFields += "," + dt.Rows[i][0].ToString();
+                        }
+                    }
+                }
+                if (string.IsNullOrEmpty(sboname)) { sboname = ""; } else { sboname = sboname + ".dbo."; }
+                int Custom = 0; if (ViewCustom) { Custom = 1; }
+                int Sales = 0; if (ViewSales) { Sales = 1; }
+                string U_FPLB = string.Empty;
+                if (IsExist(sboname + tablename, "U_FPLB"))
+                {
+                    U_FPLB = ",U_FPLB";
+                }
+                string U_YWY = string.Empty;
+                if (IsExist(sboname + tablename, "U_YWY"))
+                {
+                    U_YWY = ",U_YWY";
+                }
+                string U_New_ORDRID = string.Empty;
+                if (IsExist(sboname + tablename, "U_New_ORDRID"))
+                {
+                    U_New_ORDRID = ",U_New_ORDRID";
+                }
+                string U_EshopNo = string.Empty;
+                if (tablename.ToUpper() == "OQUT" || tablename.ToUpper() == "ORDR")
+                {
+                    U_EshopNo = ",U_EshopNo";
+                }
+                string strSql = string.Format("SELECT U_YGMD,CardCode,CASE WHEN 1 = " + Custom + " THEN CardName ELSE '******' END AS CardName,CASE WHEN 1 = " + Custom + " THEN CntctCode ELSE 0 END AS CntctCode,CASE WHEN 1 = " + Custom + " THEN NumAtCard ELSE '******' END AS NumAtCard,CASE WHEN 1 = " + Custom + " THEN DocCur ELSE '' END AS DocCur,CASE WHEN 1 = " + Custom + " THEN DocRate ELSE 0 END AS DocRate");
+                strSql += string.Format(",DocNum,DocType,CASE WHEN 1 = " + Sales + " THEN DiscSum ELSE 0 END AS DiscSum,CASE WHEN 1 = " + Sales + " THEN DiscPrcnt ELSE 0 END AS DiscPrcnt,CASE WHEN 1 = " + Sales + " THEN TotalExpns ELSE 0 END AS TotalExpns,CASE WHEN 1 = " + Sales + " THEN VatSum ELSE 0 END AS VatSum,CASE WHEN 1 = " + Sales + " THEN DocTotal ELSE 0 END AS DocTotal,DocDate,DocDueDate,TaxDate,SupplCode,ShipToCode,PayToCode,Address,Address2,Comments,SlpCode,TrnspCode,GroupNum,PeyMethod,VatPercent,LicTradNum,Indicator,PartSupply,ReqDate,CANCELED");
+                strSql += string.Format("" + CustomFields + "");
+                strSql += string.Format(",DpmPrcnt,Printed,DocStatus,OwnerCode{0},U_SL{1}{2}{3}", U_FPLB, U_YWY, U_New_ORDRID, U_EshopNo);
+                strSql += string.Format(",CASE WHEN 1 = " + Sales + " THEN DocTotalFC ELSE 0 END AS DocTotalFC,CASE WHEN 1 = " + Sales + " THEN DiscSumFC ELSE 0 END AS DiscSumFC");
+                strSql += string.Format(" FROM " + sboname + tablename + "");
+                strSql += string.Format(" WHERE DocEntry={0}", DocNum);
+                orderDraftInfo = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql, CommandType.Text, null);
+            }
+            else
+            {
+                string CustomFields = "";
+                if (dt.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dt.Rows.Count; i++)
+                    {
+                        if (IsExistMySql(tablename, dt.Rows[i][0].ToString()))
+                        {
+                            CustomFields += "," + dt.Rows[i][0].ToString();
+                        }
+                    }
+                }
+                string U_YWY = string.Empty;
+                if (IsExistMySql(tablename, "U_YWY"))
+                {
+                    U_YWY = ",U_YWY";
+                }
+                string U_New_ORDRID = string.Empty;
+                if (IsExistMySql(tablename, "U_New_ORDRID"))
+                {
+                    U_New_ORDRID = ",U_New_ORDRID";
+                }
+                string U_EshopNo = string.Empty;
+                if (tablename.ToLower() == "sale_oqut")
+                {
+                    U_EshopNo = ",U_EshopNo";
+                }
+                string strSql = string.Format("SELECT U_YGMD,CardCode,IF(" + ViewCustom + ",CardName,'******' ) AS CardName,IF(" + ViewCustom + ",CntctCode,0) AS CntctCode,IF(" + ViewCustom + ",NumAtCard,'******' ) AS NumAtCard,IF(" + ViewCustom + ",DocCur,'') AS DocCur,IF(" + ViewCustom + ",DocRate,0) AS DocRate");
+                strSql += string.Format(",DocNum,DocType,IF(" + ViewSales + ",DiscSum,0) AS DiscSum,IF(" + ViewSales + ",DiscPrcnt,0) AS DiscPrcnt,IF(" + ViewSales + ",TotalExpns,0) AS TotalExpns,IF(" + ViewSales + ",VatSum,0) AS VatSum,IF(" + ViewSales + ",DocTotal,0) AS DocTotal,DocDate,DocDueDate,TaxDate,SupplCode,ShipToCode,PayToCode,Address,Address2,Comments,BillDocType,SlpCode,TrnspCode,GroupNum,PeyMethod,VatPercent,LicTradNum,Indicator,PartSupply,ReqDate,CANCELED");
+                strSql += string.Format("" + CustomFields + "");
+                strSql += string.Format(",DpmPrcnt,Printed,DocStatus,OwnerCode,U_FPLB,U_SL{0}{1}{2}", U_YWY, U_New_ORDRID, U_EshopNo);
+                strSql += string.Format(" FROM {0}." + tablename + "", "nsap_bone");
+                strSql += string.Format($" WHERE DocNum={DocNum} AND sbo_id={0}", SboId);
+                orderDraftInfo = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            }
+            return orderDraftInfo.Tolist<OrderDraftInfo>().FirstOrDefault();
+        }
+        /// <summary>
+        /// SAP
+        /// </summary>
+        /// <param name="tablename"></param>
+        /// <param name="filename"></param>
+        /// <returns></returns>
+        public bool IsExist(string tablename, string filename)
+        {
+            bool result = false;
+            string strSql = string.Format("SELECT COUNT(*) FROM syscolumns WHERE id=object_id('{0}') AND name='{1}'", tablename, filename);
+            object obj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, strSql, CommandType.Text, null);
+            if (obj.ToString() == "0" || obj.ToString() == null)
+            { result = false; }
+            else { result = true; }
+            return result;
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tablename"></param>
+        /// <param name="filename"></param>
+        /// <returns></returns>
+        public bool IsExistMySql(string tablename, string filename)
+        {
+            bool result = false;
+            string strSql = string.Format("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='nsap_bone' AND table_name ='{0}' AND column_name='{1}'", tablename, filename);
+            object obj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            if (obj.ToString() == "0" || obj.ToString() == null)
+            { result = false; }
+            else { result = true; }
+            return result;
+        }
+        #endregion
+
+        #region 历史单据
+        /// <summary>
+        /// 历史单据
+        /// </summary>
+        public List<HistoricalOrder> GetHistoricalDoc(string TableName, int SboId, string CardCode)
+        {
+            string strSql = string.Format("SELECT DocEntry,DocTotal,DocDate FROM {0}." + TableName + " WHERE CardCode='{1}' AND sbo_id={2} ORDER BY DocEntry DESC LIMIT 5", "nsap_bone", CardCode, SboId);
+            return UnitWork.ExcuteSql<HistoricalOrder>(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+        }
+        #endregion 
     }
 }

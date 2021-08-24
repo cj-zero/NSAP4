@@ -24,7 +24,7 @@ namespace OpenAuth.App.Order.ModelDto
         /// <summary>
         /// 联系人
         /// </summary>
-        public string CntctCode { get; set; }
+        public int CntctCode { get; set; }
         /// <summary>
         /// 业务伙伴参考编号
         /// </summary>
@@ -36,11 +36,11 @@ namespace OpenAuth.App.Order.ModelDto
         /// <summary>
         /// 汇率
         /// </summary>
-        public string DocRate { get; set; }
+        public decimal DocRate { get; set; }
         /// <summary>
         /// 订单Id
         /// </summary>
-        public string DocNum { get; set; }
+        public int DocNum { get; set; }
         /// <summary>
         /// 单据类型
         /// </summary>
@@ -48,35 +48,35 @@ namespace OpenAuth.App.Order.ModelDto
         /// <summary>
         /// 总计折扣
         /// </summary>
-        public string DiscSum { get; set; }
+        public decimal DiscSum { get; set; }
         /// <summary>
         /// 折扣率
         /// </summary>
-        public string DiscPrcnt { get; set; }
+        public decimal DiscPrcnt { get; set; }
         /// <summary>
         /// 总计费用
         /// </summary>
-        public string TotalExpns { get; set; }
+        public decimal TotalExpns { get; set; }
         /// <summary>
         /// 税额总计
         /// </summary>
-        public string VatSum { get; set; }
+        public decimal VatSum { get; set; }
         /// <summary>
         /// 总价
         /// </summary>
-        public string DocTotal { get; set; }
+        public decimal DocTotal { get; set; }
         /// <summary>
         /// 单据日期（创建时间）
         /// </summary>
-        public string DocDate { get; set; }
+        public DateTime DocDate { get; set; }
         /// <summary>
-        /// 起息日
+        /// 货到付款日期
         /// </summary>
-        public string DocDueDate { get; set; }
+        public DateTime DocDueDate { get; set; }
         /// <summary>
-        /// 单据日期
+        ///  预付款日期
         /// </summary>
-        public string TaxDate { get; set; }
+        public DateTime TaxDate { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -101,15 +101,15 @@ namespace OpenAuth.App.Order.ModelDto
         /// <summary>
         /// 销售员
         /// </summary>
-        public string SlpCode { get; set; }
+        public int SlpCode { get; set; }
         /// <summary>
         /// 装运类型
         /// </summary>
-        public string TrnspCode { get; set; }
+        public int TrnspCode { get; set; }
         /// <summary>
         /// 付款条件
         /// </summary>
-        public string GroupNum { get; set; }
+        public int GroupNum { get; set; }
         /// <summary>
         /// 付款方式
         /// </summary>
@@ -117,7 +117,7 @@ namespace OpenAuth.App.Order.ModelDto
         /// <summary>
         /// 
         /// </summary>
-        public string VatPercent { get; set; }
+        public decimal VatPercent { get; set; }
         /// <summary>
         /// 国税编号
         /// </summary>
@@ -133,9 +133,9 @@ namespace OpenAuth.App.Order.ModelDto
         /// <summary>
         /// 
         /// </summary>
-        public string ReqDate { get; set; }
+        public DateTime ReqDate { get; set; }
         /// <summary>
-        /// 
+        /// 是否已取消
         /// </summary>
         public string CANCELED { get; set; }
         /// <summary>
@@ -149,9 +149,9 @@ namespace OpenAuth.App.Order.ModelDto
         /// <summary>
         /// 
         /// </summary>
-        public string DpmPrcnt { get; set; }
+        public decimal DpmPrcnt { get; set; }
         /// <summary>
-        /// 
+        /// 打印状态
         /// </summary>
         public string Printed { get; set; }
         /// <summary>
@@ -159,9 +159,9 @@ namespace OpenAuth.App.Order.ModelDto
         /// </summary>
         public string DocStatus { get; set; }
         /// <summary>
-        /// 所有者
+        /// 经理
         /// </summary>
-        public string OwnerCode { get; set; }
+        public int OwnerCode { get; set; }
         /// <summary>
         /// 发票
         /// </summary>
@@ -175,7 +175,7 @@ namespace OpenAuth.App.Order.ModelDto
         /// </summary>
         public string U_YWY { get; set; }
         /// <summary>
-        /// 
+        /// 拟取消订单
         /// </summary>
         public string U_New_ORDRID { get; set; }
         /// <summary>
@@ -183,13 +183,13 @@ namespace OpenAuth.App.Order.ModelDto
         /// </summary>
         public string U_EshopNo { get; set; }
         /// <summary>
-        /// 
+        /// 总计
         /// </summary>
-        public string DocTotalFC { get; set; }
+        public decimal DocTotalFC { get; set; }
         /// <summary>
-        /// 
+        /// 折扣前总计
         /// </summary>
-        public string DiscSumFC { get; set; }
+        public decimal DiscSumFC { get; set; }
     }
     /// <summary>
     /// 文件
@@ -242,58 +242,134 @@ namespace OpenAuth.App.Order.ModelDto
     /// <summary>
     /// 物料
     /// </summary>
-    public class OrderItem
+    public class OrderItemInfo
     {
+        /// <summary>
+        /// 物料编码
+        /// </summary>
+        public string ItemCode { get; set; }
         /// <summary>
         /// 物料描述
         /// </summary>
         public string Dscription { get; set; }
-        public string Quantity { get; set; }
-        public string PriceBefDi { get; set; }
-        public string DiscPrcnt { get; set; }
+        /// <summary>
+        /// 数量
+        /// </summary>
+        public int Quantity { get; set; }
+        /// <summary>
+        /// 单价
+        /// </summary>
+        public decimal PriceBefDi { get; set; }
+        /// <summary>
+        /// 折扣
+        /// </summary>
+        public decimal DiscPrcnt { get; set; }
+        /// <summary>
+        /// 配电选项
+        /// </summary>
         public string U_PDXX { get; set; }
-        public string U_XSTCBL { get; set; }
-        public string U_YWF { get; set; }
-        public string U_FWF { get; set; }
-        public string Price { get; set; }
+        /// <summary>
+        /// 销售提成
+        /// </summary>
+        public decimal U_XSTCBL { get; set; }
+        /// <summary>
+        /// 差旅费
+        /// </summary>
+        public decimal U_YWF { get; set; }
+        /// <summary>
+        /// 服务费
+        /// </summary>
+        public decimal U_FWF { get; set; }
+        /// <summary>
+        /// 折扣后价格
+        /// </summary>
+        public decimal Price { get; set; }
+        /// <summary>
+        /// 税码
+        /// </summary>
         public string VatGroup { get; set; }
-        public string PriceAfVAT { get; set; }
-        public string LineTotal { get; set; }
-        public string TotalFrgn { get; set; }
-        public string U_SCTCBL { get; set; }
-        public string StockPrice { get; set; }
-        public string U_YF { get; set; }
+        /// <summary>
+        /// 毛价
+        /// </summary>
+        public decimal PriceAfVAT { get; set; }
+        /// <summary>
+        /// 行总价
+        /// </summary>
+        public decimal LineTotal { get; set; }
+        /// <summary>
+        /// 总计(外币)
+        /// </summary>
+        public decimal TotalFrgn { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal U_SCTCBL { get; set; }
+        /// <summary>
+        /// 物料成本
+        /// </summary>
+        public decimal StockPrice { get; set; }
+        /// <summary>
+        /// 运费
+        /// </summary>
+        public decimal U_YF { get; set; }
+        /// <summary>
+        /// 仓库
+        /// </summary>
         public string WhsCode { get; set; }
-        public string OnHand { get; set; }
-        public string VatPrcnt { get; set; }
-        public string LineNum { get; set; }
-        public string U_YFTCBL { get; set; }
-        public string IsCommited { get; set; }
-        public string OnOrder { get; set; }
-        public string U_TDS { get; set; }
-        public string U_DL { get; set; }
-        public string U_DY { get; set; }
-        public string DocEntry { get; set; }
-        public string OpenQty { get; set; }
-        public string U_JGF { get; set; }
-        public string QryGroup1 { get; set; }
-        public string QryGroup2 { get; set; }
-        public string QryGroup3 { get; set; }
-        public string U_YFCB { get; set; }
-        public string U_SHJSDJ { get; set; }
-        public string U_SHJSJ { get; set; }
-        public string U_SHTC { get; set; }
-        public string SumQuantity { get; set; }
-        public string QryGroup8 { get; set; }
-        public string QryGroup9 { get; set; }
-        public string QryGroup10 { get; set; }
+        /// <summary>
+        ///  当前库存量
+        /// </summary>
+        public decimal OnHand { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal VatPrcnt { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public int LineNum { get; set; }
+        public decimal U_YFTCBL { get; set; }
+        public decimal IsCommited { get; set; }
+        public decimal OnOrder { get; set; }
+        public int U_TDS { get; set; }
+        public int U_DL { get; set; }
+        public int U_DY { get; set; }
+        public int DocEntry { get; set; }
+        public decimal OpenQty { get; set; }
+        public decimal U_JGF { get; set; }
+        public int QryGroup1 { get; set; }
+        public int QryGroup2 { get; set; }
+        public int QryGroup3 { get; set; }
+        public decimal U_YFCB { get; set; }
+        public decimal U_SHJSDJ { get; set; }
+        public decimal U_SHJSJ { get; set; }
+        public decimal U_SHTC { get; set; }
+        /// <summary>
+        /// 出货数量
+        /// </summary>
+        public decimal SumQuantity { get; set; }
+        public int QryGroup8 { get; set; }
+        public int QryGroup9 { get; set; }
+        public int QryGroup10 { get; set; }
         public string buyunitmsr { get; set; }
+        /// <summary>
+        /// 配置类型
+        /// </summary>
         public string U_ZS { get; set; }
+        /// <summary>
+        /// 关联评审单
+        /// </summary>
         public string U_RelDoc { get; set; }
+        /// <summary>
+        /// 状态
+        /// </summary>
         public string LineStatus { get; set; }
+        /// <summary>
+        ///  物料编码
+        /// </summary>
         public string BaseEntry { get; set; }
         public string BaseLine { get; set; }
-        public string BaseType { get; set; }
+        public int BaseType { get; set; }
 
     }
 }

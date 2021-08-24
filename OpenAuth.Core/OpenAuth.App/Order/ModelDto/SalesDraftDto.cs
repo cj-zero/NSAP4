@@ -175,6 +175,91 @@ namespace OpenAuth.App.Order
         /// 配置描述:为空显示为非标配物料
         /// </summary>
         public string Item_Desp { get; set; }
+        /// <summary>
+        ///仓库
+        /// </summary>
+        public string WhsCode { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string U_TDS { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string U_DL { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string U_DY { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal U_JGF { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal LastPurPrc { get; set; }
+        /// <summary>
+        /// 物料配置
+        /// </summary>
+        public int item_cfg_id { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public double QryGroup { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public double QryGroup2 { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string QryGroup3 { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public double QryGroup1 { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public int U_US { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal U_FS { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal SVolume { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal SWeight1 { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal U_JGF1 { get; set; }
+        /// <summary>
+        /// 运费成本
+        /// </summary>
+        public decimal U_YFCB { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal MinLevel { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal PurPackUn { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public decimal item_counts { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string buyunitmsr { get; set; }
+
     }
     /// <summary>
     /// 
