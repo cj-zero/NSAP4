@@ -2221,9 +2221,14 @@ namespace OpenAuth.App.Material
             {
                 throw new Exception("请核对是否存在未填写字段");
             }
-            var nsapUserId = await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginUser.Id)).Select(n => n.NsapUserId).FirstOrDefaultAsync();
+
             //判定人员是否有销售员code
-            var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginUser.Id)).FirstOrDefaultAsync())?.NsapUserId;
+            var createUserId = loginUser.Id;
+            if (!string.IsNullOrWhiteSpace(obj.CreateUserId)) 
+            {
+                createUserId = obj.CreateUserId;
+            }
+            var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(createUserId)).FirstOrDefaultAsync())?.NsapUserId;
             var slpCode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
 
             if (slpCode == null || slpCode == 0)

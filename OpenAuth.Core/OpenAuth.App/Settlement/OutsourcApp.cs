@@ -688,6 +688,7 @@ namespace OpenAuth.App
                     });
                     await UnitWork.BatchAddAsync<OutsourcExpenseOrg>(outsourcExpenseOrgs.ToArray());
                     var Address=(await _quotationApp.CardAddress(outsourcObj.OutsourcExpenses.Select(o => o.TerminalCustomerId).ToList())).FirstOrDefault();
+                    req.Money = string.IsNullOrWhiteSpace(req.Money)?"0":req.Money;
                     var quotationId = await _quotationApp.Add(new AddOrUpdateQuotationReq
                     {
                         IsOutsourc = true,

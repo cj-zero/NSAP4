@@ -185,7 +185,10 @@ namespace OpenAuth.App.Workbench
                     FileType = fileList.Where(f => f.Id.Equals(q.PictureId)).FirstOrDefault()?.FileType
                 }).ToList()
             };
-            quotationDetails.FlowPathResp = await _flowInstanceApp.FlowPathRespList(quotationDetails.QuotationOperationHistorys, quotationObj.FlowInstanceId);
+            if (!string.IsNullOrWhiteSpace(quotationObj.FlowInstanceId)) 
+            {
+                quotationDetails.FlowPathResp = await _flowInstanceApp.FlowPathRespList(quotationDetails.QuotationOperationHistorys, quotationObj.FlowInstanceId);
+            }
             return quotationDetails;
         }
         /// <summary>
