@@ -52,11 +52,11 @@ namespace OpenAuth.App.Order.Request
         /// <summary>
         /// 过帐时间，由程序更新。
         /// </summary>
-        public string DocDate { get; set; }
+        public DateTime DocDate { get; set; }
         /// <summary>
         /// 起息日
         /// </summary>
-        public string DocDueDate { get; set; }
+        public DateTime DocDueDate { get; set; }
         /// <summary>
         /// 客户/供应商代码
         /// </summary>
@@ -76,19 +76,19 @@ namespace OpenAuth.App.Order.Request
         /// <summary>
         /// 税额总计
         /// </summary>
-        public string VatSum { get; set; }
+        public decimal VatSum { get; set; }
         /// <summary>
         /// 凭证折扣率
         /// </summary>
-        public string DiscPrcnt { get; set; }
+        public decimal DiscPrcnt { get; set; }
         /// <summary>
         /// 总计折扣
         /// </summary>
-        public string DiscSum { get; set; }
+        public decimal DiscSum { get; set; }
         /// <summary>
         /// 总计折扣外币
         /// </summary>
-        public string DiscSumFC { get; set; }
+        public decimal DiscSumFC { get; set; }
         /// <summary>
         /// 凭证货币
         /// </summary>
@@ -96,15 +96,15 @@ namespace OpenAuth.App.Order.Request
         /// <summary>
         /// 凭证汇率
         /// </summary>
-        public string DocRate { get; set; }
+        public decimal DocRate { get; set; }
         /// <summary>
         /// 凭证总计
         /// </summary>
-        public string DocTotal { get; set; }
+        public decimal DocTotal { get; set; }
         /// <summary>
         /// 凭证总计外币
         /// </summary>
-        public string DocTotalFC { get; set; }
+        public decimal DocTotalFC { get; set; }
         /// <summary>
         /// 备注
         /// </summary>
@@ -116,15 +116,15 @@ namespace OpenAuth.App.Order.Request
         /// <summary>
         /// 付款条款代码
         /// </summary>
-        public string GroupNum { get; set; }
+        public int GroupNum { get; set; }
         /// <summary>
         /// 销售代表
         /// </summary>
-        public string SlpCode { get; set; }
+        public int SlpCode { get; set; }
         /// <summary>
         /// 交货方法
         /// </summary>
-        public string TrnspCode { get; set; }
+        public int TrnspCode { get; set; }
         /// <summary>
         /// 部分交货（Y代表Yes,N代表No,默认值为Y）
         /// </summary>
@@ -140,11 +140,11 @@ namespace OpenAuth.App.Order.Request
         /// <summary>
         /// 单据日期
         /// </summary>
-        public string TaxDate { get; set; }
+        public DateTime TaxDate { get; set; }
         /// <summary>
         /// 总计费用(运费)
         /// </summary>
-        public string TotalExpns { get; set; }
+        public decimal TotalExpns { get; set; }
         /// <summary>
         /// 标识
         /// </summary>
@@ -165,6 +165,10 @@ namespace OpenAuth.App.Order.Request
         /// 业务伙伴参考编号    
         /// </summary>
         public string NumAtCard { get; set; }
+        /// <summary>
+        /// 经理
+        /// </summary>
+        public int OwnerCode { get; set; }
         /// <summary>
         /// 折扣前总计
         /// </summary>

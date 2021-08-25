@@ -232,7 +232,11 @@ namespace OpenAuth.WebApi
             app.UseCors(builder => builder.AllowAnyOrigin()
                 .AllowAnyMethod()
                 .AllowAnyHeader());
-
+            app.UseStaticFiles();
+            app.UseStaticFiles(
+                new StaticFileOptions {
+                    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "Templates")), RequestPath = "/Templates"
+                });
             app.UseRouting();
             app.UseAuthentication();
 

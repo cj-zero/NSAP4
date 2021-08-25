@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
+using System.Text;
 
 namespace Infrastructure.Helpers
 {
@@ -70,6 +72,64 @@ namespace Infrastructure.Helpers
                 }
             }
             return resStr;
+        }
+        public static string FirstRowToJSON(this DataTable dTable) {
+            return DataRowByIndexToJSON(dTable, 0);
+        }
+        public static string DataRowByIndexToJSON(this DataTable dTable, int index) {
+            StringBuilder sBuilder = new StringBuilder();
+            if (dTable.Rows.Count == 0) return "{}";
+
+            sBuilder.Append("{");
+            for (int i = 0; i < dTable.Columns.Count; i++) {
+                sBuilder.Append("\"");
+                sBuilder.Append(dTable.Columns[i].ColumnName.ToString().FilterString());
+                sBuilder.Append("\":\"");
+                sBuilder.Append(dTable.Rows[index][i].ToString().FilterString());
+                sBuilder.Append("\",");
+            }
+            sBuilder.Remove(sBuilder.Length - 1, 1);
+            sBuilder.Append("}");
+
+            return sBuilder.ToString();
+        }
+        public static string DataTableToJSON(this DataTable dTable) {
+            StringBuilder sBuilder = new StringBuilder();
+            if (dTable.Rows.Count == 0) return "[]";
+            sBuilder.Append("[");
+            for (int i = 0; i < dTable.Rows.Count; i++) {
+                sBuilder.Append("{");
+                for (int j = 0; j < dTable.Columns.Count; j++) {
+                    sBuilder.Append("\"");
+                    sBuilder.Append(dTable.Columns[j].ColumnName);
+                    sBuilder.Append("\":\"");
+                    sBuilder.Append(dTable.Rows[i][j].ToString().FilterString());
+                    sBuilder.Append("\",");
+                }
+                sBuilder.Remove(sBuilder.Length - 1, 1);
+                sBuilder.Append("},");
+            }
+            sBuilder.Remove(sBuilder.Length - 1, 1);
+            sBuilder.Append("]");
+            return sBuilder.ToString();
+        }
+        public static string FelxgridDataToJSON(this DataTable dTable, string page, string total) {
+            if (dTable.Rows.Count == 0) return "{page:1,total:0,rows:[]}";
+            StringBuilder sBuilder = new StringBuilder("{");
+            sBuilder.AppendFormat("page:{0},total:{1},", page, total);
+            sBuilder.Append("rows:[");
+            for (int i = 0; i < dTable.Rows.Count; i++) {
+                sBuilder.Append("{");
+                sBuilder.AppendFormat("id:\"{0}\",cell:[", dTable.Rows[i][0].ToString().FilterString());
+                for (int j = 0; j < dTable.Columns.Count; j++)
+                    sBuilder.AppendFormat("\"{0}\",", dTable.Rows[i][j].ToString().FilterString());
+                sBuilder.Remove(sBuilder.Length - 1, 1);
+                sBuilder.Append("]");
+                sBuilder.Append("},");
+            }
+            sBuilder.Remove(sBuilder.Length - 1, 1);
+            sBuilder.Append("]}");
+            return sBuilder.ToString();
         }
     }
 }
