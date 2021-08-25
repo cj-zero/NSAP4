@@ -2438,7 +2438,11 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             //获取当前登陆者的nsapId
-            var nsapUserId = (await UnitWork.Find<AppUserMap>(u => u.AppUserId == req.CurrentUserId).FirstOrDefaultAsync()).UserID;
+            var nsapUserId = (await UnitWork.Find<AppUserMap>(u => u.AppUserId == req.CurrentUserId).FirstOrDefaultAsync())?.UserID;
+            if (nsapUserId == null) 
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
             var queryService = from a in UnitWork.Find<ServiceWorkOrder>(null)
                                join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id
                                select new { a, b };
