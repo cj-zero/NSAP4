@@ -157,22 +157,27 @@ namespace OpenAuth.App.Material
             {
                 warrantyDates.ForEach(w => 
                 {
-                    if (w.WarrantyPeriod < model.Where(m => m.MnfSerial.Equals(w.MnfSerial)).FirstOrDefault().WarrantyPeriod) 
+                    if (w.WarrantyPeriod < model.Where(m => m.MnfSerial.Equals(w.MnfSerial)).FirstOrDefault().WarrantyPeriod)
                     {
-                        var modelObj= model.Where(m => m.MnfSerial.Equals(w.MnfSerial)).FirstOrDefault();
-                        UnitWork.Update<SalesOrderWarrantyDate>(s=>s.Id==w.Id,s=>new SalesOrderWarrantyDate { 
-                            CustomerId= modelObj.CustomerId,
-                            CreateTime= modelObj.CreateTime,
-                            CustomerName= modelObj.CustomerName,
-                            SlpCode= modelObj.SlpCode,
-                            SalesOrderId= modelObj.SalesOrderId,
-                            SalesOrderName= modelObj.SalesOrderName,
-                            DeliveryDate= modelObj.DeliveryDate,
-                            MnfSerial= modelObj.MnfSerial,
-                            IsPass= modelObj.IsPass,
-                            WarrantyPeriod= modelObj.WarrantyPeriod,
-                            Remark= modelObj.Remark
+                        var modelObj = model.Where(m => m.MnfSerial.Equals(w.MnfSerial)).FirstOrDefault();
+                        UnitWork.Update<SalesOrderWarrantyDate>(s => s.Id == w.Id, s => new SalesOrderWarrantyDate
+                        {
+                            CustomerId = modelObj.CustomerId,
+                            CreateTime = modelObj.CreateTime,
+                            CustomerName = modelObj.CustomerName,
+                            SlpCode = modelObj.SlpCode,
+                            SalesOrderId = modelObj.SalesOrderId,
+                            SalesOrderName = modelObj.SalesOrderName,
+                            DeliveryDate = modelObj.DeliveryDate,
+                            MnfSerial = modelObj.MnfSerial,
+                            IsPass = modelObj.IsPass,
+                            WarrantyPeriod = modelObj.WarrantyPeriod,
+                            Remark = modelObj.Remark
                         });
+                        mnfSerials.Add(w.MnfSerial);
+                    }
+                    else 
+                    {
                         mnfSerials.Add(w.MnfSerial);
                     }
                 });

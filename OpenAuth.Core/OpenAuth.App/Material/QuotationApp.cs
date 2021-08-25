@@ -39,7 +39,6 @@ namespace OpenAuth.App.Material
 
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
         public readonly WorkbenchApp _workbenchApp;
-
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
 
         private ICapPublisher _capBus;
@@ -265,12 +264,12 @@ namespace OpenAuth.App.Material
 
             var file = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
             ServiceOrderids = QuotationDate.Select(q => q.ServiceOrderId).ToList();
-            var ServiceOrders = await UnitWork.Find<ServiceOrder>(null).Where(q => ServiceOrderids.Contains(q.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.CustomerId }).ToListAsync();
+            var ServiceOrders = await UnitWork.Find<ServiceOrder>(null).Where(q => ServiceOrderids.Contains(q.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.CustomerId,s.SalesMan }).ToListAsync();
             var query = from a in QuotationDate
                         join b in ServiceOrders on a.ServiceOrderId equals b.Id
                         select new { a, b };
             var terminalCustomerIds = query.Select(q => q.b.TerminalCustomerId).ToList();
-            var ocrds = await UnitWork.Find<crm_ocrd>(o => terminalCustomerIds.Contains(o.CardCode)).ToListAsync();
+            var ocrds = await UnitWork.Find<OCRD>(o => terminalCustomerIds.Contains(o.CardCode)).ToListAsync();
            
             result.Data = query.Select(q => new
             {
@@ -292,6 +291,7 @@ namespace OpenAuth.App.Material
                 q.a.IsProtected,
                 q.a.PrintWarehouse,
                 q.a.CancelRequest,
+                q.b.SalesMan,
                 Balance = ocrds.Where(o => o.CardCode.Equals(q.b.TerminalCustomerId)).FirstOrDefault()?.Balance,
                 files = q.a.QuotationPictures.Select(p => new
                 {
@@ -2133,6 +2133,8 @@ namespace OpenAuth.App.Material
                 MaterialCode.AddRange(item.QuotationMaterials.Select(q => q.MaterialCode).ToList());
                 QuotationMaterialReps.AddRange(item.QuotationMaterials.ToList());
             }
+
+            QuotationMaterialReps.Where(q => q.NewMaterialCode == true).ForEach(q => { if (q.QuotationMaterialPictures == null || q.QuotationMaterialPictures.Count() <= 0 || string.IsNullOrWhiteSpace(q.Remark)) { throw new Exception("新增物料，必须上传内部联络单和填写备注。"); } });
             var Quotations = await UnitWork.Find<Quotation>(q => q.Status > 3 && q.Status < 6).Include(q => q.QuotationMergeMaterials).Where(q => q.QuotationMergeMaterials.Any(m => MaterialCode.Contains(m.MaterialCode))).ToListAsync();
 
             if (Quotations != null && Quotations.Count > 0)
