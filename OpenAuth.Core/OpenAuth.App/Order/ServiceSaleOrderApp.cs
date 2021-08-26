@@ -498,225 +498,246 @@ namespace OpenAuth.App.Order
                     var typeObj = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT a.type_id value FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.func_id=b.func_id LEFT JOIN nsap_base.base_page c ON c.page_id=b.page_id WHERE c.page_url='{"sales/SalesQuotation.aspx"}'", CommandType.Text, null).FirstOrDefault();
                     string fileType = typeObj == null ? "-1" : typeObj.Value.ToString();
 
-					string strSql2 = string.Format("SELECT 1 value FROM nsap_oa.file_main AS T0 ");
-					strSql2 += string.Format("LEFT JOIN nsap_oa.file_type AS T1 ON T0.file_type_id = T1.type_id ");
-					strSql2 += string.Format("WHERE T0.file_type_id = {0} AND T0.docEntry = {1} limit 1", int.Parse(fileType), int.Parse(temprow["DocEntry"].ToString()));
-					ResultOrderDto fileflag = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, strSql2, CommandType.Text, null).FirstOrDefault();
-					temprow["AttachFlag"] = fileflag == null ? "0" : fileflag.Value.ToString();
-				}
-			}
-			tableData.Data = dt.Tolist<SalesDraftDto>();
-			return tableData;
-		}
-		/// <summary>
-		/// 业务伙伴获取
-		/// </summary>
-		/// <param name="query"></param>
-		/// <param name="filterQuery"></param>
-		/// <param name="sqlcont"></param>
-		/// <param name="sboname"></param>
-		/// <returns></returns>
-		public TableData SelectCardCodeInfo(CardCodeRequest query, string sortSt, string filterQuery, string sboname) {
-			TableData tableData = new TableData();
-			StringBuilder filefName = new StringBuilder();
-			StringBuilder tableName = new StringBuilder();
-			if (string.IsNullOrEmpty(sboname)) {
-				sboname = "";
-			} else {
-				sboname = sboname + ".dbo.";
-			}
-			string U_FPLB = string.Empty;
-			var syscolumn = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.SapDbContextType, $@"SELECT COUNT(*) value FROM syscolumns WHERE id=object_id('OCRD') AND name='U_FPLB'", CommandType.Text, null).FirstOrDefault();
-			if (syscolumn != null && syscolumn.Value.ToString() != "0") {
-				U_FPLB = ",a.U_FPLB";
-			}
-			filefName.AppendFormat(" a.CardCode,a.CardName,a.CntctPrsn,b.SlpName,a.Currency,a.Balance,(ISNULL(ZipCode,'')+ISNULL(c.Name,'')+ISNULL(d.Name,'')+ISNULL(City,'')+ISNULL(CONVERT(VARCHAR(100),Building),'''')) AS Address,(ISNULL(MailZipCod,'')+ISNULL(e.Name,'')+ISNULL(f.Name,'')+ISNULL(MailCity,'')+ISNULL(CONVERT(VARCHAR(100),MailBuildi),'''')) AS Address2{0},a.SlpCode", U_FPLB);
-			tableName.AppendFormat(" " + sboname + "OCRD a");
-			tableName.AppendFormat(" LEFT JOIN " + sboname + "OSLP b ON a.SlpCode=b.SlpCode");
-			tableName.AppendFormat(" LEFT JOIN " + sboname + "OCRY c ON a.Country=c.Code");
-			tableName.AppendFormat(" LEFT JOIN " + sboname + "OCST d ON a.State1=c.Code");
-			tableName.AppendFormat(" LEFT JOIN " + sboname + "OCRY e ON a.MailCountr=e.Code");
-			tableName.AppendFormat(" LEFT JOIN " + sboname + "OCST f ON a.State1=f.Code");
-			List<SqlParameter> sqlParameters = new List<SqlParameter>()
-			{
-				new SqlParameter("@strFrom",tableName.ToString()),
-				new SqlParameter("@strSelect",filefName.ToString()),
-				new SqlParameter("@pageSize",query.limit),
-				new SqlParameter("@pageIndex",query.page),
-				new SqlParameter("@strOrder",sortSt),
-				new SqlParameter("@strWhere",filterQuery),
-			};
-			SqlParameter isStats = new SqlParameter("@isStats", SqlDbType.Int);
-			isStats.Value = 1;
-			sqlParameters.Add(isStats);
-			SqlParameter paramOut = new SqlParameter("@rowCount", SqlDbType.Int);
-			paramOut.Value = 0;
-			paramOut.Direction = ParameterDirection.Output;
-			sqlParameters.Add(paramOut);
-			DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, $"sp_common_pager", CommandType.StoredProcedure, sqlParameters);
-			tableData.Data = dt.Tolist<CardCodeDto>();
-			tableData.Count = Convert.ToInt32(paramOut.Value);
-			return tableData;
-		}
-		/// <summary>
-		/// 获取业务员信息
-		/// </summary>
-		/// <param name="sboId"></param>
-		/// <returns></returns>
-		public List<SelectOption> GetSalesSelect(int sboId) {
-			var loginContext = _auth.GetCurrentUser();
-			//业务员Id
-			var selectOption = UnitWork.Find<crm_oslp>(s => s.sbo_id == sboId).Select(zw => new SelectOption { Key = zw.SlpCode.ToString(), Option = zw.SlpName }).ToList();
-			return selectOption;
-		}
-		/// <summary>
-		/// 销售报价单保存
-		/// </summary>
-		/// <param name="orderReq"></param>
-		/// <returns></returns>
-		public string Save(AddOrderReq orderReq) {
-			int userID = _serviceBaseApp.GetUserNaspId();
-			int sboID = _serviceBaseApp.GetUserNaspSboID(userID);
-			int funcId = 50;
-			string logstring = "";
-			string jobname = "";
-			string result = "";
-			try {
-				billDelivery billDelivery = BulidBillDelivery(orderReq.Order);
-				if (orderReq.IsCopy) {
-					funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesOrder.aspx", userID);
-					logstring = "根据销售报价单下销售订单";
-					jobname = "销售订单";
-					SalesOrderSave_ORDR(orderReq);
-				} else {
-					funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesQuotation.aspx", userID);
-					byte[] job_data = ByteExtension.ToSerialize(billDelivery);
-					string className = "NSAP.B1Api.BOneOQUT";
-					logstring = "新建销售报价单";
-					jobname = "销售报价单";
-					if (orderReq.Ations == OrderAtion.Draft) {
-						result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
-					} else if (orderReq.Ations == OrderAtion.Submit) {
-						result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
-						//if (int.Parse(result) > 0)
-						//{
-						//    var par = SaveJobPara(result, orderReq.IsTemplate);
-						//    if (par)
-						//    {
-						//        string _jobID = result;
-						//        if ("0" != WorkflowSubmit(int.Parse(result), userID, orderReq.Order.Remark, "", 0))
-						//        {
-						//            #region 更新商城订单状态
-						//            WfaEshopStatus thisinfo = new WfaEshopStatus();
-						//            thisinfo.JobId = int.Parse(result);
-						//            thisinfo.UserId = userID;
-						//            thisinfo.SlpCode = sboID;
-						//            thisinfo.CardCode = orderReq.Order.CardCode;
-						//            thisinfo.CardName = orderReq.Order.CardName;
-						//            thisinfo.CurStatus = 0;
-						//            thisinfo.OrderPhase = "0000";
-						//            thisinfo.ShippingPhase = "0000";
-						//            thisinfo.CompletePhase = "0";
-						//            thisinfo.OrderLastDate = DateTime.Now;
-						//            thisinfo.FirstCreateDate = DateTime.Now;
-						//            //设置报价单提交
-						//            result = Eshop_OrderStatusFlow(thisinfo, int.Parse(orderReq.Order.U_New_ORDRID));
-						//            #endregion
-						//        }
-						//        else { result = "0"; }
-						//    }
-						//    else { result = "0"; }
-						//}
-					} else if (orderReq.Ations == OrderAtion.Resubmit) {
-						result = WorkflowSubmit(orderReq.JobId, userID, orderReq.Order.Remark, "", 0);
-					}
-				}
-			} catch (Exception ex) {
-				string msg = ex.Message;
-			}
-			string log = string.Format("{1}：{0}", result, logstring);
-			AddUserOperateLog(log);
-			return result;
-		}
-		/// <summary>
-		/// 草稿
-		/// </summary>
-		/// <param name="jobName"></param>
-		/// <param name="funcID"></param>
-		/// <param name="userID"></param>
-		/// <param name="jobdata"></param>
-		/// <param name="remarks"></param>
-		/// <param name="sboID"></param>
-		/// <param name="carCode"></param>
-		/// <param name="carName"></param>
-		/// <param name="docTotal"></param>
-		/// <param name="baseType"></param>
-		/// <param name="baseEntry"></param>
-		/// <param name="assemblyName"></param>
-		/// <param name="className"></param>
-		/// <returns></returns>
-		private string OrderWorkflowBuild(string jobName, int funcID, int userID, byte[] jobdata, string remarks, int sboID, string carCode, string carName, double docTotal, int baseType, int baseEntry, string assemblyName, string className) {
-			string code = "";
-			//if (carCode != "")
-			//{
-			//    var crmOcrd = UnitWork.FindSingle<crm_ocrd>(zw => zw.sbo_id == sboID && zw.CardCode == carCode);
-			//    if (crmOcrd != null)
-			//    {
-			//        carName = crmOcrd.CardName;
-			//    }
-			//}
-			List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
-			{
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobName",    jobName),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pFuncID",     funcID),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pUserID",     userID),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobData",    jobdata),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pRemarks",    remarks),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pSboID",      sboID),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCarCode",    carCode),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCarName",    carName),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pDocTotal",   docTotal),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pBaseType",   baseType),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pBaseEntry",  baseEntry),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pAssemblyName",  assemblyName),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pClassName",  className)
-			};
-			code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_build", CommandType.StoredProcedure, sqlParameters).ToString();
-			return code;
-		}
-		/// <summary>
-		/// 审核（提交）
-		/// </summary>
-		/// <returns>返回  提交失败 0   提交成功 1   流程完成 2</returns>
-		private string OrderWorkflowSubmit(int jobID, int userID, string remarks, string cont, int auditor) {
-			string code = "";
-			List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
-			{
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobID",      jobID),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pUserID",     userID),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pRemarks",    remarks),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCont",       cont),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pAuditor",    auditor)
-			};
-			code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_submit", CommandType.StoredProcedure, sqlParameters).ToString();
-			return code;
-		}
-		#region 保存审核参数
-		/// <summary>
-		/// 保存审核参数
-		/// </summary>
-		/// <returns></returns>
-		public bool SaveJobPara(string jobID, bool setNumber) {
-			//string strSql = string.Format("INSERT INTO {0}.wfa_job_para (job_id,para_idx,para_val) VALUES(?job_id,?para_idx,?para_val)", Sql.BaseDatabaseName);
-			//IDataParameter[] parameters =
-			//{
-			//    Sql.Action.GetParameter("?job_id",  jobID),
-			//    Sql.Action.GetParameter("?para_idx",  "1"),
-			//    Sql.Action.GetParameter("?para_val",  setNumber==""?"1":setNumber)
-			//};
-			//strSql += string.Format(" ON Duplicate KEY UPDATE ");
-			//strSql += string.Format("para_val=VALUES(para_val)");
-			//executeRow = Sql.Action.ExecuteNonQuery(Sql.GB2312ConnectionString, CommandType.Text, strSql, parameters) > 0 ? "1" : "0";
+                    string strSql2 = string.Format("SELECT 1 value FROM nsap_oa.file_main AS T0 ");
+                    strSql2 += string.Format("LEFT JOIN nsap_oa.file_type AS T1 ON T0.file_type_id = T1.type_id ");
+                    strSql2 += string.Format("WHERE T0.file_type_id = {0} AND T0.docEntry = {1} limit 1", int.Parse(fileType), int.Parse(temprow["DocEntry"].ToString()));
+                    ResultOrderDto fileflag = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, strSql2, CommandType.Text, null).FirstOrDefault();
+                    temprow["AttachFlag"] = fileflag == null ? "0" : fileflag.Value.ToString();
+                }
+            }
+            tableData.Data = dt.Tolist<SalesDraftDto>();
+            return tableData;
+        }
+        /// <summary>
+        /// 业务伙伴获取
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="filterQuery"></param>
+        /// <param name="sqlcont"></param>
+        /// <param name="sboname"></param>
+        /// <returns></returns>
+        public TableData SelectCardCodeInfo(CardCodeRequest query, string sortSt, string filterQuery, string sboname)
+        {
+            TableData tableData = new TableData();
+            StringBuilder filefName = new StringBuilder();
+            StringBuilder tableName = new StringBuilder();
+            if (string.IsNullOrEmpty(sboname))
+            {
+                sboname = "";
+            }
+            else
+            {
+                sboname = sboname + ".dbo.";
+            }
+            string U_FPLB = string.Empty;
+            var syscolumn = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.SapDbContextType, $@"SELECT COUNT(*) value FROM syscolumns WHERE id=object_id('OCRD') AND name='U_FPLB'", CommandType.Text, null).FirstOrDefault();
+            if (syscolumn != null && syscolumn.Value.ToString() != "0")
+            {
+                U_FPLB = ",a.U_FPLB";
+            }
+            filefName.AppendFormat(" a.CardCode,a.CardName,a.CntctPrsn,b.SlpName,a.Currency,a.Balance,(ISNULL(ZipCode,'')+ISNULL(c.Name,'')+ISNULL(d.Name,'')+ISNULL(City,'')+ISNULL(CONVERT(VARCHAR(100),Building),'''')) AS Address,(ISNULL(MailZipCod,'')+ISNULL(e.Name,'')+ISNULL(f.Name,'')+ISNULL(MailCity,'')+ISNULL(CONVERT(VARCHAR(100),MailBuildi),'''')) AS Address2{0},a.SlpCode", U_FPLB);
+            tableName.AppendFormat(" " + sboname + "OCRD a");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OSLP b ON a.SlpCode=b.SlpCode");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OCRY c ON a.Country=c.Code");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OCST d ON a.State1=c.Code");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OCRY e ON a.MailCountr=e.Code");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OCST f ON a.State1=f.Code");
+            List<SqlParameter> sqlParameters = new List<SqlParameter>()
+            {
+                new SqlParameter("@strFrom",tableName.ToString()),
+                new SqlParameter("@strSelect",filefName.ToString()),
+                new SqlParameter("@pageSize",query.limit),
+                new SqlParameter("@pageIndex",query.page),
+                new SqlParameter("@strOrder",sortSt),
+                new SqlParameter("@strWhere",filterQuery),
+            };
+            SqlParameter isStats = new SqlParameter("@isStats", SqlDbType.Int);
+            isStats.Value = 1;
+            sqlParameters.Add(isStats);
+            SqlParameter paramOut = new SqlParameter("@rowCount", SqlDbType.Int);
+            paramOut.Value = 0;
+            paramOut.Direction = ParameterDirection.Output;
+            sqlParameters.Add(paramOut);
+            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, $"sp_common_pager", CommandType.StoredProcedure, sqlParameters);
+            tableData.Data = dt.Tolist<CardCodeDto>();
+            tableData.Count = Convert.ToInt32(paramOut.Value);
+            return tableData;
+        }
+        /// <summary>
+        /// 获取业务员信息
+        /// </summary>
+        /// <param name="sboId"></param>
+        /// <returns></returns>
+        public List<SelectOption> GetSalesSelect(int sboId)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            //业务员Id
+            var selectOption = UnitWork.Find<crm_oslp>(s => s.sbo_id == sboId).Select(zw => new SelectOption { Key = zw.SlpCode.ToString(), Option = zw.SlpName }).ToList();
+            return selectOption;
+        }
+        /// <summary>
+        /// 销售报价单保存
+        /// </summary>
+        /// <param name="orderReq"></param>
+        /// <returns></returns>
+        public string Save(AddOrderReq orderReq)
+        {
+            int userID = _serviceBaseApp.GetUserNaspId();
+            int sboID = _serviceBaseApp.GetUserNaspSboID(userID);
+            int funcId = 50;
+            string logstring = "";
+            string jobname = "";
+            string result = "";
+            try
+            {
+                billDelivery billDelivery = BulidBillDelivery(orderReq.Order);
+                if (orderReq.IsCopy)
+                {
+                    funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesOrder.aspx", userID);
+                    logstring = "根据销售报价单下销售订单";
+                    jobname = "销售订单";
+                    SalesOrderSave_ORDR(orderReq);
+                }
+                else
+                {
+                    funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesQuotation.aspx", userID);
+                    byte[] job_data = ByteExtension.ToSerialize(billDelivery);
+                    string className = "NSAP.B1Api.BOneOQUT";
+                    logstring = "新建销售报价单";
+                    jobname = "销售报价单";
+                    if (orderReq.Ations == OrderAtion.Draft)
+                    {
+                        result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
+                    }
+                    else if (orderReq.Ations == OrderAtion.Submit)
+                    {
+                        result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
+                        //if (int.Parse(result) > 0)
+                        //{
+                        //    var par = SaveJobPara(result, orderReq.IsTemplate);
+                        //    if (par)
+                        //    {
+                        //        string _jobID = result;
+                        //        if ("0" != WorkflowSubmit(int.Parse(result), userID, orderReq.Order.Remark, "", 0))
+                        //        {
+                        //            #region 更新商城订单状态
+                        //            WfaEshopStatus thisinfo = new WfaEshopStatus();
+                        //            thisinfo.JobId = int.Parse(result);
+                        //            thisinfo.UserId = userID;
+                        //            thisinfo.SlpCode = sboID;
+                        //            thisinfo.CardCode = orderReq.Order.CardCode;
+                        //            thisinfo.CardName = orderReq.Order.CardName;
+                        //            thisinfo.CurStatus = 0;
+                        //            thisinfo.OrderPhase = "0000";
+                        //            thisinfo.ShippingPhase = "0000";
+                        //            thisinfo.CompletePhase = "0";
+                        //            thisinfo.OrderLastDate = DateTime.Now;
+                        //            thisinfo.FirstCreateDate = DateTime.Now;
+                        //            //设置报价单提交
+                        //            result = Eshop_OrderStatusFlow(thisinfo, int.Parse(orderReq.Order.U_New_ORDRID));
+                        //            #endregion
+                        //        }
+                        //        else { result = "0"; }
+                        //    }
+                        //    else { result = "0"; }
+                        //}
+                    }
+                    else if (orderReq.Ations == OrderAtion.Resubmit)
+                    {
+                        result = WorkflowSubmit(orderReq.JobId, userID, orderReq.Order.Remark, "", 0);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                string msg = ex.Message;
+            }
+            string log = string.Format("{1}：{0}", result, logstring);
+            AddUserOperateLog(log);
+            return result;
+        }
+        /// <summary>
+        /// 草稿
+        /// </summary>
+        /// <param name="jobName"></param>
+        /// <param name="funcID"></param>
+        /// <param name="userID"></param>
+        /// <param name="jobdata"></param>
+        /// <param name="remarks"></param>
+        /// <param name="sboID"></param>
+        /// <param name="carCode"></param>
+        /// <param name="carName"></param>
+        /// <param name="docTotal"></param>
+        /// <param name="baseType"></param>
+        /// <param name="baseEntry"></param>
+        /// <param name="assemblyName"></param>
+        /// <param name="className"></param>
+        /// <returns></returns>
+        private string OrderWorkflowBuild(string jobName, int funcID, int userID, byte[] jobdata, string remarks, int sboID, string carCode, string carName, double docTotal, int baseType, int baseEntry, string assemblyName, string className)
+        {
+            string code = "";
+            //if (carCode != "")
+            //{
+            //    var crmOcrd = UnitWork.FindSingle<crm_ocrd>(zw => zw.sbo_id == sboID && zw.CardCode == carCode);
+            //    if (crmOcrd != null)
+            //    {
+            //        carName = crmOcrd.CardName;
+            //    }
+            //}
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobName",    jobName),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pFuncID",     funcID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pUserID",     userID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobData",    jobdata),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pRemarks",    remarks),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pSboID",      sboID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCarCode",    carCode),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCarName",    carName),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pDocTotal",   docTotal),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pBaseType",   baseType),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pBaseEntry",  baseEntry),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pAssemblyName",  assemblyName),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pClassName",  className)
+            };
+            code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_build", CommandType.StoredProcedure, sqlParameters).ToString();
+            return code;
+        }
+        /// <summary>
+        /// 审核（提交）
+        /// </summary>
+        /// <returns>返回  提交失败 0   提交成功 1   流程完成 2</returns>
+        private string OrderWorkflowSubmit(int jobID, int userID, string remarks, string cont, int auditor)
+        {
+            string code = "";
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobID",      jobID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pUserID",     userID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pRemarks",    remarks),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCont",       cont),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pAuditor",    auditor)
+            };
+            code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_submit", CommandType.StoredProcedure, sqlParameters).ToString();
+            return code;
+        }
+        #region 保存审核参数
+        /// <summary>
+        /// 保存审核参数
+        /// </summary>
+        /// <returns></returns>
+        public bool SaveJobPara(string jobID, bool setNumber)
+        {
+            //string strSql = string.Format("INSERT INTO {0}.wfa_job_para (job_id,para_idx,para_val) VALUES(?job_id,?para_idx,?para_val)", Sql.BaseDatabaseName);
+            //IDataParameter[] parameters =
+            //{
+            //    Sql.Action.GetParameter("?job_id",  jobID),
+            //    Sql.Action.GetParameter("?para_idx",  "1"),
+            //    Sql.Action.GetParameter("?para_val",  setNumber==""?"1":setNumber)
+            //};
+            //strSql += string.Format(" ON Duplicate KEY UPDATE ");
+            //strSql += string.Format("para_val=VALUES(para_val)");
+            //executeRow = Sql.Action.ExecuteNonQuery(Sql.GB2312ConnectionString, CommandType.Text, strSql, parameters) > 0 ? "1" : "0";
 
             WfaJobPara wfaJobPara = new WfaJobPara()
             {
@@ -899,103 +920,116 @@ namespace OpenAuth.App.Order
                 strSql += string.Format(" LEFT JOIN {0}.store_ocry d ON a.MailCountr=d.Code", "nsap_bone");
                 strSql += string.Format(" LEFT JOIN {0}.store_ocst e ON a.State2=e.Code", "nsap_bone");
 
-				strSql += string.Format(" WHERE CardCode='{0}'", CardCode);
-				if (!string.IsNullOrEmpty(filterString)) {
-					strSql += string.Format("{0}", filterString);
-				}
-				return UnitWork.ExcuteSql<CardInfoDto>(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).FirstOrDefault();
-			}
-		}
-		/// <summary>
-		/// 物料数据获取
-		/// </summary>
-		/// <param name="query"></param>
-		/// <param name="sboid"></param>
-		/// <returns></returns>
-		public TableData SalesItems(ItemRequest query, string sboid) {
-			TableData tableData = new TableData();
-			string sortString = string.Empty;
-			string filterString = string.Empty;
-			if (!string.IsNullOrEmpty(query.SortName) && !string.IsNullOrEmpty(query.SortOrder)) {
-				sortString = string.Format("{0} {1}", query.SortName.Replace("itemcode", "m.itemcode"), query.SortOrder.ToUpper());
-			}
-			if (!string.IsNullOrEmpty(query.ItemCode)) {
-				filterString += string.Format("(m.ItemCode LIKE '%{0}%' OR m.ItemName LIKE '%{0}%') AND ", query.ItemCode);
-			}
-			if (query.TypeId == "1") {
-				filterString += string.Format("(m.ItemCode NOT LIKE 'CT%') AND ");
-			}
-			if (query.TypeId == "2") {
-				filterString += string.Format("(m.ItemCode NOT LIKE 'CT%' AND m.ItemCode NOT LIKE 'CE%' AND m.ItemCode NOT LIKE 'CG%') AND ");
-			}
-			filterString += string.Format("w.WhsCode='{0}' AND m.sbo_id={1} AND ", query.WhsCode == "" ? "01" : query.WhsCode, sboid);
-			if (!string.IsNullOrEmpty(filterString)) {
-				filterString = filterString.Substring(0, filterString.Length - 5);
-			}
-			StringBuilder tableName = new StringBuilder();
-			StringBuilder filedName = new StringBuilder();
-			filedName.Append("m.ItemCode,m.ItemName,IFNULL(c.high_price,0) AS high_price,IFNULL(c.low_price,0) AS low_price,w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,(w.OnHand-w.IsCommited+w.OnOrder) AS OnAvailable,");
-			filedName.Append("(m.OnHand-m.IsCommited+m.OnOrder) AS Available,w.WhsCode,IFNULL(U_TDS,'0') AS U_TDS,IFNULL(U_DL,0) AS U_DL,");
-			filedName.Append("IFNULL(U_DY,0) AS U_DY,m.U_JGF,m.LastPurPrc,IFNULL(c.item_cfg_id,0) item_cfg_id,IFNULL(c.pic_path,m.PicturName) pic_path,");
-			filedName.Append("((CASE m.QryGroup1 WHEN 'N' then 0 else 0.5 END)");
-			filedName.Append("+(CASE m.QryGroup2 WHEN 'N' then 0 else 3 END)");
-			filedName.Append("+(CASE m.QryGroup3 WHEN 'N' then 0 else 2 END)) AS QryGroup,c.item_desp,IFNULL(m.U_US,0) U_US,IFNULL(m.U_FS,0) U_FS,m.QryGroup3,m.SVolume,m.SWeight1,");
-			filedName.Append("(CASE m.QryGroup1 WHEN 'N' THEN 0 ELSE '0.5' END) AS QryGroup1,");
-			filedName.Append("(CASE m.QryGroup2 WHEN 'N' THEN 0 ELSE '3' END) AS QryGroup2,");
-			filedName.Append("(CASE m.QryGroup3 WHEN 'N' THEN 0 ELSE '2' END) AS _QryGroup3,m.U_JGF1,IFNULL(m.U_YFCB,'0') U_YFCB,m.MinLevel,m.PurPackUn,c.item_counts,m.buyunitmsr");
-			tableName.AppendFormat(" {0}.store_oitm m", "nsap_bone");
-			tableName.AppendFormat(" LEFT JOIN {0}.store_oitw w ON m.ItemCode = w.ItemCode AND m.sbo_id=w.sbo_id ", "nsap_bone");
-			tableName.AppendFormat(" LEFT JOIN {0}.base_item_cfg c ON m.ItemCode = c.ItemCode AND type_id={1} ", "nsap_bone", query.TypeId);
-			List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
-			{
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pTableName",tableName.ToString()),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pFieldName",filedName.ToString()),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pPageSize",query.limit),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pPageIndex",query.page),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pStrOrder",sortString),
-				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pStrWhere",filterString)
-			};
-			MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter isStats = new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("@pIsTotal", SqlDbType.Int);
-			isStats.Value = 1;
-			sqlParameters.Add(isStats);
-			MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter paramOut = new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("@rowsCount", SqlDbType.Int);
-			paramOut.Value = 0;
-			paramOut.Direction = ParameterDirection.Output;
-			sqlParameters.Add(paramOut);
-			DataTable dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"nsap_base.sp_common_pager", CommandType.StoredProcedure, sqlParameters);
-			DataTable dtsbo = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM nsap_base.sbo_info WHERE sbo_id={sboid}", CommandType.Text, null); ;
-			string IsOpen = "0";
-			if (dtsbo.Rows.Count > 0) {
-				IsOpen = dtsbo.Rows[0]["is_open"].ToString();
-			}
-			if (IsOpen == "1") {
-				foreach (DataRow tempr in dt.Rows) {
-					string tempsql = string.Format(@"select w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,(w.OnHand-w.IsCommited+w.OnOrder) AS OnAvailable,(m.OnHand-m.IsCommited+m.OnOrder) AS Available 
+                strSql += string.Format(" WHERE CardCode='{0}'", CardCode);
+                if (!string.IsNullOrEmpty(filterString))
+                {
+                    strSql += string.Format("{0}", filterString);
+                }
+                return UnitWork.ExcuteSql<CardInfoDto>(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).FirstOrDefault();
+            }
+        }
+        /// <summary>
+        /// 物料数据获取
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="sboid"></param>
+        /// <returns></returns>
+        public TableData SalesItems(ItemRequest query, string sboid)
+        {
+            TableData tableData = new TableData();
+            string sortString = string.Empty;
+            string filterString = string.Empty;
+            if (!string.IsNullOrEmpty(query.SortName) && !string.IsNullOrEmpty(query.SortOrder))
+            {
+                sortString = string.Format("{0} {1}", query.SortName.Replace("itemcode", "m.itemcode"), query.SortOrder.ToUpper());
+            }
+            if (!string.IsNullOrEmpty(query.ItemCode))
+            {
+                filterString += string.Format("(m.ItemCode LIKE '%{0}%' OR m.ItemName LIKE '%{0}%') AND ", query.ItemCode);
+            }
+            if (query.TypeId == "1")
+            {
+                filterString += string.Format("(m.ItemCode NOT LIKE 'CT%') AND ");
+            }
+            if (query.TypeId == "2")
+            {
+                filterString += string.Format("(m.ItemCode NOT LIKE 'CT%' AND m.ItemCode NOT LIKE 'CE%' AND m.ItemCode NOT LIKE 'CG%') AND ");
+            }
+            filterString += string.Format("w.WhsCode='{0}' AND m.sbo_id={1} AND ", query.WhsCode == "" ? "01" : query.WhsCode, sboid);
+            if (!string.IsNullOrEmpty(filterString))
+            {
+                filterString = filterString.Substring(0, filterString.Length - 5);
+            }
+            StringBuilder tableName = new StringBuilder();
+            StringBuilder filedName = new StringBuilder();
+            filedName.Append("m.ItemCode,m.ItemName,IFNULL(c.high_price,0) AS high_price,IFNULL(c.low_price,0) AS low_price,w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,(w.OnHand-w.IsCommited+w.OnOrder) AS OnAvailable,");
+            filedName.Append("(m.OnHand-m.IsCommited+m.OnOrder) AS Available,w.WhsCode,IFNULL(U_TDS,'0') AS U_TDS,IFNULL(U_DL,0) AS U_DL,");
+            filedName.Append("IFNULL(U_DY,0) AS U_DY,m.U_JGF,m.LastPurPrc,IFNULL(c.item_cfg_id,0) item_cfg_id,IFNULL(c.pic_path,m.PicturName) pic_path,");
+            filedName.Append("((CASE m.QryGroup1 WHEN 'N' then 0 else 0.5 END)");
+            filedName.Append("+(CASE m.QryGroup2 WHEN 'N' then 0 else 3 END)");
+            filedName.Append("+(CASE m.QryGroup3 WHEN 'N' then 0 else 2 END)) AS QryGroup,c.item_desp,IFNULL(m.U_US,0) U_US,IFNULL(m.U_FS,0) U_FS,m.QryGroup3,m.SVolume,m.SWeight1,");
+            filedName.Append("(CASE m.QryGroup1 WHEN 'N' THEN 0 ELSE '0.5' END) AS QryGroup1,");
+            filedName.Append("(CASE m.QryGroup2 WHEN 'N' THEN 0 ELSE '3' END) AS QryGroup2,");
+            filedName.Append("(CASE m.QryGroup3 WHEN 'N' THEN 0 ELSE '2' END) AS _QryGroup3,m.U_JGF1,IFNULL(m.U_YFCB,'0') U_YFCB,m.MinLevel,m.PurPackUn,c.item_counts,m.buyunitmsr");
+            tableName.AppendFormat(" {0}.store_oitm m", "nsap_bone");
+            tableName.AppendFormat(" LEFT JOIN {0}.store_oitw w ON m.ItemCode = w.ItemCode AND m.sbo_id=w.sbo_id ", "nsap_bone");
+            tableName.AppendFormat(" LEFT JOIN {0}.base_item_cfg c ON m.ItemCode = c.ItemCode AND type_id={1} ", "nsap_bone", query.TypeId);
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pTableName",tableName.ToString()),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pFieldName",filedName.ToString()),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pPageSize",query.limit),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pPageIndex",query.page),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pStrOrder",sortString),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pStrWhere",filterString)
+            };
+            MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter isStats = new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("@pIsTotal", SqlDbType.Int);
+            isStats.Value = 1;
+            sqlParameters.Add(isStats);
+            MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter paramOut = new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("@rowsCount", SqlDbType.Int);
+            paramOut.Value = 0;
+            paramOut.Direction = ParameterDirection.Output;
+            sqlParameters.Add(paramOut);
+            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"nsap_base.sp_common_pager", CommandType.StoredProcedure, sqlParameters);
+            DataTable dtsbo = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM nsap_base.sbo_info WHERE sbo_id={sboid}", CommandType.Text, null); ;
+            string IsOpen = "0";
+            if (dtsbo.Rows.Count > 0)
+            {
+                IsOpen = dtsbo.Rows[0]["is_open"].ToString();
+            }
+            if (IsOpen == "1")
+            {
+                foreach (DataRow tempr in dt.Rows)
+                {
+                    string tempsql = string.Format(@"select w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,(w.OnHand-w.IsCommited+w.OnOrder) AS OnAvailable,(m.OnHand-m.IsCommited+m.OnOrder) AS Available 
                                               from OITM M LEFT OUTER JOIN OITW W ON m.ItemCode = w.ItemCode where m.ItemCode='{0}' and w.WhsCode={1}", tempr["ItemCode"].ToString().FilterWildCard(), tempr["WhsCode"].ToString());
-					DataTable tempt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, tempsql, CommandType.Text, null);
-					if (tempt.Rows.Count > 0) {
-						tempr["OnHand"] = tempt.Rows[0]["OnHand"] == null ? 0 : tempt.Rows[0]["OnHand"];
-						tempr["SumOnHand"] = tempt.Rows[0]["SumOnHand"] == null ? 0 : tempt.Rows[0]["SumOnHand"];
-						tempr["IsCommited"] = tempt.Rows[0]["IsCommited"] == null ? 0 : tempt.Rows[0]["IsCommited"];
-						tempr["OnOrder"] = tempt.Rows[0]["OnOrder"] == null ? 0 : tempt.Rows[0]["OnOrder"];
-						tempr["OnAvailable"] = tempt.Rows[0]["OnAvailable"] == null ? 0 : tempt.Rows[0]["OnAvailable"];
-						tempr["Available"] = tempt.Rows[0]["Available"] == null ? 0 : tempt.Rows[0]["Available"];
-					}
-				}
-			}
-			tableData.Data = dt.Tolist<SaleItemDto>();
-			tableData.Count = Convert.ToInt32(paramOut.Value);
-			return tableData;
-		}
-		/// <summary>
-		/// 获取物料配置清单
-		/// </summary>
-		/// <param name="ItemCode"></param>
-		/// <param name="WhsCode"></param>
-		public TableData GetItemConfigList(string ItemCode, string WhsCode) {
-			TableData tableData = new TableData();
-			if (!string.IsNullOrEmpty(ItemCode)) {
-				string sql = $@"SELECT a.ItemCode,a.item_name as ItemName,a.high_price,a.low_price,w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,
+                    DataTable tempt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, tempsql, CommandType.Text, null);
+                    if (tempt.Rows.Count > 0)
+                    {
+                        tempr["OnHand"] = tempt.Rows[0]["OnHand"] == null ? 0 : tempt.Rows[0]["OnHand"];
+                        tempr["SumOnHand"] = tempt.Rows[0]["SumOnHand"] == null ? 0 : tempt.Rows[0]["SumOnHand"];
+                        tempr["IsCommited"] = tempt.Rows[0]["IsCommited"] == null ? 0 : tempt.Rows[0]["IsCommited"];
+                        tempr["OnOrder"] = tempt.Rows[0]["OnOrder"] == null ? 0 : tempt.Rows[0]["OnOrder"];
+                        tempr["OnAvailable"] = tempt.Rows[0]["OnAvailable"] == null ? 0 : tempt.Rows[0]["OnAvailable"];
+                        tempr["Available"] = tempt.Rows[0]["Available"] == null ? 0 : tempt.Rows[0]["Available"];
+                    }
+                }
+            }
+            tableData.Data = dt.Tolist<SaleItemDto>();
+            tableData.Count = Convert.ToInt32(paramOut.Value);
+            return tableData;
+        }
+        /// <summary>
+        /// 获取物料配置清单
+        /// </summary>
+        /// <param name="ItemCode"></param>
+        /// <param name="WhsCode"></param>
+        public TableData GetItemConfigList(string ItemCode, string WhsCode)
+        {
+            TableData tableData = new TableData();
+            if (!string.IsNullOrEmpty(ItemCode))
+            {
+                string sql = $@"SELECT a.ItemCode,a.item_name as ItemName,a.high_price,a.low_price,w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,
                         (w.OnHand-w.IsCommited+w.OnOrder) AS OnAvailable,
                         (m.OnHand-m.IsCommited+m.OnOrder) AS Available,
                                                 w.WhsCode,a.factor_1,a.factor_2,a.factor_3,
@@ -1019,26 +1053,30 @@ namespace OpenAuth.App.Order
                         LEFT JOIN nsap_bone.store_oitm m ON m.ItemCode=a.ItemCode AND m.sbo_id=1 
                         LEFT JOIN nsap_bone.store_oitw w ON w.ItemCode=a.ItemCode AND w.WhsCode='{WhsCode}' AND m.sbo_id=w.sbo_id 
                         WHERE a.item_cfg_id={ItemCode}";
-				DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
-				tableData.Data = dataTable.Tolist<SaleItemDto>();
-			}
-			return tableData;
-		}
-		/// <summary>
-		/// 物料数据获取
-		/// </summary>
-		/// <param name="query"></param>
-		/// <returns></returns>
-		public TableData RelORDR(RelORDRRequest query) {
-			TableData tableData = new TableData();
-			string sortString = string.Empty;
-			string filterString = "(Canceled = 'Y' or DocStatus = 'O') and SlpCode =" + query.SlpCode;
-			if (!string.IsNullOrEmpty(query.SortName) && !string.IsNullOrEmpty(query.SortOrder)) {
-				sortString = string.Format("{0} {1}", query.SortName.Replace("cardcode", "a.cardcode"), query.SortOrder.ToUpper());
-			} else {
-				sortString = " docentry desc";
-			}
-			string dRowData = string.Empty;
+                DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
+                tableData.Data = dataTable.Tolist<SaleItemDto>();
+            }
+            return tableData;
+        }
+        /// <summary>
+        /// 物料数据获取
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        public TableData RelORDR(RelORDRRequest query)
+        {
+            TableData tableData = new TableData();
+            string sortString = string.Empty;
+            string filterString = "(Canceled = 'Y' or DocStatus = 'O') and SlpCode =" + query.SlpCode;
+            if (!string.IsNullOrEmpty(query.SortName) && !string.IsNullOrEmpty(query.SortOrder))
+            {
+                sortString = string.Format("{0} {1}", query.SortName.Replace("cardcode", "a.cardcode"), query.SortOrder.ToUpper());
+            }
+            else
+            {
+                sortString = " docentry desc";
+            }
+            string dRowData = string.Empty;
 
             if (!string.IsNullOrEmpty(query.DocEntry))
             {
@@ -1411,193 +1449,219 @@ namespace OpenAuth.App.Order
                 IQCDetails = new List<NSAP.Entity.Quality.IQCDetail>(),
             };
 
-			foreach (var item in order.OrderItems) {
-				billSalesDetails billSalesDetail = new billSalesDetails() {
-					BaseEntry = item.BaseEntry,//基本凭证代码
-					BaseLine = item.BaseLine,//基础行
-					BaseRef = item.BaseRef,//基本凭证参考
-					BaseType = item.BaseType,//基本凭证类型(-1,0,23，17，16，13，165,默认值为-1)
-					DiscPrcnt = !string.IsNullOrEmpty(item.DiscPrcnt) ? item.DiscPrcnt : "0",// 每行折扣 %
-					Dscription = item.Dscription,// 物料/服务描述
-					ItemCfgId = !string.IsNullOrEmpty(item.ItemCfgId) ? item.ItemCfgId : "0",//物料配置Id
-					ItemCode = item.ItemCode,//物料号
-					LineTotal = !string.IsNullOrEmpty(item.LineTotal) ? item.LineTotal : "0",//行总计
-					OnHand = !string.IsNullOrEmpty(item.OnHand) ? item.OnHand : "0",//库存量
-					Price = !string.IsNullOrEmpty(item.Price) ? item.Price : "0",//价格
-					PriceAfVAT = !string.IsNullOrEmpty(item.PriceAfVAT) ? item.PriceAfVAT : "0",//毛价
-					PriceBefDi = !string.IsNullOrEmpty(item.PriceBefDi) ? item.PriceBefDi : "0",//折扣后价格
-					Quantity = item.Quantity,//数量
-					StockPrice = !string.IsNullOrEmpty(item.StockPrice) ? item.StockPrice : "0",//物料成本
-					TargetType = item.TargetType,//目标凭证类型(-1,0,13,16,203,默认值为-1)
-					TotalFrgn = !string.IsNullOrEmpty(item.TotalFrgn) ? item.TotalFrgn : "0",//以外币计的行总计
-					TrgetEntry = item.TrgetEntry,// 目标凭证代码
-					U_DL = !string.IsNullOrEmpty(item.U_DL) ? item.U_DL : "0",
-					U_DY = !string.IsNullOrEmpty(item.U_DY) ? item.U_DY : "0",
-					U_PDXX = item.U_PDXX,//配电选项
-					U_SCTCJE = !string.IsNullOrEmpty(item.U_SCTCJE) ? item.U_SCTCJE : "0",//生产提成金额
-					U_TDS = !string.IsNullOrEmpty(item.U_TDS) ? item.U_TDS : "0",
-					U_XSTCBL = !string.IsNullOrEmpty(item.U_XSTCBL) ? item.U_XSTCBL : "0",//销售提成比例
-					U_YF = !string.IsNullOrEmpty(item.U_YF) ? item.U_YF : "0",//运费
-					U_YWF = "0",//业务费
-					U_FWF = "0",//服务费
-					VatGroup = "",//税定义
-					WhsCode = item.WhsCode,
-					Lowest = "0",//每行税收百分比
-					VatPrcnt = "",//配电选项
-					ConfigLowest = "0",//配电选项
-					IsExistMo = item.IsExistMo,
-					QryGroup1 = item.QryGroup1,
-					QryGroup2 = item.QryGroup2,
-					_QryGroup3 = item._QryGroup3,
-					Weight = item.Weight,
-					Volume = item.Volume,
-					U_JGF = item.U_JGF,
-					U_JGF1 = item.U_JGF1,
-					U_YFCB = item.U_YFCB,
-					QryGroup8 = item.QryGroup8,////3008n
-					QryGroup9 = item.QryGroup9,//9系列
-					QryGroup10 = item.QryGroup10,// ES系列
-					U_YFTCJE = item.U_YFTCJE,//研发提成金额
-					U_SHJSDJ = item.U_SHJSDJ,
-					U_SHJSJ = item.U_SHJSJ,
-					U_SHTC = item.U_SHTC,
-					U_ZS = item.U_ZS,//配置类型
-				};
-				billDelivery.billSalesDetails.Add(billSalesDetail);
-			}
-			return billDelivery;
-		}
+            foreach (var item in order.OrderItems)
+            {
+                billSalesDetails billSalesDetail = new billSalesDetails()
+                {
+                    BaseEntry = item.BaseEntry,//基本凭证代码
+                    BaseLine = item.BaseLine,//基础行
+                    BaseRef = item.BaseRef,//基本凭证参考
+                    BaseType = item.BaseType,//基本凭证类型(-1,0,23，17，16，13，165,默认值为-1)
+                    DiscPrcnt = !string.IsNullOrEmpty(item.DiscPrcnt) ? item.DiscPrcnt : "0",// 每行折扣 %
+                    Dscription = item.Dscription,// 物料/服务描述
+                    ItemCfgId = !string.IsNullOrEmpty(item.ItemCfgId) ? item.ItemCfgId : "0",//物料配置Id
+                    ItemCode = item.ItemCode,//物料号
+                    LineTotal = !string.IsNullOrEmpty(item.LineTotal) ? item.LineTotal : "0",//行总计
+                    OnHand = !string.IsNullOrEmpty(item.OnHand) ? item.OnHand : "0",//库存量
+                    Price = !string.IsNullOrEmpty(item.Price) ? item.Price : "0",//价格
+                    PriceAfVAT = !string.IsNullOrEmpty(item.PriceAfVAT) ? item.PriceAfVAT : "0",//毛价
+                    PriceBefDi = !string.IsNullOrEmpty(item.PriceBefDi) ? item.PriceBefDi : "0",//折扣后价格
+                    Quantity = item.Quantity,//数量
+                    StockPrice = !string.IsNullOrEmpty(item.StockPrice) ? item.StockPrice : "0",//物料成本
+                    TargetType = item.TargetType,//目标凭证类型(-1,0,13,16,203,默认值为-1)
+                    TotalFrgn = !string.IsNullOrEmpty(item.TotalFrgn) ? item.TotalFrgn : "0",//以外币计的行总计
+                    TrgetEntry = item.TrgetEntry,// 目标凭证代码
+                    U_DL = !string.IsNullOrEmpty(item.U_DL) ? item.U_DL : "0",
+                    U_DY = !string.IsNullOrEmpty(item.U_DY) ? item.U_DY : "0",
+                    U_PDXX = item.U_PDXX,//配电选项
+                    U_SCTCJE = !string.IsNullOrEmpty(item.U_SCTCJE) ? item.U_SCTCJE : "0",//生产提成金额
+                    U_TDS = !string.IsNullOrEmpty(item.U_TDS) ? item.U_TDS : "0",
+                    U_XSTCBL = !string.IsNullOrEmpty(item.U_XSTCBL) ? item.U_XSTCBL : "0",//销售提成比例
+                    U_YF = !string.IsNullOrEmpty(item.U_YF) ? item.U_YF : "0",//运费
+                    U_YWF = "0",//业务费
+                    U_FWF = "0",//服务费
+                    VatGroup = "",//税定义
+                    WhsCode = item.WhsCode,
+                    Lowest = "0",//每行税收百分比
+                    VatPrcnt = "",//配电选项
+                    ConfigLowest = "0",//配电选项
+                    IsExistMo = item.IsExistMo,
+                    QryGroup1 = item.QryGroup1,
+                    QryGroup2 = item.QryGroup2,
+                    _QryGroup3 = item._QryGroup3,
+                    Weight = item.Weight,
+                    Volume = item.Volume,
+                    U_JGF = item.U_JGF,
+                    U_JGF1 = item.U_JGF1,
+                    U_YFCB = item.U_YFCB,
+                    QryGroup8 = item.QryGroup8,////3008n
+                    QryGroup9 = item.QryGroup9,//9系列
+                    QryGroup10 = item.QryGroup10,// ES系列
+                    U_YFTCJE = item.U_YFTCJE,//研发提成金额
+                    U_SHJSDJ = item.U_SHJSDJ,
+                    U_SHJSJ = item.U_SHJSJ,
+                    U_SHTC = item.U_SHTC,
+                    U_ZS = item.U_ZS,//配置类型
+                };
+                billDelivery.billSalesDetails.Add(billSalesDetail);
+            }
+            return billDelivery;
+        }
 
-		#region 订单详情
-		/// <summary>
-		/// 订单详情
-		/// </summary>
-		/// <param name="DocNum"></param>
-		/// <param name="ViewCustom"></param>
-		/// <param name="tablename"></param>
-		/// <param name="ViewSales"></param>
-		/// <param name="SboId"></param>
-		/// <param name="isSql"></param>
-		/// <returns></returns>
-		public OrderDraftInfo QuerySaleDeliveryDetails(string DocNum, bool ViewCustom, string tablename, bool ViewSales, int SboId, bool isSql) {
-			DataTable orderDraftInfo = new DataTable();
-			DataTable dtConfig = _serviceBaseApp.GetSboNamePwd(SboId);
-			string dRowData = string.Empty;
-			string sqlconn = "";
-			string sboname = "";
-			string isOpen = "1";
-			if (dtConfig.Rows.Count > 0) {
-				isOpen = dtConfig.Rows[0][6].ToString();
-				sqlconn = dtConfig.Rows[0][5].ToString();
-				sboname = dtConfig.Rows[0][0].ToString();
-			}
-			DataTable dt = _serviceBaseApp.GetCustomFields(tablename);
-			if (isSql && isOpen == "1") {
-				if (tablename == "sale_ordr") { tablename = "ORDR"; }
-				if (tablename == "sale_odln") { tablename = "ODLN"; }
-				if (tablename == "sale_oqut") { tablename = "OQUT"; }
-				if (tablename == "sale_oinv") { tablename = "OINV"; }
-				if (tablename == "sale_orin") { tablename = "ORIN"; }
-				if (tablename == "sale_ordn") { tablename = "ORDN"; }
-				if (tablename == "buy_opqt") { tablename = "OPQT"; }
-				if (tablename == "buy_opor") { tablename = "OPOR"; }
-				if (tablename == "buy_opdn") { tablename = "OPDN"; }
-				if (tablename == "buy_opch") { tablename = "OPCH"; }
-				if (tablename == "buy_orpc") { tablename = "ORPC"; }
-				if (tablename == "buy_orpd") { tablename = "ORPD"; }
-				string CustomFields = "";
-				if (dt.Rows.Count > 0) {
-					for (int i = 0; i < dt.Rows.Count; i++) {
-						if (IsExist(tablename, dt.Rows[i][0].ToString())) {
-							CustomFields += "," + dt.Rows[i][0].ToString();
-						}
-					}
-				}
-				if (string.IsNullOrEmpty(sboname)) { sboname = ""; } else { sboname = sboname + ".dbo."; }
-				int Custom = 0; if (ViewCustom) { Custom = 1; }
-				int Sales = 0; if (ViewSales) { Sales = 1; }
-				string U_FPLB = string.Empty;
-				if (IsExist(sboname + tablename, "U_FPLB")) {
-					U_FPLB = ",U_FPLB";
-				}
-				string U_YWY = string.Empty;
-				if (IsExist(sboname + tablename, "U_YWY")) {
-					U_YWY = ",U_YWY";
-				}
-				string U_New_ORDRID = string.Empty;
-				if (IsExist(sboname + tablename, "U_New_ORDRID")) {
-					U_New_ORDRID = ",U_New_ORDRID";
-				}
-				string U_EshopNo = string.Empty;
-				if (tablename.ToUpper() == "OQUT" || tablename.ToUpper() == "ORDR") {
-					U_EshopNo = ",U_EshopNo";
-				}
-				string strSql = string.Format("SELECT U_YGMD,CardCode,CASE WHEN 1 = " + Custom + " THEN CardName ELSE '******' END AS CardName,CASE WHEN 1 = " + Custom + " THEN CntctCode ELSE 0 END AS CntctCode,CASE WHEN 1 = " + Custom + " THEN NumAtCard ELSE '******' END AS NumAtCard,CASE WHEN 1 = " + Custom + " THEN DocCur ELSE '' END AS DocCur,CASE WHEN 1 = " + Custom + " THEN DocRate ELSE 0 END AS DocRate");
-				strSql += string.Format(",DocNum,DocType,CASE WHEN 1 = " + Sales + " THEN DiscSum ELSE 0 END AS DiscSum,CASE WHEN 1 = " + Sales + " THEN DiscPrcnt ELSE 0 END AS DiscPrcnt,CASE WHEN 1 = " + Sales + " THEN TotalExpns ELSE 0 END AS TotalExpns,CASE WHEN 1 = " + Sales + " THEN VatSum ELSE 0 END AS VatSum,CASE WHEN 1 = " + Sales + " THEN DocTotal ELSE 0 END AS DocTotal,DocDate,DocDueDate,TaxDate,SupplCode,ShipToCode,PayToCode,Address,Address2,Comments,SlpCode,TrnspCode,GroupNum,PeyMethod,VatPercent,LicTradNum,Indicator,PartSupply,ReqDate,CANCELED");
-				strSql += string.Format("" + CustomFields + "");
-				strSql += string.Format(",DpmPrcnt,Printed,DocStatus,OwnerCode{0},U_SL{1}{2}{3}", U_FPLB, U_YWY, U_New_ORDRID, U_EshopNo);
-				strSql += string.Format(",CASE WHEN 1 = " + Sales + " THEN DocTotalFC ELSE 0 END AS DocTotalFC,CASE WHEN 1 = " + Sales + " THEN DiscSumFC ELSE 0 END AS DiscSumFC");
-				strSql += string.Format(" FROM " + sboname + tablename + "");
-				strSql += string.Format(" WHERE DocEntry={0}", DocNum);
-				orderDraftInfo = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql, CommandType.Text, null);
-			} else {
-				string CustomFields = "";
-				if (dt.Rows.Count > 0) {
-					for (int i = 0; i < dt.Rows.Count; i++) {
-						if (IsExistMySql(tablename, dt.Rows[i][0].ToString())) {
-							CustomFields += "," + dt.Rows[i][0].ToString();
-						}
-					}
-				}
-				string U_YWY = string.Empty;
-				if (IsExistMySql(tablename, "U_YWY")) {
-					U_YWY = ",U_YWY";
-				}
-				string U_New_ORDRID = string.Empty;
-				if (IsExistMySql(tablename, "U_New_ORDRID")) {
-					U_New_ORDRID = ",U_New_ORDRID";
-				}
-				string U_EshopNo = string.Empty;
-				if (tablename.ToLower() == "sale_oqut") {
-					U_EshopNo = ",U_EshopNo";
-				}
-				string strSql = string.Format("SELECT U_YGMD,CardCode,IF(" + ViewCustom + ",CardName,'******' ) AS CardName,IF(" + ViewCustom + ",CntctCode,0) AS CntctCode,IF(" + ViewCustom + ",NumAtCard,'******' ) AS NumAtCard,IF(" + ViewCustom + ",DocCur,'') AS DocCur,IF(" + ViewCustom + ",DocRate,0) AS DocRate");
-				strSql += string.Format(",DocNum,DocType,IF(" + ViewSales + ",DiscSum,0) AS DiscSum,IF(" + ViewSales + ",DiscPrcnt,0) AS DiscPrcnt,IF(" + ViewSales + ",TotalExpns,0) AS TotalExpns,IF(" + ViewSales + ",VatSum,0) AS VatSum,IF(" + ViewSales + ",DocTotal,0) AS DocTotal,DocDate,DocDueDate,TaxDate,SupplCode,ShipToCode,PayToCode,Address,Address2,Comments,BillDocType,SlpCode,TrnspCode,GroupNum,PeyMethod,VatPercent,LicTradNum,Indicator,PartSupply,ReqDate,CANCELED");
-				strSql += string.Format("" + CustomFields + "");
-				strSql += string.Format(",DpmPrcnt,Printed,DocStatus,OwnerCode,U_FPLB,U_SL{0}{1}{2}", U_YWY, U_New_ORDRID, U_EshopNo);
-				strSql += string.Format(" FROM {0}." + tablename + "", "nsap_bone");
-				strSql += string.Format($" WHERE DocNum={DocNum} AND sbo_id={0}", SboId);
-				orderDraftInfo = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
-			}
-			return orderDraftInfo.Tolist<OrderDraftInfo>().FirstOrDefault();
-		}
-		/// <summary>
-		/// SAP
-		/// </summary>
-		/// <param name="tablename"></param>
-		/// <param name="filename"></param>
-		/// <returns></returns>
-		public bool IsExist(string tablename, string filename) {
-			bool result = false;
-			string strSql = string.Format("SELECT COUNT(*) FROM syscolumns WHERE id=object_id('{0}') AND name='{1}'", tablename, filename);
-			object obj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, strSql, CommandType.Text, null);
-			if (obj.ToString() == "0" || obj.ToString() == null) { result = false; } else { result = true; }
-			return result;
-		}
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="tablename"></param>
-		/// <param name="filename"></param>
-		/// <returns></returns>
-		public bool IsExistMySql(string tablename, string filename) {
-			bool result = false;
-			string strSql = string.Format("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='nsap_bone' AND table_name ='{0}' AND column_name='{1}'", tablename, filename);
-			object obj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
-			if (obj.ToString() == "0" || obj.ToString() == null) { result = false; } else { result = true; }
-			return result;
-		}
-		#endregion
+        #region 订单详情
+        /// <summary>
+        /// 订单详情
+        /// </summary>
+        /// <param name="DocNum"></param>
+        /// <param name="ViewCustom"></param>
+        /// <param name="tablename"></param>
+        /// <param name="ViewSales"></param>
+        /// <param name="SboId"></param>
+        /// <param name="isSql"></param>
+        /// <returns></returns>
+        public OrderDraftInfo QuerySaleDeliveryDetails(string DocNum, bool ViewCustom, string tablename, bool ViewSales, int SboId, bool isSql)
+        {
+            DataTable orderDraftInfo = new DataTable();
+            DataTable dtConfig = _serviceBaseApp.GetSboNamePwd(SboId);
+            string dRowData = string.Empty;
+            string sqlconn = "";
+            string sboname = "";
+            string isOpen = "1";
+            if (dtConfig.Rows.Count > 0)
+            {
+                isOpen = dtConfig.Rows[0][6].ToString();
+                sqlconn = dtConfig.Rows[0][5].ToString();
+                sboname = dtConfig.Rows[0][0].ToString();
+            }
+            DataTable dt = _serviceBaseApp.GetCustomFields(tablename);
+            if (isSql && isOpen == "1")
+            {
+                if (tablename == "sale_ordr") { tablename = "ORDR"; }
+                if (tablename == "sale_odln") { tablename = "ODLN"; }
+                if (tablename == "sale_oqut") { tablename = "OQUT"; }
+                if (tablename == "sale_oinv") { tablename = "OINV"; }
+                if (tablename == "sale_orin") { tablename = "ORIN"; }
+                if (tablename == "sale_ordn") { tablename = "ORDN"; }
+                if (tablename == "buy_opqt") { tablename = "OPQT"; }
+                if (tablename == "buy_opor") { tablename = "OPOR"; }
+                if (tablename == "buy_opdn") { tablename = "OPDN"; }
+                if (tablename == "buy_opch") { tablename = "OPCH"; }
+                if (tablename == "buy_orpc") { tablename = "ORPC"; }
+                if (tablename == "buy_orpd") { tablename = "ORPD"; }
+                string CustomFields = "";
+                if (dt.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dt.Rows.Count; i++)
+                    {
+                        if (IsExist(tablename, dt.Rows[i][0].ToString()))
+                        {
+                            CustomFields += "," + dt.Rows[i][0].ToString();
+                        }
+                    }
+                }
+                if (string.IsNullOrEmpty(sboname)) { sboname = ""; } else { sboname = sboname + ".dbo."; }
+                int Custom = 0; if (ViewCustom) { Custom = 1; }
+                int Sales = 0; if (ViewSales) { Sales = 1; }
+                string U_FPLB = string.Empty;
+                if (IsExist(sboname + tablename, "U_FPLB"))
+                {
+                    U_FPLB = ",U_FPLB";
+                }
+                string U_YWY = string.Empty;
+                if (IsExist(sboname + tablename, "U_YWY"))
+                {
+                    U_YWY = ",U_YWY";
+                }
+                string U_New_ORDRID = string.Empty;
+                if (IsExist(sboname + tablename, "U_New_ORDRID"))
+                {
+                    U_New_ORDRID = ",U_New_ORDRID";
+                }
+                string U_EshopNo = string.Empty;
+                if (tablename.ToUpper() == "OQUT" || tablename.ToUpper() == "ORDR")
+                {
+                    U_EshopNo = ",U_EshopNo";
+                }
+                string strSql = string.Format("SELECT U_YGMD,CardCode,CASE WHEN 1 = " + Custom + " THEN CardName ELSE '******' END AS CardName,CASE WHEN 1 = " + Custom + " THEN CntctCode ELSE 0 END AS CntctCode,CASE WHEN 1 = " + Custom + " THEN NumAtCard ELSE '******' END AS NumAtCard,CASE WHEN 1 = " + Custom + " THEN DocCur ELSE '' END AS DocCur,CASE WHEN 1 = " + Custom + " THEN DocRate ELSE 0 END AS DocRate");
+                strSql += string.Format(",DocNum,DocType,CASE WHEN 1 = " + Sales + " THEN DiscSum ELSE 0 END AS DiscSum,CASE WHEN 1 = " + Sales + " THEN DiscPrcnt ELSE 0 END AS DiscPrcnt,CASE WHEN 1 = " + Sales + " THEN TotalExpns ELSE 0 END AS TotalExpns,CASE WHEN 1 = " + Sales + " THEN VatSum ELSE 0 END AS VatSum,CASE WHEN 1 = " + Sales + " THEN DocTotal ELSE 0 END AS DocTotal,DocDate,DocDueDate,TaxDate,SupplCode,ShipToCode,PayToCode,Address,Address2,Comments,SlpCode,TrnspCode,GroupNum,PeyMethod,VatPercent,LicTradNum,Indicator,PartSupply,ReqDate,CANCELED");
+                strSql += string.Format("" + CustomFields + "");
+                strSql += string.Format(",DpmPrcnt,Printed,DocStatus,OwnerCode{0},U_SL{1}{2}{3}", U_FPLB, U_YWY, U_New_ORDRID, U_EshopNo);
+                strSql += string.Format(",CASE WHEN 1 = " + Sales + " THEN DocTotalFC ELSE 0 END AS DocTotalFC,CASE WHEN 1 = " + Sales + " THEN DiscSumFC ELSE 0 END AS DiscSumFC");
+                strSql += string.Format(" FROM " + sboname + tablename + "");
+                strSql += string.Format(" WHERE DocEntry={0}", DocNum);
+                orderDraftInfo = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql, CommandType.Text, null);
+            }
+            else
+            {
+                string CustomFields = "";
+                if (dt.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dt.Rows.Count; i++)
+                    {
+                        if (IsExistMySql(tablename, dt.Rows[i][0].ToString()))
+                        {
+                            CustomFields += "," + dt.Rows[i][0].ToString();
+                        }
+                    }
+                }
+                string U_YWY = string.Empty;
+                if (IsExistMySql(tablename, "U_YWY"))
+                {
+                    U_YWY = ",U_YWY";
+                }
+                string U_New_ORDRID = string.Empty;
+                if (IsExistMySql(tablename, "U_New_ORDRID"))
+                {
+                    U_New_ORDRID = ",U_New_ORDRID";
+                }
+                string U_EshopNo = string.Empty;
+                if (tablename.ToLower() == "sale_oqut")
+                {
+                    U_EshopNo = ",U_EshopNo";
+                }
+                string strSql = string.Format("SELECT U_YGMD,CardCode,IF(" + ViewCustom + ",CardName,'******' ) AS CardName,IF(" + ViewCustom + ",CntctCode,0) AS CntctCode,IF(" + ViewCustom + ",NumAtCard,'******' ) AS NumAtCard,IF(" + ViewCustom + ",DocCur,'') AS DocCur,IF(" + ViewCustom + ",DocRate,0) AS DocRate");
+                strSql += string.Format(",DocNum,DocType,IF(" + ViewSales + ",DiscSum,0) AS DiscSum,IF(" + ViewSales + ",DiscPrcnt,0) AS DiscPrcnt,IF(" + ViewSales + ",TotalExpns,0) AS TotalExpns,IF(" + ViewSales + ",VatSum,0) AS VatSum,IF(" + ViewSales + ",DocTotal,0) AS DocTotal,DocDate,DocDueDate,TaxDate,SupplCode,ShipToCode,PayToCode,Address,Address2,Comments,BillDocType,SlpCode,TrnspCode,GroupNum,PeyMethod,VatPercent,LicTradNum,Indicator,PartSupply,ReqDate,CANCELED");
+                strSql += string.Format("" + CustomFields + "");
+                strSql += string.Format(",DpmPrcnt,Printed,DocStatus,OwnerCode,U_FPLB,U_SL{0}{1}{2}", U_YWY, U_New_ORDRID, U_EshopNo);
+                strSql += string.Format(" FROM {0}." + tablename + "", "nsap_bone");
+                strSql += string.Format($" WHERE DocNum={DocNum} AND sbo_id={0}", SboId);
+                orderDraftInfo = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            }
+            return orderDraftInfo.Tolist<OrderDraftInfo>().FirstOrDefault();
+        }
+        /// <summary>
+        /// SAP
+        /// </summary>
+        /// <param name="tablename"></param>
+        /// <param name="filename"></param>
+        /// <returns></returns>
+        public bool IsExist(string tablename, string filename)
+        {
+            bool result = false;
+            string strSql = string.Format("SELECT COUNT(*) FROM syscolumns WHERE id=object_id('{0}') AND name='{1}'", tablename, filename);
+            object obj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, strSql, CommandType.Text, null);
+            if (obj.ToString() == "0" || obj.ToString() == null)
+            { result = false; }
+            else { result = true; }
+            return result;
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tablename"></param>
+        /// <param name="filename"></param>
+        /// <returns></returns>
+        public bool IsExistMySql(string tablename, string filename)
+        {
+            bool result = false;
+            string strSql = string.Format("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='nsap_bone' AND table_name ='{0}' AND column_name='{1}'", tablename, filename);
+            object obj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            if (obj.ToString() == "0" || obj.ToString() == null)
+            { result = false; }
+            else { result = true; }
+            return result;
+        }
+        #endregion
 
         #region 历史单据
         /// <summary>
@@ -1969,83 +2033,101 @@ namespace OpenAuth.App.Order
 
             return UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null).Tolist<GetItemTypeExpInfoDto>()[0];
 
-		}
-		/// <summary>
-		/// 获取物料类型的自定义字段
-		/// </summary>
-		public List<GetItemTypeCustomFieldsDto> GetItemTypeCustomFields(string TypeId) {
-			return GetItemTypeCustomFieldsNos(TypeId);
-		}
-		/// <summary>
-		/// 获取物料类型的自定义字段
-		/// </summary>
-		public List<GetItemTypeCustomFieldsDto> GetItemTypeCustomFieldsNos(string TypeId) {
-			StringBuilder strSql = new StringBuilder();
-			strSql.Append("SELECT a.TypeID,a.Fld_nm,a.Fld_Alias,a.Fld_Desc,a.EditType,a.EditSizeMin,a.EditSizeMax,a.Fld_dflt,a.NotNull,IFNULL(b.valRows,0) AS valRows ");
-			strSql.AppendFormat("FROM {0}.store_itemtype_cufd a LEFT JOIN (SELECT TypeID,Fld_nm,COUNT(*) AS valRows ", "nsap_bone");
-			strSql.AppendFormat("FROM {0}.store_itemtype_ufd1 GROUP BY TypeID,Fld_nm) b ON a.TypeID=b.TypeID AND a.Fld_nm=b.Fld_nm ", "nsap_bone");
-			strSql.AppendFormat("WHERE a.TypeID={0} AND a.valid=1 ORDER BY a.Fld_Alias+0 ASC", TypeId);
-			return UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null).Tolist<GetItemTypeCustomFieldsDto>();
-		}
-		/// <summary>
-		/// 获取物料类型的自定义字段 — 有效值
-		/// </summary>
-		public List<GetItemTypeCustomValueDto> GetItemTypeCustomValue(string TypeId, string FieldNm) {
-			return GetItemTypeCustomValueNos(TypeId, FieldNm);
-		}
-		/// <summary>
-		/// 获取物料类型的自定义字段 — 有效值
-		/// </summary>
-		public List<GetItemTypeCustomValueDto> GetItemTypeCustomValueNos(string TypeId, string FieldNm) {
-			string strSql = string.Format("SELECT FldValue AS id,Descr AS name FROM {0}.store_itemtype_ufd1 WHERE TypeID={1} AND Fld_nm='{2}' ORDER BY IndexID ASC", "nsap_bone", TypeId, FieldNm);
-			return UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null).Tolist<GetItemTypeCustomValueDto>();
-		}
+        }
+        /// <summary>
+        /// 获取物料类型的自定义字段
+        /// </summary>
+        public List<GetItemTypeCustomFieldsDto> GetItemTypeCustomFields(string TypeId)
+        {
+            return GetItemTypeCustomFieldsNos(TypeId);
+        }
+        /// <summary>
+        /// 获取物料类型的自定义字段
+        /// </summary>
+        public List<GetItemTypeCustomFieldsDto> GetItemTypeCustomFieldsNos(string TypeId)
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("SELECT a.TypeID,a.Fld_nm,a.Fld_Alias,a.Fld_Desc,a.EditType,a.EditSizeMin,a.EditSizeMax,a.Fld_dflt,a.NotNull,IFNULL(b.valRows,0) AS valRows ");
+            strSql.AppendFormat("FROM {0}.store_itemtype_cufd a LEFT JOIN (SELECT TypeID,Fld_nm,COUNT(*) AS valRows ", "nsap_bone");
+            strSql.AppendFormat("FROM {0}.store_itemtype_ufd1 GROUP BY TypeID,Fld_nm) b ON a.TypeID=b.TypeID AND a.Fld_nm=b.Fld_nm ", "nsap_bone");
+            strSql.AppendFormat("WHERE a.TypeID={0} AND a.valid=1 ORDER BY a.Fld_Alias+0 ASC", TypeId);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null).Tolist<GetItemTypeCustomFieldsDto>();
+        }
+        /// <summary>
+        /// 获取物料类型的自定义字段 — 有效值
+        /// </summary>
+        public List<GetItemTypeCustomValueDto> GetItemTypeCustomValue(string TypeId, string FieldNm)
+        {
+            return GetItemTypeCustomValueNos(TypeId, FieldNm);
+        }
+        /// <summary>
+        /// 获取物料类型的自定义字段 — 有效值
+        /// </summary>
+        public List<GetItemTypeCustomValueDto> GetItemTypeCustomValueNos(string TypeId, string FieldNm)
+        {
+            string strSql = string.Format("SELECT FldValue AS id,Descr AS name FROM {0}.store_itemtype_ufd1 WHERE TypeID={1} AND Fld_nm='{2}' ORDER BY IndexID ASC", "nsap_bone", TypeId, FieldNm);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null).Tolist<GetItemTypeCustomValueDto>();
+        }
+        /// <summary>
+        /// 关税组 - 值
+        /// </summary>
+        /// <returns></returns>
+        public string DropListCstGrpCodeValue(string SboId, string KeyId)
+        {
+            return DropListCstGrpCodeValueNos(SboId, KeyId).DataTableToJSON();
+        }
+        /// <summary>
+        /// 关税组 - 值
+        /// </summary>
+        /// <returns></returns>
+        public DataTable DropListCstGrpCodeValueNos(string SboId, string KeyId)
+        {
+            string strSql = string.Format("SELECT TotalTax FROM {0}.store_OARG WHERE sbo_id={1} AND CstGrpCode={2}", "nsap_bone", SboId, KeyId);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null);
+        }
+        public string DropListVatGroupValue(string SboId, string type, string KeyId)
+        {
+            return DropListVatGroupValueNos(SboId, type, KeyId).DataTableToJSON();
+        }
+        /// <summary>
+        /// 税收组（采购/销售） - 值
+        /// </summary>
+        /// <returns></returns>
+        public DataTable DropListVatGroupValueNos(string SboId, string type, string KeyId)
+        {
+            string strSql = string.Format("SELECT Rate FROM {0}.store_OVTG WHERE sbo_id={1} AND Code='{2}' ", "nsap_bone", SboId, KeyId);
+            if (!string.IsNullOrEmpty(type))
+            {
+                if (type == "sale") { strSql += string.Format(" AND Category='O'"); } else if (type == "buy") { strSql += string.Format(" AND Category='I'"); }
+            }
 
-		/// <summary>
-		/// 关税组 - 值
-		/// </summary>
-		/// <returns></returns>
-		public string DropListCstGrpCodeValue(string SboId, string KeyId) {
-			string strSql = string.Format("SELECT TotalTax FROM {0}.store_OARG WHERE sbo_id={1} AND CstGrpCode={2}", "nsap_bone", SboId, KeyId);
-			object strObj = UnitWork.ExecuteScalar(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null);
-			return strObj == null ? "0" : strObj.ToString();
-
-		}
-
-		/// <summary>
-		/// 税收组（采购/销售） - 值
-		/// </summary>
-		/// <returns></returns>
-		public string DropListVatGroupValue(string SboId, string type, string KeyId) {
-			string strSql = string.Format("SELECT Rate FROM {0}.store_OVTG WHERE sbo_id={1} AND Code='{2}' ", "nsap_bone", SboId, KeyId);
-			if (!string.IsNullOrEmpty(type)) {
-				if (type == "sale") { strSql += string.Format(" AND Category='O'"); } else if (type == "buy") { strSql += string.Format(" AND Category='I'"); }
-			}
-
-			object strObj = UnitWork.ExecuteScalar(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null);
-			return strObj == null ? "0" : strObj.ToString();
-
-		}
-		/// <summary>
-		/// 获取物料的类型自定义字段 — 值
-		/// </summary>
-		public string GetMaterialTypeCustomValue(string ItemCode, string SboId) {
-			return GetMaterialTypeCustomValueNos(ItemCode.FilterESC(), SboId).FirstRowToJSON();
-		}
-		/// <summary>
-		/// 获取物料的类型自定义字段 — 值
-		/// </summary>
-		public DataTable GetMaterialTypeCustomValueNos(string ItemCode, string SboId) {
-			string CustomFields = "";
-			DataTable typeDt = GetItemTypeCustomFields();
-			if (typeDt.Rows.Count > 0) {
-				for (int j = 0; j < typeDt.Rows.Count; j++) {
-					if (QueryExistsStoreItemTypeField("store_OITM", typeDt.Rows[j][0].ToString(), "", false)) {
-						CustomFields += "," + typeDt.Rows[j][0].ToString();
-					}
-				}
-			}
-			string strSql = string.Format("SELECT ItemCode{0} FROM {1}.store_OITM WHERE sbo_id={2} AND ItemCode='{3}'", CustomFields, "nsap_bone", SboId, ItemCode);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null);
+        }
+        /// <summary>
+        /// 获取物料的类型自定义字段 — 值
+        /// </summary>
+        public string GetMaterialTypeCustomValue(string ItemCode, string SboId)
+        {
+            return GetMaterialTypeCustomValueNos(ItemCode.FilterESC(), SboId).FirstRowToJSON();
+        }
+        /// <summary>
+        /// 获取物料的类型自定义字段 — 值
+        /// </summary>
+        public DataTable GetMaterialTypeCustomValueNos(string ItemCode, string SboId)
+        {
+            string CustomFields = "";
+            DataTable typeDt = GetItemTypeCustomFields();
+            if (typeDt.Rows.Count > 0)
+            {
+                for (int j = 0; j < typeDt.Rows.Count; j++)
+                {
+                    if (QueryExistsStoreItemTypeField("store_OITM", typeDt.Rows[j][0].ToString(), "", false))
+                    {
+                        CustomFields += "," + typeDt.Rows[j][0].ToString();
+                    }
+                }
+            }
+            string strSql = string.Format("SELECT ItemCode{0} FROM {1}.store_OITM WHERE sbo_id={2} AND ItemCode='{3}'", CustomFields, "nsap_bone", SboId, ItemCode);
 
             return UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null);
         }
@@ -4289,91 +4371,105 @@ namespace OpenAuth.App.Order
             sql.Append(" LEFT JOIN OCST c ON a.State=c.Code");
             sql.AppendFormat(" WHERE AdresType='{0}' AND CardCode='{1}'", AdresType, CardCode);
 
-			return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, sql.ToString(), CommandType.Text, null);
-		}
-		#region 查询物料的过往采购记录
-		/// <summary>
-		/// 查询物料的过往采购记录
-		/// </summary>
-		public DataTable GetMaterialsPurHistory(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, string ItemCode) {
-			int rowCount = 0;
-			string sortString = string.Empty;
-			string filterString = string.Format("t1.canceled='N' AND t2.ItemCode='{0}'", ItemCode.FilterSQL().Trim());
-			if (!string.IsNullOrEmpty(sortname) && !string.IsNullOrEmpty(sortorder))
-				sortString = string.Format("{0} {1}", sortname, sortorder.ToUpper());
+            return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, sql.ToString(), CommandType.Text, null);
+        }
+        #region 查询物料的过往采购记录
+        /// <summary>
+        /// 查询物料的过往采购记录
+        /// </summary>
+        public DataTable GetMaterialsPurHistory(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, string ItemCode)
+        {
+            int rowCount = 0;
+            string sortString = string.Empty;
+            string filterString = string.Format("t1.canceled='N' AND t2.ItemCode='{0}'", ItemCode.FilterSQL().Trim());
+            if (!string.IsNullOrEmpty(sortname) && !string.IsNullOrEmpty(sortorder))
+                sortString = string.Format("{0} {1}", sortname, sortorder.ToUpper());
 
-			string tbName2 = "buy_POR1";
-			string tbName1 = "buy_OPOR";
-			#region 搜索条件
-			if (!string.IsNullOrEmpty(filterQuery)) {
-				string[] fields = filterQuery.Split('`');
-				string[] p = fields[0].Split(':');
-				if (!string.IsNullOrEmpty(p[1])) {
-					switch (p[1].ToString()) {
-						case "1":
-							tbName2 = "buy_POR1";
-							tbName1 = "buy_OPOR";
-							break;
-						case "2":
-							tbName2 = "buy_PCH1";
-							tbName1 = "buy_OPCH";
-							break;
-						case "3":
-							tbName2 = "buy_RPC1";
-							tbName1 = "buy_ORPC";
-							break;
-					}
-				}
-			}
+            string tbName2 = "buy_POR1";
+            string tbName1 = "buy_OPOR";
+            #region 搜索条件
+            if (!string.IsNullOrEmpty(filterQuery))
+            {
+                string[] fields = filterQuery.Split('`');
+                string[] p = fields[0].Split(':');
+                if (!string.IsNullOrEmpty(p[1]))
+                {
+                    switch (p[1].ToString())
+                    {
+                        case "1":
+                            tbName2 = "buy_POR1";
+                            tbName1 = "buy_OPOR";
+                            break;
+                        case "2":
+                            tbName2 = "buy_PCH1";
+                            tbName1 = "buy_OPCH";
+                            break;
+                        case "3":
+                            tbName2 = "buy_RPC1";
+                            tbName1 = "buy_ORPC";
+                            break;
+                    }
+                }
+            }
 
-			#endregion
-			DataTable dt = GetPurTradingHistory(out rowCount, pageSize, pageIndex, filterString, sortString, tbName1, tbName2);
-			dt.Columns.Add("pdn_no", typeof(string));
-			dt.Columns.Add("pdn_quantity", typeof(string));
-			foreach (DataRow dr in dt.Rows) {
-				if (tbName2 == "buy_POR1") {
-					string pdn_data = CheckPDNData(dr[1].ToString(), ItemCode.Replace("&#39;", "'").Replace("&#34;", "\""), dr[12].ToString());
-					dr["pdn_no"] = pdn_data.Split(';')[0].Split(':')[1];
-					dr["pdn_quantity"] = pdn_data.Split(';')[1].Split(':')[1];
-					DataTable dt_state = SelectOPORState(dr[1].ToString());
-					if (dt_state.Rows.Count > 0) {
-						dr["DocStatus"] = dt_state.Rows[0][0];
-						dr["Printed"] = dt_state.Rows[0][1];
-						dr["CANCELED"] = dt_state.Rows[0][2];
-					}
-				} else {
-					dr["pdn_no"] = "";
-					dr["pdn_quantity"] = "";
-				}
-			}
-			return dt;
-		}
-		public DataTable GetPurTradingHistory(out int rowCounts, int pageSize, int pageIndex, string filterQuery, string orderName, string tbName1, string tbName2) {
-			string fieldname = @"t4.sbo_nm as sbo_nm,t1.DocEntry as DocEntry,t1.ObjType as ObjType,t3.SlpName as SlpName,t1.DocDate as DocDate,t1.DocDueDate as DocDueDate
+            #endregion
+            DataTable dt = GetPurTradingHistory(out rowCount, pageSize, pageIndex, filterString, sortString, tbName1, tbName2);
+            dt.Columns.Add("pdn_no", typeof(string));
+            dt.Columns.Add("pdn_quantity", typeof(string));
+            foreach (DataRow dr in dt.Rows)
+            {
+                if (tbName2 == "buy_POR1")
+                {
+                    string pdn_data = CheckPDNData(dr[1].ToString(), ItemCode.Replace("&#39;", "'").Replace("&#34;", "\""), dr[12].ToString());
+                    dr["pdn_no"] = pdn_data.Split(';')[0].Split(':')[1];
+                    dr["pdn_quantity"] = pdn_data.Split(';')[1].Split(':')[1];
+                    DataTable dt_state = SelectOPORState(dr[1].ToString());
+                    if (dt_state.Rows.Count > 0)
+                    {
+                        dr["DocStatus"] = dt_state.Rows[0][0];
+                        dr["Printed"] = dt_state.Rows[0][1];
+                        dr["CANCELED"] = dt_state.Rows[0][2];
+                    }
+                }
+                else
+                {
+                    dr["pdn_no"] = "";
+                    dr["pdn_quantity"] = "";
+                }
+            }
+            return dt;
+        }
+        public DataTable GetPurTradingHistory(out int rowCounts, int pageSize, int pageIndex, string filterQuery, string orderName, string tbName1, string tbName2)
+        {
+            string fieldname = @"t4.sbo_nm as sbo_nm,t1.DocEntry as DocEntry,t1.ObjType as ObjType,t3.SlpName as SlpName,t1.DocDate as DocDate,t1.DocDueDate as DocDueDate
                                  ,t2.Dscription as Dscription,t2.Quantity as Quantity,t2.Price as Price,t2.LineTotal as LineTotal,t1.CardName as CardName,t1.Comments as Comments,t1.sbo_id,t1.DocStatus,t1.Printed,t1.CANCELED";
-			string tableName = string.Format(@"{0}.{1} t1 LEFT JOIN {0}.{2} t2 ON t1.DocEntry=t2.DocEntry AND t1.sbo_id=t2.sbo_id 
+            string tableName = string.Format(@"{0}.{1} t1 LEFT JOIN {0}.{2} t2 ON t1.DocEntry=t2.DocEntry AND t1.sbo_id=t2.sbo_id 
                                             LEFT JOIN {0}.crm_OSLP t3 on t1.SlpCode = t3.SlpCode AND t1.sbo_id = t3.sbo_id LEFT JOIN {3}.sbo_info t4 ON t1.sbo_id = t4.sbo_id", "nsap_bone", tbName1, tbName2, "nsap_base");
-			return SelectPagingHaveRowsCount(tableName.ToString(), fieldname.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCounts);
-		}
-		public string CheckPDNData(string pur_no, string itemCode, string sbo_id) {
-			string sql = string.Format("select DocEntry,Quantity from {0}.buy_pdn1 where BaseEntry={1} and ItemCode={2} and sbo_id={3} ", "nsap_bone", pur_no, itemCode, sbo_id);
+            return SelectPagingHaveRowsCount(tableName.ToString(), fieldname.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCounts);
+        }
+        public string CheckPDNData(string pur_no, string itemCode, string sbo_id)
+        {
+            string sql = string.Format("select DocEntry,Quantity from {0}.buy_pdn1 where BaseEntry={1} and ItemCode={2} and sbo_id={3} ", "nsap_bone", pur_no, itemCode, sbo_id);
 
-			DataTable dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
-			string pdn_no = string.Empty;
-			float pdn_quantity = 0f;
-			if (dt.Rows.Count > 0) {
-				foreach (DataRow dr in dt.Rows) {
-					pdn_no += dr[0].ToString() + ",";
-					pdn_quantity += float.Parse(dr[1].ToString());
-				}
-			}
+            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
+            string pdn_no = string.Empty;
+            float pdn_quantity = 0f;
+            if (dt.Rows.Count > 0)
+            {
+                foreach (DataRow dr in dt.Rows)
+                {
+                    pdn_no += dr[0].ToString() + ",";
+                    pdn_quantity += float.Parse(dr[1].ToString());
+                }
+            }
 
-			return string.Format("pdn_no:{0};pdn_quantity:{1}", pdn_no.TrimEnd(','), pdn_quantity);
-		}
-		public DataTable SelectOPORState(string docentry) {
-			string sql = string.Format("select DocStatus,Printed,CANCELED from OPOR where DocEntry='{0}'", docentry);
-			return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, sql, CommandType.Text, null);
-		}
-		#endregion
-	}
+            return string.Format("pdn_no:{0};pdn_quantity:{1}", pdn_no.TrimEnd(','), pdn_quantity);
+        }
+        public DataTable SelectOPORState(string docentry)
+        {
+            string sql = string.Format("select DocStatus,Printed,CANCELED from OPOR where DocEntry='{0}'", docentry);
+            return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, sql, CommandType.Text, null);
+        }
+        #endregion
+    }
 }
