@@ -2360,7 +2360,7 @@ namespace OpenAuth.App.Order
 			{
 
                 string strSql = "SELECT UnitCode AS id,VolDisply AS name FROM OLGT ORDER BY UnitCode ASC";
-                return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null).Tolist<GetItemTypeCustomValueDto>();
+                return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null).Tolist<DropListUnit>();
 
 			}
 			else
