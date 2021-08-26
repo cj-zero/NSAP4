@@ -1393,26 +1393,26 @@ namespace OpenAuth.App.Order
                 Address2 = order.Address2,
                 billBaseType = "-1",
                 billBaseEntry = "-1",
-                BeforeDiscSum = !string.IsNullOrEmpty(order.BeforeDiscSum) ? order.BeforeDiscSum : "0.0",
+                BeforeDiscSum = !string.IsNullOrEmpty(order.BeforeDiscSum) ? order.BeforeDiscSum : "0.0",// 折扣前总计
                 CardName = order.CardName,//供应商名称
                 CardCode = !string.IsNullOrEmpty(order.CardCode) ? order.CardCode : "",
                 Comments = order.Comments,//备注
                 CurSource = order.CurSource,//货币类型
                 CustomFields = order.CustomFields,//  $"U_ShipName≮1≯≮0≯U_SCBM≮1≯P3-陈友祥",
-                DiscPrcnt = !string.IsNullOrEmpty(order.DiscPrcnt.ToString()) ? order.DiscPrcnt.ToString() : "0.0",
+                DiscPrcnt = !string.IsNullOrEmpty(order.DiscPrcnt.ToString()) ? order.DiscPrcnt.ToString() : "0.0",//折扣（总计）
                 //付款条件------------------------
                 GoodsToDay = !string.IsNullOrEmpty(order.GoodsToDay) ? order.GoodsToDay : "0",//货到付百分比
                 PrepaPro = !string.IsNullOrEmpty(order.PrepaPro) ? order.PrepaPro : "0.0",//预付百分比
                 PayBefShip = !string.IsNullOrEmpty(order.PayBefShip) ? order.PayBefShip : "0.0",//发货前付
                 GoodsToPro = !string.IsNullOrEmpty(order.GoodsToPro) ? order.GoodsToPro : "0.0",//货到付百分比
                 //------------------------------
-                DiscSum = !string.IsNullOrEmpty(order.DiscSum.ToString()) ? order.DiscSum.ToString() : "0",//总计折扣
+                DiscSum = !string.IsNullOrEmpty(order.DiscSum.ToString()) ? order.DiscSum.ToString() : "0",//折扣金额
                 DocCur = order.DocCur,
                 DocDate = order.DocDate.ToString(),
                 DocDueDate = order.DocDueDate.ToString(),
                 DocRate = order.DocRate.ToString(),
                 DocStatus = "O",
-                DocTotal = order.DocTotal.ToString(),//
+                DocTotal = order.DocTotal.ToString(),//折扣后总价
                 DocType = order.DocType,
                 GoodsToDate = order.GoodsToDate,
                 FuncId = funcId.ToString(),
