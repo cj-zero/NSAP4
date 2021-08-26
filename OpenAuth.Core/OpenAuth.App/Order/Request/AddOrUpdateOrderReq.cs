@@ -34,7 +34,7 @@ namespace OpenAuth.App.Order.Request
         /// 订单
         /// </summary>
         public OrderDraft Order { get; set; }
-    }
+	}
 
     public class OrderDraft
     {
@@ -229,6 +229,10 @@ namespace OpenAuth.App.Order.Request
         /// 行明细
         /// </summary>
         public IList<OrderItem> OrderItems { get; set; }
+        /// <summary>
+        /// 附件
+        /// </summary>
+        public List<billDeliveryDeatil> FileList { get; set; }
     }
     public class OrderItem
     {

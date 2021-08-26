@@ -4,6 +4,7 @@ using OpenAuth.App;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Order;
 using OpenAuth.App.Order.ModelDto;
+using OpenAuth.App.Order.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Interface;
 using Serilog;
@@ -431,17 +432,36 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("GetMaterialsPurHistory")]
-		public  TableData GetMaterialsPurHistory(string page, string rp, string qtype, string query, string sortname, string sortorder, string ItemCode) {
+		public TableData GetMaterialsPurHistory(string page, string rp, string qtype, string query, string sortname, string sortorder, string ItemCode) {
 			var result = new TableData();
 
 			if (!string.IsNullOrEmpty(ItemCode)) {
 
-				DataTable dt= _serviceSaleOrderApp.GetMaterialsPurHistory(int.Parse(rp), int.Parse(page), query, sortname, sortorder, ItemCode);
+				DataTable dt = _serviceSaleOrderApp.GetMaterialsPurHistory(int.Parse(rp), int.Parse(page), query, sortname, sortorder, ItemCode);
 				result.Data = dt;
 				result.Count = dt.Rows.Count;
 			}
 			return result;
 		}
 		#endregion
+
+		/// <summary>
+		/// 查询物料库存数据来源
+		/// </summary>
+		/// <param name="model"></param>
+		/// <returns></returns>
+		[HttpPost]
+		[Route("SelectMaterialStockDataSource")]
+		public TableData SelectMaterialStockDataSource(SelectMaterialStockDataSourceReq model) {
+			var result = new TableData();
+			bool rIsOpenSap = model.IsOpenSap == "1" ? true : false;
+			if (!string.IsNullOrEmpty(model.SboId) && !string.IsNullOrEmpty(model.ItemCode) && !string.IsNullOrEmpty(model.ItemOperaType)) {
+				DataTable dt = _serviceSaleOrderApp.SelectMaterialStockDataSource(model.limit, model.page, model.query, model.sortname, model.sortorder, model.SboId, model.WhsCode, model.ItemCode, model.ItemOperaType, rIsOpenSap);
+				result.Data = dt;
+				result.Count = dt.Rows.Count;
+			}
+			return result;
+		}
+
 	}
 }
