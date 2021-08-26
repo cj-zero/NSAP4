@@ -182,9 +182,9 @@ namespace OpenAuth.App.Order
             #region 售后人员(部门名称“售后”开头）下的销售订单如果没有设备（物料编号C开头),则审批流程改成呼叫中心审批
             bool shslp = false; bool shc = false;
             //判断销售员是否是售后部门
-            if (!string.IsNullOrEmpty(orderReq.Order.SlpCode))
+            if (!string.IsNullOrEmpty(orderReq.Order.SlpCode.ToString()))
             {
-                string depnm = _serviceBaseApp.GetSalesDepname(orderReq.Order.SlpCode, sboID.ToString());
+                string depnm = _serviceBaseApp.GetSalesDepname(orderReq.Order.SlpCode.ToString(), sboID.ToString());
                 if (depnm.IndexOf("售后") == 0)
                 {
                     shslp = true;
@@ -215,11 +215,11 @@ namespace OpenAuth.App.Order
             }
             if (orderReq.Ations == OrderAtion.Draft)
             {
-                result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
+                result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
             }
             if (orderReq.Ations == OrderAtion.Submit)
             {
-                result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal) > 0 ? double.Parse(orderReq.Order.DocTotal) : 0), basetype, int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
+                result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), basetype, int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
                 if (int.Parse(result) > 0)
                 {
                     var par = SaveJobPara(result, orderReq.IsTemplate);

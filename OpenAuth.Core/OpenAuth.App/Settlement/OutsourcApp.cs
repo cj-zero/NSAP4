@@ -598,7 +598,7 @@ namespace OpenAuth.App
                     await UnitWork.UpdateAsync<Outsourc>(o => o.Id == req.outsourcId, u => new Outsourc
                     {
                         TotalMoney = obj.TotalMoney,
-                        FlowInstanceId = outsourcObj.FlowInstanceId,
+                        FlowInstanceId = obj.FlowInstanceId,
                         UpdateTime = DateTime.Now,
                         //todo:补充或调整自己需要的字段
                     });
@@ -982,11 +982,11 @@ namespace OpenAuth.App
                     o.TerminalCustomerId = completionReportObj.TerminalCustomerId;
                     if (o.CompleteTime.Value.Month == DateTime.Now.Month)
                     {
-                        number = thisMonth++;
+                        number = thisMonth+1;
                     }
                     else if (o.CompleteTime.Value.Month == DateTime.Now.Month - 1)
                     {
-                        number = lastMonth++;
+                        number = lastMonth+1;
                     }
                     var Province = serviceOrderIds.Where(s => s.Id == o.ServiceOrderId).FirstOrDefault()?.Province;
                     if (globalarea.Contains(Province) || Province == "海外")
