@@ -59,6 +59,7 @@ namespace Infrastructure.Export
         /// <typeparam name="T"></typeparam>
         /// <param name="filePath"></param>
         /// <param name="data"></param>
+        /// <param name="data"></param>
         /// <param name="tplPath"></param>
         /// <returns></returns>
         public static async Task<byte[]> Exporterpdf<T>(T data, string tplPath = null, Action<PdfExporterAttribute> action = null) where T : class

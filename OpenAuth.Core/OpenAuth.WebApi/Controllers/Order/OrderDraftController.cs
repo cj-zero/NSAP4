@@ -1143,7 +1143,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns>服务器存储的文件信息</returns>
         [HttpPost]
         [Route("UpdateSalesDocAttachment")]
-        public Response UpdateSalesDocAttachment(BillDelivery model) {
+        public Response UpdateSalesDocAttachment(BillDeliveryReq model) {
             var result = new Response();
             try {
                 _serviceSaleOrderApp.UpdateSalesDocAttachment(model);
