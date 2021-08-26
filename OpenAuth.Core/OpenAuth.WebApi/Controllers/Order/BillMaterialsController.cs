@@ -125,18 +125,19 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListCstGrpCodeValue")]
-		public string DropListCstGrpCodeValue(string SboId, string KeyId) {
-			var result = "";
+		public Response<string> DropListCstGrpCodeValue(string SboId, string KeyId) {
+			var result = new Response<string>();
+
 			try {
 				if (!string.IsNullOrEmpty(SboId) && !string.IsNullOrEmpty(KeyId))
-					result = _serviceSaleOrderApp.DropListCstGrpCodeValue(SboId, KeyId);
+					result.Result = _serviceSaleOrderApp.DropListCstGrpCodeValue(SboId, KeyId);
 
 				else
-					return "";
+					return null;
 			} catch (Exception e) {
-				return e.Message;
+				result.Message = e.Message;
 			}
-			if (result == "[]") result = "0";
+
 			return result;
 		}
 		/// <summary>
@@ -144,17 +145,17 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListVatGroupPuValue")]
-		public string DropListVatGroupPuValue(string SboId, string KeyId) {
-			var result = "";
+		public Response<string> DropListVatGroupPuValue(string SboId, string KeyId) {
+			var result = new Response<string>();
+
 			try {
 				if (!string.IsNullOrEmpty(SboId) && !string.IsNullOrEmpty(KeyId))
-					result = _serviceSaleOrderApp.DropListVatGroupValue(SboId, "buy", KeyId);
-				else
-					return "";
+					result.Result = _serviceSaleOrderApp.DropListVatGroupValue(SboId, "buy", KeyId);
+
 			} catch (Exception e) {
-				return e.Message;
+				result.Message = e.Message;
 			}
-			if (result == "[]") result = "0";
+
 			return result;
 		}
 		/// <summary>
@@ -162,17 +163,17 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListVatGourpSaValue")]
-		public string DropListVatGourpSaValue(string SboId, string KeyId) {
-			var result = "";
+		public Response<string> DropListVatGourpSaValue(string SboId, string KeyId) {
+			var result = new Response<string>();
+
 			try {
 				if (!string.IsNullOrEmpty(SboId) && !string.IsNullOrEmpty(KeyId))
-					result = _serviceSaleOrderApp.DropListVatGroupValue(SboId, "sale", KeyId);
-				else
-					return "";
+					result.Result = _serviceSaleOrderApp.DropListVatGroupValue(SboId, "sale", KeyId);
+
 			} catch (Exception e) {
-				return e.Message;
+				result.Message = e.Message;
 			}
-			if (result == "[]") result = "0";
+
 			return result;
 		}
 
@@ -181,12 +182,13 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("GetMaterialTypeCustomValue")]
-		public string GetMaterialTypeCustomValue(string ItemCode, string SboId) {
-			var result = "";
+		public Response<string> GetMaterialTypeCustomValue(string ItemCode, string SboId) {
+			var result = new Response<string>();
+
 			try {
-				result = _serviceSaleOrderApp.GetMaterialTypeCustomValue(ItemCode, SboId);
+				result.Result = _serviceSaleOrderApp.GetMaterialTypeCustomValue(ItemCode, SboId);
 			} catch (Exception e) {
-				return e.Message;
+				result.Message = e.Message;
 			}
 			return result;
 		}
@@ -195,12 +197,13 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("GetFileTypeByUrl")]
-		public string GetFileTypeByUrl(string PageUrl) {
-			var result = "";
+		public Response<string> GetFileTypeByUrl(string PageUrl) {
+			var result = new Response<string>();
+
 			try {
-				result = _serviceSaleOrderApp.GetFileTypeByUrl(PageUrl);
+				result.Result = _serviceSaleOrderApp.GetFileTypeByUrl(PageUrl);
 			} catch (Exception e) {
-				return e.Message;
+				result.Message = e.Message;
 			}
 			return result;
 		}
@@ -211,12 +214,13 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// <returns></returns>
 		[HttpGet]
 		[Route("GetCustomFields")]
-		public string GetCustomFields(string TableName) {
-			var result = "";
+		public Response<string> GetCustomFields(string TableName) {
+			var result = new Response<string>();
+
 			try {
-				result = _serviceSaleOrderApp.GetCustomFieldsNos(TableName);
+				result.Result = _serviceSaleOrderApp.GetCustomFieldsNos(TableName);
 			} catch (Exception e) {
-				return e.Message;
+				result.Message = e.Message;
 			}
 			return result;
 		}
@@ -228,13 +232,14 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// <returns></returns>
 		[HttpGet]
 		[Route("GetCustomValue")]
-		public string GetCustomValue(string TableID, string FieldID) {
-			var result = "";
+		public Response<string> GetCustomValue(string TableID, string FieldID) {
+			var result = new Response<string>();
+
 
 			try {
-				result = _serviceSaleOrderApp.GetCustomValue(TableID, FieldID);
+				result.Result = _serviceSaleOrderApp.GetCustomValue(TableID, FieldID);
 			} catch (Exception e) {
-				return e.Message;
+				result.Message = e.Message;
 			}
 			return result;
 		}
@@ -243,14 +248,15 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("GetMaterialPropertyName")]
-		public string GetMaterialPropertyName() {
-			var result = "";
+		public Response<string> GetMaterialPropertyName() {
+			var result = new Response<string>();
+
 			var UserID = _serviceBaseApp.GetUserNaspId();
 			var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
 			try {
-				result = _serviceSaleOrderApp.GetMaterialPropertyName(SboID.ToString());
+				result.Result = _serviceSaleOrderApp.GetMaterialPropertyName(SboID.ToString());
 			} catch (Exception e) {
-				return e.Message;
+				result.Message = e.Message;
 			}
 			return result;
 		}
@@ -261,15 +267,16 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("GetSapSboIsOpen")]
-		public string GetSapSboIsOpen(string sbo_id) {
-			var result = "";
+		public Response<string> GetSapSboIsOpen(string sbo_id) {
+			var result = new Response<string>();
+
 			try {
 				if (!string.IsNullOrEmpty(sbo_id))
-					result = _serviceSaleOrderApp.GetSapSboIsOpen(sbo_id) ? "1" : "0";
+					result.Result = _serviceSaleOrderApp.GetSapSboIsOpen(sbo_id) ? "1" : "0";
 				else
-					return "0";
+					return null;
 			} catch (Exception e) {
-				return e.Message;
+				result.Message = e.Message;
 			}
 			return result;
 		}
@@ -278,12 +285,12 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListItmsGrpCod")]
-		public string DropListItmsGrpCod(string SboId) {
-			var result = "";
+		public Response<string> DropListItmsGrpCod(string SboId) {
+			var result = new Response<string>();
 			try {
-				result = _serviceSaleOrderApp.DropListItmsGrpCod(SboId);
+				result.Result = _serviceSaleOrderApp.DropListItmsGrpCod(SboId);
 			} catch (Exception e) {
-				return e.Message;
+				result.Message = e.Message;
 			}
 			return result;
 		}
@@ -292,13 +299,14 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListShipType")]
-		public string DropListShipType(string SboId) {
-			var result = "";
+		public Response<string> DropListShipType(string SboId) {
+			var result = new Response<string>();
+
 
 			try {
-				result = _serviceSaleOrderApp.DropListShipType(SboId);
+				result.Result = _serviceSaleOrderApp.DropListShipType(SboId);
 			} catch (Exception e) {
-				return e.Message;
+				result.Message = e.Message;
 			}
 			return result;
 		}
@@ -307,12 +315,13 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListCstGrpCode")]
-		public string DropListCstGrpCode(string SboId) {
-			var result = "";
+		public Response<string> DropListCstGrpCode(string SboId) {
+			var result = new Response<string>();
+
 			try {
-				result = _serviceSaleOrderApp.DropListCstGrpCode(SboId);
+				result.Result = _serviceSaleOrderApp.DropListCstGrpCode(SboId);
 			} catch (Exception e) {
-				return e.Message;
+				result.Message = e.Message;
 			}
 			return result;
 		}
@@ -321,13 +330,14 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListVatGroupPu")]
-		public string DropListVatGroupPu(string SboId) {
-			var result = "";
+		public Response<string> DropListVatGroupPu(string SboId) {
+			var result = new Response<string>();
+
 
 			try {
-				result = _serviceSaleOrderApp.DropListVatGroup(SboId, "buy");
+				result.Result = _serviceSaleOrderApp.DropListVatGroup(SboId, "buy");
 			} catch (Exception e) {
-				return e.Message;
+				result.Message = e.Message;
 			}
 			return result;
 		}
@@ -336,12 +346,13 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListVatGourpSa")]
-		public string DropListVatGourpSa(string SboId) {
-			var result = "";
+		public Response<string> DropListVatGourpSa(string SboId) {
+			var result = new Response<string>();
+
 			try {
-				result = _serviceSaleOrderApp.DropListVatGroup(SboId, "sale");
+				result.Result = _serviceSaleOrderApp.DropListVatGroup(SboId, "sale");
 			} catch (Exception e) {
-				return e.Message;
+				result.Message = e.Message;
 			}
 			return result;
 
@@ -352,12 +363,13 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListPriceList")]
-		public string DropListPriceList(string SboId) {
-			var result = "";
+		public Response<string> DropListPriceList(string SboId) {
+			var result = new Response<string>();
+
 			try {
-				result = _serviceSaleOrderApp.DropListPriceList(SboId);
+				result.Result = _serviceSaleOrderApp.DropListPriceList(SboId);
 			} catch (Exception e) {
-				return e.Message;
+				result.Message = e.Message;
 			}
 			return result;
 		}
@@ -366,12 +378,13 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListFirmCode")]
-		public string DropListFirmCode(string SboId) {
-			var result = "";
+		public Response<string> DropListFirmCode(string SboId) {
+			var result = new Response<string>();
+
 			try {
-				result = _serviceSaleOrderApp.DropListFirmCode(SboId);
+				result.Result = _serviceSaleOrderApp.DropListFirmCode(SboId);
 			} catch (Exception e) {
-				return e.Message;
+				result.Message = e.Message;
 			}
 			return result;
 		}
@@ -380,8 +393,8 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListLengthUnit")]
-		public Response<List<GetItemTypeCustomValueDto>> DropListLengthUnit(string SboId) {
-			var result = new Response<List<GetItemTypeCustomValueDto>>();
+		public Response<List<DropListUnit>> DropListLengthUnit(string SboId) {
+			var result = new Response<List<DropListUnit>>();
 
 			result.Result = _serviceSaleOrderApp.DropListLengthUnit(SboId);
 
@@ -392,8 +405,8 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListVolumeUnit")]
-		public Response<List<GetItemTypeCustomValueDto>> DropListVolumeUnit(string SboId) {
-			var result = new Response<List<GetItemTypeCustomValueDto>>();
+		public Response<List<DropListUnit>> DropListVolumeUnit(string SboId) {
+			var result = new Response<List<DropListUnit>>();
 
 			result.Result = _serviceSaleOrderApp.DropListVolumeUnit(SboId);
 
@@ -404,13 +417,31 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListWeightUnit")]
-		public Response<List<GetItemTypeCustomValueDto>> DropListWeightUnit(string SboId) {
-			var result = new Response<List<GetItemTypeCustomValueDto>>();
+		public Response<List<DropListUnit>> DropListWeightUnit(string SboId) {
+			var result = new Response<List<DropListUnit>>();
 
 
 			result.Result = _serviceSaleOrderApp.DropListWeightUnit(SboId);
 
 			return result;
 		}
+		#region 查询物料的过往采购记录
+		/// <summary>
+		/// 查询物料的过往采购记录
+		/// </summary>
+		[HttpGet]
+		[Route("GetMaterialsPurHistory")]
+		public  TableData GetMaterialsPurHistory(string page, string rp, string qtype, string query, string sortname, string sortorder, string ItemCode) {
+			var result = new TableData();
+
+			if (!string.IsNullOrEmpty(ItemCode)) {
+
+				DataTable dt= _serviceSaleOrderApp.GetMaterialsPurHistory(int.Parse(rp), int.Parse(page), query, sortname, sortorder, ItemCode);
+				result.Data = dt;
+				result.Count = dt.Rows.Count;
+			}
+			return result;
+		}
+		#endregion
 	}
 }

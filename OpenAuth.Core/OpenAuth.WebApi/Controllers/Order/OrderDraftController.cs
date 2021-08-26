@@ -31,12 +31,14 @@ namespace OpenAuth.WebApi.Controllers.Order
     [ApiExplorerSettings(GroupName = "Order")]
     public class OrderDraftController : Controller
     {
+        private readonly FileApp _app;
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
         IAuth _auth;
         IUnitWork UnitWork;
         ServiceBaseApp _serviceBaseApp;
-        public OrderDraftController(IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
+        public OrderDraftController(FileApp app,IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
         {
+            this._app = app;
             this.UnitWork = UnitWork;
             this._serviceBaseApp = _serviceBaseApp;
             this._auth = _auth;
@@ -942,7 +944,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <summary>
         /// 查看附件
         /// <summary>
-        /// <param name="DocNum">订单Id</param>
+        /// <param name="OrderId">订单Id</param>
         /// <param name="TypeId">默认6</param>
         /// <param name="sboId">选择账套Id</param>
         /// <returns></returns>
@@ -1115,5 +1117,397 @@ namespace OpenAuth.WebApi.Controllers.Order
         }
 
         #endregion
+        /// <summary>
+		///  批量上传文件接口
+		/// </summary>
+		/// <param name="files"></param>
+		/// <returns>服务器存储的文件信息</returns>
+		[HttpPost]
+        [Route("billAttachUpload")]
+        public async Task<Response<IList<UploadFileResp>>> billAttachUpload([FromForm] IFormFileCollection files) {
+            var result = new Response<IList<UploadFileResp>>();
+            try {
+                result.Result = await _app.Add(files);
+            } catch (Exception ex) {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+        /// <summary>
+        ///  批量上传保存接口
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns>服务器存储的文件信息</returns>
+        [HttpPost]
+        [Route("UpdateSalesDocAttachment")]
+        public Response UpdateSalesDocAttachment(BillDelivery model) {
+            var result = new Response();
+            try {
+                _serviceSaleOrderApp.UpdateSalesDocAttachment(model);
+            } catch (Exception ex) {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：'', 错误：{result.Message}");
+            }
+            return result;
+        }
+        /// <summary>
+        ///  合约评审
+        /// </summary>
+        /// <param name="pageSize"></param>
+        /// <param name="pageIndex"></param>
+        /// <param name="filterQuery"></param>
+        /// <param name="sortname"></param>
+        /// <param name="sortorder"></param>
+        /// <param name="itemCode"></param>
+        /// <param name="cardCode"></param>
+        /// <returns>合约评审</returns>
+        [HttpGet]
+        [Route("GridRelationContractList")]
+
+        public TableData GridRelationContractList(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, string itemCode, string cardCode) {
+            var result = new TableData();
+
+            result.Data = _serviceSaleOrderApp.GridRelationContractList(pageSize, pageIndex, filterQuery, sortname, sortorder, itemCode, cardCode, "1");
+            return result;
+        }
+
+        /// <summary>
+        ///  复制生产订单
+        /// </summary>
+        /// <param name="page"></param>
+        /// <param name="rp"></param>
+        /// <param name="qtype"></param>
+        /// <param name="query"></param>
+        /// <param name="sortname"></param>
+        /// <param name="sortorder"></param>
+        /// <param name="sboID"></param>
+        /// <returns>复制生产订单</returns>
+        [HttpGet]
+        [Route("CopyProductToSaleSelect")]
+        public TableData CopyProductToSaleSelect(int page, int rp, string qtype, string query, string sortname, string sortorder, int sboID) {
+            var result = new TableData();
+
+            result.Data = _serviceSaleOrderApp.CopyProductToSaleSelect(pageSize: rp, pageIndex: page, filterQuery: query, sortname: sortname, sortorder: sortorder, sboID: sboID);
+            return result;
+
+
+        }
+        /// <summary>
+        /// 获取联系信息
+        /// </summary>
+        /// <param name="page"></param>
+        /// <param name="rp"></param>
+        /// <param name="qtype"></param>
+        /// <param name="query"></param>
+        /// <param name="sortname"></param>
+        /// <param name="sortorder"></param>
+        /// <param name="cardCode"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetCustomerCntctPrsnInfo")]
+        public TableData GetCustomerCntctPrsnInfo(string page, string rp, string qtype, string query, string sortname, string sortorder, string cardCode) {
+            var result = new TableData();
+            try {
+                result = _serviceSaleOrderApp.GetCustomerCntctPrsnInfo(int.Parse(rp), int.Parse(page), query, sortname, sortorder, cardCode);
+            } catch (Exception e) {
+                result.Code = 500;
+                result.Message = e.Message;
+                Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
+            }
+            return result;
+        }
+        /// <summary>
+        /// 根据客户代码查询客户地址
+        /// </summary>
+        /// <param name="page"></param>
+        /// <param name="rp"></param>
+        /// <param name="qtype"></param>
+        /// <param name="query"></param>
+        /// <param name="sortname"></param>
+        /// <param name="sortorder"></param>
+        /// <param name="cardCode"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetCustomerAddressInfo")]
+        public TableData GetCustomerAddressInfo(string page, string rp, string qtype, string query, string sortname, string sortorder, string cardCode) {
+            var result = new TableData();
+            try {
+                result = _serviceSaleOrderApp.GetCustomerAddressInfo(int.Parse(rp), int.Parse(page), query, sortname, sortorder, cardCode);
+            } catch (Exception e) {
+                result.Code = 500;
+                result.Message = e.Message;
+                Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
+            }
+            return result;
+        }
+        /// <summary>
+        /// 查看呼叫服务信息
+        /// </summary>
+        [HttpGet]
+        [Route("GetCustomerInfo")]
+        public Response<GetCustomerInfoDto> GetCustomerInfo(string cardCode, string sboId) {
+            var result = new Response<GetCustomerInfoDto>();
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+
+            result.Result = _serviceSaleOrderApp.GetCustomerDetailsInfo(cardCode, sboId, SboID.ToString());
+
+            return result;
+        }
+        /// <summary>
+        /// 取消
+        /// </summary>
+        /// <param name="DocNum"></param>
+        /// <param name="SboId"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("UpdataSalesDoc")]
+        public Response<bool> UpdataSalesDoc(string DocNum, string SboId, string type) {
+            var result = new Response<bool>();
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            result.Result = _serviceSaleOrderApp.UpdataSalesDoc(DocNum, SboID, type, UserID);
+            return result;
+        }
+        #region 查看视图
+        /// <summary>
+        /// 查看视图
+        /// </summary>
+        [HttpGet]
+        [Route("GridDataBind")]
+        public TableData GridDataBind(string page, string rp, string qtype, string query, string sortname, string sortorder) {
+            var tabledata = new TableData();
+            string type = "OQUT";
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            var DepID = _serviceBaseApp.GetSalesDepID(UserID);
+            DataTable dt = _serviceBaseApp.GetSboNamePwd(SboID);
+            string dRowData = string.Empty; string isOpen = "0"; string sqlcont = string.Empty; string sboname = string.Empty;
+            if (dt.Rows.Count > 0) {
+                isOpen = dt.Rows[0][6].ToString();
+                sqlcont = dt.Rows[0][5].ToString(); sboname = dt.Rows[0][0].ToString();
+            }
+            try {
+                if (isOpen == "0") {
+                    DataTable datatable = _serviceSaleOrderApp.SelectBillViewInfo(int.Parse(rp), int.Parse(page), query, sortname, sortorder, type, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewFull, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelf, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelfDepartment, DepID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewCustom, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSales);
+                    tabledata.Data = datatable;
+                    tabledata.Count = datatable.Rows.Count;
+
+                } else {
+                    DataTable datatable = _serviceSaleOrderApp.SelectBillListInfo(int.Parse(rp), int.Parse(page), query, sortname, sortorder, type, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewFull, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelf, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelfDepartment, DepID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewCustom, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSales, sqlcont, sboname);
+                    tabledata.Data = datatable;
+                    tabledata.Count = datatable.Rows.Count;
+
+                }
+            } catch (Exception e) {
+                tabledata.Message = e.Message;
+            }
+            return tabledata;
+        }
+        /// <summary>
+        /// 导出
+        /// </summary>
+        /// <param name="val"></param>
+        /// <param name="Indicator"></param>
+        /// <param name="sboid"></param>
+        /// <param name="DocEntry"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("ExportShow")]
+        public Response<string> ExportShow(string val, string Indicator, string sboid, string DocEntry) {
+            var result = new Response<string>();
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            try {
+                result.Result = _serviceSaleOrderApp.ExportShow(val, Indicator, sboid, DocEntry, host);
+            } catch (Exception e) {
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        #endregion
+
+        #region 根据页面地址获取FunId.
+        /// <summary>
+        /// 根据页面地址获取FunId
+        /// </summary>
+        /// <param name="Address"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetJobTypeByAddress")]
+        public Response<string> GetJobTypeByAddress(string Address) {
+            var result = new Response<string>();
+            try {
+                result.Result = _serviceSaleOrderApp.GetJobTypeByAddress(Address);
+            } catch (Exception e) {
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        #endregion
+        #region 判断审核里是否已经提交该单据
+        /// <summary>
+        /// 判断审核里是否已经提交该单据
+        /// </summary>
+        /// <param name="base_entry"></param>
+        /// <param name="base_type"></param>
+        /// <param name="funId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("IsExistDoc")]
+        public Response<bool> IsExistDoc(string base_entry, string base_type, string funId) {
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            var result = new Response<bool>();
+            try {
+                result.Result = _serviceSaleOrderApp.IsExistDoc(base_entry, base_type, funId, SboID.ToString());
+            } catch (Exception e) {
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        #endregion
+        #region 货币类型
+        /// <summary>
+        /// 货币类型
+        /// </summary>
+        /// <returns></returns>
+        // 
+
+        [HttpGet]
+        [Route("DropPopupDocCur")]
+        public Response<List<DropPopupDocCurDto>> DropPopupDocCur() {
+            var result = new Response<List<DropPopupDocCurDto>>();
+            try {
+                result.Result = _serviceSaleOrderApp.DropPopupDocCur();
+
+            } catch (Exception e) {
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        #endregion
+        #region 仓库
+        /// <summary>
+        /// 仓库
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("DropPopupWhsCode")]
+        public Response<List<DropPopupDocCurDto>> DropPopupWhsCode() {
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            var result = new Response<List<DropPopupDocCurDto>>();
+            try {
+                result.Result = _serviceSaleOrderApp.DropPopupWhsCode(SboID);
+            } catch (Exception e) {
+                result.Message = e.Message;
+            }
+            return result;
+
+        }
+
+        #endregion
+     
+        #region 开关项
+        /// <summary>
+        ///开关项
+        /// </summary>
+        /// <param name="tablename"></param>
+        /// <param name="filevalue"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("IsSwitching")]
+        public Response<bool> IsSwitching(string tablename, string filevalue) {
+            var result = new Response<bool>();
+            result.Result = _serviceSaleOrderApp.IsSwitching(tablename, filevalue);
+            return result;
+        }
+        #endregion
+        /// <summary>
+        /// 销售员
+        /// </summary>
+        /// <param name="SboId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("DropPopupSlpCode")]
+        public Response<List<GetItemTypeCustomValueDto>> DropPopupSlpCode(string SboId) {
+            var result = new Response<List<GetItemTypeCustomValueDto>>();
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            try {
+                if (string.IsNullOrEmpty(SboId)) { SboId = SboID.ToString(); }
+                result.Result = _serviceSaleOrderApp.DropPopupSlpCode(int.Parse(SboId));
+            } catch (Exception e) {
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        ///联系人名字
+        /// </summary>
+        /// <param name="CntctCode"></param>
+        /// <param name="SboId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetConfiguresCntctPrsn")]
+        public Response<string> GetConfiguresCntctPrsn(string CntctCode, string SboId) {
+            var result = new Response<string>();
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            try {
+                int billSboId = 0; bool isSql = true;
+                if (int.Parse(SboId) == SboID || SboId == "") { billSboId = SboID; } else { billSboId = int.Parse(SboId); isSql = false; }
+                result.Result = _serviceSaleOrderApp.GetConfiguresCntctPrsn(CntctCode, billSboId, isSql);
+            } catch (Exception e) {
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 应收
+        /// </summary>
+        /// <param name="SlpCode"></param>
+        /// <param name="CardCode"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetSumBalDue")]
+        public string GetSumBalDue(string SlpCode, string CardCode, string type) {
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            try {
+                return _serviceSaleOrderApp.GetSumBalDue(SlpCode, CardCode, type, SboID);
+            } catch (Exception e) {
+                return e.Message;
+            }
+        }
+        /// <summary>
+        /// 获取地址标识(开票到、运达到)
+        /// </summary>
+        /// <param name="AdresType"></param>
+        /// <param name="CardCode"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetAddressNos")]
+        public Response<string> GetAddressNos(string AdresType, string CardCode) {
+            var result = new Response<string>();
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            try {
+                if (!string.IsNullOrEmpty(AdresType) && !string.IsNullOrEmpty(CardCode)) {
+                    result.Result = _serviceSaleOrderApp.GetAddress(AdresType, CardCode, SboID);
+                } else { return null; }
+            } catch (Exception e) {
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
     }
 }

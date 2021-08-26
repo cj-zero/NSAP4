@@ -39,9 +39,8 @@ namespace OpenAuth.App.Material
 
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
         public readonly WorkbenchApp _workbenchApp;
-
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
-
+        
         private ICapPublisher _capBus;
 
         /// <summary>
@@ -265,12 +264,12 @@ namespace OpenAuth.App.Material
 
             var file = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
             ServiceOrderids = QuotationDate.Select(q => q.ServiceOrderId).ToList();
-            var ServiceOrders = await UnitWork.Find<ServiceOrder>(null).Where(q => ServiceOrderids.Contains(q.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.CustomerId }).ToListAsync();
+            var ServiceOrders = await UnitWork.Find<ServiceOrder>(null).Where(q => ServiceOrderids.Contains(q.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.CustomerId,s.SalesMan }).ToListAsync();
             var query = from a in QuotationDate
                         join b in ServiceOrders on a.ServiceOrderId equals b.Id
                         select new { a, b };
             var terminalCustomerIds = query.Select(q => q.b.TerminalCustomerId).ToList();
-            var ocrds = await UnitWork.Find<crm_ocrd>(o => terminalCustomerIds.Contains(o.CardCode)).ToListAsync();
+            var ocrds = await UnitWork.Find<OCRD>(o => terminalCustomerIds.Contains(o.CardCode)).ToListAsync();
            
             result.Data = query.Select(q => new
             {
@@ -292,6 +291,7 @@ namespace OpenAuth.App.Material
                 q.a.IsProtected,
                 q.a.PrintWarehouse,
                 q.a.CancelRequest,
+                q.b.SalesMan,
                 Balance = ocrds.Where(o => o.CardCode.Equals(q.b.TerminalCustomerId)).FirstOrDefault()?.Balance,
                 files = q.a.QuotationPictures.Select(p => new
                 {
@@ -568,18 +568,20 @@ namespace OpenAuth.App.Material
                new SqlParameter("ManufacturerSerialNumbers", request.ManufacturerSerialNumbers),
                new SqlParameter("WhsCode", request.WhsCode)
             };
-            var Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"select a.ItemCode,b.MnfSerial,c.ItemName,c.BuyUnitMsr,d.OnHand, d.WhsCode,a.BaseQty as Quantity ,c.lastPurPrc from WOR1 a 
-						join (SELECT a.BaseEntry,c.MnfSerial,a.BaseType
-            FROM oitl a left join itl1 b
-            on a.LogEntry = b.LogEntry and a.ItemCode = b.ItemCode 
-            left join osrn c on b.ItemCode = c.ItemCode and b.SysNumber = c.SysNumber
-            where a.DocType in (15, 59) and c.MnfSerial = @ManufacturerSerialNumbers and a.BaseType=202) b on a.docentry = b.BaseEntry	
+            var baseEntryList = await UnitWork.Query<SysEquipmentColumn>(@$"SELECT a.BaseEntry FROM oitl a left join itl1 b
+                    on a.LogEntry = b.LogEntry and a.ItemCode = b.ItemCode 
+                    left join osrn c on b.ItemCode = c.ItemCode and b.SysNumber = c.SysNumber
+                    where a.DocType in (15, 59) and c.MnfSerial = @ManufacturerSerialNumbers and a.BaseType=202", parameter)
+                    .Select(s => s.BaseEntry.ToString()).Distinct().ToListAsync();
+            var baseEntrys = await UnitWork.Find<product_owor>(p => baseEntryList.Contains(p.CDocEntry)).Select(p => p.DocEntry.ToString()).ToListAsync();
+            baseEntryList.AddRange(baseEntrys);
+            var Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"select a.DocEntry,a.ItemCode,c.ItemName,c.BuyUnitMsr,d.OnHand, d.WhsCode,a.BaseQty as Quantity ,c.lastPurPrc from WOR1 a 
 						join OITM c on a.itemcode = c.itemcode
 						join OITW d on a.itemcode=d.itemcode 
 						where d.WhsCode= @WhsCode", parameter).WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
                         .WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), s => request.PartDescribe.Contains(s.ItemName))
                         .WhereIf(!string.IsNullOrWhiteSpace(request.AppPartCode),s=> s.ItemName.Contains(request.AppPartCode) || s.ItemCode.Contains(request.AppPartCode))
-                        .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
+                        .Where(s=> baseEntryList.Contains(s.DocEntry.ToString())).Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = request.ManufacturerSerialNumbers, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
 
             if (Equipments == null || Equipments.Count() <= 0)
             {
@@ -594,6 +596,17 @@ namespace OpenAuth.App.Material
                     .WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
                     .WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), s => request.PartDescribe.Contains(s.ItemName))
                     .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
+            }
+            else
+            {
+                List<SysEquipmentColumn> EquipmentsObj = new List<SysEquipmentColumn>();
+                Equipments.GroupBy(e => e.ItemCode).Select(e=>new { obj=e.First(),count=e.Sum(s=>s.Quantity) }).ForEach(e => 
+                    {
+                        e.obj.Quantity = e.count;
+                        EquipmentsObj.Add(e.obj);
+                    }
+                );
+                Equipments = EquipmentsObj;
             }
             if (request.IsWarranty == null || (bool)request.IsWarranty == false)
             {
@@ -2133,6 +2146,8 @@ namespace OpenAuth.App.Material
                 MaterialCode.AddRange(item.QuotationMaterials.Select(q => q.MaterialCode).ToList());
                 QuotationMaterialReps.AddRange(item.QuotationMaterials.ToList());
             }
+
+            QuotationMaterialReps.Where(q => q.NewMaterialCode == true).ForEach(q => { if (string.IsNullOrWhiteSpace(q.Remark)) { throw new Exception("新增物料，必须填写备注。"); } });
             var Quotations = await UnitWork.Find<Quotation>(q => q.Status > 3 && q.Status < 6).Include(q => q.QuotationMergeMaterials).Where(q => q.QuotationMergeMaterials.Any(m => MaterialCode.Contains(m.MaterialCode))).ToListAsync();
 
             if (Quotations != null && Quotations.Count > 0)
