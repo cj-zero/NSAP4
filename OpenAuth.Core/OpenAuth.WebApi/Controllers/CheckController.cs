@@ -40,12 +40,14 @@ namespace OpenAuth.WebApi.Controllers
         //private ILogger _logger;
         private AuthStrategyContext _authStrategyContext;
         private CorpApp _corpApp;
-        public CheckController(IAuth authUtil, ILogger<CheckController> logger, CorpApp corpApp)
+        private RevelanceManagerApp _revelanceManagerApp;
+        public CheckController(IAuth authUtil, ILogger<CheckController> logger, CorpApp corpApp, RevelanceManagerApp revelanceManagerApp)
         {
             _authUtil = authUtil;
            // _logger = logger;
             _authStrategyContext = _authUtil.GetCurrentUser();
             _corpApp = corpApp;
+            _revelanceManagerApp = revelanceManagerApp;
         }
         
         /// <summary>
@@ -238,9 +240,39 @@ namespace OpenAuth.WebApi.Controllers
                 cascadeId = org.CascadeId;
             }
 
-            var query = _authStrategyContext.Orgs
-                .Where(u => u.CascadeId.Contains(cascadeId))
-                .OrderBy(u => u.CascadeId);
+            var deptManage = _revelanceManagerApp.GetDeptManager();
+
+            var query = from a in _authStrategyContext.Orgs
+                        join b in deptManage on a.Id equals b.OrgId into ab
+                        from b in ab.DefaultIfEmpty()
+                        where a.CascadeId.Contains(cascadeId)
+                        orderby a.CascadeId
+                        select new
+                        {
+                            a.BizCode,
+                            a.CascadeId,
+                            a.CorpId,
+                            a.CreateId,
+                            a.CreateTime,
+                            a.CustomCode,
+                            a.HotKey,
+                            a.IconName,
+                            a.Id,
+                            a.IsAutoExpand,
+                            a.IsLeaf,
+                            a.Name,
+                            a.ParentId,
+                            a.ParentName,
+                            a.SortNo,
+                            a.Status,
+                            a.TypeId,
+                            a.TypeName,
+                            UserId = b == null ? new string[] { } : b.UserId,
+                            UserName = b == null ? new string[] { } : b.UserName
+                        };
+            //var query = _authStrategyContext.Orgs
+            //    .Where(u => u.CascadeId.Contains(cascadeId))
+            //    .OrderBy(u => u.CascadeId);
 
             return new TableData
             {

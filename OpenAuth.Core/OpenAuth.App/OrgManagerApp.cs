@@ -22,13 +22,14 @@ namespace OpenAuth.App
         /// <param name="org">The org.</param>
         /// <returns>System.Int32.</returns>
         /// <exception cref="System.Exception">未能找到该组织的父节点信息</exception>
-        public string Add(OpenAuth.Repository.Domain.Org org)
+        public string Add(OpenAuth.App.Request.AddOrUpdateOrgReq obj)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var org = obj.MapTo<OpenAuth.Repository.Domain.Org>();
             CaculateCascade(org);
 
             Repository.Add(org);
@@ -45,14 +46,27 @@ namespace OpenAuth.App
                 });
             }
 
+            if (obj.DeptManager != null && obj.DeptManager.Count > 0)
+            {
+                //添加部门负责人
+                _revelanceApp.DeleteBySecondId(Define.ORGROLE, obj.Id);
+                _revelanceApp.AssignBy(Define.ORGROLE, obj.DeptManager.ToLookup(c => obj.Id));
+            }
             return org.Id;
         }
 
-        public string Update(OpenAuth.Repository.Domain.Org org)
+        public string Update(OpenAuth.App.Request.AddOrUpdateOrgReq obj)
         {
-
+            var org = obj.MapTo<OpenAuth.Repository.Domain.Org>();
             UpdateTreeObj(org);
 
+
+            if (obj.DeptManager != null && obj.DeptManager.Count > 0)
+            {
+                //添加部门负责人
+                _revelanceApp.DeleteBySecondId(Define.ORGROLE, obj.Id);
+                _revelanceApp.AssignBy(Define.ORGROLE, obj.DeptManager.ToLookup(c => obj.Id));
+            }
             return org.Id;
         }
 
