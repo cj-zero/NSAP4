@@ -573,7 +573,27 @@ namespace NSAP.App.WebApi.Controllers
 
             return result;
         }
+        /// <summary>
+        /// App技术员当天签到和签退
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AppGetClockCurrentHistory(int AppUserId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _attendanceClockApp.AppGetClockCurrentHistory(AppUserId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
 
+            return result;
+        }
         /// <summary>
         /// App技术员查询打卡记录
         /// </summary>

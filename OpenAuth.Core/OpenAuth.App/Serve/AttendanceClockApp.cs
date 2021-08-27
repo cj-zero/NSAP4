@@ -11,6 +11,7 @@ using Npoi.Mapper;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using OpenAuth.App.Serve.Request;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 
@@ -156,6 +157,20 @@ namespace OpenAuth.App
                 //todo:补充或调整自己需要的字段
             });
             UnitWork.Save();
+        }
+        /// <summary>
+        /// App技术员当天签到和签退
+        /// </summary>
+        /// <param name="AppUserId"></param>
+        /// <returns></returns>
+        public async Task<TableData> AppGetClockCurrentHistory(int AppUserId)
+        {
+            var result = new TableData();
+            DateTime dt = DateTime.Now.Date;
+            var SignIn =await UnitWork.Find<AttendanceClock>(c => c.AppUserId == AppUserId && c.ClockDate==dt && c.ClockType==1).Include(c => c.AttendanceClockPictures).OrderBy(c => c.ClockTime).Select(c=>new { c.Location,c.ClockDate,c.ClockTime}).FirstOrDefaultAsync();
+            var SignOut = await UnitWork.Find<AttendanceClock>(c => c.AppUserId == AppUserId && c.ClockDate == dt && c.ClockType == 2).Include(c => c.AttendanceClockPictures).OrderByDescending(c => c.ClockTime).Select(c => new { c.Location, c.ClockDate, c.ClockTime }).FirstOrDefaultAsync();
+            result.Data = new { SignIn , SignOut };
+            return result;
         }
 
         /// <summary>
