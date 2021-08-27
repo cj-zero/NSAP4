@@ -1441,7 +1441,7 @@ namespace OpenAuth.App.Order
                 VatSum = !string.IsNullOrEmpty(order.VatSum.ToString()) ? order.VatSum.ToString() : "0",
                 WhsCode = order.WhsCode,
                 CntctCode = order.CntctCode.ToString(),
-                attachmentData = new List<billAttchment>(),
+                attachmentData = (IList<billAttchment>)order.FileList,//new List<billAttchment>(),
                 billSalesAcctCode = new List<billSalesAcctCode>(),
                 billSalesDetails = new List<billSalesDetails>(),
                 serialNumber = new List<billSerialNumber>(),
@@ -4700,6 +4700,143 @@ namespace OpenAuth.App.Order
 			string sqlstr = string.Format(@"select U_DocRCTAmount FROM {0}.sale_ordr where docentry={1} and sbo_id={2}", "nsap_bone", ordrEntry, sboId);
 			object theamount = UnitWork.ExecuteScalar(ContextType.SapDbContextType, sqlstr, CommandType.Text, null);
 			return theamount == null ? false : (((decimal)theamount) > 0 ? true : false);
+		}
+		#endregion
+		#region 我创建的
+		/// <summary>
+		/// 我创建的
+		/// </summary>
+		public  DataTable GetICreated(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, int user_id, string types, string Applicator, string Customer, string Status, string BeginDate, string EndDate, bool ViewCustom, bool ViewSales)
+		{
+			int rowCount = 0;
+			string sortString = string.Empty;
+			string filterString = string.Empty;
+			string line = string.Empty;
+			if (!string.IsNullOrEmpty(sortname) && !string.IsNullOrEmpty(sortorder))
+				sortString = string.Format("{0} {1}", sortname, sortorder.ToUpper());
+			if (user_id > 0)
+			{
+				filterString += string.Format("a.user_id = {0} AND a.job_state >-1 AND ", user_id);
+			}
+			#region 搜索条件
+			if (types.Replace(" ", "") != "")
+			{
+				string[] typeArr = types.Split('☉');
+				if (typeArr.Length > 0)
+				{
+					filterString += string.Format(" ( ");
+					for (int i = 0; i < typeArr.Length; i++)
+					{
+						if (i == 0)
+						{
+							filterString += string.Format(" a.job_type_id={0} ", typeArr[i].FilterSQL().Trim());
+						}
+						else
+						{
+							filterString += string.Format(" OR a.job_type_id={0} ", typeArr[i].FilterSQL().Trim());
+						}
+					}
+					filterString += string.Format(" ) AND ");
+				}
+
+				if (Applicator != "")
+				{
+					string[] num;
+					num = Applicator.Split(',');
+					string para = "";
+					foreach (string c in num)
+					{
+						para += "'" + c + "'" + ",";
+					}
+					para = "(" + para.TrimEnd(',') + ")";
+					filterString += string.Format(" c.user_nm IN {0} AND ", para);
+				}
+				if (Customer != "")
+				{
+					filterString += string.Format(" (a.card_code LIKE '%{0}%' OR a.card_name LIKE '%{0}%') AND ", Customer);
+				}
+				if (Status != "")
+				{
+					filterString += string.Format(" a.job_state = {0} AND ", int.Parse(Status));
+				}
+				if (BeginDate != "")
+				{
+					filterString += string.Format(" DATE_FORMAT(a.upd_dt,'%Y/%m/%d') BETWEEN '{0}' AND '{1}' AND ", BeginDate, EndDate);
+				}
+			}
+			if (!string.IsNullOrEmpty(filterQuery))
+			{
+				string[] fields = filterQuery.Split('`');
+				string[] p = fields[0].Split(':');
+				if (!string.IsNullOrEmpty(p[1]))
+				{
+					filterString += string.Format(" a.job_id LIKE '%{0}%' AND ", p[1].FilterSQL().Trim());
+				}
+				p = fields[1].Split(':');
+				if (!string.IsNullOrEmpty(p[1]))
+				{
+					filterString += string.Format("b.job_type_nm LIKE '%{0}%' AND ", p[1].FilterSQL().Trim());
+				}
+				p = fields[2].Split(':');
+				if (!string.IsNullOrEmpty(p[1]))
+				{
+					filterString += string.Format("a.job_state = {0} AND ", p[1].FilterSQL().Trim());
+				}
+				p = fields[3].Split(':');
+				if (!string.IsNullOrEmpty(p[1]))
+				{
+					filterString += string.Format("a.job_nm LIKE '%{0}%' AND ", p[1].FilterWildCard().FilterSQL().Trim());
+				}
+				p = fields[4].Split(':');
+				if (!string.IsNullOrEmpty(p[1]))
+				{
+					filterString += string.Format("(a.card_code LIKE '%{0}%' OR a.card_name LIKE '%{0}%') AND ", p[1].FilterWildCard().FilterSQL().Trim());
+				}
+				p = fields[5].Split(':');
+				if (!string.IsNullOrEmpty(p[1]))
+				{
+					filterString += string.Format("a.remarks LIKE '%{0}%' AND ", p[1].FilterWildCard().FilterSQL().Trim());
+				}
+				p = fields[6].Split(':');
+				if (!string.IsNullOrEmpty(p[1]))
+				{
+					filterString += string.Format("a.sbo_itf_return LIKE '%{0}%' AND ", p[1].FilterWildCard().FilterSQL().Trim());
+				}
+				p = fields[7].Split(':');
+				if (!string.IsNullOrEmpty(p[1]))
+				{
+					filterString += string.Format("a.base_entry LIKE '%{0}%' AND ", p[1].FilterWildCard().FilterSQL().Trim());
+				}
+			}
+			#endregion
+			#region
+			if (!string.IsNullOrEmpty(filterString))
+				filterString = filterString.Substring(0, filterString.Length - 5);
+			#endregion
+			return GetICreated(out rowCount, pageSize, pageIndex, filterString, sortString, ViewCustom, ViewSales);
+		}
+		#endregion
+		#region 我创建的
+		/// <summary>
+		/// 我创建的
+		/// </summary>
+		public  DataTable GetICreated(out int rowCounts, int pageSize, int pageIndex, string filterQuery, string orderName, bool ViewCustom, bool ViewSales)
+		{
+			StringBuilder tableName = new StringBuilder();
+			StringBuilder filedName = new StringBuilder();
+			filedName.Append(" '',a.job_id,b.job_type_nm,a.job_nm,c.user_nm,a.job_state,a.upd_dt,a.remarks,b.job_type_id,a.card_code,");
+			filedName.Append("CASE WHEN a.card_name IS NULL THEN NULL WHEN a.card_name = '' THEN '' WHEN a.card_name IS NOT NULL AND a.card_name <> '' AND " + ViewCustom + " THEN a.card_name ELSE '******' END AS CardName,");
+			filedName.Append("CASE WHEN a.doc_total IS NULL THEN NULL WHEN a.doc_total = '' THEN '' WHEN a.doc_total IS NOT NULL AND a.doc_total <> '' AND " + ViewSales + " THEN a.doc_total ELSE '******' END AS DocTotal,");
+			filedName.Append("a.base_type,a.base_entry,d.step_nm,a.sbo_id,f.page_url,a.sbo_itf_return,g.sbo_nm,a.sync_start,a.sync_stat,b.sync_sap ");
+			tableName.AppendFormat("{0}.wfa_job a","nsap_base");
+			tableName.AppendFormat(" LEFT JOIN {0}.wfa_type b ON a.job_type_id=b.job_type_id ", "nsap_base");
+			tableName.AppendFormat(" LEFT JOIN {0}.base_user c ON a.user_id=c.user_id ", "nsap_base");
+			tableName.AppendFormat(" LEFT JOIN {0}.wfa_step d ON a.step_id=d.step_id ", "nsap_base");
+			tableName.AppendFormat(" LEFT JOIN {0}.base_func e ON b.job_type_id=e.job_type_id ", "nsap_base");
+			tableName.AppendFormat(" LEFT JOIN {0}.base_page f ON e.page_id =f.page_id ", "nsap_base");
+			tableName.AppendFormat(" LEFT JOIN {0}.sbo_info g ON a.sbo_id =g.sbo_id ", "nsap_base");
+			filterQuery += " AND a.job_state != -1 GROUP BY a.job_id";
+			return SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCounts);
 		}
 		#endregion
 	}
