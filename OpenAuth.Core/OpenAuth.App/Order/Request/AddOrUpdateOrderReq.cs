@@ -29,12 +29,12 @@ namespace OpenAuth.App.Order.Request
         /// 商品配置模板（1;有配置清单,0：无配置清单 ）
         /// 草稿时默认为1;
         /// </summary>
-        public bool IsTemplate { get; set; }
+        public string IsTemplate { get; set; }
         /// <summary>
         /// 订单
         /// </summary>
         public OrderDraft Order { get; set; }
-	}
+    }
 
     public class OrderDraft
     {
@@ -213,7 +213,10 @@ namespace OpenAuth.App.Order.Request
         /// WhsCode
         /// </summary>
         public string WhsCode { get; set; }
-        public string U_New_ORDRID { get; set; }
+        /// <summary>
+        /// 关联订单Id
+        /// </summary>
+        public int U_New_ORDRID { get; set; }
         /// <summary>
         /// 如果是商城订单记录商城单号
         public string U_EshopNo { get; set; }
@@ -224,7 +227,7 @@ namespace OpenAuth.App.Order.Request
 
         public string BillBaseType { get; set; }
         public string BillBaseEntry { get; set; }
-        
+
         /// <summary>
         /// 行明细
         /// </summary>
