@@ -576,7 +576,7 @@ namespace NSAP.App.WebApi.Controllers
         /// <summary>
         /// App技术员当天签到和签退
         /// </summary>
-        /// <param name="req"></param>
+        /// <param name="AppUserId"></param>
         /// <returns></returns>
         [HttpGet]
         public async Task<TableData> AppGetClockCurrentHistory(int AppUserId)
@@ -1241,6 +1241,21 @@ namespace NSAP.App.WebApi.Controllers
             try
             {
                 result = await _serialNumberApp.AppFind(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+        [HttpGet]
+        public async Task<TableData> AppClockMessageNotic()
+        {
+            var result = new TableData();
+            try
+            {
+                await _attendanceClockApp.AppClockMessageNotic();
             }
             catch (Exception ex)
             {

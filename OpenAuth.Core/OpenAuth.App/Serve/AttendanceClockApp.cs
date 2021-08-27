@@ -7,6 +7,7 @@ using Infrastructure.Export;
 using Infrastructure.Extensions;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Npoi.Mapper;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
@@ -21,12 +22,15 @@ namespace OpenAuth.App
     public class AttendanceClockApp : BaseApp<AttendanceClock>
     {
         private RevelanceManagerApp _revelanceApp;
-
+        private IOptions<AppSetting> _appConfiguration;
+        private HttpHelper _helper;
 
         public AttendanceClockApp(IUnitWork unitWork, IRepository<AttendanceClock> repository,
-            RevelanceManagerApp app, IAuth auth) : base(unitWork, repository, auth)
+            RevelanceManagerApp app, IAuth auth, IOptions<AppSetting> appConfiguration) : base(unitWork, repository, auth)
         {
+            _appConfiguration=appConfiguration;
             _revelanceApp = app;
+            _helper = new HttpHelper(_appConfiguration.Value.AppPushMsgUrl);
         }
         /// <summary>
         /// 加载列表
@@ -237,5 +241,34 @@ namespace OpenAuth.App
             return await ExportAllHandler.ExporterExcel(AttendanceClockList);
         }
 
+
+        #region  App打卡提醒消息通知
+        /// <summary>
+        /// App打卡推送提醒
+        /// </summary>
+        /// <returns></returns>
+        public async Task AppClockMessageNotic()
+        {
+            //1.存在服务单的技术员
+            var serviceOrderUserList = await (from a in UnitWork.Find<ServiceWorkOrder>(null)
+                                              join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id
+                                              where a.Status >= 2 && a.Status <= 5 && b.VestInOrg != 2
+                                              select a.CurrentUserId).Distinct().ToListAsync();
+            //2.白名单
+
+            //3.调用App接口
+            string title = "考勤打卡";
+            string content = "您今天还未打卡签到,请立即前往>>";
+            string payload= "{\"urlType\":1,\"url\":\"/pages/afterSale/mechanic/outWork\"}";
+
+            _helper.Post(new
+            {
+                userIds = serviceOrderUserList,
+                title = title,
+                content = content,
+                payload= payload
+            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Message/AppExternalMessagePush");
+        }
+        #endregion
     }
 }
