@@ -107,5 +107,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         public int? QryAllowOrNot { get; set; }
 
+        /// <summary>
+        /// appid
+        /// </summary>
+        public int? AppUserId { get; set; }
+
     }
 }

@@ -10,6 +10,7 @@ using OpenAuth.App.Workbench.Request;
 using OpenAuth.App.Workbench.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Material;
+using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository.Domain.Settlement;
 using OpenAuth.Repository.Domain.Workbench;
 using OpenAuth.Repository.Interface;
@@ -52,7 +53,7 @@ namespace OpenAuth.App.Workbench
                                     from c in bc.DefaultIfEmpty()
                                     select new { a.Name, a.Id, OrgName = c.Name, c.CascadeId }).OrderByDescending(u => u.CascadeId).FirstOrDefaultAsync();
             var serviceDailyReportList = await UnitWork.Find<ServiceDailyReport>(s => ServiceOrderId == s.ServiceOrderId).ToListAsync();
-
+           
             var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId).Include(s => s.ServiceWorkOrders).Select(s => new ServiceOrderResp
             {
                 ServiceOrderId = s.Id.ToString(),
@@ -75,6 +76,7 @@ namespace OpenAuth.App.Workbench
                     Remark = w.Remark
                 }).ToList()
             }).FirstOrDefaultAsync();
+            serviceOrder.Balance = await UnitWork.Find<OCRD>(o => serviceOrder.TerminalCustomerId.Contains(o.CardCode)).Select(o=>o.Balance.ToString()).FirstOrDefaultAsync();
             serviceOrder.Petitioner = petitioner.OrgName + "-" + petitioner.Name;
             serviceOrder.PetitionerId = petitioner.Id;
             serviceOrder.ServiceDailyReports = serviceDailyReportList.Select(s => new ServiceDailyReportResp
