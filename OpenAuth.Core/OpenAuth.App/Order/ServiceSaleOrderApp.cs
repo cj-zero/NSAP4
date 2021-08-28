@@ -4703,9 +4703,9 @@ namespace OpenAuth.App.Order
 		/// <summary>
 		/// 我创建的
 		/// </summary>
-		public DataTable GetICreated(out int rowCount,int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, int user_id, string types, string Applicator, string Customer, string Status, string BeginDate, string EndDate, bool ViewCustom = true, bool ViewSales = true)
+		public DataTable GetICreated(out int rowCount, int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, int user_id, string types, string Applicator, string Customer, string Status, string BeginDate, string EndDate, bool ViewCustom = true, bool ViewSales = true)
 		{
-		
+
 			string sortString = string.Empty;
 			string filterString = string.Empty;
 			string line = string.Empty;
@@ -4818,7 +4818,7 @@ namespace OpenAuth.App.Order
 		/// 我创建的
 		/// </summary>
 		public DataTable GetICreated(out int rowCounts, int pageSize, int pageIndex, string filterQuery, string orderName, bool ViewCustom, bool ViewSales)
-		{ 
+		{
 			StringBuilder tableName = new StringBuilder();
 			StringBuilder filedName = new StringBuilder();
 			filedName.Append(" '',a.job_id,b.job_type_nm,a.job_nm,c.user_nm,a.job_state,a.upd_dt,a.remarks,b.job_type_id,a.card_code,");
