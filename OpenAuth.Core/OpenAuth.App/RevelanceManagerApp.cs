@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
+using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 
@@ -44,6 +45,40 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 添加关联，需要人工删除以前的关联
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="idMaps"></param>
+        public void AssignBy(string key, ILookup<string, string> idMaps)
+        {
+            UnitWork.BatchAdd((from sameVals in idMaps
+                               from value in sameVals
+                               select new Relevance
+                               {
+                                   Key = key,
+                                   FirstId = value,
+                                   SecondId = sameVals.Key,
+                                   OperateTime = DateTime.Now
+                               }).ToArray());
+            UnitWork.Save();
+        }
+
+        public List<OrgMansgerResp> GetDeptManager()
+        {
+            var reve = from a in UnitWork.Find<Relevance>(c => c.Key == Define.ORGROLE)
+                       join b in UnitWork.Find<User>(null) on a.FirstId equals b.Id into ab
+                       from b in ab.DefaultIfEmpty()
+                       select new { a.SecondId, b.Id, b.Name };
+            var list = reve.ToList().GroupBy(c => c.SecondId).Select(c => new OrgMansgerResp
+            {
+                OrgId = c.Key,
+                UserId = c.Select(o => o.Id).ToArray(),
+                UserName = c.Select(o => o.Name).ToArray()
+            }).ToList();
+            return list;
+        }
+
+        /// <summary>
         /// 取消关联
         /// </summary>
         /// <param name="type">关联的类型，如Define.USERRESOURCE</param>
@@ -80,6 +115,10 @@ namespace OpenAuth.App
         public void DeleteBy(string key, params string[] firstIds)
         {
             Repository.Delete(u => firstIds.Contains(u.FirstId) && u.Key == key);
+        }
+        public void DeleteBySecondId(string key, params string[] secondIds)
+        {
+            Repository.Delete(u => secondIds.Contains(u.SecondId) && u.Key == key);
         }
 
 

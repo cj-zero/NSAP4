@@ -11,5 +11,7 @@ namespace OpenAuth.App.Serve.Request
         public string Message { get; set; }
 
         public bool? IsReject { get; set; }
+        public int? AppUserId { get; set; }
+        
     }
 }

@@ -63,7 +63,7 @@ namespace OpenAuth.Repository.Extensions
             {
                 conn.Close();
                 string msg = ex.Message;
-               // throw ex;
+                // throw ex;
             }
             return dt;
         }
@@ -153,19 +153,27 @@ namespace OpenAuth.Repository.Extensions
         /// <returns></returns>
         public static object ExecuteScalar(this DatabaseFacade facade, string sql, CommandType commandType, params object[] parameters)
         {
-            var command = CreateCommand(facade, sql, out DbConnection conn, commandType, parameters);
-            bool flag = false;
-            if (command.Connection.State != ConnectionState.Open)
+            try
             {
-                command.Connection.Open();
-                flag = true;
+                var command = CreateCommand(facade, sql, out DbConnection conn, commandType, parameters);
+                bool flag = false;
+                if (command.Connection.State != ConnectionState.Open)
+                {
+                    command.Connection.Open();
+                    flag = true;
+                }
+                object result = command.ExecuteScalar();
+                if (flag)
+                {
+                    conn.Close();
+                }
+                return result;
             }
-            object result = command.ExecuteScalar();
-            if (flag)
+            catch (Exception ex)
             {
-                conn.Close();
+                string msg = ex.Message;
+                throw ex;
             }
-            return result;
         }
 
     }

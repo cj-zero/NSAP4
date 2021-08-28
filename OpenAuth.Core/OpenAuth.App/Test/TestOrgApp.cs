@@ -35,7 +35,7 @@ namespace OpenAuth.App.Test
             Console.WriteLine(orgname);
             var app = _autofacServiceProvider.GetService<OrgManagerApp>();
 
-            var id = app.Add(new OpenAuth.Repository.Domain.Org
+            var id = app.Add(new OpenAuth.App.Request.AddOrUpdateOrgReq
             {
                 Name = orgname,
                 ParentId = ""
@@ -51,7 +51,7 @@ namespace OpenAuth.App.Test
             Console.WriteLine(orgname);
             var app = _autofacServiceProvider.GetService<OrgManagerApp>();
 
-            var id = app.Update(new Repository.Domain.Org
+            var id = app.Update(new OpenAuth.App.Request.AddOrUpdateOrgReq
             {
                 Id = "543a9fcf-4770-4fd9-865f-030e562be238",
                 Name = orgname,

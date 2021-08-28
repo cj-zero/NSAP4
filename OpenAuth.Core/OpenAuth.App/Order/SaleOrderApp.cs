@@ -17,7 +17,7 @@ namespace OpenAuth.App.Order
         /// 添加订单流程
         /// </summary>
         /// <returns></returns>
-        public string Eshop_AddOrderStatusFlow(WfaEshopStatus addWfaEshopStatusDto)
+        public string Eshop_AddOrderStatusFlow(WfaEshopStatus addWfaEshopStatusDto, IList<NSAP.Entity.Sales.billSalesDetails> itemdetails)
         {
             try
             {
@@ -39,13 +39,13 @@ namespace OpenAuth.App.Order
                     shipping_lastdate = addWfaEshopStatusDto.FirstCreateDate,
                     complete_lastdate = addWfaEshopStatusDto.CompleteLastDate,
                 };
-                foreach (var item in addWfaEshopStatusDto.Items)
+                foreach (var item in itemdetails)
                 {
                     wfa_eshop_oqutdetail wfaEshopOqutdetail = new wfa_eshop_oqutdetail()
                     {
                         item_code = item.ItemCode,
-                        item_desc = item.ItemDesc,
-                        item_qty = item.ItemQty
+                        item_desc = item.Dscription,
+                        item_qty = decimal.Parse(item.Quantity)
                     };
                     wfaEshopOqutdetails.Add(wfaEshopOqutdetail);
                 }
@@ -65,8 +65,9 @@ namespace OpenAuth.App.Order
         /// 更新订单流程
         /// </summary>
         /// <param name="wfaEshopStatusDto"></param>
+        /// <param name="itemdetails"></param>
         /// <returns></returns>
-        public string Eshop_UpdateOrderStatusFlow(WfaEshopStatus wfaEshopStatusDto)
+        public string Eshop_UpdateOrderStatusFlow(WfaEshopStatus wfaEshopStatusDto, IList<NSAP.Entity.Sales.billSalesDetails> itemdetails)
         {
             try
             {
@@ -74,14 +75,14 @@ namespace OpenAuth.App.Order
                 UnitWork.Update<wfa_eshop_status>(wfa_Eshop_Status);
                 UnitWork.Delete<wfa_eshop_oqutdetail>(zw => zw.document_id == wfaEshopStatusDto.DocumentId);
                 List<wfa_eshop_oqutdetail> wfaEshopOqutdetails = new List<wfa_eshop_oqutdetail>();
-                foreach (var item in wfaEshopStatusDto.Items)
+                foreach (var item in itemdetails)
                 {
                     wfa_eshop_oqutdetail wfaEshopOqutdetail = new wfa_eshop_oqutdetail()
                     {
                         document_id = wfaEshopStatusDto.DocumentId,
                         item_code = item.ItemCode,
-                        item_desc = item.ItemDesc,
-                        item_qty = item.ItemQty
+                        item_desc = item.Dscription,
+                        item_qty = decimal.Parse(item.Quantity)
                     };
                     UnitWork.Add<wfa_eshop_oqutdetail, int>(wfaEshopOqutdetail);
                 }
@@ -138,13 +139,14 @@ namespace OpenAuth.App.Order
         /// </summary>
         /// <param name="wfaEshopStatus"></param>
         /// <param name="oldorderno"></param>
+        /// <param name="itemdetails"></param>
         /// <returns></returns>
-        public string Eshop_OrderStatusFlow(WfaEshopStatus wfaEshopStatus, int oldorderno)
+        public string Eshop_OrderStatusFlow(WfaEshopStatus wfaEshopStatus, IList<NSAP.Entity.Sales.billSalesDetails> itemdetails, int oldorderno)
         {
             wfa_eshop_status WfaEshopStatus = UnitWork.FindSingle<wfa_eshop_status>(zw => zw.job_id == wfaEshopStatus.JobId);
-            if (WfaEshopStatus.document_id > 0)
+            if (WfaEshopStatus != null && WfaEshopStatus.document_id > 0)
             {
-                return Eshop_UpdateOrderStatusFlow(wfaEshopStatus);
+                return Eshop_UpdateOrderStatusFlow(wfaEshopStatus, itemdetails);
             }
             else
             {
@@ -155,10 +157,10 @@ namespace OpenAuth.App.Order
                     if (old_docId > 0)
                     {
                         wfaEshopStatus.DocumentId = old_docId;
-                        return Eshop_UpdateOrderStatusFlow(wfaEshopStatus);
+                        return Eshop_UpdateOrderStatusFlow(wfaEshopStatus, itemdetails);
                     }
                 }
-                return Eshop_AddOrderStatusFlow(wfaEshopStatus);
+                return Eshop_AddOrderStatusFlow(wfaEshopStatus, itemdetails);
             }
         }
         #endregion
@@ -223,7 +225,7 @@ namespace OpenAuth.App.Order
                 if (int.Parse(result) > 0)
                 {
                     var par = SaveJobPara(result, orderReq.IsTemplate);
-                    if (par)
+                    if (par == "1")
                     {
                         string _jobID = result;
                         if ("0" != WorkflowSubmit(int.Parse(result), userID, orderReq.Order.Remark, "", 0))
