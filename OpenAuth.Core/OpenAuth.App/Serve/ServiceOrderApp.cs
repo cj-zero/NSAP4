@@ -98,15 +98,15 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            //.Include(s => s.ServiceWorkOrders).ThenInclude(s => s.CompletionReport).ThenInclude(c=>c.CompletionReportPictures)
+            //.Include(s => s.ServiceWorkOrders).ThenInclude(s => s.CompletionReport).ThenInclude(c=>c.Solution)
+            //.Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
+            //.Include(s => s.ServiceWorkOrders).ThenInclude(s => s.Solution)
             var obj = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(id))
-                //.Include(s => s.ServiceWorkOrders).ThenInclude(s => s.CompletionReport).ThenInclude(c=>c.CompletionReportPictures)
-                //.Include(s => s.ServiceWorkOrders).ThenInclude(s => s.CompletionReport).ThenInclude(c=>c.Solution)
-                .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
-                .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.Solution)
                 .Include(s => s.ServiceOrderPictures).FirstOrDefaultAsync();
-
+            obj.ServiceWorkOrders = await UnitWork.Find<ServiceWorkOrder>(w => w.ServiceOrderId == id).Include(w=>w.ProblemType).Include(w=>w.Solution).ToListAsync();
             //判断所有工单是否都已完成
-            var notFinishcount = (await UnitWork.Find<ServiceWorkOrder>(w => w.ServiceOrderId == id && w.Status < 7).ToListAsync()).Count;
+            var notFinishcount = obj.ServiceWorkOrders.Where(w => w.ServiceOrderId == id && w.Status < 7).Count();
             var result = obj.MapTo<ServiceOrderDetailsResp>();
             result.IsFinish = notFinishcount > 0 ? false : true;
             var serviceOrderPictures = obj.ServiceOrderPictures.Select(s => new { s.PictureId, s.PictureType }).ToList();
@@ -120,7 +120,6 @@ namespace OpenAuth.App
                 var completionReportObj = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == result.Id).FirstOrDefaultAsync();
                 result.Becity = completionReportObj?.Becity;
                 result.Destination = completionReportObj?.Destination;
-
             }
             //result.ServiceWorkOrders.ForEach(async s => 
             //{
@@ -768,13 +767,18 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var loginUser = loginContext.User;
+            if (loginContext.User.Account == Define.USERAPP && req.AppUserId != null)
+            {
+                loginUser = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(req.AppUserId)).Include(u => u.User).Select(u => u.User).FirstOrDefaultAsync();
+            }
             var d = await _businessPartnerApp.GetDetails(req.TerminalCustomerId.ToUpper());
             var obj = req.MapTo<ServiceOrder>();
             obj.CustomerId = req.CustomerId.ToUpper();
             obj.TerminalCustomerId = req.TerminalCustomerId.ToUpper();
-            obj.RecepUserName = loginContext.User.Name;
-            obj.RecepUserId = loginContext.User.Id;
-            obj.CreateUserId = loginContext.User.Id;
+            obj.RecepUserName = loginUser.Name;
+            obj.RecepUserId = loginUser.Id;
+            obj.CreateUserId = loginUser.Id;
             obj.Status = 2;
             obj.SalesMan = d.SlpName;
             obj.VestInOrg = 1;
@@ -782,7 +786,7 @@ namespace OpenAuth.App
             //obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(req.Supervisor)))?.Id;
             obj.AllowOrNot = 0;
-            if (!obj.SalesManId.Equals(loginContext.User.Id)) 
+            if (!obj.SalesManId.Equals(loginUser.Id)) 
             {
                 obj.AllowOrNot = await IsAllowOrNo(req);
             }
@@ -819,9 +823,9 @@ namespace OpenAuth.App
                 s.SubmitUserId = loginContext.User.Id;
                 if (req.IsSend != null && (bool)req.IsSend)
                 {
-                    s.CurrentUser = loginContext.User.Name;
+                    s.CurrentUser = loginUser.Name;
                     s.CurrentUserId = AppUserId;
-                    s.CurrentUserNsapId = loginContext.User.Id;
+                    s.CurrentUserNsapId = loginUser.Id;
                     s.Status = 2;
                 }
                 #region 问题类型是其他的子类型直接分配给售后主管
@@ -840,9 +844,9 @@ namespace OpenAuth.App
                 //}
                 if (s.FromType == 2)
                 {
-                    s.CurrentUser = loginContext.User.Name;
+                    s.CurrentUser = loginUser.Name;
                     s.CurrentUserId = AppUserId;
-                    s.CurrentUserNsapId = loginContext.User.Id;
+                    s.CurrentUserNsapId = loginUser.Id;
                     s.Status = 7;
                     s.CompleteDate = DateTime.Now;
                 }
@@ -857,7 +861,7 @@ namespace OpenAuth.App
 
             var MaterialType = string.Join(",", obj.ServiceWorkOrders.Select(s => s.MaterialCode == "无序列号" ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-"))).Distinct().ToArray());
 
-            await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"用户:{loginContext.User.Name}创建服务单", ActionType = "创建服务单", ServiceOrderId = e.Id, MaterialType = MaterialType });
+            await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"用户:{loginUser.Name}创建服务单", ActionType = "创建服务单", ServiceOrderId = e.Id, MaterialType = MaterialType });
             #region 同步到SAP 并拿到服务单主键
 
             _capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
@@ -1071,6 +1075,11 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var loginUser = loginContext.User;
+            if (loginContext.User.Account == Define.USERAPP && req.AppUserId!=null) 
+            {
+                loginUser = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(req.AppUserId)).Include(u=>u.User).Select(u=>u.User).FirstOrDefaultAsync();
+            }
             var result = new TableData();
             var ids = await UnitWork.Find<ServiceWorkOrder>(null)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
@@ -1107,9 +1116,9 @@ namespace OpenAuth.App
                 }
                 else
                 {
-                    var sIds = await UnitWork.Find<ServiceWorkOrder>(q => q.CurrentUserNsapId.Contains(loginContext.User.Id)).OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+                    var sIds = await UnitWork.Find<ServiceWorkOrder>(q => q.CurrentUserNsapId.Contains(loginUser.Id)).OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
 
-                    query = query.Where(q => q.SupervisorId.Equals(loginContext.User.Id) || sIds.Contains(q.Id) || q.SalesManId.Equals(loginContext.User.Id) || q.CreateUserId.Equals(loginContext.User.Id));
+                    query = query.Where(q => q.SupervisorId.Equals(loginUser.Id) || sIds.Contains(q.Id) || q.SalesManId.Equals(loginUser.Id) || q.CreateUserId.Equals(loginUser.Id));
                 }
             }
             var resultsql = query.OrderByDescending(q => q.CreateTime).Select(q => new
@@ -1817,8 +1826,13 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var loginUser = loginContext.User;
+            if (loginContext.User.Account == Define.USERAPP && req.AppUserId != null)
+            {
+                loginUser = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(req.AppUserId)).Include(u => u.User).Select(u => u.User).FirstOrDefaultAsync();
+            }
             //判断当前服务单是否已确认
-            var isExist = await UnitWork.Find<ServiceOrder>(s => s.Id == req.serviceOrderId && s.SalesManId.Equals(loginContext.User.Id)).FirstOrDefaultAsync() == null ? true : false;
+            var isExist = await UnitWork.Find<ServiceOrder>(s => s.Id == req.serviceOrderId && s.SalesManId.Equals(loginUser.Id)).FirstOrDefaultAsync() == null ? true : false;
             if (isExist)
             {
                 throw new CommonException("暂无此服务单审批权限", 60019);
@@ -4265,9 +4279,11 @@ namespace OpenAuth.App
         private async Task<decimal> GetUserSubsides(string userId)
         {
             decimal subsidies = 0;
+            var loginUser=await UnitWork.Find<User>(u => u.Id.Equals(userId)).FirstOrDefaultAsync();
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == userId).Select(r => r.SecondId).ToListAsync();
             var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).ToListAsync();
-            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_TravellingAllowance") && orgname.Contains(u.Name)).Select(u => new { u.Name, u.DtValue }).ToListAsync();
+            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_TravellingAllowance") && orgname.Contains(u.Name)).Select(u => new { u.Name, u.DtValue, u.Description }).ToListAsync();
+            CategoryList = CategoryList.Where(u => orgname.Contains(u.Name) || u.Description.Split(",").Contains(loginUser.Name)).ToList();
             if (CategoryList != null && CategoryList.Count() >= 1)
             {
                 subsidies = Convert.ToDecimal(CategoryList.FirstOrDefault().DtValue);
