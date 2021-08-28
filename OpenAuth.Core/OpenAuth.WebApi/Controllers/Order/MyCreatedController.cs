@@ -42,12 +42,12 @@ namespace OpenAuth.WebApi.Controllers.Order
 		{
 			var UserID = _serviceBaseApp.GetUserNaspId();
 			var result = new TableData();
-
+			int rowCount = 0;
 			//DataTable dt = _serviceSaleOrderApp.GetICreated(model.limit, model.page, model.query, model.sortname, model.sortorder, UserID, model.types, model.Applicator, model.Customer, model.Status, model.BeginDate, model.EndDate, _serviceSaleOrderApp.GetPagePowersByUrl("mywork/AuditAllNew.aspx",UserID).ViewCustom, _serviceSaleOrderApp.GetPagePowersByUrl("mywork/AuditAllNew.aspx",UserID).ViewSales);
-			DataTable dt = _serviceSaleOrderApp.GetICreated(model.limit, model.page, model.query, model.sortname, model.sortorder, UserID, model.types, model.Applicator, model.Customer, model.Status, model.BeginDate, model.EndDate,true,true);
+			DataTable dt = _serviceSaleOrderApp.GetICreated(out rowCount,model.limit, model.page, model.query, model.sortname, model.sortorder, UserID, model.types, model.Applicator, model.Customer, model.Status, model.BeginDate, model.EndDate,true,true);
 
 			result.Data = dt;
-			result.Count = dt.Rows.Count;
+			result.Count = rowCount;
 			return result;
 
 		}

@@ -1806,10 +1806,10 @@ namespace OpenAuth.App.Order
 		public DataTable SelectMaterialsInventoryData(string ItemCode, string SboId, bool IsOpenSap, string Operating)
 		{
 			DataTable dt = SelectMaterialsInventoryDataNos(ItemCode.FilterESC(), SboId, IsOpenSap, Operating);
-			if (Operating == "search" || Operating == "edit")
-			{
-				dt.Rows.Add(ItemCode, "", "", "S", dt.Compute("SUM(OnHand)", "true"), dt.Compute("SUM(IsCommited)", "true"), dt.Compute("SUM(OnOrder)", "true"), dt.Compute("SUM(Available)", "true"), "0", "0", "0", "");
-			}
+			//if (Operating == "search" || Operating == "edit")
+			//{
+			//	dt.Rows.Add(ItemCode, "", "", "S", dt.Compute("SUM(OnHand)", "true"), dt.Compute("SUM(IsCommited)", "true"), dt.Compute("SUM(OnOrder)", "true"), dt.Compute("SUM(Available)", "true"), "0", "0", "0", "");
+			//}
 			return dt;
 		}
 
@@ -4703,9 +4703,9 @@ namespace OpenAuth.App.Order
 		/// <summary>
 		/// 我创建的
 		/// </summary>
-		public DataTable GetICreated(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, int user_id, string types, string Applicator, string Customer, string Status, string BeginDate, string EndDate, bool ViewCustom = true, bool ViewSales = true)
+		public DataTable GetICreated(out int rowCount,int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, int user_id, string types, string Applicator, string Customer, string Status, string BeginDate, string EndDate, bool ViewCustom = true, bool ViewSales = true)
 		{
-			int rowCount = 0;
+		
 			string sortString = string.Empty;
 			string filterString = string.Empty;
 			string line = string.Empty;
