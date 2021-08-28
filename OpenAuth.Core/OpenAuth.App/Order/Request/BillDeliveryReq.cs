@@ -9,7 +9,7 @@ namespace OpenAuth.App.Order.Request {
 	/// </summary>
 	[Serializable]
 	[DataContract]
-	public class BillDelivery {
+	public class BillDeliveryReq {
 
 
 		/// <summary>

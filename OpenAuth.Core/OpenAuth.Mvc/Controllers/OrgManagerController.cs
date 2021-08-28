@@ -34,7 +34,7 @@ namespace OpenAuth.Mvc.Controllers
 
         //添加组织提交
         [HttpPost]
-        public string Add(OpenAuth.Repository.Domain.Org org)
+        public string Add(OpenAuth.App.Request.AddOrUpdateOrgReq org)
         {
             try
             {
@@ -50,7 +50,7 @@ namespace OpenAuth.Mvc.Controllers
 
         //编辑
         [HttpPost]
-        public string Update(OpenAuth.Repository.Domain.Org org)
+        public string Update(OpenAuth.App.Request.AddOrUpdateOrgReq org)
         {
             try
             {

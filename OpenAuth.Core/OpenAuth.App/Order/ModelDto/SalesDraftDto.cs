@@ -196,7 +196,7 @@ namespace OpenAuth.App.Order
         /// </summary>
         public decimal U_JGF { get; set; }
         /// <summary>
-        /// 
+        /// 物料成本
         /// </summary>
         public decimal LastPurPrc { get; set; }
         /// <summary>

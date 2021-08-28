@@ -117,7 +117,6 @@ namespace OpenAuth.App
                 _userRoleIds = UnitWork.Find<Relevance>(u => u.FirstId == _user.Id && u.Key == Define.USERROLE).Select(u => u.SecondId).ToList();
             }
         }
-
         /// <summary>
         /// 获取用户可访问的字段列表
         /// </summary>
