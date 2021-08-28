@@ -569,7 +569,7 @@ namespace OpenAuth.App
                             afir.CustomName = $"个人代理结算单";
                             afir.FrmData = "{\"ID\":\"" + outsourcObj.Id + "\"}";
                             afir.OrgId = loginContext.Orgs.OrderBy(o => o.CascadeId).FirstOrDefault()?.Id;
-                            obj.FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
+                            outsourcObj.FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
                             //增加全局待处理
                             var serviceOrederObj = await UnitWork.Find<ServiceOrder>(s => s.Id == outsourcObj.OutsourcExpenses.FirstOrDefault().ServiceOrderId).FirstOrDefaultAsync();
                             await _workbenchApp.AddOrUpdate(new WorkbenchPending
@@ -598,7 +598,7 @@ namespace OpenAuth.App
                     await UnitWork.UpdateAsync<Outsourc>(o => o.Id == req.outsourcId, u => new Outsourc
                     {
                         TotalMoney = obj.TotalMoney,
-                        FlowInstanceId = obj.FlowInstanceId,
+                        FlowInstanceId = outsourcObj.FlowInstanceId,
                         UpdateTime = DateTime.Now,
                         //todo:补充或调整自己需要的字段
                     });
@@ -696,8 +696,10 @@ namespace OpenAuth.App
                         ServiceOrderSapId = (int)outsourcObj.OutsourcExpenses.FirstOrDefault()?.ServiceOrderSapId,
                         AcquisitionWay = "1",
                         AcceptancePeriod = 7,
+                        DeliveryDate=DateTime.Now.AddDays(1),
                         CreateUser = outsourcObj.CreateUser,
                         CreateUserId = outsourcObj.CreateUserId,
+                        InvoiceCompany="",
                         CollectionAddress = Address.BillingAddress,
                         ShippingAddress = Address.DeliveryAddress,
                         IsDraft = false,
@@ -705,7 +707,7 @@ namespace OpenAuth.App
                         ErpOrApp = 1,
                         IsMaterialType = "3",
                         MoneyMeans = "1",
-                        ServiceChargeSM = decimal.Parse(req.Money),
+                        ServiceChargeSMCost = decimal.Parse(req.Money),
                         ServiceChargeManHourSM = 1,
                         TravelExpenseCost = outsourcObj.OutsourcExpenses.Sum(o => o.Money),
                         TravelExpenseManHour = 1,
@@ -763,6 +765,7 @@ namespace OpenAuth.App
             //修改全局待处理
             await UnitWork.UpdateAsync<WorkbenchPending>(w => w.SourceNumbers == outsourcObj.Id && w.OrderType == 3, w => new WorkbenchPending
             {
+                TotalMoney= outsourcObj.TotalMoney,
                 UpdateTime = DateTime.Now,
             });
             await UnitWork.SaveAsync();
