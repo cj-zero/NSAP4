@@ -816,11 +816,11 @@ namespace OpenAuth.App
                 ChildTypes = await UnitWork.Find<ProblemType>(null).Where(o1 => o1.ParentId.Equals(otherProblemType.Id)).ToListAsync();
             }
             var AppUser = await UnitWork.Find<AppUserMap>(s => s.UserID == obj.SupervisorId).Include(s => s.User).FirstOrDefaultAsync();
-            var AppUserId = await UnitWork.Find<AppUserMap>(s => s.UserID == loginContext.User.Id).Select(s => s.AppUserId).FirstOrDefaultAsync();
+            var AppUserId = await UnitWork.Find<AppUserMap>(s => s.UserID == loginUser.Id).Select(s => s.AppUserId).FirstOrDefaultAsync();
             obj.ServiceWorkOrders.ForEach(s =>
             {
                 s.SubmitDate = DateTime.Now;
-                s.SubmitUserId = loginContext.User.Id;
+                s.SubmitUserId = loginUser.Id;
                 if (req.IsSend != null && (bool)req.IsSend)
                 {
                     s.CurrentUser = loginUser.Name;
