@@ -16,7 +16,7 @@ namespace OpenAuth.App.SignalR
                 .AddStackExchangeRedis(redis, options => {
                     options.Configuration.ChannelPrefix = "SignalR_";
                 });
-            services.AddSingleton<IUserIdProvider, NameUserIdProvider>();
+            services.AddScoped<IUserIdProvider, NameUserIdProvider>();
             return services;
         }
 
