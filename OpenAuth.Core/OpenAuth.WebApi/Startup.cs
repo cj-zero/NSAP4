@@ -177,7 +177,7 @@ namespace OpenAuth.WebApi
 			services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(Configuration["DataProtection"]));
 
 			//设置定时启动的任务
-			//    services.AddHostedService<QuartzService>();
+			services.AddHostedService<QuartzService>();
 
 			//SignalR
 			services.AddNsapSignalR(Configuration);
