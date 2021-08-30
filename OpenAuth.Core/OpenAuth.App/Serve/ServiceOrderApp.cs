@@ -1840,12 +1840,12 @@ namespace OpenAuth.App
             if ((bool)req.IsReject)
             {
                 await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id == req.serviceOrderId, s => new ServiceOrder { AllowOrNot = -1});
-                await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"用户:{loginContext.User.Name}驳回服务单,理由：{req.Message}", ActionType = "驳回服务单", ServiceOrderId = req.serviceOrderId});
+                await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"用户:{loginUser.Name}驳回服务单,理由：{req.Message}", ActionType = "驳回服务单", ServiceOrderId = req.serviceOrderId});
             }
             else 
             {
                 await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id == req.serviceOrderId, s => new ServiceOrder { AllowOrNot =0});
-                await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"用户:{loginContext.User.Name}同意服务单", ActionType = "同意服务单", ServiceOrderId = req.serviceOrderId });
+                await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"用户:{loginUser.Name}同意服务单", ActionType = "同意服务单", ServiceOrderId = req.serviceOrderId });
             }
             await UnitWork.SaveAsync();
         }
@@ -5058,9 +5058,11 @@ namespace OpenAuth.App
             var query = UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                 .Include(s => s.ServiceFlows)
-                .WhereIf(req.Type == 1, s => !s.ServiceWorkOrders.All(a => a.Status >= 7))//进行中 
-                .WhereIf(req.Type == 2, s => s.ServiceWorkOrders.All(a => a.Status >= 7))//已完成 服务单中所有工单均已完成
-                 .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => s.U_SAP_ID == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key)))
+                .WhereIf(req.Type == 1, s => s.ServiceWorkOrders.All(a => a.Status ==1))//待处理
+                .WhereIf(req.Type == 2, s => s.ServiceWorkOrders.All(a => a.Status < 7 && a.Status>=2))//进行中 
+                .WhereIf(req.Type == 3, s => s.ServiceWorkOrders.All(a => a.Status >= 7))//已完成 服务单中所有工单均已完成
+                .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => s.U_SAP_ID == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key)))
+                .Where(s=>s.VestInOrg==1 && s.AllowOrNot==0)
                 .Select(s => new
                 {
                     s.Id,
@@ -5267,7 +5269,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
             }
-            var serviceOrderIds = await UnitWork.Find<ServiceOrder>(s => s.SalesManId == userInfo.UserID)
+            var serviceOrderIds = await UnitWork.Find<ServiceOrder>(s => s.SalesManId == userInfo.UserID && s.VestInOrg==1 && s.AllowOrNot==0)
                .Select(s => s.Id).ToListAsync();
             result.Data = serviceOrderIds.Count;
             return result;
