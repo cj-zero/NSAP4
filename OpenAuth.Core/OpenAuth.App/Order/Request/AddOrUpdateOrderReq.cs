@@ -235,7 +235,7 @@ namespace OpenAuth.App.Order.Request
         /// <summary>
         /// 附件
         /// </summary>
-        public List<billDeliveryDeatil> FileList { get; set; }
+        public List<billAttchment> FileList { get; set; }
     }
     public class OrderItem
     {

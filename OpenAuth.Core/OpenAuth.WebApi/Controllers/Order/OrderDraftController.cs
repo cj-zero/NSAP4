@@ -1181,7 +1181,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         ///  批量上传保存接口
         /// </summary>
         /// <param name="model"></param>
-        /// <returns>服务器存储的文件信息</returns>
+        /// <returns>服务器存储的文件信息</returns>Fsave
         [HttpPost]
         [Route("UpdateSalesDocAttachment")]
         public Response UpdateSalesDocAttachment(BillDeliveryReq model)
@@ -1613,6 +1613,6 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             return result;
         }
-
+   
     }
 }
