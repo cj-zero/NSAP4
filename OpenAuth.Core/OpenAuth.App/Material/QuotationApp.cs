@@ -662,11 +662,11 @@ namespace OpenAuth.App.Material
             }
             var Quotations = await GeneralDetails((int)request.QuotationId, request.IsUpdate);
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(Quotations.ServiceOrderId)).Include(s => s.ServiceWorkOrders).FirstOrDefaultAsync();
-            var CustomerInformation = await UnitWork.Find<crm_ocrd>(o => o.CardCode.Equals(ServiceOrders.TerminalCustomerId)).Select(o => new { frozenFor = o.frozenFor == "N" ? "正常" : "冻结" }).FirstOrDefaultAsync();
+            var CustomerInformation = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(ServiceOrders.TerminalCustomerId)).Select(o => new { frozenFor = o.frozenFor == "N" ? "正常" : "冻结",o.Balance}).FirstOrDefaultAsync();
             var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(request.QuotationId)).ToListAsync();
             QuotationMergeMaterials = QuotationMergeMaterials.OrderBy(q => q.MaterialCode).ToList();
             Quotations.ServiceRelations = (await UnitWork.Find<User>(u => u.Id.Equals(Quotations.CreateUserId)).FirstOrDefaultAsync()).ServiceRelations;
-            var ocrds = await UnitWork.Find<crm_ocrd>(o => ServiceOrders.TerminalCustomerId.Equals(o.CardCode)).FirstOrDefaultAsync();
+            //var ocrds = await UnitWork.Find<OCRD>(o => ServiceOrders.TerminalCustomerId.Equals(o.CardCode)).FirstOrDefaultAsync();
             var result = new TableData();
             if (Quotations.Status == 2)
             {
@@ -715,7 +715,7 @@ namespace OpenAuth.App.Material
                 }).ToList();
                 result.Data = new
                 {
-                    Balance = ocrds?.Balance,
+                    Balance = CustomerInformation?.Balance,
                     Expressages,
                     Quotations = Quotations,
                     QuotationMergeMaterials,
@@ -727,7 +727,7 @@ namespace OpenAuth.App.Material
             {
                 result.Data = new
                 {
-                    Balance = ocrds?.Balance,
+                    Balance = CustomerInformation?.Balance,
                     Quotations = Quotations,
                     QuotationMergeMaterials,
                     ServiceOrders,
