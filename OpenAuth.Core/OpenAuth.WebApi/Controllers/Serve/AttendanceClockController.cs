@@ -9,6 +9,7 @@ using Newtonsoft.Json.Linq;
 using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using OpenAuth.App.Serve.Request;
 using Serilog;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -80,7 +81,31 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
+        /// <summary>
+        /// App技术员当天签到和签退
+        /// </summary>
+        /// <param name="AppUserId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AppGetClockCurrentHistory(int AppUserId)
+        {
+            var result = new TableData();
+            try
+            {
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
+                parameters.Add("AppUserId", AppUserId);
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/AppGetClockCurrentHistory");
+                result = JsonConvert.DeserializeObject<TableData>(r);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{AppUserId}, 错误：{result.Message}");
+            }
 
+            return result;
+        }
         /// <summary>
         /// 打卡
         /// </summary>
