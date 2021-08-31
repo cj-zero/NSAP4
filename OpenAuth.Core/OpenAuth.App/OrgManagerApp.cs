@@ -46,10 +46,10 @@ namespace OpenAuth.App
                 });
             }
 
+            _revelanceApp.DeleteBySecondId(Define.ORGROLE, obj.Id);
             if (obj.DeptManager != null && obj.DeptManager.Count > 0)
             {
                 //添加部门负责人
-                _revelanceApp.DeleteBySecondId(Define.ORGROLE, obj.Id);
                 _revelanceApp.AssignBy(Define.ORGROLE, obj.DeptManager.ToLookup(c => obj.Id));
             }
             return org.Id;
@@ -61,10 +61,10 @@ namespace OpenAuth.App
             UpdateTreeObj(org);
 
 
+            _revelanceApp.DeleteBySecondId(Define.ORGROLE, obj.Id);
             if (obj.DeptManager != null && obj.DeptManager.Count > 0)
             {
                 //添加部门负责人
-                _revelanceApp.DeleteBySecondId(Define.ORGROLE, obj.Id);
                 _revelanceApp.AssignBy(Define.ORGROLE, obj.DeptManager.ToLookup(c => obj.Id));
             }
             return org.Id;

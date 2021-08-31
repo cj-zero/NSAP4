@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenAuth.App.Order.ModelDto {
+namespace OpenAuth.App.Order.ModelDto
+{
 	/// <summary>
 	/// 订单草稿详情
 	/// </summary>
-	public class OrderDraftInfo {
+	public class OrderDraftInfo
+	{
 		/// <summary>
 		/// 系统操作者
 		/// </summary>
@@ -192,7 +194,8 @@ namespace OpenAuth.App.Order.ModelDto {
 	/// <summary>
 	/// 文件
 	/// </summary>
-	public class OrderFile {
+	public class OrderFile
+	{
 		/// <summary>
 		/// Id
 		/// </summary>
@@ -239,7 +242,8 @@ namespace OpenAuth.App.Order.ModelDto {
 	/// <summary>
 	/// 物料
 	/// </summary>
-	public class OrderItemInfo {
+	public class OrderItemInfo
+	{
 		/// <summary>
 		/// 物料编码
 		/// </summary>
@@ -371,7 +375,8 @@ namespace OpenAuth.App.Order.ModelDto {
 	/// <summary>
 	/// 查看呼叫服务信息
 	/// </summary>
-	public class GetCustomerInfoDto {
+	public class GetCustomerInfoDto
+	{
 		/// <summary>
 		/// 编号
 		/// </summary>
@@ -443,7 +448,8 @@ namespace OpenAuth.App.Order.ModelDto {
 	/// <summary>
 	/// 查询单个物料信息
 	/// </summary>
-	public class SelectSingleStoreOitmInfoDto {
+	public class SelectSingleStoreOitmInfoDto
+	{
 		/// <summary>
 		/// 物料编码
 		/// </summary>
@@ -1020,7 +1026,8 @@ namespace OpenAuth.App.Order.ModelDto {
 	/// <summary>
 	/// 获取物料类型的示例
 	/// </summary>
-	public class GetItemTypeExpInfoDto {
+	public class GetItemTypeExpInfoDto
+	{
 		public int type_id { get; set; }
 		public int code_rule { get; set; }
 		public string type_coding_exp { get; set; }
@@ -1029,7 +1036,8 @@ namespace OpenAuth.App.Order.ModelDto {
 	/// <summary>
 	/// 获取物料类型的自定义字段
 	/// </summary>
-	public class GetItemTypeCustomFieldsDto {
+	public class GetItemTypeCustomFieldsDto
+	{
 		public int TypeID { get; set; }
 		public string Fld_nm { get; set; }
 		public int Fld_Alias { get; set; }
@@ -1043,7 +1051,8 @@ namespace OpenAuth.App.Order.ModelDto {
 
 	}
 
-	public class GetItemTypeCustomValueDto {
+	public class GetItemTypeCustomValueDto
+	{
 		public int SlpCode { get; set; }
 		public string SlpName { get; set; }
 
@@ -1051,7 +1060,8 @@ namespace OpenAuth.App.Order.ModelDto {
 	/// <summary>
 	/// 货币下拉
 	/// </summary>
-	public class DropPopupDocCurDto {
+	public class DropPopupDocCurDto
+	{
 		public string id { get; set; }
 		public string name { get; set; }
 
@@ -1059,7 +1069,13 @@ namespace OpenAuth.App.Order.ModelDto {
 	/// <summary>
 	/// 单位
 	/// </summary>
-	public class DropListUnit {
+	public class DropListUnit
+	{
+		public int id { get; set; }
+		public string name { get; set; }
+	}
+	public class CurrencyList
+	{
 		public int id { get; set; }
 		public string name { get; set; }
 	}

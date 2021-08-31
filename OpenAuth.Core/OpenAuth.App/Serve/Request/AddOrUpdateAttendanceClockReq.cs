@@ -90,8 +90,12 @@ namespace OpenAuth.App.Request
         /// 
         /// </summary>
         public string Ip { get; set; }
-        
-         //todo:添加自己的请求字段
+        /// <summary>
+        /// 
+        /// </summary>
+        public int? ClockType { get; set; }
+
+        //todo:添加自己的请求字段
         public List<FileBind> Pictures { get; set; }
     }
 }

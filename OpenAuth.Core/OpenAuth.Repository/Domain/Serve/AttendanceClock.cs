@@ -118,7 +118,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("Ip地址")]
         public string Ip { get; set; }
-
+        /// <summary>
+        /// 打卡类型（0：未知  1：签到  2：签退）
+        /// </summary>
+        [Description("打卡类型")]
+        public int? ClockType { get; set; }
         /// <summary>
         /// 打卡记录图片
         /// </summary>
