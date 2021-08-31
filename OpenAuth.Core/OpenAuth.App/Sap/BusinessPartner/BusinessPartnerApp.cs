@@ -72,6 +72,17 @@ namespace OpenAuth.App.Sap.BusinessPartner
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var loginUser=loginContext.User;
+            var loginRoles = loginContext.Roles;
+            var loginOrgs = loginContext.Orgs;
+            if (loginContext.User.Account == Define.USERAPP) 
+            {
+                loginUser = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.AppUserId).Select(a => a.User).FirstOrDefaultAsync();
+                var roleIds = await UnitWork.Find<Relevance>(r => r.Key == Define.USERROLE && r.FirstId.Equals(loginUser.Id)).Select(r=>r.SecondId).ToListAsync();
+                loginRoles = await UnitWork.Find<Role>(r => roleIds.Contains(r.Id)).ToListAsync();
+                var orgIds = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId.Equals(loginUser.Id)).Select(r => r.SecondId).ToListAsync();
+                loginOrgs = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(r => orgIds.Contains(r.Id)).ToListAsync();
+            }
             var result = new TableData();
             var query = from a in UnitWork.Find<OCRD>(null)
                         join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode into ab
@@ -145,29 +156,29 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 q.a.SlpCode,
                 q.a.U_Name,
             }).ToListAsync();
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(c => c.Name == "呼叫中心"))
+            if (loginUser.Account != Define.SYSTEM_USERNAME && !loginRoles.Any(c => c.Name == "呼叫中心"))
             {
                 var cardCodes = await UnitWork.Find<SharingPartner>(null).Select(s => s.CardCode).ToListAsync();
-                if (loginContext.Roles.Any(r => r.Name == "销售员") && loginContext.Roles.Any(r => r.Name == "售后技术员"))
+                if (loginRoles.Any(r => r.Name == "销售员") && loginRoles.Any(r => r.Name == "售后技术员"))
                 {
-                    var orgIds = loginContext.Orgs.Select(o => o.Id).ToList();
+                    var orgIds = loginOrgs.Select(o => o.Id).ToList();
                     var userIds = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && orgIds.Contains(r.SecondId)).Select(r => r.FirstId).ToListAsync();
                     var userNames = await UnitWork.Find<User>(u => userIds.Contains(u.Id)).Select(u => u.Name).ToListAsync();
-                    var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
+                    var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginUser.Id)).FirstOrDefaultAsync())?.NsapUserId;
                     var slpCode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
                     query2 = query2.Where(q => q.SlpCode == slpCode || userNames.Contains(q.Technician) || cardCodes.Contains(q.CardCode)).ToList();
                 }
-                else if (loginContext.Roles.Any(r => r.Name == "销售员"))
+                else if (loginRoles.Any(r => r.Name == "销售员"))
                 {
-                    var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
+                    var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginUser.Id)).FirstOrDefaultAsync())?.NsapUserId;
                     var slpCode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
                     query2 = query2.Where(q => q.SlpCode == slpCode || cardCodes.Contains(q.CardCode)).ToList();
 
                 }
-                else if (loginContext.Roles.Any(r => r.Name == "售后技术员"))
+                else if (loginRoles.Any(r => r.Name == "售后技术员"))
                 {
-                    var secondId = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && loginContext.User.Id.Contains(r.FirstId)).Select(r => r.SecondId).FirstOrDefaultAsync();
-                    var userIds = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && secondId.Contains(r.SecondId)).Select(r => r.FirstId).ToListAsync();
+                    var orgIds = loginOrgs.Select(o => o.Id).ToList();
+                    var userIds = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && orgIds.Contains(r.SecondId)).Select(r => r.FirstId).ToListAsync();
                     var userNames = await UnitWork.Find<User>(u => userIds.Contains(u.Id)).Select(u => u.Name).ToListAsync();
                     query2 = query2.Where(q => userNames.Contains(q.Technician) || cardCodes.Contains(q.CardCode)).ToList();
                 }
