@@ -1079,6 +1079,22 @@ namespace OpenAuth.App.Order.ModelDto
 		public int id { get; set; }
 		public string name { get; set; }
 	}
+	public class CustomFieldsNewDto
+	{
+		public string  AliasID { get; set; }
+		public string  U_ShipName { get; set; }
+		public string  Descr { get; set; }
+		public string FieldID { get; set; }
+		public string  TableID { get; set; }
+		public string  NewEditType { get; set; }
+		public string EditSize { get; set; }
+		public List<LineDto> Line { get; set; }
+	}
+	public class LineDto
+	{
+		public string id { get; set; }
+		public string  name { get; set; }
+	}
 	//暂时注释
 	//public class GetMaterialsPurHistoryDto {
 	//	public string  sbo_nm { get; set; }

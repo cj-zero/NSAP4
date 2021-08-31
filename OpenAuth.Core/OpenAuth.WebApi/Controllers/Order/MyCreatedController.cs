@@ -1,5 +1,6 @@
 ﻿using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using NSAP.Entity.Sales;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Order;
@@ -62,9 +63,9 @@ namespace OpenAuth.WebApi.Controllers.Order
 		/// <returns></returns>
 		[HttpGet]
 		[Route("GetDeliverySalesInfoNew")]
-		public Response<string> GetDeliverySalesInfoNew(string job_id, string isAudit, string docType)
+		public Response<billDelivery> GetDeliverySalesInfoNew(string job_id, string isAudit, string docType)
 		{
-			var result = new Response<string>();
+			var result = new Response<billDelivery>();
 
 			result.Result = _serviceSaleOrderApp.GetDeliverySalesInfoNew(job_id, isAudit, docType);
 
@@ -102,7 +103,7 @@ namespace OpenAuth.WebApi.Controllers.Order
 
 			result.Result = _serviceSaleOrderApp.DropPopupSlpCodeNew(job_id, isAudit, docType);
 
-			return result; 
+			return result;
 		}
 		/// <summary>
 		/// 标识下拉
@@ -119,7 +120,7 @@ namespace OpenAuth.WebApi.Controllers.Order
 
 			result.Result = _serviceSaleOrderApp.DropPopupIndicatorNew(job_id, isAudit, docType);
 
-			return result; 
+			return result;
 		}
 		/// <summary>
 		/// 装运类型
@@ -138,6 +139,13 @@ namespace OpenAuth.WebApi.Controllers.Order
 
 			return result;
 		}
+		/// <summary>
+		/// 仓库
+		/// </summary>
+		/// <param name="job_id"></param>
+		/// <param name="isAudit"></param>
+		/// <param name="docType"></param>
+		/// <returns></returns>
 		[HttpGet]
 		[Route("DropPopupWhsCodeNew")]
 		public Response<List<CurrencyList>> DropPopupWhsCodeNew(string job_id, string isAudit, string docType)
@@ -145,6 +153,108 @@ namespace OpenAuth.WebApi.Controllers.Order
 			var result = new Response<List<CurrencyList>>();
 
 			result.Result = _serviceSaleOrderApp.DropPopupWhsCodeNew(job_id, isAudit, docType);
+
+			return result;
+		}
+		/// <summary>
+		/// 付款条款（新）
+		/// </summary>
+		/// <param name="job_id"></param>
+		/// <param name="isAudit"></param>
+		/// <param name="docType"></param>
+		/// <returns></returns>
+		[HttpGet]
+		[Route("GetGroupNumNew")]
+		public Response<List<CurrencyList>> GetGroupNumNew(string job_id, string isAudit, string docType)
+		{
+			var result = new Response<List<CurrencyList>>();
+
+			result.Result = _serviceSaleOrderApp.GetGroupNumNew(job_id, isAudit, docType);
+
+			return result;
+		}
+		/// <summary>
+		/// 货币
+		/// </summary>
+		/// <param name="job_id"></param>
+		/// <param name="isAudit"></param>
+		/// <param name="docType"></param>
+		/// <returns></returns>
+		[HttpGet]
+		[Route("DropPopupDocCurNew")]
+		public Response<List<DropPopupDocCurDto>> DropPopupDocCurNew(string job_id, string isAudit, string docType)
+		{
+			var result = new Response<List<DropPopupDocCurDto>>();
+
+			result.Result = _serviceSaleOrderApp.DropPopupDocCurNew(job_id, isAudit, docType);
+
+			return result;
+		}
+		/// <summary>
+		/// 联系人
+		/// </summary>
+		/// <param name="job_id"></param>
+		/// <param name="isAudit"></param>
+		/// <param name="docType"></param>
+		/// <returns></returns>
+		[HttpGet]
+		[Route("DropPopupCntctPrsnSqlNew")]
+		public Response<List<CurrencyList>> DropPopupCntctPrsnSqlNew(string job_id, string isAudit, string docType)
+		{
+			var result = new Response<List<CurrencyList>>();
+
+			result.Result = _serviceSaleOrderApp.DropPopupCntctPrsnSqlNew(job_id, isAudit, docType);
+
+			return result;
+		}
+		/// <summary>
+		/// 查询指定业务伙伴的科目余额
+		/// </summary>
+		/// <param name="job_id"></param>
+		/// <param name="isAudit"></param>
+		/// <param name="docType"></param>
+		/// <returns></returns>
+		[HttpGet]
+		[Route("SelectBalanceNew")]
+		public Response<string> SelectBalanceNew(string job_id, string isAudit, string docType)
+		{
+			var result = new Response<string>();
+
+			result.Result = _serviceSaleOrderApp.SelectBalanceNew(job_id, isAudit, docType);
+
+			return result;
+		}
+		/// <summary>
+		///  查询销售员所有客户总的科目余额
+		/// </summary>
+		/// <param name="job_id"></param>
+		/// <param name="isAudit"></param>
+		/// <param name="docType"></param>
+		/// <returns></returns>
+		[HttpGet]
+		[Route("GetSumBalDueNew")]
+		public Response<string> GetSumBalDueNew(string job_id, string isAudit, string docType)
+		{
+			var result = new Response<string>();
+
+			result.Result = _serviceSaleOrderApp.GetSumBalDueNew(job_id);
+
+			return result;
+		}
+		/// <summary>
+		/// 船舶代码
+		/// </summary>
+		/// <param name="job_id"></param>
+		/// <param name="isAudit"></param>
+		/// <param name="docType"></param>
+		/// <returns></returns>
+		[HttpGet]
+		[Route("GetAddressNew")]
+		public Response<string> GetAddressNew(string job_id, string isAudit, string docType)
+		{
+			var result = new Response<string>();
+
+			result.Result = _serviceSaleOrderApp.GetAddressNew(job_id, isAudit, docType);
 
 			return result;
 		}
@@ -238,9 +348,9 @@ namespace OpenAuth.WebApi.Controllers.Order
 		}
 		[HttpGet]
 		[Route("GetCustomFieldsNew")]
-		public Response<string> GetCustomFieldsNew(string TableName)
+		public Response<List<CustomFieldsNewDto>> GetCustomFieldsNew(string TableName)
 		{
-			var result = new Response<string>();
+			var result = new Response<List<CustomFieldsNewDto>>();
 
 			result.Result = _serviceSaleOrderApp.GetCustomFieldsNew(TableName);
 			return result;
