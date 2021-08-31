@@ -1,0 +1,120 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        body {
+            width: 1000px;
+            margin: 0 auto;
+            margin-top: 10px;
+            font-size: 13.5px;
+            color: black;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        #tablebor {
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+
+        .TH td {
+            border-style: solid;
+            border-width: 1px;
+        }
+
+        #divtitle {
+            margin: 0 auto;
+        }
+
+        hr {
+            margin-top: 80px;
+            height: 0px;
+            border-top: 1px solid #808A87;
+            border-right: 0px;
+            border-bottom: 0px;
+            border-left: 0px;
+        }
+
+        #divcode {
+            height: 60px;
+            width: 1000px;
+            margin: 0 auto;
+            border: 1px solid #808A87;
+        }
+    </style>
+
+</head>
+<body>
+    <div style=" width: 1000px; margin: 0 auto;">
+        <div id="divtitle" style=" width: 1000px; height:60px;">
+            <div style="float:left; width: 240px; ">
+                <img color="#6F6F6F" style="width: 120px;height: 45px; float: left; margin-left:10px;" src="logo.png" />
+            </div>
+            <div style="float:left;width: 300px;  margin-left:100px">
+                <span style="font-size: 42px;">内部联络单</span>
+            </div>
+            <div style="float:left;width: 180px;  ">
+                <p>单号：IW-<span> @Model.IW</span></p>
+                <p style="margin-top: 5px; ">日期：@Model.CreateTime</p>
+            </div>
+        </div>
+        <div style="margin-top: 30px;" id="divcode">
+            <div>
+                <div align="left" style="width: 55pt; font-weight: 700; font-size: larger; float: left ">&nbsp;收件人：</div>
+                <div align="left" style="font-weight: 700; font-size: larger;">生产</div>
+            </div>
+            <div>
+                <div align="left" style="width: 55pt; font-weight: 700; font-size: larger; float: left">&nbsp;抄&nbsp;&nbsp;&nbsp;&nbsp;送：</div>
+                <div align="left" style="font-weight: 700; font-size: larger">品质/采购/工程/PMC/售后/测试</div>
+            </div>
+            <div>
+                <div align="left" style="width: 55pt; font-weight: 700; font-size: larger; float: left">&nbsp;发件人：</div>
+                <div align="left" style="font-weight: 700; font-size: larger">工程</div>
+            </div>
+        </div>
+
+        <!--
+    <table style="margin-top: 30px;" id="divcode">
+        <tr>
+            <td align="left" style="width: 55pt; font-weight: 700; font-size: larger ">&nbsp;收件人：</td>
+            <td align="left" style="font-weight: 700; font-size: larger">生产</td>
+        </tr>
+        <tr>
+            <td style="font-weight: 700; font-size: larger">&nbsp;抄送：</td>
+            <td style="font-weight: 700; font-size: larger">
+                品质/采购/工程/PMC/售后/测试
+            </td>
+        </tr>
+        <tr>
+            <td style="font-weight: 700; font-size: larger">&nbsp;发件人：</td>
+            <td style="width: 550pt; font-weight: 700; font-size: larger">
+                工程
+            </td>
+        </tr>
+    </table>-->
+        <!--<table style="margin-top: 2px;" id="divcode">
+        <tr>
+            <td align="left" style="width: 55pt; ">&nbsp;主题：</td>
+            <td align="left" style="width: 55pt; ">@Model.Data.Theme</td>
+        </tr>
+    </table>
+    <table style="margin-top: 2px;">
+        <tr>
+            <td align="left" style="width: 55pt; ">&nbsp;内容：</td>
+        </tr>
+        <tr>
+            <td align="left" style="width: 55pt; ">@Model.Data.Content</td>
+        </tr>
+    </table>-->
+    </div>
+</body>

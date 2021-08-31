@@ -1,0 +1,68 @@
+﻿@using OpenAuth.Repository.Domain
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        body {
+            width: 1000px;
+            margin: 0 auto;
+            margin-top: 10px;
+            font-size: 13.5px;
+            color: black;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        #tablebor {
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+
+        .TH td {
+            border-style: solid;
+            border-width: 1px;
+        }
+
+        #divtitle {
+            margin: 0 auto;
+        }
+
+        hr {
+            margin-top: 80px;
+            height: 0px;
+            border-top: 1px solid #808A87;
+            border-right: 0px;
+            border-bottom: 0px;
+            border-left: 0px;
+        }
+
+        #divcode {
+            height: 30px;
+            width: 1000px;
+            margin: 0 auto;
+            border: 1px solid #808A87;
+        }
+    </style>
+
+</head>
+<body>
+    <div style="height:5px"></div>
+    <div style="margin-top: 2px;" id="divcode">
+        <div style="float: left; margin-top: 8px;font-weight:700;font-size:larger">&nbsp;主题：</div>
+        <div align="left" style="float: left; margin-top: 8px; font-weight: 700; font-size: larger">@Model.Theme</div>
+    </div>
+    <div style="margin-top: 2px;">
+        <div style=" margin-top: 8px;font-weight:700;font-size:larger;">&nbsp;内容：</div>
+        <div align="left" style=" margin-top: 8px; font-weight: 700; font-size: larger">@Model.Content</div>
+    </div>
+</body>
