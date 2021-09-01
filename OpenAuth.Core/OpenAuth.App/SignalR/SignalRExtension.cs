@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using OpenAuth.App.Interface;
+using OpenAuth.App.SSO;
 
 namespace OpenAuth.App.SignalR
 {
@@ -13,10 +15,12 @@ namespace OpenAuth.App.SignalR
             var redis = configuration.GetSection("AppSetting:SignalR").GetValue<string>("Redis");
             services.AddSignalR()
                 .AddMessagePackProtocol()
-                .AddStackExchangeRedis(redis, options => {
+                .AddStackExchangeRedis(redis, options =>
+                {
                     options.Configuration.ChannelPrefix = "SignalR_";
                 });
-            services.AddScoped<IUserIdProvider, NameUserIdProvider>();
+            //  services.AddScoped<IUserIdProvider, NameUserIdProvider>();
+            //  services.AddScoped<IAuth, LocalAuth>();
             return services;
         }
 
