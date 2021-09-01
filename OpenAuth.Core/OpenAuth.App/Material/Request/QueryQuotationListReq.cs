@@ -142,7 +142,11 @@ namespace OpenAuth.App.Material.Request
         /// 交货
         /// </summary>
         public string SalesOfDeliveryId { get; set; }
-        
+        /// <summary>
+        /// 是否驳回
+        /// </summary>
+        public bool? IsReject { get; set; }
+
         /// <summary>
         /// 打印物料id
         /// </summary>
