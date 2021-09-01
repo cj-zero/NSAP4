@@ -441,81 +441,68 @@ namespace OpenAuth.WebApi.Controllers.Order
                     filterString += string.Format(") {0} ) AND ", CardTypeFilter);
                 }
 
-            }
-            if (viewSelf && !viewFull && !viewSelfDepartment)
-            {
-                var rDataRowsSlp1 = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sale_id,tech_id FROM nsap_base.sbo_user WHERE user_id={userId} AND sbo_id={sboid}", CommandType.Text, null);
-                if (rDataRowsSlp1.Rows.Count > 0)
-                {
-                    string slpCode = rDataRowsSlp1.Rows[0][0].ToString();
-                    filterString += string.Format(" (a.SlpCode = {0} OR a.DfTcnician={1} {2} ) AND ", slpCode, DfTcnician, CardTypeFilter);
-                }
-                else
-                {
-                    filterString += string.Format(" a.SlpCode =0  AND ");
-                }
-            }
-            if (!string.IsNullOrEmpty(filterString))
-            {
-                filterString = filterString.Substring(0, filterString.Length - 5);
-            }
-            if (isOpen == "0")
-            {
-                filterString += string.Format(" AND a.sbo_id = {0}", sboid);
-                // return NSAP.Data.Sales.BillDelivery.SelectCardCodeView(out rowCount, pageSize, pageIndex, filterString, sortString).FelxgridDataToJSON(pageIndex.ToString(), rowCount.ToString());
-            }
-            else
-            {
-                result = _serviceSaleOrderApp.SelectCardCodeInfo(request, sortString, filterString, sboname);
-            }
-            return result;
-        }
-        /// <summary>
-        /// 加载销售报价单列表
-        /// </summary>
-        [HttpPost]
-        [Route("sales")]
-        public async Task<TableData> LoadOrderGridAsync(QuerySalesQuotationReq request)
-        {
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-            var result = new TableData();
-            var userId = _serviceBaseApp.GetUserNaspId();//(await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
-            var depId = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT dep_id value FROM base_user_detail WHERE user_id = {userId}", CommandType.Text, null).FirstOrDefault();
-            string type = "OQUT";
-            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);//UnitWork.ExcuteSql<sbo_info>(ContextType.Nsap4ServeDbContextType, "SELECT sbo_id FROM nsap_base.sbo_info WHERE is_curr = 1 AND valid = 1 LIMIT 1;", CommandType.Text, null).FirstOrDefault()?.sbo_id;
-            var dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM nsap_base.sbo_info WHERE sbo_id={sboid}", CommandType.Text, null);
-            string dRowData = string.Empty;
-            string isOpen = "0";
-            string sqlcont = string.Empty;
-            string sboname = string.Empty;
-            if (dt.Rows.Count > 0)
-            {
-                isOpen = dt.Rows[0][6].ToString();
-                sqlcont = dt.Rows[0][5].ToString();
-                sboname = dt.Rows[0][0].ToString();
-            }
-            var powerList = UnitWork.ExcuteSql<PowerDto>(ContextType.NsapBaseDbContext, $@"SELECT a.func_id funcID,b.page_url pageUrl,a.auth_map authMap FROM (SELECT a.func_id,a.page_id,b.auth_map FROM nsap_base.base_func a INNER JOIN (SELECT t.func_id,BIT_OR(t.auth_map) auth_map FROM (SELECT func_id,BIT_OR(auth_map) auth_map FROM nsap_base.base_role_func WHERE role_id IN (SELECT role_id FROM nsap_base.base_user_role WHERE user_id={userId}) GROUP BY func_id UNION ALL SELECT func_id,auth_map FROM nsap_base.base_user_func WHERE user_id={userId}) t GROUP BY t.func_id) b ON a.func_id=b.func_id) AS a INNER JOIN nsap_base.base_page AS b ON a.page_id=b.page_id", CommandType.Text, null);
-            bool viewFull = false;
-            bool viewSelf = false;
-            bool viewSelfDepartment = false;
-            bool viewSales = false;
-            bool viewCustom = false;
-            var power = powerList.FirstOrDefault(s => s.PageUrl == "sales/SalesQuotation.aspx");
-            if (power != null)
-            {
-                Powers powers = new Powers(power.AuthMap);
-                viewFull = powers.ViewFull;
-                viewSelf = powers.ViewSelf;
-                viewSelfDepartment = powers.ViewSelfDepartment;
-                viewSales = powers.ViewSales;
-                viewCustom = powers.ViewCustom;
-            }
-            if (isOpen == "0")
-            {
+			}
+			if (viewSelf && !viewFull && !viewSelfDepartment) {
+				var rDataRowsSlp1 = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sale_id,tech_id FROM nsap_base.sbo_user WHERE user_id={userId} AND sbo_id={sboid}", CommandType.Text, null);
+				if (rDataRowsSlp1.Rows.Count > 0) {
+					string slpCode = rDataRowsSlp1.Rows[0][0].ToString();
+					filterString += string.Format(" (a.SlpCode = {0} OR a.DfTcnician={1} {2} ) AND ", slpCode, DfTcnician, CardTypeFilter);
+				} else {
+					filterString += string.Format(" a.SlpCode =0  AND ");
+				}
+			}
+			if (!string.IsNullOrEmpty(filterString)) {
+				filterString = filterString.Substring(0, filterString.Length - 5);
+			}
+			if (isOpen == "0") {
+				filterString += string.Format(" AND a.sbo_id = {0}", sboid);
+				// return NSAP.Data.Sales.BillDelivery.SelectCardCodeView(out rowCount, pageSize, pageIndex, filterString, sortString).FelxgridDataToJSON(pageIndex.ToString(), rowCount.ToString());
+			} else {
+				result = _serviceSaleOrderApp.SelectCardCodeInfo(request, sortString, filterString, sboname);
+			}
+			return result;
+		}
+		/// <summary>
+		/// 加载销售报价单列表
+		/// </summary>
+		[HttpPost]
+		[Route("sales")]
+		public async Task<TableData> LoadOrderGridAsync(QuerySalesQuotationReq request) {
+			var loginContext = _auth.GetCurrentUser();
+			if (loginContext == null) {
+				throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+			}
+			var result = new TableData();
+			var userId = _serviceBaseApp.GetUserNaspId();//(await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
+			var depId = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT dep_id value FROM base_user_detail WHERE user_id = {userId}", CommandType.Text, null).FirstOrDefault();
+			string type = "OQUT";
+			var sboid = _serviceBaseApp.GetUserNaspSboID(userId);//UnitWork.ExcuteSql<sbo_info>(ContextType.Nsap4ServeDbContextType, "SELECT sbo_id FROM nsap_base.sbo_info WHERE is_curr = 1 AND valid = 1 LIMIT 1;", CommandType.Text, null).FirstOrDefault()?.sbo_id;
+			var dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM nsap_base.sbo_info WHERE sbo_id={sboid}", CommandType.Text, null);
+			string dRowData = string.Empty;
+			string isOpen = "0";
+			string sqlcont = string.Empty;
+			string sboname = string.Empty;
+			if (dt.Rows.Count > 0) {
+				isOpen = dt.Rows[0][6].ToString();
+				sqlcont = dt.Rows[0][5].ToString();
+				sboname = dt.Rows[0][0].ToString();
+			}
+			var powerList = UnitWork.ExcuteSql<PowerDto>(ContextType.NsapBaseDbContext, $@"SELECT a.func_id funcID,b.page_url pageUrl,a.auth_map authMap FROM (SELECT a.func_id,a.page_id,b.auth_map FROM nsap_base.base_func a INNER JOIN (SELECT t.func_id,BIT_OR(t.auth_map) auth_map FROM (SELECT func_id,BIT_OR(auth_map) auth_map FROM nsap_base.base_role_func WHERE role_id IN (SELECT role_id FROM nsap_base.base_user_role WHERE user_id={userId}) GROUP BY func_id UNION ALL SELECT func_id,auth_map FROM nsap_base.base_user_func WHERE user_id={userId}) t GROUP BY t.func_id) b ON a.func_id=b.func_id) AS a INNER JOIN nsap_base.base_page AS b ON a.page_id=b.page_id", CommandType.Text, null);
+			bool viewFull = false;
+			bool viewSelf = false;
+			bool viewSelfDepartment = false;
+			bool viewSales = false;
+			bool viewCustom = false;
+			var power = powerList.FirstOrDefault(s => s.PageUrl == "sales/SalesQuotation.aspx");
+			if (power != null) {
+				Powers powers = new Powers(power.AuthMap);
+				viewFull = powers.ViewFull;
+				viewSelf = powers.ViewSelf;
+				viewSelfDepartment = powers.ViewSelfDepartment;
+				viewSales = powers.ViewSales;
+				viewCustom = powers.ViewCustom;
+			}
+			if (isOpen == "0") {    
 
                 //return NSAP.Biz.Sales.BillDelivery.SelectBillViewInfo(int.Parse(rp), int.Parse(page), query, sortname, sortorder, type, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewFull, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewSelf, UserID, SboID, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewSelfDepartment, DepID, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewCustom, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewSales);
             }
@@ -1034,8 +1021,8 @@ namespace OpenAuth.WebApi.Controllers.Order
         {
             TableData tableData = new TableData();
             var userId = _serviceBaseApp.GetUserNaspId();
-            bool ViewSales = false;
-            bool ViewCustom = false;
+            bool ViewSales = true;
+            bool ViewCustom = true;
             if (!string.IsNullOrEmpty(billPageurl))
             {
                 var powerList = UnitWork.ExcuteSql<PowerDto>(ContextType.NsapBaseDbContext, $@"SELECT a.func_id funcID,b.page_url pageUrl,a.auth_map authMap FROM (SELECT a.func_id,a.page_id,b.auth_map FROM nsap_base.base_func a INNER JOIN (SELECT t.func_id,BIT_OR(t.auth_map) auth_map FROM (SELECT func_id,BIT_OR(auth_map) auth_map FROM nsap_base.base_role_func WHERE role_id IN (SELECT role_id FROM nsap_base.base_user_role WHERE user_id={userId}) GROUP BY func_id UNION ALL SELECT func_id,auth_map FROM nsap_base.base_user_func WHERE user_id={userId}) t GROUP BY t.func_id) b ON a.func_id=b.func_id) AS a INNER JOIN nsap_base.base_page AS b ON a.page_id=b.page_id", CommandType.Text, null);
@@ -1063,6 +1050,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             StringBuilder stringBuilder = new StringBuilder();
             string strSql = string.Format(" SELECT d.ItemCode,Dscription,Quantity ," +
                 "IF(" + ViewSales + ",d.PriceBefDi,0)PriceBefDi," +
+
                 "IF(" + ViewSales + ",DiscPrcnt,0)DiscPrcnt,d.U_PDXX," +
                 "IF(" + ViewSales + ",d.U_XSTCBL,0)U_XSTCBL," +
                 "IF(" + ViewSales + ",d.U_YWF,0)U_YWF," +
@@ -1193,7 +1181,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         ///  批量上传保存接口
         /// </summary>
         /// <param name="model"></param>
-        /// <returns>服务器存储的文件信息</returns>
+        /// <returns>服务器存储的文件信息</returns>Fsave
         [HttpPost]
         [Route("UpdateSalesDocAttachment")]
         public Response UpdateSalesDocAttachment(BillDeliveryReq model)
@@ -1384,6 +1372,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 tabledata.Message = e.Message;
             }
+
             return tabledata;
         }
         /// <summary>
@@ -1624,6 +1613,6 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             return result;
         }
-
+   
     }
 }
