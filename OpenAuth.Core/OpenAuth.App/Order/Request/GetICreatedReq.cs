@@ -9,8 +9,8 @@ namespace OpenAuth.App.Order.Request
 	{
 		public string qtype { get; set; }
 		public string query { get; set; }
-		public string sortname { get; set; }
-		public string sortorder { get; set; }
+		public string sortname { get; set; } = "upd_dt";
+		public string sortorder { get; set; } = "desc";
 		public string types { get; set; }
 		public string Applicator { get; set; }
 		public string Customer { get; set; }
