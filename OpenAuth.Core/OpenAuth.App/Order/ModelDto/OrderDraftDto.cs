@@ -237,7 +237,7 @@ namespace OpenAuth.App.Order.ModelDto
 		/// </summary>
 		public int acct_id { get; set; }
 
-	}
+    }
 
 	/// <summary>
 	/// 物料
@@ -1049,7 +1049,7 @@ namespace OpenAuth.App.Order.ModelDto
 		public string NotNull { get; set; }
 		public int valRows { get; set; }
 
-	}
+    }
 
 	public class GetItemTypeCustomValueDto
 	{
