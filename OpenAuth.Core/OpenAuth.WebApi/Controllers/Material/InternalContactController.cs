@@ -136,5 +136,22 @@ namespace OpenAuth.WebApi.Controllers.Material
                 throw new Exception(e.Message);
             }
         }
+
+        [HttpGet]
+        public async Task<Response> AsyncData()
+        {
+            Response result = new Response();
+            try
+            {
+                await _app.AsyncData();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}, 错误：{result.Message}");
+            }
+            return result;
+        }
     }
 }

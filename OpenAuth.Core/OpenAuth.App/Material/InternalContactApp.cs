@@ -340,8 +340,8 @@ namespace OpenAuth.App.Material
                 detail.Id,
                 detail.IW,
                 detail.Theme,
-                CardCodes = detail.CardCode.Split(","),
-                CardNames = detail.CardName.Split(","),
+                CardCodes =!string.IsNullOrWhiteSpace(detail.CardCode)? detail.CardCode.Split(","):new string[] { },
+                CardNames = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardName.Split(",") : new string[] { },
                 detail.Status,
                 detail.RdmsNo,
                 detail.SaleOrderNo,
@@ -396,26 +396,27 @@ namespace OpenAuth.App.Material
                     verificationReq.VerificationFinally = "3";
                     verificationReq.NodeRejectType = "1";
 
-                    internalContact.Status = 1;
+                    internalContact.Status = 6;
+                    await _flowInstanceApp.Verification(verificationReq);
                 }
-                else 
+                else
                 {
+                    await _flowInstanceApp.Verification(verificationReq);
                     if (loginContext.Roles.Any(c => c.Name.Equal("联络单测试审批")) && flowinstace.ActivityName == "测试审批") 
                     {
                         internalContact.Status = 2;
                         //设置研发环节执行人
-                        await _flowInstanceApp.ModifyNodeUser(flowinstace.Id, false, new string[] { internalContact.DevelopApproveId }, internalContact.DevelopApprove, false);
+                        await _flowInstanceApp.ModifyNodeUser(flowinstace.Id, true, new string[] { internalContact.DevelopApproveId }, internalContact.DevelopApprove, false);
                     } 
                     else if (loginContext.Roles.Any(c => c.Name.Equal("联络单研发审批")) && flowinstace.ActivityName == "研发审批") internalContact.Status = 3;
                     else if (loginContext.Roles.Any(c => c.Name.Equal("总经理")) && flowinstace.ActivityName == "总经理审批") internalContact.Status = 4;
                     else internalContact.Status = 1;//驳回 撤回提交
                 }
-                await _flowInstanceApp.Verification(verificationReq);
 
                 await UnitWork.UpdateAsync<InternalContact>(c => c.Id == req.Id, c => new InternalContact
                 {
                     Status = internalContact.Status,
-                    ApproveTime = internalContact.Status == 4 ? DateTime.Now : c.ApproveTime
+                    ApproveTime = internalContact.Status == 4 ? DateTime.Now : internalContact.ApproveTime
                 });
             }
             else if (req.HanleType == 2)//执行
@@ -612,6 +613,81 @@ namespace OpenAuth.App.Material
             System.IO.File.Delete(tempUrl);
             System.IO.File.Delete(contentTemp);
             return datas;
+        }
+
+        public async Task AsyncData()
+        {
+            var contact = await (from a in UnitWork.Find<base_contact>(null)
+                                 join b in UnitWork.Find<base_user>(null) on a.user_id.ToString() equals b.user_id.ToString() into ab
+                                 from b in ab.DefaultIfEmpty()
+                                 select new { a, b.user_nm }
+                          ).ToListAsync();
+            List<InternalContact> internalContacts = new List<InternalContact>();
+            contact.ForEach(c =>
+            {
+                InternalContact contact1 = new InternalContact();
+                contact1.InternalContactDeptInfos = new List<InternalContactDeptInfo>();
+                var iw = "";
+                if (c.a.topic.Contains("IW"))
+                {
+                    if (c.a.topic.Contains("IW-"))
+                    {
+                        var start = c.a.topic.IndexOf("IW-");
+                        iw = c.a.topic.Substring(start+2, start + 4);
+                    }
+                    else
+                    {
+                        var top = c.a.topic.Replace(" ", "");
+                        var start = c.a.topic.IndexOf("IW");
+                        iw = c.a.topic.Substring(start+2, start + 4);
+                    }
+                }
+                var reciveorg = c.a.add_dep.Split("、");
+                foreach (var item in reciveorg)
+                {
+                    contact1.InternalContactDeptInfos.Add(new InternalContactDeptInfo { Type = 1, OrgName = item });
+                }
+                contact1.Theme = c.a.topic;
+                contact1.AdaptiveModel = c.a.adapt_model;
+                contact1.CreateTime = c.a.ciiDate;
+                contact1.CreateUser = c.user_nm;
+                contact1.CreateUserId = c.a.user_id.ToString();
+                contact1.Content = c.a.content;
+                contact1.ApproveTime = c.a.up_dt;
+                contact1.IW = iw;
+                var rang = "";
+                var reason = "";
+                if (c.a.new_import==1)
+                {
+                    rang = "新品导入";
+                }
+                if (c.a.lib_import == 1)
+                {
+                    rang += (!string.IsNullOrWhiteSpace(rang) ? "," : "") + "在库品导入";
+                }
+                if (c.a.ship_import == 1)
+                {
+                    rang += (!string.IsNullOrWhiteSpace(rang) ? "," : "") + "已出货设备导入";
+                }
+                if (c.a.customer_need == 1)
+                {
+                    reason = "客户需求";
+                }
+                if (c.a.rd_need == 1)
+                {
+                    reason += (!string.IsNullOrWhiteSpace(reason) ? "," : "") + "研发需求";
+                }
+                contact1.AdaptiveRange = rang;
+                contact1.Reason = reason;
+                contact1.Status = 7;
+                contact1.RdmsNo = "";
+                contact1.FlowInstanceId = "";
+
+                internalContacts.Add(contact1);
+            });
+
+            await UnitWork.BatchAddAsync<InternalContact, int>(internalContacts.ToArray());
+            await UnitWork.SaveAsync();
         }
     }
 }
