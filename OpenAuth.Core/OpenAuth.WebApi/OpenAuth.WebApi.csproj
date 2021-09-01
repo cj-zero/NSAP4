@@ -68,6 +68,9 @@
     <Reference Include="Autofac.Extensions.DependencyInjection">
       <HintPath>..\..\..\Users\Administrator\.nuget\packages\autofac.extensions.dependencyinjection\4.0.0\lib\netstandard1.1\Autofac.Extensions.DependencyInjection.dll</HintPath>
     </Reference>
+    <Reference Include="ENTITY">
+      <HintPath>..\OpenAuth.App\Nsapdll\ENTITY.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
