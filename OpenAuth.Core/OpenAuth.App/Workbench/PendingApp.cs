@@ -199,17 +199,10 @@ namespace OpenAuth.App.Workbench
         /// <returns></returns>
         public async Task<ReturnnoteDetailsResp> ReturnnoteDetails(int ReturnnoteId)
         {
-            var returNnoteObj = await UnitWork.Find<ReturnNote>(r => r.Id == ReturnnoteId).Include(r => r.ReturnNotePictures).Include(r => r.ReturnnoteMaterials)
-                .ThenInclude(r => r.ReturnNoteMaterialPictures).FirstOrDefaultAsync();
+            var returNnoteObj = await UnitWork.Find<ReturnNote>(r => r.Id == ReturnnoteId).Include(r => r.ReturnNotePictures).Include(r => r.ReturnNoteProducts).ThenInclude(r=>r.ReturnNoteMaterials).FirstOrDefaultAsync();
 
-            List<string> fileIds = new List<string>();
-            var numberIds = returNnoteObj.ReturnnoteMaterials.Select(r => r.Id).ToList();
-            var numbers = await UnitWork.Find<ReturnnoteMaterialNumber>(r => numberIds.Contains(r.ReturnnoteMaterialId)).ToListAsync();
-            returNnoteObj.ReturnnoteMaterials.ForEach(r => { fileIds.AddRange(r.ReturnNoteMaterialPictures.Select(n => n.PictureId).ToList()); r.ReturnnoteMaterialNumbers = numbers.Where(n => n.ReturnnoteMaterialId == r.Id).ToList(); });
-            fileIds.AddRange(returNnoteObj.ReturnNotePictures.Select(r => r.PictureId).ToList());
+            var  fileIds = returNnoteObj.ReturnNotePictures.Select(r=>r.PictureId).ToList();
             var fileList = await UnitWork.Find<UploadFile>(f => fileIds.Contains(f.Id)).ToListAsync();
-            var materialIds = returNnoteObj.ReturnnoteMaterials.Select(r => r.QuotationMaterialId).ToList();
-            var quotationMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => materialIds.Contains(q.Id)).ToListAsync();
             var returnnoteDetails = new ReturnnoteDetailsResp
             {
                 ReturnnoteId = returNnoteObj.Id.ToString(),
@@ -219,37 +212,29 @@ namespace OpenAuth.App.Workbench
                 Remark = returNnoteObj.Remark,
                 TotalMoney = returNnoteObj.TotalMoney,
                 UpdateTime = returNnoteObj.UpdateTime.ToString("yyyy.MM.dd HH:mm:ss"),
-                ReturnNoteMaterials = returNnoteObj.ReturnnoteMaterials.Select(r => new ReturnNoteMaterialResp
-                {
-                    MaterialsId = r.Id,
-                    Count = r.Count,
-                    SecondQty = r.SecondQty,
-                    ReceivingRemark = r.ReceivingRemark,
-                    ShippingRemark = r.ShippingRemark,
-                    GoodQty = r.GoodQty,
-                    GoodWhsCode = r.GoodWhsCode,
-                    InvoiceDocEntry = r.InvoiceDocEntry,
-                    MaterialDescription = r.MaterialDescription,
-                    MaterialCode = r.MaterialCode,
-                    SecondWhsCode = r.SecondWhsCode,
-                    ReplacePartCode = quotationMaterials.Where(q => q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.MaterialCode,
-                    ReplacePartDescription = quotationMaterials.Where(q => q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.MaterialDescription,
-                    TotalPrice = r.Count * quotationMaterials.Where(q => q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.DiscountPrices,
-                    Price = quotationMaterials.Where(q => q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.DiscountPrices,
-                    ReturnnoteMaterialNumberResps = r.ReturnnoteMaterialNumbers.Select(n => new ReturnnoteMaterialNumberResp
-                    {
-                        RemoveNumber = n.ReturnNumber,
-                        ReturnNumber = n.ReturnNumber,
-                        ReturnnoteMaterialId = n.ReturnnoteMaterialId
-                    }).ToList(),
-                    ReturnNoteId = r.ReturnNoteId,
-                    Files = r.ReturnNoteMaterialPictures.Select(p => new FileResp
-                    {
-                        FileId = p.PictureId,
-                        FileName = fileList.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileName,
-                        FileType = fileList.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileType,
+                ReturnNoteProducts = returNnoteObj.ReturnNoteProducts.Select(r => new ReturnNoteProductResp {
+                    MaterialCode=r.MaterialCode,
+                    MaterialDescription=r.MaterialDescription,
+                    ProductCode=r.ProductCode,
+                    ReturnNoteId=r.ReturnNoteId,
+                    ReturnNoteMaterials=r.ReturnNoteMaterials.Select(m=>new ReturnNoteMaterialResp { 
+                        MaterialCode=m.MaterialCode,
+                        InvoiceDocEntry = m.InvoiceDocEntry,
+                        MaterialDescription=m.MaterialDescription,
+                        SecondWhsCode=m.SecondWhsCode,
+                        ShippingRemark=m.ShippingRemark,
+                        SNandPN=m.SNandPN,
+                        ReplaceSNandPN=m.ReplaceSNandPN,
+                        ReplaceMaterialDescription=m.ReplaceMaterialDescription,
+                        GoodWhsCode=m.GoodWhsCode,
+                        IsGood=m.IsGood,
+                        Moeny=m.Moeny,
+                        QuotationMaterialId=m.QuotationMaterialId,
+                        ReceivingRemark=m.ReceivingRemark,
+                        ReplaceMaterialCode=m.ReplaceMaterialCode,
+                        ReturnNoteProductId=m.ReturnNoteProductId
                     }).ToList()
-                }).ToList()
+                }).ToList(),
             };
             var History = await UnitWork.Find<FlowInstanceOperationHistory>(f => f.InstanceId.Equals(returNnoteObj.FlowInstanceId)).OrderBy(f => f.CreateDate).ToListAsync();
             returnnoteDetails.ReturnNoteHistoryResp = History.Select(h => new OperationHistoryResp

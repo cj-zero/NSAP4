@@ -48,12 +48,11 @@ namespace OpenAuth.App.Workbench.Response
         /// 流程
         /// </summary>
         public List<FlowPathResp> FlowPathResp { get; set; }
-
         /// <summary>
-        /// 退料单详细列表
+        /// 退料文件表
         /// </summary>
-        public virtual List<ReturnNoteMaterialResp> ReturnNoteMaterials { get; set; }
-
+        public virtual List<ReturnNoteProductResp> ReturnNoteProducts { get; set; }
+        
         /// <summary>
         /// 退料文件表
         /// </summary>
@@ -69,18 +68,9 @@ namespace OpenAuth.App.Workbench.Response
     public class ReturnNoteMaterialResp 
     {
         /// <summary>
-        ///物料ID
-        /// </summary>
-        public string MaterialsId { get; set; }
-        /// <summary>
         ///物料编码
         /// </summary>
         public string MaterialCode { get; set; }
-
-        /// <summary>
-        ///本次退还数量
-        /// </summary>
-        public int? Count { get; set; }
 
         /// <summary>
         ///收货备注
@@ -102,39 +92,19 @@ namespace OpenAuth.App.Workbench.Response
         ///物料描述
         /// </summary>
         public string MaterialDescription { get; set; }
-        
-        /// <summary>
-        ///总金额
-        /// </summary>
-        public decimal? TotalPrice { get; set; }
-        /// <summary>
-        ///金额
-        /// </summary>
-        public decimal? Price { get; set; }
-        
+
+
         /// <summary>
         ///良品数量
         /// </summary>
-        public int? GoodQty { get; set; }
+        public bool? IsGood { get; set; }
 
-        /// <summary>
-        ///次品数量
-        /// </summary>
-        public int? SecondQty { get; set; }
 
         /// <summary>
         ///应收发票id
         /// </summary>
         public int? InvoiceDocEntry { get; set; }
 
-        /// <summary>
-        ///领料的物料编码
-        /// </summary>
-        public string ReplacePartCode { get; set; }
-        /// <summary>
-        ///领料的物料备注
-        /// </summary>
-        public string ReplacePartDescription { get; set; }
         /// <summary>
         ///良品仓库
         /// </summary>
@@ -146,42 +116,69 @@ namespace OpenAuth.App.Workbench.Response
         public string SecondWhsCode { get; set; }
 
         /// <summary>
-        ///产品编号
+        ///原物料编码
         /// </summary>
-        public string ProductCode { get; set; }
+        public string ReplaceMaterialCode { get; set; }
 
         /// <summary>
-        ///原产品编码
+        ///原物料描述
         /// </summary>
-        public string ReplaceProductCode { get; set; }
+        public string ReplaceMaterialDescription { get; set; }
+
+        /// <summary>
+        ///SN号和PN号
+        /// </summary>
+        public string SNandPN { get; set; }
+        /// <summary>
+        ///原物料SN号和PN号
+        /// </summary>
+        public string ReplaceSNandPN { get; set; }
+
+        /// <summary>
+        ///序列号表id
+        /// </summary>
+        public string ReturnNoteProductId { get; set; }
+
+        /// <summary>
+        ///金额
+        /// </summary>
+        public decimal Moeny { get; set; }
+        /// <summary>
+        ///报价单物料id
+        /// </summary>
+        public string QuotationMaterialId { get; set; }
 
         /// <summary>
         ///退料图片
         /// </summary>
         public List<FileResp> Files { get; set; }
 
-        /// <summary>
-        ///退料图片
-        /// </summary>
-        public List<ReturnnoteMaterialNumberResp> ReturnnoteMaterialNumberResps { get; set; }
-
-
     }
-    public class ReturnnoteMaterialNumberResp 
+    public class ReturnNoteProductResp
     {
         /// <summary>
-        ///退料单物料d
+        ///退料单Id
         /// </summary>
-        public string ReturnnoteMaterialId { get; set; }
+        public int ReturnNoteId { get; set; }
 
         /// <summary>
-        ///退仓的序列号
+        ///产品编码
         /// </summary>
-        public string ReturnNumber { get; set; }
+        public string ProductCode { get; set; }
 
         /// <summary>
-        ///领取的序列号
+        ///物料编码
         /// </summary>
-        public string RemoveNumber { get; set; }
+        public string MaterialCode { get; set; }
+
+        /// <summary>
+        ///物料描述
+        /// </summary>
+        public string MaterialDescription { get; set; }
+
+        /// <summary>
+        /// 物料列表
+        /// </summary>
+        public virtual List<ReturnNoteMaterialResp> ReturnNoteMaterials { get; set; }
     }
 }

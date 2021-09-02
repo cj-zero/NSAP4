@@ -1051,25 +1051,25 @@ namespace OpenAuth.App.Material
                 loginUser = await GetUserId(Convert.ToInt32(request.AppId));
             }
             var result = new TableData();
-            var QuotationIds = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(request.ServiceOrderId) && q.CreateUserId.Equals(loginUser.Id)).Select(q => q.Id).ToListAsync();
+            //var QuotationIds = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(request.ServiceOrderId) && q.CreateUserId.Equals(loginUser.Id)).Select(q => q.Id).ToListAsync();
 
-            var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => QuotationIds.Contains((int)q.QuotationId) && q.MaterialType == 1).ToListAsync();
-            //获取当前服务单所有退料明细汇总
-            var query = from a in UnitWork.Find<ReturnnoteMaterial>(null)
-                        join b in UnitWork.Find<ReturnNote>(null) on a.ReturnNoteId equals b.Id into ab
-                        from b in ab.DefaultIfEmpty()
-                        where b.ServiceOrderId == request.ServiceOrderId && a.Count > 0
-                        select new { a.QuotationMaterialId, a.Count };
-            var returnMaterials = (await query.ToListAsync()).GroupBy(g => g.QuotationMaterialId).Select(s => new { Qty = s.Sum(s => s.Count), Id = s.Key }).ToList();
-            List<ReturnMaterialListResp> data = new List<ReturnMaterialListResp>();
-            foreach (var item in QuotationMergeMaterials)
-            {
-                var res = item.MapTo<ReturnMaterialListResp>();
-                int everQty = (int)(returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault() == null ? 0 : returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault()?.Qty);
-                res.SurplusQty = (int)item.Count - (returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault() == null ? 0 : (int)returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault().Qty);
-                data.Add(res);
-            }
-            result.Data = data;
+            //var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => QuotationIds.Contains((int)q.QuotationId) && q.MaterialType == 1).ToListAsync();
+            ////获取当前服务单所有退料明细汇总
+            //var query = from a in UnitWork.Find<ReturnNoteMaterial>(null)
+            //            join b in UnitWork.Find<ReturnNote>(null) on a.ReturnNoteId equals b.Id into ab
+            //            from b in ab.DefaultIfEmpty()
+            //            where b.ServiceOrderId == request.ServiceOrderId
+            //            select new { a.Id };
+            //var returnMaterials = (await query.ToListAsync()).GroupBy(g => g.QuotationMaterialId).Select(s => new { Qty = s.Sum(s => s.Count), Id = s.Key }).ToList();
+            //List<ReturnMaterialListResp> data = new List<ReturnMaterialListResp>();
+            //foreach (var item in QuotationMergeMaterials)
+            //{
+            //    var res = item.MapTo<ReturnMaterialListResp>();
+            //    int everQty = (int)(returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault() == null ? 0 : returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault()?.Qty);
+            //    res.SurplusQty = (int)item.Count - (returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault() == null ? 0 : (int)returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault().Qty);
+            //    data.Add(res);
+            //}
+            //result.Data = data;
             return result;
         }
 

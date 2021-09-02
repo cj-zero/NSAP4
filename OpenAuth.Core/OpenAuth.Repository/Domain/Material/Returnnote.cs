@@ -121,7 +121,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 退料单详细列表
         /// </summary>
-        public virtual List<ReturnnoteMaterial> ReturnnoteMaterials { get; set; }
+        public virtual List<ReturnNoteProduct> ReturnNoteProducts { get; set; }
 
         /// <summary>
         /// 退料文件表
