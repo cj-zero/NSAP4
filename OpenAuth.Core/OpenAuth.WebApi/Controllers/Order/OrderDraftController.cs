@@ -1008,7 +1008,7 @@ namespace OpenAuth.WebApi.Controllers.Order
 					billSboId = int.Parse(sboId);
 				}
 				else { billSboId = sboid; }
-				string strSql = string.Format("SELECT a.file_id,b.type_nm,a.file_nm,a.remarks,a.file_path,a.upd_dt,c.user_nm,a.view_file_path,a.file_type_id,a.acct_id ");
+				string strSql = string.Format("SELECT a.file_id as Id ,b.type_nm FileType ,a.file_nm as FileName ,a.remarks Remark,a.file_path as FilePath ,a.upd_dt CreateTime,c.user_nm CreateUserName ,a.view_file_path ViewFilePath ");//,a.file_type_id,a.acct_id
 				strSql += string.Format(" FROM {0}.file_main a", "nsap_oa");
 				strSql += string.Format(" LEFT JOIN {0}.file_type b ON a.file_type_id=b.type_id", "nsap_oa");
 				strSql += string.Format(" LEFT JOIN {0}.base_user c ON a.acct_id=c.user_id", "nsap_base");
