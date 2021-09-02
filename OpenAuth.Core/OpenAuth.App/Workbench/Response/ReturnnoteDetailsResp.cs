@@ -142,7 +142,7 @@ namespace OpenAuth.App.Workbench.Response
         /// <summary>
         ///金额
         /// </summary>
-        public decimal Moeny { get; set; }
+        public decimal Money { get; set; }
         /// <summary>
         ///报价单物料id
         /// </summary>
@@ -175,6 +175,10 @@ namespace OpenAuth.App.Workbench.Response
         ///物料描述
         /// </summary>
         public string MaterialDescription { get; set; }
+        /// <summary>
+        ///小计金额
+        /// </summary>
+        public decimal Money { get; set; }
 
         /// <summary>
         /// 物料列表

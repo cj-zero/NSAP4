@@ -63,7 +63,7 @@ namespace OpenAuth.App
             {
                 loginUser = await GetUserId((int)req.AppUserId);
             }
-            var returnNotes = UnitWork.Find<ReturnNote>(null).Include(r => r.ReturnNotePictures).Include(r=>r.ReturnNoteProducts).ThenInclude(r => r.ReturnNoteMaterials)
+            var returnNotes = UnitWork.Find<ReturnNote>(null).Include(r => r.ReturnNotePictures).Include(r => r.ReturnNoteProducts).ThenInclude(r => r.ReturnNoteMaterials)
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.SapId.ToString()), r => r.ServiceOrderSapId == req.SapId)
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()), r => r.SalesOrderId == req.SalesOrderId)
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), r => r.CreateTime > req.StartDate)
@@ -306,10 +306,10 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task<TableData> GetSerialNumberList(ReturnMaterialReq req) 
+        public async Task<TableData> GetSerialNumberList(ReturnMaterialReq req)
         {
             var result = new TableData();
-            result.Data = await UnitWork.Find<Quotation>(q => q.SalesOrderId == req.SalesOrderId).Include(q => q.QuotationProducts).Select(q=>q.QuotationProducts.Select(p=>new {p.ProductCode ,p.MaterialCode,p.MaterialDescription}).ToList()).FirstOrDefaultAsync();
+            result.Data = await UnitWork.Find<Quotation>(q => q.SalesOrderId == req.SalesOrderId).Include(q => q.QuotationProducts).Select(q => q.QuotationProducts.Select(p => new { p.ProductCode, p.MaterialCode, p.MaterialDescription }).ToList()).FirstOrDefaultAsync();
             return result;
         }
         /// <summary>
@@ -320,9 +320,21 @@ namespace OpenAuth.App
         public async Task<TableData> SerialNumberMaterialList(ReturnMaterialReq req)
         {
             var result = new TableData();
-            var quotationProducts = await UnitWork.Find<Quotation>(q => q.SalesOrderId == req.SalesOrderId).Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).Select(q => q.QuotationProducts).FirstOrDefaultAsync();
-            var quotationMaterials = quotationProducts.Where(q => q.ProductCode.Equals(req.ProductCode)).Select(q=>q.QuotationMaterials).FirstOrDefault();
-            var MaterialList = quotationMaterials.Select(q => new { q.MaterialCode, q.MaterialDescription, q.Count }).ToList();
+            var quotationObj = await UnitWork.Find<Quotation>(q => q.SalesOrderId == req.SalesOrderId).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).FirstOrDefaultAsync();
+            var quotationProducts = quotationObj.QuotationProducts;
+            var quotationMergeMaterials = quotationObj.QuotationMergeMaterials;
+            var quotationMaterials = quotationProducts.Where(q => q.ProductCode.Equals(req.ProductCode)).Select(q => q.QuotationMaterials).FirstOrDefault();
+            var MaterialList = quotationMaterials.Select(q => new { q.MaterialCode, q.MaterialDescription, q.DiscountPrices, q.Count }).ToList();
+            List<SerialNumberMaterial> serialNumberMaterials = new List<SerialNumberMaterial>();
+            MaterialList.ForEach(m =>
+            {
+                var mergeMaterialId = quotationMergeMaterials.Where(q => q.DiscountPrices == m.DiscountPrices && q.MaterialCode == m.MaterialCode).FirstOrDefault()?.Id;
+                for (int i = 0; i < m.Count; i++)
+                {
+                    serialNumberMaterials.Add(new SerialNumberMaterial { MaterialCode = m.MaterialCode, MaterialDescription = m.MaterialDescription,QuotationMaterialId= mergeMaterialId });
+                }
+            });
+            result.Data = serialNumberMaterials;
             return result;
         }
         /// <summary>
@@ -344,7 +356,7 @@ namespace OpenAuth.App
             }
             var result = new TableData();
             //查询当前技术员所有可退料服务Id
-            var quotationObj = await UnitWork.Find<Quotation>(q => q.SalesOrderId == req.SalesOrderId && q.CreateUserId.Equals(loginUser.Id)).Include(q => q.QuotationProducts).ThenInclude(q=>q.QuotationMaterials).Include(q=>q.QuotationMergeMaterials).Where(q=>q.QuotationProducts.Any(p=>p.ProductCode.Equals(req.ProductCode))).FirstOrDefaultAsync();
+            var quotationObj = await UnitWork.Find<Quotation>(q => q.SalesOrderId == req.SalesOrderId && q.CreateUserId.Equals(loginUser.Id)).Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).Include(q => q.QuotationMergeMaterials).Where(q => q.QuotationProducts.Any(p => p.ProductCode.Equals(req.ProductCode))).FirstOrDefaultAsync();
             var quotationProductObj = quotationObj.QuotationProducts.FirstOrDefault();
             var quotationMergeMaterials = quotationObj.QuotationMergeMaterials.ToList();
             //查询应收发票  && s.LineStatus == "O"
@@ -353,10 +365,11 @@ namespace OpenAuth.App
             var materials = await UnitWork.Find<ReturnNoteMaterial>(r => req.InvoiceDocEntry == r.InvoiceDocEntry).ToListAsync();
 
             List<sale_inv1> saleinv1List = new List<sale_inv1>();
-            saleinv1s.ForEach(s=> {
+            saleinv1s.ForEach(s =>
+            {
                 s.Quantity = s.Quantity - materials.Where(m => m.ReplaceMaterialCode.Equals(s.ItemCode)).Count();
                 var quotationMaterialCount = quotationProductObj.QuotationMaterials.Where(q => q.MaterialCode.Equals(s.ItemCode) && Convert.ToDecimal(q.DiscountPrices).ToString("#0.00") == Convert.ToDecimal(s.Price).ToString("#0.00")).Count() - materials.Where(m => m.ReplaceMaterialCode.Equals(s.ItemCode)).Count();
-                if (quotationMaterialCount > 0 && s.Quantity>0) 
+                if (quotationMaterialCount > 0 && s.Quantity > 0)
                 {
                     var num = s.Quantity;
                     if (quotationMaterialCount < s.Quantity)
@@ -370,17 +383,17 @@ namespace OpenAuth.App
                     }
                 }
             });
-            
+
             result.Data = saleinv1List.Select(s => new ReturnMaterialListResp
             {
                 MaterialCode = "",
                 MaterialDescription = "",
-                Moeny=Convert.ToDecimal(s.Price),
-                QuotationMaterialId= quotationMergeMaterials.Where(q=>q.MaterialCode.Equals(s.ItemCode)&& Convert.ToDecimal(q.DiscountPrices).ToString("#0.00") == Convert.ToDecimal(s.Price).ToString("#0.00")).FirstOrDefault()?.Id,
-                SNandPn="",
-                ReplaceSNandPN="",
-                ReplaceMaterialCode= s.ItemCode,
-                ReplaceMaterialDescription= s.Dscription
+                Money = Convert.ToDecimal(s.Price),
+                QuotationMaterialId = quotationMergeMaterials.Where(q => q.MaterialCode.Equals(s.ItemCode) && Convert.ToDecimal(q.DiscountPrices).ToString("#0.00") == Convert.ToDecimal(s.Price).ToString("#0.00")).FirstOrDefault()?.Id,
+                SNandPn = "",
+                ReplaceSNandPN = "",
+                ReplaceMaterialCode = s.ItemCode,
+                ReplaceMaterialDescription = s.Dscription
             }).ToList();
             return result;
         }
@@ -403,7 +416,7 @@ namespace OpenAuth.App
                 loginUser = await GetUserId((int)req.AppUserId);
             }
             //.Include(r => r.ReturnnoteOperationHistorys)
-            var returnNotes = await UnitWork.Find<ReturnNote>(r => r.Id == req.returnNoteId).Include(r => r.ReturnNotePictures).Include(r=>r.ReturnNoteProducts).ThenInclude(r => r.ReturnNoteMaterials).ThenInclude(r => r.ReturnNoteMaterialPictures).FirstOrDefaultAsync();
+            var returnNotes = await UnitWork.Find<ReturnNote>(r => r.Id == req.returnNoteId).Include(r => r.ReturnNotePictures).Include(r => r.ReturnNoteProducts).ThenInclude(r => r.ReturnNoteMaterials).ThenInclude(r => r.ReturnNoteMaterialPictures).FirstOrDefaultAsync();
             var History = await UnitWork.Find<FlowInstanceOperationHistory>(f => f.InstanceId.Equals(returnNotes.FlowInstanceId)).OrderBy(f => f.CreateDate).ToListAsync();
             List<ReturnNoteMaterial> returnnoteMaterials = new List<ReturnNoteMaterial>();
             returnNotes.ReturnNoteProducts.ForEach(r => { returnnoteMaterials.AddRange(r.ReturnNoteMaterials); });
@@ -422,7 +435,7 @@ namespace OpenAuth.App
             var numberIds = returnnoteMaterials.Select(r => r.Id).ToList();
 
             var fileList = await UnitWork.Find<UploadFile>(f => fileIds.Contains(f.Id)).ToListAsync();
-            
+
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ReturnNoteTypeName")).Select(u => new { u.Name, u.DtValue }).ToListAsync();
             var flowInstanceObj = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(returnNotes.FlowInstanceId)).FirstOrDefaultAsync();
             var returnnoteOperationHistorys = History.Select(h => new OperationHistoryResp
@@ -435,30 +448,31 @@ namespace OpenAuth.App
                 ApprovalResult = h.ApprovalResult,
                 ApprovalStage = h.ApprovalStage
             }).ToList();
-            if (req.IsUpDate != null && (bool)req.IsUpDate) 
+            if (req.IsUpDate != null && (bool)req.IsUpDate)
             {
                 foreach (var item in returnNotes.ReturnNoteProducts)
                 {
-                    List<ReturnMaterialListResp> MaterialList = (await GetMaterialList(new ReturnMaterialReq { InvoiceDocEntry=item.ReturnNoteMaterials.FirstOrDefault()?.InvoiceDocEntry,ProductCode=item.ProductCode,SalesOrderId= returnNotes .SalesOrderId})).Data;
-                    var returnNoteMaterials = MaterialList.Select(m => new ReturnNoteMaterial {
-                        ReplaceSNandPN=m.ReplaceSNandPN,
-                        SNandPN=m.SNandPn,
-                        Moeny=m.Moeny,
-                        ReplaceMaterialCode=m.ReplaceMaterialCode, 
-                        MaterialCode=m.MaterialCode,
-                        MaterialDescription=m.MaterialDescription,
-                        QuotationMaterialId=m.QuotationMaterialId
+                    List<ReturnMaterialListResp> MaterialList = (await GetMaterialList(new ReturnMaterialReq { InvoiceDocEntry = item.ReturnNoteMaterials.FirstOrDefault()?.InvoiceDocEntry, ProductCode = item.ProductCode, SalesOrderId = returnNotes.SalesOrderId })).Data;
+                    var returnNoteMaterials = MaterialList.Select(m => new ReturnNoteMaterial
+                    {
+                        ReplaceSNandPN = m.ReplaceSNandPN,
+                        SNandPN = m.SNandPn,
+                        Money = m.Money,
+                        ReplaceMaterialCode = m.ReplaceMaterialCode,
+                        MaterialCode = m.MaterialCode,
+                        MaterialDescription = m.MaterialDescription,
+                        QuotationMaterialId = m.QuotationMaterialId
                     }).ToList();
                     returnNotes.ReturnNoteProducts.Where(r => r.Id.Equals(item.Id)).FirstOrDefault().ReturnNoteMaterials.AddRange(returnNoteMaterials);
                 }
             }
             List<FlowPathResp> flowPathResp = new List<FlowPathResp>();
-            if (!string.IsNullOrWhiteSpace(returnNotes.FlowInstanceId)) 
+            if (!string.IsNullOrWhiteSpace(returnNotes.FlowInstanceId))
             {
                 flowPathResp = await _flowInstanceApp.FlowPathRespList(returnnoteOperationHistorys, returnNotes.FlowInstanceId);
             }
             var qoutationReq = await _pending.QuotationDetails(quotationObj.Id);
-            var serviceOrders = await _pending.ServiceOrderDetails(returnNotes.SalesOrderId, returnNotes.CreateUserId);
+            var serviceOrders = await _pending.ServiceOrderDetails(returnNotes.ServiceOrderId, returnNotes.CreateUserId);
             result.Data = new
             {
                 InvoiceDocEntry,
@@ -593,7 +607,7 @@ namespace OpenAuth.App
                     await UnitWork.SaveAsync();
                     #endregion
                     #region 新增
-                    obj.ReturnNoteProducts.ForEach(r => { r.ReturnNoteId = obj.ReturnNoteId;r.ReturnNoteMaterials.ForEach(m => m.ReturnNoteId = obj.ReturnNoteId); } );
+                    obj.ReturnNoteProducts.ForEach(r => { r.ReturnNoteId = obj.ReturnNoteId; r.ReturnNoteMaterials.ForEach(m => m.ReturnNoteId = obj.ReturnNoteId); });
                     await UnitWork.BatchAddAsync<ReturnNoteProduct>(obj.ReturnNoteProducts.ToArray());
                     obj.ReturnNotePictures.ForEach(r => r.ReturnNoteId = obj.ReturnNoteId);
                     await UnitWork.BatchAddAsync<ReturnNotePicture>(obj.ReturnNotePictures.ToArray());
@@ -677,7 +691,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var returnNoteObj = await UnitWork.Find<ReturnNote>(r => r.Id == returnNoteId).FirstOrDefaultAsync();
-            if (returnNoteObj.FlowInstanceId != null) 
+            if (returnNoteObj.FlowInstanceId != null)
             {
                 var flowInstanceObj = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(returnNoteObj.FlowInstanceId)).FirstOrDefaultAsync();
                 if (flowInstanceObj.IsFinish == FlowInstanceStatus.Finished || flowInstanceObj.IsFinish == FlowInstanceStatus.Running)
@@ -686,7 +700,7 @@ namespace OpenAuth.App
                 }
                 await UnitWork.DeleteAsync<FlowInstance>(flowInstanceObj);
             }
-            
+
             //删除所有关联数据
             if (returnNoteObj != null)
             {
@@ -712,7 +726,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var returnNotes = await UnitWork.Find<ReturnNote>(r => r.Id == req.Id).Include(r => r.ReturnNoteProducts).ThenInclude(r=>r.ReturnNoteMaterials).FirstOrDefaultAsync();
+            var returnNotes = await UnitWork.Find<ReturnNote>(r => r.Id == req.Id).Include(r => r.ReturnNoteProducts).ThenInclude(r => r.ReturnNoteMaterials).FirstOrDefaultAsync();
             if (returnNotes == null)
             {
                 throw new Exception("退料单为空，请核对。");
@@ -724,7 +738,7 @@ namespace OpenAuth.App
                 {
                     foreach (var item in req.returnnoteMaterials)
                     {
-                        await UnitWork.UpdateAsync<ReturnNoteMaterial>(r=>r.Id.Equals(item.MaterialsId),r=>new ReturnNoteMaterial { IsGood=item.IsGood});
+                        await UnitWork.UpdateAsync<ReturnNoteMaterial>(r => r.Id.Equals(item.MaterialsId), r => new ReturnNoteMaterial { IsGood = item.IsGood });
                     }
                 }
             }
@@ -734,7 +748,7 @@ namespace OpenAuth.App
                 {
                     foreach (var item in req.returnnoteMaterials)
                     {
-                        await UnitWork.UpdateAsync<ReturnNoteMaterial>(r => r.Id.Equals(item.MaterialsId), r => new ReturnNoteMaterial { GoodWhsCode=item.GoodWhsCode,SecondWhsCode = item.SecondWhsCode });
+                        await UnitWork.UpdateAsync<ReturnNoteMaterial>(r => r.Id.Equals(item.MaterialsId), r => new ReturnNoteMaterial { GoodWhsCode = item.GoodWhsCode, SecondWhsCode = item.SecondWhsCode });
                     }
                 }
             }
@@ -787,7 +801,8 @@ namespace OpenAuth.App
             decimal TotalMoney = 0;
             obj.ReturnNoteProducts.ForEach(r =>
             {
-                TotalMoney = r.ReturnNoteMaterials.Sum(m => m.Moeny);
+                r.Money = r.ReturnNoteMaterials.Sum(m => m.Money);
+                TotalMoney = r.Money;
             });
             return TotalMoney;
         }
@@ -829,24 +844,24 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var returnNoteObj = await UnitWork.Find<ReturnNote>(r => r.Id == req.Id).Include(r=>r.ReturnNoteProducts).ThenInclude(r=>r.ReturnNoteMaterials).FirstOrDefaultAsync();
+            var returnNoteObj = await UnitWork.Find<ReturnNote>(r => r.Id == req.Id).Include(r => r.ReturnNoteProducts).ThenInclude(r => r.ReturnNoteMaterials).FirstOrDefaultAsync();
             List<ReturnNoteMaterial> returnnoteMaterials = new List<ReturnNoteMaterial>();
             returnNoteObj.ReturnNoteProducts.ForEach(r =>
             {
                 returnnoteMaterials.AddRange(r.ReturnNoteMaterials.ToList());
             });
-            var returnnoteMaterialList= returnnoteMaterials.GroupBy(r => new { r.MaterialCode, r.MaterialDescription, r.Moeny, r.IsGood, r.GoodWhsCode, r.SecondWhsCode }).Select(r=>new { 
+            var returnnoteMaterialList = returnnoteMaterials.GroupBy(r => new { r.MaterialCode, r.MaterialDescription, r.Money, r.IsGood, r.GoodWhsCode, r.SecondWhsCode }).Select(r => new
+            {
                 r.First().MaterialCode,
                 r.First().MaterialDescription,
                 r.First().IsGood,
                 r.First().InvoiceDocEntry,
                 r.First().GoodWhsCode,
                 r.First().SecondWhsCode,
-                r.First().Moeny,
+                r.First().Money,
                 r.First().ReturnNoteId,
                 r.First().QuotationMaterialId,
                 Count = r.Count(),
-
             }).ToList();
 
             List<QuotationMergeMaterialReq> returnMergeMaterialGoodReqs = new List<QuotationMergeMaterialReq>();
@@ -858,16 +873,17 @@ namespace OpenAuth.App
                 {
                     if ((bool)item.IsGood)
                     {
-                        returnMergeMaterialGoodReqs.Add(new QuotationMergeMaterialReq { 
-                            InventoryQuantity=item.Count,
-                            ReturnNoteId=item.ReturnNoteId,
-                            WhsCode=item.GoodWhsCode,
-                            MaterialCode=item.MaterialCode,
-                            MaterialDescription=item.MaterialDescription,
-                            Id=item.QuotationMaterialId
+                        returnMergeMaterialGoodReqs.Add(new QuotationMergeMaterialReq
+                        {
+                            InventoryQuantity = item.Count,
+                            ReturnNoteId = item.ReturnNoteId,
+                            WhsCode = item.GoodWhsCode,
+                            MaterialCode = item.MaterialCode,
+                            MaterialDescription = item.MaterialDescription,
+                            Id = item.QuotationMaterialId
                         });
                     }
-                    else 
+                    else
                     {
                         returnMergeMaterialSecondReqs.Add(new QuotationMergeMaterialReq
                         {
@@ -878,7 +894,7 @@ namespace OpenAuth.App
                             MaterialDescription = item.MaterialDescription,
                             Id = item.QuotationMaterialId
                         });
-                    }   
+                    }
                 }
 
                 //foreach (var item in req.returnnoteMaterials)

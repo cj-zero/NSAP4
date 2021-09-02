@@ -43,7 +43,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("物料描述")]
         public string MaterialDescription { get; set; }
-
+        /// <summary>
+        ///小计金额
+        /// </summary>
+        [Description("小计金额")]
+        public decimal Money { get; set; }
+        
         /// <summary>
         /// 物料列表
         /// </summary>

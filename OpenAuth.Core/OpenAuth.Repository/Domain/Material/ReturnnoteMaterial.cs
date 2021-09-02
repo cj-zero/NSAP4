@@ -118,7 +118,7 @@ namespace OpenAuth.Repository.Domain
         ///金额
         /// </summary>
         [Description("金额")]
-        public decimal Moeny { get; set; }
+        public decimal Money { get; set; }
         /// <summary>
         ///报价单物料id
         /// </summary>

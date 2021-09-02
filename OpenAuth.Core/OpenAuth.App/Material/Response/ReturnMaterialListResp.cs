@@ -18,7 +18,7 @@ namespace OpenAuth.App.Material.Response
         /// <summary>
         /// 金额
         /// </summary>
-        public decimal Moeny { get; set; }
+        public decimal Money { get; set; }
         /// <summary>
         /// 关联报价单
         /// </summary>

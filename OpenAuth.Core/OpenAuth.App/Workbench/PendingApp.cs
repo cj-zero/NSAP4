@@ -217,6 +217,7 @@ namespace OpenAuth.App.Workbench
                     MaterialDescription=r.MaterialDescription,
                     ProductCode=r.ProductCode,
                     ReturnNoteId=r.ReturnNoteId,
+                    Money = r.Money,
                     ReturnNoteMaterials=r.ReturnNoteMaterials.Select(m=>new ReturnNoteMaterialResp { 
                         MaterialCode=m.MaterialCode,
                         InvoiceDocEntry = m.InvoiceDocEntry,
@@ -228,7 +229,7 @@ namespace OpenAuth.App.Workbench
                         ReplaceMaterialDescription=m.ReplaceMaterialDescription,
                         GoodWhsCode=m.GoodWhsCode,
                         IsGood=m.IsGood,
-                        Moeny=m.Moeny,
+                        Money = m.Money,
                         QuotationMaterialId=m.QuotationMaterialId,
                         ReceivingRemark=m.ReceivingRemark,
                         ReplaceMaterialCode=m.ReplaceMaterialCode,
