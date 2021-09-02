@@ -38,14 +38,14 @@ using IContainer = Autofac.IContainer;
 
 namespace OpenAuth.App
 {
-    public static  class AutofacExt
+    public static class AutofacExt
     {
         private static IContainer _container;
         public static IContainer InitForTest(IServiceCollection services)
         {
             var configuration = services.BuildServiceProvider().GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>();
             var builder = new ContainerBuilder();
-           
+
             //注册数据库基础操作和工作单元
             services.AddScoped(typeof(IRepository<>), typeof(BaseRepository<>));
             services.AddScoped(typeof(IUnitWork), typeof(UnitWork));
@@ -60,7 +60,7 @@ namespace OpenAuth.App
             if (services.All(u => u.ServiceType != typeof(ICacheContext)))
             {
                 var redisConnectionString = configuration.GetValue<string>("AppSetting:Cache:Redis");
-                if(string.IsNullOrWhiteSpace(redisConnectionString))
+                if (string.IsNullOrWhiteSpace(redisConnectionString))
                     services.AddScoped(typeof(ICacheContext), typeof(CacheContext));
                 else
                 {
@@ -84,8 +84,8 @@ namespace OpenAuth.App
             return _container;
 
         }
-        
-        
+
+
         public static void InitAutofac(ContainerBuilder builder, Microsoft.Extensions.Configuration.IConfiguration configuration)
         {
             // 注册minio文件服务客户端
@@ -96,7 +96,7 @@ namespace OpenAuth.App
             builder.RegisterType<MinioFileStore>().As<IFileStore>();
             //注册数据库基础操作和工作单元
             builder.RegisterGeneric(typeof(BaseRepository<>)).As(typeof(IRepository<>));
-            builder.RegisterType(typeof(UnitWork)).As(typeof(IUnitWork));
+            builder.RegisterType(typeof(UnitWork)).As(typeof(IUnitWork)).InstancePerLifetimeScope();
 
             //注入授权
             builder.RegisterType(typeof(LocalAuth)).As(typeof(IAuth));
