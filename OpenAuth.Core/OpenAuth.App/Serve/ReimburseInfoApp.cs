@@ -1465,7 +1465,7 @@ namespace OpenAuth.App
                             eoh.ApprovalResult = "已支付";
                             obj.RemburseStatus = 9;
                             obj.PayTime = DateTime.Now;
-                            _flowInstanceApp.Verification(VerificationReqModle);
+                            await _flowInstanceApp.Verification(VerificationReqModle);
                         }
                         obj.UpdateTime = DateTime.Now;
                         await UnitWork.UpdateAsync<ReimburseInfo>(obj);
