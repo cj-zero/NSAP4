@@ -461,6 +461,9 @@ namespace OpenAuth.App
                 var Orgs = loginUser.Orgs.Where(o => Relevances.Contains(o.Id)).ToList();
                 OrgName = Orgs.OrderByDescending(o => o.CascadeId).FirstOrDefault().Name;
             }
+            //获取appuserid
+            var appUserId=await UnitWork.Find<AppUserMap>(r => r.UserID.Equals(loginUser.User.Id)).FirstOrDefault()?.AppUserId;
+
             //获取角色权限
             Relevances = _revelanceApp.Get(Define.USERROLE, true, loginUser.User.Id);
             var Roles = loginUser.Roles.Where(o => Relevances.Contains(o.Id)).Select(r=>r.Name).ToList();
@@ -474,7 +477,8 @@ namespace OpenAuth.App
                 OfficeSpace = string.IsNullOrWhiteSpace(loginUser.User.OfficeSpace) ? "未录入" : loginUser.User.ServiceRelations,
                 OrgName = OrgName,
                 Roles = Roles,
-                IsPassword =Encryption.Decrypt(loginUser.User.Password).ToLower() == "xinwei123" ? true : false
+                IsPassword =Encryption.Decrypt(loginUser.User.Password).ToLower() == "xinwei123" ? true : false,
+                AppUserId=Encryption.EncryptRSA(appUserId),
             };
             return result;
         }
