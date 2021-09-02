@@ -489,7 +489,7 @@ namespace OpenAuth.WebApi.Controllers.Order
 			var sboid = _serviceBaseApp.GetUserNaspSboID(userId);//UnitWork.ExcuteSql<sbo_info>(ContextType.Nsap4ServeDbContextType, "SELECT sbo_id FROM nsap_base.sbo_info WHERE is_curr = 1 AND valid = 1 LIMIT 1;", CommandType.Text, null).FirstOrDefault()?.sbo_id;
 			var dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM nsap_base.sbo_info WHERE sbo_id={sboid}", CommandType.Text, null);
 			string dRowData = string.Empty;
-			string isOpen = "0";
+			string isOpen = "0"; 
 			string sqlcont = string.Empty;
 			string sboname = string.Empty;
 			if (dt.Rows.Count > 0)
@@ -1633,7 +1633,7 @@ namespace OpenAuth.WebApi.Controllers.Order
 		/// <returns></returns>
 		[HttpPost]
 		[Route("GridRelORDRList")]
-		public TableData GridRelORDRList(GridRelORDRDto model)
+		public TableData GridRelORDRList(GridRelORDRReq model)
 		{
 			int rowCount = 0;
 			var result = new TableData();

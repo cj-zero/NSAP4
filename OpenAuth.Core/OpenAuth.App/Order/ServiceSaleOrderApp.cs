@@ -109,15 +109,21 @@ namespace OpenAuth.App.Order
 					IsSql = false;
 				}
 			}
+			//时间区间
+			if (!string.IsNullOrWhiteSpace(query.FirstTime) && !string.IsNullOrWhiteSpace(query.LastTime))
+			{
+				filterString += string.Format("(a.UpdateDate  BETWEEN '{0}' AND '{1}')AND ", query.FirstTime.ToDateTime(), query.LastTime.ToDateTime());
+			}
 			//单号条件
 			if (!string.IsNullOrWhiteSpace(query.DocEntry))
 			{
 				filterString += string.Format("a.DocEntry LIKE '{0}' AND ", query.DocEntry.Trim());
 			}
+		
 			if (!string.IsNullOrWhiteSpace(query.CardCode))
 			{
 				filterString += string.Format("(a.CardCode LIKE '%{0}%' OR a.CardName LIKE '%{0}%') AND ", query.CardCode.Trim());
-			}
+			} 
 			if (!string.IsNullOrWhiteSpace(query.DocStatus))
 			{
 				if (query.DocStatus == "ON")
@@ -166,6 +172,7 @@ namespace OpenAuth.App.Order
 					filterString += string.Format("a.Indicator = '{0}' AND ", query.Indicator);
 				}
 			}
+	
 			//查询关联订单
 			//if (fields.Length > 6)
 			//{
@@ -4775,6 +4782,7 @@ namespace OpenAuth.App.Order
 				{
 					filterString += string.Format("b.job_type_nm LIKE '%{0}%' AND ", p[1].FilterSQL().Trim());
 				}
+			
 				p = fields[2].Split(':');
 				if (!string.IsNullOrEmpty(p[1]))
 				{
@@ -4806,6 +4814,7 @@ namespace OpenAuth.App.Order
 					filterString += string.Format("a.base_entry LIKE '%{0}%' AND ", p[1].FilterWildCard().FilterSQL().Trim());
 				}
 			}
+			filterString += string.Format("b.job_type_nm LIKE '%{0}%' AND ", "销售报价单");
 			#endregion
 			#region
 			if (!string.IsNullOrEmpty(filterString))

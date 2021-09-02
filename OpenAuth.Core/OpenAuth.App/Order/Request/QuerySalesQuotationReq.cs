@@ -44,6 +44,14 @@ namespace OpenAuth.App.Request
         /// 
         /// </summary>
         public string Indicator { get; set; }
+        /// <summary>
+        /// 时间区间开始
+        /// </summary>
+		public string FirstTime { get; set; }
+        /// <summary>
+        /// 时间区间结束
+        /// </summary>
+		public string LastTime { get; set; }
     }
     /// <summary>
     /// 

@@ -5,7 +5,7 @@ using System.Text;
 
 namespace OpenAuth.App.Order.Request
 {
-	public class GridRelORDRDto : PageReq
+	public class GridRelORDRReq : PageReq
 	{
 		/// <summary>
 		/// 排序字段
