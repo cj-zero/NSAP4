@@ -2873,12 +2873,21 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         public async Task CancellationSalesOrder(QueryQuotationListReq request)
         {
-            _capBus.Publish("Serve.SellOrder.Cancel", request.QuotationId);
-            var quotationObj = await UnitWork.Find<Quotation>(q => q.Id == request.QuotationId).FirstOrDefaultAsync();
-            if (!string.IsNullOrWhiteSpace(quotationObj.FlowInstanceId))
+            if (request.IsReject != null && (bool)request.IsReject)
             {
-                await _flowInstanceApp.ReCall(new RecallFlowInstanceReq { FlowInstanceId = quotationObj.FlowInstanceId });
+                await UnitWork.UpdateAsync<Quotation>(q => q.Id == request.QuotationId,q=>new Quotation { CancelRequest=null});
+                await UnitWork.SaveAsync();
             }
+            else 
+            {
+                _capBus.Publish("Serve.SellOrder.Cancel", request.QuotationId);
+                var quotationObj = await UnitWork.Find<Quotation>(q => q.Id == request.QuotationId).FirstOrDefaultAsync();
+                if (!string.IsNullOrWhiteSpace(quotationObj.FlowInstanceId))
+                {
+                    await _flowInstanceApp.ReCall(new RecallFlowInstanceReq { FlowInstanceId = quotationObj.FlowInstanceId });
+                }
+            }
+            
         }
 
         /// <summary>
