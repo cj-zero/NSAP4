@@ -77,13 +77,13 @@ namespace OpenAuth.App.Material
             {
                 var mf = _moduleFlowSchemeApp.Get(c => c.Module.Name == "内部联络单");
                 var flowinstace = await UnitWork.Find<FlowInstance>(c => c.SchemeId == mf.FlowSchemeId && c.MakerList.Contains(loginContext.User.Id)).Select(c => c.Id).ToListAsync();
-                query = query.Where(c => flowinstace.Contains(c.FlowInstanceId) && c.Status != 9);
+                query = query.Where(c => flowinstace.Contains(c.FlowInstanceId) && c.CreateUserId != loginContext.User.Id && c.Status != 9);
 
             }
             else if (req.PageType == 3)//已审批
             {
                 var instances = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.CreateUserId == loginContext.User.Id).Select(c => c.InstanceId).Distinct().ToListAsync();
-                query = query.Where(c => instances.Contains(c.FlowInstanceId) && c.Status != 9);
+                query = query.Where(c => instances.Contains(c.FlowInstanceId) && c.CreateUserId!= loginContext.User.Id && c.Status != 9);
             }
             else if (req.PageType == 4)//待执行
             {
@@ -142,16 +142,12 @@ namespace OpenAuth.App.Material
             {
                 try
                 {
-                    var ic = await UnitWork.Find<InternalContact>(null).OrderByDescending(c => c.IW).Select(c => c.IW).FirstOrDefaultAsync();
-                    var icId = 2000;
-                    if (!string.IsNullOrWhiteSpace(ic) && ic!=null)
-                        icId = Convert.ToInt32(ic) + 1;
+                    var single = await UnitWork.Find<InternalContact>(c => c.Id == req.Id)
+                        .Include(c => c.InternalContactAttchments)
+                        .Include(c => c.InternalContactBatchNumbers)
+                        .Include(c => c.InternalContactDeptInfos)
+                        .FirstOrDefaultAsync();
 
-                    //obj.Status = 1;
-                    obj.IW = icId.ToString();
-                    obj.CreateTime = DateTime.Now;
-                    obj.CreateUserId = loginContext.User.Id;
-                    obj.CreateUser = loginContext.User.Name;
                     obj.Status = 1;
                     obj.CardCode = string.Join(",", req.CardCodes);
                     obj.CardName = string.Join(",", req.CardNames);
@@ -165,12 +161,12 @@ namespace OpenAuth.App.Material
                     //附件
                     req.Attchments.ForEach(c =>
                     {
-                        obj.InternalContactAttchments.Add(new InternalContactAttchment { FileId = c});
+                        obj.InternalContactAttchments.Add(new InternalContactAttchment { FileId = c, InternalContactId = (single != null && single.Id > 0) ? single.Id : 0 });
                     });
                     //批次号
                     req.BatchNumbers.ForEach(c =>
                     {
-                        obj.InternalContactBatchNumbers.Add(new InternalContactBatchNumber { Number = c });
+                        obj.InternalContactBatchNumbers.Add(new InternalContactBatchNumber { Number = c, InternalContactId = (single != null && single.Id > 0) ? single.Id : 0 });
                     });
 
                     //接收部门
@@ -183,7 +179,8 @@ namespace OpenAuth.App.Material
                             OrgName = c.OrgName,
                             UserId = user?.b?.Id,
                             UserName = user?.b?.Name,
-                            Type = 1
+                            Type = 1,
+                            InternalContactId = (single != null && single.Id > 0) ? single.Id : 0
                         });
                     });
                     //执行部门
@@ -196,32 +193,91 @@ namespace OpenAuth.App.Material
                             OrgName = c.OrgName,
                             UserId = user?.b?.Id,
                             UserName = user?.b?.Name,
-                            Type = 2
+                            Type = 2,
+                            InternalContactId = (single != null && single.Id > 0) ? single.Id : 0
                         });
                     });
                     #endregion
 
-                    //创建流程
-                    var mf = _moduleFlowSchemeApp.Get(c => c.Module.Name == "内部联络单");
-                    var flow = new AddFlowInstanceReq();
-                    flow.SchemeId = mf.FlowSchemeId;
-                    flow.FrmType = 2;
-                    flow.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
-                    flow.CustomName = $"内部联络单{DateTime.Now}";
-                    flow.FrmData = "";
-                    obj.FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(flow);
+                    if (single != null && single.Id > 0)
+                    {
+                        obj.IW = single.IW;
+                        obj.FlowInstanceId = single.FlowInstanceId;
+                        obj.CreateTime = single.CreateTime;
+                        obj.CreateUserId = single.CreateUserId;
+                        obj.CreateUser = single.CreateUser;
+                        //子表删除重新添加
+                        if (obj.InternalContactAttchments.Count > 0)
+                        {
+                            await UnitWork.BatchDeleteAsync<InternalContactAttchment>(single.InternalContactAttchments.ToArray());
+                            await UnitWork.BatchAddAsync<InternalContactAttchment>(obj.InternalContactAttchments.ToArray());
+                        }
+                        if (obj.InternalContactDeptInfos.Count > 0)
+                        {
+                            await UnitWork.BatchDeleteAsync<InternalContactDeptInfo>(single.InternalContactDeptInfos.ToArray());
+                            await UnitWork.BatchAddAsync<InternalContactDeptInfo>(obj.InternalContactDeptInfos.ToArray());
+                        }
+                        if (obj.InternalContactBatchNumbers.Count > 0)
+                        {
+                            await UnitWork.BatchDeleteAsync<InternalContactBatchNumber>(single.InternalContactBatchNumbers.ToArray());
+                            //await UnitWork.DeleteAsync<InternalContactBatchNumber>(c => c.InternalContactId == single.Id);
+                            //await UnitWork.SaveAsync();
+                            await UnitWork.BatchAddAsync<InternalContactBatchNumber>(obj.InternalContactBatchNumbers.ToArray());
+                        }
+                        obj.InternalContactAttchments = null;
+                        obj.InternalContactBatchNumbers = null;
+                        obj.InternalContactDeptInfos = null;
+
+                        await UnitWork.UpdateAsync(obj);
+
+                        VerificationReq verificationReq = new VerificationReq
+                        {
+                            NodeRejectStep = "",
+                            NodeRejectType = "0",
+                            FlowInstanceId = single.FlowInstanceId,
+                            VerificationFinally = "1",
+                            VerificationOpinion = ""
+                        };
+
+                        await _flowInstanceApp.Verification(verificationReq);
+                        await UnitWork.SaveAsync();
+                    }
+                    else
+                    {
+                        var ic = await UnitWork.Find<InternalContact>(null).OrderByDescending(c => c.IW).Select(c => c.IW).FirstOrDefaultAsync();
+                        var icId = 2000;
+                        if (!string.IsNullOrWhiteSpace(ic) && ic != null)
+                            icId = Convert.ToInt32(ic) + 1;
+
+                        //obj.Status = 1;
+                        obj.IW = icId.ToString();
+                        obj.CreateTime = DateTime.Now;
+                        obj.CreateUserId = loginContext.User.Id;
+                        obj.CreateUser = loginContext.User.Name;
 
 
-                    obj = await UnitWork.AddAsync<InternalContact, int>(obj);
+                        //创建流程
+                        var mf = _moduleFlowSchemeApp.Get(c => c.Module.Name == "内部联络单");
+                        var flow = new AddFlowInstanceReq();
+                        flow.SchemeId = mf.FlowSchemeId;
+                        flow.FrmType = 2;
+                        flow.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
+                        flow.CustomName = $"内部联络单{DateTime.Now}";
+                        flow.FrmData = "";
+                        obj.FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(flow);
 
-                    //设置测试环节执行人
-                    await _flowInstanceApp.ModifyNodeUser(obj.FlowInstanceId, true, new string[] { obj.CheckApproveId }, obj.CheckApprove, false);
 
-                    await UnitWork.SaveAsync();
+                        obj = await UnitWork.AddAsync<InternalContact, int>(obj);
 
-                    #region 发送邮件
-                    await SebdEmail(obj, "");
-                    #endregion
+                        //设置测试环节执行人
+                        await _flowInstanceApp.ModifyNodeUser(obj.FlowInstanceId, true, new string[] { obj.CheckApproveId }, obj.CheckApprove, false);
+
+                        await UnitWork.SaveAsync();
+
+                        #region 发送邮件
+                        await SebdEmail(obj, "");
+                        #endregion
+                    }
                     await transaction.CommitAsync();
                 }
                 catch (Exception ex)
@@ -258,7 +314,7 @@ namespace OpenAuth.App.Material
                 {
                     mailRequest.Attachments.Add(new MailAttachment
                     {
-                        FilePath = Path.Combine("D:\nsap4file", c.BucketName, c.FilePath),
+                        FilePath = Path.Combine("D:\\nsap4file", c.BucketName, c.FilePath),
                         FileName = c.FileName,
                         FileType = c.FileType
                     });
@@ -272,20 +328,20 @@ namespace OpenAuth.App.Material
             string content = $@"{title}
                                     <b>主题：</b><br>
                                     <span>{obj.Theme}</span><br>
-                                    <b>IW号：</b><span>{obj.Theme}</span><br>
-                                    <b>重点客户代码：</b><span>{obj.Theme}</span><br>
-                                    <b>重点客户名称：</b><span>{obj.Theme}</span><br>
-                                    <b>rdms项目号：</b><span>{obj.Theme}</span><br>
-                                    <b>适应型号：</b><span>{obj.Theme}</span><br>
-                                    <b>销售单号：</b><span>{obj.Theme}</span><br>
-                                    <b>生产单号：</b><span>{obj.Theme}</span><br>
+                                    <b>IW号：</b><span>{obj.IW}</span><br>
+                                    <b>重点客户代码：</b><span>{obj.CardCode}</span><br>
+                                    <b>重点客户名称：</b><span>{obj.CardName}</span><br>
+                                    <b>rdms项目号：</b><span>{obj.RdmsNo}</span><br>
+                                    <b>适应型号：</b><span>{obj.AdaptiveModel}</span><br>
+                                    <b>销售单号：</b><span>{obj.SaleOrderNo}</span><br>
+                                    <b>生产单号：</b><span>{obj.ProductionNo}</span><br>
                                     {sb.ToString()}
-                                    <b>测试审批：</b><span>{obj.Theme}</span><br>
-                                    <b>研发审批：</b><span>{obj.Theme}</span><br>
-                                    <b>适应范围：</b><span>{obj.Theme}</span><br>
-                                    <b>变更原因：</b><span>{obj.Theme}</span><br>
-                                    <b>查收部门：</b><span>{obj.Theme}</span><br>
-                                    <b>执行部门：</b><span>{obj.Theme}</span><br>
+                                    <b>测试审批：</b><span>{obj.CheckApprove}</span><br>
+                                    <b>研发审批：</b><span>{obj.DevelopApprove}</span><br>
+                                    <b>适应范围：</b><span>{obj.AdaptiveRange}</span><br>
+                                    <b>变更原因：</b><span>{obj.Reason}</span><br>
+                                    <b>查收部门：</b><span>{string.Join(",", obj.InternalContactDeptInfos.Where(c => c.Type == 1).Select(c => c.OrgName).ToList())}</span><br>
+                                    <b>执行部门：</b><span>{string.Join(",", obj.InternalContactDeptInfos.Where(c => c.Type == 2).Select(c => c.OrgName).ToList())}</span><br>
                                     <b>变更内容：</b><br>
                                     {obj.Content}";
             #endregion
@@ -542,6 +598,11 @@ namespace OpenAuth.App.Material
                     throw new Exception("该联络单状态不需要启用。");
                 }
                 await _flowInstanceApp.ReCall(new RecallFlowInstanceReq { FlowInstanceId = single.FlowInstanceId });
+
+                var history = await UnitWork.FindTrack<FlowInstanceOperationHistory>(c => c.InstanceId == single.FlowInstanceId && c.Content == "撤回").OrderByDescending(c => c.CreateDate).FirstOrDefaultAsync();
+                if (history!=null)
+                    await UnitWork.DeleteAsync<FlowInstanceOperationHistory>(history);//删除撤回记录
+
                 await _flowInstanceApp.Verification(new VerificationReq
                 {
                     NodeRejectStep = "",
