@@ -489,7 +489,7 @@ namespace OpenAuth.WebApi.Controllers.Order
 			var sboid = _serviceBaseApp.GetUserNaspSboID(userId);//UnitWork.ExcuteSql<sbo_info>(ContextType.Nsap4ServeDbContextType, "SELECT sbo_id FROM nsap_base.sbo_info WHERE is_curr = 1 AND valid = 1 LIMIT 1;", CommandType.Text, null).FirstOrDefault()?.sbo_id;
 			var dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM nsap_base.sbo_info WHERE sbo_id={sboid}", CommandType.Text, null);
 			string dRowData = string.Empty;
-			string isOpen = "0";
+			string isOpen = "0"; 
 			string sqlcont = string.Empty;
 			string sboname = string.Empty;
 			if (dt.Rows.Count > 0)
@@ -1008,7 +1008,7 @@ namespace OpenAuth.WebApi.Controllers.Order
 					billSboId = int.Parse(sboId);
 				}
 				else { billSboId = sboid; }
-				string strSql = string.Format("SELECT a.file_id,b.type_nm,a.file_nm,a.remarks,a.file_path,a.upd_dt,c.user_nm,a.view_file_path,a.file_type_id,a.acct_id ");
+				string strSql = string.Format("SELECT a.file_id as Id ,b.type_nm FileType ,a.file_nm as FileName ,a.remarks Remark,a.file_path as FilePath ,a.upd_dt CreateTime,c.user_nm CreateUserName ,a.view_file_path ViewFilePath ");//,a.file_type_id,a.acct_id
 				strSql += string.Format(" FROM {0}.file_main a", "nsap_oa");
 				strSql += string.Format(" LEFT JOIN {0}.file_type b ON a.file_type_id=b.type_id", "nsap_oa");
 				strSql += string.Format(" LEFT JOIN {0}.base_user c ON a.acct_id=c.user_id", "nsap_base");
@@ -1633,7 +1633,7 @@ namespace OpenAuth.WebApi.Controllers.Order
 		/// <returns></returns>
 		[HttpPost]
 		[Route("GridRelORDRList")]
-		public TableData GridRelORDRList(GridRelORDRDto model)
+		public TableData GridRelORDRList(GridRelORDRReq model)
 		{
 			int rowCount = 0;
 			var result = new TableData();

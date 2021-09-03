@@ -14,19 +14,22 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace OpenAuth.WebApi.Controllers.Order {
+namespace OpenAuth.WebApi.Controllers.Order
+{
 	/// <summary>
 	/// 主物料
 	/// </summary>
 	[Route("api/Order/[controller]")]
 	[ApiController]
 	[ApiExplorerSettings(GroupName = "Order")]
-	public class BillMaterialsController : Controller {
+	public class BillMaterialsController : Controller
+	{
 		private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
 		IAuth _auth;
 		IUnitWork UnitWork;
 		ServiceBaseApp _serviceBaseApp;
-		public BillMaterialsController(IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp) {
+		public BillMaterialsController(IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
+		{
 			this.UnitWork = UnitWork;
 			this._serviceBaseApp = _serviceBaseApp;
 			this._auth = _auth;
@@ -42,24 +45,33 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// <returns></returns>
 		[HttpGet]
 		[Route("SelectMaterialsInventoryData")]
-		public TableData SelectMaterialsInventoryData(string ItemCode, string Operating, string SboId, string IsOpenSap) {
+		public TableData SelectMaterialsInventoryData(string ItemCode, string Operating, string SboId, string IsOpenSap)
+		{
 			var result = new TableData();
 			DataTable data = new DataTable();
-			try {
+			try
+			{
 				bool rIsOpenSap = IsOpenSap == "1" ? true : false;
-				if (Operating == "add") {
+				if (Operating == "add")
+				{
 					data = _serviceSaleOrderApp.SelectMaterialsInventoryData(ItemCode, SboId, rIsOpenSap, Operating);
 					result.Data = data;
 					result.Count = data.Rows.Count;
-				} else {
-					if (!string.IsNullOrEmpty(ItemCode)) {
+				}
+				else
+				{
+					if (!string.IsNullOrEmpty(ItemCode))
+					{
 						data = _serviceSaleOrderApp.SelectMaterialsInventoryData(ItemCode, SboId, rIsOpenSap, Operating);
 						result.Data = data;
 						result.Count = data.Rows.Count;
-					} else { return null; }
+					}
+					else { return null; }
 
 				}
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				result.Code = 500;
 				result.Message = e.InnerException?.Message ?? e.Message;
 				Log.Logger.Error($"地址：{Request.Path}，参数：'', 错误：{result.Message}");
@@ -71,7 +83,8 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("SelectSingleStoreOitmInfo")]
-		public Response<SelectSingleStoreOitmInfoDto> SelectSingleStoreOitmInfo(string ItemCode, string SboId, string IsOpenSap) {
+		public Response<SelectSingleStoreOitmInfoDto> SelectSingleStoreOitmInfo(string ItemCode, string SboId, string IsOpenSap)
+		{
 			var result = new Response<SelectSingleStoreOitmInfoDto>();
 			bool rIsOpenSap = IsOpenSap == "1" ? true : false;
 			result.Result = _serviceSaleOrderApp.SelectSingleStoreOitmInfo(ItemCode, SboId, rIsOpenSap);
@@ -82,12 +95,16 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("GetItemTypeExpInfo")]
-		public Response<GetItemTypeExpInfoDto> GetItemTypeExpInfo(string TypeId) {
+		public Response<GetItemTypeExpInfoDto> GetItemTypeExpInfo(string TypeId)
+		{
 			var result = new Response<GetItemTypeExpInfoDto>();
 
-			if (!string.IsNullOrEmpty(TypeId)) {
+			if (!string.IsNullOrEmpty(TypeId))
+			{
 				result.Result = _serviceSaleOrderApp.GetItemTypeExpInfo(TypeId);
-			} else {
+			}
+			else
+			{
 				return null;
 			}
 
@@ -98,12 +115,16 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("GetItemTypeCustomFields")]
-		public Response<List<GetItemTypeCustomFieldsDto>> GetItemTypeCustomFields(string TypeId) {
+		public Response<List<GetItemTypeCustomFieldsDto>> GetItemTypeCustomFields(string TypeId)
+		{
 			var result = new Response<List<GetItemTypeCustomFieldsDto>>();
 
-			if (!string.IsNullOrEmpty(TypeId)) {
+			if (!string.IsNullOrEmpty(TypeId))
+			{
 				result.Result = _serviceSaleOrderApp.GetItemTypeCustomFields(TypeId);
-			} else {
+			}
+			else
+			{
 				return null;
 			}
 
@@ -114,7 +135,8 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("GetItemTypeCustomValue")]
-		public Response<List<GetItemTypeCustomValueDto>> GetItemTypeCustomValue(string TypeId, string FieldNm) {
+		public Response<List<GetItemTypeCustomValueDto>> GetItemTypeCustomValue(string TypeId, string FieldNm)
+		{
 			var result = new Response<List<GetItemTypeCustomValueDto>>();
 
 			result.Result = _serviceSaleOrderApp.GetItemTypeCustomValue(TypeId, FieldNm);
@@ -126,16 +148,20 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListCstGrpCodeValue")]
-		public Response<string> DropListCstGrpCodeValue(string SboId, string KeyId) {
+		public Response<string> DropListCstGrpCodeValue(string SboId, string KeyId)
+		{
 			var result = new Response<string>();
 
-			try {
+			try
+			{
 				if (!string.IsNullOrEmpty(SboId) && !string.IsNullOrEmpty(KeyId))
 					result.Result = _serviceSaleOrderApp.DropListCstGrpCodeValue(SboId, KeyId);
 
 				else
 					return null;
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				result.Message = e.Message;
 			}
 
@@ -146,14 +172,18 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListVatGroupPuValue")]
-		public Response<string> DropListVatGroupPuValue(string SboId, string KeyId) {
+		public Response<string> DropListVatGroupPuValue(string SboId, string KeyId)
+		{
 			var result = new Response<string>();
 
-			try {
+			try
+			{
 				if (!string.IsNullOrEmpty(SboId) && !string.IsNullOrEmpty(KeyId))
 					result.Result = _serviceSaleOrderApp.DropListVatGroupValue(SboId, "buy", KeyId);
 
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				result.Message = e.Message;
 			}
 
@@ -164,14 +194,18 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListVatGourpSaValue")]
-		public Response<string> DropListVatGourpSaValue(string SboId, string KeyId) {
+		public Response<string> DropListVatGourpSaValue(string SboId, string KeyId)
+		{
 			var result = new Response<string>();
 
-			try {
+			try
+			{
 				if (!string.IsNullOrEmpty(SboId) && !string.IsNullOrEmpty(KeyId))
 					result.Result = _serviceSaleOrderApp.DropListVatGroupValue(SboId, "sale", KeyId);
 
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				result.Message = e.Message;
 			}
 
@@ -183,12 +217,16 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("GetMaterialTypeCustomValue")]
-		public Response<string> GetMaterialTypeCustomValue(string ItemCode, string SboId) {
+		public Response<string> GetMaterialTypeCustomValue(string ItemCode, string SboId)
+		{
 			var result = new Response<string>();
 
-			try {
+			try
+			{
 				result.Result = _serviceSaleOrderApp.GetMaterialTypeCustomValue(ItemCode, SboId);
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				result.Message = e.Message;
 			}
 			return result;
@@ -198,12 +236,16 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("GetFileTypeByUrl")]
-		public Response<string> GetFileTypeByUrl(string PageUrl) {
+		public Response<string> GetFileTypeByUrl(string PageUrl)
+		{
 			var result = new Response<string>();
 
-			try {
+			try
+			{
 				result.Result = _serviceSaleOrderApp.GetFileTypeByUrl(PageUrl);
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				result.Message = e.Message;
 			}
 			return result;
@@ -215,12 +257,16 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// <returns></returns>
 		[HttpGet]
 		[Route("GetCustomFields")]
-		public Response<string> GetCustomFields(string TableName) {
+		public Response<string> GetCustomFields(string TableName)
+		{
 			var result = new Response<string>();
 
-			try {
+			try
+			{
 				result.Result = _serviceSaleOrderApp.GetCustomFieldsNos(TableName);
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				result.Message = e.Message;
 			}
 			return result;
@@ -233,13 +279,17 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// <returns></returns>
 		[HttpGet]
 		[Route("GetCustomValue")]
-		public Response<string> GetCustomValue(string TableID, string FieldID) {
+		public Response<string> GetCustomValue(string TableID, string FieldID)
+		{
 			var result = new Response<string>();
 
 
-			try {
+			try
+			{
 				result.Result = _serviceSaleOrderApp.GetCustomValue(TableID, FieldID);
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				result.Message = e.Message;
 			}
 			return result;
@@ -249,14 +299,18 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("GetMaterialPropertyName")]
-		public Response<string> GetMaterialPropertyName() {
+		public Response<string> GetMaterialPropertyName()
+		{
 			var result = new Response<string>();
 
 			var UserID = _serviceBaseApp.GetUserNaspId();
 			var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
-			try {
+			try
+			{
 				result.Result = _serviceSaleOrderApp.GetMaterialPropertyName(SboID.ToString());
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				result.Message = e.Message;
 			}
 			return result;
@@ -268,15 +322,19 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("GetSapSboIsOpen")]
-		public Response<string> GetSapSboIsOpen(string sbo_id) {
+		public Response<string> GetSapSboIsOpen(string sbo_id)
+		{
 			var result = new Response<string>();
 
-			try {
+			try
+			{
 				if (!string.IsNullOrEmpty(sbo_id))
 					result.Result = _serviceSaleOrderApp.GetSapSboIsOpen(sbo_id) ? "1" : "0";
 				else
 					return null;
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				result.Message = e.Message;
 			}
 			return result;
@@ -286,11 +344,15 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListItmsGrpCod")]
-		public Response<string> DropListItmsGrpCod(string SboId) {
+		public Response<string> DropListItmsGrpCod(string SboId)
+		{
 			var result = new Response<string>();
-			try {
+			try
+			{
 				result.Result = _serviceSaleOrderApp.DropListItmsGrpCod(SboId);
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				result.Message = e.Message;
 			}
 			return result;
@@ -300,13 +362,17 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListShipType")]
-		public Response<string> DropListShipType(string SboId) {
+		public Response<string> DropListShipType(string SboId)
+		{
 			var result = new Response<string>();
 
 
-			try {
+			try
+			{
 				result.Result = _serviceSaleOrderApp.DropListShipType(SboId);
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				result.Message = e.Message;
 			}
 			return result;
@@ -316,12 +382,16 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListCstGrpCode")]
-		public Response<string> DropListCstGrpCode(string SboId) {
+		public Response<string> DropListCstGrpCode(string SboId)
+		{
 			var result = new Response<string>();
 
-			try {
+			try
+			{
 				result.Result = _serviceSaleOrderApp.DropListCstGrpCode(SboId);
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				result.Message = e.Message;
 			}
 			return result;
@@ -331,13 +401,17 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListVatGroupPu")]
-		public Response<string> DropListVatGroupPu(string SboId) {
+		public Response<string> DropListVatGroupPu(string SboId)
+		{
 			var result = new Response<string>();
 
 
-			try {
+			try
+			{
 				result.Result = _serviceSaleOrderApp.DropListVatGroup(SboId, "buy");
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				result.Message = e.Message;
 			}
 			return result;
@@ -347,12 +421,16 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListVatGourpSa")]
-		public Response<string> DropListVatGourpSa(string SboId) {
+		public Response<string> DropListVatGourpSa(string SboId)
+		{
 			var result = new Response<string>();
 
-			try {
+			try
+			{
 				result.Result = _serviceSaleOrderApp.DropListVatGroup(SboId, "sale");
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				result.Message = e.Message;
 			}
 			return result;
@@ -364,12 +442,16 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListPriceList")]
-		public Response<string> DropListPriceList(string SboId) {
+		public Response<string> DropListPriceList(string SboId)
+		{
 			var result = new Response<string>();
 
-			try {
+			try
+			{
 				result.Result = _serviceSaleOrderApp.DropListPriceList(SboId);
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				result.Message = e.Message;
 			}
 			return result;
@@ -379,12 +461,16 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListFirmCode")]
-		public Response<string> DropListFirmCode(string SboId) {
+		public Response<string> DropListFirmCode(string SboId)
+		{
 			var result = new Response<string>();
 
-			try {
+			try
+			{
 				result.Result = _serviceSaleOrderApp.DropListFirmCode(SboId);
-			} catch (Exception e) {
+			}
+			catch (Exception e)
+			{
 				result.Message = e.Message;
 			}
 			return result;
@@ -394,7 +480,8 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListLengthUnit")]
-		public Response<List<DropListUnit>> DropListLengthUnit(string SboId) {
+		public Response<List<DropListUnit>> DropListLengthUnit(string SboId)
+		{
 			var result = new Response<List<DropListUnit>>();
 
 			result.Result = _serviceSaleOrderApp.DropListLengthUnit(SboId);
@@ -406,7 +493,8 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListVolumeUnit")]
-		public Response<List<DropListUnit>> DropListVolumeUnit(string SboId) {
+		public Response<List<DropListUnit>> DropListVolumeUnit(string SboId)
+		{
 			var result = new Response<List<DropListUnit>>();
 
 			result.Result = _serviceSaleOrderApp.DropListVolumeUnit(SboId);
@@ -418,7 +506,8 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("DropListWeightUnit")]
-		public Response<List<DropListUnit>> DropListWeightUnit(string SboId) {
+		public Response<List<DropListUnit>> DropListWeightUnit(string SboId)
+		{
 			var result = new Response<List<DropListUnit>>();
 
 
@@ -432,10 +521,12 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// </summary>
 		[HttpGet]
 		[Route("GetMaterialsPurHistory")]
-		public TableData GetMaterialsPurHistory(string page, string rp, string qtype, string query, string sortname, string sortorder, string ItemCode) {
+		public TableData GetMaterialsPurHistory(string page, string rp, string qtype, string query, string sortname, string sortorder, string ItemCode)
+		{
 			var result = new TableData();
 
-			if (!string.IsNullOrEmpty(ItemCode)) {
+			if (!string.IsNullOrEmpty(ItemCode))
+			{
 
 				DataTable dt = _serviceSaleOrderApp.GetMaterialsPurHistory(int.Parse(rp), int.Parse(page), query, sortname, sortorder, ItemCode);
 				result.Data = dt;
@@ -452,16 +543,35 @@ namespace OpenAuth.WebApi.Controllers.Order {
 		/// <returns></returns>
 		[HttpPost]
 		[Route("SelectMaterialStockDataSource")]
-		public TableData SelectMaterialStockDataSource(SelectMaterialStockDataSourceReq model) {
+		public TableData SelectMaterialStockDataSource(SelectMaterialStockDataSourceReq model)
+		{
 			var result = new TableData();
 			bool rIsOpenSap = model.IsOpenSap == "1" ? true : false;
-			if (!string.IsNullOrEmpty(model.SboId) && !string.IsNullOrEmpty(model.ItemCode) && !string.IsNullOrEmpty(model.ItemOperaType)) {
+			if (!string.IsNullOrEmpty(model.SboId) && !string.IsNullOrEmpty(model.ItemCode) && !string.IsNullOrEmpty(model.ItemOperaType))
+			{
 				DataTable dt = _serviceSaleOrderApp.SelectMaterialStockDataSource(model.limit, model.page, model.query, model.sortname, model.sortorder, model.SboId, model.WhsCode, model.ItemCode, model.ItemOperaType, rIsOpenSap);
 				result.Data = dt;
 				result.Count = dt.Rows.Count;
 			}
 			return result;
 		}
+		/// 根据funcid获取附件类型
+		[HttpPost]
+		[Route("GetattchtypeByfuncid")]
+		public TableData GetattchtypeByfuncid(string funcID)
+		{
+			var result = new TableData();
+			if (!string.IsNullOrEmpty(funcID))
+			{
+				result.Data = _serviceSaleOrderApp.GetattchtypeByfuncid(int.Parse(funcID));
+			}
+			else
+			{
+				result.Data = "";
+			}
+			return result;
+		}
 
 	}
 }
+

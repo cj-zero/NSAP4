@@ -109,11 +109,17 @@ namespace OpenAuth.App.Order
 					IsSql = false;
 				}
 			}
+			//时间区间
+			if (!string.IsNullOrWhiteSpace(query.FirstTime) && !string.IsNullOrWhiteSpace(query.LastTime))
+			{
+				filterString += string.Format("(a.UpdateDate  BETWEEN '{0}' AND '{1}')AND ", query.FirstTime.ToDateTime(), query.LastTime.ToDateTime());
+			}
 			//单号条件
 			if (!string.IsNullOrWhiteSpace(query.DocEntry))
 			{
 				filterString += string.Format("a.DocEntry LIKE '{0}' AND ", query.DocEntry.Trim());
 			}
+
 			if (!string.IsNullOrWhiteSpace(query.CardCode))
 			{
 				filterString += string.Format("(a.CardCode LIKE '%{0}%' OR a.CardName LIKE '%{0}%') AND ", query.CardCode.Trim());
@@ -166,6 +172,7 @@ namespace OpenAuth.App.Order
 					filterString += string.Format("a.Indicator = '{0}' AND ", query.Indicator);
 				}
 			}
+
 			//查询关联订单
 			//if (fields.Length > 6)
 			//{
@@ -606,6 +613,7 @@ namespace OpenAuth.App.Order
 					string className = "NSAP.B1Api.BOneOQUT";
 					logstring = "新建销售报价单";
 					jobname = "销售报价单";
+
 					if (orderReq.Ations == OrderAtion.Draft)
 					{
 						result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
@@ -645,7 +653,45 @@ namespace OpenAuth.App.Order
 					}
 					else if (orderReq.Ations == OrderAtion.Resubmit)
 					{
+
 						result = WorkflowSubmit(orderReq.JobId, userID, orderReq.Order.Remark, "", 0);
+					}
+					else if (orderReq.Ations == OrderAtion.DraftUpdate)
+					{
+						result = UpdateAudit(orderReq.JobId, job_data, orderReq.Order.Remark, orderReq.Order.CardCode, orderReq.Order.CardName, orderReq.Order.DocTotal.ToString());
+					}
+					else if (orderReq.Ations == OrderAtion.DrafSubmit)
+					{
+						result = UpdateAudit(orderReq.JobId, job_data, orderReq.Order.Remark, orderReq.Order.CardCode, orderReq.Order.CardName, orderReq.Order.DocTotal.ToString());
+						if (result != null)
+						{
+							var par = SaveJobPara(result, orderReq.IsTemplate);
+							if (par == "1")
+							{
+								string _jobID = result;
+								if ("0" != WorkflowSubmit(int.Parse(result), userID, orderReq.Order.Remark, "", 0))
+								{
+									#region 更新商城订单状态
+									WfaEshopStatus thisinfo = new WfaEshopStatus();
+									thisinfo.JobId = int.Parse(result);
+									thisinfo.UserId = userID;
+									thisinfo.SlpCode = sboID;
+									thisinfo.CardCode = orderReq.Order.CardCode;
+									thisinfo.CardName = orderReq.Order.CardName;
+									thisinfo.CurStatus = 0;
+									thisinfo.OrderPhase = "0000";
+									thisinfo.ShippingPhase = "0000";
+									thisinfo.CompletePhase = "0";
+									thisinfo.OrderLastDate = DateTime.Now;
+									thisinfo.FirstCreateDate = DateTime.Now;
+									//设置报价单提交
+									result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, orderReq.Order.U_New_ORDRID);
+									#endregion
+								}
+								else { result = "0"; }
+							}
+							else { result = "0"; }
+						}
 					}
 				}
 			}
@@ -772,22 +818,13 @@ namespace OpenAuth.App.Order
 		/// <summary>
 		/// 修改审核数据
 		/// </summary>
-		public bool UpdateAudit(int jobId, byte[] jobData, string remarks, string doc_total, string card_code, string card_name)
+		public string UpdateAudit(int jobId, byte[] jobData, string remarks, string card_code, string card_name, string doc_total)
 		{
-			bool isSave = false;
-			//string strSql = string.Format("UPDATE {0}.wfa_job SET job_data=?job_data,remarks=?remarks,job_state=?job_state,doc_total=?doc_total,", Sql.BaseDatabaseName);
-			//strSql += string.Format("card_code=?card_code,card_name=?card_name WHERE job_id = ?job_id", Sql.BaseDatabaseName);
-			//IDataParameter[] parameters =
-			//{
-			//    Sql.Action.GetParameter("?job_data", jobData),
-			//    Sql.Action.GetParameter("?remarks", remarks),
-			//    Sql.Action.GetParameter("?job_state", "0"),
-			//    Sql.Action.GetParameter("?doc_total", doc_total==""?"0":doc_total),
-			//    Sql.Action.GetParameter("?card_code", card_code),
-			//    Sql.Action.GetParameter("?card_name", card_name),
-			//    Sql.Action.GetParameter("?job_id",  jobId)
-			//};
-			//isSave = Sql.Action.ExecuteNonQuery(Sql.UTF8ConnectionString, CommandType.Text, strSql, parameters) > 0 ? true : false;
+			string isSave = "";
+			string strSql = string.Format("UPDATE {0}.wfa_job SET job_data={1},remarks={2},job_state={3},doc_total={4},", "nsap_base", jobData, remarks, "0", doc_total == "" ? "0" : doc_total);
+			strSql += string.Format("card_code={0},card_name={1} WHERE job_id ={2}", card_code, card_name, jobId);
+
+			isSave = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).Rows.Count > 0 ? "1" : "";
 			return isSave;
 		}
 
@@ -4775,6 +4812,7 @@ namespace OpenAuth.App.Order
 				{
 					filterString += string.Format("b.job_type_nm LIKE '%{0}%' AND ", p[1].FilterSQL().Trim());
 				}
+
 				p = fields[2].Split(':');
 				if (!string.IsNullOrEmpty(p[1]))
 				{
@@ -4806,6 +4844,7 @@ namespace OpenAuth.App.Order
 					filterString += string.Format("a.base_entry LIKE '%{0}%' AND ", p[1].FilterWildCard().FilterSQL().Trim());
 				}
 			}
+			filterString += string.Format("b.job_type_nm LIKE '%{0}%' AND ", "销售报价单");
 			#endregion
 			#region
 			if (!string.IsNullOrEmpty(filterString))
@@ -4856,6 +4895,8 @@ namespace OpenAuth.App.Order
 			}
 			string type = bill.DocType;
 			string _main = JsonHelper.ParseModel(bill);
+			var ba = bill.CustomFields.Split("≯")[3];
+			bill.CustomFields = ba;
 			return bill;
 		}
 		/// <summary>
@@ -5365,7 +5406,7 @@ namespace OpenAuth.App.Order
 			DataTable dt = GetCustomFieldsNewNos(TableName);
 
 			var NewDtoList = new List<CustomFieldsNewDto>();
-			
+
 
 			for (int i = 0; i < dt.Rows.Count; i++)
 			{
@@ -5517,7 +5558,7 @@ namespace OpenAuth.App.Order
 			return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
 		}
 		#endregion
-		public  DataTable GridRelORDRList(out int rowCount, int pageSize, int pageIndex, string DocEntry,string cardcode, string sortname, string sortorder, string SlpCode)
+		public DataTable GridRelORDRList(out int rowCount, int pageSize, int pageIndex, string DocEntry, string cardcode, string sortname, string sortorder, string SlpCode)
 		{
 			string sortString = string.Empty;
 			string filterString = "(Canceled = 'Y' or DocStatus = 'O') and SlpCode =" + SlpCode;
@@ -5527,7 +5568,7 @@ namespace OpenAuth.App.Order
 			#region 搜索条件
 			if (!string.IsNullOrEmpty(DocEntry))
 			{
-					filterString += "and docentry=" + DocEntry;
+				filterString += "and docentry=" + DocEntry;
 			}
 			if (!string.IsNullOrEmpty(cardcode))
 			{
@@ -5546,10 +5587,22 @@ namespace OpenAuth.App.Order
 		/// <param name="filterQuery"></param>
 		/// <param name="sortname"></param>
 		/// <returns></returns>
-		public  DataTable GridRelORDRList(out int rowCounts, int pageSize, int pageIndex, string filterQuery, string sortname)
+		public DataTable GridRelORDRList(out int rowCounts, int pageSize, int pageIndex, string filterQuery, string sortname)
 		{
 			string fieldstr = "docentry,cardcode,doctotal,CreateDate,docstatus,Printed,CANCELED,Comments";
 			return SAPSelectPagingHaveRowsCount("ORDR", fieldstr, pageSize, pageIndex, sortname, filterQuery, out rowCounts);
 		}
+		#region 根据func_id获取附件类型
+		/// <summary>
+		/// 根据func_id获取附件类型
+		/// </summary>
+		public DataTable GetattchtypeByfuncid(int func_id)
+		{
+			string strSql = string.Format("SELECT type_id,type_nm from {0}.file_type", "nsap_oa");
+			strSql += string.Format(" WHERE func_id={0}", func_id);
+			return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+		}
+		#endregion
+
 	}
 }
