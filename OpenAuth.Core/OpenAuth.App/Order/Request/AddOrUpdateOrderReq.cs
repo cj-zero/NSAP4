@@ -35,6 +35,23 @@ namespace OpenAuth.App.Order.Request
         /// </summary>
         public OrderDraft Order { get; set; }
     }
+    /// <summary>
+    /// 销售订单
+    /// </summary>
+    public class SalesOrderSaveReq
+    {
+        /// <summary>
+        /// 提交类型
+        /// 0：草稿
+        /// 1：提交
+        /// 2：再次提交
+        /// </summary>
+        public OrderAtion Ations { get; set; }
+        /// <summary>
+        /// 销售报价单ID(创建时为0)
+        /// </summary>
+        public int JobId { get; set; }
+    }
 
     public class OrderDraft
     {
@@ -78,7 +95,7 @@ namespace OpenAuth.App.Order.Request
         /// </summary>
         public decimal VatSum { get; set; }
         /// <summary>
-        /// 凭证折扣率
+        /// 折扣率
         /// </summary>
         public decimal DiscPrcnt { get; set; }
         /// <summary>
@@ -90,11 +107,11 @@ namespace OpenAuth.App.Order.Request
         /// </summary>
         public decimal DiscSumFC { get; set; }
         /// <summary>
-        /// 凭证货币
+        /// 货币
         /// </summary>
         public string DocCur { get; set; }
         /// <summary>
-        /// 凭证汇率
+        /// 汇率
         /// </summary>
         public decimal DocRate { get; set; }
         /// <summary>
