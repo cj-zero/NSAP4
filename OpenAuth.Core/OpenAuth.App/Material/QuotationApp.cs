@@ -286,7 +286,7 @@ namespace OpenAuth.App.Material
                 CreateTime = Convert.ToDateTime(q.a.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 UpDateTime = q.a.QuotationOperationHistorys.FirstOrDefault() != null ? Convert.ToDateTime(q.a.QuotationOperationHistorys.OrderByDescending(h => h.CreateTime).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(q.a.UpDateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 q.a.QuotationStatus,
-                StatusName = string.IsNullOrWhiteSpace(q.a.FlowInstanceId) || q.a.CreateTime <= DateTime.Parse("2021-08-13") ? StatusName(q.a.QuotationStatus) : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Finished ? "已出库" : q.a.QuotationStatus == 12 ? "部分出库" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Rejected ? "驳回" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == null || q.a.IsDraft == true ? "未提交" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Draft ? "撤回" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.ActivityName,
+                StatusName = string.IsNullOrWhiteSpace(q.a.FlowInstanceId) || q.a.CreateTime <= DateTime.Parse("2021-08-13") ? StatusName(q.a.QuotationStatus) :q.a.QuotationStatus==-1?"已取消":flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Finished ? "已出库" : q.a.QuotationStatus == 12 ? "部分出库" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Rejected ? "驳回" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == null || q.a.IsDraft == true ? "未提交" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Draft ? "撤回" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.ActivityName,
                 q.a.Tentative,
                 q.a.IsProtected,
                 q.a.PrintWarehouse,
@@ -2441,6 +2441,7 @@ namespace OpenAuth.App.Material
         /// <param name="QuotationId"></param>
         /// <returns></returns>
         public async Task<byte[]> PrintSalesOrder(string QuotationId)
+        
         {
             var quotationId = int.Parse(QuotationId);
             var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId) && q.QuotationStatus < 10).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
@@ -2841,12 +2842,21 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         public async Task CancellationSalesOrder(QueryQuotationListReq request)
         {
-            _capBus.Publish("Serve.SellOrder.Cancel", request.QuotationId);
-            var quotationObj = await UnitWork.Find<Quotation>(q => q.Id == request.QuotationId).FirstOrDefaultAsync();
-            if (!string.IsNullOrWhiteSpace(quotationObj.FlowInstanceId))
+            if (request.IsReject != null && (bool)request.IsReject)
             {
-                await _flowInstanceApp.ReCall(new RecallFlowInstanceReq { FlowInstanceId = quotationObj.FlowInstanceId });
+                await UnitWork.UpdateAsync<Quotation>(q => q.Id == request.QuotationId,q=>new Quotation { CancelRequest=null});
+                await UnitWork.SaveAsync();
             }
+            else 
+            {
+                _capBus.Publish("Serve.SellOrder.Cancel", request.QuotationId);
+                var quotationObj = await UnitWork.Find<Quotation>(q => q.Id == request.QuotationId).FirstOrDefaultAsync();
+                if (!string.IsNullOrWhiteSpace(quotationObj.FlowInstanceId))
+                {
+                    await _flowInstanceApp.ReCall(new RecallFlowInstanceReq { FlowInstanceId = quotationObj.FlowInstanceId });
+                }
+            }
+            
         }
 
         /// <summary>
