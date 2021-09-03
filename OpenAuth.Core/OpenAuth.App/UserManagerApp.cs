@@ -462,7 +462,7 @@ namespace OpenAuth.App
                 OrgName = Orgs.OrderByDescending(o => o.CascadeId).FirstOrDefault().Name;
             }
             //获取appuserid
-            var appUserId=await UnitWork.Find<AppUserMap>(r => r.UserID.Equals(loginUser.User.Id)).FirstOrDefault()?.AppUserId;
+            var appUserId=UnitWork.Find<AppUserMap>(r => r.UserID.Equals(loginUser.User.Id)).FirstOrDefault()?.AppUserId.ToString();
 
             //获取角色权限
             Relevances = _revelanceApp.Get(Define.USERROLE, true, loginUser.User.Id);
