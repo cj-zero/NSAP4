@@ -441,81 +441,81 @@ namespace OpenAuth.WebApi.Controllers.Order
                     filterString += string.Format(") {0} ) AND ", CardTypeFilter);
                 }
 
-            }
-            if (viewSelf && !viewFull && !viewSelfDepartment)
-            {
-                var rDataRowsSlp1 = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sale_id,tech_id FROM nsap_base.sbo_user WHERE user_id={userId} AND sbo_id={sboid}", CommandType.Text, null);
-                if (rDataRowsSlp1.Rows.Count > 0)
-                {
-                    string slpCode = rDataRowsSlp1.Rows[0][0].ToString();
-                    filterString += string.Format(" (a.SlpCode = {0} OR a.DfTcnician={1} {2} ) AND ", slpCode, DfTcnician, CardTypeFilter);
-                }
-                else
-                {
-                    filterString += string.Format(" a.SlpCode =0  AND ");
-                }
-            }
-            if (!string.IsNullOrEmpty(filterString))
-            {
-                filterString = filterString.Substring(0, filterString.Length - 5);
-            }
-            if (isOpen == "0")
-            {
-                filterString += string.Format(" AND a.sbo_id = {0}", sboid);
-                // return NSAP.Data.Sales.BillDelivery.SelectCardCodeView(out rowCount, pageSize, pageIndex, filterString, sortString).FelxgridDataToJSON(pageIndex.ToString(), rowCount.ToString());
-            }
-            else
-            {
-                result = _serviceSaleOrderApp.SelectCardCodeInfo(request, sortString, filterString, sboname);
-            }
-            return result;
-        }
-        /// <summary>
-        /// 加载销售报价单列表
-        /// </summary>
-        [HttpPost]
-        [Route("sales")]
-        public async Task<TableData> LoadOrderGridAsync(QuerySalesQuotationReq request)
-        {
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-            var result = new TableData();
-            var userId = _serviceBaseApp.GetUserNaspId();//(await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
-            var depId = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT dep_id value FROM base_user_detail WHERE user_id = {userId}", CommandType.Text, null).FirstOrDefault();
-            string type = "OQUT";
-            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);//UnitWork.ExcuteSql<sbo_info>(ContextType.Nsap4ServeDbContextType, "SELECT sbo_id FROM nsap_base.sbo_info WHERE is_curr = 1 AND valid = 1 LIMIT 1;", CommandType.Text, null).FirstOrDefault()?.sbo_id;
-            var dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM nsap_base.sbo_info WHERE sbo_id={sboid}", CommandType.Text, null);
-            string dRowData = string.Empty;
-            string isOpen = "0";
-            string sqlcont = string.Empty;
-            string sboname = string.Empty;
-            if (dt.Rows.Count > 0)
-            {
-                isOpen = dt.Rows[0][6].ToString();
-                sqlcont = dt.Rows[0][5].ToString();
-                sboname = dt.Rows[0][0].ToString();
-            }
-            var powerList = UnitWork.ExcuteSql<PowerDto>(ContextType.NsapBaseDbContext, $@"SELECT a.func_id funcID,b.page_url pageUrl,a.auth_map authMap FROM (SELECT a.func_id,a.page_id,b.auth_map FROM nsap_base.base_func a INNER JOIN (SELECT t.func_id,BIT_OR(t.auth_map) auth_map FROM (SELECT func_id,BIT_OR(auth_map) auth_map FROM nsap_base.base_role_func WHERE role_id IN (SELECT role_id FROM nsap_base.base_user_role WHERE user_id={userId}) GROUP BY func_id UNION ALL SELECT func_id,auth_map FROM nsap_base.base_user_func WHERE user_id={userId}) t GROUP BY t.func_id) b ON a.func_id=b.func_id) AS a INNER JOIN nsap_base.base_page AS b ON a.page_id=b.page_id", CommandType.Text, null);
-            bool viewFull = false;
-            bool viewSelf = false;
-            bool viewSelfDepartment = false;
-            bool viewSales = false;
-            bool viewCustom = false;
-            var power = powerList.FirstOrDefault(s => s.PageUrl == "sales/SalesQuotation.aspx");
-            if (power != null)
-            {
-                Powers powers = new Powers(power.AuthMap);
-                viewFull = powers.ViewFull;
-                viewSelf = powers.ViewSelf;
-                viewSelfDepartment = powers.ViewSelfDepartment;
-                viewSales = powers.ViewSales;
-                viewCustom = powers.ViewCustom;
-            }
-            if (isOpen == "0")
-            {
+			}
+			if (viewSelf && !viewFull && !viewSelfDepartment)
+			{
+				var rDataRowsSlp1 = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sale_id,tech_id FROM nsap_base.sbo_user WHERE user_id={userId} AND sbo_id={sboid}", CommandType.Text, null);
+				if (rDataRowsSlp1.Rows.Count > 0)
+				{
+					string slpCode = rDataRowsSlp1.Rows[0][0].ToString();
+					filterString += string.Format(" (a.SlpCode = {0} OR a.DfTcnician={1} {2} ) AND ", slpCode, DfTcnician, CardTypeFilter);
+				}
+				else
+				{
+					filterString += string.Format(" a.SlpCode =0  AND ");
+				}
+			}
+			if (!string.IsNullOrEmpty(filterString))
+			{
+				filterString = filterString.Substring(0, filterString.Length - 5);
+			}
+			if (isOpen == "0")
+			{
+				filterString += string.Format(" AND a.sbo_id = {0}", sboid);
+				// return NSAP.Data.Sales.BillDelivery.SelectCardCodeView(out rowCount, pageSize, pageIndex, filterString, sortString).FelxgridDataToJSON(pageIndex.ToString(), rowCount.ToString());
+			}
+			else
+			{
+				result = _serviceSaleOrderApp.SelectCardCodeInfo(request, sortString, filterString, sboname);
+			}
+			return result;
+		}
+		/// <summary>
+		/// 加载销售报价单列表
+		/// </summary>
+		[HttpPost]
+		[Route("sales")]
+		public async Task<TableData> LoadOrderGridAsync(QuerySalesQuotationReq request)
+		{
+			var loginContext = _auth.GetCurrentUser();
+			if (loginContext == null)
+			{
+				throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+			}
+			var result = new TableData();
+			var userId = _serviceBaseApp.GetUserNaspId();//(await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginContext.User.Id)).FirstOrDefaultAsync())?.NsapUserId;
+			var depId = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT dep_id value FROM base_user_detail WHERE user_id = {userId}", CommandType.Text, null).FirstOrDefault();
+			string type = "OQUT";
+			var sboid = _serviceBaseApp.GetUserNaspSboID(userId);//UnitWork.ExcuteSql<sbo_info>(ContextType.Nsap4ServeDbContextType, "SELECT sbo_id FROM nsap_base.sbo_info WHERE is_curr = 1 AND valid = 1 LIMIT 1;", CommandType.Text, null).FirstOrDefault()?.sbo_id;
+			var dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM nsap_base.sbo_info WHERE sbo_id={sboid}", CommandType.Text, null);
+			string dRowData = string.Empty;
+			string isOpen = "0"; 
+			string sqlcont = string.Empty;
+			string sboname = string.Empty;
+			if (dt.Rows.Count > 0)
+			{
+				isOpen = dt.Rows[0][6].ToString();
+				sqlcont = dt.Rows[0][5].ToString();
+				sboname = dt.Rows[0][0].ToString();
+			}
+			var powerList = UnitWork.ExcuteSql<PowerDto>(ContextType.NsapBaseDbContext, $@"SELECT a.func_id funcID,b.page_url pageUrl,a.auth_map authMap FROM (SELECT a.func_id,a.page_id,b.auth_map FROM nsap_base.base_func a INNER JOIN (SELECT t.func_id,BIT_OR(t.auth_map) auth_map FROM (SELECT func_id,BIT_OR(auth_map) auth_map FROM nsap_base.base_role_func WHERE role_id IN (SELECT role_id FROM nsap_base.base_user_role WHERE user_id={userId}) GROUP BY func_id UNION ALL SELECT func_id,auth_map FROM nsap_base.base_user_func WHERE user_id={userId}) t GROUP BY t.func_id) b ON a.func_id=b.func_id) AS a INNER JOIN nsap_base.base_page AS b ON a.page_id=b.page_id", CommandType.Text, null);
+			bool viewFull = false;
+			bool viewSelf = false;
+			bool viewSelfDepartment = false;
+			bool viewSales = false;
+			bool viewCustom = false;
+			var power = powerList.FirstOrDefault(s => s.PageUrl == "sales/SalesQuotation.aspx");
+			if (power != null)
+			{
+				Powers powers = new Powers(power.AuthMap);
+				viewFull = powers.ViewFull;
+				viewSelf = powers.ViewSelf;
+				viewSelfDepartment = powers.ViewSelfDepartment;
+				viewSales = powers.ViewSales;
+				viewCustom = powers.ViewCustom;
+			}
+			if (isOpen == "0")
+			{
 
                 //return NSAP.Biz.Sales.BillDelivery.SelectBillViewInfo(int.Parse(rp), int.Parse(page), query, sortname, sortorder, type, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewFull, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewSelf, UserID, SboID, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewSelfDepartment, DepID, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewCustom, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewSales);
             }
@@ -1535,130 +1535,130 @@ namespace OpenAuth.WebApi.Controllers.Order
 
         #endregion
 
-        #region 开关项
-        /// <summary>
-        ///开关项
-        /// </summary>
-        /// <param name="tablename"></param>
-        /// <param name="filevalue"></param>
-        /// <returns></returns>
-        [HttpGet]
-        [Route("IsSwitching")]
-        public Response<bool> IsSwitching(string tablename, string filevalue)
-        {
-            var result = new Response<bool>();
-            result.Result = _serviceSaleOrderApp.IsSwitching(tablename, filevalue);
-            return result;
-        }
-        #endregion
-        /// <summary>
-        /// 销售员
-        /// </summary>
-        /// <param name="SboId"></param>
-        /// <returns></returns>
-        [HttpGet]
-        [Route("DropPopupSlpCode")]
-        public Response<List<GetItemTypeCustomValueDto>> DropPopupSlpCode(string SboId)
-        {
-            var result = new Response<List<GetItemTypeCustomValueDto>>();
-            var UserID = _serviceBaseApp.GetUserNaspId();
-            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
-            try
-            {
-                if (string.IsNullOrEmpty(SboId)) { SboId = SboID.ToString(); }
-                result.Result = _serviceSaleOrderApp.DropPopupSlpCode(int.Parse(SboId));
-            }
-            catch (Exception e)
-            {
-                result.Message = e.Message;
-            }
-            return result;
-        }
-        /// <summary>
-        ///联系人名字
-        /// </summary>
-        /// <param name="CntctCode"></param>
-        /// <param name="SboId"></param>
-        /// <returns></returns>
-        [HttpGet]
-        [Route("GetConfiguresCntctPrsn")]
-        public Response<string> GetConfiguresCntctPrsn(string CntctCode, string SboId)
-        {
-            var result = new Response<string>();
-            var UserID = _serviceBaseApp.GetUserNaspId();
-            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
-            try
-            {
-                int billSboId = 0; bool isSql = true;
-                if (int.Parse(SboId) == SboID || SboId == "") { billSboId = SboID; } else { billSboId = int.Parse(SboId); isSql = false; }
-                result.Result = _serviceSaleOrderApp.GetConfiguresCntctPrsn(CntctCode, billSboId, isSql);
-            }
-            catch (Exception e)
-            {
-                result.Message = e.Message;
-            }
-            return result;
-        }
-        /// <summary>
-        /// 应收
-        /// </summary>
-        /// <param name="SlpCode"></param>
-        /// <param name="CardCode"></param>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        [HttpGet]
-        [Route("GetSumBalDue")]
-        public string GetSumBalDue(string SlpCode, string CardCode, string type)
-        {
-            var UserID = _serviceBaseApp.GetUserNaspId();
-            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
-            try
-            {
-                return _serviceSaleOrderApp.GetSumBalDue(SlpCode, CardCode, type, SboID);
-            }
-            catch (Exception e)
-            {
-                return e.Message;
-            }
-        }
-        /// <summary>
-        /// 获取地址标识(开票到、运达到)
-        /// </summary>
-        /// <param name="AdresType"></param>
-        /// <param name="CardCode"></param>
-        /// <returns></returns>
-        [HttpGet]
-        [Route("GetAddressNos")]
-        public Response<string> GetAddressNos(string AdresType, string CardCode)
-        {
-            var result = new Response<string>();
-            var UserID = _serviceBaseApp.GetUserNaspId();
-            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
-            try
-            {
-                if (!string.IsNullOrEmpty(AdresType) && !string.IsNullOrEmpty(CardCode))
-                {
-                    result.Result = _serviceSaleOrderApp.GetAddress(AdresType, CardCode, SboID);
-                }
-                else { return null; }
-            }
-            catch (Exception e)
-            {
-                result.Message = e.Message;
-            }
-            return result;
-        }
-        /// <summary>
-        /// 拟取消订单
-        /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
-        [HttpPost]
-        [Route("GridRelORDRList")]
-        public TableData GridRelORDRList(GridRelORDRDto model)
-        {
-            int rowCount = 0;
-            var result = new TableData();
+		#region 开关项
+		/// <summary>
+		///开关项
+		/// </summary>
+		/// <param name="tablename"></param>
+		/// <param name="filevalue"></param>
+		/// <returns></returns>
+		[HttpGet]
+		[Route("IsSwitching")]
+		public Response<bool> IsSwitching(string tablename, string filevalue)
+		{
+			var result = new Response<bool>();
+			result.Result = _serviceSaleOrderApp.IsSwitching(tablename, filevalue);
+			return result;
+		}
+		#endregion
+		/// <summary>
+		/// 销售员
+		/// </summary>
+		/// <param name="SboId"></param>
+		/// <returns></returns>
+		[HttpGet]
+		[Route("DropPopupSlpCode")]
+		public Response<List<GetItemTypeCustomValueDto>> DropPopupSlpCode(string SboId)
+		{
+			var result = new Response<List<GetItemTypeCustomValueDto>>();
+			var UserID = _serviceBaseApp.GetUserNaspId();
+			var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+			try
+			{
+				if (string.IsNullOrEmpty(SboId)) { SboId = SboID.ToString(); }
+				result.Result = _serviceSaleOrderApp.DropPopupSlpCode(int.Parse(SboId));
+			}
+			catch (Exception e)
+			{
+				result.Message = e.Message;
+			}
+			return result;
+		}
+		/// <summary>
+		///联系人名字
+		/// </summary>
+		/// <param name="CntctCode"></param>
+		/// <param name="SboId"></param>
+		/// <returns></returns>
+		[HttpGet]
+		[Route("GetConfiguresCntctPrsn")]
+		public Response<string> GetConfiguresCntctPrsn(string CntctCode, string SboId)
+		{
+			var result = new Response<string>();
+			var UserID = _serviceBaseApp.GetUserNaspId();
+			var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+			try
+			{
+				int billSboId = 0; bool isSql = true;
+				if (int.Parse(SboId) == SboID || SboId == "") { billSboId = SboID; } else { billSboId = int.Parse(SboId); isSql = false; }
+				result.Result = _serviceSaleOrderApp.GetConfiguresCntctPrsn(CntctCode, billSboId, isSql);
+			}
+			catch (Exception e)
+			{
+				result.Message = e.Message;
+			}
+			return result;
+		}
+		/// <summary>
+		/// 应收
+		/// </summary>
+		/// <param name="SlpCode"></param>
+		/// <param name="CardCode"></param>
+		/// <param name="type"></param>
+		/// <returns></returns>
+		[HttpGet]
+		[Route("GetSumBalDue")]
+		public string GetSumBalDue(string SlpCode, string CardCode, string type)
+		{
+			var UserID = _serviceBaseApp.GetUserNaspId();
+			var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+			try
+			{
+				return _serviceSaleOrderApp.GetSumBalDue(SlpCode, CardCode, type, SboID);
+			}
+			catch (Exception e)
+			{
+				return e.Message;
+			}
+		}
+		/// <summary>
+		/// 获取地址标识(开票到、运达到)
+		/// </summary>
+		/// <param name="AdresType"></param>
+		/// <param name="CardCode"></param>
+		/// <returns></returns>
+		[HttpGet]
+		[Route("GetAddressNos")]
+		public Response<string> GetAddressNos(string AdresType, string CardCode)
+		{
+			var result = new Response<string>();
+			var UserID = _serviceBaseApp.GetUserNaspId();
+			var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+			try
+			{
+				if (!string.IsNullOrEmpty(AdresType) && !string.IsNullOrEmpty(CardCode))
+				{
+					result.Result = _serviceSaleOrderApp.GetAddress(AdresType, CardCode, SboID);
+				}
+				else { return null; }
+			}
+			catch (Exception e)
+			{
+				result.Message = e.Message;
+			}
+			return result;
+		}
+		/// <summary>
+		/// 拟取消订单
+		/// </summary>
+		/// <param name="model"></param>
+		/// <returns></returns>
+		[HttpPost]
+		[Route("GridRelORDRList")]
+		public TableData GridRelORDRList(GridRelORDRReq model)
+		{
+			int rowCount = 0;
+			var result = new TableData();
 
             result.Data = _serviceSaleOrderApp.GridRelORDRList(out rowCount, model.limit, model.page, model.DocEntry, model.cardcode, model.sortname, model.sortorder, model.SlpCode);
             result.Count = rowCount;
