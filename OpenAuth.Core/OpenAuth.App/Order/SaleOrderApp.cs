@@ -248,6 +248,88 @@ namespace OpenAuth.App.Order
             }
             return result;
         }
+        /// <summary>
+        /// 根据销售报价单下销售订单
+        /// </summary>
+        /// <param name="orderReq"></param>
+        /// <returns></returns>
+        public string SalesOrderSave_ORDR(AddOrderReq orderReq)
+        {
+            int userID = _serviceBaseApp.GetUserNaspId();
+            int sboID = _serviceBaseApp.GetUserNaspSboID(userID);
+            int funcId = 50;
+            string result = "";
+            string className = "NSAP.B1Api.BOneORDR";
+            string jobname = "";
+            //查询
+            billDelivery billDelivery = BulidBillDelivery(orderReq.Order);
+            byte[] job_data = ByteExtension.ToSerialize(billDelivery);
+            #region 售后人员(部门名称“售后”开头）下的销售订单如果没有设备（物料编号C开头),则审批流程改成呼叫中心审批
+            bool shslp = false; bool shc = false;
+            //判断销售员是否是售后部门
+            if (!string.IsNullOrEmpty(billDelivery.SlpCode))
+            {
+                string depnm = _serviceBaseApp.GetSalesDepname(billDelivery.SlpCode, sboID.ToString());
+                if (depnm.IndexOf("售后") == 0)
+                {
+                    shslp = true;
+                }
+            }
+            //判断销售明细里面物料是否存在设备
+            foreach (var orderDetails in billDelivery.billSalesDetails)
+            {
+                if (!string.IsNullOrEmpty(orderDetails.ItemCode))
+                {
+                    if (orderDetails.ItemCode.StartsWith("C", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        shc = true;
+                        break;
+                    }
+                }
+            }
+            if (shslp && !shc)
+            {
+                jobname = "售后订单";
+                funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesOrder_AfterSale.aspx", userID);
+            }
+            #endregion
+            int basetype = int.Parse(billDelivery.billBaseType);
+            if (!string.IsNullOrEmpty(billDelivery.U_EshopNo))
+            {
+                basetype = -2;//商城订单统一基本类别 方便审批列表标识出来
+            }
+            if (orderReq.Ations == OrderAtion.Draft)
+            {
+                result = OrderWorkflowBuild(jobname, funcId, userID, job_data, billDelivery.Remark, sboID, billDelivery.CardCode, billDelivery.CardName, (double.Parse(billDelivery.DocTotal.ToString()) > 0 ? double.Parse(billDelivery.DocTotal.ToString()) : 0), int.Parse(billDelivery.billBaseType), int.Parse(billDelivery.billBaseEntry), "BOneAPI", className);
+            }
+            if (orderReq.Ations == OrderAtion.Submit)
+            {
+                result = OrderWorkflowBuild(jobname, funcId, userID, job_data, billDelivery.Remark, sboID, billDelivery.CardCode, billDelivery.CardName, (double.Parse(billDelivery.DocTotal.ToString()) > 0 ? double.Parse(billDelivery.DocTotal.ToString()) : 0), basetype, int.Parse(billDelivery.billBaseEntry), "BOneAPI", className);
+                if (int.Parse(result) > 0)
+                {
+                    var par = SaveJobPara(result, "");
+                    if (par == "1")
+                    {
+                        string _jobID = result;
+                        if ("0" != WorkflowSubmit(int.Parse(result), userID, billDelivery.Remark, "", 0))
+                        {
+                            result = SaveProOrder(billDelivery, int.Parse(_jobID)).ToString();
+                            if (billDelivery.serialNumber.Count > 0)
+                            {
+                                if (UpdateSerialNumber(billDelivery.serialNumber, int.Parse(_jobID))) { result = "1"; }
+                            }
+                        }
+                        else { result = "0"; }
+                    }
+                    else { result = "0"; }
+                }
+            }
+            if (orderReq.Ations == OrderAtion.Resubmit)
+            {
+                result = WorkflowSubmit(orderReq.JobId, userID, billDelivery.Remark, "", 0);
+            }
+            return result;
+        }
         public int SaveProOrder(billDelivery Model, int jobid)
         {
             string SaleOrder = "0";

@@ -601,101 +601,101 @@ namespace OpenAuth.App.Order
             try
             {
                 billDelivery billDelivery = BulidBillDelivery(orderReq.Order);
-                //if (orderReq.IsCopy)
-                //{
-                //	funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesOrder.aspx", userID);
-                //	logstring = "根据销售报价单下销售订单";
-                //	jobname = "销售订单";
-                //	SalesOrderSave_ORDR(orderReq);
-                //}
-                //else
-                //{
-                funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesQuotation.aspx", userID);
-                byte[] job_data = ByteExtension.ToSerialize(billDelivery);
-                string className = "NSAP.B1Api.BOneOQUT";
-                logstring = "新建销售报价单";
-                jobname = "销售报价单";
-
-                if (orderReq.Ations == OrderAtion.Draft)
+                if (orderReq.IsCopy)
                 {
-                    result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
+                    funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesOrder.aspx", userID);
+                    logstring = "根据销售报价单下销售订单";
+                    jobname = "销售订单";
+                    SalesOrderSave_ORDR(orderReq);
                 }
-                else if (orderReq.Ations == OrderAtion.Submit)
+                else
                 {
-                    result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
-                    if (int.Parse(result) > 0)
+                    funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesQuotation.aspx", userID);
+                    byte[] job_data = ByteExtension.ToSerialize(billDelivery);
+                    string className = "NSAP.B1Api.BOneOQUT";
+                    logstring = "新建销售报价单";
+                    jobname = "销售报价单";
+
+                    if (orderReq.Ations == OrderAtion.Draft)
                     {
-                        var par = SaveJobPara(result, orderReq.IsTemplate);
-                        if (par == "1")
+                        result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
+                    }
+                    else if (orderReq.Ations == OrderAtion.Submit)
+                    {
+                        result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
+                        if (int.Parse(result) > 0)
                         {
-                            string _jobID = result;
-                            if ("0" != WorkflowSubmit(int.Parse(result), userID, orderReq.Order.Remark, "", 0))
+                            var par = SaveJobPara(result, orderReq.IsTemplate);
+                            if (par == "1")
                             {
-                                #region 更新商城订单状态
-                                WfaEshopStatus thisinfo = new WfaEshopStatus();
-                                thisinfo.JobId = int.Parse(result);
-                                thisinfo.UserId = userID;
-                                thisinfo.SlpCode = sboID;
-                                thisinfo.CardCode = orderReq.Order.CardCode;
-                                thisinfo.CardName = orderReq.Order.CardName;
-                                thisinfo.CurStatus = 0;
-                                thisinfo.OrderPhase = "0000";
-                                thisinfo.ShippingPhase = "0000";
-                                thisinfo.CompletePhase = "0";
-                                thisinfo.OrderLastDate = DateTime.Now;
-                                thisinfo.FirstCreateDate = DateTime.Now;
-                                //设置报价单提交
-                                result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, orderReq.Order.U_New_ORDRID);
-                                #endregion
+                                string _jobID = result;
+                                if ("0" != WorkflowSubmit(int.Parse(result), userID, orderReq.Order.Remark, "", 0))
+                                {
+                                    #region 更新商城订单状态
+                                    WfaEshopStatus thisinfo = new WfaEshopStatus();
+                                    thisinfo.JobId = int.Parse(result);
+                                    thisinfo.UserId = userID;
+                                    thisinfo.SlpCode = sboID;
+                                    thisinfo.CardCode = orderReq.Order.CardCode;
+                                    thisinfo.CardName = orderReq.Order.CardName;
+                                    thisinfo.CurStatus = 0;
+                                    thisinfo.OrderPhase = "0000";
+                                    thisinfo.ShippingPhase = "0000";
+                                    thisinfo.CompletePhase = "0";
+                                    thisinfo.OrderLastDate = DateTime.Now;
+                                    thisinfo.FirstCreateDate = DateTime.Now;
+                                    //设置报价单提交
+                                    result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, orderReq.Order.U_New_ORDRID);
+                                    #endregion
+                                }
+                                else { result = "0"; }
                             }
                             else { result = "0"; }
                         }
-                        else { result = "0"; }
                     }
-                }
-                else if (orderReq.Ations == OrderAtion.Resubmit)
-                {
-
-                    result = WorkflowSubmit(orderReq.JobId, userID, orderReq.Order.Remark, "", 0);
-                }
-                else if (orderReq.Ations == OrderAtion.DraftUpdate)
-                {
-                    result = UpdateAudit(orderReq.JobId, job_data, orderReq.Order.Remark, orderReq.Order.DocTotal.ToString(), orderReq.Order.CardCode, orderReq.Order.CardName);
-                }
-                else if (orderReq.Ations == OrderAtion.DrafSubmit)
-                {
-                    result = UpdateAudit(orderReq.JobId, job_data, orderReq.Order.Remark, orderReq.Order.DocTotal.ToString(), orderReq.Order.CardCode, orderReq.Order.CardName);
-                    if (result != null)
+                    else if (orderReq.Ations == OrderAtion.Resubmit)
                     {
-                        var par = SaveJobPara(orderReq.JobId.ToString(), orderReq.IsTemplate);
-                        if (par == "1")
+
+                        result = WorkflowSubmit(orderReq.JobId, userID, orderReq.Order.Remark, "", 0);
+                    }
+                    else if (orderReq.Ations == OrderAtion.DraftUpdate)
+                    {
+                        result = UpdateAudit(orderReq.JobId, job_data, orderReq.Order.Remark, orderReq.Order.DocTotal.ToString(), orderReq.Order.CardCode, orderReq.Order.CardName);
+                    }
+                    else if (orderReq.Ations == OrderAtion.DrafSubmit)
+                    {
+                        result = UpdateAudit(orderReq.JobId, job_data, orderReq.Order.Remark, orderReq.Order.DocTotal.ToString(), orderReq.Order.CardCode, orderReq.Order.CardName);
+                        if (result != null)
                         {
-                            string _jobID = result;
-                            if ("0" != WorkflowSubmit(orderReq.JobId, userID, orderReq.Order.Remark, "", 0))
+                            var par = SaveJobPara(orderReq.JobId.ToString(), orderReq.IsTemplate);
+                            if (par == "1")
                             {
-                                #region 更新商城订单状态
-                                WfaEshopStatus thisinfo = new WfaEshopStatus();
-                                thisinfo.JobId = orderReq.JobId;
-                                thisinfo.UserId = userID;
-                                thisinfo.SlpCode = sboID;
-                                thisinfo.CardCode = orderReq.Order.CardCode;
-                                thisinfo.CardName = orderReq.Order.CardName;
-                                thisinfo.CurStatus = 0;
-                                thisinfo.OrderPhase = "0000";
-                                thisinfo.ShippingPhase = "0000";
-                                thisinfo.CompletePhase = "0";
-                                thisinfo.OrderLastDate = DateTime.Now;
-                                thisinfo.FirstCreateDate = DateTime.Now;
-                                //设置报价单提交
-                                result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, orderReq.Order.U_New_ORDRID);
-                                #endregion
+                                string _jobID = result;
+                                if ("0" != WorkflowSubmit(orderReq.JobId, userID, orderReq.Order.Remark, "", 0))
+                                {
+                                    #region 更新商城订单状态
+                                    WfaEshopStatus thisinfo = new WfaEshopStatus();
+                                    thisinfo.JobId = orderReq.JobId;
+                                    thisinfo.UserId = userID;
+                                    thisinfo.SlpCode = sboID;
+                                    thisinfo.CardCode = orderReq.Order.CardCode;
+                                    thisinfo.CardName = orderReq.Order.CardName;
+                                    thisinfo.CurStatus = 0;
+                                    thisinfo.OrderPhase = "0000";
+                                    thisinfo.ShippingPhase = "0000";
+                                    thisinfo.CompletePhase = "0";
+                                    thisinfo.OrderLastDate = DateTime.Now;
+                                    thisinfo.FirstCreateDate = DateTime.Now;
+                                    //设置报价单提交
+                                    result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, orderReq.Order.U_New_ORDRID);
+                                    #endregion
+                                }
+                                else { result = "0"; }
                             }
                             else { result = "0"; }
                         }
-                        else { result = "0"; }
                     }
                 }
-                //}
             }
             catch (Exception ex)
             {
