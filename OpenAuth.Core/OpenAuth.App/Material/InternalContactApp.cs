@@ -299,11 +299,11 @@ namespace OpenAuth.App.Material
             userIds.Add(obj.CheckApproveId);
             userIds.Add(obj.DevelopApproveId);
             var userInfo = await UnitWork.Find<User>(c => userIds.Contains(c.Id)).ToListAsync();
-            mailRequest.ToUsers = new List<MailUser> { new MailUser { Name = "licong", Address = "licong@neware.com.cn" } };
-            //userInfo.ForEach(c =>
-            //{
-            //    mailRequest.ToUsers.Add(new MailUser { Name = c.Account, Address = c.Email });
-            //}); 
+            //mailRequest.ToUsers = new List<MailUser> { new MailUser { Name = "licong", Address = "licong@neware.com.cn" } };
+            userInfo.ForEach(c =>
+            {
+                mailRequest.ToUsers.Add(new MailUser { Name = c.Account, Address = c.Email });
+            });
             //附件
             mailRequest.Attachments = new List<MailAttachment>();
             if (obj.InternalContactAttchments.Count>0)
