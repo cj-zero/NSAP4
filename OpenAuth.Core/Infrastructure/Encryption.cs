@@ -86,5 +86,40 @@ namespace Infrastructure
             reult=reult.Substring(16, reult.Length -16);
             return reult;
         }
+
+        /// <summary>
+        /// RSA加密
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public static string EncryptRSA(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return input;
+            }
+            try
+            {
+                string publicKey = "";
+                string publicKeyDir = @"<RSAKeyValue><Modulus>wQridDfnXsSBkEIXpIuMqp+YI/yP5vS0TQ0PBDeZqY7d4bktT3WkconGdX+gamHf3hqtOaNcefWBngPZch4a3QrCjmZJyFOjwhir6EBVPdZLcRNJsHPmQNxnfV7SC5dvNVeVxKs1ZwUjV/TDWFvBUrnZetoLdhEI0Wf9zEQ9SC0=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>";//公钥存放地址
+                StreamReader sr = new StreamReader(publicKeyDir);
+                while (!sr.EndOfStream)
+                {
+                    string str = sr.ReadLine();
+                    publicKey += str;
+                }
+                using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
+                {
+                    rsa.FromXmlString(publicKey);
+                    byte[] plaindata = Encoding.Default.GetBytes(input);
+                    byte[] encryptdata = rsa.Encrypt(plaindata, false);
+                    return Convert.ToBase64String(encryptdata);
+                }
+            }
+            catch
+            {
+                return input;
+            }
+        }
     }
 }

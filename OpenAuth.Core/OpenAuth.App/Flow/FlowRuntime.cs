@@ -361,6 +361,48 @@ namespace OpenAuth.App.Flow
             }
         }
 
+        /// <summary>
+        /// 查找节点Id
+        /// </summary>
+        /// <param name="nodeName"></param>
+        public string GetNodeId(string nodeName)
+        {
+            var nodeId = "";
+            foreach (var item in Nodes)
+            {
+                if (item.Value.name == nodeName)
+                {
+                    nodeId = item.Key;
+                }
+            }
+            return nodeId;
+        }
+
+        /// <summary>
+        /// 修改下个节点执行人
+        /// </summary>
+        /// <param name="nodeId">下一个节点</param>
+        /// <param name="ids">用户或角色Id</param>
+        /// <param name="texts">用户或角色名</param>
+        /// <param name="isRole">是否角色</param>
+        public void ModifyNodeUser(string nodeId, string[] ids, string texts, bool isRole)
+        {
+            foreach (var item in Nodes)
+            {
+                if (item.Key == nodeId)
+                {
+                    if (isRole)
+                        item.Value.setInfo.NodeDesignate = Setinfo.SPECIAL_ROLE;
+                    else 
+                        item.Value.setInfo.NodeDesignate = Setinfo.SPECIAL_USER;
+
+                    item.Value.setInfo.NodeDesignateData.users = ids;
+                    item.Value.setInfo.NodeDesignateData.Texts = texts;
+                    break;
+                }
+            }
+        }
+
         public object ToSchemeObj()
         {
             return new

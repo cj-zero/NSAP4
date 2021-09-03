@@ -19,90 +19,90 @@ namespace OpenAuth.Repository.Domain
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("base_user")]
-    public partial class base_user 
+    [Table("base_contact")]
+    public partial class base_contact 
     {
-        public base_user()
+        public base_contact()
         {
-          this.user_nm= string.Empty;
-          this.user_desc= string.Empty;
-          this.log_nm= string.Empty;
-          this.log_psd= string.Empty;
-          this.telphone= string.Empty;
-          this.tel_short= string.Empty;
-          this.email= string.Empty;
-          this.im_nm= string.Empty;
-          this.rec_dt= DateTime.Now;
-          this.log_dt= DateTime.Now;
-
+          this.topic= string.Empty;
+          this.add_dep= string.Empty;
+          this.add_dep_id= string.Empty;
+          this.adapt_model= string.Empty;
+          this.content= string.Empty;
+          this.up_dt= DateTime.Now;
+          this.ciiDate= DateTime.Now;
         }
 
-
+        public int seq_id { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public uint user_id { get; set; }
-
+        public string topic { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string user_nm { get; set; }
+        public string add_dep { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string user_desc { get; set; }
+        public string add_dep_id { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string log_nm { get; set; }
+        public string adapt_model { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string log_psd { get; set; }
+        public int? user_id { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public long mobile { get; set; }
+        public sbyte new_import { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string telphone { get; set; }
+        public sbyte lib_import { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string tel_short { get; set; }
+        public sbyte ship_import { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string email { get; set; }
+        public sbyte customer_need { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string im_nm { get; set; }
+        public sbyte rd_need { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public bool valid { get; set; }
+        public string content { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public System.DateTime rec_dt { get; set; }
+        public System.DateTime up_dt { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public System.DateTime log_dt { get; set; }
+        public int? job_id { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public System.DateTime? ciiDate { get; set; }
     }
 }

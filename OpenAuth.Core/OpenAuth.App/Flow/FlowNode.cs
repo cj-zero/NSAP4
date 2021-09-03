@@ -89,6 +89,7 @@
         public string[] users { get; set; }
         public string[] roles { get; set; }
         public string[] orgs { get; set; }
+        public string Texts { get; set; }
     }
 
     /// <summary>

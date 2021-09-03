@@ -35,6 +35,12 @@ namespace OpenAuth.App.Sap.Request
         /// 页面类型1.所有客户2.共享客户3.普通客户
         /// </summary>
         public int PageType { get; set; }
+
+        /// <summary>
+        /// appid
+        /// </summary>
+        public int? AppUserId { get; set; }
+
         /// <summary>
         /// 客户代码集合
         /// </summary>

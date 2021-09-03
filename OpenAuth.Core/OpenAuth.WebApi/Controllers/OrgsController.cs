@@ -55,9 +55,9 @@ namespace OpenAuth.WebApi.Controllers
         }
         //添加或修改
         [HttpPost]
-        public Response<OpenAuth.Repository.Domain.Org> Add(OpenAuth.Repository.Domain.Org obj)
+        public Response<OpenAuth.App.Request.AddOrUpdateOrgReq> Add(OpenAuth.App.Request.AddOrUpdateOrgReq obj)
         {
-            var result = new Response<OpenAuth.Repository.Domain.Org>();
+            var result = new Response<OpenAuth.App.Request.AddOrUpdateOrgReq>();
             try
             {
                 _app.Add(obj);
@@ -75,7 +75,7 @@ namespace OpenAuth.WebApi.Controllers
 
         //添加或修改
         [HttpPost]
-        public Response Update(OpenAuth.Repository.Domain.Org obj)
+        public Response Update(OpenAuth.App.Request.AddOrUpdateOrgReq obj)
         {
             var result = new Response();
             try

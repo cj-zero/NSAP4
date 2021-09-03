@@ -66,7 +66,11 @@ namespace OpenAuth.App.Workbench.Response
         /// 联系人
         /// </summary>
         public string NewestContacter { get; set; }
-
+        /// <summary>
+        /// 科目余额
+        /// </summary>
+        public string Balance { get; set; }
+        
         /// <summary>
         /// 服务单工单
         /// </summary>

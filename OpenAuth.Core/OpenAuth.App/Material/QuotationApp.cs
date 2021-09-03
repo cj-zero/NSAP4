@@ -74,7 +74,7 @@ namespace OpenAuth.App.Material
                                 .WhereIf(request.QuotationStatus != null, q => q.QuotationStatus == request.QuotationStatus)
                                 .WhereIf(request.SalesOrderId != null, q => q.SalesOrderId == request.SalesOrderId)
                                 .WhereIf(ServiceOrderids.Count() > 0, q => ServiceOrderids.Contains(q.ServiceOrderId))
-                                .WhereIf(!string.IsNullOrWhiteSpace(request.CancelRequest),q=>q.CancelRequest==int.Parse(request.CancelRequest));
+                                .WhereIf(!string.IsNullOrWhiteSpace(request.CancelRequest), q => q.CancelRequest == int.Parse(request.CancelRequest));
             var flowInstanceIds = await Quotations.Select(q => q.FlowInstanceId).ToListAsync();
             var flowinstanceObjs = from a in UnitWork.Find<FlowInstance>(f => flowInstanceIds.Contains(f.Id))
                                    join b in UnitWork.Find<FlowInstanceOperationHistory>(null) on a.Id equals b.InstanceId into ab
@@ -264,13 +264,13 @@ namespace OpenAuth.App.Material
 
             var file = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
             ServiceOrderids = QuotationDate.Select(q => q.ServiceOrderId).ToList();
-            var ServiceOrders = await UnitWork.Find<ServiceOrder>(null).Where(q => ServiceOrderids.Contains(q.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.CustomerId,s.SalesMan }).ToListAsync();
+            var ServiceOrders = await UnitWork.Find<ServiceOrder>(null).Where(q => ServiceOrderids.Contains(q.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.CustomerId, s.SalesMan }).ToListAsync();
             var query = from a in QuotationDate
                         join b in ServiceOrders on a.ServiceOrderId equals b.Id
                         select new { a, b };
             var terminalCustomerIds = query.Select(q => q.b.TerminalCustomerId).ToList();
             var ocrds = await UnitWork.Find<OCRD>(o => terminalCustomerIds.Contains(o.CardCode)).ToListAsync();
-           
+
             result.Data = query.Select(q => new
             {
                 q.a.Id,
@@ -286,7 +286,7 @@ namespace OpenAuth.App.Material
                 CreateTime = Convert.ToDateTime(q.a.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 UpDateTime = q.a.QuotationOperationHistorys.FirstOrDefault() != null ? Convert.ToDateTime(q.a.QuotationOperationHistorys.OrderByDescending(h => h.CreateTime).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(q.a.UpDateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 q.a.QuotationStatus,
-                StatusName = string.IsNullOrWhiteSpace(q.a.FlowInstanceId)|| q.a.CreateTime<=DateTime.Parse("2021-08-13") ? StatusName(q.a.QuotationStatus): flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Finished ? "已出库" : q.a.QuotationStatus == 12 ? "部分出库" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Rejected ? "驳回" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == null || q.a.IsDraft == true ? "未提交" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Draft ? "撤回" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.ActivityName,
+                StatusName = string.IsNullOrWhiteSpace(q.a.FlowInstanceId) || q.a.CreateTime <= DateTime.Parse("2021-08-13") ? StatusName(q.a.QuotationStatus) :q.a.QuotationStatus==-1?"已取消":flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Finished ? "已出库" : q.a.QuotationStatus == 12 ? "部分出库" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Rejected ? "驳回" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == null || q.a.IsDraft == true ? "未提交" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Draft ? "撤回" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.ActivityName,
                 q.a.Tentative,
                 q.a.IsProtected,
                 q.a.PrintWarehouse,
@@ -304,10 +304,10 @@ namespace OpenAuth.App.Material
 
             return result;
         }
-        private string StatusName(decimal? QuotationStatus) 
+        private string StatusName(decimal? QuotationStatus)
         {
             var CategoryList = UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_QuotationStatus")).Select(u => new { u.DtValue, u.Name }).ToList();
-            return CategoryList.Where(c => decimal.Parse(c.DtValue) ==QuotationStatus).FirstOrDefault()?.Name;
+            return CategoryList.Where(c => decimal.Parse(c.DtValue) == QuotationStatus).FirstOrDefault()?.Name;
         }
         /// <summary>
         /// 加载状态列表
@@ -653,11 +653,11 @@ namespace OpenAuth.App.Material
             }
             var Quotations = await GeneralDetails((int)request.QuotationId, request.IsUpdate);
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(Quotations.ServiceOrderId)).Include(s => s.ServiceWorkOrders).FirstOrDefaultAsync();
-            var CustomerInformation = await UnitWork.Find<crm_ocrd>(o => o.CardCode.Equals(ServiceOrders.TerminalCustomerId)).Select(o => new { frozenFor = o.frozenFor == "N" ? "正常" : "冻结" }).FirstOrDefaultAsync();
+            var CustomerInformation = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(ServiceOrders.TerminalCustomerId)).Select(o => new { frozenFor = o.frozenFor == "N" ? "正常" : "冻结",o.Balance}).FirstOrDefaultAsync();
             var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(request.QuotationId)).ToListAsync();
             QuotationMergeMaterials = QuotationMergeMaterials.OrderBy(q => q.MaterialCode).ToList();
             Quotations.ServiceRelations = (await UnitWork.Find<User>(u => u.Id.Equals(Quotations.CreateUserId)).FirstOrDefaultAsync()).ServiceRelations;
-            var ocrds = await UnitWork.Find<crm_ocrd>(o => ServiceOrders.TerminalCustomerId.Equals(o.CardCode)).FirstOrDefaultAsync();
+            //var ocrds = await UnitWork.Find<OCRD>(o => ServiceOrders.TerminalCustomerId.Equals(o.CardCode)).FirstOrDefaultAsync();
             var result = new TableData();
             if (Quotations.Status == 2)
             {
@@ -706,7 +706,7 @@ namespace OpenAuth.App.Material
                 }).ToList();
                 result.Data = new
                 {
-                    Balance = ocrds?.Balance,
+                    Balance = CustomerInformation?.Balance,
                     Expressages,
                     Quotations = Quotations,
                     QuotationMergeMaterials,
@@ -718,7 +718,7 @@ namespace OpenAuth.App.Material
             {
                 result.Data = new
                 {
-                    Balance = ocrds?.Balance,
+                    Balance = CustomerInformation?.Balance,
                     Quotations = Quotations,
                     QuotationMergeMaterials,
                     ServiceOrders,
@@ -1883,101 +1883,184 @@ namespace OpenAuth.App.Material
             }
             else
             {
-                if ((loginContext.Roles.Any(r => r.Name.Equals("销售员")) || loginContext.Roles.Any(r => r.Name.Equals("总经理"))) && flowInstanceObj.ActivityName == "销售员审批")
+                if (flowInstanceObj != null)
                 {
-                    qoh.Action = "销售员审批";
-                    obj.QuotationStatus = 4;
-                }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("物料工程审批")) && flowInstanceObj.ActivityName == "工程审批")
-                {
-                    qoh.Action = "工程审批";
-                    obj.QuotationStatus = 5;
-                }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && flowInstanceObj.ActivityName == "总经理审批")
-                {
-                    qoh.Action = "总经理审批";
-                    if (obj.IsMaterialType == 1 || obj.IsMaterialType == 3)
+                    if ((loginContext.Roles.Any(r => r.Name.Equals("销售员")) || loginContext.Roles.Any(r => r.Name.Equals("总经理"))) && flowInstanceObj.ActivityName == "销售员审批")
                     {
+                        qoh.Action = "销售员审批";
+                        obj.QuotationStatus = 4;
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("物料工程审批")) && flowInstanceObj.ActivityName == "工程审批")
+                    {
+                        qoh.Action = "工程审批";
+                        obj.QuotationStatus = 5;
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && flowInstanceObj.ActivityName == "总经理审批")
+                    {
+                        qoh.Action = "总经理审批";
+                        if (obj.IsMaterialType == 1 || obj.IsMaterialType == 3)
+                        {
+                            if (req.IsTentative == true)
+                            {
+                                obj.QuotationStatus = 5;
+                                obj.Tentative = true;
+                            }
+                            else
+                            {
+                                obj.Tentative = false;
+                                obj.QuotationStatus = 10;
+                                obj.Status = 2;
+                                #region 报价单同步到SAP，ERP3.0
+                                _capBus.Publish("Serve.SellOrder.Create", obj.Id);
+                                #endregion
+
+                            }
+
+                        }
+                        else
+                        {
+                            obj.QuotationStatus = 6;
+                        }
+
+                    }
+                    else if (obj.CreateUserId.Equals(loginUser.Id) && flowInstanceObj.ActivityName == "确认报价单")
+                    {
+                        qoh.Action = "客户确认报价单";
+                        obj.QuotationStatus = 7;
+                        #region 报价单同步到SAP，ERP3.0 
+                        _capBus.Publish("Serve.SellOrder.Create", obj.Id);
+                        #endregion
+                    }
+                    else if (obj.CreateUserId.Equals(loginUser.Id) && flowInstanceObj.ActivityName == "回传销售订单")
+                    {
+                        qoh.Action = "回传销售订单";
+                        obj.QuotationStatus = 8;
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("物料财务")) && flowInstanceObj.ActivityName == "财务审批")
+                    {
+                        qoh.Action = "财务审批";
                         if (req.IsTentative == true)
                         {
-                            obj.QuotationStatus = 5;
+                            obj.QuotationStatus = 8;
                             obj.Tentative = true;
                         }
                         else
                         {
-                            obj.Tentative = false;
                             obj.QuotationStatus = 10;
                             obj.Status = 2;
-                            #region 报价单同步到SAP，ERP3.0
-                            _capBus.Publish("Serve.SellOrder.Create", obj.Id);
-                            #endregion
-
                         }
 
                     }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("销售总助")) && flowInstanceObj.ActivityName == "销售总助审批")
+                    {
+                        qoh.Action = "销售总助审批";
+                        obj.QuotationStatus = 5;
+                        if (obj.WarrantyType == 1)
+                        {
+                            var prodctCodes = obj.QuotationProducts.Select(q => q.ProductCode).ToList();
+                            var warrantyDates = await UnitWork.Find<SalesOrderWarrantyDate>(s => prodctCodes.Contains(s.MnfSerial)).ToListAsync();
+                            foreach (var item in obj.QuotationProducts)
+                            {
+                                await UnitWork.UpdateAsync<SalesOrderWarrantyDate>(s => s.MnfSerial.Equals(item.ProductCode), s => new SalesOrderWarrantyDate { WarrantyPeriod = item.WarrantyTime });
+                                await UnitWork.AddAsync<SalesOrderWarrantyDateRecord>(new SalesOrderWarrantyDateRecord
+                                {
+                                    Id = Guid.NewGuid().ToString(),
+                                    SalesOrderWarrantyDateId = warrantyDates.Where(w => w.MnfSerial.Equals(item.ProductCode)).FirstOrDefault()?.Id,
+                                    CreateTime = DateTime.Now,
+                                    QuotationId = obj.Id,
+                                    WarrantyExpense = item.QuotationMaterials != null && item.QuotationMaterials.Count() > 0 ? item.QuotationMaterials.Sum(q => q.DiscountPrices * q.Count) : 0,
+                                    CreateUser = obj.CreateUser,
+                                    CreateUserId = obj.CreateUserId,
+                                    WarrantyPeriod = item.WarrantyTime
+                                });
+                            }
+                        }
+                    }
                     else
                     {
-                        obj.QuotationStatus = 6;
+                        throw new Exception("暂无审批该流程权限，不可审批");
                     }
+                }
+                else 
+                {
+                    if ((loginContext.Roles.Any(r => r.Name.Equals("销售员")) || loginContext.Roles.Any(r => r.Name.Equals("总经理"))) && obj.QuotationStatus == 3.1M)
+                    {
+                        qoh.Action = "销售员审批";
+                        obj.QuotationStatus = 4;
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("物料工程审批")) && obj.QuotationStatus == 4)
+                    {
+                        qoh.Action = "工程审批";
+                        obj.QuotationStatus = 5;
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && obj.QuotationStatus == 5)
+                    {
+                        qoh.Action = "总经理审批";
+                        if (obj.IsMaterialType == 1 || obj.IsMaterialType == 3)
+                        {
+                            if (req.IsTentative == true)
+                            {
+                                obj.QuotationStatus = 5;
+                                obj.Tentative = true;
+                            }
+                            else
+                            {
+                                obj.Tentative = false;
+                                obj.QuotationStatus = 10;
+                                obj.Status = 2;
+                                #region 报价单同步到SAP，ERP3.0
+                                _capBus.Publish("Serve.SellOrder.Create", obj.Id);
+                                #endregion
+                            }
 
-                }
-                else if (obj.CreateUserId.Equals(loginUser.Id) && flowInstanceObj.ActivityName == "确认报价单")
-                {
-                    qoh.Action = "客户确认报价单";
-                    obj.QuotationStatus = 7;
-                    #region 报价单同步到SAP，ERP3.0 
-                    _capBus.Publish("Serve.SellOrder.Create", obj.Id);
-                    #endregion
-                }
-                else if (obj.CreateUserId.Equals(loginUser.Id) && flowInstanceObj.ActivityName == "回传销售订单")
-                {
-                    qoh.Action = "回传销售订单";
-                    obj.QuotationStatus = 8;
-                }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("物料财务")) && flowInstanceObj.ActivityName == "财务审批")
-                {
-                    qoh.Action = "财务审批";
-                    if (req.IsTentative == true)
-                    {
-                        obj.QuotationStatus = 8;
-                        obj.Tentative = true;
+                        }
+                        else
+                        {
+                            obj.QuotationStatus = 6;
+                        }
+
                     }
-                    else
+                    else if (obj.CreateUserId.Equals(loginUser.Id) && obj.QuotationStatus == 6)
                     {
+                        qoh.Action = "客户确认报价单";
+                        obj.QuotationStatus = 7;
+                        #region 报价单同步到SAP，ERP3.0 
+                        _capBus.Publish("Serve.SellOrder.Create", obj.Id);
+                        #endregion
+                    }
+                    else if (obj.CreateUserId.Equals(loginUser.Id) && obj.QuotationStatus == 7)
+                    {
+                        qoh.Action = "销售订单成立";
+                        obj.QuotationStatus = 8;
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("物料财务")) && obj.QuotationStatus == 8)
+                    {
+                        qoh.Action = "财务审批";
+                        if (req.IsTentative == true)
+                        {
+                            obj.QuotationStatus = 8;
+                            obj.Tentative = true;
+                        }
+                        else
+                        {
+                            obj.QuotationStatus = 10;
+                            obj.Status = 2;
+                        }
+
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && obj.QuotationStatus == 9)
+                    {
+                        qoh.Action = "总经理审批";
                         obj.QuotationStatus = 10;
                         obj.Status = 2;
                     }
+                    else
+                    {
+                        throw new Exception("暂无审批该流程权限，不可审批");
+                    }
 
                 }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("销售总助")) && flowInstanceObj.ActivityName == "销售总助审批")
-                {
-                    qoh.Action = "销售总助审批";
-                    obj.QuotationStatus = 5;
-                    if (obj.WarrantyType == 1)
-                    {
-                        var prodctCodes = obj.QuotationProducts.Select(q => q.ProductCode).ToList();
-                        var warrantyDates = await UnitWork.Find<SalesOrderWarrantyDate>(s => prodctCodes.Contains(s.MnfSerial)).ToListAsync();
-                        foreach (var item in obj.QuotationProducts)
-                        {
-                            await UnitWork.UpdateAsync<SalesOrderWarrantyDate>(s => s.MnfSerial.Equals(item.ProductCode), s => new SalesOrderWarrantyDate { WarrantyPeriod = item.WarrantyTime });
-                            await UnitWork.AddAsync<SalesOrderWarrantyDateRecord>(new SalesOrderWarrantyDateRecord
-                            {
-                                Id = Guid.NewGuid().ToString(),
-                                SalesOrderWarrantyDateId = warrantyDates.Where(w => w.MnfSerial.Equals(item.ProductCode)).FirstOrDefault()?.Id,
-                                CreateTime = DateTime.Now,
-                                QuotationId = obj.Id,
-                                WarrantyExpense = item.QuotationMaterials != null && item.QuotationMaterials.Count() > 0 ? item.QuotationMaterials.Sum(q => q.DiscountPrices * q.Count) : 0,
-                                CreateUser = obj.CreateUser,
-                                CreateUserId = obj.CreateUserId,
-                                WarrantyPeriod = item.WarrantyTime
-                            });
-                        }
-                    }
-                }
-                else
-                {
-                    throw new Exception("暂无审批该流程权限，不可审批");
-                }
+                
                 //else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) && flowInstanceObj.ActivityName == "总经理审批")
                 //{
                 //    qoh.Action = "总经理审批";
@@ -2358,6 +2441,7 @@ namespace OpenAuth.App.Material
         /// <param name="QuotationId"></param>
         /// <returns></returns>
         public async Task<byte[]> PrintSalesOrder(string QuotationId)
+        
         {
             var quotationId = int.Parse(QuotationId);
             var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId) && q.QuotationStatus < 10).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
@@ -2758,12 +2842,21 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         public async Task CancellationSalesOrder(QueryQuotationListReq request)
         {
-            _capBus.Publish("Serve.SellOrder.Cancel", request.QuotationId);
-            var quotationObj = await UnitWork.Find<Quotation>(q => q.Id == request.QuotationId).FirstOrDefaultAsync();
-            if (!string.IsNullOrWhiteSpace(quotationObj.FlowInstanceId))
+            if (request.IsReject != null && (bool)request.IsReject)
             {
-                await _flowInstanceApp.ReCall(new RecallFlowInstanceReq { FlowInstanceId = quotationObj.FlowInstanceId });
+                await UnitWork.UpdateAsync<Quotation>(q => q.Id == request.QuotationId,q=>new Quotation { CancelRequest=null});
+                await UnitWork.SaveAsync();
             }
+            else 
+            {
+                _capBus.Publish("Serve.SellOrder.Cancel", request.QuotationId);
+                var quotationObj = await UnitWork.Find<Quotation>(q => q.Id == request.QuotationId).FirstOrDefaultAsync();
+                if (!string.IsNullOrWhiteSpace(quotationObj.FlowInstanceId))
+                {
+                    await _flowInstanceApp.ReCall(new RecallFlowInstanceReq { FlowInstanceId = quotationObj.FlowInstanceId });
+                }
+            }
+            
         }
 
         /// <summary>
