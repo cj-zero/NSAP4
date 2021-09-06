@@ -126,9 +126,14 @@ namespace OpenAuth.App
             var serviceWorkOrder = await UnitWork.Find<ServiceWorkOrder>(s => serviceOrderIds.Contains(s.ServiceOrderId)).ToListAsync();
             var flowInstanceList = await UnitWork.Find<FlowInstance>(f => outsourcList.Select(o => o.FlowInstanceId).ToList().Contains(f.Id)).ToListAsync();
             result.Count = await query.CountAsync();
+            var userIds = outsourcList.Select(o => o.CreateUserId).ToList();
+            var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
+            var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
+            
             List<dynamic> outsourcs = new List<dynamic>();
             outsourcList.ForEach(o =>
             {
+                var orgName = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(o.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name;
                 var outsourcexpensesObj = o.OutsourcExpenses.FirstOrDefault();
                 var serviceWorkOrderObj = serviceWorkOrder.Where(s => s.ServiceOrderId == outsourcexpensesObj?.ServiceOrderId && s.CurrentUserNsapId.Equals(o.CreateUserId)).FirstOrDefault();
                 outsourcs.Add(new
@@ -146,7 +151,7 @@ namespace OpenAuth.App
                     StatusName = o.FlowInstanceId == null ? "未提交" : flowInstanceList.Where(f => f.Id.Equals(o.FlowInstanceId)).FirstOrDefault()?.IsFinish == FlowInstanceStatus.Rejected ? "驳回" : flowInstanceList.Where(f => f.Id.Equals(o.FlowInstanceId)).FirstOrDefault()?.ActivityName == "开始" ? "未提交" : flowInstanceList.Where(f => f.Id.Equals(o.FlowInstanceId)).FirstOrDefault()?.ActivityName == "结束" ? "已支付" : flowInstanceList.Where(f => f.Id.Equals(o.FlowInstanceId)).FirstOrDefault()?.ActivityName,
                     PayTime = o.PayTime != null ? Convert.ToDateTime(o.PayTime).ToString("yyyy.MM.dd HH:mm:ss") : null,
                     o.TotalMoney,
-                    o.CreateUser,
+                    CreateUser= orgName==null? o.CreateUser : orgName + "-"+ o.CreateUser,
                     o.Remark,
                     IsRejected = o.IsRejected ? "是" : null
                 });
@@ -360,6 +365,9 @@ namespace OpenAuth.App
             });
             var serviceOrderObj = await UnitWork.Find<ServiceOrder>(s => s.Id == outsourcObj.OutsourcExpenses.FirstOrDefault().ServiceOrderId).Include(s => s.ServiceWorkOrders).FirstOrDefaultAsync();
             var serviceDailyReportList = await UnitWork.Find<ServiceDailyReport>(s => outsourcObj.OutsourcExpenses.FirstOrDefault().ServiceOrderId == s.ServiceOrderId).ToListAsync();
+            var ocrd = await UnitWork.Find<OpenAuth.Repository.Domain.Sap.OCRD>(c => c.CardCode == serviceOrderObj.TerminalCustomerId).Select(c => new { c.Balance }).FirstOrDefaultAsync();
+            var relevance = await UnitWork.Find<Relevance>(c => c.Key == Define.USERORG && c.FirstId == outsourcObj.CreateUserId).Select(c => c.SecondId).ToListAsync();
+            var org = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(c => relevance.Contains(c.Id)).OrderByDescending(c => c.CascadeId).FirstOrDefaultAsync();
             result.Data = new
             {
                 BaseInfo = new
@@ -378,6 +386,8 @@ namespace OpenAuth.App
                     outsourcObj.CreateUser,
                     outsourcObj.ServiceMode,
                     StatusName,
+                    OrgName = org?.Name,
+                    Balance = ocrd?.Balance ?? 0m,
                 },
                 ServiceWorkOrderList = serviceOrderObj.ServiceWorkOrders.Where(s => s.CurrentUserNsapId.Equals(outsourcObj.CreateUserId)).Select(s => new
                 {

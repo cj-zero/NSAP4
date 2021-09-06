@@ -270,7 +270,9 @@ namespace OpenAuth.App.Material
                         select new { a, b };
             var terminalCustomerIds = query.Select(q => q.b.TerminalCustomerId).ToList();
             var ocrds = await UnitWork.Find<OCRD>(o => terminalCustomerIds.Contains(o.CardCode)).ToListAsync();
-
+            var userIds = query.Select(q => q.a.CreateUserId).ToList();
+            var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
+            var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
             result.Data = query.Select(q => new
             {
                 q.a.Id,
@@ -280,7 +282,7 @@ namespace OpenAuth.App.Material
                 q.b.CustomerId,
                 q.b.TerminalCustomerId,
                 q.a.TotalMoney,
-                q.a.CreateUser,
+                CreateUser= SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name==null? q.a.CreateUser:SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + q.a.CreateUser,
                 q.a.Remark,
                 q.a.SalesOrderId,
                 CreateTime = Convert.ToDateTime(q.a.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),

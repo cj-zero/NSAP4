@@ -53,7 +53,7 @@ namespace OpenAuth.App.Workbench
                                     from c in bc.DefaultIfEmpty()
                                     select new { a.Name, a.Id, OrgName = c.Name, c.CascadeId }).OrderByDescending(u => u.CascadeId).FirstOrDefaultAsync();
             var serviceDailyReportList = await UnitWork.Find<ServiceDailyReport>(s => ServiceOrderId == s.ServiceOrderId).ToListAsync();
-           
+
             var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId).Include(s => s.ServiceWorkOrders).Select(s => new ServiceOrderResp
             {
                 ServiceOrderId = s.Id.ToString(),
@@ -76,7 +76,7 @@ namespace OpenAuth.App.Workbench
                     Remark = w.Remark
                 }).ToList()
             }).FirstOrDefaultAsync();
-            serviceOrder.Balance = await UnitWork.Find<OCRD>(o => serviceOrder.TerminalCustomerId.Contains(o.CardCode)).Select(o=>o.Balance.ToString()).FirstOrDefaultAsync();
+            serviceOrder.Balance = await UnitWork.Find<OCRD>(o => serviceOrder.TerminalCustomerId.Contains(o.CardCode)).Select(o => o.Balance.ToString()).FirstOrDefaultAsync();
             serviceOrder.Petitioner = petitioner.OrgName + "-" + petitioner.Name;
             serviceOrder.PetitionerId = petitioner.Id;
             serviceOrder.ServiceDailyReports = serviceDailyReportList.Select(s => new ServiceDailyReportResp
@@ -95,7 +95,7 @@ namespace OpenAuth.App.Workbench
         /// <returns></returns>
         public async Task<QuotationDetailsResp> QuotationDetails(int QuotationId)
         {
-            var quotationObj = await _quotationApp.GeneralDetails(QuotationId,null);
+            var quotationObj = await _quotationApp.GeneralDetails(QuotationId, null);
             if (quotationObj == null)
             {
                 return null;
@@ -108,8 +108,8 @@ namespace OpenAuth.App.Workbench
                 WhsCode.AddRange(q.QuotationMaterials.Select(m => m.WhsCode).ToList());
                 materialCodes.AddRange(q.QuotationMaterials.Select(m => m.MaterialCode).ToList());
             });
-            var fileList = await UnitWork.Find<UploadFile>(f => (quotationPictures.Select(q=>q.PictureId).ToList()).Contains(f.Id)).ToListAsync();
-           
+            var fileList = await UnitWork.Find<UploadFile>(f => (quotationPictures.Select(q => q.PictureId).ToList()).Contains(f.Id)).ToListAsync();
+
             var quotationDetails = new QuotationDetailsResp
             {
                 QuotationId = quotationObj.Id,
@@ -127,14 +127,14 @@ namespace OpenAuth.App.Workbench
                 IsMaterialType = quotationObj.IsMaterialType,
                 Prepay = quotationObj.Prepay,
                 Remark = quotationObj.Remark,
-                WarrantyType=quotationObj.WarrantyType,
+                WarrantyType = quotationObj.WarrantyType,
                 Tentative = quotationObj.Tentative,
                 UpDateTime = Convert.ToDateTime(quotationObj.UpDateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 PayOnReceipt = quotationObj.PayOnReceipt,
                 TotalCostPrice = quotationObj.TotalCostPrice,
                 TotalMoney = quotationObj.TotalMoney,
                 QuotationStatus = quotationObj.QuotationStatus.ToString(),
-                FlowInstanceId=quotationObj.FlowInstanceId,
+                FlowInstanceId = quotationObj.FlowInstanceId,
                 QuotationOperationHistorys = quotationObj.QuotationOperationHistorys.Select(o => new OperationHistoryResp
                 {
                     ApprovalResult = o.ApprovalResult,
@@ -152,7 +152,7 @@ namespace OpenAuth.App.Workbench
                     MaterialCode = p.MaterialCode,
                     MaterialDescription = p.MaterialDescription,
                     WarrantyExpirationTime = p.WarrantyExpirationTime,
-                    WarrantyTime=p.WarrantyTime,
+                    WarrantyTime = p.WarrantyTime,
                     QuotationMaterials = p.QuotationMaterials.Select(m => new QuotationMaterialResp
                     {
                         MaterialCode = m.MaterialCode,
@@ -160,7 +160,7 @@ namespace OpenAuth.App.Workbench
                         Discount = m.Discount,
                         DiscountPrices = m.DiscountPrices,
                         SalesPrice = m.SalesPrice,
-                        Count =Convert.ToInt32(m.Count),
+                        Count = Convert.ToInt32(m.Count),
                         WhsCode = m.WhsCode,
                         MaterialType = Convert.ToInt32(m.MaterialType),
                         MaxQuantity = m.MaxQuantity,
@@ -170,7 +170,7 @@ namespace OpenAuth.App.Workbench
                         Unit = m.Unit,
                         TotalPrice = m.TotalPrice,
                         UnitPrice = m.UnitPrice,
-                        WarehouseQuantity= m.WarehouseQuantity.ToString(),
+                        WarehouseQuantity = m.WarehouseQuantity.ToString(),
                         Files = m.QuotationMaterialPictures.Select(p => new FileResp
                         {
                             FileId = p.PictureId,
@@ -183,7 +183,7 @@ namespace OpenAuth.App.Workbench
                 Files = quotationPictures.Select(q => new FileResp
                 {
                     FileId = q.PictureId,
-                    FileName = fileList.Where(f=>f.Id.Equals(q.PictureId)).FirstOrDefault()?.FileName,
+                    FileName = fileList.Where(f => f.Id.Equals(q.PictureId)).FirstOrDefault()?.FileName,
                     FileType = fileList.Where(f => f.Id.Equals(q.PictureId)).FirstOrDefault()?.FileType
                 }).ToList()
             };
@@ -358,8 +358,9 @@ namespace OpenAuth.App.Workbench
                 Remark = reimburseObj.Remark,
                 TotalMoney = reimburseObj.TotalMoney,
                 ReimburseMainId = reimburseObj.MainId,
-                Files= reimburseObj.ReimburseAttachments.Select(r=>new FileResp { 
-                    FileId=r.FileId,
+                Files = reimburseObj.ReimburseAttachments.Select(r => new FileResp
+                {
+                    FileId = r.FileId,
                     FileName = file.Where(s => s.Id.Equals(r.FileId)).FirstOrDefault().FileName,
                     FileType = file.Where(s => s.Id.Equals(r.FileId)).FirstOrDefault().FileType,
                 }).ToList(),
@@ -559,13 +560,15 @@ namespace OpenAuth.App.Workbench
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var reult = new TableData();
+            var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
+            var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
 
             if (req.PageType == 1)
             {
                 //待处理
                 var query = from a in UnitWork.Find<WorkbenchPending>(null)
                             join b in UnitWork.Find<FlowInstance>(null) on a.FlowInstanceId equals b.Id
-                            where (b.MakerList.Contains(loginContext.User.Id) || (b.MakerList == "1" && b.CustomName.Contains("物料报价单"))) && b.ActivityName!="待出库" && b.ActivityName != "开始"
+                            where (b.MakerList.Contains(loginContext.User.Id) || (b.MakerList == "1" && b.CustomName.Contains("物料报价单"))) && b.ActivityName != "待出库" && b.ActivityName != "开始"
                             select new { a, b };
                 query = query.WhereIf(!string.IsNullOrWhiteSpace(req.ApprovalNumber), q => q.a.ApprovalNumber == int.Parse(req.ApprovalNumber))
                             .WhereIf(!string.IsNullOrWhiteSpace(req.Petitioner), q => q.a.Petitioner.Contains(req.Petitioner))
@@ -589,7 +592,7 @@ namespace OpenAuth.App.Workbench
                     q.a.OrderType,
                     q.b.ActivityName,
                     q.a.UpdateTime
-                }).OrderByDescending(o=>o.UpdateTime).ToListAsync();
+                }).OrderByDescending(o => o.UpdateTime).ToListAsync();
                 List<int> salesManIds = new List<int>();
                 foreach (var p in pending)
                 {
@@ -600,7 +603,8 @@ namespace OpenAuth.App.Workbench
                         {
                             salesManIds.Add(p.ApprovalNumber);
                         }
-                    }else if(p.OrderType == 1 && p.ActivityName == "确认报价单")
+                    }
+                    else if (p.OrderType == 1 && p.ActivityName == "确认报价单")
                     {
                         if (!loginContext.User.Id.Equals(p.PetitionerId))
                         {
@@ -615,7 +619,22 @@ namespace OpenAuth.App.Workbench
                         }
                     }
                 }
-                reult.Data = pending.Where(p => !salesManIds.Contains(p.ApprovalNumber)).Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+                //SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(p.PetitionerId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + p.Petitioner;
+                reult.Data = pending.Where(p => !salesManIds.Contains(p.ApprovalNumber)).Skip((req.page - 1) * req.limit).Take(req.limit).Select(p => new
+                {
+                    p.TotalMoney,
+                    p.ApprovalNumber,
+                    p.TerminalCustomer,
+                    p.TerminalCustomerId,
+                    p.SourceNumbers,
+                    p.ServiceOrderSapId,
+                    p.Remark,
+                    Petitioner= SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(p.PetitionerId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + p.Petitioner,
+                    p.PetitionerId,
+                    p.OrderType,
+                    p.ActivityName,
+                    p.UpdateTime
+                }).ToList();
                 reult.Count = pending.Where(p => !salesManIds.Contains(p.ApprovalNumber)).Count();
             }
             else if (req.PageType == 2)
@@ -635,7 +654,7 @@ namespace OpenAuth.App.Workbench
                             .WhereIf(!string.IsNullOrWhiteSpace(req.TerminalCustomerId), q => q.a.TerminalCustomerId.Contains(req.TerminalCustomerId))
                             .WhereIf(!string.IsNullOrWhiteSpace(req.StartTime.ToString()), q => q.a.UpdateTime > req.StartTime)
                             .WhereIf(!string.IsNullOrWhiteSpace(req.EndTime.ToString()), q => q.a.UpdateTime > Convert.ToDateTime(req.EndTime).AddDays(1));
-                reult.Data = await query.Select(q => new
+                var pending = await query.Select(q => new
                 {
                     q.a.TotalMoney,
                     q.a.ApprovalNumber,
@@ -646,9 +665,25 @@ namespace OpenAuth.App.Workbench
                     q.a.Remark,
                     q.a.Petitioner,
                     q.a.OrderType,
+                    q.a.PetitionerId,
                     ActivityName = q.b.ActivityName == "开始" ? "驳回" : q.b.ActivityName,
                     q.a.UpdateTime
-                }).OrderByDescending(q=>q.UpdateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+                }).OrderByDescending(q => q.UpdateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+                reult.Data = pending.Select(p => new
+                {
+                    p.TotalMoney,
+                    p.ApprovalNumber,
+                    p.TerminalCustomer,
+                    p.TerminalCustomerId,
+                    p.SourceNumbers,
+                    p.ServiceOrderSapId,
+                    p.Remark,
+                    Petitioner = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(p.PetitionerId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name==null? p.Petitioner : SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(p.PetitionerId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + p.Petitioner,
+                    p.OrderType,
+                    p.PetitionerId,
+                    p.ActivityName,
+                    p.UpdateTime
+                }).ToList();
                 reult.Count = await query.CountAsync();
             }
             return reult;
@@ -673,7 +708,7 @@ namespace OpenAuth.App.Workbench
             return result;
         }
 
-        
+
 
     }
 }

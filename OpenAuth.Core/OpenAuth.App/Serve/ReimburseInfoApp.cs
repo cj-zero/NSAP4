@@ -292,8 +292,8 @@ namespace OpenAuth.App
                 Days=r.a.ReimburseTravellingAllowances?.Sum(r=>r.Days),
                 r.b.FromTheme,
                 r.c.SalesMan,
-                UserName = r.d.Name,
-                OrgName = r.f.Name,
+                UserName = r.f.Name==null? r.d.Name:r.f.Name + "-" + r.d.Name,
+                //OrgName = r.f.Name,
                 UpdateTime= r.a.ReimurseOperationHistories.OrderByDescending(r => r.CreateTime).FirstOrDefault()!=null?Convert.ToDateTime(r.a.ReimurseOperationHistories.OrderByDescending(r=>r.CreateTime).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"):Convert.ToDateTime(r.a.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss")
             }).OrderByDescending(r => r.UpdateTime).ToList();
             result.Data = ReimburseRespList;
