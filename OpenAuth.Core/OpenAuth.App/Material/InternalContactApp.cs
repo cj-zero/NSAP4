@@ -17,6 +17,7 @@ using Infrastructure.Mail;
 using System.IO;
 using Infrastructure.Export;
 using DinkToPdf;
+using OpenAuth.Repository.Domain.Workbench;
 
 namespace OpenAuth.App.Material
 {
@@ -272,6 +273,22 @@ namespace OpenAuth.App.Material
                         //设置测试环节执行人
                         await _flowInstanceApp.ModifyNodeUser(obj.FlowInstanceId, true, new string[] { obj.CheckApproveId }, obj.CheckApprove, false);
 
+                        await _workbenchApp.AddOrUpdate(new WorkbenchPending
+                        {
+                            OrderType = 5,
+                            TerminalCustomer = obj.CardName,
+                            TerminalCustomerId = obj.CardCode,
+                            ServiceOrderId = 0,
+                            ServiceOrderSapId = 0,
+                            UpdateTime = obj.CreateTime,
+                            Remark = "",
+                            FlowInstanceId = obj.FlowInstanceId,
+                            TotalMoney = 0,
+                            Petitioner = obj.CreateUser,
+                            SourceNumbers = Convert.ToInt32(obj.IW),
+                            PetitionerId = obj.CreateUserId
+                        });
+
                         await UnitWork.SaveAsync();
 
                         #region 发送邮件
@@ -473,6 +490,12 @@ namespace OpenAuth.App.Material
                 {
                     Status = internalContact.Status,
                     ApproveTime = internalContact.Status == 4 ? DateTime.Now : internalContact.ApproveTime
+                });
+
+                //修改全局待处理
+                await UnitWork.UpdateAsync<WorkbenchPending>(w => w.SourceNumbers == internalContact.IW.ToInt32() && w.OrderType == 5, w => new WorkbenchPending
+                {
+                    UpdateTime = DateTime.Now,
                 });
             }
             else if (req.HanleType == 2)//执行

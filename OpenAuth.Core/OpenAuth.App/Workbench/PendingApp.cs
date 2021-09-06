@@ -474,6 +474,72 @@ namespace OpenAuth.App.Workbench
         }
 
         /// <summary>
+        /// 内部联络单详情
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<dynamic> InternalcontactDetails(string id)
+        {
+
+            var detail = await UnitWork.Find<InternalContact>(c => c.IW == id)
+                            .Include(c => c.InternalContactAttchments)
+                            .Include(c => c.InternalContactBatchNumbers)
+                            .Include(c => c.InternalContactDeptInfos)
+                            .FirstOrDefaultAsync();
+            //操作历史
+            var operationHistories = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.InstanceId == detail.FlowInstanceId)
+                .OrderBy(c => c.CreateDate).Select(h => new
+                {
+                    CreateDate = Convert.ToDateTime(h.CreateDate).ToString("yyyy.MM.dd HH:mm:ss"),
+                    h.Remark,
+                    IntervalTime = h.IntervalTime != null && h.IntervalTime > 0 ? h.IntervalTime / 60 : null,
+                    h.CreateUserName,
+                    h.Content,
+                    h.ApprovalResult,
+                }).ToListAsync();
+
+            var reviceOrgList = detail.InternalContactDeptInfos.Where(c => c.Type == 1).Select(c => new
+            {
+                c.OrgName,
+                Detail = c.HandleTime != null ? "已查收" : "",
+                ReciveTime = c.HandleTime
+            });
+            var execOrgList = detail.InternalContactDeptInfos.Where(c => c.Type == 2).Select(c => new
+            {
+                c.OrgName,
+                Detail = c.Content,
+                ExecTime = c.HandleTime
+            });
+
+            return new
+            {
+                detail.Id,
+                detail.IW,
+                detail.Theme,
+                CardCodes = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardCode.Split(",") : new string[] { },
+                CardNames = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardName.Split(",") : new string[] { },
+                detail.Status,
+                detail.RdmsNo,
+                detail.SaleOrderNo,
+                detail.AdaptiveModel,
+                detail.ProductionNo,
+                AdaptiveRanges = detail.AdaptiveRange.Split(","),
+                Reasons = detail.Reason.Split(","),
+                BatchNumbers = detail.InternalContactBatchNumbers,
+                detail.CheckApproveId,
+                detail.CheckApprove,
+                detail.DevelopApproveId,
+                detail.DevelopApprove,
+                InternalContactReceiveDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 1).Select(c => new { c.OrgId, c.OrgName }).ToList(),
+                InternalContactExecDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 2).Select(c => new { c.OrgId, c.OrgName }).ToList(),
+                detail.Content,
+                reviceOrgList,
+                execOrgList,
+                operationHistories
+            };
+        }
+
+        /// <summary>
         /// 获取待处理订单详情
         /// </summary>
         /// <param name="req"></param>
@@ -482,11 +548,14 @@ namespace OpenAuth.App.Workbench
         {
             var reult = new TableData();
             var pendingObj = await UnitWork.Find<WorkbenchPending>(w => w.ApprovalNumber == int.Parse(req.ApprovalNumber)).FirstOrDefaultAsync();
-            var serviceOrderDetails = await ServiceOrderDetails(pendingObj.ServiceOrderId, pendingObj.PetitionerId);
+            ServiceOrderResp serviceOrderDetails = null;
+            if (pendingObj.ServiceOrderId!=0) 
+                serviceOrderDetails = await ServiceOrderDetails(pendingObj.ServiceOrderId, pendingObj.PetitionerId);
             QuotationDetailsResp quotationDetails = null;
             ReturnnoteDetailsResp returnnoteDetails = null;
             OutsourcDetailsResp outsourcDetails = null;
             ReimburseDetailsResp reimburseDetails = null;
+            dynamic internalcontactDetails = null;
             var quotation = new Quotation();
             switch (pendingObj.OrderType)
             {
@@ -534,6 +603,9 @@ namespace OpenAuth.App.Workbench
                     }
                     reimburseDetails = await ReimburseDetails(pendingObj.SourceNumbers);
                     break;
+                case 5:
+                    internalcontactDetails = await InternalcontactDetails(pendingObj.SourceNumbers.ToString());
+                    break;
             }
             if (pendingObj.OrderType == 3 || pendingObj.OrderType == 4)
             {
@@ -547,7 +619,8 @@ namespace OpenAuth.App.Workbench
                 quotationDetails,
                 returnnoteDetails,
                 outsourcDetails,
-                reimburseDetails
+                reimburseDetails,
+                internalcontactDetails
             };
             return reult;
         }
@@ -570,7 +643,7 @@ namespace OpenAuth.App.Workbench
                 //待处理
                 var query = from a in UnitWork.Find<WorkbenchPending>(null)
                             join b in UnitWork.Find<FlowInstance>(null) on a.FlowInstanceId equals b.Id
-                            where (b.MakerList.Contains(loginContext.User.Id) || (b.MakerList == "1" && b.CustomName.Contains("物料报价单"))) && b.ActivityName!="待出库" && b.ActivityName != "开始"
+                            where (b.MakerList.Contains(loginContext.User.Id) || (b.MakerList == "1" && b.CustomName.Contains("物料报价单"))) && b.ActivityName!="待出库" && b.ActivityName != "开始" && b.ActivityName!= "执行中"
                             select new { a, b };
                 query = query.WhereIf(!string.IsNullOrWhiteSpace(req.ApprovalNumber), q => q.a.ApprovalNumber == int.Parse(req.ApprovalNumber))
                             .WhereIf(!string.IsNullOrWhiteSpace(req.Petitioner), q => q.a.Petitioner.Contains(req.Petitioner))
