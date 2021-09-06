@@ -63,10 +63,17 @@ namespace OpenAuth.App
             {
                 loginUser = await GetUserId((int)req.AppUserId);
             }
+            List<int> serviceOrderIds = new List<int>();
+            if (!string.IsNullOrWhiteSpace(req.Customer))
+            {
+                var serviceOrderList = await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Contains(req.Customer) && s.TerminalCustomerId.Contains(req.Customer)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.NewestContacter, s.NewestContactTel }).ToListAsync();
+                serviceOrderIds = serviceOrderList.Select(s => s.Id).ToList();
+            }
             var returnNotes = UnitWork.Find<ReturnNote>(null).Include(r => r.ReturnNotePictures).Include(r => r.ReturnNoteProducts).ThenInclude(r => r.ReturnNoteMaterials)
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.SapId.ToString()), r => r.ServiceOrderSapId == req.SapId)
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()), r => r.SalesOrderId == req.SalesOrderId)
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), r => r.CreateTime > req.StartDate)
+                                .WhereIf(serviceOrderIds.Count()>0, r => serviceOrderIds.Contains(r.ServiceOrderId))
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), r => r.CreateTime < Convert.ToDateTime(req.EndDate).AddDays(1));
             #region 筛选条件
             //var schemeContent = await .FirstOrDefaultAsync();
@@ -165,60 +172,34 @@ namespace OpenAuth.App
             var result = new TableData();
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ReturnNoteTypeName")).Select(u => new { u.Name, u.DtValue }).ToListAsync();
             result.Count = await returnNotes.CountAsync();
-            var returnNoteList = await returnNotes.OrderByDescending(r => r.UpdateTime).ToListAsync();
+            var returnNoteList = await returnNotes.OrderByDescending(r => r.UpdateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
             flowInstanceIds = returnNoteList.Select(r => r.FlowInstanceId).ToList();
             var flowInstanceList = await UnitWork.Find<FlowInstance>(f => flowInstanceIds.Contains(f.Id)).ToListAsync();
-            List<ReturnNoteMainResp> returnNoteMainRespList = new List<ReturnNoteMainResp>();
-            if (!string.IsNullOrWhiteSpace(req.Customer))
-            {
-                var serviceOrders = await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Contains(req.Customer) && s.TerminalCustomerId.Contains(req.Customer)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.NewestContacter, s.NewestContactTel }).ToListAsync();
-                var serviceOrderIds = serviceOrders.Select(s => s.Id).ToList();
-                result.Count = returnNoteList.Where(r => serviceOrderIds.Contains(r.ServiceOrderId)).Count();
-                returnNoteList = returnNoteList.Where(r => serviceOrderIds.Contains(r.ServiceOrderId)).Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
-                returnNoteMainRespList = returnNoteList.Select(r => new ReturnNoteMainResp
-                {
-                    returnNoteId = r.Id,
-                    ServiceOrderId = r.ServiceOrderId,
-                    SalesOrderId = r.SalesOrderId,
-                    ServiceOrderSapId = r.ServiceOrderSapId,
-                    CreateUser = r.CreateUser,
-                    CreateTime = Convert.ToDateTime(r.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
-                    UpdateTime = Convert.ToDateTime(r.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
-                    TotalMoney = r.TotalMoney,
-                    Status = flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Rejected ? flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.ActivityName : "驳回",
-                    IsUpDate = flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Running ? flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Running ? true : false : false,
-                    IsLiquidated = r.IsLiquidated,
-                    Remark = r.Remark,
-                    InvoiceDocEntry = r.ReturnNoteProducts.FirstOrDefault().ReturnNoteMaterials.FirstOrDefault()?.InvoiceDocEntry,
-                    TerminalCustomer = serviceOrders.Where(s => s.Id == r.ServiceOrderId).FirstOrDefault()?.TerminalCustomer,
-                    TerminalCustomerId = serviceOrders.Where(s => s.Id == r.ServiceOrderId).FirstOrDefault()?.TerminalCustomerId,
-                }).ToList();
-            }
-            else
-            {
-                returnNoteList = returnNoteList.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
-                var serviceOrderIds = returnNoteList.Select(r => r.ServiceOrderId).ToList();
-                var serviceOrders = await UnitWork.Find<ServiceOrder>(s => serviceOrderIds.Contains(s.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId }).ToListAsync();
-                returnNoteMainRespList = returnNoteList.Select(r => new ReturnNoteMainResp
-                {
-                    returnNoteId = r.Id,
-                    ServiceOrderId = r.ServiceOrderId,
-                    SalesOrderId = r.SalesOrderId,
-                    ServiceOrderSapId = r.ServiceOrderSapId,
-                    CreateUser = r.CreateUser,
-                    CreateTime = Convert.ToDateTime(r.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
-                    UpdateTime = Convert.ToDateTime(r.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
-                    TotalMoney = r.TotalMoney,
-                    Status = flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Rejected ? flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.ActivityName : "驳回",
-                    IsUpDate = flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Running ? flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Running ? true : false : false,
-                    IsLiquidated = r.IsLiquidated,
-                    Remark = r.Remark,
-                    InvoiceDocEntry = r.ReturnNoteProducts.FirstOrDefault().ReturnNoteMaterials.FirstOrDefault()?.InvoiceDocEntry,
-                    TerminalCustomer = serviceOrders.Where(s => s.Id == r.ServiceOrderId).FirstOrDefault()?.TerminalCustomer,
-                    TerminalCustomerId = serviceOrders.Where(s => s.Id == r.ServiceOrderId).FirstOrDefault()?.TerminalCustomerId,
-                }).ToList();
+           
+            serviceOrderIds = returnNoteList.Select(r => r.ServiceOrderId).ToList();
+            var serviceOrders = await UnitWork.Find<ServiceOrder>(s => serviceOrderIds.Contains(s.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId }).ToListAsync();
+            var userIds = returnNoteList.Select(r => r.CreateUserId).ToList();
+            var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
+            var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
 
-            }
+            var returnNoteMainRespList = returnNoteList.Select(r => new ReturnNoteMainResp
+            {
+                returnNoteId = r.Id,
+                ServiceOrderId = r.ServiceOrderId,
+                SalesOrderId = r.SalesOrderId,
+                ServiceOrderSapId = r.ServiceOrderSapId,
+                CreateUser = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(r.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name == null ? r.CreateUser: SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(r.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name+"-"+r.CreateUser,
+                CreateTime = Convert.ToDateTime(r.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
+                UpdateTime = Convert.ToDateTime(r.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
+                TotalMoney = r.TotalMoney,
+                Status = flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Rejected ? flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.ActivityName : "驳回",
+                IsUpDate = flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Running ? flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Running ? true : false : false,
+                IsLiquidated = r.IsLiquidated,
+                Remark = r.Remark,
+                InvoiceDocEntry = r.ReturnNoteProducts.FirstOrDefault().ReturnNoteMaterials.FirstOrDefault()?.InvoiceDocEntry,
+                TerminalCustomer = serviceOrders.Where(s => s.Id == r.ServiceOrderId).FirstOrDefault()?.TerminalCustomer,
+                TerminalCustomerId = serviceOrders.Where(s => s.Id == r.ServiceOrderId).FirstOrDefault()?.TerminalCustomerId,
+            }).ToList();
             returnNoteMainRespList.ForEach(r => { r.StatusName = r.Status != null ? CategoryList.Where(c => c.DtValue.Equals(r.Status)).FirstOrDefault()?.Name : "未提交"; r.Status = r.Status != null ? r.Status : "开始"; });
             result.Data = returnNoteMainRespList;
             return result;
