@@ -358,6 +358,9 @@ namespace OpenAuth.App
             });
             var serviceOrderObj = await UnitWork.Find<ServiceOrder>(s => s.Id == outsourcObj.OutsourcExpenses.FirstOrDefault().ServiceOrderId).Include(s => s.ServiceWorkOrders).FirstOrDefaultAsync();
             var serviceDailyReportList = await UnitWork.Find<ServiceDailyReport>(s => outsourcObj.OutsourcExpenses.FirstOrDefault().ServiceOrderId == s.ServiceOrderId).ToListAsync();
+            var ocrd = await UnitWork.Find<OpenAuth.Repository.Domain.Sap.OCRD>(c => c.CardCode == serviceOrderObj.TerminalCustomerId).Select(c => new { c.Balance }).FirstOrDefaultAsync();
+            var relevance = await UnitWork.Find<Relevance>(c => c.Key == Define.USERORG && c.FirstId == outsourcObj.CreateUserId).Select(c => c.SecondId).ToListAsync();
+            var org = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(c => relevance.Contains(c.Id)).OrderByDescending(c => c.CascadeId).FirstOrDefaultAsync();
             result.Data = new
             {
                 BaseInfo = new
@@ -376,6 +379,8 @@ namespace OpenAuth.App
                     outsourcObj.CreateUser,
                     outsourcObj.ServiceMode,
                     StatusName,
+                    OrgName = org?.Name,
+                    Balance = ocrd?.Balance ?? 0m,
                 },
                 ServiceWorkOrderList = serviceOrderObj.ServiceWorkOrders.Where(s => s.CurrentUserNsapId.Equals(outsourcObj.CreateUserId)).Select(s => new
                 {
