@@ -5055,7 +5055,7 @@ namespace OpenAuth.App
                 .Select(s => s.Id).Distinct().ToListAsync();
             //获取该服务单的评价
             var serviceEvaluates = await UnitWork.Find<ServiceEvaluate>(w => serviceOrderIds.Contains((int)w.ServiceOrderId)).ToListAsync();
-            var query = UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
+            var query = UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id)&& w.Status==2)
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                 .Include(s => s.ServiceFlows)
                 .WhereIf(req.Type == 1, s => s.ServiceWorkOrders.All(a => a.Status ==1))//待处理
@@ -5099,7 +5099,6 @@ namespace OpenAuth.App
                     ProblemType = s.ServiceWorkOrders.Select(s => s.ProblemType).FirstOrDefault(),
                     ServiceFlows = s.ServiceFlows.Where(w => w.ServiceOrderId == s.Id && w.FlowType == 1).ToList()
                 });
-
             var result = new TableData();
             var list = (await query.OrderByDescending(o => o.Id)
             .Skip((req.page - 1) * req.limit)
@@ -5269,7 +5268,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
             }
-            var serviceOrderIds = await UnitWork.Find<ServiceOrder>(s => s.SalesManId == userInfo.UserID && s.VestInOrg==1 && s.AllowOrNot==0)
+            var serviceOrderIds = await UnitWork.Find<ServiceOrder>(s => s.SalesManId == userInfo.UserID && s.VestInOrg==1 && s.AllowOrNot==0 && s.Status==2)
                .Select(s => s.Id).ToListAsync();
             result.Data = serviceOrderIds.Count;
             return result;
