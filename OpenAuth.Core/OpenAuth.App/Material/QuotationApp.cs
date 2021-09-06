@@ -949,7 +949,7 @@ namespace OpenAuth.App.Material
             if (!string.IsNullOrWhiteSpace(request.ItemCode))
             {
                 var code = request.ItemCode.Substring(0, request.ItemCode.IndexOf("-") + 1);
-                query = query.Where(q => q.ItemCode.Substring(0, q.ItemCode.IndexOf("-") + 1).Equals(code) && !q.ItemCode.Equals(request.ItemCode));
+                query = query.Where(q => q.ItemCode.Substring(0, q.ItemCode.IndexOf("-") + 1).Equals(code));
             }
 
             //是否延保
