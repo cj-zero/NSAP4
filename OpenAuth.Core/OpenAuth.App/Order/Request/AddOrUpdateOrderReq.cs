@@ -5,36 +5,53 @@ using System.Text;
 
 namespace OpenAuth.App.Order.Request
 {
-	/// <summary>
-	/// 订单创建/修改
-	/// </summary>
-	public class AddOrderReq
-	{
-		/// <summary>
-		/// 提交类型
-		/// 0：草稿
-		/// 1：提交
-		/// 2：再次提交
-		/// </summary>
-		public OrderAtion Ations { get; set; }
-		/// <summary>
-		/// 销售报价单ID(创建时为0)
-		/// </summary>
-		public int JobId { get; set; }
-		/// <summary>
-		/// 是否来源销售订单
-		/// </summary>
-		public bool IsCopy { get; set; }
-		/// <summary>
-		/// 商品配置模板（1;有配置清单,0：无配置清单 ）
-		/// 草稿时默认为1;
-		/// </summary>
-		public string IsTemplate { get; set; }
-		/// <summary>
-		/// 订单
-		/// </summary>
-		public OrderDraft Order { get; set; }
-	}
+    /// <summary>
+    /// 订单创建/修改
+    /// </summary>
+    public class AddOrderReq
+    {
+        /// <summary>
+        /// 提交类型
+        /// 0：草稿
+        /// 1：提交
+        /// 2：再次提交
+        /// </summary>
+        public OrderAtion Ations { get; set; }
+        /// <summary>
+        /// 销售报价单ID(创建时为0)
+        /// </summary>
+        public int JobId { get; set; }
+        /// <summary>
+        /// 是否来源销售订单
+        /// </summary>
+        public bool IsCopy { get; set; }
+        /// <summary>
+        /// 商品配置模板（1;有配置清单,0：无配置清单 ）
+        /// 草稿时默认为1;
+        /// </summary>
+        public string IsTemplate { get; set; }
+        /// <summary>
+        /// 订单
+        /// </summary>
+        public OrderDraft Order { get; set; }
+    }
+    /// <summary>
+    /// 销售订单
+    /// </summary>
+    public class SalesOrderSaveReq
+    {
+        /// <summary>
+        /// 提交类型
+        /// 0：草稿
+        /// 1：提交
+        /// 2：再次提交
+        /// </summary>
+        public OrderAtion Ations { get; set; }
+        /// <summary>
+        /// 销售报价单ID(创建时为0)
+        /// </summary>
+        public int JobId { get; set; }
+    }
 
 	public class OrderDraft
 	{
