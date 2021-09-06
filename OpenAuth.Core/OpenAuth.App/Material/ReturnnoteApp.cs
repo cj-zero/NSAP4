@@ -362,8 +362,12 @@ namespace OpenAuth.App
             //查询应收发票  && s.LineStatus == "O"
             var saleinv1s = await UnitWork.Find<sale_inv1>(s => s.DocEntry == req.InvoiceDocEntry).ToListAsync();
             //是否存在退料记录
-            var materials = await UnitWork.Find<ReturnNoteMaterial>(r => req.InvoiceDocEntry == r.InvoiceDocEntry).ToListAsync();
-
+            var returnNoteProducts = await UnitWork.Find<ReturnNoteProduct>(r=>r.ProductCode.Equals(req.ProductCode)).Include(r=>r.ReturnNoteMaterials).Where(r=>r.ReturnNoteMaterials.Any(m=> req.InvoiceDocEntry ==m.InvoiceDocEntry)).ToListAsync();
+            List<ReturnNoteMaterial> materials = new List<ReturnNoteMaterial>();
+            returnNoteProducts.ForEach(r =>
+            {
+                materials.AddRange(r.ReturnNoteMaterials.ToList());
+            });
             List<sale_inv1> saleinv1List = new List<sale_inv1>();
             saleinv1s.ForEach(s =>
             {
@@ -473,12 +477,15 @@ namespace OpenAuth.App
             }
             var qoutationReq = await _pending.QuotationDetails(quotationObj.Id);
             var serviceOrders = await _pending.ServiceOrderDetails(returnNotes.ServiceOrderId, returnNotes.CreateUserId);
+            var status = flowInstanceObj?.IsFinish == FlowInstanceStatus.Rejected ? "驳回" : flowInstanceObj?.ActivityName == null ? "开始" : flowInstanceObj?.ActivityName;
+            var isPermission = IsPermission(status);
             result.Data = new
             {
                 InvoiceDocEntry,
                 DocTotal = DocTotal,
-                Status = flowInstanceObj?.IsFinish == FlowInstanceStatus.Rejected ? "驳回" : flowInstanceObj?.ActivityName == null ? "开始" : flowInstanceObj?.ActivityName,
                 returnNoteId = returnNotes.Id,
+                Status= status,
+                IsPermission= isPermission,
                 returnNotes,
                 serviceOrders,
                 flowPathResp,
@@ -488,6 +495,49 @@ namespace OpenAuth.App
             return result;
         }
 
+        /// <summary>
+        /// 返回是否有审批权限
+        /// </summary>
+        /// <param name="Status"></param>
+        /// <returns></returns>
+        private bool IsPermission(string Status)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            switch (Status)
+            {
+                case "储运收货":
+                    if (loginContext.Roles.Any(r => r.Name.Equals("储运人员")))
+                    {
+                        return true;
+                    }
+                    break;
+                case "品质检验":
+                    if (loginContext.Roles.Any(r => r.Name.Equals("品质")))
+                    {
+                        return true;
+                    }
+                    break;
+                case "总经理审批":
+                    if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
+                    {
+                        return true;
+                    }
+                    break;
+                case "仓库入库":
+                    if (loginContext.Roles.Any(r => r.Name.Equals("仓库")))
+                    {
+                        return true;
+                    }
+                    break;
+                default:
+                    break;
+            }
+            return false;
+        }
         /// <summary>
         /// 添加退料单
         /// </summary>
