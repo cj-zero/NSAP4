@@ -292,11 +292,40 @@ namespace OpenAuth.App
                 Days=r.a.ReimburseTravellingAllowances?.Sum(r=>r.Days),
                 r.b.FromTheme,
                 r.c.SalesMan,
-                UserName = r.d.Name,
-                OrgName = r.f.Name,
+                UserName = r.f.Name==null? r.d.Name:r.f.Name + "-" + r.d.Name,
+                //OrgName = r.f.Name,
                 UpdateTime= r.a.ReimurseOperationHistories.OrderByDescending(r => r.CreateTime).FirstOrDefault()!=null?Convert.ToDateTime(r.a.ReimurseOperationHistories.OrderByDescending(r=>r.CreateTime).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"):Convert.ToDateTime(r.a.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss")
             }).OrderByDescending(r => r.UpdateTime).ToList();
             result.Data = ReimburseRespList;
+            return result;
+        }
+        /// <summary>
+        /// 获取总金额待支付已支付金额
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetMoney(QueryReimburseInfoListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            List<string> UserIds = new List<string>();
+            if (!string.IsNullOrWhiteSpace(request.CreateUserName))
+            {
+                UserIds.AddRange(await UnitWork.Find<User>(u => u.Name.Contains(request.CreateUserName)).Select(u => u.Id).ToListAsync());
+            }
+            var result = new TableData();
+            var reimburseInfos = UnitWork.Find<ReimburseInfo>(null).WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId));
+            if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && request.PageType == 1 && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
+            {
+                reimburseInfos = reimburseInfos.Where(r => r.CreateUserId.Equals(loginContext.User.Id));
+            };
+            var totalmoney = await reimburseInfos.SumAsync(r => r.TotalMoney);
+            var havepaid = await reimburseInfos.Where(r=>r.RemburseStatus==9).SumAsync(r => r.TotalMoney);
+            var unpaid = await reimburseInfos.Where(r => r.RemburseStatus < 9 && r.RemburseStatus>3).SumAsync(r => r.TotalMoney);
+            result.Data = new { totalmoney, havepaid, unpaid };
             return result;
         }
 
@@ -1440,6 +1469,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+
             ReimurseOperationHistory eoh = new ReimurseOperationHistory();
 
             var dbContext = UnitWork.GetDbContext<ReimburseInfo>();
@@ -1447,6 +1477,7 @@ namespace OpenAuth.App
             {
                 try
                 {
+                    List<ReimurseOperationHistory> history = new List<ReimurseOperationHistory>();
                     foreach (var item in req.ReimburseId)
                     {
                         var obj = await UnitWork.Find<ReimburseInfo>(r => r.Id == item).FirstOrDefaultAsync();
@@ -1476,14 +1507,15 @@ namespace OpenAuth.App
                         eoh.ReimburseInfoId = obj.Id;
                         eoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalSeconds);
                         eoh.Id = Guid.NewGuid().ToString();
-                        await UnitWork.AddAsync<ReimurseOperationHistory>(eoh);
+                        history.Add(eoh);
                     }
+                    await UnitWork.BatchAddAsync<ReimurseOperationHistory>(history.ToArray());
                     await UnitWork.SaveAsync();
-                    transaction.Commit();
+                    await transaction.CommitAsync();
                 }
                 catch (Exception ex)
                 {
-                    transaction.Rollback();
+                    await transaction.RollbackAsync();
                     throw new Exception("审批失败,请重试" + ex.Message);
                 }
             }
