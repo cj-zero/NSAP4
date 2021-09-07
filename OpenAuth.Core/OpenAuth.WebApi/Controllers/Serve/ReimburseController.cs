@@ -58,7 +58,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetMoney(QueryReimburseInfoListReq request)
+        public async Task<TableData> GetMoney([FromQuery] QueryReimburseInfoListReq request)
         {
             return await _reimburseinfoapp.GetMoney(request);
         }
