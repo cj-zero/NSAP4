@@ -782,6 +782,21 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 批量审批
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task BatchAccraditation(List<AccraditationOutsourcReq> req)
+        {
+            if (req.Count() > 0) 
+            {
+                foreach (var item in req)
+                {
+                    await Accraditation(item);
+                }
+            }
+        }
+        /// <summary>
         /// 驳回单个
         /// </summary>
         /// <param name="req"></param>
