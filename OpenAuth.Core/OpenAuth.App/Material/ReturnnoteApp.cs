@@ -88,7 +88,7 @@ namespace OpenAuth.App
                     }
                     break;
                 case 2:
-                    if (loginContext.Roles.Any(r => r.Name.Equals("品质")))
+                    if (loginContext.Roles.Any(r => r.Name.Equals("物料品质")))
                     {
                         lineId = schemeJson.Nodes.Where(n => n.name.Equals("品质检验")).FirstOrDefault()?.id;
                     }
@@ -497,7 +497,7 @@ namespace OpenAuth.App
                     }
                     break;
                 case "品质检验":
-                    if (loginContext.Roles.Any(r => r.Name.Equals("品质")))
+                    if (loginContext.Roles.Any(r => r.Name.Equals("物料品质")))
                     {
                         return true;
                     }
