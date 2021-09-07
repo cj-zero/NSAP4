@@ -42,6 +42,7 @@ namespace OpenAuth.Repository.Domain
           this.CreateTime= DateTime.Now;
           this.CreateUserId= string.Empty;
           this.CreateUser= string.Empty;
+            this.IsTentative = false;
         }
 
         /// <summary>
@@ -152,6 +153,10 @@ namespace OpenAuth.Repository.Domain
         /// 流程ID
         /// </summary>
         public string FlowInstanceId { get; set; }
+        /// <summary>
+        /// 是否暂定
+        /// </summary>
+        public bool IsTentative { get; set; }
         /// <summary>
         /// 
         /// </summary>

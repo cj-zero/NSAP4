@@ -255,6 +255,7 @@ namespace OpenAuth.App.Material
                         obj.CreateTime = DateTime.Now;
                         obj.CreateUserId = loginContext.User.Id;
                         obj.CreateUser = loginContext.User.Name;
+                        obj.IsTentative = false;
 
 
                         //创建流程
@@ -291,9 +292,6 @@ namespace OpenAuth.App.Material
 
                         await UnitWork.SaveAsync();
 
-                        #region 发送邮件
-                        await SebdEmail(obj, "");
-                        #endregion
                     }
                     await transaction.CommitAsync();
                 }
@@ -450,7 +448,11 @@ namespace OpenAuth.App.Material
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
 
-            var internalContact = await UnitWork.Find<InternalContact>(c => c.Id == req.Id).FirstOrDefaultAsync();
+            var internalContact = await UnitWork.Find<InternalContact>(c => c.Id == req.Id)
+                                        .Include(c => c.InternalContactDeptInfos)
+                                        .Include(c => c.InternalContactAttchments)
+                                        .Include(c => c.InternalContactBatchNumbers)
+                                        .FirstOrDefaultAsync();
             var flowinstace = await UnitWork.Find<FlowInstance>(c => c.Id == internalContact.FlowInstanceId).FirstOrDefaultAsync();
             //审批
             if (req.HanleType == 1)
@@ -474,23 +476,61 @@ namespace OpenAuth.App.Material
                 }
                 else
                 {
-                    await _flowInstanceApp.Verification(verificationReq);
-                    if (loginContext.Roles.Any(c => c.Name.Equal("联络单测试审批")) && flowinstace.ActivityName == "测试审批") 
+                    if (req.IsTentative)
                     {
-                        internalContact.Status = 2;
-                        //设置研发环节执行人
-                        await _flowInstanceApp.ModifyNodeUser(flowinstace.Id, true, new string[] { internalContact.DevelopApproveId }, internalContact.DevelopApprove, false);
-                    } 
-                    else if (loginContext.Roles.Any(c => c.Name.Equal("联络单研发审批")) && flowinstace.ActivityName == "研发审批") internalContact.Status = 3;
-                    else if (loginContext.Roles.Any(c => c.Name.Equal("总经理")) && flowinstace.ActivityName == "总经理审批") internalContact.Status = 4;
-                    else internalContact.Status = 1;//驳回 撤回提交
+                        //添加操作记录
+                        FlowInstanceOperationHistory flowInstanceOperationHistory = new FlowInstanceOperationHistory
+                        {
+                            InstanceId = internalContact.FlowInstanceId,
+                            CreateUserId = loginContext.User.Id,
+                            CreateUserName = loginContext.User.Name,
+                            CreateDate = DateTime.Now,
+                            Content = flowinstace.ActivityName,
+                            Remark = req.Remark,
+                            ApprovalResult = "暂定",
+                            //ActivityId = flowInstance.ActivityId,
+                        };
+                        var fioh = await UnitWork.Find<FlowInstanceOperationHistory>(r => r.InstanceId.Equals(internalContact.FlowInstanceId)).OrderByDescending(r => r.CreateDate).FirstOrDefaultAsync();
+                        if (fioh != null)
+                        {
+                            flowInstanceOperationHistory.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalSeconds);
+                        }
+
+                        await UnitWork.AddAsync(flowInstanceOperationHistory);
+                        await UnitWork.UpdateAsync<InternalContact>(c => c.Id == req.Id, c => new InternalContact
+                        {
+                            IsTentative = true
+                        }); ;
+                    }
+                    else
+                    {
+                        await _flowInstanceApp.Verification(verificationReq);
+                        if (loginContext.Roles.Any(c => c.Name.Equal("联络单测试审批")) && flowinstace.ActivityName == "测试审批")
+                        {
+                            internalContact.Status = 2;
+                            //设置研发环节执行人
+                            await _flowInstanceApp.ModifyNodeUser(flowinstace.Id, true, new string[] { internalContact.DevelopApproveId }, internalContact.DevelopApprove, false);
+                        }
+                        else if (loginContext.Roles.Any(c => c.Name.Equal("联络单研发审批")) && flowinstace.ActivityName == "研发审批") internalContact.Status = 3;
+                        else if (loginContext.Roles.Any(c => c.Name.Equal("总经理")) && flowinstace.ActivityName == "总经理审批")
+                        {
+                            internalContact.Status = 4;
+
+                            #region 发送邮件
+                            await SebdEmail(internalContact, "");
+                            #endregion
+                        }
+                        else internalContact.Status = 1;//驳回 撤回提交
+
+                        await UnitWork.UpdateAsync<InternalContact>(c => c.Id == req.Id, c => new InternalContact
+                        {
+                            Status = internalContact.Status,
+                            ApproveTime = internalContact.Status == 4 ? DateTime.Now : internalContact.ApproveTime
+                        });
+                    }
+
                 }
 
-                await UnitWork.UpdateAsync<InternalContact>(c => c.Id == req.Id, c => new InternalContact
-                {
-                    Status = internalContact.Status,
-                    ApproveTime = internalContact.Status == 4 ? DateTime.Now : internalContact.ApproveTime
-                });
 
                 //修改全局待处理
                 await UnitWork.UpdateAsync<WorkbenchPending>(w => w.SourceNumbers == internalContact.IW.ToInt32() && w.OrderType == 5, w => new WorkbenchPending
@@ -518,15 +558,15 @@ namespace OpenAuth.App.Material
                 }
                 //await UnitWork.SaveAsync();
 
-                //var dept = await UnitWork.Find<InternalContactDeptInfo>(c => c.InternalContactId == req.Id).AllAsync(c => c.HandleTime != null);
-                //if (dept)
-                //{
-                //    //全部执行完后
-                //    await UnitWork.UpdateAsync<InternalContact>(c => c.Id == req.Id, c => new InternalContact
-                //    {
-                //        Status = 7
-                //    });
-                //}
+                var dept = await UnitWork.Find<InternalContactDeptInfo>(c => c.InternalContactId == req.Id).AllAsync(c => c.HandleTime != null);
+                if (dept)
+                {
+                    //全部执行完后
+                    await UnitWork.UpdateAsync<InternalContact>(c => c.Id == req.Id, c => new InternalContact
+                    {
+                        Status = 7
+                    });
+                }
             }
             await UnitWork.SaveAsync();
         }

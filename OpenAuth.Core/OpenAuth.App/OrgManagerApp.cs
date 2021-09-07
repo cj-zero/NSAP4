@@ -103,6 +103,15 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 根据公司获取部门
+        /// </summary>
+        /// <param name="corpId"></param>
+        /// <returns></returns>
+        public List<OpenAuth.Repository.Domain.Org> GetOrgs(string corpId)
+        {
+            return UnitWork.Find<OpenAuth.Repository.Domain.Org>(c => c.CorpId == corpId).ToList();
+        }
+        /// <summary>
         /// 获取部门树和用户
         /// </summary>
         /// <param name="corpId"></param>

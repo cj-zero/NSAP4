@@ -36,6 +36,22 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 根据公司获取部门
+        /// </summary>
+        /// <param name="corpId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public App.Response.TableData GetOrgs(string corpId)
+        {
+            return new App.Response.TableData
+            {
+                Count = _app.GetOrgs(corpId).Count,
+                Data = _app.GetOrgs(corpId)
+            };
+        }
+
+
         [HttpGet]
         public Response<List<OpenAuth.Repository.Domain.Org>> GetAllOrg()
         {
