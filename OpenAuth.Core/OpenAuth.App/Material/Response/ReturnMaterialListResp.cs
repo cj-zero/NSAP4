@@ -26,7 +26,7 @@ namespace OpenAuth.App.Material.Response
         /// <summary>
         /// sn和pn
         /// </summary>
-        public string SNandPn { get; set; }
+        public string SNandPN { get; set; }
         /// <summary>
         /// 原物料sn和pn
         /// </summary>

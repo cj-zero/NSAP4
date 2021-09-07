@@ -375,7 +375,7 @@ namespace OpenAuth.App
                 MaterialDescription = "",
                 Money = Convert.ToDecimal(s.Price),
                 QuotationMaterialId = quotationMergeMaterials.Where(q => q.MaterialCode.Equals(s.ItemCode) && Convert.ToDecimal(q.DiscountPrices).ToString("#0.00") == Convert.ToDecimal(s.Price).ToString("#0.00")).FirstOrDefault()?.Id,
-                SNandPn = "",
+                SNandPN = "",
                 ReplaceSNandPN = "",
                 ReplaceMaterialCode = s.ItemCode,
                 ReplaceMaterialDescription = s.Dscription
@@ -441,7 +441,7 @@ namespace OpenAuth.App
                     var returnNoteMaterials = MaterialList.Select(m => new ReturnNoteMaterial
                     {
                         ReplaceSNandPN = m.ReplaceSNandPN,
-                        SNandPN = m.SNandPn,
+                        SNandPN = m.SNandPN,
                         Money = m.Money,
                         ReplaceMaterialCode = m.ReplaceMaterialCode,
                         MaterialCode = m.MaterialCode,
