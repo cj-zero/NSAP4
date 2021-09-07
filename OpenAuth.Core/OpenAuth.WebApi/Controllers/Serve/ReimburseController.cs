@@ -52,7 +52,16 @@ namespace OpenAuth.WebApi.Controllers.Serve
 
             return result;
         }
-
+        /// <summary>
+        /// 获取总金额待支付已支付金额
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetMoney(QueryReimburseInfoListReq request)
+        {
+            return await _reimburseinfoapp.GetMoney(request);
+        }
         /// <summary>
         /// App查看报销单列表
         /// </summary>

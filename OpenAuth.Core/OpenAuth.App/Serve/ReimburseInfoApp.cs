@@ -299,6 +299,35 @@ namespace OpenAuth.App
             result.Data = ReimburseRespList;
             return result;
         }
+        /// <summary>
+        /// 获取总金额待支付已支付金额
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetMoney(QueryReimburseInfoListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            List<string> UserIds = new List<string>();
+            if (!string.IsNullOrWhiteSpace(request.CreateUserName))
+            {
+                UserIds.AddRange(await UnitWork.Find<User>(u => u.Name.Contains(request.CreateUserName)).Select(u => u.Id).ToListAsync());
+            }
+            var result = new TableData();
+            var reimburseInfos = UnitWork.Find<ReimburseInfo>(null).WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId));
+            if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && request.PageType == 1 && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
+            {
+                reimburseInfos = reimburseInfos.Where(r => r.CreateUserId.Equals(loginContext.User.Id));
+            };
+            var totalmoney = await reimburseInfos.SumAsync(r => r.TotalMoney);
+            var havepaid = await reimburseInfos.Where(r=>r.RemburseStatus==9).SumAsync(r => r.TotalMoney);
+            var unpaid = await reimburseInfos.Where(r => r.RemburseStatus < 9 && r.RemburseStatus>3).SumAsync(r => r.TotalMoney);
+            result.Data = new { totalmoney, havepaid, unpaid };
+            return result;
+        }
 
         /// <summary>
         /// App加载列表
