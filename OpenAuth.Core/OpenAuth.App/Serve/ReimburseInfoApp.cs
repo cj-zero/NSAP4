@@ -1469,6 +1469,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+
             ReimurseOperationHistory eoh = new ReimurseOperationHistory();
 
             var dbContext = UnitWork.GetDbContext<ReimburseInfo>();
@@ -1476,6 +1477,7 @@ namespace OpenAuth.App
             {
                 try
                 {
+                    List<ReimurseOperationHistory> history = new List<ReimurseOperationHistory>();
                     foreach (var item in req.ReimburseId)
                     {
                         var obj = await UnitWork.Find<ReimburseInfo>(r => r.Id == item).FirstOrDefaultAsync();
@@ -1505,14 +1507,15 @@ namespace OpenAuth.App
                         eoh.ReimburseInfoId = obj.Id;
                         eoh.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalSeconds);
                         eoh.Id = Guid.NewGuid().ToString();
-                        await UnitWork.AddAsync<ReimurseOperationHistory>(eoh);
+                        history.Add(eoh);
                     }
+                    await UnitWork.BatchAddAsync<ReimurseOperationHistory>(history.ToArray());
                     await UnitWork.SaveAsync();
-                    transaction.Commit();
+                    await transaction.CommitAsync();
                 }
                 catch (Exception ex)
                 {
-                    transaction.Rollback();
+                    await transaction.RollbackAsync();
                     throw new Exception("审批失败,请重试" + ex.Message);
                 }
             }
