@@ -249,7 +249,7 @@ namespace OpenAuth.App.Workbench
                 ApprovalResult = h.ApprovalResult,
                 ApprovalStage = h.ApprovalStage
             }).ToList();
-            if(string.IsNullOrWhiteSpace(returNnoteObj.FlowInstanceId)) returnnoteDetails.FlowPathResp = await _flowInstanceApp.FlowPathRespList(returnnoteDetails.ReturnNoteHistoryResp, returNnoteObj.FlowInstanceId);
+            if(!string.IsNullOrWhiteSpace(returNnoteObj.FlowInstanceId)) returnnoteDetails.FlowPathResp = await _flowInstanceApp.FlowPathRespList(returnnoteDetails.ReturnNoteHistoryResp, returNnoteObj.FlowInstanceId);
             returnnoteDetails.ReturnNotePictures = returNnoteObj.ReturnNotePictures.Select(r => new FileResp
             {
                 FileId = r.PictureId,
