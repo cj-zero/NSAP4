@@ -322,7 +322,7 @@ namespace OpenAuth.App
             {
                 reimburseInfos = reimburseInfos.Where(r => r.CreateUserId.Equals(loginContext.User.Id));
             };
-            var totalmoney = await reimburseInfos.SumAsync(r => r.TotalMoney);
+            var totalmoney = await reimburseInfos.Where(r => r.RemburseStatus <= 9 && r.RemburseStatus > 3).SumAsync(r => r.TotalMoney);
             var havepaid = await reimburseInfos.Where(r=>r.RemburseStatus==9).SumAsync(r => r.TotalMoney);
             var unpaid = await reimburseInfos.Where(r => r.RemburseStatus < 9 && r.RemburseStatus>3).SumAsync(r => r.TotalMoney);
             result.Data = new { totalmoney, havepaid, unpaid };
