@@ -1411,7 +1411,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             return tabledata;
         }
         /// <summary>
-        /// 导出
+        /// PDF打印（老）
         /// </summary>
         /// <param name="val"></param>
         /// <param name="Indicator"></param>
