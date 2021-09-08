@@ -10,11 +10,11 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 排序字段 更新日期：a.updatedate,单据：a.docentry，客户代码:a.cardcode,订单总金额：doctotal，销售员:a.slpcode
         /// </summary>
-        public string SortName { get; set; }
+        public string SortName { get; set; } = "a.updatedate";
         /// <summary>
         /// desc 降序，asc 升序
         /// </summary>
-        public string SortOrder { get; set; }
+        public string SortOrder { get; set; } = "desc";
         /// <summary>
         /// 账套Id
         /// </summary>

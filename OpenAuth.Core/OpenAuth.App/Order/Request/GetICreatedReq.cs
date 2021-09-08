@@ -27,10 +27,6 @@ namespace OpenAuth.App.Order.Request
 		/// </summary>
 		public string Customer { get; set; }
 		/// <summary>
-		/// 状态
-		/// </summary>
-		public string Status { get; set; }
-		/// <summary>
 		/// 开始时间
 		/// </summary>
 		public string BeginDate { get; set; }
