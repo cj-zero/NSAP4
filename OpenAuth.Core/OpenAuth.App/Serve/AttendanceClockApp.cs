@@ -272,9 +272,23 @@ namespace OpenAuth.App
             };
         }
 
-        public async Task AddWhiteList()
+        /// <summary>
+        /// 配置打卡推送名单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task AddWhiteList(AddWhiteListReq req)
         {
-            
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            await UnitWork.DeleteAsync<AttendanceClockWhileList>(c => c.Type == 1 || c.Type == 2);
+            await UnitWork.AddAsync<AttendanceClockWhileList>(new AttendanceClockWhileList { Type = 2, UserId = "", IsEnable = req.ServiceIsEnable });
+            await UnitWork.BatchAddAsync((from id in req.UserIds select new AttendanceClockWhileList { Type = 1, UserId = id, IsEnable = req.ConfigIsEnable }).ToArray());
+            await UnitWork.SaveAsync();
         }
 
         #region  App打卡提醒消息通知
