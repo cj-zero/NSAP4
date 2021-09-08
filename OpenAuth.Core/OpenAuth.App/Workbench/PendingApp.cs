@@ -160,7 +160,7 @@ namespace OpenAuth.App.Workbench
                         Discount = m.Discount,
                         DiscountPrices = m.DiscountPrices,
                         SalesPrice = m.SalesPrice,
-                        Count = Convert.ToInt32(m.Count),
+                        Count = Convert.ToDecimal(m.Count).ToString("#0.00"),
                         WhsCode = m.WhsCode,
                         MaterialType = Convert.ToInt32(m.MaterialType),
                         MaxQuantity = m.MaxQuantity,
@@ -249,7 +249,7 @@ namespace OpenAuth.App.Workbench
                 ApprovalResult = h.ApprovalResult,
                 ApprovalStage = h.ApprovalStage
             }).ToList();
-            returnnoteDetails.FlowPathResp = await _flowInstanceApp.FlowPathRespList(returnnoteDetails.ReturnNoteHistoryResp, returNnoteObj.FlowInstanceId);
+            if(!string.IsNullOrWhiteSpace(returNnoteObj.FlowInstanceId)) returnnoteDetails.FlowPathResp = await _flowInstanceApp.FlowPathRespList(returnnoteDetails.ReturnNoteHistoryResp, returNnoteObj.FlowInstanceId);
             returnnoteDetails.ReturnNotePictures = returNnoteObj.ReturnNotePictures.Select(r => new FileResp
             {
                 FileId = r.PictureId,
@@ -620,6 +620,7 @@ namespace OpenAuth.App.Workbench
                             .WhereIf(!string.IsNullOrWhiteSpace(req.TerminalCustomer), q => q.a.TerminalCustomer.Contains(req.TerminalCustomer))
                             .WhereIf(!string.IsNullOrWhiteSpace(req.TerminalCustomerId), q => q.a.TerminalCustomerId.Contains(req.TerminalCustomerId))
                             .WhereIf(!string.IsNullOrWhiteSpace(req.StartTime.ToString()), q => q.a.UpdateTime > req.StartTime)
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.SourceNumbers), q => q.a.SourceNumbers == int.Parse(req.SourceNumbers))
                             .WhereIf(!string.IsNullOrWhiteSpace(req.EndTime.ToString()), q => q.a.UpdateTime > Convert.ToDateTime(req.EndTime).AddDays(1));
                 var pending = await query.OrderByDescending(q => q.a.UpdateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
                 reult.Data = pending.Select(q => new

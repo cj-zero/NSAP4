@@ -217,7 +217,7 @@ namespace OpenAuth.App.Workbench.Response
         /// <summary>
         ///数量
         /// </summary>
-        public int? Count { get; set; }
+        public string Count { get; set; }
 
         /// <summary>
         ///最大数量
