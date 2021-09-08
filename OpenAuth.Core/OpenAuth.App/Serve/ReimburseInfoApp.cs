@@ -322,10 +322,14 @@ namespace OpenAuth.App
             {
                 reimburseInfos = reimburseInfos.Where(r => r.CreateUserId.Equals(loginContext.User.Id));
             };
-            var totalmoney = await reimburseInfos.SumAsync(r => r.TotalMoney);
-            var havepaid = await reimburseInfos.Where(r=>r.RemburseStatus==9).SumAsync(r => r.TotalMoney);
-            var unpaid = await reimburseInfos.Where(r => r.RemburseStatus < 9 && r.RemburseStatus>3).SumAsync(r => r.TotalMoney);
-            result.Data = new { totalmoney, havepaid, unpaid };
+            var reimburseInfoList= await reimburseInfos.Select(r => new { r.RemburseStatus, r.TotalMoney, r.ServiceOrderId }).ToListAsync();
+            var serverOrderIds = reimburseInfoList.Select(r => r.ServiceOrderId).ToList();
+            var expends = await UnitWork.Find<ServiceDailyExpends>(s => !serverOrderIds.Contains(s.ServiceOrderId)).WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId)).SumAsync(s => s.TotalMoney);
+            var totalmoney = reimburseInfoList.Sum(r => r.TotalMoney)+ expends;
+            var havepaid = reimburseInfoList.Where(r=>r.RemburseStatus==9).Sum(r => r.TotalMoney);
+            var unpaid = reimburseInfoList.Where(r => r.RemburseStatus < 9 && r.RemburseStatus>3).Sum(r => r.TotalMoney);
+            var notsubmit = reimburseInfoList.Where(r => r.RemburseStatus <= 3).Sum(r => r.TotalMoney)+ expends;
+            result.Data = new { totalmoney, havepaid, unpaid, notsubmit };
             return result;
         }
 
