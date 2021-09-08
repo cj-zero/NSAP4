@@ -96,7 +96,7 @@ namespace OpenAuth.App
             builder.RegisterType<MinioFileStore>().As<IFileStore>();
             //注册数据库基础操作和工作单元
             builder.RegisterGeneric(typeof(BaseRepository<>)).As(typeof(IRepository<>));
-            builder.RegisterType(typeof(UnitWork)).As(typeof(IUnitWork)).InstancePerLifetimeScope();
+            builder.RegisterType(typeof(UnitWork)).As(typeof(IUnitWork));
 
             //注入授权
             builder.RegisterType(typeof(LocalAuth)).As(typeof(IAuth));

@@ -51,7 +51,11 @@ namespace OpenAuth.App.Order.Request
         /// 销售报价单ID(创建时为0)
         /// </summary>
         public int JobId { get; set; }
-    }
+		/// <summary>
+		/// 备注
+		/// </summary>
+		public string Comments { get; set; }
+	}
 
 	public class OrderDraft
 	{
