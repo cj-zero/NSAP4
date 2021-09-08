@@ -17,7 +17,8 @@ namespace OpenAuth.App.SignalR
 
         public string GetUserId(HubConnectionContext connection)
         {
-            return  _authUtil.GetCurrentUser().User.Name;
+            return _authUtil.GetUserName();
+            // return  _authUtil.GetCurrentUser().User.Name;
         }
     }
 }
