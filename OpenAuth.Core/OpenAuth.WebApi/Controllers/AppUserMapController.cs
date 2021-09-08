@@ -39,8 +39,26 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        //根据 AppUserId 获取详情
+        [HttpGet]
+        public Response<AppUserMap> GetByAppUserId(int appUserId)
+        {
+            var result = new Response<AppUserMap>();
+            try
+            {
+                result.Result = _app.GetByAppUserId(appUserId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{appUserId}， 错误：{result.Message}");
+            }
+            return result;
+        }
+
         //添加
-       [HttpPost]
+        [HttpPost]
         public Response Add(AddOrUpdateAppUserMapReq obj)
         {
             var result = new Response();
