@@ -620,6 +620,7 @@ namespace OpenAuth.App.Workbench
                             .WhereIf(!string.IsNullOrWhiteSpace(req.TerminalCustomer), q => q.a.TerminalCustomer.Contains(req.TerminalCustomer))
                             .WhereIf(!string.IsNullOrWhiteSpace(req.TerminalCustomerId), q => q.a.TerminalCustomerId.Contains(req.TerminalCustomerId))
                             .WhereIf(!string.IsNullOrWhiteSpace(req.StartTime.ToString()), q => q.a.UpdateTime > req.StartTime)
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.SourceNumbers), q => q.a.SourceNumbers == int.Parse(req.SourceNumbers))
                             .WhereIf(!string.IsNullOrWhiteSpace(req.EndTime.ToString()), q => q.a.UpdateTime > Convert.ToDateTime(req.EndTime).AddDays(1));
                 var pending = await query.OrderByDescending(q => q.a.UpdateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
                 reult.Data = pending.Select(q => new
