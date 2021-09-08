@@ -575,7 +575,7 @@ namespace OpenAuth.App
                             afir.CustomName = $"个人代理结算单";
                             afir.FrmData = "{\"ID\":\"" + outsourcObj.Id + "\"}";
                             afir.OrgId = loginContext.Orgs.OrderBy(o => o.CascadeId).FirstOrDefault()?.Id;
-                            obj.FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
+                            outsourcObj.FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
                             //增加全局待处理
                             var serviceOrederObj = await UnitWork.Find<ServiceOrder>(s => s.Id == outsourcObj.OutsourcExpenses.FirstOrDefault().ServiceOrderId).FirstOrDefaultAsync();
                             await _workbenchApp.AddOrUpdate(new WorkbenchPending
@@ -604,7 +604,7 @@ namespace OpenAuth.App
                     await UnitWork.UpdateAsync<Outsourc>(o => o.Id == req.outsourcId, u => new Outsourc
                     {
                         TotalMoney = obj.TotalMoney,
-                        FlowInstanceId = obj.FlowInstanceId,
+                        FlowInstanceId = outsourcObj.FlowInstanceId,
                         UpdateTime = DateTime.Now,
                         //todo:补充或调整自己需要的字段
                     });
