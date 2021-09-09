@@ -402,7 +402,7 @@ namespace OpenAuth.App
             }
             var result = new TableData();
 
-            var quotation = await UnitWork.Find<Quotation>(c => !string.IsNullOrWhiteSpace(c.SalesOrderId.ToString()))
+            var quotation = await UnitWork.Find<Quotation>(c => !string.IsNullOrWhiteSpace(c.SalesOrderId.ToString()) && c.CreateUserId == loginUser.Id)
                                     .WhereIf(!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()), c => c.SalesOrderId == req.SalesOrderId)
                                     .WhereIf(!string.IsNullOrWhiteSpace(req.QuotationId.ToString()), c => c.Id == req.QuotationId)
                                     .ToListAsync();
