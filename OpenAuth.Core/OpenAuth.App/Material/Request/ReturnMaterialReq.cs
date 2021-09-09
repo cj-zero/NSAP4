@@ -8,6 +8,10 @@ namespace OpenAuth.App.Material.Request
     public class ReturnMaterialReq: PageReq
     {
         /// <summary>
+        /// 领料单号
+        /// </summary>
+        public int? QuotationId { get; set; }
+        /// <summary>
         /// 退料单id
         /// </summary>
         public int? returnNoteId { get; set; }

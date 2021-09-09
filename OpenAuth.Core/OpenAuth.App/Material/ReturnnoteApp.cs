@@ -384,6 +384,53 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 获取领料单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetQuotationList(ReturnMaterialReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            if (loginUser.Account == Define.USERAPP && req.AppUserId > 0)
+            {
+                loginUser = await GetUserId((int)req.AppUserId);
+            }
+            var result = new TableData();
+
+            var quotation = await UnitWork.Find<Quotation>(c => !string.IsNullOrWhiteSpace(c.SalesOrderId.ToString()))
+                                    .WhereIf(!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()), c => c.SalesOrderId == req.SalesOrderId)
+                                    .WhereIf(!string.IsNullOrWhiteSpace(req.QuotationId.ToString()), c => c.Id == req.QuotationId)
+                                    .ToListAsync();
+            var serviceOrderIds = quotation.Select(c => c.ServiceOrderId).ToList();
+
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => serviceOrderIds.Contains(c.Id))
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.Customer),c=>c.TerminalCustomer.Contains(req.Customer) || c.TerminalCustomerId.Contains(req.Customer))
+                            .Select(c => new { c.Id, c.TerminalCustomer, c.TerminalCustomerId })
+                            .ToListAsync();
+
+            var query = from a in quotation
+                        join b in serviceOrder on a.ServiceOrderId equals b.Id
+                        select new { a, b };
+            result.Data = query.Skip((req.page - 1) * req.limit).Take(req.limit).Select(c => new
+            {
+                c.a.Id,
+                c.a.SalesOrderId,
+                c.b.TerminalCustomerId,
+                c.b.TerminalCustomer,
+                c.a.TotalMoney,
+                c.a.CreateTime,
+                c.a.CreateUser,
+                c.a.Remark
+            });
+            return result;
+        }
+
+        /// <summary>
         /// 查询退料信息列表
         /// </summary>
         /// <param name="req"></param>
@@ -779,6 +826,10 @@ namespace OpenAuth.App
                 {
                     foreach (var item in req.returnnoteMaterials)
                     {
+                        if (string.IsNullOrWhiteSpace(item.GoodWhsCode) && string.IsNullOrWhiteSpace(item.SecondWhsCode))
+                        {
+                            throw new Exception("仓库不能为空。");
+                        }
                         await UnitWork.UpdateAsync<ReturnNoteMaterial>(r => r.Id.Equals(item.MaterialsId), r => new ReturnNoteMaterial { GoodWhsCode = item.GoodWhsCode, SecondWhsCode = item.SecondWhsCode });
                     }
                 }
