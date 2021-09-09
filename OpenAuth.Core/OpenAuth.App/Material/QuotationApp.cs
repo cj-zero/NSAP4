@@ -784,6 +784,7 @@ namespace OpenAuth.App.Material
                     if (m.DiscountPrices < 0) m.DiscountPrices = m.SalesPrice == 0 && m.MaterialType != "3" && m.MaterialType != "3" ? decimal.Parse(Convert.ToDecimal(m.UnitPrice * 3 * (m.Discount / 100)).ToString("#0.00")) : decimal.Parse(Convert.ToDecimal(m.SalesPrice * (m.Discount / 100)).ToString("#0.00"));
                     if (IsUpdate != null && (bool)IsUpdate) m.UnitPrice = quotationMaterials.Where(q => q.MaterialCode.Equals(m.MaterialCode)).FirstOrDefault()?.UnitPrice;
                     if (IsUpdate != null && (bool)IsUpdate) m.SalesPrice = quotationMaterials.Where(q => q.MaterialCode.Equals(m.MaterialCode)).FirstOrDefault()?.SalesPrice;
+                    if (IsUpdate != null && (bool)IsUpdate) m.Discount = m.MaterialType != "4" && m.MaterialType != "3" && m.SalesPrice > 0 ? Convert.ToDecimal(m.DiscountPrices / m.SalesPrice) * 100 : m.Discount;
                 }
                 )
             );
@@ -2344,7 +2345,7 @@ namespace OpenAuth.App.Material
                 {
                     if (m.MaterialType != 4 && m.MaterialType != 3 && m.SalesPrice > 0 && Convert.ToDouble(m.DiscountPrices / m.SalesPrice) < 0.4)
                     {
-                        throw new Exception("金额有误请重新输入");
+                        throw new Exception($"【{q.ProductCode}】序列号下【{m.MaterialCode}】物料金额有误请重新输入");
                     }
                     m.SalesPrice = m.MaterialType != 3 ? m.SalesPrice : 0;
                     m.DiscountPrices = m.MaterialType != 3 && m.MaterialType != 4 ? m.DiscountPrices : 0;
