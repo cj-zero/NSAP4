@@ -95,7 +95,7 @@ namespace OpenAuth.App.Order
 			}
 			else
 			{
-				sortString = string.Format("{0} {1}", "a.docentry", query.SortName, query.SortOrder);
+				sortString = string.Format("{0} {1}", query.SortName, query.SortOrder);
 			}
 			string dRowData = string.Empty;
 			#region 搜索条件
@@ -153,7 +153,7 @@ namespace OpenAuth.App.Order
 			if (!string.IsNullOrWhiteSpace(query.FirstTime) && !string.IsNullOrWhiteSpace(query.LastTime))
 			{
 
-				filterString += string.Format("DATE_FORMAT(a.UpdateDate,'%Y/%m/%d')  BETWEEN '{0}' AND '{1}' AND ", query.FirstTime.ToDateTime(), query.LastTime.ToDateTime());
+				filterString += string.Format("DATE_FORMAT(a.UpdateDate,'%Y-%m-%d')  BETWEEN '{0}' AND '{1}' AND ", query.FirstTime, query.LastTime);
 			}
 			//if (type == "ODLN")
 			//{
@@ -480,8 +480,17 @@ namespace OpenAuth.App.Order
 			paramOut.Direction = ParameterDirection.Output;
 			sqlParameters.Add(paramOut);
 			DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, $"sp_common_pager", CommandType.StoredProcedure, sqlParameters);
-			tableData.Count = Convert.ToInt32(paramOut.Value);
-			rowCounts = Convert.ToInt32(sqlParameters[7].Value);
+			if (dt.Rows.Count>0)
+			{
+				tableData.Count = Convert.ToInt32(paramOut.Value);
+				rowCounts = Convert.ToInt32(sqlParameters[7].Value);
+			}
+			else
+			{
+				tableData.Count = 0;
+				rowCounts = 0;
+			}
+			
 			// dt = Sql.SAPSelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCounts);
 			if (type.ToLower() == "ordr" || type.ToLower() == "opor")
 			{
@@ -3731,7 +3740,17 @@ namespace OpenAuth.App.Order
 			};
 			sqlParameters[7].Direction = ParameterDirection.Output;
 			DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, "sp_common_pager", CommandType.StoredProcedure, sqlParameters);
-			rowsCount = isTotal == 1 ? Convert.ToInt32(sqlParameters[7].Value) : 0;
+			//rowsCount = isTotal == 1 ? Convert.ToInt32(sqlParameters[7].Value) : 0;
+			if (dataTable.Rows.Count>0)
+			{
+				rowsCount = isTotal == 1 ? Convert.ToInt32(sqlParameters[7].Value) : 0;
+
+			}
+			else
+			{
+				rowsCount = 0;
+
+			}
 			return dataTable;
 		}
 
@@ -4799,9 +4818,9 @@ namespace OpenAuth.App.Order
 				{
 					filterString += string.Format(" (a.card_code LIKE '%{0}%' OR a.card_name LIKE '%{0}%') AND ", model.Customer);
 				}
-				if (model.Status != "")
+				if (model.Job_state != "")
 				{
-					filterString += string.Format(" a.job_state = {0} AND ", int.Parse(model.Status));
+					filterString += string.Format(" a.job_state = {0} AND ", int.Parse(model.Job_state));
 				}
 				if (model.BeginDate != "")
 				{
@@ -5490,7 +5509,7 @@ namespace OpenAuth.App.Order
 		/// <summary>
 		/// 流程图
 		/// </summary>
-		public string GetFlowChartByJobID(string jobID)
+		public FlowChart GetFlowChartByJobID(string jobID)
 		{
 			DataTable logTable = GetAuditLogWithFlowChart(jobID);
 			if (logTable.Rows.Count > 0)
@@ -5566,9 +5585,10 @@ namespace OpenAuth.App.Order
 					flowSteps.Add(flowStep);
 				}
 				flowChart.Steps = flowSteps;
-				return JsonHelper.ParseModel(flowChart);
+				//return JsonHelper.ParseModel(flowChart);
+				return flowChart;
 			}
-			else return "";
+			else return null;
 		}
 		/// <summary>
 		/// 获取指定流程任务的审核记录
