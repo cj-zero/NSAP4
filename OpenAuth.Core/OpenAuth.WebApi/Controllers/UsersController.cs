@@ -160,8 +160,19 @@ namespace OpenAuth.WebApi.Controllers
         [HttpPost]
         public async Task<Response> BindAppUser(AddOrUpdateAppUserMapReq request)
         {
-            await _app.BindAppUser(request);
-            return new Response();
+            var result = new Response();
+            try
+            {
+                await _app.BindAppUser(request);
+                result.Message = "绑定成功！";
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
         }
         /// <summary>
         /// 加载指定部门的用户

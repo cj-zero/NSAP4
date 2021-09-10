@@ -338,6 +338,23 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task BindAppUser(AddOrUpdateAppUserMapReq req)
         {
+            // 校验ERP账号是否被重复绑定
+            var  userMapsList = await UnitWork.Find<AppUserMap>(r => r.UserID == req.UserID).ToListAsync();
+            if (userMapsList.Count >0)
+            {
+                // 是该用户绑定
+                var exis_erp = userMapsList.Where(c=>c.AppUserId == req.AppUserId).FirstOrDefault();
+                if(userMapsList.Count == 1 && exis_erp != null)
+                {
+                    // 允许绑定
+                }
+                else
+                {
+                    var firstUserMap = userMapsList.FirstOrDefault();
+                    var appUserId = firstUserMap.AppUserId;
+                    throw new Exception("当前ERP 账号已被其他APP账号绑定！AppUserId:" + appUserId);
+                }
+            }
             var o = await UnitWork.FindSingleAsync<AppUserMap>(a => a.AppUserId == req.AppUserId);
             if (o is null)
             {
