@@ -267,7 +267,9 @@ namespace OpenAuth.App
                 Data = new
                 {
                     pushlist,
-                    serviceOrderUserList
+                    serviceOrderUserList,
+                    ServiceIsEnable= whileLists.Any(c=>c.IsEnable && c.Type==2),
+                    ConfigIsEnable = whileLists.Any(c => c.IsEnable && c.Type == 1)
                 }
             };
         }
