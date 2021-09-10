@@ -1833,7 +1833,8 @@ namespace OpenAuth.App
             }
             //判断当前服务单是否已确认
             var isExist = await UnitWork.Find<ServiceOrder>(s => s.Id == req.serviceOrderId && s.SalesManId.Equals(loginUser.Id)).FirstOrDefaultAsync() == null ? true : false;
-            if (isExist)
+            var isRole = loginContext.Roles.Any(c => c.Name.Contains("呼叫中心"));
+            if (isExist && !isRole)
             {
                 throw new CommonException("暂无此服务单审批权限", 60019);
             }
