@@ -18,6 +18,7 @@ using System.IO;
 using Infrastructure.Export;
 using DinkToPdf;
 using OpenAuth.Repository.Domain.Workbench;
+using Microsoft.AspNetCore.Http;
 
 namespace OpenAuth.App.Material
 {
@@ -411,7 +412,7 @@ namespace OpenAuth.App.Material
                 detail.Id,
                 detail.IW,
                 detail.Theme,
-                CardCodes =!string.IsNullOrWhiteSpace(detail.CardCode)? detail.CardCode.Split(","):new string[] { },
+                CardCodes = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardCode.Split(",") : new string[] { },
                 CardNames = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardName.Split(",") : new string[] { },
                 detail.Status,
                 detail.RdmsNo,
@@ -425,8 +426,8 @@ namespace OpenAuth.App.Material
                 detail.CheckApprove,
                 detail.DevelopApproveId,
                 detail.DevelopApprove,
-                InternalContactReceiveDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 1).Select(c => new { c.OrgId, c.OrgName }).ToList(),
-                InternalContactExecDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 2).Select(c => new { c.OrgId, c.OrgName }).ToList(),
+                InternalContactReceiveDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 1).Select(c => new { c.OrgId, c.OrgName, c.UserId, c.UserName }).ToList(),
+                InternalContactExecDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 2).Select(c => new { c.OrgId, c.OrgName, c.UserId, c.UserName }).ToList(),
                 detail.Content,
                 reviceOrgList,
                 execOrgList,
@@ -522,15 +523,15 @@ namespace OpenAuth.App.Material
                         }
                         else internalContact.Status = 1;//驳回 撤回提交
 
-                        await UnitWork.UpdateAsync<InternalContact>(c => c.Id == req.Id, c => new InternalContact
-                        {
-                            Status = internalContact.Status,
-                            ApproveTime = internalContact.Status == 4 ? DateTime.Now : internalContact.ApproveTime
-                        });
                     }
 
                 }
 
+                await UnitWork.UpdateAsync<InternalContact>(c => c.Id == req.Id, c => new InternalContact
+                {
+                    Status = internalContact.Status,
+                    ApproveTime = internalContact.Status == 4 ? DateTime.Now : internalContact.ApproveTime
+                });
 
                 //修改全局待处理
                 await UnitWork.UpdateAsync<WorkbenchPending>(w => w.SourceNumbers == internalContact.IW.ToInt32() && w.OrderType == 5, w => new WorkbenchPending
@@ -543,14 +544,14 @@ namespace OpenAuth.App.Material
                 var loginOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault();
                 if (req.ExecType == 1)//接收
                 {
-                    await UnitWork.UpdateAsync<InternalContactDeptInfo>(c => c.InternalContactId == req.Id && c.OrgId == loginOrg.Id && c.Type == 1, c => new InternalContactDeptInfo
+                    await UnitWork.UpdateAsync<InternalContactDeptInfo>(c => c.InternalContactId == req.Id && c.UserId == loginContext.User.Id && c.Type == 1, c => new InternalContactDeptInfo
                     {
                         HandleTime = DateTime.Now
                     });
                 }
                 else if (req.ExecType == 2)//执行
                 {
-                    await UnitWork.UpdateAsync<InternalContactDeptInfo>(c => c.InternalContactId == req.Id && c.OrgId == loginOrg.Id && c.Type == 2, c => new InternalContactDeptInfo
+                    await UnitWork.UpdateAsync<InternalContactDeptInfo>(c => c.InternalContactId == req.Id && c.UserId == loginContext.User.Id && c.Type == 2, c => new InternalContactDeptInfo
                     {
                         HandleTime = DateTime.Now,
                         Content = req.Remark
@@ -564,7 +565,8 @@ namespace OpenAuth.App.Material
                     //全部执行完后
                     await UnitWork.UpdateAsync<InternalContact>(c => c.Id == req.Id, c => new InternalContact
                     {
-                        Status = 7
+                        Status = 7,
+                        ExecTime = DateTime.Now
                     });
                 }
             }
@@ -737,6 +739,78 @@ namespace OpenAuth.App.Material
             System.IO.File.Delete(tempUrl);
             System.IO.File.Delete(contentTemp);
             return datas;
+        }
+
+        /// <summary>
+        /// 上传图片
+        /// </summary>
+        /// <param name="files"></param>
+        /// <returns></returns>
+        public List<string> UpdloadImg(IFormFileCollection files)
+        {
+            if (files.Count < 1)
+                throw new Exception("文件为空。");
+            //返回的文件地址
+            List<string> filenames = new List<string>();
+            var now = DateTime.Now;
+            //文件存储路径
+            var filePath = string.Format("/wwwroot/internalcontactImg/{0}/", now.ToString("yyyyMMdd"));
+            //获取当前web目录
+            var webRootPath = Directory.GetCurrentDirectory();
+            if (!Directory.Exists(webRootPath + filePath))
+            {
+                Directory.CreateDirectory(webRootPath + filePath);
+            }
+            try
+            {
+                foreach (var item in files)
+                {
+                    if (item != null)
+                    {
+                        #region  图片文件的条件判断
+                        //文件后缀
+                        var fileExtension = Path.GetExtension(item.FileName);
+
+                        //判断后缀是否是图片
+                        const string fileFilt = ".gif|.jpg|.jpeg|.png";
+                        if (fileExtension == null)
+                        {
+                            throw new Exception("上传的文件没有后缀。");
+                        }
+                        if (fileFilt.IndexOf(fileExtension.ToLower(), StringComparison.Ordinal) <= -1)
+                        {
+                            throw new Exception("请上传jpg、png、gif格式的图片。");
+                        }
+
+                        //判断文件大小    
+                        //long length = item.Length;
+                        //if (length > 1024 * 1024 * 2) //2M
+                        //{
+                        //    break;
+                        //    //return Error("上传的文件不能大于2M");
+                        //}
+
+                        #endregion
+
+                        var strDateTime = DateTime.Now.ToString("yyMMddhhmmssfff"); //取得时间字符串
+                        var strRan = Convert.ToString(new Random().Next(100, 999)); //生成三位随机数
+                        var saveName = strDateTime + strRan + fileExtension;
+
+                        //插入图片数据                 
+                        using (FileStream fs = System.IO.File.Create(webRootPath + filePath + saveName))
+                        {
+                            item.CopyTo(fs);
+                            fs.Flush();
+                        }
+                        filenames.Add(filePath + saveName);
+                    }
+                }
+                return filenames;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("上传失败。" + ex.Message);
+            }
         }
 
         public async Task AsyncData()

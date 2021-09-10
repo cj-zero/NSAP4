@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App.Material;
 using OpenAuth.App.Material.Request;
@@ -135,6 +136,19 @@ namespace OpenAuth.WebApi.Controllers.Material
                 Log.Logger.Error($"地址：{Request.Path}，参数：{serialNumber},{sign},{timespan}, 错误：{e.Message}");
                 throw new Exception(e.Message);
             }
+        }
+
+        /// <summary>
+        /// 上传图片
+        /// </summary>
+        /// <param name="files"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public TableData UploadImg(IFormFileCollection files)
+        {
+            TableData data = new TableData();
+            data.Data = _app.UpdloadImg(files);
+            return data;
         }
 
         [HttpGet]
