@@ -1,5 +1,6 @@
 ﻿using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using NSAP.Entity.BillFlow;
 using NSAP.Entity.Sales;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
@@ -47,7 +48,7 @@ namespace OpenAuth.WebApi.Controllers.Order
 			var result = new TableData();
 			int rowCount = 0;
 			//DataTable dt = _serviceSaleOrderApp.GetICreated(model.limit, model.page, model.query, model.sortname, model.sortorder, UserID, model.types, model.Applicator, model.Customer, model.Status, model.BeginDate, model.EndDate, _serviceSaleOrderApp.GetPagePowersByUrl("mywork/AuditAllNew.aspx",UserID).ViewCustom, _serviceSaleOrderApp.GetPagePowersByUrl("mywork/AuditAllNew.aspx",UserID).ViewSales);
-			DataTable dt = _serviceSaleOrderApp.GetICreated(out rowCount, model.limit, model.page, model.query, model.sortname, model.sortorder, UserID, model.types, model.Applicator, model.Customer, model.Status, model.BeginDate, model.EndDate, true, true);
+			DataTable dt = _serviceSaleOrderApp.GetICreated(out rowCount, model, UserID, true, true);
 			result.Data = dt;
 			result.Count = rowCount;
 			return result;
@@ -365,9 +366,9 @@ namespace OpenAuth.WebApi.Controllers.Order
 		/// <returns></returns>
 		[HttpGet]
 		[Route("GetFlowChartByJobID")]
-		public Response<string> GetFlowChartByJobID(string jobID)
+		public Response<FlowChart> GetFlowChartByJobID(string jobID)
 		{
-			var result = new Response<string>();
+			var result = new Response<FlowChart>();
 
 			result.Result = _serviceSaleOrderApp.GetFlowChartByJobID(jobID);
 

@@ -146,6 +146,10 @@ namespace OpenAuth.App.Material.Request
         /// 是否驳回
         /// </summary>
         public bool? IsReject { get; set; }
+        /// <summary>
+        /// 备注
+        /// </summary>
+        public string Remark { get; set; }
 
         /// <summary>
         /// 打印物料id
