@@ -142,6 +142,12 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        //[HttpGet]
+        //public async Task Test()
+        //{
+        //    await _app.Test();
+        //}
+
         public OutsourcsController(OutsourcApp app)
         {
             _app = app;

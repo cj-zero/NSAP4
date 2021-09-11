@@ -1088,6 +1088,33 @@ namespace OpenAuth.App
             return result;
         }
 
+        #region MyRegion
+        //public async Task Test()
+        //{
+        //    var data = await UnitWork.Find<FlowInstance>(c => c.MakerList == "2093e7b3-c7c6-11ea-bc9e-54bf645e326d,204d6d30-c7c6-11ea-bc9e-54bf645e326d").ToListAsync();
+        //    var flowid = data.Select(c => c.Id).ToList();
+
+        //    List<FlowInstanceOperationHistory> listhis = new List<FlowInstanceOperationHistory>();
+        //    data.ForEach(c =>
+        //    {
+        //        FlowInstanceOperationHistory flowInstanceOperationHistory = new FlowInstanceOperationHistory
+        //        {
+        //            InstanceId = c.Id,
+        //            CreateUserId = "系统管理员",
+        //            CreateUserName = "系统",
+        //            CreateDate = DateTime.Now,
+        //            ActivityId = c.ActivityId,
+        //            Content = "系统",
+        //            Remark = "人工已统计支付"
+        //        }; //操作记录
+        //        listhis.Add(flowInstanceOperationHistory);
+        //    });
+
+        //    await UnitWork.BatchAddAsync(listhis.ToArray());
+        //    await UnitWork.SaveAsync();
+        //}
+        #endregion
+
         public OutsourcApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, PendingApp pendingApp, WorkbenchApp workbenchApp, QuotationApp quotationApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
