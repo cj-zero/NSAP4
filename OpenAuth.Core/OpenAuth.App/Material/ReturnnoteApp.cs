@@ -196,7 +196,7 @@ namespace OpenAuth.App
                 IsUpDate = flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Running ? flowInstanceList.Where(f => f.Id.Equals(r.FlowInstanceId)).FirstOrDefault()?.IsFinish != FlowInstanceStatus.Running ? true : false : false,
                 IsLiquidated = r.IsLiquidated,
                 Remark = r.Remark,
-                InvoiceDocEntry = r.ReturnNoteProducts.FirstOrDefault().ReturnNoteMaterials.FirstOrDefault()?.InvoiceDocEntry,
+                InvoiceDocEntry = r.ReturnNoteProducts.FirstOrDefault()?.ReturnNoteMaterials.FirstOrDefault()?.InvoiceDocEntry,
                 TerminalCustomer = serviceOrders.Where(s => s.Id == r.ServiceOrderId).FirstOrDefault()?.TerminalCustomer,
                 TerminalCustomerId = serviceOrders.Where(s => s.Id == r.ServiceOrderId).FirstOrDefault()?.TerminalCustomerId,
             }).ToList();
