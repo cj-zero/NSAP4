@@ -412,6 +412,7 @@ namespace OpenAuth.App.Material
                 detail.Id,
                 detail.IW,
                 detail.Theme,
+                detail.IsTentative,
                 CardCodes = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardCode.Split(",") : new string[] { },
                 CardNames = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardName.Split(",") : new string[] { },
                 detail.Status,
@@ -488,7 +489,7 @@ namespace OpenAuth.App.Material
                             CreateDate = DateTime.Now,
                             Content = flowinstace.ActivityName,
                             Remark = req.Remark,
-                            ApprovalResult = "暂定",
+                            ApprovalResult = "待定",
                             //ActivityId = flowInstance.ActivityId,
                         };
                         var fioh = await UnitWork.Find<FlowInstanceOperationHistory>(r => r.InstanceId.Equals(internalContact.FlowInstanceId)).OrderByDescending(r => r.CreateDate).FirstOrDefaultAsync();
