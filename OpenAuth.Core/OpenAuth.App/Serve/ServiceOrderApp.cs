@@ -5040,7 +5040,7 @@ namespace OpenAuth.App
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
-            {
+            { 
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             //获取当前用户nsap用户信息

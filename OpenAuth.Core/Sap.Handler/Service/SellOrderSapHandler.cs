@@ -147,9 +147,10 @@ namespace Sap.Handler.Service
                         dts.PaymentGroupCode = DeliveryMethod != null ? int.Parse(DeliveryMethod) : 2;  //付款条件
 
                     }
-
-                    dts.Indicator = categoryList.Where(c => c.TypeId.Equals("SYS_InvoiceCompany") && c.DtValue.Equals(quotation.InvoiceCompany.ToString())).FirstOrDefault()?.DtCode;    // 标识
-
+                    if (!string.IsNullOrWhiteSpace(quotation.InvoiceCompany)) 
+                    {
+                        dts.Indicator = categoryList.Where(c => c.TypeId.Equals("SYS_InvoiceCompany") && c.DtValue.Equals(quotation.InvoiceCompany.ToString())).FirstOrDefault()?.DtCode;    // 标识
+                    }
                     //dts.PaymentMethod = quotation.DeliveryMethod;    //付款方式
 
                     //dts.FederalTaxID = model.LicTradNum;  //国税编号
