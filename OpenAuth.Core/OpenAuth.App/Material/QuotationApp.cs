@@ -354,23 +354,7 @@ namespace OpenAuth.App.Material
                 .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderSapId.ToString()), s => s.a.U_SAP_ID.Equals(request.ServiceOrderSapId));
             var ServiceOrderList = (await ServiceOrders.Where(s => s.b.CurrentUserNsapId.Equals(loginUser.Id)).ToListAsync()).GroupBy(s => s.a.Id).Select(s => s.First());
             var CustomerIds = ServiceOrderList.Select(s => s.a.TerminalCustomerId).ToList();
-            var CardAddress = from a in UnitWork.Find<OCRD>(null)
-                              join c in UnitWork.Find<OCRY>(null) on a.Country equals c.Code into ac
-                              from c in ac.DefaultIfEmpty()
-                              join d in UnitWork.Find<OCST>(null) on a.State1 equals d.Code into ad
-                              from d in ad.DefaultIfEmpty()
-                              join e in UnitWork.Find<OCRY>(null) on a.MailCountr equals e.Code into ae
-                              from e in ae.DefaultIfEmpty()
-                              where CustomerIds.Contains(a.CardCode)
-                              select new { a, c, d, e };
-            var Address = await CardAddress.Select(q => new
-            {
-                q.a.CardCode,
-                q.a.Balance,
-                q.a.frozenFor,
-                BillingAddress = $"{ q.a.ZipCode ?? "" }{ q.c.Name ?? "" }{ q.d.Name ?? "" }{ q.a.City ?? ""}{ q.a.Building ?? "" }",
-                DeliveryAddress = $"{ q.a.MailZipCod ?? "" }{ q.e.Name ?? "" }{ q.d.Name ?? "" }{ q.a.MailCity ?? "" }{ q.a.MailBuildi ?? "" }"
-            }).ToListAsync();
+            var Address = await CardAddress(CustomerIds);
             result.Data = ServiceOrderList.Skip((request.page - 1) * request.limit)
                 .Take(request.limit).Select(q => new
                 {
@@ -391,7 +375,32 @@ namespace OpenAuth.App.Material
 
             return result;
         }
-
+        /// <summary>
+        /// 获取客户地址
+        /// </summary>
+        /// <param name="CardCodes"></param>
+        /// <returns></returns>
+        public async Task<List<CardAddressResp>> CardAddress(List<string> CardCodes)
+        {
+            var CardAddress = from a in UnitWork.Find<OCRD>(null)
+                              join c in UnitWork.Find<OCRY>(null) on a.Country equals c.Code into ac
+                              from c in ac.DefaultIfEmpty()
+                              join d in UnitWork.Find<OCST>(null) on a.State1 equals d.Code into ad
+                              from d in ad.DefaultIfEmpty()
+                              join e in UnitWork.Find<OCRY>(null) on a.MailCountr equals e.Code into ae
+                              from e in ae.DefaultIfEmpty()
+                              where CardCodes.Contains(a.CardCode)
+                              select new { a, c, d, e };
+            var Address = await CardAddress.Select(q => new CardAddressResp
+            {
+                CardCode= q.a.CardCode,
+                Balance=q.a.Balance,
+                frozenFor=q.a.frozenFor,
+                BillingAddress = $"{ q.a.ZipCode ?? "" }{ q.c.Name ?? "" }{ q.d.Name ?? "" }{ q.a.City ?? ""}{ q.a.Building ?? "" }",
+                DeliveryAddress = $"{ q.a.MailZipCod ?? "" }{ q.e.Name ?? "" }{ q.d.Name ?? "" }{ q.a.MailCity ?? "" }{ q.a.MailBuildi ?? "" }"
+            }).ToListAsync();
+            return Address;
+        }
         /// <summary>
         /// 获取序列号和设备
         /// </summary>
@@ -942,7 +951,7 @@ namespace OpenAuth.App.Material
             if (!string.IsNullOrWhiteSpace(request.ItemCode))
             {
                 var code = request.ItemCode.Substring(0, request.ItemCode.IndexOf("-") + 1);
-                query = query.Where(q => q.ItemCode.Substring(0, q.ItemCode.IndexOf("-") + 1).Equals(code) && !q.ItemCode.Equals(request.ItemCode));
+                query = query.Where(q => q.ItemCode.Substring(0, q.ItemCode.IndexOf("-") + 1).Equals(code));
             }
 
             //是否延保
@@ -1046,25 +1055,25 @@ namespace OpenAuth.App.Material
                 loginUser = await GetUserId(Convert.ToInt32(request.AppId));
             }
             var result = new TableData();
-            var QuotationIds = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(request.ServiceOrderId) && q.CreateUserId.Equals(loginUser.Id)).Select(q => q.Id).ToListAsync();
+            //var QuotationIds = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(request.ServiceOrderId) && q.CreateUserId.Equals(loginUser.Id)).Select(q => q.Id).ToListAsync();
 
-            var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => QuotationIds.Contains((int)q.QuotationId) && q.MaterialType == 1).ToListAsync();
-            //获取当前服务单所有退料明细汇总
-            var query = from a in UnitWork.Find<ReturnnoteMaterial>(null)
-                        join b in UnitWork.Find<ReturnNote>(null) on a.ReturnNoteId equals b.Id into ab
-                        from b in ab.DefaultIfEmpty()
-                        where b.ServiceOrderId == request.ServiceOrderId && a.Count > 0
-                        select new { a.QuotationMaterialId, a.Count };
-            var returnMaterials = (await query.ToListAsync()).GroupBy(g => g.QuotationMaterialId).Select(s => new { Qty = s.Sum(s => s.Count), Id = s.Key }).ToList();
-            List<ReturnMaterialListResp> data = new List<ReturnMaterialListResp>();
-            foreach (var item in QuotationMergeMaterials)
-            {
-                var res = item.MapTo<ReturnMaterialListResp>();
-                int everQty = (int)(returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault() == null ? 0 : returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault()?.Qty);
-                res.SurplusQty = (int)item.Count - (returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault() == null ? 0 : (int)returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault().Qty);
-                data.Add(res);
-            }
-            result.Data = data;
+            //var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => QuotationIds.Contains((int)q.QuotationId) && q.MaterialType == 1).ToListAsync();
+            ////获取当前服务单所有退料明细汇总
+            //var query = from a in UnitWork.Find<ReturnNoteMaterial>(null)
+            //            join b in UnitWork.Find<ReturnNote>(null) on a.ReturnNoteId equals b.Id into ab
+            //            from b in ab.DefaultIfEmpty()
+            //            where b.ServiceOrderId == request.ServiceOrderId
+            //            select new { a.Id };
+            //var returnMaterials = (await query.ToListAsync()).GroupBy(g => g.QuotationMaterialId).Select(s => new { Qty = s.Sum(s => s.Count), Id = s.Key }).ToList();
+            //List<ReturnMaterialListResp> data = new List<ReturnMaterialListResp>();
+            //foreach (var item in QuotationMergeMaterials)
+            //{
+            //    var res = item.MapTo<ReturnMaterialListResp>();
+            //    int everQty = (int)(returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault() == null ? 0 : returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault()?.Qty);
+            //    res.SurplusQty = (int)item.Count - (returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault() == null ? 0 : (int)returnMaterials.Where(w => w.Id == item.Id).FirstOrDefault().Qty);
+            //    data.Add(res);
+            //}
+            //result.Data = data;
             return result;
         }
 
@@ -1100,8 +1109,8 @@ namespace OpenAuth.App.Material
                         }
                     }));
                     QuotationObj.CreateTime = DateTime.Now;
-                    QuotationObj.CreateUser = loginUser.Name;
-                    QuotationObj.CreateUserId = loginUser.Id;
+                    QuotationObj.CreateUser = obj.IsOutsourc != null && (bool)obj.IsOutsourc? obj .CreateUser: loginUser.Name;
+                    QuotationObj.CreateUserId = obj.IsOutsourc != null && (bool)obj.IsOutsourc ? obj.CreateUserId : loginUser.Id;
                     QuotationObj.Status = 1;
                     QuotationObj.QuotationStatus = 3;
                     QuotationObj.PrintWarehouse = 1;
@@ -1112,28 +1121,7 @@ namespace OpenAuth.App.Material
                     {
                         QuotationObj.QuotationStatus = 3.1M;
                         await MergeMaterial(QuotationObj);
-                        #region 创建审批流程
-                        var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("物料报价单"));
-                        var afir = new AddFlowInstanceReq();
-                        afir.SchemeId = mf.FlowSchemeId;
-                        afir.FrmType = 2;
-                        afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
-
-                        var IsProtected = QuotationObj.IsProtected != null && QuotationObj.IsProtected == true ? "1" : "2";
-                        string IsWarranty = null;
-                        if (QuotationObj.IsMaterialType == 4)
-                        {
-                            IsWarranty = "1";
-                        }
-                        else
-                        {
-                            IsWarranty = "2";
-                        }
-                        afir.FrmData = "{ \"QuotationId\":\"" + QuotationObj.Id + "\",\"IsProtected\":\"" + IsProtected + "\",\"IsWarranty\":\"" + IsWarranty + "\",\"WarrantyType\":\"" + QuotationObj.WarrantyType + "\"}";
-                        afir.CustomName = $"物料报价单" + DateTime.Now;
-                        QuotationObj.FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
-                        #endregion
-                        await UnitWork.AddAsync<QuotationOperationHistory>(new QuotationOperationHistory
+                        QuotationOperationHistory quotationOperationHistory = new QuotationOperationHistory
                         {
                             Action = QuotationObj.ErpOrApp == 1 ? QuotationObj.CreateUser + "通过ERP提交审批" : QuotationObj.CreateUser + "通过APP提交审批",
                             CreateUser = loginUser.Name,
@@ -1141,25 +1129,63 @@ namespace OpenAuth.App.Material
                             CreateTime = DateTime.Now,
                             QuotationId = QuotationObj.Id,
                             ApprovalStage = "3"
-                        });
-                        await UnitWork.UpdateAsync<Quotation>(QuotationObj);
-                        //增加全局待处理
-                        var serviceOrederObj = await UnitWork.Find<ServiceOrder>(s => s.Id == obj.ServiceOrderId).FirstOrDefaultAsync();
-                        await _workbenchApp.AddOrUpdate(new WorkbenchPending
+                        };
+                        if (obj.IsOutsourc != null && (bool)obj.IsOutsourc)
                         {
-                            OrderType = 1,
-                            TerminalCustomer = serviceOrederObj.TerminalCustomer,
-                            TerminalCustomerId = serviceOrederObj.TerminalCustomerId,
-                            ServiceOrderId = serviceOrederObj.Id,
-                            ServiceOrderSapId = (int)serviceOrederObj.U_SAP_ID,
-                            UpdateTime = QuotationObj.UpDateTime,
-                            Remark = QuotationObj.Remark,
-                            FlowInstanceId = QuotationObj.FlowInstanceId,
-                            TotalMoney = QuotationObj.TotalMoney,
-                            Petitioner = loginUser.Name,
-                            SourceNumbers = QuotationObj.Id,
-                            PetitionerId = loginUser.Id,
-                        });
+                            QuotationObj.QuotationStatus = 10;
+                            QuotationObj.Status = 2;
+                            await UnitWork.UpdateAsync<Quotation>(QuotationObj);
+                            await UnitWork.SaveAsync();
+                            quotationOperationHistory.Action = "个代结算系统自动提交";
+                            #region 报价单同步到SAP，ERP3.0
+                            await _capBus.PublishAsync("Serve.SellOrder.Create", QuotationObj.Id);
+                            #endregion
+                            Message = QuotationObj.Id.ToString();
+                        }
+                        else 
+                        {
+
+                            #region 创建审批流程
+                            var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("物料报价单"));
+                            var afir = new AddFlowInstanceReq();
+                            afir.SchemeId = mf.FlowSchemeId;
+                            afir.FrmType = 2;
+                            afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
+
+                            var IsProtected = QuotationObj.IsProtected != null && QuotationObj.IsProtected == true ? "1" : "2";
+                            string IsWarranty = null;
+                            if (QuotationObj.IsMaterialType == 4)
+                            {
+                                IsWarranty = "1";
+                            }
+                            else
+                            {
+                                IsWarranty = "2";
+                            }
+                            afir.FrmData = "{ \"QuotationId\":\"" + QuotationObj.Id + "\",\"IsProtected\":\"" + IsProtected + "\",\"IsWarranty\":\"" + IsWarranty + "\",\"WarrantyType\":\"" + QuotationObj.WarrantyType + "\"}";
+                            afir.CustomName = $"物料报价单" + DateTime.Now;
+                            QuotationObj.FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(afir);
+                            #endregion
+                            //增加全局待处理
+                            var serviceOrederObj = await UnitWork.Find<ServiceOrder>(s => s.Id == obj.ServiceOrderId).FirstOrDefaultAsync();
+                            await _workbenchApp.AddOrUpdate(new WorkbenchPending
+                            {
+                                OrderType = 1,
+                                TerminalCustomer = serviceOrederObj.TerminalCustomer,
+                                TerminalCustomerId = serviceOrederObj.TerminalCustomerId,
+                                ServiceOrderId = serviceOrederObj.Id,
+                                ServiceOrderSapId = (int)serviceOrederObj.U_SAP_ID,
+                                UpdateTime = QuotationObj.UpDateTime,
+                                Remark = QuotationObj.Remark,
+                                FlowInstanceId = QuotationObj.FlowInstanceId,
+                                TotalMoney = QuotationObj.TotalMoney,
+                                Petitioner = loginUser.Name,
+                                SourceNumbers = QuotationObj.Id,
+                                PetitionerId = loginUser.Id,
+                            });
+                        }
+                        await UnitWork.AddAsync<QuotationOperationHistory>(quotationOperationHistory);
+                        await UnitWork.UpdateAsync<Quotation>(QuotationObj);
                         await UnitWork.SaveAsync();
                     }
                     await transaction.CommitAsync();
@@ -1170,6 +1196,7 @@ namespace OpenAuth.App.Material
                     throw new Exception("添加报价单失败。" + ex.Message);
                 }
             }
+            
             return Message;
         }
 
@@ -1444,7 +1471,7 @@ namespace OpenAuth.App.Material
                     Margin = QuotationObj.ServiceChargeJH != null && QuotationObj.ServiceChargeJH > 0 ? QuotationObj.ServiceChargeJH * QuotationObj.ServiceChargeManHourJH : -(QuotationObj.ServiceChargeManHourJH * QuotationObj.ServiceChargeJHCost),
                     Discount = 100,
                     SentQuantity = 0,
-                    MaterialType = 2,
+                    MaterialType = QuotationObj.IsMaterialType == 3 ? 4 : 2,
                     DiscountPrices = QuotationObj.ServiceChargeJH,
                     WhsCode = "37"
                 });
@@ -1465,7 +1492,7 @@ namespace OpenAuth.App.Material
                     Margin = QuotationObj.ServiceChargeSM != null && QuotationObj.ServiceChargeSM > 0 ? QuotationObj.ServiceChargeSM * QuotationObj.ServiceChargeManHourSM : -(QuotationObj.ServiceChargeManHourSM * QuotationObj.ServiceChargeSMCost),
                     Discount = 100,
                     SentQuantity = 0,
-                    MaterialType = 2,
+                    MaterialType = QuotationObj.IsMaterialType==3?4:2,
                     DiscountPrices = QuotationObj.ServiceChargeSM,
                     WhsCode = "37"
                 });
@@ -1486,7 +1513,7 @@ namespace OpenAuth.App.Material
                     Margin = QuotationObj.TravelExpense != null && QuotationObj.TravelExpense > 0 ? QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour : -(QuotationObj.TravelExpenseManHour * QuotationObj.TravelExpenseCost),
                     Discount = 100,
                     SentQuantity = 0,
-                    MaterialType = 2,
+                    MaterialType = QuotationObj.IsMaterialType == 3 ? 4 : 2,
                     DiscountPrices = QuotationObj.TravelExpense,
                     WhsCode = "37"
                 });
@@ -2296,9 +2323,14 @@ namespace OpenAuth.App.Material
             {
                 throw new Exception("请核对是否存在未填写字段");
             }
-            var nsapUserId = await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginUser.Id)).Select(n => n.NsapUserId).FirstOrDefaultAsync();
+
             //判定人员是否有销售员code
-            var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(loginUser.Id)).FirstOrDefaultAsync())?.NsapUserId;
+            var createUserId = loginUser.Id;
+            if (!string.IsNullOrWhiteSpace(obj.CreateUserId)) 
+            {
+                createUserId = obj.CreateUserId;
+            }
+            var userId = (await UnitWork.Find<NsapUserMap>(n => n.UserID.Equals(createUserId)).FirstOrDefaultAsync())?.NsapUserId;
             var slpCode = (await UnitWork.Find<sbo_user>(s => s.user_id == userId && s.sbo_id == Define.SBO_ID).FirstOrDefaultAsync())?.sale_id;
 
             if (slpCode == null || slpCode == 0)
@@ -2868,7 +2900,7 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         public async Task SyncSalesOrderStatus()
         {
-            var salesOrderIds = await UnitWork.Find<Quotation>(q => string.IsNullOrWhiteSpace(q.SalesOrderId.ToString()) && q.QuotationStatus != -1M && q.QuotationStatus!=11).Select(q => q.SalesOrderId).ToListAsync();
+            var salesOrderIds = await UnitWork.Find<Quotation>(q => !string.IsNullOrWhiteSpace(q.SalesOrderId.ToString()) && q.QuotationStatus != -1M && q.QuotationStatus!=11).Select(q => q.SalesOrderId).ToListAsync();
             var oRDRS = await UnitWork.Find<ORDR>(o => salesOrderIds.Contains(o.DocEntry) && (o.DocStatus == "C" || o.CANCELED == "Y")).Select(o => new { o.DocEntry, o.DocStatus, o.CANCELED }).ToListAsync();
             var cANCELEDORDR = oRDRS.Where(o => o.CANCELED == "Y").ToList();
             if (cANCELEDORDR.Count() > 0)

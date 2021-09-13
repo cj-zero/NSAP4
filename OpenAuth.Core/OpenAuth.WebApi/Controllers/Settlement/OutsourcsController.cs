@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
@@ -55,6 +56,18 @@ namespace OpenAuth.WebApi.Controllers
         {
             var result = new Response();
             await _app.Accraditation(req);
+            return result;
+        }
+        /// <summary>
+        /// 批量审批
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> BatchAccraditation(List<AccraditationOutsourcReq> req) 
+        {
+            var result = new Response();
+            await _app.BatchAccraditation(req);
             return result;
         }
         /// <summary>
@@ -128,6 +141,12 @@ namespace OpenAuth.WebApi.Controllers
             await _app.Delete(req);
             return result;
         }
+
+        //[HttpGet]
+        //public async Task Test()
+        //{
+        //    await _app.Test();
+        //}
 
         public OutsourcsController(OutsourcApp app)
         {

@@ -160,7 +160,7 @@ namespace OpenAuth.App.Workbench
                         Discount = m.Discount,
                         DiscountPrices = m.DiscountPrices,
                         SalesPrice = m.SalesPrice,
-                        Count = Convert.ToInt32(m.Count),
+                        Count = Convert.ToDecimal(m.Count).ToString("#0.00"),
                         WhsCode = m.WhsCode,
                         MaterialType = Convert.ToInt32(m.MaterialType),
                         MaxQuantity = m.MaxQuantity,
@@ -187,7 +187,10 @@ namespace OpenAuth.App.Workbench
                     FileType = fileList.Where(f => f.Id.Equals(q.PictureId)).FirstOrDefault()?.FileType
                 }).ToList()
             };
-            quotationDetails.FlowPathResp = await _flowInstanceApp.FlowPathRespList(quotationDetails.QuotationOperationHistorys, quotationObj.FlowInstanceId);
+            if (!string.IsNullOrWhiteSpace(quotationObj.FlowInstanceId)) 
+            {
+                quotationDetails.FlowPathResp = await _flowInstanceApp.FlowPathRespList(quotationDetails.QuotationOperationHistorys, quotationObj.FlowInstanceId);
+            }
             return quotationDetails;
         }
         /// <summary>
@@ -196,17 +199,10 @@ namespace OpenAuth.App.Workbench
         /// <returns></returns>
         public async Task<ReturnnoteDetailsResp> ReturnnoteDetails(int ReturnnoteId)
         {
-            var returNnoteObj = await UnitWork.Find<ReturnNote>(r => r.Id == ReturnnoteId).Include(r => r.ReturnNotePictures).Include(r => r.ReturnnoteMaterials)
-                .ThenInclude(r => r.ReturnNoteMaterialPictures).FirstOrDefaultAsync();
+            var returNnoteObj = await UnitWork.Find<ReturnNote>(r => r.Id == ReturnnoteId).Include(r => r.ReturnNotePictures).Include(r => r.ReturnNoteProducts).ThenInclude(r=>r.ReturnNoteMaterials).FirstOrDefaultAsync();
 
-            List<string> fileIds = new List<string>();
-            var numberIds = returNnoteObj.ReturnnoteMaterials.Select(r => r.Id).ToList();
-            var numbers = await UnitWork.Find<ReturnnoteMaterialNumber>(r => numberIds.Contains(r.ReturnnoteMaterialId)).ToListAsync();
-            returNnoteObj.ReturnnoteMaterials.ForEach(r => { fileIds.AddRange(r.ReturnNoteMaterialPictures.Select(n => n.PictureId).ToList()); r.ReturnnoteMaterialNumbers = numbers.Where(n => n.ReturnnoteMaterialId == r.Id).ToList(); });
-            fileIds.AddRange(returNnoteObj.ReturnNotePictures.Select(r => r.PictureId).ToList());
+            var  fileIds = returNnoteObj.ReturnNotePictures.Select(r=>r.PictureId).ToList();
             var fileList = await UnitWork.Find<UploadFile>(f => fileIds.Contains(f.Id)).ToListAsync();
-            var materialIds = returNnoteObj.ReturnnoteMaterials.Select(r => r.QuotationMaterialId).ToList();
-            var quotationMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => materialIds.Contains(q.Id)).ToListAsync();
             var returnnoteDetails = new ReturnnoteDetailsResp
             {
                 ReturnnoteId = returNnoteObj.Id.ToString(),
@@ -216,37 +212,31 @@ namespace OpenAuth.App.Workbench
                 Remark = returNnoteObj.Remark,
                 TotalMoney = returNnoteObj.TotalMoney,
                 UpdateTime = returNnoteObj.UpdateTime.ToString("yyyy.MM.dd HH:mm:ss"),
-                ReturnNoteMaterials = returNnoteObj.ReturnnoteMaterials.Select(r => new ReturnNoteMaterialResp
-                {
-                    MaterialsId = r.Id,
-                    Count = r.Count,
-                    SecondQty = r.SecondQty,
-                    ReceivingRemark = r.ReceivingRemark,
-                    ShippingRemark = r.ShippingRemark,
-                    GoodQty = r.GoodQty,
-                    GoodWhsCode = r.GoodWhsCode,
-                    InvoiceDocEntry = r.InvoiceDocEntry,
-                    MaterialDescription = r.MaterialDescription,
-                    MaterialCode = r.MaterialCode,
-                    SecondWhsCode = r.SecondWhsCode,
-                    ReplacePartCode = quotationMaterials.Where(q => q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.MaterialCode,
-                    ReplacePartDescription = quotationMaterials.Where(q => q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.MaterialDescription,
-                    TotalPrice = r.Count * quotationMaterials.Where(q => q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.DiscountPrices,
-                    Price = quotationMaterials.Where(q => q.Id.Equals(r.QuotationMaterialId)).FirstOrDefault()?.DiscountPrices,
-                    ReturnnoteMaterialNumberResps = r.ReturnnoteMaterialNumbers.Select(n => new ReturnnoteMaterialNumberResp
-                    {
-                        RemoveNumber = n.ReturnNumber,
-                        ReturnNumber = n.ReturnNumber,
-                        ReturnnoteMaterialId = n.ReturnnoteMaterialId
-                    }).ToList(),
-                    ReturnNoteId = r.ReturnNoteId,
-                    Files = r.ReturnNoteMaterialPictures.Select(p => new FileResp
-                    {
-                        FileId = p.PictureId,
-                        FileName = fileList.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileName,
-                        FileType = fileList.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileType,
+                ReturnNoteProducts = returNnoteObj.ReturnNoteProducts.Select(r => new ReturnNoteProductResp {
+                    MaterialCode=r.MaterialCode,
+                    MaterialDescription=r.MaterialDescription,
+                    ProductCode=r.ProductCode,
+                    ReturnNoteId=r.ReturnNoteId,
+                    Money = r.Money,
+                    ReturnNoteMaterials=r.ReturnNoteMaterials.Select(m=>new ReturnNoteMaterialResp { 
+                        Id=m.Id,
+                        MaterialCode=m.MaterialCode,
+                        InvoiceDocEntry = m.InvoiceDocEntry,
+                        MaterialDescription=m.MaterialDescription,
+                        SecondWhsCode=m.SecondWhsCode,
+                        ShippingRemark=m.ShippingRemark,
+                        SNandPN=m.SNandPN,
+                        ReplaceSNandPN=m.ReplaceSNandPN,
+                        ReplaceMaterialDescription=m.ReplaceMaterialDescription,
+                        GoodWhsCode=m.GoodWhsCode,
+                        IsGood=m.IsGood,
+                        Money = m.Money,
+                        QuotationMaterialId=m.QuotationMaterialId,
+                        ReceivingRemark=m.ReceivingRemark,
+                        ReplaceMaterialCode=m.ReplaceMaterialCode,
+                        ReturnNoteProductId=m.ReturnNoteProductId
                     }).ToList()
-                }).ToList()
+                }).ToList(),
             };
             var History = await UnitWork.Find<FlowInstanceOperationHistory>(f => f.InstanceId.Equals(returNnoteObj.FlowInstanceId)).OrderBy(f => f.CreateDate).ToListAsync();
             returnnoteDetails.ReturnNoteHistoryResp = History.Select(h => new OperationHistoryResp
@@ -259,7 +249,7 @@ namespace OpenAuth.App.Workbench
                 ApprovalResult = h.ApprovalResult,
                 ApprovalStage = h.ApprovalStage
             }).ToList();
-            returnnoteDetails.FlowPathResp = await _flowInstanceApp.FlowPathRespList(returnnoteDetails.ReturnNoteHistoryResp, returNnoteObj.FlowInstanceId);
+            if(!string.IsNullOrWhiteSpace(returNnoteObj.FlowInstanceId)) returnnoteDetails.FlowPathResp = await _flowInstanceApp.FlowPathRespList(returnnoteDetails.ReturnNoteHistoryResp, returNnoteObj.FlowInstanceId);
             returnnoteDetails.ReturnNotePictures = returNnoteObj.ReturnNotePictures.Select(r => new FileResp
             {
                 FileId = r.PictureId,
@@ -484,56 +474,62 @@ namespace OpenAuth.App.Workbench
             var reult = new TableData();
             var pendingObj = await UnitWork.Find<WorkbenchPending>(w => w.ApprovalNumber == int.Parse(req.ApprovalNumber)).FirstOrDefaultAsync();
             var serviceOrderDetails = await ServiceOrderDetails(pendingObj.ServiceOrderId, pendingObj.PetitionerId);
-            QuotationDetailsResp quotationDetails = null;
-            ReturnnoteDetailsResp returnnoteDetails = null;
+            List<QuotationDetailsResp> quotationDetails = new List<QuotationDetailsResp>(); 
+            List<ReturnnoteDetailsResp> returnnoteDetails = new List<ReturnnoteDetailsResp>() ;
             OutsourcDetailsResp outsourcDetails = null;
             ReimburseDetailsResp reimburseDetails = null;
-            var quotation = new Quotation();
+            List<Quotation> quotation = new List<Quotation>();
             switch (pendingObj.OrderType)
             {
                 case 1:
-                    quotationDetails = await QuotationDetails(pendingObj.SourceNumbers);
+                    quotationDetails.Add(await QuotationDetails(pendingObj.SourceNumbers));
                     break;
                 case 2:
                     var quotationId = (await (from a in UnitWork.Find<ReturnNote>(r => r.Id == pendingObj.SourceNumbers)
                                               join b in UnitWork.Find<Quotation>(null) on a.SalesOrderId equals b.SalesOrderId
                                               select new { b.Id }).FirstOrDefaultAsync()).Id;
-                    quotationDetails = await QuotationDetails(quotationId);
-                    returnnoteDetails = await ReturnnoteDetails(pendingObj.SourceNumbers);
+                    quotationDetails.Add(await QuotationDetails(quotationId));
+                    returnnoteDetails.Add(await ReturnnoteDetails(pendingObj.SourceNumbers));
                     break;
                 case 3:
-                    var returnnoteObj = await UnitWork.Find<ReturnNote>(q => q.ServiceOrderId == pendingObj.ServiceOrderId).OrderByDescending(q => q.CreateTime).Select(q => new { q.Id, q.SalesOrderId }).FirstOrDefaultAsync();
+                    var returnnoteObj = await UnitWork.Find<ReturnNote>(q => q.ServiceOrderId == pendingObj.ServiceOrderId).OrderByDescending(q => q.CreateTime).Select(q => new { q.Id, q.SalesOrderId }).ToListAsync();
                     if (returnnoteObj != null)
                     {
-                        quotation = await UnitWork.Find<Quotation>(q => q.SalesOrderId.Equals(returnnoteObj.SalesOrderId)).OrderByDescending(q => q.CreateTime).FirstOrDefaultAsync();
-                        returnnoteDetails = await ReturnnoteDetails(returnnoteObj.Id);
+                        //quotation = await UnitWork.Find<Quotation>(q => q.SalesOrderId.Equals(returnnoteObj.SalesOrderId)).OrderByDescending(q => q.CreateTime).ToListAsync();
+                        foreach (var item in returnnoteObj)
+                        {
+                            returnnoteDetails.Add(await ReturnnoteDetails(item.Id));
+                        }
                     }
-                    else
+                    quotation = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(pendingObj.ServiceOrderId) && q.QuotationStatus>=3.1M).OrderByDescending(q => q.CreateTime).ToListAsync();
+                    if (quotation != null && quotation.Count()>0)
                     {
-                        quotation = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(pendingObj.ServiceOrderId) && q.QuotationStatus == 11).OrderByDescending(q => q.CreateTime).FirstOrDefaultAsync();
+                        foreach (var item in quotation)
+                        {
+                            quotationDetails.Add(await QuotationDetails(item.Id));
+                        }
                     }
-                    if (quotation != null)
-                    {
-                        quotationDetails = await QuotationDetails(quotation.Id);
-                    }
-                    outsourcDetails = await OutsourcDetails(pendingObj.SourceNumbers);
+                    outsourcDetails=await OutsourcDetails(pendingObj.SourceNumbers);
                     break;
                 case 4:
-                    returnnoteObj = await UnitWork.Find<ReturnNote>(q => q.ServiceOrderId == pendingObj.ServiceOrderId).OrderByDescending(q => q.CreateTime).Select(q => new { q.Id, q.SalesOrderId }).FirstOrDefaultAsync();
+                    returnnoteObj = await UnitWork.Find<ReturnNote>(q => q.ServiceOrderId == pendingObj.ServiceOrderId).OrderByDescending(q => q.CreateTime).Select(q => new { q.Id, q.SalesOrderId }).ToListAsync();
                     if (returnnoteObj != null)
                     {
-                        quotation = await UnitWork.Find<Quotation>(q => q.SalesOrderId.Equals(returnnoteObj.SalesOrderId)).OrderByDescending(q => q.CreateTime).FirstOrDefaultAsync();
-                        returnnoteDetails = await ReturnnoteDetails(returnnoteObj.Id);
+                        //quotation = await UnitWork.Find<Quotation>(q => q.SalesOrderId.Equals(returnnoteObj.SalesOrderId)).OrderByDescending(q => q.CreateTime).ToListAsync();
+                        foreach (var item in returnnoteObj)
+                        {
+                            returnnoteDetails.Add(await ReturnnoteDetails(item.Id));
+                        }
                     }
-                    else
+                    quotation = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(pendingObj.ServiceOrderId)&&q.QuotationStatus >= 3.1M).OrderByDescending(q => q.CreateTime).ToListAsync();
+                    if (quotation != null && quotation.Count() > 0)
                     {
-                        quotation = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(pendingObj.ServiceOrderId) && q.QuotationStatus == 11).OrderByDescending(q => q.CreateTime).FirstOrDefaultAsync();
+                        foreach (var item in quotation)
+                        {
+                            quotationDetails.Add(await QuotationDetails(item.Id));
+                        }
                     }
-                    if (quotation != null)
-                    {
-                        quotationDetails = await QuotationDetails(quotation.Id);
-                    }
-                    reimburseDetails = await ReimburseDetails(pendingObj.SourceNumbers);
+                    reimburseDetails=await ReimburseDetails(pendingObj.SourceNumbers);
                     break;
             }
             if (pendingObj.OrderType == 3 || pendingObj.OrderType == 4)
@@ -572,7 +568,8 @@ namespace OpenAuth.App.Workbench
             {
                 //待处理
                 var query = from a in UnitWork.Find<WorkbenchPending>(null)
-                            join b in UnitWork.Find<FlowInstance>(null) on a.FlowInstanceId equals b.Id
+                            join b in UnitWork.Find<FlowInstance>(null) on a.FlowInstanceId equals b.Id into ab
+                            from b in ab.DefaultIfEmpty()
                             where (b.MakerList.Contains(loginContext.User.Id) || (b.MakerList == "1" && b.CustomName.Contains("物料报价单"))) && b.ActivityName != "待出库" && b.ActivityName != "开始"
                             select new { a, b };
                 query = query.WhereIf(!string.IsNullOrWhiteSpace(req.ApprovalNumber), q => q.a.ApprovalNumber == int.Parse(req.ApprovalNumber))
@@ -583,64 +580,29 @@ namespace OpenAuth.App.Workbench
                             .WhereIf(!string.IsNullOrWhiteSpace(req.SourceNumbers), q => q.a.SourceNumbers == int.Parse(req.SourceNumbers))
                             .WhereIf(!string.IsNullOrWhiteSpace(req.StartTime.ToString()), q => q.a.UpdateTime > req.StartTime)
                             .WhereIf(!string.IsNullOrWhiteSpace(req.EndTime.ToString()), q => q.a.UpdateTime > Convert.ToDateTime(req.EndTime).AddDays(1));
-                var pending = await query.Select(q => new
+                if (loginContext.Roles.Any(r => r.Name == "销售员"))
                 {
-                    q.a.TotalMoney,
-                    q.a.ApprovalNumber,
-                    q.a.TerminalCustomer,
-                    q.a.TerminalCustomerId,
-                    q.a.SourceNumbers,
-                    q.a.ServiceOrderSapId,
-                    q.a.Remark,
-                    q.a.Petitioner,
-                    q.a.PetitionerId,
-                    q.a.OrderType,
-                    q.b.ActivityName,
-                    q.a.UpdateTime
-                }).OrderByDescending(o => o.UpdateTime).ToListAsync();
-                List<int> salesManIds = new List<int>();
-                foreach (var p in pending)
-                {
-                    if (p.OrderType == 1 && p.ActivityName == "销售员审批")
-                    {
-                        var salesManId = (await UnitWork.Find<ServiceOrder>(s => s.U_SAP_ID == p.ServiceOrderSapId).FirstOrDefaultAsync())?.SalesManId;
-                        if (!loginContext.User.Id.Equals(salesManId))
-                        {
-                            salesManIds.Add(p.ApprovalNumber);
-                        }
-                    }
-                    else if (p.OrderType == 1 && p.ActivityName == "确认报价单")
-                    {
-                        if (!loginContext.User.Id.Equals(p.PetitionerId))
-                        {
-                            salesManIds.Add(p.ApprovalNumber);
-                        }
-                    }
-                    else if (p.OrderType == 1 && p.ActivityName == "回传销售订单")
-                    {
-                        if (!loginContext.User.Id.Equals(p.PetitionerId))
-                        {
-                            salesManIds.Add(p.ApprovalNumber);
-                        }
-                    }
+                    var serviceOrderIds = await UnitWork.Find<ServiceOrder>(s=>s.SalesManId.Equals(loginContext.User.Id)).Select(s=>s.Id).ToListAsync();
+                    query = query.Where(q => (serviceOrderIds.Contains(q.a.ServiceOrderId) && q.b.ActivityName == "销售员审批" && q.a.OrderType == 1) || q.b.ActivityName != "销售员审批" && q.a.OrderType != 1);
                 }
-                //SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(p.PetitionerId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + p.Petitioner;
-                reult.Data = pending.Where(p => !salesManIds.Contains(p.ApprovalNumber)).Skip((req.page - 1) * req.limit).Take(req.limit).Select(p => new
+                query=query.Where(q => ((q.b.ActivityName == "确认报价单"|| q.b.ActivityName == "回传销售订单")&& q.a.OrderType==1 && q.a.PetitionerId.Equals(loginContext.User.Id)) || (q.b.ActivityName != "确认报价单"&& q.b.ActivityName != "回传销售订单" && q.a.OrderType!=1));
+                var pending = await query.OrderByDescending(o => o.a.UpdateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+                reult.Data = pending.Select(p => new
                 {
-                    p.TotalMoney,
-                    p.ApprovalNumber,
-                    p.TerminalCustomer,
-                    p.TerminalCustomerId,
-                    p.SourceNumbers,
-                    p.ServiceOrderSapId,
-                    p.Remark,
-                    Petitioner= SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(p.PetitionerId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + p.Petitioner,
-                    p.PetitionerId,
-                    p.OrderType,
-                    p.ActivityName,
-                    p.UpdateTime
+                    p.a.TotalMoney,
+                    p.a.ApprovalNumber,
+                    p.a.TerminalCustomer,
+                    p.a.TerminalCustomerId,
+                    p.a.SourceNumbers,
+                    p.a.ServiceOrderSapId,
+                    p.a.Remark,
+                    Petitioner= SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(p.a.PetitionerId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name==null? p.a.Petitioner: SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(p.a.PetitionerId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + p.a.Petitioner,
+                    p.a.PetitionerId,
+                    p.a.OrderType,
+                    p.b.ActivityName,
+                    p.a.UpdateTime
                 }).ToList();
-                reult.Count = pending.Where(p => !salesManIds.Contains(p.ApprovalNumber)).Count();
+                reult.Count = await query.CountAsync();
             }
             else if (req.PageType == 2)
             {
@@ -658,9 +620,12 @@ namespace OpenAuth.App.Workbench
                             .WhereIf(!string.IsNullOrWhiteSpace(req.TerminalCustomer), q => q.a.TerminalCustomer.Contains(req.TerminalCustomer))
                             .WhereIf(!string.IsNullOrWhiteSpace(req.TerminalCustomerId), q => q.a.TerminalCustomerId.Contains(req.TerminalCustomerId))
                             .WhereIf(!string.IsNullOrWhiteSpace(req.StartTime.ToString()), q => q.a.UpdateTime > req.StartTime)
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.SourceNumbers), q => q.a.SourceNumbers == int.Parse(req.SourceNumbers))
                             .WhereIf(!string.IsNullOrWhiteSpace(req.EndTime.ToString()), q => q.a.UpdateTime > Convert.ToDateTime(req.EndTime).AddDays(1));
-                var pending = await query.Select(q => new
+                var pending = await query.OrderByDescending(q => q.a.UpdateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+                reult.Data = pending.Select(q => new
                 {
+                    Petitioner = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.a.PetitionerId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name==null? q.a.Petitioner : SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.a.PetitionerId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + q.a.Petitioner,
                     q.a.TotalMoney,
                     q.a.ApprovalNumber,
                     q.a.TerminalCustomer,
@@ -668,26 +633,10 @@ namespace OpenAuth.App.Workbench
                     q.a.SourceNumbers,
                     q.a.ServiceOrderSapId,
                     q.a.Remark,
-                    q.a.Petitioner,
                     q.a.OrderType,
                     q.a.PetitionerId,
                     ActivityName = q.b.ActivityName == "开始" ? "驳回" : q.b.ActivityName,
                     q.a.UpdateTime
-                }).OrderByDescending(q => q.UpdateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
-                reult.Data = pending.Select(p => new
-                {
-                    p.TotalMoney,
-                    p.ApprovalNumber,
-                    p.TerminalCustomer,
-                    p.TerminalCustomerId,
-                    p.SourceNumbers,
-                    p.ServiceOrderSapId,
-                    p.Remark,
-                    Petitioner = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(p.PetitionerId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name==null? p.Petitioner : SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(p.PetitionerId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + p.Petitioner,
-                    p.OrderType,
-                    p.PetitionerId,
-                    p.ActivityName,
-                    p.UpdateTime
                 }).ToList();
                 reult.Count = await query.CountAsync();
             }
