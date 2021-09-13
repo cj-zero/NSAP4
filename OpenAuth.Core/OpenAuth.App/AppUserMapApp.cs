@@ -94,5 +94,17 @@ namespace OpenAuth.App
             var firstUser = query.MapTo<UserView>();
             return firstUser;
         }
+
+
+        public AppUserMap GetByAppUserId(int appUserId)
+        {
+            var obj = (from c in UnitWork.Find<AppUserMap>(null)
+                      join d in UnitWork.Find<User>(null) on c.UserID equals d.Id 
+                      select c).ToList();
+            var result = obj.Where(o => o.AppUserId.Equals(appUserId)).FirstOrDefault();
+            return result;
+        }
+
+
     }
 }

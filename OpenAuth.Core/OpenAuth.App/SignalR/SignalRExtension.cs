@@ -19,7 +19,7 @@ namespace OpenAuth.App.SignalR
                 {
                     options.Configuration.ChannelPrefix = "SignalR_";
                 });
-            //  services.AddScoped<IUserIdProvider, NameUserIdProvider>();
+            services.AddScoped<IUserIdProvider, NameUserIdProvider>();
             //  services.AddScoped<IAuth, LocalAuth>();
             return services;
         }

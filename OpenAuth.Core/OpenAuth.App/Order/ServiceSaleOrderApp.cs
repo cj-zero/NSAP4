@@ -28,6 +28,8 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using static Infrastructure.Helpers.CommonHelper;
 using NSAP.Entity.BillFlow;
+using NSAP.Entity.Store;
+using NSAP.Entity.Product;
 
 namespace OpenAuth.App.Order
 {
@@ -109,11 +111,7 @@ namespace OpenAuth.App.Order
 					IsSql = false;
 				}
 			}
-			//时间区间
-			if (!string.IsNullOrWhiteSpace(query.FirstTime) && !string.IsNullOrWhiteSpace(query.LastTime))
-			{
-				filterString += string.Format("(a.UpdateDate  BETWEEN '{0}' AND '{1}')AND ", query.FirstTime.ToDateTime(), query.LastTime.ToDateTime());
-			}
+
 			//单号条件
 			if (!string.IsNullOrWhiteSpace(query.DocEntry))
 			{
@@ -150,6 +148,12 @@ namespace OpenAuth.App.Order
 			if (!string.IsNullOrWhiteSpace(query.SlpName))
 			{
 				filterString += string.Format("c.SlpName LIKE '%{0}%' AND ", query.SlpName.Trim());
+			}
+			//时间区间
+			if (!string.IsNullOrWhiteSpace(query.FirstTime) && !string.IsNullOrWhiteSpace(query.LastTime))
+			{
+
+				filterString += string.Format("DATE_FORMAT(a.UpdateDate,'%Y/%m/%d')  BETWEEN '{0}' AND '{1}' AND ", query.FirstTime.ToDateTime(), query.LastTime.ToDateTime());
 			}
 			//if (type == "ODLN")
 			//{
@@ -658,22 +662,22 @@ namespace OpenAuth.App.Order
 					}
 					else if (orderReq.Ations == OrderAtion.DraftUpdate)
 					{
-						result = UpdateAudit(orderReq.JobId, job_data, orderReq.Order.Remark, orderReq.Order.CardCode, orderReq.Order.CardName, orderReq.Order.DocTotal.ToString());
+						result = UpdateAudit(orderReq.JobId, job_data, orderReq.Order.Remark, orderReq.Order.DocTotal.ToString(), orderReq.Order.CardCode, orderReq.Order.CardName);
 					}
 					else if (orderReq.Ations == OrderAtion.DrafSubmit)
 					{
-						result = UpdateAudit(orderReq.JobId, job_data, orderReq.Order.Remark, orderReq.Order.CardCode, orderReq.Order.CardName, orderReq.Order.DocTotal.ToString());
+						result = UpdateAudit(orderReq.JobId, job_data, orderReq.Order.Remark, orderReq.Order.DocTotal.ToString(), orderReq.Order.CardCode, orderReq.Order.CardName);
 						if (result != null)
 						{
-							var par = SaveJobPara(result, orderReq.IsTemplate);
+							var par = SaveJobPara(orderReq.JobId.ToString(), orderReq.IsTemplate);
 							if (par == "1")
 							{
 								string _jobID = result;
-								if ("0" != WorkflowSubmit(int.Parse(result), userID, orderReq.Order.Remark, "", 0))
+								if ("0" != WorkflowSubmit(orderReq.JobId, userID, orderReq.Order.Remark, "", 0))
 								{
 									#region 更新商城订单状态
 									WfaEshopStatus thisinfo = new WfaEshopStatus();
-									thisinfo.JobId = int.Parse(result);
+									thisinfo.JobId = orderReq.JobId;
 									thisinfo.UserId = userID;
 									thisinfo.SlpCode = sboID;
 									thisinfo.CardCode = orderReq.Order.CardCode;
@@ -818,14 +822,18 @@ namespace OpenAuth.App.Order
 		/// <summary>
 		/// 修改审核数据
 		/// </summary>
-		public string UpdateAudit(int jobId, byte[] jobData, string remarks, string card_code, string card_name, string doc_total)
+		public string UpdateAudit(int jobId, byte[] jobData, string remarks, string doc_total, string card_code, string card_name)
 		{
 			string isSave = "";
-			string strSql = string.Format("UPDATE {0}.wfa_job SET job_data={1},remarks={2},job_state={3},doc_total={4},", "nsap_base", jobData, remarks, "0", doc_total == "" ? "0" : doc_total);
-			strSql += string.Format("card_code={0},card_name={1} WHERE job_id ={2}", card_code, card_name, jobId);
+			string strSql = string.Format("UPDATE {0}.wfa_job SET job_data=?job_data,remarks='{2}',job_state={3},doc_total={4},", "nsap_base", jobData, remarks, "0", doc_total == "" ? "0" : doc_total);
+			strSql += string.Format("card_code='{0}',card_name='{1}' WHERE job_id ={2}", card_code, card_name, jobId);
+			List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+			{
+				new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_data",  jobData),
 
-			isSave = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).Rows.Count > 0 ? "1" : "";
-			return isSave;
+			};
+			isSave = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, sqlParameters).ToString();
+			return isSave == "" ? "true" : "false";
 		}
 
 		/// <summary>
@@ -1428,26 +1436,27 @@ namespace OpenAuth.App.Order
 				Address2 = order.Address2,
 				billBaseType = "-1",
 				billBaseEntry = "-1",
-				BeforeDiscSum = !string.IsNullOrEmpty(order.BeforeDiscSum) ? order.BeforeDiscSum : "0.0",// 折扣前总计
 				CardName = order.CardName,//供应商名称
+
 				CardCode = !string.IsNullOrEmpty(order.CardCode) ? order.CardCode : "",
 				Comments = order.Comments,//备注
 				CurSource = order.CurSource,//货币类型
 				CustomFields = order.CustomFields,//  $"U_ShipName≮1≯≮0≯U_SCBM≮1≯P3-陈友祥",
-				DiscPrcnt = !string.IsNullOrEmpty(order.DiscPrcnt.ToString()) ? order.DiscPrcnt.ToString() : "0.0",//折扣（总计）
-																												   //付款条件------------------------
+				BeforeDiscSum = !string.IsNullOrEmpty(order.BeforeDiscSum) ? order.BeforeDiscSum : "0.0",// 折扣前总计
+				DiscSum = !string.IsNullOrEmpty(order.DiscSum.ToString()) ? order.DiscSum.ToString() : "0",//折扣金额
+				DiscPrcnt = !string.IsNullOrEmpty(order.DiscPrcnt.ToString()) ? order.DiscPrcnt.ToString() : "0.0",//折扣（折扣率）
+				DocTotal = order.DocTotal.ToString(),//折扣后总价
+													 //付款条件------------------------
 				GoodsToDay = !string.IsNullOrEmpty(order.GoodsToDay) ? order.GoodsToDay : "0",//货到付百分比
 				PrepaPro = !string.IsNullOrEmpty(order.PrepaPro) ? order.PrepaPro : "0.0",//预付百分比
 				PayBefShip = !string.IsNullOrEmpty(order.PayBefShip) ? order.PayBefShip : "0.0",//发货前付
 				GoodsToPro = !string.IsNullOrEmpty(order.GoodsToPro) ? order.GoodsToPro : "0.0",//货到付百分比
 																								//------------------------------
-				DiscSum = !string.IsNullOrEmpty(order.DiscSum.ToString()) ? order.DiscSum.ToString() : "0",//折扣金额
 				DocCur = order.DocCur,
 				DocDate = order.DocDate.ToString(),
 				DocDueDate = order.DocDueDate.ToString(),
 				DocRate = order.DocRate.ToString(),
 				DocStatus = "O",
-				DocTotal = order.DocTotal.ToString(),//折扣后总价
 				DocType = order.DocType,
 				GoodsToDate = order.GoodsToDate,
 				FuncId = funcId.ToString(),
@@ -1844,10 +1853,10 @@ namespace OpenAuth.App.Order
 		public DataTable SelectMaterialsInventoryData(string ItemCode, string SboId, bool IsOpenSap, string Operating)
 		{
 			DataTable dt = SelectMaterialsInventoryDataNos(ItemCode.FilterESC(), SboId, IsOpenSap, Operating);
-			//if (Operating == "search" || Operating == "edit")
-			//{
-			//	dt.Rows.Add(ItemCode, "", "", "S", dt.Compute("SUM(OnHand)", "true"), dt.Compute("SUM(IsCommited)", "true"), dt.Compute("SUM(OnOrder)", "true"), dt.Compute("SUM(Available)", "true"), "0", "0", "0", "");
-			//}
+			if (Operating == "search" || Operating == "edit")
+			{
+				dt.Rows.Add(ItemCode, "", "", "S", dt.Compute("SUM(OnHand)", "true"), dt.Compute("SUM(IsCommited)", "true"), dt.Compute("SUM(OnOrder)", "true"), dt.Compute("SUM(Available)", "true"), "0", "0", "0", "");
+			}
 			return dt;
 		}
 
@@ -4741,22 +4750,22 @@ namespace OpenAuth.App.Order
 		/// <summary>
 		/// 我创建的
 		/// </summary>
-		public DataTable GetICreated(out int rowCount, int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, int user_id, string types, string Applicator, string Customer, string Status, string BeginDate, string EndDate, bool ViewCustom = true, bool ViewSales = true)
+		public DataTable GetICreated(out int rowCount, GetICreatedReq model, int user_id, bool ViewCustom = true, bool ViewSales = true)
 		{
 
 			string sortString = string.Empty;
 			string filterString = string.Empty;
 			string line = string.Empty;
-			if (!string.IsNullOrEmpty(sortname) && !string.IsNullOrEmpty(sortorder))
-				sortString = string.Format("{0} {1}", sortname, sortorder.ToUpper());
+			if (!string.IsNullOrEmpty(model.sortname) && !string.IsNullOrEmpty(model.sortorder))
+				sortString = string.Format("{0} {1}", model.sortname, model.sortorder.ToUpper());
 			if (user_id > 0)
 			{
 				filterString += string.Format("a.user_id = {0} AND a.job_state >-1 AND ", user_id);
 			}
 			#region 搜索条件
-			if (types.Replace(" ", "") != "")
+			if (model.types.Replace(" ", "") != "")
 			{
-				string[] typeArr = types.Split('☉');
+				string[] typeArr = model.types.Split('☉');
 				if (typeArr.Length > 0)
 				{
 					filterString += string.Format(" ( ");
@@ -4774,10 +4783,10 @@ namespace OpenAuth.App.Order
 					filterString += string.Format(" ) AND ");
 				}
 
-				if (Applicator != "")
+				if (model.Applicator != "")
 				{
 					string[] num;
-					num = Applicator.Split(',');
+					num = model.Applicator.Split(',');
 					string para = "";
 					foreach (string c in num)
 					{
@@ -4786,71 +4795,63 @@ namespace OpenAuth.App.Order
 					para = "(" + para.TrimEnd(',') + ")";
 					filterString += string.Format(" c.user_nm IN {0} AND ", para);
 				}
-				if (Customer != "")
+				if (model.Customer != "")
 				{
-					filterString += string.Format(" (a.card_code LIKE '%{0}%' OR a.card_name LIKE '%{0}%') AND ", Customer);
+					filterString += string.Format(" (a.card_code LIKE '%{0}%' OR a.card_name LIKE '%{0}%') AND ", model.Customer);
 				}
-				if (Status != "")
+				if (model.Status != "")
 				{
-					filterString += string.Format(" a.job_state = {0} AND ", int.Parse(Status));
+					filterString += string.Format(" a.job_state = {0} AND ", int.Parse(model.Status));
 				}
-				if (BeginDate != "")
+				if (model.BeginDate != "")
 				{
-					filterString += string.Format(" DATE_FORMAT(a.upd_dt,'%Y/%m/%d') BETWEEN '{0}' AND '{1}' AND ", BeginDate, EndDate);
+					filterString += string.Format(" DATE_FORMAT(a.upd_dt,'%Y/%m/%d') BETWEEN '{0}' AND '{1}' AND ", model.BeginDate, model.EndDate);
 				}
 			}
-			if (!string.IsNullOrEmpty(filterQuery))
-			{
-				string[] fields = filterQuery.Split('`');
-				string[] p = fields[0].Split(':');
-				if (!string.IsNullOrEmpty(p[1]))
-				{
-					filterString += string.Format(" a.job_id LIKE '%{0}%' AND ", p[1].FilterSQL().Trim());
-				}
-				p = fields[1].Split(':');
-				if (!string.IsNullOrEmpty(p[1]))
-				{
-					filterString += string.Format("b.job_type_nm LIKE '%{0}%' AND ", p[1].FilterSQL().Trim());
-				}
 
-				p = fields[2].Split(':');
-				if (!string.IsNullOrEmpty(p[1]))
-				{
-					filterString += string.Format("a.job_state = {0} AND ", p[1].FilterSQL().Trim());
-				}
-				p = fields[3].Split(':');
-				if (!string.IsNullOrEmpty(p[1]))
-				{
-					filterString += string.Format("a.job_nm LIKE '%{0}%' AND ", p[1].FilterWildCard().FilterSQL().Trim());
-				}
-				p = fields[4].Split(':');
-				if (!string.IsNullOrEmpty(p[1]))
-				{
-					filterString += string.Format("(a.card_code LIKE '%{0}%' OR a.card_name LIKE '%{0}%') AND ", p[1].FilterWildCard().FilterSQL().Trim());
-				}
-				p = fields[5].Split(':');
-				if (!string.IsNullOrEmpty(p[1]))
-				{
-					filterString += string.Format("a.remarks LIKE '%{0}%' AND ", p[1].FilterWildCard().FilterSQL().Trim());
-				}
-				p = fields[6].Split(':');
-				if (!string.IsNullOrEmpty(p[1]))
-				{
-					filterString += string.Format("a.sbo_itf_return LIKE '%{0}%' AND ", p[1].FilterWildCard().FilterSQL().Trim());
-				}
-				p = fields[7].Split(':');
-				if (!string.IsNullOrEmpty(p[1]))
-				{
-					filterString += string.Format("a.base_entry LIKE '%{0}%' AND ", p[1].FilterWildCard().FilterSQL().Trim());
-				}
+
+			if (!string.IsNullOrEmpty(model.Job_Id))
+			{
+				filterString += string.Format(" a.job_id LIKE '%{0}%' AND ", model.Job_Id);
 			}
-			filterString += string.Format("b.job_type_nm LIKE '%{0}%' AND ", "销售报价单");
+
+			if (!string.IsNullOrEmpty(model.Job_Type_nm))
+			{
+				filterString += string.Format("b.job_type_nm LIKE '%{0}%' AND ", model.Job_Type_nm);
+			}
+
+
+			if (!string.IsNullOrEmpty(model.Job_state))
+			{
+				filterString += string.Format("a.job_state = {0} AND ", model.Job_state);
+			}
+
+			if (!string.IsNullOrEmpty(model.Job_nm))
+			{
+				filterString += string.Format("a.job_nm LIKE '%{0}%' AND ", model.Job_nm);
+			}
+
+			if (!string.IsNullOrEmpty(model.Remarks))
+			{
+				filterString += string.Format("a.remarks LIKE '%{0}%' AND ", model.Remarks);
+			}
+
+			if (!string.IsNullOrEmpty(model.Sbo_itf_return))
+			{
+				filterString += string.Format("a.sbo_itf_return LIKE '%{0}%' AND ", model.Sbo_itf_return);
+			}
+			if (!string.IsNullOrEmpty(model.Base_entry))
+			{
+				filterString += string.Format("a.base_entry LIKE '%{0}%' AND ", model.Base_entry);
+			}
+
+			//filterString += string.Format("b.job_type_nm LIKE '%{0}%' AND ", "销售报价单");
 			#endregion
 			#region
 			if (!string.IsNullOrEmpty(filterString))
 				filterString = filterString.Substring(0, filterString.Length - 5);
 			#endregion
-			return GetICreated(out rowCount, pageSize, pageIndex, filterString, sortString, ViewCustom, ViewSales);
+			return GetICreated(out rowCount, model.limit, model.page, filterString, sortString, ViewCustom, ViewSales);
 		}
 		#endregion
 		#region 我创建的
@@ -4895,8 +4896,34 @@ namespace OpenAuth.App.Order
 			}
 			string type = bill.DocType;
 			string _main = JsonHelper.ParseModel(bill);
-			var ba = bill.CustomFields.Split("≯")[3];
-			bill.CustomFields = ba;
+			//if (bill.CustomFields.ToString().Contains("≯"))
+			//{
+			//	var ba = bill.CustomFields.Split("≯")[3];
+			//	bill.CustomFields = ba;
+
+			//}
+
+
+			return bill;
+		}
+		public billDelivery GetDeliverySalesInfoNewNos(string jobId)
+		{
+			billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfoNos(jobId)));
+			DataTable dt = GetSboNamePwd(int.Parse(bill.SboId));
+			string dRowData = string.Empty; string isOpen = "0"; string sboname = "0"; string sqlconn = "0";
+			if (dt.Rows.Count > 0) { isOpen = dt.Rows[0][6].ToString(); sboname = dt.Rows[0][0].ToString(); sqlconn = dt.Rows[0][5].ToString(); }
+
+			string type = bill.DocType;
+			string _main = JsonHelper.ParseModel(bill);
+			//if (bill.CustomFields.ToString().Contains("≮1≯"))
+			//{
+			//	var ba = bill.CustomFields.Split("≮1≯")[4];
+			//	bill.CustomFields = ba;
+
+			//}
+
+
+
 			return bill;
 		}
 		/// <summary>
@@ -5301,6 +5328,16 @@ namespace OpenAuth.App.Order
 			string sql = string.Format("SELECT job_data FROM {0}.wfa_job WHERE job_id = {1}", "nsap_base", jobId);
 			return UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
 		}
+		/// <summary>
+		/// 根据原单号查询
+		/// </summary>
+		/// <param name="jobId"></param>
+		/// <returns></returns>
+		public object GetSalesInfoNos(string jobId)
+		{
+			string sql = string.Format("SELECT job_data FROM {0}.wfa_job WHERE base_entry = {1}", "nsap_base", jobId);
+			return UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
+		}
 		public int GetIsEdit(string jobId)
 		{
 			int isEdit = 0;
@@ -5603,6 +5640,161 @@ namespace OpenAuth.App.Order
 			return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
 		}
 		#endregion
+		#region  流程任务 - 撤回(审核中的)
+		/// <summary>
+		///流程任务 - 撤回(审核中的)
+		/// </summary>
+		public bool ICreatedBack(string keyIds, string userId, string urlType)
+		{
+			string errorMsg = string.Empty;
 
+			List<CmdParameter> cmdParameters = new List<CmdParameter>();
+			IDataParameter[] parameter = new IDataParameter[] { new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_id", keyIds) };
+			CmdParameter qcmdParameter = new CmdParameter();
+			qcmdParameter.Sql = string.Format("DELETE FROM {0}.wfa_jump WHERE job_id ={1};", "nsap_base", keyIds);
+			cmdParameters.Add(qcmdParameter);
+
+			CmdParameter ecmdParameter = new CmdParameter();
+			ecmdParameter.Sql = string.Format("UPDATE {0}.wfa_job SET job_state=0,step_id=0 WHERE job_id ={1};", "nsap_base", keyIds);
+			cmdParameters.Add(ecmdParameter);
+
+			CmdParameter tcmdParameter = new CmdParameter();
+			tcmdParameter.Sql = string.Format("DELETE FROM {0}.wfa_job_para WHERE job_id ={1};", "nsap_base", keyIds);
+			cmdParameters.Add(tcmdParameter);
+
+			CmdParameter rcmdParameter = new CmdParameter();
+			rcmdParameter.Sql = string.Format("INSERT INTO {0}.wfa_log(job_id,user_id,audit_level,state) VALUES({1},{2},{3},{4});", "nsap_base", keyIds, userId, "0", "6");
+			cmdParameters.Add(rcmdParameter);
+
+			//销售序列号撤销
+			if (urlType.ToUpper() == "sales/SalesDelivery.aspx".ToUpper() && urlType.ToUpper() == "sales/salesreturnofgoods.aspx".ToUpper() || urlType.ToUpper() == "sales/salesreturnofgoodsline.aspx".ToUpper() || urlType.ToUpper() == "sales/salescreditmemo.aspx".ToUpper())
+			{
+				billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfo(keyIds)));
+				foreach (billSerialNumber osrn in bill.serialNumber)
+				{
+					foreach (billSerialNumberChooseItem serial in osrn.Details)
+					{
+						CmdParameter snbParameter = new CmdParameter();
+						snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode ={1} AND SysNumber ={2};", "nsap_bone", osrn.ItemCode, serial.SysSerial);
+						cmdParameters.Add(snbParameter);
+					}
+				}
+			}
+			//库存转储序列号撤销
+			if (urlType.ToUpper() == "store/stocktransfer.aspx".ToUpper())
+			{
+				storeOWTR bill = DeSerialize<storeOWTR>((byte[])(GetSalesInfo(keyIds)));
+				foreach (billSerialNumber osrn in bill.serialNumber)
+				{
+					foreach (billSerialNumberChooseItem serial in osrn.Details)
+					{
+						CmdParameter snbParameter = new CmdParameter();
+						snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode = {1} AND SysNumber = {2};", "nsap_bone", osrn.ItemCode, serial.SysSerial);
+						cmdParameters.Add(snbParameter);
+					}
+				}
+			}
+			//采购序列号撤销 
+			if (urlType.ToUpper() == "purchase/purchasereturn.aspx".ToUpper() || urlType.ToUpper() == "purchase/purchasecreditmemo.aspx".ToUpper())
+			{
+				billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfo(keyIds)));
+				foreach (billSerialNumber osrn in bill.serialNumber)
+				{
+					foreach (billSerialNumberChooseItem serial in osrn.Details)
+					{
+						CmdParameter snbParameter = new CmdParameter();
+						snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode = {1} AND SysNumber = {2};", "nasp_bone", osrn.ItemCode, serial.SysSerial);
+						cmdParameters.Add(snbParameter);
+					}
+				}
+			}
+			// 生产发料 
+			if (urlType.ToUpper() == "product/producematerial.aspx".ToUpper())
+			{
+				proReceipt bill = DeSerialize<proReceipt>((byte[])(GetSalesInfo(keyIds)));
+				foreach (billSerialNumber osrn in bill.serialNumber)
+				{
+					foreach (billSerialNumberChooseItem serial in osrn.Details)
+					{
+						CmdParameter snbParameter = new CmdParameter();
+						snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode = {1} AND SysNumber = {2};", "nsap_bone", osrn.ItemCode, serial.SysSerial);
+						cmdParameters.Add(snbParameter);
+					}
+				}
+			}
+			int resultCount = ExecuteTransaction(cmdParameters, out errorMsg);
+
+			//解除服务呼叫绑定售后报价单
+			if (urlType.ToUpper() == "sales/SalesQuotation.aspx".ToUpper() && resultCount > 0)
+			{
+				billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfo(keyIds)));
+				if (!string.IsNullOrEmpty(bill.U_CallID))
+				{
+					UpdateUsftjbjFromOscl(bill.U_CallID, bill.SboId, "0");
+				}
+			}
+
+			return resultCount > 0 ? true : false;
+		}
+		public int ExecuteTransaction(List<CmdParameter> array, out string errorMsg)
+		{
+			if (array.Count == 0) { errorMsg = string.Empty; return 0; }
+			int count = 0; errorMsg = string.Empty;
+			try
+			{
+				string rValue = string.Empty;
+				foreach (CmdParameter cmd in array)
+				{
+					if (!string.IsNullOrEmpty(cmd.Sql))
+					{
+						try
+						{
+							if (cmd.IsReturn)
+							{
+								object o = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, cmd.Sql.Replace(CmdParameter.ReturnMark, rValue), CommandType.Text, null);
+								if (o != null) rValue = o.ToString();
+							}
+							else UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, cmd.Sql.Replace(CmdParameter.ReturnMark, rValue), CommandType.Text, null);
+							count++;
+						}
+						catch (Exception e) { throw new Exception(string.Format("An error occurs when transactions are executed: \r\nReason[{0}]\r\nStatement[{1}]", e.Message, cmd.Sql)); }
+					}
+					else throw new Exception("When transactions are executed, Sql statement can not be empty");
+				}
+
+			}
+			catch (Exception e)
+			{
+
+				count = 0; errorMsg = e.Message;
+			}
+
+
+			return count;
+		}
+		#endregion
+		#region 修改服务呼叫状态
+		/// <summary>
+		/// 修改服务呼叫状态（U_SFTJBJ 0未关联报价单  1已关联报价单）
+		/// </summary>
+		/// <param name="callID">服务呼叫ID</param>
+		/// <param name="sbo_id">帐套ID</param>
+		/// <returns></returns>
+		public int UpdateUsftjbjFromOscl(string callID, string sbo_id, string state)
+		{
+			string sqlStr = string.Format("UPDATE {0}.service_oscl SET U_SFTJBJ={1} WHERE callID = {2} AND sbo_id = {3};", "nsap_bone", state, callID, sbo_id);
+			return UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sqlStr, CommandType.Text, null) != null ? 1 : 0;
+		}
+		#endregion
+		#region 删除我创建的(草稿&驳回)
+		/// <summary>
+		///删除我创建的(草稿&驳回)
+		/// </summary>
+		public bool ICreatedDelete(string keyIds)
+		{
+			string sql = string.Format("UPDATE {0}.wfa_job SET job_state=-1 WHERE (job_state=0 OR job_state=2) AND  job_id IN ({1})", "nsap_base", keyIds);
+			return UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sql, CommandType.Text, null) == null ? true : false;
+		}
+		#endregion
 	}
 }

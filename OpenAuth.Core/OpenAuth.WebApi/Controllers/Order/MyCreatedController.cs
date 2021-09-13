@@ -47,7 +47,7 @@ namespace OpenAuth.WebApi.Controllers.Order
 			var result = new TableData();
 			int rowCount = 0;
 			//DataTable dt = _serviceSaleOrderApp.GetICreated(model.limit, model.page, model.query, model.sortname, model.sortorder, UserID, model.types, model.Applicator, model.Customer, model.Status, model.BeginDate, model.EndDate, _serviceSaleOrderApp.GetPagePowersByUrl("mywork/AuditAllNew.aspx",UserID).ViewCustom, _serviceSaleOrderApp.GetPagePowersByUrl("mywork/AuditAllNew.aspx",UserID).ViewSales);
-			DataTable dt = _serviceSaleOrderApp.GetICreated(out rowCount, model.limit, model.page, model.query, model.sortname, model.sortorder, UserID, model.types, model.Applicator, model.Customer, model.Status, model.BeginDate, model.EndDate, true, true);
+			DataTable dt = _serviceSaleOrderApp.GetICreated(out rowCount, model, UserID, true, true);
 			result.Data = dt;
 			result.Count = rowCount;
 			return result;
@@ -376,5 +376,42 @@ namespace OpenAuth.WebApi.Controllers.Order
 
 
 		}
+		#region 流程任务 - 撤回(审核中的)
+		/// <summary>
+		/// 流程任务 - 撤回(审核中的)
+		/// </summary>
+		[HttpGet]
+		[Route("BackReceipt")]
+		public Response<bool> BackReceipt(string jobId, string urlType= "sales / SalesQuotation.aspx")
+		{
+			var result = new Response<bool>();
+			var UserID = _serviceBaseApp.GetUserNaspId();
+
+			result .Result= _serviceSaleOrderApp.ICreatedBack(jobId, UserID.ToString(), urlType);
+				
+			
+			return result;
+		}
+
+		#endregion
+		#region 删除(草稿&驳回)
+		/// <summary>
+		/// 删除(草稿&驳回)
+		/// </summary>
+		[HttpGet]
+		[Route("Delete")]
+		public Response<bool> Delete(string keyIds)
+		{
+			var result = new Response<bool>();
+
+
+
+			result.Result = _serviceSaleOrderApp.ICreatedDelete(keyIds);
+				
+		
+			return result;
+		}
+
+		#endregion
 	}
 }
