@@ -81,12 +81,20 @@ namespace OpenAuth.App.Serve
         /// <returns></returns>
         private async Task PushMessageToApp(int userId, string title, string content)
         {
+            #region 获取token
+            var erpUserId = await UnitWork.Find<User>(c => c.Account == "admin").Select(c => c.Id).FirstOrDefaultAsync();
+            var appUserId = await UnitWork.Find<AppUserMap>(c => c.UserID == erpUserId).Select(c => c.AppUserId).FirstOrDefaultAsync();
+            var key = System.Web.HttpUtility.UrlEncode(Encryption.EncryptRSA(appUserId.ToString()));
+            var result = _helper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "ciphertext", key } }, "Account/GetUserInfoFromErp");
+            var token = result["Data"];
+            #endregion
+
             _helper.Post(new
             {
                 UserId = userId,
                 Title = title,
                 Content = content
-            }, "BbsCommunity/AppPushMsg");
+            }, "BbsCommunity/AppPushMsg", "ErpAuthorize", $"Neware {token}");
         }
     }
 }
