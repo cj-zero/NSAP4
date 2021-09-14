@@ -19,10 +19,12 @@ namespace OpenAuth.App.Serve
     {
         private HttpHelper _helper;
         private readonly ServiceOrderApp _serviceOrderApp;
+        private IOptions<AppSetting> _appConfiguration;
         public ServiceOrderMessageApp(IUnitWork unitWork, IAuth auth, IOptions<AppSetting> appConfiguration, ServiceOrderApp serviceOrderApp) : base(unitWork, auth)
         {
             _helper = new HttpHelper(appConfiguration.Value.AppPushMsgUrl);
             _serviceOrderApp = serviceOrderApp;
+            _appConfiguration = appConfiguration;
         }
 
         public async Task<dynamic> GetServiceOrderMessages(int serviceOrderId)
@@ -79,22 +81,18 @@ namespace OpenAuth.App.Serve
         /// <param name="title">消息标题</param>
         /// <param name="content">消息内容</param>
         /// <returns></returns>
-        private async Task PushMessageToApp(int userId, string title, string content)
+        public async Task PushMessageToApp(int userId, string title, string content)
         {
-            #region 获取token
-            var erpUserId = await UnitWork.Find<User>(c => c.Account == "admin").Select(c => c.Id).FirstOrDefaultAsync();
-            var appUserId = await UnitWork.Find<AppUserMap>(c => c.UserID == erpUserId).Select(c => c.AppUserId).FirstOrDefaultAsync();
-            var key = System.Web.HttpUtility.UrlEncode(Encryption.EncryptRSA(appUserId.ToString()));
-            var result = _helper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "ciphertext", key } }, "Account/GetUserInfoFromErp");
-            var token = result["Data"];
-            #endregion
+            var timespan = DatetimeUtil.ToUnixTimestampBySeconds(DateTime.Now.AddMinutes(5));
+            var text = $"NewareApiTokenDeadline:{timespan}";
+            var aes = Encryption.AESEncrypt(text);
 
             _helper.Post(new
             {
                 UserId = userId,
                 Title = title,
                 Content = content
-            }, "BbsCommunity/AppPushMsg", "ErpAuthorize", $"Neware {token}");
+            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg", "EncryToken", aes);
         }
     }
 }
