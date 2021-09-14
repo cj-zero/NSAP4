@@ -2477,6 +2477,7 @@ namespace OpenAuth.App.Material
         /// <param name="QuotationId"></param>
         /// <returns></returns>
         public async Task<byte[]> PrintSalesOrder(string QuotationId)
+        
         {
             var quotationId = int.Parse(QuotationId);
             var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId) && q.QuotationStatus < 10).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();

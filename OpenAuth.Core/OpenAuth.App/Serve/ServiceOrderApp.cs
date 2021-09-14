@@ -2512,12 +2512,20 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task PushMessageToApp(int userId, string title, string content)
         {
+            #region 获取token
+            var erpUserId = await UnitWork.Find<User>(c => c.Account == "admin").Select(c => c.Id).FirstOrDefaultAsync();
+            var appUserId = await UnitWork.Find<AppUserMap>(c => c.UserID == erpUserId).Select(c => c.AppUserId).FirstOrDefaultAsync();
+            var key = System.Web.HttpUtility.UrlEncode(Encryption.EncryptRSA(appUserId.ToString()));
+            var result = _helper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "ciphertext", key } }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Account/GetUserInfoFromErp");
+            var token = result["Data"];
+            #endregion
+
             _helper.Post(new
             {
                 UserId = userId,
                 Title = title,
                 Content = content
-            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg");
+            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg", "ErpAuthorize", $"Neware {token}");
         }
 
         /// <summary>
@@ -2531,6 +2539,14 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<string> PushMessageToApp(int userId, string title, string content, string type, dynamic guidInfo)
         {
+            #region 获取token
+            var erpUserId = await UnitWork.Find<User>(c => c.Account == "admin").Select(c => c.Id).FirstOrDefaultAsync();
+            var appUserId = await UnitWork.Find<AppUserMap>(c => c.UserID == erpUserId).Select(c => c.AppUserId).FirstOrDefaultAsync();
+            var key = System.Web.HttpUtility.UrlEncode(Encryption.EncryptRSA(appUserId.ToString()));
+            var result = _helper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "ciphertext", key } }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Account/GetUserInfoFromErp");
+            var token = result["Data"];
+            #endregion
+
             return _helper.Post(new
             {
                 UserId = userId,
@@ -2538,7 +2554,7 @@ namespace OpenAuth.App
                 Content = content,
                 Type = type,
                 GuidInfos = guidInfo
-            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg");
+            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg", "ErpAuthorize", $"Neware {token}");
         }
         #endregion
 
@@ -4244,7 +4260,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
             }
-            var data = await UnitWork.Find<PersonProblemAndSolution>(w => w.CreaterId == userInfo.UserID && w.Type == Type && w.IsDelete == 0).Select(s => new { s.Description, s.Id }).ToListAsync();
+            var data = await UnitWork.Find<PersonProblemAndSolution>(w => w.CreaterId == userInfo.UserID && w.Type == Type && w.IsDelete == 0).OrderByDescending(c => c.CreateTime).Take(5).Select(s => new { s.Description, s.Id }).ToListAsync();
             result.Data = data;
             return result;
         }

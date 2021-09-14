@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -85,6 +86,34 @@ namespace Infrastructure
             var reult = Encoding.UTF8.GetString(toEncryptArray);
             reult=reult.Substring(16, reult.Length -16);
             return reult;
+        }
+
+        /// <summary>
+        /// RSA加密
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public static string EncryptRSA(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return input;
+            }
+            try
+            {
+                string publicKeyDir = @"<RSAKeyValue><Modulus>wQridDfnXsSBkEIXpIuMqp+YI/yP5vS0TQ0PBDeZqY7d4bktT3WkconGdX+gamHf3hqtOaNcefWBngPZch4a3QrCjmZJyFOjwhir6EBVPdZLcRNJsHPmQNxnfV7SC5dvNVeVxKs1ZwUjV/TDWFvBUrnZetoLdhEI0Wf9zEQ9SC0=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>";//公钥存放地址
+                using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
+                {
+                    rsa.FromXmlString(publicKeyDir);
+                    byte[] plaindata = Encoding.Default.GetBytes(input);
+                    byte[] encryptdata = rsa.Encrypt(plaindata, false);
+                    return Convert.ToBase64String(encryptdata);
+                }
+            }
+            catch(Exception ex)
+            {
+                return input;
+            }
         }
     }
 }

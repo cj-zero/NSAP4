@@ -29,6 +29,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Templates\InternalContactHeader.html" />
+    <None Remove="Templates\PrintInternalContact.html" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Templates\InternalContactHeader.html" />
+    <Content Include="Templates\PrintInternalContact.html" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="Templates\Calibration Certificate.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
