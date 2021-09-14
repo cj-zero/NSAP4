@@ -230,7 +230,16 @@ namespace OpenAuth.App.Material
                 {
                     if (!loginContext.Roles.Any(r => r.Name.Equals("仓库")))
                     {
-                        Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
+                        if (loginContext.Roles.Any(r => r.Name.Equals("售后主管")))//售后主管查看其部门下所以人的数据
+                        {
+                            var orgId = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault()?.Id;
+                            var orgUserIds = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.SecondId == orgId && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
+                            Quotations = Quotations.Where(q => orgUserIds.Contains(q.CreateUserId));
+                        }
+                        else
+                        {
+                            Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
+                        }
                     }
                     switch (request.StartType)
                     {
@@ -253,7 +262,16 @@ namespace OpenAuth.App.Material
                 {
                     if (!loginContext.Roles.Any(r => r.Name.Equals("物料稽查")))
                     {
-                        Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
+                        if (loginContext.Roles.Any(r=>r.Name.Equals("售后主管")))//售后主管查看其部门下所以人的数据
+                        {
+                            var orgId = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault()?.Id;
+                            var orgUserIds = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.SecondId == orgId && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
+                            Quotations = Quotations.Where(q => orgUserIds.Contains(q.CreateUserId));
+                        }
+                        else
+                        {
+                            Quotations = Quotations.Where(q => q.CreateUserId.Equals(loginUser.Id));
+                        }
                     }
                 }
             }
