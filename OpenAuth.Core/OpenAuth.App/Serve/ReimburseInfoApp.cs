@@ -318,13 +318,31 @@ namespace OpenAuth.App
             }
             var result = new TableData();
             var reimburseInfos = UnitWork.Find<ReimburseInfo>(null).WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId));
-            if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && request.PageType == 1 && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
+            List<string> currentUser = new List<string>();
+            if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginContext.Roles.Any(r=>r.Name.Equals("总经理")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
-                reimburseInfos = reimburseInfos.Where(r => r.CreateUserId.Equals(loginContext.User.Id));
+                if (loginContext.Roles.Any(c => c.Name.Equals("售后主管")))//查看本部下数据
+                {
+                    var orgId = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault()?.Id;
+                    var userIds = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.SecondId == orgId && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
+                    reimburseInfos = reimburseInfos.Where(r => userIds.Contains(r.CreateUserId));
+                    currentUser.AddRange(userIds);
+                }
+                else
+                {
+                    reimburseInfos = reimburseInfos.Where(r => r.CreateUserId.Equals(loginContext.User.Id));
+                    currentUser.Add(loginContext.User.Id);
+                }
             };
+            
+            var currsoids = currentUser.Count > 0 ? await UnitWork.Find<ServiceWorkOrder>(c => currentUser.Contains(c.CurrentUserNsapId)).Select(c => c.ServiceOrderId).Distinct().ToListAsync() : null;
             var reimburseInfoList= await reimburseInfos.Select(r => new { r.RemburseStatus, r.TotalMoney, r.ServiceOrderId }).ToListAsync();
             var serverOrderIds = reimburseInfoList.Select(r => r.ServiceOrderId).ToList();
-            var expends = await UnitWork.Find<ServiceDailyExpends>(s => !serverOrderIds.Contains(s.ServiceOrderId)).WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId)).SumAsync(s => s.TotalMoney);
+            var expends = await UnitWork.Find<ServiceDailyExpends>(null)
+                .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId))
+                .WhereIf(currsoids != null, r => currsoids.Contains(r.ServiceOrderId))//不能查看全部的则查看自己或部门下的服务单关联的日费
+                .WhereIf(currsoids == null, s => !serverOrderIds.Contains(s.ServiceOrderId))//全部日费
+                .SumAsync(s => s.TotalMoney);
             var totalmoney = reimburseInfoList.Sum(r => r.TotalMoney)+ expends;
             var havepaid = reimburseInfoList.Where(r=>r.RemburseStatus==9).Sum(r => r.TotalMoney);
             var unpaid = reimburseInfoList.Where(r => r.RemburseStatus < 9 && r.RemburseStatus>3).Sum(r => r.TotalMoney);
