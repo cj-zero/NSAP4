@@ -2512,7 +2512,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task PushMessageToApp(int userId, string title, string content)
         {
-            var timespan = DatetimeUtil.ToUnixTimestampBySeconds(DateTime.Now.AddSeconds(5));
+            var timespan = DatetimeUtil.ToUnixTimestampBySeconds(DateTime.Now.AddMinutes(5));
             var text = $"NewareApiTokenDeadline:{timespan}";
             var aes = Encryption.AESEncrypt(text);
 
