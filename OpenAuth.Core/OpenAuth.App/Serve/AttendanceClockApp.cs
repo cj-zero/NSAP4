@@ -295,18 +295,26 @@ namespace OpenAuth.App
 
         #region  App打卡提醒消息通知
         /// <summary>
-        /// App打卡推送提醒
+        /// App签到打卡推送提醒
         /// </summary>
         /// <returns></returns>
         public async Task AppClockMessageNotic()
         {
             DateTime dt = DateTime.Now.Date;
+            List<int> list = new List<int>();
             var serviceOrderUserList = await (from a in UnitWork.Find<ServiceWorkOrder>(null)
                                               join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id
                                               where a.Status >= 2 && a.Status <= 5 && b.VestInOrg != 2
                                               select a.CurrentUserId.Value).Distinct().ToListAsync();
             var hasClockUser = await UnitWork.Find<AttendanceClock>(null).Where(c => c.ClockDate == dt).Select(c => c.AppUserId).ToListAsync();
-            var noticMessageUser = serviceOrderUserList.Except(hasClockUser).ToList();
+            var serviceUserIsPush = await UnitWork.Find<AttendanceClockWhileList>(null).Where(c => c.Type == 2 && c.IsEnable == false).FirstOrDefaultAsync();
+            var whileLists = await UnitWork.Find<AttendanceClockWhileList>(null).Where(c=>c.Type==1 && c.IsEnable==true).Select(c=>c.UserId).ToListAsync();
+            var whilepushlist = await UnitWork.Find<AppUserMap>(c => whileLists.Contains(c.UserID)).Select(c=>c.AppUserId.Value).ToListAsync();
+            if (serviceUserIsPush == null)
+                list = serviceOrderUserList.Union(whilepushlist).Distinct().ToList();
+            else
+                list = whilepushlist;
+            var noticMessageUser = list.Except(hasClockUser).ToList();
             string title = "考勤打卡";
             string content = "您今天还未打卡签到,请立即前往>>";
             string payload= "{\"urlType\":1,\"url\":\"/pages/afterSale/mechanic/outWork\"}";

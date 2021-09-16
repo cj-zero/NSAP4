@@ -1267,6 +1267,10 @@ namespace NSAP.App.WebApi.Controllers
             }
             return result;
         }
+        /// <summary>
+        /// App签到打卡推送提醒
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
         public async Task<TableData> AppClockMessageNotic()
         {
