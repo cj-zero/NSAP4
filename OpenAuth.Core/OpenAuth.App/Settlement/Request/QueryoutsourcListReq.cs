@@ -61,7 +61,10 @@ namespace OpenAuth.App.Request
         /// 开始时间
         /// </summary>
         public DateTime? EndTime { get; set; }
-
+        /// <summary>
+        /// 是否修改
+        /// </summary>
+        public bool? IsUpdate { get; set; }
         /// <summary>
         /// 服务单集合
         /// </summary>

@@ -1,5 +1,6 @@
 ﻿using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using NSAP.Entity.BillFlow;
 using NSAP.Entity.Sales;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
@@ -365,9 +366,9 @@ namespace OpenAuth.WebApi.Controllers.Order
 		/// <returns></returns>
 		[HttpGet]
 		[Route("GetFlowChartByJobID")]
-		public Response<string> GetFlowChartByJobID(string jobID)
+		public Response<FlowChart> GetFlowChartByJobID(string jobID)
 		{
-			var result = new Response<string>();
+			var result = new Response<FlowChart>();
 
 			result.Result = _serviceSaleOrderApp.GetFlowChartByJobID(jobID);
 

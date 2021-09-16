@@ -1833,7 +1833,8 @@ namespace OpenAuth.App
             }
             //判断当前服务单是否已确认
             var isExist = await UnitWork.Find<ServiceOrder>(s => s.Id == req.serviceOrderId && s.SalesManId.Equals(loginUser.Id)).FirstOrDefaultAsync() == null ? true : false;
-            if (isExist)
+            var isRole = loginContext.Roles.Any(c => c.Name.Contains("呼叫中心"));
+            if (isExist && !isRole)
             {
                 throw new CommonException("暂无此服务单审批权限", 60019);
             }
@@ -2511,20 +2512,16 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task PushMessageToApp(int userId, string title, string content)
         {
-            #region 获取token
-            var erpUserId = await UnitWork.Find<User>(c => c.Account == "admin").Select(c => c.Id).FirstOrDefaultAsync();
-            var appUserId = await UnitWork.Find<AppUserMap>(c => c.UserID == erpUserId).Select(c => c.AppUserId).FirstOrDefaultAsync();
-            var key = System.Web.HttpUtility.UrlEncode(Encryption.EncryptRSA(appUserId.ToString()));
-            var result = _helper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "ciphertext", key } }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Account/GetUserInfoFromErp");
-            var token = result["Data"];
-            #endregion
+            var timespan = DatetimeUtil.ToUnixTimestampBySeconds(DateTime.Now.AddMinutes(5));
+            var text = $"NewareApiTokenDeadline:{timespan}";
+            var aes = Encryption.AESEncrypt(text);
 
             _helper.Post(new
             {
                 UserId = userId,
                 Title = title,
                 Content = content
-            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg", "ErpAuthorize", $"Neware {token}");
+            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg", "EncryToken", aes);
         }
 
         /// <summary>
@@ -2538,13 +2535,9 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<string> PushMessageToApp(int userId, string title, string content, string type, dynamic guidInfo)
         {
-            #region 获取token
-            var erpUserId = await UnitWork.Find<User>(c => c.Account == "admin").Select(c => c.Id).FirstOrDefaultAsync();
-            var appUserId = await UnitWork.Find<AppUserMap>(c => c.UserID == erpUserId).Select(c => c.AppUserId).FirstOrDefaultAsync();
-            var key = System.Web.HttpUtility.UrlEncode(Encryption.EncryptRSA(appUserId.ToString()));
-            var result = _helper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "ciphertext", key } }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Account/GetUserInfoFromErp");
-            var token = result["Data"];
-            #endregion
+            var timespan = DatetimeUtil.ToUnixTimestampBySeconds(DateTime.Now.AddMinutes(5));
+            var text = $"NewareApiTokenDeadline:{timespan}";
+            var aes = Encryption.AESEncrypt(text);
 
             return _helper.Post(new
             {
@@ -2553,7 +2546,7 @@ namespace OpenAuth.App
                 Content = content,
                 Type = type,
                 GuidInfos = guidInfo
-            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg", "ErpAuthorize", $"Neware {token}");
+            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg", "EncryToken", aes);
         }
         #endregion
 
@@ -5088,7 +5081,7 @@ namespace OpenAuth.App
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
-            {
+            { 
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             //获取当前用户nsap用户信息

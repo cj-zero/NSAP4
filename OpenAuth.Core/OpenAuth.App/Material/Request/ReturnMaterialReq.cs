@@ -8,13 +8,17 @@ namespace OpenAuth.App.Material.Request
     public class ReturnMaterialReq: PageReq
     {
         /// <summary>
+        /// 领料单号
+        /// </summary>
+        public int? QuotationId { get; set; }
+        /// <summary>
         /// 退料单id
         /// </summary>
         public int? returnNoteId { get; set; }
         /// <summary>
         /// 服务单主键Id
         /// </summary>
-        public int ServiceOrderId { get; set; }
+        public int? ServiceOrderId { get; set; }
 
         /// <summary>
         /// SAP服务Id
@@ -34,8 +38,10 @@ namespace OpenAuth.App.Material.Request
         /// 快递单号
         /// </summary>
         public string ExpressNumber { get; set; }
-
-
+        /// <summary>
+        /// 序列号
+        /// </summary>
+        public string ProductCode { get; set; }
         /// <summary>
         /// 运费
         /// </summary>

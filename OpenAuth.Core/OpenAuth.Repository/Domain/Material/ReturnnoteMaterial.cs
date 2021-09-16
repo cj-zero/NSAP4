@@ -17,18 +17,15 @@ namespace OpenAuth.Repository.Domain
     ///退料单详细表
     /// </summary>
     [Table("returnnotematerial")]
-    public class ReturnnoteMaterial : Entity
+    public class ReturnNoteMaterial : Entity
     {
-        public ReturnnoteMaterial()
+        public ReturnNoteMaterial()
         {
             this.MaterialCode = "";
-            this.Count = 0;
             this.ReceivingRemark = "";
             this.ShippingRemark = "";
             this.ReturnNoteId = 0;
             this.MaterialDescription = "";
-            this.GoodQty = 0;
-            this.SecondQty = 0;
 
         }
         /// <summary>
@@ -36,12 +33,6 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("物料编码")]
         public string MaterialCode { get; set; }
-
-        /// <summary>
-        ///本次退还数量
-        /// </summary>
-        [Description("本次退还数量")]
-        public int? Count { get; set; }
 
         /// <summary>
         ///收货备注
@@ -73,13 +64,8 @@ namespace OpenAuth.Repository.Domain
         ///良品数量
         /// </summary>
         [Description("良品数量")]
-        public int? GoodQty { get; set; }
+        public bool? IsGood { get; set; }
 
-        /// <summary>
-        ///次品数量
-        /// </summary>
-        [Description("次品数量")]
-        public int? SecondQty { get; set; }
 
         /// <summary>
         ///应收发票id
@@ -100,34 +86,49 @@ namespace OpenAuth.Repository.Domain
         public string SecondWhsCode { get; set; }
 
         /// <summary>
-        ///产品编号
+        ///原物料编码
         /// </summary>
-        [Description("产品编号")]
-        public string ProductCode { get; set; }
+        [Description("原物料编码")]
+        public string ReplaceMaterialCode { get; set; }
 
         /// <summary>
-        ///原产品编码
+        ///原物料描述
         /// </summary>
-        [Description("原产品编码")]
-        public string ReplaceProductCode { get; set; }
+        [Description("原物料描述")]
+        public string ReplaceMaterialDescription { get; set; }
 
+        /// <summary>
+        ///SN号和PN号
+        /// </summary>
+        [Description("SN号和PN号")]
+        public string SNandPN { get; set; }
+        /// <summary>
+        ///原物料SN号和PN号
+        /// </summary>
+        [Description("原物料SN号和PN号")]
+        public string ReplaceSNandPN { get; set; }
+
+        /// <summary>
+        ///序列号表id
+        /// </summary>
+        [Description("序列号表id")]
+        public string ReturnNoteProductId { get; set; }
+
+        /// <summary>
+        ///金额
+        /// </summary>
+        [Description("金额")]
+        public decimal Money { get; set; }
+        /// <summary>
+        ///报价单物料id
+        /// </summary>
+        [Description("报价单物料id")]
+        public string QuotationMaterialId { get; set; }
+        
         /// <summary>
         ///退料图片
         /// </summary>
         [Description("退料图片")]
         public List<ReturnNoteMaterialPicture> ReturnNoteMaterialPictures { get; set; }
-
-        /// <summary>
-        ///退料物料序列号表
-        /// </summary>
-        [Description("退料物料序列号表")]
-        public List<ReturnnoteMaterialNumber> ReturnnoteMaterialNumbers { get; set; }
-
-        /// <summary>
-        /// 领料明细Id
-        /// </summary>
-        [Description("领料明细Id")]
-        public string QuotationMaterialId { get; set; }
-
     }
 }

@@ -95,7 +95,7 @@ namespace OpenAuth.App.Order
 			}
 			else
 			{
-				sortString = string.Format("{0} {1}", "a.docentry", query.SortName, query.SortOrder);
+				sortString = string.Format("{0} {1}", query.SortName, query.SortOrder);
 			}
 			string dRowData = string.Empty;
 			#region 搜索条件
@@ -153,7 +153,8 @@ namespace OpenAuth.App.Order
 			if (!string.IsNullOrWhiteSpace(query.FirstTime) && !string.IsNullOrWhiteSpace(query.LastTime))
 			{
 
-				filterString += string.Format("DATE_FORMAT(a.UpdateDate,'%Y/%m/%d')  BETWEEN '{0}' AND '{1}' AND ", query.FirstTime.ToDateTime(), query.LastTime.ToDateTime());
+				//filterString += string.Format("DATE_FORMAT(a.UpdateDate,'%Y-%m-%d')  BETWEEN '{0}' AND '{1}' AND ", query.FirstTime, query.LastTime);
+				filterString += string.Format("a.UpdateDate BETWEEN '{0}' AND '{1}' AND ", query.FirstTime, query.LastTime);
 			}
 			//if (type == "ODLN")
 			//{
@@ -480,8 +481,17 @@ namespace OpenAuth.App.Order
 			paramOut.Direction = ParameterDirection.Output;
 			sqlParameters.Add(paramOut);
 			DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, $"sp_common_pager", CommandType.StoredProcedure, sqlParameters);
-			tableData.Count = Convert.ToInt32(paramOut.Value);
-			rowCounts = Convert.ToInt32(sqlParameters[7].Value);
+			if (dt.Rows.Count > 0)
+			{
+				tableData.Count = Convert.ToInt32(paramOut.Value);
+				rowCounts = Convert.ToInt32(sqlParameters[7].Value);
+			}
+			else
+			{
+				tableData.Count = 0;
+				rowCounts = 0;
+			}
+
 			// dt = Sql.SAPSelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCounts);
 			if (type.ToLower() == "ordr" || type.ToLower() == "opor")
 			{
@@ -3731,7 +3741,17 @@ namespace OpenAuth.App.Order
 			};
 			sqlParameters[7].Direction = ParameterDirection.Output;
 			DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, "sp_common_pager", CommandType.StoredProcedure, sqlParameters);
-			rowsCount = isTotal == 1 ? Convert.ToInt32(sqlParameters[7].Value) : 0;
+			//rowsCount = isTotal == 1 ? Convert.ToInt32(sqlParameters[7].Value) : 0;
+			if (dataTable.Rows.Count > 0)
+			{
+				rowsCount = isTotal == 1 ? Convert.ToInt32(sqlParameters[7].Value) : 0;
+
+			}
+			else
+			{
+				rowsCount = 0;
+
+			}
 			return dataTable;
 		}
 
@@ -3980,14 +4000,13 @@ namespace OpenAuth.App.Order
 		#endregion
 		#region 判断审核里是否已经提交该单据
 		/// <summary>
-		/// 判断审核里是否已经提交该单据
+		/// 判断审核里是否已经提交该单据（销售订单）
 		/// </summary>
-		public bool IsExistDoc(string base_entry, string base_type, string funId, string sboId)
+		public bool IsExistDoc(string base_entry, string base_type, string sboId)
 		{
 			bool result = false;
 			string strSql = string.Format("SELECT COUNT(*) FROM {0}.wfa_job", "nsap_base");
-			strSql += string.Format(" WHERE base_type={0} AND sbo_id={1} AND base_entry={2} AND (job_state=1 OR job_state=0 OR job_state=2 OR job_state=4)", base_type, sboId, base_entry);
-			strSql += string.Format(" AND job_type_id=(SELECT job_type_id FROM {0}.base_func WHERE func_id='{1}' LIMIT 1)", "nsap_base", funId);
+			strSql += string.Format(" WHERE base_type={0} AND sbo_id={1} AND base_entry={2} AND (job_state=1 OR job_state=0 OR job_state=2 OR job_state=4)AND job_type_id=7", base_type, sboId, base_entry);
 
 			object obj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
 			if (obj.ToString() == "0" || obj == null)
@@ -4799,9 +4818,9 @@ namespace OpenAuth.App.Order
 				{
 					filterString += string.Format(" (a.card_code LIKE '%{0}%' OR a.card_name LIKE '%{0}%') AND ", model.Customer);
 				}
-				if (model.Status != "")
+				if (model.Job_state != "")
 				{
-					filterString += string.Format(" a.job_state = {0} AND ", int.Parse(model.Status));
+					filterString += string.Format(" a.job_state = {0} AND ", int.Parse(model.Job_state));
 				}
 				if (model.BeginDate != "")
 				{
@@ -4845,7 +4864,8 @@ namespace OpenAuth.App.Order
 				filterString += string.Format("a.base_entry LIKE '%{0}%' AND ", model.Base_entry);
 			}
 
-			//filterString += string.Format("b.job_type_nm LIKE '%{0}%' AND ", "销售报价单");
+			//filterString += string.Format("(b.job_type_nm LIKE '%{0}%' OR b.job_type_nm LIKE '%{1}%') AND ", "销售报价单","销售订单");
+			filterString += string.Format("(b.job_type_nm = '{0}' OR b.job_type_nm = '{1}') AND ", "销售报价单","销售订单");
 			#endregion
 			#region
 			if (!string.IsNullOrEmpty(filterString))
@@ -4908,6 +4928,7 @@ namespace OpenAuth.App.Order
 		}
 		public billDelivery GetDeliverySalesInfoNewNos(string jobId)
 		{
+			string s = GetSalesInfoNos(jobId).ToString();
 			billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfoNos(jobId)));
 			DataTable dt = GetSboNamePwd(int.Parse(bill.SboId));
 			string dRowData = string.Empty; string isOpen = "0"; string sboname = "0"; string sqlconn = "0";
@@ -5490,7 +5511,7 @@ namespace OpenAuth.App.Order
 		/// <summary>
 		/// 流程图
 		/// </summary>
-		public string GetFlowChartByJobID(string jobID)
+		public FlowChart GetFlowChartByJobID(string jobID)
 		{
 			DataTable logTable = GetAuditLogWithFlowChart(jobID);
 			if (logTable.Rows.Count > 0)
@@ -5566,9 +5587,10 @@ namespace OpenAuth.App.Order
 					flowSteps.Add(flowStep);
 				}
 				flowChart.Steps = flowSteps;
-				return JsonHelper.ParseModel(flowChart);
+				//return JsonHelper.ParseModel(flowChart);
+				return flowChart;
 			}
-			else return "";
+			else return null;
 		}
 		/// <summary>
 		/// 获取指定流程任务的审核记录
@@ -5796,5 +5818,50 @@ namespace OpenAuth.App.Order
 			return UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sql, CommandType.Text, null) == null ? true : false;
 		}
 		#endregion
+		public DataTable SelectAccountsView(out int rowCount, SelectAccountsReq model, string SboId)
+		{
+
+			string sortString = string.Empty; string filterString = string.Empty;
+			if (!string.IsNullOrEmpty(model.sortname) && !string.IsNullOrEmpty(model.sortorder))
+				sortString = string.Format("{0} {1}", model.sortname, model.sortorder.ToUpper());
+			if (!string.IsNullOrEmpty(model.CardCode))
+			{
+				filterString += string.Format("T0.ShortName = '{0}' AND ", model.CardCode);
+			}
+			if (!string.IsNullOrEmpty(model.SlpCode))
+			{
+				filterString += string.Format("T1.SlpCode = '{0}'  AND (CASE T0.TransType WHEN T3.ObjType THEN T3.ItemCode ELSE T4.ItemCode END) IS NOT NULL AND ", model.SlpCode);
+			}
+			filterString += string.Format(" T0.sbo_id={0} AND ", SboId);
+			if (!string.IsNullOrEmpty(filterString))
+				filterString = filterString.Substring(0, filterString.Length - 5);
+			return SelectAccountsView(out rowCount, model.limit, model.page, filterString, sortString, model.type);
+		}
+		public DataTable SelectAccountsView(out int rowCount, int pageSize, int pageIndex, string filterQuery, string orderName, string type)
+		{
+			StringBuilder tableName = new StringBuilder();
+			StringBuilder filedName = new StringBuilder();
+			//改动后正确版本 filedName.Append(" (CASE T0.TransType WHEN T3.ObjType THEN T3.DocDate ELSE T4.DocDate END) AS DocDate,T0.LineMemo,T0.BaseRef");
+
+			filedName.Append(" distinct (CASE T0.TransType WHEN T3.ObjType THEN T3.DocDate ELSE T4.DocDate END) AS DocDate, T0.LineMemo,T0.BaseRef,'',T0.BalDueDeb");
+			tableName.AppendFormat(" {0}.finance_jdt1 T0", "nsap_bone");
+			tableName.AppendFormat(" LEFT JOIN {0}.crm_ocrd T1 ON  T0.ShortName=T1.CardCode AND T0.sbo_id=T1.sbo_id", "nsap_bone");
+			tableName.AppendFormat(" LEFT JOIN {0}.base_sap_doctype T2 ON T0.TransType=T2.doc_type ", "nsap_bone");
+			if (type == "C")
+			{
+				tableName.AppendFormat(" LEFT JOIN {0}.sale_inv1 T3 ON T0.BaseRef=T3.DocEntry AND T0.TransType=T3.ObjType AND T0.sbo_id=T3.sbo_id", "nsap_bone");
+				tableName.AppendFormat(" LEFT JOIN {0}.sale_rin1 T4 ON T0.BaseRef=T4.DocEntry AND T0.TransType=T4.ObjType AND T0.sbo_id=T4.sbo_id", "nsap_bone");
+				tableName.AppendFormat(" LEFT JOIN {0}.finance_orct T6 ON T0.BaseRef=T6.DocEntry AND T0.TransType=T6.ObjType AND T0.sbo_id=T6.sbo_id", "nsap_bone");
+				tableName.AppendFormat(" LEFT JOIN {0}.sbo_info T5 ON T0.sbo_id=T5.sbo_id", "nsap_bone");
+			}
+			else
+			{
+				tableName.AppendFormat(" LEFT JOIN {0}.buy_pch1 T3 ON T0.BaseRef=T3.DocEntry AND T0.TransType=T3.ObjType AND T0.sbo_id=T3.sbo_id", "nsap_bone");
+				tableName.AppendFormat(" LEFT JOIN {0}.buy_rpc1 T4 ON T0.BaseRef=T4.DocEntry AND T0.TransType=T4.ObjType AND T0.sbo_id=T4.sbo_id", "nsap_bone");
+				tableName.AppendFormat(" LEFT JOIN {0}.sbo_info T5 ON T0.sbo_id=T5.sbo_id", "nsap_bone");
+			}
+			//filterQuery += string.Format(" GROUP BY T2.Name,T0.BaseRef,(CASE T0.TransType WHEN T3.ObjType THEN T3.ItemCode ELSE T4.ItemCode END)");
+			return SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCount);
+		}
 	}
 }
