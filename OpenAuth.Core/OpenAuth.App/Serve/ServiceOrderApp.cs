@@ -4194,6 +4194,39 @@ namespace OpenAuth.App
             result.Data = new DailyReportResp { DailyDates = dailyReportDates, ReportResults = data };
             return result;
         }
+        /// <summary>
+        /// 判断有服务单的技术员当天是否填写日报
+        /// </summary>
+        /// <param name="TechnicianId"></param>
+        /// <returns></returns>
+        public async Task<TableData> TechnicianHasWriteDailyReport(int TechnicianId)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId ==TechnicianId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            var ServiceWorkOrder = await UnitWork.Find<ServiceWorkOrder>(c => c.CurrentUserNsapId == userInfo.UserID && c.Status >= 2 && c.Status <= 5).FirstOrDefaultAsync();
+            if (ServiceWorkOrder!=null)
+            {
+                var dailyReports = await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == userInfo.UserID && w.CreateTime.Value.Date == DateTime.Now.Date).FirstOrDefaultAsync();
+                if (dailyReports==null)
+                    result.Data = false;
+                else
+                    result.Data = true;
+            }
+            else
+            {
+                result.Data = true;
+            }
+            return result;
+        }
 
         private List<string> GetServiceTroubleAndSolution(string data)
         {

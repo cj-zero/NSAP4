@@ -1522,6 +1522,30 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+        /// <summary>
+        /// 判断有服务单的技术员当天是否填写日报
+        /// </summary>
+        /// <param name="TechnicianId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> TechnicianHasWriteDailyReport(int TechnicianId)
+        {
+            var result = new TableData();
+            try
+            {
+                Dictionary<string, object> parameters = new Dictionary<string, object>();
+                parameters.Add("TechnicianId", TechnicianId);
+                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/TechnicianHasWriteDailyReport");
+                result = JsonConvert.DeserializeObject<TableData>(r);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{TechnicianId}， 错误：{result.Message}");
+            }
+            return result;
+        }
 
         /// <summary>
         /// 自定义问题描述/解决方案
