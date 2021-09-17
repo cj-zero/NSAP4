@@ -384,6 +384,16 @@ namespace OpenAuth.WebApi.Controllers
             
         }
         /// <summary>
+        /// 获取序列号信息
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetSerialNumberList([FromQuery] ReturnMaterialReq req) 
+        {
+            return await _returnnoteApp.GetSerialNumberList(req);
+        }
+        /// <summary>
         /// 获取退料单详情
         /// </summary>
         /// <param name="req"></param>

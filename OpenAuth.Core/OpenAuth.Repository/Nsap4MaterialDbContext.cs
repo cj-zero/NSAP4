@@ -38,7 +38,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<ReturnNote> Returnnotes { get; set; }
         public virtual DbSet<ReturnNotePicture> ReturnNotePictures { get; set; }
         
-        public virtual DbSet<ReturnnoteMaterial> ReturnnoteMaterials { get; set; }
+        public virtual DbSet<ReturnNoteMaterial> ReturnNoteMaterial { get; set; }
 
         public virtual DbSet<ReturnNoteMaterialPicture> ReturnNoteMaterialPictures { get; set; }
 
@@ -55,7 +55,8 @@ namespace OpenAuth.Repository
         public virtual DbSet<LogisticsRecord> LogisticsRecords { get; set; }
         public virtual DbSet<amountinarear> amountinarears { get; set; }
         public virtual DbSet<amountinarearlog> amountinarearlogs { get; set; }
-        public virtual DbSet<ReturnnoteMaterialNumber> ReturnnoteMaterialNumbers { get; set; }
+        public virtual DbSet<ReturnNoteProduct> ReturnNoteProducts { get; set; }
+        //public virtual DbSet<ReturnnoteMaterialNumber> ReturnnoteMaterialNumbers { get; set; }
         #endregion
         public virtual DbSet<InternalContact> InternalContacts { get; set; }
         public virtual DbSet<InternalContactAttchment> InternalContactAttchments { get; set; }

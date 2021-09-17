@@ -63,5 +63,11 @@ namespace OpenAuth.WebApi.Controllers.Serve
             }
             return result;
         }
+
+        [HttpGet]
+        public async Task test()
+        {
+            await _serviceOrderMessageApp.PushMessageToApp(0, "", $"");
+        }
     }
 }

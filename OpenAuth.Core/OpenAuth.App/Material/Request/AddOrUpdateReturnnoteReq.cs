@@ -108,8 +108,8 @@ namespace OpenAuth.App.Material.Request
         public virtual List<ReturnNotePicture> ReturnNotePictures { get; set; }
 
         /// <summary>
-        /// 退料单详细列表
+        /// 退料单序列号列表
         /// </summary>
-        public virtual List<ReturnnoteMaterial> ReturnnoteMaterials { get; set; }
+        public virtual List<ReturnNoteProduct> ReturnNoteProducts { get; set; }
     }
 }

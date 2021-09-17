@@ -155,5 +155,10 @@ namespace OpenAuth.App.Material.Request
         /// 打印物料id
         /// </summary>
         public List<QuotationMergeMaterialReq> QuotationMergeMaterialReqs { get; set; }
-}
+    }
+
+    public class SyncSalesOrder
+    {
+        public string QuotationId { get; set; }
+    }
 }

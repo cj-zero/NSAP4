@@ -300,25 +300,24 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task AppClockMessageNotic()
         {
-            //1.存在服务单的技术员
+            DateTime dt = DateTime.Now.Date;
             var serviceOrderUserList = await (from a in UnitWork.Find<ServiceWorkOrder>(null)
                                               join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id
                                               where a.Status >= 2 && a.Status <= 5 && b.VestInOrg != 2
-                                              select a.CurrentUserId).Distinct().ToListAsync();
-            //2.白名单
-
-            //3.调用App接口
+                                              select a.CurrentUserId.Value).Distinct().ToListAsync();
+            var hasClockUser = await UnitWork.Find<AttendanceClock>(null).Where(c => c.ClockDate == dt).Select(c => c.AppUserId).ToListAsync();
+            var noticMessageUser = serviceOrderUserList.Except(hasClockUser).ToList();
             string title = "考勤打卡";
             string content = "您今天还未打卡签到,请立即前往>>";
             string payload= "{\"urlType\":1,\"url\":\"/pages/afterSale/mechanic/outWork\"}";
-
-            _helper.Post(new
+            var str = _helper.Post(new
             {
-                userIds = serviceOrderUserList,
+                userIds = noticMessageUser,
                 title = title,
                 content = content,
-                payload= payload
-            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Message/AppExternalMessagePush");
+                payload = payload
+            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Message/AppExternalMessagePush", "", "");
+
         }
         #endregion
     }

@@ -32,12 +32,7 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         /// 良品数量
         /// </summary>
-        public int GoodQty { get; set; }
-        /// <summary>
-        /// 次品数量
-        /// </summary>
-        public int SecondQty { get; set; }
-
+        public bool IsGood { get; set; }
         /// <summary>
         ///良品仓库
         /// </summary>

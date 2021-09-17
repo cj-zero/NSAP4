@@ -4864,7 +4864,8 @@ namespace OpenAuth.App.Order
 				filterString += string.Format("a.base_entry LIKE '%{0}%' AND ", model.Base_entry);
 			}
 
-			//filterString += string.Format("b.job_type_nm LIKE '%{0}%' AND ", "销售报价单");
+			//filterString += string.Format("(b.job_type_nm LIKE '%{0}%' OR b.job_type_nm LIKE '%{1}%') AND ", "销售报价单","销售订单");
+			filterString += string.Format("(b.job_type_nm = '{0}' OR b.job_type_nm = '{1}') AND ", "销售报价单","销售订单");
 			#endregion
 			#region
 			if (!string.IsNullOrEmpty(filterString))

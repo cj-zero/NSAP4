@@ -338,6 +338,23 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task BindAppUser(AddOrUpdateAppUserMapReq req)
         {
+            // 校验ERP账号是否被重复绑定
+            var  userMapsList = await UnitWork.Find<AppUserMap>(r => r.UserID == req.UserID).ToListAsync();
+            if (userMapsList.Count >0)
+            {
+                // 是该用户绑定
+                var exis_erp = userMapsList.Where(c=>c.AppUserId == req.AppUserId).FirstOrDefault();
+                if(userMapsList.Count == 1 && exis_erp != null)
+                {
+                    // 允许绑定
+                }
+                else
+                {
+                    var firstUserMap = userMapsList.FirstOrDefault();
+                    var appUserId = firstUserMap.AppUserId;
+                    throw new Exception("当前ERP 账号已被其他APP账号绑定！AppUserId:" + appUserId);
+                }
+            }
             var o = await UnitWork.FindSingleAsync<AppUserMap>(a => a.AppUserId == req.AppUserId);
             if (o is null)
             {
@@ -461,6 +478,9 @@ namespace OpenAuth.App
                 var Orgs = loginUser.Orgs.Where(o => Relevances.Contains(o.Id)).ToList();
                 OrgName = Orgs.OrderByDescending(o => o.CascadeId).FirstOrDefault().Name;
             }
+            //获取appuserid
+            var appUserId=UnitWork.Find<AppUserMap>(r => r.UserID.Equals(loginUser.User.Id)).FirstOrDefault()?.AppUserId.ToString();
+
             //获取角色权限
             Relevances = _revelanceApp.Get(Define.USERROLE, true, loginUser.User.Id);
             var Roles = loginUser.Roles.Where(o => Relevances.Contains(o.Id)).Select(r=>r.Name).ToList();
@@ -474,7 +494,8 @@ namespace OpenAuth.App
                 OfficeSpace = string.IsNullOrWhiteSpace(loginUser.User.OfficeSpace) ? "未录入" : loginUser.User.ServiceRelations,
                 OrgName = OrgName,
                 Roles = Roles,
-                IsPassword =Encryption.Decrypt(loginUser.User.Password).ToLower() == "xinwei123" ? true : false
+                IsPassword =Encryption.Decrypt(loginUser.User.Password).ToLower() == "xinwei123" ? true : false,
+                AppUserId=Encryption.EncryptRSA(appUserId),
             };
             return result;
         }

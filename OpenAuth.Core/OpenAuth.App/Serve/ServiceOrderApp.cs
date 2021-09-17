@@ -2512,12 +2512,16 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task PushMessageToApp(int userId, string title, string content)
         {
+            var timespan = DatetimeUtil.ToUnixTimestampBySeconds(DateTime.Now.AddMinutes(5));
+            var text = $"NewareApiTokenDeadline:{timespan}";
+            var aes = Encryption.AESEncrypt(text);
+
             _helper.Post(new
             {
                 UserId = userId,
                 Title = title,
                 Content = content
-            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg");
+            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg", "EncryToken", aes);
         }
 
         /// <summary>
@@ -2531,6 +2535,10 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<string> PushMessageToApp(int userId, string title, string content, string type, dynamic guidInfo)
         {
+            var timespan = DatetimeUtil.ToUnixTimestampBySeconds(DateTime.Now.AddMinutes(5));
+            var text = $"NewareApiTokenDeadline:{timespan}";
+            var aes = Encryption.AESEncrypt(text);
+
             return _helper.Post(new
             {
                 UserId = userId,
@@ -2538,7 +2546,7 @@ namespace OpenAuth.App
                 Content = content,
                 Type = type,
                 GuidInfos = guidInfo
-            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg");
+            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "BbsCommunity/AppPushMsg", "EncryToken", aes);
         }
         #endregion
 
@@ -4244,7 +4252,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
             }
-            var data = await UnitWork.Find<PersonProblemAndSolution>(w => w.CreaterId == userInfo.UserID && w.Type == Type && w.IsDelete == 0).Select(s => new { s.Description, s.Id }).ToListAsync();
+            var data = await UnitWork.Find<PersonProblemAndSolution>(w => w.CreaterId == userInfo.UserID && w.Type == Type && w.IsDelete == 0).OrderByDescending(c => c.CreateTime).Take(5).Select(s => new { s.Description, s.Id }).ToListAsync();
             result.Data = data;
             return result;
         }
@@ -5040,7 +5048,7 @@ namespace OpenAuth.App
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
-            {
+            { 
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             //获取当前用户nsap用户信息
