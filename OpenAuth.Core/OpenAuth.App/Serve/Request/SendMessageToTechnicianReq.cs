@@ -32,6 +32,11 @@ namespace OpenAuth.App.Request
         public int AppUserId { get; set; }
 
         /// <summary>
+        /// 催办
+        /// </summary>
+        public int MessageType { get; set; }
+
+        /// <summary>
         /// 服务单消息流水记录表
         /// </summary>
         [Ignore]

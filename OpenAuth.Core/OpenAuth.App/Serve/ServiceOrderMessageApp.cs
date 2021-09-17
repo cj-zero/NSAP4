@@ -61,6 +61,11 @@ namespace OpenAuth.App.Serve
             obj.CreateTime = DateTime.Now;
             var pictures = req.ServiceOrderMessagePictures;
             obj.ServiceOrderMessagePictures = null;
+            if (req.MessageType==1)
+            {
+                var num = await UnitWork.Find<ServiceOrderMessage>(c => c.ServiceOrderId == req.ServiceOrderId && c.MessageType == 1).CountAsync();
+                obj.Content = $"{obj.Replier}发起第{(num + 1)}次催办";
+            } 
             await UnitWork.AddAsync(obj);
             await UnitWork.SaveAsync();
             if (pictures != null && pictures?.Count > 0)
