@@ -542,8 +542,8 @@ namespace OpenAuth.App.Workbench
             ServiceOrderResp serviceOrderDetails = null;
             if (pendingObj.ServiceOrderId!=0) 
                 serviceOrderDetails = await ServiceOrderDetails(pendingObj.ServiceOrderId, pendingObj.PetitionerId);
-            QuotationDetailsResp quotationDetails = null;
-            ReturnnoteDetailsResp returnnoteDetails = null;
+            List<QuotationDetailsResp> quotationDetails = new List<QuotationDetailsResp>();
+            List<ReturnnoteDetailsResp> returnnoteDetails = new List<ReturnnoteDetailsResp>();
             OutsourcDetailsResp outsourcDetails = null;
             ReimburseDetailsResp reimburseDetails = null;
             dynamic internalcontactDetails = null;
