@@ -62,5 +62,6 @@ namespace OpenAuth.Repository
         public virtual DbSet<InternalContactAttchment> InternalContactAttchments { get; set; }
         public virtual DbSet<InternalContactBatchNumber> InternalContactBatchNumbers { get; set; }
         public virtual DbSet<InternalContactDeptInfo> InternalContactDeptInfos { get; set; }
+        public virtual DbSet<MaterialReplaceRecord> MaterialReplaceRecords { get; set; }
     }
 }
