@@ -425,7 +425,7 @@ namespace OpenAuth.App
                                     .Include(c=>c.QuotationProducts).Include(c=>c.QuotationMergeMaterials)
                                     .WhereIf(!string.IsNullOrWhiteSpace(req.CreateUserName), c => c.CreateUser == req.CreateUserName)
                                     .WhereIf(!string.IsNullOrWhiteSpace(req.ServiceOrderId.ToString()), c => c.ServiceOrderId == req.ServiceOrderId)
-                                    .WhereIf(ServiceOrderids.Count > 0, c => ServiceOrderids.Contains(c.Id))
+                                    .WhereIf(ServiceOrderids.Count > 0, c => ServiceOrderids.Contains(c.ServiceOrderId))
                                     .WhereIf(quotationIds.Count > 0, c => quotationIds.Contains(c.Id.ToString()))
                                     ;
 
