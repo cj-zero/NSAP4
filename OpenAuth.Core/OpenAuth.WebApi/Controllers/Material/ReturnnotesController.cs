@@ -381,7 +381,7 @@ namespace OpenAuth.WebApi.Controllers
         public async Task<TableData> GetOinvList([FromQuery] ReturnMaterialReq req)
         {
             return await _returnnoteApp.GetOinvList(req);
-            
+
         }
         /// <summary>
         /// 获取序列号信息
@@ -389,9 +389,20 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetSerialNumberList([FromQuery] ReturnMaterialReq req) 
+        public async Task<TableData> GetSerialNumberList([FromQuery] ReturnMaterialReq req)
         {
             return await _returnnoteApp.GetSerialNumberList(req);
+        }
+
+        /// <summary>
+        /// 通过序列号和领料单号获取物料
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetMaterialListBySerialNumber([FromQuery] ReturnMaterialReq req)
+        {
+            return await _returnnoteApp.GetMaterialListBySerialNumber(req);
         }
         /// <summary>
         /// 获取退料单详情
@@ -402,6 +413,27 @@ namespace OpenAuth.WebApi.Controllers
         public async Task<TableData> GetDetails([FromQuery] ReturnMaterialReq req) 
         {
             return await _returnnoteApp.GetDetails(req);
+        }
+
+        /// <summary>
+        /// 更换列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetQuotationList([FromQuery] ReturnMaterialReq req)
+        {
+            TableData result = new TableData();
+            try
+            {
+                result= await _returnnoteApp.GetQuotationList(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
         }
         /// <summary>
         /// 添加退料单
@@ -445,6 +477,18 @@ namespace OpenAuth.WebApi.Controllers
         public async Task<Response> Accraditation(AccraditationReturnNoteReq req)
         {
             await _returnnoteApp.Accraditation(req);
+            return new Response();
+        }
+
+        /// <summary>
+        /// 添加物料更换记录
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> CreateMaterialReplaceRecord(AddOrUpdateMaterialReplaceRecordReq obj)
+        {
+            await _returnnoteApp.CreateMaterialReplaceRecord(obj);
             return new Response();
         }
 

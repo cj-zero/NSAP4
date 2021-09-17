@@ -88,6 +88,11 @@ namespace OpenAuth.App.Material.Request
         public bool? IsUpDate { get; set; }
 
         /// <summary>
+        /// 创建人
+        /// </summary>
+        public string CreateUserName { get; set; }
+
+        /// <summary>
         /// 物流图片
         /// </summary>
         public List<string> ExpressPictureIds { get; set; }
