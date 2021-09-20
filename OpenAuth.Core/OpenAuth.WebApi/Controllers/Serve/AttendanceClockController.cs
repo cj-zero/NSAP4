@@ -53,6 +53,40 @@ namespace OpenAuth.WebApi.Controllers
 
             return File(data, "application/vnd.ms-excel");
         }
+
+        /// <summary>
+        /// 获取打卡推送名单
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> LoadWhiteList()
+        {
+            return await _app.LoadWhiteList();
+        }
+
+        /// <summary>
+        /// 配置打卡推送名单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> AddWhiteList(AddWhiteListReq request)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.AddWhiteList(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
         #region 新威智能APP售后接口 若修改请告知！！！
         /// <summary>
         /// 获取详情
