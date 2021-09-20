@@ -998,7 +998,7 @@ namespace OpenAuth.App.Order
 			}
 			if (!string.IsNullOrEmpty(query.ItemCode))
 			{
-				filterString += string.Format("(m.ItemCode LIKE '%{0}%' OR m.ItemName LIKE '%{0}%') AND ", query.ItemCode);
+				filterString += string.Format("(m.ItemCode LIKE '%{0}%' OR m.ItemName LIKE '%{0}%') AND ", query.ItemCode.FilterWildCard());
 			}
 			if (query.TypeId == "1")
 			{
