@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace OpenAuth.App.Jobs
 {
     /// <summary>
-    /// App打卡提醒
+    /// App签到打卡推送提醒
     /// </summary>
     public class AppClockMessageNoticJob : IJob
     {
@@ -24,7 +24,7 @@ namespace OpenAuth.App.Jobs
             _attendanceClockApp = attendanceClockApp;
         }
         /// <summary>
-        /// App打卡推送提醒
+        /// App签到打卡推送提醒
         /// </summary>
         /// <param name="context"></param>
         /// <returns></returns>

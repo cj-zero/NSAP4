@@ -160,7 +160,7 @@ namespace OpenAuth.App.Workbench
                         Discount = m.Discount,
                         DiscountPrices = m.DiscountPrices,
                         SalesPrice = m.SalesPrice,
-                        Count = Convert.ToDecimal(m.Count).ToString("#0.00"),
+                        Count = m.Count.ToString(),//Convert.ToDecimal(m.Count).ToString("#0.00"),
                         WhsCode = m.WhsCode,
                         MaterialType = Convert.ToInt32(m.MaterialType),
                         MaxQuantity = m.MaxQuantity,

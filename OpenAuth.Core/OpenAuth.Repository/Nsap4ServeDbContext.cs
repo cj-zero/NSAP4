@@ -26,6 +26,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<ProblemType> Problemtypes { get; set; }
         public virtual DbSet<AttendanceClock> Attendanceclocks { get; set; }
         public virtual DbSet<AttendanceClockPicture> Attendanceclockpictures { get; set; }
+        public virtual DbSet<AttendanceClockWhileList> AttendanceClockWhileLists { get; set; }
         public virtual DbSet<CompletionReport> Completionreports { get; set; }
         public virtual DbSet<ChangeTheMaterial> ChangeTheMaterials { get; set; }
         

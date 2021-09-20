@@ -58,5 +58,9 @@ namespace OpenAuth.Repository
         public virtual DbSet<ReturnNoteProduct> ReturnNoteProducts { get; set; }
         //public virtual DbSet<ReturnnoteMaterialNumber> ReturnnoteMaterialNumbers { get; set; }
         #endregion
+        public virtual DbSet<InternalContact> InternalContacts { get; set; }
+        public virtual DbSet<InternalContactAttchment> InternalContactAttchments { get; set; }
+        public virtual DbSet<InternalContactBatchNumber> InternalContactBatchNumbers { get; set; }
+        public virtual DbSet<InternalContactDeptInfo> InternalContactDeptInfos { get; set; }
     }
 }

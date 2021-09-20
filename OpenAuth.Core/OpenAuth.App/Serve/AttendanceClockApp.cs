@@ -241,33 +241,91 @@ namespace OpenAuth.App
             return await ExportAllHandler.ExporterExcel(AttendanceClockList);
         }
 
+        /// <summary>
+        /// 获取打卡推送名单
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> LoadWhiteList()
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            List<string> idList = new List<string>();
+            var whileLists = await UnitWork.Find<AttendanceClockWhileList>(null).ToListAsync();
+            var userIds = whileLists.Select(c => c.UserId).ToList();
+            var pushlist = await UnitWork.Find<User>(c => userIds.Contains(c.Id)).ToListAsync();
+
+            //存在服务单的技术员
+            var serviceOrderUserList = await (from a in UnitWork.Find<ServiceWorkOrder>(null)
+                                              join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id
+                                              where a.Status >= 2 && a.Status <= 5 && b.VestInOrg != 2
+                                              select new { a.CurrentUserNsapId,a.CurrentUser } ).Distinct().ToListAsync();
+            return new TableData
+            {
+                Data = new
+                {
+                    pushlist,
+                    serviceOrderUserList,
+                    ServiceIsEnable= whileLists.Any(c=>c.IsEnable && c.Type==2),
+                    ConfigIsEnable = whileLists.Any(c => c.IsEnable && c.Type == 1)
+                }
+            };
+        }
+
+        /// <summary>
+        /// 配置打卡推送名单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task AddWhiteList(AddWhiteListReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            await UnitWork.DeleteAsync<AttendanceClockWhileList>(c => c.Type == 1 || c.Type == 2);
+            await UnitWork.AddAsync<AttendanceClockWhileList>(new AttendanceClockWhileList { Type = 2, UserId = "", IsEnable = req.ServiceIsEnable });
+            await UnitWork.BatchAddAsync((from id in req.UserIds select new AttendanceClockWhileList { Type = 1, UserId = id, IsEnable = req.ConfigIsEnable }).ToArray());
+            await UnitWork.SaveAsync();
+        }
 
         #region  App打卡提醒消息通知
         /// <summary>
-        /// App打卡推送提醒
+        /// App签到打卡推送提醒
         /// </summary>
         /// <returns></returns>
         public async Task AppClockMessageNotic()
         {
-            //1.存在服务单的技术员
+            DateTime dt = DateTime.Now.Date;
+            List<int> list = new List<int>();
             var serviceOrderUserList = await (from a in UnitWork.Find<ServiceWorkOrder>(null)
                                               join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id
                                               where a.Status >= 2 && a.Status <= 5 && b.VestInOrg != 2
-                                              select a.CurrentUserId).Distinct().ToListAsync();
-            //2.白名单
-
-            //3.调用App接口
+                                              select a.CurrentUserId.Value).Distinct().ToListAsync();
+            var hasClockUser = await UnitWork.Find<AttendanceClock>(null).Where(c => c.ClockDate == dt).Select(c => c.AppUserId).ToListAsync();
+            var serviceUserIsPush = await UnitWork.Find<AttendanceClockWhileList>(null).Where(c => c.Type == 2 && c.IsEnable == false).FirstOrDefaultAsync();
+            var whileLists = await UnitWork.Find<AttendanceClockWhileList>(null).Where(c=>c.Type==1 && c.IsEnable==true).Select(c=>c.UserId).ToListAsync();
+            var whilepushlist = await UnitWork.Find<AppUserMap>(c => whileLists.Contains(c.UserID)).Select(c=>c.AppUserId.Value).ToListAsync();
+            if (serviceUserIsPush == null)
+                list = serviceOrderUserList.Union(whilepushlist).Distinct().ToList();
+            else
+                list = whilepushlist;
+            var noticMessageUser = list.Except(hasClockUser).ToList();
             string title = "考勤打卡";
             string content = "您今天还未打卡签到,请立即前往>>";
             string payload= "{\"urlType\":1,\"url\":\"/pages/afterSale/mechanic/outWork\"}";
-
-            _helper.Post(new
+            var str = _helper.Post(new
             {
-                userIds = serviceOrderUserList,
+                userIds = noticMessageUser,
                 title = title,
                 content = content,
-                payload= payload
-            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Message/AppExternalMessagePush");
+                payload = payload
+            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Message/AppExternalMessagePush", "", "");
+
         }
         #endregion
     }

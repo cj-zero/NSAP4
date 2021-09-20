@@ -33,6 +33,7 @@ namespace OpenAuth.Repository.Domain
             this.TypeName = string.Empty;
             this.TypeId = string.Empty;
             this.CardNo = string.Empty;
+            this.Email = string.Empty;
         }
 
         /// <summary>
@@ -111,5 +112,9 @@ namespace OpenAuth.Repository.Domain
         /// Nasp ID
         /// </summary>
         public int? User_Id { get; set; }
+        /// <summary>
+        /// 邮箱
+        /// </summary>
+        public string Email { get; set; }
     }
 }

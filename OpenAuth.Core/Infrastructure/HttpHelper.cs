@@ -86,13 +86,15 @@ namespace Infrastructure
         /// <param name="entity">实体</param>
         /// <param name="requestUri">例如/api/Files/UploadFile</param>
         /// <returns></returns>
-        public string Post(object entity, string requestUri)
+        public string Post(object entity, string requestUri,string header,string token)
         {
             string request = string.Empty;
             if (entity != null)
                 request = JsonHelper.Instance.Serialize(entity);
             HttpContent httpContent = new StringContent(request);
             httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            if (!string.IsNullOrWhiteSpace(header) && !string.IsNullOrWhiteSpace(token))
+                httpContent.Headers.Add(header, token);
             return Post(requestUri, httpContent);
         }
 

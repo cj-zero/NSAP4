@@ -600,18 +600,18 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <param name="QuotationId"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> SyncSalesOrder([FromBody] string QuotationId) 
+        public async Task<Response> SyncSalesOrder(SyncSalesOrder request) 
         {
             var result = new Response();
             try
             {
-                await _app.SyncSalesOrder(QuotationId);
+                await _app.SyncSalesOrder(request.QuotationId);
             }
             catch (Exception e)
             {
                 result.Code = 500;
                 result.Message = e.Message;
-                Log.Logger.Error($"地址：{Request.Path}，参数：{QuotationId}, 错误：{result.Message}");
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.QuotationId}, 错误：{result.Message}");
             }
             return result;
         }
