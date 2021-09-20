@@ -1085,7 +1085,7 @@ namespace OpenAuth.App.Order
 				string sql = $@"SELECT a.ItemCode,a.item_name as ItemName,a.high_price,a.low_price,w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,
                         (w.OnHand-w.IsCommited+w.OnOrder) AS OnAvailable,
                         (m.OnHand-m.IsCommited+m.OnOrder) AS Available,
-                                                w.WhsCode,a.factor_1,a.factor_2,a.factor_3,
+                                                w.WhsCode,a.Factor_1,a.Factor_2,a.Factor_3,
                         IFNULL(U_TDS,0) AS U_TDS,
                         IFNULL(U_DL,0) AS U_DL,
                         IFNULL(U_DY,0) AS U_DY,m.U_JGF,
