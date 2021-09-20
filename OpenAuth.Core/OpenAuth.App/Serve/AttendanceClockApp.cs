@@ -342,13 +342,13 @@ namespace OpenAuth.App
             string title = "考勤打卡";
             string content = "您今天还未打卡签签退,请立即前往>>";
             string payload = "{\"urlType\":1,\"url\":\"/pages/afterSale/mechanic/outWork\"}";
-            //var str = _helper.Post(new
-            //{
-            //    userIds = signoutUser,
-            //    title = title,
-            //    content = content,
-            //    payload = payload
-            //}, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Message/AppExternalMessagePush", "", "");
+            var str = _helper.Post(new
+            {
+                userIds = signoutUser,
+                title = title,
+                content = content,
+                payload = payload
+            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Message/AppExternalMessagePush", "", "");
         }
         #endregion
     }
