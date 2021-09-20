@@ -328,5 +328,28 @@ namespace OpenAuth.App
 
         }
         #endregion
+
+        #region App签退提醒
+        /// <summary>
+        /// App签退提醒
+        /// </summary>
+        public async Task AppSignOutMessageNotic()
+        {
+            var hasClockUser = await UnitWork.Find<AttendanceClock>(c => c.ClockDate == DateTime.Now.Date).Select(c => new { c.AppUserId, c.ClockType }).ToListAsync();
+            var signinUser = hasClockUser.Where(c => c.ClockType == 1).Select(c => c.AppUserId).ToList();
+            var signoutUser = hasClockUser.Where(c => c.ClockType == 2).Select(c => c.AppUserId).ToList();
+            signoutUser = signinUser.Except(signoutUser).ToList();
+            string title = "考勤打卡";
+            string content = "您今天还未打卡签签退,请立即前往>>";
+            string payload = "{\"urlType\":1,\"url\":\"/pages/afterSale/mechanic/outWork\"}";
+            //var str = _helper.Post(new
+            //{
+            //    userIds = signoutUser,
+            //    title = title,
+            //    content = content,
+            //    payload = payload
+            //}, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Message/AppExternalMessagePush", "", "");
+        }
+        #endregion
     }
 }
