@@ -393,7 +393,7 @@ namespace OpenAuth.App.Flow
                 {
                     if (isRole)
                         item.Value.setInfo.NodeDesignate = Setinfo.SPECIAL_ROLE;
-                    else 
+                    else
                         item.Value.setInfo.NodeDesignate = Setinfo.SPECIAL_USER;
 
                     item.Value.setInfo.NodeDesignateData.users = ids;
