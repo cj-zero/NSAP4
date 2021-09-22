@@ -422,7 +422,7 @@ namespace OpenAuth.App
             }
 
             var quotation = UnitWork.Find<Quotation>(c=>c.Status==2)
-                                    .Include(c=>c.QuotationProducts).Include(c=>c.QuotationMergeMaterials)
+                                    .Include(c=>c.QuotationProducts).Include(c=>c.QuotationMergeMaterials).Include(c=>c.Expressages)
                                     .WhereIf(!string.IsNullOrWhiteSpace(req.CreateUserName), c => c.CreateUser == req.CreateUserName)
                                     .WhereIf(!string.IsNullOrWhiteSpace(req.ServiceOrderId.ToString()), c => c.ServiceOrderId == req.ServiceOrderId)
                                     .WhereIf(ServiceOrderids.Count > 0, c => ServiceOrderids.Contains(c.ServiceOrderId))
@@ -482,6 +482,8 @@ namespace OpenAuth.App
                 c.b.TerminalCustomerId,
                 c.b.TerminalCustomer,
                 c.a.TotalMoney,
+                c.a.AcquisitionWay,
+                Expressages=c.a.Expressages,
                 DeviceNum = c.a.QuotationProducts.Count(),
                 c.a.CreateTime,
                 c.a.CreateUser,
