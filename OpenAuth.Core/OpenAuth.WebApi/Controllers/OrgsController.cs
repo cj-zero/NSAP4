@@ -122,6 +122,20 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 获取部门信息
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async System.Threading.Tasks.Task<App.Response.TableData> GetOrgInfo(string id, string name)
+        {
+            return new App.Response.TableData
+            {
+                Data = await _app.GetOrgInfo(id, name)
+            };
+        }
 
         /// <summary>
         /// 删除选中的部门及所有的子部门
