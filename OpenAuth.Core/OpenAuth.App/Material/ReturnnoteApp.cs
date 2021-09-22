@@ -376,15 +376,15 @@ namespace OpenAuth.App
                     }
                 }
             });
-
+            var replaceRecord = await UnitWork.Find<MaterialReplaceRecord>(c => c.QuotationId == quotationObj.Id && c.ProductCode == req.ProductCode).ToListAsync();
             result.Data = saleinv1List.Select(s => new ReturnMaterialListResp
             {
-                MaterialCode = "",
-                MaterialDescription = "",
+                MaterialCode = replaceRecord.Where(r => r.MaterialCode == s.ItemCode).FirstOrDefault()?.ReplaceMaterialCode,
+                MaterialDescription = replaceRecord.Where(r => r.MaterialCode == s.ItemCode).FirstOrDefault()?.ReplaceMaterialDescription,
                 Money = Convert.ToDecimal(s.Price),
                 QuotationMaterialId = quotationMergeMaterials.Where(q => q.MaterialCode.Equals(s.ItemCode) && Convert.ToDecimal(q.DiscountPrices).ToString("#0.00") == Convert.ToDecimal(s.Price).ToString("#0.00")).FirstOrDefault()?.Id,
-                SNandPN = "",
-                ReplaceSNandPN = "",
+                SNandPN = replaceRecord.Where(r => r.MaterialCode == s.ItemCode).FirstOrDefault()?.ReplaceSNandPN,
+                ReplaceSNandPN = replaceRecord.Where(r => r.MaterialCode == s.ItemCode).FirstOrDefault()?.SNandPN,
                 ReplaceMaterialCode = s.ItemCode,
                 ReplaceMaterialDescription = s.Dscription
             }).ToList();
@@ -461,6 +461,7 @@ namespace OpenAuth.App
                 //}
                 //Quotations = Quotations.Where(q => (q.IsMaterialType != null || q.QuotationStatus == 11));
             }
+            result.Count = quotation.Count();
             var quotationObj = await quotation.OrderByDescending(c => c.UpDateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
             var serviceOrderIds = quotation.Select(c => c.ServiceOrderId).ToList();
             var ids = quotation.Select(c => c.Id).ToList();
@@ -479,11 +480,12 @@ namespace OpenAuth.App
             {
                 c.a.Id,
                 c.a.ServiceOrderId,
+                c.a.ServiceOrderSapId,
                 c.b.TerminalCustomerId,
                 c.b.TerminalCustomer,
                 c.a.TotalMoney,
                 c.a.AcquisitionWay,
-                Expressages=c.a.Expressages,
+                Expressages = c.a.Expressages,
                 DeviceNum = c.a.QuotationProducts.Count(),
                 c.a.CreateTime,
                 c.a.CreateUser,

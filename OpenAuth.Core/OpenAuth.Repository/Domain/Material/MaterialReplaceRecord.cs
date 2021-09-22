@@ -32,31 +32,33 @@ namespace OpenAuth.Repository.Domain.Material
         /// </summary>
         [Description("序列号")]
         public string ProductCode { get; set; }
+        /// <summary>
+        ///已领料的物料
         /// </summary>
         [Description("已领料的物料")]
         public string MaterialCode { get; set; }
         /// <summary>
-        ///被替换的物料描述
+        ///已领料的物料描述
         /// </summary>
         [Description("已领料的物料描述")]
         public string MaterialDescription { get; set; }
         /// <summary>
-        ///SN号和PN号
+        ///已领料的SN号和PN号
         /// </summary>
         [Description("已领料的SN号和PN号")]
         public string SNandPN { get; set; }
         /// <summary>
-        ///被替换的物料
+        ///需退的物料编码
         /// </summary>
         [Description("需退的物料")]
         public string ReplaceMaterialCode { get; set; }
         /// <summary>
-        ///被替换的物料描述
+        ///需退的物料描述
         /// </summary>
         [Description("需退的物料描述")]
         public string ReplaceMaterialDescription { get; set; }
         /// <summary>
-        ///SN号和PN号
+        ///需退的SN号和PN号
         /// </summary>
         [Description("需退的SN号和PN号")]
         public string ReplaceSNandPN { get; set; }
