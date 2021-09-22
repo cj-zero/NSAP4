@@ -169,6 +169,17 @@ namespace OpenAuth.App
             return result;
         }
 
+        /// <summary>
+        /// 获取部门信息
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public async Task<OpenAuth.Repository.Domain.Org> GetOrgInfo(string id,string name)
+        {
+            return await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).WhereIf(!string.IsNullOrWhiteSpace(id), c => c.Id == id).WhereIf(!string.IsNullOrWhiteSpace(name), c => c.Name == name).FirstOrDefaultAsync();
+        }
+
         //private void GetTree(List<Tree> trees,string pid)
         //{
         //    var child = UnitWork.Find<OpenAuth.Repository.Domain.Org>(c=>c.ParentId==pid).ToList();
