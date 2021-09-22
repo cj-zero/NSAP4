@@ -31,6 +31,7 @@ namespace OpenAuth.Repository.Domain
             this.Replier = string.Empty;
             this.ReplierId = string.Empty;
             this.CreateTime = DateTime.Now;
+            this.MessageType = 0;
         }
 
 
@@ -83,6 +84,11 @@ namespace OpenAuth.Repository.Domain
         /// app用户Id
         /// </summary>
         public int AppUserId { get; set; }
+
+        /// <summary>
+        /// 催办
+        /// </summary>
+        public int? MessageType { get; set; }
 
         /// <summary>
         /// 服务单消息流水记录表
