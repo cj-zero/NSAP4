@@ -393,6 +393,40 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 保存查看人员名单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task SetLoactionViewUser(QueryLocationInfoReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            await UnitWork.AddAsync(new LocationViewUser { UserId = loginContext.User.Id, UserName = string.Join(",", req.Name) });
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 获取查看人员名单
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetLoactionViewUser()
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            var obj = await UnitWork.Find<LocationViewUser>(c => c.UserId == loginContext.User.Id).FirstOrDefaultAsync();
+            result.Data = obj?.UserName.Split(",");
+            return result;
+        }
+
+        /// <summary>
         /// 分析报表
         /// </summary>
         /// <param name="req"></param>
