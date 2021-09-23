@@ -539,6 +539,15 @@ namespace OpenAuth.App.Workbench
         {
             var reult = new TableData();
             var pendingObj = await UnitWork.Find<WorkbenchPending>(w => w.ApprovalNumber == int.Parse(req.ApprovalNumber)).FirstOrDefaultAsync();
+            if (pendingObj == null && !string.IsNullOrWhiteSpace(req.ApprovalNumber))
+            {
+                pendingObj = new WorkbenchPending 
+                { 
+                    ApprovalNumber = int.Parse(req.ApprovalNumber), 
+                    OrderType = 3, 
+                    ServiceOrderId = req.ServiceOrderId == null ? 0 :Convert.ToInt32( req.ServiceOrderId )
+                };
+            }
             ServiceOrderResp serviceOrderDetails = null;
             if (pendingObj.ServiceOrderId!=0) 
                 serviceOrderDetails = await ServiceOrderDetails(pendingObj.ServiceOrderId, pendingObj.PetitionerId);

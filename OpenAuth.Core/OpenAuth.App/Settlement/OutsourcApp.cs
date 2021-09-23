@@ -123,7 +123,7 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(request.StartTime.ToString()), q => q.CreateTime > request.StartTime)
                        .WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), q => q.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1));
             var outsourcList = await query.Include(o => o.OutsourcExpenses).OrderByDescending(o => o.UpdateTime).Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
-            var serviceOrderIds = outsourcList.Select(o => o.OutsourcExpenses.FirstOrDefault().ServiceOrderId).ToList();
+            var serviceOrderIds = outsourcList.Select(o => o.OutsourcExpenses.FirstOrDefault()?.ServiceOrderId).ToList();
             var serviceWorkOrder = await UnitWork.Find<ServiceWorkOrder>(s => serviceOrderIds.Contains(s.ServiceOrderId)).ToListAsync();
             var flowInstanceList = await UnitWork.Find<FlowInstance>(f => outsourcList.Select(o => o.FlowInstanceId).ToList().Contains(f.Id)).ToListAsync();
             result.Count = await query.CountAsync();
@@ -452,7 +452,15 @@ namespace OpenAuth.App
             else 
             {
                 var workbenchPending = await UnitWork.Find<WorkbenchPending>(w => w.SourceNumbers == int.Parse(req.OutsourcId) && w.OrderType == 3).FirstOrDefaultAsync();
-                return await _pendingApp.PendingDetails(new Workbench.Request.PendingReq { ApprovalNumber = workbenchPending.ApprovalNumber.ToString() });
+                Outsourc outsource = null;
+                int? serviceOrderId = null;
+                if (workbenchPending==null)//草稿状态
+                {
+                    outsource = await UnitWork.Find<Outsourc>(c => c.Id == int.Parse(req.OutsourcId)).Include(c => c.OutsourcExpenses).FirstOrDefaultAsync();
+                    serviceOrderId = outsource.OutsourcExpenses.FirstOrDefault()?.ServiceOrderId;
+                }
+                var num = workbenchPending?.ApprovalNumber == null ? req.OutsourcId.ToString() : workbenchPending?.ApprovalNumber.ToString();
+                return await _pendingApp.PendingDetails(new Workbench.Request.PendingReq { ApprovalNumber = num, ServiceOrderId = serviceOrderId });
             }
            
         }
