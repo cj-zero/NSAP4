@@ -421,10 +421,11 @@ namespace OpenAuth.App
                 quotationIds = await UnitWork.Find<QuotationProduct>(c => c.ProductCode.Contains(req.ProductCode)).Select(c => c.QuotationId.ToString()).ToListAsync();
             }
 
-            var quotation = UnitWork.Find<Quotation>(c=>c.Status==2)
-                                    .Include(c=>c.QuotationProducts).Include(c=>c.QuotationMergeMaterials).Include(c=>c.Expressages)
+            var quotation = UnitWork.Find<Quotation>(c => c.Status == 2)
+                                    .Include(c => c.QuotationProducts).Include(c => c.QuotationMergeMaterials).Include(c => c.Expressages)
+                                    .WhereIf(!string.IsNullOrWhiteSpace(req.QuotationId.ToString()), c => c.Id == req.QuotationId)
                                     .WhereIf(!string.IsNullOrWhiteSpace(req.CreateUserName), c => c.CreateUser == req.CreateUserName)
-                                    .WhereIf(!string.IsNullOrWhiteSpace(req.ServiceOrderId.ToString()), c => c.ServiceOrderId == req.ServiceOrderId)
+                                    .WhereIf(!string.IsNullOrWhiteSpace(req.SapId.ToString()), c => c.ServiceOrderSapId == req.SapId)
                                     .WhereIf(ServiceOrderids.Count > 0, c => ServiceOrderids.Contains(c.ServiceOrderId))
                                     .WhereIf(quotationIds.Count > 0, c => quotationIds.Contains(c.Id.ToString()))
                                     ;
