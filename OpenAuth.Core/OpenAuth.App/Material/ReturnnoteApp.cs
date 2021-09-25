@@ -490,7 +490,7 @@ namespace OpenAuth.App
                 DeviceNum = c.a.QuotationProducts.Count(),
                 c.a.CreateTime,
                 c.a.CreateUser,
-                Status = materialReplaceRecord.Where(m => m.QuotationId == c.a.Id).Count() > 0 ? (materialReplaceRecord.Where(m => m.QuotationId == c.a.Id).Count() == c.a.QuotationMergeMaterials.Count() ? "已更新" : "部分更新") : "待更新"
+                Status = materialReplaceRecord.Where(m => m.QuotationId == c.a.Id).Count() > 0 ? (materialReplaceRecord.Where(m => m.QuotationId == c.a.Id).Count() == c.a.QuotationMergeMaterials.Sum(s=>s.Count) ? "已更新" : "部分更新") : "待更新"
             });
             return result;
         }
@@ -531,24 +531,32 @@ namespace OpenAuth.App
             var result = new TableData();
             var quotationProducts = await UnitWork.Find<QuotationProduct>(c => c.QuotationId == req.QuotationId && c.ProductCode == req.ProductCode).Include(c => c.QuotationMaterials).FirstOrDefaultAsync();
             var replacedMaterials = await UnitWork.Find<MaterialReplaceRecord>(c => c.QuotationId == req.QuotationId).ToListAsync();
+            List<MaterialReplaceRecordReq> materials = new List<MaterialReplaceRecordReq>();
+            quotationProducts.QuotationMaterials.ForEach(c =>
+            {
+                for (int i = 0; i < c.Count; i++)
+                {
+                    materials.Add(new MaterialReplaceRecordReq
+                    {
+                        LineNum = (i + 1),
+                        MaterialType = c.MaterialType,
+                        MaterialCode = c.MaterialCode,
+                        MaterialDescription = c.MaterialDescription,
+                        SNandPN = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.SNandPN,
+                        ReplaceMaterialCode = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.ReplaceMaterialCode,
+                        ReplaceMaterialDescription = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.ReplaceMaterialDescription,
+                        ReplaceSNandPN = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.ReplaceSNandPN,
+                        Count = c.UnitPrice,
+                        Status = !string.IsNullOrWhiteSpace(replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.ReplaceMaterialCode) ? "已更新" : "未提交"
+                    });
+                }
+            });
             result.Data = new
             {
                 quotationProducts.ProductCode,
                 quotationProducts.MaterialCode,
                 quotationProducts.MaterialDescription,
-                MaterialsData = quotationProducts.QuotationMaterials.Select(c => new
-                {
-                    c.Id,
-                    c.MaterialType,
-                    c.MaterialCode,
-                    c.MaterialDescription,
-                    SNandPN = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode).FirstOrDefault()?.SNandPN,
-                    ReplaceMaterialCode = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode).FirstOrDefault()?.ReplaceMaterialCode,
-                    ReplaceMaterialDescription = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode).FirstOrDefault()?.ReplaceMaterialDescription,
-                    ReplaceSNandPN = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode).FirstOrDefault()?.ReplaceSNandPN,
-                    Count = c.UnitPrice,
-                    Status = !string.IsNullOrWhiteSpace(replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode).FirstOrDefault()?.ReplaceMaterialCode) ? "已更新" : "未提交"
-                })
+                MaterialsData = materials
             };
             return result;
         }

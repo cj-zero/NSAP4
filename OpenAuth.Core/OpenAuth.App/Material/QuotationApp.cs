@@ -344,7 +344,23 @@ namespace OpenAuth.App.Material
             var Quotations = await UnitWork.Find<Quotation>(null).Include(q => q.Expressages).Include(q => q.QuotationOperationHistorys).WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId.ToString()), q => q.ServiceOrderId.Equals(request.ServiceOrderId))
                      .WhereIf(!string.IsNullOrWhiteSpace(request.QuotationId.ToString()), q => q.Id.Equals(request.QuotationId)).ToListAsync();
             Quotations.ForEach(q => q.QuotationOperationHistorys = q.QuotationOperationHistorys.OrderBy(o => o.CreateTime).ToList());
-            result.Data = Quotations.Skip((request.page - 1) * request.limit).Take(request.limit).ToList();
+            var serviceOrderIds = Quotations.Select(c => c.ServiceOrderId).ToList();
+            var serivceOrder = await UnitWork.Find<ServiceOrder>(c => serviceOrderIds.Contains(c.Id)).Select(c => new { c.Id, c.TerminalCustomerId, c.TerminalCustomer }).ToListAsync();
+            result.Data = Quotations.Skip((request.page - 1) * request.limit).Take(request.limit).Select(c => new
+            {
+                c.Id,
+                c.ServiceOrderSapId,
+                c.SalesOrderId,
+                TerminalCustomerId = serivceOrder.Where(s => s.Id == c.ServiceOrderId).FirstOrDefault()?.TerminalCustomerId,
+                TerminalCustomer = serivceOrder.Where(s => s.Id == c.ServiceOrderId).FirstOrDefault()?.TerminalCustomer,
+                c.AcquisitionWay,
+                c.CreateTime,
+                c.UpDateTime,
+                c.TotalMoney,
+                c.Remark,
+                QuotationOperationHistorys = c.QuotationOperationHistorys,
+                Expressages = c.Expressages
+            }).ToList();
             result.Count = Quotations.Count();
             return result;
         }

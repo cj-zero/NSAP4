@@ -33,6 +33,10 @@ namespace OpenAuth.Repository.Domain.Material
         [Description("序列号")]
         public string ProductCode { get; set; }
         /// <summary>
+        /// 行号
+        /// </summary>
+        public int LineNum { get; set; }
+        /// <summary>
         ///已领料的物料
         /// </summary>
         [Description("已领料的物料")]
