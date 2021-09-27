@@ -304,7 +304,9 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             TableData result = new TableData();
-            var serviceOrder = UnitWork.Find<ServiceOrder>(null);
+            var workOrder = UnitWork.Find<ServiceWorkOrder>(null)
+                                .WhereIf(!string.IsNullOrWhiteSpace(req.Year), c => c.CreateTime.Value.Year == int.Parse(req.Year))
+                                .WhereIf(!string.IsNullOrWhiteSpace(req.Month), c => c.CreateTime.Value.Month == int.Parse(req.Month));
             List<string> currentUser = new List<string>();
             if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginContext.Roles.Any(r => r.Name.Equals("总经理")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
@@ -314,20 +316,21 @@ namespace OpenAuth.App
                     var orgId = orgRole.SecondId;
                     var userIds = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.SecondId == orgId && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
                     //serviceOrder = serviceOrder.Where(r => userIds.Contains(r.CreateUserId));
-                    currentUser.AddRange(userIds);
+                    workOrder = workOrder.Where(c => userIds.Contains(c.CurrentUserNsapId));
+                    //currentUser.AddRange(userIds);
                 }
                 else
                 {
                     //serviceOrder = serviceOrder.Where(r => r.CreateUserId.Equals(loginContext.User.Id));
-                    currentUser.Add(loginContext.User.Id);
+                    workOrder = workOrder.Where(r => r.CurrentUserNsapId.Equals(loginContext.User.Id));
+                    //currentUser.Add(loginContext.User.Id);
                 }
             };
-            var workOrder = await UnitWork.Find<ServiceWorkOrder>(c => currentUser.Contains(c.CurrentUserNsapId))
+            var workOrderIds = await workOrder.Select(c => c.ServiceOrderId).ToListAsync();
+            var serviceOrderObj = await UnitWork.Find<ServiceOrder>(c => workOrderIds.Contains(c.Id))
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.Year), c => c.CreateTime.Value.Year == int.Parse(req.Year))
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.Month), c => c.CreateTime.Value.Month == int.Parse(req.Month))
-                                .Select(c => c.ServiceOrderId)
                                 .ToListAsync();
-            var serviceOrderObj = await serviceOrder.Where(c => workOrder.Contains(c.Id)).ToListAsync();
 
             var groupby = serviceOrderObj.GroupBy(c => c.FromId).Select(c => new { FromId = c.Key, Count = c.Count() }).ToList();
             var totalCount = serviceOrderObj.Count();
@@ -649,8 +652,8 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             TableData result = new TableData();
-            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => c.VestInOrg == 1)
-                .WhereIf(!string.IsNullOrWhiteSpace(req.Year), c => c.CreateTime.Value.Year == int.Parse(req.Year)).ToListAsync();
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => c.VestInOrg == 1 && c.CreateTime != null)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.Year), c => c.CreateTime.Value.Year == int.Parse(req.Year)).Select(c => new { c.CreateTime }).ToListAsync();
             var groupby = serviceOrder.GroupBy(c => c.CreateTime.Value.Month).Select(c => new { Month = c.Key, Count = c.Count() }).ToList();
             var query = from a in monthTemp
                         join b in groupby on a.ID equals b.Month into ab
