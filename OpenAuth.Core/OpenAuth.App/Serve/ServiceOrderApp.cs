@@ -3015,6 +3015,7 @@ namespace OpenAuth.App
                             NewestContacter = string.IsNullOrEmpty(a.NewestContacter) ? a.Contacter : a.NewestContacter,
                             NewestContactTel = string.IsNullOrEmpty(a.NewestContactTel) ? a.ContactTel : a.NewestContactTel,
                             AppCustId = a.AppUserId,
+                            Reamrk = a.ServiceWorkOrders.Count > 0 ? a.ServiceWorkOrders.FirstOrDefault().Remark : "",
                             ServiceWorkOrders = a.ServiceWorkOrders.Where(w => w.CurrentUserId == CurrentUserId && (string.IsNullOrEmpty(MaterialType) ? true : "无序列号".Equals(MaterialType) ? w.MaterialCode == "无序列号" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-")) == MaterialType)).Select(o => new
                             {
                                 o.Id,
@@ -3052,6 +3053,7 @@ namespace OpenAuth.App
                     a.CustomerId,
                     a.TerminalCustomer,
                     a.TerminalCustomerId,
+                    a.Reamrk,
                     ProblemTypeName = string.IsNullOrEmpty(a.ProblemTypeName) ? a.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Name : a.ProblemTypeName,
                     ProblemTypeId = string.IsNullOrEmpty(a.ProblemTypeId) ? a.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Id : a.ProblemTypeId,
                     Services = GetServiceFromTheme(a.ServiceWorkOrders.FirstOrDefault()?.FromTheme),
@@ -3889,7 +3891,7 @@ namespace OpenAuth.App
             var completeReportList = await UnitWork.Find<CompletionReport>(w => serviceOrderIds.Contains((int)w.ServiceOrderId)).Select(s => new { s.ServiceOrderId, s.TechnicianId, s.IsReimburse, s.Id, s.ServiceMode, MaterialType = s.MaterialCode == "无序列号" ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) }).ToListAsync();
             //获取我的报销单集合
             var reimburseList = await UnitWork.Find<ReimburseInfo>(r => r.CreateUserId == userInfo.UserID).ToListAsync();
-            var query = UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id) && w.AllowOrNot==0)
+            var query = UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id) && w.AllowOrNot == 0)
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                 .Include(s => s.ServiceFlows)
                 .WhereIf(req.Type == 1, s => s.ServiceWorkOrders.All(a => a.OrderTakeType == 0))//待处理 所有设备类型都未操作
@@ -3920,6 +3922,7 @@ namespace OpenAuth.App
                     s.CustomerName,
                     s.TerminalCustomer,
                     s.VestInOrg,
+                    Reamrk = s.ServiceWorkOrders.Count > 0 ? s.ServiceWorkOrders.FirstOrDefault().Remark : "",
                     MaterialCode = s.VestInOrg == 2 ? s.ServiceWorkOrders.Where(c => c.ServiceOrderId == s.Id).FirstOrDefault().MaterialCode : "",
                     ManufacturerSerialNumber = s.VestInOrg == 2 ? s.ServiceWorkOrders.Where(c => c.ServiceOrderId == s.Id).FirstOrDefault().ManufacturerSerialNumber : "",
                     Count = s.ServiceWorkOrders.Where(w => w.ServiceOrderId == s.Id && w.CurrentUserId == req.TechnicianId).Count(),
@@ -3967,6 +3970,7 @@ namespace OpenAuth.App
                 s.VestInOrg,
                 s.MaterialCode,
                 s.ManufacturerSerialNumber,
+                s.Reamrk,
                 FromTheme = s.MaterialInfo.Select(s => s.FromTheme).FirstOrDefault(),
                 TransactionType = s.MaterialInfo.Select(s => s.TransactionType).FirstOrDefault(),
                 Priority = s.MaterialInfo.Select(s => s.Priority).FirstOrDefault(),
