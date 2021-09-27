@@ -376,15 +376,15 @@ namespace OpenAuth.App
                     }
                 }
             });
-
+            var replaceRecord = await UnitWork.Find<MaterialReplaceRecord>(c => c.QuotationId == quotationObj.Id && c.ProductCode == req.ProductCode).ToListAsync();
             result.Data = saleinv1List.Select(s => new ReturnMaterialListResp
             {
-                MaterialCode = "",
-                MaterialDescription = "",
+                MaterialCode = replaceRecord.Where(r => r.MaterialCode == s.ItemCode).FirstOrDefault()?.ReplaceMaterialCode,
+                MaterialDescription = replaceRecord.Where(r => r.MaterialCode == s.ItemCode).FirstOrDefault()?.ReplaceMaterialDescription,
                 Money = Convert.ToDecimal(s.Price),
                 QuotationMaterialId = quotationMergeMaterials.Where(q => q.MaterialCode.Equals(s.ItemCode) && Convert.ToDecimal(q.DiscountPrices).ToString("#0.00") == Convert.ToDecimal(s.Price).ToString("#0.00")).FirstOrDefault()?.Id,
-                SNandPN = "",
-                ReplaceSNandPN = "",
+                SNandPN = replaceRecord.Where(r => r.MaterialCode == s.ItemCode).FirstOrDefault()?.ReplaceSNandPN,
+                ReplaceSNandPN = replaceRecord.Where(r => r.MaterialCode == s.ItemCode).FirstOrDefault()?.SNandPN,
                 ReplaceMaterialCode = s.ItemCode,
                 ReplaceMaterialDescription = s.Dscription
             }).ToList();
@@ -421,10 +421,11 @@ namespace OpenAuth.App
                 quotationIds = await UnitWork.Find<QuotationProduct>(c => c.ProductCode.Contains(req.ProductCode)).Select(c => c.QuotationId.ToString()).ToListAsync();
             }
 
-            var quotation = UnitWork.Find<Quotation>(c=>c.Status==2)
-                                    .Include(c=>c.QuotationProducts).Include(c=>c.QuotationMergeMaterials).Include(c=>c.Expressages)
+            var quotation = UnitWork.Find<Quotation>(c => c.Status == 2)
+                                    .Include(c => c.QuotationProducts).Include(c => c.QuotationMergeMaterials).Include(c => c.Expressages)
+                                    .WhereIf(!string.IsNullOrWhiteSpace(req.QuotationId.ToString()), c => c.Id == req.QuotationId)
                                     .WhereIf(!string.IsNullOrWhiteSpace(req.CreateUserName), c => c.CreateUser == req.CreateUserName)
-                                    .WhereIf(!string.IsNullOrWhiteSpace(req.ServiceOrderId.ToString()), c => c.ServiceOrderId == req.ServiceOrderId)
+                                    .WhereIf(!string.IsNullOrWhiteSpace(req.SapId.ToString()), c => c.ServiceOrderSapId == req.SapId)
                                     .WhereIf(ServiceOrderids.Count > 0, c => ServiceOrderids.Contains(c.ServiceOrderId))
                                     .WhereIf(quotationIds.Count > 0, c => quotationIds.Contains(c.Id.ToString()))
                                     ;
@@ -461,6 +462,7 @@ namespace OpenAuth.App
                 //}
                 //Quotations = Quotations.Where(q => (q.IsMaterialType != null || q.QuotationStatus == 11));
             }
+            result.Count = quotation.Count();
             var quotationObj = await quotation.OrderByDescending(c => c.UpDateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
             var serviceOrderIds = quotation.Select(c => c.ServiceOrderId).ToList();
             var ids = quotation.Select(c => c.Id).ToList();
@@ -479,15 +481,16 @@ namespace OpenAuth.App
             {
                 c.a.Id,
                 c.a.ServiceOrderId,
+                c.a.ServiceOrderSapId,
                 c.b.TerminalCustomerId,
                 c.b.TerminalCustomer,
                 c.a.TotalMoney,
                 c.a.AcquisitionWay,
-                Expressages=c.a.Expressages,
+                Expressages = c.a.Expressages,
                 DeviceNum = c.a.QuotationProducts.Count(),
                 c.a.CreateTime,
                 c.a.CreateUser,
-                Status = materialReplaceRecord.Where(m => m.QuotationId == c.a.Id).Count() > 0 ? (materialReplaceRecord.Where(m => m.QuotationId == c.a.Id).Count() == c.a.QuotationMergeMaterials.Count() ? "已更新" : "部分更新") : "待更新"
+                Status = materialReplaceRecord.Where(m => m.QuotationId == c.a.Id).Count() > 0 ? (materialReplaceRecord.Where(m => m.QuotationId == c.a.Id).Count() == c.a.QuotationMergeMaterials.Sum(s=>s.Count) ? "已更新" : "部分更新") : "待更新"
             });
             return result;
         }
@@ -528,24 +531,32 @@ namespace OpenAuth.App
             var result = new TableData();
             var quotationProducts = await UnitWork.Find<QuotationProduct>(c => c.QuotationId == req.QuotationId && c.ProductCode == req.ProductCode).Include(c => c.QuotationMaterials).FirstOrDefaultAsync();
             var replacedMaterials = await UnitWork.Find<MaterialReplaceRecord>(c => c.QuotationId == req.QuotationId).ToListAsync();
+            List<MaterialReplaceRecordReq> materials = new List<MaterialReplaceRecordReq>();
+            quotationProducts.QuotationMaterials.ForEach(c =>
+            {
+                for (int i = 0; i < c.Count; i++)
+                {
+                    materials.Add(new MaterialReplaceRecordReq
+                    {
+                        LineNum = (i + 1),
+                        MaterialType = c.MaterialType,
+                        MaterialCode = c.MaterialCode,
+                        MaterialDescription = c.MaterialDescription,
+                        SNandPN = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.SNandPN,
+                        ReplaceMaterialCode = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.ReplaceMaterialCode,
+                        ReplaceMaterialDescription = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.ReplaceMaterialDescription,
+                        ReplaceSNandPN = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.ReplaceSNandPN,
+                        Count = c.UnitPrice,
+                        Status = !string.IsNullOrWhiteSpace(replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.ReplaceMaterialCode) ? "已更新" : "未提交"
+                    });
+                }
+            });
             result.Data = new
             {
                 quotationProducts.ProductCode,
                 quotationProducts.MaterialCode,
                 quotationProducts.MaterialDescription,
-                MaterialsData = quotationProducts.QuotationMaterials.Select(c => new
-                {
-                    c.Id,
-                    c.MaterialType,
-                    c.MaterialCode,
-                    c.MaterialDescription,
-                    SNandPN = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode).FirstOrDefault()?.SNandPN,
-                    ReplaceMaterialCode = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode).FirstOrDefault()?.ReplaceMaterialCode,
-                    ReplaceMaterialDescription = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode).FirstOrDefault()?.ReplaceMaterialDescription,
-                    ReplaceSNandPN = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode).FirstOrDefault()?.ReplaceSNandPN,
-                    Count = c.UnitPrice,
-                    Status = !string.IsNullOrWhiteSpace(replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode).FirstOrDefault()?.ReplaceMaterialCode) ? "已更新" : "未提交"
-                })
+                MaterialsData = materials
             };
             return result;
         }

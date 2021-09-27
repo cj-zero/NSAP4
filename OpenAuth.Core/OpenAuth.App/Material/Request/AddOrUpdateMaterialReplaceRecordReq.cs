@@ -27,7 +27,13 @@ namespace OpenAuth.App.Material.Request
 
     public partial class MaterialReplaceRecordReq
     {
-
+        public int LineNum { get; set; }
+        public string Status { get; set; }
+        public decimal? Count { get; set; }
+        /// <summary>
+        /// 物料类型
+        /// </summary>
+        public int? MaterialType { get; set; }
         /// <summary>
         ///物料报价单Id
         /// </summary>
