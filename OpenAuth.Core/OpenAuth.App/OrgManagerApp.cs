@@ -103,6 +103,15 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 根据公司获取部门
+        /// </summary>
+        /// <param name="corpId"></param>
+        /// <returns></returns>
+        public List<OpenAuth.Repository.Domain.Org> GetOrgs(string corpId)
+        {
+            return UnitWork.Find<OpenAuth.Repository.Domain.Org>(c => c.CorpId == corpId).ToList();
+        }
+        /// <summary>
         /// 获取部门树和用户
         /// </summary>
         /// <param name="corpId"></param>
@@ -158,6 +167,17 @@ namespace OpenAuth.App
             //});
             result.Data = trees;
             return result;
+        }
+
+        /// <summary>
+        /// 获取部门信息
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public async Task<OpenAuth.Repository.Domain.Org> GetOrgInfo(string id,string name)
+        {
+            return await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).WhereIf(!string.IsNullOrWhiteSpace(id), c => c.Id == id).WhereIf(!string.IsNullOrWhiteSpace(name), c => c.Name == name).FirstOrDefaultAsync();
         }
 
         //private void GetTree(List<Tree> trees,string pid)

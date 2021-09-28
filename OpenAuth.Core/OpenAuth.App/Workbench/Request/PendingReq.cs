@@ -50,6 +50,11 @@ namespace OpenAuth.App.Workbench.Request
         /// 单据类型
         /// </summary>
         public string OrderType { get; set; }
-        
+
+        /// <summary>
+        /// 服务单ID
+        /// </summary>
+        public int? ServiceOrderId { get; set; }
+
     }
 }

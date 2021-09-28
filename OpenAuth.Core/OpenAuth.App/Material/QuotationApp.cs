@@ -344,11 +344,71 @@ namespace OpenAuth.App.Material
             var Quotations = await UnitWork.Find<Quotation>(null).Include(q => q.Expressages).Include(q => q.QuotationOperationHistorys).WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId.ToString()), q => q.ServiceOrderId.Equals(request.ServiceOrderId))
                      .WhereIf(!string.IsNullOrWhiteSpace(request.QuotationId.ToString()), q => q.Id.Equals(request.QuotationId)).ToListAsync();
             Quotations.ForEach(q => q.QuotationOperationHistorys = q.QuotationOperationHistorys.OrderBy(o => o.CreateTime).ToList());
-            result.Data = Quotations.Skip((request.page - 1) * request.limit).Take(request.limit).ToList();
+            var serviceOrderIds = Quotations.Select(c => c.ServiceOrderId).ToList();
+            var serivceOrder = await UnitWork.Find<ServiceOrder>(c => serviceOrderIds.Contains(c.Id)).Select(c => new { c.Id, c.TerminalCustomerId, c.TerminalCustomer }).ToListAsync();
+            result.Data = Quotations.Skip((request.page - 1) * request.limit).Take(request.limit).Select(c => new
+            {
+                c.Id,
+                c.ServiceOrderSapId,
+                c.SalesOrderId,
+                TerminalCustomerId = serivceOrder.Where(s => s.Id == c.ServiceOrderId).FirstOrDefault()?.TerminalCustomerId,
+                TerminalCustomer = serivceOrder.Where(s => s.Id == c.ServiceOrderId).FirstOrDefault()?.TerminalCustomer,
+                c.AcquisitionWay,
+                c.CreateTime,
+                c.UpDateTime,
+                c.TotalMoney,
+                c.Remark,
+                QuotationOperationHistorys = c.QuotationOperationHistorys,
+                Expressages = c.Expressages
+            }).ToList();
             result.Count = Quotations.Count();
             return result;
         }
 
+        /// <summary>
+        /// 是否有更换类型物料未退料
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<bool> IsReturnMaterial(QueryQuotationListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = false;
+            var quotation = await UnitWork.Find<Quotation>(c => c.ServiceOrderSapId == request.ServiceOrderSapId).Include(c => c.QuotationProducts).ThenInclude(c => c.QuotationMaterials).Where(c => c.QuotationProducts.Any(a => a.QuotationMaterials.Any(m => m.MaterialType == 1))).ToListAsync();
+            if (quotation.Count==0)
+                return result;
+            if (quotation.All(c=>c.SalesOrderId!=null))
+            {
+                var saleOrderIds = quotation.Select(c => c.SalesOrderId).ToList();
+                var returnote = await UnitWork.Find<ReturnNote>(c => saleOrderIds.Contains(c.SalesOrderId))
+                    .Include(c => c.ReturnNoteProducts)
+                    .ThenInclude(c => c.ReturnNoteMaterials)
+                    .ToListAsync();
+                quotation.ForEach(c =>
+                {
+                    //领料单下序列号
+                    c.QuotationProducts.ForEach(q =>
+                    {
+                        var obj = returnote.Where(r => r.SalesOrderId == c.SalesOrderId).FirstOrDefault();
+                        var product = obj.ReturnNoteProducts.Where(r => r.ProductCode == q.ProductCode).FirstOrDefault();//退料单序列号
+                        q.QuotationMaterials.ForEach(m =>
+                        {
+                            result = false;//全部满足则为true
+                            if (m.Count == product.ReturnNoteMaterials.Where(nm => nm.MaterialCode == m.MaterialCode).Count())//领料单物料的数量等于退料物料的数量
+                            {
+                                result = true;
+                            }
+                        });
+                    });
+                });
+            }
+
+            return result;
+        }
         /// <summary>
         /// 加载服务单列表
         /// </summary>

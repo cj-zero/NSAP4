@@ -36,6 +36,22 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 根据公司获取部门
+        /// </summary>
+        /// <param name="corpId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public App.Response.TableData GetOrgs(string corpId)
+        {
+            return new App.Response.TableData
+            {
+                Count = _app.GetOrgs(corpId).Count,
+                Data = _app.GetOrgs(corpId)
+            };
+        }
+
+
         [HttpGet]
         public Response<List<OpenAuth.Repository.Domain.Org>> GetAllOrg()
         {
@@ -106,6 +122,20 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 获取部门信息
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async System.Threading.Tasks.Task<App.Response.TableData> GetOrgInfo(string id, string name)
+        {
+            return new App.Response.TableData
+            {
+                Data = await _app.GetOrgInfo(id, name)
+            };
+        }
 
         /// <summary>
         /// 删除选中的部门及所有的子部门
