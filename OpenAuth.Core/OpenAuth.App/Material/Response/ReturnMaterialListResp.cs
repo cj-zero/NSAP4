@@ -7,6 +7,7 @@ namespace OpenAuth.App.Material.Response
 {
     public class ReturnMaterialListResp
     {
+        public int LineNum { get; set; }
         /// <summary>
         /// 物料编码
         /// </summary>

@@ -29,6 +29,10 @@ namespace OpenAuth.Repository.Domain
 
         }
         /// <summary>
+        /// 行号
+        /// </summary>
+        public int LineNum { get; set; }
+        /// <summary>
         ///物料编码
         /// </summary>
         [Description("物料编码")]
