@@ -1475,7 +1475,7 @@ namespace OpenAuth.App.Order
                 Indicator = order.Indicator,
                 LicTradNum = "0",//国税编号 许可的经销商号
                 NumAtCard = order.NumAtCard,
-                OwnerCode = order.OwnerCode.ToString(),//
+                OwnerCode = order.OwnerCode != 0 ? order.OwnerCode.ToString() : "",//
                 PartSupply = order.PartSupply,
                 PayToCode = order.PayToCode,
                 PeyMethod = order.PeyMethod,
@@ -5863,6 +5863,97 @@ namespace OpenAuth.App.Order
             }
             //filterQuery += string.Format(" GROUP BY T2.Name,T0.BaseRef,(CASE T0.TransType WHEN T3.ObjType THEN T3.ItemCode ELSE T4.ItemCode END)");
             return SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCount);
+        }
+        public DataTable SelectCopyItemAllView(out int rowCount, GridCopyItemListReq model, int SboID, int UserID)
+        {
+            string sortString = string.Empty; string filterString = string.Empty;
+            string type = string.Empty; string line = string.Empty;
+            if (!string.IsNullOrEmpty(model.sortname) && !string.IsNullOrEmpty(model.sortorder))
+                sortString = string.Format("{0} {1}", model.sortname, model.sortorder.ToUpper());
+            DataTable dt = GetSboNamePwd(SboID);
+            string dRowData = string.Empty; string isOpen = "0"; string sboname = ""; string sqlconn = "";
+            if (dt.Rows.Count > 0) { isOpen = dt.Rows[0][6].ToString(); sboname = dt.Rows[0][0].ToString(); sqlconn = dt.Rows[0][5].ToString(); }
+            #region 搜索条件
+            #region 根据不同的单据类型获取不同的物料
+            if (!string.IsNullOrEmpty(model.txtCopyDocType))
+            {
+                if (model.txtCopyDocType == "23") { type = "sale_oqut"; line = "sale_qut1"; }//销售报价单
+                else if (model.txtCopyDocType == "17") { type = "sale_ordr"; line = "sale_rdr1"; }//销售订单
+                else if (model.txtCopyDocType == "15") { type = "sale_odln"; line = "sale_dln1"; }//销售交货单
+                else if (model.txtCopyDocType == "13") { type = "sale_oinv"; line = "sale_inv1"; }//应收发票
+                else if (model.txtCopyDocType == "16") { type = "sale_ordn"; line = "sale_rdn1"; }//销售退货单
+                else if (model.txtCopyDocType == "14") { type = "sale_orin"; line = "sale_rin1"; }//应收贷项凭证
+                else if (model.txtCopyDocType == "54") { type = "buy_opqt"; line = "buy_pqt1"; }//采购报价单
+                else if (model.txtCopyDocType == "22") { type = "buy_opor"; line = "buy_por1"; }//采购订单
+                else if (model.txtCopyDocType == "20") { type = "buy_opdn"; line = "buy_pdn1"; }//采购收货单
+                else if (model.txtCopyDocType == "18") { type = "buy_opch"; line = "buy_pch1"; }//应付发票
+                else if (model.txtCopyDocType == "21") { type = "buy_orpd"; line = "buy_rpd1"; }//采购退货单
+                else if (model.txtCopyDocType == "19") { type = "buy_orpc"; line = "buy_rpc1"; }//应付贷项凭证
+                else if (model.txtCopyDocType == "wtr1") { type = "store_owtr"; line = "store_wtr1"; }//库存转储
+                else
+                {
+                    if (model.doctype == "buy") { type = "buy_opqt"; line = "buy_pqt1"; }
+                    else { type = "sale_oqut"; line = "sale_qut1"; }
+                }
+            }
+            else
+            {
+                if (model.doctype == "buy") { type = "buy_opqt"; line = "buy_pqt1"; }
+                else { type = "sale_oqut"; line = "sale_qut1"; }
+            }
+            #endregion
+            if (!string.IsNullOrEmpty(model.txtCardCode))
+            {
+                filterString += string.Format("(a.CardCode LIKE '%{0}%' OR a.CardName LIKE '%{0}%') AND ", model.txtCardCode.FilterWildCard());
+            }
+
+            if (!string.IsNullOrEmpty(model.txtItemCode))
+            {
+                filterString += string.Format("(b.ItemCode LIKE '%{0}%' OR b.Dscription LIKE '%{0}%') AND ", model.txtItemCode.FilterWildCard());
+            }
+            if (!string.IsNullOrEmpty(model.txtDocEntry))
+            {
+                filterString += string.Format("(a.DocEntry = '{0}') AND ", model.txtDocEntry.FilterWildCard());
+            }
+
+            #endregion
+            DataTable rDataRowsSlp = GetSboSlpCodeId(UserID, SboID);
+            if (type != "store_owtr")
+            {
+                if (rDataRowsSlp.Rows.Count > 0)
+                {
+                    string slpCode = rDataRowsSlp.Rows[0][0].ToString();
+                    filterString += string.Format(" a.SlpCode = '{0}' AND a.sbo_id={1} AND m.ItemCode IS NOT NULL AND ", slpCode, SboID);
+                }
+            }
+            if (!string.IsNullOrEmpty(filterString))
+                filterString = filterString.Substring(0, filterString.Length - 5);
+            //filterQuery += string.Format(" GROUP BY T2.Name,T0.BaseRef,(CASE T0.TransType WHEN T3.ObjType THEN T3.ItemCode ELSE T4.ItemCode END)");
+            StringBuilder filedName = new StringBuilder();
+            StringBuilder tableName = new StringBuilder();
+            string U_SHJSDJ = "", U_SHJSJ = "", U_SHTC = "";
+            if (IsExistMySql(line, "U_SHJSDJ"))
+            {
+                U_SHJSDJ = ",IFNULL(b.U_SHJSDJ,0)";
+            }
+            if (IsExistMySql(line, "U_SHJSJ"))
+            {
+                U_SHJSJ = ",IFNULL(b.U_SHJSJ,0)";
+            }
+            if (IsExistMySql(line, "U_SHTC"))
+            {
+                U_SHTC = ",IFNULL(b.U_SHTC,0)";
+            }
+            filedName.Append("a.DocEntry,a.CardCode,a.CardName,b.ItemCode,b.Dscription,b.Quantity,b.Price,b.LineTotal,b.WhsCode,w.OnHand,m.LastPurPrc,");
+            filedName.Append("m.U_JGF,m.IsCommited,m.OnOrder,(m.OnHand-m.IsCommited+m.OnOrder) AS OnAvailable,m.U_JGF1,IFNULL(m.U_YFCB,'0'),m.OnHand AS OnHandS,m.MinLevel,m.PurPackUn,");
+            filedName.Append("(IFNULL((CASE m.QryGroup1 WHEN 'N' THEN 0 ELSE '0.5' END),0)) AS QryGroup1,");
+            filedName.Append("(IFNULL((CASE m.QryGroup2 WHEN 'N' THEN 0 ELSE '3' END),0)) AS QryGroup2,");
+            filedName.Append("(IFNULL((CASE m.QryGroup3 WHEN 'N' THEN 0 ELSE '2' END),0)) AS _QryGroup3");
+            filedName.AppendFormat("{0}{1}{2}", U_SHJSDJ, U_SHJSJ, U_SHTC);
+            tableName.AppendFormat(" {0}." + type + " a LEFT JOIN {0}." + line + " b ON a.DocEntry=b.DocEntry AND a.sbo_id=b.sbo_id", "nsap_bone");
+            tableName.AppendFormat(" LEFT JOIN {0}.store_oitw w ON b.ItemCode=w.ItemCode AND b.WhsCode=w.WhsCode AND b.sbo_id=w.sbo_id", "nsap_bone");
+            tableName.AppendFormat(" LEFT JOIN {0}.store_oitm m ON b.ItemCode=m.ItemCode AND m.sbo_id=b.sbo_id", "nsap_bone");
+            return SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), model.limit, model.page, sortString, filterString, out rowCount);
         }
     }
 }
