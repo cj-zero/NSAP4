@@ -72,6 +72,10 @@ namespace OpenAuth.App.Workbench.Response
         /// </summary>
         public string Id { get; set; }
         /// <summary>
+        /// 物料类型
+        /// </summary>
+        public int? MaterialType { get; set; }
+        /// <summary>
         ///物料编码
         /// </summary>
         public string MaterialCode { get; set; }

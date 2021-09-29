@@ -346,7 +346,7 @@ namespace OpenAuth.App
             var result = new TableData();
             //查询当前技术员所有可退料服务Id
             var quotationObj = await UnitWork.Find<Quotation>(q => q.SalesOrderId == req.SalesOrderId && q.CreateUserId.Equals(loginUser.Id)).Include(q => q.QuotationProducts).ThenInclude(q => q.QuotationMaterials).Include(q => q.QuotationMergeMaterials).Where(q => q.QuotationProducts.Any(p => p.ProductCode.Equals(req.ProductCode))).FirstOrDefaultAsync();
-            var quotationProductObj = quotationObj.QuotationProducts.FirstOrDefault();
+            var quotationProductObj = quotationObj.QuotationProducts.Where(c => c.ProductCode == req.ProductCode).FirstOrDefault();
             var quotationMergeMaterials = quotationObj.QuotationMergeMaterials.ToList();
             //查询应收发票  && s.LineStatus == "O"
             var saleinv1s = await UnitWork.Find<sale_inv1>(s => s.DocEntry == req.InvoiceDocEntry).ToListAsync();
@@ -376,12 +376,19 @@ namespace OpenAuth.App
             //        }
             //    }
             //});
+            var productMaterials = quotationProductObj.QuotationMaterials.ToList();
             var replaceRecord = await UnitWork.Find<MaterialReplaceRecord>(c => c.QuotationId == quotationObj.Id && c.ProductCode == req.ProductCode).ToListAsync();
             List<ReturnMaterialListResp> listResps = new List<ReturnMaterialListResp>();
             saleinv1s.ForEach(s =>
             {
+                //领料单物料数量
+                var productMaterialsCount = productMaterials.Where(p => p.MaterialCode == s.ItemCode && Convert.ToDecimal(p.DiscountPrices).ToString("#0.00") == Convert.ToDecimal(s.Price).ToString("#0.00")).FirstOrDefault()?.Count;
+                //已退的物料数量
                 var hasCount= materials.Where(m => m.ReplaceMaterialCode.Equals(s.ItemCode)).Count();
-                s.Quantity = s.Quantity - hasCount;
+                //剩余能退数量
+                productMaterialsCount = productMaterialsCount - hasCount;
+                //s.Quantity = s.Quantity - hasCount;
+                s.Quantity = productMaterialsCount;
                 //var quotationMaterialCount = quotationProductObj.QuotationMaterials.Where(q => q.MaterialCode.Equals(s.ItemCode) && Convert.ToDecimal(q.DiscountPrices).ToString("#0.00") == Convert.ToDecimal(s.Price).ToString("#0.00")).Count() - materials.Where(m => m.ReplaceMaterialCode.Equals(s.ItemCode)).Count();
                 if (s.Quantity > 0)
                 {
@@ -396,6 +403,7 @@ namespace OpenAuth.App
                         listResps.Add(new ReturnMaterialListResp
                         {
                             LineNum= linenum,
+                            MaterialType= quotationMergeMaterials.Where(q => q.MaterialCode.Equals(s.ItemCode) && Convert.ToDecimal(q.DiscountPrices).ToString("#0.00") == Convert.ToDecimal(s.Price).ToString("#0.00")).FirstOrDefault()?.MaterialType,
                             //按顺序匹配更换记录
                             MaterialCode = replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault()==null?"": replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault().ReplaceMaterialCode,
                             MaterialDescription = replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault()==null?"": replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault().ReplaceMaterialDescription,
@@ -582,7 +590,7 @@ namespace OpenAuth.App
                         ReplaceMaterialDescription = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.ReplaceMaterialDescription,
                         ReplaceSNandPN = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.ReplaceSNandPN,
                         Count = c.UnitPrice,
-                        Status = !string.IsNullOrWhiteSpace(replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.ReplaceMaterialCode) ? "已更新" : "未提交"
+                        Status = !string.IsNullOrWhiteSpace(replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.SNandPN) ? "已更新" : "未提交"
                     });
                 }
             });

@@ -29,6 +29,10 @@ namespace OpenAuth.Repository.Domain
 
         }
         /// <summary>
+        /// 物料类型
+        /// </summary>
+        public int? MaterialType { get; set; }
+        /// <summary>
         /// 行号
         /// </summary>
         public int? LineNum { get; set; }
