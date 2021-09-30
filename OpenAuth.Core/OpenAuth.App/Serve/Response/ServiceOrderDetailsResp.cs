@@ -189,7 +189,14 @@ namespace OpenAuth.App.Response
         /// 是否允许服务
         /// </summary>
         public int AllowOrNot { get; set; }
-
+        /// <summary>
+        /// 撤销人
+        /// </summary>
+        public string RevokeUser { get; set; }
+        /// <summary>
+        /// 撤销时间
+        /// </summary>
+        public DateTime? RevokeTime { get; set; }
         /// <summary>
         /// 服务单关联的工单
         /// </summary>
