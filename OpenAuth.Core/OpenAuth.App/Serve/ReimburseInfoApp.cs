@@ -112,7 +112,17 @@ namespace OpenAuth.App
             }
             if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && request.PageType == 1 && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
-                ReimburseInfos = ReimburseInfos.Where(r => r.CreateUserId.Equals(loginContext.User.Id));
+                var orgRole = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.Key == Define.ORGROLE && c.FirstId == loginContext.User.Id).FirstOrDefaultAsync();
+                if (orgRole != null)//查看本部下数据
+                {
+                    var orgId = orgRole.SecondId;
+                    var userIds = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.SecondId == orgId && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
+                    ReimburseInfos = ReimburseInfos.Where(r => userIds.Contains(r.CreateUserId));
+                }
+                else
+                {
+                    ReimburseInfos = ReimburseInfos.Where(r => r.CreateUserId.Equals(loginContext.User.Id));
+                }
             };
             #endregion
 
@@ -321,9 +331,10 @@ namespace OpenAuth.App
             List<string> currentUser = new List<string>();
             if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginContext.Roles.Any(r=>r.Name.Equals("总经理")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
-                if (loginContext.Roles.Any(c => c.Name.Equals("售后主管")))//查看本部下数据
+                var orgRole = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.Key == Define.ORGROLE && c.FirstId == loginContext.User.Id).FirstOrDefaultAsync();
+                if (orgRole != null)//查看本部下数据
                 {
-                    var orgId = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault()?.Id;
+                    var orgId = orgRole.SecondId;
                     var userIds = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.SecondId == orgId && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
                     reimburseInfos = reimburseInfos.Where(r => userIds.Contains(r.CreateUserId));
                     currentUser.AddRange(userIds);
