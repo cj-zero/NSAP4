@@ -129,6 +129,29 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 获取查看人员名单
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetLoactionViewUser()
+        {
+            return await _realTimeLocationApp.GetLoactionViewUser();
+        }
+
+
+        /// <summary>
+        /// 保存查看人员名单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> SetLoactionViewUser(QueryLocationInfoReq req)
+        {
+            await _realTimeLocationApp.SetLoactionViewUser(req);
+            return new Response();
+        }
+
+        /// <summary>
         ///获取所有客户
         /// </summary>
         /// <returns></returns>
