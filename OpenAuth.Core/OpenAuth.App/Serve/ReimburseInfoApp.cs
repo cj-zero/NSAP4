@@ -67,7 +67,7 @@ namespace OpenAuth.App
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ServiceRelations") && u.Enable == false).Select(u => u.Name).ToListAsync();
 
             var result = new TableData();
-            var objs = UnitWork.Find<ReimburseInfo>(null).Include(r => r.ReimburseTravellingAllowances).Include(r=>r.ReimurseOperationHistories);
+            var objs = UnitWork.Find<ReimburseInfo>(null).Include(r => r.ReimburseTravellingAllowances).Include(r => r.ReimurseOperationHistories);
             var ReimburseInfos = objs.WhereIf(!string.IsNullOrWhiteSpace(request.MainId), r => r.MainId.ToString().Contains(request.MainId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId), r => r.ServiceOrderSapId.ToString().Contains(request.ServiceOrderId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.BearToPay), r => r.BearToPay.Contains(request.BearToPay))
@@ -287,14 +287,14 @@ namespace OpenAuth.App
                 fillTime = r.a.CreateTime.ToString("yyyy.MM.dd HH:mm:ss"),
                 r.b.TerminalCustomerId,
                 r.b.TerminalCustomer,
-                BusinessTripDate = serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).FirstOrDefault() == null ? CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c => c.BusinessTripDate)==null? Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.CreateTime)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c => c.BusinessTripDate)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).Min(s => s.EditTime)).ToString("yyyy.MM.dd HH:mm:ss"),
-                EndDate = serviceDailyReports.Where(s=>s.ServiceOrderId== r.a.ServiceOrderId).FirstOrDefault()==null? CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate)==null? Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.CreateTime)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).Max(s=>s.EditTime)).ToString("yyyy.MM.dd HH:mm:ss"),
-                Days=r.a.ReimburseTravellingAllowances?.Sum(r=>r.Days),
+                BusinessTripDate = serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).FirstOrDefault() == null ? CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c => c.BusinessTripDate) == null ? Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.CreateTime)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c => c.BusinessTripDate)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).Min(s => s.EditTime)).ToString("yyyy.MM.dd HH:mm:ss"),
+                EndDate = serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).FirstOrDefault() == null ? CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate) == null ? Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.CreateTime)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).Max(s => s.EditTime)).ToString("yyyy.MM.dd HH:mm:ss"),
+                Days = r.a.ReimburseTravellingAllowances?.Sum(r => r.Days),
                 r.b.FromTheme,
                 r.c.SalesMan,
-                UserName = r.f.Name==null? r.d.Name:r.f.Name + "-" + r.d.Name,
+                UserName = r.f.Name == null ? r.d.Name : r.f.Name + "-" + r.d.Name,
                 //OrgName = r.f.Name,
-                UpdateTime= r.a.ReimurseOperationHistories.OrderByDescending(r => r.CreateTime).FirstOrDefault()!=null?Convert.ToDateTime(r.a.ReimurseOperationHistories.OrderByDescending(r=>r.CreateTime).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"):Convert.ToDateTime(r.a.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss")
+                UpdateTime = r.a.ReimurseOperationHistories.OrderByDescending(r => r.CreateTime).FirstOrDefault() != null ? Convert.ToDateTime(r.a.ReimurseOperationHistories.OrderByDescending(r => r.CreateTime).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(r.a.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss")
             }).OrderByDescending(r => r.UpdateTime).ToList();
             result.Data = ReimburseRespList;
             return result;
@@ -319,7 +319,7 @@ namespace OpenAuth.App
             var result = new TableData();
             var reimburseInfos = UnitWork.Find<ReimburseInfo>(null).WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId));
             List<string> currentUser = new List<string>();
-            if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginContext.Roles.Any(r=>r.Name.Equals("总经理")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
+            if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginContext.Roles.Any(r => r.Name.Equals("总经理")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
                 if (loginContext.Roles.Any(c => c.Name.Equals("售后主管")))//查看本部下数据
                 {
@@ -334,19 +334,19 @@ namespace OpenAuth.App
                     currentUser.Add(loginContext.User.Id);
                 }
             };
-            
+
             var currsoids = currentUser.Count > 0 ? await UnitWork.Find<ServiceWorkOrder>(c => currentUser.Contains(c.CurrentUserNsapId)).Select(c => c.ServiceOrderId).Distinct().ToListAsync() : null;
-            var reimburseInfoList= await reimburseInfos.Select(r => new { r.RemburseStatus, r.TotalMoney, r.ServiceOrderId }).ToListAsync();
+            var reimburseInfoList = await reimburseInfos.Select(r => new { r.RemburseStatus, r.TotalMoney, r.ServiceOrderId }).ToListAsync();
             var serverOrderIds = reimburseInfoList.Select(r => r.ServiceOrderId).ToList();
             var expends = await UnitWork.Find<ServiceDailyExpends>(null)
                 .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId))
                 .WhereIf(currsoids != null, r => currsoids.Contains(r.ServiceOrderId))//不能查看全部的则查看自己或部门下的服务单关联的日费
                 .WhereIf(currsoids == null, s => !serverOrderIds.Contains(s.ServiceOrderId))//全部日费
                 .SumAsync(s => s.TotalMoney);
-            var totalmoney = reimburseInfoList.Sum(r => r.TotalMoney)+ expends;
-            var havepaid = reimburseInfoList.Where(r=>r.RemburseStatus==9).Sum(r => r.TotalMoney);
-            var unpaid = reimburseInfoList.Where(r => r.RemburseStatus < 9 && r.RemburseStatus>3).Sum(r => r.TotalMoney);
-            var notsubmit = reimburseInfoList.Where(r => r.RemburseStatus <= 3).Sum(r => r.TotalMoney)+ expends;
+            var totalmoney = reimburseInfoList.Sum(r => r.TotalMoney) + expends;
+            var havepaid = reimburseInfoList.Where(r => r.RemburseStatus == 9).Sum(r => r.TotalMoney);
+            var unpaid = reimburseInfoList.Where(r => r.RemburseStatus < 9 && r.RemburseStatus > 3).Sum(r => r.TotalMoney);
+            var notsubmit = reimburseInfoList.Where(r => r.RemburseStatus <= 3).Sum(r => r.TotalMoney) + expends;
             result.Data = new { totalmoney, havepaid, unpaid, notsubmit };
             return result;
         }
@@ -460,7 +460,7 @@ namespace OpenAuth.App
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.CreateUserId.Equals(loginUser.Id) && c.IsReimburse < 2).OrderByDescending(c => c.CreateTime).ToListAsync();
 
             var ServiceOrderids = CompletionReports.Select(c => c.ServiceOrderId).Distinct().ToList();
-            var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ServiceOrderids.Contains(s.Id) && (s.VestInOrg==1 || s.VestInOrg == 3)).Include(s => s.ServiceWorkOrders).ToListAsync();
+            var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ServiceOrderids.Contains(s.Id) && (s.VestInOrg == 1 || s.VestInOrg == 3)).Include(s => s.ServiceWorkOrders).ToListAsync();
             List<ServiceOrder> ServiceOrderList = new List<ServiceOrder>();
             foreach (var item in ServiceOrders)
             {
@@ -484,7 +484,7 @@ namespace OpenAuth.App
             }
             var ServiceOrderLists = from a in ServiceOrderList
                                     join b in CompletionReports on a.Id equals b.ServiceOrderId
-                                    where (b.ServiceMode == 1||a.VestInOrg==3)
+                                    where (b.ServiceMode == 1 || a.VestInOrg == 3)
                                     select new { a, b };
 
 
@@ -513,7 +513,7 @@ namespace OpenAuth.App
                 s.b.Destination,
                 BusinessTripDate = CompletionReports.Where(c => c.ServiceOrderId.Equals(s.a.Id) && c.ServiceMode == 1).Min(c => c.BusinessTripDate),
                 EndDate = CompletionReports.Where(c => c.ServiceOrderId.Equals(s.a.Id) && c.ServiceMode == 1).Max(c => c.EndDate),
-                MaterialCode =string.IsNullOrWhiteSpace(s.b.MaterialCode)?"":s.b.MaterialCode == "无序列号" ? "无序列号" : s.b.MaterialCode.Substring(0, s.b.MaterialCode.IndexOf("-"))
+                MaterialCode = string.IsNullOrWhiteSpace(s.b.MaterialCode) ? "" : s.b.MaterialCode == "无序列号" ? "无序列号" : s.b.MaterialCode.Substring(0, s.b.MaterialCode.IndexOf("-"))
             }).ToList();
             result.Count = ServiceOrderLists.Count();
             return result;
@@ -537,14 +537,14 @@ namespace OpenAuth.App
                 loginUser = await GetUserId(Convert.ToInt32(request.AppId));
             }
             decimal subsidies = 0;
-            if (request.UserId != null) 
+            if (request.UserId != null)
             {
                 loginUser.Id = request.UserId;
             }
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == loginUser.Id).Select(r => r.SecondId).ToListAsync();
             var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).ToListAsync();
-            var categoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_TravellingAllowance")).Select(u => new { u.Name, u.DtValue,u.Description }).ToListAsync();
-            categoryList = categoryList.Where(u => orgname.Contains(u.Name)|| u.Description.Split(",").Contains(loginUser.Name)).ToList();
+            var categoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_TravellingAllowance")).Select(u => new { u.Name, u.DtValue, u.Description }).ToListAsync();
+            categoryList = categoryList.Where(u => orgname.Contains(u.Name) || u.Description.Split(",").Contains(loginUser.Name)).ToList();
             if (categoryList != null && categoryList.Count() >= 1)
             {
                 subsidies = Convert.ToDecimal(categoryList.FirstOrDefault().DtValue);
@@ -624,7 +624,7 @@ namespace OpenAuth.App
             List<string> fileids = Reimburse.ReimburseAttachments.Select(r => r.FileId).ToList();
             List<ReimburseAttachment> rffilemodel = new List<ReimburseAttachment>();
             List<ReimburseExpenseOrg> expenseOrg = new List<ReimburseExpenseOrg>();
-            if (Reimburse.ReimburseTravellingAllowances != null && Reimburse.ReimburseTravellingAllowances.Count > 0) 
+            if (Reimburse.ReimburseTravellingAllowances != null && Reimburse.ReimburseTravellingAllowances.Count > 0)
             {
                 var rtaids = ReimburseResp.ReimburseTravellingAllowances.Select(r => r.Id).ToList();
                 expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rtaids.Contains(r.ExpenseId) && r.ExpenseType == 1).ToListAsync());
@@ -654,7 +654,8 @@ namespace OpenAuth.App
             ReimburseResp.ReimburseAttachments.ForEach(r => { r.AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault(); r.FileType = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileType).FirstOrDefault(); });
             if (Reimburse.ReimburseTravellingAllowances != null && Reimburse.ReimburseTravellingAllowances.Count > 0)
             {
-                ReimburseResp.ReimburseTravellingAllowances.ForEach(r => {
+                ReimburseResp.ReimburseTravellingAllowances.ForEach(r =>
+                {
                     r.ExpenseType = "1";
                     r.ReimburseExpenseOrgs = (expenseOrg.Where(e => e.ExpenseId == r.Id && e.ExpenseType == 1).ToList()).MapToList<ReimburseExpenseOrgResp>();
                 });
@@ -677,8 +678,10 @@ namespace OpenAuth.App
                     r.ReimburseExpenseOrgs = (expenseOrg.Where(e => e.ExpenseId == r.Id && e.ExpenseType == 2).ToList()).MapToList<ReimburseExpenseOrgResp>();
                 });
             }
-            if (ReimburseResp.ReimburseAccommodationSubsidies != null && ReimburseResp.ReimburseAccommodationSubsidies.Count > 0) {
-                ReimburseResp.ReimburseAccommodationSubsidies.ForEach(r => {
+            if (ReimburseResp.ReimburseAccommodationSubsidies != null && ReimburseResp.ReimburseAccommodationSubsidies.Count > 0)
+            {
+                ReimburseResp.ReimburseAccommodationSubsidies.ForEach(r =>
+                {
                     r.ExpenseType = "3";
                     r.ReimburseAttachments = rffilemodel.Where(f => f.ReimburseId.Equals(r.Id) && f.ReimburseType == 3).Select(r => new ReimburseAttachmentResp
                     {
@@ -695,7 +698,8 @@ namespace OpenAuth.App
             }
             if (ReimburseResp.ReimburseOtherCharges != null && ReimburseResp.ReimburseOtherCharges.Count > 0)
             {
-                ReimburseResp.ReimburseOtherCharges.ForEach(r => {
+                ReimburseResp.ReimburseOtherCharges.ForEach(r =>
+                {
                     r.ExpenseType = "4";
                     r.ReimburseAttachments = rffilemodel.Where(f => f.ReimburseId.Equals(r.Id) && f.ReimburseType == 4).Select(r => new ReimburseAttachmentResp
                     {
@@ -710,13 +714,13 @@ namespace OpenAuth.App
                     r.ReimburseExpenseOrgs = (expenseOrg.Where(e => e.ExpenseId == r.Id && e.ExpenseType == 4).ToList()).MapToList<ReimburseExpenseOrgResp>();
                 });
             }
-                
+
             #endregion
 
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == ReimburseResp.CreateUserId).Select(r => r.SecondId).ToListAsync();
             var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
-            var serviceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id == ReimburseResp.ServiceOrderId).Include(s=>s.ServiceWorkOrders).FirstOrDefaultAsync();
-            var quotationIds = await UnitWork.Find<Quotation>(q => q.ServiceOrderId == ReimburseResp.ServiceOrderId && q.CreateUserId.Equals(ReimburseResp.CreateUserId) && q.QuotationStatus==11).Select(q=>q.Id).ToListAsync();
+            var serviceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id == ReimburseResp.ServiceOrderId).Include(s => s.ServiceWorkOrders).FirstOrDefaultAsync();
+            var quotationIds = await UnitWork.Find<Quotation>(q => q.ServiceOrderId == ReimburseResp.ServiceOrderId && q.CreateUserId.Equals(ReimburseResp.CreateUserId) && q.QuotationStatus == 11).Select(q => q.Id).ToListAsync();
             List<AddOrUpdateQuotationReq> quotations = new List<AddOrUpdateQuotationReq>();
             foreach (var item in quotationIds)
             {
@@ -739,7 +743,7 @@ namespace OpenAuth.App
                 Destination = completionreport.Destination,
                 //BusinessTripDate = CompletionReports.Min(c => c.BusinessTripDate),
                 //EndDate = CompletionReports.Max(c => c.EndDate),
-                MaterialCode = string.IsNullOrWhiteSpace(completionreport.MaterialCode)?"":completionreport.MaterialCode == "无序列号" ? "无序列号" : completionreport.MaterialCode.Substring(0, completionreport.MaterialCode.IndexOf("-")),
+                MaterialCode = string.IsNullOrWhiteSpace(completionreport.MaterialCode) ? "" : completionreport.MaterialCode == "无序列号" ? "无序列号" : completionreport.MaterialCode.Substring(0, completionreport.MaterialCode.IndexOf("-")),
                 ServiceOrders = serviceOrders,
                 Quotations = quotations,
             };
@@ -841,7 +845,7 @@ namespace OpenAuth.App
                         UnitWork.Save();
                     }
                     //反写完工报告
-                    UnitWork.Update<CompletionReport>(c=> c.ServiceOrderId == obj.ServiceOrderId && c.CreateUserId == obj.CreateUserId,c=>new CompletionReport { IsReimburse = 2 });
+                    UnitWork.Update<CompletionReport>(c => c.ServiceOrderId == obj.ServiceOrderId && c.CreateUserId == obj.CreateUserId, c => new CompletionReport { IsReimburse = 2 });
                     UnitWork.Save();
                     //保存附件
                     List<ReimburseAttachment> AttachmentList = new List<ReimburseAttachment>();
@@ -911,7 +915,7 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task<TableData> AddTravellingAllowance(ReimburseTravellingAllowanceResp req) 
+        public async Task<TableData> AddTravellingAllowance(ReimburseTravellingAllowanceResp req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -923,15 +927,15 @@ namespace OpenAuth.App
                 throw new Exception("已新增出差补贴，不可多次新建");
             }
             var result = new TableData();
-            if (req != null) 
+            if (req != null)
             {
-                var travellingAllowances =req.MapTo<ReimburseTravellingAllowance>();
+                var travellingAllowances = req.MapTo<ReimburseTravellingAllowance>();
                 travellingAllowances.CreateTime = DateTime.Now;
                 travellingAllowances.IsAdded = true;
                 travellingAllowances.ReimburseInfoId = (int)req.ReimburseInfoId;
-                result.Data=await UnitWork.AddAsync<ReimburseTravellingAllowance,int>(travellingAllowances);
+                result.Data = await UnitWork.AddAsync<ReimburseTravellingAllowance, int>(travellingAllowances);
                 var TotalMoney = travellingAllowances.Days * travellingAllowances.Money;
-                await UnitWork.UpdateAsync<ReimburseInfo>(r => r.Id == req.ReimburseInfoId, r=>new ReimburseInfo{ TotalMoney= r.TotalMoney + TotalMoney });
+                await UnitWork.UpdateAsync<ReimburseInfo>(r => r.Id == req.ReimburseInfoId, r => new ReimburseInfo { TotalMoney = r.TotalMoney + TotalMoney });
                 await UnitWork.SaveAsync();
             }
             return result;
@@ -983,7 +987,7 @@ namespace OpenAuth.App
                             afir.FrmData = "{\"ReimburseInfoId\":\"" + obj.Id + "\"}";
                             obj.FlowInstanceId = _flowInstanceApp.CreateInstanceAndGetIdAsync(afir).ConfigureAwait(false).GetAwaiter().GetResult();
                         }
-                        else 
+                        else
                         {
                             _flowInstanceApp.Start(new StartFlowInstanceReq { FlowInstanceId = obj.FlowInstanceId }).ConfigureAwait(false).GetAwaiter().GetResult();
                         }
@@ -1060,7 +1064,7 @@ namespace OpenAuth.App
                         UnitWork.Save();
                     }
                     //反写完工报告
-                    UnitWork.Update<CompletionReport>(c => c.ServiceOrderId == obj.ServiceOrderId && c.CreateUserId == obj.CreateUserId,c=>new CompletionReport { IsReimburse=2}) ;
+                    UnitWork.Update<CompletionReport>(c => c.ServiceOrderId == obj.ServiceOrderId && c.CreateUserId == obj.CreateUserId, c => new CompletionReport { IsReimburse = 2 });
                     UnitWork.Save();
                     #region 删除
                     List<ReimburseAttachment> ReimburseAttachments = new List<ReimburseAttachment>();
@@ -1260,8 +1264,8 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             ReimurseOperationHistory eoh = new ReimurseOperationHistory();
-            var obj = await UnitWork.Find<ReimburseInfo>(r => r.Id == req.Id).Include(r=>r.ReimburseTravellingAllowances)
-                .Include(r=>r.ReimburseFares).Include(r=>r.ReimburseAccommodationSubsidies).Include(r=>r.ReimburseOtherCharges).FirstOrDefaultAsync();
+            var obj = await UnitWork.Find<ReimburseInfo>(r => r.Id == req.Id).Include(r => r.ReimburseTravellingAllowances)
+                .Include(r => r.ReimburseFares).Include(r => r.ReimburseAccommodationSubsidies).Include(r => r.ReimburseOtherCharges).FirstOrDefaultAsync();
             if (obj.RemburseStatus < 4)
             {
                 throw new Exception("报销单已撤回，不可操作。");
@@ -1275,7 +1279,7 @@ namespace OpenAuth.App
             eoh.ApprovalStage = obj.RemburseStatus;
             if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && obj.RemburseStatus == 4)
             {
-                if (!req.IsReject) 
+                if (!req.IsReject)
                 {
                     if (req.travelOrgResults != null)
                     {
@@ -1324,7 +1328,8 @@ namespace OpenAuth.App
                     if (req.ReimburseExpenseOrgs != null && req.ReimburseExpenseOrgs.Count() > 0)
                     {
                         var reimburseExpenseOrgs = req.ReimburseExpenseOrgs.MapToList<ReimburseExpenseOrg>();
-                        reimburseExpenseOrgs.ForEach(o => {
+                        reimburseExpenseOrgs.ForEach(o =>
+                        {
                             o.CreateTime = DateTime.Now; o.UpdateTime = DateTime.Now; o.ExpenseSatus = 1;
                             switch (o.ExpenseType)
                             {
@@ -1414,7 +1419,7 @@ namespace OpenAuth.App
                 }
                 else
                 {
-                    
+
                     eoh.ApprovalResult = "同意";
                     await _flowInstanceApp.Verification(VerificationReqModle);
                 }
@@ -1453,7 +1458,7 @@ namespace OpenAuth.App
 
             var obj = await UnitWork.Find<ReimburseInfo>(r => r.Id == req.Id).FirstOrDefaultAsync();
 
-            if (obj.RemburseStatus < 4 && obj.RemburseStatus>9)
+            if (obj.RemburseStatus < 4 && obj.RemburseStatus > 9)
             {
                 throw new Exception("当前报销单状态，不可操作。");
             }
@@ -1580,7 +1585,7 @@ namespace OpenAuth.App
                     CreateTime = DateTime.Now,
                     ReimburseInfoId = obj.Id
                 });
-                await _flowInstanceApp.ReCall(new RecallFlowInstanceReq { FlowInstanceId = obj.FlowInstanceId,Description= "撤回报销单" });
+                await _flowInstanceApp.ReCall(new RecallFlowInstanceReq { FlowInstanceId = obj.FlowInstanceId, Description = "撤回报销单" });
                 await UnitWork.SaveAsync();
                 result.Code = 200;
                 result.Message = "已撤回到草稿箱";
@@ -1857,13 +1862,13 @@ namespace OpenAuth.App
             };
             if (string.IsNullOrWhiteSpace(PrintReimburse.CompleteAddress))
             {
-               
+
                 var query = from a in UnitWork.Find<OCRD>(c => c.CardCode.Equals(PrintReimburse.TerminalCustomerId))
-                              join f in UnitWork.Find<OCRY>(null) on a.Country equals f.Code into af
-                              from f in af.DefaultIfEmpty()
-                              join g in UnitWork.Find<OCST>(null) on a.State1 equals g.Code into ag
-                              from g in ag.DefaultIfEmpty()
-                              select new { ocryName=f.Name, ocstName=g.Name , a.City, a.Building };
+                            join f in UnitWork.Find<OCRY>(null) on a.Country equals f.Code into af
+                            from f in af.DefaultIfEmpty()
+                            join g in UnitWork.Find<OCST>(null) on a.State1 equals g.Code into ag
+                            from g in ag.DefaultIfEmpty()
+                            select new { ocryName = f.Name, ocstName = g.Name, a.City, a.Building };
                 var ocrdObj = await query.FirstOrDefaultAsync();
                 PrintReimburse.CompleteAddress = ocrdObj.ocryName + ocrdObj.ocstName + ocrdObj.City + ocrdObj.Building;
             }
@@ -2152,7 +2157,7 @@ namespace OpenAuth.App
             #endregion
 
             #region 判断金额
-            if (req.TotalMoney <= 0) 
+            if (req.TotalMoney <= 0)
             {
                 throw new Exception("金额为0不可提交");
             }
@@ -2160,7 +2165,7 @@ namespace OpenAuth.App
 
             #region 计算金额
             decimal totalMoeny = 0;
-            req.ReimburseTravellingAllowances.ForEach(r => totalMoeny+=(decimal)(r.Days*r.Money));
+            req.ReimburseTravellingAllowances.ForEach(r => totalMoeny += (decimal)(r.Days * r.Money));
             req.ReimburseOtherCharges.ForEach(r => totalMoeny += (decimal)r.Money);
             req.ReimburseFares.ForEach(r => totalMoeny += (decimal)r.Money);
             req.ReimburseAccommodationSubsidies.ForEach(r => totalMoeny += (decimal)r.TotalMoney);
@@ -2202,7 +2207,7 @@ namespace OpenAuth.App
 
             //var meanVale = ReimburseFaresList.GroupBy(r => new { r.From, r.To }).Select(r => new { r.Key.From, r.Key.To, Count = (r.Select(r => r.Money).Sum() / r.Select(r => r.Money).Count()) });
             var serviceIds = ReimburseInfos.Select(r => r.ServiceOrderId).ToList();
-            var serviceDailyExpends =await UnitWork.Find<ServiceDailyExpends>(s => serviceIds.Contains(s.ServiceOrderId) && s.DailyExpenseType == 1).ToListAsync();
+            var serviceDailyExpends = await UnitWork.Find<ServiceDailyExpends>(s => serviceIds.Contains(s.ServiceOrderId) && s.DailyExpenseType == 1).ToListAsync();
             var userId = ReimburseInfos.Select(r => r.CreateUserId).ToList();
             var query = from a in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userId.Contains(r.FirstId))
                         join b in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals b.Id into ab
@@ -2212,7 +2217,7 @@ namespace OpenAuth.App
             var ReimburseInfoList = ReimburseInfos.Select(r => new
             {
                 r.MainId,
-                Days=r.ReimburseTravellingAllowances.Sum(t=>t.Days)<=0&& serviceDailyExpends.Where(s=>s.ServiceOrderId==r.ServiceOrderId) !=null? serviceDailyExpends.Where(s => s.ServiceOrderId == r.ServiceOrderId).Sum(s=>s.Days): r.ReimburseTravellingAllowances.Sum(t => t.Days),
+                Days = r.ReimburseTravellingAllowances.Sum(t => t.Days) <= 0 && serviceDailyExpends.Where(s => s.ServiceOrderId == r.ServiceOrderId) != null ? serviceDailyExpends.Where(s => s.ServiceOrderId == r.ServiceOrderId).Sum(s => s.Days) : r.ReimburseTravellingAllowances.Sum(t => t.Days),
                 r.TotalMoney,
                 FaresMoney = r.ReimburseFares.Sum(f => f.Money),
                 TravellingAllowancesMoney = r.ReimburseTravellingAllowances.FirstOrDefault()?.Days.Value * r.ReimburseTravellingAllowances.FirstOrDefault()?.Money.Value,
@@ -2221,7 +2226,7 @@ namespace OpenAuth.App
                 BusinessTripDate = CompletionReports.Where(c => c.CreateUserId.Equals(r.CreateUserId) && c.ServiceOrderId.Equals(r.ServiceOrderId)).Min(c => c.BusinessTripDate),
                 EndDate = CompletionReports.Where(c => c.CreateUserId.Equals(r.CreateUserId) && c.ServiceOrderId.Equals(r.ServiceOrderId)).Max(c => c.EndDate),
                 UserName = CompletionReports.Where(c => c.CreateUserId.Equals(r.CreateUserId) && c.ServiceOrderId.Equals(r.ServiceOrderId)).FirstOrDefault()?.TechnicianName,
-                OrgName= query.Where(q=>q.a.FirstId==r.CreateUserId).FirstOrDefault()?.b?.Name
+                OrgName = query.Where(q => q.a.FirstId == r.CreateUserId).FirstOrDefault()?.b?.Name
             }).ToList();
 
 
@@ -2231,7 +2236,7 @@ namespace OpenAuth.App
                 r.Days,
                 r.TotalMoney,
                 r.FaresMoney,
-                AverageDaily=r.Days>0 ? r.TotalMoney/r.Days: r.TotalMoney,
+                AverageDaily = r.Days > 0 ? r.TotalMoney / r.Days : r.TotalMoney,
                 FMProportion = Convert.ToDecimal((r.FaresMoney / r.TotalMoney)).ToString("p"),
                 r.TravellingAllowancesMoney,
                 TAProportion = Convert.ToDecimal((r.TravellingAllowancesMoney / r.TotalMoney)).ToString("p"),
@@ -2300,7 +2305,7 @@ namespace OpenAuth.App
 
         }
 
-        public ReimburseInfoApp(IUnitWork unitWork, ModuleFlowSchemeApp moduleFlowSchemeApp, WorkbenchApp workbenchApp, FlowInstanceApp flowInstanceApp, IAuth auth,QuotationApp quotationApp) : base(unitWork, auth)
+        public ReimburseInfoApp(IUnitWork unitWork, ModuleFlowSchemeApp moduleFlowSchemeApp, WorkbenchApp workbenchApp, FlowInstanceApp flowInstanceApp, IAuth auth, QuotationApp quotationApp) : base(unitWork, auth)
         {
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _flowInstanceApp = flowInstanceApp;
