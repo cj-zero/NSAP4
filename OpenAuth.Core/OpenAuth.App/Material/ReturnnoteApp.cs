@@ -383,42 +383,45 @@ namespace OpenAuth.App
             saleinv1s.ForEach(s =>
             {
                 //领料单物料数量
-                var productMaterialsCount = productMaterials.Where(p => p.MaterialCode == s.ItemCode && Convert.ToDecimal(p.DiscountPrices).ToString("#0.00") == Convert.ToDecimal(s.Price).ToString("#0.00")).FirstOrDefault()?.Count;
+                //var productMaterialsCount = productMaterials.Where(p => p.MaterialCode == s.ItemCode && Convert.ToDecimal(p.DiscountPrices).ToString("#0.00") == Convert.ToDecimal(s.Price).ToString("#0.00")).FirstOrDefault()?.Count;
                 //已退的物料数量
-                var hasCount= materials.Where(m => m.ReplaceMaterialCode.Equals(s.ItemCode)).Count();
+                var hasCount = materials.Where(m => m.ReplaceMaterialCode.Equals(s.ItemCode)).Count();
                 //剩余能退数量
-                productMaterialsCount = productMaterialsCount - hasCount;
+                //productMaterialsCount = productMaterialsCount - hasCount;
                 //s.Quantity = s.Quantity - hasCount;
-                s.Quantity = productMaterialsCount;
-                //var quotationMaterialCount = quotationProductObj.QuotationMaterials.Where(q => q.MaterialCode.Equals(s.ItemCode) && Convert.ToDecimal(q.DiscountPrices).ToString("#0.00") == Convert.ToDecimal(s.Price).ToString("#0.00")).Count() - materials.Where(m => m.ReplaceMaterialCode.Equals(s.ItemCode)).Count();
+                s.Quantity = s.Quantity - hasCount;//应收发票上剩余能退数量
+                var quotationMaterialCount = quotationProductObj.QuotationMaterials.Where(q => q.MaterialCode.Equals(s.ItemCode) && Convert.ToDecimal(q.DiscountPrices).ToString("#0.00") == Convert.ToDecimal(s.Price).ToString("#0.00")).FirstOrDefault()?.Count ?? 0 - materials.Where(m => m.ReplaceMaterialCode.Equals(s.ItemCode)).Count();//序列号下剩余能退数量
                 var sort = 0;
-                if (s.Quantity > 0)
+                if (productMaterials.Any(c => c.MaterialCode == s.ItemCode))//应收发票下物料是选择的序列号下是否存在
                 {
-                    var num = s.Quantity;
-                    //if (quotationMaterialCount < s.Quantity)
-                    //{
-                    //    num = quotationMaterialCount;
-                    //}
-                    for (int i = 1; i <= num; i++) 
+                    if (s.Quantity > 0 && quotationMaterialCount > 0)
                     {
-                        var linenum = hasCount + i;
-                        listResps.Add(new ReturnMaterialListResp
+                        var num = s.Quantity;
+                        if (quotationMaterialCount < s.Quantity)
                         {
-                            Sort = sort + i,
-                            LineNum = linenum,
-                            MaterialType = quotationMergeMaterials.Where(q => q.MaterialCode.Equals(s.ItemCode) && Convert.ToDecimal(q.DiscountPrices).ToString("#0.00") == Convert.ToDecimal(s.Price).ToString("#0.00")).FirstOrDefault()?.MaterialType,
-                            //按顺序匹配更换记录
-                            MaterialCode = replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault() == null ? "" : replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault().ReplaceMaterialCode,
-                            MaterialDescription = replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault() == null ? "" : replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault().ReplaceMaterialDescription,
-                            Money = Convert.ToDecimal(s.Price),
-                            QuotationMaterialId = quotationMergeMaterials.Where(q => q.MaterialCode.Equals(s.ItemCode) && Convert.ToDecimal(q.DiscountPrices).ToString("#0.00") == Convert.ToDecimal(s.Price).ToString("#0.00")).FirstOrDefault()?.Id,
-                            SNandPN = replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault() == null ? "" : replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault().ReplaceSNandPN,
-                            ReplaceSNandPN = replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault() == null ? "" : replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault().SNandPN,
-                            ReplaceMaterialCode = s.ItemCode,
-                            ReplaceMaterialDescription = s.Dscription
-                        });
-                        //s.Quantity = 1;
-                        //saleinv1List.Add(s);
+                            num = quotationMaterialCount;//数量不能超过序列号下的物料数量
+                        }
+                        for (int i = 1; i <= num; i++)
+                        {
+                            var linenum = hasCount + i;
+                            listResps.Add(new ReturnMaterialListResp
+                            {
+                                Sort = sort + i,
+                                LineNum = linenum,
+                                MaterialType = quotationMergeMaterials.Where(q => q.MaterialCode.Equals(s.ItemCode) && Convert.ToDecimal(q.DiscountPrices).ToString("#0.00") == Convert.ToDecimal(s.Price).ToString("#0.00")).FirstOrDefault()?.MaterialType,
+                                //按顺序匹配更换记录
+                                MaterialCode = replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault() == null ? "" : replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault().ReplaceMaterialCode,
+                                MaterialDescription = replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault() == null ? "" : replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault().ReplaceMaterialDescription,
+                                Money = Convert.ToDecimal(s.Price),
+                                QuotationMaterialId = quotationMergeMaterials.Where(q => q.MaterialCode.Equals(s.ItemCode) && Convert.ToDecimal(q.DiscountPrices).ToString("#0.00") == Convert.ToDecimal(s.Price).ToString("#0.00")).FirstOrDefault()?.Id,
+                                SNandPN = replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault() == null ? "" : replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault().ReplaceSNandPN,
+                                ReplaceSNandPN = replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault() == null ? "" : replaceRecord.Where(r => r.MaterialCode == s.ItemCode && r.LineNum == linenum).FirstOrDefault().SNandPN,
+                                ReplaceMaterialCode = s.ItemCode,
+                                ReplaceMaterialDescription = s.Dscription
+                            });
+                            //s.Quantity = 1;
+                            //saleinv1List.Add(s);
+                        }
                     }
                 }
             });
@@ -785,6 +788,27 @@ namespace OpenAuth.App
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppUserId));
                 loginOrg = await GetOrgs(loginUser.Id);
             }
+
+            obj.ReturnNoteProducts.ForEach(c =>
+            {
+                var sort = 0;
+                var hasMaterials = c.ReturnNoteMaterials.OrderBy(c => c.ReplaceMaterialCode).ToList();
+                var groupbyMaterials = hasMaterials.GroupBy(c => c.ReplaceMaterialCode).Select(c => new { c.Key, Item = c.Select(i => i).ToList() }).ToList();
+                groupbyMaterials.ForEach(g =>
+                {
+                    var first = g.Item.FirstOrDefault()?.MaterialCode;
+                    if (!g.Item.All(c=>c.MaterialCode==first))
+                    {
+                        throw new Exception($"物料{g.Key}，需退料的物料编码不一致，不同编码需分开退料！");
+                    }
+                    //物料重新排序
+                    g.Item.ForEach(f =>
+                    {
+                        f.Sort = ++sort;
+                    });
+                });
+                c.ReturnNoteMaterials = hasMaterials;
+            });
             //事务保证数据一致
             var dbContext = UnitWork.GetDbContext<Quotation>();
             using (var transaction = await dbContext.Database.BeginTransactionAsync())
@@ -799,21 +823,21 @@ namespace OpenAuth.App
                     returnnotrObj.IsLiquidated = false;
                     returnnotrObj.TotalMoney = await CalculatePrice(obj);
                     //物料重新排序
-                    returnnotrObj.ReturnNoteProducts.ForEach(c =>
-                    {
-                        var sort = 0;
-                        var hasMaterials = c.ReturnNoteMaterials.OrderBy(c => c.ReplaceMaterialCode).ToList();
-                        var groupbyMaterials = hasMaterials.GroupBy(c => c.ReplaceMaterialCode).Select(c => new { Item = c.Select(i => i).ToList() }).ToList();
-                        groupbyMaterials.ForEach(g =>
-                        {
-                            sort = 0;
-                            g.Item.ForEach(f =>
-                            {
-                                f.Sort = ++sort;
-                            });
-                        });
-                        c.ReturnNoteMaterials = hasMaterials;
-                    });
+                    //returnnotrObj.ReturnNoteProducts.ForEach(c =>
+                    //{
+                    //    var sort = 0;
+                    //    var hasMaterials = c.ReturnNoteMaterials.OrderBy(c => c.ReplaceMaterialCode).ToList();
+                    //    var groupbyMaterials = hasMaterials.GroupBy(c => c.ReplaceMaterialCode).Select(c => new { Item = c.Select(i => i).ToList() }).ToList();
+                    //    groupbyMaterials.ForEach(g =>
+                    //    {
+                    //        sort = 0;
+                    //        g.Item.ForEach(f =>
+                    //        {
+                    //            f.Sort = ++sort;
+                    //        });
+                    //    });
+                    //    c.ReturnNoteMaterials = hasMaterials;
+                    //});
                     returnnotrObj = await UnitWork.AddAsync<ReturnNote, int>(returnnotrObj);
                     await UnitWork.SaveAsync();
                     if (!obj.IsDraft)
