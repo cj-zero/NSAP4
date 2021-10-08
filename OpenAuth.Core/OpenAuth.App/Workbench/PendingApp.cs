@@ -222,6 +222,8 @@ namespace OpenAuth.App.Workbench
                     ReturnNoteMaterials = r.ReturnNoteMaterials.Select(m => new ReturnNoteMaterialResp
                     {
                         Id = m.Id,
+                        Sort = m.Sort,
+                        LineNum = m.LineNum,
                         MaterialType = m.MaterialType,
                         MaterialCode = m.MaterialCode,
                         InvoiceDocEntry = m.InvoiceDocEntry,
@@ -238,7 +240,7 @@ namespace OpenAuth.App.Workbench
                         ReceivingRemark = m.ReceivingRemark,
                         ReplaceMaterialCode = m.ReplaceMaterialCode,
                         ReturnNoteProductId = m.ReturnNoteProductId
-                    }).ToList()
+                    }).OrderBy(m => m.ReplaceMaterialCode).ToList()
                 }).ToList(),
             };
             var History = await UnitWork.Find<FlowInstanceOperationHistory>(f => f.InstanceId.Equals(returNnoteObj.FlowInstanceId)).OrderBy(f => f.CreateDate).ToListAsync();

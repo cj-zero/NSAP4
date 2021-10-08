@@ -33,6 +33,10 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public int? MaterialType { get; set; }
         /// <summary>
+        /// 界面展示序号
+        /// </summary>
+        public int? Sort { get; set; }
+        /// <summary>
         /// 行号
         /// </summary>
         public int? LineNum { get; set; }

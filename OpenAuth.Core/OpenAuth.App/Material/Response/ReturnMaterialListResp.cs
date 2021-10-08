@@ -8,6 +8,10 @@ namespace OpenAuth.App.Material.Response
     public class ReturnMaterialListResp
     {
         /// <summary>
+        /// 排序号
+        /// </summary>
+        public int? Sort { get; set; }
+        /// <summary>
         /// 物料类型
         /// </summary>
         public int? MaterialType { get; set; }
