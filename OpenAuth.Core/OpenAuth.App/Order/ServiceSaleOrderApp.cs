@@ -630,11 +630,11 @@ namespace OpenAuth.App.Order
 
                     if (orderReq.Ations == OrderAtion.Draft)
                     {
-                        result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
+                        result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), -5, int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
                     }
                     else if (orderReq.Ations == OrderAtion.Submit)
                     {
-                        result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), int.Parse(orderReq.Order.BillBaseType), int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
+                        result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), -5, int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
                         if (int.Parse(result) > 0)
                         {
                             var par = SaveJobPara(result, orderReq.IsTemplate);
@@ -1444,7 +1444,7 @@ namespace OpenAuth.App.Order
             {
                 Address = order.Address,
                 Address2 = order.Address2,
-                billBaseType = "-1",
+                billBaseType = "-5",
                 billBaseEntry = "-1",
                 CardName = order.CardName,//供应商名称
 
@@ -1752,37 +1752,6 @@ namespace OpenAuth.App.Order
             #endregion
             return true;
         }
-
-
-        #region 合约评审
-        public DataTable GridRelationContractList(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, string itemCode, string cardCode, string sboID)
-        {
-            int rowCount = 0;
-            string sortString = string.Empty;
-            string filterString = string.Empty;
-            int rowcounts = 0;
-            if (!string.IsNullOrEmpty(sortname) && !string.IsNullOrEmpty(sortorder))
-                sortString = string.Format(" {0} {1}", sortname, sortorder.ToUpper());
-            filterString = string.Format(" sbo_id={0} and itemcode='{1}' and CardCode='{2}'", sboID, itemCode.FilterSQL(), cardCode);
-            #region 搜索条件
-            if (!string.IsNullOrEmpty(filterQuery))
-            {
-                string[] fields = filterQuery.Split('`');
-                string[] p = fields[0].Split(':');
-                if (!string.IsNullOrEmpty(p[1]))
-                {
-                    filterString += string.Format(" and contract_id={0} ", p[1].FilterSQL().Trim());
-                }
-            }
-            #endregion
-            return GridRelationContractListNos(out rowCount, pageSize, pageIndex, filterString, sortString);
-        }
-        public DataTable GridRelationContractListNos(out int rowsCount, int pageSize, int pageIndex, string filterQuery, string orderName)
-        {
-            string tablename = string.Format(" {0}.sale_contract_review", "nsap_bone");
-            string fieldname = " sbo_id,contract_id,price,qty,sum_total,deliver_dt,walts,comm_rate,custom_req";
-            return SelectPagingHaveRowsCount(tablename, fieldname, pageSize, pageIndex, orderName, filterQuery, out rowsCount);
-        }
         public DataTable SelectPagingHaveRowsCount(string tableName, string fieldName, int pageSize, int pageIndex, string strOrder, string strWhere, out int rowsCount)
         {
             return SelectPaging(tableName, fieldName, pageSize, pageIndex, strOrder, strWhere, 1, out rowsCount);
@@ -1806,7 +1775,6 @@ namespace OpenAuth.App.Order
             return dataTable;
 
         }
-        #endregion
         #region 复制生产订单
         public DataTable CopyProductToSaleSelect(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, int sboID)
         {
@@ -5954,6 +5922,34 @@ namespace OpenAuth.App.Order
             tableName.AppendFormat(" LEFT JOIN {0}.store_oitw w ON b.ItemCode=w.ItemCode AND b.WhsCode=w.WhsCode AND b.sbo_id=w.sbo_id", "nsap_bone");
             tableName.AppendFormat(" LEFT JOIN {0}.store_oitm m ON b.ItemCode=m.ItemCode AND m.sbo_id=b.sbo_id", "nsap_bone");
             return SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), model.limit, model.page, sortString, filterString, out rowCount);
+        }
+        public DataTable GridRelationContractList(out int rowCount, GridRelationContractListReq model, int SboID, int UserID)
+        {
+            string sortString = string.Empty;
+            string filterString = string.Empty;
+            if (!string.IsNullOrEmpty(model.sortname) && !string.IsNullOrEmpty(model.sortorder))
+                sortString = string.Format(" {0} {1}", model.sortname, model.sortorder.ToUpper());
+            filterString = string.Format(" sbo_id={0} and itemcode='{1}' and CardCode='{2}'", SboID, model.ItemCode.FilterSQL(), model.CardCode);
+            #region 搜索条件  
+
+            filterString += string.Format(" and contract_id={0} ", model.DocEntry.FilterSQL().Trim());
+
+            #endregion
+            return GridRelationContractList(out rowCount, model.limit, model.page, filterString, sortString);
+
+        }
+        /// <summary>
+        /// 获取销售报价单/订单 同客户/物料的合约评审
+        /// </summary>
+        /// <param name="itemcode"></param>
+        /// <param name="cardcode"></param>
+        /// <param name="sboid"></param>
+        /// <returns></returns>
+        public DataTable GridRelationContractList(out int rowCount, int pageSize, int pageIndex, string filterQuery, string orderName)
+        {
+            string tablename = string.Format(" {0}.sale_contract_review", "nsap_bone");
+            string fieldname = " sbo_id,contract_id,price,qty,sum_total,deliver_dt,walts,comm_rate,custom_req";
+            return SelectPagingHaveRowsCount(tablename, fieldname, pageSize, pageIndex, orderName, filterQuery, out rowCount);
         }
     }
 }
