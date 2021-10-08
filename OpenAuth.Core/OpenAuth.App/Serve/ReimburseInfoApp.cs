@@ -1980,6 +1980,7 @@ namespace OpenAuth.App
                       .WhereIf(request.PaymentEndDate != null, r => r.PayTime < Convert.ToDateTime(request.PaymentEndDate).AddDays(1));
 
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ServiceRelations") && u.Enable == false).Select(u => u.Name).ToListAsync();
+            var categoryStatus = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_RemburseStatus") && u.Enable == true).Select(u => new { u.Name, u.DtValue }).ToListAsync();
 
             if (CategoryList != null && CategoryList.Where(c => c.Equals("All")).Count() >= 1)
             {
@@ -2039,6 +2040,9 @@ namespace OpenAuth.App
 
             var ReimburseRespList = ReimburseResps.Select(r => new
             {
+                报销单号=r.a.MainId,
+                服务ID=r.a.ServiceOrderSapId,
+                报销状态= categoryStatus.Where(c=>c.DtValue==r.a.RemburseStatus.ToString()).FirstOrDefault()?.Name,
                 创建时间 = r.a.CreateTime.ToString("yyyy-MM-dd"),
                 客户代码 = r.b.TerminalCustomerId,
                 客户名称 = r.b.TerminalCustomer,
