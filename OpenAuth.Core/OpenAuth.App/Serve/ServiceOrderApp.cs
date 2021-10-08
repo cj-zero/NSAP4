@@ -227,6 +227,7 @@ namespace OpenAuth.App
                 q.Area,
                 q.Addr,
                 q.U_SAP_ID,
+                q.FromAppUserId
             });
 
             var list = (await query
@@ -249,7 +250,8 @@ namespace OpenAuth.App
                 s.City,
                 s.Area,
                 s.Addr,
-                s.U_SAP_ID
+                s.U_SAP_ID,
+                s.FromAppUserId
             });
             result.Data = list;
             result.Count = query.Count();
@@ -271,7 +273,10 @@ namespace OpenAuth.App
             var obj = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(id))
                 .Include(s => s.ServiceOrderSNs)
                 .Include(s => s.ServiceOrderPictures).FirstOrDefaultAsync();
+            var log = await UnitWork.Find<ServiceOrderLog>(c => c.ServiceOrderId == id && c.ActionType == "撤销操作").FirstOrDefaultAsync();
             var result = obj.MapTo<ServiceOrderDetailsResp>();
+            result.RevokeUser = log?.CreateUserName;
+            result.RevokeTime = log?.CreateTime;
             return result;
         }
 
@@ -1811,6 +1816,13 @@ namespace OpenAuth.App
                 throw new CommonException("已确认不可取消", 60019);
             }
             await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id == req.serviceOrderId, s => new ServiceOrder { Status = 3, Remark = req.Message });
+            //保存日志
+            await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq
+            {
+                ServiceOrderId = Convert.ToInt32(req.serviceOrderId),
+                Action = $"{loginContext.User.Name}执行撤销操作，撤销ID为{ Convert.ToInt32(req.serviceOrderId)}的服务单",
+                ActionType = "撤销操作",
+            });
             await UnitWork.SaveAsync();
         }
 
