@@ -1234,27 +1234,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             return result;
         }
-        /// <summary>
-        ///  合约评审
-        /// </summary>
-        /// <param name="pageSize"></param>
-        /// <param name="pageIndex"></param>
-        /// <param name="filterQuery"></param>
-        /// <param name="sortname"></param>
-        /// <param name="sortorder"></param>
-        /// <param name="itemCode"></param>
-        /// <param name="cardCode"></param>
-        /// <returns>合约评审</returns>
-        [HttpGet]
-        [Route("GridRelationContractList")]
-
-        public TableData GridRelationContractList(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, string itemCode, string cardCode)
-        {
-            var result = new TableData();
-
-            result.Data = _serviceSaleOrderApp.GridRelationContractList(pageSize, pageIndex, filterQuery, sortname, sortorder, itemCode, cardCode, "1");
-            return result;
-        }
+ 
 
         /// <summary>
         ///  复制生产订单
@@ -1701,6 +1681,24 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
 
 
+        }
+
+        /// <summary>
+        ///合约评审
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GridRelationContractList")]
+        public TableData GridRelationContractList(GridRelationContractListReq model)
+        {
+            int rowCount = 0;
+            var result = new TableData();
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            result.Data = _serviceSaleOrderApp.GridRelationContractList(out rowCount, model, SboID, UserID);
+            result.Count = rowCount;
+            return result;
         }
     }
 }
