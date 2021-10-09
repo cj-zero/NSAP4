@@ -796,6 +796,7 @@ namespace OpenAuth.App
                 var groupbyMaterials = hasMaterials.GroupBy(c => c.ReplaceMaterialCode).Select(c => new { c.Key, Item = c.Select(i => i).ToList() }).ToList();
                 groupbyMaterials.ForEach(g =>
                 {
+                    sort = 0;
                     var first = g.Item.FirstOrDefault()?.MaterialCode;
                     if (!g.Item.All(c=>c.MaterialCode==first))
                     {
@@ -934,6 +935,28 @@ namespace OpenAuth.App
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppUserId));
                 loginOrg = await GetOrgs(loginUser.Id);
             }
+            obj.ReturnNoteProducts.ForEach(c =>
+            {
+                var sort = 0;
+                var hasMaterials = c.ReturnNoteMaterials.OrderBy(c => c.ReplaceMaterialCode).ToList();
+                var groupbyMaterials = hasMaterials.GroupBy(c => c.ReplaceMaterialCode).Select(c => new { c.Key, Item = c.Select(i => i).ToList() }).ToList();
+                groupbyMaterials.ForEach(g =>
+                {
+                    sort = 0;
+                    var first = g.Item.FirstOrDefault()?.MaterialCode;
+                    if (!g.Item.All(c => c.MaterialCode == first))
+                    {
+                        throw new Exception($"物料{g.Key}，需退料的物料编码不一致，不同编码需分开退料！");
+                    }
+                    //物料重新排序
+                    g.Item.ForEach(f =>
+                    {
+                        f.Sort = ++sort;
+                    });
+                });
+                c.ReturnNoteMaterials = hasMaterials;
+            });
+
             var dbContext = UnitWork.GetDbContext<ReturnNote>();
             //事务
             using (var transaction = await dbContext.Database.BeginTransactionAsync())
