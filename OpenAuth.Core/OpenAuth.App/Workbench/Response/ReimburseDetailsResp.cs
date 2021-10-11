@@ -28,6 +28,14 @@ namespace OpenAuth.App.Workbench.Response
         /// </summary>
         public decimal? TotalMoney { get; set; }
         /// <summary>
+        /// 部门归属费用
+        /// </summary>
+        public decimal? OrgMoney { get; set; }
+        /// <summary>
+        /// 部门
+        /// </summary>
+        public string  Org { get; set; }
+        /// <summary>
         /// 更新时间
         /// </summary>
         public System.DateTime UpdateTime { get; set; }

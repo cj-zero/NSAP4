@@ -1454,6 +1454,78 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 设置费用归属
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task SetExpenseOrgs(AccraditationReimburseInfoReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var obj = await UnitWork.Find<ReimburseInfo>(r => r.Id == req.Id).Include(r => r.ReimburseTravellingAllowances)
+                .Include(r => r.ReimburseFares).Include(r => r.ReimburseAccommodationSubsidies).Include(r => r.ReimburseOtherCharges).FirstOrDefaultAsync();
+            List<ReimburseExpenseOrg> expenseOrgs = new List<ReimburseExpenseOrg>(); 
+            if (req.ReimburseExpenseOrgs != null && req.ReimburseExpenseOrgs.Count() > 0)
+            {
+                //旧数据删除
+                if (obj.ReimburseTravellingAllowances!=null && obj.ReimburseTravellingAllowances.Count>0)
+                {
+                    var ids = obj.ReimburseTravellingAllowances.Select(c => c.Id).ToList();
+                    expenseOrgs.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => ids.Contains(r.ExpenseId) && r.ExpenseType == 1).ToListAsync());
+                }
+                if (obj.ReimburseFares!=null && obj.ReimburseFares.Count>0)
+                {
+                    var rfids = obj.ReimburseFares.Select(r => r.Id).ToList();
+                    expenseOrgs.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rfids.Contains(r.ExpenseId) && r.ExpenseType == 2).ToListAsync());
+                }
+                if (obj.ReimburseAccommodationSubsidies!=null && obj.ReimburseAccommodationSubsidies.Count>0)
+                {
+                    var rasids = obj.ReimburseAccommodationSubsidies.Select(r => r.Id).ToList();
+                    expenseOrgs.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rasids.Contains(r.ExpenseId) && r.ExpenseType == 3).ToListAsync());
+                }
+                if (obj.ReimburseOtherCharges != null && obj.ReimburseOtherCharges.Count > 0)
+                {
+                    var rocids = obj.ReimburseOtherCharges.Select(r => r.Id).ToList();
+                    expenseOrgs.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rocids.Contains(r.ExpenseId) && r.ExpenseType == 4).ToListAsync());
+                }
+
+                await UnitWork.BatchDeleteAsync(expenseOrgs.ToArray());
+
+                
+                var reimburseExpenseOrgs = req.ReimburseExpenseOrgs.MapToList<ReimburseExpenseOrg>();
+                reimburseExpenseOrgs.ForEach(o =>
+                {
+                    o.CreateTime = DateTime.Now; o.UpdateTime = DateTime.Now; o.ExpenseSatus = 1;
+                    switch (o.ExpenseType)
+                    {
+                        case 1:
+                            var rta = obj.ReimburseTravellingAllowances.Where(r => r.Id == o.ExpenseId).FirstOrDefault();
+                            o.Money = (rta.Days * rta.Money) * (o.Ratio / 100);
+                            break;
+                        case 2:
+                            var rf = obj.ReimburseFares.Where(r => r.Id == o.ExpenseId).FirstOrDefault();
+                            o.Money = rf.Money * (o.Ratio / 100);
+                            break;
+                        case 3:
+                            var ras = obj.ReimburseAccommodationSubsidies.Where(r => r.Id == o.ExpenseId).FirstOrDefault();
+                            o.Money = ras.TotalMoney * (o.Ratio / 100);
+                            break;
+                        case 4:
+                            var roc = obj.ReimburseOtherCharges.Where(r => r.Id == o.ExpenseId).FirstOrDefault();
+                            o.Money = roc.Money * (o.Ratio / 100);
+                            break;
+                    }
+                });
+                await UnitWork.BatchAddAsync<ReimburseExpenseOrg>(reimburseExpenseOrgs.ToArray());
+                await UnitWork.SaveAsync();
+            }
+        }
+
+        /// <summary>
         /// 部门主管审批报销单 
         /// </summary>
         /// <param name="req"></param>
