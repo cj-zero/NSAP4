@@ -108,6 +108,10 @@ namespace OpenAuth.App
                     case "9":
                         ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 9);
                         break;
+                    case "0"://费用归属用
+                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus > 4 && r.RemburseStatus <= 9);
+                        break;
+
                 }
             }
             if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && request.PageType == 1 && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
@@ -267,6 +271,7 @@ namespace OpenAuth.App
             ServiceOrderIds = ReimburseInfolist.Select(d => d.ServiceOrderId).ToList();
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ServiceOrderIds.Contains(s.Id)).ToListAsync();
             var serviceDailyReports = await UnitWork.Find<ServiceDailyReport>(s => ServiceOrderIds.Contains((int)s.ServiceOrderId)).ToListAsync();
+            var workbench = await UnitWork.Find<WorkbenchPending>(c => c.OrderType == 4).Select(c => new { c.ApprovalNumber, c.SourceNumbers }).ToListAsync();
             var ReimburseResps = from a in ReimburseInfolist
                                  join b in CompletionReports on a.ServiceOrderId equals b.ServiceOrderId
                                  join c in ServiceOrders on a.ServiceOrderId equals c.Id into ac
@@ -302,6 +307,7 @@ namespace OpenAuth.App
                 Days = r.a.ReimburseTravellingAllowances?.Sum(r => r.Days),
                 r.b.FromTheme,
                 r.c.SalesMan,
+                ApprovalNumber = workbench.Where(c => c.SourceNumbers == r.a.MainId).FirstOrDefault()?.ApprovalNumber,
                 UserName = r.f.Name == null ? r.d.Name : r.f.Name + "-" + r.d.Name,
                 //OrgName = r.f.Name,
                 UpdateTime = r.a.ReimurseOperationHistories.OrderByDescending(r => r.CreateTime).FirstOrDefault() != null ? Convert.ToDateTime(r.a.ReimurseOperationHistories.OrderByDescending(r => r.CreateTime).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(r.a.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss")
