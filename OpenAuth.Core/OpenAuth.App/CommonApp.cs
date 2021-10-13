@@ -2,6 +2,8 @@
 using Infrastructure.Cache;
 using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -38,6 +40,8 @@ namespace OpenAuth.App
         {
             _cacheContext = cacheContext;
         }
+
+        #region 首页报表
 
         /// <summary>
         /// 获取首页四个数量汇总
@@ -340,9 +344,9 @@ namespace OpenAuth.App
 
             result.Data = new
             {
-                Tel = tel ,
-                App = app ,
-                Other = other ,
+                Tel = tel,
+                App = app,
+                Other = other,
             };
             return result;
         }
@@ -542,7 +546,7 @@ namespace OpenAuth.App
 
             var quotationObj = await quotation.ToListAsync();
 
-            var groupby= quotationObj.GroupBy(c => c.CreateTime.Month).Select(c => new { Month = c.Key, Detail = c }).ToList();
+            var groupby = quotationObj.GroupBy(c => c.CreateTime.Month).Select(c => new { Month = c.Key, Detail = c }).ToList();
 
             var query = from a in monthTemp
                         join b in groupby on a.ID equals b.Month into ab
@@ -556,13 +560,13 @@ namespace OpenAuth.App
                 {
                     Month = c.Month,
                     NoFinlish = c.Detail == null ? 0 : c.Detail.Where(d => d.DeliveryMethod != "1").Sum(d => d.TotalMoney),
-                    Finlish = c.Detail == null ? 0 : c.Detail?.Where(d => d.DeliveryMethod =="1" && d.Status==2).Sum(d => d.TotalMoney),//款到发货并为出库单
+                    Finlish = c.Detail == null ? 0 : c.Detail?.Where(d => d.DeliveryMethod == "1" && d.Status == 2).Sum(d => d.TotalMoney),//款到发货并为出库单
                 });
             });
 
             result.Data = new
             {
-                TotalMoney = quotation.Sum(c => c.TotalMoney) ,
+                TotalMoney = quotation.Sum(c => c.TotalMoney),
                 Detail = detail
             };
             return result;
@@ -602,16 +606,17 @@ namespace OpenAuth.App
             var flowInstaceId = outsourcObj.Select(c => c.FlowInstanceId).ToList();
             var flowInstace = await UnitWork.Find<FlowInstance>(c => flowInstaceId.Contains(c.Id)).ToListAsync();
             var queryMerge = from a in outsourcObj
-                        join b in flowInstace on a.FlowInstanceId equals b.Id into ab
-                        from b in ab.DefaultIfEmpty()
-                        select new { a, ActivityName = b == null ? null : b.ActivityName };
-            var groupbyMonth = queryMerge.GroupBy(c => c.a.CreateTime.Value.Month).Select(c => new 
+                             join b in flowInstace on a.FlowInstanceId equals b.Id into ab
+                             from b in ab.DefaultIfEmpty()
+                             select new { a, ActivityName = b == null ? null : b.ActivityName };
+            var groupbyMonth = queryMerge.GroupBy(c => c.a.CreateTime.Value.Month).Select(c => new
             {
-                Month = c.Key, 
-                Child = c.GroupBy(g => g.ActivityName).Select(g => new 
-                { 
-                    ActivityName = g.Key, 
-                    Money = g.Sum(g => g.a.TotalMoney) }).ToList() 
+                Month = c.Key,
+                Child = c.GroupBy(g => g.ActivityName).Select(g => new
+                {
+                    ActivityName = g.Key,
+                    Money = g.Sum(g => g.a.TotalMoney)
+                }).ToList()
             }).ToList();
 
             var query = from a in monthTemp
@@ -625,7 +630,7 @@ namespace OpenAuth.App
                 detail.Add(new
                 {
                     Month = c.Month,
-                    Paid = c.Detail == null ? 0 : c.Detail.Where(d => d.ActivityName=="结束").Sum(d => d.Money),
+                    Paid = c.Detail == null ? 0 : c.Detail.Where(d => d.ActivityName == "结束").Sum(d => d.Money),
                     Paying = c.Detail == null ? 0 : c.Detail?.Where(d => d.ActivityName == "财务支付").Sum(d => d.Money),
                     Approval = c.Detail == null ? 0 : c.Detail?.Where(d => d.ActivityName != "财务支付" && d.ActivityName != "结束").Sum(d => d.Money)
                 });
@@ -684,8 +689,303 @@ namespace OpenAuth.App
             };
             return result;
         }
-    }
+        #endregion
 
+        #region 服务呼叫报表
+        /// <summary>
+        /// 服务呼叫分布
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> ServiceOrderDistribution(QueryReportReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(null)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.Year), c => c.CreateTime.Value.Year == int.Parse(req.Year))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.Month), c => c.CreateTime.Value.Month == int.Parse(req.Month))
+                .Select(c=>c.VestInOrg)
+                .ToListAsync();
+            var groupbyValue = serviceOrder.GroupBy(c => c).Select(c => new { c.Key, Count = c.Count() }).ToList();
+            var listTemp = new List<dynamic> { new { ID = 1, Name = "客诉单" }, new { ID = 2, Name = "维修单" }, new { ID = 3, Name = "行政单" } };
+            var query = from a in listTemp
+                        join b in groupbyValue on a.ID equals b.Key into ab
+                        from b in ab.DefaultIfEmpty()
+                        select new { a.Name, Count = b == null ? 0 : b.Count };
+            result.Data = query;
+            return result;
+        }
+
+        /// <summary>
+        /// 服务呼叫来源
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> ServiceOrderSource(QueryReportReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            var CategoryList = await UnitWork.Find<Category>(c => c.TypeId == "SYS_CallTheSource").Select(c => new { c.DtValue, c.Name }).ToListAsync();
+
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(null)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.Year), c => c.CreateTime.Value.Year == int.Parse(req.Year))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.Month), c => c.CreateTime.Value.Month == int.Parse(req.Month))
+                .Select(c => c.FromId)
+                .ToListAsync();
+            var groupbyValue = serviceOrder.GroupBy(c => c).Select(c => new { c.Key, Count = c.Count() }).ToList();
+            var query = from a in CategoryList
+                        join b in groupbyValue on a.DtValue equals b.Key.ToString() into ab
+                        from b in ab.DefaultIfEmpty()
+                        select new { a.Name, Count = b == null ? 0 : b.Count };
+            result.Data = query;
+            return result;
+        }
+
+        /// <summary>
+        /// 服务呼叫状态和问题类型分析
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> ServiceOrderStatusAndProblemType(QueryReportReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //TableData result = new TableData();
+
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(null)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.Year), c => c.CreateTime.Value.Year == int.Parse(req.Year))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.Month), c => c.CreateTime.Value.Month == int.Parse(req.Month))
+                .Select(c => c.Id)
+                .ToListAsync();
+            var serviceWorkOrder = await UnitWork.Find<ServiceWorkOrder>(c => serviceOrder.Contains(c.ServiceOrderId))
+                .Include(c => c.ProblemType)
+                .Select(c => new { c.CurrentUserNsapId, c.CurrentUser, c.Status, c.ProblemType })
+                .ToListAsync();
+            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ServiceWorkOrderStatus") && u.Enable == false && u.DtValue != "").Select(u => new { u.DtValue, u.Name }).ToListAsync();
+            List<ProblemType> problemTypes = new List<ProblemType>();
+            List<dynamic> detail = new List<dynamic>();
+            if (req.Range == "user")
+            {
+                if (req.Name!=null && req.Name.Count>0)
+                    serviceWorkOrder = serviceWorkOrder.Where(c => req.Name.Contains(c.CurrentUser)).ToList();
+
+                var groupbyUser = serviceWorkOrder.GroupBy(c => c.CurrentUser).Select(c => new
+                {
+                    UserName = c.Key,
+                    Detail = c.GroupBy(d => d.Status).Select(d => new
+                    {
+                        Status = d.Key,
+                        Count = d.Count()
+                    }).ToList()
+                }).ToList();
+
+                groupbyUser.ForEach(c =>
+                {
+                    var g = from a in CategoryList
+                            join b in c.Detail on a.DtValue equals b.Status.ToString() into ab
+                            from b in ab.DefaultIfEmpty()
+                            select new { Name = a.Name, Count = b == null ? 0 : b.Count };
+                    detail.Add(new { Name = c.UserName, Detail = g });
+                });
+
+                //问题类型
+                serviceWorkOrder.ForEach(c =>
+                {
+                    if (c.ProblemType != null)
+                    {
+                        problemTypes.Add(c.ProblemType);
+                    }
+                });
+            }
+            else if (req.Range == "org")
+            {
+                var nsapUserId = serviceWorkOrder.Select(c => c.CurrentUserNsapId).ToList();
+                var userInfo = await (from a in UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.Key == Define.USERORG && nsapUserId.Contains(c.FirstId))
+                                      join b in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals b.Id //into ab
+                                      //from b in ab.DefaultIfEmpty()
+                                      select new { a.FirstId, b.CascadeId, b.Name }).ToListAsync();
+                var userInfoOnly = userInfo.GroupBy(c => c.FirstId).Select(c => c.OrderByDescending(o => o.CascadeId).First()).ToList();
+
+                var query = from a in userInfoOnly
+                            join b in serviceWorkOrder on a.FirstId equals b.CurrentUserNsapId into ab
+                            from b in ab.DefaultIfEmpty()
+                            select new { a, b };
+                //部门筛选
+                if (req.Name != null && req.Name.Count > 0)
+                    query = query.Where(c => req.Name.Contains(c.a.Name)).ToList();
+
+                var groupbyOrg = query.GroupBy(c => c.a.Name).Select(c => new
+                {
+                    OrgName = c.Key,
+                    Deatil = c.GroupBy(d => d.b.Status).Select(d => new
+                    {
+                        Status = d.Key,
+                        Count = d.Count()
+                    }).ToList()
+                }).ToList();
+
+                groupbyOrg.ForEach(c =>
+                {
+                    var g = from a in CategoryList
+                            join b in c.Deatil on a.DtValue equals b.Status.ToString() into ab
+                            from b in ab.DefaultIfEmpty()
+                            select new { Name = a.Name, Count = b == null ? 0 : b.Count };
+                    detail.Add(new { Name = c.OrgName, Detail = g });
+                });
+
+                query.ToList().ForEach(c =>
+                {
+                    if (c.b.ProblemType!=null)
+                    {
+                        problemTypes.Add(c.b.ProblemType);
+                    }
+                });
+            }
+            var problemTypesData = problemTypes.GroupBy(c => c.Name).Select(c => new { Name = c.Key, Count = c.Count() }).ToList();
+            return new TableData
+            {
+                Data = new
+                {
+                    Status = detail,
+                    ProblemTypes = problemTypesData
+                }
+            };
+        }
+
+        /// <summary>
+        /// 催办次数
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> UrgingTimes(QueryReportReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            var serviceMessage = await UnitWork.Find<ServiceOrderMessage>(c => c.Content.Contains("催办"))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.Year), c => c.CreateTime.Value.Year == int.Parse(req.Year))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.Month), c => c.CreateTime.Value.Month == int.Parse(req.Month))
+                .ToListAsync();
+            if (req.Range == "user")
+            {
+                if (req.Name != null && req.Name.Count > 0)
+                    serviceMessage = serviceMessage.Where(c => req.Name.Contains(c.Replier)).ToList();
+                result.Data = serviceMessage.GroupBy(c => c.Replier).Select(c => new { Name = c.Key, Count = c.Count() }).ToList();
+            }
+            else
+            {
+                var nsapUserId = serviceMessage.Select(c => c.ReplierId).ToList();
+                var userInfo = await (from a in UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.Key == Define.USERORG && nsapUserId.Contains(c.FirstId))
+                                      join b in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals b.Id //into ab
+                                      //from b in ab.DefaultIfEmpty()
+                                      select new { a.FirstId, b.CascadeId, b.Name }).ToListAsync();
+                var userInfoOnly = userInfo.GroupBy(c => c.FirstId).Select(c => c.OrderByDescending(o => o.CascadeId).First()).ToList();
+
+                if (req.Name != null && req.Name.Count > 0)
+                    userInfoOnly = userInfoOnly.Where(c => req.Name.Contains(c.Name)).ToList();
+
+                var query = from a in userInfoOnly
+                            join b in serviceMessage on a.FirstId equals b.ReplierId into ab
+                            from b in ab.DefaultIfEmpty()
+                            select new { a, b };
+                result.Data = query.GroupBy(c => c.a.Name).Select(c => new { Name = c.Key, Count = c.Count() }).ToList();
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 呼叫主题进度分析
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> ServiceThemeProgress(QueryReportReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var startTime = req.StartTime ?? DateTime.Now.Date;
+            var endTime = req.EndTime ?? DateTime.Now.AddDays(1).Date;
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(c=>c.CreateTime>= startTime && c.CreateTime< endTime)
+                .Select(c => c.Id)
+                .ToListAsync();
+            var serviceWorkOrder = await UnitWork.Find<ServiceWorkOrder>(c => serviceOrder.Contains(c.ServiceOrderId))
+                .Select(c => new { c.FromTheme, c.Status })
+                .ToListAsync();
+
+            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ServiceWorkOrderStatus") && u.Enable == false && u.DtValue != "").Select(u => new { u.DtValue, u.Name }).ToListAsync();
+
+            List<ServiceWorkOrderFromTheme> fromThemes = new List<ServiceWorkOrderFromTheme>();
+            serviceWorkOrder.ForEach(c =>
+            {
+                var theme = GetServiceTroubleAndSolution(c.FromTheme);
+                theme.ForEach(t =>
+                {
+                    fromThemes.Add(new ServiceWorkOrderFromTheme { Description = t.Description, Status = c.Status });
+                });
+            });
+            if (req.Name != null && req.Name.Count > 0)
+            {
+                fromThemes = fromThemes.Where(c => req.Name.Contains(c.Description)).ToList();
+            }
+
+            var groupbyTheme = fromThemes.GroupBy(c => c.Description).Select(c => new
+            {
+                Name = c.Key,
+                Detail = c.GroupBy(d => d.Status).Select(d => new
+                {
+                    Status = d.Key,
+                    Count = d.Count()
+                }).ToList()
+            }).ToList();
+
+            List<dynamic> detail = new List<dynamic>();
+            groupbyTheme.ForEach(c =>
+            {
+                var g = from a in CategoryList
+                        join b in c.Detail on a.DtValue equals b.Status.ToString() into ab
+                        from b in ab.DefaultIfEmpty()
+                        select new { Name = a.Name, Count = b == null ? 0 : b.Count };
+                detail.Add(new { Name = c.Name, Detail = g });
+            });
+
+            return new TableData
+            {
+                Data = detail
+            };
+        }
+        #endregion
+
+        private List<ServiceWorkOrderFromTheme> GetServiceTroubleAndSolution(string data)
+        {
+            List<ServiceWorkOrderFromTheme> result = new List<ServiceWorkOrderFromTheme>();
+            if (!string.IsNullOrEmpty(data))
+            {
+                JArray jArray = (JArray)JsonConvert.DeserializeObject(data);
+                foreach (var item in jArray)
+                {
+                    result.Add(new ServiceWorkOrderFromTheme { Description = item["description"].ToString() });
+                }
+            }
+            return result;
+        }
+    }
 
 
     public class HomePageCardReportResp
@@ -718,5 +1018,12 @@ namespace OpenAuth.App
         public int ID { get; set; }
         public string Name { get; set; }
         public int Count { get; set; }
+    }
+
+    public class ServiceWorkOrderFromTheme
+    {
+        public string Code { get; set; }
+        public string Description { get; set; }
+        public int? Status { get; set; }
     }
 }
