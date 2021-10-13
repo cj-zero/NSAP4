@@ -7,6 +7,7 @@ using Infrastructure.Export;
 using Infrastructure.Extensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Npoi.Mapper;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Material.Request;
@@ -36,7 +37,7 @@ namespace OpenAuth.App.Material
     public class QuotationApp : OnlyUnitWorkBaeApp
     {
         private readonly FlowInstanceApp _flowInstanceApp;
-
+        private readonly IOptions<AppSetting> _appConfiguration;
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
         public readonly WorkbenchApp _workbenchApp;
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
@@ -2554,93 +2555,116 @@ namespace OpenAuth.App.Material
         /// </summary>
         /// <param name="QuotationId"></param>
         /// <returns></returns>
-        public async Task<byte[]> PrintSalesOrder(string QuotationId)
-        
+        public async Task<TableData> PrintSalesOrder(string SaleOrderId)
         {
-            var quotationId = int.Parse(QuotationId);
-            var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId) && q.QuotationStatus < 10).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
-            if (model != null || model == null)
+            TableData result = new TableData();
+            var quotation = await UnitWork.Find<Quotation>(c => c.SalesOrderId == int.Parse(SaleOrderId)).FirstOrDefaultAsync();
+            if (quotation==null)
             {
-                throw new Exception("暂未开放销售订单打印，请前往3.0打印。");
-                //throw new Exception("已出库，不可打印。");
+                throw new Exception("领料单不存在");
             }
-            var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
-            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_AcquisitionWay") || u.TypeId.Equals("SYS_DeliveryMethod")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
-            var createTime = Convert.ToDateTime(model.QuotationOperationHistorys.Where(q => q.ApprovalStage == "6.0").FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd");
-            var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderHeader.html");
-            var text = System.IO.File.ReadAllText(url);
-            text = text.Replace("@Model.SalesOrderId", model.SalesOrderId.ToString());
-            text = text.Replace("@Model.CreateTime", createTime);
-            text = text.Replace("@Model.SalesUser", model?.CreateUser.ToString());
-            text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.SalesOrderId.ToString()));
-            text = text.Replace("@Model.CustomerId", serverOrder?.TerminalCustomerId.ToString());
-            text = text.Replace("@Model.CollectionAddress", model?.CollectionAddress.ToString());
-            text = text.Replace("@Model.ShippingAddress", model?.ShippingAddress.ToString());
-            text = text.Replace("@Model.CustomerName", serverOrder?.TerminalCustomer.ToString());
-            text = text.Replace("@Model.NewestContacter", serverOrder?.NewestContacter.ToString());
-            text = text.Replace("@Model.NewestContactTel", serverOrder?.NewestContactTel.ToString());
-            text = text.Replace("@Model.DeliveryMethod", CategoryList.Where(c => c.DtValue.Equals(model?.DeliveryMethod) && c.TypeId.Equals("SYS_DeliveryMethod")).FirstOrDefault()?.Name);
-            text = text.Replace("@Model.AcquisitionWay", CategoryList.Where(c => c.DtValue.Equals(model?.AcquisitionWay) && c.TypeId.Equals("SYS_AcquisitionWay")).FirstOrDefault()?.Name);
-            text = text.Replace("@Model.DeliveryDate", Convert.ToDateTime(model?.DeliveryDate).ToString("yyyy.MM.dd"));
-            text = text.Replace("@Model.AcceptancePeriod", Convert.ToDateTime(model?.DeliveryDate).AddDays(model.AcceptancePeriod == null ? 0 : (double)model.AcceptancePeriod).ToString("yyyy.MM.dd"));
-            text = text.Replace("@Model.Remark", model?.Remark);
-            string InvoiceCompany = "", Location = "", website = "", seal = "", width = "", height = "";
+            var category = await UnitWork.Find<Category>(c => c.TypeId == "SYS_InvoiceCompany" && c.DtValue == quotation.DeliveryMethod).FirstOrDefaultAsync();
+            if (category==null)
+            {
+                throw new Exception("开票单位不存在");
+            }
+            HttpHelper httpHelper = new HttpHelper(_appConfiguration.Value.ERP3Url);
+            var resultApi = httpHelper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "DocEntry", quotation.SalesOrderId.ToString() },{ "Indicator", category .DtCode} }, "/spv/exportsaleorder.ashx");
+            if (resultApi["msg"] == "success")
+            {
+                result.Data = resultApi["url"];
+            }
+            else
+            {
+                result.Code = 500;
+                result.Message = resultApi["msg"];
+            }
+            #region MyRegion
+            //var quotationId = int.Parse(QuotationId);
+            //var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId) && q.QuotationStatus < 10).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
+            //if (model != null || model == null)
+            //{
+            //    throw new Exception("暂未开放销售订单打印，请前往3.0打印。");
+            //    //throw new Exception("已出库，不可打印。");
+            //}
+            //var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
+            //var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_AcquisitionWay") || u.TypeId.Equals("SYS_DeliveryMethod")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
+            //var createTime = Convert.ToDateTime(model.QuotationOperationHistorys.Where(q => q.ApprovalStage == "6.0").FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd");
+            //var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderHeader.html");
+            //var text = System.IO.File.ReadAllText(url);
+            //text = text.Replace("@Model.SalesOrderId", model.SalesOrderId.ToString());
+            //text = text.Replace("@Model.CreateTime", createTime);
+            //text = text.Replace("@Model.SalesUser", model?.CreateUser.ToString());
+            //text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.SalesOrderId.ToString()));
+            //text = text.Replace("@Model.CustomerId", serverOrder?.TerminalCustomerId.ToString());
+            //text = text.Replace("@Model.CollectionAddress", model?.CollectionAddress.ToString());
+            //text = text.Replace("@Model.ShippingAddress", model?.ShippingAddress.ToString());
+            //text = text.Replace("@Model.CustomerName", serverOrder?.TerminalCustomer.ToString());
+            //text = text.Replace("@Model.NewestContacter", serverOrder?.NewestContacter.ToString());
+            //text = text.Replace("@Model.NewestContactTel", serverOrder?.NewestContactTel.ToString());
+            //text = text.Replace("@Model.DeliveryMethod", CategoryList.Where(c => c.DtValue.Equals(model?.DeliveryMethod) && c.TypeId.Equals("SYS_DeliveryMethod")).FirstOrDefault()?.Name);
+            //text = text.Replace("@Model.AcquisitionWay", CategoryList.Where(c => c.DtValue.Equals(model?.AcquisitionWay) && c.TypeId.Equals("SYS_AcquisitionWay")).FirstOrDefault()?.Name);
+            //text = text.Replace("@Model.DeliveryDate", Convert.ToDateTime(model?.DeliveryDate).ToString("yyyy.MM.dd"));
+            //text = text.Replace("@Model.AcceptancePeriod", Convert.ToDateTime(model?.DeliveryDate).AddDays(model.AcceptancePeriod == null ? 0 : (double)model.AcceptancePeriod).ToString("yyyy.MM.dd"));
+            //text = text.Replace("@Model.Remark", model?.Remark);
+            //string InvoiceCompany = "", Location = "", website = "", seal = "", width = "", height = "";
 
-            if (Convert.ToInt32(model.InvoiceCompany) == 1)
-            {
-                InvoiceCompany = "深圳市新威尔电子有限公司 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 交通银行股份有限公司&nbsp;&nbsp;深圳梅林支行 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;443066388018001726113";
-                Location = "深圳市福田区梅林街道梅都社区中康路 128 号卓越梅林中心广场(北区)3 号楼 1206 电话：0755-83108866 免费服务专线：800-830-8866";
-                website = "www.neware.com.cn &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-                seal = "新威尔";
-                width = "350px";
-                height = "350px";
-            }
-            else if (Convert.ToInt32(model.InvoiceCompany) == 2)
-            {
-                InvoiceCompany = "东莞新威检测技术有限公司 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 交通银行股份有限公司 &nbsp;&nbsp; 东莞塘厦支行 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;483007618018810043352";
-                Location = "广东省东莞市塘厦镇龙安路5号5栋101室";
-                seal = "东莞新威";
-                width = "182px";
-                height = "193px";
-                text = text.Replace("@Model.logo", "hidden='hidden'");
-            }
-            var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderHeader{model.Id}.html");
-            System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
-            var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderFooter.html");
-            var foottext = System.IO.File.ReadAllText(footUrl);
-            foottext = foottext.Replace("@Model.Corporate", InvoiceCompany);
-            foottext = foottext.Replace("@Model.PrintNo", model.PrintNo);
-            foottext = foottext.Replace("@Model.Location", Location);
-            foottext = foottext.Replace("@Model.Website", website);
-            foottext = foottext.Replace("@Model.PrintTheNumber", (model.PrintTheNumber + 1).ToString());
-            foottext = foottext.Replace("@Model.seal", seal);
-            foottext = foottext.Replace("@Model.width", width);
-            foottext = foottext.Replace("@Model.height", height);
-            var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderFooter{model.Id}.html");
-            System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
-            var materials = model.QuotationMergeMaterials.Select(q => new PrintSalesOrderResp
-            {
-                MaterialCode = q.MaterialCode,
-                MaterialDescription = q.MaterialDescription,
-                Count = q.Count.ToString(),
-                Unit = q.Unit,
-                SalesPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.DiscountPrices,
-                TotalPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.TotalPrice
-            }).OrderBy(m => m.MaterialCode).ToList();
-            var datas = await ExportAllHandler.Exporterpdf(materials, "PrintSalesOrder.cshtml", pdf =>
-            {
-                pdf.IsWriteHtml = true;
-                pdf.PaperKind = PaperKind.A4;
-                pdf.Orientation = Orientation.Portrait;
-                pdf.IsEnablePagesCount = true;
-                pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
-                pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
-            });
-            System.IO.File.Delete(tempUrl);
-            System.IO.File.Delete(foottempUrl);
-            await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(quotationId), q => new Quotation { PrintTheNumber = q.PrintTheNumber + 1 });
-            await UnitWork.SaveAsync();
-            return datas;
+            //if (Convert.ToInt32(model.InvoiceCompany) == 1)
+            //{
+            //    InvoiceCompany = "深圳市新威尔电子有限公司 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 交通银行股份有限公司&nbsp;&nbsp;深圳梅林支行 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;443066388018001726113";
+            //    Location = "深圳市福田区梅林街道梅都社区中康路 128 号卓越梅林中心广场(北区)3 号楼 1206 电话：0755-83108866 免费服务专线：800-830-8866";
+            //    website = "www.neware.com.cn &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+            //    seal = "新威尔";
+            //    width = "350px";
+            //    height = "350px";
+            //}
+            //else if (Convert.ToInt32(model.InvoiceCompany) == 2)
+            //{
+            //    InvoiceCompany = "东莞新威检测技术有限公司 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 交通银行股份有限公司 &nbsp;&nbsp; 东莞塘厦支行 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;483007618018810043352";
+            //    Location = "广东省东莞市塘厦镇龙安路5号5栋101室";
+            //    seal = "东莞新威";
+            //    width = "182px";
+            //    height = "193px";
+            //    text = text.Replace("@Model.logo", "hidden='hidden'");
+            //}
+            //var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderHeader{model.Id}.html");
+            //System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
+            //var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderFooter.html");
+            //var foottext = System.IO.File.ReadAllText(footUrl);
+            //foottext = foottext.Replace("@Model.Corporate", InvoiceCompany);
+            //foottext = foottext.Replace("@Model.PrintNo", model.PrintNo);
+            //foottext = foottext.Replace("@Model.Location", Location);
+            //foottext = foottext.Replace("@Model.Website", website);
+            //foottext = foottext.Replace("@Model.PrintTheNumber", (model.PrintTheNumber + 1).ToString());
+            //foottext = foottext.Replace("@Model.seal", seal);
+            //foottext = foottext.Replace("@Model.width", width);
+            //foottext = foottext.Replace("@Model.height", height);
+            //var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderFooter{model.Id}.html");
+            //System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
+            //var materials = model.QuotationMergeMaterials.Select(q => new PrintSalesOrderResp
+            //{
+            //    MaterialCode = q.MaterialCode,
+            //    MaterialDescription = q.MaterialDescription,
+            //    Count = q.Count.ToString(),
+            //    Unit = q.Unit,
+            //    SalesPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.DiscountPrices,
+            //    TotalPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.TotalPrice
+            //}).OrderBy(m => m.MaterialCode).ToList();
+            //var datas = await ExportAllHandler.Exporterpdf(materials, "PrintSalesOrder.cshtml", pdf =>
+            //{
+            //    pdf.IsWriteHtml = true;
+            //    pdf.PaperKind = PaperKind.A4;
+            //    pdf.Orientation = Orientation.Portrait;
+            //    pdf.IsEnablePagesCount = true;
+            //    pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+            //    pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
+            //});
+            //System.IO.File.Delete(tempUrl);
+            //System.IO.File.Delete(foottempUrl);
+            //await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(quotationId), q => new Quotation { PrintTheNumber = q.PrintTheNumber + 1 });
+            //await UnitWork.SaveAsync();
+            #endregion
+            return result;
         }
 
         /// <summary>
@@ -3041,8 +3065,10 @@ namespace OpenAuth.App.Material
             await UnitWork.SaveAsync();
         }
 
-        public QuotationApp(IUnitWork unitWork, ICapPublisher capBus, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
+
+        public QuotationApp(IUnitWork unitWork, ICapPublisher capBus, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IOptions<AppSetting> appConfiguration, IAuth auth) : base(unitWork, auth)
         {
+            _appConfiguration = appConfiguration;
             _flowInstanceApp = flowInstanceApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _capBus = capBus;

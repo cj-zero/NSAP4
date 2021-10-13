@@ -212,30 +212,35 @@ namespace OpenAuth.App.Workbench
                 Remark = returNnoteObj.Remark,
                 TotalMoney = returNnoteObj.TotalMoney,
                 UpdateTime = returNnoteObj.UpdateTime.ToString("yyyy.MM.dd HH:mm:ss"),
-                ReturnNoteProducts = returNnoteObj.ReturnNoteProducts.Select(r => new ReturnNoteProductResp {
-                    MaterialCode=r.MaterialCode,
-                    MaterialDescription=r.MaterialDescription,
-                    ProductCode=r.ProductCode,
-                    ReturnNoteId=r.ReturnNoteId,
+                ReturnNoteProducts = returNnoteObj.ReturnNoteProducts.Select(r => new ReturnNoteProductResp
+                {
+                    MaterialCode = r.MaterialCode,
+                    MaterialDescription = r.MaterialDescription,
+                    ProductCode = r.ProductCode,
+                    ReturnNoteId = r.ReturnNoteId,
                     Money = r.Money,
-                    ReturnNoteMaterials=r.ReturnNoteMaterials.Select(m=>new ReturnNoteMaterialResp { 
-                        Id=m.Id,
-                        MaterialCode=m.MaterialCode,
+                    ReturnNoteMaterials = r.ReturnNoteMaterials.Select(m => new ReturnNoteMaterialResp
+                    {
+                        Id = m.Id,
+                        Sort = m.Sort,
+                        LineNum = m.LineNum,
+                        MaterialType = m.MaterialType,
+                        MaterialCode = m.MaterialCode,
                         InvoiceDocEntry = m.InvoiceDocEntry,
-                        MaterialDescription=m.MaterialDescription,
-                        SecondWhsCode=m.SecondWhsCode,
-                        ShippingRemark=m.ShippingRemark,
-                        SNandPN=m.SNandPN,
-                        ReplaceSNandPN=m.ReplaceSNandPN,
-                        ReplaceMaterialDescription=m.ReplaceMaterialDescription,
-                        GoodWhsCode=m.GoodWhsCode,
-                        IsGood=m.IsGood,
+                        MaterialDescription = m.MaterialDescription,
+                        SecondWhsCode = m.SecondWhsCode,
+                        ShippingRemark = m.ShippingRemark,
+                        SNandPN = m.SNandPN,
+                        ReplaceSNandPN = m.ReplaceSNandPN,
+                        ReplaceMaterialDescription = m.ReplaceMaterialDescription,
+                        GoodWhsCode = m.GoodWhsCode,
+                        IsGood = m.IsGood,
                         Money = m.Money,
-                        QuotationMaterialId=m.QuotationMaterialId,
-                        ReceivingRemark=m.ReceivingRemark,
-                        ReplaceMaterialCode=m.ReplaceMaterialCode,
-                        ReturnNoteProductId=m.ReturnNoteProductId
-                    }).ToList()
+                        QuotationMaterialId = m.QuotationMaterialId,
+                        ReceivingRemark = m.ReceivingRemark,
+                        ReplaceMaterialCode = m.ReplaceMaterialCode,
+                        ReturnNoteProductId = m.ReturnNoteProductId
+                    }).OrderBy(m => m.ReplaceMaterialCode).ToList()
                 }).ToList(),
             };
             var History = await UnitWork.Find<FlowInstanceOperationHistory>(f => f.InstanceId.Equals(returNnoteObj.FlowInstanceId)).OrderBy(f => f.CreateDate).ToListAsync();

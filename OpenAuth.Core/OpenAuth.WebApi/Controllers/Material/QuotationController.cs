@@ -514,11 +514,11 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <returns></returns>
         [ServiceFilter(typeof(CertAuthFilter))]
         [HttpGet]
-        public async Task<IActionResult> PrintSalesOrder(string serialNumber, string sign, string timespan)
+        public async Task<TableData> PrintSalesOrder(string serialNumber, string sign, string timespan)
         {
             try
             {
-                return File(await _app.PrintSalesOrder(serialNumber), "application/pdf");
+                return await _app.PrintSalesOrder(serialNumber);
             }
             catch (Exception e)
             {

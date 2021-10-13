@@ -29,6 +29,18 @@ namespace OpenAuth.Repository.Domain
 
         }
         /// <summary>
+        /// 物料类型
+        /// </summary>
+        public int? MaterialType { get; set; }
+        /// <summary>
+        /// 界面展示序号
+        /// </summary>
+        public int? Sort { get; set; }
+        /// <summary>
+        /// 行号
+        /// </summary>
+        public int? LineNum { get; set; }
+        /// <summary>
         ///物料编码
         /// </summary>
         [Description("物料编码")]
