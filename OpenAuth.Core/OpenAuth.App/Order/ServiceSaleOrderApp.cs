@@ -2787,9 +2787,8 @@ namespace OpenAuth.App.Order
         /// 查看视图【主页面 - 帐套关闭】
         /// </summary>
         /// <returns></returns>
-        public DataTable SelectBillViewInfo(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, string type, bool ViewFull, bool ViewSelf, int UserID, int SboID, bool ViewSelfDepartment, int DepID, bool ViewCustom, bool ViewSales)
+        public DataTable SelectBillViewInfo(out int rowCount, int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, string type, bool ViewFull, bool ViewSelf, int UserID, int SboID, bool ViewSelfDepartment, int DepID, bool ViewCustom, bool ViewSales)
         {
-            int rowCount = 0;
             string sortString = string.Empty;
             string filterString = string.Empty;
             string line = string.Empty;
@@ -3338,7 +3337,7 @@ namespace OpenAuth.App.Order
             }
             else
             {
-                return SelectBillViewInfo(pageSize, pageIndex, filterQuery, sortname, sortorder, type, ViewFull, ViewSelf, UserID, uSboId, ViewSelfDepartment, DepID, ViewCustom, ViewSales);
+                return SelectBillViewInfo(out rowCount, pageSize, pageIndex, filterQuery, sortname, sortorder, type, ViewFull, ViewSelf, UserID, uSboId, ViewSelfDepartment, DepID, ViewCustom, ViewSales);
             }
         }
 
@@ -5951,5 +5950,264 @@ namespace OpenAuth.App.Order
             string fieldname = " sbo_id,contract_id,price,qty,sum_total,deliver_dt,walts,comm_rate,custom_req";
             return SelectPagingHaveRowsCount(tablename, fieldname, pageSize, pageIndex, orderName, filterQuery, out rowCount);
         }
+        #region 10.9销售订单接口
+        public DataTable SelectBillListInfo_ORDR(out int rowCount, SalesOrderListReq model, string type, bool ViewFull, bool ViewSelf, int UserID, int SboID, bool ViewSelfDepartment, int DepID, bool ViewCustom, bool ViewSales, string sqlcont, string sboname)
+        {
+            bool IsSql = true;
+            string sortString = string.Empty;
+            string filterString = string.Empty;
+            string line = string.Empty; int uSboId = SboID;
+            if (!string.IsNullOrEmpty(model.sortname) && !string.IsNullOrEmpty(model.sortorder))
+                sortString = string.Format("{0} {1}", model.sortname, model.sortorder.ToUpper());
+            string dRowData = string.Empty;
+            #region 搜索条件
+            if (!string.IsNullOrEmpty(model.DocEntry))
+            {
+                filterString += string.Format("a.DocEntry LIKE '{0}' AND ", model.DocEntry.FilterSQL().Trim());
+
+            }
+            if (!string.IsNullOrEmpty(model.CardCode))
+            {
+                filterString += string.Format("(a.CardCode LIKE '%{0}%' OR a.CardName LIKE '%{0}%') AND ", model.CardCode.FilterWildCard());
+
+            }
+            if (!string.IsNullOrEmpty(model.DocStatus))
+            {
+                if (model.DocStatus == "ON") { filterString += string.Format(" (a.DocStatus = 'O' AND a.Printed = 'N' AND a.CANCELED = 'N') AND "); }
+                if (model.DocStatus == "OY") { filterString += string.Format(" (a.DocStatus = 'O' AND a.Printed = 'Y' AND a.CANCELED = 'N') AND "); }
+                if (model.DocStatus == "CY") { filterString += string.Format(" a.CANCELED = 'Y' AND "); }
+                if (model.DocStatus == "CN") { filterString += string.Format(" (a.DocStatus = 'C' AND a.CANCELED = 'N') AND "); }
+                if (model.DocStatus == "NC") { filterString += string.Format(" a.CANCELED = 'N' AND "); }
+            }
+            if (!string.IsNullOrEmpty(model.Comments))
+            {
+                filterString += string.Format("a.Comments LIKE '%{0}%' AND ", model.Comments.FilterWildCard());
+            }
+            if (!string.IsNullOrEmpty(model.SlpName))
+            {
+                filterString += string.Format("c.SlpName LIKE '%{0}%' AND ", model.SlpName.FilterSQL().Trim());
+            }
+            if (!string.IsNullOrEmpty(model.ToCompany))
+            {
+                filterString += string.Format("a.Indicator = '{0}' AND ", model.ToCompany);
+            }
+            if (!string.IsNullOrEmpty(model.ReceiptStatus))
+            {
+                if (model.ReceiptStatus == "Y")
+                {
+                    filterString += string.Format("a.U_DocRCTAmount>0.00 AND ");
+                }
+                else if (model.ReceiptStatus == "W")
+                {
+                    filterString += string.Format("a.U_DocRCTAmount =0.00 AND ");
+                }
+            }
+            #endregion
+
+            #region 判断权限
+
+            if (ViewSelfDepartment && !ViewFull)
+            {
+                DataTable rDataRows = GetSboSlpCodeIds(DepID, SboID);
+                if (rDataRows.Rows.Count > 0)
+                {
+                    filterString += string.Format(" (a.SlpCode IN(");
+                    for (int i = 0; i < rDataRows.Rows.Count; i++)
+                    {
+                        filterString += string.Format("{0},", rDataRows.Rows[i][0]);
+                    }
+                    if (!string.IsNullOrEmpty(filterString))
+                        filterString = filterString.Substring(0, filterString.Length - 1);
+                    filterString += string.Format(") OR d.DfTcnician IN (");
+                    for (int i = 0; i < rDataRows.Rows.Count; i++)
+                    {
+                        filterString += string.Format("{0},", rDataRows.Rows[i][1]);
+                    }
+                    if (!string.IsNullOrEmpty(filterString))
+                        filterString = filterString.Substring(0, filterString.Length - 1);
+                    filterString += string.Format(")) AND ");
+                }
+            }
+            else if (ViewSelf && !ViewFull && !ViewSelfDepartment)
+            {
+                DataTable rDataRowsSlp = GetSboSlpCodeId(UserID, SboID);
+                if (rDataRowsSlp.Rows.Count > 0)
+                {
+                    string slpCode = rDataRowsSlp.Rows[0][0].ToString();
+                    string slpTcnician = rDataRowsSlp.Rows[0][1].ToString();
+                    filterString += string.Format(" (a.SlpCode = {0}) AND ", slpCode);// OR d.DfTcnician={1}   , slpTcnician  不允许售后查看业务员的单
+                }
+                else
+                {
+                    filterString = string.Format(" (a.SlpCode = {0}) AND ", 0);
+                }
+            }
+            #endregion
+            if (!string.IsNullOrEmpty(filterString))
+                filterString = filterString.Substring(0, filterString.Length - 5);
+            if (IsSql)
+            {
+                DataTable thistab = SelectBillListInfo_ORDRNew(out rowCount, model.limit, model.page, filterString, sortString, line, ViewCustom, ViewSales, sqlcont, sboname, SboID);
+                return thistab;
+            }
+            else
+            {
+                return SelectBillViewInfo(out rowCount, model.limit, model.page, model.query, model.sortname, model.sortorder, type, ViewFull, ViewSelf, UserID, uSboId, ViewSelfDepartment, DepID, ViewCustom, ViewSales);
+            }
+        }
+        /// <summary>
+        /// 查看销售订单视图
+        /// </summary>
+        /// <returns></returns>
+        public DataTable SelectBillListInfo_ORDRNew(out int rowCounts, int pageSize, int pageIndex, string filterQuery, string orderName, string line, bool ViewCustom, bool ViewSales, string sqlcont, string sboname, int nsapsboId = 1)
+        {
+            StringBuilder tableName = new StringBuilder();
+            StringBuilder filedName = new StringBuilder(); int Custom = 0; int Sales = 0;
+            if (ViewCustom) { Custom = 1; }
+            if (ViewSales) { Sales = 1; }
+            if (string.IsNullOrEmpty(sboname)) { sboname = ""; } else { sboname = sboname + ".dbo."; }
+            filedName.Append(" a.UpdateDate,a.DocEntry,a.CardCode,CASE WHEN 1 = " + Custom + " THEN a.CardName ELSE '******' END AS CardName,CASE WHEN 1 = " + Sales + " THEN a.DocTotal ELSE 0 END AS DocTotal,CASE WHEN 1 = " + Sales + " THEN (a.DocTotal-a.PaidToDate) ELSE 0 END AS OpenDocTotal,a.CreateDate,a.SlpCode,a.Comments,a.DocStatus,a.Printed,c.SlpName,a.CANCELED,a.Indicator,a.DocDueDate,e.PymntGroup,'' as billID,'' AS ActualDocDueDate ");
+            filedName.Append(",'10011111-28a9-4767-854f-77246e36d24d1111111111111111111' as PrintNo,'00' as PrintNumIndex,'' as billStatus,'' as bonusStatus,'' as proStatus,n.Name as IndicatorName,'' as EmpAcctWarn,'' as AttachFlag,a.U_DocRCTAmount");
+            filedName.Append(", '' as TransFee,a.DocCur");
+            tableName.AppendFormat("" + sboname + "ORDR a ");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OSLP c ON a.SlpCode = c.SlpCode");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OCRD d ON a.CardCode = d.CardCode");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OCTG e ON a.GroupNum = e.GroupNum");
+            tableName.AppendFormat(" LEFT JOIN " + sboname + "OIDC  n ON a.Indicator=n.Code");
+            //tableName.AppendFormat(" LEFT JOIN " + sboname + "OWOR w on w.Status!='C' AND a.docentry=w.originAbs");
+            DataTable dt = SAPSelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCounts);
+
+            #region 给特定字段赋值（只能取自外挂）
+            string bonustypeid = GetJobTypeByUrl("sales/SalesBonus.aspx");
+            string bonusatypeid = GetJobTypeByUrl("sales/BonusAfterSales.aspx");
+            string protypeid = GetJobTypeByUrl("product/ProductionOrder.aspx");
+            string protypeid_cp = GetJobTypeByUrl("product/ProductionOrder_CP.aspx");
+            string typeidstr = bonustypeid + "," + bonusatypeid + "," + protypeid + "," + protypeid_cp;
+            foreach (DataRow ordrrow in dt.Rows)
+            {
+                //打印信息赋值
+                DataTable dtPrintnum = PurgetPrintNum("1", ordrrow["DocEntry"].ToString().Trim(), "ordr");//取编号
+                if (dtPrintnum.Rows.Count > 0)
+                {
+                    ordrrow["PrintNo"] = dtPrintnum.Rows[0][0].ToString();
+                    var aa = dtPrintnum.Rows[0][1].ToString();
+                    ordrrow["PrintNumIndex"] = dtPrintnum.Rows[0][1].ToString();
+                }
+                else
+                {
+                    ordrrow["PrintNo"] = "";
+                    ordrrow["PrintNumIndex"] = 0;
+                }
+                //发票、提成、生产状态
+                string orderid = ordrrow["DocEntry"].ToString();
+                ordrrow["billStatus"] = GetBillStatusByOrderId(orderid, nsapsboId.ToString());
+                DataTable jobtab = GetJobStateForDoc(orderid, typeidstr, nsapsboId.ToString());
+                DataRow[] bonusrows = jobtab.Select("job_type_id=" + bonustypeid + " or job_type_id=" + bonusatypeid);
+                ordrrow["bonusStatus"] = "";
+                ordrrow["proStatus"] = GetProdStatusByOrderId(orderid, nsapsboId.ToString());
+                if (bonusrows.Length > 0)
+                {
+                    ordrrow["bonusStatus"] = bonusrows[0]["job_state"].ToString();
+                }
+                if (string.IsNullOrEmpty(ordrrow["proStatus"].ToString()))
+                {
+                    DataRow[] prorows = jobtab.Select("job_type_id=" + protypeid + " or job_type_id=" + protypeid_cp, "upd_dt desc");
+                    if (prorows.Length > 0)
+                    {
+                        ordrrow["proStatus"] = prorows[0]["job_state"].ToString();
+                    }
+                }
+                ordrrow["EmpAcctWarn"] = GetEmptyAcctByOrderId(orderid, nsapsboId.ToString());
+                //取销售合同类型附件
+                string attTypeSql = string.Format("SELECT a.type_id FROM {0}.file_type a LEFT JOIN {1}.base_func b ON a.func_id=b.func_id LEFT JOIN {1}.base_page c ON c.page_id=b.page_id WHERE c.page_url=?page_url", "nsap_oa", "nsap_base");
+                List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?page_url","sales/SalesOrder.aspx")
+            };
+                object typeObj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, attTypeSql, CommandType.Text, sqlParameters);
+                string fileType = typeObj == null ? "-1" : typeObj.ToString();
+
+                string strSql2 = string.Format("SELECT 1 FROM {0}.file_main AS T0 ", "nsap_oa");
+                strSql2 += string.Format("LEFT JOIN {0}.file_type AS T1 ON T0.file_type_id = T1.type_id ", "nsap_oa");
+                strSql2 += string.Format("WHERE T0.file_type_id = {0} AND T0.docEntry = {1} limit 1", int.Parse(fileType), int.Parse(orderid));
+                object fileflag = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql2, CommandType.Text, null);
+                ordrrow["AttachFlag"] = fileflag == null ? "0" : fileflag.ToString();
+                //取运费
+                ordrrow["TransFee"] = GetSaleDeliveryYFByORDRID(orderid, nsapsboId.ToString());
+            }
+            #endregion
+            return dt;
+        }
+        public string GetProdStatusByOrderId(string orderid, string sbo_id)
+        {
+            string strsql = string.Format("select a.Status from {0}.product_owor a where a.Status!='C' AND a.originAbs={1} AND a.sbo_id={2} limit 1", "nsap_bone", orderid, sbo_id);
+            object res = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strsql, CommandType.Text, null);
+            return res == null ? "" : res.ToString();
+        }
+        /// <summary>
+        /// 得到销售订单对应交货运费
+        /// </summary>
+        /// <param name="ordrid">销售订单号</param>
+        /// <param name="sboid"></param>
+        /// <returns></returns>
+        public string GetSaleDeliveryYFByORDRID(string ordrid, string sboid)
+        {
+            string strsql = string.Format(@"select sum(v1.doctotal) from (
+                                                select DISTINCT t0.Buy_DocEntry,t1.DocTotal from {0}.sale_transport t0
+                                                INNER JOIN {0}.buy_opor t1 on t1.DocEntry = t0.Buy_DocEntry and t1.sbo_id = t0.SboId and t1.CANCELED = 'N'
+                                                INNER JOIN {0}.sale_dln1 dl on dl.sbo_id=t0.sboid and dl.docentry=t0.base_docentry
+                                                WHERE t0.Base_DocType = 24 and  dl.basetype=17 and t0.SboId ={1} and dl.baseentry={2}
+                                                union all
+												select DISTINCT t0.Buy_DocEntry,t1.DocTotal from {0}.sale_transport t0
+                                                INNER JOIN {0}.buy_opor t1 on t1.DocEntry = t0.Buy_DocEntry and t1.sbo_id = t0.SboId and t1.CANCELED = 'N'
+                                                WHERE t0.Base_DocType = 17 and t0.SboId ={1} and t0.Base_DocEntry={2}
+                                            ) v1", "nsap_bone", sboid, ordrid);
+            object yfobj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strsql, CommandType.Text, null);
+            return yfobj == null ? "0.00" : yfobj.ToString();
+        }
+        public string GetBaseEntrybyDocId(string docentry, string sboid, string linetable)
+        {
+            string sqlstr = string.Format("select baseentry from {0}.{1} where basetype>0 and sbo_id={2} and docentry={3} limit 1", "nsap_bone", linetable, sboid, docentry);
+            object resultentry = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sqlstr, CommandType.Text, null);
+            return resultentry == null ? "0" : resultentry.ToString();
+        }
+
+        /// <summary>
+        /// 获取业务伙伴的所有联系人
+        /// </summary>
+        public DataTable DropPopupCntctPrsn(string Code, int SboId)
+        {
+            string sql = string.Format("SELECT b.CntctCode AS id,b.Name AS name FROM  " + "nsap_bone" + ".crm_ocrd a LEFT JOIN  " + "nsap_bone" + ".crm_ocpr b ON a.CardCode=b.CardCode and a.sbo_id=b.sbo_id WHERE a.CardCode='{0}' and a.sbo_id={1}", Code, SboId);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
+        }
+        /// <summary>
+        /// 所属公司下拉列表
+        /// </summary>
+        /// <param name="sbo_id"></param>
+        /// <returns></returns>
+        public DataTable DropPopupIndicator(int sbo_id)
+        {
+            string strSql = string.Format(" SELECT Code as id,Name AS name FROM {0}.crm_oidc WHERE sbo_id={1}", "nsap_bone", sbo_id);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+        }
+        /// <summary>
+        /// 历史帐套
+        /// </summary>
+        /// <returns></returns>
+        public DataTable DropPopupSboInfo()
+        {
+            string strSql = string.Format("SELECT sbo_id AS id,sbo_nm AS name FROM {0}.sbo_info", "nsap_base");
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+        }
+        /// <summary>
+        /// 付款条款
+        /// </summary>
+        /// <returns></returns>
+        public  DataTable DropPopupGroupNum(int sbo_id)
+        {
+            string strSql = string.Format(" SELECT GroupNum AS id,PymntGroup AS name FROM {0}.crm_octg WHERE sbo_id={1}", "nsap_bone", sbo_id);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+        }
+        #endregion
     }
 }
