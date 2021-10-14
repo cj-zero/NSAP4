@@ -2563,7 +2563,7 @@ namespace OpenAuth.App.Material
             {
                 throw new Exception("领料单不存在");
             }
-            var category = await UnitWork.Find<Category>(c => c.TypeId == "SYS_InvoiceCompany" && c.DtValue == quotation.DeliveryMethod).FirstOrDefaultAsync();
+            var category = await UnitWork.Find<Category>(c => c.TypeId == "SYS_InvoiceCompany" && c.DtValue == quotation.InvoiceCompany).FirstOrDefaultAsync();
             if (category==null)
             {
                 throw new Exception("开票单位不存在");
