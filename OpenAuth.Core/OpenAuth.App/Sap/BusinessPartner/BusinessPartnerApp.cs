@@ -156,7 +156,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 q.a.SlpCode,
                 q.a.U_Name,
             }).ToListAsync();
-            if (loginUser.Account != Define.SYSTEM_USERNAME && !loginRoles.Any(c => c.Name == "呼叫中心"))
+            if (loginUser.Account != Define.SYSTEM_USERNAME && !loginRoles.Any(c => c.Name == "呼叫中心") && loginUser.Account!= "luolingzhi")
             {
                 var cardCodes = await UnitWork.Find<SharingPartner>(null).Select(s => s.CardCode).ToListAsync();
                 if (loginRoles.Any(r => r.Name == "销售员") && loginRoles.Any(r => r.Name == "售后技术员"))
