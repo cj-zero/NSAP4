@@ -1354,6 +1354,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         [Route("GridDataBind")]
         public TableData GridDataBind(string page, string rp, string qtype, string query, string sortname, string sortorder)
         {
+            int rowCount = 0;
             var tabledata = new TableData();
             string type = "OQUT";
             var UserID = _serviceBaseApp.GetUserNaspId();
@@ -1370,7 +1371,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 if (isOpen == "0")
                 {
-                    DataTable datatable = _serviceSaleOrderApp.SelectBillViewInfo(int.Parse(rp), int.Parse(page), query, sortname, sortorder, type, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewFull, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelf, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelfDepartment, DepID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewCustom, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSales);
+                    DataTable datatable = _serviceSaleOrderApp.SelectBillViewInfo(out rowCount, int.Parse(rp), int.Parse(page), query, sortname, sortorder, type, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewFull, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelf, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelfDepartment, DepID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewCustom, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSales);
                     tabledata.Data = datatable;
                     tabledata.Count = datatable.Rows.Count;
 
