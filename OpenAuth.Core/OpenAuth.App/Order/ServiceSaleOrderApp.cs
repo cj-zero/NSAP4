@@ -5930,8 +5930,11 @@ namespace OpenAuth.App.Order
                 sortString = string.Format(" {0} {1}", model.sortname, model.sortorder.ToUpper());
             filterString = string.Format(" sbo_id={0} and itemcode='{1}' and CardCode='{2}'", SboID, model.ItemCode.FilterSQL(), model.CardCode);
             #region 搜索条件  
+            if (!string.IsNullOrEmpty(model.DocEntry))
+            {
+                filterString += string.Format(" and contract_id={0} ", model.DocEntry.FilterSQL().Trim());
 
-            filterString += string.Format(" and contract_id={0} ", model.DocEntry.FilterSQL().Trim());
+            }
 
             #endregion
             return GridRelationContractList(out rowCount, model.limit, model.page, filterString, sortString);
