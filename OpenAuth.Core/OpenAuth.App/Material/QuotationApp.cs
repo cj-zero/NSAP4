@@ -2563,7 +2563,7 @@ namespace OpenAuth.App.Material
             {
                 throw new Exception("领料单不存在");
             }
-            var category = await UnitWork.Find<Category>(c => c.TypeId == "SYS_InvoiceCompany" && c.DtValue == quotation.DeliveryMethod).FirstOrDefaultAsync();
+            var category = await UnitWork.Find<Category>(c => c.TypeId == "SYS_InvoiceCompany" && c.DtValue == quotation.InvoiceCompany).FirstOrDefaultAsync();
             if (category==null)
             {
                 throw new Exception("开票单位不存在");
@@ -2572,7 +2572,8 @@ namespace OpenAuth.App.Material
             var resultApi = httpHelper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "DocEntry", quotation.SalesOrderId.ToString() },{ "Indicator", category .DtCode} }, "/spv/exportsaleorder.ashx");
             if (resultApi["msg"] == "success")
             {
-                result.Data = resultApi["url"];
+                var url = resultApi["url"].Replace("192.168.0.208", "218.17.149.195");
+                result.Data = url;
             }
             else
             {
