@@ -16,36 +16,24 @@ using OpenAuth.Repository.Core;
 
 namespace OpenAuth.Repository.Domain
 {
-    /// <summary>
-	/// 
-	/// </summary>
-    [Table("internalcontactbatchnumber")]
-    public partial class InternalContactBatchNumber : Entity
+    [Table("internalcontactmaterial")]
+    public class InternalcontactMaterial : Entity
     {
-        public InternalContactBatchNumber()
-        {
-          this.Number= string.Empty;
-        }
-
-        
         /// <summary>
-        /// 
+        /// 联络单ID
         /// </summary>
-        [Description("")]
-        [Browsable(false)]
         public int InternalContactId { get; set; }
         /// <summary>
-        /// 
+        /// 物料编码
         /// </summary>
-        [Description("")]
-        public string Number { get; set; }
+        public string MaterialCode { get; set; }
         /// <summary>
-        /// 起始SN
+        /// 仓库
         /// </summary>
-        public string StartSN { get; set; }
+        public string WhsCode { get; set; }
         /// <summary>
-        /// 结束SN
+        /// 存货量
         /// </summary>
-        public string EndSN { get; set; }
+        public int OnHand { get; set; }
     }
 }

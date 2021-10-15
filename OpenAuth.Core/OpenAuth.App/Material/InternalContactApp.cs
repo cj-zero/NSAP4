@@ -97,6 +97,10 @@ namespace OpenAuth.App.Material
                 var subdept = await UnitWork.Find<InternalContactDeptInfo>(c => c.UserId == loginContext.User.Id && c.HandleTime != null).Select(c => c.InternalContactId).ToListAsync();
                 query = query.Where(c => subdept.Contains(c.Id) && c.Status != 9);//执行中或停用中
             }
+            else if (req.PageType == 6)
+            {
+                query = query.Where(c => c.Status == 4 || c.Status == 7);//执行中或已完成
+            }
 
             var resp= await query
                                 .Skip((req.page - 1) * req.limit)
@@ -154,11 +158,12 @@ namespace OpenAuth.App.Material
                     obj.CardCode = string.Join(",", req.CardCodes);
                     obj.CardName = string.Join(",", req.CardNames);
                     obj.Reason = string.Join(",", req.Reasons);
+                    obj.MaterialOrder = string.Join(",", req.MaterialOrder);
                     obj.AdaptiveRange = string.Join(",", req.AdaptiveRanges);
 
                     #region 添加子表数据
                     obj.InternalContactAttchments = new List<InternalContactAttchment>();
-                    obj.InternalContactBatchNumbers = new List<InternalContactBatchNumber>();
+                    //obj.InternalContactBatchNumbers = new List<InternalContactBatchNumber>();
                     obj.InternalContactDeptInfos = new List<InternalContactDeptInfo>();
                     //附件
                     req.Attchments.ForEach(c =>
@@ -166,9 +171,18 @@ namespace OpenAuth.App.Material
                         obj.InternalContactAttchments.Add(new InternalContactAttchment { FileId = c, InternalContactId = (single != null && single.Id > 0) ? single.Id : 0 });
                     });
                     //批次号
-                    req.BatchNumbers.ForEach(c =>
+                    //req.BatchNumbers.ForEach(c =>
+                    //{
+                    //    obj.InternalContactBatchNumbers.Add(new InternalContactBatchNumber { Number = c, InternalContactId = (single != null && single.Id > 0) ? single.Id : 0 });
+                    //});
+                    obj.InternalContactBatchNumbers.ForEach(c =>
                     {
-                        obj.InternalContactBatchNumbers.Add(new InternalContactBatchNumber { Number = c, InternalContactId = (single != null && single.Id > 0) ? single.Id : 0 });
+                        c.InternalContactId = (single != null && single.Id > 0) ? single.Id : 0;
+                    });
+                    //物料
+                    obj.InternalcontactMaterials.ForEach(c =>
+                    {
+                        c.InternalContactId = (single != null && single.Id > 0) ? single.Id : 0;
                     });
 
                     //接收部门
@@ -385,6 +399,7 @@ namespace OpenAuth.App.Material
                             .Include(c => c.InternalContactAttchments)
                             .Include(c => c.InternalContactBatchNumbers)
                             .Include(c => c.InternalContactDeptInfos)
+                            .Include(c => c.InternalcontactMaterials)
                             .FirstOrDefaultAsync();
             //操作历史
             var operationHistories = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.InstanceId == detail.FlowInstanceId)
@@ -425,6 +440,8 @@ namespace OpenAuth.App.Material
                 detail.ProductionNo,
                 AdaptiveRanges = detail.AdaptiveRange.Split(","),
                 Reasons = detail.Reason.Split(","),
+                MaterialOrder = detail.MaterialOrder.Split(","),
+                //BatchNumbers = detail.InternalContactBatchNumbers,
                 BatchNumbers = detail.InternalContactBatchNumbers,
                 detail.CheckApproveId,
                 detail.CheckApprove,
@@ -435,6 +452,7 @@ namespace OpenAuth.App.Material
                 detail.Content,
                 reviceOrgList,
                 execOrgList,
+                InternalcontactMaterials = detail.InternalcontactMaterials,
                 operationHistories
             };
             return result;
