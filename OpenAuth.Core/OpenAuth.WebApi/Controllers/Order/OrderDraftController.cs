@@ -1234,7 +1234,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             return result;
         }
- 
+
 
         /// <summary>
         ///  复制生产订单
@@ -1701,5 +1701,28 @@ namespace OpenAuth.WebApi.Controllers.Order
             result.Count = rowCount;
             return result;
         }
+        /// <summary>
+        /// 合约评审PDF
+        /// </summary>
+        /// <param name="contractId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("ContractExportShow_ForSale")]
+        public Response<string> ContractExportShow_ForSale(string contractId)
+        {
+            var result = new Response<string>();
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            try
+            {
+                result.Result = _serviceSaleOrderApp.ContractExportShow_ForSale(contractId, host);
+            }
+            catch (Exception e)
+            {
+                result.Message = e.Message;
+            }
+            return result;
+
+        }
+
     }
 }

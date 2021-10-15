@@ -211,6 +211,29 @@ namespace OpenAuth.WebApi.Controllers.Order
             result.Result = "[{id:'0',name:'增值税普通发票'},{id:'1',name:'增值税专用发票'}]";
             return result;
         }
+        /// <summary>
+        /// 销售订单PDF打印
+        /// </summary>
+        /// <param name="sboid"></param>
+        /// <param name="DocEntry"></param>
+        /// <param name="Indicator"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("OrderExportShow")]
+        public Response<string> OrderExportShow(string sboid, string DocEntry, string Indicator)
+        {
+            var result = new Response<string>();
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            try
+            {
+                result.Result = _serviceSaleOrderApp.OrderExportShow(sboid, DocEntry, Indicator,host);
+            }
+            catch (Exception e)
+            {
+                result.Message = e.Message;
+            }
+            return result;
+        }
 
         #endregion
     }
