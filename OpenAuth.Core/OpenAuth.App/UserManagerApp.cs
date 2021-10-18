@@ -572,5 +572,22 @@ namespace OpenAuth.App
                 AddOrUpdate(new UpdateUserReq {Account= item.log_nm,Name=item.user_nm,Password="xinwei123",ServiceRelations= officeaddr, OrganizationIds= orgObj?.Id,NsapUserId=(int)item.user_id,IsSync=true });
             }
         }
+
+        /// <summary>
+        /// 获取用户部门信息
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public async Task<UserResp> GetUserOrgInfo(string userId)
+        {
+
+            var petitioner = await (from a in UnitWork.Find<User>(u => u.Id.Equals(userId))
+                                    join b in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG) on a.Id equals b.FirstId into ab
+                                    from b in ab.DefaultIfEmpty()
+                                    join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id into bc
+                                    from c in bc.DefaultIfEmpty()
+                                    select new UserResp { Name=a.Name, Id=a.Id, OrgId = c.Id, OrgName = c.Name, CascadeId=c.CascadeId }).OrderByDescending(u => u.CascadeId).FirstOrDefaultAsync();
+            return petitioner;
+        }
     }
 }

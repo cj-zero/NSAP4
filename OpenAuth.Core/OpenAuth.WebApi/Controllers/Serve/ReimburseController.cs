@@ -309,6 +309,29 @@ namespace OpenAuth.WebApi.Controllers.Serve
         }
 
         /// <summary>
+        /// 设置费用部门
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> SetExpenseOrgs(AccraditationReimburseInfoReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                await _reimburseinfoapp.SetExpenseOrgs(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 批量审批
         /// </summary>
         /// <param name="req"></param>

@@ -25,6 +25,7 @@ namespace OpenAuth.WebApi.Controllers
             _app = app;
         }
 
+        #region 主页报表
         /// <summary>
         /// 主页顶部数量汇总
         /// </summary>
@@ -182,5 +183,62 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+        #endregion
+
+        #region 服务呼叫报表
+        /// <summary>
+        /// 服务呼叫分布
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> ServiceOrderDistribution([FromQuery] QueryReportReq req)
+        {
+            return await _app.ServiceOrderDistribution(req);
+        }
+
+        /// <summary>
+        /// 服务呼叫来源
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> ServiceOrderSource([FromQuery] QueryReportReq req)
+        {
+            return await _app.ServiceOrderSource(req);
+        }
+
+        /// <summary>
+        /// 服务呼叫状态和问题类型分析
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> ServiceOrderStatusAndProblemType([FromQuery] QueryReportReq req)
+        {
+            return await _app.ServiceOrderStatusAndProblemType(req);
+        }
+
+        /// <summary>
+        /// 催办次数
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> UrgingTimes([FromQuery] QueryReportReq req)
+        {
+            return await _app.UrgingTimes(req);
+        }
+        /// <summary>
+        /// 呼叫主题进度分析
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> ServiceThemeProgress([FromQuery] QueryReportReq req)
+        {
+            return await _app.ServiceThemeProgress(req);
+        }
+        #endregion
     }
 }
