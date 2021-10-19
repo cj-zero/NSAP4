@@ -29,16 +29,18 @@ namespace OpenAuth.App.Workbench
     {
         public readonly QuotationApp _quotationApp;
         public readonly FlowInstanceApp _flowInstanceApp;
+        public readonly UserManagerApp _userManagerApp;
         /// <summary>
         /// 构造方法
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
         /// <param name="quotationApp"></param>
-        public PendingApp(IUnitWork unitWork, IAuth auth, QuotationApp quotationApp, FlowInstanceApp flowInstanceApp) : base(unitWork, auth)
+        public PendingApp(IUnitWork unitWork, IAuth auth, QuotationApp quotationApp, UserManagerApp userManagerApp, FlowInstanceApp flowInstanceApp) : base(unitWork, auth)
         {
             _quotationApp = quotationApp;
             _flowInstanceApp = flowInstanceApp;
+            _userManagerApp = userManagerApp;
         }
         /// <summary>
         /// 服务单详情
@@ -331,6 +333,7 @@ namespace OpenAuth.App.Workbench
             List<string> fileids = new List<string>();
             List<ReimburseAttachment> filemodel = new List<ReimburseAttachment>();
             List<ReimburseExpenseOrg> expenseOrg = new List<ReimburseExpenseOrg>();
+            var userOrgInfo = await _userManagerApp.GetUserOrgInfo(reimburseObj.CreateUserId);
             if (reimburseObj.ReimburseTravellingAllowances != null && reimburseObj.ReimburseTravellingAllowances.Count > 0)
             {
                 var rtaids = reimburseObj.ReimburseTravellingAllowances.Select(r => r.Id).ToList();
@@ -354,6 +357,7 @@ namespace OpenAuth.App.Workbench
                 filemodel.AddRange(await UnitWork.Find<ReimburseAttachment>(r => rocids.Contains(r.ReimburseId) && r.ReimburseType == 4).ToListAsync());
                 expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rocids.Contains(r.ExpenseId) && r.ExpenseType == 4).ToListAsync());
             }
+            var orgMoney= expenseOrg.Where(c => c.OrgId == userOrgInfo.OrgId).Sum(c => c.Money);
             fileids.AddRange(filemodel.Select(f => f.FileId).ToList());
             fileids.AddRange(reimburseObj.ReimburseAttachments.Select(r => r.FileId).ToList());
             var file = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
@@ -363,6 +367,8 @@ namespace OpenAuth.App.Workbench
                 UpdateTime = reimburseObj.UpdateTime,
                 Remark = reimburseObj.Remark,
                 TotalMoney = reimburseObj.TotalMoney,
+                OrgMoney = orgMoney,
+                Org = userOrgInfo?.OrgName,
                 ReimburseMainId = reimburseObj.MainId,
                 Files = reimburseObj.ReimburseAttachments.Select(r => new FileResp
                 {
@@ -543,7 +549,10 @@ namespace OpenAuth.App.Workbench
         public async Task<TableData> PendingDetails(PendingReq req)
         {
             var reult = new TableData();
-            var pendingObj = await UnitWork.Find<WorkbenchPending>(w => w.ApprovalNumber == int.Parse(req.ApprovalNumber)).FirstOrDefaultAsync();
+            var pendingObj = await UnitWork.Find<WorkbenchPending>(null)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.ApprovalNumber), w => w.ApprovalNumber == int.Parse(req.ApprovalNumber))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.SourceNumbers), w => w.SourceNumbers == int.Parse(req.SourceNumbers))
+                .FirstOrDefaultAsync();
             if (pendingObj == null && !string.IsNullOrWhiteSpace(req.ApprovalNumber))
             {
                 pendingObj = new WorkbenchPending 
