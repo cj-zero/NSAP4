@@ -91,7 +91,25 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
-
+        /// <summary>
+        /// 是否有更换类型物料未退料
+        /// </summary>
+        [HttpGet]
+        public async Task<Response<bool>> IsReturnMaterial([FromQuery] QueryQuotationListReq request)
+        {
+            Response<bool> result = new Response<bool>();
+            try
+            {
+                result.Result= await _app.IsReturnMaterial(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
         /// <summary>
         /// 加载服务单列表
         /// </summary>
@@ -157,6 +175,18 @@ namespace OpenAuth.WebApi.Controllers.Material
                 Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
             }
             return result;
+        }
+
+
+        /// <summary>
+        /// 获取物料仓库与库存
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetMaterialOnHand([FromQuery] QueryQuotationListReq request)
+        {
+            return await _app.GetMaterialOnHand(request);
         }
 
         /// <summary>
@@ -496,11 +526,11 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <returns></returns>
         [ServiceFilter(typeof(CertAuthFilter))]
         [HttpGet]
-        public async Task<IActionResult> PrintSalesOrder(string serialNumber, string sign, string timespan)
+        public async Task<TableData> PrintSalesOrder(string serialNumber, string sign, string timespan)
         {
             try
             {
-                return File(await _app.PrintSalesOrder(serialNumber), "application/pdf");
+                return await _app.PrintSalesOrder(serialNumber);
             }
             catch (Exception e)
             {

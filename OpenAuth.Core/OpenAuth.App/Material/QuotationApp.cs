@@ -7,6 +7,7 @@ using Infrastructure.Export;
 using Infrastructure.Extensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Npoi.Mapper;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Material.Request;
@@ -36,7 +37,7 @@ namespace OpenAuth.App.Material
     public class QuotationApp : OnlyUnitWorkBaeApp
     {
         private readonly FlowInstanceApp _flowInstanceApp;
-
+        private readonly IOptions<AppSetting> _appConfiguration;
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
         public readonly WorkbenchApp _workbenchApp;
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
@@ -344,11 +345,71 @@ namespace OpenAuth.App.Material
             var Quotations = await UnitWork.Find<Quotation>(null).Include(q => q.Expressages).Include(q => q.QuotationOperationHistorys).WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId.ToString()), q => q.ServiceOrderId.Equals(request.ServiceOrderId))
                      .WhereIf(!string.IsNullOrWhiteSpace(request.QuotationId.ToString()), q => q.Id.Equals(request.QuotationId)).ToListAsync();
             Quotations.ForEach(q => q.QuotationOperationHistorys = q.QuotationOperationHistorys.OrderBy(o => o.CreateTime).ToList());
-            result.Data = Quotations.Skip((request.page - 1) * request.limit).Take(request.limit).ToList();
+            var serviceOrderIds = Quotations.Select(c => c.ServiceOrderId).ToList();
+            var serivceOrder = await UnitWork.Find<ServiceOrder>(c => serviceOrderIds.Contains(c.Id)).Select(c => new { c.Id, c.TerminalCustomerId, c.TerminalCustomer }).ToListAsync();
+            result.Data = Quotations.Skip((request.page - 1) * request.limit).Take(request.limit).Select(c => new
+            {
+                c.Id,
+                c.ServiceOrderSapId,
+                c.SalesOrderId,
+                TerminalCustomerId = serivceOrder.Where(s => s.Id == c.ServiceOrderId).FirstOrDefault()?.TerminalCustomerId,
+                TerminalCustomer = serivceOrder.Where(s => s.Id == c.ServiceOrderId).FirstOrDefault()?.TerminalCustomer,
+                c.AcquisitionWay,
+                c.CreateTime,
+                c.UpDateTime,
+                c.TotalMoney,
+                c.Remark,
+                QuotationOperationHistorys = c.QuotationOperationHistorys,
+                Expressages = c.Expressages
+            }).ToList();
             result.Count = Quotations.Count();
             return result;
         }
 
+        /// <summary>
+        /// 是否有更换类型物料未退料
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<bool> IsReturnMaterial(QueryQuotationListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = false;
+            var quotation = await UnitWork.Find<Quotation>(c => c.ServiceOrderSapId == request.ServiceOrderSapId).Include(c => c.QuotationProducts).ThenInclude(c => c.QuotationMaterials).Where(c => c.QuotationProducts.Any(a => a.QuotationMaterials.Any(m => m.MaterialType == 1))).ToListAsync();
+            if (quotation.Count==0)
+                return result;
+            if (quotation.All(c=>c.SalesOrderId!=null))
+            {
+                var saleOrderIds = quotation.Select(c => c.SalesOrderId).ToList();
+                var returnote = await UnitWork.Find<ReturnNote>(c => saleOrderIds.Contains(c.SalesOrderId))
+                    .Include(c => c.ReturnNoteProducts)
+                    .ThenInclude(c => c.ReturnNoteMaterials)
+                    .ToListAsync();
+                quotation.ForEach(c =>
+                {
+                    //领料单下序列号
+                    c.QuotationProducts.ForEach(q =>
+                    {
+                        var obj = returnote?.Where(r => r.SalesOrderId == c.SalesOrderId).FirstOrDefault();
+                        var product = obj?.ReturnNoteProducts.Where(r => r.ProductCode == q.ProductCode).FirstOrDefault();//退料单序列号
+                        q.QuotationMaterials.ForEach(m =>
+                        {
+                            result = false;//全部满足则为true
+                            if (m.Count == product?.ReturnNoteMaterials.Where(nm => nm.MaterialCode == m.MaterialCode).Count())//领料单物料的数量等于退料物料的数量
+                            {
+                                result = true;
+                            }
+                        });
+                    });
+                });
+            }
+
+            return result;
+        }
         /// <summary>
         /// 加载服务单列表
         /// </summary>
@@ -667,6 +728,25 @@ namespace OpenAuth.App.Material
             var materialCodeOnHand = (await UnitWork.Find<OITW>(o => o.ItemCode.Equals(request.MaterialCode) && o.WhsCode.Equals(request.WhsCode)).FirstOrDefaultAsync())?.OnHand;
             result.Data = new { OnHand = materialCodeOnHand };
             return result;
+        }
+
+        /// <summary>
+        /// 获取物料仓库与库存
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetMaterialOnHand(QueryQuotationListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var query = await UnitWork.Find<OITW>(o => o.ItemCode == request.MaterialCode && o.OnHand > 0).Select(c => new { c.ItemCode, c.OnHand, c.WhsCode }).ToListAsync();
+            return new TableData
+            {
+                Data = query
+            };
         }
 
         /// <summary>
@@ -2494,93 +2574,117 @@ namespace OpenAuth.App.Material
         /// </summary>
         /// <param name="QuotationId"></param>
         /// <returns></returns>
-        public async Task<byte[]> PrintSalesOrder(string QuotationId)
-        
+        public async Task<TableData> PrintSalesOrder(string SaleOrderId)
         {
-            var quotationId = int.Parse(QuotationId);
-            var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId) && q.QuotationStatus < 10).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
-            if (model != null || model == null)
+            TableData result = new TableData();
+            var quotation = await UnitWork.Find<Quotation>(c => c.SalesOrderId == int.Parse(SaleOrderId)).FirstOrDefaultAsync();
+            if (quotation==null)
             {
-                throw new Exception("暂未开放销售订单打印，请前往3.0打印。");
-                //throw new Exception("已出库，不可打印。");
+                throw new Exception("领料单不存在");
             }
-            var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
-            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_AcquisitionWay") || u.TypeId.Equals("SYS_DeliveryMethod")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
-            var createTime = Convert.ToDateTime(model.QuotationOperationHistorys.Where(q => q.ApprovalStage == "6.0").FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd");
-            var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderHeader.html");
-            var text = System.IO.File.ReadAllText(url);
-            text = text.Replace("@Model.SalesOrderId", model.SalesOrderId.ToString());
-            text = text.Replace("@Model.CreateTime", createTime);
-            text = text.Replace("@Model.SalesUser", model?.CreateUser.ToString());
-            text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.SalesOrderId.ToString()));
-            text = text.Replace("@Model.CustomerId", serverOrder?.TerminalCustomerId.ToString());
-            text = text.Replace("@Model.CollectionAddress", model?.CollectionAddress.ToString());
-            text = text.Replace("@Model.ShippingAddress", model?.ShippingAddress.ToString());
-            text = text.Replace("@Model.CustomerName", serverOrder?.TerminalCustomer.ToString());
-            text = text.Replace("@Model.NewestContacter", serverOrder?.NewestContacter.ToString());
-            text = text.Replace("@Model.NewestContactTel", serverOrder?.NewestContactTel.ToString());
-            text = text.Replace("@Model.DeliveryMethod", CategoryList.Where(c => c.DtValue.Equals(model?.DeliveryMethod) && c.TypeId.Equals("SYS_DeliveryMethod")).FirstOrDefault()?.Name);
-            text = text.Replace("@Model.AcquisitionWay", CategoryList.Where(c => c.DtValue.Equals(model?.AcquisitionWay) && c.TypeId.Equals("SYS_AcquisitionWay")).FirstOrDefault()?.Name);
-            text = text.Replace("@Model.DeliveryDate", Convert.ToDateTime(model?.DeliveryDate).ToString("yyyy.MM.dd"));
-            text = text.Replace("@Model.AcceptancePeriod", Convert.ToDateTime(model?.DeliveryDate).AddDays(model.AcceptancePeriod == null ? 0 : (double)model.AcceptancePeriod).ToString("yyyy.MM.dd"));
-            text = text.Replace("@Model.Remark", model?.Remark);
-            string InvoiceCompany = "", Location = "", website = "", seal = "", width = "", height = "";
+            var category = await UnitWork.Find<Category>(c => c.TypeId == "SYS_InvoiceCompany" && c.DtValue == quotation.InvoiceCompany).FirstOrDefaultAsync();
+            if (category==null)
+            {
+                throw new Exception("开票单位不存在");
+            }
+            HttpHelper httpHelper = new HttpHelper(_appConfiguration.Value.ERP3Url);
+            var resultApi = httpHelper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "DocEntry", quotation.SalesOrderId.ToString() },{ "Indicator", category .DtCode} }, "/spv/exportsaleorder.ashx");
+            if (resultApi["msg"] == "success")
+            {
+                var url = resultApi["url"].Replace("192.168.0.208", "218.17.149.195");
+                result.Data = url;
+            }
+            else
+            {
+                result.Code = 500;
+                result.Message = resultApi["msg"];
+            }
+            #region MyRegion
+            //var quotationId = int.Parse(QuotationId);
+            //var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId) && q.QuotationStatus < 10).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
+            //if (model != null || model == null)
+            //{
+            //    throw new Exception("暂未开放销售订单打印，请前往3.0打印。");
+            //    //throw new Exception("已出库，不可打印。");
+            //}
+            //var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
+            //var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_AcquisitionWay") || u.TypeId.Equals("SYS_DeliveryMethod")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
+            //var createTime = Convert.ToDateTime(model.QuotationOperationHistorys.Where(q => q.ApprovalStage == "6.0").FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd");
+            //var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderHeader.html");
+            //var text = System.IO.File.ReadAllText(url);
+            //text = text.Replace("@Model.SalesOrderId", model.SalesOrderId.ToString());
+            //text = text.Replace("@Model.CreateTime", createTime);
+            //text = text.Replace("@Model.SalesUser", model?.CreateUser.ToString());
+            //text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.SalesOrderId.ToString()));
+            //text = text.Replace("@Model.CustomerId", serverOrder?.TerminalCustomerId.ToString());
+            //text = text.Replace("@Model.CollectionAddress", model?.CollectionAddress.ToString());
+            //text = text.Replace("@Model.ShippingAddress", model?.ShippingAddress.ToString());
+            //text = text.Replace("@Model.CustomerName", serverOrder?.TerminalCustomer.ToString());
+            //text = text.Replace("@Model.NewestContacter", serverOrder?.NewestContacter.ToString());
+            //text = text.Replace("@Model.NewestContactTel", serverOrder?.NewestContactTel.ToString());
+            //text = text.Replace("@Model.DeliveryMethod", CategoryList.Where(c => c.DtValue.Equals(model?.DeliveryMethod) && c.TypeId.Equals("SYS_DeliveryMethod")).FirstOrDefault()?.Name);
+            //text = text.Replace("@Model.AcquisitionWay", CategoryList.Where(c => c.DtValue.Equals(model?.AcquisitionWay) && c.TypeId.Equals("SYS_AcquisitionWay")).FirstOrDefault()?.Name);
+            //text = text.Replace("@Model.DeliveryDate", Convert.ToDateTime(model?.DeliveryDate).ToString("yyyy.MM.dd"));
+            //text = text.Replace("@Model.AcceptancePeriod", Convert.ToDateTime(model?.DeliveryDate).AddDays(model.AcceptancePeriod == null ? 0 : (double)model.AcceptancePeriod).ToString("yyyy.MM.dd"));
+            //text = text.Replace("@Model.Remark", model?.Remark);
+            //string InvoiceCompany = "", Location = "", website = "", seal = "", width = "", height = "";
 
-            if (Convert.ToInt32(model.InvoiceCompany) == 1)
-            {
-                InvoiceCompany = "深圳市新威尔电子有限公司 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 交通银行股份有限公司&nbsp;&nbsp;深圳梅林支行 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;443066388018001726113";
-                Location = "深圳市福田区梅林街道梅都社区中康路 128 号卓越梅林中心广场(北区)3 号楼 1206 电话：0755-83108866 免费服务专线：800-830-8866";
-                website = "www.neware.com.cn &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-                seal = "新威尔";
-                width = "350px";
-                height = "350px";
-            }
-            else if (Convert.ToInt32(model.InvoiceCompany) == 2)
-            {
-                InvoiceCompany = "东莞新威检测技术有限公司 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 交通银行股份有限公司 &nbsp;&nbsp; 东莞塘厦支行 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;483007618018810043352";
-                Location = "广东省东莞市塘厦镇龙安路5号5栋101室";
-                seal = "东莞新威";
-                width = "182px";
-                height = "193px";
-                text = text.Replace("@Model.logo", "hidden='hidden'");
-            }
-            var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderHeader{model.Id}.html");
-            System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
-            var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderFooter.html");
-            var foottext = System.IO.File.ReadAllText(footUrl);
-            foottext = foottext.Replace("@Model.Corporate", InvoiceCompany);
-            foottext = foottext.Replace("@Model.PrintNo", model.PrintNo);
-            foottext = foottext.Replace("@Model.Location", Location);
-            foottext = foottext.Replace("@Model.Website", website);
-            foottext = foottext.Replace("@Model.PrintTheNumber", (model.PrintTheNumber + 1).ToString());
-            foottext = foottext.Replace("@Model.seal", seal);
-            foottext = foottext.Replace("@Model.width", width);
-            foottext = foottext.Replace("@Model.height", height);
-            var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderFooter{model.Id}.html");
-            System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
-            var materials = model.QuotationMergeMaterials.Select(q => new PrintSalesOrderResp
-            {
-                MaterialCode = q.MaterialCode,
-                MaterialDescription = q.MaterialDescription,
-                Count = q.Count.ToString(),
-                Unit = q.Unit,
-                SalesPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.DiscountPrices,
-                TotalPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.TotalPrice
-            }).OrderBy(m => m.MaterialCode).ToList();
-            var datas = await ExportAllHandler.Exporterpdf(materials, "PrintSalesOrder.cshtml", pdf =>
-            {
-                pdf.IsWriteHtml = true;
-                pdf.PaperKind = PaperKind.A4;
-                pdf.Orientation = Orientation.Portrait;
-                pdf.IsEnablePagesCount = true;
-                pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
-                pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
-            });
-            System.IO.File.Delete(tempUrl);
-            System.IO.File.Delete(foottempUrl);
-            await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(quotationId), q => new Quotation { PrintTheNumber = q.PrintTheNumber + 1 });
-            await UnitWork.SaveAsync();
-            return datas;
+            //if (Convert.ToInt32(model.InvoiceCompany) == 1)
+            //{
+            //    InvoiceCompany = "深圳市新威尔电子有限公司 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 交通银行股份有限公司&nbsp;&nbsp;深圳梅林支行 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;443066388018001726113";
+            //    Location = "深圳市福田区梅林街道梅都社区中康路 128 号卓越梅林中心广场(北区)3 号楼 1206 电话：0755-83108866 免费服务专线：800-830-8866";
+            //    website = "www.neware.com.cn &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+            //    seal = "新威尔";
+            //    width = "350px";
+            //    height = "350px";
+            //}
+            //else if (Convert.ToInt32(model.InvoiceCompany) == 2)
+            //{
+            //    InvoiceCompany = "东莞新威检测技术有限公司 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 交通银行股份有限公司 &nbsp;&nbsp; 东莞塘厦支行 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;483007618018810043352";
+            //    Location = "广东省东莞市塘厦镇龙安路5号5栋101室";
+            //    seal = "东莞新威";
+            //    width = "182px";
+            //    height = "193px";
+            //    text = text.Replace("@Model.logo", "hidden='hidden'");
+            //}
+            //var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderHeader{model.Id}.html");
+            //System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
+            //var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "SalesOrderFooter.html");
+            //var foottext = System.IO.File.ReadAllText(footUrl);
+            //foottext = foottext.Replace("@Model.Corporate", InvoiceCompany);
+            //foottext = foottext.Replace("@Model.PrintNo", model.PrintNo);
+            //foottext = foottext.Replace("@Model.Location", Location);
+            //foottext = foottext.Replace("@Model.Website", website);
+            //foottext = foottext.Replace("@Model.PrintTheNumber", (model.PrintTheNumber + 1).ToString());
+            //foottext = foottext.Replace("@Model.seal", seal);
+            //foottext = foottext.Replace("@Model.width", width);
+            //foottext = foottext.Replace("@Model.height", height);
+            //var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"SalesOrderFooter{model.Id}.html");
+            //System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
+            //var materials = model.QuotationMergeMaterials.Select(q => new PrintSalesOrderResp
+            //{
+            //    MaterialCode = q.MaterialCode,
+            //    MaterialDescription = q.MaterialDescription,
+            //    Count = q.Count.ToString(),
+            //    Unit = q.Unit,
+            //    SalesPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.DiscountPrices,
+            //    TotalPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.TotalPrice
+            //}).OrderBy(m => m.MaterialCode).ToList();
+            //var datas = await ExportAllHandler.Exporterpdf(materials, "PrintSalesOrder.cshtml", pdf =>
+            //{
+            //    pdf.IsWriteHtml = true;
+            //    pdf.PaperKind = PaperKind.A4;
+            //    pdf.Orientation = Orientation.Portrait;
+            //    pdf.IsEnablePagesCount = true;
+            //    pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+            //    pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
+            //});
+            //System.IO.File.Delete(tempUrl);
+            //System.IO.File.Delete(foottempUrl);
+            //await UnitWork.UpdateAsync<Quotation>(q => q.Id.Equals(quotationId), q => new Quotation { PrintTheNumber = q.PrintTheNumber + 1 });
+            //await UnitWork.SaveAsync();
+            #endregion
+            return result;
         }
 
         /// <summary>
@@ -2981,8 +3085,10 @@ namespace OpenAuth.App.Material
             await UnitWork.SaveAsync();
         }
 
-        public QuotationApp(IUnitWork unitWork, ICapPublisher capBus, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
+
+        public QuotationApp(IUnitWork unitWork, ICapPublisher capBus, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IOptions<AppSetting> appConfiguration, IAuth auth) : base(unitWork, auth)
         {
+            _appConfiguration = appConfiguration;
             _flowInstanceApp = flowInstanceApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _capBus = capBus;

@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Infrastructure;
+using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
+using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +25,7 @@ namespace OpenAuth.WebApi.Controllers
             _app = app;
         }
 
+        #region 主页报表
         /// <summary>
         /// 主页顶部数量汇总
         /// </summary>
@@ -41,5 +45,200 @@ namespace OpenAuth.WebApi.Controllers
         {
             return await _app.GetChartInfo();
         }
+
+        /// <summary>
+        /// 呼叫来源
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> CallSource([FromQuery] QueryReportReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.CallSource(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 服务呼叫
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> ServiceCall([FromQuery] QueryReportReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.ServiceCall(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 报销金额与客诉服务
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> Reimburseinfo([FromQuery] QueryReportReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.Reimburseinfo(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 销售金额
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> SaleAmount([FromQuery] QueryReportReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.SaleAmount(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 个代金额
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> SettlementAmount([FromQuery] QueryReportReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.SettlementAmount(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取客诉服务
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetServiceOrderInfo([FromQuery] QueryReportReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetServiceOrderInfo(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+        #endregion
+
+        #region 服务呼叫报表
+        /// <summary>
+        /// 服务呼叫分布
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> ServiceOrderDistribution([FromQuery] QueryReportReq req)
+        {
+            return await _app.ServiceOrderDistribution(req);
+        }
+
+        /// <summary>
+        /// 服务呼叫来源
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> ServiceOrderSource([FromQuery] QueryReportReq req)
+        {
+            return await _app.ServiceOrderSource(req);
+        }
+
+        /// <summary>
+        /// 服务呼叫状态和问题类型分析
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> ServiceOrderStatusAndProblemType([FromQuery] QueryReportReq req)
+        {
+            return await _app.ServiceOrderStatusAndProblemType(req);
+        }
+
+        /// <summary>
+        /// 催办次数
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> UrgingTimes([FromQuery] QueryReportReq req)
+        {
+            return await _app.UrgingTimes(req);
+        }
+        /// <summary>
+        /// 呼叫主题进度分析
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> ServiceThemeProgress([FromQuery] QueryReportReq req)
+        {
+            return await _app.ServiceThemeProgress(req);
+        }
+        #endregion
     }
 }

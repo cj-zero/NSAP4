@@ -227,6 +227,7 @@ namespace OpenAuth.App
                 q.Area,
                 q.Addr,
                 q.U_SAP_ID,
+                q.FromAppUserId
             });
 
             var list = (await query
@@ -249,7 +250,8 @@ namespace OpenAuth.App
                 s.City,
                 s.Area,
                 s.Addr,
-                s.U_SAP_ID
+                s.U_SAP_ID,
+                s.FromAppUserId
             });
             result.Data = list;
             result.Count = query.Count();
@@ -271,7 +273,10 @@ namespace OpenAuth.App
             var obj = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(id))
                 .Include(s => s.ServiceOrderSNs)
                 .Include(s => s.ServiceOrderPictures).FirstOrDefaultAsync();
+            var log = await UnitWork.Find<ServiceOrderLog>(c => c.ServiceOrderId == id && c.ActionType == "撤销操作").FirstOrDefaultAsync();
             var result = obj.MapTo<ServiceOrderDetailsResp>();
+            result.RevokeUser = log?.CreateUserName;
+            result.RevokeTime = log?.CreateTime;
             return result;
         }
 
@@ -1081,13 +1086,18 @@ namespace OpenAuth.App
                 loginUser = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(req.AppUserId)).Include(u=>u.User).Select(u=>u.User).FirstOrDefaultAsync();
             }
             var result = new TableData();
+            List<string> techName = new List<string>();
+            if (!string.IsNullOrWhiteSpace(req.QryTechName))
+                techName = req.QryTechName.Split(",").ToList();
+
             var ids = await UnitWork.Find<ServiceWorkOrder>(null)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.Status.Equals(Convert.ToInt32(req.QryState)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ManufacturerSerialNumber.Contains(req.QryManufSN))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ProblemTypeId.Equals(req.QryProblemType))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromType), q => q.FromType.Equals(Convert.ToInt32(req.QryFromType)))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.QryTechName), q => q.CurrentUser.Contains(req.QryTechName))
+                //.WhereIf(!string.IsNullOrWhiteSpace(req.QryTechName), q => q.CurrentUser.Contains(req.QryTechName))
+                .WhereIf(techName.Count > 0, q => techName.Contains(q.CurrentUser))
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromTheme), q => q.FromTheme.Contains(req.QryFromTheme))
                 .WhereIf(req.CompleteDate != null, q => q.CompleteDate > req.CompleteDate)
@@ -1147,7 +1157,7 @@ namespace OpenAuth.App
                 && (string.IsNullOrWhiteSpace(req.QryManufSN) || a.ManufacturerSerialNumber.Contains(req.QryManufSN))
                 //&& ((req.QryCreateTimeFrom == null || req.QryCreateTimeTo == null) || (a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
                 && (string.IsNullOrWhiteSpace(req.QryFromType) || a.FromType.Equals(Convert.ToInt32(req.QryFromType)))
-                && (string.IsNullOrWhiteSpace(req.QryTechName) || a.CurrentUser.Contains(req.QryTechName))
+                && (string.IsNullOrWhiteSpace(req.QryTechName) || a.CurrentUser.Contains(req.QryTechName) || techName.Contains(a.CurrentUser))
                 && (string.IsNullOrWhiteSpace(req.QryProblemType) || a.ProblemTypeId.Equals(req.QryProblemType))
                 && (string.IsNullOrWhiteSpace(req.QryFromTheme) || a.FromTheme.Contains(req.QryFromTheme))
                 && (req.CompleteDate == null || (a.CompleteDate > req.CompleteDate))
@@ -1811,6 +1821,13 @@ namespace OpenAuth.App
                 throw new CommonException("已确认不可取消", 60019);
             }
             await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id == req.serviceOrderId, s => new ServiceOrder { Status = 3, Remark = req.Message });
+            //保存日志
+            await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq
+            {
+                ServiceOrderId = Convert.ToInt32(req.serviceOrderId),
+                Action = $"{loginContext.User.Name}执行撤销操作，撤销ID为{ Convert.ToInt32(req.serviceOrderId)}的服务单",
+                ActionType = "撤销操作",
+            });
             await UnitWork.SaveAsync();
         }
 
@@ -3015,6 +3032,7 @@ namespace OpenAuth.App
                             NewestContacter = string.IsNullOrEmpty(a.NewestContacter) ? a.Contacter : a.NewestContacter,
                             NewestContactTel = string.IsNullOrEmpty(a.NewestContactTel) ? a.ContactTel : a.NewestContactTel,
                             AppCustId = a.AppUserId,
+                            Reamrk = a.ServiceWorkOrders.Count > 0 ? a.ServiceWorkOrders.FirstOrDefault().Remark : "",
                             ServiceWorkOrders = a.ServiceWorkOrders.Where(w => w.CurrentUserId == CurrentUserId && (string.IsNullOrEmpty(MaterialType) ? true : "无序列号".Equals(MaterialType) ? w.MaterialCode == "无序列号" : w.MaterialCode.Substring(0, w.MaterialCode.IndexOf("-")) == MaterialType)).Select(o => new
                             {
                                 o.Id,
@@ -3052,6 +3070,7 @@ namespace OpenAuth.App
                     a.CustomerId,
                     a.TerminalCustomer,
                     a.TerminalCustomerId,
+                    a.Reamrk,
                     ProblemTypeName = string.IsNullOrEmpty(a.ProblemTypeName) ? a.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Name : a.ProblemTypeName,
                     ProblemTypeId = string.IsNullOrEmpty(a.ProblemTypeId) ? a.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Id : a.ProblemTypeId,
                     Services = GetServiceFromTheme(a.ServiceWorkOrders.FirstOrDefault()?.FromTheme),
@@ -3889,7 +3908,7 @@ namespace OpenAuth.App
             var completeReportList = await UnitWork.Find<CompletionReport>(w => serviceOrderIds.Contains((int)w.ServiceOrderId)).Select(s => new { s.ServiceOrderId, s.TechnicianId, s.IsReimburse, s.Id, s.ServiceMode, MaterialType = s.MaterialCode == "无序列号" ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) }).ToListAsync();
             //获取我的报销单集合
             var reimburseList = await UnitWork.Find<ReimburseInfo>(r => r.CreateUserId == userInfo.UserID).ToListAsync();
-            var query = UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id) && w.AllowOrNot==0)
+            var query = UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id) && w.AllowOrNot == 0)
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                 .Include(s => s.ServiceFlows)
                 .WhereIf(req.Type == 1, s => s.ServiceWorkOrders.All(a => a.OrderTakeType == 0))//待处理 所有设备类型都未操作
@@ -3920,6 +3939,7 @@ namespace OpenAuth.App
                     s.CustomerName,
                     s.TerminalCustomer,
                     s.VestInOrg,
+                    Reamrk = s.ServiceWorkOrders.Count > 0 ? s.ServiceWorkOrders.FirstOrDefault().Remark : "",
                     MaterialCode = s.VestInOrg == 2 ? s.ServiceWorkOrders.Where(c => c.ServiceOrderId == s.Id).FirstOrDefault().MaterialCode : "",
                     ManufacturerSerialNumber = s.VestInOrg == 2 ? s.ServiceWorkOrders.Where(c => c.ServiceOrderId == s.Id).FirstOrDefault().ManufacturerSerialNumber : "",
                     Count = s.ServiceWorkOrders.Where(w => w.ServiceOrderId == s.Id && w.CurrentUserId == req.TechnicianId).Count(),
@@ -3967,6 +3987,7 @@ namespace OpenAuth.App
                 s.VestInOrg,
                 s.MaterialCode,
                 s.ManufacturerSerialNumber,
+                s.Reamrk,
                 FromTheme = s.MaterialInfo.Select(s => s.FromTheme).FirstOrDefault(),
                 TransactionType = s.MaterialInfo.Select(s => s.TransactionType).FirstOrDefault(),
                 Priority = s.MaterialInfo.Select(s => s.Priority).FirstOrDefault(),
@@ -4324,7 +4345,8 @@ namespace OpenAuth.App
             var loginUser=await UnitWork.Find<User>(u => u.Id.Equals(userId)).FirstOrDefaultAsync();
             var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == userId).Select(r => r.SecondId).ToListAsync();
             var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).ToListAsync();
-            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_TravellingAllowance") && orgname.Contains(u.Name)).Select(u => new { u.Name, u.DtValue, u.Description }).ToListAsync();
+            // && orgname.Contains(u.Name)
+            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_TravellingAllowance")).Select(u => new { u.Name, u.DtValue, u.Description }).ToListAsync();
             CategoryList = CategoryList.Where(u => orgname.Contains(u.Name) || u.Description.Split(",").Contains(loginUser.Name)).ToList();
             if (CategoryList != null && CategoryList.Count() >= 1)
             {

@@ -17,6 +17,8 @@ using Infrastructure.Mail;
 using System.IO;
 using Infrastructure.Export;
 using DinkToPdf;
+using OpenAuth.Repository.Domain.Workbench;
+using Microsoft.AspNetCore.Http;
 
 namespace OpenAuth.App.Material
 {
@@ -95,6 +97,10 @@ namespace OpenAuth.App.Material
                 var subdept = await UnitWork.Find<InternalContactDeptInfo>(c => c.UserId == loginContext.User.Id && c.HandleTime != null).Select(c => c.InternalContactId).ToListAsync();
                 query = query.Where(c => subdept.Contains(c.Id) && c.Status != 9);//执行中或停用中
             }
+            else if (req.PageType == 6)
+            {
+                query = query.Where(c => c.Status == 4 || c.Status == 7);//执行中或已完成
+            }
 
             var resp= await query
                                 .Skip((req.page - 1) * req.limit)
@@ -152,11 +158,12 @@ namespace OpenAuth.App.Material
                     obj.CardCode = string.Join(",", req.CardCodes);
                     obj.CardName = string.Join(",", req.CardNames);
                     obj.Reason = string.Join(",", req.Reasons);
+                    obj.MaterialOrder = string.Join(",", req.MaterialOrder);
                     obj.AdaptiveRange = string.Join(",", req.AdaptiveRanges);
 
                     #region 添加子表数据
                     obj.InternalContactAttchments = new List<InternalContactAttchment>();
-                    obj.InternalContactBatchNumbers = new List<InternalContactBatchNumber>();
+                    //obj.InternalContactBatchNumbers = new List<InternalContactBatchNumber>();
                     obj.InternalContactDeptInfos = new List<InternalContactDeptInfo>();
                     //附件
                     req.Attchments.ForEach(c =>
@@ -164,9 +171,18 @@ namespace OpenAuth.App.Material
                         obj.InternalContactAttchments.Add(new InternalContactAttchment { FileId = c, InternalContactId = (single != null && single.Id > 0) ? single.Id : 0 });
                     });
                     //批次号
-                    req.BatchNumbers.ForEach(c =>
+                    //req.BatchNumbers.ForEach(c =>
+                    //{
+                    //    obj.InternalContactBatchNumbers.Add(new InternalContactBatchNumber { Number = c, InternalContactId = (single != null && single.Id > 0) ? single.Id : 0 });
+                    //});
+                    obj.InternalContactBatchNumbers.ForEach(c =>
                     {
-                        obj.InternalContactBatchNumbers.Add(new InternalContactBatchNumber { Number = c, InternalContactId = (single != null && single.Id > 0) ? single.Id : 0 });
+                        c.InternalContactId = (single != null && single.Id > 0) ? single.Id : 0;
+                    });
+                    //物料
+                    obj.InternalcontactMaterials.ForEach(c =>
+                    {
+                        c.InternalContactId = (single != null && single.Id > 0) ? single.Id : 0;
                     });
 
                     //接收部门
@@ -254,6 +270,7 @@ namespace OpenAuth.App.Material
                         obj.CreateTime = DateTime.Now;
                         obj.CreateUserId = loginContext.User.Id;
                         obj.CreateUser = loginContext.User.Name;
+                        obj.IsTentative = false;
 
 
                         //创建流程
@@ -272,11 +289,24 @@ namespace OpenAuth.App.Material
                         //设置测试环节执行人
                         await _flowInstanceApp.ModifyNodeUser(obj.FlowInstanceId, true, new string[] { obj.CheckApproveId }, obj.CheckApprove, false);
 
+                        await _workbenchApp.AddOrUpdate(new WorkbenchPending
+                        {
+                            OrderType = 5,
+                            TerminalCustomer = obj.CardName,
+                            TerminalCustomerId = obj.CardCode,
+                            ServiceOrderId = 0,
+                            ServiceOrderSapId = 0,
+                            UpdateTime = obj.CreateTime,
+                            Remark = "",
+                            FlowInstanceId = obj.FlowInstanceId,
+                            TotalMoney = 0,
+                            Petitioner = obj.CreateUser,
+                            SourceNumbers = Convert.ToInt32(obj.IW),
+                            PetitionerId = obj.CreateUserId
+                        });
+
                         await UnitWork.SaveAsync();
 
-                        #region 发送邮件
-                        await SebdEmail(obj, "");
-                        #endregion
                     }
                     await transaction.CommitAsync();
                 }
@@ -302,7 +332,10 @@ namespace OpenAuth.App.Material
             //mailRequest.ToUsers = new List<MailUser> { new MailUser { Name = "licong", Address = "licong@neware.com.cn" } };
             userInfo.ForEach(c =>
             {
-                mailRequest.ToUsers.Add(new MailUser { Name = c.Account, Address = c.Email });
+                if (!string.IsNullOrWhiteSpace(c.Email))
+                {
+                    mailRequest.ToUsers.Add(new MailUser { Name = c.Account, Address = c.Email });
+                }
             });
             //附件
             mailRequest.Attachments = new List<MailAttachment>();
@@ -366,6 +399,7 @@ namespace OpenAuth.App.Material
                             .Include(c => c.InternalContactAttchments)
                             .Include(c => c.InternalContactBatchNumbers)
                             .Include(c => c.InternalContactDeptInfos)
+                            .Include(c => c.InternalcontactMaterials)
                             .FirstOrDefaultAsync();
             //操作历史
             var operationHistories = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.InstanceId == detail.FlowInstanceId)
@@ -396,7 +430,8 @@ namespace OpenAuth.App.Material
                 detail.Id,
                 detail.IW,
                 detail.Theme,
-                CardCodes =!string.IsNullOrWhiteSpace(detail.CardCode)? detail.CardCode.Split(","):new string[] { },
+                detail.IsTentative,
+                CardCodes = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardCode.Split(",") : new string[] { },
                 CardNames = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardName.Split(",") : new string[] { },
                 detail.Status,
                 detail.RdmsNo,
@@ -405,16 +440,19 @@ namespace OpenAuth.App.Material
                 detail.ProductionNo,
                 AdaptiveRanges = detail.AdaptiveRange.Split(","),
                 Reasons = detail.Reason.Split(","),
+                MaterialOrder = detail.MaterialOrder.Split(","),
+                //BatchNumbers = detail.InternalContactBatchNumbers,
                 BatchNumbers = detail.InternalContactBatchNumbers,
                 detail.CheckApproveId,
                 detail.CheckApprove,
                 detail.DevelopApproveId,
                 detail.DevelopApprove,
-                InternalContactReceiveDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 1).Select(c => new { c.OrgId, c.OrgName }).ToList(),
-                InternalContactExecDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 2).Select(c => new { c.OrgId, c.OrgName }).ToList(),
+                InternalContactReceiveDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 1).Select(c => new { c.OrgId, c.OrgName, c.UserId, c.UserName }).ToList(),
+                InternalContactExecDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 2).Select(c => new { c.OrgId, c.OrgName, c.UserId, c.UserName }).ToList(),
                 detail.Content,
                 reviceOrgList,
                 execOrgList,
+                InternalcontactMaterials = detail.InternalcontactMaterials,
                 operationHistories
             };
             return result;
@@ -433,7 +471,11 @@ namespace OpenAuth.App.Material
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
 
-            var internalContact = await UnitWork.Find<InternalContact>(c => c.Id == req.Id).FirstOrDefaultAsync();
+            var internalContact = await UnitWork.Find<InternalContact>(c => c.Id == req.Id)
+                                        .Include(c => c.InternalContactDeptInfos)
+                                        .Include(c => c.InternalContactAttchments)
+                                        .Include(c => c.InternalContactBatchNumbers)
+                                        .FirstOrDefaultAsync();
             var flowinstace = await UnitWork.Find<FlowInstance>(c => c.Id == internalContact.FlowInstanceId).FirstOrDefaultAsync();
             //审批
             if (req.HanleType == 1)
@@ -457,16 +499,54 @@ namespace OpenAuth.App.Material
                 }
                 else
                 {
-                    await _flowInstanceApp.Verification(verificationReq);
-                    if (loginContext.Roles.Any(c => c.Name.Equal("联络单测试审批")) && flowinstace.ActivityName == "测试审批") 
+                    if (req.IsTentative)
                     {
-                        internalContact.Status = 2;
-                        //设置研发环节执行人
-                        await _flowInstanceApp.ModifyNodeUser(flowinstace.Id, true, new string[] { internalContact.DevelopApproveId }, internalContact.DevelopApprove, false);
-                    } 
-                    else if (loginContext.Roles.Any(c => c.Name.Equal("联络单研发审批")) && flowinstace.ActivityName == "研发审批") internalContact.Status = 3;
-                    else if (loginContext.Roles.Any(c => c.Name.Equal("总经理")) && flowinstace.ActivityName == "总经理审批") internalContact.Status = 4;
-                    else internalContact.Status = 1;//驳回 撤回提交
+                        //添加操作记录
+                        FlowInstanceOperationHistory flowInstanceOperationHistory = new FlowInstanceOperationHistory
+                        {
+                            InstanceId = internalContact.FlowInstanceId,
+                            CreateUserId = loginContext.User.Id,
+                            CreateUserName = loginContext.User.Name,
+                            CreateDate = DateTime.Now,
+                            Content = flowinstace.ActivityName,
+                            Remark = req.Remark,
+                            ApprovalResult = "待定",
+                            //ActivityId = flowInstance.ActivityId,
+                        };
+                        var fioh = await UnitWork.Find<FlowInstanceOperationHistory>(r => r.InstanceId.Equals(internalContact.FlowInstanceId)).OrderByDescending(r => r.CreateDate).FirstOrDefaultAsync();
+                        if (fioh != null)
+                        {
+                            flowInstanceOperationHistory.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalSeconds);
+                        }
+
+                        await UnitWork.AddAsync(flowInstanceOperationHistory);
+                        await UnitWork.UpdateAsync<InternalContact>(c => c.Id == req.Id, c => new InternalContact
+                        {
+                            IsTentative = true
+                        }); ;
+                    }
+                    else
+                    {
+                        await _flowInstanceApp.Verification(verificationReq);
+                        if (loginContext.Roles.Any(c => c.Name.Equal("联络单测试审批")) && flowinstace.ActivityName == "测试审批")
+                        {
+                            internalContact.Status = 2;
+                            //设置研发环节执行人
+                            await _flowInstanceApp.ModifyNodeUser(flowinstace.Id, true, new string[] { internalContact.DevelopApproveId }, internalContact.DevelopApprove, false);
+                        }
+                        else if (loginContext.Roles.Any(c => c.Name.Equal("联络单研发审批")) && flowinstace.ActivityName == "研发审批") internalContact.Status = 3;
+                        else if (loginContext.Roles.Any(c => c.Name.Equal("总经理")) && flowinstace.ActivityName == "总经理审批")
+                        {
+                            internalContact.Status = 4;
+
+                            #region 发送邮件
+                            await SebdEmail(internalContact, "");
+                            #endregion
+                        }
+                        else internalContact.Status = 1;//驳回 撤回提交
+
+                    }
+
                 }
 
                 await UnitWork.UpdateAsync<InternalContact>(c => c.Id == req.Id, c => new InternalContact
@@ -474,20 +554,26 @@ namespace OpenAuth.App.Material
                     Status = internalContact.Status,
                     ApproveTime = internalContact.Status == 4 ? DateTime.Now : internalContact.ApproveTime
                 });
+
+                //修改全局待处理
+                await UnitWork.UpdateAsync<WorkbenchPending>(w => w.SourceNumbers == internalContact.IW.ToInt32() && w.OrderType == 5, w => new WorkbenchPending
+                {
+                    UpdateTime = DateTime.Now,
+                });
             }
             else if (req.HanleType == 2)//执行
             {
                 var loginOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault();
                 if (req.ExecType == 1)//接收
                 {
-                    await UnitWork.UpdateAsync<InternalContactDeptInfo>(c => c.InternalContactId == req.Id && c.OrgId == loginOrg.Id && c.Type == 1, c => new InternalContactDeptInfo
+                    await UnitWork.UpdateAsync<InternalContactDeptInfo>(c => c.InternalContactId == req.Id && c.UserId == loginContext.User.Id && c.Type == 1, c => new InternalContactDeptInfo
                     {
                         HandleTime = DateTime.Now
                     });
                 }
                 else if (req.ExecType == 2)//执行
                 {
-                    await UnitWork.UpdateAsync<InternalContactDeptInfo>(c => c.InternalContactId == req.Id && c.OrgId == loginOrg.Id && c.Type == 2, c => new InternalContactDeptInfo
+                    await UnitWork.UpdateAsync<InternalContactDeptInfo>(c => c.InternalContactId == req.Id && c.UserId == loginContext.User.Id && c.Type == 2, c => new InternalContactDeptInfo
                     {
                         HandleTime = DateTime.Now,
                         Content = req.Remark
@@ -495,15 +581,16 @@ namespace OpenAuth.App.Material
                 }
                 //await UnitWork.SaveAsync();
 
-                //var dept = await UnitWork.Find<InternalContactDeptInfo>(c => c.InternalContactId == req.Id).AllAsync(c => c.HandleTime != null);
-                //if (dept)
-                //{
-                //    //全部执行完后
-                //    await UnitWork.UpdateAsync<InternalContact>(c => c.Id == req.Id, c => new InternalContact
-                //    {
-                //        Status = 7
-                //    });
-                //}
+                var dept = await UnitWork.Find<InternalContactDeptInfo>(c => c.InternalContactId == req.Id).AllAsync(c => c.HandleTime != null);
+                if (dept)
+                {
+                    //全部执行完后
+                    await UnitWork.UpdateAsync<InternalContact>(c => c.Id == req.Id, c => new InternalContact
+                    {
+                        Status = 7,
+                        ExecTime = DateTime.Now
+                    });
+                }
             }
             await UnitWork.SaveAsync();
         }
@@ -674,6 +761,78 @@ namespace OpenAuth.App.Material
             System.IO.File.Delete(tempUrl);
             System.IO.File.Delete(contentTemp);
             return datas;
+        }
+
+        /// <summary>
+        /// 上传图片
+        /// </summary>
+        /// <param name="files"></param>
+        /// <returns></returns>
+        public List<string> UpdloadImg(IFormFileCollection files)
+        {
+            if (files.Count < 1)
+                throw new Exception("文件为空。");
+            //返回的文件地址
+            List<string> filenames = new List<string>();
+            var now = DateTime.Now;
+            //文件存储路径
+            var filePath = string.Format("/wwwroot/internalcontactImg/{0}/", now.ToString("yyyyMMdd"));
+            //获取当前web目录
+            var webRootPath = Directory.GetCurrentDirectory();
+            if (!Directory.Exists(webRootPath + filePath))
+            {
+                Directory.CreateDirectory(webRootPath + filePath);
+            }
+            try
+            {
+                foreach (var item in files)
+                {
+                    if (item != null)
+                    {
+                        #region  图片文件的条件判断
+                        //文件后缀
+                        var fileExtension = Path.GetExtension(item.FileName);
+
+                        //判断后缀是否是图片
+                        const string fileFilt = ".gif|.jpg|.jpeg|.png";
+                        if (fileExtension == null)
+                        {
+                            throw new Exception("上传的文件没有后缀。");
+                        }
+                        if (fileFilt.IndexOf(fileExtension.ToLower(), StringComparison.Ordinal) <= -1)
+                        {
+                            throw new Exception("请上传jpg、png、gif格式的图片。");
+                        }
+
+                        //判断文件大小    
+                        //long length = item.Length;
+                        //if (length > 1024 * 1024 * 2) //2M
+                        //{
+                        //    break;
+                        //    //return Error("上传的文件不能大于2M");
+                        //}
+
+                        #endregion
+
+                        var strDateTime = DateTime.Now.ToString("yyMMddhhmmssfff"); //取得时间字符串
+                        var strRan = Convert.ToString(new Random().Next(100, 999)); //生成三位随机数
+                        var saveName = strDateTime + strRan + fileExtension;
+
+                        //插入图片数据                 
+                        using (FileStream fs = System.IO.File.Create(webRootPath + filePath + saveName))
+                        {
+                            item.CopyTo(fs);
+                            fs.Flush();
+                        }
+                        filenames.Add(filePath + saveName);
+                    }
+                }
+                return filenames;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("上传失败。" + ex.Message);
+            }
         }
 
         public async Task AsyncData()

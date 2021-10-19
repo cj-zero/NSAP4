@@ -29,16 +29,18 @@ namespace OpenAuth.App.Workbench
     {
         public readonly QuotationApp _quotationApp;
         public readonly FlowInstanceApp _flowInstanceApp;
+        public readonly UserManagerApp _userManagerApp;
         /// <summary>
         /// 构造方法
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
         /// <param name="quotationApp"></param>
-        public PendingApp(IUnitWork unitWork, IAuth auth, QuotationApp quotationApp, FlowInstanceApp flowInstanceApp) : base(unitWork, auth)
+        public PendingApp(IUnitWork unitWork, IAuth auth, QuotationApp quotationApp, UserManagerApp userManagerApp, FlowInstanceApp flowInstanceApp) : base(unitWork, auth)
         {
             _quotationApp = quotationApp;
             _flowInstanceApp = flowInstanceApp;
+            _userManagerApp = userManagerApp;
         }
         /// <summary>
         /// 服务单详情
@@ -212,30 +214,35 @@ namespace OpenAuth.App.Workbench
                 Remark = returNnoteObj.Remark,
                 TotalMoney = returNnoteObj.TotalMoney,
                 UpdateTime = returNnoteObj.UpdateTime.ToString("yyyy.MM.dd HH:mm:ss"),
-                ReturnNoteProducts = returNnoteObj.ReturnNoteProducts.Select(r => new ReturnNoteProductResp {
-                    MaterialCode=r.MaterialCode,
-                    MaterialDescription=r.MaterialDescription,
-                    ProductCode=r.ProductCode,
-                    ReturnNoteId=r.ReturnNoteId,
+                ReturnNoteProducts = returNnoteObj.ReturnNoteProducts.Select(r => new ReturnNoteProductResp
+                {
+                    MaterialCode = r.MaterialCode,
+                    MaterialDescription = r.MaterialDescription,
+                    ProductCode = r.ProductCode,
+                    ReturnNoteId = r.ReturnNoteId,
                     Money = r.Money,
-                    ReturnNoteMaterials=r.ReturnNoteMaterials.Select(m=>new ReturnNoteMaterialResp { 
-                        Id=m.Id,
-                        MaterialCode=m.MaterialCode,
+                    ReturnNoteMaterials = r.ReturnNoteMaterials.Select(m => new ReturnNoteMaterialResp
+                    {
+                        Id = m.Id,
+                        Sort = m.Sort,
+                        LineNum = m.LineNum,
+                        MaterialType = m.MaterialType,
+                        MaterialCode = m.MaterialCode,
                         InvoiceDocEntry = m.InvoiceDocEntry,
-                        MaterialDescription=m.MaterialDescription,
-                        SecondWhsCode=m.SecondWhsCode,
-                        ShippingRemark=m.ShippingRemark,
-                        SNandPN=m.SNandPN,
-                        ReplaceSNandPN=m.ReplaceSNandPN,
-                        ReplaceMaterialDescription=m.ReplaceMaterialDescription,
-                        GoodWhsCode=m.GoodWhsCode,
-                        IsGood=m.IsGood,
+                        MaterialDescription = m.MaterialDescription,
+                        SecondWhsCode = m.SecondWhsCode,
+                        ShippingRemark = m.ShippingRemark,
+                        SNandPN = m.SNandPN,
+                        ReplaceSNandPN = m.ReplaceSNandPN,
+                        ReplaceMaterialDescription = m.ReplaceMaterialDescription,
+                        GoodWhsCode = m.GoodWhsCode,
+                        IsGood = m.IsGood,
                         Money = m.Money,
-                        QuotationMaterialId=m.QuotationMaterialId,
-                        ReceivingRemark=m.ReceivingRemark,
-                        ReplaceMaterialCode=m.ReplaceMaterialCode,
-                        ReturnNoteProductId=m.ReturnNoteProductId
-                    }).ToList()
+                        QuotationMaterialId = m.QuotationMaterialId,
+                        ReceivingRemark = m.ReceivingRemark,
+                        ReplaceMaterialCode = m.ReplaceMaterialCode,
+                        ReturnNoteProductId = m.ReturnNoteProductId
+                    }).OrderBy(m => m.ReplaceMaterialCode).ToList()
                 }).ToList(),
             };
             var History = await UnitWork.Find<FlowInstanceOperationHistory>(f => f.InstanceId.Equals(returNnoteObj.FlowInstanceId)).OrderBy(f => f.CreateDate).ToListAsync();
@@ -326,6 +333,7 @@ namespace OpenAuth.App.Workbench
             List<string> fileids = new List<string>();
             List<ReimburseAttachment> filemodel = new List<ReimburseAttachment>();
             List<ReimburseExpenseOrg> expenseOrg = new List<ReimburseExpenseOrg>();
+            var userOrgInfo = await _userManagerApp.GetUserOrgInfo(reimburseObj.CreateUserId);
             if (reimburseObj.ReimburseTravellingAllowances != null && reimburseObj.ReimburseTravellingAllowances.Count > 0)
             {
                 var rtaids = reimburseObj.ReimburseTravellingAllowances.Select(r => r.Id).ToList();
@@ -349,6 +357,7 @@ namespace OpenAuth.App.Workbench
                 filemodel.AddRange(await UnitWork.Find<ReimburseAttachment>(r => rocids.Contains(r.ReimburseId) && r.ReimburseType == 4).ToListAsync());
                 expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rocids.Contains(r.ExpenseId) && r.ExpenseType == 4).ToListAsync());
             }
+            var orgMoney= expenseOrg.Where(c => c.OrgId == userOrgInfo.OrgId).Sum(c => c.Money);
             fileids.AddRange(filemodel.Select(f => f.FileId).ToList());
             fileids.AddRange(reimburseObj.ReimburseAttachments.Select(r => r.FileId).ToList());
             var file = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
@@ -358,6 +367,8 @@ namespace OpenAuth.App.Workbench
                 UpdateTime = reimburseObj.UpdateTime,
                 Remark = reimburseObj.Remark,
                 TotalMoney = reimburseObj.TotalMoney,
+                OrgMoney = orgMoney,
+                Org = userOrgInfo?.OrgName,
                 ReimburseMainId = reimburseObj.MainId,
                 Files = reimburseObj.ReimburseAttachments.Select(r => new FileResp
                 {
@@ -465,6 +476,72 @@ namespace OpenAuth.App.Workbench
         }
 
         /// <summary>
+        /// 内部联络单详情
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<dynamic> InternalcontactDetails(string id)
+        {
+
+            var detail = await UnitWork.Find<InternalContact>(c => c.IW == id)
+                            .Include(c => c.InternalContactAttchments)
+                            .Include(c => c.InternalContactBatchNumbers)
+                            .Include(c => c.InternalContactDeptInfos)
+                            .FirstOrDefaultAsync();
+            //操作历史
+            var operationHistories = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.InstanceId == detail.FlowInstanceId)
+                .OrderBy(c => c.CreateDate).Select(h => new
+                {
+                    CreateDate = Convert.ToDateTime(h.CreateDate).ToString("yyyy.MM.dd HH:mm:ss"),
+                    h.Remark,
+                    IntervalTime = h.IntervalTime != null && h.IntervalTime > 0 ? h.IntervalTime / 60 : null,
+                    h.CreateUserName,
+                    h.Content,
+                    h.ApprovalResult,
+                }).ToListAsync();
+
+            var reviceOrgList = detail.InternalContactDeptInfos.Where(c => c.Type == 1).Select(c => new
+            {
+                c.OrgName,
+                Detail = c.HandleTime != null ? "已查收" : "",
+                ReciveTime = c.HandleTime
+            });
+            var execOrgList = detail.InternalContactDeptInfos.Where(c => c.Type == 2).Select(c => new
+            {
+                c.OrgName,
+                Detail = c.Content,
+                ExecTime = c.HandleTime
+            });
+
+            return new
+            {
+                detail.Id,
+                detail.IW,
+                detail.Theme,
+                CardCodes = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardCode.Split(",") : new string[] { },
+                CardNames = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardName.Split(",") : new string[] { },
+                detail.Status,
+                detail.RdmsNo,
+                detail.SaleOrderNo,
+                detail.AdaptiveModel,
+                detail.ProductionNo,
+                AdaptiveRanges = detail.AdaptiveRange.Split(","),
+                Reasons = detail.Reason.Split(","),
+                BatchNumbers = detail.InternalContactBatchNumbers,
+                detail.CheckApproveId,
+                detail.CheckApprove,
+                detail.DevelopApproveId,
+                detail.DevelopApprove,
+                InternalContactReceiveDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 1).Select(c => new { c.OrgId, c.OrgName }).ToList(),
+                InternalContactExecDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 2).Select(c => new { c.OrgId, c.OrgName }).ToList(),
+                detail.Content,
+                reviceOrgList,
+                execOrgList,
+                operationHistories
+            };
+        }
+
+        /// <summary>
         /// 获取待处理订单详情
         /// </summary>
         /// <param name="req"></param>
@@ -472,12 +549,27 @@ namespace OpenAuth.App.Workbench
         public async Task<TableData> PendingDetails(PendingReq req)
         {
             var reult = new TableData();
-            var pendingObj = await UnitWork.Find<WorkbenchPending>(w => w.ApprovalNumber == int.Parse(req.ApprovalNumber)).FirstOrDefaultAsync();
-            var serviceOrderDetails = await ServiceOrderDetails(pendingObj.ServiceOrderId, pendingObj.PetitionerId);
-            List<QuotationDetailsResp> quotationDetails = new List<QuotationDetailsResp>(); 
-            List<ReturnnoteDetailsResp> returnnoteDetails = new List<ReturnnoteDetailsResp>() ;
+            var pendingObj = await UnitWork.Find<WorkbenchPending>(null)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.ApprovalNumber), w => w.ApprovalNumber == int.Parse(req.ApprovalNumber))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.SourceNumbers), w => w.SourceNumbers == int.Parse(req.SourceNumbers))
+                .FirstOrDefaultAsync();
+            if (pendingObj == null && !string.IsNullOrWhiteSpace(req.ApprovalNumber))
+            {
+                pendingObj = new WorkbenchPending 
+                { 
+                    ApprovalNumber = int.Parse(req.ApprovalNumber), 
+                    OrderType = 3, 
+                    ServiceOrderId = req.ServiceOrderId == null ? 0 :Convert.ToInt32( req.ServiceOrderId )
+                };
+            }
+            ServiceOrderResp serviceOrderDetails = null;
+            if (pendingObj.ServiceOrderId!=0) 
+                serviceOrderDetails = await ServiceOrderDetails(pendingObj.ServiceOrderId, pendingObj.PetitionerId);
+            List<QuotationDetailsResp> quotationDetails = new List<QuotationDetailsResp>();
+            List<ReturnnoteDetailsResp> returnnoteDetails = new List<ReturnnoteDetailsResp>();
             OutsourcDetailsResp outsourcDetails = null;
             ReimburseDetailsResp reimburseDetails = null;
+            dynamic internalcontactDetails = null;
             List<Quotation> quotation = new List<Quotation>();
             switch (pendingObj.OrderType)
             {
@@ -531,6 +623,9 @@ namespace OpenAuth.App.Workbench
                     }
                     reimburseDetails=await ReimburseDetails(pendingObj.SourceNumbers);
                     break;
+                case 5:
+                    internalcontactDetails = await InternalcontactDetails(pendingObj.SourceNumbers.ToString());
+                    break;
             }
             if (pendingObj.OrderType == 3 || pendingObj.OrderType == 4)
             {
@@ -544,7 +639,8 @@ namespace OpenAuth.App.Workbench
                 quotationDetails,
                 returnnoteDetails,
                 outsourcDetails,
-                reimburseDetails
+                reimburseDetails,
+                internalcontactDetails
             };
             return reult;
         }
@@ -570,7 +666,7 @@ namespace OpenAuth.App.Workbench
                 var query = from a in UnitWork.Find<WorkbenchPending>(null)
                             join b in UnitWork.Find<FlowInstance>(null) on a.FlowInstanceId equals b.Id into ab
                             from b in ab.DefaultIfEmpty()
-                            where (b.MakerList.Contains(loginContext.User.Id) || (b.MakerList == "1" && b.CustomName.Contains("物料报价单"))) && b.ActivityName != "待出库" && b.ActivityName != "开始"
+                            where (b.MakerList.Contains(loginContext.User.Id) || (b.MakerList == "1" && b.CustomName.Contains("物料报价单"))) && b.ActivityName != "待出库" && b.ActivityName != "开始" && b.ActivityName != "执行中"
                             select new { a, b };
                 query = query.WhereIf(!string.IsNullOrWhiteSpace(req.ApprovalNumber), q => q.a.ApprovalNumber == int.Parse(req.ApprovalNumber))
                             .WhereIf(!string.IsNullOrWhiteSpace(req.Petitioner), q => q.a.Petitioner.Contains(req.Petitioner))

@@ -42,6 +42,8 @@ namespace OpenAuth.Repository.Domain
           this.CreateTime= DateTime.Now;
           this.CreateUserId= string.Empty;
           this.CreateUser= string.Empty;
+            this.IsTentative = false;
+            this.MaterialOrder = string.Empty;
         }
 
         /// <summary>
@@ -153,14 +155,23 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public string FlowInstanceId { get; set; }
         /// <summary>
+        /// 是否暂定
+        /// </summary>
+        public bool IsTentative { get; set; }
+        /// <summary>
         /// 
         /// </summary>
         [Description("")]
         public string CreateUser { get; set; }
+        /// <summary>
+        /// 物料生成订单
+        /// </summary>
+        public string MaterialOrder { get; set; }
 
         public List<InternalContactAttchment> InternalContactAttchments { get; set; }
         public List<InternalContactBatchNumber> InternalContactBatchNumbers { get; set; }
         public List<InternalContactDeptInfo> InternalContactDeptInfos { get; set; }
+        public List<InternalcontactMaterial> InternalcontactMaterials { get; set; }
         public override void GenerateDefaultKeyVal()
         {
 

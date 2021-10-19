@@ -186,6 +186,18 @@ namespace OpenAuth.App.Order
 		/// <summary>
 		/// 
 		/// </summary>
+		public decimal Factor_1 { get; set; }
+		/// <summary>
+		/// 数量
+		/// </summary>
+		public decimal Factor_2 { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		public decimal Factor_3 { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
 		public string U_TDS { get; set; }
 		/// <summary>
 		/// 
