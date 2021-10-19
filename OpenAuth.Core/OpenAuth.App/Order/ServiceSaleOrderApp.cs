@@ -869,6 +869,69 @@ namespace OpenAuth.App.Order
             code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_submit", CommandType.StoredProcedure, sqlParameters).ToString();
             return code;
         }
+        #region 驳回
+        /// <summary>
+        /// 审核（驳回）
+        /// </summary>
+        /// <returns>返回  驳回失败 0   驳回成功 1</returns>
+        public string WorkflowReject(int jobID, int userID, string remarks, string cont, int goStepID)
+        {
+            string code = "";
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobID",      jobID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pUserID",     userID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pRemarks",    remarks),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCont",       cont),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pGoStepID",    goStepID)
+            };
+            code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_goback", CommandType.StoredProcedure, sqlParameters).ToString();
+            return code;
+        }
+        #endregion
+        #region 更新状态为未决
+        /// <summary>
+        /// 审核（未决）
+        /// </summary>
+        /// <returns>返回  失败 0   成功 1</returns>
+        public string SavePanding(int jobID, int userID, string remarks)
+        {
+            string code = "";
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobID",      jobID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pUserID",     userID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pRemarks",    remarks)
+            };
+            code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_pending", CommandType.StoredProcedure, sqlParameters).ToString();
+            return code;
+        }
+        //删除已选择序列号
+        public bool DeleteSerialNumber(string ItemCode, string SysNumber)
+        {
+            string strSql = string.Format(" DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode = '{1}' AND SysNumber ='{2}'", "nsap_base", ItemCode, SysNumber);
+            object obj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text);
+            if (obj != null)
+            {
+                return int.Parse(obj.ToString()) > 0;
+            }
+            return false;
+        }
+        public DataTable GetItemOnhand(DataTable itemtab)
+        {
+            string strSql = string.Format("SELECT m.ItemCode,w.WhsCode,ISNULL(w.Onhand,'0') AS ItemOnhand,case when m.InvntItem='Y' then 1 else 0 end as InvntItem FROM OITW w inner join OITM m on w.ItemCode=m.ItemCode");
+            if (itemtab != null && itemtab.Rows.Count > 0)
+            {
+                strSql += string.Format(" WHERE "); int i = 1;
+                foreach (DataRow thisrow in itemtab.Rows)
+                {
+                    strSql += (i == 1 ? "" : " OR ") + string.Format(" (w.WhsCode='{0}' AND w.ItemCode='{1}')", thisrow["WhsCode"].ToString(), thisrow["ItemCode"].ToString().FilterSQL());
+                    i++;
+                }
+            }
+            return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql, CommandType.Text);
+        }
+        #endregion
         /// <summary>
         /// 客户代码数据
         /// </summary>

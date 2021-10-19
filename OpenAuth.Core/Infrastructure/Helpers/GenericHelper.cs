@@ -131,5 +131,56 @@ namespace Infrastructure.Helpers
             sBuilder.Append("]}");
             return sBuilder.ToString();
         }
+        public static DataTable Join(this DataTable dTable, DataTable sTable, DataColumn[] dColumn, DataColumn[] sColumn)
+        {
+            DataTable aTable = new DataTable("Join");
+            using (DataSet dSet = new DataSet())
+            {
+                dSet.Tables.AddRange(new DataTable[] { dTable.Copy(), sTable.Copy() });
+                DataColumn[] pColumns = new DataColumn[dColumn.Length];
+                for (int i = 0; i < pColumns.Length; i++)
+                {
+                    pColumns[i] = dSet.Tables[0].Columns[dColumn[i].ColumnName];
+                }
+                DataColumn[] cColumns = new DataColumn[sColumn.Length];
+                for (int i = 0; i < cColumns.Length; i++)
+                {
+                    cColumns[i] = dSet.Tables[1].Columns[sColumn[i].ColumnName];
+                }
+                DataRelation dRelation = new DataRelation(string.Empty, pColumns, cColumns, false);
+                dSet.Relations.Add(dRelation);
+                for (int i = 0; i < dTable.Columns.Count; i++)
+                {
+                    aTable.Columns.Add(dTable.Columns[i].ColumnName, dTable.Columns[i].DataType);
+                }
+                for (int i = 0; i < sTable.Columns.Count; i++)
+                {
+                    if (!aTable.Columns.Contains(sTable.Columns[i].ColumnName))
+                        aTable.Columns.Add(sTable.Columns[i].ColumnName, sTable.Columns[i].DataType);
+                    else
+                        aTable.Columns.Add(sTable.Columns[i].ColumnName + "1", sTable.Columns[i].DataType);
+                }
+                aTable.BeginLoadData();
+                foreach (DataRow fRow in dSet.Tables[0].Rows)
+                {
+                    DataRow[] cRows = fRow.GetChildRows(dRelation);
+                    if (cRows != null && cRows.Length > 0)
+                    {
+                        object[] pArray = fRow.ItemArray;
+                        foreach (DataRow sRow in cRows)
+                        {
+                            object[] sArray = sRow.ItemArray;
+                            object[] jArray = new object[pArray.Length + sArray.Length];
+                            Array.Copy(pArray, 0, jArray, 0, pArray.Length);
+                            Array.Copy(sArray, 0, jArray, pArray.Length, sArray.Length);
+                            aTable.LoadDataRow(jArray, true);
+                        }
+                    }
+                }
+                aTable.EndLoadData();
+            }
+            return aTable;
+        }
+
     }
 }

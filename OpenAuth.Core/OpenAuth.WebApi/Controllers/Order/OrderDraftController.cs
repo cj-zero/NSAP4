@@ -1721,8 +1721,27 @@ namespace OpenAuth.WebApi.Controllers.Order
                 result.Message = e.Message;
             }
             return result;
-
         }
-
+        /// <summary>
+        /// 销售报价单审核
+        /// </summary>
+        /// <param name="resubmitReq">请求参数</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("AuditResubmitNextNew")]
+        public Response<string> AuditResubmitNextNew(AuditResubmitReq resubmitReq)
+        {
+            var result = new Response<string>();
+            try
+            {
+                var userId = _serviceBaseApp.GetUserNaspId();
+                result.Result = _serviceSaleOrderApp.AuditResubmitNextNew(resubmitReq.jobId, userId, resubmitReq.recommend, resubmitReq.auditOpinionid, resubmitReq.IsUpdate, resubmitReq.vStock);
+            }
+            catch (Exception e)
+            {
+                result.Message = e.Message;
+            }
+            return result;
+        }
     }
 }
