@@ -572,5 +572,28 @@ namespace OpenAuth.App
                 AddOrUpdate(new UpdateUserReq {Account= item.log_nm,Name=item.user_nm,Password="xinwei123",ServiceRelations= officeaddr, OrganizationIds= orgObj?.Id,NsapUserId=(int)item.user_id,IsSync=true });
             }
         }
+
+        public TableData GetAppUserInfo(string keyword)
+        {
+            TableData result = new TableData();
+            IQueryable<User> query = UnitWork.Find<User>(null);
+            query = UnitWork.Find<User>(u => u.Name.Contains(keyword) || u.Account.Contains(keyword));
+
+            var userInfos = from user in query
+                           join map in UnitWork.Find<AppUserMap>(null)
+                               on user.Id equals map.UserID into temp
+                           from r in temp.DefaultIfEmpty()
+                           select new
+                           {
+                               erpId = user.Id,
+                               erpAccount = user.Account,
+                               erpName = user.Name,
+                               appUserId = r == null ? 0 : r.AppUserId
+                           };
+            var userInfoList = userInfos.ToList();
+            result.Data = userInfoList;
+            return result;
+
+        }
     }
 }
