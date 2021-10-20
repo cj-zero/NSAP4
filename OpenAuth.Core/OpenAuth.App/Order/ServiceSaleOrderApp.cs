@@ -3980,9 +3980,9 @@ namespace OpenAuth.App.Order
                 var s = FileHelper.TempletFilePath.PhysicalPath + mbval;
                 var ss = FileHelper.OrdersFilePath.PhysicalPath + jpgName + pdfName;
                 var sss = FileHelper.OrdersFilePath.PhysicalPath + pdfName;
-                _logger.LogError(FileHelper.TempletFilePath.PhysicalPath);
-                _logger.LogError(host + FileHelper.OrdersFilePath.VirtualPath);
-                _logger.LogError(FileHelper.OrdersFilePath.PhysicalPath);
+                _logger.LogInformation(FileHelper.TempletFilePath.PhysicalPath);
+                _logger.LogInformation(host + FileHelper.OrdersFilePath.VirtualPath);
+                _logger.LogInformation(FileHelper.OrdersFilePath.PhysicalPath);
                 if (FileHelper.DOCTemplateToPDF(FileHelper.TempletFilePath.PhysicalPath + mbval, FileHelper.OrdersFilePath.PhysicalPath + pdfName, workMarks))
                 {
                     return host + FileHelper.OrdersFilePath.VirtualPath + pdfName;
