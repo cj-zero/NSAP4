@@ -29,7 +29,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<AttendanceClockWhileList> AttendanceClockWhileLists { get; set; }
         public virtual DbSet<CompletionReport> Completionreports { get; set; }
         public virtual DbSet<ChangeTheMaterial> ChangeTheMaterials { get; set; }
-        
+
         public virtual DbSet<CompletionReportPicture> Completionreportpictures { get; set; }
         public virtual DbSet<ServiceOrder> Serviceorders { get; set; }
         public virtual DbSet<ServiceOrderMessage> Serviceordermessages { get; set; }
@@ -51,7 +51,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<ServiceDailyReport> Servicedailyreports { get; set; }
 
         public virtual DbSet<ServiceDailyExpends> Servicedailyexpends { get; set; }
-        
+
         public virtual DbSet<DailyAttachment> Dailyattachments { get; set; }
         #region 报销
         public virtual DbSet<ReimburseAccommodationSubsidy> Reimburseaccommodationsubsidies { get; set; }
@@ -64,7 +64,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<ReimburseExpenseOrg> ReimburseExpenseOrgs { get; set; }
 
         public virtual DbSet<ServiceOrderParticipationRecord> ServiceOrderParticipationRecords { get; set; }
-        
+
         public virtual DbSet<MyExpends> Myexpends { get; set; }
         #endregion
 
@@ -84,6 +84,14 @@ namespace OpenAuth.Repository
         public virtual DbSet<ServiceRedeploy> Serviceredeploys { get; set; }
 
         public virtual DbSet<SharingPartner> SharingPartners { get; set; }
-        
+        #region 展会
+        public virtual DbSet<Meetings> Meetings { get; set; }
+        public virtual DbSet<MeetingDispatch> MeetingDispatch { get; set; }
+        public virtual DbSet<MeetingOpreateLog> MeetingOpreateLog { get; set; }
+        public virtual DbSet<MeetingUser> MeetingUser { get; set; }
+        public virtual DbSet<MeetingFile> MeetingFile { get; set; }
+
+        #endregion
+
     }
 }
