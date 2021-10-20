@@ -7,6 +7,16 @@ namespace OpenAuth.App.Meeting.Request
     public class AddMeetingDataReq
     {
         /// <summary>
+        /// 提交类型
+        /// 0：草稿
+        /// 1：提交
+        /// 2：再次提交
+        /// 3：更新草稿
+        /// 4：草稿更新后提交
+        /// </summary>
+        public MeetingAtion Ations { get; set; }
+
+        /// <summary>
         /// 展会名称
         /// </summary>
         public string Name { get; set; }
@@ -35,10 +45,6 @@ namespace OpenAuth.App.Meeting.Request
         /// </summary>
         public string Address { get; set; }
         /// <summary>
-        /// 状态
-        /// </summary>
-        public int Status { get; set; }
-        /// <summary>
         /// 申请人ID
         /// </summary>
         public int ApplyUserId { get; set; }
@@ -49,7 +55,7 @@ namespace OpenAuth.App.Meeting.Request
         /// <summary>
         /// 申请部门ID
         /// </summary>
-        public int DempIdtId { get; set; }
+        public int DempId { get; set; }
         /// <summary>
         /// 申请部门
         /// </summary>
@@ -118,5 +124,32 @@ namespace OpenAuth.App.Meeting.Request
         /// 附件
         /// </summary>
         public List<FileReq> FileList { get; set; }
+    }
+    /// <summary>
+    /// 订单操作类型
+    /// </summary>
+    public enum MeetingAtion
+    {
+        /// <summary>
+        /// 草稿
+        /// </summary>
+        Draft,
+        /// <summary>
+        /// 提交
+        /// </summary>
+        Submit,
+        /// <summary>
+        /// 再次提交
+        /// </summary>
+        Resubmit,
+        /// <summary>
+        /// 草稿更新
+        /// </summary>
+        DraftUpdate,
+        /// <summary>
+        /// 草稿更新后提交
+        /// </summary>
+        DrafSubmit
+
     }
 }

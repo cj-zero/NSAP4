@@ -43,6 +43,10 @@ namespace OpenAuth.Repository.Domain.Serve
         /// </summary>
         [Description("是否删除")]
         public bool IsDelete { get; set; }
+        /// <summary>
+        /// 类型
+        /// </summary>
+        public int Type { get; set; }
         public override void GenerateDefaultKeyVal()
         {
 

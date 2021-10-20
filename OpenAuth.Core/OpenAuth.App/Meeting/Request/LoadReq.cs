@@ -1,14 +1,11 @@
-﻿using AutoMapper;
-using OpenAuth.App.Request;
-using OpenAuth.Repository.Domain.Serve;
+﻿using OpenAuth.App.Request;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenAuth.App.Meeting.ModelDto
+namespace OpenAuth.App.Meeting.Request
 {
-    [AutoMap(typeof(Meetings))]
-    public class QueryListDto
+    public class LoadReq : PageReq
     {
         /// <summary>
         /// 展会名称
@@ -17,23 +14,20 @@ namespace OpenAuth.App.Meeting.ModelDto
         /// <summary>
         /// 展会开始时间
         /// </summary>
-        public DateTime StartTime { get; set; }
+        public string StartTime { get; set; }
         /// <summary>
         /// 展会结束时间
         /// </summary>
-        public DateTime EndTime { get; set; }
-        /// <summary>
-        /// 地址
-        /// </summary>
-        public string Address { get; set; }
+        public string EndTime { get; set; }
+
         /// <summary>
         /// 有无晚宴
         /// </summary>
         public bool IsDinner { get; set; }
         /// <summary>
-        /// 申请部门
+        /// 申请部门ID
         /// </summary>
-        public string ApplyDempName { get; set; }
+        public int DempId { get; set; }
         /// <summary>
         /// 申请人
         /// </summary>
