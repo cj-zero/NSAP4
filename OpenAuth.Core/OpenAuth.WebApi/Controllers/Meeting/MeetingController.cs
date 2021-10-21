@@ -42,7 +42,7 @@ namespace OpenAuth.WebApi.Controllers.Meeting
         {
             var result = new Response<string>();
             try
-            { 
+            {
                 result.Result = _serviceMeetingApp.AddMeetingData(Addmodel);
 
             }
@@ -81,6 +81,34 @@ namespace OpenAuth.WebApi.Controllers.Meeting
 
             return result;
         }
+
+        /// <summary>
+        /// 展会详情
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("ExhibitionDetailById")]
+        public async Task<Response<ExhibitionDetailDto>> ExhibitionDetailById(int Id)
+        {
+
+            var result = new Response<ExhibitionDetailDto>();
+            try
+            {
+                result.Result = _serviceMeetingApp.ExhibitionDetailById(Id);
+
+
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+
+
+            return result;
+        }
+
         /// <summary>
         /// 我创建的列表
         /// </summary>
@@ -88,13 +116,39 @@ namespace OpenAuth.WebApi.Controllers.Meeting
         /// <returns></returns>
         [HttpPost]
         [Route("MyCreatedLoad")]
-        public async Task<TableData> MyCreatedLoad(LoadReq Querymodel)
+        public async Task<TableData> MyCreatedLoad(MyCreatedLoadReq Querymodel)
         {
             int rowcount = 0;
             var result = new TableData();
             try
             {
-                result.Data = _serviceMeetingApp.Load(Querymodel, out rowcount);
+                result.Data = _serviceMeetingApp.MyCreatedLoad(Querymodel, out rowcount);
+                result.Count = rowcount;
+
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+
+
+            return result;
+        }
+        /// <summary>
+        /// 报名人数查看列表
+        /// </summary>
+        /// <param name="Querymodel"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("MeetingUserList")]
+        public async Task<TableData> MeetingUserList(MeetingUserListReq Querymodel)
+        {
+            int rowcount = 0;
+            var result = new TableData();
+            try
+            {
+                result.Data = _serviceMeetingApp.MeetingUserList(Querymodel, out rowcount);
                 result.Count = rowcount;
 
             }

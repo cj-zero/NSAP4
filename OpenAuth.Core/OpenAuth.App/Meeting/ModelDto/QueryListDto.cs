@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.Configuration.Annotations;
 using OpenAuth.App.Request;
 using OpenAuth.Repository.Domain.Serve;
 using System;
@@ -7,7 +8,7 @@ using System.Text;
 
 namespace OpenAuth.App.Meeting.ModelDto
 {
-    [AutoMap(typeof(Meetings))]
+    [AutoMap(typeof(Repository.Domain.Serve.Meeting))]
     public class QueryListDto
     {
         /// <summary>
@@ -30,6 +31,7 @@ namespace OpenAuth.App.Meeting.ModelDto
         /// 有无晚宴
         /// </summary>
         public bool IsDinner { get; set; }
+
         /// <summary>
         /// 申请部门
         /// </summary>
@@ -46,5 +48,10 @@ namespace OpenAuth.App.Meeting.ModelDto
         /// 状态
         /// </summary>
         public int Status { get; set; }
+        /// <summary>
+        /// 保密人数 
+        /// </summary>
+        [Ignore]
+        public int number { get; set; }
     }
 }

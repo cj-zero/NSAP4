@@ -11,7 +11,7 @@ namespace OpenAuth.Repository.Domain.Serve
     /// 调度
     /// </summary>
     [Table("meetingopreatelog")]
-    public partial class MeetingOpreateLog : BaseEntity<int>
+    public class MeetingOpreateLog : BaseEntity<int>
     {
         /// <summary>
         /// 会议Id

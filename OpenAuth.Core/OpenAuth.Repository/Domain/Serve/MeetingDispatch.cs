@@ -11,7 +11,7 @@ namespace OpenAuth.Repository.Domain.Serve
     /// 调度
     /// </summary>
     [Table("meetingdispatch")]
-    public partial class MeetingDispatch:BaseEntity<int>
+    public class MeetingDispatch : BaseEntity<int>
     {
         /// <summary>
         /// 原会议ID
@@ -30,7 +30,7 @@ namespace OpenAuth.Repository.Domain.Serve
         /// </summary>
         [Description("调度人员")]
 
-        public string  UserJson { get; set; }
+        public string UserJson { get; set; }
         /// <summary>
         /// 调度原因
         /// </summary>

@@ -11,7 +11,7 @@ namespace OpenAuth.Repository.Domain.Serve
     /// 调度
     /// </summary>
     [Table("meetinguser")]
-    public partial class MeetingUser : BaseEntity<int>
+    public class MeetingUser : BaseEntity<int>
     {
         /// <summary>
         /// 会议Id
@@ -21,7 +21,7 @@ namespace OpenAuth.Repository.Domain.Serve
         /// <summary>
         /// 用户Id
         /// </summary>
-        [Description("会议Id")]
+        [Description("用户Id")]
         public int UserId { get; set; }
         /// <summary>
         /// 报名人

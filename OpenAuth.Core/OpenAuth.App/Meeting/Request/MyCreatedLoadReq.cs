@@ -14,11 +14,11 @@ namespace OpenAuth.App.Meeting.Request
         /// <summary>
         /// 单据类型
         /// </summary>
-        public string Type { get; set; }
+        public int Type { get; set; }
         /// <summary>
-        /// 状态
+        ///步骤
         /// </summary>
-        public int Status { get; set; }
+        public int Step { get; set; }
         /// <summary>
         /// 任务名称
         /// </summary>

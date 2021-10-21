@@ -5676,6 +5676,26 @@ namespace OpenAuth.App.Order
 
             return GridRelORDRList(out rowCount, pageSize, pageIndex, filterString, sortString);
         }
+        public DataTable GridRelORDR(out int rowCount, int pageSize, int pageIndex, string DocEntry, string cardcode, string sortname, string sortorder, string SlpCode)
+        {
+            string sortString = string.Empty;
+            string filterString = "(Canceled = 'Y' or DocStatus = 'O') and SlpCode =" + SlpCode;
+            if (!string.IsNullOrEmpty(sortname) && !string.IsNullOrEmpty(sortorder))
+                sortString = string.Format("{0} {1}", sortname, sortorder.ToUpper());
+            string dRowData = string.Empty;
+            #region 搜索条件
+            if (!string.IsNullOrEmpty(DocEntry))
+            {
+                filterString += string.Format("and docentry LIKE '%{0}%'", DocEntry);
+            }
+            if (!string.IsNullOrEmpty(cardcode))
+            {
+                filterString += string.Format("and cardcode LIKE '%{0}%'", cardcode);
+            }
+            #endregion
+
+            return GridRelORDRList(out rowCount, pageSize, pageIndex, filterString, sortString);
+        }
         /// <summary>
         /// 取到销售员所有未清销售合同与已取消的
         /// </summary>

@@ -46,7 +46,7 @@ namespace OpenAuth.App.Meeting
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
-            Meetings meeting = new Meetings
+            OpenAuth.Repository.Domain.Serve.Meeting meeting = new OpenAuth.Repository.Domain.Serve.Meeting
             {
                 Name = addmodel.Name,
                 Title = addmodel.Title,
@@ -84,7 +84,7 @@ namespace OpenAuth.App.Meeting
             {
                 meeting.Status = 1;
             }
-            var data = UnitWork.Add<Meetings, int>(meeting);
+            var data = UnitWork.Add<OpenAuth.Repository.Domain.Serve.Meeting, int>(meeting);
             UnitWork.Save();
 
             foreach (var item in addmodel.FileList)
@@ -124,12 +124,35 @@ namespace OpenAuth.App.Meeting
             return "1";
         }
 
+        public List<MeetingUserListDto> MeetingUserList(MeetingUserListReq querymodel, out int rowcount)
+        {
+            Expression<Func<MeetingUser, bool>> exps = t => true;
+            exps = exps.And(t => !t.IsDelete && t.MeetingId == querymodel.MeetingId);
+            var meetingUser = UnitWork.Find(querymodel.page, querymodel.limit, "", exps);
+            rowcount = UnitWork.GetCount(exps);
+            return meetingUser.MapToList<MeetingUserListDto>();
+        }
+
+        public ExhibitionDetailDto ExhibitionDetailById(int Id)
+        {
+            Expression<Func<OpenAuth.Repository.Domain.Serve.Meeting, bool>> exp = t => true;
+            exp = exp.And(t => !t.IsDelete && t.Id == Id);
+            var objs = UnitWork.FindSingle(exp);
+            var list = objs.MapTo<ExhibitionDetailDto>();
+            Expression<Func<MeetingFile, bool>> exps = t => true;
+            exps = exps.And(t => !t.IsDelete && t.MeetingId == Id);
+            var filelist = UnitWork.Find(exps);
+            var s = filelist.MapToList<FileDto>();
+            list.FileList.AddRange(s);
+            return list;
+        }
+
         public List<QueryListDto> Load(LoadReq querymodel, out int rowcount)
         {
 
-            Expression<Func<Meetings, bool>> exp = t => true;
+            Expression<Func<OpenAuth.Repository.Domain.Serve.Meeting, bool>> exp = t => true;
             exp = exp.And(t => !t.IsDelete);
-            exp = exp.And(t => t.Status == 3);
+            //exp = exp.And(t => t.Status == 3);
             if (!string.IsNullOrEmpty(querymodel.Name))
             {
                 exp = exp.And(t => t.Name == querymodel.Name);
@@ -164,13 +187,70 @@ namespace OpenAuth.App.Meeting
             {
                 exp = exp.And(t => t.Status == querymodel.Status);
             }
-            var objs = UnitWork.Find<Meetings>(querymodel.page, querymodel.limit, "", exp);
-            var list = objs.MapToList<Meetings>();
+            var objs = UnitWork.Find<OpenAuth.Repository.Domain.Serve.Meeting>(querymodel.page, querymodel.limit, "", exp);
+            var list = objs.MapToList<OpenAuth.Repository.Domain.Serve.Meeting>();
             rowcount = UnitWork.GetCount(exp);
             var data = new List<QueryListDto>();
             foreach (var obj in list)
             {
                 var nes = new QueryListDto();
+
+                nes.Address = obj.Address;
+                nes.Name = obj.Name;
+                nes.StartTime = obj.StartTime;
+                nes.EndTime = obj.EndTime;
+                nes.Status = obj.Status;
+                nes.IsDinner = obj.IsDinner;
+                nes.ApplyDempName = obj.ApplyDempName;
+                nes.ApplyUser = obj.ApplyUser;
+                nes.FollowPerson = obj.FollowPerson;
+                var obe = UnitWork.GetCount<MeetingDraft>(x => x.Base_entry == obj.Id);
+                nes.number = obe;
+                data.Add(nes);
+            }
+            return data;
+        }
+        public List<MyCreatedLoadListDto> MyCreatedLoad(MyCreatedLoadReq querymodel, out int rowcount)
+        {
+
+            Expression<Func<MeetingDraft, bool>> exp = t => true;
+            if (querymodel.JobId != 0)
+            {
+                exp = exp.And(t => t.Id == querymodel.JobId);
+
+            }
+            if (querymodel.Type != -1)
+            {
+                exp = exp.And(t => t.Type == querymodel.Type);
+
+            }
+            if (querymodel.Step != -1)
+            {
+                exp = exp.And(t => t.Step == querymodel.Step);
+
+            }
+            if (!string.IsNullOrWhiteSpace(querymodel.JobName))
+            {
+                exp = exp.And(t => t.Name.Contains(querymodel.JobName));
+
+            }
+            if (!string.IsNullOrWhiteSpace(querymodel.Remark))
+            {
+                exp = exp.And(t => t.Remark.Contains(querymodel.JobName));
+
+            }
+            if (querymodel.Base_entry != 0)
+            {
+                exp = exp.And(t => t.Base_entry == querymodel.Base_entry);
+
+            }
+            var objs = UnitWork.Find<MeetingDraft>(querymodel.page, querymodel.limit, "", exp);
+            var list = objs.MapToList<MeetingDraft>();
+            rowcount = UnitWork.GetCount(exp);
+            var data = new List<MyCreatedLoadListDto>();
+            foreach (var obj in list)
+            {
+                var nes = new MyCreatedLoadListDto();
                 obj.CopyTo(nes);
                 data.Add(nes);
             }
