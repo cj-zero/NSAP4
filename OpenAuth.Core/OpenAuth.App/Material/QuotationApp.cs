@@ -394,12 +394,12 @@ namespace OpenAuth.App.Material
                     //领料单下序列号
                     c.QuotationProducts.ForEach(q =>
                     {
-                        var obj = returnote.Where(r => r.SalesOrderId == c.SalesOrderId).FirstOrDefault();
-                        var product = obj.ReturnNoteProducts.Where(r => r.ProductCode == q.ProductCode).FirstOrDefault();//退料单序列号
+                        var obj = returnote?.Where(r => r.SalesOrderId == c.SalesOrderId).FirstOrDefault();
+                        var product = obj?.ReturnNoteProducts.Where(r => r.ProductCode == q.ProductCode).FirstOrDefault();//退料单序列号
                         q.QuotationMaterials.ForEach(m =>
                         {
                             result = false;//全部满足则为true
-                            if (m.Count == product.ReturnNoteMaterials.Where(nm => nm.MaterialCode == m.MaterialCode).Count())//领料单物料的数量等于退料物料的数量
+                            if (m.Count == product?.ReturnNoteMaterials.Where(nm => nm.MaterialCode == m.MaterialCode).Count())//领料单物料的数量等于退料物料的数量
                             {
                                 result = true;
                             }

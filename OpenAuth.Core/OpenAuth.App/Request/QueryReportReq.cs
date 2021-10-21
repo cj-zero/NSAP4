@@ -30,5 +30,13 @@ namespace OpenAuth.App.Request
         /// 单据类别（1服务单，2E3工程部,3.行政单）
         /// </summary>
         public int VestInOrg { get; set; }
+        /// <summary>
+        /// 选择范围 -user -org
+        /// </summary>
+        public string Range { get; set; }
+        /// <summary>
+        /// 呼叫主题/部门/人员
+        /// </summary>
+        public List<string> Name { get; set; }
     }
 }
