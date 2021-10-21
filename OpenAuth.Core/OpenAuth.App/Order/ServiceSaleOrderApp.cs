@@ -30,6 +30,7 @@ using static Infrastructure.Helpers.CommonHelper;
 using NSAP.Entity.BillFlow;
 using NSAP.Entity.Store;
 using NSAP.Entity.Product;
+using Microsoft.Extensions.Logging;
 
 namespace OpenAuth.App.Order
 {
@@ -47,8 +48,12 @@ namespace OpenAuth.App.Order
         private ICapPublisher _capBus;
         private readonly ServiceFlowApp _serviceFlowApp;
         ServiceBaseApp _serviceBaseApp;
-        public ServiceSaleOrderApp(IUnitWork unitWork, RevelanceManagerApp app, ServiceBaseApp serviceBaseApp, ServiceOrderLogApp serviceOrderLogApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
+        private ILogger<ServiceSaleOrderApp> _logger;
+
+        public ServiceSaleOrderApp(IUnitWork unitWork, ILogger<ServiceSaleOrderApp> logger, RevelanceManagerApp app, ServiceBaseApp serviceBaseApp, ServiceOrderLogApp serviceOrderLogApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
         {
+            _logger = logger;
+
             _appConfiguration = appConfiguration;
             _revelanceApp = app;
             _appServiceOrderLogApp = appServiceOrderLogApp;
@@ -864,6 +869,69 @@ namespace OpenAuth.App.Order
             code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_submit", CommandType.StoredProcedure, sqlParameters).ToString();
             return code;
         }
+        #region 驳回
+        /// <summary>
+        /// 审核（驳回）
+        /// </summary>
+        /// <returns>返回  驳回失败 0   驳回成功 1</returns>
+        public string WorkflowReject(int jobID, int userID, string remarks, string cont, int goStepID)
+        {
+            string code = "";
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobID",      jobID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pUserID",     userID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pRemarks",    remarks),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCont",       cont),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pGoStepID",    goStepID)
+            };
+            code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_goback", CommandType.StoredProcedure, sqlParameters).ToString();
+            return code;
+        }
+        #endregion
+        #region 更新状态为未决
+        /// <summary>
+        /// 审核（未决）
+        /// </summary>
+        /// <returns>返回  失败 0   成功 1</returns>
+        public string SavePanding(int jobID, int userID, string remarks)
+        {
+            string code = "";
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pJobID",      jobID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pUserID",     userID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pRemarks",    remarks)
+            };
+            code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_pending", CommandType.StoredProcedure, sqlParameters).ToString();
+            return code;
+        }
+        //删除已选择序列号
+        public bool DeleteSerialNumber(string ItemCode, string SysNumber)
+        {
+            string strSql = string.Format(" DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode = '{1}' AND SysNumber ='{2}'", "nsap_base", ItemCode, SysNumber);
+            object obj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text);
+            if (obj != null)
+            {
+                return int.Parse(obj.ToString()) > 0;
+            }
+            return false;
+        }
+        public DataTable GetItemOnhand(DataTable itemtab)
+        {
+            string strSql = string.Format("SELECT m.ItemCode,w.WhsCode,ISNULL(w.Onhand,'0') AS ItemOnhand,case when m.InvntItem='Y' then 1 else 0 end as InvntItem FROM OITW w inner join OITM m on w.ItemCode=m.ItemCode");
+            if (itemtab != null && itemtab.Rows.Count > 0)
+            {
+                strSql += string.Format(" WHERE "); int i = 1;
+                foreach (DataRow thisrow in itemtab.Rows)
+                {
+                    strSql += (i == 1 ? "" : " OR ") + string.Format(" (w.WhsCode='{0}' AND w.ItemCode='{1}')", thisrow["WhsCode"].ToString(), thisrow["ItemCode"].ToString().FilterSQL());
+                    i++;
+                }
+            }
+            return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql, CommandType.Text);
+        }
+        #endregion
         /// <summary>
         /// 客户代码数据
         /// </summary>
@@ -3894,7 +3962,7 @@ namespace OpenAuth.App.Order
                 if (mbval == "销售报价单-新能源.doc" || mbval == "销售报价单-新威尔.doc" || mbval == "销售报价单-东莞新威.doc" || mbval == "销售报价单-钮威.doc")
                 {
                     workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 2, TableMark = 1, XCellMark = 1, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][13].ToString()) ? " " : dtb.Rows[0][13].ToString() });
-                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 2, TableMark = 1, XCellMark = 6, YCellMark = 2, ValueType = 0, ValueData = "张学没友" });
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 2, TableMark = 1, XCellMark = 6, YCellMark = 2, ValueType = 0, ValueData = "" });
                     workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 2, TableMark = 1, XCellMark = 6, YCellMark = 3, ValueType = 0, ValueData = DateTime.Now.ToString() });
                 }
                 else if (mbval == "新威尔维修报价单.doc" || mbval == "新能源维修报价单.doc" || mbval == "维修报价单.doc" || mbval == "东莞新威维修报价单.doc" || mbval == "钮威维修报价单.doc")
@@ -3912,6 +3980,9 @@ namespace OpenAuth.App.Order
                 var s = FileHelper.TempletFilePath.PhysicalPath + mbval;
                 var ss = FileHelper.OrdersFilePath.PhysicalPath + jpgName + pdfName;
                 var sss = FileHelper.OrdersFilePath.PhysicalPath + pdfName;
+                _logger.LogInformation(FileHelper.TempletFilePath.PhysicalPath);
+                _logger.LogInformation(host + FileHelper.OrdersFilePath.VirtualPath);
+                _logger.LogInformation(FileHelper.OrdersFilePath.PhysicalPath);
                 if (FileHelper.DOCTemplateToPDF(FileHelper.TempletFilePath.PhysicalPath + mbval, FileHelper.OrdersFilePath.PhysicalPath + pdfName, workMarks))
                 {
                     return host + FileHelper.OrdersFilePath.VirtualPath + pdfName;
@@ -5930,8 +6001,11 @@ namespace OpenAuth.App.Order
                 sortString = string.Format(" {0} {1}", model.sortname, model.sortorder.ToUpper());
             filterString = string.Format(" sbo_id={0} and itemcode='{1}' and CardCode='{2}'", SboID, model.ItemCode.FilterSQL(), model.CardCode);
             #region 搜索条件  
+            if (!string.IsNullOrEmpty(model.DocEntry))
+            {
+                filterString += string.Format(" and contract_id={0} ", model.DocEntry.FilterSQL().Trim());
 
-            filterString += string.Format(" and contract_id={0} ", model.DocEntry.FilterSQL().Trim());
+            }
 
             #endregion
             return GridRelationContractList(out rowCount, model.limit, model.page, filterString, sortString);
@@ -6203,10 +6277,1945 @@ namespace OpenAuth.App.Order
         /// 付款条款
         /// </summary>
         /// <returns></returns>
-        public  DataTable DropPopupGroupNum(int sbo_id)
+        public DataTable DropPopupGroupNum(int sbo_id)
         {
             string strSql = string.Format(" SELECT GroupNum AS id,PymntGroup AS name FROM {0}.crm_octg WHERE sbo_id={1}", "nsap_bone", sbo_id);
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+        }
+        #endregion
+        #region 合约评审生成PDF
+        public string ContractExportShow_ForSale(string contractId, string host)
+        {
+            DataTable maintab = GetContractReviewInfo(contractId, "1", "1", true);
+            if (maintab.Rows.Count > 0)
+            {
+                if (!string.IsNullOrEmpty(maintab.Rows[0]["PDF_FilePath_S"].ToString()))
+                {
+                    return host + maintab.Rows[0]["PDF_FilePath_S"].ToString();
+                }
+                string mbval = ""; mbval = "合约评审-CT.doc";
+                List<FileHelper.WordTemplate> workMarks = new List<FileHelper.WordTemplate>();
+                //页眉部分
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 1, XCellMark = 1, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["contract_id"].ToString()) ? " " : maintab.Rows[0]["contract_id"].ToString() });//评审单号
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 1, XCellMark = 1, YCellMark = 6, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["SlpName"].ToString()) ? " " : maintab.Rows[0]["SlpName"].ToString() }); //销售员
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 1, XCellMark = 2, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["ApplyDate"].ToString()) ? " " : DateTime.Parse(maintab.Rows[0]["ApplyDate"].ToString()).ToShortDateString() }); //申请日期
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 1, XCellMark = 3, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["DeliverDate"].ToString()) ? " " : DateTime.Parse(maintab.Rows[0]["DeliverDate"].ToString()).ToShortDateString() });//交货日期
+                #region 基本信设置，属性
+                //常规
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 1, YCellMark = 2, ValueType = 0, ValueData = (string.IsNullOrEmpty(maintab.Rows[0]["ItemCode"].ToString()) ? " " : maintab.Rows[0]["ItemCode"].ToString()) + (maintab.Rows[0]["IsNew"].ToString() == "1" ? "(新)" : "") });//产品型号
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 1, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["ItemDesc"].ToString()) ? " " : maintab.Rows[0]["ItemDesc"].ToString() });//物料描述
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 2, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["CardCode"].ToString()) ? " " : maintab.Rows[0]["CardCode"].ToString() });//客户编号
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 2, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["CardName"].ToString()) ? " " : maintab.Rows[0]["CardName"].ToString() }); //客户名称 
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 2, YCellMark = 6, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["CustomType"].ToString()) ? " " : GetCustomFldDescrByValue("saleContractReview", "1", maintab.Rows[0]["CustomType"].ToString()) });//客户类型
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 3, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["CommRate"].ToString()) ? " " : double.Parse(maintab.Rows[0]["CommRate"].ToString()).ToString("0.00") });//提成比例
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 3, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["Wattage"].ToString()) ? " " : maintab.Rows[0]["Wattage"].ToString() }); //每瓦单价 
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 3, YCellMark = 6, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["UnitMsr"].ToString()) ? " " : maintab.Rows[0]["UnitMsr"].ToString() }); //计量单位
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 3, YCellMark = 8, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["U_JGF"].ToString()) ? " " : maintab.Rows[0]["U_JGF"].ToString() });//加工费 
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 3, YCellMark = 10, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["U_FDY"].ToString()) ? " " : maintab.Rows[0]["U_FDY"].ToString() });//负电源个数
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 4, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["Price"].ToString()) ? " " : double.Parse(maintab.Rows[0]["Price"].ToString()).ToString("0.00") });//单价 
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 4, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["Quantity"].ToString()) ? " " : maintab.Rows[0]["Quantity"].ToString() });//数量
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 4, YCellMark = 6, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["SumTotal"].ToString()) ? " " : double.Parse(maintab.Rows[0]["SumTotal"].ToString()).ToString("0.00") });//总计 
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 4, YCellMark = 8, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["CostTotal"].ToString()) ? " " : double.Parse(maintab.Rows[0]["CostTotal"].ToString()).ToString("0.00") });//总成本 
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 4, YCellMark = 10, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["Maori"].ToString()) ? " " : double.Parse(maintab.Rows[0]["Maori"].ToString()).ToString("0.00") });//毛利 
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 5, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["DetectionCapability"].ToString()) ? " " : maintab.Rows[0]["DetectionCapability"].ToString() });//检测能力
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 5, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["CustomReq"].ToString()) ? " " : maintab.Rows[0]["CustomReq"].ToString() });//客户特殊要求
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 6, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["Remarks"].ToString()) ? " " : maintab.Rows[0]["Remarks"].ToString() });//备注
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 7, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["ProjectDesc"].ToString()) ? " " : maintab.Rows[0]["ProjectDesc"].ToString() });//项目情况说明
+
+                //属性-基本要求
+                string CaseColor = "", CaseSilkPRT = "", MinDischargeVoltage = "", AgeingTime = "", MainCaseNo = "", RequiredPrecision = "", MiddleMachineType = "", AdditionalCaseNo = "";
+                string WiringMethod = "", LanguageVer = "", DisOptions = "", MainSpecialRequire = "", MainOtherRequire = "", AirExhaustingMethod = "";
+                //属性-配件要求
+                string EthernetCable = "", PowerLine = "", PlugAdaptor = "", SwitchBoard = "", ChannelElectricCurrentLine = "", ChannelVoltageLine = "", ChannelThermalCouple = "", Pallet = "", FixturePanel = "", Gantry = "", CustomBatteryElevator = "", CustomAntiExplosionType = "";
+                //属性-电池信息
+                string CylindricalBatteryInfo_Size = "", CylindricalBatteryInfo_Struct = "", SoftPackingBatteryInfo_Size = "", SoftPackingBatteryInfo_Jtype = "", LiionBatteryInfo_Size = "", LiionBatteryInfo_Jtype = "", LiionBatteryInfo_struct = "";
+                //配电选项，最低放电电压默认取主表字段
+                switch (maintab.Rows[0]["DisOptions"].ToString())
+                {
+                    case "AC110":
+                        DisOptions = "单相110V";
+                        break;
+                    case "AC220":
+                        DisOptions = "单相220V";
+                        break;
+                    case "TC220":
+                        DisOptions = "三相220V";
+                        break;
+                    case "AC380":
+                        DisOptions = "三相380V";
+                        break;
+                    case "AC420":
+                        DisOptions = "三相420V";
+                        break;
+                    default:
+                        DisOptions = maintab.Rows[0]["DisOptions"].ToString();
+                        break;
+                }
+                MinDischargeVoltage = maintab.Rows[0]["MinDischargeVoltage"].ToString() + "V";
+
+                DataTable tempt = GetContractReviewProperty(contractId);
+                if (tempt.Rows.Count > 0)
+                {
+                    string[] seprates = { "||" };
+                    if (!object.Equals(tempt.Rows[0]["ProductProperty"], DBNull.Value))
+                    {
+                        byte[] thisPropbyte = (byte[])tempt.Rows[0]["ProductProperty"]; string[] valuearr;
+                        if (tempt.Rows[0]["ProductType"].ToString() == "CT")
+                        {
+                            saleContractReview_CTPPE ctpro = DeSerialize<saleContractReview_CTPPE>(thisPropbyte);
+                            #region 设备基本要求
+                            if (!string.IsNullOrEmpty(ctpro.CaseColor))//机箱颜色
+                            {
+                                valuearr = ctpro.CaseColor.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    CaseColor = valuearr[1] + "色";
+                                }
+                                else
+                                {
+                                    CaseColor = "常规（暖灰）";
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.CaseSilkPrint))//机箱丝印
+                            {
+                                valuearr = ctpro.CaseSilkPrint.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    CaseSilkPRT = valuearr[1];
+                                }
+                                else
+                                {
+                                    CaseSilkPRT = "常规";
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.MinDischargeVoltage))//最低放电电压
+                            {
+                                valuearr = ctpro.MinDischargeVoltage.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    MinDischargeVoltage = valuearr[1] + "V";
+                                }
+                                else
+                                {
+                                    MinDischargeVoltage = valuearr[0] + "V";
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.AgeingTime))//设备老化时间
+                            {
+                                valuearr = ctpro.AgeingTime.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    AgeingTime = valuearr[1];
+                                }
+                                else
+                                {
+                                    switch (valuearr[0])
+                                    {
+                                        case "1":
+                                            AgeingTime = "公司默认标准";
+                                            break;
+                                        case "2":
+                                            AgeingTime = "1个星期";
+                                            break;
+                                        case "3":
+                                            AgeingTime = "半个月";
+                                            break;
+                                        default:
+                                            AgeingTime = valuearr[0];
+                                            break;
+                                    }
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.MainCaseNo))
+                            {
+                                valuearr = ctpro.MainCaseNo.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    MainCaseNo = "要求从" + valuearr[1] + "箱号开始";
+                                }
+                                else
+                                {
+                                    MainCaseNo = "无要求";
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.RequiredPrecision))
+                            {
+                                switch (ctpro.RequiredPrecision)
+                                {
+                                    case "1":
+                                        RequiredPrecision = "0.1%FS";
+                                        break;
+                                    case "2":
+                                        RequiredPrecision = "0.05%FS";
+                                        break;
+                                    case "3":
+                                        RequiredPrecision = "0.02%FS";
+                                        break;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.MiddleMachineType))
+                            {
+                                switch (ctpro.MiddleMachineType)
+                                {
+                                    case "1":
+                                        MiddleMachineType = "CT-ZWJ-3'S";
+                                        break;
+                                    case "2":
+                                        MiddleMachineType = "CT-ZWJ-4'S";
+                                        break;
+                                    case "3":
+                                        MiddleMachineType = "内置";
+                                        break;
+                                    case "4":
+                                        MiddleMachineType = "无（原先已配）";
+                                        break;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.AdditionalCaseNo))
+                            {
+                                valuearr = ctpro.AdditionalCaseNo.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    AdditionalCaseNo = "要求从" + valuearr[1] + "箱号开始";
+                                }
+                                else
+                                {
+                                    AdditionalCaseNo = "无要求";
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.WiringMethod))
+                            {
+                                valuearr = ctpro.WiringMethod.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    WiringMethod = valuearr[1];
+                                }
+                                else
+                                {
+                                    switch (valuearr[0])
+                                    {
+                                        case "1":
+                                            WiringMethod = "设备前面出线（默认）";
+                                            break;
+                                        case "2":
+                                            WiringMethod = "设备背部出线";
+                                            break;
+                                        case "3":
+                                            WiringMethod = "设备底部出线";
+                                            break;
+                                    }
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.LanguageVer))
+                            {
+                                switch (ctpro.LanguageVer)
+                                {
+                                    case "0":
+                                        LanguageVer = "中文版";
+                                        break;
+                                    case "1":
+                                        LanguageVer = "中英文版";
+                                        break;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.DisOptions))
+                            {
+                                valuearr = ctpro.DisOptions.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    DisOptions = valuearr[1] + "V";
+                                    if (valuearr.Length > 2)
+                                    {
+                                        DisOptions += " " + valuearr[2];
+                                    }
+                                }
+                                else
+                                {
+                                    switch (valuearr[0])
+                                    {
+                                        case "AC110":
+                                            DisOptions = "单相110V";
+                                            break;
+                                        case "AC220":
+                                            DisOptions = "单相220V";
+                                            break;
+                                        case "TC220":
+                                            DisOptions = "三相220V";
+                                            break;
+                                        case "AC380":
+                                            DisOptions = "三相380V";
+                                            break;
+                                        case "AC420":
+                                            DisOptions = "三相420V";
+                                            break;
+                                    }
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.MainSpecialRequire))
+                            {
+                                string[] specReqarr = ctpro.MainSpecialRequire.Split(',');
+                                for (int i = 0; i < specReqarr.Length; i++)
+                                {
+                                    switch (specReqarr[i])
+                                    {
+                                        case "0":
+                                            MainSpecialRequire += " 无";
+                                            break;
+                                        case "1":
+                                            MainSpecialRequire += " 极性切换功能";
+                                            break;
+                                        case "2":
+                                            MainSpecialRequire += " 恒压放电功能";
+                                            break;
+                                        case "3":
+                                            MainSpecialRequire += " 带报警灯";
+                                            break;
+                                        case "4":
+                                            MainSpecialRequire += " 无防反接功能";
+                                            break;
+                                        case "5":
+                                            MainSpecialRequire += " CAN通讯";
+                                            break;
+                                    }
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.MainOtherRequire))
+                            {
+                                MainOtherRequire = ctpro.MainOtherRequire;
+                            }
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 8, YCellMark = 2, ValueType = 0, ValueData = CaseColor });//机箱颜色
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 8, YCellMark = 4, ValueType = 0, ValueData = CaseSilkPRT }); //机箱丝印
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 8, YCellMark = 6, ValueType = 0, ValueData = MinDischargeVoltage });//最低放电电压
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 8, YCellMark = 8, ValueType = 0, ValueData = AgeingTime }); //设备老化时间
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 9, YCellMark = 2, ValueType = 0, ValueData = MainCaseNo }); //主设备箱号
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 9, YCellMark = 4, ValueType = 0, ValueData = RequiredPrecision });//设备精度要求
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 9, YCellMark = 6, ValueType = 0, ValueData = MiddleMachineType }); //中位机
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 10, YCellMark = 2, ValueType = 0, ValueData = AdditionalCaseNo });//辅助设备箱号
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 10, YCellMark = 4, ValueType = 0, ValueData = WiringMethod }); //出线方式
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 10, YCellMark = 6, ValueType = 0, ValueData = LanguageVer });//中英文版本
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 11, YCellMark = 2, ValueType = 0, ValueData = DisOptions });//配电选项
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 11, YCellMark = 4, ValueType = 0, ValueData = MainSpecialRequire });//其它特殊要求
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 12, YCellMark = 2, ValueType = 0, ValueData = MainOtherRequire });//其它要求
+                            #endregion
+                            #region 辅助通道
+                            if (ctpro.AddChannelFlag != null && ctpro.AddChannelFlag == "1")
+                            {
+                                StringBuilder addchlinfo = new StringBuilder();
+                                addchlinfo.Append("类型:");
+                                string dRow1value = " ";
+                                if (!string.IsNullOrEmpty(ctpro.AdditionalChannelType))
+                                {
+                                    switch (ctpro.AdditionalChannelType)
+                                    {
+                                        case "0":
+                                            dRow1value = "无";
+                                            break;
+                                        case "1":
+                                            dRow1value = "CA-4008-1U-VT";
+                                            break;
+                                        case "2":
+                                            dRow1value = "CA-4008-1U-VT-KX";
+                                            break;
+                                        case "3":
+                                            dRow1value = "CA-4008-1U-VT-TX";
+                                            break;
+                                        case "4":
+                                            dRow1value = "CA-5008-1U-VT";
+                                            break;
+                                    }
+                                }
+                                addchlinfo.Append(dRow1value);
+                                addchlinfo.Append(" 电压:");
+                                string dRow2value = " ";
+                                if (!string.IsNullOrEmpty(ctpro.AdditionalChannelVoltage))
+                                {
+                                    switch (ctpro.AdditionalChannelVoltage)
+                                    {
+                                        case "0":
+                                            dRow2value = "无";
+                                            break;
+                                        default:
+                                            dRow2value = ctpro.AdditionalChannelVoltage + "V";
+                                            break;
+                                    }
+                                }
+                                addchlinfo.Append(dRow2value);
+                                addchlinfo.Append(" 温度:");
+                                string dRow3value = " ";
+                                if (!string.IsNullOrEmpty(ctpro.AdditionalChannelTemperature))
+                                {
+                                    switch (ctpro.AdditionalChannelTemperature)
+                                    {
+                                        case "4S":
+                                            dRow3value = "2K热敏电阻(4S)";
+                                            break;
+                                        case "3S":
+                                            dRow3value = "10K热敏电阻(3S)";
+                                            break;
+                                        case "T":
+                                            dRow3value = "T型热电偶";
+                                            break;
+                                        case "K":
+                                            dRow3value = "K型热电偶";
+                                            break;
+                                        case "0":
+                                            dRow3value = "无";
+                                            break;
+                                    }
+                                }
+                                addchlinfo.Append(dRow3value);
+                                addchlinfo.Append(" 通道线长度:");
+                                string dRow4value = " ";
+                                if (!string.IsNullOrEmpty(ctpro.AdditionalChannelLinelength))
+                                {
+                                    valuearr = ctpro.AdditionalChannelLinelength.Split(seprates, StringSplitOptions.None);
+                                    if (valuearr.Length > 1)
+                                    {
+                                        dRow4value = valuearr[1];
+                                    }
+                                    else
+                                    {
+                                        switch (valuearr[0])
+                                        {
+                                            case "1":
+                                                dRow4value = "0.5米（常规3U）";
+                                                break;
+                                            case "2":
+                                                dRow4value = "2米";
+                                                break;
+                                            case "3":
+                                                dRow4value = "3米";
+                                                break;
+                                        }
+                                    }
+                                }
+                                addchlinfo.Append(dRow4value);
+                                addchlinfo.Append(" 电压夹具:");
+                                string dRow5value = " ";
+                                if (!string.IsNullOrEmpty(ctpro.AdditionalChannelFixture))
+                                {
+                                    valuearr = ctpro.AdditionalChannelFixture.Split(seprates, StringSplitOptions.None);
+                                    switch (valuearr[0])
+                                    {
+                                        case "1":
+                                            dRow5value = "鳄鱼夹";
+                                            break;
+                                        case "2":
+                                            dRow5value = "无";
+                                            break;
+                                        case "0":
+                                            dRow5value = "线鼻子";
+                                            break;
+                                    }
+                                    if (valuearr.Length > 1)
+                                    {
+                                        dRow5value += valuearr[1] + "mm";
+                                    }
+                                }
+                                addchlinfo.Append(dRow5value);
+                                //添加到单元格中
+                                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 13, YCellMark = 2, ValueType = 0, ValueData = addchlinfo.ToString() });//辅助通道信息
+                            }
+                            else
+                            {
+                                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 13, YCellMark = 2, ValueType = 0, ValueData = "无" });//无辅助通道
+                            }
+                            #endregion
+                            #region 压床
+                            if (ctpro.PressMacFlag != null && ctpro.PressMacFlag == "1")
+                            {
+                                StringBuilder pressmacinfo = new StringBuilder();
+                                pressmacinfo.Append("压床类型:");
+                                string dRow1value = " ";
+                                if (!string.IsNullOrEmpty(ctpro.PressType))
+                                {
+                                    valuearr = ctpro.PressType.Split(seprates, StringSplitOptions.None);
+                                    if (valuearr.Length > 1)
+                                    {
+                                        switch (valuearr[1])
+                                        {
+                                            case "3":
+                                                dRow1value = "无";
+                                                break;
+                                            case "2":
+                                                dRow1value = "全自动";
+                                                break;
+                                            case "1":
+                                                dRow1value = "半自动";
+                                                break;
+                                        }
+                                        pressmacinfo.Append(dRow1value);
+                                    }
+                                    else
+                                    {
+                                        pressmacinfo.Append("(" + valuearr[0] + ")");
+                                    }
+                                }
+                                pressmacinfo.Append("   压床通讯方式:");
+                                if (!string.IsNullOrEmpty(ctpro.PLCLine))
+                                {
+                                    switch (ctpro.PLCLine)
+                                    {
+                                        case "NO":
+                                            pressmacinfo.Append("无");
+                                            break;
+                                        default:
+                                            pressmacinfo.Append(ctpro.PLCLine);
+                                            break;
+                                    }
+                                }
+                                pressmacinfo.Append("   每层通道数:");
+                                if (!string.IsNullOrEmpty(ctpro.ChannelsPerLayer))
+                                {
+                                    pressmacinfo.Append(ctpro.ChannelsPerLayer);
+                                }
+                                pressmacinfo.Append("   压床层数:");
+                                if (!string.IsNullOrEmpty(ctpro.PressLayers))
+                                {
+                                    pressmacinfo.Append(ctpro.PressLayers);
+                                }
+                                pressmacinfo.Append("   单托盘通道数:");
+                                if (!string.IsNullOrEmpty(ctpro.ChannelsPerPallet))
+                                {
+                                    pressmacinfo.Append(ctpro.ChannelsPerPallet);
+                                }
+                                pressmacinfo.Append("   单列通道数:");
+                                if (!string.IsNullOrEmpty(ctpro.ChannelsPerList))
+                                {
+                                    pressmacinfo.Append(ctpro.ChannelsPerList);
+                                }
+                                if (!string.IsNullOrEmpty(ctpro.MESBISFlag))
+                                {
+                                    pressmacinfo.Append("   ");
+                                    valuearr = ctpro.MESBISFlag.Split(seprates, StringSplitOptions.None);
+                                    switch (valuearr[0])
+                                    {
+                                        case "0":
+                                            break;
+                                        case "NO":
+                                            pressmacinfo.Append("无");
+                                            break;
+                                        default:
+                                            pressmacinfo.Append(valuearr[0]);
+                                            break;
+                                    }
+                                    if (valuearr.Length > 1)
+                                    {
+                                        pressmacinfo.Append(valuearr[1]);
+                                    }
+                                }
+                                //添加到单元格中
+                                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 14, YCellMark = 2, ValueType = 0, ValueData = pressmacinfo.ToString() });//压床信息
+                            }
+                            else
+                            {
+                                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 14, YCellMark = 2, ValueType = 0, ValueData = "无" });//无压床
+                            }
+                            #endregion
+                            #region 高低温箱
+                            if (ctpro.HLTempFlag != null && ctpro.HLTempFlag == "1")
+                            {
+                                StringBuilder hltempinfo = new StringBuilder();
+                                hltempinfo.Append("通讯方式:");
+                                if (!string.IsNullOrEmpty(ctpro.HTTemp_PLCLine))
+                                {
+                                    switch (ctpro.HTTemp_PLCLine)
+                                    {
+                                        case "NO":
+                                            hltempinfo.Append("无");
+                                            break;
+                                        default:
+                                            hltempinfo.Append(ctpro.PLCLine);
+                                            break;
+                                    }
+                                }
+                                hltempinfo.Append(" 体积:");
+                                if (!string.IsNullOrEmpty(ctpro.HTTemp_Volume))
+                                {
+                                    hltempinfo.Append(ctpro.HTTemp_Volume);
+                                }
+                                hltempinfo.Append(" 供应商");
+                                if (!string.IsNullOrEmpty(ctpro.HTTemp_Vendor))
+                                {
+                                    hltempinfo.Append(ctpro.HTTemp_Vendor);
+                                }
+                                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 15, YCellMark = 2, ValueType = 0, ValueData = hltempinfo.ToString() });//无高低温箱
+                            }
+                            else
+                            {
+                                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 15, YCellMark = 2, ValueType = 0, ValueData = "无" });//无高低温箱
+                            }
+                            #endregion
+                            #region 配件要求
+                            if (!string.IsNullOrEmpty(ctpro.EthernetCable))
+                            {
+                                valuearr = ctpro.EthernetCable.Split(seprates, StringSplitOptions.None);
+                                switch (valuearr[0])
+                                {
+                                    case "1":
+                                        EthernetCable = "0.25米";
+                                        if (valuearr.Length > 1)
+                                        {
+                                            EthernetCable += valuearr[1] + "条";
+                                        }
+                                        break;
+                                    case "2":
+                                        EthernetCable = "0.5米";
+                                        if (valuearr.Length > 1)
+                                        {
+                                            EthernetCable += valuearr[1] + "条";
+                                        }
+                                        break;
+                                    case "3":
+                                        EthernetCable = "3米";
+                                        if (valuearr.Length > 1)
+                                        {
+                                            EthernetCable += valuearr[1] + "条";
+                                        }
+                                        break;
+                                    case "4":
+                                        EthernetCable = "5米";
+                                        if (valuearr.Length > 1)
+                                        {
+                                            EthernetCable += valuearr[1] + "条";
+                                        }
+                                        break;
+                                    case "0":
+                                        if (valuearr.Length > 1)
+                                        {
+                                            EthernetCable += valuearr[1] + "米";
+                                        }
+                                        break;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.PowerLine))
+                            {
+                                valuearr = ctpro.PowerLine.Split(seprates, StringSplitOptions.None);
+                                switch (valuearr[0])
+                                {
+                                    case "1":
+                                        PowerLine = "1*1";
+                                        if (valuearr.Length > 1)
+                                        {
+                                            PowerLine += " " + valuearr[1] + "条";
+                                        }
+                                        if (valuearr.Length > 2)
+                                        {
+                                            string cver = "";
+                                            switch (valuearr[2])
+                                            {
+                                                case "U":
+                                                    cver = "欧式";
+                                                    break;
+                                                case "A":
+                                                    cver = "美式";
+                                                    break;
+                                                case "E":
+                                                    cver = "英式";
+                                                    break;
+                                            }
+                                            PowerLine += "(" + cver + ")";
+                                        }
+                                        break;
+                                    case "2":
+                                        PowerLine = "1*5";
+                                        if (valuearr.Length > 1)
+                                        {
+                                            PowerLine += " " + valuearr[1] + "条";
+                                        }
+                                        break;
+                                    case "3":
+                                        PowerLine = "1*6";
+                                        if (valuearr.Length > 1)
+                                        {
+                                            PowerLine += " " + valuearr[1] + "条";
+                                        }
+                                        break;
+                                    case "0":
+                                        PowerLine = "设备自带";
+                                        break;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.PlugAdaptor))
+                            {
+                                valuearr = ctpro.PlugAdaptor.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    switch (valuearr[1])
+                                    {
+                                        case "U":
+                                            PlugAdaptor = "欧式";
+                                            break;
+                                        case "A":
+                                            PlugAdaptor = "美式";
+                                            break;
+                                        case "E":
+                                            PlugAdaptor = "英式";
+                                            break;
+                                    }
+                                }
+                                if (!string.IsNullOrEmpty(valuearr[0]))
+                                {
+                                    PlugAdaptor += " " + valuearr[0] + "个";
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.SwitchBoard))
+                            {
+                                switch (ctpro.SwitchBoard)
+                                {
+                                    case "CP":
+                                        SwitchBoard = "电脑";
+                                        break;
+                                    default:
+                                        SwitchBoard = ctpro.SwitchBoard;
+                                        break;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.ChannelElectricCurrentLine))
+                            {
+                                valuearr = ctpro.ChannelElectricCurrentLine.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 2)
+                                {
+                                    switch (valuearr[1])
+                                    {
+                                        case "1":
+                                            ChannelElectricCurrentLine = "线鼻子";
+                                            if (!string.IsNullOrEmpty(valuearr[2]))
+                                            {
+                                                ChannelElectricCurrentLine += valuearr[2] + "mm";
+                                            }
+                                            break;
+                                        case "2":
+                                            ChannelElectricCurrentLine = "鳄鱼夹";
+                                            if (!string.IsNullOrEmpty(valuearr[2]))
+                                            {
+                                                ChannelElectricCurrentLine += valuearr[2] + "A";
+                                            }
+                                            break;
+                                        case "3":
+                                            ChannelElectricCurrentLine = "聚合物夹具";
+                                            if (!string.IsNullOrEmpty(valuearr[2]))
+                                            {
+                                                ChannelElectricCurrentLine += valuearr[2] + "A";
+                                            }
+                                            break;
+                                        case "4":
+                                            ChannelElectricCurrentLine = "顶针夹具";
+                                            if (!string.IsNullOrEmpty(valuearr[2]))
+                                            {
+                                                ChannelElectricCurrentLine += valuearr[2] + "A";
+                                            }
+                                            break;
+                                    }
+                                }
+                                if (!string.IsNullOrEmpty(valuearr[0]))
+                                {
+                                    ChannelElectricCurrentLine += " 长度" + valuearr[0] + "米";
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.ChannelVoltageLine))
+                            {
+                                valuearr = ctpro.ChannelVoltageLine.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 2)
+                                {
+                                    switch (valuearr[1])
+                                    {
+                                        case "1":
+                                            ChannelVoltageLine = "线鼻子";
+                                            if (!string.IsNullOrEmpty(valuearr[2]))
+                                            {
+                                                ChannelVoltageLine += valuearr[2] + "mm";
+                                            }
+                                            break;
+                                        case "2":
+                                            ChannelVoltageLine = "鳄鱼夹";
+                                            if (!string.IsNullOrEmpty(valuearr[2]))
+                                            {
+                                                ChannelVoltageLine += valuearr[2] + "A";
+                                            }
+                                            break;
+                                        case "3":
+                                            ChannelVoltageLine = "聚合物夹具";
+                                            if (!string.IsNullOrEmpty(valuearr[2]))
+                                            {
+                                                ChannelVoltageLine += valuearr[2] + "A";
+                                            }
+                                            break;
+                                        case "4":
+                                            ChannelVoltageLine = "顶针夹具";
+                                            if (!string.IsNullOrEmpty(valuearr[2]))
+                                            {
+                                                ChannelVoltageLine += valuearr[2] + "A";
+                                            }
+                                            break;
+                                    }
+                                }
+                                if (!string.IsNullOrEmpty(valuearr[0]))
+                                {
+                                    ChannelVoltageLine += " 长度" + valuearr[0] + "米";
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.Pallet))
+                            {
+                                valuearr = ctpro.Pallet.Split(seprates, StringSplitOptions.None);
+                                switch (valuearr[0])
+                                {
+                                    case "1":
+                                        Pallet = "19寸托盘";
+                                        break;
+                                    case "2":
+                                        Pallet = "24寸托盘";
+                                        break;
+                                    case "0":
+                                        if (valuearr.Length > 1)
+                                        {
+                                            Pallet = valuearr[1];
+                                        }
+                                        break;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.FixturePanel))
+                            {
+                                switch (ctpro.FixturePanel)
+                                {
+                                    case "3":
+                                        FixturePanel = "3U夹具面板";
+                                        break;
+                                    case "4":
+                                        FixturePanel = "5U夹具面板";
+                                        break;
+                                    case "5":
+                                        FixturePanel = "纽扣夹具";
+                                        break;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.Gantry))
+                            {
+                                valuearr = ctpro.Gantry.Split(seprates, StringSplitOptions.None);
+                                switch (valuearr[0])
+                                {
+                                    case "1":
+                                        Gantry = "A604-19\"-LMJ-n";
+                                        break;
+                                    case "2":
+                                        Gantry = "A604-19\"-LMJ-m";
+                                        break;
+                                    case "0":
+                                        if (valuearr.Length > 1)
+                                        {
+                                            Gantry = valuearr[1];
+                                        }
+                                        break;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.CustomBatteryElevator))
+                            {
+                                CustomBatteryElevator = ctpro.CustomBatteryElevator;
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.CustomAntiExplosionType))
+                            {
+                                CustomAntiExplosionType = ctpro.CustomAntiExplosionType;
+                            }
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 16, YCellMark = 2, ValueType = 0, ValueData = EthernetCable });//网线
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 16, YCellMark = 4, ValueType = 0, ValueData = PowerLine });//电源线
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 16, YCellMark = 6, ValueType = 0, ValueData = PlugAdaptor });//转换插头
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 16, YCellMark = 8, ValueType = 0, ValueData = SwitchBoard });//交换机
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 17, YCellMark = 2, ValueType = 0, ValueData = Pallet });//托盘
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 17, YCellMark = 4, ValueType = 0, ValueData = ChannelElectricCurrentLine });//通道电流线
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 17, YCellMark = 6, ValueType = 0, ValueData = FixturePanel });//夹具面板
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 18, YCellMark = 2, ValueType = 0, ValueData = Gantry });//龙门架
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 18, YCellMark = 4, ValueType = 0, ValueData = ChannelVoltageLine });//通道电压线
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 19, YCellMark = 2, ValueType = 0, ValueData = CustomBatteryElevator });//定制电池架
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 19, YCellMark = 4, ValueType = 0, ValueData = CustomAntiExplosionType });//定制防爆箱
+                            #endregion
+                            #region 电池信息
+                            if (!string.IsNullOrEmpty(ctpro.CylindricalBatteryInfo))
+                            {
+                                valuearr = ctpro.CylindricalBatteryInfo.Split(seprates, StringSplitOptions.None);
+                                CylindricalBatteryInfo_Size = valuearr[0] + " " + valuearr[1];
+                                CylindricalBatteryInfo_Struct = valuearr[2];
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.SoftPackingBatteryInfo))
+                            {
+                                valuearr = ctpro.SoftPackingBatteryInfo.Split(seprates, StringSplitOptions.None);
+                                SoftPackingBatteryInfo_Size = valuearr[0] + " " + valuearr[1];
+                                if (valuearr.Length > 2)
+                                {
+                                    switch (valuearr[2])
+                                    {
+                                        case "1":
+                                            SoftPackingBatteryInfo_Jtype = "两端出极耳";
+                                            break;
+                                        case "2":
+                                            SoftPackingBatteryInfo_Jtype = "一端出极耳";
+                                            break;
+                                    }
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.LiionBatteryInfo))
+                            {
+                                valuearr = ctpro.LiionBatteryInfo.Split(seprates, StringSplitOptions.None);
+                                LiionBatteryInfo_Size = valuearr[0] + " " + valuearr[1];
+                                LiionBatteryInfo_struct = valuearr[2];
+                                if (valuearr.Length > 2)
+                                {
+                                    switch (valuearr[2])
+                                    {
+                                        case "1":
+                                            LiionBatteryInfo_Jtype = "两端出极耳";
+                                            break;
+                                        case "2":
+                                            LiionBatteryInfo_Jtype = "一端出极耳";
+                                            break;
+                                    }
+                                }
+                            }
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 20, YCellMark = 3, ValueType = 0, ValueData = CylindricalBatteryInfo_Size });//圆柱电池-尺寸
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 20, YCellMark = 5, ValueType = 0, ValueData = CylindricalBatteryInfo_Struct });//圆柱电池-极柱结构
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 21, YCellMark = 3, ValueType = 0, ValueData = SoftPackingBatteryInfo_Size });//软包电池-尺寸
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 21, YCellMark = 4, ValueType = 0, ValueData = SoftPackingBatteryInfo_Jtype });//软包电池-极耳类型
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 22, YCellMark = 3, ValueType = 0, ValueData = LiionBatteryInfo_Size });//方形电池-尺寸
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 22, YCellMark = 4, ValueType = 0, ValueData = LiionBatteryInfo_Jtype });//方形电池-极耳类型
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 22, YCellMark = 6, ValueType = 0, ValueData = LiionBatteryInfo_struct });//方形电池-极柱结构
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 23, YCellMark = 2, ValueType = 0, ValueData = ctpro.ProductBatteryInfo });//方形电池-极柱结构
+                            #endregion
+                            #region 其它特殊要求
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 24, YCellMark = 2, ValueType = 0, ValueData = ctpro.CTSepecialRequire });//其它特殊要求
+                            #endregion
+                        }
+                        else if (tempt.Rows[0]["ProductType"].ToString() == "CE")
+                        {
+                            saleContractReview_CEPPE cepro = DeSerialize<saleContractReview_CEPPE>(thisPropbyte);
+                            mbval = "合约评审-CE.doc";
+                            #region 设备基本信息
+                            if (!string.IsNullOrEmpty(cepro.CaseColor))//机箱颜色
+                            {
+                                valuearr = cepro.CaseColor.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    CaseColor = valuearr[1] + "色";
+                                }
+                                else
+                                {
+                                    CaseColor = "常规（暖灰）";
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(cepro.CaseSilkPrint))//机箱丝印
+                            {
+                                valuearr = cepro.CaseSilkPrint.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    CaseSilkPRT = valuearr[1];
+                                }
+                                else
+                                {
+                                    CaseSilkPRT = "常规";
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(cepro.MinDischargeVoltage))//最低放电电压
+                            {
+                                valuearr = cepro.MinDischargeVoltage.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    MinDischargeVoltage = valuearr[1] + "V";
+                                }
+                                else
+                                {
+                                    MinDischargeVoltage = valuearr[0] + "V";
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(cepro.AgeingTime))//设备老化时间
+                            {
+                                AgeingTime = cepro.AgeingTime + "小时";
+
+                            }
+                            if (!string.IsNullOrEmpty(cepro.MainCaseNo))
+                            {
+                                valuearr = cepro.MainCaseNo.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    MainCaseNo = "要求从" + valuearr[1] + "箱号开始";
+                                }
+                                else
+                                {
+                                    MainCaseNo = "无要求";
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(cepro.RequiredPrecision))
+                            {
+                                switch (cepro.RequiredPrecision)
+                                {
+                                    case "1":
+                                        RequiredPrecision = "0.1%FS";
+                                        break;
+                                    case "2":
+                                        RequiredPrecision = "0.05%FS(温度25℃±5℃) ";
+                                        break;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(cepro.MiddleMachineType))
+                            {
+                                switch (cepro.MiddleMachineType)
+                                {
+                                    case "1":
+                                        MiddleMachineType = "ZWJ-4S";
+                                        break;
+                                    case "2":
+                                        MiddleMachineType = "ZWJ-3S";
+                                        break;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(cepro.AdditionalCaseNo))
+                            {
+                                valuearr = cepro.AdditionalCaseNo.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    AdditionalCaseNo = "要求从" + valuearr[1] + "箱号开始";
+                                }
+                                else
+                                {
+                                    AdditionalCaseNo = "无要求";
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(cepro.WiringMethod))
+                            {
+                                valuearr = cepro.WiringMethod.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    WiringMethod = valuearr[1];
+                                }
+                                else
+                                {
+                                    switch (valuearr[0])
+                                    {
+                                        case "1":
+                                            WiringMethod = "设备前面出线";
+                                            break;
+                                        case "2":
+                                            WiringMethod = "设备背部出线";
+                                            break;
+                                        case "3":
+                                            WiringMethod = "设备底部出线";
+                                            break;
+                                    }
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(cepro.LanguageVer))
+                            {
+                                switch (cepro.LanguageVer)
+                                {
+                                    case "0":
+                                        LanguageVer = "中文版";
+                                        break;
+                                    case "1":
+                                        LanguageVer = "英文版";
+                                        break;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(cepro.DisOptions))
+                            {
+                                valuearr = cepro.DisOptions.Split(seprates, StringSplitOptions.None);
+                                switch (valuearr[0])
+                                {
+                                    case "AC110":
+                                        DisOptions = "单相110V";
+                                        break;
+                                    case "AC220":
+                                        DisOptions = "单相220V";
+                                        break;
+                                    case "TC220":
+                                        DisOptions = "三相220V";
+                                        break;
+                                    case "AC380":
+                                        DisOptions = "三相380V";
+                                        break;
+                                    case "AC420":
+                                        DisOptions = "三相420V";
+                                        break;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(cepro.MainSpecialRequire))
+                            {
+                                string[] specReqarr = cepro.MainSpecialRequire.Split(',');
+                                for (int i = 0; i < specReqarr.Length; i++)
+                                {
+                                    switch (specReqarr[i])
+                                    {
+                                        case "0":
+                                            MainSpecialRequire += "无";
+                                            break;
+                                        case "1":
+                                            MainSpecialRequire += "极性切换功能";
+                                            break;
+                                        case "2":
+                                            MainSpecialRequire += "恒压放电功能";
+                                            break;
+                                        case "3":
+                                            MainSpecialRequire += "带报警灯";
+                                            break;
+                                    }
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(cepro.AirExhaustingMethod))
+                            {
+                                switch (cepro.AirExhaustingMethod)
+                                {
+                                    case "1":
+                                        AirExhaustingMethod = "前后";
+                                        break;
+                                    case "2":
+                                        AirExhaustingMethod = "向上";
+                                        break;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(cepro.MainOtherRequire))
+                            {
+                                MainOtherRequire = cepro.MainOtherRequire;
+                            }
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 8, YCellMark = 2, ValueType = 0, ValueData = CaseColor });//机箱颜色
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 8, YCellMark = 4, ValueType = 0, ValueData = CaseSilkPRT }); //机箱丝印
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 8, YCellMark = 6, ValueType = 0, ValueData = MinDischargeVoltage });//最低放电电压
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 8, YCellMark = 8, ValueType = 0, ValueData = AgeingTime }); //设备老化时间
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 9, YCellMark = 2, ValueType = 0, ValueData = MainCaseNo }); //主设备箱号
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 9, YCellMark = 4, ValueType = 0, ValueData = RequiredPrecision });//设备精度要求
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 9, YCellMark = 6, ValueType = 0, ValueData = MiddleMachineType }); //中位机
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 10, YCellMark = 2, ValueType = 0, ValueData = AdditionalCaseNo });//辅助设备箱号
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 10, YCellMark = 4, ValueType = 0, ValueData = WiringMethod }); //出线方式
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 10, YCellMark = 6, ValueType = 0, ValueData = LanguageVer });//中英文版本
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 11, YCellMark = 2, ValueType = 0, ValueData = DisOptions });//配电选项
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 11, YCellMark = 4, ValueType = 0, ValueData = MainSpecialRequire });//其它特殊要求
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 11, YCellMark = 6, ValueType = 0, ValueData = AirExhaustingMethod });//排风方式
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 12, YCellMark = 2, ValueType = 0, ValueData = MainOtherRequire });//其它要求
+                            #endregion
+                            #region 辅助通道
+                            if (cepro.AddChannelFlag != null && cepro.AddChannelFlag == "1")
+                            {
+                                StringBuilder addchlinfo = new StringBuilder();
+                                addchlinfo.Append("类型:");
+                                string dRow1value = " ";
+                                if (!string.IsNullOrEmpty(cepro.AdditionalChannelType))
+                                {
+                                    switch (cepro.AdditionalChannelType)
+                                    {
+                                        case "0":
+                                            dRow1value = "无";
+                                            break;
+                                        case "1":
+                                            dRow1value = "CA-4008-1U-VT";
+                                            break;
+                                        case "2":
+                                            dRow1value = "CA-4008-1U-VT-KX";
+                                            break;
+                                        case "3":
+                                            dRow1value = "CA-4008-1U-VT-TX";
+                                            break;
+                                        case "4":
+                                            dRow1value = "CA-5008-1U-VT";
+                                            break;
+                                    }
+                                }
+                                addchlinfo.Append(dRow1value);
+                                addchlinfo.Append(" 电压:");
+                                string dRow2value = " ";
+                                if (!string.IsNullOrEmpty(cepro.AdditionalChannelVoltage))
+                                {
+                                    switch (cepro.AdditionalChannelVoltage)
+                                    {
+                                        case "0":
+                                            dRow2value = "无";
+                                            break;
+                                        default:
+                                            dRow2value = cepro.AdditionalChannelVoltage + "V";
+                                            break;
+                                    }
+                                }
+                                addchlinfo.Append(dRow2value);
+                                addchlinfo.Append(" 温度:");
+                                string dRow3value = " ";
+                                if (!string.IsNullOrEmpty(cepro.AdditionalChannelTemperature))
+                                {
+                                    switch (cepro.AdditionalChannelTemperature)
+                                    {
+                                        case "4S":
+                                            dRow3value = "2K热敏电阻(4S)";
+                                            break;
+                                        case "3S":
+                                            dRow3value = "10K热敏电阻(3S)";
+                                            break;
+                                        case "T":
+                                            dRow3value = "T型热电偶";
+                                            break;
+                                        case "K":
+                                            dRow3value = "K型热电偶";
+                                            break;
+                                        case "0":
+                                            dRow3value = "无";
+                                            break;
+                                    }
+                                }
+                                addchlinfo.Append(dRow3value);
+                                addchlinfo.Append(" 通道线长度:");
+                                string dRow4value = " ";
+                                if (!string.IsNullOrEmpty(cepro.AdditionalChannelLinelength))
+                                {
+                                    valuearr = cepro.AdditionalChannelLinelength.Split(seprates, StringSplitOptions.None);
+                                    if (valuearr.Length > 1)
+                                    {
+                                        dRow4value = valuearr[1];
+                                    }
+                                    else
+                                    {
+                                        switch (valuearr[0])
+                                        {
+                                            case "1":
+                                                dRow4value = "0.5米（常规3U）";
+                                                break;
+                                            case "2":
+                                                dRow4value = "2米";
+                                                break;
+                                            case "3":
+                                                dRow4value = "3米";
+                                                break;
+                                        }
+                                    }
+                                }
+                                addchlinfo.Append(dRow4value);
+                                addchlinfo.Append(" 电压夹具:");
+                                string dRow5value = " ";
+                                if (!string.IsNullOrEmpty(cepro.AdditionalChannelFixture))
+                                {
+                                    valuearr = cepro.AdditionalChannelFixture.Split(seprates, StringSplitOptions.None);
+                                    switch (valuearr[0])
+                                    {
+                                        case "1":
+                                            dRow5value = "鳄鱼夹";
+                                            break;
+                                        case "2":
+                                            dRow5value = "无";
+                                            break;
+                                        case "0":
+                                            dRow5value = "线鼻子";
+                                            break;
+                                    }
+                                    if (valuearr.Length > 1)
+                                    {
+                                        dRow5value += valuearr[1] + "mm";
+                                    }
+                                }
+                                addchlinfo.Append(dRow5value);
+                                //添加到单元格中
+                                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 13, YCellMark = 2, ValueType = 0, ValueData = addchlinfo.ToString() });//辅助通道信息
+                            }
+                            else
+                            {
+                                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 13, YCellMark = 2, ValueType = 0, ValueData = "无" });//无辅助通道
+                            }
+                            #endregion
+                            #region 压床
+                            if (cepro.PressMacFlag != null && cepro.PressMacFlag == "1")
+                            {
+                                StringBuilder pressmacinfo = new StringBuilder();
+                                pressmacinfo.Append("压床类型:");
+                                string dRow1value = " ";
+                                if (!string.IsNullOrEmpty(cepro.PressType))
+                                {
+                                    valuearr = cepro.PressType.Split(seprates, StringSplitOptions.None);
+                                    if (valuearr.Length > 1)
+                                    {
+                                        switch (valuearr[1])
+                                        {
+                                            case "3":
+                                                dRow1value = "无";
+                                                break;
+                                            case "2":
+                                                dRow1value = "全自动";
+                                                break;
+                                            case "1":
+                                                dRow1value = "半自动";
+                                                break;
+                                        }
+                                        pressmacinfo.Append(dRow1value);
+                                    }
+                                    else
+                                    {
+                                        pressmacinfo.Append("(" + valuearr[0] + ")");
+                                    }
+                                }
+                                pressmacinfo.Append("   压床通讯方式:");
+                                if (!string.IsNullOrEmpty(cepro.PLCLine))
+                                {
+                                    switch (cepro.PLCLine)
+                                    {
+                                        case "NO":
+                                            pressmacinfo.Append("无");
+                                            break;
+                                        default:
+                                            pressmacinfo.Append(cepro.PLCLine);
+                                            break;
+                                    }
+                                }
+                                pressmacinfo.Append("   每层通道数:");
+                                if (!string.IsNullOrEmpty(cepro.ChannelsPerLayer))
+                                {
+                                    pressmacinfo.Append(cepro.ChannelsPerLayer);
+                                }
+                                pressmacinfo.Append("   压床层数:");
+                                if (!string.IsNullOrEmpty(cepro.PressLayers))
+                                {
+                                    pressmacinfo.Append(cepro.PressLayers);
+                                }
+                                pressmacinfo.Append("   单托盘通道数:");
+                                if (!string.IsNullOrEmpty(cepro.ChannelsPerPallet))
+                                {
+                                    pressmacinfo.Append(cepro.ChannelsPerPallet);
+                                }
+                                pressmacinfo.Append("   单列通道数:");
+                                if (!string.IsNullOrEmpty(cepro.ChannelsPerList))
+                                {
+                                    pressmacinfo.Append(cepro.ChannelsPerList);
+                                }
+                                if (!string.IsNullOrEmpty(cepro.MESBISFlag))
+                                {
+                                    pressmacinfo.Append("   ");
+                                    valuearr = cepro.MESBISFlag.Split(seprates, StringSplitOptions.None);
+                                    switch (valuearr[0])
+                                    {
+                                        case "0":
+                                            break;
+                                        case "NO":
+                                            pressmacinfo.Append("无");
+                                            break;
+                                        default:
+                                            pressmacinfo.Append(valuearr[0]);
+                                            break;
+                                    }
+                                    if (valuearr.Length > 1)
+                                    {
+                                        pressmacinfo.Append(valuearr[1]);
+                                    }
+                                }
+                                //添加到单元格中
+                                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 14, YCellMark = 2, ValueType = 0, ValueData = pressmacinfo.ToString() });//压床信息
+                            }
+                            else
+                            {
+                                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 14, YCellMark = 2, ValueType = 0, ValueData = "无" });//无压床
+                            }
+                            #endregion
+                            #region 高低温箱
+                            if (cepro.HLTempFlag != null && cepro.HLTempFlag == "1")
+                            {
+                                StringBuilder hltempinfo = new StringBuilder();
+                                hltempinfo.Append("通讯方式:");
+                                if (!string.IsNullOrEmpty(cepro.HTTemp_PLCLine))
+                                {
+                                    switch (cepro.HTTemp_PLCLine)
+                                    {
+                                        case "NO":
+                                            hltempinfo.Append("无");
+                                            break;
+                                        default:
+                                            hltempinfo.Append(cepro.PLCLine);
+                                            break;
+                                    }
+                                }
+                                hltempinfo.Append(" 体积:");
+                                if (!string.IsNullOrEmpty(cepro.HTTemp_Volume))
+                                {
+                                    hltempinfo.Append(cepro.HTTemp_Volume);
+                                }
+                                hltempinfo.Append(" 供应商");
+                                if (!string.IsNullOrEmpty(cepro.HTTemp_Vendor))
+                                {
+                                    hltempinfo.Append(cepro.HTTemp_Vendor);
+                                }
+                                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 15, YCellMark = 2, ValueType = 0, ValueData = hltempinfo.ToString() });//无高低温箱
+                            }
+                            else
+                            {
+                                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 15, YCellMark = 2, ValueType = 0, ValueData = "无" });//无高低温箱
+                            }
+                            #endregion
+                            #region 配件要求
+                            if (!string.IsNullOrEmpty(cepro.EthernetCable))
+                            {
+                                EthernetCable = cepro.EthernetCable + "米";
+                            }
+                            if (!string.IsNullOrEmpty(cepro.PowerLine))
+                            {
+                                PowerLine = cepro.PowerLine + "米";
+                            }
+
+                            if (!string.IsNullOrEmpty(cepro.SwitchBoard))
+                            {
+                                switch (cepro.SwitchBoard)
+                                {
+                                    case "CP":
+                                        SwitchBoard = "电脑";
+                                        break;
+                                    default:
+                                        SwitchBoard = cepro.SwitchBoard;
+                                        break;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(cepro.ChannelElectricCurrentLine))
+                            {
+                                valuearr = cepro.ChannelElectricCurrentLine.Split(seprates, StringSplitOptions.None);
+                                if (!string.IsNullOrEmpty(valuearr[0]))
+                                {
+                                    ChannelElectricCurrentLine += " 设备端线鼻子长度" + valuearr[0] + "mm";
+                                }
+                                if (valuearr.Length > 1)
+                                {
+                                    if (!string.IsNullOrEmpty(valuearr[1]))
+                                    {
+                                        ChannelElectricCurrentLine += " 压床端线鼻子" + valuearr[1] + "mm";
+                                    }
+                                }
+                                if (valuearr.Length > 2)
+                                {
+                                    if (!string.IsNullOrEmpty(valuearr[2]))
+                                    {
+                                        ChannelElectricCurrentLine += " 长度" + valuearr[2] + "米";
+                                    }
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(cepro.ChannelVoltageLine))
+                            {
+                                valuearr = cepro.ChannelVoltageLine.Split(seprates, StringSplitOptions.None);
+                                if (!string.IsNullOrEmpty(valuearr[0]))
+                                {
+                                    ChannelVoltageLine = "端子类型" + valuearr[0];
+                                }
+                                if (!string.IsNullOrEmpty(valuearr[1]))
+                                {
+                                    ChannelVoltageLine = "长度" + valuearr[1] + "米";
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(cepro.ChannelThermalCouple))
+                            {
+                                valuearr = cepro.ChannelThermalCouple.Split(seprates, StringSplitOptions.None);
+                                if (!string.IsNullOrEmpty(valuearr[0]))
+                                {
+                                    ChannelThermalCouple = "端子类型" + valuearr[0];
+                                }
+                                if (!string.IsNullOrEmpty(valuearr[1]))
+                                {
+                                    ChannelThermalCouple = "长度" + valuearr[1] + "米";
+                                }
+                            }
+
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 16, YCellMark = 2, ValueType = 0, ValueData = EthernetCable });//网线
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 16, YCellMark = 4, ValueType = 0, ValueData = PowerLine });//电源线
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 16, YCellMark = 6, ValueType = 0, ValueData = SwitchBoard });//交换机
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 16, YCellMark = 8, ValueType = 0, ValueData = ChannelThermalCouple });//通道温度线
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 17, YCellMark = 2, ValueType = 0, ValueData = ChannelElectricCurrentLine });//通道电流线
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 17, YCellMark = 4, ValueType = 0, ValueData = ChannelVoltageLine });//通道电压线
+
+                            #endregion
+                            #region 电池信息
+                            if (!string.IsNullOrEmpty(cepro.CylindricalBatteryInfo))
+                            {
+                                valuearr = cepro.CylindricalBatteryInfo.Split(seprates, StringSplitOptions.None);
+                                CylindricalBatteryInfo_Size = valuearr[0] + " " + valuearr[1];
+                                CylindricalBatteryInfo_Struct = valuearr[2];
+                            }
+                            if (!string.IsNullOrEmpty(cepro.SoftPackingBatteryInfo))
+                            {
+                                valuearr = cepro.SoftPackingBatteryInfo.Split(seprates, StringSplitOptions.None);
+                                SoftPackingBatteryInfo_Size = valuearr[0] + " " + valuearr[1];
+                                if (valuearr.Length > 2)
+                                {
+                                    switch (valuearr[2])
+                                    {
+                                        case "1":
+                                            SoftPackingBatteryInfo_Jtype = "两端出极耳";
+                                            break;
+                                        case "2":
+                                            SoftPackingBatteryInfo_Jtype = "一端出极耳";
+                                            break;
+                                    }
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(cepro.LiionBatteryInfo))
+                            {
+                                valuearr = cepro.LiionBatteryInfo.Split(seprates, StringSplitOptions.None);
+                                LiionBatteryInfo_Size = valuearr[0] + " " + valuearr[1];
+                                LiionBatteryInfo_struct = valuearr[2];
+                                if (valuearr.Length > 2)
+                                {
+                                    switch (valuearr[2])
+                                    {
+                                        case "1":
+                                            LiionBatteryInfo_Jtype = "两端出极耳";
+                                            break;
+                                        case "2":
+                                            LiionBatteryInfo_Jtype = "一端出极耳";
+                                            break;
+                                    }
+                                }
+                            }
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 18, YCellMark = 3, ValueType = 0, ValueData = CylindricalBatteryInfo_Size });//圆柱电池-尺寸
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 18, YCellMark = 5, ValueType = 0, ValueData = CylindricalBatteryInfo_Struct });//圆柱电池-极柱结构
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 19, YCellMark = 3, ValueType = 0, ValueData = SoftPackingBatteryInfo_Size });//软包电池-尺寸
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 19, YCellMark = 4, ValueType = 0, ValueData = SoftPackingBatteryInfo_Jtype });//软包电池-极耳类型
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 20, YCellMark = 3, ValueType = 0, ValueData = LiionBatteryInfo_Size });//方形电池-尺寸
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 20, YCellMark = 4, ValueType = 0, ValueData = LiionBatteryInfo_Jtype });//方形电池-极耳类型
+                            workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 20, YCellMark = 6, ValueType = 0, ValueData = LiionBatteryInfo_struct });//方形电池-极柱结构
+                            #endregion
+                        }
+                    }
+                }
+                else
+                {
+                    //没有属性
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 8, YCellMark = 6, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["MinDischargeVoltage"].ToString()) ? " " : maintab.Rows[0]["MinDischargeVoltage"].ToString() });//设备最低放电电压
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 11, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(maintab.Rows[0]["DisOptions"].ToString()) ? " " : maintab.Rows[0]["DisOptions"].ToString() });//配电选项
+                }
+                #endregion
+                #region BOM单
+                DataTable bomtab = SelectContractReviewBomData(contractId, "1");
+                //a.seq_id, b.ItemTypeName, a.ItemCode, c.ItemName, a.qty, a.UnitMsr,a.PurPrice, a.DocTotal, c.U_JGF AS MacPrice, IFNULL(c.U_JGF,0)*a.qty AS MacTotal,
+                DataTable dTable = new DataTable();
+                dTable.Columns.Add("C1", typeof(string));
+                dTable.Columns.Add("C2", typeof(string));
+                dTable.Columns.Add("C3", typeof(string));
+                dTable.Columns.Add("C4", typeof(string));
+                dTable.Columns.Add("C5", typeof(string));
+                dTable.Columns.Add("C6", typeof(string));
+                dTable.Columns.Add("C7", typeof(string));
+                dTable.Columns.Add("C8", typeof(string));
+                dTable.Columns.Add("C9", typeof(string));
+                dTable.Columns.Add("C10", typeof(string));
+
+                DataRow titlerow = dTable.NewRow();
+                titlerow[0] = "#";
+                titlerow[1] = "类别";
+                titlerow[2] = "物料编码";
+                titlerow[3] = "物料描述";
+                titlerow[4] = "数量";
+                titlerow[5] = "计量单位";
+                titlerow[6] = "上一次采购价";
+                titlerow[7] = "成本价";
+                titlerow[8] = "加工单价";
+                titlerow[9] = "加工费";
+                dTable.Rows.Add(titlerow);
+                int index = 1;
+                foreach (DataRow tempRow in bomtab.Rows)
+                {
+                    DataRow newrow = dTable.NewRow();
+                    newrow[0] = index.ToString();
+                    newrow[1] = tempRow["ItemTypeName"];
+                    newrow[2] = tempRow["ItemCode"];
+                    newrow[3] = tempRow["ItemName"];
+                    newrow[4] = string.IsNullOrEmpty(tempRow["qty"].ToString()) ? "" : double.Parse(tempRow["qty"].ToString()).ToString();
+                    newrow[5] = tempRow["UnitMsr"];
+                    newrow[6] = "******";//tempRow["PurPrice"];
+                    newrow[7] = "******";//string.IsNullOrEmpty(tempRow["DocTotal"].ToString()) ? "" : double.Parse(tempRow["DocTotal"].ToString()).ToString("0.00");
+                    newrow[8] = "******"; //tempRow["MacPrice"];
+                    newrow[9] = "******";//string.IsNullOrEmpty(tempRow["MacTotal"].ToString()) ? "" : double.Parse(tempRow["MacTotal"].ToString()).ToString("0.00");
+                    dTable.Rows.Add(newrow);
+                    index++;
+                }
+
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 0, TableMark = 1, ValueType = 2, ValueData = dTable });
+
+                #endregion
+                string pdfName = string.Format("{0}.pdf", Guid.NewGuid().ToString());
+                if (FileHelper.DOCTemplateToPDF(FileHelper.TempletFilePath.PhysicalPath + mbval, FileHelper.OrdersFilePath.PhysicalPath + pdfName, workMarks))
+                {
+                    //保存第一次PDF文件路径，避免每次生产新文件
+                    SetPDFFilePathForContractReview(contractId, "PDF_FilePath_S", FileHelper.OrdersFilePath.VirtualPath + pdfName);
+                    return host + FileHelper.OrdersFilePath.VirtualPath + pdfName;
+                }
+                else
+                {
+                    return "2";
+                }
+            }
+            else
+            {
+                return "0";
+            }
+        }
+        public bool SetPDFFilePathForContractReview(string ContractId, string fieldName, string PDFFilePath)
+        {
+            string sqlstr = string.Format(@"update {0}.sale_contract_review set {3}='{1}' where contract_id={2}", "nsap_bone", PDFFilePath, ContractId, fieldName);
+            object theamount = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sqlstr, CommandType.Text, null);
+            return theamount == null ? false : (((decimal)theamount) > 0 ? true : false);
+        }
+        /// <summary>
+        /// 查询合约评审 主表信息
+        /// </summary>
+        /// <returns></returns>
+        public DataTable GetContractReviewInfo(string ContractId, string IsViewGross, string IsViewCostPrice, bool IsViewCustom)
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.AppendFormat("SELECT a.sbo_id, a.contract_id, {0}, a.ItemCode, c.ItemName AS ItemDesc, b.SlpName, a.UnitMsr, ", IsViewCustom ? "a.CardCode, a.CardName" : "'****' AS CardCode, '****' AS CardName");
+            strSql.Append("a.is_new AS IsNew, a.comm_rate AS CommRate, a.walts AS Wattage, a.power_option AS DisOptions, a.min_discharge_volt AS MinDischargeVoltage, ");
+            strSql.Append("a.custom_type AS CustomType, a.is_create_drawing_task AS IsCreateDrawingTask, a.custom_req AS CustomReq, a.detection_capability AS DetectionCapability, ");
+            if (IsViewGross == "1")
+            {
+                strSql.Append("a.maori AS Maori, ");
+            }
+            else
+            {
+                strSql.Append("'*' AS Maori, ");
+            }
+            if (IsViewCostPrice == "1")
+            {
+                strSql.Append("a.cost_total AS CostTotal, ");
+            }
+            else
+            {
+                strSql.Append("'*' AS CostTotal, ");
+            }
+            strSql.Append("a.price AS Price, a.qty AS Quantity, a.sum_total AS SumTotal, a.apply_dt AS ApplyDate, a.deliver_dt AS DeliverDate, a.remarks AS Remarks, a.U_JGF,a.ProjectDesc,a.ProductType,c.U_FDY,a.PDF_FilePath,a.PDF_FilePath_S ");
+            strSql.AppendFormat("FROM {0}.sale_contract_review a ", "nsap_bone");
+            strSql.AppendFormat("LEFT JOIN {0}.crm_oslp b ON a.SlpCode=b.SlpCode AND a.sbo_id=b.sbo_id ", "nsap_bone");
+            strSql.AppendFormat("LEFT JOIN {0}.store_oitm c ON a.itemcode=c.ItemCode AND a.sbo_id=c.sbo_id ", "nsap_bone");
+            strSql.Append("WHERE a.contract_id=?ContractId");
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?ContractId", ContractId),
+
+            };
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara);
+        }
+
+        public DataTable GetContractReviewProperty(string ContractId)
+        {
+            string sqlstr = string.Format("select a.ProductType,a.ProductProperty from {0}.sale_contract_review a where a.contract_id={1}", "nsap_bone", ContractId);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sqlstr, CommandType.Text, null);
+
+        }
+        public string GetCustomFldDescrByValue(string TableID, string FieldID, string InValue)
+        {
+            string strSql = string.Format("SELECT Descr AS name FROM {0}.base_ufd1 WHERE TableID=?TableID AND FieldID=?FieldID and FldValue=?FldValue limit 1", "nsap_bone");
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?TableID",TableID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?FieldID",FieldID),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?FldValue",InValue)
+            };
+            object result = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara);
+            return result == null ? "" : result.ToString();
+        }
+        #endregion
+
+        #region 查询合约评审 BOM单列表
+        /// <summary>
+        /// 查询合约评审 BOM单列表
+        /// </summary>
+        public DataTable SelectContractReviewBomData(string ContractId, string IsViewCostPrice)
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("SELECT a.seq_id, b.ItemTypeName, a.ItemCode, c.ItemName, a.qty, a.UnitMsr, ");
+            if (IsViewCostPrice == "1")
+            {
+                strSql.Append("a.PurPrice, a.DocTotal, c.U_JGF AS MacPrice, IFNULL(c.U_JGF,0)*a.qty AS MacTotal, ");
+            }
+            else
+            {
+                strSql.Append("'*' AS PurPrice, '*' AS DocTotal, '*' AS MacPrice, '*' AS MacTotal, ");
+            }
+            strSql.Append("'0' as IsNew, a.ItemTypeID ");
+            strSql.AppendFormat("FROM {0}.sale_contract_review_detail a ", "nsap_bone");
+            strSql.AppendFormat("LEFT JOIN {0}.store_itemtype b ON a.ItemTypeID=b.ItemTypeId ", "nsap_bone");
+            strSql.AppendFormat("LEFT JOIN {0}.store_oitm c ON a.itemcode=c.ItemCode AND a.sbo_id=c.sbo_id ", "nsap_bone");
+            strSql.Append("WHERE a.contract_id=?ContractId");
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                 new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?ContractId", ContractId)
+            };
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara);
+        }
+        #endregion
+        #region 销售订单生成PDF
+        public string OrderExportShow(string sboid, string DocEntry, string Indicator, string host)
+        {
+            DataTable dtb = OrderExportView(sboid, DocEntry);
+            if (dtb.Rows.Count > 0)
+            {
+                DataTable dtprint = GetPrintNo(sboid, DocEntry);
+                string PrintNo = Guid.NewGuid().ToString();
+                int PrintNumIndex = 0;
+                if (dtprint.Rows.Count > 0)
+                {
+                    if (!string.IsNullOrEmpty(dtprint.Rows[0][0].ToString()))
+                    {
+                        PrintNo = dtprint.Rows[0][0].ToString();
+                    }
+                    if (!string.IsNullOrEmpty(dtprint.Rows[0][1].ToString().Trim()))
+                    {
+                        PrintNumIndex = 1 + int.Parse(dtprint.Rows[0][1].ToString().Trim());
+                    }
+                    else
+                    {
+                        PrintNumIndex = 1;
+                    }
+                }
+                else
+                {
+                    PrintNumIndex = 1;
+                }
+
+                if (UpdatePrintNo(sboid, DocEntry, PrintNo, PrintNumIndex.ToString()) == false)
+                {
+                    return "0";
+                }
+                string mbval = "";
+                decimal docTotal = dtb.Rows[0][12].ToString() == "" ? 0 : decimal.Parse(dtb.Rows[0][12].ToString());
+                decimal discSum = dtb.Rows[0]["DiscSum"].ToString() == "" ? 0 : decimal.Parse(dtb.Rows[0]["DiscSum"].ToString());
+                decimal discSumFC = dtb.Rows[0]["DiscSumFC"].ToString() == "" ? 0 : decimal.Parse(dtb.Rows[0]["DiscSumFC"].ToString());
+                decimal totalBefDisc = docTotal + discSum;
+                DataTable dtNm = GetIndicators(string.IsNullOrEmpty(Indicator) ? " " : Indicator, sboid);
+                if (dtNm.Rows.Count > 0)
+                {
+                    if (dtNm.Rows[0][1].ToString() == "01")
+                    {
+                        if (discSum > 0)
+                        {
+                            mbval = "销售合同-新威尔折扣.doc";
+                        }
+                        else
+                        {
+                            mbval = "销售合同-新威尔.doc";
+                        }
+                    }
+                    else if (dtNm.Rows[0][1].ToString() == "02")
+                    {
+                        if (discSum > 0)
+                        {
+                            mbval = "销售合同-新能源折扣.doc";
+                        }
+                        else
+                        {
+                            mbval = "销售合同-新能源.doc";
+                        }
+                    }
+                    else if (dtNm.Rows[0][1].ToString() == "05")
+                    {
+                        if (discSum > 0)
+                        {
+                            mbval = "销售合同-东莞新威折扣.doc";
+                        }
+                        else
+                        {
+                            mbval = "销售合同-东莞新威.doc";
+                        }
+                    }
+                    else if (dtNm.Rows[0][1].ToString() == "07")
+                    {
+                        if (discSum > 0)
+                        {
+                            mbval = "销售合同-钮威折扣.doc";
+                        }
+                        else
+                        {
+                            mbval = "销售合同-钮威.doc";
+                        }
+                    }
+                    else
+                    {
+                        return "3";
+                    }
+                }
+                else
+                {
+                    if (discSum > 0)
+                    {
+                        mbval = "销售订单-现金折扣.doc";
+                    }
+                    else
+                    {
+                        mbval = "销售订单-现金.doc";
+                    }
+                }
+                string jpgName = string.Format("{0}.jpg", Guid.NewGuid().ToString());
+                string path = FileHelper.OrdersFilePath.PhysicalPath;
+                QRCoderHelper.BuildBarcode(int.Parse(dtb.Rows[0][0].ToString()).ToString("d4"), FileHelper.OrdersFilePath.PhysicalPath + jpgName, 3);
+                List<FileHelper.WordTemplate> workMarks = new List<FileHelper.WordTemplate>();
+                string sb = dtb.Rows[0][15].ToString();
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 1, XCellMark = 1, YCellMark = 5, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][0].ToString()) ? " " : dtb.Rows[0][0].ToString() });//单号
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 1, XCellMark = 1, YCellMark = 6, ValueType = 1, ValueData = path + jpgName });//条形码
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 1, XCellMark = 2, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][15].ToString()) ? " " : dtb.Rows[0][15].ToString() });//日期
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 1, XCellMark = 3, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][9].ToString()) ? " " : dtb.Rows[0][9].ToString() });//销售员电话
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 1, XCellMark = 3, YCellMark = 5, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][8].ToString()) ? " " : dtb.Rows[0][8].ToString() });//销售员名称
+
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 1, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][1].ToString()) ? " " : dtb.Rows[0][1].ToString() });//客户编号
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 2, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][7].ToString()) ? " " : dtb.Rows[0][7].ToString().Replace("<br>", "").Replace("\r", "") });//客户地址
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 1, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][2].ToString()) ? " " : dtb.Rows[0][2].ToString() });//客户名称
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 1, YCellMark = 6, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][3].ToString()) ? " " : dtb.Rows[0][3].ToString() });//联系人
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 1, YCellMark = 8, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][4].ToString()) ? " " : dtb.Rows[0][4].ToString() });//电话
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 2, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][6].ToString()) ? " " : dtb.Rows[0][6].ToString() });//手机
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 3, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][19].ToString()) ? " " : dtb.Rows[0][19].ToString().Replace("<br>", "").Replace("\r", "") });//交货地址
+
+
+
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 3, XCellMark = 1, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][11].ToString()) ? " " : dtb.Rows[0][11].ToString() });//付款条件
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 3, XCellMark = 1, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][14].ToString().Trim()) ? " " : "" });//交货日期 Convert.ToDateTime(dtb.Rows[0][14].ToString().Trim()).ToString("yyyy.MM.dd") 
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 3, XCellMark = 2, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][16].ToString()) ? " " : dtb.Rows[0][16].ToString() });//交货方式
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 3, XCellMark = 2, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][20].ToString()) ? " " : dtb.Rows[0][20].ToString() }); //验收期限
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 3, XCellMark = 3, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][10].ToString()) ? " " : dtb.Rows[0][10].ToString().Replace("<br>", "") });//备注
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 3, XCellMark = 4, YCellMark = 3, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][24].ToString()) ? " " : dtb.Rows[0][24].ToString() });//客户PO
+
+                DataTable dTable = new DataTable();
+                dTable.Columns.Add("C1", typeof(string));
+                dTable.Columns.Add("C2", typeof(string));
+                dTable.Columns.Add("C3", typeof(string));
+                dTable.Columns.Add("C4", typeof(string));
+                dTable.Columns.Add("C5", typeof(string));
+                dTable.Columns.Add("C6", typeof(string));
+                dTable.Columns.Add("C7", typeof(string));
+
+                DataTable dtbs = OrderExportViews(sboid, DocEntry);
+                string Currency = "";
+                decimal totalall = 0;
+                for (int i = 0; i < dtbs.Rows.Count; i++)
+                {
+                    DataRow dRow = dTable.NewRow();
+                    if (Currency == "")
+                    {
+                        Currency = dtbs.Rows[i][7].ToString();
+                    }
+                    string r5d = Convert.ToDecimal(dtbs.Rows[i][5].ToString()).ToString("###,###.0000");
+                    if (r5d == ".0000")
+                    {
+                        r5d = "0.0000";
+                    }
+                    string r6 = Convert.ToDecimal(dtbs.Rows[i][6].ToString()).ToString("###,###.00");
+                    if (r6 == ".00")
+                    {
+                        r6 = "0.00";
+                    }
+                    totalall = totalall + decimal.Parse(r6);
+                    dRow[0] = i + 1;
+                    dRow[1] = string.IsNullOrEmpty(dtbs.Rows[i][1].ToString()) ? " " : dtbs.Rows[i][1].ToString(); //"CT-3008-5V5mA";物料编码
+                    dRow[2] = string.IsNullOrEmpty(dtbs.Rows[i][2].ToString()) ? " " : dtbs.Rows[i][2].ToString();//"BTS-5V5mA-8通道-钢壳-四线扣式圆头夹具-3U19\"白色机箱";物料描述
+                    dRow[3] = string.IsNullOrEmpty(dtbs.Rows[i][3].ToString()) ? " " : dtbs.Rows[i][3].ToString(); //"1";数量
+                    dRow[4] = string.IsNullOrEmpty(dtbs.Rows[i][4].ToString()) ? " " : dtbs.Rows[i][4].ToString(); //"Pcs";单位
+                    dRow[5] = string.IsNullOrEmpty(dtbs.Rows[i][5].ToString()) ? " " : r5d; //"3200.000000";单价
+                    dRow[6] = string.IsNullOrEmpty(dtbs.Rows[i][6].ToString()) ? " " : r6; //"3200.00";金额
+
+                    dTable.Rows.Add(dRow);
+                }
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 0, TableMark = 1, ValueType = 2, ValueData = dTable });//明细数据
+
+                if (mbval != "销售订单-现金.doc")
+                {
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 2, TableMark = 1, XCellMark = 5, YCellMark = 4, ValueType = 0, ValueData = PrintNo });//打印编号                                                                                                                                                     
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 2, TableMark = 1, XCellMark = 5, YCellMark = 2, ValueType = 0, ValueData = "打印次数: " + PrintNumIndex });//打印次数 
+                    if (discSum > 0)
+                    {
+                        workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 0, TableMark = 2, XCellMark = 3, YCellMark = 2, ValueType = 0, ValueData = "含税 " + dtb.Rows[0][23].ToString() });//含税
+                        workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 0, TableMark = 2, XCellMark = 1, YCellMark = 4, ValueType = 0, ValueData = totalBefDisc > 0 ? "RMB " + totalBefDisc.ToString("###,###.00") : "" });//折扣前金额
+                        workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 0, TableMark = 2, XCellMark = 2, YCellMark = 4, ValueType = 0, ValueData = discSum > 0 ? "RMB " + discSum.ToString("###,###.00") : "" });//折扣前金额
+                        workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 0, TableMark = 2, XCellMark = 3, YCellMark = 4, ValueType = 0, ValueData = docTotal > 0 ? "RMB " + docTotal.ToString("###,###.00") : "" });//合计金额
+                    }
+                    else
+                    {
+                        workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 0, TableMark = 2, XCellMark = 1, YCellMark = 2, ValueType = 0, ValueData = "含税 " + dtb.Rows[0][23].ToString() });//含税
+                        workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 0, TableMark = 2, XCellMark = 1, YCellMark = 4, ValueType = 0, ValueData = docTotal > 0 ? "RMB " + docTotal.ToString("###,###.00") : "" });//合计金额
+                    }
+                }
+                else
+                {
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 2, TableMark = 1, XCellMark = 4, YCellMark = 4, ValueType = 0, ValueData = PrintNo });//打印编号                                                                                                                                                     
+                    //workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 2, TableMark = 1, XCellMark = 4, YCellMark = 2, ValueType = 0, ValueData = "打印次数: " + PrintNumIndex });//打印次数 
+                    if (discSum > 0)
+                    {
+                        workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 0, TableMark = 2, XCellMark = 1, YCellMark = 4, ValueType = 0, ValueData = totalall == 0 ? "" : Currency + " " + totalall.ToString("###,###.00") });//合计金额
+                        decimal totaldisc = discSum, totalamount = totalall;
+                        if (Currency != "RMB")
+                        {
+                            totaldisc = discSumFC;
+                            totalamount = totalall - totaldisc;
+                        }
+                        workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 0, TableMark = 2, XCellMark = 2, YCellMark = 4, ValueType = 0, ValueData = discSum > 0 ? Currency + " " + totaldisc.ToString("###,###.00") : "" });//折扣前金额
+                        workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 0, TableMark = 2, XCellMark = 3, YCellMark = 4, ValueType = 0, ValueData = docTotal > 0 ? Currency + " " + totalamount.ToString("###,###.00") : "" });//合计金额
+                    }
+                    else
+                    {
+                        workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 0, TableMark = 2, XCellMark = 1, YCellMark = 3, ValueType = 0, ValueData = totalall == 0 ? "" : Currency + " " + totalall.ToString("###,###.00") });//合计金额
+                    }
+                }
+
+                //string pdfName = string.Format("{0}.pdf", Guid.NewGuid().ToString());
+                string pdfName = string.Format("SE-{0}.pdf", dtb.Rows[0][0].ToString());
+
+                if (FileHelper.DOCTemplateToPDF(FileHelper.TempletFilePath.PhysicalPath + mbval, FileHelper.OrdersFilePath.PhysicalPath + pdfName, workMarks))
+                {
+                    return host + FileHelper.OrdersFilePath.VirtualPath + pdfName;
+                }
+                else
+                {
+                    return "2";
+                }
+            }
+            else
+            {
+                return "0";
+            }
+        }
+        /// <summary>
+        /// 销售订单主数据导出
+        /// </summary>
+        public DataTable OrderExportView(string sboid, string DocEntry)
+        {
+            StringBuilder str = new StringBuilder();
+            str.Append("SELECT distinct a.DocEntry,a.CardCode,a.CardName,b.Name,b.Tel1,b.Tel2,b.Cellolar,b.Address,c.SlpName,c.Memo,a.Comments,d.PymntGroup,");
+            str.Append(" a.DocTotal,CONCAT(e.Currency,' ',ROUND(a.DocTotal,2)) as curtotal ,DATE_FORMAT(a.DocDueDate,'%Y.%m.%d %H:%i') as DocDueDate,DATE_FORMAT(a.DocDate,'%Y.%m.%d') as DocDate,a.U_ShipName,b.Fax,a.U_YGMD,a.Address2,a.U_YSQX,a.BnkAccount,f.HouseBank,CONCAT(ROUND(a.U_SL,0),'%')U_SL,a.NumAtCard ");
+            str.Append(" ,a.DiscSum,a.DiscSumFC,a.DocTotalFC,a.DocCur");
+            str.AppendFormat(" FROM {0}.sale_ordr a ", "nsap_bone");
+            str.AppendFormat(" left join {0}.crm_ocpr b on a.CntctCode=b.CntctCode and a.sbo_id=b.sbo_id and a.CardCode=b.CardCode ", "nsap_bone");
+            str.AppendFormat(" left join {0}.crm_oslp c on a.SlpCode=c.SlpCode and a.sbo_id=c.sbo_id ", "nsap_bone");
+            str.AppendFormat(" left join {0}.crm_octg d on a.GroupNum=d.GroupNum AND a.sbo_id=d.sbo_id ", "nsap_bone");
+            str.AppendFormat(" left join {0}.crm_ocrd f on a.DocEntry=f.CardCode and a.sbo_id=f.sbo_id ", "nsap_bone");
+            str.AppendFormat(" left join {0}.sale_rdr1 e on a.DocEntry=e.DocEntry and a.sbo_id=e.sbo_id ", "nsap_bone");
+            str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1}", DocEntry, sboid);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, str.ToString(), CommandType.Text, null);
+        }
+        /// <summary>
+        ///获取打印编号
+        /// </summary>
+        public DataTable GetPrintNo(string SboId, string DocEntry)
+        {
+            string PrintSql = string.Format("SELECT PrintNo,PrintNumIndex FROM {0}.sale_ordr WHERE sbo_id = {1} AND DocEntry = {2}", "nsap_bone", int.Parse(SboId), int.Parse(DocEntry));
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, PrintSql.ToString(), CommandType.Text, null);
+
+        }
+        /// <summary>
+        ///更新打印编号
+        /// </summary>
+        public bool UpdatePrintNo(string SboId, string DocEntry, string PrintNo, string PrintNumIndex)
+        {
+            string PrintSql = string.Format("UPDATE {0}.sale_ordr SET PrintNo='{1}',PrintNumIndex={4} WHERE DocEntry={2} and sbo_id={3} ", "nsap_bone", PrintNo, int.Parse(DocEntry), int.Parse(SboId), PrintNumIndex);
+            bool result = false;
+            result = UnitWork.ExecuteSql(PrintSql, ContextType.NsapBaseDbContext) > 0 ? true : false;
+            return result;
+        }
+        /// <summary>
+        /// 获取销售订单内部标识
+        /// </summary>
+        public DataTable GetIndicators(string Indicator, string sbo_id)
+        {
+            string strSql = string.Format(@"SELECT a.Name,a.Code FROM {0}.crm_oidc a
+		                                    LEFT JOIN {0}.sale_ordr b ON a.Code=b.Indicator AND a.sbo_id=b.sbo_id
+		                                    WHERE b.Indicator='{1}' AND b.sbo_id={2} ", "nsap_bone", Indicator, sbo_id);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+        }
+        /// <summary>
+        /// 销售订单行明细数据导出
+        /// </summary>
+        public DataTable OrderExportViews(string sboid, string DocEntry)
+        {
+            StringBuilder str = new StringBuilder();
+            str.Append(" SELECT b.sbo_id,b.ItemCode,b.Dscription,ROUND(b.Quantity,2),b.unitMsr,ROUND(b.Price,6),ROUND(b.Quantity*b.Price,2),b.Currency ");
+            str.AppendFormat(" from {0}.sale_rdr1  b ", "nsap_bone");
+            str.AppendFormat(" LEFT JOIN {0}.sale_ordr a on b.DocEntry=a.DocEntry and b.sbo_id=a.sbo_id ", "nsap_bone");
+            str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1} ", DocEntry, sboid);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, str.ToString(), CommandType.Text, null);
         }
         #endregion
     }
