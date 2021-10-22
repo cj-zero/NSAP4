@@ -177,6 +177,18 @@ namespace OpenAuth.WebApi.Controllers.Material
             return result;
         }
 
+
+        /// <summary>
+        /// 获取物料仓库与库存
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetMaterialOnHand([FromQuery] QueryQuotationListReq request)
+        {
+            return await _app.GetMaterialOnHand(request);
+        }
+
         /// <summary>
         /// 加载物料列表
         /// </summary>
