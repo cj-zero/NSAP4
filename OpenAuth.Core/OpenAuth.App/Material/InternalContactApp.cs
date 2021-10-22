@@ -440,7 +440,7 @@ namespace OpenAuth.App.Material
                 detail.ProductionNo,
                 AdaptiveRanges = detail.AdaptiveRange.Split(","),
                 Reasons = detail.Reason.Split(","),
-                MaterialOrder = detail.MaterialOrder.Split(","),
+                MaterialOrder = !string.IsNullOrWhiteSpace(detail.MaterialOrder) ? detail.MaterialOrder.Split(",") : new string[] { },
                 //BatchNumbers = detail.InternalContactBatchNumbers,
                 BatchNumbers = detail.InternalContactBatchNumbers,
                 detail.CheckApproveId,
