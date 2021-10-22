@@ -56,7 +56,7 @@ namespace OpenAuth.WebApi.Controllers.Meeting
             return result;
         }
         /// <summary>
-        /// 列表
+        /// 展会列表
         /// </summary>
         /// <param name="Querymodel"></param>
         /// <returns></returns>
@@ -159,6 +159,152 @@ namespace OpenAuth.WebApi.Controllers.Meeting
             }
 
 
+            return result;
+        }
+        /// <summary>
+        /// 报名
+        /// </summary>
+        /// <param name="MeetingId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("MeetingUserApply")]
+        public Response<bool> MeetingUserApply(int MeetingId)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = _serviceMeetingApp.MeetingUserApply(MeetingId);
+
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+
+
+            return result;
+        }
+        /// <summary>
+        /// 调度-调度人
+        /// </summary>
+        /// <param name="Querymodel"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("Dispatcher")]
+        public Response<List<DispatcherDto>> Dispatcher(DispatcherReq Querymodel)
+        {
+            int rowcount = 0;
+            var result = new Response<List<DispatcherDto>>();
+            try
+            {
+                result.Result = _serviceMeetingApp.Dispatcher(Querymodel, out rowcount);
+
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+
+
+            return result;
+        }
+        /// <summary>
+        /// 调度-调度操作
+        /// </summary>
+        /// <param name="Querymodel"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("Scheduling")]
+        public Response<bool> Scheduling(List<SchedulingReq> Updatemodel)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = _serviceMeetingApp.Scheduling(Updatemodel);
+
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+
+
+            return result;
+        }
+        /// <summary>
+        /// 我的创建详情
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("MyCreatedDetails")]
+        public async Task<Response<ExhibitionDetailDto>> MyCreatedDetails(int Id)
+        {
+
+            var result = new Response<ExhibitionDetailDto>();
+            try
+            {
+                result.Result = _serviceMeetingApp.MyCreatedDetailsById(Id);
+
+
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+
+
+            return result;
+        }
+
+        /// <summary>
+        /// 提交给我的
+        /// </summary>
+        /// <param name="Querymodel"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("SubmittedLod")]
+        public async Task<TableData> SubmittedLod(SubmittedReq Querymodel)
+        {
+            int rowcount = 0;
+            var result = new TableData();
+            try
+            {
+                result.Data = _serviceMeetingApp.SubmittedLod(Querymodel, out rowcount);
+                result.Count = rowcount;
+
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+
+
+            return result;
+        }
+        /// <summary>
+        /// 提交给我的详情
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("SubmittedDetails")]
+        public async Task<Response<SubmittedDetailsDto>> SubmittedDetails(int Id)
+        {
+            var result = new Response<SubmittedDetailsDto>();
+            try
+            {
+                result.Result = _serviceMeetingApp.SubmittedDetails(Id);
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+            }
             return result;
         }
     }

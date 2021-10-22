@@ -91,6 +91,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<MeetingUser> MeetingUser { get; set; }
         public virtual DbSet<MeetingFile> MeetingFile { get; set; }
         public virtual DbSet<MeetingDraft> meetingdraft { get; set; }
+        public virtual DbSet<MeetingDraftlog> meetingdraftlog { get; set; }
 
         #endregion
 
