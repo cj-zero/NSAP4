@@ -46,15 +46,15 @@ namespace OpenAuth.App
                 loginUser = await UnitWork.Find<User>(u => u.Id.Equals(userid)).FirstOrDefaultAsync();
             }
             var result = new TableData();
-            var sericeWorkOrderList = UnitWork.Find<ServiceWorkOrder>(s => s.CompletionReportId != null && s.CompleteDate != null).Include(s=>s.ServiceOrder).Where(s=>s.ServiceOrder.VestInOrg==2)
-                                       .WhereIf(!string.IsNullOrWhiteSpace(request.MaterialCode), s => s.MaterialCode.Contains(request.MaterialCode));
+            var sericeWorkOrderList = UnitWork.Find<ServiceWorkOrder>(s => s.CompletionReportId != null && s.CompleteDate != null).Include(s => s.ServiceOrder).Where(s => s.ServiceOrder.VestInOrg == 2)
+                                       .WhereIf(!string.IsNullOrWhiteSpace(request.MaterialCode), s => s.MaterialCode.Contains(request.MaterialCode) || s.ManufacturerSerialNumber.Contains(request.MaterialCode));
             if (loginContext.User.Account == Define.USERAPP && request.CurrentUserId != null)
             {
                 sericeWorkOrderList = sericeWorkOrderList.WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumber), s => s.ManufacturerSerialNumber.Equals(request.ManufacturerSerialNumber));
             }
             else
             {
-                sericeWorkOrderList = sericeWorkOrderList.WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumber), s => s.ManufacturerSerialNumber.Contains(request.ManufacturerSerialNumber));
+                sericeWorkOrderList = sericeWorkOrderList.WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumber), s => s.ManufacturerSerialNumber.Contains(request.ManufacturerSerialNumber) || s.MaterialCode.Contains(request.ManufacturerSerialNumber));
             }
             //if (!loginContext.Roles.Any(r => r.Name.Equals("工程主管"))&& !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心"))) 
             //{
@@ -69,20 +69,32 @@ namespace OpenAuth.App
                        select new { a,b};
             var objs = await query.ToListAsync();
             Dictionary<string, string> changeTheMaterials = new Dictionary<string, string>();
-            objs.ForEach(o => { var material = ""; o.a.ChangeTheMaterials.ForEach(c=>material+=c.Material+"*"+c.Count+","); changeTheMaterials.Add(o.a.Id, material); });
+            Dictionary<string, string> changeTheLocation = new Dictionary<string, string>();
+            objs.ForEach(o => 
+            { 
+                var material = "";
+                var location = "";
+                o.a.ChangeTheMaterials.ForEach(c => 
+                {
+                    material += c.Material + "*" + c.Count + ",";
+                    location += c.ChangeTheLocation + ",";
+                }) ; 
+                changeTheMaterials.Add(o.a.Id, material);
+                changeTheLocation.Add(o.a.Id, location.Trim());
+            });
             result.Data = objs.Select(o => new
             {
-                MaterialCode=o.b.ServiceWorkOrders.FirstOrDefault()?.MaterialCode,
+                MaterialCode = o.b.ServiceWorkOrders.FirstOrDefault()?.MaterialCode,
                 o.a.CreateTime,
                 o.a.FaultPhenomenon,
                 o.a.CauseOfDefect,
                 o.a.Responsibility,
-                o.a.ChangeTheLocation,
+                ChangeTheLocation = !string.IsNullOrWhiteSpace(o.a.ChangeTheLocation) ? o.a.ChangeTheLocation : (changeTheLocation.GetValue(o.a.Id).ToString()).Substring(0, changeTheLocation.GetValue(o.a.Id).ToString().Length - 1),
                 ChangeTheMaterials = (changeTheMaterials.GetValue(o.a.Id).ToString()).Substring(0, changeTheMaterials.GetValue(o.a.Id).ToString().Length - 1),
-                Pictures =o.a.CompletionReportPictures.Select(c=>c.PictureId),
+                Pictures = o.a.CompletionReportPictures.Select(c => c.PictureId),
                 o.b.U_SAP_ID,
                 o.a.TechnicianName
-            }) ;
+            });
             result.Count = await sericeWorkOrderList.CountAsync();
             return result;
         }

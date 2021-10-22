@@ -152,6 +152,11 @@ namespace OpenAuth.App.Material.Request
         public string Remark { get; set; }
 
         /// <summary>
+        /// 是否常用物料
+        /// </summary>
+        public bool? IsCommonUsed { get; set; }
+
+        /// <summary>
         /// 打印物料id
         /// </summary>
         public List<QuotationMergeMaterialReq> QuotationMergeMaterialReqs { get; set; }
