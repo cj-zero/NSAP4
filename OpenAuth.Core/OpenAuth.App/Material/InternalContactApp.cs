@@ -103,6 +103,7 @@ namespace OpenAuth.App.Material
             }
 
             var resp= await query
+                                .OrderByDescending(c => c.IW)
                                 .Skip((req.page - 1) * req.limit)
                                 .Take(req.limit)
                                 .ToListAsync();
@@ -111,7 +112,7 @@ namespace OpenAuth.App.Material
                 c.Id,
                 c.IW,
                 c.Theme,
-                ReceiveOrg=string.Join(",", c.InternalContactDeptInfos.Where(o => o.Type == 1).Select(c=>c.OrgName)),
+                ReceiveOrg = string.Join(",", c.InternalContactDeptInfos.Where(o => o.Type == 1).Select(c => c.OrgName)),
                 ExecOrg = string.Join(",", c.InternalContactDeptInfos.Where(o => o.Type == 2).Select(c => c.OrgName)),
                 c.CardCode,
                 c.CardName,
@@ -119,8 +120,9 @@ namespace OpenAuth.App.Material
                 c.CreateTime,
                 c.ApproveTime,
                 c.ExecTime,
-                c.Status
-            });
+                c.Status,
+                c.IsTentative
+            }).ToList();
             result.Count = await query.CountAsync();
             return result;
         }
@@ -495,6 +497,7 @@ namespace OpenAuth.App.Material
                     verificationReq.NodeRejectType = "1";
 
                     internalContact.Status = 6;
+                    internalContact.IsTentative = false;
                     await _flowInstanceApp.Verification(verificationReq);
                 }
                 else
@@ -544,6 +547,7 @@ namespace OpenAuth.App.Material
                             #endregion
                         }
                         else internalContact.Status = 1;//驳回 撤回提交
+                        internalContact.IsTentative = false;
 
                     }
 
@@ -552,6 +556,7 @@ namespace OpenAuth.App.Material
                 await UnitWork.UpdateAsync<InternalContact>(c => c.Id == req.Id, c => new InternalContact
                 {
                     Status = internalContact.Status,
+                    IsTentative = internalContact.IsTentative,
                     ApproveTime = internalContact.Status == 4 ? DateTime.Now : internalContact.ApproveTime
                 });
 
