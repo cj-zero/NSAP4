@@ -1646,6 +1646,18 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
 
         }
+        [HttpGet]
+        [Route("GridRelORDR")]
+        public TableData GridRelORDR(string SlpCode, string DocEntry, string cardcode)
+        {
+            int rowCount = 0;
+            var result = new TableData();
+
+            result.Data = _serviceSaleOrderApp.GridRelORDR(out rowCount, 20, 1, DocEntry, cardcode, "docentry", "desc", SlpCode);
+            result.Count = rowCount;
+            return result;
+
+        }
         /// <summary>
         /// 销售员详情
         /// </summary>

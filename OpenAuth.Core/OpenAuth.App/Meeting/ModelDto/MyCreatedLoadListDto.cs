@@ -1,20 +1,19 @@
-﻿using OpenAuth.Repository.Core;
+﻿using AutoMapper;
+using OpenAuth.Repository.Domain.Serve;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace OpenAuth.Repository.Domain.Serve
+namespace OpenAuth.App.Meeting.ModelDto
 {
-    /// <summary>
-    /// 展会草稿记录
-    /// </summary>
-    
-    [Table("meetingdraft")]
-    public class MeetingDraft : BaseEntity<int>
+    [AutoMap(typeof(MeetingDraft))]
+    public class MyCreatedLoadListDto
     {
-        /// <summary> 
+        /// <summary>
+        /// 审批序号
+        /// </summary>
+        public int Id { get; set; }
+        /// <summary>
         /// 单据类型
         /// 0 :展会申请 1：报名申请
         /// </summary>
@@ -39,33 +38,14 @@ namespace OpenAuth.Repository.Domain.Serve
         /// <summary>
         /// 创建人
         /// </summary>
-        [Description("创建人")]
         public string CreateUser { get; set; }
         /// <summary>
         /// 创建时间
         /// </summary>
-        [Description("创建时间")]
-        public System.DateTime CreateTime { get; set; }
-        /// <summary>
-        /// 更新人
-        /// </summary>
-        [Description("更新人")]
-        public string UpdateUser { get; set; }
+        public DateTime CreateTime { get; set; }
         /// <summary>
         /// 更新时间
         /// </summary>
-        [Description("更新时间")]
         public DateTime? UpdateTime { get; set; }
-
-        public override void GenerateDefaultKeyVal()
-        {
-
-        }
-
-        public override bool KeyIsNull()
-        {
-            return Id == 0;
-        }
     }
-
 }

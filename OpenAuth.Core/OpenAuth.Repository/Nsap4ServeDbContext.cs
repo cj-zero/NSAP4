@@ -85,12 +85,13 @@ namespace OpenAuth.Repository
 
         public virtual DbSet<SharingPartner> SharingPartners { get; set; }
         #region 展会
-        public virtual DbSet<Meetings> Meetings { get; set; }
+        public virtual DbSet<Meeting> Meeting { get; set; }
         public virtual DbSet<MeetingDispatch> MeetingDispatch { get; set; }
         public virtual DbSet<MeetingOpreateLog> MeetingOpreateLog { get; set; }
         public virtual DbSet<MeetingUser> MeetingUser { get; set; }
         public virtual DbSet<MeetingFile> MeetingFile { get; set; }
         public virtual DbSet<MeetingDraft> meetingdraft { get; set; }
+        public virtual DbSet<MeetingDraftlog> meetingdraftlog { get; set; }
 
         #endregion
 

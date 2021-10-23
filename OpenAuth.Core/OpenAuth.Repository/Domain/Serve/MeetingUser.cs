@@ -11,7 +11,7 @@ namespace OpenAuth.Repository.Domain.Serve
     /// 调度
     /// </summary>
     [Table("meetinguser")]
-    public partial class MeetingUser : BaseEntity<int>
+    public class MeetingUser : BaseEntity<int>
     {
         /// <summary>
         /// 会议Id
@@ -21,7 +21,7 @@ namespace OpenAuth.Repository.Domain.Serve
         /// <summary>
         /// 用户Id
         /// </summary>
-        [Description("会议Id")]
+        [Description("用户Id")]
         public int UserId { get; set; }
         /// <summary>
         /// 报名人
@@ -52,17 +52,17 @@ namespace OpenAuth.Repository.Domain.Serve
         /// 报名时间
         /// </summary>
         [Description("报名时间")]
-        public int CreateTime { get; set; }
+        public DateTime CreateTime { get; set; }
         /// <summary>
         /// 创建人
         /// </summary>
         [Description("创建人")]
-        public int CreateUser { get; set; }
+        public string CreateUser { get; set; }
         /// <summary>
         /// 取消原因
         /// </summary>
         [Description("取消原因")]
-        public int CancelReason { get; set; }
+        public string CancelReason { get; set; }
         /// <summary>
         /// 取消时间
         /// </summary>

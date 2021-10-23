@@ -5,7 +5,7 @@ using System.Text;
 
 namespace OpenAuth.App.Meeting.Request
 {
-    public class MyCreatedLoadReq : PageReq
+    public class SubmittedReq : PageReq
     {
         /// <summary>
         /// 单据号
@@ -31,6 +31,5 @@ namespace OpenAuth.App.Meeting.Request
         /// 源单号
         /// </summary>
         public int Base_entry { get; set; }
-
     }
 }

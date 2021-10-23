@@ -7,27 +7,20 @@ using System.Text;
 
 namespace OpenAuth.Repository.Domain.Serve
 {
-    /// <summary>
-    /// 调度
-    /// </summary>
-    [Table("meetingopreatelog")]
-    public class MeetingOpreateLog : BaseEntity<int>
+    [Table("meetingdraftlog")]
+
+    public class MeetingDraftlog : BaseEntity<int>
     {
         /// <summary>
-        /// 会议Id
+        /// 草稿Id
         /// </summary>
-        [Description("会议Id")]
-        public int MeetingId { get; set; }
+        [Description("草稿Id")]
+        public int DraftId { get; set; }
         /// <summary>
         /// 日志
         /// </summary>
         [Description("日志")]
         public string Log { get; set; }
-        /// <summary>
-        /// 修改内容
-        /// </summary>
-        [Description("修改内容")]
-        public string Json { get; set; }
         /// <summary>
         /// 操作人
         /// </summary>
@@ -44,7 +37,7 @@ namespace OpenAuth.Repository.Domain.Serve
         [Description("是否删除")]
         public bool IsDelete { get; set; }
         /// <summary>
-        /// 类型 1：会议申请，2：会议报名，3：会议申请审核流程，4：会议取消审核流程，5：报名审核流程，6：取消审核流程
+        /// 类型 1：会议申请审核流程，2：会议取消审核流程，3：报名审核流程，4：取消审核流程
         /// </summary>
         public int Type { get; set; }
         public override void GenerateDefaultKeyVal()
