@@ -260,6 +260,7 @@ namespace OpenAuth.App.Meeting
             return true;
         }
 
+
         /// <summary>
         /// 调度-调度人
         /// </summary>
@@ -502,8 +503,266 @@ namespace OpenAuth.App.Meeting
         public SubmittedDetailsDto SubmittedDetails(int id)
         {
             var data = new SubmittedDetailsDto();
+            var meetingdraft = UnitWork.FindSingle<MeetingDraft>(zw => zw.Id == id);
+            var meeting = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(zw => zw.Id == meetingdraft.Base_entry);
+            data.Id = meetingdraft.Id;
+            data.Introduce = meeting.Introduce;
+            data.Name = meeting.Name;
+            data.StartTime = meeting.StartTime;
+            data.EndTime = meeting.EndTime;
+            data.Title = meeting.Title;
+            data.SponsorUnit = meeting.SponsorUnit;
+            data.GuideUnit = meeting.GuideUnit;
+            data.AddressType = meeting.AddressType;
+            data.Address = meeting.Address;
+            data.DempId = meeting.DempId;
+            data.ApplyDempName = meeting.ApplyDempName;
+            data.ApplyUser = meeting.ApplyUser;
+            data.Contact = meeting.Contact;
+            data.ApplyReason = meeting.ApplyReason;
+            data.FollowPerson = meeting.FollowPerson;
+            data.Funds = meeting.Funds;
+            data.UserNumberLimit = meeting.UserNumberLimit;
+            data.ConferenceScale = meeting.ConferenceScale;
+            data.MeasureOfArea = meeting.MeasureOfArea;
+            data.Position = meeting.Position;
+            data.ProductType = meeting.ProductType;
+            data.Remark = meeting.Remark;
+            data.IsDinner = meeting.IsDinner;
+            data.BulidType = meeting.BulidType;
+            var meetinglist = UnitWork.Find<Repository.Domain.Serve.Meeting>(q => q.CreateUser == meeting.CreateUser);
+            foreach (var item in meetinglist)
+            {
+                var eson = new LatestApplicationDto();
+                eson.Applicant = item.CreateUser;
+                eson.ApplicationTime = item.CreateTime;
+                eson.StartTime = item.StartTime;
+                eson.EndTime = item.EndTime;
+                eson.Id = item.Id;
+                eson.Name = item.Name;
+                data.LatestApplicationList.Add(eson);
+            }
+            var file = UnitWork.Find<MeetingFile>(q => q.MeetingId == meeting.Id);
+            foreach (var item in file)
+            {
+                var FileDto = new FileDto();
+                item.CopyTo(FileDto);
+                data.FileList.Add(FileDto);
+            }
+            var meetingOpreateLog = UnitWork.Find<MeetingOpreateLog>(q => q.MeetingId == meeting.Id);
+            foreach (var item in meetingOpreateLog)
+            {
+                var messi = new MeetingOpreateLogDto();
+                item.CopyTo(messi);
+                data.MeetingOpreateLog.Add(messi);
+                var list = JsonHelper.Instance.Deserialize<Repository.Domain.Serve.Meeting>(item.Json);
+                if (meeting.Address != list.Address)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "Address";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.AddressType != list.AddressType)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "AddressType";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.Name != list.Name)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "Name";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.Title != list.Title)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "Title";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.Introduce != list.Introduce)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "Introduce";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.StartTime != list.StartTime)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "StartTime";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.EndTime != list.EndTime)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "EndTime";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.ApplyUser != list.ApplyUser)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "ApplyUser";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.ApplyDempName != list.ApplyDempName)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "ApplyDempName";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.Contact != list.Contact)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "Contact";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.FollowPerson != list.FollowPerson)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "FollowPerson";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.ApplyReason != list.ApplyReason)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "ApplyReason";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.SponsorUnit != list.SponsorUnit)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "SponsorUnit";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.ConferenceScale != list.ConferenceScale)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "ConferenceScale";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.UserNumberLimit != list.UserNumberLimit)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "UserNumberLimit";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.Funds != list.Funds)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "Funds";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.Position != list.Position)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "Position";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.MeasureOfArea != list.MeasureOfArea)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "MeasureOfArea";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.ProductType != list.ProductType)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "ProductType";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.IsDinner != list.IsDinner)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "IsDinner";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.BulidType != list.BulidType)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "BulidType";
+                    data.FieldsList.Add(Fields);
+                }
+                if (meeting.Remark != list.Remark)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "Remark";
+                    data.FieldsList.Add(Fields);
+                }
+
+            }
 
             return data;
+        }
+        /// <summary>
+        /// 审批
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="opinion"></param>
+        /// <returns></returns>
+        public bool Approve(int id, string opinion)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var depId = _serviceBaseApp.GetSalesDepID(userId);
+            var depName = _serviceBaseApp.GetSalesDepname(userId.ToString(), "1");
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            var meetingdraft = UnitWork.FindSingle<MeetingDraft>(q => q.Id == id);
+
+            var meetingdraftlog = new MeetingDraftlog();
+            meetingdraftlog.DraftId = id;
+            if (meetingdraft.Step == 1)
+            {
+                if (id == 0)
+                {
+                    meetingdraft.Step = 3;
+                    meetingdraft.Opinion = opinion;
+                    UnitWork.Update(meetingdraft);
+                    meetingdraftlog.CreateUser = loginUser.Name;
+                    meetingdraftlog.CreateTime = DateTime.Now;
+                    meetingdraftlog.Type = 1;
+                    meetingdraftlog.Log = loginUser.Name + "——操作：审批驳回";
+                }
+                else if (id == 1)
+                {
+                    meetingdraft.Step = 2;
+                    meetingdraft.Opinion = opinion;
+                    UnitWork.Update(meetingdraft);
+                    meetingdraftlog.CreateUser = loginUser.Name;
+                    meetingdraftlog.CreateTime = DateTime.Now;
+                    meetingdraftlog.Type = 1;
+                    meetingdraftlog.Log = loginUser.Name + "——操作：审批通过";
+                }
+            }
+            else if (meetingdraft.Step == 2)
+            {
+                if (id == 0)
+                {
+                    meetingdraft.Step = 3;
+                    meetingdraft.Opinion = opinion;
+                    UnitWork.Update(meetingdraft);
+                    meetingdraftlog.CreateUser = loginUser.Name;
+                    meetingdraftlog.CreateTime = DateTime.Now;
+                    meetingdraftlog.Type = 1;
+                    meetingdraftlog.Log = loginUser.Name + "——操作：审批驳回";
+                }
+                else if (id == 1)
+                {
+                    meetingdraft.Step = 4;
+                    meetingdraft.Opinion = opinion;
+                    UnitWork.Update(meetingdraft);
+                    meetingdraftlog.CreateUser = loginUser.Name;
+                    meetingdraftlog.CreateTime = DateTime.Now;
+                    meetingdraftlog.Type = 1;
+                    meetingdraftlog.Log = loginUser.Name + "——操作：审批通过";
+                }
+            }
+
+            UnitWork.Save();
+            return true;
         }
 
     }
