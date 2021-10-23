@@ -731,6 +731,25 @@ namespace OpenAuth.App.Material
         }
 
         /// <summary>
+        /// 获取物料仓库与库存
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetMaterialOnHand(QueryQuotationListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var query = await UnitWork.Find<OITW>(o => o.ItemCode == request.MaterialCode && o.OnHand > 0).Select(c => new { c.ItemCode, c.OnHand, c.WhsCode }).ToListAsync();
+            return new TableData
+            {
+                Data = query
+            };
+        }
+
+        /// <summary>
         /// 获取报价单详情
         /// </summary>
         /// <param name="request"></param>
@@ -1043,6 +1062,12 @@ namespace OpenAuth.App.Material
                 var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ShieldingMaterials")).Select(u => u.Name).ToListAsync();
                 query = query.Where(e => !CategoryList.Contains(e.ItemCode));
             }
+
+            if (request.IsCommonUsed != null && (bool)request.IsCommonUsed)
+            {
+                var obj = await UnitWork.Find<CommonUsedMaterial>(null).Select(c => c.MaterialCode).ToListAsync();
+                query = query.Where(e => !obj.Contains(e.ItemCode));
+            }
             result.Count = await query.CountAsync();
             var Equipments = await query.Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
@@ -1089,6 +1114,68 @@ namespace OpenAuth.App.Material
             result.Data = Equipments.ToList();
             return result;
         }
+
+        #region 常用物料
+        /// <summary>
+        /// 添加常用物料
+        /// </summary>
+        /// <returns></returns>
+        public async Task AddCommonUsedMaterial(List<AddCommonUsedMaterialReq>  request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var obj = request.MapToList<CommonUsedMaterial>();
+            var materialCode = obj.Select(c => c.MaterialCode).ToList();
+            var material = await UnitWork.Find<CommonUsedMaterial>(c => materialCode.Contains(c.MaterialCode)).FirstOrDefaultAsync();
+            if (material!=null)
+            {
+                throw new CommonException($"物料{material.MaterialCode}已设为常用物料，勿重复操作。", 500);
+            }
+            await UnitWork.BatchAddAsync(obj.ToArray());
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 删除常用物料
+        /// </summary>
+        /// <param name="materialCode"></param>
+        /// <returns></returns>
+        public async Task DeleteCommonUsedMaterial(string materialCode)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var obj = await UnitWork.Find<CommonUsedMaterial>(c => c.MaterialCode == materialCode).FirstOrDefaultAsync();
+            await UnitWork.DeleteAsync(obj);
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 获取常用物料
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetCommonUsedMaterial(QueryQuotationListReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            var obj = await UnitWork.Find<CommonUsedMaterial>(null)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.PartCode), q => q.MaterialCode.Contains(req.PartCode))
+                .ToListAsync();
+            result.Data = obj.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+            result.Count = obj.Count;
+            return result;
+        }
+        #endregion
 
         /// <summary>
         /// 获取待合并报价单

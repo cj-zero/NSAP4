@@ -97,8 +97,13 @@ namespace OpenAuth.App.Material
                 var subdept = await UnitWork.Find<InternalContactDeptInfo>(c => c.UserId == loginContext.User.Id && c.HandleTime != null).Select(c => c.InternalContactId).ToListAsync();
                 query = query.Where(c => subdept.Contains(c.Id) && c.Status != 9);//执行中或停用中
             }
+            else if (req.PageType == 6)
+            {
+                query = query.Where(c => c.Status == 4 || c.Status == 7);//执行中或已完成
+            }
 
             var resp= await query
+                                .OrderByDescending(c => c.IW)
                                 .Skip((req.page - 1) * req.limit)
                                 .Take(req.limit)
                                 .ToListAsync();
@@ -107,7 +112,7 @@ namespace OpenAuth.App.Material
                 c.Id,
                 c.IW,
                 c.Theme,
-                ReceiveOrg=string.Join(",", c.InternalContactDeptInfos.Where(o => o.Type == 1).Select(c=>c.OrgName)),
+                ReceiveOrg = string.Join(",", c.InternalContactDeptInfos.Where(o => o.Type == 1).Select(c => c.OrgName)),
                 ExecOrg = string.Join(",", c.InternalContactDeptInfos.Where(o => o.Type == 2).Select(c => c.OrgName)),
                 c.CardCode,
                 c.CardName,
@@ -115,8 +120,9 @@ namespace OpenAuth.App.Material
                 c.CreateTime,
                 c.ApproveTime,
                 c.ExecTime,
-                c.Status
-            });
+                c.Status,
+                c.IsTentative
+            }).ToList();
             result.Count = await query.CountAsync();
             return result;
         }
@@ -154,11 +160,12 @@ namespace OpenAuth.App.Material
                     obj.CardCode = string.Join(",", req.CardCodes);
                     obj.CardName = string.Join(",", req.CardNames);
                     obj.Reason = string.Join(",", req.Reasons);
+                    obj.MaterialOrder = string.Join(",", req.MaterialOrder);
                     obj.AdaptiveRange = string.Join(",", req.AdaptiveRanges);
 
                     #region 添加子表数据
                     obj.InternalContactAttchments = new List<InternalContactAttchment>();
-                    obj.InternalContactBatchNumbers = new List<InternalContactBatchNumber>();
+                    //obj.InternalContactBatchNumbers = new List<InternalContactBatchNumber>();
                     obj.InternalContactDeptInfos = new List<InternalContactDeptInfo>();
                     //附件
                     req.Attchments.ForEach(c =>
@@ -166,9 +173,18 @@ namespace OpenAuth.App.Material
                         obj.InternalContactAttchments.Add(new InternalContactAttchment { FileId = c, InternalContactId = (single != null && single.Id > 0) ? single.Id : 0 });
                     });
                     //批次号
-                    req.BatchNumbers.ForEach(c =>
+                    //req.BatchNumbers.ForEach(c =>
+                    //{
+                    //    obj.InternalContactBatchNumbers.Add(new InternalContactBatchNumber { Number = c, InternalContactId = (single != null && single.Id > 0) ? single.Id : 0 });
+                    //});
+                    obj.InternalContactBatchNumbers.ForEach(c =>
                     {
-                        obj.InternalContactBatchNumbers.Add(new InternalContactBatchNumber { Number = c, InternalContactId = (single != null && single.Id > 0) ? single.Id : 0 });
+                        c.InternalContactId = (single != null && single.Id > 0) ? single.Id : 0;
+                    });
+                    //物料
+                    obj.InternalcontactMaterials.ForEach(c =>
+                    {
+                        c.InternalContactId = (single != null && single.Id > 0) ? single.Id : 0;
                     });
 
                     //接收部门
@@ -385,6 +401,7 @@ namespace OpenAuth.App.Material
                             .Include(c => c.InternalContactAttchments)
                             .Include(c => c.InternalContactBatchNumbers)
                             .Include(c => c.InternalContactDeptInfos)
+                            .Include(c => c.InternalcontactMaterials)
                             .FirstOrDefaultAsync();
             //操作历史
             var operationHistories = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.InstanceId == detail.FlowInstanceId)
@@ -425,6 +442,8 @@ namespace OpenAuth.App.Material
                 detail.ProductionNo,
                 AdaptiveRanges = detail.AdaptiveRange.Split(","),
                 Reasons = detail.Reason.Split(","),
+                MaterialOrder = !string.IsNullOrWhiteSpace(detail.MaterialOrder) ? detail.MaterialOrder.Split(",") : new string[] { },
+                //BatchNumbers = detail.InternalContactBatchNumbers,
                 BatchNumbers = detail.InternalContactBatchNumbers,
                 detail.CheckApproveId,
                 detail.CheckApprove,
@@ -435,6 +454,7 @@ namespace OpenAuth.App.Material
                 detail.Content,
                 reviceOrgList,
                 execOrgList,
+                InternalcontactMaterials = detail.InternalcontactMaterials,
                 operationHistories
             };
             return result;
@@ -477,6 +497,7 @@ namespace OpenAuth.App.Material
                     verificationReq.NodeRejectType = "1";
 
                     internalContact.Status = 6;
+                    internalContact.IsTentative = false;
                     await _flowInstanceApp.Verification(verificationReq);
                 }
                 else
@@ -526,6 +547,7 @@ namespace OpenAuth.App.Material
                             #endregion
                         }
                         else internalContact.Status = 1;//驳回 撤回提交
+                        internalContact.IsTentative = false;
 
                     }
 
@@ -534,6 +556,7 @@ namespace OpenAuth.App.Material
                 await UnitWork.UpdateAsync<InternalContact>(c => c.Id == req.Id, c => new InternalContact
                 {
                     Status = internalContact.Status,
+                    IsTentative = internalContact.IsTentative,
                     ApproveTime = internalContact.Status == 4 ? DateTime.Now : internalContact.ApproveTime
                 });
 

@@ -177,6 +177,18 @@ namespace OpenAuth.WebApi.Controllers.Material
             return result;
         }
 
+
+        /// <summary>
+        /// 获取物料仓库与库存
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetMaterialOnHand([FromQuery] QueryQuotationListReq request)
+        {
+            return await _app.GetMaterialOnHand(request);
+        }
+
         /// <summary>
         /// 加载物料列表
         /// </summary>
@@ -221,6 +233,74 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
+
+        #region 常用物料
+        /// <summary>
+        /// 添加常用物料
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> AddCommonUsedMaterial(List<AddCommonUsedMaterialReq> request)
+        {
+            Response result = new Response();
+            try
+            {
+                await _app.AddCommonUsedMaterial(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message},堆栈信息：{ex.StackTrace}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 删除常用物料
+        /// </summary>
+        /// <param name="materialCode"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response> DeleteCommonUsedMaterial(string materialCode)
+        {
+            Response result = new Response();
+            try
+            {
+                await _app.DeleteCommonUsedMaterial(materialCode);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{materialCode}, 错误：{result.Message},堆栈信息：{ex.StackTrace}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取常用物料
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetCommonUsedMaterial([FromQuery] QueryQuotationListReq request)
+        {
+            TableData result = new TableData();
+            try
+            {
+                result= await _app.GetCommonUsedMaterial(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message},堆栈信息：{ex.StackTrace}");
+            }
+            return result;
+        }
+        #endregion
 
         /// <summary>
         /// 报价单详情
