@@ -132,7 +132,9 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Customer), q => outsourcIds.Contains(q.Id))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderSapId), q => outsourcIds.Contains(q.Id))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.StartTime.ToString()), q => q.CreateTime > request.StartTime)
-                       .WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), q => q.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1));
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), q => q.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1))
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()), q => outsourcIds.Contains(q.Id))
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()), q => outsourcIds.Contains(q.Id));
             var outsourcList = await query.Include(o => o.OutsourcExpenses).OrderByDescending(o => o.UpdateTime).Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
             var serviceOrderIds = outsourcList.Select(o => o.OutsourcExpenses.FirstOrDefault()?.ServiceOrderId).ToList();
             var serviceWorkOrder = await UnitWork.Find<ServiceWorkOrder>(s => serviceOrderIds.Contains(s.ServiceOrderId)).ToListAsync();
@@ -1210,7 +1212,9 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Customer), q => outsourcIds.Contains(q.Id))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderSapId), q => outsourcIds.Contains(q.Id))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.StartTime.ToString()), q => q.CreateTime > request.StartTime)
-                       .WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), q => q.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1));
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), q => q.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1))
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()), q => outsourcIds.Contains(q.Id))
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()), q => outsourcIds.Contains(q.Id));
             var outsourcList = await query.Include(o => o.OutsourcExpenses).OrderByDescending(o => o.UpdateTime).ToListAsync();
             var userIds = outsourcList.Select(o => o.CreateUserId).ToList();
             var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
