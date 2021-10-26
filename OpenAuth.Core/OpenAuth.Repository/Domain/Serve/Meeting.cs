@@ -50,7 +50,7 @@ namespace OpenAuth.Repository.Domain.Serve
         public string Address { get; set; }
         /// <summary>
         /// 状态
-        ///  0：草稿，1：待审，2：审核通过，3：审批通过，4 ：拒绝，驳回：6
+        ///  0：草稿，1：待审，2：审核通过，3：审批通过，4 ：拒绝,驳回，6:取消
         /// </summary>
         [Description("状态")]
         public int Status { get; set; }

@@ -1179,7 +1179,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                     ViewSales = Powers.ViewSales;
                 }
                 if (ations == "copy") { ViewCustom = true; ViewSales = true; }
-                result.Data = _serviceSaleOrderApp.QuerySaleDeliveryDetailsV1(DocNum, ViewCustom, tablename, ViewSales, billSboId, isSql);
+                result.Data = _serviceSaleOrderApp.QuerySaleDeliveryDetailsV1(DocNum, true, tablename, true, billSboId, isSql);
             }
             catch (Exception e)
             {

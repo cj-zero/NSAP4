@@ -38,7 +38,7 @@ namespace OpenAuth.App.Meeting
         /// <param name="addmodel"></param>
         /// <returns></returns>
         /// <exception cref="CommonException"></exception>
-        public string AddMeetingData(AddMeetingDataReq addmodel)
+        public string AddMeetingData(AddMeetingDataReq AddModel)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -48,46 +48,46 @@ namespace OpenAuth.App.Meeting
             var loginUser = loginContext.User;
             OpenAuth.Repository.Domain.Serve.Meeting meeting = new OpenAuth.Repository.Domain.Serve.Meeting
             {
-                Name = addmodel.Name,
-                Title = addmodel.Title,
-                Introduce = addmodel.Introduce,
-                StartTime = addmodel.StartTime,
-                EndTime = addmodel.EndTime,
-                Address = addmodel.Address,
-                ApplyUserId = addmodel.ApplyUserId,
-                ApplyUser = addmodel.ApplyUser,
-                DempId = addmodel.DempId,
-                ApplyDempName = addmodel.ApplyDempName,
-                Contact = addmodel.Contact,
-                FollowPerson = addmodel.FollowPerson,
-                SponsorUnit = addmodel.SponsorUnit,
-                GuideUnit = addmodel.GuideUnit,
-                ApplyReason = addmodel.ApplyReason,
-                ConferenceScale = addmodel.ConferenceScale,
-                UserNumberLimit = addmodel.UserNumberLimit,
-                Funds = addmodel.Funds,
-                Position = addmodel.Position,
-                MeasureOfArea = addmodel.MeasureOfArea,
-                ProductType = addmodel.ProductType,
-                IsDinner = addmodel.IsDinner,
-                BulidType = addmodel.BulidType,
-                IsSign = addmodel.IsSign,
-                Remark = addmodel.Remark,
+                Name = AddModel.Name,
+                Title = AddModel.Title,
+                Introduce = AddModel.Introduce,
+                StartTime = AddModel.StartTime,
+                EndTime = AddModel.EndTime,
+                Address = AddModel.Address,
+                ApplyUserId = AddModel.ApplyUserId,
+                ApplyUser = AddModel.ApplyUser,
+                DempId = AddModel.DempId,
+                ApplyDempName = AddModel.ApplyDempName,
+                Contact = AddModel.Contact,
+                FollowPerson = AddModel.FollowPerson,
+                SponsorUnit = AddModel.SponsorUnit,
+                GuideUnit = AddModel.GuideUnit,
+                ApplyReason = AddModel.ApplyReason,
+                ConferenceScale = AddModel.ConferenceScale,
+                UserNumberLimit = AddModel.UserNumberLimit,
+                Funds = AddModel.Funds,
+                Position = AddModel.Position,
+                MeasureOfArea = AddModel.MeasureOfArea,
+                ProductType = AddModel.ProductType,
+                IsDinner = AddModel.IsDinner,
+                BulidType = AddModel.BulidType,
+                IsSign = AddModel.IsSign,
+                Remark = AddModel.Remark,
                 CreateUser = loginUser.Name,
                 CreateTime = DateTime.Now
             };
-            if (addmodel.Ations == MeetingAtion.Draft)
+            if (AddModel.Ations == MeetingAtion.Draft)
             {
                 meeting.Status = 0;
             }
-            else if (addmodel.Ations == MeetingAtion.Submit)
+            else if (AddModel.Ations == MeetingAtion.Submit)
             {
                 meeting.Status = 1;
             }
             var data = UnitWork.Add<OpenAuth.Repository.Domain.Serve.Meeting, int>(meeting);
             UnitWork.Save();
 
-            foreach (var item in addmodel.FileList)
+            foreach (var item in AddModel.FileList)
             {
                 MeetingFile file = new MeetingFile
                 {
@@ -111,11 +111,11 @@ namespace OpenAuth.App.Meeting
             draft.CreateTime = DateTime.Now;
             draft.Name = "展会申请";
             draft.Remark = data.Remark;
-            if (addmodel.Ations == MeetingAtion.Draft)
+            if (AddModel.Ations == MeetingAtion.Draft)
             {
                 draft.Step = 0;
             }
-            else if (addmodel.Ations == MeetingAtion.Submit)
+            else if (AddModel.Ations == MeetingAtion.Submit)
             {
                 draft.Step = 1;
             }
@@ -129,7 +129,7 @@ namespace OpenAuth.App.Meeting
         /// </summary>
         /// <param name="meetingId"></param>
         /// <returns></returns>
-        public bool MeetingUserApply(int meetingId)
+        public bool MeetingUserApply(int MeetingId, string Opinion)
         {
             var loginContext = _auth.GetCurrentUser();
             var userId = _serviceBaseApp.GetUserNaspId();
@@ -139,19 +139,20 @@ namespace OpenAuth.App.Meeting
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            if (UnitWork.IsExist<MeetingUser>(zw => zw.MeetingId == meetingId && zw.UserId == userId && zw.DempId == depId && !zw.IsDelete))
+            if (UnitWork.IsExist<MeetingUser>(zw => zw.MeetingId == MeetingId && zw.UserId == userId && zw.DempId == depId && !zw.IsDelete))
             {
                 return false;
             }
             var loginUser = loginContext.User;
             MeetingUser user = new MeetingUser();
-            user.MeetingId = meetingId;
+            user.MeetingId = MeetingId;
             user.Name = loginUser.Name;
             user.Status = 0;
             user.UserId = userId;
             user.CreateTime = DateTime.Now;
             user.DempId = depId;
             user.DempName = depName;
+            user.Remark = Opinion;
             UnitWork.Add<MeetingUser, int>(user);
             UnitWork.Save();
             MeetingDraft draft = new MeetingDraft();
@@ -161,6 +162,7 @@ namespace OpenAuth.App.Meeting
             draft.CreateTime = DateTime.Now;
             draft.Name = "展会报名";
             draft.Step = 1;
+            draft.Remark = Opinion;
             UnitWork.Add<MeetingDraft, int>(draft);
             UnitWork.Save();
 
@@ -170,7 +172,7 @@ namespace OpenAuth.App.Meeting
         /// 我的创建详情根据单号查询
         /// </summary>
         /// <param name="Id"></param>
-        /// <returns></returns>
+        /// <returns></returns> 
         public ExhibitionDetailDto MyCreatedDetailsById(int Id)
         {
             var list = new ExhibitionDetailDto();
@@ -198,16 +200,12 @@ namespace OpenAuth.App.Meeting
             }
             return list;
         }
-
-
-
-
         /// <summary>
         /// 调度-调度操作
         /// </summary>
         /// <param name="Updatemodel"></param>
         /// <returns></returns>
-        public bool Scheduling(List<SchedulingReq> Updatemodel)
+        public bool Scheduling(List<SchedulingReq> UpdateModel)
         {
             var loginContext = _auth.GetCurrentUser();
             var userId = _serviceBaseApp.GetUserNaspId();
@@ -219,7 +217,7 @@ namespace OpenAuth.App.Meeting
             }
             var loginUser = loginContext.User;
 
-            foreach (var item in Updatemodel)
+            foreach (var item in UpdateModel)
             {
                 MeetingOpreateLog opreateLog = new MeetingOpreateLog();
 
@@ -261,35 +259,38 @@ namespace OpenAuth.App.Meeting
         }
 
 
+
         /// <summary>
         /// 调度-调度人
         /// </summary>
         /// <param name="Querymodel"></param>
         /// <returns></returns>
-        public List<DispatcherDto> Dispatcher(DispatcherReq Querymodel, out int rowcount)
+        public List<DispatcherDto> Dispatcher(DispatcherReq QueryModel, out int rowcount)
         {
             Expression<Func<MeetingUser, bool>> exps = t => true;
-            exps = exps.And(t => !t.IsDelete && t.MeetingId == Querymodel.MeetingId);
-            if (!string.IsNullOrWhiteSpace(Querymodel.Name))
+            exps = exps.And(t => !t.IsDelete && t.MeetingId == QueryModel.MeetingId);
+            if (!string.IsNullOrWhiteSpace(QueryModel.Name))
             {
-                exps = exps.And(t => t.Name.Contains(Querymodel.Name));
+                exps = exps.And(t => t.Name.Contains(QueryModel.Name));
 
             }
 
-            var meetingUser = UnitWork.Find(Querymodel.page, Querymodel.limit, "", exps);
+            var meetingUser = UnitWork.Find(QueryModel.page, QueryModel.limit, "", exps);
             rowcount = UnitWork.GetCount(exps);
             return meetingUser.MapToList<DispatcherDto>();
         }
+
+
         /// <summary>
         /// 报名人数查看列表
         /// </summary>
         /// <param name="Querymodel"></param>
         /// <returns></returns>
-        public List<MeetingUserListDto> MeetingUserList(MeetingUserListReq Querymodel, out int rowcount)
+        public List<MeetingUserListDto> MeetingUserList(MeetingUserListReq QueryModel, out int rowcount)
         {
             Expression<Func<MeetingUser, bool>> exps = t => true;
-            exps = exps.And(t => !t.IsDelete && t.MeetingId == Querymodel.MeetingId);
-            var meetingUser = UnitWork.Find(Querymodel.page, Querymodel.limit, "", exps);
+            exps = exps.And(t => !t.IsDelete && t.MeetingId == QueryModel.MeetingId);
+            var meetingUser = UnitWork.Find(QueryModel.page, QueryModel.limit, "", exps);
             rowcount = UnitWork.GetCount(exps);
             return meetingUser.MapToList<MeetingUserListDto>();
         }
@@ -316,47 +317,54 @@ namespace OpenAuth.App.Meeting
         /// </summary>
         /// <param name="Querymodel"></param>
         /// <returns></returns>
-        public List<QueryListDto> Load(LoadReq querymodel, out int rowcount)
+        public List<QueryListDto> Load(LoadReq QueryModel, out int rowcount)
         {
-
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
             Expression<Func<OpenAuth.Repository.Domain.Serve.Meeting, bool>> exp = t => true;
             exp = exp.And(t => !t.IsDelete);
             //exp = exp.And(t => t.Status == 3);
-            if (!string.IsNullOrEmpty(querymodel.Name))
+            exp = exp.And(t => t.CreateUser == loginUser.Name);
+
+            if (!string.IsNullOrEmpty(QueryModel.Name))
             {
-                exp = exp.And(t => t.Name == querymodel.Name);
+                exp = exp.And(t => t.Name == QueryModel.Name);
 
             }
-            if (!string.IsNullOrEmpty(querymodel.StartTime))
+            if (!string.IsNullOrEmpty(QueryModel.StartTime))
             {
                 DateTime startTime;
-                DateTime.TryParse(querymodel.StartTime, out startTime);
+                DateTime.TryParse(QueryModel.StartTime, out startTime);
                 exp = exp.And(t => t.StartTime <= startTime);
             }
-            if (!string.IsNullOrEmpty(querymodel.EndTime))
+            if (!string.IsNullOrEmpty(QueryModel.EndTime))
             {
                 DateTime endTime;
-                DateTime.TryParse(querymodel.EndTime, out endTime);
+                DateTime.TryParse(QueryModel.EndTime, out endTime);
                 exp = exp.And(t => t.EndTime <= endTime);
             }
             exp = exp.And(t => t.IsDinner == true);
-            if (querymodel.DempId != 0)
+            if (QueryModel.DempId != 0)
             {
-                exp = exp.And(t => t.DempId == querymodel.DempId);
+                exp = exp.And(t => t.DempId == QueryModel.DempId);
             }
-            if (!string.IsNullOrEmpty(querymodel.ApplyUser))
+            if (!string.IsNullOrEmpty(QueryModel.ApplyUser))
             {
-                exp = exp.And(t => t.ApplyUser == querymodel.ApplyUser);
+                exp = exp.And(t => t.ApplyUser == QueryModel.ApplyUser);
             }
-            if (!string.IsNullOrEmpty(querymodel.FollowPerson))
+            if (!string.IsNullOrEmpty(QueryModel.FollowPerson))
             {
-                exp = exp.And(t => t.FollowPerson == querymodel.FollowPerson);
+                exp = exp.And(t => t.FollowPerson == QueryModel.FollowPerson);
             }
-            if (querymodel.Status != 0)
+            if (QueryModel.Status != 0)
             {
-                exp = exp.And(t => t.Status == querymodel.Status);
+                exp = exp.And(t => t.Status == QueryModel.Status);
             }
-            var objs = UnitWork.Find<OpenAuth.Repository.Domain.Serve.Meeting>(querymodel.page, querymodel.limit, "", exp);
+            var objs = UnitWork.Find<OpenAuth.Repository.Domain.Serve.Meeting>(QueryModel.page, QueryModel.limit, "", exp);
             var list = objs.MapToList<OpenAuth.Repository.Domain.Serve.Meeting>();
             rowcount = UnitWork.GetCount(exp);
             var data = new List<QueryListDto>();
@@ -384,41 +392,47 @@ namespace OpenAuth.App.Meeting
         /// </summary>
         /// <param name="Querymodel"></param>
         /// <returns></returns>
-        public List<MyCreatedLoadListDto> MyCreatedLoad(MyCreatedLoadReq querymodel, out int rowcount)
+        public List<MyCreatedLoadListDto> MyCreatedLoad(MyCreatedLoadReq QueryModel, out int rowcount)
         {
-
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
             Expression<Func<MeetingDraft, bool>> exp = t => true;
-            if (querymodel.JobId != 0)
+            exp = exp.And(t => t.CreateUser == loginUser.Name);
+            if (QueryModel.JobId != 0)
             {
-                exp = exp.And(t => t.Id == querymodel.JobId);
+                exp = exp.And(t => t.Id == QueryModel.JobId);
 
             }
-            if (querymodel.Type != -1)
+            if (QueryModel.Type != -1)
             {
-                exp = exp.And(t => t.Type == querymodel.Type);
+                exp = exp.And(t => t.Type == QueryModel.Type);
 
             }
-            if (querymodel.Step != -1)
+            if (QueryModel.Step != -1)
             {
-                exp = exp.And(t => t.Step == querymodel.Step);
+                exp = exp.And(t => t.Step == QueryModel.Step);
 
             }
-            if (!string.IsNullOrWhiteSpace(querymodel.JobName))
+            if (!string.IsNullOrWhiteSpace(QueryModel.JobName))
             {
-                exp = exp.And(t => t.Name.Contains(querymodel.JobName));
+                exp = exp.And(t => t.Name.Contains(QueryModel.JobName));
 
             }
-            if (!string.IsNullOrWhiteSpace(querymodel.Remark))
+            if (!string.IsNullOrWhiteSpace(QueryModel.Remark))
             {
-                exp = exp.And(t => t.Remark.Contains(querymodel.JobName));
+                exp = exp.And(t => t.Remark.Contains(QueryModel.JobName));
 
             }
-            if (querymodel.Base_entry != 0)
+            if (QueryModel.Base_entry != 0)
             {
-                exp = exp.And(t => t.Base_entry == querymodel.Base_entry);
+                exp = exp.And(t => t.Base_entry == QueryModel.Base_entry);
 
             }
-            var objs = UnitWork.Find<MeetingDraft>(querymodel.page, querymodel.limit, "", exp);
+            var objs = UnitWork.Find<MeetingDraft>(QueryModel.page, QueryModel.limit, "", exp);
             var list = objs.MapToList<MeetingDraft>();
             rowcount = UnitWork.GetCount(exp);
             var data = new List<MyCreatedLoadListDto>();
@@ -436,7 +450,7 @@ namespace OpenAuth.App.Meeting
         /// <param name="querymodel"></param>
         /// <param name="rowcount"></param>
         /// <returns></returns>
-        public List<SubmittedDto> SubmittedLod(SubmittedReq querymodel, out int rowcount)
+        public List<SubmittedDto> SubmittedLod(SubmittedReq QueryModel, out int rowcount)
         {
             var loginContext = _auth.GetCurrentUser();
             var userId = _serviceBaseApp.GetUserNaspId();
@@ -448,50 +462,61 @@ namespace OpenAuth.App.Meeting
             }
             var loginUser = loginContext.User;
             Expression<Func<MeetingDraft, bool>> exp = t => true;
-            if (querymodel.JobId != 0)
+            if (QueryModel.JobId != 0)
             {
-                exp = exp.And(t => t.Id == querymodel.JobId);
+                exp = exp.And(t => t.Id == QueryModel.JobId);
 
             }
-            if (querymodel.Type != -1)
+            if (QueryModel.Type != -1)
             {
-                exp = exp.And(t => t.Type == querymodel.Type);
+                exp = exp.And(t => t.Type == QueryModel.Type);
 
             }
-            if (querymodel.Step != -1)
+            if (QueryModel.Step != -1)
             {
-                exp = exp.And(t => t.Step == querymodel.Step);
+                exp = exp.And(t => t.Step == QueryModel.Step);
 
             }
-            if (!string.IsNullOrWhiteSpace(querymodel.JobName))
+            if (!string.IsNullOrWhiteSpace(QueryModel.JobName))
             {
-                exp = exp.And(t => t.Name.Contains(querymodel.JobName));
+                exp = exp.And(t => t.Name.Contains(QueryModel.JobName));
 
             }
-            if (!string.IsNullOrWhiteSpace(querymodel.Remark))
+            if (!string.IsNullOrWhiteSpace(QueryModel.Remark))
             {
-                exp = exp.And(t => t.Remark.Contains(querymodel.JobName));
+                exp = exp.And(t => t.Remark.Contains(QueryModel.JobName));
 
             }
-            if (querymodel.Base_entry != 0)
+            if (QueryModel.Base_entry != 0)
             {
-                exp = exp.And(t => t.Base_entry == querymodel.Base_entry);
+                exp = exp.And(t => t.Base_entry == QueryModel.Base_entry);
 
             }
-            var objs = UnitWork.Find<MeetingDraft>(querymodel.page, querymodel.limit, "", exp);
+            var objs = UnitWork.Find<MeetingDraft>(QueryModel.page, QueryModel.limit, "", exp);
             var list = objs.MapToList<MeetingDraft>();
             rowcount = UnitWork.GetCount(exp);
             var data = new List<SubmittedDto>();
             foreach (var obj in list)
             {
                 var nes = new SubmittedDto();
-                var meetinguser = UnitWork.FindSingle<MeetingUser>(q => q.Id == obj.Base_entry);
-                if (meetinguser.DempId == depId)
+                if (obj.Type == 0)
                 {
-                    obj.CopyTo(nes);
-                    data.Add(nes);
+                    var meetinguser = UnitWork.FindSingle<MeetingUser>(q => q.Id == obj.Base_entry);
+                    if (meetinguser.DempId == depId)
+                    {
+                        obj.CopyTo(nes);
+                        data.Add(nes);
+                    }
                 }
-
+                if (obj.Type == 1)
+                {
+                    var meetuser = UnitWork.FindSingle<MeetingUser>(q => q.Id == obj.Base_entry);
+                    if (meetuser.DempId == depId)
+                    {
+                        obj.CopyTo(nes);
+                        data.Add(nes);
+                    }
+                }
             }
             return data;
         }
@@ -500,11 +525,23 @@ namespace OpenAuth.App.Meeting
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public SubmittedDetailsDto SubmittedDetails(int id)
+        public SubmittedDetailsDto SubmittedDetails(int Id)
         {
             var data = new SubmittedDetailsDto();
-            var meetingdraft = UnitWork.FindSingle<MeetingDraft>(zw => zw.Id == id);
-            var meeting = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(zw => zw.Id == meetingdraft.Base_entry);
+            var meetingdraft = UnitWork.FindSingle<MeetingDraft>(zw => zw.Id == Id);
+            var meeting = new OpenAuth.Repository.Domain.Serve.Meeting();
+            if (meetingdraft.Type == 1)
+            {
+                var meetinguser = UnitWork.FindSingle<MeetingUser>(zw => zw.Id == meetingdraft.Base_entry);
+                meeting = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(zw => zw.Id == meetinguser.MeetingId);
+                data.meetingUser.CreateTime = meetinguser.CreateTime;
+                data.meetingUser.Name = meetinguser.Name;
+                data.meetingUser.Remark = meetinguser.Remark;
+            }
+            if (meetingdraft.Type == 0)
+            {
+                meeting = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(zw => zw.Id == meetingdraft.Base_entry);
+            }
             data.Id = meetingdraft.Id;
             data.Introduce = meeting.Introduce;
             data.Name = meeting.Name;
@@ -688,6 +725,12 @@ namespace OpenAuth.App.Meeting
                     Fields.Field = "Remark";
                     data.FieldsList.Add(Fields);
                 }
+                if (meeting.CancelReason != null && meeting.CancelReason != list.CancelReason)
+                {
+                    var Fields = new FieldsDto();
+                    Fields.Field = "CancelReason";
+                    data.FieldsList.Add(Fields);
+                }
 
             }
 
@@ -699,7 +742,7 @@ namespace OpenAuth.App.Meeting
         /// <param name="id"></param>
         /// <param name="opinion"></param>
         /// <returns></returns>
-        public bool Approve(int id, string opinion)
+        public bool Approve(int Id, int Audit, string Opinion)
         {
             var loginContext = _auth.GetCurrentUser();
             var userId = _serviceBaseApp.GetUserNaspId();
@@ -710,60 +753,347 @@ namespace OpenAuth.App.Meeting
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
-            var meetingdraft = UnitWork.FindSingle<MeetingDraft>(q => q.Id == id);
+            var meetingdraft = UnitWork.FindSingle<MeetingDraft>(q => q.Id == Id);
 
             var meetingdraftlog = new MeetingDraftlog();
-            meetingdraftlog.DraftId = id;
+            meetingdraftlog.DraftId = Id;
             if (meetingdraft.Step == 1)
             {
-                if (id == 0)
+                if (Audit == 0)
                 {
                     meetingdraft.Step = 3;
-                    meetingdraft.Opinion = opinion;
+                    meetingdraft.Opinion = Opinion;
                     UnitWork.Update(meetingdraft);
                     meetingdraftlog.CreateUser = loginUser.Name;
                     meetingdraftlog.CreateTime = DateTime.Now;
                     meetingdraftlog.Type = 1;
                     meetingdraftlog.Log = loginUser.Name + "——操作：审批驳回";
+                    if (meetingdraft.Type == 0)
+                    {
+                        var meet = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(q => q.Id == meetingdraft.Base_entry);
+                        meet.Status = 4;
+                        UnitWork.Update(meet);
+                    }
+                    else if (meetingdraft.Type == 1)
+                    {
+                        var meetuser = UnitWork.FindSingle<MeetingUser>(q => q.Id == meetingdraft.Base_entry);
+                        meetuser.Status = -1;
+                        UnitWork.Update(meetuser);
+
+                    }
+
                 }
-                else if (id == 1)
+                else if (Audit == 1)
                 {
                     meetingdraft.Step = 2;
-                    meetingdraft.Opinion = opinion;
+                    meetingdraft.Opinion = Opinion;
                     UnitWork.Update(meetingdraft);
                     meetingdraftlog.CreateUser = loginUser.Name;
                     meetingdraftlog.CreateTime = DateTime.Now;
                     meetingdraftlog.Type = 1;
                     meetingdraftlog.Log = loginUser.Name + "——操作：审批通过";
+                    if (meetingdraft.Type == 0)
+                    {
+                        var meet = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(q => q.Id == meetingdraft.Base_entry);
+                        meet.Status = 2;
+                        UnitWork.Update(meet);
+                    }
+                    if (meetingdraft.Type == 1)
+                    {
+                        var meetuser = UnitWork.FindSingle<MeetingUser>(q => q.Id == meetingdraft.Base_entry);
+                        meetuser.Status = 1;
+                        UnitWork.Update(meetuser);
+                    }
+
                 }
             }
             else if (meetingdraft.Step == 2)
             {
-                if (id == 0)
+                if (Audit == 0)
                 {
                     meetingdraft.Step = 3;
-                    meetingdraft.Opinion = opinion;
+                    meetingdraft.Opinion = Opinion;
                     UnitWork.Update(meetingdraft);
                     meetingdraftlog.CreateUser = loginUser.Name;
                     meetingdraftlog.CreateTime = DateTime.Now;
                     meetingdraftlog.Type = 1;
                     meetingdraftlog.Log = loginUser.Name + "——操作：审批驳回";
+                    if (meetingdraft.Type == 0)
+                    {
+                        var meet = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(q => q.Id == meetingdraft.Base_entry);
+                        meet.Status = 4;
+                        UnitWork.Update(meet);
+                    }
+                    else if (meetingdraft.Type == 1)
+                    {
+                        var meetuser = UnitWork.FindSingle<MeetingUser>(q => q.Id == meetingdraft.Base_entry);
+                        meetuser.Status = -1;
+                        UnitWork.Update(meetuser);
+
+                    }
                 }
-                else if (id == 1)
+                else if (Audit == 1)
                 {
                     meetingdraft.Step = 4;
-                    meetingdraft.Opinion = opinion;
+                    meetingdraft.Opinion = Opinion;
                     UnitWork.Update(meetingdraft);
                     meetingdraftlog.CreateUser = loginUser.Name;
                     meetingdraftlog.CreateTime = DateTime.Now;
                     meetingdraftlog.Type = 1;
                     meetingdraftlog.Log = loginUser.Name + "——操作：审批通过";
+                    if (meetingdraft.Type == 0)
+                    {
+                        var meet = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(q => q.Id == meetingdraft.Base_entry);
+                        meet.Status = 3;
+                        UnitWork.Update(meet);
+                    }
+                    else if (meetingdraft.Type == 1)
+                    {
+                        var meetuser = UnitWork.FindSingle<MeetingUser>(q => q.Id == meetingdraft.Base_entry);
+                        meetuser.Status = 1;
+                        UnitWork.Update(meetuser);
+
+                    }
                 }
             }
 
             UnitWork.Save();
             return true;
         }
+        /// <summary>
+        /// 会议重新提交
+        /// </summary>
+        /// <param name="UpdateModel"></param>
+        /// <returns></returns>
 
+        public bool Resubmit(UpdateMeetingDataReq UpdateModel)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            bool result = false;
+            if (UpdateModel.Ations == MeetingAtion.Resubmit)
+            {
+                var data = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(q => q.Id == UpdateModel.Id);
+                if (data.Status == 3)
+                {
+                    if (UpdateModel.Name != data.Name || UpdateModel.StartTime != data.StartTime || UpdateModel.EndTime != data.EndTime || UpdateModel.Address != data.Address || UpdateModel.Funds != data.Funds || UpdateModel.ApplyReason != data.ApplyReason)
+                    {
+                        data.Status = 1;
+                        var meetdraft = UnitWork.FindSingle<MeetingDraft>(q => q.Base_entry == UpdateModel.Id);
+                        meetdraft.Step = 1;
+                        meetdraft.UpdateTime = DateTime.Now;
+                        meetdraft.UpdateUser = loginUser.Name;
+                        UnitWork.Update(meetdraft);
+                        var meetdraftlog = new MeetingDraftlog();
+                        meetdraftlog.CreateTime = DateTime.Now;
+                        meetdraftlog.CreateUser = loginUser.Name;
+                        meetdraftlog.DraftId = meetdraft.Id;
+                        meetdraftlog.Type = 1;
+                        meetdraftlog.Log = loginUser.Name + "——操作：更变已通过状态重新提交审核";
+                    }
+                }
+                if (data.Status == 4)
+                {
+                    data.Status = 1;
+                    var meetdraft = UnitWork.FindSingle<MeetingDraft>(q => q.Base_entry == UpdateModel.Id);
+                    meetdraft.Step = 1;
+                    meetdraft.UpdateTime = DateTime.Now;
+                    meetdraft.UpdateUser = loginUser.Name;
+                    UnitWork.Update(meetdraft);
+                    var meetdraftlog = new MeetingDraftlog();
+                    meetdraftlog.CreateTime = DateTime.Now;
+                    meetdraftlog.CreateUser = loginUser.Name;
+                    meetdraftlog.DraftId = meetdraft.Id;
+                    meetdraftlog.Type = 1;
+                    meetdraftlog.Log = loginUser.Name + "——操作：更变已驳回状态重新提交审核";
+                }
+                data.Name = UpdateModel.Name;
+                data.Title = UpdateModel.Title;
+                data.Introduce = UpdateModel.Introduce;
+                data.StartTime = UpdateModel.StartTime;
+                data.EndTime = UpdateModel.EndTime;
+                data.Address = UpdateModel.Address;
+                data.ApplyUserId = UpdateModel.ApplyUserId;
+                data.ApplyUser = UpdateModel.ApplyUser;
+                data.DempId = UpdateModel.DempId;
+                data.ApplyDempName = UpdateModel.ApplyDempName;
+                data.Contact = UpdateModel.Contact;
+                data.FollowPerson = UpdateModel.FollowPerson;
+                data.SponsorUnit = UpdateModel.SponsorUnit;
+                data.GuideUnit = UpdateModel.GuideUnit;
+                data.ApplyReason = UpdateModel.ApplyReason;
+                data.ConferenceScale = UpdateModel.ConferenceScale;
+                data.UserNumberLimit = UpdateModel.UserNumberLimit;
+                data.Funds = UpdateModel.Funds;
+                data.Position = UpdateModel.Position;
+                data.MeasureOfArea = UpdateModel.MeasureOfArea;
+                data.ProductType = UpdateModel.ProductType;
+                data.IsDinner = UpdateModel.IsDinner;
+                data.BulidType = UpdateModel.BulidType;
+                data.IsSign = UpdateModel.IsSign;
+                data.Remark = UpdateModel.Remark;
+                data.UpdateUser = loginUser.Name;
+                data.UpdateTime = DateTime.Now;
+                UnitWork.Update(data);
+                MeetingOpreateLog opreateLog = new MeetingOpreateLog();
+                opreateLog.Log = "修改会议内容";
+                opreateLog.Json = JsonHelper.Instance.Serialize(UpdateModel);
+                opreateLog.CreateUser = loginUser.Name;
+                opreateLog.CreateTime = DateTime.Now;
+                opreateLog.MeetingId = UpdateModel.Id;
+                opreateLog.Type = 1;
+                UnitWork.Add<MeetingOpreateLog, int>(opreateLog);
+                UnitWork.Save();
+            }
+
+            return result;
+        }
+        /// <summary>
+        /// 取消会议申请
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <param name="Opinion"></param>
+        /// <returns></returns>
+        public bool MeetingCanel(int Id, string Opinion)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            var meeting = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(q => q.Id == Id);
+            meeting.CancelReason = Opinion;
+            //meeting.Status = 6;//状态更变为取消
+            meeting.UpdateTime = DateTime.Now;
+            meeting.UpdateUser = loginUser.Name;
+            meeting.CancelTime = DateTime.Now;
+            UnitWork.Update(meeting);
+            MeetingDraft draft = new MeetingDraft();
+            draft.Base_entry = meeting.Id;
+            draft.CreateUser = loginUser.Name;
+            draft.Type = 0;
+            draft.CreateTime = DateTime.Now;
+            draft.Name = "展会取消申请";
+            draft.Step = 1;
+            draft.Remark = meeting.CancelReason;
+            UnitWork.Add<MeetingDraft, int>(draft);
+            UnitWork.Save();
+            return true;
+        }
+
+        /// <summary>
+        /// 历史报名信息
+        /// </summary>
+        /// <param name="QueryModel"></param>
+        /// <returns></returns>
+        public List<MeetingUserHistoryDto> MeetingUserHistory(MeetingUserHistoryReq QueryModel)
+        {
+            var data = new List<MeetingUserHistoryDto>();
+            Expression<Func<OpenAuth.Repository.Domain.Serve.MeetingUser, bool>> exp = t => true;
+            exp = exp.And(t => !t.IsDelete);
+            exp = exp.And(t => t.UserId == QueryModel.UserId);
+            if (!string.IsNullOrEmpty(QueryModel.StartTime))
+            {
+                DateTime startTime;
+                DateTime.TryParse(QueryModel.StartTime, out startTime);
+                exp = exp.And(t => t.CancelTime <= startTime);
+            }
+            if (!string.IsNullOrEmpty(QueryModel.EndTime))
+            {
+                DateTime endTime;
+                DateTime.TryParse(QueryModel.EndTime, out endTime);
+                exp = exp.And(t => t.CancelTime <= endTime);
+            }
+            var meetuser = UnitWork.Find(exp);
+            var list = meetuser.MapToList<MeetingUser>();
+            foreach (var item in list)
+            {
+                var scon = new MeetingUserHistoryDto();
+
+                var meeting = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(q => q.Id == item.MeetingId);
+                if (string.IsNullOrWhiteSpace(QueryModel.MeetingName) && meeting.Name.Contains(QueryModel.MeetingName))
+                {
+                    scon.MeetingName = meeting.Name;
+                    scon.Name = item.Name;
+                    scon.StartTime = meeting.StartTime;
+                    scon.EndTime = meeting.EndTime;
+                    scon.Address = meeting.Address;
+                    scon.AddressType = meeting.AddressType;
+                    scon.CreateTime = item.CreateTime;
+                    data.Add(scon);
+                }
+            }
+            return data;
+        }
+        public bool MeetingUserCanel(int Id, string Opinion)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            var meetingUser = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.MeetingUser>(q => q.Id == Id);
+            meetingUser.CancelReason = Opinion;
+            //meeting.Status = 6;//状态更变为取消
+            meetingUser.CancelTime = DateTime.Now;
+            UnitWork.Update(meetingUser);
+            MeetingDraft draft = new MeetingDraft();
+            draft.Base_entry = meetingUser.Id;
+            draft.CreateUser = loginUser.Name;
+            draft.Type = 1;
+            draft.CreateTime = DateTime.Now;
+            draft.Name = "展会报名取消申请";
+            draft.Step = 1;
+            draft.Remark = meetingUser.CancelReason;
+            UnitWork.Add<MeetingDraft, int>(draft);
+            UnitWork.Save();
+            return true;
+        }
+        /// <summary>
+        /// 报名重新提交
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <param name="Opinion"></param>
+        /// <returns></returns>
+        public bool MeetingUserResubmit(int Id, string Opinion)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            var meetingdraft = UnitWork.FindSingle<MeetingDraft>(q => q.Id == Id);
+            meetingdraft.Remark = Opinion;
+            meetingdraft.Step = 1;
+            UnitWork.Update(meetingdraft);
+            var meetuser = UnitWork.FindSingle<MeetingUser>(q => q.Id == meetingdraft.Base_entry);
+            meetuser.Remark = Opinion;
+            UnitWork.Update(meetuser);
+            MeetingOpreateLog opreateLog = new MeetingOpreateLog();
+            opreateLog.Log = "修改报名备注";
+            opreateLog.Json = JsonHelper.Instance.Serialize(Opinion);
+            opreateLog.CreateUser = loginUser.Name;
+            opreateLog.CreateTime = DateTime.Now;
+            opreateLog.MeetingId = meetuser.MeetingId;
+            opreateLog.Type = 2;
+            UnitWork.Add<MeetingOpreateLog, int>(opreateLog);
+            UnitWork.Save();
+            return true;
+        }
+
+        public bool MeetingDraftDelete(int Id)
+        {
+            var meetdraft = UnitWork.FindSingle<MeetingDraft>(q => q.Id == Id);
+            meetdraft.IsDelete = true;
+            UnitWork.Update(meetdraft);
+            UnitWork.Save(); return true;
+        }
     }
 }
