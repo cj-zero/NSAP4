@@ -56,6 +56,10 @@ namespace OpenAuth.Repository.Domain.Serve
         /// </summary>
         [Description("更新时间")]
         public DateTime? UpdateTime { get; set; }
+        /// <summary>
+        /// 审批意见
+        /// </summary>
+        public string  Opinion { get; set; }
 
         public override void GenerateDefaultKeyVal()
         {

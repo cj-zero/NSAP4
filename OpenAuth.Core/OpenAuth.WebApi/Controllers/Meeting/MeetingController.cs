@@ -307,5 +307,26 @@ namespace OpenAuth.WebApi.Controllers.Meeting
             }
             return result;
         }
+        /// <summary>
+        /// 审批
+        /// 0：驳回，1：通过
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("Approve")]
+        public async Task<Response<bool>> Approve(int Id, string Opinion)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = _serviceMeetingApp.Approve(Id, Opinion);
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }

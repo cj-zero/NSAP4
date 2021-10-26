@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OpenAuth.Repository.Domain.Serve;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -156,7 +157,11 @@ namespace OpenAuth.App.Meeting.ModelDto
         /// <summary>
         /// 有改动字段
         /// </summary>
-        public List<Fields> FieldsList { get; set; }
+        public List<FieldsDto> FieldsList { get; set; }
+        /// <summary>
+        /// 操作日志
+        /// </summary>
+        public List<MeetingOpreateLogDto> MeetingOpreateLog { get; set; }
     }
     public class LatestApplicationDto
     {
@@ -189,8 +194,31 @@ namespace OpenAuth.App.Meeting.ModelDto
     /// <summary>
     /// 有改动字段
     /// </summary>
-    public class Fields
+    public class FieldsDto
     {
         public string Field { get; set; }
+    }
+    public class MeetingOpreateLogDto
+    {
+        /// <summary>
+        /// 会议Id
+        /// </summary>
+        public int MeetingId { get; set; }
+        /// <summary>
+        /// 日志
+        /// </summary>
+        public string Log { get; set; }
+        /// <summary>
+        /// 修改内容
+        /// </summary>
+        public string Json { get; set; }
+        /// <summary>
+        /// 操作人
+        /// </summary>
+        public string CreateUser { get; set; }
+        /// <summary>
+        /// 操作时间
+        /// </summary>
+        public DateTime CreateTime { get; set; }
     }
 }
