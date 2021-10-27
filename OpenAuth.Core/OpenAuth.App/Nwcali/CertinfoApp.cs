@@ -905,10 +905,10 @@ namespace OpenAuth.App
                                     select new { a.Id, UserName = a.Name, OrgName = c.Name, c.CascadeId };
 
                         var OrgNameList = await query.OrderByDescending(o => o.CascadeId).FirstOrDefaultAsync();
-                        single.ContactsId = OrgNameList.Id;
-                        single.Contacts = OrgNameList.UserName;
-                        single.ContactsOrg = OrgNameList.OrgName;
-                        single.Phone = saler.Memo;
+                        single.ContactsId = OrgNameList?.Id;
+                        single.Contacts = OrgNameList?.UserName;
+                        single.ContactsOrg = OrgNameList?.OrgName;
+                        single.Phone = saler?.Memo;
 
                         //获取开票到地址
                         var entrustedUnit = GetAddress("C00550", saleOrder.sbo_id);//新威尔
