@@ -496,7 +496,10 @@ namespace OpenAuth.App
             }
             if (CompletionReports.Count()<=0) 
             {
-                throw new Exception("暂无完工报告");
+                result.Code = 500;
+                result.Message = "暂无完工报告";
+                return result;
+                //throw new Exception("暂无完工报告");
             }
 
             if (serviceOrderObj.VestInOrg == 1)
