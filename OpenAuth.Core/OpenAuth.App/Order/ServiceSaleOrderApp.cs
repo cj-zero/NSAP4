@@ -6165,7 +6165,7 @@ namespace OpenAuth.App.Order
             if (string.IsNullOrEmpty(sboname)) { sboname = ""; } else { sboname = sboname + ".dbo."; }
             filedName.Append(" a.UpdateDate,a.DocEntry,a.CardCode,CASE WHEN 1 = " + Custom + " THEN a.CardName ELSE '******' END AS CardName,CASE WHEN 1 = " + Sales + " THEN a.DocTotal ELSE 0 END AS DocTotal,CASE WHEN 1 = " + Sales + " THEN (a.DocTotal-a.PaidToDate) ELSE 0 END AS OpenDocTotal,a.CreateDate,a.SlpCode,a.Comments,a.DocStatus,a.Printed,c.SlpName,a.CANCELED,a.Indicator,a.DocDueDate,e.PymntGroup,'' as billID,'' AS ActualDocDueDate ");
             filedName.Append(",'10011111-28a9-4767-854f-77246e36d24d1111111111111111111' as PrintNo,'00' as PrintNumIndex,'' as billStatus,'' as bonusStatus,'' as proStatus,n.Name as IndicatorName,'' as EmpAcctWarn,'' as AttachFlag,a.U_DocRCTAmount");
-            filedName.Append(", '' as TransFee,a.DocCur");
+            filedName.Append(", '0000000000000' as TransFee,a.DocCur");
             tableName.AppendFormat("" + sboname + "ORDR a ");
             tableName.AppendFormat(" LEFT JOIN " + sboname + "OSLP c ON a.SlpCode = c.SlpCode");
             tableName.AppendFormat(" LEFT JOIN " + sboname + "OCRD d ON a.CardCode = d.CardCode");

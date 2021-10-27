@@ -39,7 +39,7 @@ namespace OpenAuth.Repository.Domain.Serve
         [Description("展会结束时间")]
         public DateTime EndTime { get; set; }
         /// <summary>
-        /// 1：国内，2：国外
+        /// 0：国内，1：国外
         /// </summary>
         [Description("展会地点")]
         public int AddressType { get; set; }

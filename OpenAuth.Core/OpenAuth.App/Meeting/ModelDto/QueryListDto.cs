@@ -12,17 +12,21 @@ namespace OpenAuth.App.Meeting.ModelDto
     public class QueryListDto
     {
         /// <summary>
+        /// 展会Id
+        /// </summary>
+        public int Id { get; set; }
+        /// <summary>
         /// 展会名称
         /// </summary>
         public string Name { get; set; }
         /// <summary>
         /// 展会开始时间
         /// </summary>
-        public DateTime StartTime { get; set; }
+        public string  StartTime { get; set; }
         /// <summary>
         /// 展会结束时间
         /// </summary>
-        public DateTime EndTime { get; set; }
+        public string EndTime { get; set; }
         /// <summary>
         /// 地址
         /// </summary>
@@ -49,9 +53,13 @@ namespace OpenAuth.App.Meeting.ModelDto
         /// </summary>
         public int Status { get; set; }
         /// <summary>
-        /// 保密人数 
+        /// 报名人数 
         /// </summary>
         [Ignore]
         public int number { get; set; }
+        /// <summary>
+        /// 0：国内，1：国外
+        /// </summary>
+        public int AddressType { get; set; }
     }
 }

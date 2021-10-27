@@ -15,13 +15,25 @@ namespace OpenAuth.App.Meeting.ModelDto
         public int Id { get; set; }
         /// <summary>
         /// 单据类型
-        /// 0 :展会申请 1：报名申请
+        /// 0 :展会申请 1：报名申请 2： 取消
         /// </summary>
         public int Type { get; set; }
         /// <summary>
         /// 任务名称
         /// </summary>
         public string Name { get; set; }
+        /// <summary>
+        /// 会议名称
+        /// </summary>
+        public string MeetingName { get; set; }
+        /// <summary>
+        /// 0：国内，1：国外
+        /// </summary>
+        public int AddressType { get; set; }
+        /// <summary>
+        /// 地址
+        /// </summary>
+        public string Address { get; set; }
         /// <summary>
         /// 原单据编号
         /// </summary>

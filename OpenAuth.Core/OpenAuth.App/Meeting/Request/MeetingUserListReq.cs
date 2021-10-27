@@ -15,7 +15,7 @@ namespace OpenAuth.App.Meeting.Request
         /// <summary>
         /// 姓名
         /// </summary>
-        public int Name { get; set; }
+        public string Name { get; set; }
         /// <summary>
         /// 开始时间
         /// </summary>

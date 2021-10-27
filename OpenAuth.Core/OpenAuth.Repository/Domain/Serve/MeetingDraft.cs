@@ -59,6 +59,7 @@ namespace OpenAuth.Repository.Domain.Serve
         /// <summary>
         /// 审批意见
         /// </summary>
+        [Description("审批意见")]
         public string  Opinion { get; set; }
         /// <summary>
         /// 是否删除

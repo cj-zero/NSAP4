@@ -193,14 +193,14 @@ namespace OpenAuth.WebApi.Controllers.Meeting
         /// <returns></returns>
         [HttpPost]
         [Route("Dispatcher")]
-        public Response<List<DispatcherDto>> Dispatcher(DispatcherReq QueryModel)
+        public async Task<TableData> Dispatcher(DispatcherReq QueryModel)
         {
             int rowcount = 0;
-            var result = new Response<List<DispatcherDto>>();
+            var result = new TableData();
             try
             {
-                result.Result = _serviceMeetingApp.Dispatcher(QueryModel, out rowcount);
-
+                result.Data = _serviceMeetingApp.Dispatcher(QueryModel, out rowcount);
+                result.Count = rowcount;
             }
             catch (Exception ex)
             {
@@ -434,6 +434,13 @@ namespace OpenAuth.WebApi.Controllers.Meeting
             }
             return result;
         }
+        /// <summary>
+        /// 删除草稿/我的创建
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("MeetingDraftDelete")]
         public async Task<Response<bool>> MeetingDraftDelete(int Id)
         {
             var result = new Response<bool>();
@@ -447,6 +454,128 @@ namespace OpenAuth.WebApi.Controllers.Meeting
             }
             return result;
         }
+        /// <summary>
+        /// 部门下拉列表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("DepList")]
+        public async Task<Response<List<TextVaule>>> DepList()
+        {
+            var result = new Response<List<TextVaule>>();
+            try
+            {
+                result.Result = _serviceMeetingApp.DepList();
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 用户列表（根据部门id查）
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("UserList")]
+        public async Task<Response<List<TextVaule>>> UserList(int Id)
+        {
+            var result = new Response<List<TextVaule>>();
+            try
+            {
+                result.Result = _serviceMeetingApp.UserList(Id);
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 当前登录用户ID
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("AuthStrategyContextUserID")]
+        public async Task<Response<int>> AuthStrategyContextUserID()
+        {
+            var result = new Response<int>();
+            try
+            {
+                result.Result = _serviceMeetingApp.AuthStrategyContextUserID();
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 当前登录用户部门ID
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("AuthStrategyContextDepID")]
+        public async Task<Response<int>> AuthStrategyContextDepID()
+        {
+            var result = new Response<int>();
+            try
+            {
+                result.Result = _serviceMeetingApp.AuthStrategyContextDepID();
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 调度会议下拉
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("MeetingList")]
+        public async Task<Response<List<TextVaule>>> MeetingList(int Id)
+        {
+            var result = new Response<List<TextVaule>>();
+            try
+            {
+                result.Result = _serviceMeetingApp.MeetingList(Id);
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+            }
+            return result;
+
+        }
+
+        /// <summary>
+        /// 展会重新提交 Ations：
+        /// 3：更新草稿
+        /// 4：草稿更新后提交
+        /// </summary>
+        /// <param name="UpdateModel"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("MeetingDraftResubmit")]
+        public async Task<Response<bool>> MeetingDraftResubmit(UpdateMeetingDataReq UpdateModel)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = _serviceMeetingApp.MeetingDraftResubmit(UpdateModel);
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
 
     }
 }
