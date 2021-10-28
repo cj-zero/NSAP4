@@ -57,7 +57,7 @@ namespace OpenAuth.App.Order
             //        filterString += string.Format(" ) AND ");
             //    }
             //}
-            filterString += " c.job_type_nm='销售报价单' AND  ";
+            
             if (!string.IsNullOrWhiteSpace(Applicator))
             {
                 string[] num;
@@ -78,6 +78,7 @@ namespace OpenAuth.App.Order
             {
                 filterString += string.Format(" a.job_state = {0} AND ", int.Parse(Status));
             }
+            //filterString += " c.job_type_nm='销售报价单' AND  ";
             if (!string.IsNullOrWhiteSpace(BeginDate))
             {
                 filterString += string.Format(" DATE_FORMAT(a.upd_dt,'%Y/%m/%d') BETWEEN '{0}' AND '{1}' AND ", BeginDate, EndDate);

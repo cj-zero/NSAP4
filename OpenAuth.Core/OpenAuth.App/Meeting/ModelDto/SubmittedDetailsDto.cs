@@ -162,6 +162,10 @@ namespace OpenAuth.App.Meeting.ModelDto
         /// 操作日志
         /// </summary>
         public List<MeetingOpreateLogDto> MeetingOpreateLog { get; set; }
+        /// <summary>
+        /// 报名信息
+        /// </summary>
+        public MeetingUserDto meetingUser { get; set; }
     }
     public class LatestApplicationDto
     {
@@ -220,5 +224,25 @@ namespace OpenAuth.App.Meeting.ModelDto
         /// 操作时间
         /// </summary>
         public DateTime CreateTime { get; set; }
+    }
+    public class MeetingUserDto
+    {
+        /// <summary>
+        /// 报名人
+        /// </summary>
+        public string Name { get; set; }
+        /// <summary>
+        /// 报名时间
+        /// </summary>
+        public DateTime CreateTime { get; set; }
+        /// <summary>
+        /// 备注
+        /// </summary>
+        public string Remark { get; set; }
+        /// <summary>
+        /// 取消原因
+        /// </summary>
+        public string CancelReason { get; set; }
+
     }
 }

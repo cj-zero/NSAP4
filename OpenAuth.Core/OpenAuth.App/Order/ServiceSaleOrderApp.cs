@@ -868,7 +868,7 @@ namespace OpenAuth.App.Order
             };
             code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_submit", CommandType.StoredProcedure, sqlParameters).ToString();
             return code;
-        }
+        } 
         #region 驳回
         /// <summary>
         /// 审核（驳回）
@@ -1838,6 +1838,7 @@ namespace OpenAuth.App.Order
                 new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pIsTotal",    isTotal),
                 new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?rowsCount",  0)
             };
+            sqlParameters[7].Direction = ParameterDirection.Output;
             dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, "nsap_base.sp_common_pager", CommandType.StoredProcedure, sqlParameters);
             rowsCount = isTotal == 1 ? Convert.ToInt32(sqlParameters[7].Value) : 0;
             return dataTable;
@@ -5652,7 +5653,7 @@ namespace OpenAuth.App.Order
         /// </summary>
         public DataTable GetAuditObjWithFlowChart(string jobID)
         {
-            string sql = string.Format("SELECT CONCAT(IF(d.dep_alias IS NULL,'',CONCAT(d.dep_alias,'-')),b.user_nm) Name FROM {0}.wfa_jump a INNER JOIN {0}.base_user b ON a.user_id=b.user_id LEFT JOIN {0}.base_user_detail c ON b.user_id=c.user_id INNER JOIN {0}.base_dep d ON c.dep_id=d.dep_id WHERE a.job_id=?jobID AND a.audit_level=(SELECT b.audit_level FROM {0}.wfa_job a INNER JOIN {0}.wfa_step b ON a.step_id=b.step_id WHERE a.job_id={1} LIMIT 1)", "nsap_base", jobID);
+            string sql = string.Format("SELECT CONCAT(IF(d.dep_alias IS NULL,'',CONCAT(d.dep_alias,'-')),b.user_nm) Name FROM {0}.wfa_jump a INNER JOIN {0}.base_user b ON a.user_id=b.user_id LEFT JOIN {0}.base_user_detail c ON b.user_id=c.user_id INNER JOIN {0}.base_dep d ON c.dep_id=d.dep_id WHERE a.job_id={1} AND a.audit_level=(SELECT b.audit_level FROM {0}.wfa_job a INNER JOIN {0}.wfa_step b ON a.step_id=b.step_id WHERE a.job_id={1} LIMIT 1)", "nsap_base", jobID);
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
         }
         #endregion
@@ -6002,13 +6003,15 @@ namespace OpenAuth.App.Order
             {
                 U_SHTC = ",IFNULL(b.U_SHTC,0)";
             }
-            filedName.Append("a.DocEntry,a.CardCode,a.CardName,b.ItemCode,b.Dscription,b.Quantity,b.Price,b.LineTotal,b.WhsCode,w.OnHand,m.LastPurPrc,");
-            filedName.Append("m.U_JGF,m.IsCommited,m.OnOrder,(m.OnHand-m.IsCommited+m.OnOrder) AS OnAvailable,m.U_JGF1,IFNULL(m.U_YFCB,'0'),m.OnHand AS OnHandS,m.MinLevel,m.PurPackUn,");
-            filedName.Append("(IFNULL((CASE m.QryGroup1 WHEN 'N' THEN 0 ELSE '0.5' END),0)) AS QryGroup1,");
-            filedName.Append("(IFNULL((CASE m.QryGroup2 WHEN 'N' THEN 0 ELSE '3' END),0)) AS QryGroup2,");
-            filedName.Append("(IFNULL((CASE m.QryGroup3 WHEN 'N' THEN 0 ELSE '2' END),0)) AS _QryGroup3");
+            filedName.Append("ROW_NUMBER() OVER (ORDER BY a.DocEntry) RowNum,a.DocEntry,a.CardCode,a.CardName,b.ItemCode,b.Dscription,b.Quantity,b.Price,b.LineTotal,b.WhsCode,w.OnHand,b.BaseLine,m.LastPurPrc,");
+            filedName.Append("IFNULL(m.U_TDS,'0') AS U_TDS,IFNULL(m.U_DL,'0') AS U_DL,IFNULL(m.U_DY,'0') AS U_DY,m.U_JGF,");
+            filedName.Append("((IFNULL((CASE m.QryGroup1 WHEN 'N' THEN 0 ELSE '0.5' END),0))");
+            filedName.Append("+(IFNULL((CASE m.QryGroup2 WHEN 'N' THEN 0 ELSE '3' END),0))");
+            filedName.Append("+(IFNULL((CASE m.QryGroup3 WHEN 'N' THEN 0 ELSE '2' END),0))) AS QryGroup,");
+            filedName.Append("IFNULL(m.U_US,0) AS U_US,IFNULL(m.U_FS,0) AS U_FS,m.QryGroup3,m.SVolume,m.SWeight1,");
+            filedName.Append("b.U_PDXX,m.IsCommited,m.OnOrder,(m.OnHand-m.IsCommited+m.OnOrder) AS OnAvailable,m.U_JGF1,IFNULL(m.U_YFCB,'0'),m.OnHand AS OnHandS,m.MinLevel,m.PurPackUn,m.buyunitmsr");
             filedName.AppendFormat("{0}{1}{2}", U_SHJSDJ, U_SHJSJ, U_SHTC);
-            tableName.AppendFormat(" {0}." + type + " a LEFT JOIN {0}." + line + " b ON a.DocEntry=b.DocEntry AND a.sbo_id=b.sbo_id", "nsap_bone");
+            tableName.AppendFormat(" {0}." + type + " a LEFT JOIN {0}."  + line + " b ON a.DocEntry=b.DocEntry AND a.sbo_id=b.sbo_id", "nsap_bone");
             tableName.AppendFormat(" LEFT JOIN {0}.store_oitw w ON b.ItemCode=w.ItemCode AND b.WhsCode=w.WhsCode AND b.sbo_id=w.sbo_id", "nsap_bone");
             tableName.AppendFormat(" LEFT JOIN {0}.store_oitm m ON b.ItemCode=m.ItemCode AND m.sbo_id=b.sbo_id", "nsap_bone");
             return SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), model.limit, model.page, sortString, filterString, out rowCount);
@@ -6162,7 +6165,7 @@ namespace OpenAuth.App.Order
             if (string.IsNullOrEmpty(sboname)) { sboname = ""; } else { sboname = sboname + ".dbo."; }
             filedName.Append(" a.UpdateDate,a.DocEntry,a.CardCode,CASE WHEN 1 = " + Custom + " THEN a.CardName ELSE '******' END AS CardName,CASE WHEN 1 = " + Sales + " THEN a.DocTotal ELSE 0 END AS DocTotal,CASE WHEN 1 = " + Sales + " THEN (a.DocTotal-a.PaidToDate) ELSE 0 END AS OpenDocTotal,a.CreateDate,a.SlpCode,a.Comments,a.DocStatus,a.Printed,c.SlpName,a.CANCELED,a.Indicator,a.DocDueDate,e.PymntGroup,'' as billID,'' AS ActualDocDueDate ");
             filedName.Append(",'10011111-28a9-4767-854f-77246e36d24d1111111111111111111' as PrintNo,'00' as PrintNumIndex,'' as billStatus,'' as bonusStatus,'' as proStatus,n.Name as IndicatorName,'' as EmpAcctWarn,'' as AttachFlag,a.U_DocRCTAmount");
-            filedName.Append(", '' as TransFee,a.DocCur");
+            filedName.Append(", '0000000000000' as TransFee,a.DocCur");
             tableName.AppendFormat("" + sboname + "ORDR a ");
             tableName.AppendFormat(" LEFT JOIN " + sboname + "OSLP c ON a.SlpCode = c.SlpCode");
             tableName.AppendFormat(" LEFT JOIN " + sboname + "OCRD d ON a.CardCode = d.CardCode");

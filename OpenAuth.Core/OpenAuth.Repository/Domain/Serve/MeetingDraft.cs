@@ -59,8 +59,13 @@ namespace OpenAuth.Repository.Domain.Serve
         /// <summary>
         /// 审批意见
         /// </summary>
+        [Description("审批意见")]
         public string  Opinion { get; set; }
-
+        /// <summary>
+        /// 是否删除
+        /// </summary>
+        [Description("是否删除")]
+        public bool IsDelete { get; set; }
         public override void GenerateDefaultKeyVal()
         {
 
