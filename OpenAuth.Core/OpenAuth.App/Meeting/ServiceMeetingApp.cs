@@ -413,7 +413,7 @@ namespace OpenAuth.App.Meeting
             return data;
         }
 
-      
+
 
 
 
@@ -435,7 +435,7 @@ namespace OpenAuth.App.Meeting
             }
             var loginUser = loginContext.User;
             Expression<Func<MeetingDraft, bool>> exp = t => true;
-            exp = exp.And(t => t.CreateUser == loginUser.Name);
+            exp = exp.And(t => t.CreateUser == loginUser.Name && !t.IsDelete);
             if (QueryModel.JobId != 0)
             {
                 exp = exp.And(t => t.Id == QueryModel.JobId);
@@ -446,24 +446,9 @@ namespace OpenAuth.App.Meeting
                 exp = exp.And(t => t.Type == QueryModel.Type);
 
             }
-            if (QueryModel.Step != -1)
-            {
-                exp = exp.And(t => t.Step == QueryModel.Step);
-
-            }
             if (!string.IsNullOrWhiteSpace(QueryModel.JobName))
             {
                 exp = exp.And(t => t.Name.Contains(QueryModel.JobName));
-
-            }
-            if (!string.IsNullOrWhiteSpace(QueryModel.Remark))
-            {
-                exp = exp.And(t => t.Remark.Contains(QueryModel.JobName));
-
-            }
-            if (QueryModel.Base_entry != 0)
-            {
-                exp = exp.And(t => t.Base_entry == QueryModel.Base_entry);
 
             }
             var objs = UnitWork.Find<MeetingDraft>(QueryModel.page, QueryModel.limit, "", exp);
@@ -473,10 +458,31 @@ namespace OpenAuth.App.Meeting
             foreach (var obj in list)
             {
                 var nes = new MyCreatedLoadListDto();
-                if (obj.Type==0)
+                Expression<Func<Repository.Domain.Serve.Meeting, bool>> exps = e => true;
+                if (!string.IsNullOrWhiteSpace(QueryModel.MeetingName))
                 {
-                    var meeting = UnitWork.FindSingle<Repository.Domain.Serve.Meeting>(q => q.Id == obj.Base_entry);
-
+                    exps = exps.And(e => e.Name.Contains(QueryModel.MeetingName));
+                }
+                if (QueryModel.AddressType != -1)
+                {
+                    exps = exps.And(e => e.AddressType == QueryModel.AddressType);
+                }
+                if (!string.IsNullOrEmpty(QueryModel.StartTime))
+                {
+                    DateTime startTime;
+                    DateTime.TryParse(QueryModel.StartTime, out startTime);
+                    exps = exps.And(e => e.StartTime >= startTime);
+                }
+                if (!string.IsNullOrEmpty(QueryModel.EndTime))
+                {
+                    DateTime endTime;
+                    DateTime.TryParse(QueryModel.EndTime, out endTime);
+                    exps = exps.And(e => e.EndTime <= endTime);
+                }
+                if (obj.Type == 0)
+                {
+                    exps = exps.And(e => e.Id == obj.Base_entry);
+                    var meeting = UnitWork.FindSingle<Repository.Domain.Serve.Meeting>(exps);
                     nes.Address = meeting.Address;
                     nes.AddressType = meeting.AddressType;
                     nes.Id = obj.Id;
@@ -490,10 +496,11 @@ namespace OpenAuth.App.Meeting
                     nes.CreateTime = obj.CreateTime;
                     nes.CreateUser = obj.CreateUser;
                 }
-                else if(obj.Type==1)
+                else if (obj.Type == 1)
                 {
                     var meetinguser = UnitWork.FindSingle<Repository.Domain.Serve.MeetingUser>(q => q.Id == obj.Base_entry);
-                    var meeting= UnitWork.FindSingle<Repository.Domain.Serve.Meeting>(q => q.Id == meetinguser.MeetingId);
+                    exps = exps.And(e => e.Id == meetinguser.MeetingId);
+                    var meeting = UnitWork.FindSingle<Repository.Domain.Serve.Meeting>(exps);
                     nes.Address = meeting.Address;
                     nes.AddressType = meeting.AddressType;
                     nes.Id = obj.Id;
@@ -506,9 +513,8 @@ namespace OpenAuth.App.Meeting
                     nes.Base_entry = obj.Base_entry;
                     nes.CreateTime = obj.CreateTime;
                     nes.CreateUser = obj.CreateUser;
-
                 }
-               
+
                 data.Add(nes);
             }
             return data;
@@ -534,32 +540,15 @@ namespace OpenAuth.App.Meeting
             if (QueryModel.JobId != 0)
             {
                 exp = exp.And(t => t.Id == QueryModel.JobId);
-
             }
             if (QueryModel.Type != -1)
             {
                 exp = exp.And(t => t.Type == QueryModel.Type);
-
             }
-            if (QueryModel.Step != -1)
-            {
-                exp = exp.And(t => t.Step == QueryModel.Step);
 
-            }
             if (!string.IsNullOrWhiteSpace(QueryModel.JobName))
             {
                 exp = exp.And(t => t.Name.Contains(QueryModel.JobName));
-
-            }
-            if (!string.IsNullOrWhiteSpace(QueryModel.Remark))
-            {
-                exp = exp.And(t => t.Remark.Contains(QueryModel.JobName));
-
-            }
-            if (QueryModel.Base_entry != 0)
-            {
-                exp = exp.And(t => t.Base_entry == QueryModel.Base_entry);
-
             }
             var objs = UnitWork.Find<MeetingDraft>(QueryModel.page, QueryModel.limit, "", exp);
             var list = objs.MapToList<MeetingDraft>();
@@ -568,25 +557,137 @@ namespace OpenAuth.App.Meeting
             foreach (var obj in list)
             {
                 var nes = new SubmittedDto();
-                if (obj.Type == 0)
+                Expression<Func<Repository.Domain.Serve.Meeting, bool>> exps = e => true;
+                if (!string.IsNullOrWhiteSpace(QueryModel.MeetingName))
                 {
-                    var meetinguser = UnitWork.FindSingle<MeetingUser>(q => q.Id == obj.Base_entry);
-                    if (meetinguser.DempId == depId)
+                    exps = exps.And(e => e.Name.Contains(QueryModel.MeetingName));
+                }
+                if (QueryModel.AddressType != -1)
+                {
+                    exps = exps.And(e => e.AddressType == QueryModel.AddressType);
+                }
+                if (!string.IsNullOrEmpty(QueryModel.StartTime))
+                {
+                    DateTime startTime;
+                    DateTime.TryParse(QueryModel.StartTime, out startTime);
+                    exps = exps.And(e => e.StartTime >= startTime);
+                }
+                if (!string.IsNullOrEmpty(QueryModel.EndTime))
+                {
+                    DateTime endTime;
+                    DateTime.TryParse(QueryModel.EndTime, out endTime);
+                    exps = exps.And(e => e.EndTime <= endTime);
+                }
+
+                if (loginUser.Name == "骆灵芝")
+                {
+                    if (obj.Type == 0)
                     {
-                        obj.CopyTo(nes);
-                        data.Add(nes);
+                        exps = exps.And(e => e.Id == obj.Base_entry);
+                        var meeting = UnitWork.FindSingle<Repository.Domain.Serve.Meeting>(exps);
+
+                        if (meeting != null)
+                        {
+                            nes.Name = obj.Name;
+                            nes.Remark = obj.Remark;
+                            nes.Step = obj.Step;
+                            nes.Type = obj.Type;
+                            nes.UpdateTime = obj.UpdateTime;
+                            nes.StartTime = meeting.StartTime;
+                            nes.EndTime = meeting.EndTime;
+                            nes.Id = obj.Id;
+                            nes.MeetingName = meeting.Name;
+                            nes.Address = meeting.Address;
+                            nes.AddressType = meeting.AddressType;
+                            nes.Base_entry = obj.Base_entry;
+                            nes.CreateTime = obj.CreateTime;
+                            nes.CreateUser = obj.CreateUser;
+                            data.Add(nes);
+                        }
+                    }
+                    if (obj.Type == 1)
+                    {
+                        var meetuser = UnitWork.FindSingle<MeetingUser>(q => q.Id == obj.Base_entry);
+                        exps = exps.And(e => e.Id == meetuser.MeetingId);
+                        var meeting = UnitWork.FindSingle<Repository.Domain.Serve.Meeting>(exps);
+                        if (meeting != null)
+                        {
+                            nes.Name = obj.Name;
+                            nes.Remark = obj.Remark;
+                            nes.Step = obj.Step;
+                            nes.Type = obj.Type;
+                            nes.UpdateTime = obj.UpdateTime;
+                            nes.StartTime = meeting.StartTime;
+                            nes.EndTime = meeting.EndTime;
+                            nes.Id = obj.Id;
+                            nes.MeetingName = meeting.Name;
+                            nes.Address = meeting.Address;
+                            nes.AddressType = meeting.AddressType;
+                            nes.Base_entry = obj.Base_entry;
+                            nes.CreateTime = obj.CreateTime;
+                            nes.CreateUser = obj.CreateUser;
+                            data.Add(nes);
+                        }
+
                     }
                 }
-                if (obj.Type == 1)
+                else
                 {
-                    var meetuser = UnitWork.FindSingle<MeetingUser>(q => q.Id == obj.Base_entry);
-                    if (meetuser.DempId == depId)
+                    if (obj.Type == 0)
                     {
-                        obj.CopyTo(nes);
-                        data.Add(nes);
+                        exps = exps.And(e => e.Id == obj.Base_entry);
+                        exps = exps.And(e => e.DempId == depId);
+                        var meeting = UnitWork.FindSingle<Repository.Domain.Serve.Meeting>(exps);
+                        if (meeting != null)
+                        {
+                            nes.Name = obj.Name;
+                            nes.Remark = obj.Remark;
+                            nes.Step = obj.Step;
+                            nes.Type = obj.Type;
+                            nes.UpdateTime = obj.UpdateTime;
+                            nes.StartTime = meeting.StartTime;
+                            nes.EndTime = meeting.EndTime;
+                            nes.Id = obj.Id;
+                            nes.MeetingName = meeting.Name;
+                            nes.Address = meeting.Address;
+                            nes.AddressType = meeting.AddressType;
+                            nes.Base_entry = obj.Base_entry;
+                            nes.CreateTime = obj.CreateTime;
+                            nes.CreateUser = obj.CreateUser;
+                            data.Add(nes);
+                        }
+
+                    }
+                    if (obj.Type == 1)
+                    {
+                        var meetuser = UnitWork.FindSingle<MeetingUser>(q => q.Id == obj.Base_entry);
+                        exps = exps.And(e => e.Id == meetuser.MeetingId);
+                        exps = exps.And(e => e.DempId == depId);
+                        var meeting = UnitWork.FindSingle<Repository.Domain.Serve.Meeting>(exps);
+                        if (meeting != null)
+                        {
+                            nes.Name = obj.Name;
+                            nes.Remark = obj.Remark;
+                            nes.Step = obj.Step;
+                            nes.Type = obj.Type;
+                            nes.UpdateTime = obj.UpdateTime;
+                            nes.StartTime = meeting.StartTime;
+                            nes.EndTime = meeting.EndTime;
+                            nes.Id = obj.Id;
+                            nes.MeetingName = meeting.Name;
+                            nes.Address = meeting.Address;
+                            nes.AddressType = meeting.AddressType;
+                            nes.Base_entry = obj.Base_entry;
+                            nes.CreateTime = obj.CreateTime;
+                            nes.CreateUser = obj.CreateUser;
+                            data.Add(nes);
+                        }
+
                     }
                 }
+
             }
+
             return data;
         }
         /// <summary>
@@ -1264,7 +1365,7 @@ namespace OpenAuth.App.Meeting
             }
             var loginUser = loginContext.User;
             bool result = false;
-            var meetingdraft = UnitWork.FindSingle<MeetingDraft>(q=>q.Id==UpdateModel.Id);
+            var meetingdraft = UnitWork.FindSingle<MeetingDraft>(q => q.Id == UpdateModel.Id);
             if (UpdateModel.Ations == MeetingAtion.DraftUpdate)
             {
                 var data = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(q => q.Id == meetingdraft.Base_entry);

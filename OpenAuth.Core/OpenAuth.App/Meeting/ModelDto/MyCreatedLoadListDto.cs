@@ -59,5 +59,13 @@ namespace OpenAuth.App.Meeting.ModelDto
         /// 更新时间
         /// </summary>
         public DateTime? UpdateTime { get; set; }
+        /// <summary>
+        /// 展会开始时间
+        /// </summary>
+        public DateTime StartTime { get; set; }
+        /// <summary>
+        /// 展会结束时间
+        /// </summary>
+        public DateTime EndTime { get; set; }
     }
 }

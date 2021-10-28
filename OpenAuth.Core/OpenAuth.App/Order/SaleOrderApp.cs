@@ -404,6 +404,9 @@ namespace OpenAuth.App.Order
             }
             return bresult;
         }
+
+
+
         //修改已选择序列号状态
         public bool UpdateSerialNumber(IList<billSerialNumber> serialNumbers, int submitjobid)
         {
@@ -480,14 +483,16 @@ namespace OpenAuth.App.Order
         /// <param name="IsUpdate"></param>
         /// <param name="vStock"></param>
         /// <returns></returns>
-        public string AuditResubmitNextNew(int jobID, int userID, string recommend, string auditOpinionid, string IsUpdate, string vStock)
+        public string AuditResubmitNextNew(int jobID, int userID, string recommend, string auditOpinionid, string IsUpdate, string vStock, string Comments, string Remark)
         {
             string res = "";
-            byte[] job_data = new byte[] { }; 
+            byte[] job_data = new byte[] { };
             billDelivery Model = DeSerialize<billDelivery>((byte[])(GetSalesInfo(jobID.ToString())));
+            Model.Comments = Comments;
+            Model.Remark = Remark;
             if (IsUpdate == "1")
             {
-               job_data = ByteExtension.ToSerialize(Model);
+                job_data = ByteExtension.ToSerialize(Model);
             }
             //防止工作流多个人同时操作一个工作流，会跳过步骤的情况
             if (!_serviceBaseApp.IsValidSubmit(jobID, userID))
@@ -576,7 +581,7 @@ namespace OpenAuth.App.Order
                     {
                         if (bool.Parse(UpdateAudit(jobID, job_data, Model.Remark, Model.DocTotal, Model.CardCode, Model.CardName)))
                         {
-                            res =WorkflowSubmit(jobID, userID, recommend, "", 0);
+                            res = WorkflowSubmit(jobID, userID, recommend, "", 0);
                         }
                         else { res = "0"; }
                     }
@@ -661,5 +666,8 @@ namespace OpenAuth.App.Order
             return res;
         }
         #endregion
+
+
+
     }
 }
