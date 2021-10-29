@@ -417,23 +417,23 @@ namespace OpenAuth.App.Order.Request
 	public enum OrderAtion
 	{
 		/// <summary>
-		/// 草稿
+		/// 草稿 0
 		/// </summary>
 		Draft,
 		/// <summary>
-		/// 提交
+		/// 提交 1
 		/// </summary>
 		Submit,
 		/// <summary>
-		/// 再次提交
+		/// 再次提交 2
 		/// </summary>
 		Resubmit,
 		/// <summary>
-		/// 草稿更新
+		/// 草稿更新 3
 		/// </summary>
 		DraftUpdate,
 		/// <summary>
-		/// 草稿更新后提交
+		/// 草稿更新后提交 4
 		/// </summary>
 		DrafSubmit
 

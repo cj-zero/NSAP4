@@ -293,7 +293,7 @@ namespace OpenAuth.WebApi.Controllers.Meeting
         /// </summary>
         /// <param name="Id"></param>
         /// <returns></returns>
-        [HttpPost]
+        [HttpGet]
         [Route("SubmittedDetails")]
         public async Task<Response<SubmittedDetailsDto>> SubmittedDetails(int Id)
         {
@@ -575,7 +575,24 @@ namespace OpenAuth.WebApi.Controllers.Meeting
             }
             return result;
         }
-
-
+        /// <summary>
+        /// 审批流程步骤
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("ProcessSteps")]
+        public async Task<Response<List<ProcessStepsDto>>> ProcessSteps(int? DraftId, int? MeetingId)
+        {
+            var result = new Response<List<ProcessStepsDto>>();
+            try
+            {
+                result.Result = _serviceMeetingApp.ProcessSteps(DraftId, MeetingId);
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }
