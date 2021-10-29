@@ -23,6 +23,7 @@ using OpenAuth.Repository.Domain.Workbench;
 using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -66,6 +67,8 @@ namespace OpenAuth.App.Material
                 ServiceOrderids = await UnitWork.Find<ServiceOrder>(null).Where(q => q.TerminalCustomer.Contains(request.CardCode) || q.TerminalCustomerId.Contains(request.CardCode)).Select(s => s.Id).ToListAsync();
 
             }
+            //Stopwatch sw = new Stopwatch();
+            //sw.Start();
             var Quotations = UnitWork.Find<Quotation>(null).Include(q => q.QuotationPictures).Include(q => q.QuotationOperationHistorys).WhereIf(request.QuotationId.ToString() != null, q => q.Id.ToString().Contains(request.QuotationId.ToString()))
                                 .WhereIf(request.ServiceOrderSapId != null, q => q.ServiceOrderSapId.ToString().Contains(request.ServiceOrderSapId.ToString()))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUser), q => q.CreateUser.Contains(request.CreateUser))
@@ -76,16 +79,41 @@ namespace OpenAuth.App.Material
                                 .WhereIf(request.SalesOrderId != null, q => q.SalesOrderId == request.SalesOrderId)
                                 .WhereIf(ServiceOrderids.Count() > 0, q => ServiceOrderids.Contains(q.ServiceOrderId))
                                 .WhereIf(request.Remark!=null, q => q.Remark.Contains(request.Remark))
-                                .WhereIf(!string.IsNullOrWhiteSpace(request.CancelRequest), q => q.CancelRequest == int.Parse(request.CancelRequest));
+                                .WhereIf(!string.IsNullOrWhiteSpace(request.CancelRequest), q => q.CancelRequest == int.Parse(request.CancelRequest))
+                                .Select(q=>new {
+                                    q.Id,
+                                    q.ServiceOrderSapId,
+                                    q.ServiceOrderId,
+                                    q.TotalMoney,
+                                    q.FlowInstanceId,
+                                    q.UpDateTime,
+                                    q.CreateUserId,
+                                    q.CreateUser,
+                                    q.Remark,
+                                    q.SalesOrderId,
+                                    q.CreateTime,
+                                    q.QuotationStatus,
+                                    q.IsDraft,
+                                    q.Tentative,
+                                    q.IsProtected,
+                                    q.PrintWarehouse,
+                                    q.CancelRequest,
+                                    q.IsMaterialType,
+                                    q.QuotationOperationHistorys,
+                                    q.QuotationPictures
+                                });
+            //sw.Stop();
+            //TimeSpan dt = sw.Elapsed;
+            //double s = dt.TotalSeconds;
+
             var flowInstanceIds = await Quotations.Select(q => q.FlowInstanceId).ToListAsync();
             var flowinstanceObjs = from a in UnitWork.Find<FlowInstance>(f => flowInstanceIds.Contains(f.Id))
                                    join b in UnitWork.Find<FlowInstanceOperationHistory>(null) on a.Id equals b.InstanceId into ab
                                    from b in ab.DefaultIfEmpty()
-                                   select new { a, b };
-            var flowinstanceList = await flowinstanceObjs.ToListAsync();
+                                   select new { a.Id, a.ActivityName, b.CreateUserId, b.Content, a.IsFinish };
             if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginUser.Account.Equals(Define.SYSTEM_USERNAME))
             {
-
+                var flowinstanceList = await flowinstanceObjs.ToListAsync();
                 if (request.PageStart != null && request.PageStart == 1)
                 {
                     if (loginContext.Roles.Any(r => r.Name.Equals("销售员")))
@@ -93,15 +121,15 @@ namespace OpenAuth.App.Material
                         switch (request.StartType)
                         {
                             case 1:
-                                flowInstanceIds = flowinstanceList.Where(f => f.a.ActivityName == "销售员审批").Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => f.ActivityName == "销售员审批").Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus == 3.1M));
                                 break;
                             case 2:
-                                flowInstanceIds = flowinstanceList.Where(f => f.b.CreateUserId.Equals(loginContext.User.Id) && f.b.Content == "销售员审批").Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => f.CreateUserId.Equals(loginContext.User.Id) && f.Content == "销售员审批").Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus > 3.1M));
                                 break;
                             default:
-                                flowInstanceIds = flowinstanceList.Where(f => (f.b.CreateUserId.Equals(loginContext.User.Id) || f.a.ActivityName == "销售员审批")).Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => (f.CreateUserId.Equals(loginContext.User.Id) || f.ActivityName == "销售员审批")).Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus >= 3.1M));
                                 break;
                         }
@@ -113,15 +141,15 @@ namespace OpenAuth.App.Material
                         switch (request.StartType)
                         {
                             case 1:
-                                flowInstanceIds = flowinstanceList.Where(f => f.a.ActivityName == "工程审批").Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => f.ActivityName == "工程审批").Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus == 4));
                                 break;
                             case 2:
-                                flowInstanceIds = flowinstanceList.Where(f => f.b.CreateUserId.Equals(loginContext.User.Id) && f.b.Content == "工程审批").Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => f.CreateUserId.Equals(loginContext.User.Id) && f.Content == "工程审批").Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus > 4));
                                 break;
                             default:
-                                flowInstanceIds = flowinstanceList.Where(f => (f.b.CreateUserId.Equals(loginContext.User.Id) || f.a.ActivityName == "工程审批")).Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => (f.CreateUserId.Equals(loginContext.User.Id) || f.ActivityName == "工程审批")).Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus >= 4));
                                 break;
                         }
@@ -133,17 +161,17 @@ namespace OpenAuth.App.Material
                         switch (request.StartType)
                         {
                             case 1:
-                                flowInstanceIds = flowinstanceList.Where(f => f.a.ActivityName == "总经理审批").Select(f => f.a.Id).Distinct().ToList();
-                                slpIds = flowinstanceList.Where(f => f.a.ActivityName == "销售员审批").Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => f.ActivityName == "总经理审批").Select(f => f.Id).Distinct().ToList();
+                                slpIds = flowinstanceList.Where(f => f.ActivityName == "销售员审批").Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId) || (ServiceOrderids.Contains(q.ServiceOrderId) && slpIds.Contains(q.FlowInstanceId)) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus == 5 || (ServiceOrderids.Contains(q.ServiceOrderId) && q.QuotationStatus == 3.1M)));
                                 break;
                             case 2:
-                                flowInstanceIds = flowinstanceList.Where(f => f.b.CreateUserId.Equals(loginContext.User.Id) && f.b.Content == "总经理审批").Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => f.CreateUserId.Equals(loginContext.User.Id) && f.Content == "总经理审批").Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus > 5 || (ServiceOrderids.Contains(q.ServiceOrderId) && q.QuotationStatus > 3.1M)));
                                 break;
                             default:
-                                flowInstanceIds = flowinstanceList.Where(f => (f.b.CreateUserId.Equals(loginContext.User.Id) || f.a.ActivityName == "总经理审批")).Select(f => f.a.Id).Distinct().ToList();
-                                slpIds = flowinstanceList.Where(f => f.a.ActivityName == "销售员审批").Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => (f.CreateUserId.Equals(loginContext.User.Id) || f.ActivityName == "总经理审批")).Select(f => f.Id).Distinct().ToList();
+                                slpIds = flowinstanceList.Where(f => f.ActivityName == "销售员审批").Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId) || (ServiceOrderids.Contains(q.ServiceOrderId) && slpIds.Contains(q.FlowInstanceId)) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus >= 5 || (ServiceOrderids.Contains(q.ServiceOrderId) && q.QuotationStatus >= 3.1M)));
                                 break;
                         }
@@ -153,15 +181,15 @@ namespace OpenAuth.App.Material
                         switch (request.StartType)
                         {
                             case 1:
-                                flowInstanceIds = flowinstanceList.Where(f => f.a.ActivityName == "销售总助审批").Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => f.ActivityName == "销售总助审批").Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId));
                                 break;
                             case 2:
-                                flowInstanceIds = flowinstanceList.Where(f => f.b.CreateUserId.Equals(loginContext.User.Id) && f.b.Content == "销售总助审批").Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => f.CreateUserId.Equals(loginContext.User.Id) && f.Content == "销售总助审批").Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId));
                                 break;
                             default:
-                                flowInstanceIds = flowinstanceList.Where(f => (f.b.CreateUserId.Equals(loginContext.User.Id) || f.a.ActivityName == "销售总助审批")).Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => (f.CreateUserId.Equals(loginContext.User.Id) || f.ActivityName == "销售总助审批")).Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId));
                                 break;
                         }
@@ -171,16 +199,16 @@ namespace OpenAuth.App.Material
                         switch (request.StartType)
                         {
                             case 1:
-                                flowInstanceIds = flowinstanceList.Where(f => f.a.ActivityName == "确认报价单").Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => f.ActivityName == "确认报价单").Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => (flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus == 6)) && q.CreateUserId.Equals(loginUser.Id));
                                 break;
 
                             case 2:
-                                flowInstanceIds = flowinstanceList.Where(f => f.b.CreateUserId.Equals(loginContext.User.Id) && f.b.Content == "确认报价单").Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => f.CreateUserId.Equals(loginContext.User.Id) && f.Content == "确认报价单").Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => (flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus > 6)) && q.CreateUserId.Equals(loginUser.Id));
                                 break;
                             default:
-                                flowInstanceIds = flowinstanceList.Where(f => (f.b.CreateUserId.Equals(loginContext.User.Id) || f.a.ActivityName == "确认报价单")).Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => (f.CreateUserId.Equals(loginContext.User.Id) || f.ActivityName == "确认报价单")).Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => (flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus >= 6)) && q.CreateUserId.Equals(loginUser.Id));
                                 break;
                         }
@@ -194,15 +222,15 @@ namespace OpenAuth.App.Material
                         switch (request.StartType)
                         {
                             case 1:
-                                flowInstanceIds = flowinstanceList.Where(f => f.a.ActivityName == "财务审批").Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => f.ActivityName == "财务审批").Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus == 8));
                                 break;
                             case 2:
-                                flowInstanceIds = flowinstanceList.Where(f => f.b.CreateUserId.Equals(loginContext.User.Id) && f.b.Content == "财务审批").Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => f.CreateUserId.Equals(loginContext.User.Id) && f.Content == "财务审批").Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus > 8));
                                 break;
                             default:
-                                flowInstanceIds = flowinstanceList.Where(f => (f.b.CreateUserId.Equals(loginContext.User.Id) || f.a.ActivityName == "财务审批")).Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => (f.CreateUserId.Equals(loginContext.User.Id) || f.ActivityName == "财务审批")).Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus >= 8));
                                 break;
                         }
@@ -212,16 +240,16 @@ namespace OpenAuth.App.Material
                         switch (request.StartType)
                         {
                             case 1:
-                                flowInstanceIds = flowinstanceList.Where(f => f.a.ActivityName == "回传销售订单").Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => f.ActivityName == "回传销售订单").Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => (flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus == 7)) && q.CreateUserId.Equals(loginUser.Id));
                                 break;
 
                             case 2:
-                                flowInstanceIds = flowinstanceList.Where(f => (f.b.CreateUserId.Equals(loginContext.User.Id) && f.b.Content == "回传销售订单")).Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => (f.CreateUserId.Equals(loginContext.User.Id) && f.Content == "回传销售订单")).Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => (flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus > 7)) && q.CreateUserId.Equals(loginUser.Id));
                                 break;
                             default:
-                                flowInstanceIds = flowinstanceList.Where(f => (f.b.CreateUserId.Equals(loginContext.User.Id) || f.a.ActivityName == "回传销售订单")).Select(f => f.a.Id).Distinct().ToList();
+                                flowInstanceIds = flowinstanceList.Where(f => (f.CreateUserId.Equals(loginContext.User.Id) || f.ActivityName == "回传销售订单")).Select(f => f.Id).Distinct().ToList();
                                 Quotations = Quotations.Where(q => (flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus >= 7)) && q.CreateUserId.Equals(loginUser.Id));
                                 break;
                         }
@@ -245,15 +273,15 @@ namespace OpenAuth.App.Material
                     switch (request.StartType)
                     {
                         case 1:
-                            flowInstanceIds = flowinstanceList.Where(f => f.a.ActivityName == "待出库").Select(f => f.a.Id).Distinct().ToList();
+                            flowInstanceIds = flowinstanceList.Where(f => f.ActivityName == "待出库").Select(f => f.Id).Distinct().ToList();
                             Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus == 10));
                             break;
                         case 2:
-                            flowInstanceIds = flowinstanceList.Where(f => f.a.ActivityName == "结束").Select(f => f.a.Id).Distinct().ToList();
+                            flowInstanceIds = flowinstanceList.Where(f => f.ActivityName == "结束").Select(f => f.Id).Distinct().ToList();
                             Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus == 11));
                             break;
                         default:
-                            flowInstanceIds = flowinstanceList.Where(f => f.a.ActivityName == "待出库" || f.a.ActivityName == "结束").Select(f => f.a.Id).Distinct().ToList();
+                            flowInstanceIds = flowinstanceList.Where(f => f.ActivityName == "待出库" || f.ActivityName == "结束").Select(f => f.Id).Distinct().ToList();
                             Quotations = Quotations.Where(q => flowInstanceIds.Contains(q.FlowInstanceId) || (string.IsNullOrWhiteSpace(q.FlowInstanceId) && q.QuotationStatus >= 10));
                             break;
                     }
@@ -293,34 +321,41 @@ namespace OpenAuth.App.Material
             var userIds = query.Select(q => q.a.CreateUserId).ToList();
             var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
             var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
-            result.Data = query.Select(q => new
+            result.Data = query.Select(q => 
             {
-                q.a.Id,
-                q.a.ServiceOrderSapId,
-                q.a.ServiceOrderId,
-                q.b.TerminalCustomer,
-                q.b.CustomerId,
-                q.b.TerminalCustomerId,
-                q.a.TotalMoney,
-                CreateUser= SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name==null? q.a.CreateUser:SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + q.a.CreateUser,
-                q.a.Remark,
-                q.a.SalesOrderId,
-                CreateTime = Convert.ToDateTime(q.a.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
-                UpDateTime = q.a.QuotationOperationHistorys.FirstOrDefault() != null ? Convert.ToDateTime(q.a.QuotationOperationHistorys.OrderByDescending(h => h.CreateTime).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(q.a.UpDateTime).ToString("yyyy.MM.dd HH:mm:ss"),
-                q.a.QuotationStatus,
-                StatusName = string.IsNullOrWhiteSpace(q.a.FlowInstanceId) || q.a.CreateTime <= DateTime.Parse("2021-08-13") ? StatusName(q.a.QuotationStatus) :q.a.QuotationStatus==-1?"已取消":flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Finished ? "已出库" : q.a.QuotationStatus == 12 ? "部分出库" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Rejected ? "驳回" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == null || q.a.IsDraft == true ? "未提交" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.IsFinish == FlowInstanceStatus.Draft ? "撤回" : flowinstanceObjs.Where(f => f.a.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.a.ActivityName,
-                q.a.Tentative,
-                q.a.IsProtected,
-                q.a.PrintWarehouse,
-                q.a.CancelRequest,
-                q.b.SalesMan,
-                Balance = ocrds.Where(o => o.CardCode.Equals(q.b.TerminalCustomerId)).FirstOrDefault()?.Balance,
-                files = q.a.QuotationPictures.Select(p => new
+                var isfinish = flowinstanceObjs.Where(f => f.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.IsFinish;
+                var orgName = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name;
+                return new
                 {
-                    fileName = file.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileName,
-                    fileType = file.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileType,
-                    fileId = p?.PictureId
-                }).ToList()
+                    q.a.Id,
+                    q.a.ServiceOrderSapId,
+                    q.a.ServiceOrderId,
+                    q.b.TerminalCustomer,
+                    q.b.CustomerId,
+                    q.b.TerminalCustomerId,
+                    q.a.TotalMoney,
+                    //CreateUser = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name == null ? q.a.CreateUser : SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + q.a.CreateUser,
+                    CreateUser = orgName == null ? q.a.CreateUser : orgName + "-" + q.a.CreateUser,
+                    q.a.Remark,
+                    q.a.SalesOrderId,
+                    CreateTime = Convert.ToDateTime(q.a.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
+                    UpDateTime = q.a.QuotationOperationHistorys.FirstOrDefault() != null ? Convert.ToDateTime(q.a.QuotationOperationHistorys.OrderByDescending(h => h.CreateTime).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(q.a.UpDateTime).ToString("yyyy.MM.dd HH:mm:ss"),
+                    q.a.QuotationStatus,
+                    //StatusName = string.IsNullOrWhiteSpace(q.a.FlowInstanceId) || q.a.CreateTime <= DateTime.Parse("2021-08-13") ? StatusName(q.a.QuotationStatus) : q.a.QuotationStatus == -1 ? "已取消" : flowinstanceObjs.Where(f => f.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.IsFinish == FlowInstanceStatus.Finished ? "已出库" : q.a.QuotationStatus == 12 ? "部分出库" : flowinstanceObjs.Where(f => f.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.IsFinish == FlowInstanceStatus.Rejected ? "驳回" : flowinstanceObjs.Where(f => f.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.IsFinish == null || q.a.IsDraft == true ? "未提交" : flowinstanceObjs.Where(f => f.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.IsFinish == FlowInstanceStatus.Draft ? "撤回" : flowinstanceObjs.Where(f => f.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.ActivityName,
+                    StatusName = string.IsNullOrWhiteSpace(q.a.FlowInstanceId) || q.a.CreateTime <= DateTime.Parse("2021-08-13") ? StatusName(q.a.QuotationStatus) : q.a.QuotationStatus == -1 ? "已取消" : isfinish == FlowInstanceStatus.Finished ? "已出库" : q.a.QuotationStatus == 12 ? "部分出库" : isfinish == FlowInstanceStatus.Rejected ? "驳回" : isfinish == null || q.a.IsDraft == true ? "未提交" : isfinish == FlowInstanceStatus.Draft ? "撤回" : flowinstanceObjs.Where(f => f.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.ActivityName,
+                    q.a.Tentative,
+                    q.a.IsProtected,
+                    q.a.PrintWarehouse,
+                    q.a.CancelRequest,
+                    q.b.SalesMan,
+                    Balance = ocrds.Where(o => o.CardCode.Equals(q.b.TerminalCustomerId)).FirstOrDefault()?.Balance,
+                    files = q.a.QuotationPictures.Select(p => new
+                    {
+                        fileName = file.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileName,
+                        fileType = file.Where(f => f.Id.Equals(p.PictureId)).FirstOrDefault()?.FileType,
+                        fileId = p?.PictureId
+                    }).ToList()
+                };
             }).OrderByDescending(q => Convert.ToDateTime(q.UpDateTime)).ToList();
             result.Count = await Quotations.CountAsync();
 
@@ -682,8 +717,13 @@ namespace OpenAuth.App.Material
                    new SqlParameter("MaterialCode", request.MaterialCode),
                    new SqlParameter("WhsCode", request.WhsCode)
                 };
-                Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"select a.* ,c.lastPurPrc from (select a.Father as MnfSerial,a.Code as ItemCode,a.U_Desc as ItemName,a.U_DUnit as BuyUnitMsr,b.OnHand,b.WhsCode,a.Quantity
-                        from ITT1 a join OITW b on a.Code=b.ItemCode  where a.Father=@MaterialCode and b.WhsCode=@WhsCode) a join OITM c on c.ItemCode=a.ItemCode", parameter)
+
+                //select a.* ,c.lastPurPrc from(select a.Father as MnfSerial,a.Code as ItemCode,a.U_Desc as ItemName,a.U_DUnit as BuyUnitMsr,b.OnHand,b.WhsCode,a.Quantity
+                //       from ITT1 a join OITW b on a.Code = b.ItemCode  where a.Father = @MaterialCode and b.WhsCode = @WhsCode) a join OITM c on c.ItemCode = a.ItemCode
+                Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"select a.* ,c.lastPurPrc from (select a.Father as MnfSerial,a.Code as ItemCode,c.ItemName,a.U_DUnit as BuyUnitMsr,d.OnHand,d.WhsCode,a.Quantity
+                        from ITT1 a
+	                        JOIN OITM c ON a.code = c.itemcode
+	                        JOIN OITW d ON a.code= d.itemcode  where a.Father=@MaterialCode and d.WhsCode=@WhsCode) a join OITM c on c.ItemCode=a.ItemCode", parameter)
                     .WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
                     .WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), s => request.PartDescribe.Contains(s.ItemName))
                     .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
@@ -728,6 +768,25 @@ namespace OpenAuth.App.Material
             var materialCodeOnHand = (await UnitWork.Find<OITW>(o => o.ItemCode.Equals(request.MaterialCode) && o.WhsCode.Equals(request.WhsCode)).FirstOrDefaultAsync())?.OnHand;
             result.Data = new { OnHand = materialCodeOnHand };
             return result;
+        }
+
+        /// <summary>
+        /// 获取物料仓库与库存
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetMaterialOnHand(QueryQuotationListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var query = await UnitWork.Find<OITW>(o => o.ItemCode == request.MaterialCode && o.OnHand > 0).Select(c => new { c.ItemCode, c.OnHand, c.WhsCode }).ToListAsync();
+            return new TableData
+            {
+                Data = query
+            };
         }
 
         /// <summary>
@@ -1043,6 +1102,12 @@ namespace OpenAuth.App.Material
                 var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ShieldingMaterials")).Select(u => u.Name).ToListAsync();
                 query = query.Where(e => !CategoryList.Contains(e.ItemCode));
             }
+
+            if (request.IsCommonUsed != null && (bool)request.IsCommonUsed)
+            {
+                var obj = await UnitWork.Find<CommonUsedMaterial>(null).Select(c => c.MaterialCode).ToListAsync();
+                query = query.Where(e => !obj.Contains(e.ItemCode));
+            }
             result.Count = await query.CountAsync();
             var Equipments = await query.Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
@@ -1089,6 +1154,68 @@ namespace OpenAuth.App.Material
             result.Data = Equipments.ToList();
             return result;
         }
+
+        #region 常用物料
+        /// <summary>
+        /// 添加常用物料
+        /// </summary>
+        /// <returns></returns>
+        public async Task AddCommonUsedMaterial(List<AddCommonUsedMaterialReq>  request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var obj = request.MapToList<CommonUsedMaterial>();
+            var materialCode = obj.Select(c => c.MaterialCode).ToList();
+            var material = await UnitWork.Find<CommonUsedMaterial>(c => materialCode.Contains(c.MaterialCode)).FirstOrDefaultAsync();
+            if (material!=null)
+            {
+                throw new CommonException($"物料{material.MaterialCode}已设为常用物料，勿重复操作。", 500);
+            }
+            await UnitWork.BatchAddAsync(obj.ToArray());
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 删除常用物料
+        /// </summary>
+        /// <param name="materialCode"></param>
+        /// <returns></returns>
+        public async Task DeleteCommonUsedMaterial(string materialCode)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var obj = await UnitWork.Find<CommonUsedMaterial>(c => c.MaterialCode == materialCode).FirstOrDefaultAsync();
+            await UnitWork.DeleteAsync(obj);
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 获取常用物料
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetCommonUsedMaterial(QueryQuotationListReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            var obj = await UnitWork.Find<CommonUsedMaterial>(null)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.PartCode), q => q.MaterialCode.Contains(req.PartCode))
+                .ToListAsync();
+            result.Data = obj.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+            result.Count = obj.Count;
+            return result;
+        }
+        #endregion
 
         /// <summary>
         /// 获取待合并报价单
@@ -1513,7 +1640,7 @@ namespace OpenAuth.App.Material
             //                     DiscountPrices = g.Key.DiscountPrices,
             //                     WhsCode = g.Key.WhsCode
             //                 };
-            var quotationMaterialsList = QuotationMaterials.GroupBy(q => new { q.MaterialCode, q.MaterialDescription, q.Unit, q.MaterialType, q.DiscountPrices, q.WhsCode }).Select(q => new { mergeMaterial = q.First(), count = q.Sum(s => s.Count) }).ToList();
+            var quotationMaterialsList = QuotationMaterials.GroupBy(q => new { q.MaterialCode, q.Unit, q.MaterialType, q.DiscountPrices, q.WhsCode }).Select(q => new { mergeMaterial = q.First(), count = q.Sum(s => s.Count) }).ToList();
             var MaterialsT = quotationMaterialsList.Select(q => new QueryQuotationMergeMaterialListReq
             {
                 MaterialCode = q.mergeMaterial.MaterialCode,

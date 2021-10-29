@@ -487,6 +487,7 @@ namespace OpenAuth.App.Workbench
                             .Include(c => c.InternalContactAttchments)
                             .Include(c => c.InternalContactBatchNumbers)
                             .Include(c => c.InternalContactDeptInfos)
+                            .Include(c => c.InternalcontactMaterials)
                             .FirstOrDefaultAsync();
             //操作历史
             var operationHistories = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.InstanceId == detail.FlowInstanceId)
@@ -518,6 +519,7 @@ namespace OpenAuth.App.Workbench
                 detail.Id,
                 detail.IW,
                 detail.Theme,
+                detail.IsTentative,
                 CardCodes = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardCode.Split(",") : new string[] { },
                 CardNames = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardName.Split(",") : new string[] { },
                 detail.Status,
@@ -527,16 +529,19 @@ namespace OpenAuth.App.Workbench
                 detail.ProductionNo,
                 AdaptiveRanges = detail.AdaptiveRange.Split(","),
                 Reasons = detail.Reason.Split(","),
+                MaterialOrder = !string.IsNullOrWhiteSpace(detail.MaterialOrder) ? detail.MaterialOrder.Split(",") : new string[] { },
+                //BatchNumbers = detail.InternalContactBatchNumbers,
                 BatchNumbers = detail.InternalContactBatchNumbers,
                 detail.CheckApproveId,
                 detail.CheckApprove,
                 detail.DevelopApproveId,
                 detail.DevelopApprove,
-                InternalContactReceiveDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 1).Select(c => new { c.OrgId, c.OrgName }).ToList(),
-                InternalContactExecDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 2).Select(c => new { c.OrgId, c.OrgName }).ToList(),
+                InternalContactReceiveDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 1).Select(c => new { c.OrgId, c.OrgName, c.UserId, c.UserName }).ToList(),
+                InternalContactExecDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 2).Select(c => new { c.OrgId, c.OrgName, c.UserId, c.UserName }).ToList(),
                 detail.Content,
                 reviceOrgList,
                 execOrgList,
+                InternalcontactMaterials = detail.InternalcontactMaterials,
                 operationHistories
             };
         }

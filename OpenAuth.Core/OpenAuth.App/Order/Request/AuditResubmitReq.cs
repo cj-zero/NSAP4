@@ -33,5 +33,13 @@ namespace OpenAuth.App.Order.Request
         /// 默认：0
         /// </summary>
         public string vStock { get; set; }
+        /// <summary>
+        /// 备注
+        /// </summary>
+        public string Comments { get; set; }
+        /// <summary>
+        /// 审核备注
+        /// </summary>
+        public string Remark { get; set; }
     }
 }

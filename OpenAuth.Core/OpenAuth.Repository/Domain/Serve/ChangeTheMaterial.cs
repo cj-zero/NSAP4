@@ -29,5 +29,15 @@ namespace OpenAuth.Repository.Domain.Serve
         /// </summary>
         [Description("数量")]
         public int? Count { get; set; }
+        /// <summary>
+        /// 物料
+        /// </summary>
+        [Description("更换元件位置")]
+        public string ChangeTheLocation { get; set; }
+        /// <summary>
+        /// 物料
+        /// </summary>
+        [Description("物料描述")]
+        public string MaterialDescription { get; set; }
     }
 }

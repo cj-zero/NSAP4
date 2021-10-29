@@ -7,7 +7,7 @@ using System.Text;
 namespace OpenAuth.App.Meeting.ModelDto
 {
     [AutoMap(typeof(MeetingDraft))]
-    public class MyCreatedLoadListDto
+    public class SubmittedDto
     {
         /// <summary>
         /// 审批序号
@@ -15,25 +15,13 @@ namespace OpenAuth.App.Meeting.ModelDto
         public int Id { get; set; }
         /// <summary>
         /// 单据类型
-        /// 0 :展会申请 1：报名申请 2： 取消
+        /// 0 :展会申请 1：报名申请
         /// </summary>
         public int Type { get; set; }
         /// <summary>
         /// 任务名称
         /// </summary>
         public string Name { get; set; }
-        /// <summary>
-        /// 会议名称
-        /// </summary>
-        public string MeetingName { get; set; }
-        /// <summary>
-        /// 0：国内，1：国外
-        /// </summary>
-        public int AddressType { get; set; }
-        /// <summary>
-        /// 地址
-        /// </summary>
-        public string Address { get; set; }
         /// <summary>
         /// 原单据编号
         /// </summary>
@@ -59,6 +47,18 @@ namespace OpenAuth.App.Meeting.ModelDto
         /// 更新时间
         /// </summary>
         public DateTime? UpdateTime { get; set; }
+        /// <summary>
+        /// 会议名称
+        /// </summary>
+        public string MeetingName { get; set; }
+        /// <summary>
+        /// 0：国内，1：国外
+        /// </summary>
+        public int AddressType { get; set; }
+        /// <summary>
+        /// 地址
+        /// </summary>
+        public string Address { get; set; }
         /// <summary>
         /// 展会开始时间
         /// </summary>

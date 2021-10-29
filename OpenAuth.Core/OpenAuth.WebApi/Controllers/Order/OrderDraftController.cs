@@ -1180,7 +1180,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                     ViewSales = Powers.ViewSales;
                 }
                 if (ations == "copy") { ViewCustom = true; ViewSales = true; }
-                result.Data = _serviceSaleOrderApp.QuerySaleDeliveryDetailsV1(DocNum, ViewCustom, tablename, ViewSales, billSboId, isSql);
+                result.Data = _serviceSaleOrderApp.QuerySaleDeliveryDetailsV1(DocNum, true, tablename, true, billSboId, isSql);
             }
             catch (Exception e)
             {
@@ -1748,7 +1748,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             try
             {
                 var userId = _serviceBaseApp.GetUserNaspId();
-                result.Result = _serviceSaleOrderApp.AuditResubmitNextNew(resubmitReq.jobId, userId, resubmitReq.recommend, resubmitReq.auditOpinionid, resubmitReq.IsUpdate, resubmitReq.vStock);
+                result.Result = _serviceSaleOrderApp.AuditResubmitNextNew(resubmitReq.jobId, userId, resubmitReq.recommend, resubmitReq.auditOpinionid, resubmitReq.IsUpdate, resubmitReq.vStock,resubmitReq.Comments,resubmitReq.Remark);
             }
             catch (Exception e)
             {

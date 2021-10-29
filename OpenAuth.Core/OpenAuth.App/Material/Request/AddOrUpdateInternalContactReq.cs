@@ -64,6 +64,10 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public List<string> Reasons { get; set; }
         /// <summary>
+        /// 物料生成订单
+        /// </summary>
+        public List<string> MaterialOrder { get; set; }
+        /// <summary>
         /// 测试审批人ID
         /// </summary>
         public string CheckApproveId { get; set; }
@@ -114,7 +118,11 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         /// 批次号
         /// </summary>
-        public List<string> BatchNumbers { get; set; }
+        public List<InternalContactBatchNumberReq> InternalContactBatchNumbers { get; set; }
+        /// <summary>
+        /// 联络单物料
+        /// </summary>
+        public List<InternalcontactMaterialReq> InternalcontactMaterials { get; set; }
         /// <summary>
         /// 
         /// </summary>

@@ -5,7 +5,7 @@ using System.Text;
 
 namespace OpenAuth.App.Meeting.Request
 {
-    public class MyCreatedLoadReq : PageReq
+    public class SubmittedReq : PageReq
     {
         /// <summary>
         /// 单据号
@@ -15,6 +15,7 @@ namespace OpenAuth.App.Meeting.Request
         /// 单据类型
         /// </summary>
         public int Type { get; set; }
+
         /// <summary>
         /// 任务名称
         /// </summary>
@@ -26,7 +27,7 @@ namespace OpenAuth.App.Meeting.Request
         /// <summary>
         /// 展会开始时间
         /// </summary>
-        public string StartTime { get; set; }
+        public string  StartTime { get; set; }
         /// <summary>
         /// 展会结束时间
         /// </summary>

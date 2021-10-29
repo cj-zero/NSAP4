@@ -27,9 +27,8 @@ namespace OpenAuth.App.Order
         /// <summary>
         /// 提交给我的
         /// </summary>
-        public DataTable GetSubmtToMe(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, int user_id, string Applicator, string Customer, string Status, string BeginDate, string EndDate, bool ViewCustom, bool ViewSales)
+        public DataTable GetSubmtToMe(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, int user_id, string Applicator, string Customer, string Status, string BeginDate, string EndDate, bool ViewCustom, bool ViewSales, out int rowCount)
         {
-            int rowCount = 0;
             string sortString = string.Empty;
             string filterString = string.Empty;
             string line = string.Empty;
@@ -57,7 +56,7 @@ namespace OpenAuth.App.Order
             //        filterString += string.Format(" ) AND ");
             //    }
             //}
-            filterString += " c.job_type_nm='销售报价单' AND  ";
+            
             if (!string.IsNullOrWhiteSpace(Applicator))
             {
                 string[] num;
@@ -78,6 +77,7 @@ namespace OpenAuth.App.Order
             {
                 filterString += string.Format(" a.job_state = {0} AND ", int.Parse(Status));
             }
+            //filterString += " c.job_type_nm='销售报价单' AND  ";
             if (!string.IsNullOrWhiteSpace(BeginDate))
             {
                 filterString += string.Format(" DATE_FORMAT(a.upd_dt,'%Y/%m/%d') BETWEEN '{0}' AND '{1}' AND ", BeginDate, EndDate);

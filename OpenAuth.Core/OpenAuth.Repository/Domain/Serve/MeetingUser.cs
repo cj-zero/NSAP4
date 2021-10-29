@@ -1,4 +1,5 @@
-﻿using OpenAuth.Repository.Core;
+﻿
+using OpenAuth.Repository.Core;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -52,17 +53,17 @@ namespace OpenAuth.Repository.Domain.Serve
         /// 报名时间
         /// </summary>
         [Description("报名时间")]
-        public int CreateTime { get; set; }
+        public DateTime CreateTime { get; set; }
         /// <summary>
         /// 创建人
         /// </summary>
         [Description("创建人")]
-        public int CreateUser { get; set; }
+        public string CreateUser { get; set; }
         /// <summary>
         /// 取消原因
         /// </summary>
         [Description("取消原因")]
-        public int CancelReason { get; set; }
+        public string CancelReason { get; set; }
         /// <summary>
         /// 取消时间
         /// </summary>

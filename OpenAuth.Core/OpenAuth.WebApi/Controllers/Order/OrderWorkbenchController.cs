@@ -52,7 +52,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                 viewSales = powers.ViewSales;
                 viewCustom = powers.ViewCustom;
             }
-            DataTable dt = _orderWorkbenchApp.GetSubmtToMe(orderSubmtToMeReq.rp, orderSubmtToMeReq.page, orderSubmtToMeReq.query, orderSubmtToMeReq.sortname, orderSubmtToMeReq.sortorder, UserID, orderSubmtToMeReq.Applicator, orderSubmtToMeReq.Customer, orderSubmtToMeReq.Status, orderSubmtToMeReq.BeginDate, orderSubmtToMeReq.EndDate, ViewCustom: viewCustom, ViewSales: viewSales);
+            DataTable dt = _orderWorkbenchApp.GetSubmtToMe(orderSubmtToMeReq.rp, orderSubmtToMeReq.page, orderSubmtToMeReq.query, orderSubmtToMeReq.sortname, orderSubmtToMeReq.sortorder, UserID, orderSubmtToMeReq.Applicator, orderSubmtToMeReq.Customer, orderSubmtToMeReq.Status, orderSubmtToMeReq.BeginDate, orderSubmtToMeReq.EndDate, ViewCustom: viewCustom, ViewSales: viewSales,out rowCount);
             result.Data = dt;
             result.Count = rowCount;
             return result;
