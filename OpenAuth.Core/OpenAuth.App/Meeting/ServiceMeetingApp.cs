@@ -164,6 +164,7 @@ namespace OpenAuth.App.Meeting
             user.Status = 0;
             user.UserId = userId;
             user.CreateTime = DateTime.Now;
+            user.CreateUser = loginUser.Name;
             user.DempId = depId;
             user.DempName = depName;
             user.Remark = Opinion;
@@ -1206,19 +1207,35 @@ namespace OpenAuth.App.Meeting
             foreach (var item in list)
             {
                 var scon = new MeetingUserHistoryDto();
-
-                var meeting = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(q => q.Id == item.MeetingId);
-                if (string.IsNullOrWhiteSpace(QueryModel.MeetingName) && meeting.Name.Contains(QueryModel.MeetingName))
+                Expression<Func<OpenAuth.Repository.Domain.Serve.Meeting, bool>> exps = t => true;
+                exps = exps.And(t => !t.IsDelete);
+                exps = exps.And(t => t.Id == item.MeetingId);
+                if (!string.IsNullOrWhiteSpace(QueryModel.MeetingName))
                 {
-                    scon.MeetingName = meeting.Name;
-                    scon.Name = item.Name;
-                    scon.StartTime = meeting.StartTime;
-                    scon.EndTime = meeting.EndTime;
-                    scon.Address = meeting.Address;
-                    scon.AddressType = meeting.AddressType;
-                    scon.CreateTime = item.CreateTime;
-                    data.Add(scon);
+                    exps = exps.And(t => t.Name.Contains(QueryModel.MeetingName));
+
                 }
+                if (!string.IsNullOrWhiteSpace(QueryModel.Address))
+                {
+                    exps = exps.And(t => t.Address.Contains(QueryModel.Address));
+
+                }
+                if (QueryModel.AddressType != -1)
+                {
+                    exps = exps.And(t => t.AddressType == QueryModel.AddressType);
+
+                }
+                var meeting = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(exps);
+
+                scon.MeetingName = meeting.Name;
+                scon.Name = item.Name;
+                scon.StartTime = meeting.StartTime;
+                scon.EndTime = meeting.EndTime;
+                scon.Address = meeting.Address;
+                scon.AddressType = meeting.AddressType;
+                scon.CreateTime = item.CreateTime;
+                data.Add(scon);
+
             }
             return data;
         }
