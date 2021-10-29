@@ -840,7 +840,7 @@ namespace OpenAuth.App.Order
         public string UpdateAudit(int jobId, byte[] jobData, string remarks, string doc_total, string card_code, string card_name)
         {
             string isSave = "";
-            string strSql = string.Format("UPDATE {0}.wfa_job SET job_data=?job_data,remarks='{2}',job_state={3},doc_total={4},", "nsap_base", jobData, remarks, "0", doc_total == "" ? "0" : doc_total);
+            string strSql = string.Format("UPDATE {0}.wfa_job SET job_data=?job_data,remarks='{1}',job_state={2},doc_total={3},", "nsap_base", remarks, "0", doc_total == "" ? "0" : doc_total);
             strSql += string.Format("card_code='{0}',card_name='{1}' WHERE job_id ={2}", card_code, card_name, jobId);
             List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
             {
