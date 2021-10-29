@@ -717,8 +717,13 @@ namespace OpenAuth.App.Material
                    new SqlParameter("MaterialCode", request.MaterialCode),
                    new SqlParameter("WhsCode", request.WhsCode)
                 };
-                Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"select a.* ,c.lastPurPrc from (select a.Father as MnfSerial,a.Code as ItemCode,a.U_Desc as ItemName,a.U_DUnit as BuyUnitMsr,b.OnHand,b.WhsCode,a.Quantity
-                        from ITT1 a join OITW b on a.Code=b.ItemCode  where a.Father=@MaterialCode and b.WhsCode=@WhsCode) a join OITM c on c.ItemCode=a.ItemCode", parameter)
+
+                //select a.* ,c.lastPurPrc from(select a.Father as MnfSerial,a.Code as ItemCode,a.U_Desc as ItemName,a.U_DUnit as BuyUnitMsr,b.OnHand,b.WhsCode,a.Quantity
+                //       from ITT1 a join OITW b on a.Code = b.ItemCode  where a.Father = @MaterialCode and b.WhsCode = @WhsCode) a join OITM c on c.ItemCode = a.ItemCode
+                Equipments = await UnitWork.Query<SysEquipmentColumn>(@$"select a.* ,c.lastPurPrc from (select a.Father as MnfSerial,a.Code as ItemCode,c.ItemName,a.U_DUnit as BuyUnitMsr,d.OnHand,d.WhsCode,a.Quantity
+                        from ITT1 a
+	                        JOIN OITM c ON a.code = c.itemcode
+	                        JOIN OITW d ON a.code= d.itemcode  where a.Father=@MaterialCode and d.WhsCode=@WhsCode) a join OITM c on c.ItemCode=a.ItemCode", parameter)
                     .WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
                     .WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), s => request.PartDescribe.Contains(s.ItemName))
                     .Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = s.MnfSerial, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
@@ -1635,7 +1640,7 @@ namespace OpenAuth.App.Material
             //                     DiscountPrices = g.Key.DiscountPrices,
             //                     WhsCode = g.Key.WhsCode
             //                 };
-            var quotationMaterialsList = QuotationMaterials.GroupBy(q => new { q.MaterialCode, q.MaterialDescription, q.Unit, q.MaterialType, q.DiscountPrices, q.WhsCode }).Select(q => new { mergeMaterial = q.First(), count = q.Sum(s => s.Count) }).ToList();
+            var quotationMaterialsList = QuotationMaterials.GroupBy(q => new { q.MaterialCode, q.Unit, q.MaterialType, q.DiscountPrices, q.WhsCode }).Select(q => new { mergeMaterial = q.First(), count = q.Sum(s => s.Count) }).ToList();
             var MaterialsT = quotationMaterialsList.Select(q => new QueryQuotationMergeMaterialListReq
             {
                 MaterialCode = q.mergeMaterial.MaterialCode,
