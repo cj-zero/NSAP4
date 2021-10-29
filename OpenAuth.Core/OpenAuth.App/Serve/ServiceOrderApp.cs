@@ -5354,6 +5354,12 @@ namespace OpenAuth.App
             int service_counts = 0;
             List<object> list = new List<object>();
             int page_size = 3;
+            int.TryParse(key, out int id);
+            if (id<=0)
+            {
+                result.Data = new { service = list, service_counts = service_counts };
+                return result;
+            }
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
@@ -5373,8 +5379,8 @@ namespace OpenAuth.App
                     var customer_order = UnitWork.Find<ServiceOrder>(s => s.AppUserId == AppUserId)
                                 .Include(s => s.ServiceWorkOrders)
                                 .Where(s => s.Status == 2)
+                                .Where(s => s.U_SAP_ID.Value.ToString().Contains(id.ToString()))
                                 .Where(q => q.ServiceWorkOrders.All(a => a.FromType == 1) && q.ServiceWorkOrders.Count > 0)
-                                .WhereIf(int.TryParse(key, out int id), s => s.U_SAP_ID != 0 && s.U_SAP_ID.Value.ToString().Contains(id.ToString()))
                                 .Select(a => new
                                 {
                                     a.Id,
@@ -5431,8 +5437,8 @@ namespace OpenAuth.App
                         .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                         .Include(s => s.ServiceFlows)
                         .Where(s => s.Status == 2)
+                        .Where(s => s.U_SAP_ID.Value.ToString().Contains(id.ToString()))
                         .WhereIf(role!=6, s=>s.VestInOrg != 2)
-                        .WhereIf(int.TryParse(key, out int id1), s => s.U_SAP_ID != 0 && s.U_SAP_ID.Value.ToString().Contains(id1.ToString()))
                         .Select(s => new
                         {
                             s.Id,
@@ -5493,7 +5499,7 @@ namespace OpenAuth.App
                     var sale_order = UnitWork.Find<ServiceOrder>(w => customer_serviceOrderIds.Contains(w.Id) && w.Status == 2)
                         .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                         .Include(s => s.ServiceFlows)
-                        .WhereIf(int.TryParse(key, out int id5), s =>s.U_SAP_ID!=0 && s.U_SAP_ID.ToString().Contains(id5.ToString()))
+                        .Where(s => s.U_SAP_ID.Value.ToString().Contains(id.ToString()))
                         .Where(s => s.VestInOrg == 1 && s.AllowOrNot == 0)
                         .Where(q => q.ServiceWorkOrders.All(a => a.CurrentUserId != AppUserId) && q.ServiceWorkOrders.Count > 0)
                         .Select(s => new
@@ -5556,7 +5562,7 @@ namespace OpenAuth.App
                         .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                         .Include(s => s.ServiceFlows)
                         .Where(s => s.Status == 2 && s.VestInOrg != 2)
-                        .WhereIf(int.TryParse(key, out int sale_id), s => s.U_SAP_ID != 0 && s.U_SAP_ID.Value.ToString().Contains(sale_id.ToString()))
+                        .Where(s => s.U_SAP_ID.Value.ToString().Contains(id.ToString()))
                         .Select(s => new
                         {
                             s.Id,
@@ -5634,6 +5640,12 @@ namespace OpenAuth.App
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
             List<object> list = new List<object>();
+            int.TryParse(key, out int id);
+            if (id <= 0)
+            {
+                result.Data = new { service = list};
+                return result;
+            }
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
@@ -5653,8 +5665,8 @@ namespace OpenAuth.App
                     var customer_order = UnitWork.Find<ServiceOrder>(s => s.AppUserId == AppUserId)
                                 .Include(s => s.ServiceWorkOrders)
                                 .Where(s => s.Status == 2)
+                                .Where(s => s.U_SAP_ID.Value.ToString().Contains(id.ToString()))
                                 .Where(q => q.ServiceWorkOrders.All(a => a.FromType == 1) && q.ServiceWorkOrders.Count > 0)
-                                .WhereIf(int.TryParse(key, out int id), s => s.U_SAP_ID != 0 && s.U_SAP_ID.Value.ToString().Contains(id.ToString()))
                                 .Select(a => new
                                 {
                                     a.Id,
@@ -5710,8 +5722,8 @@ namespace OpenAuth.App
                         .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                         .Include(s => s.ServiceFlows)
                         .Where(s => s.Status == 2)
+                        .Where(s => s.U_SAP_ID.Value.ToString().Contains(id.ToString()))
                         .WhereIf(role != 6, s => s.VestInOrg != 2)
-                        .WhereIf(int.TryParse(key, out int id1), s => s.U_SAP_ID != 0 && s.U_SAP_ID.Value.ToString().Contains(id1.ToString()))
                         .Select(s => new
                         {
                             s.Id,
@@ -5772,7 +5784,7 @@ namespace OpenAuth.App
                     var sale_order = UnitWork.Find<ServiceOrder>(w => customer_serviceOrderIds.Contains(w.Id) && w.Status == 2)
                         .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                         .Include(s => s.ServiceFlows)
-                        .WhereIf(int.TryParse(key, out int id5), s => s.U_SAP_ID != 0 && s.U_SAP_ID.ToString().Contains(id5.ToString()))
+                        .Where(s => s.U_SAP_ID.Value.ToString().Contains(id.ToString()))
                         .Where(s => s.VestInOrg == 1 && s.AllowOrNot == 0)
                         .Where(q => q.ServiceWorkOrders.All(a => a.CurrentUserId != AppUserId) && q.ServiceWorkOrders.Count > 0)
                         .Select(s => new
@@ -5835,7 +5847,7 @@ namespace OpenAuth.App
                         .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                         .Include(s => s.ServiceFlows)
                         .Where(s => s.Status == 2 && s.VestInOrg != 2)
-                        .WhereIf(int.TryParse(key, out int sale_id), s => s.U_SAP_ID != 0 && s.U_SAP_ID.Value.ToString().Contains(sale_id.ToString()))
+                        .Where(s => s.U_SAP_ID.Value.ToString().Contains(id.ToString()))
                         .Select(s => new
                         {
                             s.Id,
