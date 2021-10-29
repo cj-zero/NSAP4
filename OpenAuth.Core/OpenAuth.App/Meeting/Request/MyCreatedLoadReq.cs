@@ -16,21 +16,28 @@ namespace OpenAuth.App.Meeting.Request
         /// </summary>
         public int Type { get; set; }
         /// <summary>
-        ///步骤
-        /// </summary>
-        public int Step { get; set; }
-        /// <summary>
         /// 任务名称
         /// </summary>
         public string JobName { get; set; }
         /// <summary>
-        /// 备注
+        /// 展会名称
         /// </summary>
-        public string Remark { get; set; }
+        public string MeetingName { get; set; }
         /// <summary>
-        /// 源单号
+        /// 展会开始时间
         /// </summary>
-        public int Base_entry { get; set; }
-
+        public string StartTime { get; set; }
+        /// <summary>
+        /// 展会结束时间
+        /// </summary>
+        public string EndTime { get; set; }
+        /// <summary>
+        /// 0：国内，1：国外
+        /// </summary>
+        public int AddressType { get; set; }
+        /// <summary>
+        /// 地址
+        /// </summary>
+        public string Address { get; set; }
     }
 }

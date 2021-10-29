@@ -868,7 +868,7 @@ namespace OpenAuth.App.Order
             };
             code = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, "nsap_base.sp_process_submit", CommandType.StoredProcedure, sqlParameters).ToString();
             return code;
-        } 
+        }
         #region 驳回
         /// <summary>
         /// 审核（驳回）
@@ -4361,7 +4361,7 @@ namespace OpenAuth.App.Order
                                   (select sum(DocTotal) from OINV WHERE CANCELED = 'N' and CardCode=C.CardCode) as INVtotal
                                   ,(select SUM(DocTOTal) from ORIN where CANCELED='N' and CardCode=c.CardCode) as RINtotal
                                   FROM OCRD C WHERE C.SlpCode={0} ) as ocrdbal) as ttotal ", slpCode, type);
-                return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql, CommandType.Text, strSql, null);
+                return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql, CommandType.Text, null);
             }
             else
             {
@@ -6011,7 +6011,7 @@ namespace OpenAuth.App.Order
             filedName.Append("IFNULL(m.U_US,0) AS U_US,IFNULL(m.U_FS,0) AS U_FS,m.QryGroup3,m.SVolume,m.SWeight1,");
             filedName.Append("b.U_PDXX,m.IsCommited,m.OnOrder,(m.OnHand-m.IsCommited+m.OnOrder) AS OnAvailable,m.U_JGF1,IFNULL(m.U_YFCB,'0'),m.OnHand AS OnHandS,m.MinLevel,m.PurPackUn,m.buyunitmsr");
             filedName.AppendFormat("{0}{1}{2}", U_SHJSDJ, U_SHJSJ, U_SHTC);
-            tableName.AppendFormat(" {0}." + type + " a LEFT JOIN {0}."  + line + " b ON a.DocEntry=b.DocEntry AND a.sbo_id=b.sbo_id", "nsap_bone");
+            tableName.AppendFormat(" {0}." + type + " a LEFT JOIN {0}." + line + " b ON a.DocEntry=b.DocEntry AND a.sbo_id=b.sbo_id", "nsap_bone");
             tableName.AppendFormat(" LEFT JOIN {0}.store_oitw w ON b.ItemCode=w.ItemCode AND b.WhsCode=w.WhsCode AND b.sbo_id=w.sbo_id", "nsap_bone");
             tableName.AppendFormat(" LEFT JOIN {0}.store_oitm m ON b.ItemCode=m.ItemCode AND m.sbo_id=b.sbo_id", "nsap_bone");
             return SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), model.limit, model.page, sortString, filterString, out rowCount);
@@ -8241,5 +8241,15 @@ namespace OpenAuth.App.Order
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, str.ToString(), CommandType.Text, null);
         }
         #endregion
+
+        public DataTable GetCKCountsByCK(string itemCode, string whsCode, string sboId)
+        {
+            string sqlstr = string.Format(@"SELECT t1.sbo_id,t1.ItemCode,t1.ItemName,t1.OnHand,t1.IsCommited,t1.OnOrder,(t1.OnHand-t1.IsCommited+t1.OnOrder) as OnAvailable
+                                        , t2.OnHand as whsOnHand,t2.IsCommited as whsIsCommited,t2.OnOrder as whsOnOrder,(t2.OnHand - t2.IsCommited + t2.OnOrder) as whsOnAvailable
+                                        from {0}.store_oitm t1
+                                        LEFT OUTER JOIN {0}.store_oitw t2 on t2.ItemCode = t1.ItemCode and t2.sbo_id = t1.sbo_Id and t2.whsCode = '{1}'
+                                        where t1.sbo_id = {2} and t1.ItemCode = '{3}'", "nsap_bone", whsCode, sboId, itemCode);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sqlstr, CommandType.Text, null);
+        }
     }
 }

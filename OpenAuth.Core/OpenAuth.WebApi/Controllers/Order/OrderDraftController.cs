@@ -1747,7 +1747,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             try
             {
                 var userId = _serviceBaseApp.GetUserNaspId();
-                result.Result = _serviceSaleOrderApp.AuditResubmitNextNew(resubmitReq.jobId, userId, resubmitReq.recommend, resubmitReq.auditOpinionid, resubmitReq.IsUpdate, resubmitReq.vStock);
+                result.Result = _serviceSaleOrderApp.AuditResubmitNextNew(resubmitReq.jobId, userId, resubmitReq.recommend, resubmitReq.auditOpinionid, resubmitReq.IsUpdate, resubmitReq.vStock,resubmitReq.Comments,resubmitReq.Remark);
             }
             catch (Exception e)
             {

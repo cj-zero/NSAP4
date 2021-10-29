@@ -47,5 +47,25 @@ namespace OpenAuth.App.Meeting.ModelDto
         /// 更新时间
         /// </summary>
         public DateTime? UpdateTime { get; set; }
+        /// <summary>
+        /// 会议名称
+        /// </summary>
+        public string MeetingName { get; set; }
+        /// <summary>
+        /// 0：国内，1：国外
+        /// </summary>
+        public int AddressType { get; set; }
+        /// <summary>
+        /// 地址
+        /// </summary>
+        public string Address { get; set; }
+        /// <summary>
+        /// 展会开始时间
+        /// </summary>
+        public DateTime StartTime { get; set; }
+        /// <summary>
+        /// 展会结束时间
+        /// </summary>
+        public DateTime EndTime { get; set; }
     }
 }
