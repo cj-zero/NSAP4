@@ -684,10 +684,10 @@ namespace OpenAuth.App.Order
                         result = UpdateAudit(orderReq.JobId, job_data, orderReq.Order.Remark, orderReq.Order.DocTotal.ToString(), orderReq.Order.CardCode, orderReq.Order.CardName);
                         if (result != null)
                         {
-                            var par = SaveJobPara(orderReq.JobId.ToString(), orderReq.IsTemplate);
-                            if (par == "1")
-                            {
-                                string _jobID = result;
+                            //var par = SaveJobPara(orderReq.JobId.ToString(), orderReq.IsTemplate);
+                            //if (par == "1")
+                            //{
+                                string _jobID = orderReq.JobId.ToString();
                                 if ("0" != WorkflowSubmit(orderReq.JobId, userID, orderReq.Order.Remark, "", 0))
                                 {
                                     #region 更新商城订单状态
@@ -708,8 +708,8 @@ namespace OpenAuth.App.Order
                                     #endregion
                                 }
                                 else { result = "0"; }
-                            }
-                            else { result = "0"; }
+                            //}
+                            //else { result = "0"; }
                         }
                     }
                 }
@@ -1529,7 +1529,6 @@ namespace OpenAuth.App.Order
                 PrepaPro = !string.IsNullOrEmpty(order.PrepaPro) ? order.PrepaPro : "0.0",//预付百分比
                 PayBefShip = !string.IsNullOrEmpty(order.PayBefShip) ? order.PayBefShip : "0.0",//发货前付
                 GoodsToPro = !string.IsNullOrEmpty(order.GoodsToPro) ? order.GoodsToPro : "0.0",//货到付百分比
-                                                                                                //------------------------------
                 DocCur = order.DocCur,
                 U_ERPFrom = "5",//来源4.0系统
                 DocDate = order.DocDate.ToString(),

@@ -378,7 +378,7 @@ namespace OpenAuth.WebApi.Controllers.Meeting
         /// <param name="QueryModel"></param>
         /// <returns></returns>
         [HttpPost]
-        [Route("MeetingCanel")]
+        [Route("MeetingUserHistory")]
         public async Task<Response<List<MeetingUserHistoryDto>>> MeetingUserHistory(MeetingUserHistoryReq QueryModel)
         {
             var result = new Response<List<MeetingUserHistoryDto>>();
