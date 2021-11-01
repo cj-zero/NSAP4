@@ -8287,7 +8287,7 @@ namespace OpenAuth.App.Order
                     item.CopyTo(fs);
                     fs.Flush();
                 }
-                scon.Id = new Guid().ToString();
+                //scon.Id = new Guid().ToString();
                 scon.FilePath = host + FileHelper.FilePath.VirtualPath + fileName;
                 scon.FileName = fileName;
                 scon.FileType = suffix;

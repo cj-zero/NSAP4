@@ -9,7 +9,7 @@ namespace OpenAuth.App.Response
     [AutoMapTo(typeof(UploadFile))]
     public class UploadFileResp
     {
-        //public string Id { get; set; }
+        public string Id { get; set; }
         /// <summary>
 	    /// 文件名称
 	    /// </summary>
@@ -38,6 +38,6 @@ namespace OpenAuth.App.Response
         /// <summary>
         /// 图片类型
         /// </summary>
-        //public int? PictureType { get; set; }
+        public int? PictureType { get; set; }
     }
 }
