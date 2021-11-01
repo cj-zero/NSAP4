@@ -1566,6 +1566,7 @@ namespace OpenAuth.App.Order
                 VatSum = !string.IsNullOrEmpty(order.VatSum.ToString()) ? order.VatSum.ToString() : "0",
                 WhsCode = order.WhsCode,
                 CntctCode = order.CntctCode.ToString(),
+                U_New_ORDRID = order.U_New_ORDRID.ToString(),
                 attachmentData = order.FileList,//new List<billAttchment>(),
                 billSalesAcctCode = new List<billSalesAcctCode>(),
                 billSalesDetails = new List<billSalesDetails>(),

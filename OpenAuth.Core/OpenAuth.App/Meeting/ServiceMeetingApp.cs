@@ -601,21 +601,25 @@ namespace OpenAuth.App.Meeting
 
                         if (meeting != null)
                         {
-                            nes.Name = obj.Name;
-                            nes.Remark = obj.Remark;
-                            nes.Step = obj.Step;
-                            nes.Type = obj.Type;
-                            nes.UpdateTime = obj.UpdateTime;
-                            nes.StartTime = meeting.StartTime;
-                            nes.EndTime = meeting.EndTime;
-                            nes.Id = obj.Id;
-                            nes.MeetingName = meeting.Name;
-                            nes.Address = meeting.Address;
-                            nes.AddressType = meeting.AddressType;
-                            nes.Base_entry = obj.Base_entry;
-                            nes.CreateTime = obj.CreateTime;
-                            nes.CreateUser = obj.CreateUser;
-                            data.Add(nes);
+                            if (obj.Step==2)
+                            {
+                                nes.Name = obj.Name;
+                                nes.Remark = obj.Remark;
+                                nes.Step = obj.Step;
+                                nes.Type = obj.Type;
+                                nes.UpdateTime = obj.UpdateTime;
+                                nes.StartTime = meeting.StartTime;
+                                nes.EndTime = meeting.EndTime;
+                                nes.Id = obj.Id;
+                                nes.MeetingName = meeting.Name;
+                                nes.Address = meeting.Address;
+                                nes.AddressType = meeting.AddressType;
+                                nes.Base_entry = obj.Base_entry;
+                                nes.CreateTime = obj.CreateTime;
+                                nes.CreateUser = obj.CreateUser;
+                                data.Add(nes);
+                            }
+                         
                         }
                     }
                     if (obj.Type == 1)
@@ -625,21 +629,25 @@ namespace OpenAuth.App.Meeting
                         var meeting = UnitWork.FindSingle<Repository.Domain.Serve.Meeting>(exps);
                         if (meeting != null)
                         {
-                            nes.Name = obj.Name;
-                            nes.Remark = obj.Remark;
-                            nes.Step = obj.Step;
-                            nes.Type = obj.Type;
-                            nes.UpdateTime = obj.UpdateTime;
-                            nes.StartTime = meeting.StartTime;
-                            nes.EndTime = meeting.EndTime;
-                            nes.Id = obj.Id;
-                            nes.MeetingName = meeting.Name;
-                            nes.Address = meeting.Address;
-                            nes.AddressType = meeting.AddressType;
-                            nes.Base_entry = obj.Base_entry;
-                            nes.CreateTime = obj.CreateTime;
-                            nes.CreateUser = obj.CreateUser;
-                            data.Add(nes);
+                            if (obj.Step==2)
+                            {
+                                nes.Name = obj.Name;
+                                nes.Remark = obj.Remark;
+                                nes.Step = obj.Step;
+                                nes.Type = obj.Type;
+                                nes.UpdateTime = obj.UpdateTime;
+                                nes.StartTime = meeting.StartTime;
+                                nes.EndTime = meeting.EndTime;
+                                nes.Id = obj.Id;
+                                nes.MeetingName = meeting.Name;
+                                nes.Address = meeting.Address;
+                                nes.AddressType = meeting.AddressType;
+                                nes.Base_entry = obj.Base_entry;
+                                nes.CreateTime = obj.CreateTime;
+                                nes.CreateUser = obj.CreateUser;
+                                data.Add(nes);
+                            }
+                       
                         }
 
                     }
@@ -653,21 +661,25 @@ namespace OpenAuth.App.Meeting
                         var meeting = UnitWork.FindSingle<Repository.Domain.Serve.Meeting>(exps);
                         if (meeting != null)
                         {
-                            nes.Name = obj.Name;
-                            nes.Remark = obj.Remark;
-                            nes.Step = obj.Step;
-                            nes.Type = obj.Type;
-                            nes.UpdateTime = obj.UpdateTime;
-                            nes.StartTime = meeting.StartTime;
-                            nes.EndTime = meeting.EndTime;
-                            nes.Id = obj.Id;
-                            nes.MeetingName = meeting.Name;
-                            nes.Address = meeting.Address;
-                            nes.AddressType = meeting.AddressType;
-                            nes.Base_entry = obj.Base_entry;
-                            nes.CreateTime = obj.CreateTime;
-                            nes.CreateUser = obj.CreateUser;
-                            data.Add(nes);
+                            if (obj.Step==1)
+                            {
+                                nes.Name = obj.Name;
+                                nes.Remark = obj.Remark;
+                                nes.Step = obj.Step;
+                                nes.Type = obj.Type;
+                                nes.UpdateTime = obj.UpdateTime;
+                                nes.StartTime = meeting.StartTime;
+                                nes.EndTime = meeting.EndTime;
+                                nes.Id = obj.Id;
+                                nes.MeetingName = meeting.Name;
+                                nes.Address = meeting.Address;
+                                nes.AddressType = meeting.AddressType;
+                                nes.Base_entry = obj.Base_entry;
+                                nes.CreateTime = obj.CreateTime;
+                                nes.CreateUser = obj.CreateUser;
+                                data.Add(nes);
+                            }
+                           
                         }
 
                     }
@@ -679,21 +691,25 @@ namespace OpenAuth.App.Meeting
                         var meeting = UnitWork.FindSingle<Repository.Domain.Serve.Meeting>(exps);
                         if (meeting != null)
                         {
-                            nes.Name = obj.Name;
-                            nes.Remark = obj.Remark;
-                            nes.Step = obj.Step;
-                            nes.Type = obj.Type;
-                            nes.UpdateTime = obj.UpdateTime;
-                            nes.StartTime = meeting.StartTime;
-                            nes.EndTime = meeting.EndTime;
-                            nes.Id = obj.Id;
-                            nes.MeetingName = meeting.Name;
-                            nes.Address = meeting.Address;
-                            nes.AddressType = meeting.AddressType;
-                            nes.Base_entry = obj.Base_entry;
-                            nes.CreateTime = obj.CreateTime;
-                            nes.CreateUser = obj.CreateUser;
-                            data.Add(nes);
+                            if (obj.Step==1)
+                            {
+                                nes.Name = obj.Name;
+                                nes.Remark = obj.Remark;
+                                nes.Step = obj.Step;
+                                nes.Type = obj.Type;
+                                nes.UpdateTime = obj.UpdateTime;
+                                nes.StartTime = meeting.StartTime;
+                                nes.EndTime = meeting.EndTime;
+                                nes.Id = obj.Id;
+                                nes.MeetingName = meeting.Name;
+                                nes.Address = meeting.Address;
+                                nes.AddressType = meeting.AddressType;
+                                nes.Base_entry = obj.Base_entry;
+                                nes.CreateTime = obj.CreateTime;
+                                nes.CreateUser = obj.CreateUser;
+                                data.Add(nes);
+                            }
+                           
                         }
 
                     }
@@ -1062,7 +1078,7 @@ namespace OpenAuth.App.Meeting
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
-            bool result = false;
+
             if (UpdateModel.Ations == MeetingAtion.Resubmit)
             {
                 var data = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(q => q.Id == UpdateModel.Id);
@@ -1143,7 +1159,7 @@ namespace OpenAuth.App.Meeting
                 UnitWork.Save();
             }
 
-            return result;
+            return true;
         }
         /// <summary>
         /// 取消会议申请
