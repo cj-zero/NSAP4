@@ -155,6 +155,11 @@ namespace OpenAuth.App
             {
                 var productModelCategory = UnitWork.Find<ProductModelCategory>(u => !u.IsDelete && u.Id == productModelSelection.ProductModelCategoryId).FirstOrDefault();
                 var productModelSelectionInfo = UnitWork.Find<ProductModelSelectionInfo>(u => !u.IsDelete && u.ProductModelSelectionId == productModelSelection.Id).FirstOrDefault();
+                object templatePath = "";
+                List<WordMarkModel> wordModels = new List<WordMarkModel>();
+                string filePath = "";
+                object[] oBookMark = new object[20];
+                WordHandler.DOCTemplateConvert(templatePath, filePath, wordModels, oBookMark);
             }
         }
     }
