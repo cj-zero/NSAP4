@@ -719,10 +719,10 @@ namespace OpenAuth.App.Order
             }
             catch (Exception ex)
             {
-                string msg = ex.Message;
+                throw ex;
             }
-            string log = string.Format("{1}：{0}", result, logstring);
-            AddUserOperateLog(log);
+            //  string log = string.Format("{1}：{0}", result, logstring);
+            // AddUserOperateLog(log);
             return result;
         }
         /// <summary>
