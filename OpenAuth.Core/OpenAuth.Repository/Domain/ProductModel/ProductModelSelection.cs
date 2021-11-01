@@ -25,9 +25,9 @@ namespace OpenAuth.Repository.Domain.ProductModel
         [MaxLength(50)]
         public string SerialNumber { get; set; }
         /// <summary>
-        /// 产品类型
+        /// 产品系列
         /// </summary>
-        [Description("产品类型")]
+        [Description("产品系列")]
         [MaxLength(20)]
         public string ProductType { get; set; }
         /// <summary>
@@ -49,9 +49,9 @@ namespace OpenAuth.Repository.Domain.ProductModel
         [MaxLength(10)]
         public string Current { get; set; }
         /// <summary>
-        /// 序列号
+        /// 通道
         /// </summary>
-        [Description("序列号")]
+        [Description("通道")]
         public int ChannelNumber { get; set; }
         /// <summary>
         /// 功率

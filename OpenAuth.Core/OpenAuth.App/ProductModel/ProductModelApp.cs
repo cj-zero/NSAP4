@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using Infrastructure.Wrod;
 using Newtonsoft.Json;
 using OpenAuth.App.Interface;
 using OpenAuth.App.ProductModel;
@@ -143,6 +144,18 @@ namespace OpenAuth.App
                 imgs = JsonConvert.DeserializeObject<List<string>>(productModelCategory.CaseImage);
             }
             return imgs;
+        }
+        /// <summary>
+        /// 导出规格说明书
+        /// </summary>
+        public void ExportProductSpecsDoc(int id)
+        {
+            var productModelSelection = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.Id == id).FirstOrDefault();
+            if (productModelSelection != null)
+            {
+                var productModelCategory = UnitWork.Find<ProductModelCategory>(u => !u.IsDelete && u.Id == productModelSelection.ProductModelCategoryId).FirstOrDefault();
+                var productModelSelectionInfo = UnitWork.Find<ProductModelSelectionInfo>(u => !u.IsDelete && u.ProductModelSelectionId == productModelSelection.Id).FirstOrDefault();
+            }
         }
     }
 }

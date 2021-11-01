@@ -20,12 +20,12 @@ namespace OpenAuth.Repository.Domain
         [Description("分类")]
         [MaxLength(20)]
         public string Category { get; set; }
-        /// <summary>
-        /// 产品系列
-        /// </summary>
-        [Description("产品系列")]
-        [MaxLength(20)]
-        public string Type { get; set; }
+        ///// <summary>
+        ///// 产品系列
+        ///// </summary>
+        //[Description("产品系列")]
+        //[MaxLength(20)]
+        //public string Type { get; set; }
         /// <summary>
         /// 产品手册
         /// </summary>
@@ -38,6 +38,18 @@ namespace OpenAuth.Repository.Domain
         [Description("产品案例")]
         [MaxLength(500)]
         public string CaseImage { get; set; }
+        /// <summary>
+        /// 规格说明书模板
+        /// </summary>
+        [Description("规格说明书模板")]
+        [MaxLength(500)]
+        public string SpecsDocTemplatePath { get; set; }
+        /// <summary>
+        /// 技术协议模板
+        /// </summary>
+        [Description("技术协议模板")]
+        [MaxLength(500)]
+        public string TAgreementDocTemplatePath { get; set; }
         /// <summary>
         /// 是否删除
         /// </summary>
