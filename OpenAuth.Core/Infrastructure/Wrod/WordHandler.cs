@@ -3,6 +3,7 @@ using NetOffice.WordApi.Enums;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -174,6 +175,48 @@ namespace Infrastructure.Wrod
                 }
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 文档模板导出
+        /// </summary>
+        /// <param name="templatePath"></param>
+        /// <param name="filePath"></param>
+        /// <param name="wordModels"></param>
+        /// <param name="oBookMark"></param>
+        /// <returns></returns>
+        public static bool DOCTemplateConvert(object templatePath, string filePath, List<WordMarkModel> wordModels, object[] oBookMark)
+        {
+            bool result = false;
+            string extension = Path.GetExtension(filePath).ToLower();
+            int endIndex = filePath.LastIndexOf(extension);
+            string targetPath = string.Format("{0}.docx", filePath.Substring(0, endIndex));
+            object oMissing = System.Reflection.Missing.Value;
+            try
+            {
+                Microsoft.Office.Interop.Word._Application wordApplication = new Microsoft.Office.Interop.Word.Application();
+                Microsoft.Office.Interop.Word._Document wordDocument = null;
+                //设置为不可见
+                wordApplication.Visible = false;
+                //以模板为基础生成文档
+                wordDocument = wordApplication.Documents.Add(ref templatePath, ref oMissing, ref oMissing, ref oMissing);
+                for (int i = 0; i < oBookMark.Length; i++)
+                {
+                    var mark = wordModels.FirstOrDefault(zw => zw.MarkName == oBookMark[i].ToString());
+                    wordDocument.Bookmarks.get_Item(ref oBookMark[i]).Range.Text = mark.MarkValue.ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+                result = false;
+            }
+            finally
+            {
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
             }
