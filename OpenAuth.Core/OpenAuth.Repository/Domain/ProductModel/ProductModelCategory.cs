@@ -41,15 +41,27 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 规格说明书模板
         /// </summary>
-        [Description("规格说明书模板")]
+        [Description("中文规格说明书模板")]
         [MaxLength(500)]
-        public string SpecsDocTemplatePath { get; set; }
+        public string SpecsDocTemplatePath_CH { get; set; }
         /// <summary>
         /// 技术协议模板
         /// </summary>
-        [Description("技术协议模板")]
+        [Description("中文技术协议模板")]
         [MaxLength(500)]
-        public string TAgreementDocTemplatePath { get; set; }
+        public string TAgreementDocTemplatePath_CH { get; set; }
+        /// <summary>
+        /// 规格说明书模板
+        /// </summary>
+        [Description("英文规格说明书模板")]
+        [MaxLength(500)]
+        public string SpecsDocTemplatePath_EN { get; set; }
+        /// <summary>
+        /// 技术协议模板
+        /// </summary>
+        [Description("英文技术协议模板")]
+        [MaxLength(500)]
+        public string TAgreementDocTemplatePath_EN { get; set; }
         /// <summary>
         /// 是否删除
         /// </summary>
