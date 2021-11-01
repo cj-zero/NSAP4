@@ -16,7 +16,7 @@ namespace OpenAuth.App.Order.Request
         /// <summary>
         /// 备注
         /// </summary>
-        public string recommend { get; set; }
+        public string recommend { get; set; } = "\\";
         /// <summary>
         /// 操作类型
         /// agree：已批准

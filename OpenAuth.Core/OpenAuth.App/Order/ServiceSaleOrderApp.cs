@@ -31,6 +31,9 @@ using NSAP.Entity.BillFlow;
 using NSAP.Entity.Store;
 using NSAP.Entity.Product;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using System.Net.Http.Headers;
 
 namespace OpenAuth.App.Order
 {
@@ -687,27 +690,27 @@ namespace OpenAuth.App.Order
                             //var par = SaveJobPara(orderReq.JobId.ToString(), orderReq.IsTemplate);
                             //if (par == "1")
                             //{
-                                string _jobID = orderReq.JobId.ToString();
-                                if ("0" != WorkflowSubmit(orderReq.JobId, userID, orderReq.Order.Remark, "", 0))
-                                {
-                                    #region 更新商城订单状态
-                                    WfaEshopStatus thisinfo = new WfaEshopStatus();
-                                    thisinfo.JobId = orderReq.JobId;
-                                    thisinfo.UserId = userID;
-                                    thisinfo.SlpCode = sboID;
-                                    thisinfo.CardCode = orderReq.Order.CardCode;
-                                    thisinfo.CardName = orderReq.Order.CardName;
-                                    thisinfo.CurStatus = 0;
-                                    thisinfo.OrderPhase = "0000";
-                                    thisinfo.ShippingPhase = "0000";
-                                    thisinfo.CompletePhase = "0";
-                                    thisinfo.OrderLastDate = DateTime.Now;
-                                    thisinfo.FirstCreateDate = DateTime.Now;
-                                    //设置报价单提交
-                                    result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, orderReq.Order.U_New_ORDRID);
-                                    #endregion
-                                }
-                                else { result = "0"; }
+                            string _jobID = orderReq.JobId.ToString();
+                            if ("0" != WorkflowSubmit(orderReq.JobId, userID, orderReq.Order.Remark, "", 0))
+                            {
+                                #region 更新商城订单状态
+                                WfaEshopStatus thisinfo = new WfaEshopStatus();
+                                thisinfo.JobId = orderReq.JobId;
+                                thisinfo.UserId = userID;
+                                thisinfo.SlpCode = sboID;
+                                thisinfo.CardCode = orderReq.Order.CardCode;
+                                thisinfo.CardName = orderReq.Order.CardName;
+                                thisinfo.CurStatus = 0;
+                                thisinfo.OrderPhase = "0000";
+                                thisinfo.ShippingPhase = "0000";
+                                thisinfo.CompletePhase = "0";
+                                thisinfo.OrderLastDate = DateTime.Now;
+                                thisinfo.FirstCreateDate = DateTime.Now;
+                                //设置报价单提交
+                                result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, orderReq.Order.U_New_ORDRID);
+                                #endregion
+                            }
+                            else { result = "0"; }
                             //}
                             //else { result = "0"; }
                         }
@@ -8249,6 +8252,49 @@ namespace OpenAuth.App.Order
                                         LEFT OUTER JOIN {0}.store_oitw t2 on t2.ItemCode = t1.ItemCode and t2.sbo_id = t1.sbo_Id and t2.whsCode = '{1}'
                                         where t1.sbo_id = {2} and t1.ItemCode = '{3}'", "nsap_bone", whsCode, sboId, itemCode);
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sqlstr, CommandType.Text, null);
+        }
+
+
+        /// <summary>
+        /// 批量上传（新）
+        /// </summary>
+        /// <param name="files"></param>
+        /// <returns></returns>
+        public List<UploadFileResp> BillAttachUploadNew(IFormFileCollection files, string host)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            var result = new List<UploadFileResp>();
+            foreach (var item in files)
+            {
+                var scon = new UploadFileResp();
+                var fileName = ContentDispositionHeaderValue.Parse(item.ContentDisposition).FileName.Trim('"');
+                string filePath = FileHelper.FilePath.PhysicalPath;
+                if (!Directory.Exists(filePath))
+                {
+                    Directory.CreateDirectory(filePath);
+                }
+                string suffix = fileName.Split('.')[fileName.Split('.').Length - 1];
+                fileName = Guid.NewGuid() + "." + suffix;
+                string fileFullName = filePath + fileName;
+                using (FileStream fs = System.IO.File.Create(fileFullName))
+                {
+                    //保存到本地
+                    item.CopyTo(fs);
+                    fs.Flush();
+                }
+                scon.Id = new Guid().ToString();
+                scon.FilePath = host + FileHelper.FilePath.VirtualPath + fileName;
+                scon.FileName = fileName;
+                scon.FileType = suffix;
+                scon.CreateUserName = loginUser.Name;
+                result.Add(scon);
+            }
+            return result;
         }
     }
 }
