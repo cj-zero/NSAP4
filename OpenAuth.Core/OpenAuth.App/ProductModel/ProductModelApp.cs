@@ -23,8 +23,11 @@ namespace OpenAuth.App
     public class ProductModelApp : OnlyUnitWorkBaeApp
     {
         private RevelanceManagerApp _revelanceApp;
-        public ProductModelApp(IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
+        ServiceBaseApp _serviceBaseApp;
+        public ProductModelApp(ServiceBaseApp serviceBaseApp, IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
         {
+            _serviceBaseApp = serviceBaseApp;
+
         }
         /// <summary>
         /// 获取设备编码
@@ -41,7 +44,8 @@ namespace OpenAuth.App
         /// <returns></returns>
         public List<string> GetProductTypeList()
         {
-            return new List<string>();
+            var productModelSelections = UnitWork.Find<ProductModelType>(u => !u.IsDelete);
+            return productModelSelections.Select(zw => zw.Name).OrderBy(zw => zw).Distinct().ToList();
         }
         /// <summary>
         /// 获取电流等级
@@ -112,8 +116,24 @@ namespace OpenAuth.App
                 exps = exps.And(t => t.ChannelNumber == queryModel.ChannelNumber);
             }
             var productModelSelectionList = UnitWork.Find(queryModel.page, queryModel.limit, "", exps);
+            var list = productModelSelectionList.MapToList<ProductModelSelection>();
             rowcount = UnitWork.GetCount(exps);
-            return productModelSelectionList.MapToList<ProductModelInfo>();
+            var result = new List<ProductModelInfo>();
+            foreach (var item in list)
+            {
+                var scon = new ProductModelInfo();
+                scon.ChannelNumber = item.ChannelNumber;
+                scon.Current = item.Current;
+                scon.CurrentAccurack = item.CurrentAccurack;
+                scon.DeviceCoding = item.DeviceCoding;
+                scon.Id = item.Id;
+                scon.Voltage = item.Voltage;
+                scon.TotalPower = item.TotalPower;
+                scon.Size = item.Size;
+                scon.Weight = item.Weight;
+                scon.UnitPrice = item.UnitPrice;
+            }
+            return result;
         }
         /// <summary>
         /// 获取产品手册

@@ -42,12 +42,22 @@ namespace OpenAuth.WebApi.Controllers.Order
         [Route("GridDataBind")]
         public TableData GridDataBind(SalesOrderListReq model)
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
             int rowCount = 0;
             var UserID = _serviceBaseApp.GetUserNaspId();
             var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
             var DepID = _serviceBaseApp.GetSalesDepID(UserID);
             var result = new TableData();
-
+            bool rata = false;
+            if (loginUser.Name == "韦京生" || loginUser.Name == "郭睿心")
+            {
+                rata = true;
+            }
             string type = "ORDR";
             DataTable dt = _serviceSaleOrderApp.GetSboNamePwd(SboID);
             string dRowData = string.Empty; string isOpen = "0"; string sqlcont = string.Empty; string sboname = string.Empty;
@@ -60,7 +70,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 if (isOpen == "1")
                 {
-                    DataTable dts = _serviceSaleOrderApp.SelectBillListInfo_ORDR(out rowCount, model, type, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewFull, true, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewSelfDepartment, DepID, true, true, sqlcont, sboname);
+                    DataTable dts = _serviceSaleOrderApp.SelectBillListInfo_ORDR(out rowCount, model, type, rata, true, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewSelfDepartment, DepID, rata, rata, sqlcont, sboname);
                     result.Data = dts;
                     result.Count = rowCount;
                 }
@@ -226,7 +236,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
             try
             {
-                result.Result = _serviceSaleOrderApp.OrderExportShow(sboid, DocEntry, Indicator,host);
+                result.Result = _serviceSaleOrderApp.OrderExportShow(sboid, DocEntry, Indicator, host);
             }
             catch (Exception e)
             {

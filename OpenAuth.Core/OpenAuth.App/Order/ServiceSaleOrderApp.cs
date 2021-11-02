@@ -4845,33 +4845,33 @@ namespace OpenAuth.App.Order
                     filterString += string.Format(" ) AND ");
                 }
 
-                if (model.Applicator != "")
-                {
-                    string[] num;
-                    num = model.Applicator.Split(',');
-                    string para = "";
-                    foreach (string c in num)
-                    {
-                        para += "'" + c + "'" + ",";
-                    }
-                    para = "(" + para.TrimEnd(',') + ")";
-                    filterString += string.Format(" c.user_nm IN {0} AND ", para);
-                }
-                if (model.Customer != "")
-                {
-                    filterString += string.Format(" (a.card_code LIKE '%{0}%' OR a.card_name LIKE '%{0}%') AND ", model.Customer);
-                }
-                if (model.Job_state != "")
-                {
-                    filterString += string.Format(" a.job_state = {0} AND ", int.Parse(model.Job_state));
-                }
-                if (model.BeginDate != "")
-                {
-                    filterString += string.Format(" DATE_FORMAT(a.upd_dt,'%Y/%m/%d') BETWEEN '{0}' AND '{1}' AND ", model.BeginDate, model.EndDate);
-                }
+               
             }
 
-
+            if (model.Applicator != "")
+            {
+                string[] num;
+                num = model.Applicator.Split(',');
+                string para = "";
+                foreach (string c in num)
+                {
+                    para += "'" + c + "'" + ",";
+                }
+                para = "(" + para.TrimEnd(',') + ")";
+                filterString += string.Format(" c.user_nm IN {0} AND ", para);
+            }
+            if (model.Customer != "")
+            {
+                filterString += string.Format(" (a.card_code LIKE '%{0}%' OR a.card_name LIKE '%{0}%') AND ", model.Customer);
+            }
+            if (model.Job_state != "")
+            {
+                filterString += string.Format(" a.job_state = {0} AND ", int.Parse(model.Job_state));
+            }
+            if (model.BeginDate != "")
+            {
+                filterString += string.Format(" DATE_FORMAT(a.upd_dt,'%Y/%m/%d') BETWEEN '{0}' AND '{1}' AND ", model.BeginDate, model.EndDate);
+            }
             if (!string.IsNullOrEmpty(model.Job_Id))
             {
                 filterString += string.Format(" a.job_id LIKE '%{0}%' AND ", model.Job_Id);

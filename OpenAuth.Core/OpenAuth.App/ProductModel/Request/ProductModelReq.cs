@@ -15,7 +15,7 @@ namespace OpenAuth.App.ProductModel.Request
         /// </summary>
         public int? ProductModelCategoryId { get; set; }
         /// <summary>
-        /// 产品类型
+        /// 产品系列
         /// </summary>
         public string ProductType { get; set; }
         /// <summary>

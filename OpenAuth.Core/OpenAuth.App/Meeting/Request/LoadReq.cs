@@ -23,7 +23,7 @@ namespace OpenAuth.App.Meeting.Request
         /// <summary>
         /// 有无晚宴
         /// </summary>
-        public bool IsDinner { get; set; }
+        public int IsDinner { get; set; }
         /// <summary>
         /// 申请部门ID
         /// </summary>
@@ -40,5 +40,13 @@ namespace OpenAuth.App.Meeting.Request
         /// 状态
         /// </summary>
         public int Status { get; set; }
+        /// <summary>
+        /// 0：国内，1：国外
+        /// </summary>
+        public int AddressType { get; set; }
+        /// <summary>
+        /// 地址
+        /// </summary>
+        public string Address { get; set; }
     }
 }
