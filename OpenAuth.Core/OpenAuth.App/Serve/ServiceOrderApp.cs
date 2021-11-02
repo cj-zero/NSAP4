@@ -2497,11 +2497,43 @@ namespace OpenAuth.App
                     s.a.AppUserId,
                     s.a.ServiceOrderId,
                     s.a.Replier,
+                    s.a.Id
                 });
+                var messageId = resultsql.Select(c => c.Id).ToList();
+                var meassageUser = await UnitWork.Find<ServiceOrderMessageUser>(c => messageId.Contains(c.MessageId)).ToListAsync();
+
+                //result.Data =
+                //((await resultsql
+                //.ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(g => g.First())).Select(s => new 
+                //{ 
+                //    s.Content, 
+                //    CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"), 
+                //    s.FroTechnicianName, 
+                //    s.AppUserId, 
+                //    s.ServiceOrderId, 
+                //    s.Replier, 
+                //    s.U_SAP_ID 
+                //});
 
                 result.Data =
                 ((await resultsql
-                .ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(g => g.First())).Select(s => new { s.Content, CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"), s.FroTechnicianName, s.AppUserId, s.ServiceOrderId, s.Replier, s.U_SAP_ID });
+                .ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(s => 
+                {
+                    var first = s.First();
+                    var messageid = s.Select(c => c.Id).ToList();
+                    var hasRead = meassageUser.Where(c => messageid.Contains(c.MessageId) && c.FroUserId==req.CurrentUserId.ToString()).All(c => c.HasRead == true);//服务id下消息是否全部已读
+                    return new
+                    {
+                        first.Content,
+                        CreateTime = first.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
+                        first.FroTechnicianName,
+                        first.AppUserId,
+                        first.ServiceOrderId,
+                        first.Replier,
+                        first.U_SAP_ID,
+                        HasRead = hasRead
+                    };
+                }));
             }
             return result;
         }
