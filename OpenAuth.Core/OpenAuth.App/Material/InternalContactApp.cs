@@ -332,6 +332,7 @@ namespace OpenAuth.App.Material
             userIds.Add(obj.DevelopApproveId);
             var userInfo = await UnitWork.Find<User>(c => userIds.Contains(c.Id)).ToListAsync();
             //mailRequest.ToUsers = new List<MailUser> { new MailUser { Name = "licong", Address = "licong@neware.com.cn" } };
+            mailRequest.ToUsers = new List<MailUser> ();
             userInfo.ForEach(c =>
             {
                 if (!string.IsNullOrWhiteSpace(c.Email))
