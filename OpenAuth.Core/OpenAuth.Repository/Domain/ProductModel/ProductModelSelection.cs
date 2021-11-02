@@ -19,6 +19,10 @@ namespace OpenAuth.Repository.Domain.ProductModel
         /// </summary>
         public int ProductModelCategoryId { get; set; }
         /// <summary>
+        /// 类型Id
+        /// </summary>
+        public int ProductModelTypeId { get; set; }
+        /// <summary>
         /// 序列号
         /// </summary>
         [Description("序列号")]
@@ -101,13 +105,13 @@ namespace OpenAuth.Repository.Domain.ProductModel
         /// 更新时间
         /// </summary>
         [Description("更新时间")]
-        public DateTime UpdateUser { get; set; }
+        public DateTime UpdateTime { get; set; }
         /// <summary>
         /// 更新人
         /// </summary>
         [Description("更新人")]
         [MaxLength(20)]
-        public string UpdateTime { get; set; }
+        public string UpdateUser { get; set; }
         public override void GenerateDefaultKeyVal()
         {
 

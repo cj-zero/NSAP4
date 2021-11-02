@@ -6,54 +6,32 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace OpenAuth.Repository.Domain
+namespace OpenAuth.Repository.Domain.ProductModel
 {
     /// <summary>
-    /// 产品模型详情
+    /// 产品模型类型
     /// </summary>
-    [Table("Product_Model_Selection_Info")]
-    public class ProductModelSelectionInfo : BaseEntity<int>
+    [Table("Product_Model_Type")]
+    public class ProductModelType : BaseEntity<int>
     {
         /// <summary>
-        /// 设备Id
+        /// 分类Id
         /// </summary>
-        public int ProductModelSelectionId { get; set; }
-        /// <summary>
-        /// 最低放电电压
-        /// </summary>
-        [Description("最低放电电压")]
+        [Description("分类Id")]
         [MaxLength(20)]
-        public string MinimumDischargeVoltage { get; set; }
+        public int ProductModelCategoryId { get; set; }
         /// <summary>
-        /// 输入电源
+        /// 类型
         /// </summary>
-        [Description("输入电源")]
-        [MaxLength(10)]
-        public string InputPowerType { get; set; }
+        [Description("类型")]
+        [MaxLength(20)]
+        public string Name { get; set; }
         /// <summary>
-        /// 输入有功功率
+        /// 产品手册图片
         /// </summary>
-        [Description("输入有功功率")]
-        [MaxLength(10)]
-        public string InputActivePower { get; set; }
-        /// <summary>
-        /// 输入电流
-        /// </summary>
-        [Description("输入电流")]
-        [MaxLength(10)]
-        public string InputCurrent { get; set; }
-        /// <summary>
-        /// 记录频率
-        /// </summary>
-        [Description("记录频率")]
-        [MaxLength(10)]
-        public string Fre { get; set; }
-        /// <summary>
-        /// 最小电流间隔
-        /// </summary>
-        [Description("最小电流间隔")]
-        [MaxLength(10)]
-        public string VoltAccurack { get; set; }
+        [Description("产品手册图片")]
+        [MaxLength(500)]
+        public string Image { get; set; }
         /// <summary>
         /// 是否删除
         /// </summary>
@@ -85,6 +63,7 @@ namespace OpenAuth.Repository.Domain
         {
 
         }
+
         public override bool KeyIsNull()
         {
             return Id == 0;

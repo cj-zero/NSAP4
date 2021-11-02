@@ -82,13 +82,13 @@ namespace OpenAuth.Repository.Domain
         /// 更新时间
         /// </summary>
         [Description("更新时间")]
-        public DateTime UpdateUser { get; set; }
+        public DateTime UpdateTime { get; set; }
         /// <summary>
         /// 更新人
         /// </summary>
         [Description("更新人")]
         [MaxLength(20)]
-        public string UpdateTime { get; set; }
+        public string UpdateUser { get; set; }
         public override void GenerateDefaultKeyVal()
         {
 
