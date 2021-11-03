@@ -264,5 +264,15 @@ namespace OpenAuth.WebApi.Controllers
         {
             _app = app;
         }
+
+        /// <summary>
+        /// 获取ERP用户的app信息
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public TableData GetAppUserInfo(string keyword)
+        {
+            return _app.GetAppUserInfo(keyword);
+        }
     }
 }

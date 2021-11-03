@@ -36,7 +36,7 @@ namespace OpenAuth.App.Order.Request
         /// <summary>
         /// 
         /// </summary>
-      //  public string types { get; set; }
+       public string types { get; set; }
         /// <summary>
         /// 
         /// </summary>

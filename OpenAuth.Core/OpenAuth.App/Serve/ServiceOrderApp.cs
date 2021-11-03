@@ -5374,5 +5374,579 @@ namespace OpenAuth.App
             return result;
         }
         #endregion
+
+        #region App服务单搜索
+        /// <summary>
+        /// App销售首页搜索服务单
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="role">0-普通用户 1-ERP用户 2-技术员 3-技术员管理员 4-客服 5-销售员 6-E3工程师</param>
+        /// <param name="AppUserId"></param>
+        /// <returns></returns>
+        public async Task<TableData> AppSearchServiceOrder(string key,int role, int AppUserId)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            int service_counts = 0;
+            List<object> list = new List<object>();
+            int page_size = 3;
+            int.TryParse(key, out int id);
+            if (id<=0)
+            {
+                result.Data = new { service = list, service_counts = service_counts };
+                return result;
+            }
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == AppUserId).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                if (role!=0)
+                {
+                    throw new CommonException("未绑定ERP账户", Define.INVALID_APPUser);
+                }
+            }
+            var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
+            switch (role)
+            {
+                case 0:
+                    var customer_order = UnitWork.Find<ServiceOrder>(s => s.AppUserId == AppUserId)
+                                .Include(s => s.ServiceWorkOrders)
+                                .Where(s => s.Status == 2)
+                                .Where(s => s.U_SAP_ID.Value.ToString().Contains(id.ToString()))
+                                .Where(q => q.ServiceWorkOrders.All(a => a.FromType == 1) && q.ServiceWorkOrders.Count > 0)
+                                .Select(a => new
+                                {
+                                    a.Id,
+                                    a.AppUserId,
+                                    a.Status,
+                                    a.U_SAP_ID,
+                                    a.ProblemTypeId,
+                                    a.ProblemTypeName,
+                                    ServiceWorkOrders = a.ServiceWorkOrders.Select(o => new
+                                    {
+                                        o.Id,
+                                        o.Status,
+                                        o.FromTheme,
+                                        ProblemType = o.ProblemType.Description,
+                                        o.ManufacturerSerialNumber,
+                                        o.MaterialCode,
+                                        o.CurrentUserId,
+                                        MaterialType = "无序列号".Equals(o.MaterialCode) ? "无序列号" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-"))
+                                    }).OrderByDescending(a => a.Id).ToList(),
+                                });
+                    list = (await customer_order
+                        .Take(page_size)
+                        .ToListAsync())
+                        .Select(a => new
+                        {
+                            a.Id,
+                            a.AppUserId,
+                            a.Status,
+                            a.U_SAP_ID,
+                            ServiceWorkOrders = a.ServiceWorkOrders.GroupBy(o => o.MaterialType).Select(s => new
+                            {
+                                MaterialType = s.Key,
+                                MaterialTypeName = "无序列号".Equals(s.Key) ? "无序列号" : MaterialTypeModel.Where(m => m.TypeAlias == s.Key).FirstOrDefault().TypeName,
+                                TechnicianId = s.ToList().Select(s => s.CurrentUserId).Distinct().FirstOrDefault(),
+                                Status = s.ToList().Select(s => s.Status).Distinct().FirstOrDefault(),
+                                Count = s.Count(),
+                                Orders = s.ToList()
+                            }).ToList(),
+                            WorkOrderState = a.ServiceWorkOrders.Distinct().OrderBy(o => o.Status).FirstOrDefault()?.Status
+                        }).ToList<object>();
+                    service_counts = customer_order.Count() - list.Count();
+                    result.Data = new {service= list,service_counts= service_counts };
+                    break;
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 6:
+                    var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == AppUserId && s.FromType == 1)
+                        .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+                    var completeReportList = await UnitWork.Find<CompletionReport>(w => serviceOrderIds.Contains((int)w.ServiceOrderId)).Select(s => new { s.ServiceOrderId, s.TechnicianId, s.IsReimburse, s.Id, s.ServiceMode, MaterialType = s.MaterialCode == "无序列号" ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) }).ToListAsync();
+                    var reimburseList = await UnitWork.Find<ReimburseInfo>(r => r.CreateUserId == userInfo.UserID).ToListAsync();
+                    var query = UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id) && w.AllowOrNot == 0)
+                        .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
+                        .Include(s => s.ServiceFlows)
+                        .Where(s => s.Status == 2)
+                        .Where(s => s.U_SAP_ID.Value.ToString().Contains(id.ToString()))
+                        .WhereIf(role!=6, s=>s.VestInOrg != 2)
+                        .Select(s => new
+                        {
+                            s.Id,
+                            s.AppUserId,
+                            s.Status,
+                            s.U_SAP_ID,
+                            s.VestInOrg,
+                            MaterialCode = s.VestInOrg == 2 ? s.ServiceWorkOrders.Where(c => c.ServiceOrderId == s.Id).FirstOrDefault().MaterialCode : "",
+                            Count = s.ServiceWorkOrders.Where(w => w.ServiceOrderId == s.Id && w.CurrentUserId ==AppUserId).Count(),
+                            MaterialInfo = s.ServiceWorkOrders.Where(w => w.CurrentUserId == AppUserId).Select(o => new
+                            {
+                                o.MaterialCode,
+                                o.ManufacturerSerialNumber,
+                                MaterialType = "无序列号".Equals(o.MaterialCode) ? "无序列号" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                                o.Status,
+                                o.Id,
+                                o.OrderTakeType,
+                                o.ServiceMode,
+                                o.Priority,
+                                o.TransactionType,
+                                o.FromTheme
+                            }),
+                            ServiceFlows = s.ServiceFlows.Where(w => w.Creater == userInfo.UserID && w.ServiceOrderId == s.Id && w.FlowType == 1).ToList()
+                        });
+                    list = (await query.OrderByDescending(o => o.Id)
+                    .Take(page_size).ToListAsync()).Select(s => new
+                    {
+                        s.Id,
+                        s.AppUserId,
+                        s.Status,
+                        s.U_SAP_ID,
+                        s.VestInOrg,
+                        s.MaterialCode,
+                        MaterialTypeQty = s.VestInOrg == 1 ? s.MaterialInfo.GroupBy(o => o.MaterialType).Select(i => i.Key).ToList().Count : 0,
+                        MaterialInfo = s.VestInOrg == 1 ? s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
+                        .Select(o => new
+                        {
+                            MaterialType = o.Key,
+                            Status = o.ToList().Select(s => s.Status).Distinct().FirstOrDefault(),
+                            MaterialTypeName = "无序列号".Equals(o.Key) ? "无序列号" : MaterialTypeModel.Where(a => a.TypeAlias == o.Key).FirstOrDefault().TypeName,
+                            OrderTakeType = o.ToList().Select(s => s.OrderTakeType).Distinct().FirstOrDefault(),
+                            ServiceMode = o.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault(),
+                            flowInfo = s.ServiceFlows.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToList()
+                        }) : new object(),
+                        IsReimburse = (s.VestInOrg == 1 || s.VestInOrg == 3) ? completeReportList.Where(w => w.ServiceOrderId == s.Id && (w.ServiceMode == 1 || s.VestInOrg == 3) && w.TechnicianId == AppUserId.ToString()).FirstOrDefault() == null ? 0 : completeReportList.Where(w => w.ServiceOrderId == s.Id && (w.ServiceMode == 1 || s.VestInOrg == 3) && w.TechnicianId == AppUserId.ToString()).FirstOrDefault().IsReimburse : 0,
+                        MaterialType = s.VestInOrg == 1 ? completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == AppUserId.ToString()).FirstOrDefault() == null ? string.Empty : completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == AppUserId.ToString()).OrderBy(o => o.ServiceMode).FirstOrDefault().MaterialType : string.Empty,
+                        ReimburseId =(s.VestInOrg == 1 || s.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.Id).FirstOrDefault() : 0,
+                        RemburseStatus = (s.VestInOrg == 1 || s.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.RemburseStatus).FirstOrDefault() : 0,
+                        RemburseIsRead = (s.VestInOrg == 1 || s.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.IsRead).FirstOrDefault() : 0
+                    }).ToList<object>();
+                    service_counts = query.Count() - list.Count();
+                    result.Data = new { service = list, service_counts = service_counts };
+                    break;
+                case 5:
+                    var customer_serviceOrderIds = await UnitWork.Find<ServiceOrder>(s => s.SalesManId == userInfo.UserID)
+                        .Select(s => s.Id).Distinct().ToListAsync();
+                    var serviceEvaluates = await UnitWork.Find<ServiceEvaluate>(w => customer_serviceOrderIds.Contains((int)w.ServiceOrderId)).ToListAsync();
+                    var sale_order = UnitWork.Find<ServiceOrder>(w => customer_serviceOrderIds.Contains(w.Id) && w.Status == 2)
+                        .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
+                        .Include(s => s.ServiceFlows)
+                        .Where(s => s.U_SAP_ID.Value.ToString().Contains(id.ToString()))
+                        .Where(s => s.VestInOrg == 1 && s.AllowOrNot == 0)
+                        .Where(q => q.ServiceWorkOrders.All(a => a.CurrentUserId != AppUserId) && q.ServiceWorkOrders.Count > 0)
+                        .Select(s => new
+                        {
+                            s.Id,
+                            s.AppUserId,
+                            s.Status,
+                            s.U_SAP_ID,
+                            s.VestInOrg,
+                            Count =0,
+                            MaterialInfo = s.ServiceWorkOrders.Select(o => new
+                            {
+                                o.CurrentUserId,
+                                o.MaterialCode,
+                                o.ManufacturerSerialNumber,
+                                MaterialType = "无序列号".Equals(o.MaterialCode) ? "无序列号" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                                o.Status,
+                                o.Id,
+                                o.OrderTakeType,
+                                o.ServiceMode
+                            }),
+                            ServiceFlows = s.ServiceFlows.Where(w => w.ServiceOrderId == s.Id && w.FlowType == 1).ToList()
+                        });
+                    var customer_list = (await sale_order.OrderByDescending(o => o.Id)
+                    .ToListAsync()).Select(s => new
+                    {
+                        s.Id,
+                        s.AppUserId,
+                        s.U_SAP_ID,
+                        s.Status,
+                        s.VestInOrg,
+                        s.Count,
+                        MaterialTypeQty = s.MaterialInfo.GroupBy(o => o.MaterialType).Select(i => i.Key).ToList().Count,
+                        MaterialInfo = s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
+                        .Select(o => new
+                        {
+                            MaterialType = o.Key,
+                            Status = o.ToList().Select(s => s.Status).Distinct().FirstOrDefault(),
+                            MaterialTypeName = "无序列号".Equals(o.Key) ? "无序列号" : MaterialTypeModel.Where(a => a.TypeAlias == o.Key).FirstOrDefault().TypeName,
+                            OrderTakeType = o.ToList().Select(s => s.OrderTakeType).Distinct().FirstOrDefault(),
+                            ServiceMode = o.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault(),
+                            flowInfo = s.ServiceFlows.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToList(),
+                            TechnicianId = o.ToList().Select(s => s.CurrentUserId).Distinct().FirstOrDefault()
+                        }),
+                        IsCanEvaluate = serviceEvaluates.Where(w => w.ServiceOrderId == s.Id).ToList().Count > 0 ? 1 : 0,
+                        EvaluateId = serviceEvaluates.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).FirstOrDefault() == null ? 0 : serviceEvaluates.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).FirstOrDefault().Id,
+                        type=1,
+                        IsReimburse = 0,
+                        MaterialType = string.Empty,
+                        ReimburseId = 0,
+                        RemburseStatus =  0,
+                        RemburseIsRead = 0
+                    }).ToList<object>();
+
+                    var sale_serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == AppUserId && s.FromType == 1)
+                        .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+                    var sale_completeReportList = await UnitWork.Find<CompletionReport>(w => sale_serviceOrderIds.Contains((int)w.ServiceOrderId)).Select(s => new { s.ServiceOrderId, s.TechnicianId, s.IsReimburse, s.Id, s.ServiceMode, MaterialType = s.MaterialCode == "无序列号" ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) }).ToListAsync();
+                    var sale_reimburseList = await UnitWork.Find<ReimburseInfo>(r => r.CreateUserId == userInfo.UserID).ToListAsync();
+                    var sale_query = UnitWork.Find<ServiceOrder>(w => sale_serviceOrderIds.Contains(w.Id) && w.AllowOrNot == 0)
+                        .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
+                        .Include(s => s.ServiceFlows)
+                        .Where(s => s.Status == 2 && s.VestInOrg != 2)
+                        .Where(s => s.U_SAP_ID.Value.ToString().Contains(id.ToString()))
+                        .Select(s => new
+                        {
+                            s.Id,
+                            s.AppUserId,
+                            s.U_SAP_ID,
+                            s.Status,
+                            s.VestInOrg,
+                            MaterialCode = s.VestInOrg == 2 ? s.ServiceWorkOrders.Where(c => c.ServiceOrderId == s.Id).FirstOrDefault().MaterialCode : "",
+                            Count = s.ServiceWorkOrders.Where(w => w.ServiceOrderId == s.Id && w.CurrentUserId == AppUserId).Count(),
+                            MaterialInfo = s.ServiceWorkOrders.Where(w => w.CurrentUserId == AppUserId).Select(o => new
+                            {
+                                o.MaterialCode,
+                                o.ManufacturerSerialNumber,
+                                MaterialType = "无序列号".Equals(o.MaterialCode) ? "无序列号" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                                o.Status,
+                                o.Id,
+                                o.OrderTakeType,
+                                o.ServiceMode,
+                                o.Priority,
+                                o.TransactionType,
+                                o.FromTheme
+                            }),
+                            ServiceFlows = s.ServiceFlows.Where(w => w.Creater == userInfo.UserID && w.ServiceOrderId == s.Id && w.FlowType == 1).ToList()
+                        });
+                    var sale_list = (await sale_query.OrderByDescending(o => o.Id)
+                    .ToListAsync()).Select(s => new
+                    {
+                        s.Id,
+                        s.AppUserId,
+                        s.Status,
+                        s.U_SAP_ID,
+                        s.VestInOrg,
+                        s.MaterialCode,
+                        MaterialTypeQty = s.VestInOrg == 1 ? s.MaterialInfo.GroupBy(o => o.MaterialType).Select(i => i.Key).ToList().Count : 0,
+                        MaterialInfo = s.VestInOrg == 1 ? s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
+                        .Select(o => new
+                        {
+                            MaterialType = o.Key,
+                            Status = o.ToList().Select(s => s.Status).Distinct().FirstOrDefault(),
+                            MaterialTypeName = "无序列号".Equals(o.Key) ? "无序列号" : MaterialTypeModel.Where(a => a.TypeAlias == o.Key).FirstOrDefault().TypeName,
+                            OrderTakeType = o.ToList().Select(s => s.OrderTakeType).Distinct().FirstOrDefault(),
+                            ServiceMode = o.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault(),
+                            flowInfo = s.ServiceFlows.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToList()
+                        }) : new object(),
+                        IsCanEvaluate =  0,
+                        EvaluateId =0,
+                        type = 2,
+                        IsReimburse = (s.VestInOrg == 1 || s.VestInOrg == 3) ? sale_completeReportList.Where(w => w.ServiceOrderId == s.Id && (w.ServiceMode == 1 || s.VestInOrg == 3) && w.TechnicianId == AppUserId.ToString()).FirstOrDefault() == null ? 0 : sale_completeReportList.Where(w => w.ServiceOrderId == s.Id && (w.ServiceMode == 1 || s.VestInOrg == 3) && w.TechnicianId == AppUserId.ToString()).FirstOrDefault().IsReimburse : 0,
+                        MaterialType = s.VestInOrg == 1 ? sale_completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == AppUserId.ToString()).FirstOrDefault() == null ? string.Empty : sale_completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == AppUserId.ToString()).OrderBy(o => o.ServiceMode).FirstOrDefault().MaterialType : string.Empty,
+                        ReimburseId = (s.VestInOrg == 1 || s.VestInOrg == 3) ? sale_reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.Id).FirstOrDefault() : 0,
+                        RemburseStatus = (s.VestInOrg == 1 || s.VestInOrg == 3) ? sale_reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.RemburseStatus).FirstOrDefault() : 0,
+                        RemburseIsRead = (s.VestInOrg == 1 || s.VestInOrg == 3) ? sale_reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.IsRead).FirstOrDefault() : 0
+                    }).ToList<object>();
+                    list=sale_list.Union(customer_list).Take(page_size).ToList();
+                    service_counts = customer_list.Count() + sale_list.Count() - list.Count();
+                    result.Data = new { service = list, service_counts = service_counts };
+                    break;
+                default:
+                    break;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// App销售首页搜索服务单
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="role">0-普通用户 1-ERP用户 2-技术员 3-技术员管理员 4-客服 5-销售员 6-E3工程师</param>
+        /// <param name="AppUserId"></param>
+        /// <param name="page_index"></param>
+        /// <param name="page_size"></param>
+        /// <returns></returns>
+        public async Task<TableData> SearchServiceOrderById(string key, int role, int AppUserId,int page_index,int page_size)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            List<object> list = new List<object>();
+            int.TryParse(key, out int id);
+            if (id <= 0)
+            {
+                result.Data = new { service = list};
+                return result;
+            }
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == AppUserId).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                if (role != 0)
+                {
+                    throw new CommonException("未绑定ERP账户", Define.INVALID_APPUser);
+                }
+            }
+            var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
+            switch (role)
+            {
+                case 0:
+                    var customer_order = UnitWork.Find<ServiceOrder>(s => s.AppUserId == AppUserId)
+                                .Include(s => s.ServiceWorkOrders)
+                                .Where(s => s.Status == 2)
+                                .Where(s => s.U_SAP_ID.Value.ToString().Contains(id.ToString()))
+                                .Where(q => q.ServiceWorkOrders.All(a => a.FromType == 1) && q.ServiceWorkOrders.Count > 0)
+                                .Select(a => new
+                                {
+                                    a.Id,
+                                    a.AppUserId,
+                                    a.Status,
+                                    a.U_SAP_ID,
+                                    a.ProblemTypeId,
+                                    a.ProblemTypeName,
+                                    ServiceWorkOrders = a.ServiceWorkOrders.Select(o => new
+                                    {
+                                        o.Id,
+                                        o.Status,
+                                        o.FromTheme,
+                                        ProblemType = o.ProblemType.Description,
+                                        o.ManufacturerSerialNumber,
+                                        o.MaterialCode,
+                                        o.CurrentUserId,
+                                        MaterialType = "无序列号".Equals(o.MaterialCode) ? "无序列号" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-"))
+                                    }).OrderByDescending(a => a.Id).ToList(),
+                                });
+                    list = (await customer_order
+                        .Skip((page_index - 1) * page_size).Take(page_size)
+                        .ToListAsync())
+                        .Select(a => new
+                        {
+                            a.Id,
+                            a.AppUserId,
+                            a.Status,
+                            a.U_SAP_ID,
+                            ServiceWorkOrders = a.ServiceWorkOrders.GroupBy(o => o.MaterialType).Select(s => new
+                            {
+                                MaterialType = s.Key,
+                                MaterialTypeName = "无序列号".Equals(s.Key) ? "无序列号" : MaterialTypeModel.Where(m => m.TypeAlias == s.Key).FirstOrDefault().TypeName,
+                                TechnicianId = s.ToList().Select(s => s.CurrentUserId).Distinct().FirstOrDefault(),
+                                Status = s.ToList().Select(s => s.Status).Distinct().FirstOrDefault(),
+                                Count = s.Count(),
+                                Orders = s.ToList()
+                            }).ToList(),
+                            WorkOrderState = a.ServiceWorkOrders.Distinct().OrderBy(o => o.Status).FirstOrDefault()?.Status
+                        }).ToList<object>();
+                    result.Data = new { service = list};
+                    break;
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                case 6:
+                    var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == AppUserId && s.FromType == 1)
+                        .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+                    var completeReportList = await UnitWork.Find<CompletionReport>(w => serviceOrderIds.Contains((int)w.ServiceOrderId)).Select(s => new { s.ServiceOrderId, s.TechnicianId, s.IsReimburse, s.Id, s.ServiceMode, MaterialType = s.MaterialCode == "无序列号" ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) }).ToListAsync();
+                    var reimburseList = await UnitWork.Find<ReimburseInfo>(r => r.CreateUserId == userInfo.UserID).ToListAsync();
+                    var query = UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id) && w.AllowOrNot == 0)
+                        .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
+                        .Include(s => s.ServiceFlows)
+                        .Where(s => s.Status == 2)
+                        .Where(s => s.U_SAP_ID.Value.ToString().Contains(id.ToString()))
+                        .WhereIf(role != 6, s => s.VestInOrg != 2)
+                        .Select(s => new
+                        {
+                            s.Id,
+                            s.AppUserId,
+                            s.Status,
+                            s.U_SAP_ID,
+                            s.VestInOrg,
+                            MaterialCode = s.VestInOrg == 2 ? s.ServiceWorkOrders.Where(c => c.ServiceOrderId == s.Id).FirstOrDefault().MaterialCode : "",
+                            Count = s.ServiceWorkOrders.Where(w => w.ServiceOrderId == s.Id && w.CurrentUserId == AppUserId).Count(),
+                            MaterialInfo = s.ServiceWorkOrders.Where(w => w.CurrentUserId == AppUserId).Select(o => new
+                            {
+                                o.MaterialCode,
+                                o.ManufacturerSerialNumber,
+                                MaterialType = "无序列号".Equals(o.MaterialCode) ? "无序列号" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                                o.Status,
+                                o.Id,
+                                o.OrderTakeType,
+                                o.ServiceMode,
+                                o.Priority,
+                                o.TransactionType,
+                                o.FromTheme
+                            }),
+                            ServiceFlows = s.ServiceFlows.Where(w => w.Creater == userInfo.UserID && w.ServiceOrderId == s.Id && w.FlowType == 1).ToList()
+                        });
+                    list = (await query.OrderByDescending(o => o.Id)
+                        .Skip((page_index - 1) * page_size).Take(page_size)
+                    .ToListAsync()).Select(s => new
+                    {
+                        s.Id,
+                        s.AppUserId,
+                        s.Status,
+                        s.U_SAP_ID,
+                        s.VestInOrg,
+                        s.MaterialCode,
+                        MaterialTypeQty = s.VestInOrg == 1 ? s.MaterialInfo.GroupBy(o => o.MaterialType).Select(i => i.Key).ToList().Count : 0,
+                        MaterialInfo = s.VestInOrg == 1 ? s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
+                        .Select(o => new
+                        {
+                            MaterialType = o.Key,
+                            Status = o.ToList().Select(s => s.Status).Distinct().FirstOrDefault(),
+                            MaterialTypeName = "无序列号".Equals(o.Key) ? "无序列号" : MaterialTypeModel.Where(a => a.TypeAlias == o.Key).FirstOrDefault().TypeName,
+                            OrderTakeType = o.ToList().Select(s => s.OrderTakeType).Distinct().FirstOrDefault(),
+                            ServiceMode = o.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault(),
+                            flowInfo = s.ServiceFlows.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToList()
+                        }) : new object(),
+                        IsReimburse = (s.VestInOrg == 1 || s.VestInOrg == 3) ? completeReportList.Where(w => w.ServiceOrderId == s.Id && (w.ServiceMode == 1 || s.VestInOrg == 3) && w.TechnicianId == AppUserId.ToString()).FirstOrDefault() == null ? 0 : completeReportList.Where(w => w.ServiceOrderId == s.Id && (w.ServiceMode == 1 || s.VestInOrg == 3) && w.TechnicianId == AppUserId.ToString()).FirstOrDefault().IsReimburse : 0,
+                        MaterialType = s.VestInOrg == 1 ? completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == AppUserId.ToString()).FirstOrDefault() == null ? string.Empty : completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == AppUserId.ToString()).OrderBy(o => o.ServiceMode).FirstOrDefault().MaterialType : string.Empty,
+                        ReimburseId = (s.VestInOrg == 1 || s.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.Id).FirstOrDefault() : 0,
+                        RemburseStatus = (s.VestInOrg == 1 || s.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.RemburseStatus).FirstOrDefault() : 0,
+                        RemburseIsRead = (s.VestInOrg == 1 || s.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.IsRead).FirstOrDefault() : 0
+                    }).ToList<object>();
+                    result.Data = new { service = list};
+                    break;
+                case 5:
+                    var customer_serviceOrderIds = await UnitWork.Find<ServiceOrder>(s => s.SalesManId == userInfo.UserID)
+                        .Select(s => s.Id).Distinct().ToListAsync();
+                    var serviceEvaluates = await UnitWork.Find<ServiceEvaluate>(w => customer_serviceOrderIds.Contains((int)w.ServiceOrderId)).ToListAsync();
+                    var sale_order = UnitWork.Find<ServiceOrder>(w => customer_serviceOrderIds.Contains(w.Id) && w.Status == 2)
+                        .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
+                        .Include(s => s.ServiceFlows)
+                        .Where(s => s.U_SAP_ID.Value.ToString().Contains(id.ToString()))
+                        .Where(s => s.VestInOrg == 1 && s.AllowOrNot == 0)
+                        .Where(q => q.ServiceWorkOrders.All(a => a.CurrentUserId != AppUserId) && q.ServiceWorkOrders.Count > 0)
+                        .Select(s => new
+                        {
+                            s.Id,
+                            s.AppUserId,
+                            s.Status,
+                            s.U_SAP_ID,
+                            s.VestInOrg,
+                            Count = 0,
+                            MaterialInfo = s.ServiceWorkOrders.Select(o => new
+                            {
+                                o.CurrentUserId,
+                                o.MaterialCode,
+                                o.ManufacturerSerialNumber,
+                                MaterialType = "无序列号".Equals(o.MaterialCode) ? "无序列号" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                                o.Status,
+                                o.Id,
+                                o.OrderTakeType,
+                                o.ServiceMode
+                            }),
+                            ServiceFlows = s.ServiceFlows.Where(w => w.ServiceOrderId == s.Id && w.FlowType == 1).ToList()
+                        });
+                    var customer_list = (await sale_order.OrderByDescending(o => o.Id)
+                    .ToListAsync()).Select(s => new
+                    {
+                        s.Id,
+                        s.AppUserId,
+                        s.U_SAP_ID,
+                        s.Status,
+                        s.VestInOrg,
+                        s.Count,
+                        MaterialTypeQty = s.MaterialInfo.GroupBy(o => o.MaterialType).Select(i => i.Key).ToList().Count,
+                        MaterialInfo = s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
+                        .Select(o => new
+                        {
+                            MaterialType = o.Key,
+                            Status = o.ToList().Select(s => s.Status).Distinct().FirstOrDefault(),
+                            MaterialTypeName = "无序列号".Equals(o.Key) ? "无序列号" : MaterialTypeModel.Where(a => a.TypeAlias == o.Key).FirstOrDefault().TypeName,
+                            OrderTakeType = o.ToList().Select(s => s.OrderTakeType).Distinct().FirstOrDefault(),
+                            ServiceMode = o.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault(),
+                            flowInfo = s.ServiceFlows.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToList(),
+                            TechnicianId = o.ToList().Select(s => s.CurrentUserId).Distinct().FirstOrDefault()
+                        }),
+                        IsCanEvaluate = serviceEvaluates.Where(w => w.ServiceOrderId == s.Id).ToList().Count > 0 ? 1 : 0,
+                        EvaluateId = serviceEvaluates.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).FirstOrDefault() == null ? 0 : serviceEvaluates.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).FirstOrDefault().Id,
+                        type = 1,
+                        IsReimburse = 0,
+                        MaterialType = string.Empty,
+                        ReimburseId = 0,
+                        RemburseStatus = 0,
+                        RemburseIsRead = 0
+                    }).ToList<object>();
+
+                    var sale_serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == AppUserId && s.FromType == 1)
+                        .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+                    var sale_completeReportList = await UnitWork.Find<CompletionReport>(w => sale_serviceOrderIds.Contains((int)w.ServiceOrderId)).Select(s => new { s.ServiceOrderId, s.TechnicianId, s.IsReimburse, s.Id, s.ServiceMode, MaterialType = s.MaterialCode == "无序列号" ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) }).ToListAsync();
+                    var sale_reimburseList = await UnitWork.Find<ReimburseInfo>(r => r.CreateUserId == userInfo.UserID).ToListAsync();
+                    var sale_query = UnitWork.Find<ServiceOrder>(w => sale_serviceOrderIds.Contains(w.Id) && w.AllowOrNot == 0)
+                        .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
+                        .Include(s => s.ServiceFlows)
+                        .Where(s => s.Status == 2 && s.VestInOrg != 2)
+                        .Where(s => s.U_SAP_ID.Value.ToString().Contains(id.ToString()))
+                        .Select(s => new
+                        {
+                            s.Id,
+                            s.AppUserId,
+                            s.U_SAP_ID,
+                            s.Status,
+                            s.VestInOrg,
+                            MaterialCode = s.VestInOrg == 2 ? s.ServiceWorkOrders.Where(c => c.ServiceOrderId == s.Id).FirstOrDefault().MaterialCode : "",
+                            Count = s.ServiceWorkOrders.Where(w => w.ServiceOrderId == s.Id && w.CurrentUserId == AppUserId).Count(),
+                            MaterialInfo = s.ServiceWorkOrders.Where(w => w.CurrentUserId == AppUserId).Select(o => new
+                            {
+                                o.MaterialCode,
+                                o.ManufacturerSerialNumber,
+                                MaterialType = "无序列号".Equals(o.MaterialCode) ? "无序列号" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                                o.Status,
+                                o.Id,
+                                o.OrderTakeType,
+                                o.ServiceMode,
+                                o.Priority,
+                                o.TransactionType,
+                                o.FromTheme
+                            }),
+                            ServiceFlows = s.ServiceFlows.Where(w => w.Creater == userInfo.UserID && w.ServiceOrderId == s.Id && w.FlowType == 1).ToList()
+                        });
+                    var sale_list = (await sale_query.OrderByDescending(o => o.Id)
+                    .ToListAsync()).Select(s => new
+                    {
+                        s.Id,
+                        s.AppUserId,
+                        s.Status,
+                        s.U_SAP_ID,
+                        s.VestInOrg,
+                        s.MaterialCode,
+                        MaterialTypeQty = s.VestInOrg == 1 ? s.MaterialInfo.GroupBy(o => o.MaterialType).Select(i => i.Key).ToList().Count : 0,
+                        MaterialInfo = s.VestInOrg == 1 ? s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
+                        .Select(o => new
+                        {
+                            MaterialType = o.Key,
+                            Status = o.ToList().Select(s => s.Status).Distinct().FirstOrDefault(),
+                            MaterialTypeName = "无序列号".Equals(o.Key) ? "无序列号" : MaterialTypeModel.Where(a => a.TypeAlias == o.Key).FirstOrDefault().TypeName,
+                            OrderTakeType = o.ToList().Select(s => s.OrderTakeType).Distinct().FirstOrDefault(),
+                            ServiceMode = o.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault(),
+                            flowInfo = s.ServiceFlows.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToList()
+                        }) : new object(),
+                        IsCanEvaluate = 0,
+                        EvaluateId = 0,
+                        type = 2,
+                        IsReimburse = (s.VestInOrg == 1 || s.VestInOrg == 3) ? sale_completeReportList.Where(w => w.ServiceOrderId == s.Id && (w.ServiceMode == 1 || s.VestInOrg == 3) && w.TechnicianId == AppUserId.ToString()).FirstOrDefault() == null ? 0 : sale_completeReportList.Where(w => w.ServiceOrderId == s.Id && (w.ServiceMode == 1 || s.VestInOrg == 3) && w.TechnicianId == AppUserId.ToString()).FirstOrDefault().IsReimburse : 0,
+                        MaterialType = s.VestInOrg == 1 ? sale_completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == AppUserId.ToString()).FirstOrDefault() == null ? string.Empty : sale_completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == AppUserId.ToString()).OrderBy(o => o.ServiceMode).FirstOrDefault().MaterialType : string.Empty,
+                        ReimburseId = (s.VestInOrg == 1 || s.VestInOrg == 3) ? sale_reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.Id).FirstOrDefault() : 0,
+                        RemburseStatus = (s.VestInOrg == 1 || s.VestInOrg == 3) ? sale_reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.RemburseStatus).FirstOrDefault() : 0,
+                        RemburseIsRead = (s.VestInOrg == 1 || s.VestInOrg == 3) ? sale_reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.IsRead).FirstOrDefault() : 0
+                    }).ToList<object>();
+                    list = sale_list.Union(customer_list)
+                        .Skip((page_index - 1) * page_size).Take(page_size)
+                        .ToList();
+                    result.Data = new { service = list};
+                    break;
+                default:
+                    break;
+            }
+            return result;
+        }
+        #endregion
     }
 }
