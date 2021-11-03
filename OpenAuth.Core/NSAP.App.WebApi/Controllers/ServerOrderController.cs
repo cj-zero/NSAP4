@@ -1288,5 +1288,54 @@ namespace NSAP.App.WebApi.Controllers
         }
         #endregion
 
+        #region App服务单搜索
+        /// <summary>
+        /// App销售首页搜索服务单
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="role"></param>
+        /// <param name="AppUserId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AppSearchServiceOrder(string key,int role,int AppUserId)
+        {
+            var result = new TableData();
+            try
+            {
+                return result.Data=await _serviceOrderApp.AppSearchServiceOrder(key, role, AppUserId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// App销售首页搜索服务单
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="role">0-普通用户 1-ERP用户 2-技术员 3-技术员管理员 4-客服 5-销售员 6-E3工程师</param>
+        /// <param name="AppUserId"></param>
+        /// <param name="page_index"></param>
+        /// <param name="page_size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> SearchServiceOrderById(string key, int role, int AppUserId,int page_index,int page_size)
+        {
+            var result = new TableData();
+            try
+            {
+                return result.Data = await _serviceOrderApp.SearchServiceOrderById(key, role, AppUserId,page_index,page_size);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+        #endregion
     }
 }

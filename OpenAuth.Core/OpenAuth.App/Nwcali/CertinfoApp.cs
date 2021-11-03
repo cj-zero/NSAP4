@@ -30,6 +30,7 @@ using OpenAuth.Repository.Interface;
 using Org.BouncyCastle.Ocsp;
 using NSAP.Entity;
 using OpenAuth.Repository.Domain.Sap;
+using OpenAuth.Repository;
 
 namespace OpenAuth.App
 {
@@ -994,10 +995,13 @@ namespace OpenAuth.App
                 foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
                 {
                     int line2 = 0;
-                    var deletedt = await UnitWork.FindTrack<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();
+                    //var deletedt = await UnitWork.FindTrack<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();
                     //await UnitWork.DeleteAsync<EntrustmentDetail>(c => c.EntrustmentId == item.Id);
-                    await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deletedt.ToArray());
-                    await UnitWork.SaveAsync();
+                    //await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deletedt.ToArray());
+                    //await UnitWork.SaveAsync();
+                    var deleteSql = $"DELETE FROM entrustmentdetail WHERE EntrustmentId={item.Id}";
+                    UnitWork.ExecuteSql(deleteSql, ContextType.Nsap4NwcaliDbContextType);
+
 
                     if (groupItem.Key.StartsWith("CT") || groupItem.Key.StartsWith("CTE") || groupItem.Key.StartsWith("CE"))
                     {

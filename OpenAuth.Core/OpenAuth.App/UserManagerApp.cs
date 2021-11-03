@@ -573,6 +573,29 @@ namespace OpenAuth.App
             }
         }
 
+        public TableData GetAppUserInfo(string keyword)
+        {
+            TableData result = new TableData();
+            IQueryable<User> query = UnitWork.Find<User>(null);
+            query = UnitWork.Find<User>(u => u.Name.Contains(keyword) || u.Account.Contains(keyword));
+
+            var userInfos = from user in query
+                           join map in UnitWork.Find<AppUserMap>(null)
+                               on user.Id equals map.UserID into temp
+                           from r in temp.DefaultIfEmpty()
+                           select new
+                           {
+                               erpId = user.Id,
+                               erpAccount = user.Account,
+                               erpName = user.Name,
+                               appUserId = r == null ? 0 : r.AppUserId
+                           };
+            var userInfoList = userInfos.ToList();
+            result.Data = userInfoList;
+            return result;
+ 		}
+ 		
+ 		
         /// <summary>
         /// 获取用户部门信息
         /// </summary>

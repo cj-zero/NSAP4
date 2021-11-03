@@ -154,6 +154,7 @@ namespace OpenAuth.App.Material
                         .Include(c => c.InternalContactAttchments)
                         .Include(c => c.InternalContactBatchNumbers)
                         .Include(c => c.InternalContactDeptInfos)
+                        .Include(c=>c.InternalcontactMaterials)
                         .FirstOrDefaultAsync();
 
                     obj.Status = 1;
@@ -241,6 +242,11 @@ namespace OpenAuth.App.Material
                             //await UnitWork.DeleteAsync<InternalContactBatchNumber>(c => c.InternalContactId == single.Id);
                             //await UnitWork.SaveAsync();
                             await UnitWork.BatchAddAsync<InternalContactBatchNumber>(obj.InternalContactBatchNumbers.ToArray());
+                        }
+                        if (obj.InternalcontactMaterials.Count > 0)
+                        {
+                            await UnitWork.BatchDeleteAsync<InternalcontactMaterial>(single.InternalcontactMaterials.ToArray());
+                            await UnitWork.BatchAddAsync<InternalcontactMaterial>(obj.InternalcontactMaterials.ToArray());
                         }
                         obj.InternalContactAttchments = null;
                         obj.InternalContactBatchNumbers = null;
@@ -332,6 +338,7 @@ namespace OpenAuth.App.Material
             userIds.Add(obj.DevelopApproveId);
             var userInfo = await UnitWork.Find<User>(c => userIds.Contains(c.Id)).ToListAsync();
             //mailRequest.ToUsers = new List<MailUser> { new MailUser { Name = "licong", Address = "licong@neware.com.cn" } };
+            mailRequest.ToUsers = new List<MailUser> ();
             userInfo.ForEach(c =>
             {
                 if (!string.IsNullOrWhiteSpace(c.Email))

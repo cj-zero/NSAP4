@@ -112,5 +112,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         public int? AppUserId { get; set; }
 
+        /// <summary>
+        /// 销售员查询
+        /// </summary>
+        public string QrySalesMan { get; set; }
+
     }
 }

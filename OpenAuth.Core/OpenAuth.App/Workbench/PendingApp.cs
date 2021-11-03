@@ -671,7 +671,7 @@ namespace OpenAuth.App.Workbench
                 var query = from a in UnitWork.Find<WorkbenchPending>(null)
                             join b in UnitWork.Find<FlowInstance>(null) on a.FlowInstanceId equals b.Id into ab
                             from b in ab.DefaultIfEmpty()
-                            where (b.MakerList.Contains(loginContext.User.Id) || (b.MakerList == "1" && b.CustomName.Contains("物料报价单"))) && b.ActivityName != "待出库" && b.ActivityName != "开始" && b.ActivityName != "执行中"
+                            where (b.MakerList.Contains(loginContext.User.Id) || (b.MakerList == "1" && b.CustomName.Contains("物料报价单"))) && b.ActivityName != "待出库" && b.ActivityName != "开始" && b.ActivityName != "执行中" && b.ActivityName != "提交"
                             select new { a, b };
                 query = query.WhereIf(!string.IsNullOrWhiteSpace(req.ApprovalNumber), q => q.a.ApprovalNumber == int.Parse(req.ApprovalNumber))
                             .WhereIf(!string.IsNullOrWhiteSpace(req.Petitioner), q => q.a.Petitioner.Contains(req.Petitioner))
@@ -736,7 +736,7 @@ namespace OpenAuth.App.Workbench
                     q.a.Remark,
                     q.a.OrderType,
                     q.a.PetitionerId,
-                    ActivityName = q.b.ActivityName == "开始" ? "驳回" : q.b.ActivityName,
+                    ActivityName = q.b.ActivityName == "开始" || q.b.ActivityName == "提交" ? "驳回" : q.b.ActivityName,
                     q.a.UpdateTime
                 }).ToList();
                 reult.Count = await query.CountAsync();
