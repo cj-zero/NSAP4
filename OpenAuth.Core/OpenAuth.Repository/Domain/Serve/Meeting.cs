@@ -123,12 +123,12 @@ namespace OpenAuth.Repository.Domain.Serve
         /// 展位面积
         /// </summary>
         [Description("展位面积")]
-        public double MeasureOfArea { get; set; }
+        public string  MeasureOfArea { get; set; }
         /// <summary>
         /// 展品类别
         /// </summary>
         [Description("展品类别")]
-        public int ProductType { get; set; }
+        public string ProductType { get; set; }
         /// <summary>
         /// 有无晚宴
         /// </summary>

@@ -27,7 +27,7 @@ namespace OpenAuth.App.Order
         /// <summary>
         /// 提交给我的
         /// </summary>
-        public DataTable GetSubmtToMe(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, int user_id, string Applicator, string Customer, string Status, string BeginDate, string EndDate, bool ViewCustom, bool ViewSales, out int rowCount)
+        public DataTable GetSubmtToMe(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, int user_id, string types,string Applicator, string Customer, string Status, string BeginDate, string EndDate, bool ViewCustom, bool ViewSales, out int rowCount)
         {
             string sortString = string.Empty;
             string filterString = string.Empty;
@@ -36,27 +36,27 @@ namespace OpenAuth.App.Order
                 sortString = string.Format("{0} {1}", sortname, sortorder.ToUpper());
 
             #region 搜索条件
-            //if (types.Replace(" ", "") != "")
-            //{
-            //    string[] typeArr = types.Split('☉');
-            //    if (typeArr.Length > 0)
-            //    {
-            //        filterString += string.Format(" ( ");
-            //        for (int i = 0; i < typeArr.Length; i++)
-            //        {
-            //            if (i == 0)
-            //            {
-            //                filterString += string.Format(" a.job_type_id={0} ", typeArr[i].FilterSQL().Trim());
-            //            }
-            //            else
-            //            {
-            //                filterString += string.Format(" OR a.job_type_id={0} ", typeArr[i].FilterSQL().Trim());
-            //            }
-            //        }
-            //        filterString += string.Format(" ) AND ");
-            //    }
-            //}
-            
+            if (types.Replace(" ", "") != "")
+            {
+                string[] typeArr = types.Split('☉');
+                if (typeArr.Length > 0)
+                {
+                    filterString += string.Format(" ( ");
+                    for (int i = 0; i < typeArr.Length; i++)
+                    {
+                        if (i == 0)
+                        {
+                            filterString += string.Format(" a.job_type_id={0} ", typeArr[i].FilterSQL().Trim());
+                        }
+                        else
+                        {
+                            filterString += string.Format(" OR a.job_type_id={0} ", typeArr[i].FilterSQL().Trim());
+                        }
+                    }
+                    filterString += string.Format(" ) AND ");
+                }
+            }
+
             if (!string.IsNullOrWhiteSpace(Applicator))
             {
                 string[] num;

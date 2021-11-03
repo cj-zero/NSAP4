@@ -99,11 +99,11 @@ namespace OpenAuth.App.Meeting.Request
         /// <summary>
         /// 展位面积
         /// </summary>
-        public double MeasureOfArea { get; set; }
+        public string MeasureOfArea { get; set; }
         /// <summary>
         /// 展品类别
         /// </summary>
-        public int ProductType { get; set; }
+        public string ProductType { get; set; }
         /// <summary>
         /// 有无晚宴
         /// </summary>

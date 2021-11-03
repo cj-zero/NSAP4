@@ -1129,7 +1129,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                     itemindex++;
                     tempr[0] = itemindex.ToString();
                     string statusSql = string.Format("select top 1 LineStatus from RDR1 where DocEntry={0} and LineNum={1}", DocNum, tempr["LineNum"].ToString());
-                    object statusobj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+                    object statusobj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, statusSql.ToString(), CommandType.Text, null);
                     tempr["LineStatus"] = statusobj == null ? "" : statusobj.ToString();
                 }
             }

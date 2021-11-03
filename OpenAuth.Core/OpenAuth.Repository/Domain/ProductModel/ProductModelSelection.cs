@@ -105,7 +105,7 @@ namespace OpenAuth.Repository.Domain.ProductModel
         /// 更新时间
         /// </summary>
         [Description("更新时间")]
-        public DateTime UpdateTime { get; set; }
+        public DateTime? UpdateTime { get; set; }
         /// <summary>
         /// 更新人
         /// </summary>

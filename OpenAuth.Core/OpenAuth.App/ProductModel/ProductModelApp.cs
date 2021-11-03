@@ -132,6 +132,7 @@ namespace OpenAuth.App
                 scon.Size = item.Size;
                 scon.Weight = item.Weight;
                 scon.UnitPrice = item.UnitPrice;
+                result.Add(scon);
             }
             return result;
         }
