@@ -4642,7 +4642,10 @@ namespace OpenAuth.App
                 {
                     case 1:
                         var travelExpenseInfo = item.MapTo<TravelExpense>();
-                        travelExpenses.Add(travelExpenseInfo);
+                        if (travelExpenses.Count(c=>c.CreateTime.ToString("yyyy-MM-dd")== travelExpenseInfo.CreateTime.ToString("yyyy-MM-dd"))==0)
+                        {
+                            travelExpenses.Add(travelExpenseInfo);
+                        }
                         break;
                     case 2:
                         var transportExpenseInfo = item.MapTo<TransportExpense>();
