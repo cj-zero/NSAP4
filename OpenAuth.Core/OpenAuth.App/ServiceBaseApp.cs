@@ -56,6 +56,30 @@ namespace OpenAuth.App
             return Convert.ToInt32(loginContext.User.User_Id);
         }
         /// <summary>
+        /// 验证当前审批人的提交操作是否可以（避免一个工作流多个人同时操作引起的跳过步骤问题）
+        /// </summary>
+        /// <param name="job_id">工作流ID</param>
+        /// <param name="auditid">审批人ID</param>
+        /// <returns></returns>
+        public bool IsValidSubmit(int job_id, int auditid)
+        {
+            string auSQL = string.Format(@"select 1 from {0}.wfa_job t0 left outer join {0}.wfa_step t1 on t0.step_id=t1.step_id"
+                                       + " LEFT OUTER JOIN {0}.wfa_jump t2 on t2.job_id=t0.job_id and t2.audit_level=t1.audit_level"
+                                       + " where t2.state=0 and t0.job_id={1} and t2.user_id={2} ", "nsap_base", job_id, auditid);
+            object existau = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, auSQL, CommandType.Text);
+            return existau == null ? false : true;
+        }
+        #region 获取流程任务的流程类型
+        /// <summary>
+        /// 获取流程任务的流程类型
+        /// </summary>
+        public string GetJobTypeNm(int JobId)
+        {
+            string strSql = $"SELECT B.job_type_nm FROM nsap_base.wfa_job A LEFT JOIN nsap_base.wfa_type B ON A.job_type_id=B.job_type_id WHERE a.job_id={JobId}";
+            return UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text).ToString();
+        }
+        #endregion
+        /// <summary>
         /// 获取sboId
         /// </summary>
         /// <returns></returns>
@@ -127,11 +151,13 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="userID"></param>
         /// <returns></returns>
-        public int GetSalesDepID(int userID) {
+        public int GetSalesDepID(int userID)
+        {
             int DepID = 0;
             string sql = string.Format(@"SELECT c.dep_id FROM nsap_base.base_dep a INNER JOIN nsap_base.base_user_detail b ON a.dep_id=b.dep_id INNER JOIN nsap_base.base_dep c ON c.dep_id=b.dep_id WHERE b.user_id={0}", userID);
             DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
-            if (dataTable != null && dataTable.Rows.Count > 0) {
+            if (dataTable != null && dataTable.Rows.Count > 0)
+            {
                 DepID = int.Parse(dataTable.Rows[0][0].ToString());
             }
             return DepID;

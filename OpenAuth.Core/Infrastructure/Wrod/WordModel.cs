@@ -37,4 +37,20 @@ namespace Infrastructure.Wrod
         public int FileXCellMark { get; set; }
         public int FileYCellMark { get; set; }
     }
+
+    public class WordMarkModel
+    {
+        /// <summary>
+        /// 标签
+        /// </summary>
+        public string MarkName { get; set; }
+        /// <summary>
+        /// 0文本(string)；1图片(string)；2列表(datatable)；3html字符串（string）
+        /// </summary>
+        public int MarkType { get; set; }
+        /// <summary>
+        /// 数据
+        /// </summary>
+        public object MarkValue { get; set; }
+    }
 }
