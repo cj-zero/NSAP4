@@ -293,7 +293,7 @@ namespace OpenAuth.WebApi.Controllers.Meeting
         /// </summary>
         /// <param name="Id"></param>
         /// <returns></returns>
-        [HttpPost]
+        [HttpGet]
         [Route("SubmittedDetails")]
         public async Task<Response<SubmittedDetailsDto>> SubmittedDetails(int Id)
         {
@@ -335,7 +335,7 @@ namespace OpenAuth.WebApi.Controllers.Meeting
         /// </summary>
         /// <param name="UpdateModel"></param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost]
         [Route("Resubmit")]
         public async Task<Response<bool>> Resubmit(UpdateMeetingDataReq UpdateModel)
         {
@@ -378,7 +378,7 @@ namespace OpenAuth.WebApi.Controllers.Meeting
         /// <param name="QueryModel"></param>
         /// <returns></returns>
         [HttpPost]
-        [Route("MeetingCanel")]
+        [Route("MeetingUserHistory")]
         public async Task<Response<List<MeetingUserHistoryDto>>> MeetingUserHistory(MeetingUserHistoryReq QueryModel)
         {
             var result = new Response<List<MeetingUserHistoryDto>>();
@@ -554,13 +554,13 @@ namespace OpenAuth.WebApi.Controllers.Meeting
         }
 
         /// <summary>
-        /// 展会重新提交 Ations：
+        /// 展会草稿更新，提交 Ations：
         /// 3：更新草稿
         /// 4：草稿更新后提交
         /// </summary>
         /// <param name="UpdateModel"></param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost]
         [Route("MeetingDraftResubmit")]
         public async Task<Response<bool>> MeetingDraftResubmit(UpdateMeetingDataReq UpdateModel)
         {
@@ -575,7 +575,24 @@ namespace OpenAuth.WebApi.Controllers.Meeting
             }
             return result;
         }
-
-
+        /// <summary>
+        /// 审批流程步骤
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("ProcessSteps")]
+        public async Task<Response<List<ProcessStepsDto>>> ProcessSteps(int? DraftId, int? MeetingId)
+        {
+            var result = new Response<List<ProcessStepsDto>>();
+            try
+            {
+                result.Result = _serviceMeetingApp.ProcessSteps(DraftId, MeetingId);
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }

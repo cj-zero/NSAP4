@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.ProductModel;
 using OpenAuth.Repository.Domain.Serve;
 using System;
 using System.Collections.Generic;
@@ -94,6 +95,10 @@ namespace OpenAuth.Repository
         public virtual DbSet<MeetingDraftlog> meetingdraftlog { get; set; }
 
         #endregion
+        public virtual DbSet<ProductModelCategory> productmodelcategory { get; set; }
+        public virtual DbSet<ProductModelSelection> productmodelselections { get; set; }
+        public virtual DbSet<ProductModelSelectionInfo> productmodelselectioninfo { get; set; }
+        public virtual DbSet<ProductModelType> productmodeltype { get; set; }
 
     }
 }

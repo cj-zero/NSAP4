@@ -39,5 +39,10 @@ namespace OpenAuth.App.Meeting.Request
         /// 地址
         /// </summary>
         public string Address { get; set; }
+        /// <summary>
+        /// 流程步骤
+        /// 0 草稿，1：审核中（主管审批） 2：审核中（or审批），3：不批准，4，已批准
+        /// </summary>
+        public int Step { get; set; }
     }
 }

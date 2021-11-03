@@ -555,9 +555,10 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             catch (Exception ex)
             {
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
                 Log.Logger.Error($"地址：{Request.Path}, 错误：{result.Message}");
+                throw ex;
+                //result.Code = 500;
+                //result.Message = ex.InnerException?.Message ?? ex.Message;
             }
             return result;
         }
@@ -1202,6 +1203,31 @@ namespace OpenAuth.WebApi.Controllers.Order
             try
             {
                 result.Result = await _app.Add(files);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+        /// <summary>
+        ///  批量上传文件接口(新)
+        /// </summary>
+        /// <param name="files"></param>
+        /// <returns>服务器存储的文件信息</returns>
+        [HttpPost]
+        [Route("BillAttachUploadNew")]
+        public async Task<Response<List<UploadFileResp>>> BillAttachUploadNew([FromForm] IFormFileCollection files)
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+
+            var result = new Response<List<UploadFileResp>>();
+            try
+            {
+                result.Result = _serviceSaleOrderApp.BillAttachUploadNew(files,host);
             }
             catch (Exception ex)
             {

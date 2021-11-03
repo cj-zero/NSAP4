@@ -26,6 +26,7 @@
     <PackageReference Include="MailKit" Version="2.15.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="3.1.7" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.2" />
+    <PackageReference Include="Microsoft.Office.Interop.Word" Version="15.0.4797.1003" />
     <PackageReference Include="MimeKit" Version="2.15.0" />
     <PackageReference Include="Minio" Version="3.1.13" />
     <PackageReference Include="NetOfficeFw.Word" Version="1.7.4.11" />

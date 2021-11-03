@@ -31,6 +31,9 @@ using NSAP.Entity.BillFlow;
 using NSAP.Entity.Store;
 using NSAP.Entity.Product;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using System.Net.Http.Headers;
 
 namespace OpenAuth.App.Order
 {
@@ -684,42 +687,42 @@ namespace OpenAuth.App.Order
                         result = UpdateAudit(orderReq.JobId, job_data, orderReq.Order.Remark, orderReq.Order.DocTotal.ToString(), orderReq.Order.CardCode, orderReq.Order.CardName);
                         if (result != null)
                         {
-                            var par = SaveJobPara(orderReq.JobId.ToString(), orderReq.IsTemplate);
-                            if (par == "1")
+                            //var par = SaveJobPara(orderReq.JobId.ToString(), orderReq.IsTemplate);
+                            //if (par == "1")
+                            //{
+                            string _jobID = orderReq.JobId.ToString();
+                            if ("0" != WorkflowSubmit(orderReq.JobId, userID, orderReq.Order.Remark, "", 0))
                             {
-                                string _jobID = result;
-                                if ("0" != WorkflowSubmit(orderReq.JobId, userID, orderReq.Order.Remark, "", 0))
-                                {
-                                    #region 更新商城订单状态
-                                    WfaEshopStatus thisinfo = new WfaEshopStatus();
-                                    thisinfo.JobId = orderReq.JobId;
-                                    thisinfo.UserId = userID;
-                                    thisinfo.SlpCode = sboID;
-                                    thisinfo.CardCode = orderReq.Order.CardCode;
-                                    thisinfo.CardName = orderReq.Order.CardName;
-                                    thisinfo.CurStatus = 0;
-                                    thisinfo.OrderPhase = "0000";
-                                    thisinfo.ShippingPhase = "0000";
-                                    thisinfo.CompletePhase = "0";
-                                    thisinfo.OrderLastDate = DateTime.Now;
-                                    thisinfo.FirstCreateDate = DateTime.Now;
-                                    //设置报价单提交
-                                    result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, orderReq.Order.U_New_ORDRID);
-                                    #endregion
-                                }
-                                else { result = "0"; }
+                                #region 更新商城订单状态
+                                WfaEshopStatus thisinfo = new WfaEshopStatus();
+                                thisinfo.JobId = orderReq.JobId;
+                                thisinfo.UserId = userID;
+                                thisinfo.SlpCode = sboID;
+                                thisinfo.CardCode = orderReq.Order.CardCode;
+                                thisinfo.CardName = orderReq.Order.CardName;
+                                thisinfo.CurStatus = 0;
+                                thisinfo.OrderPhase = "0000";
+                                thisinfo.ShippingPhase = "0000";
+                                thisinfo.CompletePhase = "0";
+                                thisinfo.OrderLastDate = DateTime.Now;
+                                thisinfo.FirstCreateDate = DateTime.Now;
+                                //设置报价单提交
+                                result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, orderReq.Order.U_New_ORDRID);
+                                #endregion
                             }
                             else { result = "0"; }
+                            //}
+                            //else { result = "0"; }
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                string msg = ex.Message;
+                throw ex;
             }
-            string log = string.Format("{1}：{0}", result, logstring);
-            AddUserOperateLog(log);
+            //  string log = string.Format("{1}：{0}", result, logstring);
+            // AddUserOperateLog(log);
             return result;
         }
         /// <summary>
@@ -840,7 +843,7 @@ namespace OpenAuth.App.Order
         public string UpdateAudit(int jobId, byte[] jobData, string remarks, string doc_total, string card_code, string card_name)
         {
             string isSave = "";
-            string strSql = string.Format("UPDATE {0}.wfa_job SET job_data=?job_data,remarks='{2}',job_state={3},doc_total={4},", "nsap_base", jobData, remarks, "0", doc_total == "" ? "0" : doc_total);
+            string strSql = string.Format("UPDATE {0}.wfa_job SET job_data=?job_data,remarks='{1}',job_state={2},doc_total={3},", "nsap_base", remarks, "0", doc_total == "" ? "0" : doc_total);
             strSql += string.Format("card_code='{0}',card_name='{1}' WHERE job_id ={2}", card_code, card_name, jobId);
             List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
             {
@@ -1529,7 +1532,6 @@ namespace OpenAuth.App.Order
                 PrepaPro = !string.IsNullOrEmpty(order.PrepaPro) ? order.PrepaPro : "0.0",//预付百分比
                 PayBefShip = !string.IsNullOrEmpty(order.PayBefShip) ? order.PayBefShip : "0.0",//发货前付
                 GoodsToPro = !string.IsNullOrEmpty(order.GoodsToPro) ? order.GoodsToPro : "0.0",//货到付百分比
-                                                                                                //------------------------------
                 DocCur = order.DocCur,
                 U_ERPFrom = "5",//来源4.0系统
                 DocDate = order.DocDate.ToString(),
@@ -1564,6 +1566,7 @@ namespace OpenAuth.App.Order
                 VatSum = !string.IsNullOrEmpty(order.VatSum.ToString()) ? order.VatSum.ToString() : "0",
                 WhsCode = order.WhsCode,
                 CntctCode = order.CntctCode.ToString(),
+                U_New_ORDRID = order.U_New_ORDRID.ToString(),
                 attachmentData = order.FileList,//new List<billAttchment>(),
                 billSalesAcctCode = new List<billSalesAcctCode>(),
                 billSalesDetails = new List<billSalesDetails>(),
@@ -4842,33 +4845,33 @@ namespace OpenAuth.App.Order
                     filterString += string.Format(" ) AND ");
                 }
 
-                if (model.Applicator != "")
-                {
-                    string[] num;
-                    num = model.Applicator.Split(',');
-                    string para = "";
-                    foreach (string c in num)
-                    {
-                        para += "'" + c + "'" + ",";
-                    }
-                    para = "(" + para.TrimEnd(',') + ")";
-                    filterString += string.Format(" c.user_nm IN {0} AND ", para);
-                }
-                if (model.Customer != "")
-                {
-                    filterString += string.Format(" (a.card_code LIKE '%{0}%' OR a.card_name LIKE '%{0}%') AND ", model.Customer);
-                }
-                if (model.Job_state != "")
-                {
-                    filterString += string.Format(" a.job_state = {0} AND ", int.Parse(model.Job_state));
-                }
-                if (model.BeginDate != "")
-                {
-                    filterString += string.Format(" DATE_FORMAT(a.upd_dt,'%Y/%m/%d') BETWEEN '{0}' AND '{1}' AND ", model.BeginDate, model.EndDate);
-                }
+               
             }
 
-
+            if (model.Applicator != "")
+            {
+                string[] num;
+                num = model.Applicator.Split(',');
+                string para = "";
+                foreach (string c in num)
+                {
+                    para += "'" + c + "'" + ",";
+                }
+                para = "(" + para.TrimEnd(',') + ")";
+                filterString += string.Format(" c.user_nm IN {0} AND ", para);
+            }
+            if (model.Customer != "")
+            {
+                filterString += string.Format(" (a.card_code LIKE '%{0}%' OR a.card_name LIKE '%{0}%') AND ", model.Customer);
+            }
+            if (model.Job_state != "")
+            {
+                filterString += string.Format(" a.job_state = {0} AND ", int.Parse(model.Job_state));
+            }
+            if (model.BeginDate != "")
+            {
+                filterString += string.Format(" DATE_FORMAT(a.upd_dt,'%Y/%m/%d') BETWEEN '{0}' AND '{1}' AND ", model.BeginDate, model.EndDate);
+            }
             if (!string.IsNullOrEmpty(model.Job_Id))
             {
                 filterString += string.Format(" a.job_id LIKE '%{0}%' AND ", model.Job_Id);
@@ -8250,6 +8253,49 @@ namespace OpenAuth.App.Order
                                         LEFT OUTER JOIN {0}.store_oitw t2 on t2.ItemCode = t1.ItemCode and t2.sbo_id = t1.sbo_Id and t2.whsCode = '{1}'
                                         where t1.sbo_id = {2} and t1.ItemCode = '{3}'", "nsap_bone", whsCode, sboId, itemCode);
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sqlstr, CommandType.Text, null);
+        }
+
+
+        /// <summary>
+        /// 批量上传（新）
+        /// </summary>
+        /// <param name="files"></param>
+        /// <returns></returns>
+        public List<UploadFileResp> BillAttachUploadNew(IFormFileCollection files, string host)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            var result = new List<UploadFileResp>();
+            foreach (var item in files)
+            {
+                var scon = new UploadFileResp();
+                var fileName = ContentDispositionHeaderValue.Parse(item.ContentDisposition).FileName.Trim('"');
+                string filePath = FileHelper.FilePath.PhysicalPath;
+                if (!Directory.Exists(filePath))
+                {
+                    Directory.CreateDirectory(filePath);
+                }
+                string suffix = fileName.Split('.')[fileName.Split('.').Length - 1];
+                fileName = Guid.NewGuid() + "." + suffix;
+                string fileFullName = filePath + fileName;
+                using (FileStream fs = System.IO.File.Create(fileFullName))
+                {
+                    //保存到本地
+                    item.CopyTo(fs);
+                    fs.Flush();
+                }
+                //scon.Id = new Guid().ToString();
+                scon.FilePath = host + FileHelper.FilePath.VirtualPath + fileName;
+                scon.FileName = fileName;
+                scon.FileType = suffix;
+                scon.CreateUserName = loginUser.Name;
+                result.Add(scon);
+            }
+            return result;
         }
     }
 }
