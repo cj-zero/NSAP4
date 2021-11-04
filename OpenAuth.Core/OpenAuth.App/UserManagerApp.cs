@@ -553,17 +553,19 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task SysnERPUser()
         {
-            var userAccounts = await UnitWork.Find<User>(null).Select(u => u.Account).ToListAsync();
+            var user = await UnitWork.Find<User>(null).Select(u =>new { u.Account ,u.Status} ).ToListAsync();
+            var userAccounts = user.Select(c => c.Account).ToList();
             var query = from a in UnitWork.Find<base_user>(null)
                         join b in UnitWork.Find<base_user_detail>(null) on a.user_id equals b.user_id into ab
                         from b in ab.DefaultIfEmpty()
                         join c in UnitWork.Find<base_dep>(null) on b.dep_id equals c.dep_id into bc
-                        from c in bc.DefaultIfEmpty() 
-                        where !userAccounts.Contains(a.log_nm) && b.out_date.ToString()== "0000-00-00"
-                        select new {a.log_nm,a.user_nm,a.user_id,b.office_addr,c.dep_alias};
+                        from c in bc.DefaultIfEmpty()
+                            //where !userAccounts.Contains(a.log_nm) && b.out_date.ToString()== "0000-00-00"
+                        select new { a.log_nm, a.user_nm, a.user_id, b.office_addr, c.dep_alias, out_date = b.out_date.ToString() };
             var erpUsers = await query.ToListAsync();
+            var newUsers = erpUsers.Where(c => !userAccounts.Contains(c.log_nm) && c.out_date.ToString() == "0000-00-00").ToList();
             var orgs = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).ToListAsync();
-            foreach (var item in erpUsers)
+            foreach (var item in newUsers)
             {
                 var officeaddr = "新威尔";
                 if (item.office_addr == "东莞塘厦") officeaddr = "东莞新威";
@@ -571,6 +573,18 @@ namespace OpenAuth.App
                 var orgObj = orgs.Where(o => o.Name == item.dep_alias).FirstOrDefault();
                 AddOrUpdate(new UpdateUserReq {Account= item.log_nm,Name=item.user_nm,Password="xinwei123",ServiceRelations= officeaddr, OrganizationIds= orgObj?.Id,NsapUserId=(int)item.user_id,IsSync=true });
             }
+            var quitUsers = erpUsers.Where(c => c.out_date.ToString() != "0000-00-00").Select(c => c.log_nm).ToList();//3.0已离职
+            userAccounts = user.Where(c => c.Status == 0 && quitUsers.Contains(c.Account)).Select(c => c.Account).ToList();//4.0未停用用户
+            foreach (var item in userAccounts)
+            {
+                UnitWork.Update<User>(c => c.Account == item, c => new User
+                {
+                    Status = 1
+                });
+                UnitWork.Save();
+            }
+
+
         }
 
         public TableData GetAppUserInfo(string keyword)
