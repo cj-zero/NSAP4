@@ -195,7 +195,70 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
             }
             return result;
         }
+        /// <summary>
+        /// 获取产品手册banner
+        /// </summary>
+        /// <param name="ProductModelCategoryId"></param>
+        [HttpGet]
+        [Route("GetProductImg")]
+        public async Task<Response<List<string>>> GetProductImg(int ProductModelTypeId)
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            var result = new Response<List<string>>();
+            try
+            {
+                result.Result = _productModelApp.GetProductImg(ProductModelTypeId, host);
+            }
+            catch (Exception ex)
+            {
 
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 获取应用案例banner
+        /// </summary>
+        /// <param name="ProductModelCategoryId"></param>
+        [HttpGet]
+        [Route("GetCaseImage")]
+        public async Task<Response<List<string>>> GetCaseImage(int ProductModelCategoryId)
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            var result = new Response<List<string>>();
+            try
+            {
+                result.Result = _productModelApp.GetCaseImage(ProductModelCategoryId, host);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 下载技术协议
+        /// </summary>
+        /// <param name="Id"></param>
+        [HttpGet]
+        [Route("ExportProductSpecsDoc")]
+        public async Task<Response<string>> ExportProductSpecsDoc(int Id,string Language)
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            var result = new Response<string>();
+            try
+            {
+                result.Result = _productModelApp.ExportProductSpecsDoc(Id, host, Language);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
 
 
     }

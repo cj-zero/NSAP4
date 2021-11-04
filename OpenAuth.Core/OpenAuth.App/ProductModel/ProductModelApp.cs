@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using Infrastructure.Helpers;
 using Infrastructure.Wrod;
 using Newtonsoft.Json;
 using OpenAuth.App.Interface;
@@ -139,13 +140,17 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="ProductModelCategoryId"></param>
         /// <returns></returns>
-        public List<string> GetProductImg(int ProductModelCategoryId)
+        public List<string> GetProductImg(int ProductModelTypeId, string host)
         {
             List<string> imgs = new List<string>();
-            var productModelCategory = UnitWork.Find<ProductModelCategory>(u => !u.IsDelete && u.Id == ProductModelCategoryId)?.FirstOrDefault();
-            if (productModelCategory != null && !string.IsNullOrWhiteSpace(productModelCategory.Image))
+            var productModelCategory = UnitWork.Find<ProductModelType>(u => !u.IsDelete && u.Id == ProductModelTypeId)?.FirstOrDefault();
+            if (productModelCategory != null && !string.IsNullOrWhiteSpace(productModelCategory.ImageBanner))
             {
-                imgs = JsonConvert.DeserializeObject<List<string>>(productModelCategory.Image);
+                foreach (var item in productModelCategory.ImageBanner.Replace("\r", "").Replace("\n", "").TrimEnd(',').Split(','))
+                {
+                    imgs.Add(host + item);
+                }
+                //imgs = JsonConvert.DeserializeObject<List<string>>(productModelCategory.ImageBanner);
             }
             return imgs;
         }
@@ -153,36 +158,160 @@ namespace OpenAuth.App
 
 
         /// <summary>
-        /// 获取产品手册
+        /// 获取应用案例
         /// </summary>
         /// <param name="ProductModelCategoryId"></param>
         /// <returns></returns>
-        public List<string> GetCaseImage(int ProductModelCategoryId)
+        public List<string> GetCaseImage(int ProductModelCategoryId, string host)
         {
             List<string> imgs = new List<string>();
             var productModelCategory = UnitWork.Find<ProductModelCategory>(u => !u.IsDelete && u.Id == ProductModelCategoryId)?.FirstOrDefault();
             if (productModelCategory != null && !string.IsNullOrWhiteSpace(productModelCategory.CaseImage))
             {
-                imgs = JsonConvert.DeserializeObject<List<string>>(productModelCategory.CaseImage);
+                foreach (var item in productModelCategory.CaseImage.Replace("\r", "").Replace("\n", "").TrimEnd(',').Split(','))
+                {
+                    imgs.Add(host + item);
+                }
+                //imgs = JsonConvert.DeserializeObject<List<string>>(productModelCategory.CaseImage);
             }
             return imgs;
         }
         /// <summary>
         /// 导出规格说明书
         /// </summary>
-        public void ExportProductSpecsDoc(int id)
+        public string ExportProductSpecsDoc(int Id, string host, string Language)
         {
-            var productModelSelection = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.Id == id).FirstOrDefault();
+            var productModelSelection = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.Id == Id).FirstOrDefault();
+            string pdfName = DateTime.Now.ToString("yyyyMMddHHmmssffffff")+ ".doc";
+
             if (productModelSelection != null)
             {
                 var productModelCategory = UnitWork.Find<ProductModelCategory>(u => !u.IsDelete && u.Id == productModelSelection.ProductModelCategoryId).FirstOrDefault();
                 var productModelSelectionInfo = UnitWork.Find<ProductModelSelectionInfo>(u => !u.IsDelete && u.ProductModelSelectionId == productModelSelection.Id).FirstOrDefault();
+                var productModelDetails = GetSpecifications(Id);
                 object templatePath = "";
-                List<WordMarkModel> wordModels = new List<WordMarkModel>();
-                string filePath = "";
-                object[] oBookMark = new object[20];
-                WordHandler.DOCTemplateConvert(templatePath, filePath, wordModels, oBookMark);
+                List<WordMarkModel> wordModels = new List<WordMarkModel>() {
+                new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.DeviceCoding),
+                 MarkType=0,
+                 MarkValue=productModelDetails.DeviceCoding
+                },
+                   new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.ChannelNumber),
+                 MarkType=0,
+                 MarkValue=productModelDetails.ChannelNumber
+                },
+                          new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.InputPowerType),
+                 MarkType=0,
+                 MarkValue=productModelDetails.InputPowerType
+                },       new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.InputActivePower),
+                 MarkType=0,
+                 MarkValue=productModelDetails.InputActivePower
+                },       new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.InputCurrent),
+                 MarkType=0,
+                 MarkValue=productModelDetails.InputCurrent
+                },       new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.Efficiency),
+                 MarkType=0,
+                 MarkValue=productModelDetails.Efficiency
+                },       new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.Noise),
+                 MarkType=0,
+                 MarkValue=productModelDetails.Noise
+                },       new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.DeviceType),
+                 MarkType=0,
+                 MarkValue=productModelDetails.DeviceType
+                },       new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.PowerControlModuleType),
+                 MarkType=0,
+                 MarkValue=productModelDetails.PowerControlModuleType
+                },       new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.PowerConnection),
+                 MarkType=0,
+                 MarkValue=productModelDetails.PowerConnection
+                },
+                           new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.ChargeVoltageRange),
+                 MarkType=0,
+                 MarkValue=productModelDetails.ChargeVoltageRange
+                }, new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.DischargeVoltageRange),
+                 MarkType=0,
+                 MarkValue=productModelDetails.DischargeVoltageRange
+                }, new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.MinimumDischargeVoltage),
+                 MarkType=0,
+                 MarkValue=productModelDetails.MinimumDischargeVoltage
+                }, new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.CurrentRange),
+                 MarkType=0,
+                 MarkValue=productModelDetails.CurrentRange
+                },
+                            new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.CurrentAccurack),
+                 MarkType=0,
+                 MarkValue=productModelDetails.CurrentAccurack
+                }, new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.CutOffCurrent),
+                 MarkType=0,
+                 MarkValue=productModelDetails.CutOffCurrent
+                }, new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.SinglePower),
+                 MarkType=0,
+                 MarkValue=productModelDetails.SinglePower
+                }, new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.CurrentResponseTime),
+                 MarkType=0,
+                 MarkValue=productModelDetails.CurrentResponseTime
+                }, new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.CurrentConversionTime),
+                 MarkType=0,
+                 MarkValue=productModelDetails.CurrentConversionTime
+                }, new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.RecordFreq),
+                 MarkType=0,
+                 MarkValue=productModelDetails.RecordFreq
+                }, new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.MinimumVoltageInterval),
+                 MarkType=0,
+                 MarkValue=productModelDetails.MinimumVoltageInterval
+                },
+                             new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.MinimumCurrentInterval),
+                 MarkType=0,
+                 MarkValue=productModelDetails.MinimumCurrentInterval
+                }, new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.TotalPower),
+                 MarkType=0,
+                 MarkValue=productModelDetails.TotalPower
+                }, new WordMarkModel(){
+                 MarkName=nameof(ProductModelDetails.Size),
+                 MarkType=0,
+                 MarkValue=productModelDetails.Size
+                },
+                };
+                if (Language == "CN")
+                {
+                    templatePath = host + productModelCategory.SpecsDocTemplatePath_CH;
+                }
+                if (Language == "EN")
+                {
+                    templatePath = host + productModelCategory.SpecsDocTemplatePath_EN;
+
+                }
+                string filePath = "/Templates/";
+                filePath = "";
+                //object[] oBookMark = new object[20];
+                //oBookMark[0] = "DeviceCoding";
+                object[] oBookMark = wordModels.Select(zw => (object)zw.MarkName).Distinct().ToArray();
+                FileHelper.DOCTemplateConvert(templatePath, filePath + pdfName, wordModels, oBookMark);
             }
+            return host + "\\Templates\\" + pdfName;
+
         }
         /// <summary>
         /// 产品规格
