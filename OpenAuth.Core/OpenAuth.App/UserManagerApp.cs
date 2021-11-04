@@ -573,8 +573,9 @@ namespace OpenAuth.App
                 var orgObj = orgs.Where(o => o.Name == item.dep_alias).FirstOrDefault();
                 AddOrUpdate(new UpdateUserReq {Account= item.log_nm,Name=item.user_nm,Password="xinwei123",ServiceRelations= officeaddr, OrganizationIds= orgObj?.Id,NsapUserId=(int)item.user_id,IsSync=true });
             }
+            var category = await UnitWork.Find<Category>(c => c.TypeId == "SYS_QuitShieldUser").Select(c => c.DtValue).ToListAsync();
             var quitUsers = erpUsers.Where(c => c.out_date.ToString() != "0000-00-00").Select(c => c.log_nm).ToList();//3.0已离职
-            userAccounts = user.Where(c => c.Status == 0 && quitUsers.Contains(c.Account)).Select(c => c.Account).ToList();//4.0未停用用户
+            userAccounts = user.Where(c => c.Status == 0 && quitUsers.Contains(c.Account) && !category.Contains(c.Account)).Select(c => c.Account).ToList();//4.0未停用用户
             foreach (var item in userAccounts)
             {
                 UnitWork.Update<User>(c => c.Account == item, c => new User
