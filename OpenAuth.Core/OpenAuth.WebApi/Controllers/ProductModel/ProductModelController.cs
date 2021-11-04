@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Meeting.ModelDto;
 using OpenAuth.App.ProductModel;
 using OpenAuth.App.ProductModel.Request;
 using OpenAuth.App.Response;
@@ -80,9 +81,9 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
         /// <returns></returns>
         [HttpGet]
         [Route("GetProductTypeList")]
-        public async Task<Response<List<string>>> GetProductTypeList()
+        public async Task<Response<List<TextVaule>>> GetProductTypeList()
         {
-            var result = new Response<List<string>>();
+            var result = new Response<List<TextVaule>>();
             try
             {
                 result.Result = _productModelApp.GetProductTypeList();
@@ -174,5 +175,28 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
             }
             return result;
         }
+        /// <summary>
+        /// 获取参数规格
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetSpecifications")]
+        public async Task<Response<ProductModelDetails>> GetSpecifications(int Id)
+        {
+            var result = new Response<ProductModelDetails>();
+            try
+            {
+                result.Result = _productModelApp.GetSpecifications(Id);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+
+
     }
 }
