@@ -209,6 +209,12 @@ namespace Infrastructure.Wrod
                     var mark = wordModels.FirstOrDefault(zw => zw.MarkName == oBookMark[i].ToString());
                     wordDocument.Bookmarks.get_Item(ref oBookMark[i]).Range.Text = mark.MarkValue.ToString();
                 }
+                object objfilePath = (object)filePath;
+                wordDocument.SaveAs(ref objfilePath, ref oMissing, ref oMissing, ref oMissing,
+                ref oMissing, ref oMissing, ref oMissing, ref oMissing, ref oMissing,
+                ref oMissing, ref oMissing, ref oMissing, ref oMissing, ref oMissing,
+                ref oMissing, ref oMissing);
+                wordDocument.Close(ref oMissing, ref oMissing, ref oMissing);
             }
             catch (Exception ex)
             {
