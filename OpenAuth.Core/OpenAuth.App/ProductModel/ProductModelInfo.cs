@@ -32,7 +32,7 @@ namespace OpenAuth.App.ProductModel
         /// </summary>
         public string Current { get; set; }
         /// <summary>
-        /// 序列号
+        /// 通道数
         /// </summary>
         public int ChannelNumber { get; set; }
         /// <summary>
@@ -55,25 +55,8 @@ namespace OpenAuth.App.ProductModel
         /// 价格
         /// </summary>
         public decimal UnitPrice { get; set; }
-        /// <summary>
-        /// 输入电源
-        /// </summary>
-        public string InputPowerType { get; set; }
-        /// <summary>
-        /// 输入有功功率
-        /// </summary>
-        public string InputActivePower { get; set; }
-         /// <summary>
-        /// 输入电流
-        /// </summary>
-        public string InputCurrent { get; set; }
-        /// <summary>
-        /// 最低放电电压
-        /// </summary>
-        public string MinimumDischargeVoltage { get; set; }
-        /// <summary>
-        /// 最小电流间隔
-        /// </summary>
-        public string VoltAccurack { get; set; }
+       
+
+
     }
 }
