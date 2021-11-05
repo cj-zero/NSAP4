@@ -42,6 +42,10 @@ namespace OpenAuth.App.Response
 	    /// </summary>
         public int Type { get; set; }
 
+        /// <summary>
+        /// 身份标识 1-销售 2-技术 3-工程 4-研发
+        /// </summary>
+        public string Identity { get; set; }
 
         /// <summary>
         ///是否属于某用户 

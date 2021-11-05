@@ -63,7 +63,8 @@ namespace OpenAuth.App
             UnitWork.Update<Role>(u => u.Id == obj.Id, u => new Role
             {
                 Name = role.Name,
-                Status = role.Status
+                Status = role.Status,
+                Identity = role.Identity
             });
 
         }
