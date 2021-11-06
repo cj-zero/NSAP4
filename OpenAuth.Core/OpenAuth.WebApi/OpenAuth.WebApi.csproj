@@ -89,8 +89,14 @@
     <None Update="Templates\Calibration Certificate%28word%29.docx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Templates\CE-6000n系列AC交流输入电源线计算&amp;下单说明.pdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Templates\chen.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Templates\files\images\rulecode.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Templates\files\images\产品手册1.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

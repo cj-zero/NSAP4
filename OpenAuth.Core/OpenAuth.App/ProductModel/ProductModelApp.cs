@@ -18,6 +18,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace OpenAuth.App
 {
     /// <summary>
@@ -116,7 +117,7 @@ namespace OpenAuth.App
             }
             if (!string.IsNullOrWhiteSpace(queryModel.Current))
             {
-                exps = exps.And(t => t.Current == queryModel.Current);
+                exps = exps.And(t => t.Current == queryModel.Current); 
             }
             if (!string.IsNullOrWhiteSpace(queryModel.TotalPower))
             {
@@ -209,14 +210,10 @@ namespace OpenAuth.App
             {
                 var productModelCategory = UnitWork.Find<ProductModelCategory>(u => !u.IsDelete && u.Id == productModelSelection.ProductModelCategoryId).FirstOrDefault();
                 var productModelSelectionInfo = UnitWork.Find<ProductModelSelectionInfo>(u => !u.IsDelete && u.ProductModelSelectionId == productModelSelection.Id).FirstOrDefault();
-                var productModelDetails = GetSpecifications(Id);
+                var productModelDetails = GetSpecifications(Id, null);
                 string templatePath = "";
                 List<WordMarkModel> wordModels = new List<WordMarkModel>() {
-                new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.DeviceCoding),
-                 MarkType=0,
-                 MarkValue=productModelDetails.DeviceCoding
-                },
+                
                    new WordMarkModel(){
                  MarkName=nameof(ProductModelDetails.ChannelNumber),
                  MarkType=0,
@@ -392,12 +389,23 @@ namespace OpenAuth.App
             return host + "/Templates/" + pdfName;
 
         }
+
+        public string GetCalculation(string host)
+        {
+            return host + @"/Templates/CE-6000n系列AC交流输入电源线计算&下单说明.pdf";
+        }
+
+        public string GetCodingRules(string host)
+        {
+            return host + @"/Templates/files/images/rulecode.jpg";
+        }
+
         /// <summary>
         /// 产品规格
         /// </summary>
         /// <param name="Id"></param>
         /// <returns></returns>
-        public ProductModelDetails GetSpecifications(int Id)
+        public ProductModelDetails GetSpecifications(int Id, string? host)
 
         {
             var result = new ProductModelDetails();
@@ -464,8 +472,10 @@ namespace OpenAuth.App
             result.MinimumCurrentInterval = "最小电流间隔: " + Temp + "A";//Minimum current interval: 0.1A
             result.TotalPower = productmodelselection.TotalPower;
             result.Size = productmodelselection.Size;
+            result.Pic = host + productmodeltype.Image;
             return result;
         }
+      
 
     }
 }

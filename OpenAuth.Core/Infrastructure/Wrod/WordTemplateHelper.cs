@@ -18,12 +18,30 @@ namespace Infrastructure.Wrod
         /// <param name="keywords">关键字集合</param>
         public static void WriteToPublicationOfResult(string TemplatePath, string SavePath, Dictionary<string, string> keywords)
         {
+
+
+
+
+            //File.Copy(TemplatePath, SavePath, true);
+
+            //FileStream fs = new FileStream(SavePath, FileMode.Open, FileAccess.Read);
+
+            //XWPFDocument document = new XWPFDocument();
+
+            //document.Write(fs);
+
+            //fs.Close();
+
+            //XWPFParagraph para = document.CreateParagraph();
+            //ReplaceKeyWords((IList<XWPFParagraph>)para, keywords);
+            //para.ReplaceText("zaosheng", "123");
             //InputStream iss= new FileInputStream(TemplatePath);
             try
             {
-
-                FileStream fs = new FileStream(TemplatePath, FileMode.Open, FileAccess.Read);
-                XWPFDocument document = new XWPFDocument(fs);
+                FileStream fileStream = new FileStream(TemplatePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                //FileStream fs = File.OpenRead(TemplatePath);
+                //FileStream fs = new FileStream(TemplatePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                XWPFDocument document = new XWPFDocument(fileStream);
                 foreach (var table in document.Tables)
                 {
                     foreach (var row in table.Rows)
@@ -37,8 +55,8 @@ namespace Infrastructure.Wrod
                 ReplaceKeyWords(document.Paragraphs, keywords);//替换模板中非表格的关键字
                 FileStream output = new FileStream(SavePath, FileMode.Create);
                 document.Write(output);
-                fs.Close();
-                fs.Dispose();
+                fileStream.Close();
+                fileStream.Dispose();
                 output.Close();
                 output.Dispose();
             }
@@ -101,7 +119,85 @@ namespace Infrastructure.Wrod
             }
             return keywords;
         }
+        /// <summary>
+        /// Word 模板 替换
+        /// <para>当前适用的字段模板形如：[=Name]，其中 Name 就是字段名</para>
+        /// <para>返回 true 表示成功</para>
+        /// </summary>
+        /// <param name="tempPath">Word 文件 模板路径</param>
+        /// <param name="newWordPath">生成的新 Word 文件的路径</param>
+        /// <param name="textDic">文字字典集合</param>
+        /// <returns></returns>
+        //public static bool WordTemplateReplace(string tempPath, string newWordPath,
+        //    Dictionary<string, string> textDic)
+        //{
+        //    try
+        //    {
+        //        var a = @"D:\Dev\OpenDemo\Word模板文件的替换并生成新的Word文件\WordTestDemo\WordFileDemo\bin\Debug\WordFiles\Templates\测试模板-0.docx";
+        //        var doc = DocX.Load(tempPath);  // 加载 Word 模板文件
 
+        //        #region 字段替换文字
+
+        //        if (textDic != null && textDic.Count > 0)
+        //        {
+        //            foreach (var paragraph in doc.Paragraphs)   // 遍历当前 Word 文件中的所有（段落）段
+        //            {
+        //                foreach (var texts in textDic)
+        //                {
+        //                    try
+        //                    {
+        //                        paragraph.ReplaceText($"{texts.Key}", texts.Value);  // 替换段落中的文字
+        //                    }
+        //                    catch (Exception ex)
+        //                    {
+        //                        // 不处理
+        //                        continue;
+        //                    }
+        //                }
+        //            }
+
+        //            foreach (var table in doc.Tables)   // 遍历当前 Word 文件中的所有表格
+        //            {
+        //                foreach (var row in table.Rows) // 遍历表格中的每一行
+        //                {
+        //                    foreach (var cell in row.Cells)     //遍历每一行中的每一列
+        //                    {
+        //                        foreach (var paragraph in cell.Paragraphs)  // 遍历当前表格里的所有（段落）段
+        //                        {
+        //                            foreach (var texts in textDic)
+        //                            {
+        //                                try
+        //                                {
+        //                                    paragraph.ReplaceText($"[={texts.Key}]", texts.Value);  // 替换段落中的文字
+        //                                }
+        //                                catch (Exception ex)
+        //                                {
+        //                                    // 不处理
+        //                                    continue;
+        //                                }
+        //                            }
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //        }
+
+        //        #endregion
+
+
+
+        //        doc.SaveAs(newWordPath);
+
+        //        return true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        // 不处理
+        //        return false;
+        //    }
+        //}
 
     }
+
 }
+

@@ -608,17 +608,21 @@ namespace OpenAuth.App.Meeting
                 {
                     exps = exps.And(e => e.AddressType == QueryModel.AddressType);
                 }
+                if (!string.IsNullOrWhiteSpace(QueryModel.Address ))
+                {
+                    exps = exps.And(e => e.Address.Contains(QueryModel.Address));
+                }
                 if (!string.IsNullOrEmpty(QueryModel.StartTime))
                 {
                     DateTime startTime;
                     DateTime.TryParse(QueryModel.StartTime, out startTime);
-                    exps = exps.And(e => e.StartTime >= startTime);
+                    exps = exps.And(e => e.StartTime <= startTime);
                 }
                 if (!string.IsNullOrEmpty(QueryModel.EndTime))
                 {
                     DateTime endTime;
                     DateTime.TryParse(QueryModel.EndTime, out endTime);
-                    exps = exps.And(e => e.EndTime <= endTime);
+                    exps = exps.And(e => e.EndTime >= endTime);
                 }
 
                 if (loginUser.Name == "骆灵芝")
