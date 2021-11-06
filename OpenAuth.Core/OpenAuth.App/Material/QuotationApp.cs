@@ -42,7 +42,8 @@ namespace OpenAuth.App.Material
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
         public readonly WorkbenchApp _workbenchApp;
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
-        
+        private readonly OrgManagerApp _orgApp;
+
         private ICapPublisher _capBus;
 
         /// <summary>
@@ -936,8 +937,9 @@ namespace OpenAuth.App.Material
                 )
             );
 
-            var SecondId = (await UnitWork.Find<Relevance>(r => r.FirstId.Equals(quotationsMap.CreateUserId) && r.Key.Equals(Define.USERORG)).FirstOrDefaultAsync()).SecondId;
-            quotationsMap.OrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Id.Equals(SecondId)).Select(o => o.Name).FirstOrDefaultAsync();
+            var orgrole = await _orgApp.GetOrgNameAndRoleIdentity(quotationsMap.CreateUserId);
+            quotationsMap.OrgName = orgrole.OrgName;
+            quotationsMap.RoleIdentity = orgrole.RoleIdentity;
 
             List<QuotationMaterialReq> QuotationMergeMaterial = new List<QuotationMaterialReq>();
             List<ProductCodeListResp> serialNumberList = (await GetSerialNumberList(new QueryQuotationListReq { ServiceOrderId = quotationsMap.ServiceOrderId, CreateUserId = quotationsMap.CreateUserId })).Data;
@@ -3194,13 +3196,14 @@ namespace OpenAuth.App.Material
         }
 
 
-        public QuotationApp(IUnitWork unitWork, ICapPublisher capBus, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IOptions<AppSetting> appConfiguration, IAuth auth) : base(unitWork, auth)
+        public QuotationApp(IUnitWork unitWork, ICapPublisher capBus, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IOptions<AppSetting> appConfiguration, IAuth auth, OrgManagerApp orgApp) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
             _flowInstanceApp = flowInstanceApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _capBus = capBus;
             _workbenchApp = workbenchApp;
+            _orgApp = orgApp;
         }
 
     }
