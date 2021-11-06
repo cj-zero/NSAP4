@@ -411,14 +411,77 @@ namespace OpenAuth.App
                     MinimumCurrentInterval = productModelDetails.MinimumCurrentInterval,
                     TotalPower = productModelDetails.TotalPower,
                     Size = productModelDetails.Size,
+                    Image = host + type.Image,
+                    Weight=productModelSelection.Weight.ToString()
+
+                };
+                SpireDocWord.GetDocument(templatePath);
+                SpireDocWord.ReplaseTemplateWord(productParamTemplate);
+                SpireDocWord.CreateNewWord(filePath + productModelSelection.DeviceCoding+ "-技术规格协议书" + ".docx");
+            }
+            return host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + productModelSelection.DeviceCoding+ "-技术规格协议书.docx";
+
+        }
+
+        public string TechnicalDoc(int Id, string host, string Language)
+        {
+            var productModelSelection = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.Id == Id).FirstOrDefault();
+            var type = UnitWork.FindSingle<ProductModelType>(q => q.Id == productModelSelection.ProductModelTypeId);
+
+            if (productModelSelection != null)
+            {
+                var productModelCategory = UnitWork.Find<ProductModelCategory>(u => !u.IsDelete && u.Id == productModelSelection.ProductModelCategoryId).FirstOrDefault();
+                var productModelSelectionInfo = UnitWork.Find<ProductModelSelectionInfo>(u => !u.IsDelete && u.ProductModelSelectionId == productModelSelection.Id).FirstOrDefault();
+                var productModelDetails = GetSpecifications(Id, null, Language);
+                string templatePath = "";
+               
+                if (Language == "CN")
+                {
+                    templatePath = Path.Combine(Directory.GetCurrentDirectory() + productModelCategory.SpecsDocTemplatePath_CH);
+                }
+                if (Language == "EN")
+                {
+                    templatePath = Path.Combine(Directory.GetCurrentDirectory() + productModelCategory.SpecsDocTemplatePath_EN);
+
+                }
+               
+
+                string filePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Templates\\files\\" + DateTime.Now.ToString("yyyyMMdd") + "\\");
+                
+                ProductParamTemplate productParamTemplate = new ProductParamTemplate()
+                {
+                    Title= productModelSelection.DeviceCoding,
+                    DeviceCoding = productModelSelection.DeviceCoding,
+                    ChannelNumber = productModelSelection.ChannelNumber.ToString(),
+                    InputPowerType = productModelDetails.InputPowerType,
+                    InputActivePower = productModelDetails.InputActivePower,
+                    InputCurrent = productModelDetails.InputCurrent,
+                    Efficiency = productModelDetails.Efficiency,
+                    Noise = productModelDetails.Noise,
+                    DeviceType = productModelDetails.DeviceType,
+                    PowerControlModuleType = productModelDetails.PowerControlModuleType,
+                    PowerConnection = productModelDetails.PowerConnection,
+                    ChargeVoltageRange = productModelDetails.ChargeVoltageRange,
+                    DischargeVoltageRange = productModelDetails.DischargeVoltageRange,
+                    MinimumDischargeVoltage = productModelDetails.MinimumDischargeVoltage,
+                    CurrentRange = productModelDetails.CurrentRange,
+                    CurrentAccurack = productModelDetails.CurrentAccurack,
+                    CutOffCurrent = productModelDetails.CutOffCurrent,
+                    SinglePower = productModelDetails.SinglePower,
+                    CurrentResponseTime = productModelDetails.CurrentResponseTime,
+                    CurrentConversionTime = productModelDetails.CurrentConversionTime,
+                    RecordFreq = productModelDetails.RecordFreq,
+                    MinimumVoltageInterval = productModelDetails.MinimumVoltageInterval,
+                    MinimumCurrentInterval = productModelDetails.MinimumCurrentInterval,
+                    TotalPower = productModelDetails.TotalPower,
+                    Size = productModelDetails.Size,
                     Image = host + type.Image
                 };
                 SpireDocWord.GetDocument(templatePath);
                 SpireDocWord.ReplaseTemplateWord(productParamTemplate);
                 SpireDocWord.CreateNewWord(filePath + productModelSelection.DeviceCoding + ".docx");
             }
-            return host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + productModelSelection.DeviceCoding;
-
+            return host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + productModelSelection.DeviceCoding + ".docx";
         }
 
         public string GetCalculation(string host)

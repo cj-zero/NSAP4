@@ -63,6 +63,8 @@ namespace OpenAuth.App.ProductModel
 
     public class ProductParamTemplate : ExportBase
     {
+        public string Weight { get; set; }
+        public string  Title { get; set; }
         public string DeviceCoding { get; set; }
         public string ChannelNumber { get; set; }
         public string InputPowerType { get; set; }

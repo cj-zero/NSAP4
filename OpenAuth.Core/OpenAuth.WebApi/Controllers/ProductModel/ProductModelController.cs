@@ -302,5 +302,29 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
             }
             return result;
         }
+
+        /// <summary>
+        /// 技术协议书
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <param name="Language"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("TechnicalDoc")]
+        public async Task<Response<string>> TechnicalDoc(int Id, string Language)
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            var result = new Response<string>();
+            try
+            {
+                result.Result = _productModelApp.TechnicalDoc(Id, host, Language);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }
