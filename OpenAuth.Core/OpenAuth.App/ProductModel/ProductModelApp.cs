@@ -144,7 +144,7 @@ namespace OpenAuth.App
         public List<string> GetProductImg(int ProductModelTypeId, string host)
         {
             List<string> imgs = new List<string>();
-            if (ProductModelTypeId!=0)
+            if (ProductModelTypeId != 0)
             {
                 var productModelCategory = UnitWork.Find<ProductModelType>(u => !u.IsDelete && u.Id == ProductModelTypeId)?.FirstOrDefault();
                 if (productModelCategory != null && !string.IsNullOrWhiteSpace(productModelCategory.ImageBanner))
@@ -153,7 +153,7 @@ namespace OpenAuth.App
                     {
                         imgs.Add(host + item);
                     }
-                   
+
                     //imgs = JsonConvert.DeserializeObject<List<string>>(productModelCategory.ImageBanner);
                 }
 
@@ -167,7 +167,7 @@ namespace OpenAuth.App
                     {
                         imgs.Add(host + scon);
                     }
-                  
+
                 }
                 imgs.Add(host + "/Templates/files/images/产品手册1.jpg");
                 imgs.Add(host + "/Templates/files/images/产品手册2.jpg");
@@ -319,7 +319,7 @@ namespace OpenAuth.App
                 };
                 if (Language == "CN")
                 {
-                    templatePath = Path.Combine(Directory.GetCurrentDirectory() +productModelCategory.SpecsDocTemplatePath_CH);
+                    templatePath = Path.Combine(Directory.GetCurrentDirectory() + productModelCategory.SpecsDocTemplatePath_CH);
                 }
                 if (Language == "EN")
                 {
@@ -353,10 +353,41 @@ namespace OpenAuth.App
                     TotalPower = productModelDetails.TotalPower,
                     Size = productModelDetails.Size
                 };
+
+                ProductParamTemplate productParamTemplate = new ProductParamTemplate()
+                {
+                    DeviceCoding = productModelSelection.DeviceCoding,
+                    ChannelNumber = productModelSelection.ChannelNumber.ToString(),
+                    InputPowerType = productModelDetails.InputPowerType,
+                    InputActivePower = productModelDetails.InputActivePower,
+                    InputCurrent = productModelDetails.InputCurrent,
+                    Efficiency = productModelDetails.Efficiency,
+                    Noise = productModelDetails.Noise,
+                    DeviceType = productModelDetails.DeviceType,
+                    PowerControlModuleType = productModelDetails.PowerControlModuleType,
+                    PowerConnection = productModelDetails.PowerConnection,
+                    ChargeVoltageRange = productModelDetails.ChargeVoltageRange,
+                    DischargeVoltageRange = productModelDetails.DischargeVoltageRange,
+                    MinimumDischargeVoltage = productModelDetails.MinimumDischargeVoltage,
+                    CurrentRange = productModelDetails.CurrentRange,
+                    CurrentAccurack = productModelDetails.CurrentAccurack,
+                    CutOffCurrent = productModelDetails.CutOffCurrent,
+                    SinglePower = productModelDetails.SinglePower,
+                    CurrentResponseTime = productModelDetails.CurrentResponseTime,
+                    CurrentConversionTime = productModelDetails.CurrentConversionTime,
+                    RecordFreq = productModelDetails.RecordFreq,
+                    MinimumVoltageInterval = productModelDetails.MinimumVoltageInterval,
+                    MinimumCurrentInterval = productModelDetails.MinimumCurrentInterval,
+                    TotalPower = productModelDetails.TotalPower,
+                    Size = productModelDetails.Size
+                };
                 string filePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Templates\\");
-                object[] oBookMark = wordModels.Select(zw => (object)zw.MarkName).Distinct().ToArray();
-                //FileHelper.DOCTemplateConvert(templatePath, filePath + pdfName, wordModels, oBookMark);
-                WordTemplateHelper.WriteToPublicationOfResult(templatePath, filePath + pdfName, WordTemplateHelper.getProperties(ParamTemplate));
+                // object[] oBookMark = wordModels.Select(zw => (object)zw.MarkName).Distinct().ToArray();
+                // FileHelper.DOCTemplateConvert(templatePath, filePath + pdfName, wordModels, oBookMark);
+                //   WordTemplateHelper.WriteToPublicationOfResult(templatePath, filePath + pdfName, WordTemplateHelper.getProperties(ParamTemplate));
+                SpireDocWord.GetDocument(); 
+                SpireDocWord.ReplaseTemplateWord(productParamTemplate);
+                SpireDocWord.CreateNewWord();
             }
             return host + "/Templates/" + pdfName;
 
