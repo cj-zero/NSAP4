@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Meeting.ModelDto;
 using OpenAuth.App.ProductModel;
 using OpenAuth.App.ProductModel.Request;
 using OpenAuth.App.Response;
@@ -80,9 +81,9 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
         /// <returns></returns>
         [HttpGet]
         [Route("GetProductTypeList")]
-        public async Task<Response<List<string>>> GetProductTypeList()
+        public async Task<Response<List<TextVaule>>> GetProductTypeList()
         {
-            var result = new Response<List<string>>();
+            var result = new Response<List<TextVaule>>();
             try
             {
                 result.Result = _productModelApp.GetProductTypeList();
@@ -166,6 +167,133 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
             try
             {
                 result.Result = _productModelApp.GetTotalPowerList();
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 获取参数规格
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetSpecifications")]
+        public async Task<Response<ProductModelDetails>> GetSpecifications(int Id,string Language)
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+
+            var result = new Response<ProductModelDetails>();
+            try
+            {
+                result.Result = _productModelApp.GetSpecifications(Id, host, Language);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 获取产品手册banner
+        /// </summary>
+        /// <param name="ProductModelCategoryId"></param>
+        [HttpGet]
+        [Route("GetProductImg")]
+        public async Task<Response<List<string>>> GetProductImg(int ProductModelTypeId)
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            var result = new Response<List<string>>();
+            try
+            {
+                result.Result = _productModelApp.GetProductImg(ProductModelTypeId, host);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 获取应用案例banner
+        /// </summary>
+        /// <param name="ProductModelCategoryId"></param>
+        [HttpGet]
+        [Route("GetCaseImage")]
+        public async Task<Response<List<string>>> GetCaseImage(int ProductModelCategoryId)
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            var result = new Response<List<string>>();
+            try
+            {
+                result.Result = _productModelApp.GetCaseImage(ProductModelCategoryId, host);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 下载规格书
+        /// </summary>
+        /// <param name="Id"></param>
+        [HttpGet]
+        [Route("ExportProductSpecsDoc")]
+        public async Task<Response<string>> ExportProductSpecsDoc(int Id, string Language)
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            var result = new Response<string>();
+            try
+            {
+                result.Result = _productModelApp.ExportProductSpecsDoc(Id, host, Language);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取编码规则
+        /// </summary>
+        [HttpGet]
+        [Route("GetCodingRules")]
+        public async Task<Response<string>> GetCodingRules()
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            var result = new Response<string>();
+            try
+            {
+                result.Result = _productModelApp.GetCodingRules(host);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        ///线材计算及下载
+        /// </summary>
+        [HttpGet]
+        [Route("GetCalculation")]
+        public async Task<Response<string>> GetCalculation()
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            var result = new Response<string>();
+            try
+            {
+                result.Result = _productModelApp.GetCalculation(host);
             }
             catch (Exception ex)
             {
