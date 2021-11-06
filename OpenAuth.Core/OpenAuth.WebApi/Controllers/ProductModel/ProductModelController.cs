@@ -183,10 +183,12 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
         [Route("GetSpecifications")]
         public async Task<Response<ProductModelDetails>> GetSpecifications(int Id)
         {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+
             var result = new Response<ProductModelDetails>();
             try
             {
-                result.Result = _productModelApp.GetSpecifications(Id);
+                result.Result = _productModelApp.GetSpecifications(Id, host);
             }
             catch (Exception ex)
             {
@@ -239,12 +241,12 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
         }
 
         /// <summary>
-        /// 下载技术协议
+        /// 下载规格书
         /// </summary>
         /// <param name="Id"></param>
         [HttpGet]
         [Route("ExportProductSpecsDoc")]
-        public async Task<Response<string>> ExportProductSpecsDoc(int Id,string Language)
+        public async Task<Response<string>> ExportProductSpecsDoc(int Id, string Language)
         {
             string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
             var result = new Response<string>();
@@ -260,6 +262,45 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
             return result;
         }
 
+        /// <summary>
+        /// 获取编码规则
+        /// </summary>
+        [HttpGet]
+        [Route("GetCodingRules")]
+        public async Task<Response<string>> GetCodingRules()
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            var result = new Response<string>();
+            try
+            {
+                result.Result = _productModelApp.GetCodingRules(host);
+            }
+            catch (Exception ex)
+            {
 
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        ///线材计算及下载
+        /// </summary>
+        [HttpGet]
+        [Route("GetCalculation")]
+        public async Task<Response<string>> GetCalculation()
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            var result = new Response<string>();
+            try
+            {
+                result.Result = _productModelApp.GetCalculation(host);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }

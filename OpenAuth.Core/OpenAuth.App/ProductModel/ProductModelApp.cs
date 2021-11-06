@@ -18,6 +18,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace OpenAuth.App
 {
     /// <summary>
@@ -116,7 +117,7 @@ namespace OpenAuth.App
             }
             if (!string.IsNullOrWhiteSpace(queryModel.Current))
             {
-                exps = exps.And(t => t.Current == queryModel.Current);
+                exps = exps.And(t => t.Current == queryModel.Current); 
             }
             if (!string.IsNullOrWhiteSpace(queryModel.TotalPower))
             {
@@ -144,7 +145,7 @@ namespace OpenAuth.App
         public List<string> GetProductImg(int ProductModelTypeId, string host)
         {
             List<string> imgs = new List<string>();
-            if (ProductModelTypeId!=0)
+            if (ProductModelTypeId != 0)
             {
                 var productModelCategory = UnitWork.Find<ProductModelType>(u => !u.IsDelete && u.Id == ProductModelTypeId)?.FirstOrDefault();
                 if (productModelCategory != null && !string.IsNullOrWhiteSpace(productModelCategory.ImageBanner))
@@ -153,7 +154,7 @@ namespace OpenAuth.App
                     {
                         imgs.Add(host + item);
                     }
-                   
+
                     //imgs = JsonConvert.DeserializeObject<List<string>>(productModelCategory.ImageBanner);
                 }
 
@@ -167,7 +168,7 @@ namespace OpenAuth.App
                     {
                         imgs.Add(host + scon);
                     }
-                  
+
                 }
                 imgs.Add(host + "/Templates/files/images/产品手册1.jpg");
                 imgs.Add(host + "/Templates/files/images/产品手册2.jpg");
@@ -209,14 +210,10 @@ namespace OpenAuth.App
             {
                 var productModelCategory = UnitWork.Find<ProductModelCategory>(u => !u.IsDelete && u.Id == productModelSelection.ProductModelCategoryId).FirstOrDefault();
                 var productModelSelectionInfo = UnitWork.Find<ProductModelSelectionInfo>(u => !u.IsDelete && u.ProductModelSelectionId == productModelSelection.Id).FirstOrDefault();
-                var productModelDetails = GetSpecifications(Id);
+                var productModelDetails = GetSpecifications(Id, null);
                 string templatePath = "";
                 List<WordMarkModel> wordModels = new List<WordMarkModel>() {
-                new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.DeviceCoding),
-                 MarkType=0,
-                 MarkValue=productModelDetails.DeviceCoding
-                },
+                
                    new WordMarkModel(){
                  MarkName=nameof(ProductModelDetails.ChannelNumber),
                  MarkType=0,
@@ -319,7 +316,7 @@ namespace OpenAuth.App
                 };
                 if (Language == "CN")
                 {
-                    templatePath = Path.Combine(Directory.GetCurrentDirectory() +productModelCategory.SpecsDocTemplatePath_CH);
+                    templatePath = Path.Combine(Directory.GetCurrentDirectory() + productModelCategory.SpecsDocTemplatePath_CH);
                 }
                 if (Language == "EN")
                 {
@@ -353,20 +350,61 @@ namespace OpenAuth.App
                     TotalPower = productModelDetails.TotalPower,
                     Size = productModelDetails.Size
                 };
+
                 string filePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Templates\\");
                 object[] oBookMark = wordModels.Select(zw => (object)zw.MarkName).Distinct().ToArray();
+
+                //WordTemplateHelper.WordTemplateReplace(templatePath,
+                //    filePath + pdfName,
+                //    new Dictionary<string, string>()
+                //    {
+                //        ["DeviceCoding"] = productModelDetails.DeviceCoding,
+                //        ["InputActivePower"] = productModelDetails.InputActivePower,
+                //        ["InputPowerType"] = productModelDetails.InputPowerType.ToString(),
+                //        ["InputCurrent"] = productModelDetails.InputCurrent,
+                //        ["Efficiency"] = productModelDetails.Efficiency,
+                //        ["Noise"] = productModelDetails.Noise,
+                //        ["DeviceType"] = productModelDetails.DeviceType,
+                //        ["PowerControlModuleType"] = productModelDetails.PowerControlModuleType,
+                //        ["PowerConnection"] = productModelDetails.PowerConnection,
+                //        ["ChargeVoltageRange"] = productModelDetails.ChargeVoltageRange,
+                //        ["DischargeVoltageRange"] = productModelDetails.DischargeVoltageRange,
+                //        ["MinimumDischargeVoltage"] = productModelDetails.MinimumDischargeVoltage,
+                //        ["CurrentRange"] = productModelDetails.CurrentRange,
+                //        ["CurrentAccurack"] = productModelDetails.CurrentAccurack,
+                //        ["CutOffCurrent"] = productModelDetails.CutOffCurrent,
+                //        ["SinglePower"] = productModelDetails.SinglePower,
+                //        ["CurrentResponseTime"] = productModelDetails.CurrentResponseTime,
+                //        ["CurrentConversionTime"] = productModelDetails.CurrentConversionTime,
+                //        ["RecordFreq"] = productModelDetails.RecordFreq,
+                //        ["MinimumVoltageInterval"] = productModelDetails.MinimumVoltageInterval,
+                //        ["MinimumCurrentInterval"] = productModelDetails.MinimumCurrentInterval,
+                //        ["TotalPower"] = productModelDetails.TotalPower,
+                //        ["Size"] = productModelDetails.Size
+                //    });
                 //FileHelper.DOCTemplateConvert(templatePath, filePath + pdfName, wordModels, oBookMark);
                 WordTemplateHelper.WriteToPublicationOfResult(templatePath, filePath + pdfName, WordTemplateHelper.getProperties(ParamTemplate));
             }
             return host + "/Templates/" + pdfName;
 
         }
+
+        public string GetCalculation(string host)
+        {
+            return host + @"/Templates/CE-6000n系列AC交流输入电源线计算&下单说明.pdf";
+        }
+
+        public string GetCodingRules(string host)
+        {
+            return host + @"/Templates/files/images/rulecode.jpg";
+        }
+
         /// <summary>
         /// 产品规格
         /// </summary>
         /// <param name="Id"></param>
         /// <returns></returns>
-        public ProductModelDetails GetSpecifications(int Id)
+        public ProductModelDetails GetSpecifications(int Id, string? host)
 
         {
             var result = new ProductModelDetails();
@@ -433,8 +471,10 @@ namespace OpenAuth.App
             result.MinimumCurrentInterval = "最小电流间隔: " + Temp + "A";//Minimum current interval: 0.1A
             result.TotalPower = productmodelselection.TotalPower;
             result.Size = productmodelselection.Size;
+            result.Pic = host + productmodeltype.Image;
             return result;
         }
+      
 
     }
 }

@@ -104,5 +104,9 @@ namespace OpenAuth.App.ProductModel
         /// 设备尺寸
         /// </summary>
         public string Size { get; set; }
+        /// <summary>
+        /// 产品图
+        /// </summary>
+        public string Pic { get; set; }
     }
 }
