@@ -122,11 +122,14 @@ namespace OpenAuth.App
             var org = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).ToListAsync();
             //var user = await UnitWork.Find<OpenAuth.Repository.Domain.User>(null).ToListAsync();
 
-            var query = from a in UnitWork.Find<OpenAuth.Repository.Domain.User>(null)
+            var query = from a in UnitWork.Find<OpenAuth.Repository.Domain.User>(a => a.Status == 0)
                         join b in UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.Key == Define.USERORG)
                         on a.Id equals b.FirstId into ab
                         from b in ab.DefaultIfEmpty()
-                        select new UserOrg { Name=a.Name, SecondId=b.SecondId };
+                        join c in UnitWork.Find<AppUserMap>(null)
+                        on a.Id equals c.UserID into ac
+                        from c in ac.DefaultIfEmpty()
+                        select new UserOrg { Name = a.Name, SecondId = b.SecondId, AppUserId = c.AppUserId };
 
             List<object> trees = new List<object>();
             GetTree(trees, "", org, query);

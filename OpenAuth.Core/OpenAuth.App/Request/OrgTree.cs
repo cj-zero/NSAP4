@@ -14,5 +14,6 @@ namespace OpenAuth.App.Request
     {
         public string Name { get; set; }
         public string SecondId { get; set; }
+        public int? AppUserId { get; set; }
     }
 }

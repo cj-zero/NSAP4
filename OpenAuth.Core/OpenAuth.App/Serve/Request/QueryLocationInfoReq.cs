@@ -10,8 +10,16 @@ namespace OpenAuth.App.Request
         public string City { get; set; }
         public string Area { get; set; }
         public List<string> Name { get; set; }
+        public List<int?> AppUserId { get; set; }
+        public List<NameAndAppUserId> NameAndAppUserId { get; set; }
 
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
+    }
+
+    public class NameAndAppUserId
+    {
+        public string Name { get; set; }
+        public int? AppUserId { get; set; }
     }
 }
