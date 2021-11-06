@@ -263,6 +263,26 @@ namespace OpenAuth.App
             return orgname;
         }
 
+        /// <summary>
+        /// 获取人员部门和角色身份标识
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public async Task<dynamic> GetOrgNameAndRoleIdentity(string userId)
+        {
+            var relevance = await UnitWork.Find<Relevance>(r => r.FirstId == userId).Select(r => new { r.SecondId, r.Key }).ToListAsync();
+            var orgids = relevance.Where(c => c.Key == Define.USERORG).Select(c => c.SecondId).ToList();
+            var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
+            var roleids = relevance.Where(c => c.Key == Define.USERROLE).Select(c => c.SecondId).ToList();
+            var roleIdentity = await UnitWork.Find<Role>(c => roleids.Contains(c.Id) && !string.IsNullOrWhiteSpace(c.Identity)).Select(c => c.Identity).ToListAsync();
+            var catetory = await UnitWork.Find<OpenAuth.Repository.Domain.Category>(c => c.TypeId == "SYS_RoleIdentification" && roleIdentity.Contains(c.DtValue)).Select(c => c.Name).ToListAsync();
+            return new
+            {
+                OrgName = orgname,
+                RoleIdentity = catetory
+            };
+        }
+
         public OrgManagerApp(IUnitWork unitWork, IRepository<OpenAuth.Repository.Domain.Org> repository, IAuth auth,
             RevelanceManagerApp revelanceApp) : base(unitWork, repository, auth)
         {

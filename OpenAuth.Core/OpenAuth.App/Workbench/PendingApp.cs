@@ -30,17 +30,19 @@ namespace OpenAuth.App.Workbench
         public readonly QuotationApp _quotationApp;
         public readonly FlowInstanceApp _flowInstanceApp;
         public readonly UserManagerApp _userManagerApp;
+        private readonly OrgManagerApp _orgApp;
         /// <summary>
         /// 构造方法
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
         /// <param name="quotationApp"></param>
-        public PendingApp(IUnitWork unitWork, IAuth auth, QuotationApp quotationApp, UserManagerApp userManagerApp, FlowInstanceApp flowInstanceApp) : base(unitWork, auth)
+        public PendingApp(IUnitWork unitWork, IAuth auth, QuotationApp quotationApp, UserManagerApp userManagerApp, FlowInstanceApp flowInstanceApp, OrgManagerApp orgApp) : base(unitWork, auth)
         {
             _quotationApp = quotationApp;
             _flowInstanceApp = flowInstanceApp;
             _userManagerApp = userManagerApp;
+            _orgApp = orgApp;
         }
         /// <summary>
         /// 服务单详情
@@ -55,6 +57,7 @@ namespace OpenAuth.App.Workbench
                                     from c in bc.DefaultIfEmpty()
                                     select new { a.Name, a.Id, OrgName = c.Name, c.CascadeId }).OrderByDescending(u => u.CascadeId).FirstOrDefaultAsync();
             var serviceDailyReportList = await UnitWork.Find<ServiceDailyReport>(s => ServiceOrderId == s.ServiceOrderId).ToListAsync();
+            var orgrole = await _orgApp.GetOrgNameAndRoleIdentity(PetitionerId);
 
             var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId).Include(s => s.ServiceWorkOrders).Select(s => new ServiceOrderResp
             {
@@ -81,6 +84,7 @@ namespace OpenAuth.App.Workbench
             serviceOrder.Balance = await UnitWork.Find<OCRD>(o => serviceOrder.TerminalCustomerId.Contains(o.CardCode)).Select(o => o.Balance.ToString()).FirstOrDefaultAsync();
             serviceOrder.Petitioner = petitioner.OrgName + "-" + petitioner.Name;
             serviceOrder.PetitionerId = petitioner.Id;
+            serviceOrder.RoleIdentity = orgrole.RoleIdentity;
             serviceOrder.ServiceDailyReports = serviceDailyReportList.Select(s => new ServiceDailyReportResp
             {
                 CreateTime = Convert.ToDateTime(s.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
@@ -487,6 +491,7 @@ namespace OpenAuth.App.Workbench
                             .Include(c => c.InternalContactAttchments)
                             .Include(c => c.InternalContactBatchNumbers)
                             .Include(c => c.InternalContactDeptInfos)
+                            .Include(c => c.InternalcontactMaterials)
                             .FirstOrDefaultAsync();
             //操作历史
             var operationHistories = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.InstanceId == detail.FlowInstanceId)
@@ -518,6 +523,7 @@ namespace OpenAuth.App.Workbench
                 detail.Id,
                 detail.IW,
                 detail.Theme,
+                detail.IsTentative,
                 CardCodes = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardCode.Split(",") : new string[] { },
                 CardNames = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardName.Split(",") : new string[] { },
                 detail.Status,
@@ -527,16 +533,19 @@ namespace OpenAuth.App.Workbench
                 detail.ProductionNo,
                 AdaptiveRanges = detail.AdaptiveRange.Split(","),
                 Reasons = detail.Reason.Split(","),
+                MaterialOrder = !string.IsNullOrWhiteSpace(detail.MaterialOrder) ? detail.MaterialOrder.Split(",") : new string[] { },
+                //BatchNumbers = detail.InternalContactBatchNumbers,
                 BatchNumbers = detail.InternalContactBatchNumbers,
                 detail.CheckApproveId,
                 detail.CheckApprove,
                 detail.DevelopApproveId,
                 detail.DevelopApprove,
-                InternalContactReceiveDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 1).Select(c => new { c.OrgId, c.OrgName }).ToList(),
-                InternalContactExecDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 2).Select(c => new { c.OrgId, c.OrgName }).ToList(),
+                InternalContactReceiveDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 1).Select(c => new { c.OrgId, c.OrgName, c.UserId, c.UserName }).ToList(),
+                InternalContactExecDepts = detail.InternalContactDeptInfos.Where(o => o.Type == 2).Select(c => new { c.OrgId, c.OrgName, c.UserId, c.UserName }).ToList(),
                 detail.Content,
                 reviceOrgList,
                 execOrgList,
+                InternalcontactMaterials = detail.InternalcontactMaterials,
                 operationHistories
             };
         }
@@ -666,7 +675,7 @@ namespace OpenAuth.App.Workbench
                 var query = from a in UnitWork.Find<WorkbenchPending>(null)
                             join b in UnitWork.Find<FlowInstance>(null) on a.FlowInstanceId equals b.Id into ab
                             from b in ab.DefaultIfEmpty()
-                            where (b.MakerList.Contains(loginContext.User.Id) || (b.MakerList == "1" && b.CustomName.Contains("物料报价单"))) && b.ActivityName != "待出库" && b.ActivityName != "开始" && b.ActivityName != "执行中"
+                            where (b.MakerList.Contains(loginContext.User.Id) || (b.MakerList == "1" && b.CustomName.Contains("物料报价单"))) && b.ActivityName != "待出库" && b.ActivityName != "开始" && b.ActivityName != "执行中" && b.ActivityName != "提交"
                             select new { a, b };
                 query = query.WhereIf(!string.IsNullOrWhiteSpace(req.ApprovalNumber), q => q.a.ApprovalNumber == int.Parse(req.ApprovalNumber))
                             .WhereIf(!string.IsNullOrWhiteSpace(req.Petitioner), q => q.a.Petitioner.Contains(req.Petitioner))
@@ -731,7 +740,7 @@ namespace OpenAuth.App.Workbench
                     q.a.Remark,
                     q.a.OrderType,
                     q.a.PetitionerId,
-                    ActivityName = q.b.ActivityName == "开始" ? "驳回" : q.b.ActivityName,
+                    ActivityName = q.b.ActivityName == "开始" || q.b.ActivityName == "提交" ? "驳回" : q.b.ActivityName,
                     q.a.UpdateTime
                 }).ToList();
                 reult.Count = await query.CountAsync();

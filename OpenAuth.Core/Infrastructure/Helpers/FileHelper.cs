@@ -351,7 +351,28 @@ namespace Infrastructure.Helpers {
 				return filePocket;
 			}
 		}
+		/// <summary>
+		/// 上传保存本地路径
+		/// </summary>
+		public static FilePocket FilePath
+		{
+			get
+			{
+				FilePocket filePocket = new FilePocket();
+				string uploadRelPath = "/Templates/files/", uploadAbsPath = string.Empty;
+				uploadRelPath = uploadRelPath + DateTime.Now.ToString("yyyyMM") + "/";
+				uploadAbsPath = Path.Combine(Directory.GetCurrentDirectory() + uploadRelPath).Replace("/", "\\");
 
+				if (!Directory.Exists(uploadAbsPath))
+				{
+					Directory.CreateDirectory(uploadAbsPath);
+				}
+				filePocket.PhysicalPath = uploadAbsPath;
+				filePocket.VirtualPath = uploadRelPath;
+
+				return filePocket;
+			}
+		}
 		#region PDF导出
 		public static bool DOCTemplateToPDF(string templatePath, string filePath, List<WordTemplate> wordMarks) {
 

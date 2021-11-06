@@ -1112,7 +1112,8 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.Supervisor.Contains(req.QrySupervisor))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryVestInOrg), q => q.VestInOrg == Convert.ToInt32(req.QryVestInOrg))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.QryAllowOrNot.ToString()) ,q=>q.AllowOrNot== req.QryAllowOrNot)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryAllowOrNot.ToString()), q => q.AllowOrNot == req.QryAllowOrNot)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QrySalesMan), q => q.SalesMan == req.QrySalesMan)
                 .Where(q => ids.Contains(q.Id) && q.Status == 2);
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("工程主管")) && !loginContext.User.Account.Equals("wanghaitao") && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看服务ID")))
@@ -2496,11 +2497,43 @@ namespace OpenAuth.App
                     s.a.AppUserId,
                     s.a.ServiceOrderId,
                     s.a.Replier,
+                    s.a.Id
                 });
+                var messageId = resultsql.Select(c => c.Id).ToList();
+                var meassageUser = await UnitWork.Find<ServiceOrderMessageUser>(c => messageId.Contains(c.MessageId)).ToListAsync();
+
+                //result.Data =
+                //((await resultsql
+                //.ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(g => g.First())).Select(s => new 
+                //{ 
+                //    s.Content, 
+                //    CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"), 
+                //    s.FroTechnicianName, 
+                //    s.AppUserId, 
+                //    s.ServiceOrderId, 
+                //    s.Replier, 
+                //    s.U_SAP_ID 
+                //});
 
                 result.Data =
                 ((await resultsql
-                .ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(g => g.First())).Select(s => new { s.Content, CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"), s.FroTechnicianName, s.AppUserId, s.ServiceOrderId, s.Replier, s.U_SAP_ID });
+                .ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(s => 
+                {
+                    var first = s.First();
+                    var messageid = s.Select(c => c.Id).ToList();
+                    var hasRead = meassageUser.Where(c => messageid.Contains(c.MessageId) && c.FroUserId==req.CurrentUserId.ToString()).All(c => c.HasRead == true);//服务id下消息是否全部已读
+                    return new
+                    {
+                        first.Content,
+                        CreateTime = first.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
+                        first.FroTechnicianName,
+                        first.AppUserId,
+                        first.ServiceOrderId,
+                        first.Replier,
+                        first.U_SAP_ID,
+                        HasRead = hasRead
+                    };
+                }));
             }
             return result;
         }
@@ -4609,7 +4642,10 @@ namespace OpenAuth.App
                 {
                     case 1:
                         var travelExpenseInfo = item.MapTo<TravelExpense>();
-                        travelExpenses.Add(travelExpenseInfo);
+                        if (travelExpenses.Count(c=>c.CreateTime.ToString("yyyy-MM-dd")== travelExpenseInfo.CreateTime.ToString("yyyy-MM-dd"))==0)
+                        {
+                            travelExpenses.Add(travelExpenseInfo);
+                        }
                         break;
                     case 2:
                         var transportExpenseInfo = item.MapTo<TransportExpense>();

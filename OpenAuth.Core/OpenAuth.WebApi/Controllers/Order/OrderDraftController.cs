@@ -555,9 +555,10 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             catch (Exception ex)
             {
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
                 Log.Logger.Error($"地址：{Request.Path}, 错误：{result.Message}");
+                throw ex;
+                //result.Code = 500;
+                //result.Message = ex.InnerException?.Message ?? ex.Message;
             }
             return result;
         }
@@ -1128,7 +1129,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                     itemindex++;
                     tempr[0] = itemindex.ToString();
                     string statusSql = string.Format("select top 1 LineStatus from RDR1 where DocEntry={0} and LineNum={1}", DocNum, tempr["LineNum"].ToString());
-                    object statusobj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+                    object statusobj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, statusSql.ToString(), CommandType.Text, null);
                     tempr["LineStatus"] = statusobj == null ? "" : statusobj.ToString();
                 }
             }
@@ -1179,7 +1180,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                     ViewSales = Powers.ViewSales;
                 }
                 if (ations == "copy") { ViewCustom = true; ViewSales = true; }
-                result.Data = _serviceSaleOrderApp.QuerySaleDeliveryDetailsV1(DocNum, ViewCustom, tablename, ViewSales, billSboId, isSql);
+                result.Data = _serviceSaleOrderApp.QuerySaleDeliveryDetailsV1(DocNum, true, tablename, true, billSboId, isSql);
             }
             catch (Exception e)
             {
@@ -1202,6 +1203,31 @@ namespace OpenAuth.WebApi.Controllers.Order
             try
             {
                 result.Result = await _app.Add(files);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+        /// <summary>
+        ///  批量上传文件接口(新)
+        /// </summary>
+        /// <param name="files"></param>
+        /// <returns>服务器存储的文件信息</returns>
+        [HttpPost]
+        [Route("BillAttachUploadNew")]
+        public async Task<Response<List<UploadFileResp>>> BillAttachUploadNew([FromForm] IFormFileCollection files)
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+
+            var result = new Response<List<UploadFileResp>>();
+            try
+            {
+                result.Result = _serviceSaleOrderApp.BillAttachUploadNew(files,host);
             }
             catch (Exception ex)
             {
@@ -1646,6 +1672,18 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
 
         }
+        [HttpGet]
+        [Route("GridRelORDR")]
+        public TableData GridRelORDR(string SlpCode, string DocEntry, string cardcode)
+        {
+            int rowCount = 0;
+            var result = new TableData();
+
+            result.Data = _serviceSaleOrderApp.GridRelORDR(out rowCount, 20, 1, DocEntry, cardcode, "docentry", "desc", SlpCode);
+            result.Count = rowCount;
+            return result;
+
+        }
         /// <summary>
         /// 销售员详情
         /// </summary>
@@ -1721,8 +1759,27 @@ namespace OpenAuth.WebApi.Controllers.Order
                 result.Message = e.Message;
             }
             return result;
-
         }
-
+        /// <summary>
+        /// 销售报价单审核
+        /// </summary>
+        /// <param name="resubmitReq">请求参数</param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("AuditResubmitNextNew")]
+        public Response<string> AuditResubmitNextNew(AuditResubmitReq resubmitReq)
+        {
+            var result = new Response<string>();
+            try
+            {
+                var userId = _serviceBaseApp.GetUserNaspId();
+                result.Result = _serviceSaleOrderApp.AuditResubmitNextNew(resubmitReq.jobId, userId, resubmitReq.recommend, resubmitReq.auditOpinionid, resubmitReq.IsUpdate, resubmitReq.vStock,resubmitReq.Comments,resubmitReq.Remark);
+            }
+            catch (Exception e)
+            {
+                result.Message = e.Message;
+            }
+            return result;
+        }
     }
 }
