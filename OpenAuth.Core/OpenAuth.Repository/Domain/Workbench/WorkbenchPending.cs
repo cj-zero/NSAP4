@@ -37,7 +37,7 @@ namespace OpenAuth.Repository.Domain.Workbench
         [Description("总金额")]
         public decimal? TotalMoney { get; set; }
         /// <summary>
-        /// 订单类型 1销售订单 2 退料单 3 个人结算单 4 报销单
+        /// 订单类型 1销售订单 2 退料单 3 个人结算单 4 报销单 5 内联单
         /// </summary> 
         [Description("订单类型")]
         public int OrderType { get; set; }

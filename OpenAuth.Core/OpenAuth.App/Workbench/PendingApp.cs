@@ -30,17 +30,19 @@ namespace OpenAuth.App.Workbench
         public readonly QuotationApp _quotationApp;
         public readonly FlowInstanceApp _flowInstanceApp;
         public readonly UserManagerApp _userManagerApp;
+        private readonly OrgManagerApp _orgApp;
         /// <summary>
         /// 构造方法
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
         /// <param name="quotationApp"></param>
-        public PendingApp(IUnitWork unitWork, IAuth auth, QuotationApp quotationApp, UserManagerApp userManagerApp, FlowInstanceApp flowInstanceApp) : base(unitWork, auth)
+        public PendingApp(IUnitWork unitWork, IAuth auth, QuotationApp quotationApp, UserManagerApp userManagerApp, FlowInstanceApp flowInstanceApp, OrgManagerApp orgApp) : base(unitWork, auth)
         {
             _quotationApp = quotationApp;
             _flowInstanceApp = flowInstanceApp;
             _userManagerApp = userManagerApp;
+            _orgApp = orgApp;
         }
         /// <summary>
         /// 服务单详情
@@ -55,6 +57,7 @@ namespace OpenAuth.App.Workbench
                                     from c in bc.DefaultIfEmpty()
                                     select new { a.Name, a.Id, OrgName = c.Name, c.CascadeId }).OrderByDescending(u => u.CascadeId).FirstOrDefaultAsync();
             var serviceDailyReportList = await UnitWork.Find<ServiceDailyReport>(s => ServiceOrderId == s.ServiceOrderId).ToListAsync();
+            var orgrole = await _orgApp.GetOrgNameAndRoleIdentity(PetitionerId);
 
             var serviceOrder = await UnitWork.Find<ServiceOrder>(s => s.Id == ServiceOrderId).Include(s => s.ServiceWorkOrders).Select(s => new ServiceOrderResp
             {
@@ -81,6 +84,7 @@ namespace OpenAuth.App.Workbench
             serviceOrder.Balance = await UnitWork.Find<OCRD>(o => serviceOrder.TerminalCustomerId.Contains(o.CardCode)).Select(o => o.Balance.ToString()).FirstOrDefaultAsync();
             serviceOrder.Petitioner = petitioner.OrgName + "-" + petitioner.Name;
             serviceOrder.PetitionerId = petitioner.Id;
+            serviceOrder.RoleIdentity = orgrole.RoleIdentity;
             serviceOrder.ServiceDailyReports = serviceDailyReportList.Select(s => new ServiceDailyReportResp
             {
                 CreateTime = Convert.ToDateTime(s.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),

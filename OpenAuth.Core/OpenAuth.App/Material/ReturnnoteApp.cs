@@ -31,8 +31,9 @@ namespace OpenAuth.App
         //private readonly QuotationApp _quotation;
         private readonly PendingApp _pending;
         private readonly WorkbenchApp _workbenchApp;
+        private readonly OrgManagerApp _orgApp;
 
-        public ReturnNoteApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, PendingApp pending, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth, ICapPublisher capBus) : base(unitWork, auth)
+        public ReturnNoteApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, PendingApp pending, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth, ICapPublisher capBus, OrgManagerApp orgApp) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
@@ -41,6 +42,7 @@ namespace OpenAuth.App
             //_quotation = quotation;
             _workbenchApp = workbenchApp;
             _pending = pending;
+            _orgApp = orgApp;
         }
 
         #region app和erp通用
@@ -710,13 +712,17 @@ namespace OpenAuth.App
             returnNotes.ReturnNoteProducts.ForEach(c => {
                 c.ReturnNoteMaterials = c.ReturnNoteMaterials.OrderBy(c => c.ReplaceMaterialCode).ThenBy(c => c.Sort).ToList();
             });
+
+            var orgrole = await _orgApp.GetOrgNameAndRoleIdentity(returnNotes.CreateUserId);
+
             result.Data = new
             {
                 InvoiceDocEntry,
                 DocTotal = DocTotal,
                 returnNoteId = returnNotes.Id,
                 Status= status,
-                IsPermission= isPermission,
+                RoleIdentity = orgrole.RoleIdentity,
+                IsPermission = isPermission,
                 returnNotes,
                 serviceOrders,
                 flowPathResp,

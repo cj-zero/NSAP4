@@ -267,7 +267,12 @@ namespace OpenAuth.App.Material.Request
         ///是否个代结算
         /// </summary>
         public bool? IsOutsourc { get; set; }
-        
+
+        /// <summary>
+        /// 角色身份标识
+        /// </summary>
+        public List<string> RoleIdentity { get; set; }
+
         /// <summary>
         /// 报价单设备列表
         /// </summary>
