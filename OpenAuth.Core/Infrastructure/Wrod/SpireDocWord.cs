@@ -13,11 +13,11 @@ namespace Infrastructure.Wrod
         /// <summary>
         /// 获取模板
         /// </summary>
-        public static void GetDocument()
+        public static void GetDocument(string templatesPath)
         {
             try
             {
-                string wordTemplatePath = AppDomain.CurrentDomain.BaseDirectory + "\\Templates\\CE-6000-CH.docx";
+                string wordTemplatePath = templatesPath;
                 document.LoadFromFile(wordTemplatePath);
             }
             catch (Exception ex)
@@ -26,9 +26,9 @@ namespace Infrastructure.Wrod
                 throw;
             }
         }
-        public static void CreateNewWord()
+        public static void CreateNewWord(string docxName)
         {
-            document.SaveToFile("Replace.docx", FileFormat.Docx);
+            document.SaveToFile(docxName, FileFormat.Docx);
         }
         /// <summary>
         /// 替换模板

@@ -181,14 +181,14 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
         /// <returns></returns>
         [HttpGet]
         [Route("GetSpecifications")]
-        public async Task<Response<ProductModelDetails>> GetSpecifications(int Id)
+        public async Task<Response<ProductModelDetails>> GetSpecifications(int Id,string Language)
         {
             string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
 
             var result = new Response<ProductModelDetails>();
             try
             {
-                result.Result = _productModelApp.GetSpecifications(Id, host);
+                result.Result = _productModelApp.GetSpecifications(Id, host, Language);
             }
             catch (Exception ex)
             {

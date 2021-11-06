@@ -117,7 +117,7 @@ namespace OpenAuth.App
             }
             if (!string.IsNullOrWhiteSpace(queryModel.Current))
             {
-                exps = exps.And(t => t.Current == queryModel.Current); 
+                exps = exps.And(t => t.Current == queryModel.Current);
             }
             if (!string.IsNullOrWhiteSpace(queryModel.TotalPower))
             {
@@ -204,116 +204,116 @@ namespace OpenAuth.App
         public string ExportProductSpecsDoc(int Id, string host, string Language)
         {
             var productModelSelection = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.Id == Id).FirstOrDefault();
-            string pdfName = DateTime.Now.ToString("yyyyMMddHHmmssffffff") + ".doc";
+            var type = UnitWork.FindSingle<ProductModelType>(q => q.Id == productModelSelection.ProductModelTypeId);
 
             if (productModelSelection != null)
             {
                 var productModelCategory = UnitWork.Find<ProductModelCategory>(u => !u.IsDelete && u.Id == productModelSelection.ProductModelCategoryId).FirstOrDefault();
                 var productModelSelectionInfo = UnitWork.Find<ProductModelSelectionInfo>(u => !u.IsDelete && u.ProductModelSelectionId == productModelSelection.Id).FirstOrDefault();
-                var productModelDetails = GetSpecifications(Id, null);
+                var productModelDetails = GetSpecifications(Id, null,Language);
                 string templatePath = "";
-                List<WordMarkModel> wordModels = new List<WordMarkModel>() {
-                
-                   new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.ChannelNumber),
-                 MarkType=0,
-                 MarkValue=productModelDetails.ChannelNumber
-                },
-                          new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.InputPowerType),
-                 MarkType=0,
-                 MarkValue=productModelDetails.InputPowerType
-                },
-                new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.InputActivePower),
-                 MarkType=0,
-                 MarkValue=productModelDetails.InputActivePower
-                },
-                new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.InputCurrent),
-                 MarkType=0,
-                 MarkValue=productModelDetails.InputCurrent
-                },       new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.Efficiency),
-                 MarkType=0,
-                 MarkValue=productModelDetails.Efficiency
-                },       new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.Noise),
-                 MarkType=0,
-                 MarkValue=productModelDetails.Noise
-                },       new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.DeviceType),
-                 MarkType=0,
-                 MarkValue=productModelDetails.DeviceType
-                },       new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.PowerControlModuleType),
-                 MarkType=0,
-                 MarkValue=productModelDetails.PowerControlModuleType
-                },       new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.PowerConnection),
-                 MarkType=0,
-                 MarkValue=productModelDetails.PowerConnection
-                },
-                           new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.ChargeVoltageRange),
-                 MarkType=0,
-                 MarkValue=productModelDetails.ChargeVoltageRange
-                }, new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.DischargeVoltageRange),
-                 MarkType=0,
-                 MarkValue=productModelDetails.DischargeVoltageRange
-                }, new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.MinimumDischargeVoltage),
-                 MarkType=0,
-                 MarkValue=productModelDetails.MinimumDischargeVoltage
-                }, new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.CurrentRange),
-                 MarkType=0,
-                 MarkValue=productModelDetails.CurrentRange
-                },
-                            new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.CurrentAccurack),
-                 MarkType=0,
-                 MarkValue=productModelDetails.CurrentAccurack
-                }, new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.CutOffCurrent),
-                 MarkType=0,
-                 MarkValue=productModelDetails.CutOffCurrent
-                }, new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.SinglePower),
-                 MarkType=0,
-                 MarkValue=productModelDetails.SinglePower
-                }, new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.CurrentResponseTime),
-                 MarkType=0,
-                 MarkValue=productModelDetails.CurrentResponseTime
-                }, new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.CurrentConversionTime),
-                 MarkType=0,
-                 MarkValue=productModelDetails.CurrentConversionTime
-                }, new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.RecordFreq),
-                 MarkType=0,
-                 MarkValue=productModelDetails.RecordFreq
-                }, new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.MinimumVoltageInterval),
-                 MarkType=0,
-                 MarkValue=productModelDetails.MinimumVoltageInterval
-                },
-                             new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.MinimumCurrentInterval),
-                 MarkType=0,
-                 MarkValue=productModelDetails.MinimumCurrentInterval
-                }, new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.TotalPower),
-                 MarkType=0,
-                 MarkValue=productModelDetails.TotalPower
-                }, new WordMarkModel(){
-                 MarkName=nameof(ProductModelDetails.Size),
-                 MarkType=0,
-                 MarkValue=productModelDetails.Size
-                },
-                };
+                //List<WordMarkModel> wordModels = new List<WordMarkModel>() {
+
+                //   new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.ChannelNumber),
+                // MarkType=0,
+                // MarkValue=productModelDetails.ChannelNumber
+                //},
+                //          new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.InputPowerType),
+                // MarkType=0,
+                // MarkValue=productModelDetails.InputPowerType
+                //},
+                //new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.InputActivePower),
+                // MarkType=0,
+                // MarkValue=productModelDetails.InputActivePower
+                //},
+                //new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.InputCurrent),
+                // MarkType=0,
+                // MarkValue=productModelDetails.InputCurrent
+                //},       new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.Efficiency),
+                // MarkType=0,
+                // MarkValue=productModelDetails.Efficiency
+                //},       new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.Noise),
+                // MarkType=0,
+                // MarkValue=productModelDetails.Noise
+                //},       new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.DeviceType),
+                // MarkType=0,
+                // MarkValue=productModelDetails.DeviceType
+                //},       new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.PowerControlModuleType),
+                // MarkType=0,
+                // MarkValue=productModelDetails.PowerControlModuleType
+                //},       new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.PowerConnection),
+                // MarkType=0,
+                // MarkValue=productModelDetails.PowerConnection
+                //},
+                //           new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.ChargeVoltageRange),
+                // MarkType=0,
+                // MarkValue=productModelDetails.ChargeVoltageRange
+                //}, new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.DischargeVoltageRange),
+                // MarkType=0,
+                // MarkValue=productModelDetails.DischargeVoltageRange
+                //}, new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.MinimumDischargeVoltage),
+                // MarkType=0,
+                // MarkValue=productModelDetails.MinimumDischargeVoltage
+                //}, new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.CurrentRange),
+                // MarkType=0,
+                // MarkValue=productModelDetails.CurrentRange
+                //},
+                //            new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.CurrentAccurack),
+                // MarkType=0,
+                // MarkValue=productModelDetails.CurrentAccurack
+                //}, new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.CutOffCurrent),
+                // MarkType=0,
+                // MarkValue=productModelDetails.CutOffCurrent
+                //}, new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.SinglePower),
+                // MarkType=0,
+                // MarkValue=productModelDetails.SinglePower
+                //}, new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.CurrentResponseTime),
+                // MarkType=0,
+                // MarkValue=productModelDetails.CurrentResponseTime
+                //}, new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.CurrentConversionTime),
+                // MarkType=0,
+                // MarkValue=productModelDetails.CurrentConversionTime
+                //}, new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.RecordFreq),
+                // MarkType=0,
+                // MarkValue=productModelDetails.RecordFreq
+                //}, new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.MinimumVoltageInterval),
+                // MarkType=0,
+                // MarkValue=productModelDetails.MinimumVoltageInterval
+                //},
+                //             new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.MinimumCurrentInterval),
+                // MarkType=0,
+                // MarkValue=productModelDetails.MinimumCurrentInterval
+                //}, new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.TotalPower),
+                // MarkType=0,
+                // MarkValue=productModelDetails.TotalPower
+                //}, new WordMarkModel(){
+                // MarkName=nameof(ProductModelDetails.Size),
+                // MarkType=0,
+                // MarkValue=productModelDetails.Size
+                //},
+                //};
                 if (Language == "CN")
                 {
                     templatePath = Path.Combine(Directory.GetCurrentDirectory() + productModelCategory.SpecsDocTemplatePath_CH);
@@ -323,36 +323,70 @@ namespace OpenAuth.App
                     templatePath = Path.Combine(Directory.GetCurrentDirectory() + productModelCategory.SpecsDocTemplatePath_EN);
 
                 }
-                var ParamTemplate = new
-                {
-                    DeviceCoding = productModelSelection.DeviceCoding,
-                    ChannelNumber = productModelSelection.ChannelNumber,
-                    InputPowerType = productModelDetails.InputPowerType,
-                    InputActivePower = productModelDetails.InputActivePower,
-                    InputCurrent = productModelDetails.InputCurrent,
-                    Efficiency = productModelDetails.Efficiency,
-                    Noise = productModelDetails.Noise,
-                    DeviceType = productModelDetails.DeviceType,
-                    PowerControlModuleType = productModelDetails.PowerControlModuleType,
-                    PowerConnection = productModelDetails.PowerConnection,
-                    ChargeVoltageRange = productModelDetails.ChargeVoltageRange,
-                    DischargeVoltageRange = productModelDetails.DischargeVoltageRange,
-                    MinimumDischargeVoltage = productModelDetails.MinimumDischargeVoltage,
-                    CurrentRange = productModelDetails.CurrentRange,
-                    CurrentAccurack = productModelDetails.CurrentAccurack,
-                    CutOffCurrent = productModelDetails.CutOffCurrent,
-                    SinglePower = productModelDetails.SinglePower,
-                    CurrentResponseTime = productModelDetails.CurrentResponseTime,
-                    CurrentConversionTime = productModelDetails.CurrentConversionTime,
-                    RecordFreq = productModelDetails.RecordFreq,
-                    MinimumVoltageInterval = productModelDetails.MinimumVoltageInterval,
-                    MinimumCurrentInterval = productModelDetails.MinimumCurrentInterval,
-                    TotalPower = productModelDetails.TotalPower,
-                    Size = productModelDetails.Size
-                };
+                //var ParamTemplate = new
+                //{
+                //    DeviceCoding = productModelSelection.DeviceCoding,
+                //    ChannelNumber = productModelSelection.ChannelNumber,
+                //    InputPowerType = productModelDetails.InputPowerType,
+                //    InputActivePower = productModelDetails.InputActivePower,
+                //    InputCurrent = productModelDetails.InputCurrent,
+                //    Efficiency = productModelDetails.Efficiency,
+                //    Noise = productModelDetails.Noise,
+                //    DeviceType = productModelDetails.DeviceType,
+                //    PowerControlModuleType = productModelDetails.PowerControlModuleType,
+                //    PowerConnection = productModelDetails.PowerConnection,
+                //    ChargeVoltageRange = productModelDetails.ChargeVoltageRange,
+                //    DischargeVoltageRange = productModelDetails.DischargeVoltageRange,
+                //    MinimumDischargeVoltage = productModelDetails.MinimumDischargeVoltage,
+                //    CurrentRange = productModelDetails.CurrentRange,
+                //    CurrentAccurack = productModelDetails.CurrentAccurack,
+                //    CutOffCurrent = productModelDetails.CutOffCurrent,
+                //    SinglePower = productModelDetails.SinglePower,
+                //    CurrentResponseTime = productModelDetails.CurrentResponseTime,
+                //    CurrentConversionTime = productModelDetails.CurrentConversionTime,
+                //    RecordFreq = productModelDetails.RecordFreq,
+                //    MinimumVoltageInterval = productModelDetails.MinimumVoltageInterval,
+                //    MinimumCurrentInterval = productModelDetails.MinimumCurrentInterval,
+                //    TotalPower = productModelDetails.TotalPower,
+                //    Size = productModelDetails.Size
+                //};
 
+                string filePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Templates\\files\\" + DateTime.Now.ToString("yyyyMMdd") + "\\");
+                //object[] oBookMark = wordModels.Select(zw => (object)zw.MarkName).Distinct().ToArray();
+
+                //WordTemplateHelper.WordTemplateReplace(templatePath,
+                //    filePath + pdfName,
+                //    new Dictionary<string, string>()
+                //    {
+                //        ["DeviceCoding"] = productModelDetails.DeviceCoding,
+                //        ["InputActivePower"] = productModelDetails.InputActivePower,
+                //        ["InputPowerType"] = productModelDetails.InputPowerType.ToString(),
+                //        ["InputCurrent"] = productModelDetails.InputCurrent,
+                //        ["Efficiency"] = productModelDetails.Efficiency,
+                //        ["Noise"] = productModelDetails.Noise,
+                //        ["DeviceType"] = productModelDetails.DeviceType,
+                //        ["PowerControlModuleType"] = productModelDetails.PowerControlModuleType,
+                //        ["PowerConnection"] = productModelDetails.PowerConnection,
+                //        ["ChargeVoltageRange"] = productModelDetails.ChargeVoltageRange,
+                //        ["DischargeVoltageRange"] = productModelDetails.DischargeVoltageRange,
+                //        ["MinimumDischargeVoltage"] = productModelDetails.MinimumDischargeVoltage,
+                //        ["CurrentRange"] = productModelDetails.CurrentRange,
+                //        ["CurrentAccurack"] = productModelDetails.CurrentAccurack,
+                //        ["CutOffCurrent"] = productModelDetails.CutOffCurrent,
+                //        ["SinglePower"] = productModelDetails.SinglePower,
+                //        ["CurrentResponseTime"] = productModelDetails.CurrentResponseTime,
+                //        ["CurrentConversionTime"] = productModelDetails.CurrentConversionTime,
+                //        ["RecordFreq"] = productModelDetails.RecordFreq,
+                //        ["MinimumVoltageInterval"] = productModelDetails.MinimumVoltageInterval,
+                //        ["MinimumCurrentInterval"] = productModelDetails.MinimumCurrentInterval,
+                //        ["TotalPower"] = productModelDetails.TotalPower,
+                //        ["Size"] = productModelDetails.Size
+                //    });
+                //FileHelper.DOCTemplateConvert(templatePath, filePath + pdfName, wordModels, oBookMark);
+                //WordTemplateHelper.WriteToPublicationOfResult(templatePath, filePath + pdfName, WordTemplateHelper.getProperties(ParamTemplate));
                 ProductParamTemplate productParamTemplate = new ProductParamTemplate()
                 {
+
                     DeviceCoding = productModelSelection.DeviceCoding,
                     ChannelNumber = productModelSelection.ChannelNumber.ToString(),
                     InputPowerType = productModelDetails.InputPowerType,
@@ -376,17 +410,14 @@ namespace OpenAuth.App
                     MinimumVoltageInterval = productModelDetails.MinimumVoltageInterval,
                     MinimumCurrentInterval = productModelDetails.MinimumCurrentInterval,
                     TotalPower = productModelDetails.TotalPower,
-                    Size = productModelDetails.Size
+                    Size = productModelDetails.Size,
+                    Image = host + type.Image
                 };
-                string filePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Templates\\");
-                // object[] oBookMark = wordModels.Select(zw => (object)zw.MarkName).Distinct().ToArray();
-                // FileHelper.DOCTemplateConvert(templatePath, filePath + pdfName, wordModels, oBookMark);
-                //   WordTemplateHelper.WriteToPublicationOfResult(templatePath, filePath + pdfName, WordTemplateHelper.getProperties(ParamTemplate));
-                SpireDocWord.GetDocument(); 
+                SpireDocWord.GetDocument(templatePath);
                 SpireDocWord.ReplaseTemplateWord(productParamTemplate);
-                SpireDocWord.CreateNewWord();
+                SpireDocWord.CreateNewWord(filePath + productModelSelection.DeviceCoding + ".docx");
             }
-            return host + "/Templates/" + pdfName;
+            return host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + productModelSelection.DeviceCoding;
 
         }
 
@@ -405,7 +436,7 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="Id"></param>
         /// <returns></returns>
-        public ProductModelDetails GetSpecifications(int Id, string? host)
+        public ProductModelDetails GetSpecifications(int Id, string? host, string Language)
 
         {
             var result = new ProductModelDetails();
@@ -417,65 +448,128 @@ namespace OpenAuth.App
             result.InputPowerType = productmodelselectioninfo.InputPowerType;
             result.InputActivePower = productmodelselectioninfo.InputActivePower;
             result.InputCurrent = productmodelselectioninfo.InputCurrent;
-            if (productmodeltype.Name == "模块机")
+            if (Language=="CN")
             {
-                result.Efficiency = "90%";
-                result.Noise = "≤65dB";
-                result.DeviceType = "四线制连接(充放电异口)";
-                result.PowerControlModuleType = "MOSFET";
-                if (productmodelselectioninfo.InputPowerType.Contains("AC220V"))
+                if (productmodeltype.Name == "模块机")
                 {
-                    result.PowerConnection = "单相三线";
+                    result.Efficiency = "90%";
+                    result.Noise = "≤65dB";
+                    result.DeviceType = "四线制连接(充放电异口)";
+                    result.PowerControlModuleType = "MOSFET";
+                    if (productmodelselectioninfo.InputPowerType.Contains("AC220V"))
+                    {
+                        result.PowerConnection = "单相三线";
+                    }
+                    else
+                    {
+                        result.PowerConnection = "三相五线";
+                    }
+                    result.CurrentResponseTime = "≤3ms";
+                    result.CurrentConversionTime = "≤6ms";
+                }
+                if (productmodeltype.Name == "塔式机")
+                {
+                    result.Efficiency = "94%";
+                    result.Noise = "≤75dB";
+                    result.DeviceType = "四线制连接(充放电同口)";
+                    result.PowerControlModuleType = "IGBT";
+                    result.PowerConnection = "三相四线";
+                    result.CurrentResponseTime = "≤5ms";
+                    result.CurrentConversionTime = "≤10ms";
+
+                }
+                result.ChargeVoltageRange = "充电：0" + "V~" + productmodelselection.Voltage + "V";
+                result.DischargeVoltageRange = "放电：" + productmodelselectioninfo.MinimumDischargeVoltage + "~" + productmodelselection.Voltage + "V";
+                result.MinimumDischargeVoltage = productmodelselectioninfo.MinimumDischargeVoltage;
+                result.CurrentRange = (float.Parse(productmodelselection.Current) * 0.005).ToString() + "A~" + productmodelselection.Current + "A";
+                result.CurrentAccurack = productmodelselection.CurrentAccurack;
+                float Temp = (float.Parse(productmodelselection.Current) * 1000);
+                if (Temp >= 30000)
+                {
+                    Temp = (float)(Temp * 0.001);
                 }
                 else
                 {
-                    result.PowerConnection = "三相五线";
+                    Temp = 30;//
+
                 }
-                result.CurrentResponseTime = "≤3ms";
-                result.CurrentConversionTime = "≤6ms";
-            }
-            if (productmodeltype.Name == "塔式机")
-            {
-                result.Efficiency = "94%";
-                result.Noise = "≤75dB";
-                result.DeviceType = "四线制连接(充放电同口)";
-                result.PowerControlModuleType = "IGBT";
-                result.PowerConnection = "三相四线";
-                result.CurrentResponseTime = "≤5ms";
-                result.CurrentConversionTime = "≤10ms";
+                result.CutOffCurrent = Temp.ToString();
+                result.SinglePower = Temp.ToString() + "KW";
+                result.RecordFreq = productmodelselectioninfo.Fre;
+                if (productmodelselectioninfo.Fre == "100HZ")
+                {
+                    result.RecordFreq = productmodelselectioninfo.Fre + "(接入辅助通道为10HZ)";
 
+                }
+                result.MinimumVoltageInterval = "最小电压间隔: " + Temp + "V";
+                result.MinimumCurrentInterval = "最小电流间隔: " + Temp + "A";//Minimum current interval: 0.1A
+                result.TotalPower = productmodelselection.TotalPower;
+                result.Size = productmodelselection.Size;
+                result.Pic = host + productmodeltype.Image;
             }
-            result.ChargeVoltageRange = "充电：0" + "V~" + productmodelselection.Voltage + "V";
-            result.DischargeVoltageRange = "放电：" + productmodelselectioninfo.MinimumDischargeVoltage + "~" + productmodelselection.Voltage + "V";
-            result.MinimumDischargeVoltage = productmodelselectioninfo.MinimumDischargeVoltage;
-            result.CurrentRange = (float.Parse(productmodelselection.Current) * 0.005).ToString() + "A~" + productmodelselection.Current + "A";
-            result.CurrentAccurack = productmodelselection.CurrentAccurack;
-            float Temp = (float.Parse(productmodelselection.Current) * 1000);
-            if (Temp >= 30000)
+            else if (Language=="EN")
             {
-                Temp = (float)(Temp * 0.001);
-            }
-            else
-            {
-                Temp = 30;//
+                if (productmodeltype.Name == "模块机")
+                {
+                    result.Efficiency = "90%";
+                    result.Noise = "≤65dB";
+                    result.DeviceType = "Four-wire connection(different port for charging and discharging)";
+                    result.PowerControlModuleType = "MOSFET";
+                    if (productmodelselectioninfo.InputPowerType.Contains("AC220V"))
+                    {
+                        result.PowerConnection = "Single-phase-four wire system";
+                    }
+                    else
+                    {
+                        result.PowerConnection = "Three-phase-five wire system";
+                    }
+                    result.CurrentResponseTime = "≤3ms";
+                    result.CurrentConversionTime = "≤6ms";
+                }
+                if (productmodeltype.Name == "塔式机")
+                {
+                    result.Efficiency = "94%";
+                    result.Noise = "≤75dB";
+                    result.DeviceType = "Four-wire connection(same port for charging and discharging)";
+                    result.PowerControlModuleType = "IGBT";
+                    result.PowerConnection = "Three-phase-four wire system";
+                    result.CurrentResponseTime = "≤5ms";
+                    result.CurrentConversionTime = "≤10ms";
 
-            }
-            result.CutOffCurrent = Temp.ToString();
-            result.SinglePower = Temp.ToString() + "KW";
-            result.RecordFreq = productmodelselectioninfo.Fre;
-            if (productmodelselectioninfo.Fre == "100HZ")
-            {
-                result.RecordFreq = productmodelselectioninfo.Fre + "(接入辅助通道为10HZ)";
+                }
+                result.ChargeVoltageRange = "Charge：0" + "V~" + productmodelselection.Voltage + "V";
+                result.DischargeVoltageRange = "Discharge：" + productmodelselectioninfo.MinimumDischargeVoltage + "~" + productmodelselection.Voltage + "V";
+                result.MinimumDischargeVoltage = productmodelselectioninfo.MinimumDischargeVoltage;
+                result.CurrentRange = (float.Parse(productmodelselection.Current) * 0.005).ToString() + "A~" + productmodelselection.Current + "A";
+                result.CurrentAccurack = productmodelselection.CurrentAccurack;
+                float Temp = (float.Parse(productmodelselection.Current) * 1000);
+                if (Temp >= 30000)
+                {
+                    Temp = (float)(Temp * 0.001);
+                }
+                else
+                {
+                    Temp = 30;//
 
+                }
+                result.CutOffCurrent = Temp.ToString();
+                result.SinglePower = Temp.ToString() + "KW";
+                result.RecordFreq = productmodelselectioninfo.Fre;
+                if (productmodelselectioninfo.Fre == "100HZ")
+                {
+                    result.RecordFreq = productmodelselectioninfo.Fre + "(connected with AUX channel:10Hz)";
+
+                }
+                result.MinimumVoltageInterval = "Minimum voltage interval: " + Temp + "V";
+                result.MinimumCurrentInterval = "Minimum current interval: " + Temp + "A";//Minimum current interval: 0.1A
+                result.TotalPower = productmodelselection.TotalPower;
+                result.Size = productmodelselection.Size;
+                result.Pic = host + productmodeltype.Image;
             }
-            result.MinimumVoltageInterval = "最小电压间隔: " + Temp + "V";
-            result.MinimumCurrentInterval = "最小电流间隔: " + Temp + "A";//Minimum current interval: 0.1A
-            result.TotalPower = productmodelselection.TotalPower;
-            result.Size = productmodelselection.Size;
-            result.Pic = host + productmodeltype.Image;
+            
             return result;
         }
-      
+
 
     }
 }
