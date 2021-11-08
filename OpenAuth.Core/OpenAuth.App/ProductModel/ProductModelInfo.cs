@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Infrastructure.Wrod;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -32,7 +33,7 @@ namespace OpenAuth.App.ProductModel
         /// </summary>
         public string Current { get; set; }
         /// <summary>
-        /// 序列号
+        /// 通道数
         /// </summary>
         public int ChannelNumber { get; set; }
         /// <summary>
@@ -55,25 +56,37 @@ namespace OpenAuth.App.ProductModel
         /// 价格
         /// </summary>
         public decimal UnitPrice { get; set; }
-        /// <summary>
-        /// 输入电源
-        /// </summary>
+
+
+
+    }
+
+    public class ProductParamTemplate : ExportBase
+    {
+        public string DeviceCoding { get; set; }
+        public string ChannelNumber { get; set; }
         public string InputPowerType { get; set; }
-        /// <summary>
-        /// 输入有功功率
-        /// </summary>
         public string InputActivePower { get; set; }
-         /// <summary>
-        /// 输入电流
-        /// </summary>
         public string InputCurrent { get; set; }
-        /// <summary>
-        /// 最低放电电压
-        /// </summary>
+        public string Efficiency { get; set; }
+        public string Noise { get; set; }
+        public string DeviceType { get; set; }
+        public string PowerControlModuleType { get; set; }
+        public string PowerConnection { get; set; }
+        public string ChargeVoltageRange { get; set; }
+        public string DischargeVoltageRange { get; set; }
         public string MinimumDischargeVoltage { get; set; }
-        /// <summary>
-        /// 最小电流间隔
-        /// </summary>
-        public string VoltAccurack { get; set; }
+        public string CurrentRange { get; set; }
+        public string CurrentAccurack { get; set; }
+        public string CutOffCurrent { get; set; }
+        public string SinglePower { get; set; }
+        public string CurrentResponseTime { get; set; }
+        public string CurrentConversionTime { get; set; }
+        public string RecordFreq { get; set; }
+        public string MinimumVoltageInterval { get; set; }
+        public string MinimumCurrentInterval { get; set; }
+        public string TotalPower { get; set; }
+        public string Size { get; set; }
+        public string Image { get; set; }
     }
 }

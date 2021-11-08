@@ -1954,7 +1954,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         private static async Task<string> BarcodeGenerate(string data)
         {
-            System.Drawing.Font labelFont = new System.Drawing.Font("OCRB", 11f, FontStyle.Bold);
+            System.Drawing.Font labelFont = new System.Drawing.Font("OCRB", 11f);//,FontStyle.Bold
             BarcodeLib.Barcode b = new BarcodeLib.Barcode
             {
                 IncludeLabel = true,

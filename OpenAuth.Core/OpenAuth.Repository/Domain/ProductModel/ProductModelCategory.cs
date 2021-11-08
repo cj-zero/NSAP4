@@ -26,12 +26,7 @@ namespace OpenAuth.Repository.Domain
         //[Description("产品系列")]
         //[MaxLength(20)]
         //public string Type { get; set; }
-        /// <summary>
-        /// 产品手册
-        /// </summary>
-        [Description("产品手册")]
-        [MaxLength(500)]
-        public string Image { get; set; }
+      
         /// <summary>
         /// 产品案例
         /// </summary>

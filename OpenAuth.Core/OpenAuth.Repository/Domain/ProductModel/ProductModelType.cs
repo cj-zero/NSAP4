@@ -27,9 +27,15 @@ namespace OpenAuth.Repository.Domain.ProductModel
         [MaxLength(20)]
         public string Name { get; set; }
         /// <summary>
-        /// 产品手册图片
+        /// 产品手册
         /// </summary>
-        [Description("产品手册图片")]
+        [Description("产品手册")]
+        [MaxLength(500)]
+        public string ImageBanner { get; set; }
+        /// <summary>
+        /// 产品详情图片
+        /// </summary>
+        [Description("产品详情图片")]
         [MaxLength(500)]
         public string Image { get; set; }
         /// <summary>
@@ -52,7 +58,7 @@ namespace OpenAuth.Repository.Domain.ProductModel
         /// 更新时间
         /// </summary>
         [Description("更新时间")]
-        public DateTime UpdateTime { get; set; }
+        public DateTime? UpdateTime { get; set; }
         /// <summary>
         /// 更新人
         /// </summary>

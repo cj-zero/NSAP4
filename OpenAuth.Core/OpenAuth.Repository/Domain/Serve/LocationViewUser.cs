@@ -17,8 +17,11 @@ namespace OpenAuth.Repository.Domain
         {
             this.UserId = string.Empty;
             this.UserName = string.Empty;
+            this.AppUserId = null;
         }
+
         public string UserId { get; set; }
         public string UserName { get; set; }
+        public int? AppUserId { get; set; }
     }
 }

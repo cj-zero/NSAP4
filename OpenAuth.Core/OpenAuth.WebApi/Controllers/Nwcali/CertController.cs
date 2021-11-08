@@ -337,7 +337,7 @@ namespace OpenAuth.WebApi.Controllers
             //    System.IO.File.Delete(Directory.GetCurrentDirectory() + "/wwwroot/ziliao.zip");
             //}
             //准备用来存放下载的多个文件流目录
-            var time=DateTime.Now.ToString("yyyyMMddHHmmss", System.Globalization.DateTimeFormatInfo.InvariantInfo);
+            var time = DateTime.Now.ToString("yyyyMMddHHmmss", System.Globalization.DateTimeFormatInfo.InvariantInfo);
             string pathZip = Directory.GetCurrentDirectory() + "/wwwroot/downfile/downfile-" + time + "/";
 
             var num = serialNumber.Split(',').ToList();
@@ -381,7 +381,7 @@ namespace OpenAuth.WebApi.Controllers
                 }
             }
             var certs = await _certinfoApp.GetAllAsync(c => num.Contains(c.CertNo));
-            if (certs.Count>0)
+            if (certs.Count > 0)
             {
                 foreach (var cert in certs)
                 {
@@ -436,14 +436,14 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="buff">byte数组</param>
         /// <param name="savepath">保存地址</param>
-        public static void Bytes2File(byte[] buff, string savepath,string name)
+        public static void Bytes2File(byte[] buff, string savepath, string name)
         {
             if (!Directory.Exists(savepath))
             {
                 Directory.CreateDirectory(savepath);
             }
 
-            FileStream fs = new FileStream(savepath+name, FileMode.Create);
+            FileStream fs = new FileStream(savepath + name, FileMode.Create);
             BinaryWriter bw = new BinaryWriter(fs);
             bw.Write(buff, 0, buff.Length);
             bw.Close();
@@ -459,7 +459,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 if (!string.IsNullOrWhiteSpace(baseInfo.PdfPath))
                 {
-                    var filestream =new FileStream(baseInfo.PdfPath, FileMode.Open);
+                    var filestream = new FileStream(baseInfo.PdfPath, FileMode.Open);
                     return File(filestream, "application/pdf");
                 }
                 var model = await BuildModel(baseInfo);
@@ -1286,7 +1286,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <returns></returns>
         private static async Task<string> BarcodeGenerate(string data)
         {
-            System.Drawing.Font labelFont = new System.Drawing.Font("OCRB", 11f, FontStyle.Bold);
+            System.Drawing.Font labelFont = new System.Drawing.Font("OCRB", 11f);//, FontStyle.Bold
             BarcodeLib.Barcode b = new BarcodeLib.Barcode
             {
                 IncludeLabel = true,
@@ -1304,6 +1304,7 @@ namespace OpenAuth.WebApi.Controllers
                 var base64str = Convert.ToBase64String(bytes);
                 return base64str;
             }
+            return "";
         }
 
         /// <summary>
