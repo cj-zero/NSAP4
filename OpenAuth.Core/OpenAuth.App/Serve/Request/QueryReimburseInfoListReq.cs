@@ -113,5 +113,10 @@ namespace OpenAuth.App.Request
         public DateTime? PaymentEndDate { get; set; }
 
         //todo:添加自己的请求字段
+
+        /// <summary>
+        /// 创建人ID
+        /// </summary>
+        public string CreateUserId { get; set; }
     }
 }
