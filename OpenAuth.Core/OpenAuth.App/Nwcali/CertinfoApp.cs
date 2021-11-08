@@ -1952,9 +1952,9 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private static async Task<string> BarcodeGenerate(string data)
+        public  async Task<string> BarcodeGenerate(string data)
         {
-            System.Drawing.Font labelFont = new System.Drawing.Font("OCRB", 11f);//,FontStyle.Bold
+            System.Drawing.Font labelFont = new System.Drawing.Font("OCRB", 11f, FontStyle.Bold);//
             BarcodeLib.Barcode b = new BarcodeLib.Barcode
             {
                 IncludeLabel = true,

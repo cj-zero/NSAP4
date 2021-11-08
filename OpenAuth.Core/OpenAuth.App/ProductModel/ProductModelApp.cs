@@ -512,8 +512,8 @@ namespace OpenAuth.App
             result.DeviceCoding = productmodelselection.DeviceCoding;
             result.ChannelNumber = productmodelselection.ChannelNumber;
             result.InputPowerType = productmodelselectioninfo.InputPowerType;
-            result.InputActivePower = productmodelselectioninfo.InputActivePower;
-            result.InputCurrent = productmodelselectioninfo.InputCurrent;
+            result.InputActivePower = productmodelselectioninfo.InputActivePower+"KW";
+            result.InputCurrent = productmodelselectioninfo.InputCurrent+"A/每相";
             if (Language == "CN")
             {
                 if (productmodeltype.Name == "模块机")
@@ -545,7 +545,7 @@ namespace OpenAuth.App
 
                 }
                 result.ChargeVoltageRange = "充电：0" + "V~" + productmodelselection.Voltage + "V";
-                result.DischargeVoltageRange = "放电：" + productmodelselectioninfo.MinimumDischargeVoltage + "~" + productmodelselection.Voltage + "V";
+                result.DischargeVoltageRange = "放电：" + productmodelselectioninfo.MinimumDischargeVoltage + "V~" + productmodelselection.Voltage + "V";
                 result.MinimumDischargeVoltage = productmodelselectioninfo.MinimumDischargeVoltage;
                 result.CurrentRange = (float.Parse(productmodelselection.Current) * 0.005).ToString() + "A~" + productmodelselection.Current + "A";
                 result.CurrentAccurack = productmodelselection.CurrentAccurack;
@@ -559,7 +559,7 @@ namespace OpenAuth.App
                     Temp = 30;//
 
                 }
-                result.CutOffCurrent = Temp.ToString();
+                result.CutOffCurrent = Temp.ToString()+"mA";
                 result.SinglePower = Temp.ToString() + "KW";
                 result.RecordFreq = productmodelselectioninfo.Fre;
                 if (productmodelselectioninfo.Fre == "100HZ")
@@ -604,7 +604,7 @@ namespace OpenAuth.App
 
                 }
                 result.ChargeVoltageRange = "Charge：0" + "V~" + productmodelselection.Voltage + "V";
-                result.DischargeVoltageRange = "Discharge：" + productmodelselectioninfo.MinimumDischargeVoltage + "~" + productmodelselection.Voltage + "V";
+                result.DischargeVoltageRange = "Discharge：" + productmodelselectioninfo.MinimumDischargeVoltage + "V~" + productmodelselection.Voltage + "V";
                 result.MinimumDischargeVoltage = productmodelselectioninfo.MinimumDischargeVoltage;
                 result.CurrentRange = (float.Parse(productmodelselection.Current) * 0.005).ToString() + "A~" + productmodelselection.Current + "A";
                 result.CurrentAccurack = productmodelselection.CurrentAccurack;
