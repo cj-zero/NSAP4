@@ -210,7 +210,7 @@ namespace OpenAuth.App
             {
                 var productModelCategory = UnitWork.Find<ProductModelCategory>(u => !u.IsDelete && u.Id == productModelSelection.ProductModelCategoryId).FirstOrDefault();
                 var productModelSelectionInfo = UnitWork.Find<ProductModelSelectionInfo>(u => !u.IsDelete && u.ProductModelSelectionId == productModelSelection.Id).FirstOrDefault();
-                var productModelDetails = GetSpecifications(Id, null,Language);
+                var productModelDetails = GetSpecifications(Id, null, Language);
                 string templatePath = "";
                 //List<WordMarkModel> wordModels = new List<WordMarkModel>() {
 
@@ -386,7 +386,7 @@ namespace OpenAuth.App
                 //WordTemplateHelper.WriteToPublicationOfResult(templatePath, filePath + pdfName, WordTemplateHelper.getProperties(ParamTemplate));
                 ProductParamTemplate productParamTemplate = new ProductParamTemplate()
                 {
-
+                    Title = productModelSelection.DeviceCoding,
                     DeviceCoding = productModelSelection.DeviceCoding,
                     ChannelNumber = productModelSelection.ChannelNumber.ToString(),
                     InputPowerType = productModelDetails.InputPowerType,
@@ -412,14 +412,14 @@ namespace OpenAuth.App
                     TotalPower = productModelDetails.TotalPower,
                     Size = productModelDetails.Size,
                     Image = host + type.Image,
-                    Weight=productModelSelection.Weight.ToString()
+                    Weight = productModelSelection.Weight.ToString()
 
                 };
                 SpireDocWord.GetDocument(templatePath);
                 SpireDocWord.ReplaseTemplateWord(productParamTemplate);
-                SpireDocWord.CreateNewWord(filePath + productModelSelection.DeviceCoding+ "-技术规格协议书" + ".docx");
+                SpireDocWord.CreateNewWord(filePath + productModelSelection.DeviceCoding + "-技术规格书" + ".docx");
             }
-            return host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + productModelSelection.DeviceCoding+ "-技术规格协议书.docx";
+            return host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + productModelSelection.DeviceCoding + "-技术规格书.docx";
 
         }
 
@@ -434,23 +434,26 @@ namespace OpenAuth.App
                 var productModelSelectionInfo = UnitWork.Find<ProductModelSelectionInfo>(u => !u.IsDelete && u.ProductModelSelectionId == productModelSelection.Id).FirstOrDefault();
                 var productModelDetails = GetSpecifications(Id, null, Language);
                 string templatePath = "";
-               
+
                 if (Language == "CN")
                 {
-                    templatePath = Path.Combine(Directory.GetCurrentDirectory() + productModelCategory.SpecsDocTemplatePath_CH);
+
+                    templatePath = Path.Combine(Directory.GetCurrentDirectory() + type.TAgreementDocTemplatePath_CH);
+
+
                 }
                 if (Language == "EN")
                 {
-                    templatePath = Path.Combine(Directory.GetCurrentDirectory() + productModelCategory.SpecsDocTemplatePath_EN);
+                    templatePath = Path.Combine(Directory.GetCurrentDirectory() + type.TAgreementDocTemplatePath_EN);
 
                 }
-               
+
 
                 string filePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Templates\\files\\" + DateTime.Now.ToString("yyyyMMdd") + "\\");
-                
+
                 ProductParamTemplate productParamTemplate = new ProductParamTemplate()
                 {
-                    Title= productModelSelection.DeviceCoding,
+                    Title = productModelSelection.DeviceCoding,
                     DeviceCoding = productModelSelection.DeviceCoding,
                     ChannelNumber = productModelSelection.ChannelNumber.ToString(),
                     InputPowerType = productModelDetails.InputPowerType,
@@ -474,14 +477,15 @@ namespace OpenAuth.App
                     MinimumVoltageInterval = productModelDetails.MinimumVoltageInterval,
                     MinimumCurrentInterval = productModelDetails.MinimumCurrentInterval,
                     TotalPower = productModelDetails.TotalPower,
-                    Size = productModelDetails.Size,
+                    Size = productModelDetails.Size != null ? productModelDetails.Size : "0.0",
+                    Weight=productModelSelection.Weight.ToString(),
                     Image = host + type.Image
                 };
                 SpireDocWord.GetDocument(templatePath);
                 SpireDocWord.ReplaseTemplateWord(productParamTemplate);
-                SpireDocWord.CreateNewWord(filePath + productModelSelection.DeviceCoding + ".docx");
+                SpireDocWord.CreateNewWord(filePath + productModelSelection.DeviceCoding + "-技术规格协议书" + ".docx");
             }
-            return host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + productModelSelection.DeviceCoding + ".docx";
+            return host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + productModelSelection.DeviceCoding + "-技术规格协议书.docx";
         }
 
         public string GetCalculation(string host)
@@ -511,7 +515,7 @@ namespace OpenAuth.App
             result.InputPowerType = productmodelselectioninfo.InputPowerType;
             result.InputActivePower = productmodelselectioninfo.InputActivePower;
             result.InputCurrent = productmodelselectioninfo.InputCurrent;
-            if (Language=="CN")
+            if (Language == "CN")
             {
                 if (productmodeltype.Name == "模块机")
                 {
@@ -570,7 +574,7 @@ namespace OpenAuth.App
                 result.Size = productmodelselection.Size;
                 result.Pic = host + productmodeltype.Image;
             }
-            else if (Language=="EN")
+            else if (Language == "EN")
             {
                 if (productmodeltype.Name == "模块机")
                 {
@@ -629,7 +633,7 @@ namespace OpenAuth.App
                 result.Size = productmodelselection.Size;
                 result.Pic = host + productmodeltype.Image;
             }
-            
+
             return result;
         }
 

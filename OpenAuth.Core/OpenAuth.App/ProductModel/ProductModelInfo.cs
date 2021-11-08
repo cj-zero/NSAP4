@@ -88,7 +88,7 @@ namespace OpenAuth.App.ProductModel
         public string MinimumVoltageInterval { get; set; }
         public string MinimumCurrentInterval { get; set; }
         public string TotalPower { get; set; }
-        public string Size { get; set; }
+        public string Size { get; set; } = "0.0";
         public string Image { get; set; }
     }
 }

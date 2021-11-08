@@ -102,7 +102,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Templates\CE-6000n系列AC交流输入电源线计算&amp;下单说明.pdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Templates\CE-6000塔式机技术协议书模板-CH.wpt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
