@@ -65,7 +65,7 @@ namespace OpenAuth.App
         public List<string> GetVoltageList()
         {
             var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete);
-            return productModelSelections.Select(zw => zw.Voltage).Distinct().OrderBy(zw => zw).ToList();
+            return productModelSelections.Select(zw => zw.Voltage).Distinct().OrderBy(int.Parse).ToList();
         }
         /// <summary>
         /// 获取电压等级
@@ -74,7 +74,7 @@ namespace OpenAuth.App
         public List<string> GetCurrentList()
         {
             var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete);
-            return productModelSelections.Select(zw => zw.Current).Distinct().OrderBy(zw => zw).ToList();
+            return productModelSelections.Select(zw => zw.Current).Distinct().OrderBy(int.Parse).ToList();
         }
         /// <summary>
         /// 获取通道数量
@@ -92,7 +92,7 @@ namespace OpenAuth.App
         public List<string> GetTotalPowerList()
         {
             var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete);
-            return productModelSelections.Select(zw => zw.TotalPower).Distinct().OrderBy(zw => zw).ToList();
+            return productModelSelections.Select(zw => zw.TotalPower).Distinct().OrderBy(float.Parse).ToList();
         }
         /// <summary>
         /// 查询
@@ -160,6 +160,8 @@ namespace OpenAuth.App
             }
             else
             {
+                imgs.Add(host + "/Templates/files/images/产品手册1.jpg");
+                imgs.Add(host + "/Templates/files/images/产品手册2.jpg");
                 var productModelCategory = UnitWork.Find<ProductModelType>(u => !u.IsDelete)?.ToList();
                 foreach (var item in productModelCategory)
                 {
@@ -169,8 +171,7 @@ namespace OpenAuth.App
                     }
 
                 }
-                imgs.Add(host + "/Templates/files/images/产品手册1.jpg");
-                imgs.Add(host + "/Templates/files/images/产品手册2.jpg");
+               
             }
 
             return imgs;
@@ -507,7 +508,7 @@ namespace OpenAuth.App
         {
             var result = new ProductModelDetails();
             var productmodelselection = UnitWork.FindSingle<ProductModelSelection>(q => q.Id == Id);
-            var productmodeltype = UnitWork.FindSingle<ProductModelType>(q => q.Id == productmodelselection.ProductModelCategoryId);
+            var productmodeltype = UnitWork.FindSingle<ProductModelType>(q => q.Id == productmodelselection.ProductModelTypeId);
             var productmodelselectioninfo = UnitWork.FindSingle<ProductModelSelectionInfo>(q => q.ProductModelSelectionId == productmodelselection.Id);
             result.DeviceCoding = productmodelselection.DeviceCoding;
             result.ChannelNumber = productmodelselection.ChannelNumber;

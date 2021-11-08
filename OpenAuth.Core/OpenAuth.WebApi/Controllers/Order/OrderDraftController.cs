@@ -508,7 +508,11 @@ namespace OpenAuth.WebApi.Controllers.Order
             if (power != null)
             {
                 Powers powers = new Powers(power.AuthMap);
-                viewFull = powers.ViewFull;
+                if (loginContext.User.Name == "韦京生"|| loginContext.User.Name == "郭睿心")
+                {
+                    viewFull = powers.ViewFull;
+
+                }
                 viewSelf = powers.ViewSelf;
                 viewSelfDepartment = powers.ViewSelfDepartment;
                 viewSales = powers.ViewSales;

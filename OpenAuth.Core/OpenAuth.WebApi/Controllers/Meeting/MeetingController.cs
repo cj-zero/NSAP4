@@ -335,21 +335,21 @@ namespace OpenAuth.WebApi.Controllers.Meeting
         /// </summary>
         /// <param name="UpdateModel"></param>
         /// <returns></returns>
-        [HttpPost]
-        [Route("Resubmit")]
-        public async Task<Response<bool>> Resubmit(UpdateMeetingDataReq UpdateModel)
-        {
-            var result = new Response<bool>();
-            try
-            {
-                result.Result = _serviceMeetingApp.Resubmit(UpdateModel);
-            }
-            catch (Exception ex)
-            {
-                result.Message = ex.Message;
-            }
-            return result;
-        }
+        //[HttpPost]
+        //[Route("Resubmit")]
+        //public async Task<Response<bool>> Resubmit(UpdateMeetingDataReq UpdateModel)
+        //{
+        //    var result = new Response<bool>();
+        //    try
+        //    {
+        //        result.Result = _serviceMeetingApp.Resubmit(UpdateModel);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Message = ex.Message;
+        //    }
+        //    return result;
+        //}
         /// <summary>
         /// 取消会议申请 Opinion：理由、原因
         /// </summary>
