@@ -134,10 +134,16 @@ namespace OpenAuth.App
             var pppUserMap = await UnitWork.Find<AppUserMap>(null).ToListAsync();
 
             //所有人最新定位信息
-            var realTimeLocationHis = await UnitWork.FromSql<RealTimeLocation>(@$"SELECT * from realtimelocation where Id in  (
-                                        SELECT max(Id) as Id from realtimelocation GROUP BY AppUserId
-                                        ) ORDER BY CreateTime desc")
-                                        .ToListAsync();
+            //var realTimeLocationHis = await UnitWork.FromSql<RealTimeLocation>(@$"SELECT * from realtimelocation where Id in  (
+            //                            SELECT max(Id) as Id from realtimelocation GROUP BY AppUserId
+            //                            ) ORDER BY CreateTime desc")
+            //                            .ToListAsync();
+
+            var realTimeLocationHis = await UnitWork.FromSql<RealTimeLocation>(@"SELECT r.*
+                                        FROM realtimelocation AS r
+                                        JOIN(
+	                                        SELECT max(Id) as Id from realtimelocation GROUP BY AppUserId
+                                        ) AS t ON r.Id = t.Id ORDER BY CreateTime desc;").ToListAsync();
 
 
             var locaotionInfoHistory = from a in realTimeLocationHis
