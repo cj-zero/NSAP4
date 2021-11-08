@@ -39,6 +39,18 @@ namespace OpenAuth.Repository.Domain.ProductModel
         [MaxLength(500)]
         public string Image { get; set; }
         /// <summary>
+        /// 技术协议模板
+        /// </summary>
+        [Description("中文技术协议模板")]
+        [MaxLength(500)]
+        public string TAgreementDocTemplatePath_CH { get; set; }
+        /// <summary>
+        /// 技术协议模板
+        /// </summary>
+        [Description("英文技术协议模板")]
+        [MaxLength(500)]
+        public string TAgreementDocTemplatePath_EN { get; set; }
+        /// <summary>
         /// 是否删除
         /// </summary>
         [Description("是否删除")]

@@ -544,7 +544,7 @@ namespace OpenAuth.WebApi.Controllers
             var turV = baseInfo.NwcaliTurs.Where(d => d.DataType == 1).ToList();
             var turA = baseInfo.NwcaliTurs.Where(d => d.DataType == 2).ToList();
             #region 页眉
-            var barcode = await BarcodeGenerate(baseInfo.CertificateNumber);
+            var barcode = await _certinfoApp.BarcodeGenerate(baseInfo.CertificateNumber);
             model.BarCode = barcode;
             #endregion
             #region Calibration Certificate
@@ -1279,33 +1279,33 @@ namespace OpenAuth.WebApi.Controllers
             }
         }
 
-        /// <summary>
-        /// 生成证书一维码
-        /// </summary>
-        /// <param name="data"></param>
-        /// <returns></returns>
-        private static async Task<string> BarcodeGenerate(string data)
-        {
-            System.Drawing.Font labelFont = new System.Drawing.Font("OCRB", 11f);//, FontStyle.Bold
-            BarcodeLib.Barcode b = new BarcodeLib.Barcode
-            {
-                IncludeLabel = true,
-                LabelFont = labelFont
-            };
-            Image img = b.Encode(BarcodeLib.TYPE.CODE128, data, Color.Black, Color.White, 131, 50);
+        ///// <summary>
+        ///// 生成证书一维码
+        ///// </summary>
+        ///// <param name="data"></param>
+        ///// <returns></returns>
+        //private static async Task<string> BarcodeGenerate(string data)
+        //{
+        //    System.Drawing.Font labelFont = new System.Drawing.Font("OCRB", 11f, FontStyle.Bold, FontStyle.Bold);//
+        //    BarcodeLib.Barcode b = new BarcodeLib.Barcode
+        //    {
+        //        IncludeLabel = true,
+        //        LabelFont = labelFont
+        //    };
+        //    Image img = b.Encode(BarcodeLib.TYPE.CODE128, data, Color.Black, Color.White, 131, 50);
 
-            DirUtil.CheckOrCreateDir(Path.Combine(BaseCertDir, data));
-            using (var stream = new MemoryStream())
-            {
-                img.Save(stream, ImageFormat.Png);
-                var bytes = new byte[stream.Length];
-                stream.Position = 0;
-                await stream.ReadAsync(bytes, 0, bytes.Length);
-                var base64str = Convert.ToBase64String(bytes);
-                return base64str;
-            }
-            return "";
-        }
+        //    DirUtil.CheckOrCreateDir(Path.Combine(BaseCertDir, data));
+        //    using (var stream = new MemoryStream())
+        //    {
+        //        img.Save(stream, ImageFormat.Png);
+        //        var bytes = new byte[stream.Length];
+        //        stream.Position = 0;
+        //        await stream.ReadAsync(bytes, 0, bytes.Length);
+        //        var base64str = Convert.ToBase64String(bytes);
+        //        return base64str;
+        //    }
+        //    return "";
+        //}
 
         /// <summary>
         /// 电压单位约分

@@ -264,6 +264,8 @@ namespace OpenAuth.App.Material
                         };
 
                         await _flowInstanceApp.Verification(verificationReq);
+                        //设置测试环节执行人
+                        await _flowInstanceApp.ModifyNodeUser(single.FlowInstanceId, true, new string[] { obj.CheckApproveId }, obj.CheckApprove, false);
                         await UnitWork.SaveAsync();
                     }
                     else
