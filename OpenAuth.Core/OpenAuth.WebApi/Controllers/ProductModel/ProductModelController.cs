@@ -305,7 +305,9 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
                         TotalPower = productModelDetails.TotalPower,
                         Size = productModelDetails.Size,
                         Image = host + type.Image,
-                        Weight = productModelSelection.Weight.ToString()
+                        Weight = productModelDetails.Weight,
+                        VoltageAccuracy = productModelSelectionInfo.VoltAccurack
+
 
                     };
                     SpireDocWord.GetDocument(templatePath);
@@ -384,7 +386,7 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
                 {
                     var productModelCategory = UnitWork.Find<ProductModelCategory>(u => !u.IsDelete && u.Id == productModelSelection.ProductModelCategoryId).FirstOrDefault();
                     var productModelSelectionInfo = UnitWork.Find<ProductModelSelectionInfo>(u => !u.IsDelete && u.ProductModelSelectionId == productModelSelection.Id).FirstOrDefault();
-                    var productModelDetails = _productModelApp. GetSpecifications(Id, null, Language);
+                    var productModelDetails = _productModelApp.GetSpecifications(Id, null, Language);
                     string templatePath = "";
 
                     if (Language == "CN")
@@ -431,14 +433,16 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
                         TotalPower = productModelDetails.TotalPower,
                         Size = productModelDetails.Size != null ? productModelDetails.Size : "0.0",
                         Weight = productModelSelection.Weight.ToString(),
-                        Image = host + type.Image
+                        Image = host + type.Image,
+                        VoltageAccuracy = productModelSelectionInfo.VoltAccurack
+
                     };
                     SpireDocWord.GetDocument(templatePath);
                     SpireDocWord.ReplaseTemplateWord(productParamTemplate);
                     SpireDocWord.CreateNewWord(filePath + productModelSelection.DeviceCoding + "-技术规格协议书" + ".docx");
                 }
-                result.Result= host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + productModelSelection.DeviceCoding + "-技术规格协议书.docx";
-             
+                result.Result = host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + productModelSelection.DeviceCoding + "-技术规格协议书.docx";
+
             }
             catch (Exception ex)
             {

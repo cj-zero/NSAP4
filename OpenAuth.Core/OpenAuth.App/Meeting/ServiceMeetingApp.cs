@@ -393,7 +393,7 @@ namespace OpenAuth.App.Meeting
             }
             if (QueryModel.IsDinner != -1)
             {
-                    exp = exp.And(t => t.IsDinner == (QueryModel.IsDinner != 0) ? true : false);
+                exp = exp.And(t => t.IsDinner == (QueryModel.IsDinner != 0) ? true : false);
             }
             if (QueryModel.DempId != 0)
             {
@@ -608,7 +608,7 @@ namespace OpenAuth.App.Meeting
                 {
                     exps = exps.And(e => e.AddressType == QueryModel.AddressType);
                 }
-                if (!string.IsNullOrWhiteSpace(QueryModel.Address ))
+                if (!string.IsNullOrWhiteSpace(QueryModel.Address))
                 {
                     exps = exps.And(e => e.Address.Contains(QueryModel.Address));
                 }

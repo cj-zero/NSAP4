@@ -92,6 +92,10 @@ namespace OpenAuth.App.ProductModel
         public string TotalPower { get; set; }
         public string Size { get; set; } = "0.0";
         public string Image { get; set; }
+        /// <summary>
+        /// 电压精度
+        /// </summary>
+        public string VoltageAccuracy { get; set; }
     }
 
     /// <summary>

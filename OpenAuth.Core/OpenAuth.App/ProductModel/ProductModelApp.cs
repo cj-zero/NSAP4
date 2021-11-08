@@ -512,8 +512,9 @@ namespace OpenAuth.App
             result.DeviceCoding = productmodelselection.DeviceCoding;
             result.ChannelNumber = productmodelselection.ChannelNumber;
             result.InputPowerType = productmodelselectioninfo.InputPowerType;
-            result.InputActivePower = productmodelselectioninfo.InputActivePower+"KW";
-            result.InputCurrent = productmodelselectioninfo.InputCurrent+"A/每相";
+            result.InputActivePower = productmodelselectioninfo.InputActivePower + "KW";
+            result.InputCurrent = productmodelselectioninfo.InputCurrent + "A/每相";
+            result.Weight = "约" + productmodelselection.Weight.ToString() + "KG";
             if (Language == "CN")
             {
                 if (productmodeltype.Name == "模块机")
@@ -532,6 +533,7 @@ namespace OpenAuth.App
                     }
                     result.CurrentResponseTime = "≤3ms";
                     result.CurrentConversionTime = "≤6ms";
+
                 }
                 if (productmodeltype.Name == "塔式机")
                 {
@@ -544,9 +546,10 @@ namespace OpenAuth.App
                     result.CurrentConversionTime = "≤10ms";
 
                 }
+                result.VoltageAccuracy = productmodelselectioninfo.VoltAccurack;
                 result.ChargeVoltageRange = "充电：0" + "V~" + productmodelselection.Voltage + "V";
                 result.DischargeVoltageRange = "放电：" + productmodelselectioninfo.MinimumDischargeVoltage + "V~" + productmodelselection.Voltage + "V";
-                result.MinimumDischargeVoltage = productmodelselectioninfo.MinimumDischargeVoltage;
+                result.MinimumDischargeVoltage = productmodelselectioninfo.MinimumDischargeVoltage+"V";
                 result.CurrentRange = (float.Parse(productmodelselection.Current) * 0.005).ToString() + "A~" + productmodelselection.Current + "A";
                 result.CurrentAccurack = productmodelselection.CurrentAccurack;
                 float Temp = (float.Parse(productmodelselection.Current) * 1000);
@@ -559,7 +562,9 @@ namespace OpenAuth.App
                     Temp = 30;//
 
                 }
-                result.CutOffCurrent = Temp.ToString()+"mA";
+                result.CutOffCurrent = Temp.ToString() + "mA";
+                Temp = (float)(float.Parse(productmodelselection.Voltage)* float.Parse(productmodelselection.Current) * 0.001);
+
                 result.SinglePower = Temp.ToString() + "KW";
                 result.RecordFreq = productmodelselectioninfo.Fre;
                 if (productmodelselectioninfo.Fre == "100HZ")
@@ -567,9 +572,10 @@ namespace OpenAuth.App
                     result.RecordFreq = productmodelselectioninfo.Fre + "(接入辅助通道为10HZ)";
 
                 }
+                Temp = (float)(float.Parse(productmodelselection.Voltage) * 0.002);
                 result.MinimumVoltageInterval = "最小电压间隔: " + Temp + "V";
                 result.MinimumCurrentInterval = "最小电流间隔: " + Temp + "A";//Minimum current interval: 0.1A
-                result.TotalPower = productmodelselection.TotalPower;
+                result.TotalPower = productmodelselection.TotalPower+"KW";
                 result.Size = productmodelselection.Size;
                 result.Pic = host + productmodeltype.Image;
             }
@@ -591,6 +597,8 @@ namespace OpenAuth.App
                     }
                     result.CurrentResponseTime = "≤3ms";
                     result.CurrentConversionTime = "≤6ms";
+
+
                 }
                 if (productmodeltype.Name == "塔式机")
                 {
@@ -602,7 +610,10 @@ namespace OpenAuth.App
                     result.CurrentResponseTime = "≤5ms";
                     result.CurrentConversionTime = "≤10ms";
 
+
+
                 }
+                result.VoltageAccuracy = productmodelselectioninfo.VoltAccurack;
                 result.ChargeVoltageRange = "Charge：0" + "V~" + productmodelselection.Voltage + "V";
                 result.DischargeVoltageRange = "Discharge：" + productmodelselectioninfo.MinimumDischargeVoltage + "V~" + productmodelselection.Voltage + "V";
                 result.MinimumDischargeVoltage = productmodelselectioninfo.MinimumDischargeVoltage;
@@ -619,6 +630,7 @@ namespace OpenAuth.App
 
                 }
                 result.CutOffCurrent = Temp.ToString();
+                Temp = (float)(float.Parse(productmodelselection.Voltage) * float.Parse(productmodelselection.Current) * 0.001);
                 result.SinglePower = Temp.ToString() + "KW";
                 result.RecordFreq = productmodelselectioninfo.Fre;
                 if (productmodelselectioninfo.Fre == "100HZ")
@@ -626,9 +638,10 @@ namespace OpenAuth.App
                     result.RecordFreq = productmodelselectioninfo.Fre + "(connected with AUX channel:10Hz)";
 
                 }
+                Temp = (float)(float.Parse(productmodelselection.Voltage) * 0.002);
                 result.MinimumVoltageInterval = "Minimum voltage interval: " + Temp + "V";
                 result.MinimumCurrentInterval = "Minimum current interval: " + Temp + "A";//Minimum current interval: 0.1A
-                result.TotalPower = productmodelselection.TotalPower;
+                result.TotalPower = productmodelselection.TotalPower+"KW";
                 result.Size = productmodelselection.Size;
                 result.Pic = host + productmodeltype.Image;
             }
