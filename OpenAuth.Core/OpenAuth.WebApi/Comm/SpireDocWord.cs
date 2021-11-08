@@ -2,9 +2,10 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Reflection;
+using OpenAuth.App.ProductModel;
 using Spire.Doc;
 
-namespace Infrastructure.Wrod
+namespace OpenAuth.WebApi.Comm
 {
 
     public static class SpireDocWord
@@ -51,54 +52,5 @@ namespace Infrastructure.Wrod
             }
         }
 
-    }
-
-    /// <summary>
-    /// 导出基类
-    /// </summary>
-    public class ExportBase
-    {
-        /// <summary>
-        /// 根据属性获取值
-        /// </summary>
-        /// <param name="propertyName"></param>
-        /// <returns></returns>
-        public string GetValue(string propertyName)
-        {
-            string value = "";
-            try
-            {
-                if (!string.IsNullOrEmpty(propertyName))
-                {
-                    var objectValue = this.GetType().GetProperty(propertyName).GetValue(this, null);
-                    if (objectValue != null)
-                    {
-                        value = objectValue.ToString();
-                    }
-                }
-            }
-            catch (Exception)
-            {
-            }
-            return value;
-        }
-        /// <summary>
-        /// 根据属性获取描述值
-        /// </summary>
-        /// <param name="propertyName"></param>
-        /// <returns></returns>
-        public string GetDescription(string propertyName)
-        {
-            try
-            {
-                PropertyInfo item = this.GetType().GetProperty(propertyName);
-                string des = ((DescriptionAttribute)Attribute.GetCustomAttribute(item, typeof(DescriptionAttribute))).Description;// 属性值
-                return des;
-            }
-            catch (Exception)
-            {
-                return "";
-            }
-        }
     }
 }
