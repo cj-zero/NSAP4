@@ -2103,7 +2103,14 @@ namespace OpenAuth.App.Material
             var flowInstanceObj = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(obj.FlowInstanceId)).FirstOrDefaultAsync();
             qoh.ApprovalStage = obj.QuotationStatus.ToString();
 
-            VerificationReq VerificationReqModle = new VerificationReq();
+            VerificationReq VerificationReqModle = new VerificationReq
+            {
+                NodeRejectStep = "",
+                NodeRejectType = "0",
+                FlowInstanceId = obj.FlowInstanceId,
+                VerificationFinally = "1",
+                VerificationOpinion = req.Remark,
+            };
             if (req.IsReject)
             {
                 VerificationReqModle = new VerificationReq
@@ -2113,6 +2120,7 @@ namespace OpenAuth.App.Material
                     FlowInstanceId = obj.FlowInstanceId,
                     VerificationFinally = "3",
                     VerificationOpinion = req.Remark,
+                    Operator = loginUser
                 };
                 if (!string.IsNullOrWhiteSpace(obj.FlowInstanceId))
                 {
@@ -2120,7 +2128,9 @@ namespace OpenAuth.App.Material
                 }
                 obj.QuotationStatus = 1;
                 qoh.ApprovalResult = "驳回";
-                qoh.ApprovalStage = "1";
+                qoh.ApprovalStage = "1"; 
+                if (!string.IsNullOrWhiteSpace(req.AppId.ToString()))
+                    qoh.Action = loginUser.Name + "通过APP提交销售员审批";
                 var delQuotationMergeMaterial = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(obj.Id)).ToListAsync();
                 await UnitWork.BatchDeleteAsync<QuotationMergeMaterial>(delQuotationMergeMaterial.ToArray());
             }
@@ -2131,7 +2141,10 @@ namespace OpenAuth.App.Material
                     if ((loginUserRole.Any(r => r.Name.Equals("销售员")) || loginUserRole.Any(r => r.Name.Equals("总经理"))) && flowInstanceObj.ActivityName == "销售员审批")
                     {
                         qoh.Action = "销售员审批";
+                        if (!string.IsNullOrWhiteSpace(req.AppId.ToString()))
+                            qoh.Action = loginUser.Name+"通过APP提交销售员审批";
                         obj.QuotationStatus = 4;
+                        VerificationReqModle.Operator = loginUser;
                     }
                     else if (loginUserRole.Any(r => r.Name.Equals("物料工程审批")) && flowInstanceObj.ActivityName == "工程审批")
                     {
@@ -2319,14 +2332,7 @@ namespace OpenAuth.App.Material
                 else
                 {
                     qoh.ApprovalResult = "同意";
-                    VerificationReqModle = new VerificationReq
-                    {
-                        NodeRejectStep = "",
-                        NodeRejectType = "0",
-                        FlowInstanceId = obj.FlowInstanceId,
-                        VerificationFinally = "1",
-                        VerificationOpinion = req.Remark,
-                    };
+                    
                     if (!string.IsNullOrWhiteSpace(obj.FlowInstanceId))
                     {
                         await _flowInstanceApp.Verification(VerificationReqModle);
