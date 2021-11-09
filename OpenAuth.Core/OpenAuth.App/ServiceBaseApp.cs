@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Order.ModelDto;
 using OpenAuth.Repository;
+using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
@@ -53,7 +54,8 @@ namespace OpenAuth.App
         public int GetUserNaspId()
         {
             var loginContext = _auth.GetCurrentUser();
-            return Convert.ToInt32(loginContext.User.User_Id);
+            var nsapUserMap = UnitWork.FindSingle<NsapUserMap>(u=>u.UserID==loginContext.User.Id);
+            return Convert.ToInt32(nsapUserMap.NsapUserId);
         }
         /// <summary>
         /// 验证当前审批人的提交操作是否可以（避免一个工作流多个人同时操作引起的跳过步骤问题）
