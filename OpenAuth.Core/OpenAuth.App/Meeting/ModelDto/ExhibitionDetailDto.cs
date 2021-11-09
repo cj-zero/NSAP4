@@ -147,6 +147,10 @@ namespace OpenAuth.App.Meeting.ModelDto
         /// </summary>
         public bool IsDelete { get; set; } = false;
         public List<MeetingFile> FileList { get; set; }
+        /// <summary>
+        /// 报名信息
+        /// </summary>
+        public MeetingUserDto meetingUser { get; set; }
 
     }
 }
