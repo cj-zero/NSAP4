@@ -142,7 +142,7 @@ namespace OpenAuth.App
             string ids = "";
             if (req.AppUserId?.Count > 0)
             {
-                foreach(var id in req.AppUserId)
+                foreach (var id in req.AppUserId.Where(x => x != null || x.ToString() != ""))
                 {
                     ids += "," + id.ToString();
                 }
@@ -153,20 +153,35 @@ namespace OpenAuth.App
                                 join b in UnitWork.Find<User>(x => x.Status == 0).WhereIf(req.Name?.Count > 0, c => req.Name.Contains(c.Name))
                                 on a.UserID equals b.Id
                                 select a.AppUserId;
-
-                ids += "," + appUserId.FirstOrDefault().ToString();
+                if (appUserId != null && appUserId.Count() > 0)
+                {
+                    ids += "," + appUserId.FirstOrDefault().ToString();
+                }
             }
 
             string sql = "";
             if (req.AppUserId?.Count > 0 || req.Name?.Count > 0)
             {
-                sql = @$"SELECT r.*
+                if (ids == "")
+                {
+                    sql = @"SELECT r.*
+                            FROM realtimelocation AS r
+                            JOIN(
+                                SELECT max(Id) as Id from realtimelocation
+                                WHERE AppUserId IN('')
+                                GROUP BY AppUserId
+                            ) AS t ON r.Id = t.Id ORDER BY CreateTime desc;";
+                }
+                else
+                {
+                    sql = @$"SELECT r.*
                         FROM realtimelocation AS r
                         JOIN(
                             SELECT max(Id) as Id from realtimelocation
                             WHERE AppUserId IN({ ids.Substring(1)})
                             GROUP BY AppUserId
                         ) AS t ON r.Id = t.Id ORDER BY CreateTime desc;";
+                }
             }
             else
             {
