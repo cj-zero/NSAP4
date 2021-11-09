@@ -38,7 +38,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public List<string> GetDeviceCodingList()
         {
-            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete);
+            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && !u.DeviceCoding.Contains("CTE"));
             return productModelSelections.Select(zw => zw.DeviceCoding).OrderBy(zw => zw).Distinct().ToList();
         }
         /// <summary>
@@ -102,6 +102,7 @@ namespace OpenAuth.App
         {
             Expression<Func<ProductModelSelection, bool>> exps = t => true;
             exps = exps.And(t => !t.IsDelete);
+            exps = exps.And(t =>  !t.DeviceCoding.Contains("CTE"));
             if (!string.IsNullOrWhiteSpace(queryModel.ProductType))
             {
                 exps = exps.And(t => t.ProductType == queryModel.ProductType);
