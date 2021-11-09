@@ -2470,6 +2470,7 @@ namespace OpenAuth.App
             var orgname= petitioner.OrgName + "-" + petitioner.Name;
             var ReimburseInfoList = ReimburseInfos.Select(r => new
             {
+                r.Id,
                 r.MainId,
                 Days = r.ReimburseTravellingAllowances.Sum(t => t.Days) <= 0 && serviceDailyExpends.Where(s => s.ServiceOrderId == r.ServiceOrderId) != null ? serviceDailyExpends.Where(s => s.ServiceOrderId == r.ServiceOrderId).Sum(s => s.Days) : r.ReimburseTravellingAllowances.Sum(t => t.Days),
                 r.TotalMoney,
@@ -2488,6 +2489,7 @@ namespace OpenAuth.App
 
             var ReimburseInfoRes = ReimburseInfoList.Select(r => new
             {
+                r.Id,
                 r.MainId,
                 Type = "报销",
                 r.Days,
@@ -2515,6 +2517,7 @@ namespace OpenAuth.App
                 var completionReports = CompletionReports.Where(c => c.CreateUserId.Equals(r.CreateUserId) && c.ServiceOrderId.Equals(serviceOrderId)).FirstOrDefault();
                 return new
                 {
+                    r.Id,
                     MainId = r.Id,
                     r.TotalMoney,
                     Days = completionReports?.BusinessTripDays,
@@ -2533,6 +2536,7 @@ namespace OpenAuth.App
 
             var outsourceRes = outsourceList.Select(r => new
             {
+                r.Id,
                 r.MainId,
                 Type = "结算",
                 r.Days,
