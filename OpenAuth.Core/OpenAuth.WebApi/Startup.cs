@@ -14,6 +14,7 @@ using Infrastructure.HuaweiOCR;
 using Infrastructure.TecentOCR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
@@ -125,6 +126,7 @@ namespace OpenAuth.WebApi
 			{
 				option.Filters.Add<OpenAuthFilter>();
 				option.Filters.Add<ExceptionFilter>();
+				option.Filters.Add<RequestActionFilter>();
 			}).AddNewtonsoftJson(options =>
 			{
 				//忽略循环引用
@@ -239,6 +241,14 @@ namespace OpenAuth.WebApi
 					FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "Templates")),
 					RequestPath = "/Templates"
 				});
+
+			//允许HttpContext.Request.Body被重复读取
+			app.Use((context, next) =>
+			{
+				context.Request.EnableBuffering();
+				return next();
+			});
+
 			app.UseRouting();
 			app.UseAuthentication();
 
