@@ -14,6 +14,7 @@ using OpenAuth.App.Material;
 using OpenAuth.App.Material.Request;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using OpenAuth.App.Sap.BusinessPartner;
 using OpenAuth.App.Serve.Request;
 using OpenAuth.App.Serve.Response;
 using OpenAuth.App.Workbench;
@@ -32,6 +33,8 @@ namespace OpenAuth.App
         private readonly QuotationApp _quotation;
         private readonly WorkbenchApp _workbenchApp;
         private readonly OrgManagerApp _orgApp;
+        private readonly BusinessPartnerApp _businessPartnerApp;
+        private readonly UserManagerApp _userManagerApp;
 
         //报销单据类型(0 报销单，1 出差补贴， 2 交通费用， 3 住宿补贴， 4 其他费用, 5 我的费用)
         /// <summary>
@@ -749,18 +752,21 @@ namespace OpenAuth.App
             }
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceOrderId == ReimburseResp.ServiceOrderId && c.CreateUserId.Equals(ReimburseResp.CreateUserId) && c.ServiceMode == 1).ToListAsync();
             var completionreport = CompletionReports.FirstOrDefault();
-            var ocrds = await UnitWork.Find<crm_ocrd>(o => serviceOrders.TerminalCustomerId.Equals(o.CardCode)).FirstOrDefaultAsync();
+            //var ocrds = await UnitWork.Find<crm_ocrd>(o => serviceOrders.TerminalCustomerId.Equals(o.CardCode)).FirstOrDefaultAsync();
+            var ocrds = await _businessPartnerApp.GetDetails(serviceOrders.TerminalCustomerId);
+            var userinfo = await _userManagerApp.GetUserOrgInfo("", ocrds?.TechName);
             result.Data = new
             {
                 ReimburseResp = ReimburseResp,
                 UserName = await UnitWork.Find<User>(u => u.Id.Equals(ReimburseResp.CreateUserId)).Select(u => u.Name).FirstOrDefaultAsync(),
                 OrgName = orgname,
-                RoleIdentity= catetory,
+                RoleIdentity = catetory,
                 Balance = ocrds?.Balance,
                 //TerminalCustomer = completionreport.TerminalCustomer,
                 //TerminalCustomerId = completionreport.TerminalCustomerId,
                 FromTheme = completionreport.FromTheme,
                 Becity = completionreport.Becity,
+                CusBelong = userinfo?.OrgName + "-" + userinfo?.Name,
                 //CompleteAddress = ServiceOrders.Province + ServiceOrders.City + ServiceOrders.Area + ServiceOrders.Addr,
                 Destination = completionreport.Destination,
                 //BusinessTripDate = CompletionReports.Min(c => c.BusinessTripDate),
@@ -2639,13 +2645,15 @@ namespace OpenAuth.App
 
         }
 
-        public ReimburseInfoApp(IUnitWork unitWork, ModuleFlowSchemeApp moduleFlowSchemeApp, WorkbenchApp workbenchApp, FlowInstanceApp flowInstanceApp, IAuth auth, QuotationApp quotationApp, OrgManagerApp orgApp) : base(unitWork, auth)
+        public ReimburseInfoApp(IUnitWork unitWork, ModuleFlowSchemeApp moduleFlowSchemeApp, WorkbenchApp workbenchApp, FlowInstanceApp flowInstanceApp, IAuth auth, QuotationApp quotationApp, OrgManagerApp orgApp, BusinessPartnerApp businessPartnerApp, UserManagerApp userManagerApp) : base(unitWork, auth)
         {
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _flowInstanceApp = flowInstanceApp;
             _quotation = quotationApp;
             _workbenchApp = workbenchApp;
             _orgApp = orgApp;
+            _businessPartnerApp = businessPartnerApp;
+            _userManagerApp = userManagerApp;
         }
     }
 }

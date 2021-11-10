@@ -294,6 +294,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
                 q.a.SlpCode,
                 q.b.SlpName,
                 q.a.U_Name,
+                q.a.Balance,
                 TechID = q.a.DfTcnician,
                 TechName = $"{q.e.lastName ?? ""}{q.e.firstName}",
                 CntctPrsnList = UnitWork.Find<OCPR>(null).Where(o => o.CardCode.Equals(q.a.CardCode)).ToList(),
