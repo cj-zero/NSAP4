@@ -304,14 +304,15 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
                         MinimumCurrentInterval = productModelDetails.MinimumCurrentInterval,
                         TotalPower = productModelDetails.TotalPower,
                         Size = productModelDetails.Size,
-                        Image = host + type.Image,
+                        Image = Path.Combine(Directory.GetCurrentDirectory() + type.Image),
                         Weight = productModelDetails.Weight,
                         VoltageAccuracy = productModelSelectionInfo.VoltAccurack
-
+                                
 
                     };
                     SpireDocWord.GetDocument(templatePath);
                     SpireDocWord.ReplaseTemplateWord(productParamTemplate);
+                    SpireDocWord.AddImage(productParamTemplate.Image);
                     SpireDocWord.CreateNewWord(filePath + productModelSelection.DeviceCoding + "-技术规格书" + ".docx");
                 }
                 result.Result = host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + productModelSelection.DeviceCoding + "-技术规格书.docx";
@@ -433,12 +434,13 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
                         TotalPower = productModelDetails.TotalPower,
                         Size = productModelDetails.Size != null ? productModelDetails.Size : "0.0",
                         Weight = productModelSelection.Weight.ToString(),
-                        Image = host + type.Image,
+                        Image = Path.Combine(Directory.GetCurrentDirectory() + type.Image),
                         VoltageAccuracy = productModelSelectionInfo.VoltAccurack
 
                     };
                     SpireDocWord.GetDocument(templatePath);
                     SpireDocWord.ReplaseTemplateWord(productParamTemplate);
+                    SpireDocWord.AddImageTechnical(productParamTemplate.Image);
                     SpireDocWord.CreateNewWord(filePath + productModelSelection.DeviceCoding + "-技术规格协议书" + ".docx");
                 }
                 result.Result = host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + productModelSelection.DeviceCoding + "-技术规格协议书.docx";

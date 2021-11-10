@@ -8274,6 +8274,7 @@ namespace OpenAuth.App.Order
             {
                 var scon = new UploadFileResp();
                 var fileName = ContentDispositionHeaderValue.Parse(item.ContentDisposition).FileName.Trim('"');
+                scon.FileName = fileName;
                 string filePath = FileHelper.FilePath.PhysicalPath;
                 if (!Directory.Exists(filePath))
                 {
@@ -8290,7 +8291,6 @@ namespace OpenAuth.App.Order
                 }
                 //scon.Id = new Guid().ToString();
                 scon.FilePath = host + FileHelper.FilePath.VirtualPath + fileName;
-                scon.FileName = fileName;
                 scon.FileType = suffix;
                 scon.CreateUserName = loginUser.Name;
                 result.Add(scon);
