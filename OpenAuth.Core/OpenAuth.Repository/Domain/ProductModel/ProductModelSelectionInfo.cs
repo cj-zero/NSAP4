@@ -49,7 +49,7 @@ namespace OpenAuth.Repository.Domain
         [MaxLength(10)]
         public string Fre { get; set; }
         /// <summary>
-        /// 最小电流间隔
+        /// 电压精度
         /// </summary>
         [Description("最小电流间隔")]
         [MaxLength(10)]

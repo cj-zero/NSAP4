@@ -61,5 +61,11 @@ namespace OpenAuth.Repository.Domain
          [Description("分类ID")]
         public string TypeId { get; set; }
 
+        /// <summary>
+        /// 身份标识 1-销售 2-技术 3-工程 4-研发
+        /// </summary>
+        [Description("身份标识")]
+        public string Identity { get; set; }
+
     }
 }

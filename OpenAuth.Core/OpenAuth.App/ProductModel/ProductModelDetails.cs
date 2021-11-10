@@ -104,5 +104,18 @@ namespace OpenAuth.App.ProductModel
         /// 设备尺寸
         /// </summary>
         public string Size { get; set; }
+        /// <summary>
+        /// 产品图
+        /// </summary>
+        public string Pic { get; set; }
+
+        /// <summary>
+        /// 重量
+        /// </summary>
+        public string Weight { get; set; }
+        /// <summary>
+        /// 电压精度
+        /// </summary>
+        public string VoltageAccuracy { get; set; }
     }
 }

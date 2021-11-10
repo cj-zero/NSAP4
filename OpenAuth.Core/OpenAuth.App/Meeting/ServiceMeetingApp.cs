@@ -199,18 +199,26 @@ namespace OpenAuth.App.Meeting
                 Expression<Func<MeetingFile, bool>> exps = t => true;
                 exps = exps.And(t => !t.IsDelete && t.MeetingId == objs.Id);
                 var filelist = UnitWork.Find(exps);
-                var s = filelist.MapToList<FileDto>();
+                var s = filelist.MapToList<MeetingFile>();
                 list.FileList.AddRange(s);
+
             }
             else if (meetdraft.Type == 1)
             {
-                var meetuser = UnitWork.FindSingle<MeetingUser>(q => q.Id == Id);
+                var meetuser = UnitWork.FindSingle<MeetingUser>(q => q.Id == meetdraft.Base_entry);
+                var scon = new MeetingUserDto();
+                scon.CreateTime = meetuser.CreateTime;
+                scon.Name = meetuser.Name;
+                scon.Remark = meetuser.Remark;
+                scon.UserId = meetuser.UserId;
+                scon.CancelReason=meetuser.CancelReason;    
+                list.meetingUser = scon;
                 var objs = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(t => !t.IsDelete && t.Id == meetuser.MeetingId);
                 list = objs.MapTo<ExhibitionDetailDto>();
                 Expression<Func<MeetingFile, bool>> exps = t => true;
                 exps = exps.And(t => !t.IsDelete && t.MeetingId == objs.Id);
                 var filelist = UnitWork.Find(exps);
-                var s = filelist.MapToList<FileDto>();
+                var s = filelist.MapToList<MeetingFile>();
                 list.FileList.AddRange(s);
             }
             return list;
@@ -340,7 +348,7 @@ namespace OpenAuth.App.Meeting
             Expression<Func<MeetingFile, bool>> exps = t => true;
             exps = exps.And(t => !t.IsDelete && t.MeetingId == Id);
             var filelist = UnitWork.Find(exps);
-            var s = filelist.MapToList<FileDto>();
+            var s = filelist.MapToList<MeetingFile>();
             list.FileList.AddRange(s);
             return list;
         }
@@ -362,8 +370,8 @@ namespace OpenAuth.App.Meeting
             var loginUser = loginContext.User;
             Expression<Func<OpenAuth.Repository.Domain.Serve.Meeting, bool>> exp = t => true;
             exp = exp.And(t => !t.IsDelete);
-            //exp = exp.And(t => t.Status == 3);
-            exp = exp.And(t => t.CreateUser == loginUser.Name);
+            exp = exp.And(t => t.Status == 3);
+            //exp = exp.And(t => t.CreateUser == loginUser.Name);
             if (QueryModel.AddressType != -1)
             {
                 exp = exp.And(t => t.AddressType == QueryModel.AddressType);
@@ -393,7 +401,7 @@ namespace OpenAuth.App.Meeting
             }
             if (QueryModel.IsDinner != -1)
             {
-                    exp = exp.And(t => t.IsDinner == (QueryModel.IsDinner != 0) ? true : false);
+                exp = exp.And(t => t.IsDinner == (QueryModel.IsDinner != 0) ? true : false);
             }
             if (QueryModel.DempId != 0)
             {
@@ -490,7 +498,7 @@ namespace OpenAuth.App.Meeting
             }
             if (QueryModel.Step != -1)
             {
-                exp = exp.And(t => t.Step == QueryModel.Step);
+                exp = exp.And(t => t.Step == QueryModel.Step || t.Step == 2);//默认带上or审核条件
 
             }
             var objs = UnitWork.Find<MeetingDraft>(QueryModel.page, QueryModel.limit, "", exp);
@@ -537,6 +545,8 @@ namespace OpenAuth.App.Meeting
                     nes.Base_entry = obj.Base_entry;
                     nes.CreateTime = obj.CreateTime;
                     nes.CreateUser = obj.CreateUser;
+                    nes.StartTime = meeting.StartTime;
+                    nes.EndTime = meeting.EndTime;
                 }
                 else if (obj.Type == 1)
                 {
@@ -555,6 +565,8 @@ namespace OpenAuth.App.Meeting
                     nes.Base_entry = obj.Base_entry;
                     nes.CreateTime = obj.CreateTime;
                     nes.CreateUser = obj.CreateUser;
+                    nes.StartTime = meeting.StartTime;
+                    nes.EndTime = meeting.EndTime;
                 }
 
                 data.Add(nes);
@@ -608,17 +620,21 @@ namespace OpenAuth.App.Meeting
                 {
                     exps = exps.And(e => e.AddressType == QueryModel.AddressType);
                 }
+                if (!string.IsNullOrWhiteSpace(QueryModel.Address))
+                {
+                    exps = exps.And(e => e.Address.Contains(QueryModel.Address));
+                }
                 if (!string.IsNullOrEmpty(QueryModel.StartTime))
                 {
                     DateTime startTime;
                     DateTime.TryParse(QueryModel.StartTime, out startTime);
-                    exps = exps.And(e => e.StartTime >= startTime);
+                    exps = exps.And(e => e.StartTime <= startTime);
                 }
                 if (!string.IsNullOrEmpty(QueryModel.EndTime))
                 {
                     DateTime endTime;
                     DateTime.TryParse(QueryModel.EndTime, out endTime);
-                    exps = exps.And(e => e.EndTime <= endTime);
+                    exps = exps.And(e => e.EndTime >= endTime);
                 }
 
                 if (loginUser.Name == "骆灵芝")
@@ -762,9 +778,13 @@ namespace OpenAuth.App.Meeting
             {
                 var meetinguser = UnitWork.FindSingle<MeetingUser>(zw => zw.Id == meetingdraft.Base_entry);
                 meeting = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(zw => zw.Id == meetinguser.MeetingId);
-                data.meetingUser.CreateTime = meetinguser.CreateTime;
-                data.meetingUser.Name = meetinguser.Name;
-                data.meetingUser.Remark = meetinguser.Remark;
+                var scon = new MeetingUserDto();
+                scon.CreateTime = meetinguser.CreateTime;
+                scon.Name = meetinguser.Name;
+                scon.Remark = meetinguser.Remark;
+                scon.UserId = meetinguser.UserId;
+                scon.CancelReason= meetinguser.CancelReason;
+                data.meetingUser = scon;
             }
             if (meetingdraft.Type == 0)
             {
@@ -1099,97 +1119,97 @@ namespace OpenAuth.App.Meeting
         /// <param name="UpdateModel"></param>
         /// <returns></returns>
 
-        public bool Resubmit(UpdateMeetingDataReq UpdateModel)
-        {
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-            var loginUser = loginContext.User;
+        //public bool Resubmit(UpdateMeetingDataReq UpdateModel)
+        //{
+        //    var loginContext = _auth.GetCurrentUser();
+        //    if (loginContext == null)
+        //    {
+        //        throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+        //    }
+        //    var loginUser = loginContext.User;
 
-            if (UpdateModel.Ations == MeetingAtion.Resubmit)
-            {
-                var data = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(q => q.Id == UpdateModel.Id);
-                if (data.Status == 3)
-                {
-                    if (UpdateModel.Name != data.Name || UpdateModel.StartTime != data.StartTime || UpdateModel.EndTime != data.EndTime || UpdateModel.Address != data.Address || UpdateModel.Funds != data.Funds || UpdateModel.ApplyReason != data.ApplyReason)
-                    {
-                        data.Status = 1;
-                        var meetdraft = UnitWork.FindSingle<MeetingDraft>(q => q.Base_entry == UpdateModel.Id);
-                        meetdraft.Step = 1;
-                        meetdraft.UpdateTime = DateTime.Now;
-                        meetdraft.UpdateUser = loginUser.Name;
-                        UnitWork.Update(meetdraft);
-                        var meetdraftlog = new MeetingDraftlog();
-                        meetdraftlog.CreateTime = DateTime.Now;
-                        meetdraftlog.CreateUser = loginUser.Name;
-                        meetdraftlog.DraftId = meetdraft.Id;
-                        meetdraftlog.Type = 1;
-                        meetdraftlog.Log = "更变已通过状态重新提交审核";
-                        UnitWork.Add<MeetingDraftlog, int>(meetdraftlog);
+        //    if (UpdateModel.Ations == MeetingAtion.Resubmit)
+        //    {
+        //        var data = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(q => q.Id == UpdateModel.Id);
+        //        if (data.Status == 3)
+        //        {
+        //            if (UpdateModel.Name != data.Name || UpdateModel.StartTime != data.StartTime || UpdateModel.EndTime != data.EndTime || UpdateModel.Address != data.Address || UpdateModel.Funds != data.Funds || UpdateModel.ApplyReason != data.ApplyReason)
+        //            {
+        //                data.Status = 1;
+        //                var meetdraft = UnitWork.FindSingle<MeetingDraft>(q => q.Base_entry == UpdateModel.Id);
+        //                meetdraft.Step = 1;
+        //                meetdraft.UpdateTime = DateTime.Now;
+        //                meetdraft.UpdateUser = loginUser.Name;
+        //                UnitWork.Update(meetdraft);
+        //                var meetdraftlog = new MeetingDraftlog();
+        //                meetdraftlog.CreateTime = DateTime.Now;
+        //                meetdraftlog.CreateUser = loginUser.Name;
+        //                meetdraftlog.DraftId = meetdraft.Id;
+        //                meetdraftlog.Type = 1;
+        //                meetdraftlog.Log = "更变已通过状态重新提交审核";
+        //                UnitWork.Add<MeetingDraftlog, int>(meetdraftlog);
 
-                    }
-                }
-                if (data.Status == 4)
-                {
-                    data.Status = 1;
-                    var meetdraft = UnitWork.FindSingle<MeetingDraft>(q => q.Base_entry == UpdateModel.Id);
-                    meetdraft.Step = 1;
-                    meetdraft.UpdateTime = DateTime.Now;
-                    meetdraft.UpdateUser = loginUser.Name;
-                    UnitWork.Update(meetdraft);
-                    var meetdraftlog = new MeetingDraftlog();
-                    meetdraftlog.CreateTime = DateTime.Now;
-                    meetdraftlog.CreateUser = loginUser.Name;
-                    meetdraftlog.DraftId = meetdraft.Id;
-                    meetdraftlog.Type = 1;
-                    meetdraftlog.Log = "更变已驳回状态重新提交审核";
-                    UnitWork.Add<MeetingDraftlog, int>(meetdraftlog);
+        //            }
+        //        }
+        //        if (data.Status == 4)
+        //        {
+        //            data.Status = 1;
+        //            var meetdraft = UnitWork.FindSingle<MeetingDraft>(q => q.Base_entry == UpdateModel.Id);
+        //            meetdraft.Step = 1;
+        //            meetdraft.UpdateTime = DateTime.Now;
+        //            meetdraft.UpdateUser = loginUser.Name;
+        //            UnitWork.Update(meetdraft);
+        //            var meetdraftlog = new MeetingDraftlog();
+        //            meetdraftlog.CreateTime = DateTime.Now;
+        //            meetdraftlog.CreateUser = loginUser.Name;
+        //            meetdraftlog.DraftId = meetdraft.Id;
+        //            meetdraftlog.Type = 1;
+        //            meetdraftlog.Log = "更变已驳回状态重新提交审核";
+        //            UnitWork.Add<MeetingDraftlog, int>(meetdraftlog);
 
-                }
-                data.Name = UpdateModel.Name;
-                data.Title = UpdateModel.Title;
-                data.Introduce = UpdateModel.Introduce;
-                data.StartTime = UpdateModel.StartTime;
-                data.EndTime = UpdateModel.EndTime;
-                data.Address = UpdateModel.Address;
-                data.ApplyUserId = UpdateModel.ApplyUserId;
-                data.ApplyUser = UpdateModel.ApplyUser;
-                data.DempId = UpdateModel.DempId;
-                data.ApplyDempName = UpdateModel.ApplyDempName;
-                data.Contact = UpdateModel.Contact;
-                data.FollowPerson = UpdateModel.FollowPerson;
-                data.SponsorUnit = UpdateModel.SponsorUnit;
-                data.GuideUnit = UpdateModel.GuideUnit;
-                data.ApplyReason = UpdateModel.ApplyReason;
-                data.ConferenceScale = UpdateModel.ConferenceScale;
-                data.UserNumberLimit = UpdateModel.UserNumberLimit;
-                data.Funds = UpdateModel.Funds;
-                data.Position = UpdateModel.Position;
-                data.MeasureOfArea = UpdateModel.MeasureOfArea;
-                data.ProductType = UpdateModel.ProductType;
-                data.IsDinner = UpdateModel.IsDinner;
-                data.BulidType = UpdateModel.BulidType;
-                data.IsSign = UpdateModel.IsSign;
-                data.Remark = UpdateModel.Remark;
-                data.UpdateUser = loginUser.Name;
-                data.UpdateTime = DateTime.Now;
-                UnitWork.Update(data);
-                MeetingOpreateLog opreateLog = new MeetingOpreateLog();
-                opreateLog.Log = "修改会议内容";
-                opreateLog.Json = JsonHelper.Instance.Serialize(UpdateModel);
-                opreateLog.CreateUser = loginUser.Name;
-                opreateLog.CreateTime = DateTime.Now;
-                opreateLog.MeetingId = UpdateModel.Id;
-                opreateLog.Type = 1;
-                UnitWork.Add<MeetingOpreateLog, int>(opreateLog);
+        //        }
+        //        data.Name = UpdateModel.Name;
+        //        data.Title = UpdateModel.Title;
+        //        data.Introduce = UpdateModel.Introduce;
+        //        data.StartTime = UpdateModel.StartTime;
+        //        data.EndTime = UpdateModel.EndTime;
+        //        data.Address = UpdateModel.Address;
+        //        data.ApplyUserId = UpdateModel.ApplyUserId;
+        //        data.ApplyUser = UpdateModel.ApplyUser;
+        //        data.DempId = UpdateModel.DempId;
+        //        data.ApplyDempName = UpdateModel.ApplyDempName;
+        //        data.Contact = UpdateModel.Contact;
+        //        data.FollowPerson = UpdateModel.FollowPerson;
+        //        data.SponsorUnit = UpdateModel.SponsorUnit;
+        //        data.GuideUnit = UpdateModel.GuideUnit;
+        //        data.ApplyReason = UpdateModel.ApplyReason;
+        //        data.ConferenceScale = UpdateModel.ConferenceScale;
+        //        data.UserNumberLimit = UpdateModel.UserNumberLimit;
+        //        data.Funds = UpdateModel.Funds;
+        //        data.Position = UpdateModel.Position;
+        //        data.MeasureOfArea = UpdateModel.MeasureOfArea;
+        //        data.ProductType = UpdateModel.ProductType;
+        //        data.IsDinner = UpdateModel.IsDinner;
+        //        data.BulidType = UpdateModel.BulidType;
+        //        data.IsSign = UpdateModel.IsSign;
+        //        data.Remark = UpdateModel.Remark;
+        //        data.UpdateUser = loginUser.Name;
+        //        data.UpdateTime = DateTime.Now;
+        //        UnitWork.Update(data);
+        //        MeetingOpreateLog opreateLog = new MeetingOpreateLog();
+        //        opreateLog.Log = "修改会议内容";
+        //        opreateLog.Json = JsonHelper.Instance.Serialize(UpdateModel);
+        //        opreateLog.CreateUser = loginUser.Name;
+        //        opreateLog.CreateTime = DateTime.Now;
+        //        opreateLog.MeetingId = UpdateModel.Id;
+        //        opreateLog.Type = 1;
+        //        UnitWork.Add<MeetingOpreateLog, int>(opreateLog);
 
-                UnitWork.Save();
-            }
+        //        UnitWork.Save();
+        //    }
 
-            return true;
-        }
+        //    return true;
+        //}
         /// <summary>
         /// 取消会议申请
         /// </summary>
@@ -1436,7 +1456,7 @@ namespace OpenAuth.App.Meeting
         }
 
         /// <summary>
-        /// 展会草稿修改
+        /// 展会草稿修改 Ations 2:再次提交（被驳回，有修改），3：更新草稿，4：更新草稿后提交
         /// </summary>
         /// <param name="UpdateModel"></param>
         /// <returns></returns>
@@ -1542,6 +1562,85 @@ namespace OpenAuth.App.Meeting
                 UnitWork.Add<MeetingDraftlog, int>(meetingdraftlog);
                 UnitWork.Save();
 
+            }
+            if (UpdateModel.Ations == MeetingAtion.Resubmit)
+            {
+                var data = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(q => q.Id == meetingdraft.Base_entry);
+                if (data.Status == 3)
+                {
+                    if (UpdateModel.Name != data.Name || UpdateModel.StartTime != data.StartTime || UpdateModel.EndTime != data.EndTime || UpdateModel.Address != data.Address || UpdateModel.Funds != data.Funds || UpdateModel.ApplyReason != data.ApplyReason)
+                    {
+                        data.Status = 1;
+
+                        meetingdraft.Step = 1;
+                        meetingdraft.UpdateTime = DateTime.Now;
+                        meetingdraft.UpdateUser = loginUser.Name;
+                        UnitWork.Update(meetingdraft);
+                        var meetdraftlog = new MeetingDraftlog();
+                        meetdraftlog.CreateTime = DateTime.Now;
+                        meetdraftlog.CreateUser = loginUser.Name;
+                        meetdraftlog.DraftId = meetingdraft.Id;
+                        meetdraftlog.Type = 1;
+                        meetdraftlog.Log = "更变已通过状态重新提交审核";
+                        UnitWork.Add<MeetingDraftlog, int>(meetdraftlog);
+
+                    }
+                }
+                if (data.Status == 4)
+                {
+                    data.Status = 1;
+
+                    meetingdraft.Step = 1;
+                    meetingdraft.UpdateTime = DateTime.Now;
+                    meetingdraft.UpdateUser = loginUser.Name;
+                    UnitWork.Update(meetingdraft);
+                    var meetdraftlog = new MeetingDraftlog();
+                    meetdraftlog.CreateTime = DateTime.Now;
+                    meetdraftlog.CreateUser = loginUser.Name;
+                    meetdraftlog.DraftId = meetingdraft.Id;
+                    meetdraftlog.Type = 1;
+                    meetdraftlog.Log = "更变已驳回状态重新提交审核";
+                    UnitWork.Add<MeetingDraftlog, int>(meetdraftlog);
+
+                }
+                data.Name = UpdateModel.Name;
+                data.Title = UpdateModel.Title;
+                data.Introduce = UpdateModel.Introduce;
+                data.StartTime = UpdateModel.StartTime;
+                data.EndTime = UpdateModel.EndTime;
+                data.Address = UpdateModel.Address;
+                data.ApplyUserId = UpdateModel.ApplyUserId;
+                data.ApplyUser = UpdateModel.ApplyUser;
+                data.DempId = UpdateModel.DempId;
+                data.ApplyDempName = UpdateModel.ApplyDempName;
+                data.Contact = UpdateModel.Contact;
+                data.FollowPerson = UpdateModel.FollowPerson;
+                data.SponsorUnit = UpdateModel.SponsorUnit;
+                data.GuideUnit = UpdateModel.GuideUnit;
+                data.ApplyReason = UpdateModel.ApplyReason;
+                data.ConferenceScale = UpdateModel.ConferenceScale;
+                data.UserNumberLimit = UpdateModel.UserNumberLimit;
+                data.Funds = UpdateModel.Funds;
+                data.Position = UpdateModel.Position;
+                data.MeasureOfArea = UpdateModel.MeasureOfArea;
+                data.ProductType = UpdateModel.ProductType;
+                data.IsDinner = UpdateModel.IsDinner;
+                data.BulidType = UpdateModel.BulidType;
+                data.IsSign = UpdateModel.IsSign;
+                data.Remark = UpdateModel.Remark;
+                data.UpdateUser = loginUser.Name;
+                data.UpdateTime = DateTime.Now;
+                UnitWork.Update(data);
+                MeetingOpreateLog opreateLog = new MeetingOpreateLog();
+                opreateLog.Log = "修改会议内容";
+                opreateLog.Json = JsonHelper.Instance.Serialize(UpdateModel);
+                opreateLog.CreateUser = loginUser.Name;
+                opreateLog.CreateTime = DateTime.Now;
+                opreateLog.MeetingId = meetingdraft.Base_entry;
+                opreateLog.Type = 1;
+                UnitWork.Add<MeetingOpreateLog, int>(opreateLog);
+
+                UnitWork.Save();
             }
             return result;
         }

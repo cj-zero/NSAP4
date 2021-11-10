@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OpenAuth.Repository.Domain.Serve;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -96,11 +97,11 @@ namespace OpenAuth.App.Meeting.ModelDto
         /// <summary>
         /// 展位面积
         /// </summary>
-        public double MeasureOfArea { get; set; }
+        public string MeasureOfArea { get; set; }
         /// <summary>
         /// 展品类别
         /// </summary>
-        public int ProductType { get; set; }
+        public string ProductType { get; set; }
         /// <summary>
         /// 有无晚宴
         /// </summary>
@@ -145,7 +146,11 @@ namespace OpenAuth.App.Meeting.ModelDto
         /// 是否删除
         /// </summary>
         public bool IsDelete { get; set; } = false;
-        public List<FileDto> FileList { get; set; }
+        public List<MeetingFile> FileList { get; set; }
+        /// <summary>
+        /// 报名信息
+        /// </summary>
+        public MeetingUserDto meetingUser { get; set; }
 
     }
 }

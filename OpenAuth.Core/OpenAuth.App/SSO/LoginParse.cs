@@ -41,20 +41,20 @@ namespace OpenAuth.App.SSO
                 }
                 //获取用户信息
                 User userInfo = null;
-                if (model.Account == Define.SYSTEM_USERNAME)
-                {
-                    userInfo = new User
-                    {
-                        Id = Guid.Empty.ToString(), 
-                        Account = Define.SYSTEM_USERNAME,
-                        Name ="超级管理员",
-                        Password = Define.SYSTEM_USERPWD
-                    };
-                }
-                else
-                {
+                //if (model.Account == Define.SYSTEM_USERNAME)
+                //{
+                //    userInfo = new User
+                //    {
+                //        Id = Guid.Empty.ToString(), 
+                //        Account = Define.SYSTEM_USERNAME,
+                //        Name ="超级管理员",
+                //        Password = Define.SYSTEM_USERPWD
+                //    };
+                //}
+                //else
+                //{
                     userInfo = _app.FindSingle(u =>u.Account == model.Account);
-                }
+                //}
                
                 if (userInfo == null)
                 {

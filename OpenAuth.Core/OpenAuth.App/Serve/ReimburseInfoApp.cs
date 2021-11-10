@@ -31,6 +31,7 @@ namespace OpenAuth.App
         private readonly FlowInstanceApp _flowInstanceApp;
         private readonly QuotationApp _quotation;
         private readonly WorkbenchApp _workbenchApp;
+        private readonly OrgManagerApp _orgApp;
 
         //报销单据类型(0 报销单，1 出差补贴， 2 交通费用， 3 住宿补贴， 4 其他费用, 5 我的费用)
         /// <summary>
@@ -735,8 +736,10 @@ namespace OpenAuth.App
 
             #endregion
 
-            var orgids = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && r.FirstId == ReimburseResp.CreateUserId).Select(r => r.SecondId).ToListAsync();
-            var orgname = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => orgids.Contains(o.Id)).OrderByDescending(o => o.CascadeId).Select(o => o.Name).FirstOrDefaultAsync();
+            var orgrole = await _orgApp.GetOrgNameAndRoleIdentity(ReimburseResp.CreateUserId);
+            var orgname = orgrole.OrgName;
+            var catetory = orgrole.RoleIdentity;
+
             var serviceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id == ReimburseResp.ServiceOrderId).Include(s => s.ServiceWorkOrders).FirstOrDefaultAsync();
             var quotationIds = await UnitWork.Find<Quotation>(q => q.ServiceOrderId == ReimburseResp.ServiceOrderId && q.CreateUserId.Equals(ReimburseResp.CreateUserId) && q.QuotationStatus == 11).Select(q => q.Id).ToListAsync();
             List<AddOrUpdateQuotationReq> quotations = new List<AddOrUpdateQuotationReq>();
@@ -752,6 +755,7 @@ namespace OpenAuth.App
                 ReimburseResp = ReimburseResp,
                 UserName = await UnitWork.Find<User>(u => u.Id.Equals(ReimburseResp.CreateUserId)).Select(u => u.Name).FirstOrDefaultAsync(),
                 OrgName = orgname,
+                RoleIdentity= catetory,
                 Balance = ocrds?.Balance,
                 //TerminalCustomer = completionreport.TerminalCustomer,
                 //TerminalCustomerId = completionreport.TerminalCustomerId,
@@ -2635,12 +2639,13 @@ namespace OpenAuth.App
 
         }
 
-        public ReimburseInfoApp(IUnitWork unitWork, ModuleFlowSchemeApp moduleFlowSchemeApp, WorkbenchApp workbenchApp, FlowInstanceApp flowInstanceApp, IAuth auth, QuotationApp quotationApp) : base(unitWork, auth)
+        public ReimburseInfoApp(IUnitWork unitWork, ModuleFlowSchemeApp moduleFlowSchemeApp, WorkbenchApp workbenchApp, FlowInstanceApp flowInstanceApp, IAuth auth, QuotationApp quotationApp, OrgManagerApp orgApp) : base(unitWork, auth)
         {
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _flowInstanceApp = flowInstanceApp;
             _quotation = quotationApp;
             _workbenchApp = workbenchApp;
+            _orgApp = orgApp;
         }
     }
 }

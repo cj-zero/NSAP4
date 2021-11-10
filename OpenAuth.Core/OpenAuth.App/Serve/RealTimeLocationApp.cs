@@ -134,10 +134,65 @@ namespace OpenAuth.App
             var pppUserMap = await UnitWork.Find<AppUserMap>(null).ToListAsync();
 
             //所有人最新定位信息
-            var realTimeLocationHis = await UnitWork.FromSql<RealTimeLocation>(@$"SELECT * from realtimelocation where Id in  (
-                                        SELECT max(Id) as Id from realtimelocation GROUP BY AppUserId
-                                        ) ORDER BY CreateTime desc")
-                                        .ToListAsync();
+            //var realTimeLocationHis = await UnitWork.FromSql<RealTimeLocation>(@$"SELECT * from realtimelocation where Id in  (
+            //                            SELECT max(Id) as Id from realtimelocation GROUP BY AppUserId
+            //                            ) ORDER BY CreateTime desc")
+            //                            .ToListAsync();
+
+            string ids = "";
+            if (req.AppUserId?.Count > 0)
+            {
+                foreach (var id in req.AppUserId.Where(x => x != null || x.ToString() != ""))
+                {
+                    ids += "," + id.ToString();
+                }
+            }
+            else if (req.Name?.Count > 0)
+            {
+                var appUserId = from a in UnitWork.Find<AppUserMap>(null)
+                                join b in UnitWork.Find<User>(x => x.Status == 0).WhereIf(req.Name?.Count > 0, c => req.Name.Contains(c.Name))
+                                on a.UserID equals b.Id
+                                select a.AppUserId;
+                if (appUserId != null && appUserId.Count() > 0)
+                {
+                    ids += "," + appUserId.FirstOrDefault().ToString();
+                }
+            }
+
+            string sql = "";
+            if (req.AppUserId?.Count > 0 || req.Name?.Count > 0)
+            {
+                if (ids == "")
+                {
+                    sql = @"SELECT r.*
+                            FROM realtimelocation AS r
+                            JOIN(
+                                SELECT max(Id) as Id from realtimelocation
+                                WHERE AppUserId IN('')
+                                GROUP BY AppUserId
+                            ) AS t ON r.Id = t.Id ORDER BY CreateTime desc;";
+                }
+                else
+                {
+                    sql = @$"SELECT r.*
+                        FROM realtimelocation AS r
+                        JOIN(
+                            SELECT max(Id) as Id from realtimelocation
+                            WHERE AppUserId IN({ ids.Substring(1)})
+                            GROUP BY AppUserId
+                        ) AS t ON r.Id = t.Id ORDER BY CreateTime desc;";
+                }
+            }
+            else
+            {
+                sql= @$"SELECT r.*
+                        FROM realtimelocation AS r
+                        JOIN(
+                            SELECT max(Id) as Id from realtimelocation
+                            GROUP BY AppUserId
+                        ) AS t ON r.Id = t.Id ORDER BY CreateTime desc;";
+            }
+            var realTimeLocationHis = await UnitWork.FromSql<RealTimeLocation>(sql).ToListAsync();
 
 
             var locaotionInfoHistory = from a in realTimeLocationHis
@@ -154,8 +209,12 @@ namespace OpenAuth.App
 
 
             var now = DateTime.Now;
-            var data = await (from a in UnitWork.Find<AppUserMap>(null)
-                              join b in UnitWork.Find<User>(c => c.Status == 0).WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)).WhereIf(userIds.Count > 0, c => userIds.Contains(c.Id)) on a.UserID equals b.Id
+            //var data = await (from a in UnitWork.Find<AppUserMap>(null)
+            //                  join b in UnitWork.Find<User>(c => c.Status == 0).WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)).WhereIf(userIds.Count > 0, c => userIds.Contains(c.Id)) on a.UserID equals b.Id
+            //                  select new User { Id = b.Id, Name = b.Name, Mobile = b.Mobile }).ToListAsync();
+
+            var data = await (from a in UnitWork.Find<AppUserMap>(null).WhereIf(req.AppUserId?.Count > 0, a => req.AppUserId.Contains(a.AppUserId))
+                              join b in UnitWork.Find<User>(c => c.Status == 0).WhereIf(req.Name?.Count > 0, c => req.Name.Contains(c.Name)).WhereIf(userIds.Count > 0, c => userIds.Contains(c.Id)) on a.UserID equals b.Id
                               select new User { Id = b.Id, Name = b.Name, Mobile = b.Mobile }).ToListAsync();
 
             var da1 = data.Select(c =>
@@ -405,7 +464,19 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
 
-            await UnitWork.AddAsync(new LocationViewUser { UserId = loginContext.User.Id, UserName = string.Join(",", req.Name) });
+            //先把之前保存的数据删除,确保表里面存的是最新一次数据
+            var oldData = await UnitWork.Find<LocationViewUser>(c => c.UserId == loginContext.User.Id).ToListAsync();
+            await UnitWork.BatchDeleteAsync(oldData.ToArray());
+
+            List<LocationViewUser> locationViewUsers = new List<LocationViewUser>();
+            foreach (var item in req.NameAndAppUserId)
+            {
+                locationViewUsers.Add(new LocationViewUser { UserId = loginContext.User.Id, UserName = item.Name, AppUserId = item.AppUserId });
+            }
+
+            //写入数据
+            await UnitWork.BatchAddAsync<LocationViewUser>(locationViewUsers.ToArray());
+            //await UnitWork.AddAsync(new LocationViewUser { UserId = loginContext.User.Id, UserName = string.Join(",", req.Name) });
             await UnitWork.SaveAsync();
         }
 
@@ -421,8 +492,11 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             TableData result = new TableData();
-            var obj = await UnitWork.Find<LocationViewUser>(c => c.UserId == loginContext.User.Id).FirstOrDefaultAsync();
-            result.Data = obj?.UserName.Split(",");
+            //var obj = await UnitWork.Find<LocationViewUser>(c => c.UserId == loginContext.User.Id).FirstOrDefaultAsync();
+            //result.Data = obj?.UserName.Split(",");
+
+            var obj = await UnitWork.Find<LocationViewUser>(c => c.UserId == loginContext.User.Id).ToListAsync();
+            result.Data = obj.Select(t => new { Name = t.UserName, t.AppUserId });
             return result;
         }
 

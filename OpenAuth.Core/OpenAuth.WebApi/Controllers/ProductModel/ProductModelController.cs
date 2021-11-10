@@ -6,9 +6,13 @@ using OpenAuth.App.Meeting.ModelDto;
 using OpenAuth.App.ProductModel;
 using OpenAuth.App.ProductModel.Request;
 using OpenAuth.App.Response;
+using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.ProductModel;
 using OpenAuth.Repository.Interface;
+using OpenAuth.WebApi.Comm;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -181,12 +185,14 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
         /// <returns></returns>
         [HttpGet]
         [Route("GetSpecifications")]
-        public async Task<Response<ProductModelDetails>> GetSpecifications(int Id)
+        public async Task<Response<ProductModelDetails>> GetSpecifications(int Id, string Language)
         {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+
             var result = new Response<ProductModelDetails>();
             try
             {
-                result.Result = _productModelApp.GetSpecifications(Id);
+                result.Result = _productModelApp.GetSpecifications(Id, host, Language);
             }
             catch (Exception ex)
             {
@@ -239,18 +245,76 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
         }
 
         /// <summary>
-        /// 下载技术协议
+        /// 下载规格书
         /// </summary>
         /// <param name="Id"></param>
         [HttpGet]
         [Route("ExportProductSpecsDoc")]
-        public async Task<Response<string>> ExportProductSpecsDoc(int Id,string Language)
+        public async Task<Response<string>> ExportProductSpecsDoc(int Id, string Language)
         {
             string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
             var result = new Response<string>();
             try
             {
-                result.Result = _productModelApp.ExportProductSpecsDoc(Id, host, Language);
+
+                var productModelSelection = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.Id == Id).FirstOrDefault();
+                var type = UnitWork.FindSingle<ProductModelType>(q => q.Id == productModelSelection.ProductModelTypeId);
+
+                if (productModelSelection != null)
+                {
+                    var productModelCategory = UnitWork.Find<ProductModelCategory>(u => !u.IsDelete && u.Id == productModelSelection.ProductModelCategoryId).FirstOrDefault();
+                    var productModelSelectionInfo = UnitWork.Find<ProductModelSelectionInfo>(u => !u.IsDelete && u.ProductModelSelectionId == productModelSelection.Id).FirstOrDefault();
+                    var productModelDetails = _productModelApp.GetSpecifications(Id, null, Language);
+                    string templatePath = "";
+
+                    if (Language == "CN")
+                    {
+                        templatePath = Path.Combine(Directory.GetCurrentDirectory() + productModelCategory.SpecsDocTemplatePath_CH);
+                    }
+                    if (Language == "EN")
+                    {
+                        templatePath = Path.Combine(Directory.GetCurrentDirectory() + productModelCategory.SpecsDocTemplatePath_EN);
+
+                    }
+                    string filePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Templates\\files\\" + DateTime.Now.ToString("yyyyMMdd") + "\\");
+                    ProductParamTemplate productParamTemplate = new ProductParamTemplate()
+                    {
+                        Title = productModelSelection.DeviceCoding,
+                        DeviceCoding = productModelSelection.DeviceCoding,
+                        ChannelNumber = productModelSelection.ChannelNumber.ToString(),
+                        InputPowerType = productModelDetails.InputPowerType,
+                        InputActivePower = productModelDetails.InputActivePower,
+                        InputCurrent = productModelDetails.InputCurrent,
+                        Efficiency = productModelDetails.Efficiency,
+                        Noise = productModelDetails.Noise,
+                        DeviceType = productModelDetails.DeviceType,
+                        PowerControlModuleType = productModelDetails.PowerControlModuleType,
+                        PowerConnection = productModelDetails.PowerConnection,
+                        ChargeVoltageRange = productModelDetails.ChargeVoltageRange,
+                        DischargeVoltageRange = productModelDetails.DischargeVoltageRange,
+                        MinimumDischargeVoltage = productModelDetails.MinimumDischargeVoltage,
+                        CurrentRange = productModelDetails.CurrentRange,
+                        CurrentAccurack = productModelDetails.CurrentAccurack,
+                        CutOffCurrent = productModelDetails.CutOffCurrent,
+                        SinglePower = productModelDetails.SinglePower,
+                        CurrentResponseTime = productModelDetails.CurrentResponseTime,
+                        CurrentConversionTime = productModelDetails.CurrentConversionTime,
+                        RecordFreq = productModelDetails.RecordFreq,
+                        MinimumVoltageInterval = productModelDetails.MinimumVoltageInterval,
+                        MinimumCurrentInterval = productModelDetails.MinimumCurrentInterval,
+                        TotalPower = productModelDetails.TotalPower,
+                        Size = productModelDetails.Size,
+                        Image = host + type.Image,
+                        Weight = productModelDetails.Weight,
+                        VoltageAccuracy = productModelSelectionInfo.VoltAccurack
+
+
+                    };
+                    SpireDocWord.GetDocument(templatePath);
+                    SpireDocWord.ReplaseTemplateWord(productParamTemplate);
+                    SpireDocWord.CreateNewWord(filePath + productModelSelection.DeviceCoding + "-技术规格书" + ".docx");
+                }
+                result.Result = host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + productModelSelection.DeviceCoding + "-技术规格书.docx";
             }
             catch (Exception ex)
             {
@@ -260,6 +324,132 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
             return result;
         }
 
+        /// <summary>
+        /// 获取编码规则
+        /// </summary>
+        [HttpGet]
+        [Route("GetCodingRules")]
+        public async Task<Response<string>> GetCodingRules()
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            var result = new Response<string>();
+            try
+            {
+                result.Result = _productModelApp.GetCodingRules(host);
+            }
+            catch (Exception ex)
+            {
 
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        ///线材计算及下载
+        /// </summary>
+        [HttpGet]
+        [Route("GetCalculation")]
+        public async Task<Response<string>> GetCalculation()
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            var result = new Response<string>();
+            try
+            {
+                result.Result = _productModelApp.GetCalculation(host);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 技术协议书
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <param name="Language"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("TechnicalDoc")]
+        public async Task<Response<string>> TechnicalDoc(int Id, string Language)
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            var result = new Response<string>();
+            try
+            {
+                var productModelSelection = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.Id == Id).FirstOrDefault();
+                var type = UnitWork.FindSingle<ProductModelType>(q => q.Id == productModelSelection.ProductModelTypeId);
+
+                if (productModelSelection != null)
+                {
+                    var productModelCategory = UnitWork.Find<ProductModelCategory>(u => !u.IsDelete && u.Id == productModelSelection.ProductModelCategoryId).FirstOrDefault();
+                    var productModelSelectionInfo = UnitWork.Find<ProductModelSelectionInfo>(u => !u.IsDelete && u.ProductModelSelectionId == productModelSelection.Id).FirstOrDefault();
+                    var productModelDetails = _productModelApp.GetSpecifications(Id, null, Language);
+                    string templatePath = "";
+
+                    if (Language == "CN")
+                    {
+
+                        templatePath = Path.Combine(Directory.GetCurrentDirectory() + type.TAgreementDocTemplatePath_CH);
+
+
+                    }
+                    if (Language == "EN")
+                    {
+                        templatePath = Path.Combine(Directory.GetCurrentDirectory() + type.TAgreementDocTemplatePath_EN);
+
+                    }
+
+
+                    string filePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Templates\\files\\" + DateTime.Now.ToString("yyyyMMdd") + "\\");
+
+                    ProductParamTemplate productParamTemplate = new ProductParamTemplate()
+                    {
+                        Title = productModelSelection.DeviceCoding,
+                        DeviceCoding = productModelSelection.DeviceCoding,
+                        ChannelNumber = productModelSelection.ChannelNumber.ToString(),
+                        InputPowerType = productModelDetails.InputPowerType,
+                        InputActivePower = productModelDetails.InputActivePower,
+                        InputCurrent = productModelDetails.InputCurrent,
+                        Efficiency = productModelDetails.Efficiency,
+                        Noise = productModelDetails.Noise,
+                        DeviceType = productModelDetails.DeviceType,
+                        PowerControlModuleType = productModelDetails.PowerControlModuleType,
+                        PowerConnection = productModelDetails.PowerConnection,
+                        ChargeVoltageRange = productModelDetails.ChargeVoltageRange,
+                        DischargeVoltageRange = productModelDetails.DischargeVoltageRange,
+                        MinimumDischargeVoltage = productModelDetails.MinimumDischargeVoltage,
+                        CurrentRange = productModelDetails.CurrentRange,
+                        CurrentAccurack = productModelDetails.CurrentAccurack,
+                        CutOffCurrent = productModelDetails.CutOffCurrent,
+                        SinglePower = productModelDetails.SinglePower,
+                        CurrentResponseTime = productModelDetails.CurrentResponseTime,
+                        CurrentConversionTime = productModelDetails.CurrentConversionTime,
+                        RecordFreq = productModelDetails.RecordFreq,
+                        MinimumVoltageInterval = productModelDetails.MinimumVoltageInterval,
+                        MinimumCurrentInterval = productModelDetails.MinimumCurrentInterval,
+                        TotalPower = productModelDetails.TotalPower,
+                        Size = productModelDetails.Size != null ? productModelDetails.Size : "0.0",
+                        Weight = productModelSelection.Weight.ToString(),
+                        Image = host + type.Image,
+                        VoltageAccuracy = productModelSelectionInfo.VoltAccurack
+
+                    };
+                    SpireDocWord.GetDocument(templatePath);
+                    SpireDocWord.ReplaseTemplateWord(productParamTemplate);
+                    SpireDocWord.CreateNewWord(filePath + productModelSelection.DeviceCoding + "-技术规格协议书" + ".docx");
+                }
+                result.Result = host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + productModelSelection.DeviceCoding + "-技术规格协议书.docx";
+
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }

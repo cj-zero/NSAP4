@@ -5428,12 +5428,14 @@ namespace OpenAuth.App
                                     ServiceWorkOrders = a.ServiceWorkOrders.Select(o => new
                                     {
                                         o.Id,
+                                        o.ServiceOrderId,
                                         o.Status,
                                         o.FromTheme,
                                         ProblemType = o.ProblemType.Description,
                                         o.ManufacturerSerialNumber,
                                         o.MaterialCode,
                                         o.CurrentUserId,
+                                        o.OrderTakeType,
                                         MaterialType = "无序列号".Equals(o.MaterialCode) ? "无序列号" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-"))
                                     }).OrderByDescending(a => a.Id).ToList(),
                                 });
@@ -5455,7 +5457,7 @@ namespace OpenAuth.App
                                 Count = s.Count(),
                                 Orders = s.ToList()
                             }).ToList(),
-                            WorkOrderState = a.ServiceWorkOrders.Distinct().OrderBy(o => o.Status).FirstOrDefault()?.Status
+                            WorkOrderState = a.ServiceWorkOrders.Distinct().OrderBy(o => o.Status).FirstOrDefault()?.Status,
                         }).ToList<object>();
                     service_counts = customer_order.Count() - list.Count();
                     result.Data = new {service= list,service_counts= service_counts };
@@ -5495,7 +5497,8 @@ namespace OpenAuth.App
                                 o.ServiceMode,
                                 o.Priority,
                                 o.TransactionType,
-                                o.FromTheme
+                                o.FromTheme,
+                                o.ServiceOrderId,
                             }),
                             ServiceFlows = s.ServiceFlows.Where(w => w.Creater == userInfo.UserID && w.ServiceOrderId == s.Id && w.FlowType == 1).ToList()
                         });
@@ -5523,7 +5526,8 @@ namespace OpenAuth.App
                         MaterialType = s.VestInOrg == 1 ? completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == AppUserId.ToString()).FirstOrDefault() == null ? string.Empty : completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == AppUserId.ToString()).OrderBy(o => o.ServiceMode).FirstOrDefault().MaterialType : string.Empty,
                         ReimburseId =(s.VestInOrg == 1 || s.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.Id).FirstOrDefault() : 0,
                         RemburseStatus = (s.VestInOrg == 1 || s.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.RemburseStatus).FirstOrDefault() : 0,
-                        RemburseIsRead = (s.VestInOrg == 1 || s.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.IsRead).FirstOrDefault() : 0
+                        RemburseIsRead = (s.VestInOrg == 1 || s.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.IsRead).FirstOrDefault() : 0,
+                        orderStatus = s.MaterialInfo.Where(c => c.ServiceOrderId == s.Id).All(c => c.OrderTakeType == 0) == true ? 0 : (s.MaterialInfo.Where(c => c.ServiceOrderId == s.Id).All(c => c.Status >= 7) == true ? 2 : 1)
                     }).ToList<object>();
                     service_counts = query.Count() - list.Count();
                     result.Data = new { service = list, service_counts = service_counts };
@@ -5555,7 +5559,8 @@ namespace OpenAuth.App
                                 o.Status,
                                 o.Id,
                                 o.OrderTakeType,
-                                o.ServiceMode
+                                o.ServiceMode,
+                                o.ServiceOrderId
                             }),
                             ServiceFlows = s.ServiceFlows.Where(w => w.ServiceOrderId == s.Id && w.FlowType == 1).ToList()
                         });
@@ -5587,7 +5592,8 @@ namespace OpenAuth.App
                         MaterialType = string.Empty,
                         ReimburseId = 0,
                         RemburseStatus =  0,
-                        RemburseIsRead = 0
+                        RemburseIsRead = 0,
+                        orderStatus = s.MaterialInfo.Where(c => c.ServiceOrderId == s.Id).All(c => c.OrderTakeType == 0) == true ? 0 : (s.MaterialInfo.Where(c => c.ServiceOrderId == s.Id).All(c => c.Status >= 7) == true ? 2 : 1)
                     }).ToList<object>();
 
                     var sale_serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == AppUserId && s.FromType == 1)
@@ -5619,9 +5625,10 @@ namespace OpenAuth.App
                                 o.ServiceMode,
                                 o.Priority,
                                 o.TransactionType,
-                                o.FromTheme
+                                o.FromTheme,
+                                o.ServiceOrderId
                             }),
-                            ServiceFlows = s.ServiceFlows.Where(w => w.Creater == userInfo.UserID && w.ServiceOrderId == s.Id && w.FlowType == 1).ToList()
+                            ServiceFlows = s.ServiceFlows.Where(w => w.Creater == userInfo.UserID && w.ServiceOrderId == s.Id && w.FlowType == 1).ToList(),
                         });
                     var sale_list = (await sale_query.OrderByDescending(o => o.Id)
                     .ToListAsync()).Select(s => new
@@ -5650,7 +5657,8 @@ namespace OpenAuth.App
                         MaterialType = s.VestInOrg == 1 ? sale_completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == AppUserId.ToString()).FirstOrDefault() == null ? string.Empty : sale_completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == AppUserId.ToString()).OrderBy(o => o.ServiceMode).FirstOrDefault().MaterialType : string.Empty,
                         ReimburseId = (s.VestInOrg == 1 || s.VestInOrg == 3) ? sale_reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.Id).FirstOrDefault() : 0,
                         RemburseStatus = (s.VestInOrg == 1 || s.VestInOrg == 3) ? sale_reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.RemburseStatus).FirstOrDefault() : 0,
-                        RemburseIsRead = (s.VestInOrg == 1 || s.VestInOrg == 3) ? sale_reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.IsRead).FirstOrDefault() : 0
+                        RemburseIsRead = (s.VestInOrg == 1 || s.VestInOrg == 3) ? sale_reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.IsRead).FirstOrDefault() : 0,
+                        orderStatus = s.MaterialInfo.Where(c => c.ServiceOrderId == s.Id).All(c => c.OrderTakeType == 0) == true ? 0 : (s.MaterialInfo.Where(c => c.ServiceOrderId == s.Id).All(c => c.Status >= 7) == true ? 2 : 1)
                     }).ToList<object>();
                     list=sale_list.Union(customer_list).Take(page_size).ToList();
                     service_counts = customer_list.Count() + sale_list.Count() - list.Count();
@@ -5780,7 +5788,8 @@ namespace OpenAuth.App
                                 o.ServiceMode,
                                 o.Priority,
                                 o.TransactionType,
-                                o.FromTheme
+                                o.FromTheme,
+                                o.ServiceOrderId
                             }),
                             ServiceFlows = s.ServiceFlows.Where(w => w.Creater == userInfo.UserID && w.ServiceOrderId == s.Id && w.FlowType == 1).ToList()
                         });
@@ -5809,7 +5818,8 @@ namespace OpenAuth.App
                         MaterialType = s.VestInOrg == 1 ? completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == AppUserId.ToString()).FirstOrDefault() == null ? string.Empty : completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == AppUserId.ToString()).OrderBy(o => o.ServiceMode).FirstOrDefault().MaterialType : string.Empty,
                         ReimburseId = (s.VestInOrg == 1 || s.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.Id).FirstOrDefault() : 0,
                         RemburseStatus = (s.VestInOrg == 1 || s.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.RemburseStatus).FirstOrDefault() : 0,
-                        RemburseIsRead = (s.VestInOrg == 1 || s.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.IsRead).FirstOrDefault() : 0
+                        RemburseIsRead = (s.VestInOrg == 1 || s.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.IsRead).FirstOrDefault() : 0,
+                        orderStatus = s.MaterialInfo.Where(c => c.ServiceOrderId == s.Id).All(c => c.OrderTakeType == 0) == true ? 0 : (s.MaterialInfo.Where(c => c.ServiceOrderId == s.Id).All(c => c.Status >= 7) == true ? 2 : 1)
                     }).ToList<object>();
                     result.Data = new { service = list};
                     break;
@@ -5840,7 +5850,8 @@ namespace OpenAuth.App
                                 o.Status,
                                 o.Id,
                                 o.OrderTakeType,
-                                o.ServiceMode
+                                o.ServiceMode,
+                                o.ServiceOrderId
                             }),
                             ServiceFlows = s.ServiceFlows.Where(w => w.ServiceOrderId == s.Id && w.FlowType == 1).ToList()
                         });
@@ -5872,7 +5883,8 @@ namespace OpenAuth.App
                         MaterialType = string.Empty,
                         ReimburseId = 0,
                         RemburseStatus = 0,
-                        RemburseIsRead = 0
+                        RemburseIsRead = 0,
+                        orderStatus = s.MaterialInfo.Where(c => c.ServiceOrderId == s.Id).All(c => c.OrderTakeType == 0) == true ? 0 : (s.MaterialInfo.Where(c => c.ServiceOrderId == s.Id).All(c => c.Status >= 7) == true ? 2 : 1)
                     }).ToList<object>();
 
                     var sale_serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == AppUserId && s.FromType == 1)
@@ -5904,7 +5916,8 @@ namespace OpenAuth.App
                                 o.ServiceMode,
                                 o.Priority,
                                 o.TransactionType,
-                                o.FromTheme
+                                o.FromTheme,
+                                o.ServiceOrderId
                             }),
                             ServiceFlows = s.ServiceFlows.Where(w => w.Creater == userInfo.UserID && w.ServiceOrderId == s.Id && w.FlowType == 1).ToList()
                         });
@@ -5935,7 +5948,8 @@ namespace OpenAuth.App
                         MaterialType = s.VestInOrg == 1 ? sale_completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == AppUserId.ToString()).FirstOrDefault() == null ? string.Empty : sale_completeReportList.Where(w => w.ServiceOrderId == s.Id && w.TechnicianId == AppUserId.ToString()).OrderBy(o => o.ServiceMode).FirstOrDefault().MaterialType : string.Empty,
                         ReimburseId = (s.VestInOrg == 1 || s.VestInOrg == 3) ? sale_reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.Id).FirstOrDefault() : 0,
                         RemburseStatus = (s.VestInOrg == 1 || s.VestInOrg == 3) ? sale_reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.RemburseStatus).FirstOrDefault() : 0,
-                        RemburseIsRead = (s.VestInOrg == 1 || s.VestInOrg == 3) ? sale_reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.IsRead).FirstOrDefault() : 0
+                        RemburseIsRead = (s.VestInOrg == 1 || s.VestInOrg == 3) ? sale_reimburseList.Where(w => w.ServiceOrderId == s.Id && w.CreateUserId == userInfo.UserID).Select(s => s.IsRead).FirstOrDefault() : 0,
+                        orderStatus = s.MaterialInfo.Where(c => c.ServiceOrderId == s.Id).All(c => c.OrderTakeType == 0) == true ? 0 : (s.MaterialInfo.Where(c => c.ServiceOrderId == s.Id).All(c => c.Status >= 7) == true ? 2 : 1)
                     }).ToList<object>();
                     list = sale_list.Union(customer_list)
                         .Skip((page_index - 1) * page_size).Take(page_size)

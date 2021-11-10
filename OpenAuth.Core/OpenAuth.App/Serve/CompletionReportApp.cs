@@ -262,19 +262,22 @@ namespace OpenAuth.App
             if (updatechangeTheMaterial.Count > 0)
             {
                 var changeTheMaterialList=await UnitWork.Find<ChangeTheMaterial>(c => c.CompletionReportId.Equals(obj.Id)).ToListAsync();
-                var updatechangeTheMaterialList = new List<ChangeTheMaterial>();
-                updatechangeTheMaterial.ForEach(c =>
-                {
-                    var changeTheMaterialObj = changeTheMaterialList.Where(t => t.Id.Equals(c.Id)).FirstOrDefault();
-                    if (c.Count != changeTheMaterialObj.Count && !c.Material.Equals(changeTheMaterialObj.Material)) 
-                    {
-                        updatechangeTheMaterialList.Add(c);
-                    }
-                });
-                if (updatechangeTheMaterialList.Count > 0) 
-                {
-                    await UnitWork.BatchUpdateAsync<ChangeTheMaterial>(updatechangeTheMaterialList.ToArray());
-                }
+                await UnitWork.BatchDeleteAsync(changeTheMaterialList.ToArray());
+                await UnitWork.BatchAddAsync<ChangeTheMaterial>(updatechangeTheMaterial.ToArray());
+
+                //var updatechangeTheMaterialList = new List<ChangeTheMaterial>();
+                //updatechangeTheMaterial.ForEach(c =>
+                //{
+                //    var changeTheMaterialObj = changeTheMaterialList.Where(t => t.Id.Equals(c.Id)).FirstOrDefault();
+                //    if (c.Count != changeTheMaterialObj.Count && !c.Material.Equals(changeTheMaterialObj.Material)) 
+                //    {
+                //        updatechangeTheMaterialList.Add(c);
+                //    }
+                //});
+                //if (updatechangeTheMaterialList.Count > 0) 
+                //{
+                //    await UnitWork.BatchUpdateAsync<ChangeTheMaterial>(updatechangeTheMaterialList.ToArray());
+                //}
             }
             await UnitWork.SaveAsync();
 
