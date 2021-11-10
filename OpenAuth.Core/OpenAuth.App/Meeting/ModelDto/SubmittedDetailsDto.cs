@@ -227,6 +227,7 @@ namespace OpenAuth.App.Meeting.ModelDto
     }
     public class MeetingUserDto
     {
+        public int UserId { get; set; }
         /// <summary>
         /// 报名人
         /// </summary>
@@ -238,11 +239,11 @@ namespace OpenAuth.App.Meeting.ModelDto
         /// <summary>
         /// 备注
         /// </summary>
-        public string Remark { get; set; }
+        public string? Remark { get; set; }
         /// <summary>
         /// 取消原因
         /// </summary>
-        public string CancelReason { get; set; }
+        public string? CancelReason { get; set; }
 
     }
 }

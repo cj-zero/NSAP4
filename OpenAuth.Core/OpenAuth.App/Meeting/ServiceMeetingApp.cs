@@ -201,10 +201,18 @@ namespace OpenAuth.App.Meeting
                 var filelist = UnitWork.Find(exps);
                 var s = filelist.MapToList<MeetingFile>();
                 list.FileList.AddRange(s);
+
             }
             else if (meetdraft.Type == 1)
             {
                 var meetuser = UnitWork.FindSingle<MeetingUser>(q => q.Id == meetdraft.Base_entry);
+                var scon = new MeetingUserDto();
+                scon.CreateTime = meetuser.CreateTime;
+                scon.Name = meetuser.Name;
+                scon.Remark = meetuser.Remark;
+                scon.UserId = meetuser.UserId;
+                scon.CancelReason=meetuser.CancelReason;    
+                list.meetingUser = scon;
                 var objs = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(t => !t.IsDelete && t.Id == meetuser.MeetingId);
                 list = objs.MapTo<ExhibitionDetailDto>();
                 Expression<Func<MeetingFile, bool>> exps = t => true;
@@ -363,7 +371,7 @@ namespace OpenAuth.App.Meeting
             Expression<Func<OpenAuth.Repository.Domain.Serve.Meeting, bool>> exp = t => true;
             exp = exp.And(t => !t.IsDelete);
             exp = exp.And(t => t.Status == 3);
-            exp = exp.And(t => t.CreateUser == loginUser.Name);
+            //exp = exp.And(t => t.CreateUser == loginUser.Name);
             if (QueryModel.AddressType != -1)
             {
                 exp = exp.And(t => t.AddressType == QueryModel.AddressType);
@@ -490,7 +498,7 @@ namespace OpenAuth.App.Meeting
             }
             if (QueryModel.Step != -1)
             {
-                exp = exp.And(t => t.Step == QueryModel.Step);
+                exp = exp.And(t => t.Step == QueryModel.Step || t.Step == 2);//默认带上or审核条件
 
             }
             var objs = UnitWork.Find<MeetingDraft>(QueryModel.page, QueryModel.limit, "", exp);
@@ -770,9 +778,13 @@ namespace OpenAuth.App.Meeting
             {
                 var meetinguser = UnitWork.FindSingle<MeetingUser>(zw => zw.Id == meetingdraft.Base_entry);
                 meeting = UnitWork.FindSingle<OpenAuth.Repository.Domain.Serve.Meeting>(zw => zw.Id == meetinguser.MeetingId);
-                data.meetingUser.CreateTime = meetinguser.CreateTime;
-                data.meetingUser.Name = meetinguser.Name;
-                data.meetingUser.Remark = meetinguser.Remark;
+                var scon = new MeetingUserDto();
+                scon.CreateTime = meetinguser.CreateTime;
+                scon.Name = meetinguser.Name;
+                scon.Remark = meetinguser.Remark;
+                scon.UserId = meetinguser.UserId;
+                scon.CancelReason= meetinguser.CancelReason;
+                data.meetingUser = scon;
             }
             if (meetingdraft.Type == 0)
             {
