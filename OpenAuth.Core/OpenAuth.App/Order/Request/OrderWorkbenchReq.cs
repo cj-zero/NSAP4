@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OpenAuth.App.Request;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -7,16 +8,9 @@ namespace OpenAuth.App.Order.Request
     /// <summary>
     /// 提交给我的
     /// </summary>
-    public class OrderSubmtToMeReq
+    public class OrderSubmtToMeReq:PageReq
     {
-        /// <summary>
-        /// 
-        /// </summary>
-        public int page { get; set; } = 1;
-        /// <summary>
-        /// 
-        /// </summary>
-        public int rp { get; set; } = 20;
+        
         /// <summary>
         /// 
         /// </summary>

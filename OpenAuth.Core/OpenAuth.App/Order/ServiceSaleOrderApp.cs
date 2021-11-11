@@ -4845,7 +4845,7 @@ namespace OpenAuth.App.Order
                     filterString += string.Format(" ) AND ");
                 }
 
-               
+
             }
 
             if (model.Applicator != "")
@@ -4969,10 +4969,10 @@ namespace OpenAuth.App.Order
 
             return bill;
         }
-        public billDelivery GetDeliverySalesInfoNewNos(string jobId)
+        public billDelivery GetDeliverySalesInfoNewNos(string jobId, int userID)
         {
-           
-            billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfoNos(jobId)));
+
+            billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfoNos(jobId, userID)));
             DataTable dt = GetSboNamePwd(int.Parse(bill.SboId));
             string dRowData = string.Empty; string isOpen = "0"; string sboname = "0"; string sqlconn = "0";
             if (dt.Rows.Count > 0) { isOpen = dt.Rows[0][6].ToString(); sboname = dt.Rows[0][0].ToString(); sqlconn = dt.Rows[0][5].ToString(); }
@@ -5397,9 +5397,9 @@ namespace OpenAuth.App.Order
         /// </summary>
         /// <param name="jobId"></param>
         /// <returns></returns>
-        public object GetSalesInfoNos(string jobId)
+        public object GetSalesInfoNos(string jobId, int userID)
         {
-            string sql = string.Format("SELECT job_data FROM {0}.wfa_job WHERE base_entry = {1} OR sbo_itf_return={1}", "nsap_base", jobId);
+            string sql = string.Format("SELECT job_data FROM {0}.wfa_job WHERE job_type_id=13 AND user_id= {1} AND  sbo_itf_return={2}", "nsap_base", userID, jobId);
             return UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
         }
         public int GetIsEdit(string jobId)
@@ -8274,6 +8274,7 @@ namespace OpenAuth.App.Order
             {
                 var scon = new UploadFileResp();
                 var fileName = ContentDispositionHeaderValue.Parse(item.ContentDisposition).FileName.Trim('"');
+                scon.FileName = fileName;
                 string filePath = FileHelper.FilePath.PhysicalPath;
                 if (!Directory.Exists(filePath))
                 {
@@ -8290,7 +8291,6 @@ namespace OpenAuth.App.Order
                 }
                 //scon.Id = new Guid().ToString();
                 scon.FilePath = host + FileHelper.FilePath.VirtualPath + fileName;
-                scon.FileName = fileName;
                 scon.FileType = suffix;
                 scon.CreateUserName = loginUser.Name;
                 result.Add(scon);
