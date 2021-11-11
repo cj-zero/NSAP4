@@ -243,11 +243,11 @@ namespace OpenAuth.WebApi
 				});
 
 			//允许HttpContext.Request.Body被重复读取
-			app.Use((context, next) =>
-			{
-				context.Request.EnableBuffering();
-				return next();
-			});
+			//app.Use((context, next) =>
+			//{
+			//	context.Request.EnableBuffering();
+			//	return next();
+			//});
 
 			app.UseRouting();
 			app.UseAuthentication();
