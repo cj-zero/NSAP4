@@ -2482,6 +2482,7 @@ namespace OpenAuth.App
             {
                 r.Id,
                 r.MainId,
+                r.RemburseStatus,
                 Days = r.ReimburseTravellingAllowances.Sum(t => t.Days) <= 0 && serviceDailyExpends.Where(s => s.ServiceOrderId == r.ServiceOrderId) != null ? serviceDailyExpends.Where(s => s.ServiceOrderId == r.ServiceOrderId).Sum(s => s.Days) : r.ReimburseTravellingAllowances.Sum(t => t.Days),
                 r.TotalMoney,
                 FaresMoney = r.ReimburseFares.Sum(f => f.Money),
@@ -2501,6 +2502,7 @@ namespace OpenAuth.App
             {
                 r.Id,
                 r.MainId,
+                r.RemburseStatus,
                 Type = "报销",
                 r.Days,
                 r.TotalMoney,
@@ -2529,6 +2531,7 @@ namespace OpenAuth.App
                 {
                     r.Id,
                     MainId = r.Id,
+                    RemburseStatus=0,
                     r.TotalMoney,
                     Days = completionReports?.BusinessTripDays,
                     FaresMoney = r.OutsourcExpenses.Where(o => o.ExpenseType == 1).Sum(o => o.Money),//交通
@@ -2548,6 +2551,7 @@ namespace OpenAuth.App
             {
                 r.Id,
                 r.MainId,
+                r.RemburseStatus,
                 Type = "结算",
                 r.Days,
                 r.TotalMoney,

@@ -372,6 +372,7 @@ namespace OpenAuth.App.Workbench
             var userinfo = await _userManagerApp.GetUserOrgInfo("", ocrds?.TechName);
             var reimburseDetails = new ReimburseDetailsResp
             {
+                CreateUserId = reimburseObj.CreateUserId,
                 ReimburseId = reimburseObj.Id,
                 UpdateTime = reimburseObj.UpdateTime,
                 Remark = reimburseObj.Remark,
