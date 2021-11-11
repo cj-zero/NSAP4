@@ -185,7 +185,7 @@ namespace OpenAuth.App.Order
             string className = "NSAP.B1Api.BOneORDR";
             string jobname = "销售订单";
             //查询
-            billDelivery billDelivery = GetDeliverySalesInfoNewNos(orderReq.JobId.ToString());
+            billDelivery billDelivery = GetDeliverySalesInfoNewNos(orderReq.JobId.ToString(),userID);
             if (orderReq.Comments == "")
             {
                 billDelivery.Comments = "\\ ";
