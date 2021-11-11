@@ -30,6 +30,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<AttendanceClockWhileList> AttendanceClockWhileLists { get; set; }
         public virtual DbSet<CompletionReport> Completionreports { get; set; }
         public virtual DbSet<ChangeTheMaterial> ChangeTheMaterials { get; set; }
+        public virtual DbSet<RequestActionLog> RequestActionLogs { get; set; }
 
         public virtual DbSet<CompletionReportPicture> Completionreportpictures { get; set; }
         public virtual DbSet<ServiceOrder> Serviceorders { get; set; }
