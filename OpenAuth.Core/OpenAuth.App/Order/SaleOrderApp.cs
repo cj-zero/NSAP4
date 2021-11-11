@@ -178,6 +178,7 @@ namespace OpenAuth.App.Order
         /// <returns></returns>
         public string SalesOrderSave_ORDR(SalesOrderSaveReq orderReq)
         {
+
             int userID = _serviceBaseApp.GetUserNaspId();
             int sboID = _serviceBaseApp.GetUserNaspSboID(userID);
             int funcId = 33;
@@ -186,6 +187,10 @@ namespace OpenAuth.App.Order
             string jobname = "销售订单";
             //查询
             billDelivery billDelivery = GetDeliverySalesInfoNewNos(orderReq.JobId.ToString(), userID);
+            if (IsExistDoc(billDelivery.billBaseEntry, "23", sboID.ToString()))
+            {
+                result = "该销售报价单转销售订单已提交";
+            }
             //billDelivery.billBaseEntry=billDelivery.
             if (orderReq.Comments == "")
             {
