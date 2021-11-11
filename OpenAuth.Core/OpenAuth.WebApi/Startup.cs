@@ -242,12 +242,12 @@ namespace OpenAuth.WebApi
                     RequestPath = "/Templates"
                 });
 
-            //允许HttpContext.Request.Body被重复读取
-            app.Use((context, next) =>
-            {
-                context.Request.EnableBuffering();
-                return next();
-            });
+			//允许HttpContext.Request.Body被重复读取
+			//app.Use((context, next) =>
+			//{
+			//	context.Request.EnableBuffering();
+			//	return next();
+			//});
 
             app.UseRouting();
             app.UseAuthentication();

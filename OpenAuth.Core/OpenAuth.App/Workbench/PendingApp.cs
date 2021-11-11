@@ -562,13 +562,15 @@ namespace OpenAuth.App.Workbench
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ApprovalNumber), w => w.ApprovalNumber == int.Parse(req.ApprovalNumber))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.SourceNumbers), w => w.SourceNumbers == int.Parse(req.SourceNumbers))
                 .FirstOrDefaultAsync();
-            if (pendingObj == null && !string.IsNullOrWhiteSpace(req.ApprovalNumber))
+            if (pendingObj == null && !string.IsNullOrWhiteSpace(req.ApprovalNumber))//来源结算getdetail
             {
-                pendingObj = new WorkbenchPending 
-                { 
-                    ApprovalNumber = int.Parse(req.ApprovalNumber), 
-                    OrderType = 3, 
-                    ServiceOrderId = req.ServiceOrderId == null ? 0 :Convert.ToInt32( req.ServiceOrderId )
+                pendingObj = new WorkbenchPending
+                {
+                    //ApprovalNumber = int.Parse(req.ApprovalNumber),
+                    OrderType = 3,
+                    ServiceOrderId = req.ServiceOrderId == null ? 0 : Convert.ToInt32(req.ServiceOrderId),
+                    PetitionerId = req.Petitioner,
+                    SourceNumbers=Convert.ToInt32(req.SourceNumbers)
                 };
             }
             ServiceOrderResp serviceOrderDetails = null;
