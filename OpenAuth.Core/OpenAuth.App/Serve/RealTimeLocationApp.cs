@@ -139,62 +139,28 @@ namespace OpenAuth.App
             //                            ) ORDER BY CreateTime desc")
             //                            .ToListAsync();
 
-            string ids = "";
-            if (req.AppUserId?.Count > 0)
+            //根据name查询appUserId
+            int? appUserIdByName = null;
+            if (req.Name?.Count() > 0)
             {
-                foreach (var id in req.AppUserId.Where(x => x != null || x.ToString() != ""))
-                {
-                    ids += "," + id.ToString();
-                }
-            }
-            else if (req.Name?.Count > 0)
-            {
-                var appUserId = from a in UnitWork.Find<AppUserMap>(null)
-                                join b in UnitWork.Find<User>(x => x.Status == 0).WhereIf(req.Name?.Count > 0, c => req.Name.Contains(c.Name))
-                                on a.UserID equals b.Id
-                                select a.AppUserId;
-                if (appUserId != null && appUserId.Count() > 0)
-                {
-                    ids += "," + appUserId.FirstOrDefault().ToString();
-                }
+                appUserIdByName = await (from a in UnitWork.Find<AppUserMap>(null)
+                                   join b in UnitWork.Find<User>(x => x.Status == 0).WhereIf(req.Name?.Count > 0, c => req.Name.Contains(c.Name))
+                                   on a.UserID equals b.Id
+                                   select a.AppUserId).FirstOrDefaultAsync();
             }
 
-            string sql = "";
-            if (req.AppUserId?.Count > 0 || req.Name?.Count > 0)
-            {
-                if (ids == "")
-                {
-                    sql = @"SELECT r.*
-                            FROM realtimelocation AS r
-                            JOIN(
-                                SELECT max(Id) as Id from realtimelocation
-                                WHERE AppUserId IN('')
-                                GROUP BY AppUserId
-                            ) AS t ON r.Id = t.Id ORDER BY CreateTime desc;";
-                }
-                else
-                {
-                    sql = @$"SELECT r.*
-                        FROM realtimelocation AS r
-                        JOIN(
-                            SELECT max(Id) as Id from realtimelocation
-                            WHERE AppUserId IN({ ids.Substring(1)})
-                            GROUP BY AppUserId
-                        ) AS t ON r.Id = t.Id ORDER BY CreateTime desc;";
-                }
-            }
-            else
-            {
-                sql= @$"SELECT r.*
-                        FROM realtimelocation AS r
-                        JOIN(
-                            SELECT max(Id) as Id from realtimelocation
-                            GROUP BY AppUserId
-                        ) AS t ON r.Id = t.Id ORDER BY CreateTime desc;";
-            }
-            var realTimeLocationHis = await UnitWork.FromSql<RealTimeLocation>(sql).ToListAsync();
+            //求每个人最大的id,即最新的记录
+            var ids = from r1 in Repository.Find(null)
+                       .WhereIf(req.AppUserId?.Count() > 0, x => req.AppUserId.Contains(x.AppUserId))
+                       .WhereIf(appUserIdByName != null, x => x.AppUserId == appUserIdByName)
+                      group r1 by r1.AppUserId into g
+                      select g.Max(x => x.Id);
 
+            var realTimeLocationHis = await (from r in Repository.Find(null)
+                                             join t in ids on new { r.Id } equals new { Id = t }
+                                             select r).ToListAsync();
 
+            //所有人最新定位信息
             var locaotionInfoHistory = from a in realTimeLocationHis
                                        join b in pppUserMap on a.AppUserId equals b.AppUserId
                                        select new { a, b.UserID };

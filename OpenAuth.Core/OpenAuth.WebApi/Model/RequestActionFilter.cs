@@ -7,10 +7,11 @@ using Newtonsoft.Json;
 using Microsoft.AspNetCore.Http;
 using System.IO;
 using OpenAuth.App;
+using System.Threading.Tasks;
 
 namespace OpenAuth.WebApi.Model
 {
-    public class RequestActionFilter : IActionFilter
+    public class RequestActionFilter : IAsyncActionFilter
     {
         private readonly IAuth _auth;
         private readonly RequestActionLogApp _requestActionLogApp;
@@ -27,50 +28,36 @@ namespace OpenAuth.WebApi.Model
         }
 
         /// <summary>
-        /// action执行前执行
+        /// 当有异步方法的时候,会优先走异步方法,同步的不会执行(因此OnActionExecuting和OnActionExecuted都不会执行)
         /// </summary>
         /// <param name="context"></param>
-        public void OnActionExecuting(ActionExecutingContext context)
-        {
-        }
-
-        /// <summary>
-        /// action执行完之后执行
-        /// </summary>
-        /// <param name="context"></param>
-        public void OnActionExecuted(ActionExecutedContext context)
+        /// <param name="next"></param>
+        /// <returns></returns>
+        public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
             var descriptor = (Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor)context.ActionDescriptor;
             var controllerName = descriptor.ControllerName;
             var actionName = descriptor.ActionName;
+            var parameter = JsonConvert.SerializeObject(context.ActionArguments);
             var currentUser = _auth.GetCurrentUser()?.User?.Id ?? "";
-            string requestBody = "";
-            if (context != null)
-            {
-                var request = context.HttpContext.Request;
-                request.Body.Position = 0;
-                using (var stream = new StreamReader(request.Body))
-                {
-                    requestBody = stream.ReadToEnd();
-                    request.Body.Position = 0;
-                }
-            }
 
             var log = new RequestActionLog
             {
                 ActionName = $"{controllerName}/{actionName}",
-                Parameter = requestBody,
+                Parameter = parameter,
                 RequestUser = currentUser,
                 RequestTime = DateTime.Now
             };
 
-            if (context.Exception != null)
+            var resultContext = await next();
+
+            if (resultContext.Exception != null)
             {
-                log.ApiResult = JsonConvert.SerializeObject(context.Exception.InnerException.Message);
+                log.ApiResult = resultContext.Exception.Message;
             }
-            else if(context.Result != null)
+            else if (resultContext.Result != null)
             {
-                log.ApiResult = JsonConvert.SerializeObject(((ObjectResult)context.Result).Value);
+                log.ApiResult = JsonConvert.SerializeObject(((ObjectResult)resultContext.Result).Value);
             }
 
             _requestActionLogApp.Add(log);
