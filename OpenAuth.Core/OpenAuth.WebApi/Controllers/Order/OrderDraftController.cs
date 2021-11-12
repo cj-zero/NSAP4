@@ -1810,7 +1810,8 @@ namespace OpenAuth.WebApi.Controllers.Order
         }
 
 
-
+        [HttpGet]
+        [Route("GetPagePowersByUrl")]
         public Response<string> GetPagePowersByUrl(string url)
         {
             var result = new Response<string>();
