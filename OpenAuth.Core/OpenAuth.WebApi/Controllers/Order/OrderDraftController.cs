@@ -1824,5 +1824,26 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             return result;
         }
+        // 根据业务伙伴代码获取相关数据
+        [HttpGet]
+        [Route("GetCardInfo")]
+        public TableData GetCardInfo(string CardCode, string SboId = "1", bool billViewFull = true, bool billViewSelfDepartment = true, bool billViewSelf = true)
+        {
+            var result = new TableData();
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            var DepID = _serviceBaseApp.GetSalesDepID(UserID);
+            try
+            {
+                int billSboId = 0; bool isSql = true;
+                if (int.Parse(SboId) == SboID || SboId == "") { billSboId = SboID; } else { billSboId = int.Parse(SboId); isSql = false; }
+                result.Data = _serviceSaleOrderApp.GetCardInfo(CardCode, billSboId, isSql, billViewSelf, billViewSelfDepartment, billViewFull, UserID, DepID);
+            }
+            catch (Exception e)
+            {
+                result.Message = e.Message;
+            }
+            return result;
+        }
     }
 }

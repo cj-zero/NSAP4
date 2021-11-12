@@ -4140,6 +4140,7 @@ namespace OpenAuth.App.Order
             }
             string U_New_ORDRID = string.Empty;
             if (IsExist(sboname + tablename, "U_New_ORDRID"))
+
             {
                 U_New_ORDRID = ",U_New_ORDRID";
             }
@@ -8294,6 +8295,7 @@ namespace OpenAuth.App.Order
                 }
                 //scon.Id = new Guid().ToString();
                 scon.FilePath = host + FileHelper.FilePath.VirtualPath + fileName;
+                scon.FileUpdateTime = DateTime.Now;
                 scon.FileType = suffix;
                 scon.CreateUserName = loginUser.Name;
                 result.Add(scon);
@@ -8356,5 +8358,104 @@ namespace OpenAuth.App.Order
             return sBuilder.ToString();
         }
 
+
+        /// <summary>
+        /// 根据业务伙伴代码获取相关数据
+        /// </summary>
+        public DataTable GetCardInfo(string CardCode, int SboID, bool isSql, bool ViewSelf, bool ViewSelfDepartment, bool ViewFull, int UserId, int DepId)
+        {
+            DataTable dt = GetSboNamePwd(SboID);
+            string dRowData = string.Empty; string isOpen = "0"; string sboname = "0"; string sqlconn = "0";
+            if (dt.Rows.Count > 0) { isOpen = dt.Rows[0][6].ToString(); sboname = dt.Rows[0][0].ToString(); sqlconn = dt.Rows[0][5].ToString(); }
+            string filterString = string.Empty;
+            if (ViewSelfDepartment && !ViewFull)
+            {
+                DataTable rDataRows = GetSboSlpCodeIds(DepId, SboID);
+                if (rDataRows.Rows.Count > 0)
+                {
+                    filterString += string.Format(" AND (a.SlpCode IN(");
+                    for (int i = 0; i < rDataRows.Rows.Count; i++)
+                    {
+                        filterString += string.Format("{0},", rDataRows.Rows[i][0]);
+                    }
+                    if (!string.IsNullOrEmpty(filterString))
+                        filterString = filterString.Substring(0, filterString.Length - 1);
+                    filterString += string.Format(") OR a.DfTcnician IN (");
+                    for (int i = 0; i < rDataRows.Rows.Count; i++)
+                    {
+                        filterString += string.Format("{0},", rDataRows.Rows[i][1]);
+                    }
+                    if (!string.IsNullOrEmpty(filterString))
+                        filterString = filterString.Substring(0, filterString.Length - 1);
+                    filterString += string.Format(") {0})", " OR a.SlpCode = -1 ");
+                }
+
+            }
+            if (ViewSelf && !ViewFull && !ViewSelfDepartment)
+            {
+                DataTable rDataRowsSlp = GetSboSlpCodeId(UserId, SboID);
+                if (rDataRowsSlp.Rows.Count > 0)
+                {
+                    string slpCode = rDataRowsSlp.Rows[0][0].ToString();
+                    string slpTcnician = rDataRowsSlp.Rows[0][1].ToString();
+                    string SlpCodeViewSelf = "";
+                    if (CardCode.Substring(0, 1) == "V") { SlpCodeViewSelf = " OR a.SlpCode = -1"; } else { SlpCodeViewSelf = ""; }
+                    filterString += string.Format(" AND (a.SlpCode = {0} OR a.DfTcnician={1} {2}) ", slpCode, slpTcnician, SlpCodeViewSelf);
+                }
+                else
+                {
+                    filterString += string.Format(" a.SlpCode =0  AND ");
+                }
+            }
+            if (isSql && isOpen == "1")
+            {
+                return GetCardInfoSql(CardCode, sboname, sqlconn, filterString);
+            }
+            else
+            {
+                filterString += string.Format(" AND a.sbo_id={0}", SboID);
+                return GetCardInfo(CardCode, filterString);
+            }
+        }
+        public DataTable GetCardInfoSql(string CardCode, string sboname, string sqlconn, string filterString)
+        {
+            if (string.IsNullOrEmpty(sboname)) { sboname = ""; } else { sboname = sboname + ".dbo."; }
+            string U_FPLB = string.Empty;
+            if (IsExist("OCRD", "U_FPLB"))
+            {
+                U_FPLB = ",a.U_FPLB";
+            }
+            string strSql = string.Format("SELECT CardName,Currency,Building,MailBuildi{0},CntctPrsn,BillToDef AS PayToCode,ShipToDef AS ShipToCode,", U_FPLB);
+            strSql += string.Format("(ISNULL(ZipCode,'')+ISNULL(b.Name,'')+ISNULL(c.Name,'')+ISNULL(City,'')+ISNULL(CONVERT(VARCHAR(1000),Building),'''')) AS Address,");
+            strSql += string.Format("(ISNULL(MailZipCod,'')+ISNULL(d.Name,'')+ISNULL(e.Name,'')+ISNULL(MailCity,'')+ISNULL(CONVERT(VARCHAR(8000),MailBuildi),'''')) AS Address2,");
+            strSql += string.Format("a.MailZipCod,a.State2,a.HsBnkIBAN,a.SlpCode AS U_YWY,a.QryGroup1 as IsTransport,U_is_reseller,U_EndCustomerName,U_EndCustomerContact FROM " + sboname + "OCRD a ");
+            strSql += string.Format(" LEFT JOIN " + sboname + "OCRY b ON a.Country=b.Code");
+            strSql += string.Format(" LEFT JOIN " + sboname + "OCST c ON a.State1=c.Code");
+            strSql += string.Format(" LEFT JOIN " + sboname + "OCRY d ON a.MailCountr=d.Code");
+            strSql += string.Format(" LEFT JOIN " + sboname + "OCST e ON a.State2=e.Code");
+            strSql += string.Format(" WHERE CardCode='{0}'", CardCode);
+            if (!string.IsNullOrEmpty(filterString)) { strSql += string.Format("{0}", filterString); }
+            return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql, CommandType.Text, null);
+        }
+        /// <summary>
+        /// 根据业务伙伴代码获取相关数据
+        /// </summary>
+        public DataTable GetCardInfo(string CardCode, string filterString)
+        {
+            string strSql = string.Format("SELECT CardName,Currency,Building,MailBuildi,U_FPLB,CntctPrsn,CONCAT(IFNULL(a.ZipCode,''),IFNULL(b.Name,''),");
+            strSql += string.Format("IFNULL(c.Name,''),IFNULL(a.City,''),IFNULL(a.Building,'')) AS Address,CONCAT(IFNULL(a.MailZipCod,''),IFNULL(d.Name,''),");
+            strSql += string.Format("IFNULL(e.Name,''),IFNULL(a.MailCity,''),IFNULL(a.MailBuildi,'')) AS Address2,a.MailZipCod,a.State2,a.HsBnkIBAN,a.QryGroup1 as IsTransport,U_is_reseller,U_EndCustomerName,U_EndCustomerContact");
+            strSql += string.Format(",a.SlpCode");
+            strSql += string.Format(" FROM {0}.crm_ocrd a", "nsap_bone");
+            strSql += string.Format(" LEFT JOIN {0}.store_ocry b ON a.Country=b.Code", "nsap_bone");
+            strSql += string.Format(" LEFT JOIN {0}.store_ocst c ON a.State1=c.Code", "nsap_bone");
+            strSql += string.Format(" LEFT JOIN {0}.store_ocry d ON a.MailCountr=d.Code", "nsap_bone");
+            strSql += string.Format(" LEFT JOIN {0}.store_ocst e ON a.State2=e.Code", "nsap_bone");
+
+            strSql += string.Format(" WHERE CardCode='{0}'", CardCode);
+
+            if (!string.IsNullOrEmpty(filterString)) { strSql += string.Format("{0}", filterString); }
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+        }
     }
 }

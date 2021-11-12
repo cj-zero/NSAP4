@@ -39,5 +39,9 @@ namespace OpenAuth.App.Response
         /// 图片类型
         /// </summary>
         public int? PictureType { get; set; }
+        /// <summary>
+        /// 操作时间
+        /// </summary>
+        public DateTime FileUpdateTime { get; set; }
     }
 }
