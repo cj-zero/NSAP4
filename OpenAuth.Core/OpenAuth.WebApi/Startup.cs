@@ -126,7 +126,7 @@ namespace OpenAuth.WebApi
 			{
 				option.Filters.Add<OpenAuthFilter>();
 				option.Filters.Add<ExceptionFilter>();
-				option.Filters.Add<RequestActionFilter>();
+				//option.Filters.Add<RequestActionFilter>();
 			}).AddNewtonsoftJson(options =>
 			{
 				//忽略循环引用

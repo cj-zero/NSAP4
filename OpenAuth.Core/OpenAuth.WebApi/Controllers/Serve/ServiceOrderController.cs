@@ -16,7 +16,7 @@ using OpenAuth.App.Serve.Request;
 using OpenAuth.Repository.Domain;
 using Serilog;
 using static Infrastructure.HttpHelper;
-
+using OpenAuth.WebApi.Model;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -1477,6 +1477,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
+        [TypeFilter(typeof(RequestActionFilter))]
         public async Task<Response> AddDailyReport(AddDailyReportReq req)
         {
             var result = new Response();

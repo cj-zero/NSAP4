@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
+using OpenAuth.WebApi.Model;
 
 namespace OpenAuth.WebApi.Controllers
 {
@@ -53,6 +54,7 @@ namespace OpenAuth.WebApi.Controllers
         #region 新威智能APP售后接口 若修改请告知！！！
         //添加
         [HttpPost]
+        [TypeFilter(typeof(RequestActionFilter))]
         public async Task<Response> Add(AddOrUpdateCompletionReportReq obj)
         {
             var result = new Response();
