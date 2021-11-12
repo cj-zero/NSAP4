@@ -178,14 +178,20 @@ namespace OpenAuth.App.Order
         /// <returns></returns>
         public string SalesOrderSave_ORDR(SalesOrderSaveReq orderReq)
         {
+
             int userID = _serviceBaseApp.GetUserNaspId();
             int sboID = _serviceBaseApp.GetUserNaspSboID(userID);
-            int funcId = 50;
+            int funcId = 33;
             string result = "";
             string className = "NSAP.B1Api.BOneORDR";
             string jobname = "销售订单";
             //查询
-            billDelivery billDelivery = GetDeliverySalesInfoNewNos(orderReq.JobId.ToString(),userID);
+            billDelivery billDelivery = GetDeliverySalesInfoNewNos(orderReq.JobId.ToString(), userID);
+            if (IsExistDoc(billDelivery.billBaseEntry, "23", sboID.ToString()))
+            {
+                result = "该销售报价单转销售订单已提交";
+            }
+            //billDelivery.billBaseEntry=billDelivery.
             if (orderReq.Comments == "")
             {
                 billDelivery.Comments = "\\ ";
@@ -444,7 +450,10 @@ namespace OpenAuth.App.Order
             try
             {
                 store_drawing_job wfaEshopStatus = UnitWork.FindSingle<store_drawing_job>(zw => zw.job_idMe == jobID && zw.Typeid == 3 && zw.SalesId == int.Parse(jobidNew));
-                UnitWork.Delete<store_drawing_job>(wfaEshopStatus);
+                if (wfaEshopStatus != null)
+                {
+                    UnitWork.Delete<store_drawing_job>(wfaEshopStatus);
+                }
                 string[] itemcode = sfileCpbm.Split(',');
                 string[] projhsl = sNum.Split(',');
                 string[] _sTp = sTp.Split(',');
@@ -669,7 +678,7 @@ namespace OpenAuth.App.Order
             return res;
         }
 
-      
+
         #endregion
 
 

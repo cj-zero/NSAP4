@@ -365,7 +365,7 @@ namespace OpenAuth.App
             var totalmoney = reimburseInfoList.Sum(r => r.TotalMoney) + expends;
             var havepaid = reimburseInfoList.Where(r => r.RemburseStatus == 9).Sum(r => r.TotalMoney);
             var unpaid = reimburseInfoList.Where(r => r.RemburseStatus < 9 && r.RemburseStatus > 3).Sum(r => r.TotalMoney);
-            var notsubmit = reimburseInfoList.Where(r => r.RemburseStatus <= 3).Sum(r => r.TotalMoney) + expends;
+            var notsubmit = reimburseInfoList.Where(r => r.RemburseStatus == 3 || r.RemburseStatus == 2).Sum(r => r.TotalMoney) + expends;
             result.Data = new { totalmoney, havepaid, unpaid, notsubmit };
             return result;
         }

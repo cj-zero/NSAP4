@@ -472,8 +472,8 @@ namespace OpenAuth.App
                     outsource = await UnitWork.Find<Outsourc>(c => c.Id == int.Parse(req.OutsourcId)).Include(c => c.OutsourcExpenses).FirstOrDefaultAsync();
                     serviceOrderId = outsource.OutsourcExpenses.FirstOrDefault()?.ServiceOrderId;
                 }
-                var num = workbenchPending?.ApprovalNumber == null ? req.OutsourcId.ToString() : workbenchPending?.ApprovalNumber.ToString();
-                return await _pendingApp.PendingDetails(new Workbench.Request.PendingReq { ApprovalNumber = num, ServiceOrderId = serviceOrderId });
+                var num = workbenchPending?.ApprovalNumber == null ? "0" : workbenchPending?.ApprovalNumber.ToString();
+                return await _pendingApp.PendingDetails(new Workbench.Request.PendingReq { ApprovalNumber = num, SourceNumbers = req.OutsourcId, ServiceOrderId = serviceOrderId, Petitioner = outsource?.CreateUserId });
             }
            
         }
