@@ -77,21 +77,24 @@ namespace OpenAuth.App.Order
             try
             {
                 wfa_eshop_status wfa_Eshop_Status = UnitWork.FindSingle<wfa_eshop_status>(zw => zw.document_id == wfaEshopStatusDto.DocumentId);
-                UnitWork.Update<wfa_eshop_status>(wfa_Eshop_Status);
-                UnitWork.Delete<wfa_eshop_oqutdetail>(zw => zw.document_id == wfaEshopStatusDto.DocumentId);
-                List<wfa_eshop_oqutdetail> wfaEshopOqutdetails = new List<wfa_eshop_oqutdetail>();
-                foreach (var item in itemdetails)
+                if (wfa_Eshop_Status != null)
                 {
-                    wfa_eshop_oqutdetail wfaEshopOqutdetail = new wfa_eshop_oqutdetail()
+                    UnitWork.Update<wfa_eshop_status>(wfa_Eshop_Status);
+                    UnitWork.Delete<wfa_eshop_oqutdetail>(zw => zw.document_id == wfaEshopStatusDto.DocumentId);
+                    List<wfa_eshop_oqutdetail> wfaEshopOqutdetails = new List<wfa_eshop_oqutdetail>();
+                    foreach (var item in itemdetails)
                     {
-                        document_id = wfaEshopStatusDto.DocumentId,
-                        item_code = item.ItemCode,
-                        item_desc = item.Dscription,
-                        item_qty = decimal.Parse(item.Quantity)
-                    };
-                    UnitWork.Add<wfa_eshop_oqutdetail, int>(wfaEshopOqutdetail);
+                        wfa_eshop_oqutdetail wfaEshopOqutdetail = new wfa_eshop_oqutdetail()
+                        {
+                            document_id = wfa_Eshop_Status.document_id,
+                            item_code = item.ItemCode,
+                            item_desc = item.Dscription,
+                            item_qty = decimal.Parse(item.Quantity)
+                        };
+                        UnitWork.Add<wfa_eshop_oqutdetail, int>(wfaEshopOqutdetail);
+                    }
+                    UnitWork.Save();
                 }
-                UnitWork.Save();
                 return "1";
             }
             catch (Exception ex)
@@ -148,9 +151,10 @@ namespace OpenAuth.App.Order
         /// <returns></returns>
         public string Eshop_OrderStatusFlow(WfaEshopStatus wfaEshopStatus, IList<NSAP.Entity.Sales.billSalesDetails> itemdetails, int oldorderno)
         {
-            wfa_eshop_status WfaEshopStatus = UnitWork.FindSingle<wfa_eshop_status>(zw => zw.job_id == wfaEshopStatus.JobId);
-            if (WfaEshopStatus != null && WfaEshopStatus.document_id > 0)
+            wfa_eshop_status wfaEshop = UnitWork.FindSingle<wfa_eshop_status>(zw => zw.job_id == wfaEshopStatus.JobId);
+            if (wfaEshop != null && wfaEshop.document_id > 0)
             {
+                wfaEshopStatus.DocumentId = wfaEshop.document_id;
                 return Eshop_UpdateOrderStatusFlow(wfaEshopStatus, itemdetails);
             }
             else
@@ -200,7 +204,7 @@ namespace OpenAuth.App.Order
             billDelivery.billBaseEntry = orderReq.JobId.ToString();
             if (orderReq.Comments == "")
             {
-                billDelivery.Comments = "\\ ";
+                billDelivery.Comments = "";
 
             }
             else

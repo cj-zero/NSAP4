@@ -1808,5 +1808,21 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             return result;
         }
+
+
+
+        public Response<string> GetPagePowersByUrl(string url)
+        {
+            var result = new Response<string>();
+            try
+            {
+                result.Result = _serviceSaleOrderApp.GetPagePowersByUrlWithClient(url);
+            }
+            catch (Exception e)
+            {
+                result.Message = e.Message;
+            }
+            return result;
+        }
     }
 }

@@ -4049,7 +4049,7 @@ namespace OpenAuth.App.Order
         {
             bool result = false;
             string strSql = string.Format("SELECT COUNT(*) FROM {0}.wfa_job", "nsap_base");
-            strSql += string.Format(" WHERE base_type={0} AND sbo_id={1} AND base_entry={2} AND (job_state=1 OR job_state=0 OR job_state=2 OR job_state=4)AND job_type_id=(SELECT job_type_id FROM nsap_base.base_func WHERE func_id=33 LIMIT 1)", base_type, sboId, base_entry);
+            strSql += string.Format(" WHERE base_type={0} AND sbo_id={1} AND base_entry={2} OR base_entry=23 AND (job_state=1 OR job_state=0 OR job_state=2 OR job_state=4)AND job_type_id=(SELECT job_type_id FROM nsap_base.base_func WHERE func_id=33 LIMIT 1)", base_type, sboId, base_entry);
 
             object obj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
             if (obj.ToString() == "0" || obj == null)
@@ -4977,7 +4977,7 @@ namespace OpenAuth.App.Order
             {
                 bill = DeSerialize<billDelivery>((byte[])(obj));
             }
-            if (bill!=null)
+            if (bill != null)
             {
                 DataTable dt = GetSboNamePwd(int.Parse(bill.SboId));
                 string dRowData = string.Empty; string isOpen = "0"; string sboname = "0"; string sqlconn = "0";
@@ -8330,5 +8330,31 @@ namespace OpenAuth.App.Order
             return obj == null ? "" : obj.ToString();
         }
         #endregion
+
+        public string GetPagePowersByUrlWithClient(string url)
+        {
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            CurrentPage page = GetCurrentPage(UserID, url);
+            Powers p = new Powers(page.AuthMap);
+            StringBuilder sBuilder = new StringBuilder("{");
+            sBuilder.AppendFormat("\"DownloadAttachment\":\"{0}\",", p.DownloadAttachment ? 1 : 0);
+            sBuilder.AppendFormat("\"ViewAttachment\":\"{0}\",", p.ViewAttachment ? 1 : 0);
+            sBuilder.AppendFormat("\"ViewCustom\":\"{0}\",", p.ViewCustom ? 1 : 0);
+            sBuilder.AppendFormat("\"ViewSales\":\"{0}\",", p.ViewSales ? 1 : 0);
+            sBuilder.AppendFormat("\"ViewPurchase\":\"{0}\",", p.ViewPurchase ? 1 : 0);
+            sBuilder.AppendFormat("\"ViewGross\":\"{0}\",", p.ViewGross ? 1 : 0);
+            sBuilder.AppendFormat("\"ViewCosts\":\"{0}\",", p.ViewCosts ? 1 : 0);
+            sBuilder.AppendFormat("\"OperateExport\":\"{0}\",", p.OperateExport ? 1 : 0);
+            sBuilder.AppendFormat("\"OperateAudit\":\"{0}\",", p.OperateAudit ? 1 : 0);
+            sBuilder.AppendFormat("\"OperateDelete\":\"{0}\",", p.OperateDelete ? 1 : 0);
+            sBuilder.AppendFormat("\"OperateUpdate\":\"{0}\",", p.OperateUpdate ? 1 : 0);
+            sBuilder.AppendFormat("\"OperateAppend\":\"{0}\",", p.OperateAppend ? 1 : 0);
+            sBuilder.AppendFormat("\"ViewFull\":\"{0}\",", p.ViewFull ? 1 : 0);
+            sBuilder.AppendFormat("\"ViewSelfDepartment\":\"{0}\",", p.ViewSelfDepartment ? 1 : 0);
+            sBuilder.AppendFormat("\"ViewSelf\":\"{0}\"", p.ViewSelf ? 1 : 0);
+            sBuilder.Append("}");
+            return sBuilder.ToString();
+        }
+
     }
 }
