@@ -620,6 +620,10 @@ namespace OpenAuth.App.Order
             string result = "";
             try
             {
+                orderReq.Order.FileList.ForEach(zw =>
+                {
+                    zw.fileUserId = userID.ToString();
+                });
                 billDelivery billDelivery = BulidBillDelivery(orderReq.Order);
                 if (orderReq.IsCopy)
                 {
@@ -1574,7 +1578,6 @@ namespace OpenAuth.App.Order
                 billDeliveryItemAid = new List<billDeliveryItemAid>(),
                 IQCDetails = new List<NSAP.Entity.Quality.IQCDetail>(),
             };
-
             foreach (var item in order.OrderItems)
             {
                 billSalesDetails billSalesDetail = new billSalesDetails()
@@ -1817,7 +1820,7 @@ namespace OpenAuth.App.Order
 
                 StringBuilder nSql = new StringBuilder();
                 nSql.AppendFormat("INSERT INTO nsap_oa.file_main (file_sn,file_nm,file_type_id,docEntry,job_id,file_ver,acct_id,issue_reason,file_path,content,remarks,file_status,upd_dt,view_file_path,sbo_id) VALUES");
-                nSql.AppendFormat("(1,'{0}',{1},{2},0,'A0',8,'','{3}','','',0,'{4}','{5}',{6});", item.filename, model.filetypeId, model.docEntry, item.filepath, DateTime.Now, item.filepath, item.filesboid);
+                nSql.AppendFormat("(1,'{0}',{1},{2},0,'A0','{3}','','{4}','','',0,'{5}','{6}',{7});", item.filename, model.filetypeId, model.docEntry, item.fileUserId, item.filepath, DateTime.Now, item.filepath, item.filesboid);
                 UnitWork.ExcuteSqlTable(ContextType.NsapOaDbContextType, nSql.ToString(), CommandType.Text, null);
             }
             #endregion

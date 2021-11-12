@@ -1825,7 +1825,16 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             return result;
         }
-        // 根据业务伙伴代码获取相关数据
+        /// <summary>
+        /// 根据业务伙伴代码获取相关数据
+        /// </summary>
+        /// <param name="CardCode"></param>
+        /// <param name="SboId"></param>
+        /// <param name="billViewFull"></param>
+        /// <param name="billViewSelfDepartment"></param>
+        /// <param name="billViewSelf"></param>
+        /// <returns></returns>
+        // 
         [HttpGet]
         [Route("GetCardInfo")]
         public TableData GetCardInfo(string CardCode, string SboId = "1", bool billViewFull = true, bool billViewSelfDepartment = true, bool billViewSelf = true)
