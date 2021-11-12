@@ -120,21 +120,21 @@ namespace OpenAuth.WebApi
                 }
 
 
-            });
-            services.Configure<AppSetting>(Configuration.GetSection("AppSetting"));
-            services.AddControllers(option =>
-            {
-                option.Filters.Add<OpenAuthFilter>();
-                option.Filters.Add<ExceptionFilter>();
-                //	option.Filters.Add<RequestActionFilter>();
-            }).AddNewtonsoftJson(options =>
-            {
-                //忽略循环引用
-                options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-                //不使用驼峰样式的key
-                //options.SerializerSettings.ContractResolver = new DefaultContractResolver();    
-                options.SerializerSettings.DateFormatString = "yyyy-MM-dd HH:mm:ss";
-            });
+			});
+			services.Configure<AppSetting>(Configuration.GetSection("AppSetting"));
+			services.AddControllers(option =>
+			{
+				option.Filters.Add<OpenAuthFilter>();
+				option.Filters.Add<ExceptionFilter>();
+				//option.Filters.Add<RequestActionFilter>();
+			}).AddNewtonsoftJson(options =>
+			{
+				//忽略循环引用
+				options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+				//不使用驼峰样式的key
+				//options.SerializerSettings.ContractResolver = new DefaultContractResolver();    
+				options.SerializerSettings.DateFormatString = "yyyy-MM-dd HH:mm:ss";
+			});
 
             var redisConnectionString = Configuration.GetValue<string>("AppSetting:Cache:Redis");
             if (string.IsNullOrWhiteSpace(redisConnectionString))

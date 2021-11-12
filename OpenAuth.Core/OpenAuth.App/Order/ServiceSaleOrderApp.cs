@@ -8300,5 +8300,35 @@ namespace OpenAuth.App.Order
             }
             return result;
         }
+        #region 获取联系人
+        public string GetCntctCode(string Code, string Name, int SboId)
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.AppendFormat("SELECT CntctCode FROM {0}.crm_ocpr WHERE sbo_id=?sbo_id AND CardCode=?CardCode AND Name=?Name", "nsap_bone");
+
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?sbo_id",      SboId),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?CardCode",     Code),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?Name",    Name),
+
+            };
+            object obj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, sqlParameters);
+            return obj == null ? "" : obj.ToString();
+        }
+        public string GetCntctCodeSql(string Code, string Name, int SboId)
+        {
+            DataTable dt = GetSboNamePwd(SboId);
+            string sqlconn = ""; string sboname = "";
+            if (dt.Rows.Count > 0)
+            {
+                sboname = dt.Rows[0][0].ToString() + ".dbo.";
+            }
+            if (SboId == 1) { sboname = ""; }
+            string strSql = string.Format("SELECT CntctCode FROM " + sboname + "OCPR WHERE CardCode='{0}' AND Name='{1}'", Code, Name);
+            object obj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, strSql, CommandType.Text, null);
+            return obj == null ? "" : obj.ToString();
+        }
+        #endregion
     }
 }

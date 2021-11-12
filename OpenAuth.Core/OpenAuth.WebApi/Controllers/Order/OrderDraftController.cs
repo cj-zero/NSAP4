@@ -508,7 +508,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             if (power != null)
             {
                 Powers powers = new Powers(power.AuthMap);
-                if (loginContext.User.Name == "韦京生"|| loginContext.User.Name == "郭睿心")
+                if (loginContext.User.Name == "韦京生" || loginContext.User.Name == "郭睿心")
                 {
                     viewFull = powers.ViewFull;
 
@@ -1231,7 +1231,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             var result = new Response<List<UploadFileResp>>();
             try
             {
-                result.Result = _serviceSaleOrderApp.BillAttachUploadNew(files,host);
+                result.Result = _serviceSaleOrderApp.BillAttachUploadNew(files, host);
             }
             catch (Exception ex)
             {
@@ -1777,11 +1777,34 @@ namespace OpenAuth.WebApi.Controllers.Order
             try
             {
                 var userId = _serviceBaseApp.GetUserNaspId();
-                result.Result = _serviceSaleOrderApp.AuditResubmitNextNew(resubmitReq.jobId, userId, resubmitReq.recommend, resubmitReq.auditOpinionid, resubmitReq.IsUpdate, resubmitReq.vStock,resubmitReq.Comments,resubmitReq.Remark);
+                result.Result = _serviceSaleOrderApp.AuditResubmitNextNew(resubmitReq.jobId, userId, resubmitReq.recommend, resubmitReq.auditOpinionid, resubmitReq.IsUpdate, resubmitReq.vStock, resubmitReq.Comments, resubmitReq.Remark);
             }
             catch (Exception e)
             {
                 result.Message = e.Message;
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// 获取业务伙伴的默认联系人
+        /// </summary>
+        [HttpGet]
+        [Route("GetCntctCode")]
+        public Response<string> GetCntctCode(string Code, string Name, int SboId, bool isSql)
+        {
+            var result = new Response<string>();
+            DataTable dt = _serviceSaleOrderApp.GetSboNamePwd(SboId);
+            string dRowData = string.Empty; string isOpen = "0";
+            if (dt.Rows.Count > 0) { isOpen = dt.Rows[0][6].ToString(); }
+            if (isSql && isOpen == "1")
+            {
+                result.Result = _serviceSaleOrderApp.GetCntctCodeSql(Code, Name, SboId);
+            }
+            else
+            {
+                result.Result = _serviceSaleOrderApp.GetCntctCode(Code, Name, SboId);
             }
             return result;
         }

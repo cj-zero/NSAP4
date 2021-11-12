@@ -53,11 +53,19 @@ namespace OpenAuth.WebApi.Model
 
             if (resultContext.Exception != null)
             {
-                log.ApiResult = resultContext.Exception.Message;
+                log.ApiResult = resultContext.Exception?.Message;
             }
             else if (resultContext.Result != null)
             {
-                log.ApiResult = JsonConvert.SerializeObject(((ObjectResult)resultContext.Result).Value);
+                try
+                {
+                    var resultValue = ((ObjectResult)resultContext.Result).Value;
+                    log.ApiResult = JsonConvert.SerializeObject(resultValue);
+                }
+                catch(Exception ex)
+                {
+                    log.ApiResult = ex.Message;
+                }
             }
 
             _requestActionLogApp.Add(log);
