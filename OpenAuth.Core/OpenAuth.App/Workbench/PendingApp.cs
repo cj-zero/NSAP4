@@ -6,6 +6,7 @@ using Newtonsoft.Json.Linq;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Material;
 using OpenAuth.App.Response;
+using OpenAuth.App.Sap.BusinessPartner;
 using OpenAuth.App.Workbench.Request;
 using OpenAuth.App.Workbench.Response;
 using OpenAuth.Repository.Domain;
@@ -31,18 +32,20 @@ namespace OpenAuth.App.Workbench
         public readonly FlowInstanceApp _flowInstanceApp;
         public readonly UserManagerApp _userManagerApp;
         private readonly OrgManagerApp _orgApp;
+        private readonly BusinessPartnerApp _businessPartnerApp;
         /// <summary>
         /// 构造方法
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
         /// <param name="quotationApp"></param>
-        public PendingApp(IUnitWork unitWork, IAuth auth, QuotationApp quotationApp, UserManagerApp userManagerApp, FlowInstanceApp flowInstanceApp, OrgManagerApp orgApp) : base(unitWork, auth)
+        public PendingApp(IUnitWork unitWork, IAuth auth, QuotationApp quotationApp, UserManagerApp userManagerApp, FlowInstanceApp flowInstanceApp, OrgManagerApp orgApp, BusinessPartnerApp businessPartnerApp) : base(unitWork, auth)
         {
             _quotationApp = quotationApp;
             _flowInstanceApp = flowInstanceApp;
             _userManagerApp = userManagerApp;
             _orgApp = orgApp;
+            _businessPartnerApp = businessPartnerApp;
         }
         /// <summary>
         /// 服务单详情
@@ -329,7 +332,7 @@ namespace OpenAuth.App.Workbench
         /// 报销单详情
         /// </summary>
         /// <returns></returns>
-        public async Task<ReimburseDetailsResp> ReimburseDetails(int ReimburseId)
+        public async Task<ReimburseDetailsResp> ReimburseDetails(int ReimburseId, string customerId)
         {
             var reimburseObj = await UnitWork.Find<ReimburseInfo>(r => r.MainId == ReimburseId).Include(r => r.ReimburseFares)
                 .Include(r => r.ReimburseOtherCharges).Include(r => r.ReimburseTravellingAllowances).Include(r => r.ReimurseOperationHistories).Include(r => r.ReimburseAccommodationSubsidies).FirstOrDefaultAsync();
@@ -361,18 +364,22 @@ namespace OpenAuth.App.Workbench
                 filemodel.AddRange(await UnitWork.Find<ReimburseAttachment>(r => rocids.Contains(r.ReimburseId) && r.ReimburseType == 4).ToListAsync());
                 expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rocids.Contains(r.ExpenseId) && r.ExpenseType == 4).ToListAsync());
             }
-            var orgMoney= expenseOrg.Where(c => c.OrgId == userOrgInfo.OrgId).Sum(c => c.Money);
+            var orgMoney = expenseOrg.Where(c => c.OrgId == userOrgInfo.OrgId).Sum(c => c.Money);
             fileids.AddRange(filemodel.Select(f => f.FileId).ToList());
             fileids.AddRange(reimburseObj.ReimburseAttachments.Select(r => r.FileId).ToList());
             var file = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
+            var ocrds = await _businessPartnerApp.GetDetails(customerId);
+            var userinfo = await _userManagerApp.GetUserOrgInfo("", ocrds?.TechName);
             var reimburseDetails = new ReimburseDetailsResp
             {
+                CreateUserId = reimburseObj.CreateUserId,
                 ReimburseId = reimburseObj.Id,
                 UpdateTime = reimburseObj.UpdateTime,
                 Remark = reimburseObj.Remark,
                 TotalMoney = reimburseObj.TotalMoney,
                 OrgMoney = orgMoney,
                 Org = userOrgInfo?.OrgName,
+                CusBelong = userinfo?.OrgName + "-" + userinfo?.Name,
                 ReimburseMainId = reimburseObj.MainId,
                 Files = reimburseObj.ReimburseAttachments.Select(r => new FileResp
                 {
@@ -632,7 +639,7 @@ namespace OpenAuth.App.Workbench
                             quotationDetails.Add(await QuotationDetails(item.Id));
                         }
                     }
-                    reimburseDetails=await ReimburseDetails(pendingObj.SourceNumbers);
+                    reimburseDetails = await ReimburseDetails(pendingObj.SourceNumbers, serviceOrderDetails?.TerminalCustomerId);
                     break;
                 case 5:
                     internalcontactDetails = await InternalcontactDetails(pendingObj.SourceNumbers.ToString());

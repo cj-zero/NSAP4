@@ -47,7 +47,8 @@ namespace OpenAuth.App.Response
         /// 客户简称
         /// </summary>
         public string U_Name { get; set; }
-        
+
+        public decimal? Balance { get; set; }
 
         public List<OCPR> CntctPrsnList { get; set; }
 

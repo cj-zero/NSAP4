@@ -36,6 +36,14 @@ namespace OpenAuth.App.Workbench.Response
         /// </summary>
         public string  Org { get; set; }
         /// <summary>
+        /// 客户所属
+        /// </summary>
+        public string CusBelong { get; set; }
+        /// <summary>
+        /// 创建人ID
+        /// </summary>
+        public string CreateUserId { get; set; }
+        /// <summary>
         /// 更新时间
         /// </summary>
         public System.DateTime UpdateTime { get; set; }

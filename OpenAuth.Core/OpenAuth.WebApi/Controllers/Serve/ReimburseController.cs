@@ -447,6 +447,29 @@ namespace OpenAuth.WebApi.Controllers.Serve
         }
 
         /// <summary>
+        /// 个人历史费用 
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> HistoryReimburseInfoForUser([FromQuery] QueryReimburseInfoListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _reimburseinfoapp.HistoryReimburseInfoForUser(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 报表分析
         /// </summary>
         /// <returns></returns>
