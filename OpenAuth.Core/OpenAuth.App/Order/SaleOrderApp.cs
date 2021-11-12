@@ -187,11 +187,17 @@ namespace OpenAuth.App.Order
             string jobname = "销售订单";
             //查询
             billDelivery billDelivery = GetDeliverySalesInfoNewNos(orderReq.JobId.ToString(), userID);
-            if (IsExistDoc(billDelivery.billBaseEntry, "23", sboID.ToString()))
+            if (billDelivery is null)
+            {
+                result = "单据不存在";
+                return result;
+            }
+            if (IsExistDoc(orderReq.JobId.ToString(), "-5", sboID.ToString()))
             {
                 result = "该销售报价单转销售订单已提交";
+                return result;
             }
-            //billDelivery.billBaseEntry=billDelivery.
+            billDelivery.billBaseEntry = orderReq.JobId.ToString();
             if (orderReq.Comments == "")
             {
                 billDelivery.Comments = "\\ ";

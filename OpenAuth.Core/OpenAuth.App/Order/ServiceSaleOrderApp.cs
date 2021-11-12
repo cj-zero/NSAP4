@@ -4971,23 +4971,26 @@ namespace OpenAuth.App.Order
         }
         public billDelivery GetDeliverySalesInfoNewNos(string jobId, int userID)
         {
+            billDelivery bill = null;
+            object obj = GetSalesInfoNos(jobId, userID);
+            if (obj != null)
+            {
+                bill = DeSerialize<billDelivery>((byte[])(obj));
+            }
+            if (bill!=null)
+            {
+                DataTable dt = GetSboNamePwd(int.Parse(bill.SboId));
+                string dRowData = string.Empty; string isOpen = "0"; string sboname = "0"; string sqlconn = "0";
+                if (dt.Rows.Count > 0) { isOpen = dt.Rows[0][6].ToString(); sboname = dt.Rows[0][0].ToString(); sqlconn = dt.Rows[0][5].ToString(); }
 
-            billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfoNos(jobId, userID)));
-            DataTable dt = GetSboNamePwd(int.Parse(bill.SboId));
-            string dRowData = string.Empty; string isOpen = "0"; string sboname = "0"; string sqlconn = "0";
-            if (dt.Rows.Count > 0) { isOpen = dt.Rows[0][6].ToString(); sboname = dt.Rows[0][0].ToString(); sqlconn = dt.Rows[0][5].ToString(); }
-
-            string type = bill.DocType;
-            string _main = JsonHelper.ParseModel(bill);
-            //if (bill.CustomFields.ToString().Contains("≮1≯"))
-            //{
-            //	var ba = bill.CustomFields.Split("≮1≯")[4];
-            //	bill.CustomFields = ba;
-
-            //}
-
-
-
+                string type = bill.DocType;
+                string _main = JsonHelper.ParseModel(bill);
+                //if (bill.CustomFields.ToString().Contains("≮1≯"))
+                //{
+                //	var ba = bill.CustomFields.Split("≮1≯")[4];
+                //	bill.CustomFields = ba;
+                //}
+            }
             return bill;
         }
         /// <summary>
