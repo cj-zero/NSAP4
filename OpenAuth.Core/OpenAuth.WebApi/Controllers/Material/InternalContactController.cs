@@ -94,6 +94,27 @@ namespace OpenAuth.WebApi.Controllers.Material
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response> SebdEmail(int id)
+        {
+            Response result = new Response();
+            try
+            {
+                await _app.SendEmail(id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：id:{id}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 撤销\过期\停用\启用
         /// </summary>
         /// <param name="internalContactId"></param>
