@@ -995,7 +995,7 @@ namespace OpenAuth.App
                 foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
                 {
                     int line2 = 0;
-                    var deletedt = await UnitWork.FindTrack<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();
+                    //var deletedt = await UnitWork.FindTrack<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();
                     await UnitWork.DeleteAsync<EntrustmentDetail>(c => c.EntrustmentId == item.Id);
                     //await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deletedt.ToArray());
                     await UnitWork.SaveAsync();
