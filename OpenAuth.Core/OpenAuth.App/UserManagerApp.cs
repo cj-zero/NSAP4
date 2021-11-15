@@ -553,7 +553,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task SysnERPUser()
         {
-            var user = await UnitWork.Find<User>(null).Select(u =>new { u.Account ,u.Status} ).ToListAsync();
+            var user = await UnitWork.Find<User>(null).Select(u => new { u.Account, u.Status, u.Email }).ToListAsync();
             var userAccounts = user.Select(c => c.Account).ToList();
             var query = from a in UnitWork.Find<base_user>(null)
                         join b in UnitWork.Find<base_user_detail>(null) on a.user_id equals b.user_id into ab
@@ -561,7 +561,7 @@ namespace OpenAuth.App
                         join c in UnitWork.Find<base_dep>(null) on b.dep_id equals c.dep_id into bc
                         from c in bc.DefaultIfEmpty()
                             //where !userAccounts.Contains(a.log_nm) && b.out_date.ToString()== "0000-00-00"
-                        select new { a.log_nm, a.user_nm, a.user_id, b.office_addr, c.dep_alias, out_date = b.out_date.ToString() };
+                        select new { a.log_nm, a.user_nm, a.user_id, b.office_addr, c.dep_alias, out_date = b.out_date.ToString(), a.email };
             var erpUsers = await query.ToListAsync();
             var newUsers = erpUsers.Where(c => !userAccounts.Contains(c.log_nm) && c.out_date.ToString() == "0000-00-00").ToList();
             var orgs = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).ToListAsync();
@@ -584,6 +584,25 @@ namespace OpenAuth.App
                 });
                 UnitWork.Save();
             }
+
+            var onUser = user.Where(c => c.Status == 0).Select(c => new { c.Account, c.Email }).ToList();
+            foreach (var item in onUser)
+            {
+                var u = erpUsers.Where(c => c.log_nm == item.Account).FirstOrDefault();
+                if (u!=null)
+                {
+                    if (item.Email!=u.email)
+                    {
+                        UnitWork.Update<User>(c => c.Account == item.Account, c => new User
+                        {
+                            Email = u.email
+                        });
+                        UnitWork.Save();
+                    }
+                }
+            }
+
+
 
 
         }
