@@ -2798,7 +2798,9 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            if (string.IsNullOrWhiteSpace(req.Addr) || string.IsNullOrWhiteSpace(req.City) || string.IsNullOrWhiteSpace(req.Area) || string.IsNullOrWhiteSpace(req.Province))  throw new Exception("地址错误，请核对地址后重新上传。");
+            if (string.IsNullOrWhiteSpace(req.Province) && string.IsNullOrWhiteSpace(req.City)) throw new Exception("地址错误，请核对地址后重新上传。");
+            if (string.IsNullOrWhiteSpace(req.Addr) ||  string.IsNullOrWhiteSpace(req.Area) ) throw new Exception("地址错误，请核对地址后重新上传。");
+
             var obj = req.MapTo<ServiceOrder>();
             obj.CustomerId = obj.CustomerId.ToUpper();
             obj.CreateTime = DateTime.Now;
