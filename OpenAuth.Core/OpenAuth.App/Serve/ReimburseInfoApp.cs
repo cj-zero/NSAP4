@@ -2448,7 +2448,7 @@ namespace OpenAuth.App
 
             //结算单
             var flowInstaceId = await UnitWork.Find<FlowInstance>(c => c.CustomName == "个人代理结算单" && c.ActivityName == "结束").Select(c => c.Id).ToListAsync();
-            var outsource = await UnitWork.Find<Outsourc>(c => flowInstaceId.Contains(c.FlowInstanceId)).Include(c => c.OutsourcExpenses).ToListAsync();
+            var outsource = await UnitWork.Find<Outsourc>(c => flowInstaceId.Contains(c.FlowInstanceId) && c.CreateUserId == req.CreateUserId).Include(c => c.OutsourcExpenses).ToListAsync();
 
             var ServiceOrderIds = ReimburseInfos.Select(c => c?.ServiceOrderId).ToList();
             var serviceDailyExpends = await UnitWork.Find<ServiceDailyExpends>(s => ServiceOrderIds.Contains(s.ServiceOrderId) && s.DailyExpenseType == 1).ToListAsync();
