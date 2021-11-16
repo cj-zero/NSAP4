@@ -99,6 +99,31 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="files"></param>
+        /// <param name="bucketNames"></param>
+        /// <returns></returns>
+        [HttpPost]
+        //[AllowAnonymous]
+        public async Task<Response<IList<UploadFileResp>>> UploadFor([FromForm] IFormFileCollection files)
+        {
+            var result = new Response<IList<UploadFileResp>>();
+            try
+            {
+                var bucketNames = Request.Form["bucketNames"];
+                result.Result = await _app.Add(files, bucketNames);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
 
         /// <summary>
         ///  App批量上传文件接口
@@ -152,6 +177,33 @@ namespace OpenAuth.WebApi.Controllers
         {
             var file = await _app.GetFileAsync(fileId);
             if(file is null)
+                return NotFound($"fileId:{fileId} is not exists");
+            //var filePath = file.FilePath;
+            //if (isThumbnail)
+            //    filePath = file.Thumbnail;
+            //if (!System.IO.File.Exists(filePath))
+            //    return NotFound($"fileName:{file.FileName} is not exists");
+
+            var f = new FileExtensionContentTypeProvider();
+            f.TryGetContentType(file.FileName, out string contentType);
+            if (string.IsNullOrWhiteSpace(contentType))
+                contentType = "application/octet-stream";
+            var fileStream = await _app.GetFileStreamAsync(file.BucketName, file.FilePath);
+            return File(fileStream, contentType);//, file.FileName
+        }
+
+        /// <summary>
+        /// 无鉴权下载
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="isThumbnail"></param>
+        /// <returns></returns>
+        [HttpGet("{fileId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> DownloadAllow(string fileId)
+        {
+            var file = await _app.GetFileAsync(fileId);
+            if (file is null)
                 return NotFound($"fileId:{fileId} is not exists");
             //var filePath = file.FilePath;
             //if (isThumbnail)

@@ -27,13 +27,15 @@ namespace OpenAuth.App.Files
         /// 上传
         /// </summary>
         /// <param name="file"></param>
+        /// <param name="bucketNames"></param>
         /// <returns></returns>
-        public async Task<UploadFile> UploadFile(IFormFile file)
+        public async Task<UploadFile> UploadFile(IFormFile file,string bucketNames = "")
         {
             var folderYear = DateTime.Now.ToString("yyyy");
             var folderMonth = DateTime.Now.ToString("MM");
             var folderDay = DateTime.Now.ToString("dd");
-            var bucketName = folderYear; ;// Path.Combine(folderYear, folderMonth, folderDay);
+            //var bucketName = folderYear; ;// Path.Combine(folderYear, folderMonth, folderDay);
+            var bucketName = !string.IsNullOrWhiteSpace(bucketNames) ? bucketNames : folderYear;
             // Make a bucket on the server, if not already present.
             bool found = await _minioClient.BucketExistsAsync(bucketName);
             if (!found)
