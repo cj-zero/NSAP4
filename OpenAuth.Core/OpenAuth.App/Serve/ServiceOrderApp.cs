@@ -47,8 +47,9 @@ namespace OpenAuth.App
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
         private readonly SignalRMessageApp _signalrmessage;
         private readonly ServiceFlowApp _serviceFlowApp;
+        private readonly UserManagerApp _userManagerApp;
         public ServiceOrderApp(IUnitWork unitWork,
-             RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, SignalRMessageApp signalrmessage, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
+             RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, SignalRMessageApp signalrmessage, ServiceFlowApp serviceFlowApp, UserManagerApp userManagerApp) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
             _revelanceApp = app;
@@ -59,6 +60,7 @@ namespace OpenAuth.App
             _ServiceOrderLogApp = ServiceOrderLogApp;
             _signalrmessage = signalrmessage;
             _serviceFlowApp = serviceFlowApp;
+            _userManagerApp = userManagerApp;
         }
 
         #region<<nSAP System>>
@@ -773,9 +775,11 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
+            var loginUserOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).Select(c=>new UserResp { Name = "", Id = "", OrgId = c.Id, OrgName = c.Name, CascadeId = c.CascadeId }).FirstOrDefault();
             if (loginContext.User.Account == Define.USERAPP && req.AppUserId != null)
             {
                 loginUser = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(req.AppUserId)).Include(u => u.User).Select(u => u.User).FirstOrDefaultAsync();
+                loginUserOrg = await _userManagerApp.GetUserOrgInfo(loginUser.Id);
             }
             var d = await _businessPartnerApp.GetDetails(req.TerminalCustomerId.ToUpper());
             var obj = req.MapTo<ServiceOrder>();
@@ -824,6 +828,10 @@ namespace OpenAuth.App
             var AppUserId = await UnitWork.Find<AppUserMap>(s => s.UserID == loginUser.Id).Select(s => s.AppUserId).FirstOrDefaultAsync();
             obj.ServiceWorkOrders.ForEach(s =>
             {
+                if (s.ManufacturerSerialNumber== "无序列号" && loginUserOrg.OrgName!="S19")
+                {
+                    throw new Exception("非S19呼叫中心人员，不允许提交无序列号的呼叫。");
+                }
                 s.SubmitDate = DateTime.Now;
                 s.SubmitUserId = loginUser.Id;
                 if (req.IsSend != null && (bool)req.IsSend)
