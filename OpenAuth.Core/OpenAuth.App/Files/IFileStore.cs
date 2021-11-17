@@ -11,7 +11,7 @@ namespace OpenAuth.App.Files
 {
     public interface IFileStore
     {
-        Task<UploadFile> UploadFile(IFormFile file);
+        Task<UploadFile> UploadFile(IFormFile file, string bucketNames="");
 
         Task<Stream> DownloadFile(string bucketName, string fileName);
     }

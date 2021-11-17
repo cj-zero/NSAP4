@@ -605,9 +605,19 @@ namespace OpenAuth.App
             }
             //添加之前判断是否有报告提交记录 若有则删除之前的完工报告
             //var everCompletionReport = await UnitWork.Find<CompletionReport>(w => w.ServiceOrderId == req.ServiceOrderId && w.TechnicianId == req.CurrentUserId.ToString()).FirstOrDefaultAsync();
-
             var obj = req.MapTo<CompletionReport>();
             var serviceOrderObj = await UnitWork.Find<ServiceOrder>(s => s.Id == req.ServiceOrderId).Include(s => s.ServiceWorkOrders).FirstOrDefaultAsync();
+            if (serviceOrderObj.VestInOrg==3)//行政单验证有无行程
+            {
+                var dailyReports = await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == req.ServiceOrderId && w.CreateUserId == loginUser.Id).Select(s => s.CreateTime).ToListAsync();
+                if (dailyReports != null && dailyReports.Count > 0)
+                {
+                }
+                else
+                {
+                    throw new Exception("未填写行程日报，不可填写完工报告。");
+                }
+            }
             var workOrderList = serviceOrderObj.ServiceWorkOrders.Where(s => s.CurrentUserId == req.CurrentUserId).ToList();
             //获取最新的工单服务方式 这么做的原因是因为一键重派后可能拉取之前的完工报告的服务方式 而重派之后做单时选了其他的服务方式
             obj.CustomerName = serviceOrderObj.CustomerName;

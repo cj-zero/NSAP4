@@ -214,6 +214,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="obj"></param>
         /// <returns></returns>
         [HttpPost]
+        [TypeFilter(typeof(RequestActionFilter))]
         public async Task<Response> CISEAdd(AddOrUpdateCompletionReportReq obj)
         {
             var result = new Response();

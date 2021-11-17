@@ -1,6 +1,7 @@
 ﻿using Infrastructure.Extensions;
 using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Http;
+using Newtonsoft.Json;
 using NSAP.Entity.Sales;
 using OpenAuth.App.Order.Request;
 using OpenAuth.App.Response;
@@ -191,17 +192,20 @@ namespace OpenAuth.App.Order
             string jobname = "销售订单";
             //查询
             billDelivery billDelivery = GetDeliverySalesInfoNewNos(orderReq.JobId.ToString(), userID);
+
+            string josn = JsonConvert.SerializeObject(billDelivery);
             if (billDelivery is null)
             {
                 result = "单据不存在";
                 return result;
             }
-            if (IsExistDoc(orderReq.JobId.ToString(), "-5", sboID.ToString()))
+            if (IsExistDoc(orderReq.JobId.ToString(), "23", sboID.ToString()))
             {
                 result = "该销售报价单转销售订单已提交";
                 return result;
             }
             billDelivery.billBaseEntry = orderReq.JobId.ToString();
+            billDelivery.billBaseType = "23";
             if (orderReq.Comments == "")
             {
                 billDelivery.Comments = "";
