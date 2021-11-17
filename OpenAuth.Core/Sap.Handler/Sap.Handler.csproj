@@ -16,6 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="ENTITY">
+      <HintPath>..\OpenAuth.App\Nsapdll\ENTITY.dll</HintPath>
+    </Reference>
     <Reference Include="Interop.SAPbobsCOM">
       <HintPath>..\package\Interop.SAPbobsCOM.dll</HintPath>
     </Reference>
