@@ -1630,7 +1630,9 @@ namespace OpenAuth.App.Order
                     U_SHJSDJ = item.U_SHJSDJ,
                     U_SHJSJ = item.U_SHJSJ,
                     U_SHTC = item.U_SHTC,
-                    U_ZS = item.U_ZS,//配置类型
+                    U_ZS = !string.IsNullOrEmpty(item.U_ZS) ? item.U_ZS : "",//配置类型，
+                    U_RelDoc = !string.IsNullOrEmpty(item.U_RelDoc) ? item.U_RelDoc : ""//关联订单号
+
                 };
                 billDelivery.billSalesDetails.Add(billSalesDetail);
             }
