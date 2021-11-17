@@ -995,13 +995,19 @@ namespace OpenAuth.App
                 foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
                 {
                     int line2 = 0;
+                    
+                    var deleteData = await UnitWork.Find<EntrustmentDetail>(x => x.EntrustmentId == item.Id)?.ToArrayAsync();
+                    if (deleteData != null && deleteData.Count() > 0)
+                    {
+                        await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deleteData);
+                        await UnitWork.SaveAsync();
+                    }
                     //var deletedt = await UnitWork.FindTrack<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();
-                    await UnitWork.DeleteAsync<EntrustmentDetail>(c => c.EntrustmentId == item.Id);
+                    //await UnitWork.DeleteAsync<EntrustmentDetail>(c => c.EntrustmentId == item.Id);
                     //await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deletedt.ToArray());
-                    await UnitWork.SaveAsync();
+
                     //var deleteSql = $"DELETE FROM entrustmentdetail WHERE EntrustmentId={item.Id}";
                     //UnitWork.ExecuteSql(deleteSql, ContextType.Nsap4NwcaliDbContextType);
-
 
                     if (groupItem.Key.StartsWith("CT") || groupItem.Key.StartsWith("CTE") || groupItem.Key.StartsWith("CE"))
                     {
