@@ -98,6 +98,37 @@ namespace OpenAuth.App
             //}
         }
 
+        public async Task<List<UploadFileResp>> Add(IFormFileCollection files,string bucketName)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var result = new List<UploadFileResp>();
+            foreach (var file in files)
+            {
+
+                if (file != null)
+                {
+                    _logger.LogInformation("收到新文件: " + file.FileName);
+                    _logger.LogInformation("收到新文件: " + file.Length);
+                }
+                else
+                {
+                    _logger.LogWarning("收到新文件为空");
+                }
+                var uploadResult = await _fileStore.UploadFile(file, bucketName);
+                uploadResult.CreateUserName = _auth.GetCurrentUser().User.Name;
+                uploadResult.CreateUserId = Guid.Parse(_auth.GetCurrentUser().User.Id);
+                var a = await Repository.AddAsync(uploadResult);
+                result.Add(uploadResult.MapTo<UploadFileResp>());
+            }
+
+            return result;
+        }
+
         private void UploadFile(string fileName, byte[] fileBuffers)
         {
             string folder = DateTime.Now.ToString("yyyyMMdd");

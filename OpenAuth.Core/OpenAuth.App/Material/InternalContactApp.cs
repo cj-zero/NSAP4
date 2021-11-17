@@ -328,17 +328,31 @@ namespace OpenAuth.App.Material
             }
         }
 
-        public async Task SendEmail(int id)
+        public async Task SendEmail(int id, string title = "")
         {
-            var internalContact = await UnitWork.Find<InternalContact>(c => c.Id == id)
+            var obj = await UnitWork.Find<InternalContact>(c => c.Id == id)
                             .Include(c => c.InternalContactDeptInfos)
                             .Include(c => c.InternalContactAttchments)
                             .Include(c => c.InternalContactBatchNumbers)
                             .FirstOrDefaultAsync();
-            await SebdEmail(internalContact, "");
+
+            var orgIds = obj.InternalContactDeptInfos.Select(c => c.OrgId).ToList();
+            var userIds = await UnitWork.Find<Relevance>(c => orgIds.Contains(c.SecondId) && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
+            userIds.Add(obj.CheckApproveId);
+            userIds.Add(obj.DevelopApproveId);
+            var userInfo = await UnitWork.Find<User>(c => userIds.Contains(c.Id) && c.Status == 0).ToListAsync();
+            userInfo.ForEach(async c =>
+            {
+                if (!string.IsNullOrWhiteSpace(c.Email))
+                {
+                    var mailuser = new List<MailUser>();
+                    mailuser.Add(new MailUser { Name = c.Account, Address = c.Email });
+                    await SebdEmail(obj, title, mailuser);
+                }
+            });
         }
 
-        private async Task SebdEmail(InternalContact obj,string title)
+        private async Task SebdEmail(InternalContact obj,string title, List<MailUser> mailUsers=null)
         {
             try
             {
@@ -346,20 +360,21 @@ namespace OpenAuth.App.Material
                 mailRequest.Subject = obj.Theme;
                 mailRequest.Priority = 1;
                 mailRequest.FromUser = new MailUser { Name = "ERP4.0通知", Address = Define.MailAccount, Password = Define.MailPassword };
-                var orgIds = obj.InternalContactDeptInfos.Select(c => c.OrgId).ToList();
-                var userIds = await UnitWork.Find<Relevance>(c => orgIds.Contains(c.SecondId) && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
-                userIds.Add(obj.CheckApproveId);
-                userIds.Add(obj.DevelopApproveId);
-                var userInfo = await UnitWork.Find<User>(c => userIds.Contains(c.Id) && c.Status == 0).ToListAsync();
-                //mailRequest.ToUsers = new List<MailUser> { new MailUser { Name = "licong", Address = "licong@neware.com.cn" } };
-                mailRequest.ToUsers = new List<MailUser>();
-                userInfo.ForEach(c =>
-                {
-                    if (!string.IsNullOrWhiteSpace(c.Email))
-                    {
-                        mailRequest.ToUsers.Add(new MailUser { Name = c.Account, Address = c.Email });
-                    }
-                });
+                mailRequest.ToUsers = mailUsers;
+                //var orgIds = obj.InternalContactDeptInfos.Select(c => c.OrgId).ToList();
+                //var userIds = await UnitWork.Find<Relevance>(c => orgIds.Contains(c.SecondId) && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
+                //userIds.Add(obj.CheckApproveId);
+                //userIds.Add(obj.DevelopApproveId);
+                //var userInfo = await UnitWork.Find<User>(c => userIds.Contains(c.Id) && c.Status == 0).ToListAsync();
+                ////mailRequest.ToUsers = new List<MailUser> { new MailUser { Name = "licong", Address = "licong@neware.com.cn" } };
+                //mailRequest.ToUsers = new List<MailUser>();
+                //userInfo.ForEach(c =>
+                //{
+                //    if (!string.IsNullOrWhiteSpace(c.Email))
+                //    {
+                //        mailRequest.ToUsers.Add(new MailUser { Name = c.Account, Address = c.Email });
+                //    }
+                //});
                 //附件
                 mailRequest.Attachments = new List<MailAttachment>();
                 if (obj.InternalContactAttchments.Count > 0)
@@ -433,7 +448,7 @@ namespace OpenAuth.App.Material
             var operationHistories = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.InstanceId == detail.FlowInstanceId)
                 .OrderBy(c => c.CreateDate).Select(h => new
             {
-                CreateDate = Convert.ToDateTime(h.CreateDate).ToString("yyyy.MM.dd HH:mm:ss"),
+                CreateTime = Convert.ToDateTime(h.CreateDate).ToString("yyyy.MM.dd HH:mm:ss"),
                 h.Remark,
                 IntervalTime = h.IntervalTime != null && h.IntervalTime > 0 ? h.IntervalTime / 60 : null,
                 h.CreateUserName,
@@ -705,7 +720,8 @@ namespace OpenAuth.App.Material
 
 
                 //发送邮件 
-                await SebdEmail(single, "<span style=\"font - size:larger\"><b>暂时停用以下联络单，请勿执行，等待通知</b></span><br><br>");
+                //await SebdEmail(single, "<span style=\"font - size:larger\"><b>暂时停用以下联络单，请勿执行，等待通知</b></span><br><br>");
+                await SendEmail(single.Id, " < span style =\"font - size:larger\"><b>暂时停用以下联络单，请勿执行，等待通知</b></span><br><br>");
             }
             else if (handleType == 4)//启用
             {
@@ -737,7 +753,8 @@ namespace OpenAuth.App.Material
 
 
                 //发邮件
-                await SebdEmail(single, "<span style=\"font - size:larger\"><b>重新启用以下联络单，请未完成的同事继续执行</b></span><br><br>");
+                //await SebdEmail(single, "<span style=\"font - size:larger\"><b>重新启用以下联络单，请未完成的同事继续执行</b></span><br><br>");
+                await SendEmail(single.Id, " <span style=\"font - size:larger\"><b>重新启用以下联络单，请未完成的同事继续执行</b></span><br><br>");
             }
             await UnitWork.SaveAsync();
 
