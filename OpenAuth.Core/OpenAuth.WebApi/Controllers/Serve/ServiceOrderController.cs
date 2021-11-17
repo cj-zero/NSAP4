@@ -278,7 +278,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response();
             try
             {
-                await _serviceOrderApp.CustomerServiceAgentCreateOrder(req);
+                result=await _serviceOrderApp.CustomerServiceAgentCreateOrder(req);
             }
             catch (Exception ex)
             {

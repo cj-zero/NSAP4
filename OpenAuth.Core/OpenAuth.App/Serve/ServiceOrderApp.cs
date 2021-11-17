@@ -767,13 +767,15 @@ namespace OpenAuth.App
         /// 客服新建服务单
         /// </summary>
         /// <returns></returns>
-        public async Task CustomerServiceAgentCreateOrder(CustomerServiceAgentCreateOrderReq req)
+        public async Task<Infrastructure.Response> CustomerServiceAgentCreateOrder(CustomerServiceAgentCreateOrderReq req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            Infrastructure.Response result = new Infrastructure.Response();
+
             var loginUser = loginContext.User;
             var loginUserOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).Select(c=>new UserResp { Name = "", Id = "", OrgId = c.Id, OrgName = c.Name, CascadeId = c.CascadeId }).FirstOrDefault();
             if (loginContext.User.Account == Define.USERAPP && req.AppUserId != null)
@@ -826,11 +828,15 @@ namespace OpenAuth.App
             }
             var AppUser = await UnitWork.Find<AppUserMap>(s => s.UserID == obj.SupervisorId).Include(s => s.User).FirstOrDefaultAsync();
             var AppUserId = await UnitWork.Find<AppUserMap>(s => s.UserID == loginUser.Id).Select(s => s.AppUserId).FirstOrDefaultAsync();
+            var isHasNum = false;
             obj.ServiceWorkOrders.ForEach(s =>
             {
                 if (s.ManufacturerSerialNumber== "无序列号" && loginUserOrg.OrgName!="S19")
                 {
-                    throw new Exception("非S19呼叫中心人员，不允许提交无序列号的呼叫。");
+                    result.Code = 500;
+                    result.Message = "非S19呼叫中心人员，不允许提交无序列号的呼叫。";
+                    isHasNum = true;
+                    //throw new Exception("");
                 }
                 s.SubmitDate = DateTime.Now;
                 s.SubmitUserId = loginUser.Id;
@@ -865,6 +871,8 @@ namespace OpenAuth.App
                 }
                 #endregion
             });
+            if (isHasNum) return result;
+
             var e = await UnitWork.AddAsync<ServiceOrder, int>(obj);
             await UnitWork.SaveAsync();
             var pictures = req.Pictures.MapToList<ServiceOrderPicture>();
@@ -904,6 +912,7 @@ namespace OpenAuth.App
                 });
                 await _signalrmessage.SendSystemMessage(SignalRSendType.User, $"系统已自动分配了{assignedWorks.Count()}个新的售后服务，请尽快处理", new List<string>() { obj.Supervisor });
             }
+            return result;
         }
         /// <summary>
         /// 工程部新建服务单
