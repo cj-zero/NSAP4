@@ -208,12 +208,12 @@ namespace OpenAuth.App.Order
             billDelivery.billBaseType = "23";
             if (orderReq.Comments == "")
             {
-                billDelivery.Comments = "";
+                billDelivery.Comments = "基于报价单" + orderReq.JobId.ToString();
 
             }
             else
             {
-                billDelivery.Comments = orderReq.Comments;
+                billDelivery.Comments = orderReq.Comments+"基于报价单"+ orderReq.JobId.ToString();
 
             }
             //billDelivery. = "销售订单";
