@@ -493,6 +493,32 @@ namespace OpenAuth.App.Order
             {
                 tableData.Count = Convert.ToInt32(paramOut.Value);
                 rowCounts = Convert.ToInt32(sqlParameters[7].Value);
+                //for (int i = 0; i < dt.Rows.Count; i++)
+                //{
+                //    var row = dt.Rows[i];
+                //    var s = row[1].ToString("yyyy-MM-dd");
+                //    if (DateTime.TryParse(s,out var date))
+                //    {
+                //        var dtValue = date.ToString("yyyy-MM-dd");
+                //    }
+                //}
+                //foreach (DataRow temprow in dt.Rows)
+                //{
+                //    var s = temprow["UpdateDate"].ToString();
+                //    if (DateTime.TryParse(s, out var date))
+                //    {
+                //        var dtValue = date.ToString("yyyy-MM-dd");
+                //        temprow["UpdateDate"] = dtValue;
+
+                //    }
+                //    var ss = temprow["CreateDate"].ToString();
+                //    if (DateTime.TryParse(ss, out var dates))
+                //    {
+                //        var dtValue = dates.ToString("yyyy-MM-dd");
+                //        temprow["CreateDate"] = dtValue;
+
+                //    }
+                //}
             }
             else
             {
@@ -532,10 +558,12 @@ namespace OpenAuth.App.Order
                     strSql2 += string.Format("LEFT JOIN nsap_oa.file_type AS T1 ON T0.file_type_id = T1.type_id ");
                     strSql2 += string.Format("WHERE T0.file_type_id = {0} AND T0.docEntry = {1} limit 1", int.Parse(fileType), int.Parse(temprow["DocEntry"].ToString()));
                     ResultOrderDto fileflag = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, strSql2, CommandType.Text, null).FirstOrDefault();
-                    temprow["AttachFlag"] = fileflag == null ? "0" : fileflag.Value.ToString();
+                    temprow["AttachFlag"] = fileflag == null ? "0" : fileflag.Value.ToString();                   
                 }
             }
-            tableData.Data = dt.Tolist<SalesDraftDto>();
+    
+            tableData.Data= dt.Tolist<SalesDraftDto>();
+           
             return tableData;
         }
         /// <summary>
