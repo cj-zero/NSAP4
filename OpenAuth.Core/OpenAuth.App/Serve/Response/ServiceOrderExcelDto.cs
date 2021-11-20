@@ -164,6 +164,11 @@ namespace OpenAuth.App.Response
         [ExporterHeader(DisplayName = "工单提交时间")]
         public System.DateTime? SubmitDate { get; set; }
         /// <summary>
+        /// 工单结束时间
+        /// </summary>
+        [ExporterHeader(DisplayName = "工单结束时间")]
+        public System.DateTime? CompleteDate { get; set; }
+        /// <summary>
         /// 预约日期
         /// </summary>
         [ExporterHeader(DisplayName = "预约日期")]

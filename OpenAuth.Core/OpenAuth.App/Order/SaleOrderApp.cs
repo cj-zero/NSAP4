@@ -192,7 +192,6 @@ namespace OpenAuth.App.Order
             string jobname = "销售订单";
             //查询
             billDelivery billDelivery = GetDeliverySalesInfoNewNos(orderReq.JobId.ToString(), userID);
-
             string josn = JsonConvert.SerializeObject(billDelivery);
             if (billDelivery is null)
             {
@@ -206,14 +205,22 @@ namespace OpenAuth.App.Order
             }
             billDelivery.billBaseEntry = orderReq.JobId.ToString();
             billDelivery.billBaseType = "23";
+            int i = 0;
+            foreach (var item in billDelivery.billSalesDetails)
+            {
+                item.BaseEntry = orderReq.JobId.ToString();
+                item.BaseLine = i.ToString();
+                item.BaseType = "23";
+                i++;
+            }
             if (orderReq.Comments == "")
             {
-                billDelivery.Comments = "";
+                billDelivery.Comments = "基于报价单" + orderReq.JobId.ToString();
 
             }
             else
             {
-                billDelivery.Comments = orderReq.Comments;
+                billDelivery.Comments = orderReq.Comments+"基于报价单"+ orderReq.JobId.ToString();
 
             }
             //billDelivery. = "销售订单";
@@ -516,6 +523,7 @@ namespace OpenAuth.App.Order
             billDelivery Model = DeSerialize<billDelivery>((byte[])(GetSalesInfo(jobID.ToString())));
             Model.Comments = Comments;
             Model.Remark = Remark;
+            Model.DocStatus = "C";
             if (IsUpdate == "1")
             {
                 job_data = ByteExtension.ToSerialize(Model);

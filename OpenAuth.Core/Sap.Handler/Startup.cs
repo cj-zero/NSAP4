@@ -43,6 +43,7 @@ namespace Sap.Handler
             services.AddScoped<SellOrderSapHandler>();
             services.AddScoped<MaterialSapHandler>();
             services.AddScoped<AfterSaleReturnHandler>();
+            services.AddScoped<ServiceSaleOrderHandler>();
             services.AddControllersWithViews();
         }
 

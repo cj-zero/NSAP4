@@ -24,7 +24,7 @@ namespace Sap.Handler.DependencyInjection
             oCompany.UserName = settings.UserName; //dRow[2].ToString();
             oCompany.Password = settings.Password; //dRow[3].ToString();Aa789123@
             oCompany.CompanyDB = settings.CompanyDB; //dRow[6].ToString();
-            oCompany.language = BoSuppLangs.ln_Chinese;
+            oCompany.language = BoSuppLangs.ln_Chinese; 
             int connecti = oCompany.Connect();
             if (connecti != 0)
             {
