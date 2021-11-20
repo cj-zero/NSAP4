@@ -2067,6 +2067,7 @@ namespace OpenAuth.App
                         WorkOrderStatus = statusDic.GetValueOrDefault(workOrder.Status.Value),
                         CurrentUser = workOrder.CurrentUser,
                         SubmitDate = workOrder.CreateTime,
+                        CompleteDate = workOrder.CompleteDate,
                         BookingDate = workOrder.BookingDate,
                         VisitTime = workOrder.VisitTime,
                         LiquidationDate = workOrder.LiquidationDate,

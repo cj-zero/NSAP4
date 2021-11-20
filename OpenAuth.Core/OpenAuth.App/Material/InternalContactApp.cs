@@ -571,23 +571,32 @@ namespace OpenAuth.App.Material
                     }
                     else
                     {
-                        await _flowInstanceApp.Verification(verificationReq);
                         if (loginContext.Roles.Any(c => c.Name.Equal("联络单测试审批")) && flowinstace.ActivityName == "测试审批")
                         {
+                            await _flowInstanceApp.Verification(verificationReq);
                             internalContact.Status = 2;
                             //设置研发环节执行人
                             await _flowInstanceApp.ModifyNodeUser(flowinstace.Id, true, new string[] { internalContact.DevelopApproveId }, internalContact.DevelopApprove, false);
                         }
-                        else if (loginContext.Roles.Any(c => c.Name.Equal("联络单研发审批")) && flowinstace.ActivityName == "研发审批") internalContact.Status = 3;
+                        else if (loginContext.Roles.Any(c => c.Name.Equal("联络单研发审批")) && flowinstace.ActivityName == "研发审批")
+                        {
+                            await _flowInstanceApp.Verification(verificationReq);
+                            internalContact.Status = 3;
+                        }
                         else if (loginContext.Roles.Any(c => c.Name.Equal("总经理")) && flowinstace.ActivityName == "总经理审批")
                         {
+                            await _flowInstanceApp.Verification(verificationReq);
                             internalContact.Status = 4;
 
                             #region 发送邮件
                             //await SebdEmail(internalContact, "");
                             #endregion
                         }
-                        else internalContact.Status = 1;//驳回 撤回提交
+                        else if (flowinstace.ActivityName == "提交" && (internalContact.Status == 5 || internalContact.Status == 6))
+                        {
+                            await _flowInstanceApp.Verification(verificationReq);
+                            internalContact.Status = 1;//驳回 撤回提交
+                        }
                         internalContact.IsTentative = false;
 
                     }
