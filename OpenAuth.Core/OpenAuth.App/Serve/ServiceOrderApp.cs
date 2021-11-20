@@ -1965,6 +1965,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceWorkOrders.Any(a => a.ManufacturerSerialNumber.Contains(req.QryManufSN)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.RecepUserName.Contains(req.QryRecepUser))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryVestInOrg), q => q.VestInOrg == Convert.ToInt32(req.QryVestInOrg))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ServiceWorkOrders.Any(a => a.ProblemTypeId.Equals(req.QryProblemType)))
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
