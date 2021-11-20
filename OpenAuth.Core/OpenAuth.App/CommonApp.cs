@@ -1158,7 +1158,7 @@ namespace OpenAuth.App
 
             //分类没有则为0
             List<dynamic> detail = new List<dynamic>();
-            foreach (var item in testData.OrderByDescending(x => x.count))
+            foreach (var item in testData.OrderBy(x => x.count))
             {
                 var g = from a in serviceTypes
                         join b in item.detail on a.value equals b.serviceType into temp
