@@ -80,7 +80,14 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-                return await _app.ServiceCall(request);
+                if (request.CallType == 1)
+                {
+                    return await _app.ServiceCall(request);
+                }
+                else if (request.CallType == 2)
+                {
+                    return await _app.GetServiceCallInfo(request);
+                }
             }
             catch (Exception ex)
             {
@@ -180,6 +187,27 @@ namespace OpenAuth.WebApi.Controllers
                 result.Code = 500;
                 result.Message = ex.Message;
                 Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 根据生产部门获取服务单信息
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetServiceCallInfo([FromQuery] QueryReportReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetServiceThemeInfo(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
             }
             return result;
         }
