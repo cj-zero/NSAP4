@@ -1611,7 +1611,7 @@ namespace OpenAuth.App.Order
                 billSalesDetails billSalesDetail = new billSalesDetails()
                 {
                     BaseEntry = item.BaseEntry,//基本凭证代码
-                    BaseLine = item.BaseLine,//基础行
+                    BaseLine = !string.IsNullOrEmpty(item.BaseLine) ? item.BaseLine : "0",//基础行
                     BaseRef = item.BaseRef,//基本凭证参考
                     BaseType = item.BaseType,//基本凭证类型(-1,0,23，17，16，13，165,默认值为-1)
                     DiscPrcnt = !string.IsNullOrEmpty(item.DiscPrcnt) ? item.DiscPrcnt : "0",// 每行折扣 %
