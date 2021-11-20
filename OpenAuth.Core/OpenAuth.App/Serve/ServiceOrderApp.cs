@@ -2035,6 +2035,12 @@ namespace OpenAuth.App
                     var FromThemeJson = JsonHelper.Instance.Deserialize<List<FromThemeJsonResp>>(workOrder?.FromTheme);
                     string FromTheme = "";
                     FromThemeJson.ForEach(f => FromTheme += f.description);
+                    double interval = 0;
+                    if (!string.IsNullOrWhiteSpace(workOrder.CreateTime.ToString()) && !string.IsNullOrWhiteSpace(workOrder.CompleteDate.ToString()))
+                    {
+                        TimeSpan ts = workOrder.CompleteDate.Value.Subtract(workOrder.CreateTime.Value);
+                        interval = Math.Round(ts.TotalHours, 2);
+                    }
                     list.Add(new ServiceOrderExcelDto
                     {
                         U_SAP_ID = serviceOrder.U_SAP_ID,
@@ -2069,6 +2075,7 @@ namespace OpenAuth.App
                         CurrentUser = workOrder.CurrentUser,
                         SubmitDate = workOrder.CreateTime,
                         CompleteDate = workOrder.CompleteDate,
+                        TimeInterval = interval,
                         BookingDate = workOrder.BookingDate,
                         VisitTime = workOrder.VisitTime,
                         LiquidationDate = workOrder.LiquidationDate,
