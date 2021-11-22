@@ -38,5 +38,10 @@ namespace OpenAuth.App.Request
         /// 呼叫主题/部门/人员
         /// </summary>
         public List<string> Name { get; set; }
+
+        /// <summary>
+        /// 请求类型:1--普通部门,2--生产部门
+        /// </summary>
+        public int CallType { get; set; }
     }
 }

@@ -970,6 +970,216 @@ namespace OpenAuth.App
                 Data = detail
             };
         }
+
+        /// <summary>
+        /// 根据生产部门获取服务呼叫客诉单的信息,按服务方式分类(电话,上门)
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetServiceCallInfo(QueryReportReq req)
+        {
+            var result = new TableData();
+
+            var startTime = req.StartTime ?? DateTime.Now.Date;
+            var endTime = req.EndTime ?? startTime.AddDays(1).Date;
+
+            //因为服务单信息跟部门信息不在一个服务器上,所以处理思路是:服务单->序列号(这个在erp4.0),序列号->部门(这个在erp3.0)
+
+            //根据票据类型和时间,筛选出序列号
+            var severData = await (from s in UnitWork.Find<ServiceOrder>(x => x.VestInOrg == req.VestInOrg && x.CreateTime >= startTime && x.CreateTime < endTime)
+                                   join sw in UnitWork.Find<ServiceWorkOrder>(x => x.Status >= 2)
+                                   on s.Id equals sw.ServiceOrderId
+                                   select new { s.Id, sw.ServiceMode, sw.FromTheme, sw.ManufacturerSerialNumber }).ToListAsync();
+
+            //序列号去重
+            var serialData = severData.GroupBy(x => x.ManufacturerSerialNumber).Select(x => x.Key);
+
+            //根据序列号找出对应的部门(这个查找方式是从erp3.0找过来的,还有别的方式?)
+            var deptsInfo = await (from a in UnitWork.Find<store_oitl>(null)
+                                   join b in UnitWork.Find<store_itl1>(null) on new { a.sbo_id, a.ItemCode, a.LogEntry } equals new { b.sbo_id, b.ItemCode, b.LogEntry } into ab
+                                   from bDefault in ab.DefaultIfEmpty()
+                                   join c in UnitWork.Find<store_osrn>(null) on new { bDefault.sbo_id, bDefault.ItemCode, bDefault.SysNumber } equals new { c.sbo_id, c.ItemCode, c.SysNumber } into bc
+                                   from cDefault in bc.DefaultIfEmpty()
+                                   join d in UnitWork.Find<product_owor>(null) on new { sbo_id = a.sbo_id.Value, DocEntry = a.BaseEntry.Value } equals new { d.sbo_id, d.DocEntry }
+                                   where new int[] { 15, 59 }.Contains(a.DocType.Value) && a.BaseType.Value == 202 && serialData.Contains(cDefault.MnfSerial)
+                                   select new { cDefault.MnfSerial, d.U_WO_LTDW }).ToListAsync();
+
+            //处理数据(例如:将P6,P6-李xx,p6处理为一个部门)
+            var depts = deptsInfo.Select(x => new
+            {
+                dept = (x.U_WO_LTDW.Contains("-") ? x.U_WO_LTDW.Split('-')[0] : x.U_WO_LTDW).ToUpper(),
+                serial = x.MnfSerial
+            });
+
+            //根据传入部门过滤数据
+            if (req.OrgName?.Count() > 0)
+            {
+                depts = depts.Where(x => req.OrgName.Contains(x.dept));
+            }
+
+            //去重
+            var data = (from a in severData
+                        join b in depts on a.ManufacturerSerialNumber equals b.serial
+                        select new { a.Id, a.ServiceMode, b.dept }).Distinct();
+
+            //这个我没在数据库中找到维护的表,所以固定写在代码里
+            var serviceTypes = new[]
+            {
+                new { name = "上门服务",value = 1},
+                new { name = "电话服务",value = 2},
+            };
+
+            var testData = data.Where(x => x.ServiceMode != null).GroupBy(x => x.dept).Select(x => new
+            {
+                OrgName = x.Key,
+                Deatil = x.GroupBy(d => d.ServiceMode).Select(d => new
+                {
+                    Status = d.Key,
+                    Count = d.Count()
+                })
+            });
+
+            //分类没有则为0
+            List<dynamic> detail = new List<dynamic>();
+            foreach(var item in testData)
+            {
+                var g = from a in serviceTypes
+                        join b in item.Deatil on a.value equals b.Status into temp
+                        from t in temp.DefaultIfEmpty()
+                        select new { Name = a.name, Count = t == null ? 0 : t.Count };
+
+                detail.Add(new { OrgName = item.OrgName, Detail = g });
+            }
+
+            result.Data = detail;
+            result.Count = detail.Count();
+
+            return result;
+        }
+
+        /// <summary>
+        /// 统计生产部门的呼叫主题
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetServiceThemeInfo(QueryReportReq req)
+        {
+            var result = new TableData();
+
+            var startTime = req.StartTime ?? DateTime.Now.Date;
+            var endTime = req.EndTime ?? startTime.AddDays(1).Date;
+
+            //因为服务单信息跟部门信息不在一个服务器上,所以处理思路是:服务单->序列号(这个在erp4.0),序列号->部门(这个在erp3.0)
+
+            //根据票据类型和时间,筛选出序列号
+            var severData = await (from s in UnitWork.Find<ServiceOrder>(x => x.VestInOrg == req.VestInOrg && x.CreateTime >= startTime && x.CreateTime < endTime)
+                                   join sw in UnitWork.Find<ServiceWorkOrder>(x => x.Status >= 2)
+                                   on s.Id equals sw.ServiceOrderId
+                                   select new { s.Id, sw.ServiceMode, sw.FromTheme, sw.ManufacturerSerialNumber }).ToListAsync();
+
+            //序列号去重
+            var serialData = severData.GroupBy(x => x.ManufacturerSerialNumber).Select(x => x.Key);
+
+            //根据序列号找出对应的部门(这个查找方式是从erp3.0找过来的,还有别的方式?)
+            var deptsInfo = await (from a in UnitWork.Find<store_oitl>(null)
+                                   join b in UnitWork.Find<store_itl1>(null) on new { a.sbo_id, a.ItemCode, a.LogEntry } equals new { b.sbo_id, b.ItemCode, b.LogEntry } into ab
+                                   from bDefault in ab.DefaultIfEmpty()
+                                   join c in UnitWork.Find<store_osrn>(null) on new { bDefault.sbo_id, bDefault.ItemCode, bDefault.SysNumber } equals new { c.sbo_id, c.ItemCode, c.SysNumber } into bc
+                                   from cDefault in bc.DefaultIfEmpty()
+                                   join d in UnitWork.Find<product_owor>(null) on new { sbo_id = a.sbo_id.Value, DocEntry = a.BaseEntry.Value } equals new { d.sbo_id, d.DocEntry }
+                                   where new int[] { 15, 59 }.Contains(a.DocType.Value) && a.BaseType.Value == 202 && serialData.Contains(cDefault.MnfSerial)
+                                   select new { cDefault.MnfSerial, d.U_WO_LTDW }).ToListAsync();
+
+            //处理数据(例如:将P6,P6-李xx,p6处理为一个部门)
+            var depts = deptsInfo.Select(x => new
+            {
+                dept = (x.U_WO_LTDW.Contains("-") ? x.U_WO_LTDW.Split('-')[0] : x.U_WO_LTDW).ToUpper(),
+                serial = x.MnfSerial
+            });
+
+            //根据传入部门过滤数据
+            if (req.OrgName?.Count() > 0)
+            {
+                depts = depts.Where(x => req.OrgName.Contains(x.dept));
+            }
+
+            //查询主题(只查询服务方式不为空的数据)
+            var data = from a in severData.Where(x => x.ServiceMode != null)
+                       join b in depts on a.ManufacturerSerialNumber equals b.serial
+                       select new
+                       {
+                           a.Id,
+                           a.ServiceMode,
+                           Theme = GetServiceTroubleAndSolution(a.FromTheme).Select(x => new { x.ThemeId, x.Description, x.Code }),
+                           b.dept
+                       };
+
+            //将一对多拆分成一对一
+            List<DeptServiceTheme> resultData = new List<DeptServiceTheme>();
+            foreach (var idItem in data.Where(x => x.ServiceMode != null))
+            {
+                foreach (var theme in idItem.Theme)
+                {
+                    resultData.Add(new DeptServiceTheme
+                    {
+                        ServiceId = idItem.Id,
+                        ServiceMode = idItem.ServiceMode.Value,
+                        ServiceDept = idItem.dept,
+                        ServiceThemeId = theme.ThemeId,
+                        ServiceThemeCode = theme.Code,
+                        ServiceThemeDesc = theme.Description,
+                    });
+                }
+            }
+
+            //这个我没在数据库中找到维护的表,所以固定写在代码里
+            var serviceTypes = new[]
+            {
+                new { name = "上门服务",value = 1},
+                new { name = "电话服务",value = 2},
+            };
+
+            //统计
+            var testData = from d in resultData.Select(x => new { x.ServiceId, x.ServiceMode, x.ServiceThemeId, x.ServiceThemeCode, x.ServiceThemeDesc, x.ServiceDept }).Distinct()
+                           group d by new { d.ServiceDept, d.ServiceThemeId }
+                           into g
+                           select new
+                           {
+                               g.Key.ServiceDept,
+                               //ThemeId = GetTreeCode(g.Key.ServiceThemeId),
+                               ThemeCode = g.Min(x => x.ServiceThemeCode),
+                               ThemeDesc = g.Min(x => x.ServiceThemeDesc),
+                               count = g.Count(x => new int[] { 1, 2 }.Contains(x.ServiceMode)),
+                               detail = g.GroupBy(x => x.ServiceMode).Select(x => new
+                               {
+                                   serviceType = x.Key,
+                                   count = x.Count()
+                               })
+                           };
+
+            //分类没有则为0
+            List<dynamic> detail = new List<dynamic>();
+            foreach (var item in testData.OrderBy(x => x.count))
+            {
+                var g = from a in serviceTypes
+                        join b in item.detail on a.value equals b.serviceType into temp
+                        from t in temp.DefaultIfEmpty()
+                        select new { Name = a.name, Count = t == null ? 0 : t.count };
+
+                detail.Add(new
+                {
+                    ServiceDept = item.ServiceDept,
+                    ThemeCode = item.ThemeCode,
+                    ThemeDesc = item.ThemeDesc,
+                    count = item.count,
+                    Detail = g
+                });
+            }
+
+            result.Data = detail;
+            result.Count = detail.Count();
+            
+            return result;
+        }
         #endregion
 
         private List<ServiceWorkOrderFromTheme> GetServiceTroubleAndSolution(string data)
@@ -980,13 +1190,31 @@ namespace OpenAuth.App
                 JArray jArray = (JArray)JsonConvert.DeserializeObject(data);
                 foreach (var item in jArray)
                 {
-                    result.Add(new ServiceWorkOrderFromTheme { Description = item["description"].ToString() });
+                    result.Add(new ServiceWorkOrderFromTheme
+                    {
+                        Description = item["description"].ToString(),
+                        ThemeId = item["id"].ToString(),
+                        Code = item["code"] == null ? "" : item["code"].ToString(),
+                    });
                 }
             }
             return result;
         }
-    }
 
+        private string GetTreeCode(string id)
+        {
+            var parent = UnitWork.Find<KnowledgeBase>(x => x.Id == id).FirstOrDefault();
+            if (parent == null || parent?.ParentId == "")
+            {
+                return parent?.Code;
+            }
+            else
+            {
+
+                return GetTreeCode(parent.ParentId) + "-" + parent.Code;
+            }
+        }
+    }
 
     public class HomePageCardReportResp
     {
@@ -1025,5 +1253,40 @@ namespace OpenAuth.App
         public string Code { get; set; }
         public string Description { get; set; }
         public int? Status { get; set; }
+
+        public string? ThemeId { get; set; }
+    }
+
+    public class DeptServiceTheme
+    {
+        /// <summary>
+        /// 服务id
+        /// </summary>
+        public int ServiceId { get; set; }
+
+        /// <summary>
+        /// 服务方式
+        /// </summary>
+        public int ServiceMode { get; set; }
+
+        /// <summary>
+        /// 服务主题Id
+        /// </summary>
+        public string ServiceThemeId { get; set; }
+
+        /// <summary>
+        /// 服务主题Code
+        /// </summary>
+        public string ServiceThemeCode { get; set; }
+
+        /// <summary>
+        /// 服务主题描述
+        /// </summary>
+        public string ServiceThemeDesc { get; set; }
+
+        /// <summary>
+        /// 服务部门
+        /// </summary>
+        public string ServiceDept { get; set; }
     }
 }
