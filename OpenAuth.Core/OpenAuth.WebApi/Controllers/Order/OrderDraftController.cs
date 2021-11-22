@@ -1855,5 +1855,27 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             return result;
         }
+        /// <summary>
+        /// 审核备注
+        /// </summary>
+        /// <param name="DocEntry"></param>
+        /// <param name="SboId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetSaleQuotationRemarkById")]
+        public Response< string> GetSaleQuotationRemarkById(string DocEntry, string SboId)
+        {
+            var result = new Response<string>();
+            try
+            {
+                result.Result = _serviceSaleOrderApp.GetSaleQuotationRemarkById(DocEntry, SboId);
+            }
+            catch (Exception e)
+            {
+                result.Message = e.Message;
+            }
+            return result;
+
+        }
     }
 }

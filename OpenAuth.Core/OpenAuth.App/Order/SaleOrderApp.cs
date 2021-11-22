@@ -205,6 +205,7 @@ namespace OpenAuth.App.Order
             }
             billDelivery.billBaseEntry = orderReq.JobId.ToString();
             billDelivery.billBaseType = "23";
+            billDelivery.Remark = !string.IsNullOrWhiteSpace(orderReq.Remark) ? orderReq.Remark : "";
             int i = 0;
             foreach (var item in billDelivery.billSalesDetails)
             {
@@ -220,7 +221,7 @@ namespace OpenAuth.App.Order
             }
             else
             {
-                billDelivery.Comments = orderReq.Comments+"基于报价单"+ orderReq.JobId.ToString();
+                billDelivery.Comments = orderReq.Comments + "基于报价单" + orderReq.JobId.ToString();
 
             }
             //billDelivery. = "销售订单";

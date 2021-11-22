@@ -55,6 +55,10 @@ namespace OpenAuth.App.Order.Request
 		/// 备注
 		/// </summary>
 		public string Comments { get; set; }
+		/// <summary>
+		/// 审核备注
+		/// </summary>
+		public string Remark { get; set; }
 	}
 
 	public class OrderDraft
