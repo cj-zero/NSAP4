@@ -857,6 +857,16 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 根据序列号获取委托单
+        /// </summary>
+        /// <param name="serialNumber"></param>
+        /// <returns></returns>
+        public async Task<Entrustment> GetEntrustment(string serialNumber)
+        {
+            return await UnitWork.Find<Entrustment>(c => c.EntrustmentDetails.Any(e => e.SerialNumber == serialNumber)).FirstOrDefaultAsync();
+        }
+
+        /// <summary>
         /// 推送过期前一个月的校准证书关联的GUID
         /// </summary>
         /// <returns></returns>
