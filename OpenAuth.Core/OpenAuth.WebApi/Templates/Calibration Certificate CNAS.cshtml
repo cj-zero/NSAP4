@@ -1,0 +1,1720 @@
+﻿@using System.Data
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calibration Certificate</title>
+    <style>
+               /*! normalize.css v8.0.1 | MIT License | github.com/necolas/normalize.css */
+               /* Document
+          ========================================================================== */
+               /**
+        * 1. Correct the line height in all browsers.
+        * 2. Prevent adjustments of font size after orientation changes in iOS.
+        */
+               html {
+                   line-height: 1.15;
+                   /* 1 */
+                   -webkit-text-size-adjust: 100%;
+                   /* 2 */
+               }
+
+               /* Sections
+          ========================================================================== */
+               /**
+        * Remove the margin in all browsers.
+        */
+               body {
+                   margin: 0;
+               }
+
+               /**
+        * Render the `main` element consistently in IE.
+        */
+               main {
+                   display: block;
+               }
+
+               /**
+        * Correct the font size and margin on `h1` elements within `section` and
+        * `article` contexts in Chrome, Firefox, and Safari.
+        */
+               h1 {
+                   font-size: 2em;
+                   margin: 0.67em 0;
+               }
+
+               /* Grouping content
+          ========================================================================== */
+               /**
+        * 1. Add the correct box sizing in Firefox.
+        * 2. Show the overflow in Edge and IE.
+        */
+               hr {
+                   -webkit-box-sizing: content-box;
+                   box-sizing: content-box;
+                   /* 1 */
+                   height: 0;
+                   /* 1 */
+                   overflow: visible;
+                   /* 2 */
+               }
+
+               /**
+        * 1. Correct the inheritance and scaling of font size in all browsers.
+        * 2. Correct the odd `em` font sizing in all browsers.
+        */
+               pre {
+                   font-family: monospace, monospace;
+                   /* 1 */
+                   font-size: 1em;
+                   /* 2 */
+               }
+
+               /* Text-level semantics
+          ========================================================================== */
+               /**
+        * Remove the gray background on active links in IE 10.
+        */
+               a {
+                   background-color: transparent;
+               }
+
+               /**
+        * 1. Remove the bottom border in Chrome 57-
+        * 2. Add the correct text decoration in Chrome, Edge, IE, Opera, and Safari.
+        */
+               abbr[title] {
+                   border-bottom: none;
+                   /* 1 */
+                   text-decoration: underline;
+                   /* 2 */
+                   -webkit-text-decoration: underline dotted;
+                   text-decoration: underline dotted;
+                   /* 2 */
+               }
+
+               /**
+        * Add the correct font weight in Chrome, Edge, and Safari.
+        */
+               b,
+               strong {
+                   font-weight: bolder;
+               }
+
+               /**
+        * 1. Correct the inheritance and scaling of font size in all browsers.
+        * 2. Correct the odd `em` font sizing in all browsers.
+        */
+               code,
+               kbd,
+               samp {
+                   font-family: monospace, monospace;
+                   /* 1 */
+                   font-size: 1em;
+                   /* 2 */
+               }
+
+               /**
+        * Add the correct font size in all browsers.
+        */
+               small {
+                   font-size: 80%;
+               }
+
+               /**
+        * Prevent `sub` and `sup` elements from affecting the line height in
+        * all browsers.
+        */
+               sub,
+               sup {
+                   font-size: 75%;
+                   line-height: 0;
+                   position: relative;
+                   vertical-align: baseline;
+               }
+
+               sub {
+                   bottom: -0.25em;
+               }
+
+               sup {
+                   top: -0.5em;
+               }
+
+               /* Embedded content
+          ========================================================================== */
+               /**
+        * Remove the border on images inside links in IE 10.
+        */
+               img {
+                   border-style: none;
+               }
+
+               /* Forms
+          ========================================================================== */
+               /**
+        * 1. Change the font styles in all browsers.
+        * 2. Remove the margin in Firefox and Safari.
+        */
+               button,
+               input,
+               optgroup,
+               select,
+               textarea {
+                   font-family: inherit;
+                   /* 1 */
+                   font-size: 100%;
+                   /* 1 */
+                   line-height: 1.15;
+                   /* 1 */
+                   margin: 0;
+                   /* 2 */
+               }
+
+               /**
+        * Show the overflow in IE.
+        * 1. Show the overflow in Edge.
+        */
+               button,
+               input {
+                   /* 1 */
+                   overflow: visible;
+               }
+
+               /**
+        * Remove the inheritance of text transform in Edge, Firefox, and IE.
+        * 1. Remove the inheritance of text transform in Firefox.
+        */
+               button,
+               select {
+                   /* 1 */
+                   text-transform: none;
+               }
+
+               /**
+        * Correct the inability to style clickable types in iOS and Safari.
+        */
+               button,
+               [type="button"],
+               [type="reset"],
+               [type="submit"] {
+                   -webkit-appearance: button;
+               }
+
+                   /**
+        * Remove the inner border and padding in Firefox.
+        */
+                   button::-moz-focus-inner,
+                   [type="button"]::-moz-focus-inner,
+                   [type="reset"]::-moz-focus-inner,
+                   [type="submit"]::-moz-focus-inner {
+                       border-style: none;
+                       padding: 0;
+                   }
+
+                   /**
+        * Restore the focus styles unset by the previous rule.
+        */
+                   button:-moz-focusring,
+                   [type="button"]:-moz-focusring,
+                   [type="reset"]:-moz-focusring,
+                   [type="submit"]:-moz-focusring {
+                       outline: 1px dotted ButtonText;
+                   }
+
+               /**
+        * Correct the padding in Firefox.
+        */
+               fieldset {
+                   padding: 0.35em 0.75em 0.625em;
+               }
+
+               /**
+        * 1. Correct the text wrapping in Edge and IE.
+        * 2. Correct the color inheritance from `fieldset` elements in IE.
+        * 3. Remove the padding so developers are not caught out when they zero out
+        *    `fieldset` elements in all browsers.
+        */
+               legend {
+                   -webkit-box-sizing: border-box;
+                   box-sizing: border-box;
+                   /* 1 */
+                   color: inherit;
+                   /* 2 */
+                   display: table;
+                   /* 1 */
+                   max-width: 100%;
+                   /* 1 */
+                   padding: 0;
+                   /* 3 */
+                   white-space: normal;
+                   /* 1 */
+               }
+
+               /**
+        * Add the correct vertical alignment in Chrome, Firefox, and Opera.
+        */
+               progress {
+                   vertical-align: baseline;
+               }
+
+               /**
+        * Remove the default vertical scrollbar in IE 10+.
+        */
+               textarea {
+                   overflow: auto;
+               }
+
+               /**
+        * 1. Add the correct box sizing in IE 10.
+        * 2. Remove the padding in IE 10.
+        */
+               [type="checkbox"],
+               [type="radio"] {
+                   -webkit-box-sizing: border-box;
+                   box-sizing: border-box;
+                   /* 1 */
+                   padding: 0;
+                   /* 2 */
+               }
+
+               /**
+        * Correct the cursor style of increment and decrement buttons in Chrome.
+        */
+               [type="number"]::-webkit-inner-spin-button,
+               [type="number"]::-webkit-outer-spin-button {
+                   height: auto;
+               }
+
+               /**
+        * 1. Correct the odd appearance in Chrome and Safari.
+        * 2. Correct the outline style in Safari.
+        */
+               [type="search"] {
+                   -webkit-appearance: textfield;
+                   /* 1 */
+                   outline-offset: -2px;
+                   /* 2 */
+               }
+
+                   /**
+        * Remove the inner padding in Chrome and Safari on macOS.
+        */
+                   [type="search"]::-webkit-search-decoration {
+                       -webkit-appearance: none;
+                   }
+
+               /**
+        * 1. Correct the inability to style clickable types in iOS and Safari.
+        * 2. Change font properties to `inherit` in Safari.
+        */
+               ::-webkit-file-upload-button {
+                   -webkit-appearance: button;
+                   /* 1 */
+                   font: inherit;
+                   /* 2 */
+               }
+
+               /* Interactive
+          ========================================================================== */
+               /*
+        * Add the correct display in Edge, IE 10+, and Firefox.
+        */
+               details {
+                   display: block;
+               }
+
+               /*
+        * Add the correct display in all browsers.
+        */
+               summary {
+                   display: list-item;
+               }
+
+               /* Misc
+          ========================================================================== */
+               /**
+        * Add the correct display in IE 10+.
+        */
+               template {
+                   display: none;
+               }
+
+               /**
+        * Add the correct display in IE 10.
+        */
+               [hidden] {
+                   display: none;
+               }
+
+               @@font-face {
+                   font-family: 'Roboto';
+                   src: url(../font/Roboto/Roboto-Regular.ttf);
+               }
+
+               @@font-face {
+                   font-family: 'Roboto Medium';
+                   src: url(../font/Roboto/Roboto-Medium.ttf);
+               }
+
+               @@font-face {
+                   font-family: 'Roboto Black';
+                   src: url(../font/Roboto/Roboto-Black.ttf);
+               }
+
+               * {
+                   -webkit-box-sizing: border-box;
+                   box-sizing: border-box;
+               }
+
+               body {
+                   margin: 0;
+                   font-size: 10.5pt;
+                   line-height: 1.5;
+                   font-family: 'Roboto', sans-serif;
+                   background-color: #fff;
+               }
+
+               h1,
+               h2,
+               h3,
+               h4,
+               h5,
+               h6 {
+                   font-size: inherit;
+                   font-weight: inherit;
+               }
+
+              #app table {
+                   border-collapse: collapse;
+                   width:90% !important;
+                   margin:0 auto;
+               }
+        #description table {
+            border-collapse: collapse;
+            width: 100% !important;
+            margin: 0 auto;
+            margin-left: 10px;
+            margin-top: 20px
+        }
+                ol {
+                    margin: 0;
+                }
+
+               .items-start {
+                   -webkit-box-align: start;
+                   -ms-flex-align: start;
+                   align-items: flex-start;
+               }
+
+               .items-end {
+                   -webkit-box-align: end;
+                   -ms-flex-align: end;
+                   align-items: flex-end;
+               }
+
+               .items-center {
+                   -webkit-box-align: center;
+                   -ms-flex-align: center;
+                   align-items: center;
+               }
+
+               .items-baseline {
+                   -webkit-box-align: baseline;
+                   -ms-flex-align: baseline;
+                   align-items: baseline;
+               }
+
+               .items-stretch {
+                   -webkit-box-align: stretch;
+                   -ms-flex-align: stretch;
+                   align-items: stretch;
+               }
+
+               .block {
+                   display: block;
+               }
+
+               .inline-block {
+                   display: inline-block;
+               }
+
+               .inline {
+                   display: inline;
+               }
+
+               .flex {
+                   display: -webkit-box;
+                   display: -ms-flexbox;
+                   display: flex;
+               }
+
+               .inline-flex {
+                   display: -webkit-inline-box;
+                   display: -ms-inline-flexbox;
+                   display: inline-flex;
+               }
+
+               .font-consolas {
+                   font-family: 'Consolas' !important;
+               }
+
+               .font-bahnschrift {
+                   font-family: 'Bahnschrift' !important;
+               }
+
+               .font-roboto {
+                   font-family: 'Bahnschrift Light' !important;
+               }
+
+               .font-bahnschrift--semibold {
+                   font-family: 'Bahnschrift Semibold' !important;
+               }
+
+               .font-roboto {
+                   font-family: 'Roboto' !important;
+               }
+
+               .font-roboto--medium font-bold {
+                   font-family: 'Roboto Medium' !important;
+               }
+
+               .text-9pt {
+                   font-size: 9pt !important;
+               }
+
+               .text-10pt {
+                   font-size: 10pt !important;
+               }
+
+               .text-10\.5pt {
+                   font-size: 10.5pt !important;
+               }
+
+               .text-15pt {
+                   font-family:FangSong;
+                   font-size: 15pt;
+                   font-weight:bold;
+               }
+
+                .text-14pt {
+                    font-family: FangSong;
+                    font-size: 14pt;
+                    font-weight: bold;
+                }
+                .text-en-12pt {
+                    font-family: 'Times New Roman';
+                    font-size: 11pt;
+                    /*font-weight: bold;*/
+                }
+        .text-en-17pt {
+            padding-left: 20px;
+            font-size: 17px;
+            font-family: 'Times New Roman'
+        }
+        .text-en-10pt-bold {
+            font-family: 'Times New Roman';
+            font-size: 10pt;
+            font-weight: bold;
+        }
+               .text-12pt {
+                   font-size: 12pt !important;
+               }
+        .text-13pt {
+            font-size: 13pt !important;
+            font-weight:bold;
+        }
+               .text-14pt {
+                   font-size: 14pt !important;
+               }
+
+               .font-bold {
+                   font-weight: 700 !important;
+               }
+
+               .h-8 {
+                   height: 30pt;
+               }
+
+               .h-full {
+                   height: 100%;
+               }
+
+               .leading-3 {
+                   line-height: 0.75rem;
+               }
+
+               .leading-4 {
+                   line-height: 1rem;
+               }
+
+               .leading-5 {
+                   line-height: 1.25rem;
+               }
+
+               .leading-6 {
+                   line-height: 1.5rem;
+               }
+
+               .leading-7 {
+                   line-height: 1.75rem;
+               }
+
+               .leading-8 {
+                   line-height: 2rem;
+               }
+
+               .leading-9 {
+                   line-height: 2.25rem;
+               }
+
+               .leading-10 {
+                   line-height: 2.5rem;
+               }
+
+               .leading-none {
+                   line-height: 1;
+               }
+
+               .leading-tight {
+                   line-height: 1.25;
+               }
+
+               .leading-snug {
+                   line-height: 1.375;
+               }
+
+               .leading-normal {
+                   line-height: 1.5;
+               }
+
+               .ml-2 {
+                   margin-left: 7.5pt;
+               }
+
+               .mt-4 {
+                   margin-top: 15pt;
+               }
+
+               .px-2 {
+                   padding-left: 7.5pt;
+                   padding-right: 7.5pt;
+               }
+
+               .w-26 {
+                   width: 97.5pt;
+               }
+
+               .w-100pt {
+                   width: 100pt;
+               }
+
+               .w-32 {
+                   width: 120pt;
+               }
+
+               .w-1\/2 {
+                   width: 50%;
+               }
+
+               .w-1\/3 {
+                   width: 33.333333%;
+               }
+
+               .w-2\/3 {
+                   width: 66.666667%;
+               }
+
+               .w-1\/4 {
+                   width: 25%;
+               }
+
+               .w-2\/4 {
+                   width: 50%;
+               }
+
+               .w-3\/4 {
+                   width: 75%;
+               }
+
+               .w-1\/5 {
+                   width: 20%;
+               }
+
+               .w-2\/5 {
+                   width: 40%;
+               }
+
+               .w-3\/5 {
+                   width: 60%;
+               }
+
+               .w-4\/5 {
+                   width: 80%;
+               }
+
+               .w-1\/6 {
+                   width: 16.666667%;
+               }
+
+               .w-2\/6 {
+                   width: 33.333333%;
+               }
+
+               .w-3\/6 {
+                   width: 50%;
+               }
+
+               .w-4\/6 {
+                   width: 66.666667%;
+               }
+
+               .w-5\/6 {
+                   width: 83.333333%;
+               }
+
+               .w-1\/12 {
+                   width: 8.333333%;
+               }
+
+               .w-2\/12 {
+                   width: 16.666667%;
+               }
+
+               .w-3\/12 {
+                   width: 25%;
+               }
+
+               .w-4\/12 {
+                   width: 33.333333%;
+               }
+
+               .w-5\/12 {
+                   width: 41.666667%;
+               }
+
+               .w-6\/12 {
+                   width: 50%;
+               }
+
+               .w-7\/12 {
+                   width: 58.333333%;
+               }
+
+               .w-8\/12 {
+                   width: 66.666667%;
+               }
+
+               .w-9\/12 {
+                   width: 75%;
+               }
+
+               .w-10\/12 {
+                   width: 83.333333%;
+               }
+
+               .w-11\/12 {
+                   width: 91.666667%;
+               }
+
+               .w-full {
+                   width: 100%;
+               }
+
+               .text-left {
+                   text-align: left !important;
+               }
+
+               .text-center {
+                   text-align: center !important;
+               }
+
+               .text-right {
+                   text-align: right !important;
+               }
+
+               .text-justify {
+                   text-align: justify !important;
+               }
+
+               .align-top {
+                   vertical-align: top !important;
+               }
+
+               .whitespace-normal {
+                   white-space: normal !important;
+               }
+
+               .whitespace-no-wrap {
+                   white-space: nowrap !important;
+               }
+
+               .whitespace-pre {
+                   white-space: pre !important;
+               }
+
+               .whitespace-pre-line {
+                   white-space: pre-line !important;
+               }
+
+               .whitespace-pre-wrap {
+                   white-space: pre-wrap !important;
+               }
+
+               #app {
+                   width: 100%;
+                   margin: 0pt auto;
+                   /*margin-bottom:300px*/
+               }
+        #description {
+            width: 100%;
+            margin: 0pt auto;
+            /*margin-bottom: 300px*/
+        }
+               .header {
+                   display: -webkit-box;
+                   display: -ms-flexbox;
+                   display: flex;
+                   -webkit-box-align: center;
+                   -ms-flex-align: center;
+                   align-items: center;
+                   -webkit-box-pack: justify;
+                   -ms-flex-pack: justify;
+                   justify-content: space-between;
+                   border-bottom: thin solid #000;
+               }
+
+                   .header .header-left {
+                       font-size: 10pt;
+                       font-family: 'Century Gothic';
+                   }
+
+                       .header .header-left .logo {
+                           font-size: 22.5pt;
+                           font-weight: 600;
+                           line-height: 1;
+                       }
+
+                   .header .header-code {
+                       width: 79.5pt;
+                       height: 34.5pt;
+                       -o-object-fit: contain;
+                       object-fit: contain;
+                   }
+
+        .title {
+            display: -webkit-box;
+            display: -ms-flexbox;
+            display: flex;
+            -webkit-box-align: center;
+            -ms-flex-align: center;
+            align-items: center;
+            -webkit-box-pack: center;
+            -ms-flex-pack: center;
+            justify-content: center;
+            height: 60pt;
+            font-size: 40pt;
+            /*font-weight: bold;*/
+            font-family: FangSong;
+            font-weight: bold
+            /*/*font-family: 'Roboto Medium';*/
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+               .table--border-top {
+                   border-top: 1px solid #000 !important;
+               }
+/**/
+               .table--border-bottom {
+                   border-bottom: 1px solid #000 !important;
+               }
+
+               .table--stripe tr:nth-child(even) {
+                   background-color: #f1f1f1;
+               }
+
+               .table thead {
+                   font-family: 'Consolas';
+                   font-size: 11pt;
+                   /*border-bottom: thin solid #000;*/
+               }
+
+               .table tbody {
+                   font-size: 10.5pt;
+               }
+
+        .table tr td {
+            padding: 2pt 6pt;
+            border-right: 1px dashed rgb(200, 200, 200);
+        }
+        .table tr th {
+            /*padding: 2pt 6pt;*/
+            border-right: 1px dashed rgb(200, 200, 200);
+        }
+        .table tr {
+            border: 1px dashed rgb(200, 200, 200);
+        }
+
+               .table tr th {
+                   font-weight: normal;
+                   padding: 6pt;
+                   text-align: left;
+               }
+
+               .autographs {
+                   padding: 0 30pt 30pt;
+               }
+
+                   .autographs .autograph {
+                       position: relative;
+                       display: inline-block;
+                       width: 210pt;
+                       height: 60pt;
+                       text-align: center;
+                       border-bottom: thin solid #000;
+                   }
+
+                       .autographs .autograph:nth-child(even) {
+                           margin-left: 180pt;
+                       }
+
+                       .autographs .autograph::before {
+                           content: attr(data-name);
+                           position: absolute;
+                           top: 105%;
+                           right: 0;
+                           font-size: 11pt;
+                           font-family: 'Roboto Medium';
+                       }
+
+                   .autographs .autograph-img {
+                       position: absolute;
+                       /*bottom: 1pt;*/
+                       width: 80%;
+                       height: 65%;
+                       -o-object-fit: contain;
+                       object-fit: contain;
+                       top: 40%;
+                       left: 15%;
+                       transform: translate(-50%,-50%);
+                   }
+
+               .footer {
+                   font-family: 'Century Gothic';
+               }
+
+                   .footer .footer-title {
+                       border-bottom: thin solid #000;
+                   }
+
+                   .footer .footer-company {
+                       font-size: 12pt;
+                       font-weight: bold;
+                   }
+
+                   .footer .copyright-span {
+                       display: block;
+                       height: 15pt;
+                       line-height: 15pt;
+                       font-size: 10pt;
+                       color: #666;
+                   }
+
+                       .footer .copyright-span:nth-child(even) {
+                           margin-top: -15pt;
+                           text-align: right;
+                       }
+
+               /*# sourceMappingURL=app.css.map */
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header class="title font-roboto--medium ">
+            <div>
+                校准证书
+            </div>
+        </header>
+        <div style="text-align: center; margin-top: -10px; font-size: 18pt; font-family: 'Times New Roman'; font-weight: bold; ">
+            Calibration Certificate
+        </div>
+        <table class="table table--border-top">
+            <tbody>
+                <tr>
+                    <td style="width: 150px; ">
+                        <div class="text-15pt">
+                            证 书 编 号：
+                        </div>
+                        <div class="text-en-12pt">
+                            Certificate No.
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-size:13pt;font-family:'Times New Roman'">
+                            <span>@Model.Data.CalibrationCertificate.CertificatenNumber</span>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="text-15pt">
+                            委 托 单 位：
+                        </div>
+                        <div class="text-en-12pt">
+                            Client
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-size:13pt;font-family:FangSong;">
+                            @Model.Data.CalibrationCertificate.EntrustedUnit
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="text-15pt">
+                            地 址：
+                        </div>
+                        <div class="text-en-12pt">
+                            Address
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-size: 13pt; font-family: FangSong">
+                            @Model.Data.CalibrationCertificate.EntrustedUnitAdress
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="text-15pt">
+                            仪 器 名 称：
+                        </div>
+                        <div class="text-en-12pt">
+                            Description
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-size: 13pt; font-family: FangSong">
+                            电池充放电测试仪
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="text-15pt">
+                            制 造 厂：
+                        </div>
+                        <div class="text-en-12pt">
+                            Manufacturer
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-size:13pt;font-family:Cambria">
+                            @Model.Data.CalibrationCertificate.TesterMake
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="text-15pt">
+                            型 号 规 格：
+                        </div>
+                        <div class="text-en-12pt">
+                            Model/Type
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-size: 13pt; font-family: FangSong">
+                            @Model.Data.CalibrationCertificate.TesterModel
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="text-15pt">
+                            出 厂 编 号：
+                        </div>
+                        <div class="text-en-12pt">
+                            Serial  No.
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-size: 13pt; font-family: FangSong">
+                            @Model.Data.CalibrationCertificate.TesterSn
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="text-15pt">
+                            资 产 编 号：
+                        </div>
+                        <div class="text-en-12pt">
+                            Asset  No.
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-size: 13pt; font-family: FangSong">
+                            @Model.Data.CalibrationCertificate.AssetNo
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table class="table" style="margin-top:30px">
+            <tbody>
+                <tr>
+                    <td style="width: 150px; ">
+                        <div class="text-15pt">
+                            校    准
+                        </div>
+                        <div class="text-en-12pt">
+                            Calibrated  by
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-size:13pt;font-family:FangSong;width:350px">
+                            <img src="data:image/png;base64,@Model.Data.CalibrationTechnician" alt>
+                        </div>
+                    </td>
+                    <td rowspan="3" style="width:300px;text-align:center">
+                        <img src="data:image/png;base64,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">
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 150px; ">
+                        <div class="text-15pt">
+                            核    验
+                        </div>
+                        <div class="text-en-12pt">
+                            Inspected  by
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-size: 13pt; font-family: FangSong">
+                            <img class="autograph-img" src="data:image/png;base64, @Model.Data.TechnicalManager" alt>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width: 150px; ">
+                        <div class="text-15pt">
+                            批    准
+                        </div>
+                        <div class="text-en-12pt">
+                            Approved  by
+                        </div>
+                    </td>
+                    <td>
+                        <div style="font-size: 13pt; font-family: FangSong">
+                            <img class="autograph-img" src="data:image/png;base64, @Model.Data.ApprovalDirector" alt>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <table class="table" style="margin-top:50px">
+            <tbody>
+                <tr>
+                    <td style="width: 150px; ">
+                        <div class="text-15pt">
+                            委 托 日 期
+                        </div>
+                        <div class="text-en-12pt">
+                            Application  Date
+                        </div>
+                    </td>
+                    <td style="width: 250px; ">
+                        <div style="font-size:13pt;font-family:FangSong">
+                            <div>
+                                @Model.Data.CalibrationCertificate.EntrustedDate
+                            </div>
+                            <div class="text-en-12pt">
+                                YYYY&nbsp;&nbsp;&nbsp; MM      &nbsp;&nbsp;&nbsp;DD
+                            </div>
+                        </div>
+                    </td>
+                    <td style="width: 150px; ">
+                        <div class="text-15pt">
+                            校 准 日 期
+                        </div>
+                        <div class="text-en-12pt">
+                            Calibration  Date
+                        </div>
+                    </td>
+                    <td style="width: 250px; ">
+                        <div style="font-size:13pt;font-family:FangSong">
+                            <div>
+                                @Model.Data.CalibrationCertificate.CalibrationDate
+                            </div>
+                            <div class="text-en-12pt">
+                                YYYY&nbsp;&nbsp;&nbsp; MM      &nbsp;&nbsp;&nbsp;DD
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div style="page-break-inside: avoid; page-break-before: always; page-break-after: always; "></div>
+
+    <div id="description">
+        <header class="title font-roboto--medium ">
+            <div>
+                校准说明
+            </div>
+        </header>
+        <div style="text-align: center; margin-top: -10px; font-size: 18pt; font-family: 'Times New Roman'; font-weight: bold; ">
+            Directions of Calibration
+        </div>
+        <div style="width:90%;margin:0 auto;">
+            <div style="margin-top:10px">
+                <span class="text-15pt">1.本次校准所使用的主要计量器具</span>
+                <span class="text-en-12pt">(Main standards used):</span>
+            </div>
+            <table class="table table--border-top table--border-bottom">
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="text-14pt">
+                                名称
+                            </div>
+                            <div class="text-en-10pt-bold">
+                                Standard Name
+                            </div>
+                        </td>
+                        <td>
+                            <div class="text-14pt">
+                                编号
+                            </div>
+                            <div class="text-en-10pt-bold">
+                                Asset No.
+                            </div>
+                        </td>
+                        <td>
+                            <div class="text-14pt">
+                                证书编号/有效期
+                            </div>
+                            <div class="text-en-10pt-bold">
+                                Certificate No./Due Date
+                            </div>
+                        </td>
+                        <td>
+                            <div class="text-14pt">
+                                溯源机构
+                            </div>
+                            <div class="text-en-10pt-bold">
+                                Traceability Institute
+                            </div>
+                        </td>
+                        <td>
+                            <div class="text-14pt">
+                                计量特性
+                            </div>
+                            <div class="text-en-10pt-bold">
+                                Characteristics
+                            </div>
+                        </td>
+                    </tr>
+                    @foreach (var item in @Model.Data.MainStandardsUsed)
+                    {
+                        @*<tr>
+                                <td>@item.Name</td>
+                                <td>@item.Characterisics</td>
+                                <td>@item.AssetNo</td>
+                                <td>@item.CertificateNo</td>
+                                <td>@item.DueDate</td>
+                            </tr>*@
+                        <tr>
+                            <td>
+                                <div class="text-14pt">
+                                    @*数字多用表*@
+                                </div>
+                                <div class="text-en-12pt">
+                                    @item.Name
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-en-12pt">
+                                    @item.AssetNo
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-en-12pt">
+                                    @item.CertificateNo<br />
+                                    /@item.DueDate
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-14pt">
+                                    @item.CalibrationEntity
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-en-12pt">
+                                    @item.Characterisics
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @*<tr>
+                            <td>
+                                <div class="text-14pt">
+                                    数字多用表
+                                </div>
+                                <div class="text-en-12pt">
+                                    KEYSIGHT 3458A
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-en-12pt">
+                                    MY59351003
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-en-12pt">
+                                    DCsy2020-02510
+                                    /2021-11-29
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-14pt">
+                                    中国计量科学研究院
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-en-12pt">
+                                    DCV:Urel=0.0004%
+                                    DCI:Urel=0.0010%
+                                    （k=2）
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="text-14pt">
+                                    分流器
+                                </div>
+                                <div class="text-en-12pt">
+                                    FLUKE A40B
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-en-12pt">
+                                    459175126/459175127
+                                    /480576144
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-en-12pt">
+                                    DCzd2021-00057
+                                    /2022-01-12
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-14pt">
+                                    中国计量科学研究院
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-en-12pt">
+                                    MPE: DCI:±0.0026%
+                                </div>
+                            </td>
+                        </tr>*@
+                </tbody>
+            </table>
+
+            <div style="margin-top:20px">
+                <span class="text-15pt">2.校准地点</span>
+                <span class="text-en-12pt">(Place of the calibration):</span>
+            </div>
+            <div style="border: 1px dashed rgb(200, 200, 200);margin-left:10px; padding-left: 10px; width: 100% ;height:40px;line-height:40px;margin-top:10px">
+                <span style="font-family: FangSong; font-size: 14px; ">六楼校准实验室1</span>
+            </div>
+
+            <div style="margin-top:20px">
+                <span class="text-15pt">3.环境条件</span>
+                <span class="text-en-12pt">(Environmental condition during calibration)::</span>
+            </div>
+            <table style="border: 1px dashed rgb(200, 200, 200);" class="table">
+                <thead>
+                    <tr>
+                        <td>
+                            <div class="text-13pt">
+                                温  度：
+                            </div>
+                            <div class="text-en-12pt">
+                                Temperature
+                            </div>
+                        </td>
+                        <td>@Model.Data.CalibrationCertificate.Temperature</td>
+                        <td>℃</td>
+                        <td>
+                            <div class="text-13pt">
+                                相对湿度：
+                            </div>
+                            <div class="text-en-12pt">
+                                Relative humidity
+                            </div>
+                        </td>
+                        <td>@Model.Data.CalibrationCertificate.RelativeHumidity</td>
+                        <td>%RH</td>
+                    </tr>
+                </thead>
+            </table>
+
+            <div style="margin-top:20px">
+                <span class="text-15pt">4.本次校准的技术依据</span>
+                <span class="text-en-12pt">(Reference documents for the calibration):</span>
+            </div>
+            <div style="border: 1px dashed rgb(200, 200, 200);margin-left:10px; padding-left: 10px; width: 100% ;height:40px;line-height:40px;margin-top:10px">
+                <span style="font-family: FangSong; font-size: 14px; ">电池充放电测试仪校准规范JJF(军工) 108</span>
+            </div>
+
+            <div style="margin-top:20px">
+                <span class="text-15pt">5.除特殊说明外，本报告的扩展不确定度是由标准不确定度乘以包含概率约为95％时的包含因子(k=2）。</span>
+            </div>
+            <div class="text-en-17pt">
+                Measurement uncertainties are given in the next pages,where applicable.All uncertainties are reported at a coverage factor of 2 (k=2) for an approximately 95% confidence unless specified.
+            </div>
+
+            <div style="margin-top:20px">
+                <span class="text-15pt">6.本证书编号具有唯一性，后缀若带有“-Cx”的证书为替换证书，自发出后原证书即刻作废。</span>
+            </div>
+            <div class="text-en-17pt">
+                Each certificate has a unique number. The suffix of "-Cx" will be added to the number as a replacement of the old version. The original certificate will be officially invalid once the new certificate number is issued.
+            </div>
+
+            <div style="margin-top:20px">
+                <span class="text-15pt">7.本证书校准结果只与受校准样品有关，且经本实验室书面批准，不得部分复制校准证书；此证书无实验室盖章无效。</span>
+            </div>
+            <div class="text-en-17pt">
+                This certificate applies to only the item identified and shall not be reproduced other than in full, without the specific written approval by Newell Laboratories. Calibration certificates without signatures are not valid.
+            </div>
+        </div>
+    </div>
+    <div style="page-break-inside: avoid; page-break-before: always; page-break-after: always; "></div>
+
+    <div id="result">
+        <header class="title font-roboto--medium ">
+            <div>
+                校准结果
+            </div>
+        </header>
+        <div style="text-align: center; margin-top: -10px; font-size: 18pt; font-family: 'Times New Roman'; font-weight: bold; ">
+            Results of calibration
+        </div>
+
+        <div style="width:90%;margin:0 auto;">
+            @*<div style="margin-top:20px">
+        <span style="font-family:FangSong;font-size:14pt">I.&nbsp;&nbsp;&nbsp;&nbsp;外观及工作正常性检查：</span><br />
+        <span style="font-family: 'Times New Roman'; font-size: 13pt; padding-left: 30px;">Appearance and performance checked</span>
+        </div>*@
+
+            @*<div style="margin-top:20px">
+            <span style="font-family:FangSong;font-size:14pt">I.&nbsp;&nbsp;&nbsp;直流电流</span>
+            <span style="font-family: 'Times New Roman'; font-size: 13pt;">(DC Current)</span>
+        </div>*@
+            <section>
+                <h2 class="font-roboto--medium font-bold text-12pt">1. Charging Voltage</h2>
+                <table class="table">
+                    <thead>
+                        <tr style="line-height:5pt">
+                            <th>通道</th>
+                            <th class="text-right">量程</th>
+                            <th class="text-right">示值</th>
+                            <th class="text-right">标准值</th>
+                            <th class="text-right">误差</th>
+                            <th class="text-right">接收值</th>
+                            <th class="text-right">不确定度</th>
+                            <th class="text-right">结论</th>
+                        </tr>
+                        <tr style="font-family:'Times New Roman'">
+                            <th>Channel &emsp;&emsp;&emsp;&emsp;</th>
+                            <th class="text-right">Range (V)</th>
+                            <th class="text-right">Indication (V)</th>
+                            <th class="text-right">Measured Value (V)</th>
+                            <th class="text-right">Error (mV)</th>
+                            <th class="text-right">Acceptance (mV)</th>
+                            <th class="text-right">Uncertainty (mV)</th>
+                            <th class="text-right">Conclusion &emsp;</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in @Model.Data.ChargingVoltage)
+                        {
+                            <tr style="font-family:'Times New Roman'">
+                                @if (@item.Conclusion != "P")
+                                {
+                                    <td style="color: red">@item.Channel</td>
+                                    <td class="text-right" style="color: red">@item.Range</td>
+                                    <td class="text-right" style="color: red">@item.Indication</td>
+                                    <td class="text-right" style="color: red">@item.MeasuredValue</td>
+                                    <td class="text-right" style="color: red">@item.Error</td>
+                                    <td class="text-right" style="color: red">@item.Acceptance</td>
+                                    <td class="text-right" style="color: red">@item.Uncertainty</td>
+                                    <td class="text-center" style="color: red">@item.Conclusion</td>
+                                }
+                                else
+                                {
+                                    <td>@item.Channel</td>
+                                    <td class="text-right">@item.Range</td>
+                                    <td class="text-right">@item.Indication</td>
+                                    <td class="text-right">@item.MeasuredValue</td>
+                                    <td class="text-right">@item.Error</td>
+                                    <td class="text-right">@item.Acceptance</td>
+                                    <td class="text-right">@item.Uncertainty</td>
+                                    <td class="text-center">@item.Conclusion</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </section>
+            <div style="page-break-inside: avoid; page-break-before: always; page-break-after: always; "></div>
+            <h2 class="font-roboto--medium font-bold text-12pt">2. Discharging Voltage</h2>
+            <table class="table">
+                <thead>
+                    <tr style="line-height:5pt">
+                        <th>通道</th>
+                        <th class="text-right">量程</th>
+                        <th class="text-right">示值</th>
+                        <th class="text-right">标准值</th>
+                        <th class="text-right">误差</th>
+                        <th class="text-right">接收值</th>
+                        <th class="text-right">不确定度</th>
+                        <th class="text-right">结论</th>
+                    </tr>
+                    <tr style="font-family:'Times New Roman'">
+                        <th>Channel &emsp;&emsp;&emsp;&emsp;</th>
+                        <th class="text-right">Range (V)</th>
+                        <th class="text-right">Indication (V)</th>
+                        <th class="text-right">Measured Value (V)</th>
+                        <th class="text-right">Error (mV)</th>
+                        <th class="text-right">Acceptance (mV)</th>
+                        <th class="text-right">Uncertainty (mV)</th>
+                        <th class="text-right">Conclusion &emsp;</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in @Model.Data.DischargingVoltage)
+                    {
+                        <tr>
+                            @if (@item.Conclusion != "P")
+                            {
+                                <td style="color: red">@item.Channel</td>
+                                <td class="text-right" style="color: red">@item.Range</td>
+                                <td class="text-right" style="color: red">@item.Indication</td>
+                                <td class="text-right" style="color: red">@item.MeasuredValue</td>
+                                <td class="text-right" style="color: red">@item.Error</td>
+                                <td class="text-right" style="color: red">@item.Acceptance</td>
+                                <td class="text-right" style="color: red">@item.Uncertainty</td>
+                                <td class="text-center" style="color: red">@item.Conclusion</td>
+                            }
+                            else
+                            {
+                                <td>@item.Channel</td>
+                                <td class="text-right">@item.Range</td>
+                                <td class="text-right">@item.Indication</td>
+                                <td class="text-right">@item.MeasuredValue</td>
+                                <td class="text-right">@item.Error</td>
+                                <td class="text-right">@item.Acceptance</td>
+                                <td class="text-right">@item.Uncertainty</td>
+                                <td class="text-center">@item.Conclusion</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <div style="page-break-inside: avoid; page-break-before: always; page-break-after: always; "></div>
+            <h2 class="font-roboto--medium font-bold text-12pt">3. Charging Current</h2>
+            <table class="table">
+                <thead>
+                    @{
+                        var unit = "";
+                        var unitma = "";
+                        if (Model.Data.CalibrationCertificate.TesterModel.Contains("mA"))
+                        {
+                            unit = "mA";
+                            unitma = "μA";
+
+                        }
+                        else
+                        {
+                            unit = "A";
+                            unitma = "mA";
+                        }
+                    }
+                    <tr style="line-height:5pt">
+                        <th>通道</th>
+                        <th class="text-right">量程</th>
+                        <th class="text-right">示值</th>
+                        <th class="text-right">标准值</th>
+                        <th class="text-right">误差</th>
+                        <th class="text-right">接收值</th>
+                        <th class="text-right">不确定度</th>
+                        <th class="text-right">结论</th>
+                    </tr>
+                    <tr style="font-family:'Times New Roman'">
+                        <th>Channel &emsp;&emsp;&emsp;&emsp;</th>
+                        <th class="text-right font-bold">Range (@unit)</th>
+                        <th class="text-right font-bold">Indication (@unit)</th>
+                        <th class="text-right font-bold">Measured Value (@unit)</th>
+                        <th class="text-right font-bold">Error (@unitma)</th>
+                        <th class="text-right font-bold">Acceptance (@unitma)</th>
+                        <th class="text-right font-bold">Uncertainty (@unitma)</th>
+                        <th class="text-right font-bold">Conclusion &emsp;</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in @Model.Data.ChargingCurrent)
+                    {
+                        <tr>
+                            @if (@item.Conclusion != "P")
+                            {
+                                <td style="color: red">@item.Channel</td>
+                                <td class="text-right" style="color: red">@item.Range</td>
+                                <td class="text-right" style="color: red">@item.Indication</td>
+                                <td class="text-right" style="color: red">@item.MeasuredValue</td>
+                                <td class="text-right" style="color: red">@item.Error</td>
+                                <td class="text-right" style="color: red">@item.Acceptance</td>
+                                <td class="text-right" style="color: red">@item.Uncertainty</td>
+                                <td class="text-center" style="color: red">@item.Conclusion</td>
+                            }
+                            else
+                            {
+                                <td>@item.Channel</td>
+                                <td class="text-right">@item.Range</td>
+                                <td class="text-right">@item.Indication</td>
+                                <td class="text-right">@item.MeasuredValue</td>
+                                <td class="text-right">@item.Error</td>
+                                <td class="text-right">@item.Acceptance</td>
+                                <td class="text-right">@item.Uncertainty</td>
+                                <td class="text-center">@item.Conclusion</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <div style="page-break-inside: avoid; page-break-before: always; page-break-after: always; "></div>
+            <h2 class="font-roboto--medium font-bold text-12pt">4. Discharging Current</h2>
+            <table class="table">
+                <thead>
+                    <tr style="line-height:5pt">
+                        <th>通道</th>
+                        <th class="text-right">量程</th>
+                        <th class="text-right">示值</th>
+                        <th class="text-right">标准值</th>
+                        <th class="text-right">误差</th>
+                        <th class="text-right">接收值</th>
+                        <th class="text-right">不确定度</th>
+                        <th class="text-right">结论</th>
+                    </tr>
+                    <tr style="font-family:'Times New Roman'">
+                        <th>Channel &emsp;&emsp;&emsp;&emsp;</th>
+                        <th class="text-right font-bold">Range (@unit)</th>
+                        <th class="text-right font-bold">Indication (@unit)</th>
+                        <th class="text-right font-bold">Measured Value (@unit)</th>
+                        <th class="text-right font-bold">Error (@unitma)</th>
+                        <th class="text-right font-bold">Acceptance (@unitma)</th>
+                        <th class="text-right font-bold">Uncertainty (@unitma)</th>
+                        <th class="text-right font-bold">Conclusion &emsp;</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in @Model.Data.DischargingCurrent)
+                    {
+                        <tr>
+                            @if (@item.Conclusion != "P")
+                            {
+                                <td style="color: red">@item.Channel</td>
+                                <td class="text-right" style="color: red">@item.Range</td>
+                                <td class="text-right" style="color: red">@item.Indication</td>
+                                <td class="text-right" style="color: red">@item.MeasuredValue</td>
+                                <td class="text-right" style="color: red">@item.Error</td>
+                                <td class="text-right" style="color: red">@item.Acceptance</td>
+                                <td class="text-right" style="color: red">@item.Uncertainty</td>
+                                <td class="text-center" style="color: red">@item.Conclusion</td>
+                            }
+                            else
+                            {
+                                <td>@item.Channel</td>
+                                <td class="text-right">@item.Range</td>
+                                <td class="text-right">@item.Indication</td>
+                                <td class="text-right">@item.MeasuredValue</td>
+                                <td class="text-right">@item.Error</td>
+                                <td class="text-right">@item.Acceptance</td>
+                                <td class="text-right">@item.Uncertainty</td>
+                                <td class="text-center">@item.Conclusion</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+    <div style="page-break-inside: avoid; page-break-before: always; page-break-after: always; "></div>
+
+    <div id="remark">
+        <header class="title font-roboto--medium ">
+            <div>
+                备注
+            </div>
+        </header>
+        <div style="text-align: center; margin-top: -10px; font-size: 18pt; font-family: 'Times New Roman'; font-weight: bold; ">
+            Comments
+        </div>
+
+        <div style="width:90%;margin:0 auto;">
+            <div style="margin-top:20px">
+                <span style="font-family:FangSong;font-size:16pt;font-weight:bold">1.&nbsp;&nbsp;JJF 1059.1-2012测量不确定度评定与表示，扩展不确定度的包含因子k=2。</span><br />
+                <div style="font-family: 'Times New Roman'; font-size: 15pt; padding-left: 30px;">Reference document: JJF 1059.1-2012 Evaluation and Expression of Uncertainty in Measurement,the coverage factor of expanded uncertainty is k = 2.</div>
+            </div>
+            <div style="margin-top:20px">
+                <span style="font-family:FangSong;font-size:16pt;font-weight:bold">2.&nbsp;&nbsp;送检单位根据实际使用情况自主决定复校时间。</span><br />
+                <div style="font-family: 'Times New Roman'; font-size: 15pt; padding-left: 30px;">
+                    The re-calibration time is determined by the user according to the actual usage.
+                </div>
+            </div>
+            <div style="margin-top:20px">
+                <span style="font-family:FangSong;font-size:16pt;font-weight:bold">3.&nbsp;&nbsp;结论(Conclusion)：</span><br />
+                <div style="font-family: 'Times New Roman'; font-size: 15pt; width: 100%; border: 1px dashed rgb(200, 200, 200);padding-left:10px; margin-left: 20px;margin-top:10px ">
+                    <span>按校准结果使用</span><br />
+                    <span>Use according to the calibration result</span><br />
+                    <span>校准结果中结论列给出了考虑了测量不确定度下与技术规格的符合性程度。可能出现如下三种情形：</span><br />
+                    <span>
+                        Conclusion column indicates compliance or otherwise with specification taking into account the
+                        measurement uncertainty. Three conditions are indicated as follows:
+                    </span><br />
+                    <span>a. P 或者 PASS。测试结果在接受限以内，接受限引入了一种保护带策略使得控制错误接受概率≤2%。</span><br />
+                    <span>
+                        a. P or PASS. The measurement result is inside the acceptance limit with a guard band strategy
+                        considered to ensure probability of false accept (PFA) of 2% or less.
+                    </span><br />
+                    <span>b. P *或者 PASS*。测试结果在规格限以内，但在接受限以外。</span><br />
+                    <span>
+                        b. P* or PASS*. The measurement result is inside the specification limit but outside the above
+                        acceptance limit.
+                    </span><br />
+                    <span>c. F 或者 Fail。测试结果超出了对应的技术规格。</span><br />
+                    <span>c. F or Fail. The calibration point does not comply with the stated specification.</span><br />
+                </div>
+            </div>
+            <div style="border: 1px dashed rgb(200, 200, 200); border-top: 1px solid #000; height: 50px; text-align: center; font-size: 18pt; width: 50%; margin: 0 auto;margin-top:50px; font-weight:bold">
+                <span style="font-family:FangSong">以下空白</span>
+                <span style="font-family:'Times New Roman'">（End of Report）</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

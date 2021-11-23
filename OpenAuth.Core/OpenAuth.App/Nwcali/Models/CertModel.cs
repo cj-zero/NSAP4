@@ -38,8 +38,10 @@ namespace OpenAuth.App.Nwcali.Models
         public string AssetNo { get; set; }
         public string SiteCode { get; set; }
         public string Temperature { get; set; }
-
         public string RelativeHumidity { get; set; }
+        public string EntrustedUnit { get; set; }
+        public string EntrustedUnitAdress { get; set; }
+        public string EntrustedDate { get; set; }
     }
     public class MainStandardsUsed
     {
@@ -48,6 +50,7 @@ namespace OpenAuth.App.Nwcali.Models
         public string AssetNo { get; set; }
         public string CertificateNo { get; set; }
         public string DueDate { get; set; }
+        public string CalibrationEntity { get; set; }
     }
     public class TurTable
     {
