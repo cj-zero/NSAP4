@@ -4207,7 +4207,7 @@ namespace OpenAuth.App.Order
                     {
                         CustomFields += "," + dt.Rows[i][0].ToString();
                     }
-                }
+                } 
             }
             string U_YWY = string.Empty;
             if (IsExistMySql(tablename, "U_YWY"))
@@ -8490,5 +8490,18 @@ namespace OpenAuth.App.Order
             if (!string.IsNullOrEmpty(filterString)) { strSql += string.Format("{0}", filterString); }
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
         }
+        /// <summary>
+        /// 审核备注
+        /// </summary>
+        /// <param name="docentry"></param>
+        /// <param name="sboid"></param>
+        /// <returns></returns>
+        public  string GetSaleQuotationRemarkById(string docentry, string sboid)
+        {
+            string sqlstr = string.Format("select AuditRemark from {0}.sale_oqut where sbo_id={1} and docentry={2} limit 1","nsap_bone", sboid, docentry);
+            object resultentry =UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sqlstr, CommandType.Text, null);
+            return resultentry == null ? "" : resultentry.ToString();
+        }
+
     }
 }
