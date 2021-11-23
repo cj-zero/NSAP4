@@ -5,6 +5,7 @@ using OpenAuth.Repository.Domain.Sap;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 namespace OpenAuth.Repository
 {
@@ -58,6 +59,17 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<OINV>().HasKey(o => o.DocEntry);
             modelBuilder.Entity<INV1>().HasKey(o => new { o.DocEntry, o.LineNum });
             #endregion
+
+            //为含有decimal类型属性的实体设置decimal的精度(不设置efcore会提示warning:This will cause values to be silently truncated if they do not fit in the default precision and scale.)
+            foreach (var item in modelBuilder.Model.GetEntityTypes().Where(t => t.ClrType.GetProperties().Any(p => p.PropertyType == typeof(decimal) || p.PropertyType == typeof(decimal?))))
+            {
+                var type = item.ClrType;
+                var props = type.GetProperties().Where(p => p.PropertyType == typeof(decimal) || p.PropertyType == typeof(decimal?));
+                foreach (var p in props)
+                {
+                    modelBuilder.Entity(type).Property(p.Name).HasColumnType("decimal(19,6)"); //这个精度范围参考Sap的sql server里面的numeric类型精度
+                }
+            }
         }
         //非数据库表格
         public virtual DbSet<SysEquipmentColumn> SysEquipmentColumns { get; set; }
