@@ -1348,7 +1348,7 @@ namespace OpenAuth.App.Material
                             await UnitWork.SaveAsync();
                             quotationOperationHistory.Action = "个代结算系统自动提交";
                             #region 报价单同步到SAP，ERP3.0
-                            await _capBus.PublishAsync("Serve.SellOrder.Create", QuotationObj.Id);
+                            //await _capBus.PublishAsync("Serve.SellOrder.Create", QuotationObj.Id);
                             #endregion
                             Message = QuotationObj.Id.ToString();
                         }
