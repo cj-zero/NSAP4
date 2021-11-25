@@ -1840,6 +1840,7 @@ namespace OpenAuth.App.Order
         /// <returns></returns>
         public bool UpdateSalesDocAttachment(BillDeliveryReq model)
         {
+            var UserID = _serviceBaseApp.GetUserNaspId();
             #region 删除原附件数据
             string sql = string.Format("DELETE FROM nsap_oa.file_main WHERE docEntry={0} AND file_type_id = {1}", model.docEntry, model.filetypeId);
             UnitWork.ExcuteSqlTable(ContextType.NsapOaDbContextType, sql, CommandType.Text, null);
@@ -1850,7 +1851,7 @@ namespace OpenAuth.App.Order
 
                 StringBuilder nSql = new StringBuilder();
                 nSql.AppendFormat("INSERT INTO nsap_oa.file_main (file_sn,file_nm,file_type_id,docEntry,job_id,file_ver,acct_id,issue_reason,file_path,content,remarks,file_status,upd_dt,view_file_path,sbo_id) VALUES");
-                nSql.AppendFormat("(1,'{0}',{1},{2},0,'A0','{3}','','{4}','','',0,'{5}','{6}',{7});", item.filename, model.filetypeId, model.docEntry, item.fileUserId, item.filepath, DateTime.Now, item.filepath, item.filesboid);
+                nSql.AppendFormat("(1,'{0}',{1},{2},0,'A0','{3}','','{4}','','',0,'{5}','{6}',{7});", item.filename, model.filetypeId, model.docEntry, UserID, item.filepath, DateTime.Now, item.filepath, item.filesboid);
                 UnitWork.ExcuteSqlTable(ContextType.NsapOaDbContextType, nSql.ToString(), CommandType.Text, null);
             }
             #endregion

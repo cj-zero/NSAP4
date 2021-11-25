@@ -46,11 +46,6 @@ namespace OpenAuth.App.Order.Request {
 		[DataMember]
 		public string filepath { get; set; }
 		/// <summary>
-		/// 用户Id
-		/// </summary>
-		[DataMember]
-		public uint fileUserId { get; set; }
-		/// <summary>
 		/// 帐套ID
 		/// </summary>
 		[DataMember]
