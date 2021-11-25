@@ -30,6 +30,7 @@ namespace OpenAuth.Repository.Domain
           this.AssetNo= string.Empty;
           this.CertificateNo= string.Empty;
           this.DueDate= string.Empty;
+            this.CalibrationEntity = string.Empty;
         }
 
         
@@ -63,5 +64,9 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         public string DueDate { get; set; }
+        /// <summary>
+        /// 校准实体
+        /// </summary>
+        public string CalibrationEntity { get; set; }
     }
 }

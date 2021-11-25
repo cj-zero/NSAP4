@@ -4258,6 +4258,35 @@ namespace OpenAuth.App
             result.Data = new DailyReportResp { DailyDates = dailyReportDates, ReportResults = data };
             return result;
         }
+
+        /// <summary>
+        /// 获取技术员当天是否有日报
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetTechnicianCureentDailyReport(GetTechnicianDailyReportReq req)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.TechnicianId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            var dailyReports = await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == userInfo.UserID && w.CreateTime.Value.Date == DateTime.Now.Date && w.ServiceOrderId==req.ServiceOrderId).FirstOrDefaultAsync();
+
+            result.Data = true;
+            if (dailyReports==null)
+                result.Data = false;
+
+            return result;
+        }
+
         /// <summary>
         /// 判断有服务单的技术员当天是否填写日报
         /// </summary>
@@ -4428,6 +4457,15 @@ namespace OpenAuth.App
             {
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
             }
+            if (req.travelExpense.Days == 1)
+            {
+                var dailyReport = await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == req.ServiceOrderId && w.CreateUserId == userInfo.UserID && w.CreateTime.Value.Date == DateTime.Now.Date).FirstOrDefaultAsync();
+                if (dailyReport == null)
+                {
+                    throw new Exception("当天未填写行程日报，不允许申请差补");
+                }
+            }
+
             //判断当天是否已经填写日费 再次填写则数据清空
             var serviceDailyExpend = await UnitWork.Find<ServiceDailyExpends>(w => w.ServiceOrderId == req.ServiceOrderId && w.CreateUserId == userInfo.UserID && w.CreateTime.Value.Day == DateTime.Now.Day && w.CreateTime.Value.Month == DateTime.Now.Month && w.CreateTime.Value.Year == DateTime.Now.Year).ToListAsync();
             if (serviceDailyExpend.Count > 0)

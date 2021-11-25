@@ -1524,6 +1524,27 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
         /// <summary>
+        /// 获取技术员当天是否有日报
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTechnicianCureentDailyReport([FromQuery] GetTechnicianDailyReportReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result =await _serviceOrderApp.GetTechnicianCureentDailyReport(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
+        }
+        /// <summary>
         /// 判断有服务单的技术员当天是否填写日报
         /// </summary>
         /// <param name="TechnicianId"></param>

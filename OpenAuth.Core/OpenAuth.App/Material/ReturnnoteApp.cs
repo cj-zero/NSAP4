@@ -81,99 +81,102 @@ namespace OpenAuth.App
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), r => r.CreateTime > req.StartDate)
                                 .WhereIf(serviceOrderIds.Count()>0, r => serviceOrderIds.Contains(r.ServiceOrderId))
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), r => r.CreateTime < Convert.ToDateTime(req.EndDate).AddDays(1));
-            #region 筛选条件
-            //var schemeContent = await .FirstOrDefaultAsync();
-            var SchemeContent = await UnitWork.Find<FlowScheme>(f => f.SchemeName.Equals("退料单审批")).Select(f => f.SchemeContent).FirstOrDefaultAsync();
-            SchemeContentJson schemeJson = JsonHelper.Instance.Deserialize<SchemeContentJson>(SchemeContent);
-            switch (req.PageType)
+            if (loginUser.Account!=Define.SYSTEM_USERNAME)
             {
-                case 1:
-                    if (loginContext.Roles.Any(r => r.Name.Equals("储运人员")))
-                    {
-                        lineId = schemeJson.Nodes.Where(n => n.name.Equals("储运收货")).FirstOrDefault()?.id;
-                    }
-                    break;
-                case 2:
-                    if (loginContext.Roles.Any(r => r.Name.Equals("物料品质")))
-                    {
-                        lineId = schemeJson.Nodes.Where(n => n.name.Equals("品质检验")).FirstOrDefault()?.id;
-                    }
-                    break;
-                case 3:
-                    if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
-                    {
-                        lineId = schemeJson.Nodes.Where(n => n.name.Equals("总经理审批")).FirstOrDefault()?.id;
-                    }
-                    break;
-                case 4:
-                    if (loginContext.Roles.Any(r => r.Name.Equals("仓库")))
-                    {
-                        lineId = schemeJson.Nodes.Where(n => n.name.Equals("仓库入库")).FirstOrDefault()?.id;
-                    }
-                    break;
-                default:
-                    returnNotes = returnNotes.Where(r => r.CreateUserId.Equals(loginUser.Id));
-                    break;
-            }
-            if (!string.IsNullOrWhiteSpace(lineId) && req.PageType != null && req.PageType > 0)
-            {
-                if (req.PageStatus == 1)
+                #region 筛选条件
+                //var schemeContent = await .FirstOrDefaultAsync();
+                var SchemeContent = await UnitWork.Find<FlowScheme>(f => f.SchemeName.Equals("退料单审批")).Select(f => f.SchemeContent).FirstOrDefaultAsync();
+                SchemeContentJson schemeJson = JsonHelper.Instance.Deserialize<SchemeContentJson>(SchemeContent);
+                switch (req.PageType)
                 {
-                    Lines.Add(lineId);
-                }
-                else //if (req.PageStatus == 2)
-                {
-                    List<string> lineIds = new List<string>();
-                    var lineIdTo = lineId;
-                    foreach (var item in schemeJson.Lines)
-                    {
-                        if (schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to != null)
+                    case 1:
+                        if (loginContext.Roles.Any(r => r.Name.Equals("储运人员")))
                         {
-                            lineIdTo = schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to;
-                            lineIds.Add(lineIdTo);
+                            lineId = schemeJson.Nodes.Where(n => n.name.Equals("储运收货")).FirstOrDefault()?.id;
+                        }
+                        break;
+                    case 2:
+                        if (loginContext.Roles.Any(r => r.Name.Equals("物料品质")))
+                        {
+                            lineId = schemeJson.Nodes.Where(n => n.name.Equals("品质检验")).FirstOrDefault()?.id;
+                        }
+                        break;
+                    case 3:
+                        if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
+                        {
+                            lineId = schemeJson.Nodes.Where(n => n.name.Equals("总经理审批")).FirstOrDefault()?.id;
+                        }
+                        break;
+                    case 4:
+                        if (loginContext.Roles.Any(r => r.Name.Equals("仓库")))
+                        {
+                            lineId = schemeJson.Nodes.Where(n => n.name.Equals("仓库入库")).FirstOrDefault()?.id;
+                        }
+                        break;
+                    default:
+                        returnNotes = returnNotes.Where(r => r.CreateUserId.Equals(loginUser.Id));
+                        break;
+                }
+                if (!string.IsNullOrWhiteSpace(lineId) && req.PageType != null && req.PageType > 0)
+                {
+                    if (req.PageStatus == 1)
+                    {
+                        Lines.Add(lineId);
+                    }
+                    else //if (req.PageStatus == 2)
+                    {
+                        List<string> lineIds = new List<string>();
+                        var lineIdTo = lineId;
+                        foreach (var item in schemeJson.Lines)
+                        {
+                            if (schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to != null)
+                            {
+                                lineIdTo = schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to;
+                                lineIds.Add(lineIdTo);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                        if (req.PageStatus == 2)
+                        {
+                            Lines.AddRange(lineIds);
                         }
                         else
                         {
-                            break;
+                            Lines.Add(lineId);
+                            Lines.AddRange(lineIds);
                         }
                     }
-                    if (req.PageStatus == 2)
+                    if (Lines.Count > 0)
                     {
-                        Lines.AddRange(lineIds);
+                        flowInstanceIds = await UnitWork.Find<FlowInstance>(f => Lines.Contains(f.ActivityId)).Select(s => s.Id).ToListAsync();
+                        returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId));
+                    }
+                }
+                if (!string.IsNullOrWhiteSpace(req.Status))
+                {
+                    if (req.Status == "驳回")
+                    {
+                        flowInstanceIds.AddRange(await UnitWork.Find<FlowInstance>(f => f.IsFinish == FlowInstanceStatus.Rejected).Select(s => s.Id).ToListAsync());
                     }
                     else
                     {
-                        Lines.Add(lineId);
-                        Lines.AddRange(lineIds);
+                        flowInstanceIds.AddRange(await UnitWork.Find<FlowInstance>(f => f.ActivityName.Equals(req.Status)).Select(s => s.Id).ToListAsync());
                     }
-                }
-                if (Lines.Count > 0)
-                {
-                    flowInstanceIds = await UnitWork.Find<FlowInstance>(f => Lines.Contains(f.ActivityId)).Select(s => s.Id).ToListAsync();
-                    returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId));
-                }
-            }
-            if (!string.IsNullOrWhiteSpace(req.Status))
-            {
-                if (req.Status == "驳回")
-                {
-                    flowInstanceIds.AddRange(await UnitWork.Find<FlowInstance>(f => f.IsFinish == FlowInstanceStatus.Rejected).Select(s => s.Id).ToListAsync());
-                }
-                else
-                {
-                    flowInstanceIds.AddRange(await UnitWork.Find<FlowInstance>(f => f.ActivityName.Equals(req.Status)).Select(s => s.Id).ToListAsync());
-                }
-                if (req.Status == "开始")
-                {
-                    returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId) || string.IsNullOrEmpty(r.FlowInstanceId));
-                }
-                else
-                {
-                    returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId));
-                }
+                    if (req.Status == "开始")
+                    {
+                        returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId) || string.IsNullOrEmpty(r.FlowInstanceId));
+                    }
+                    else
+                    {
+                        returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId));
+                    }
 
+                }
+                #endregion
             }
-            #endregion
 
             var result = new TableData();
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ReturnNoteTypeName")).Select(u => new { u.Name, u.DtValue }).ToListAsync();

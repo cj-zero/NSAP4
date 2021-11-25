@@ -73,7 +73,7 @@ namespace OpenAuth.App.Material
 
             if (req.PageType==1)//我的提交
             {
-                query = query.WhereIf(loginContext.User.Account != Define.SYSTEM_USERNAME, c => c.CreateUserId == loginContext.User.Id);
+                query = query.WhereIf(loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(c => c.Name == "内部联络单-查看全部"), c => c.CreateUserId == loginContext.User.Id);
             }
             else if (req.PageType == 2)//待审批
             {
