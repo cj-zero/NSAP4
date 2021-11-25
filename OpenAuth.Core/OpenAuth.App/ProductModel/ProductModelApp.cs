@@ -650,7 +650,17 @@ namespace OpenAuth.App
 
             return result;
         }
-
-
+        /// <summary>
+        /// 产品选型视频介绍
+        /// </summary>
+        /// <returns></returns>
+        public List<TextVauleString> GetVideo( )
+        {
+            var data = new List<TextVauleString>();
+            data.Add(new TextVauleString { Id=1,Name= "CE-6000 模块机整机解析视频.mp4", Value= "https://file.neware.com.cn/CE-6000%20%E6%A8%A1%E5%9D%97%E6%9C%BA%E6%95%B4%E6%9C%BA%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%912020.12.10~1_converted.mp4.zip"});//CE-6000 模块机整机解析视频
+            data.Add(new TextVauleString { Id=2,Name= "CE-6000 模块机组装3D.mp4", Value= "https://file.neware.com.cn/CE-6000%20%E6%A8%A1%E5%9D%97%E6%9C%BA%E7%BB%84%E8%A3%853D%20Video%202020.8.24.mp4.zip"});//CE-6000 模块机组装3D
+            data.Add(new TextVauleString { Id=3,Name= "CE-6000n 模块机系列整机生产测试指导.pdf", Value= "https://file.neware.com.cn/CE-6000n%20%E6%A8%A1%E5%9D%97%E6%9C%BA%E7%B3%BB%E5%88%97%E6%95%B4%E6%9C%BA%E7%94%9F%E4%BA%A7%E6%B5%8B%E8%AF%95%E6%8C%87%E5%AF%BC.pdf" });//CE-6000n 模块机系列整机生产测试指导.pdf
+            return data;
+        }
     }
 }
