@@ -55,13 +55,24 @@ namespace OpenAuth.App.Workbench.Response
         public string Destination { get; set; }
 
         /// <summary>
+        /// 销售审核Id
+        /// </summary>
+        public string SalesManId { get; set; }
+
+        /// <summary>
         /// 销售审核
         /// </summary>
         public string SalesMan { get; set; }
+
+        /// <summary>
+        /// 售后审核Id
+        /// </summary>
+        public string SupervisorId { get; set; }
         /// <summary>
         /// 售后审核
         /// </summary>
         public string Supervisor { get; set; }
+
         /// <summary>
         /// 联系人电话
         /// </summary>

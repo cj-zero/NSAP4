@@ -48,8 +48,12 @@ namespace OpenAuth.App
         private readonly SignalRMessageApp _signalrmessage;
         private readonly ServiceFlowApp _serviceFlowApp;
         private readonly UserManagerApp _userManagerApp;
+
         public ServiceOrderApp(IUnitWork unitWork,
-             RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, SignalRMessageApp signalrmessage, ServiceFlowApp serviceFlowApp, UserManagerApp userManagerApp) : base(unitWork, auth)
+             RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp,
+             IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus,
+             ServiceOrderLogApp ServiceOrderLogApp, SignalRMessageApp signalrmessage, ServiceFlowApp serviceFlowApp,
+             UserManagerApp userManagerApp) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
             _revelanceApp = app;
@@ -134,6 +138,17 @@ namespace OpenAuth.App
             //        s.CompletionReport.Files = completionReportFiles.MapTo<List<UploadFileResp>>();
             //    }
             //});
+
+            //为职员加上部门前缀
+            var recepUserOrgInfo = await _userManagerApp.GetUserOrgInfo(result.RecepUserId);
+            result.RecepUserName = recepUserOrgInfo != null ? recepUserOrgInfo.OrgName + "-" + result.RecepUserName : result.RecepUserName;
+
+            var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(result.SalesManId);
+            result.SalesMan = salesManOrgInfo != null ? salesManOrgInfo.OrgName + "-" + result.SalesMan : result.SalesMan;
+
+            var superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(result.SupervisorId);
+            result.Supervisor = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName + "-" + result.Supervisor : result.Supervisor;
+
             return result;
         }
 
@@ -767,21 +782,17 @@ namespace OpenAuth.App
         /// 客服新建服务单
         /// </summary>
         /// <returns></returns>
-        public async Task<Infrastructure.Response> CustomerServiceAgentCreateOrder(CustomerServiceAgentCreateOrderReq req)
+        public async Task CustomerServiceAgentCreateOrder(CustomerServiceAgentCreateOrderReq req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            Infrastructure.Response result = new Infrastructure.Response();
-
             var loginUser = loginContext.User;
-            var loginUserOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).Select(c=>new UserResp { Name = "", Id = "", OrgId = c.Id, OrgName = c.Name, CascadeId = c.CascadeId }).FirstOrDefault();
             if (loginContext.User.Account == Define.USERAPP && req.AppUserId != null)
             {
                 loginUser = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(req.AppUserId)).Include(u => u.User).Select(u => u.User).FirstOrDefaultAsync();
-                loginUserOrg = await _userManagerApp.GetUserOrgInfo(loginUser.Id);
             }
             var d = await _businessPartnerApp.GetDetails(req.TerminalCustomerId.ToUpper());
             var obj = req.MapTo<ServiceOrder>();
@@ -828,16 +839,8 @@ namespace OpenAuth.App
             }
             var AppUser = await UnitWork.Find<AppUserMap>(s => s.UserID == obj.SupervisorId).Include(s => s.User).FirstOrDefaultAsync();
             var AppUserId = await UnitWork.Find<AppUserMap>(s => s.UserID == loginUser.Id).Select(s => s.AppUserId).FirstOrDefaultAsync();
-            var isHasNum = false;
             obj.ServiceWorkOrders.ForEach(s =>
             {
-                if (s.ManufacturerSerialNumber== "无序列号" && loginUserOrg.OrgName!="S19")
-                {
-                    result.Code = 500;
-                    result.Message = "非S19呼叫中心人员，不允许提交无序列号的呼叫。";
-                    isHasNum = true;
-                    //throw new Exception("");
-                }
                 s.SubmitDate = DateTime.Now;
                 s.SubmitUserId = loginUser.Id;
                 if (req.IsSend != null && (bool)req.IsSend)
@@ -871,8 +874,6 @@ namespace OpenAuth.App
                 }
                 #endregion
             });
-            if (isHasNum) return result;
-
             var e = await UnitWork.AddAsync<ServiceOrder, int>(obj);
             await UnitWork.SaveAsync();
             var pictures = req.Pictures.MapToList<ServiceOrderPicture>();
@@ -912,7 +913,6 @@ namespace OpenAuth.App
                 });
                 await _signalrmessage.SendSystemMessage(SignalRSendType.User, $"系统已自动分配了{assignedWorks.Count()}个新的售后服务，请尽快处理", new List<string>() { obj.Supervisor });
             }
-            return result;
         }
         /// <summary>
         /// 工程部新建服务单
@@ -1296,7 +1296,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<dynamic> GetCustomerNewestOrders(string code)
         {
-            var newestOrder = await UnitWork.Find<ServiceOrder>(s => s.CustomerId.Equals(code) && !string.IsNullOrWhiteSpace(s.CreateTime.ToString())).Include(s => s.ServiceWorkOrders).OrderByDescending(s => s.CreateTime)
+            var newestOrder = await UnitWork.Find<ServiceOrder>(s => s.CustomerId.Equals(code)).Include(s => s.ServiceWorkOrders).OrderByDescending(s => s.CreateTime)
                 .Select(s => new
                 {
                     s.Id,
@@ -1318,7 +1318,7 @@ namespace OpenAuth.App
                     Day = 5
                 })
                 .Skip(0).Take(10).ToListAsync();
-            var newestNotCloseOrder = await UnitWork.Find<ServiceOrder>(s => s.CustomerId.Equals(code) && s.Status == 2 && !string.IsNullOrWhiteSpace(s.CreateTime.ToString()) && s.ServiceWorkOrders.Any(o => o.Status < 7)).Include(s => s.ServiceWorkOrders).OrderByDescending(s => s.CreateTime)
+            var newestNotCloseOrder = await UnitWork.Find<ServiceOrder>(s => s.CustomerId.Equals(code) && s.Status == 2 && s.ServiceWorkOrders.Any(o => o.Status < 7)).Include(s => s.ServiceWorkOrders).OrderByDescending(s => s.CreateTime)
                 .Select(s => new
                 {
                     s.Id,
@@ -1965,7 +1965,6 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceWorkOrders.Any(a => a.ManufacturerSerialNumber.Contains(req.QryManufSN)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.RecepUserName.Contains(req.QryRecepUser))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.QryVestInOrg), q => q.VestInOrg == Convert.ToInt32(req.QryVestInOrg))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ServiceWorkOrders.Any(a => a.ProblemTypeId.Equals(req.QryProblemType)))
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
@@ -2035,12 +2034,6 @@ namespace OpenAuth.App
                     var FromThemeJson = JsonHelper.Instance.Deserialize<List<FromThemeJsonResp>>(workOrder?.FromTheme);
                     string FromTheme = "";
                     FromThemeJson.ForEach(f => FromTheme += f.description);
-                    double interval = 0;
-                    if (!string.IsNullOrWhiteSpace(workOrder.CreateTime.ToString()) && !string.IsNullOrWhiteSpace(workOrder.CompleteDate.ToString()))
-                    {
-                        TimeSpan ts = workOrder.CompleteDate.Value.Subtract(workOrder.CreateTime.Value);
-                        interval = Math.Round(ts.TotalHours, 2);
-                    }
                     list.Add(new ServiceOrderExcelDto
                     {
                         U_SAP_ID = serviceOrder.U_SAP_ID,
@@ -2074,8 +2067,6 @@ namespace OpenAuth.App
                         WorkOrderStatus = statusDic.GetValueOrDefault(workOrder.Status.Value),
                         CurrentUser = workOrder.CurrentUser,
                         SubmitDate = workOrder.CreateTime,
-                        CompleteDate = workOrder.CompleteDate,
-                        TimeInterval = interval,
                         BookingDate = workOrder.BookingDate,
                         VisitTime = workOrder.VisitTime,
                         LiquidationDate = workOrder.LiquidationDate,
@@ -2824,9 +2815,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            if (string.IsNullOrWhiteSpace(req.Province) && string.IsNullOrWhiteSpace(req.City)) throw new Exception("地址错误，请核对地址后重新上传。");
-            if (string.IsNullOrWhiteSpace(req.Addr) ||  string.IsNullOrWhiteSpace(req.Area) ) throw new Exception("地址错误，请核对地址后重新上传。");
-
+            if (string.IsNullOrWhiteSpace(req.Addr) || string.IsNullOrWhiteSpace(req.City) || string.IsNullOrWhiteSpace(req.Area) || string.IsNullOrWhiteSpace(req.Province))  throw new Exception("地址错误，请核对地址后重新上传。");
             var obj = req.MapTo<ServiceOrder>();
             obj.CustomerId = obj.CustomerId.ToUpper();
             obj.CreateTime = DateTime.Now;

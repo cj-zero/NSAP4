@@ -32,8 +32,10 @@ namespace OpenAuth.App
         private readonly PendingApp _pending;
         private readonly WorkbenchApp _workbenchApp;
         private readonly OrgManagerApp _orgApp;
+        private readonly UserManagerApp _userManagerApp;
 
-        public ReturnNoteApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, PendingApp pending, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth, ICapPublisher capBus, OrgManagerApp orgApp) : base(unitWork, auth)
+        public ReturnNoteApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, PendingApp pending, 
+            ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth, ICapPublisher capBus, OrgManagerApp orgApp,UserManagerApp userManagerApp) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
@@ -43,6 +45,7 @@ namespace OpenAuth.App
             _workbenchApp = workbenchApp;
             _pending = pending;
             _orgApp = orgApp;
+            _userManagerApp = userManagerApp;
         }
 
         #region app和erp通用
@@ -632,6 +635,9 @@ namespace OpenAuth.App
             }
             //.Include(r => r.ReturnnoteOperationHistorys)
             var returnNotes = await UnitWork.Find<ReturnNote>(r => r.Id == req.returnNoteId).Include(r => r.ReturnNotePictures).Include(r => r.ReturnNoteProducts).ThenInclude(r => r.ReturnNoteMaterials).ThenInclude(r => r.ReturnNoteMaterialPictures).FirstOrDefaultAsync();
+            var createrOrgInfo = await _userManagerApp.GetUserOrgInfo(returnNotes.CreateUserId);
+            returnNotes.CreateUser = createrOrgInfo != null ? createrOrgInfo.OrgName + "-" + returnNotes.CreateUser : returnNotes.CreateUser;
+
             var History = await UnitWork.Find<FlowInstanceOperationHistory>(f => f.InstanceId.Equals(returnNotes.FlowInstanceId)).OrderBy(f => f.CreateDate).ToListAsync();
             List<ReturnNoteMaterial> returnnoteMaterials = new List<ReturnNoteMaterial>();
             returnNotes.ReturnNoteProducts.ForEach(r => { returnnoteMaterials.AddRange(r.ReturnNoteMaterials); });
@@ -707,6 +713,12 @@ namespace OpenAuth.App
             }
             var qoutationReq = await _pending.QuotationDetails(quotationObj.Id);
             var serviceOrders = await _pending.ServiceOrderDetails(returnNotes.ServiceOrderId, returnNotes.CreateUserId);
+            //为职员加上部门前缀
+            var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrders.SalesManId);
+            serviceOrders.SalesMan = salesManOrgInfo != null ? salesManOrgInfo.OrgName + "-" + serviceOrders.SalesMan : serviceOrders.SalesMan;
+            var superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrders.SupervisorId);
+            serviceOrders.Supervisor = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName + "-" + serviceOrders.Supervisor : serviceOrders.Supervisor;
+
             var status = flowInstanceObj?.IsFinish == FlowInstanceStatus.Rejected ? "驳回" : flowInstanceObj?.ActivityName == null ? "开始" : flowInstanceObj?.ActivityName;
             var isPermission = IsPermission(status);
             returnNotes.ReturnNoteProducts.ForEach(c => {
