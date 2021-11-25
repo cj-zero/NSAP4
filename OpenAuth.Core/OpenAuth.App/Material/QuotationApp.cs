@@ -1348,7 +1348,7 @@ namespace OpenAuth.App.Material
                             await UnitWork.SaveAsync();
                             quotationOperationHistory.Action = "个代结算系统自动提交";
                             #region 报价单同步到SAP，ERP3.0
-                            await _capBus.PublishAsync("Serve.SellOrder.Create", QuotationObj.Id);
+                            //await _capBus.PublishAsync("Serve.SellOrder.Create", QuotationObj.Id);
                             #endregion
                             Message = QuotationObj.Id.ToString();
                         }
@@ -2845,13 +2845,14 @@ namespace OpenAuth.App.Material
             var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"Quotationheader{model.Id}.html");
             System.IO.File.WriteAllText(tempUrl, text);
             var footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Quotationfooter.html");
+            var specialMaterials = new string[] { "S111-SERVICE-GSF-S", "S111-SERVICE-GSF-JH", "S111-SERVICE-CLF" }; //上门维修费、寄回维修费、差旅费数量显示为1,单价等于总价
             var materials = model.QuotationMergeMaterials.Select(q => new PrintSalesOrderResp
             {
                 MaterialCode = q.MaterialCode,
                 MaterialDescription = q.MaterialDescription,
-                Count = q.Count.ToString(),
+                Count = specialMaterials.Contains(q.MaterialCode) ? "1" : q.Count.ToString(),
                 Unit = q.Unit,
-                SalesPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.DiscountPrices,
+                SalesPrice = specialMaterials.Contains(q.MaterialCode) ? (decimal)q.TotalPrice : (q.MaterialType == 1 ? 0.00M : (decimal)q.DiscountPrices),
                 TotalPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.TotalPrice
             }).OrderBy(q => q.MaterialCode).ToList();
             var datas = await ExportAllHandler.Exporterpdf(materials, "PrintQuotation.cshtml", pdf =>

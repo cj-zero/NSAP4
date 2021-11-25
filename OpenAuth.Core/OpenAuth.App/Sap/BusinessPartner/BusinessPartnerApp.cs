@@ -101,10 +101,10 @@ namespace OpenAuth.App.Sap.BusinessPartner
             List<string> carCode = new List<string>();
             if (!string.IsNullOrWhiteSpace(req.ManufSN))
             {
-                carCode = await UnitWork.Find<OINS>(null).Where(o => o.manufSN.Contains(req.ManufSN)).Select(o => o.customer).ToListAsync();
+                carCode = await UnitWork.Find<OINS>(null).Where(o => o.manufSN.Contains(req.ManufSN)).Select(o => o.customer).Distinct().ToListAsync();
                 if (carCode.Count == 0)
                 {
-                    carCode = await UnitWork.Find<ServiceOins>(s => s.manufSN.Contains(req.ManufSN)).Select(s => s.customer).ToListAsync();
+                    carCode = await UnitWork.Find<ServiceOins>(s => s.manufSN.Contains(req.ManufSN)).Select(s => s.customer).Distinct().ToListAsync();
                 }
 
             }
@@ -113,12 +113,12 @@ namespace OpenAuth.App.Sap.BusinessPartner
                          .WhereIf(!string.IsNullOrWhiteSpace(req.slpName), q => q.b.SlpName.Contains(req.slpName));
             if (req.PageType == 2)
             {
-                var cardCodes = await UnitWork.Find<SharingPartner>(null).Select(s => s.CardCode).ToListAsync();
+                var cardCodes = await UnitWork.Find<SharingPartner>(null).Select(s => s.CardCode).Distinct().ToListAsync();
                 query = query.Where(q => cardCodes.Contains(q.a.CardCode));
             }
             else if (req.PageType == 3)
             {
-                var cardCodes = await UnitWork.Find<SharingPartner>(null).Select(s => s.CardCode).ToListAsync();
+                var cardCodes = await UnitWork.Find<SharingPartner>(null).Select(s => s.CardCode).Distinct().ToListAsync();
                 query = query.Where(q => !cardCodes.Contains(q.a.CardCode));
             }
             var query2 = await query.Select(q => new
@@ -158,7 +158,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
             }).ToListAsync();
             if (loginUser.Account != Define.SYSTEM_USERNAME && !loginRoles.Any(c => c.Name == "呼叫中心") && loginUser.Account!= "luolingzhi")
             {
-                var cardCodes = await UnitWork.Find<SharingPartner>(null).Select(s => s.CardCode).ToListAsync();
+                var cardCodes = await UnitWork.Find<SharingPartner>(null).Select(s => s.CardCode).Distinct().ToListAsync();
                 if (loginRoles.Any(r => r.Name == "销售员") && loginRoles.Any(r => r.Name == "售后技术员"))
                 {
                     var orgIds = loginOrgs.Select(o => o.Id).ToList();

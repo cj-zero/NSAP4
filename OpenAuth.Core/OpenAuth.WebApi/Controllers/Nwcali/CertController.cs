@@ -96,7 +96,7 @@ namespace OpenAuth.WebApi.Controllers
                 var assetNoRow = sheet.GetRow(7);
                 baseInfo.AssetNo = assetNoRow.GetCell(1).StringCellValue;
                 var siteCodeRow = sheet.GetRow(8);
-                baseInfo.SiteCode = "Electrical Lab";//siteCodeRow.GetCell(1).StringCellValue;
+                baseInfo.SiteCode = siteCodeRow.GetCell(1).StringCellValue; //"Electrical Lab";
                 var temperatureRow = sheet.GetRow(9);
                 baseInfo.Temperature = temperatureRow.GetCell(1).StringCellValue;
                 var relativeHumidityRow = sheet.GetRow(10);
@@ -120,6 +120,7 @@ namespace OpenAuth.WebApi.Controllers
                 var etalonsCharacteristicsRow = sheet.GetRow(19);
                 var etalonsAssetNoRow = sheet.GetRow(20);
                 var etalonsCertificateNoRow = sheet.GetRow(22);
+                var etalonsCalibrationEntity = sheet.GetRow(21);
                 var etalonsDueDateRow = sheet.GetRow(23);
                 for (int i = 1; i < etalonsNameRow.LastCellNum; i++)
                 {
@@ -133,7 +134,8 @@ namespace OpenAuth.WebApi.Controllers
                             Characteristics = etalonsCharacteristicsRow.GetCell(i).StringCellValue,
                             AssetNo = etalonsAssetNoRow.GetCell(i).StringCellValue,
                             CertificateNo = etalonsCertificateNoRow.GetCell(i).StringCellValue,
-                            DueDate = etalonsDueDateRow.GetCell(i).StringCellValue
+                            DueDate = etalonsDueDateRow.GetCell(i).StringCellValue,
+                            CalibrationEntity = etalonsCalibrationEntity.GetCell(i).StringCellValue
                         });
                     }
                     catch
@@ -503,6 +505,53 @@ namespace OpenAuth.WebApi.Controllers
             return new NotFoundResult();
         }
 
+        /// <summary>
+        /// CNAS证书下载
+        /// </summary>
+        /// <param name="serialNumber"></param>
+        /// <param name="sign"></param>
+        /// <param name="timespan"></param>
+        /// <returns></returns>
+        [ServiceFilter(typeof(CertAuthFilter))]
+        [HttpGet]
+        public async Task<IActionResult> DownloadCNASCertPdf(string serialNumber, string sign, string timespan)
+        {
+            var baseInfo = await _nwcaliCertApp.GetInfo(serialNumber);
+            if (baseInfo != null)
+            {
+                //if (!string.IsNullOrWhiteSpace(baseInfo.PdfPath))
+                //{
+                //    var filestream = new FileStream(baseInfo.PdfPath, FileMode.Open);
+                //    return File(filestream, "application/pdf");
+                //}
+                var model = await BuildModel(baseInfo);
+                //获取委托单
+                var entrustment = await _certinfoApp.GetEntrustment(model.CalibrationCertificate.TesterSn);
+                model.CalibrationCertificate.EntrustedUnit = entrustment?.CertUnit;
+                model.CalibrationCertificate.EntrustedUnitAdress = entrustment?.CertCountry + entrustment?.CertProvince + entrustment?.CertCity + entrustment?.CertAddress;
+                model.CalibrationCertificate.EntrustedDate = !string.IsNullOrWhiteSpace(entrustment?.EntrustedDate.ToString()) ? entrustment?.EntrustedDate.Value.ToString("yyyy年MM月dd日") : "";
+                model.CalibrationCertificate.CalibrationDate = DateTime.Parse(model.CalibrationCertificate.CalibrationDate).ToString("yyyy年MM月dd日");
+
+                var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "CNAS Header.html");
+                var text = System.IO.File.ReadAllText(url);
+                text = text.Replace("@Model.Data.BarCode", model.BarCode);
+                var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"Header{Guid.NewGuid()}.html");
+                System.IO.File.WriteAllText(tempUrl, text);
+                var footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "CNAS Footer.html");
+                var datas = await ExportAllHandler.Exporterpdf(model, "Calibration Certificate CNAS.cshtml", pdf =>
+                {
+                    pdf.IsWriteHtml = true;
+                    pdf.PaperKind = PaperKind.A4;
+                    pdf.Orientation = Orientation.Portrait;
+                    pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                    pdf.FooterSettings = new FooterSettings() { FontSize = 6, Right = "Page [page] of [toPage] ", Line = false, Spacing = 2.812, HtmUrl = footerUrl };
+                });
+                System.IO.File.Delete(tempUrl);
+                return File(datas, "application/pdf");
+            }
+            return new NotFoundResult();
+        }
+
         [ServiceFilter(typeof(CertAuthFilter))]
         [HttpGet]
         public async Task<IActionResult> GetCertNoList(string serialNumber, string sign, string timespan)
@@ -569,7 +618,8 @@ namespace OpenAuth.WebApi.Controllers
                     Characterisics = baseInfo.Etalons[i].Characteristics,
                     AssetNo = baseInfo.Etalons[i].AssetNo,
                     CertificateNo = baseInfo.Etalons[i].CertificateNo,
-                    DueDate = DateStringConverter(baseInfo.Etalons[i].DueDate)
+                    DueDate = DateStringConverter(baseInfo.Etalons[i].DueDate),
+                    CalibrationEntity= baseInfo.Etalons[i].CalibrationEntity
                 });
             }
             #endregion
