@@ -47,8 +47,13 @@ namespace OpenAuth.App
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
         private readonly SignalRMessageApp _signalrmessage;
         private readonly ServiceFlowApp _serviceFlowApp;
+        private readonly UserManagerApp _userManagerApp;
+
         public ServiceOrderApp(IUnitWork unitWork,
-             RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, SignalRMessageApp signalrmessage, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
+             RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp,
+             IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus,
+             ServiceOrderLogApp ServiceOrderLogApp, SignalRMessageApp signalrmessage, ServiceFlowApp serviceFlowApp,
+             UserManagerApp userManagerApp) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
             _revelanceApp = app;
@@ -59,6 +64,7 @@ namespace OpenAuth.App
             _ServiceOrderLogApp = ServiceOrderLogApp;
             _signalrmessage = signalrmessage;
             _serviceFlowApp = serviceFlowApp;
+            _userManagerApp = userManagerApp;
         }
 
         #region<<nSAP System>>
@@ -132,6 +138,17 @@ namespace OpenAuth.App
             //        s.CompletionReport.Files = completionReportFiles.MapTo<List<UploadFileResp>>();
             //    }
             //});
+
+            //为职员加上部门前缀
+            var recepUserOrgInfo = await _userManagerApp.GetUserOrgInfo(result.RecepUserId);
+            result.RecepUserName = recepUserOrgInfo != null ? recepUserOrgInfo.OrgName + "-" + result.RecepUserName : result.RecepUserName;
+
+            var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(result.SalesManId);
+            result.SalesMan = salesManOrgInfo != null ? salesManOrgInfo.OrgName + "-" + result.SalesMan : result.SalesMan;
+
+            var superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(result.SupervisorId);
+            result.Supervisor = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName + "-" + result.Supervisor : result.Supervisor;
+
             return result;
         }
 
