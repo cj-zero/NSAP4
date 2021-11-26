@@ -307,7 +307,7 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
                         Image = Path.Combine(Directory.GetCurrentDirectory() + type.Image),
                         Weight = productModelDetails.Weight,
                         VoltageAccuracy = productModelSelectionInfo.VoltAccurack
-                                
+
 
                     };
                     SpireDocWord.GetDocument(templatePath);
@@ -445,6 +445,28 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
                 }
                 result.Result = host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + productModelSelection.DeviceCoding + "-技术规格协议书.docx";
 
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        ///CE-6000宣传视频下载
+        /// </summary>
+        [HttpGet]
+        [Route("GetVideo")]
+        public async Task<Response<List<TextVauleString>>> GetVideo()
+        {
+
+            var result = new Response<List<TextVauleString>>();
+            try
+            {
+                result.Result = _productModelApp.GetVideo();
             }
             catch (Exception ex)
             {

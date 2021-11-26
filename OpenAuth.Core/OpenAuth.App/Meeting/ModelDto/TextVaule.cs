@@ -15,4 +15,19 @@ namespace OpenAuth.App.Meeting.ModelDto
         /// </summary>
         public string Text { get; set; }
     }
+    public class TextVauleString
+    {
+        /// <summary>
+        /// Id
+        /// </summary>
+        public int Id { get; set; }
+        /// <summary>
+        /// Name
+        /// </summary>
+        public string Name { get; set; }
+        /// <summary>
+        /// Value
+        /// </summary>
+        public string Value { get; set; }
+    }
 }

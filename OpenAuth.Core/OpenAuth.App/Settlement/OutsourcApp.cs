@@ -32,6 +32,8 @@ namespace OpenAuth.App
         private readonly WorkbenchApp _workbenchApp;
         private readonly PendingApp _pendingApp;
         private readonly QuotationApp _quotationApp;
+        private readonly UserManagerApp _userManagerApp;
+
         /// <summary>
         /// 加载列表
         /// </summary>
@@ -380,6 +382,14 @@ namespace OpenAuth.App
                     OutsourcExpenseOrgs = expenseOrgs.Where(e => e.ExpenseId.Equals(o.Id)).ToList()
                 });
                 var serviceOrderObj = await UnitWork.Find<ServiceOrder>(s => s.Id == outsourcObj.OutsourcExpenses.FirstOrDefault().ServiceOrderId).Include(s => s.ServiceWorkOrders).FirstOrDefaultAsync();
+                //为职员加上部门前缀
+                var recepUserOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrderObj.RecepUserId);
+                serviceOrderObj.RecepUserName = recepUserOrgInfo != null ? recepUserOrgInfo.OrgName + "-" + serviceOrderObj.RecepUserName : serviceOrderObj.RecepUserName;
+                var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrderObj.SalesManId);
+                serviceOrderObj.SalesMan = salesManOrgInfo != null ? salesManOrgInfo.OrgName + "-" + serviceOrderObj.SalesMan : serviceOrderObj.SalesMan;
+                var superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrderObj.SupervisorId);
+                serviceOrderObj.Supervisor = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName + "-" + serviceOrderObj.Supervisor : serviceOrderObj.Supervisor;
+
                 var serviceDailyReportList = await UnitWork.Find<ServiceDailyReport>(s => outsourcObj.OutsourcExpenses.FirstOrDefault().ServiceOrderId == s.ServiceOrderId).ToListAsync();
                 var ocrd = await UnitWork.Find<OpenAuth.Repository.Domain.Sap.OCRD>(c => c.CardCode == serviceOrderObj.TerminalCustomerId).Select(c => new { c.Balance }).FirstOrDefaultAsync();
                 var relevance = await UnitWork.Find<Relevance>(c => c.Key == Define.USERORG && c.FirstId == outsourcObj.CreateUserId).Select(c => c.SecondId).ToListAsync();
@@ -1267,13 +1277,15 @@ namespace OpenAuth.App
         //}
         #endregion
 
-        public OutsourcApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, PendingApp pendingApp, WorkbenchApp workbenchApp, QuotationApp quotationApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth) : base(unitWork, auth)
+        public OutsourcApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, PendingApp pendingApp, WorkbenchApp workbenchApp,
+            QuotationApp quotationApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth, UserManagerApp userManagerApp) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _workbenchApp = workbenchApp;
             _quotationApp = quotationApp;
             _pendingApp = pendingApp;
+            _userManagerApp = userManagerApp;
         }
     }
 }
