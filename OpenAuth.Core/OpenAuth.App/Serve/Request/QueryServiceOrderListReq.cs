@@ -17,7 +17,10 @@ namespace OpenAuth.App.Request
         /// 呼叫状态查询条件
         /// </summary>
         public string QryState { get; set; }
-
+        /// <summary>
+        /// 呼叫状态查询条件多选
+        /// </summary>
+        public List<int> QryStateList { get; set; }
         /// <summary>
         /// 客户查询条件
         /// </summary>

@@ -140,14 +140,14 @@ namespace OpenAuth.App
             //});
 
             //为职员加上部门前缀
-            var recepUserOrgInfo = await _userManagerApp.GetUserOrgInfo(result.RecepUserId);
-            result.RecepUserName = recepUserOrgInfo != null ? recepUserOrgInfo.OrgName + "-" + result.RecepUserName : result.RecepUserName;
+            //var recepUserOrgInfo = await _userManagerApp.GetUserOrgInfo(result.RecepUserId);
+            //result.RecepUserName = recepUserOrgInfo != null ? recepUserOrgInfo.OrgName + "-" + result.RecepUserName : result.RecepUserName;
 
-            var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(result.SalesManId);
-            result.SalesMan = salesManOrgInfo != null ? salesManOrgInfo.OrgName + "-" + result.SalesMan : result.SalesMan;
+            //var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(result.SalesManId);
+            //result.SalesMan = salesManOrgInfo != null ? salesManOrgInfo.OrgName + "-" + result.SalesMan : result.SalesMan;
 
-            var superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(result.SupervisorId);
-            result.Supervisor = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName + "-" + result.Supervisor : result.Supervisor;
+            //var superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(result.SupervisorId);
+            //result.Supervisor = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName + "-" + result.Supervisor : result.Supervisor;
 
             return result;
         }
@@ -1124,7 +1124,8 @@ namespace OpenAuth.App
 
             var ids = await UnitWork.Find<ServiceWorkOrder>(null)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.Status.Equals(Convert.ToInt32(req.QryState)))
+                //.WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.Status.Equals(Convert.ToInt32(req.QryState)))
+                .WhereIf(req.QryStateList != null && req.QryStateList?.Count() > 0, q => req.QryStateList.Contains(q.Status.Value))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ManufacturerSerialNumber.Contains(req.QryManufSN))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ProblemTypeId.Equals(req.QryProblemType))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromType), q => q.FromType.Equals(Convert.ToInt32(req.QryFromType)))
