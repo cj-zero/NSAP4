@@ -66,7 +66,9 @@ namespace OpenAuth.App.Workbench
             {
                 ServiceOrderId = s.Id.ToString(),
                 ServiceOrderSapId = s.U_SAP_ID.ToString(),
+                SalesManId = s.SalesManId,
                 SalesMan = s.SalesMan,
+                SupervisorId = s.SupervisorId,
                 Supervisor = s.Supervisor,
                 NewestContacter = s.NewestContacter,
                 NewestContactTel = s.NewestContactTel,
@@ -583,6 +585,12 @@ namespace OpenAuth.App.Workbench
             ServiceOrderResp serviceOrderDetails = null;
             if (pendingObj.ServiceOrderId!=0) 
                 serviceOrderDetails = await ServiceOrderDetails(pendingObj.ServiceOrderId, pendingObj.PetitionerId);
+            //为职员加上部门抬头
+            //var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrderDetails.SalesManId);
+            //serviceOrderDetails.SalesMan = salesManOrgInfo != null ? salesManOrgInfo.OrgName + "-" + serviceOrderDetails.SalesMan : serviceOrderDetails.SalesMan;
+            //var superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrderDetails.SupervisorId);
+            //serviceOrderDetails.Supervisor = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName + "-" + serviceOrderDetails.Supervisor : serviceOrderDetails.Supervisor;
+
             List<QuotationDetailsResp> quotationDetails = new List<QuotationDetailsResp>();
             List<ReturnnoteDetailsResp> returnnoteDetails = new List<ReturnnoteDetailsResp>();
             OutsourcDetailsResp outsourcDetails = null;
@@ -660,6 +668,7 @@ namespace OpenAuth.App.Workbench
                 reimburseDetails,
                 internalcontactDetails
             };
+
             return reult;
         }
 

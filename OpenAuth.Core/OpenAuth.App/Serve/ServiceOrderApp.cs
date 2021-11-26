@@ -48,8 +48,12 @@ namespace OpenAuth.App
         private readonly SignalRMessageApp _signalrmessage;
         private readonly ServiceFlowApp _serviceFlowApp;
         private readonly UserManagerApp _userManagerApp;
+
         public ServiceOrderApp(IUnitWork unitWork,
-             RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, SignalRMessageApp signalrmessage, ServiceFlowApp serviceFlowApp, UserManagerApp userManagerApp) : base(unitWork, auth)
+             RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp,
+             IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus,
+             ServiceOrderLogApp ServiceOrderLogApp, SignalRMessageApp signalrmessage, ServiceFlowApp serviceFlowApp,
+             UserManagerApp userManagerApp) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
             _revelanceApp = app;
@@ -134,6 +138,17 @@ namespace OpenAuth.App
             //        s.CompletionReport.Files = completionReportFiles.MapTo<List<UploadFileResp>>();
             //    }
             //});
+
+            //为职员加上部门前缀
+            //var recepUserOrgInfo = await _userManagerApp.GetUserOrgInfo(result.RecepUserId);
+            //result.RecepUserName = recepUserOrgInfo != null ? recepUserOrgInfo.OrgName + "-" + result.RecepUserName : result.RecepUserName;
+
+            //var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(result.SalesManId);
+            //result.SalesMan = salesManOrgInfo != null ? salesManOrgInfo.OrgName + "-" + result.SalesMan : result.SalesMan;
+
+            //var superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(result.SupervisorId);
+            //result.Supervisor = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName + "-" + result.Supervisor : result.Supervisor;
+
             return result;
         }
 
@@ -1109,7 +1124,8 @@ namespace OpenAuth.App
 
             var ids = await UnitWork.Find<ServiceWorkOrder>(null)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.Status.Equals(Convert.ToInt32(req.QryState)))
+                //.WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.Status.Equals(Convert.ToInt32(req.QryState)))
+                .WhereIf(req.QryStateList != null && req.QryStateList?.Count() > 0, q => req.QryStateList.Contains(q.Status.Value))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ManufacturerSerialNumber.Contains(req.QryManufSN))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ProblemTypeId.Equals(req.QryProblemType))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromType), q => q.FromType.Equals(Convert.ToInt32(req.QryFromType)))
@@ -1956,6 +1972,10 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
 
+            List<string> techName = new List<string>();
+            if (!string.IsNullOrWhiteSpace(req.QryTechName))
+                techName = req.QryTechName.Split(",").ToList();
+
             var query = UnitWork.Find<ServiceOrder>(null)
                 .Include(s => s.ServiceWorkOrders).ThenInclude(c => c.ProblemType)
                 .Include(a => a.ServiceWorkOrders).ThenInclude(b => b.Solution)
@@ -1966,12 +1986,16 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceWorkOrders.Any(a => a.ManufacturerSerialNumber.Contains(req.QryManufSN)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.RecepUserName.Contains(req.QryRecepUser))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryVestInOrg), q => q.VestInOrg == Convert.ToInt32(req.QryVestInOrg))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.Supervisor.Contains(req.QrySupervisor))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryAllowOrNot.ToString()), q => q.AllowOrNot == req.QryAllowOrNot)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QrySalesMan), q => q.SalesMan == req.QrySalesMan)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ServiceWorkOrders.Any(a => a.ProblemTypeId.Equals(req.QryProblemType)))
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromType), q => q.ServiceWorkOrders.Any(a => a.FromType.Equals(Convert.ToInt32(req.QryFromType))))
                 .WhereIf(req.CompleteDate != null, q => q.ServiceWorkOrders.Any(s => s.CompleteDate > req.CompleteDate))
                 .WhereIf(req.EndCompleteDate != null, q => q.ServiceWorkOrders.Any(s => s.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1)))
+                .WhereIf(techName.Count > 0, q => q.ServiceWorkOrders.Any(s=> techName.Contains(s.CurrentUser)))
                 .Where(q => q.Status == 2);
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))

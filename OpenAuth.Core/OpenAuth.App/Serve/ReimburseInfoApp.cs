@@ -744,6 +744,14 @@ namespace OpenAuth.App
             var catetory = orgrole.RoleIdentity;
 
             var serviceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id == ReimburseResp.ServiceOrderId).Include(s => s.ServiceWorkOrders).FirstOrDefaultAsync();
+            //为职员加上部门前缀
+            //var recepUserOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrders.RecepUserId);
+            //serviceOrders.RecepUserName = recepUserOrgInfo != null ? recepUserOrgInfo.OrgName + "-" + serviceOrders.RecepUserName : serviceOrders.RecepUserName;
+            //var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrders.SalesManId);
+            //serviceOrders.SalesMan = salesManOrgInfo != null ? salesManOrgInfo.OrgName + "-" + serviceOrders.SalesMan : serviceOrders.SalesMan;
+            //var superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrders.SupervisorId);
+            //serviceOrders.Supervisor = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName + "-" + serviceOrders.Supervisor : serviceOrders.Supervisor;
+
             var quotationIds = await UnitWork.Find<Quotation>(q => q.ServiceOrderId == ReimburseResp.ServiceOrderId && q.CreateUserId.Equals(ReimburseResp.CreateUserId) && q.QuotationStatus == 11).Select(q => q.Id).ToListAsync();
             List<AddOrUpdateQuotationReq> quotations = new List<AddOrUpdateQuotationReq>();
             foreach (var item in quotationIds)
