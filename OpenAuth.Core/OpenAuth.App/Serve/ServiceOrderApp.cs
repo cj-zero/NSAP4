@@ -4323,6 +4323,34 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 获取技术员服务单是否有日报
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetTechnicianIsHasDailyReport(GetTechnicianDailyReportReq req)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.TechnicianId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            var dailyReports = await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId).FirstOrDefaultAsync();
+
+            result.Data = true;
+            if (dailyReports == null)
+                result.Data = false;
+
+            return result;
+        }
+
+        /// <summary>
         /// 判断有服务单的技术员当天是否填写日报
         /// </summary>
         /// <param name="TechnicianId"></param>
