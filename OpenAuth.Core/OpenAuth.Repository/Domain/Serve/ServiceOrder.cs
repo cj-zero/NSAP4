@@ -259,6 +259,22 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("是否允许服务")]
         public int AllowOrNot { get; set; }
+
+        /// <summary>
+        /// 接单员部门
+        /// </summary>
+        [NotMapped]
+        public string RecepUserDept { get; set; }
+        /// <summary>
+        /// 售后审核部门
+        /// </summary>
+        [NotMapped]
+        public string SalesManDept { get; set; }
+        /// <summary>
+        /// 业务员部门
+        /// </summary>
+        [NotMapped]
+        public string SuperVisorDept { get; set; }
         
         /// <summary>
         /// 服务单关联的工单

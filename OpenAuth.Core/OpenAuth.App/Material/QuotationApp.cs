@@ -811,12 +811,12 @@ namespace OpenAuth.App.Material
 
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(Quotations.ServiceOrderId)).Include(s => s.ServiceWorkOrders).FirstOrDefaultAsync();
             //为职员加上部门前缀
-            //var recepUserOrgInfo = await _userManagerApp.GetUserOrgInfo(ServiceOrders.RecepUserId);
-            //ServiceOrders.RecepUserName = recepUserOrgInfo != null ? recepUserOrgInfo.OrgName + "-" + ServiceOrders.RecepUserName : ServiceOrders.RecepUserName;
-            //var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(ServiceOrders.SalesManId);
-            //ServiceOrders.SalesMan = salesManOrgInfo != null ? salesManOrgInfo.OrgName + "-" + ServiceOrders.SalesMan : ServiceOrders.SalesMan;
-            //var superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(ServiceOrders.SupervisorId);
-            //ServiceOrders.Supervisor = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName + "-" + ServiceOrders.Supervisor : ServiceOrders.Supervisor;
+            var recepUserOrgInfo = await _userManagerApp.GetUserOrgInfo(ServiceOrders.RecepUserId);
+            ServiceOrders.RecepUserDept = recepUserOrgInfo != null ? recepUserOrgInfo.OrgName : "";
+            var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(ServiceOrders.SalesManId);
+            ServiceOrders.SalesManDept = salesManOrgInfo != null ? salesManOrgInfo.OrgName : "";
+            var superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(ServiceOrders.SupervisorId);
+            ServiceOrders.SuperVisorDept = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName : "";
 
             var CustomerInformation = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(ServiceOrders.TerminalCustomerId)).Select(o => new { frozenFor = o.frozenFor == "N" ? "正常" : "冻结",o.Balance}).FirstOrDefaultAsync();
             var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId.Equals(request.QuotationId)).ToListAsync();
