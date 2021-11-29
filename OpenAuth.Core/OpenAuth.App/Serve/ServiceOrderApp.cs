@@ -140,14 +140,14 @@ namespace OpenAuth.App
             //});
 
             //为职员加上部门前缀
-            //var recepUserOrgInfo = await _userManagerApp.GetUserOrgInfo(result.RecepUserId);
-            //result.RecepUserName = recepUserOrgInfo != null ? recepUserOrgInfo.OrgName + "-" + result.RecepUserName : result.RecepUserName;
+            var recepUserOrgInfo = await _userManagerApp.GetUserOrgInfo(result.RecepUserId);
+            result.RecepUserDept = recepUserOrgInfo != null ? recepUserOrgInfo.OrgName : "";
 
-            //var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(result.SalesManId);
-            //result.SalesMan = salesManOrgInfo != null ? salesManOrgInfo.OrgName + "-" + result.SalesMan : result.SalesMan;
+            var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(result.SalesManId);
+            result.SalesManDept = salesManOrgInfo != null ? salesManOrgInfo.OrgName : "";
 
-            //var superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(result.SupervisorId);
-            //result.Supervisor = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName + "-" + result.Supervisor : result.Supervisor;
+            var superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(result.SupervisorId);
+            result.SuperVisorDept = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName : "";
 
             return result;
         }

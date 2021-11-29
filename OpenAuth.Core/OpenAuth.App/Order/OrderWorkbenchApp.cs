@@ -1,6 +1,8 @@
 ﻿using Infrastructure.Extensions;
 using Microsoft.Extensions.Logging;
+using NSAP.Entity.BillFlow;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Order.ModelDto;
 using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
@@ -27,7 +29,7 @@ namespace OpenAuth.App.Order
         /// <summary>
         /// 提交给我的
         /// </summary>
-        public DataTable GetSubmtToMe(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, int user_id, string types,string Applicator, string Customer, string Status, string BeginDate, string EndDate, bool ViewCustom, bool ViewSales, out int rowCount)
+        public DataTable GetSubmtToMe(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, int user_id, string types, string Applicator, string Customer, string Status, string BeginDate, string EndDate, bool ViewCustom, bool ViewSales, out int rowCount)
         {
             string sortString = string.Empty;
             string filterString = string.Empty;
@@ -299,6 +301,56 @@ namespace OpenAuth.App.Order
             return _serviceSaleOrderApp.SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCounts);
         }
         #endregion
+        /// <summary>
+        /// 审核操作记录
+        /// </summary>
+        /// <param name="jobID"></param>
+        /// <returns></returns>
+        public List<FlowChartDto> GetApprovalRecord(string jobID, string type)
+        {
+            var result = new List<FlowChartDto>();
+            FlowChart flowChart = _serviceSaleOrderApp.GetFlowChartByJobID(jobID);
+            var dt = new DateTime();
+            int i = 0;
+            foreach (var caps in flowChart.Steps)
+            {
+                var scon = new FlowChartDto();
+                scon.stepName = caps.StepName;
+                if (i == 0)
+                {
+                    if (type == "sale_oqut")
+                    {
+                        scon.stepName = "销售报价单创建";
 
+                    }
+                    if (type == "sale_ordr")
+                    {
+                        scon.stepName = "销售订单单创建";
+
+                    }
+                }
+                if (caps.RealAuditors != null && caps.RealAuditors.Count > 0)
+                {
+                    foreach (var doin in caps.RealAuditors)
+                    {
+                        scon.realAuditorsName = doin.Name;
+                        scon.realAuditorsComment = doin.Comment;
+                        scon.realAuditorsCheckTime = doin.CheckTime;
+                        scon.realAuditorsResult = doin.Result;
+                        var dts = new DateTime();
+                        dts = (DateTime)doin.CheckTime.ToDateTime();
+                        if (i != 0)
+                        {
+                            var subTime = dts.Subtract(dt.ToDateTime());
+                            scon.Audittime = $"{subTime.Days}天{subTime.Hours}小时{subTime.Minutes}分钟{subTime.Seconds}秒{subTime.Milliseconds}毫秒";
+                        }
+                        dt = (DateTime)doin.CheckTime.ToDateTime();
+                        i++;
+                    }
+                }
+                result.Add(scon);
+            }
+            return result;
+        }
     }
 }

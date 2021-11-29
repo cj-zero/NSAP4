@@ -586,10 +586,10 @@ namespace OpenAuth.App.Workbench
             if (pendingObj.ServiceOrderId!=0) 
                 serviceOrderDetails = await ServiceOrderDetails(pendingObj.ServiceOrderId, pendingObj.PetitionerId);
             //为职员加上部门抬头
-            //var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrderDetails.SalesManId);
-            //serviceOrderDetails.SalesMan = salesManOrgInfo != null ? salesManOrgInfo.OrgName + "-" + serviceOrderDetails.SalesMan : serviceOrderDetails.SalesMan;
-            //var superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrderDetails.SupervisorId);
-            //serviceOrderDetails.Supervisor = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName + "-" + serviceOrderDetails.Supervisor : serviceOrderDetails.Supervisor;
+            var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrderDetails.SalesManId);
+            serviceOrderDetails.SalesManDept = salesManOrgInfo != null ? salesManOrgInfo.OrgName : "";
+            var superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrderDetails.SupervisorId);
+            serviceOrderDetails.SupervisorDept = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName : "";
 
             List<QuotationDetailsResp> quotationDetails = new List<QuotationDetailsResp>();
             List<ReturnnoteDetailsResp> returnnoteDetails = new List<ReturnnoteDetailsResp>();

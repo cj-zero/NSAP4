@@ -76,6 +76,13 @@ namespace OpenAuth.Repository.Domain
         public string CreateUserId { get; set; }
 
         /// <summary>
+        /// 创建人部门
+        /// </summary>
+        /// 
+        [NotMapped]
+        public string OrgName { get; set; }
+
+        /// <summary>
         /// 签收备注
         /// </summary>
         [Description("签收备注")]

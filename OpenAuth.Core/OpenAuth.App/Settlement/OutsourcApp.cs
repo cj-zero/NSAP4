@@ -383,12 +383,12 @@ namespace OpenAuth.App
                 });
                 var serviceOrderObj = await UnitWork.Find<ServiceOrder>(s => s.Id == outsourcObj.OutsourcExpenses.FirstOrDefault().ServiceOrderId).Include(s => s.ServiceWorkOrders).FirstOrDefaultAsync();
                 //为职员加上部门前缀
-                //var recepUserOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrderObj.RecepUserId);
-                //serviceOrderObj.RecepUserName = recepUserOrgInfo != null ? recepUserOrgInfo.OrgName + "-" + serviceOrderObj.RecepUserName : serviceOrderObj.RecepUserName;
-                //var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrderObj.SalesManId);
-                //serviceOrderObj.SalesMan = salesManOrgInfo != null ? salesManOrgInfo.OrgName + "-" + serviceOrderObj.SalesMan : serviceOrderObj.SalesMan;
-                //superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrderObj.SupervisorId);
-                //serviceOrderObj.Supervisor = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName + "-" + serviceOrderObj.Supervisor : serviceOrderObj.Supervisor;
+                var recepUserOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrderObj.RecepUserId);
+                serviceOrderObj.RecepUserDept = recepUserOrgInfo != null ? recepUserOrgInfo.OrgName : "";
+                var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrderObj.SalesManId);
+                serviceOrderObj.SalesManDept = salesManOrgInfo != null ? salesManOrgInfo.OrgName : "";
+                var superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(serviceOrderObj.SupervisorId);
+                serviceOrderObj.SuperVisorDept = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName : "";
 
                 var serviceDailyReportList = await UnitWork.Find<ServiceDailyReport>(s => outsourcObj.OutsourcExpenses.FirstOrDefault().ServiceOrderId == s.ServiceOrderId).ToListAsync();
                 var ocrd = await UnitWork.Find<OpenAuth.Repository.Domain.Sap.OCRD>(c => c.CardCode == serviceOrderObj.TerminalCustomerId).Select(c => new { c.Balance }).FirstOrDefaultAsync();
@@ -405,10 +405,12 @@ namespace OpenAuth.App
                         serviceOrderObj.TerminalCustomer,
                         serviceOrderObj.TerminalCustomerId,
                         serviceOrderObj.SalesMan,
+                        serviceOrderObj.SalesManDept,
                         serviceOrderObj.NewestContactTel,
                         serviceOrderObj.NewestContacter,
                         serviceOrderObj.Address,
                         serviceOrderObj.Supervisor,
+                        serviceOrderObj.SuperVisorDept,
                         outsourcObj.CreateUser,
                         outsourcObj.ServiceMode,
                         StatusName,

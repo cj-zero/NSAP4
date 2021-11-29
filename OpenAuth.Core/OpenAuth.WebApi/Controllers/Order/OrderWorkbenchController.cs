@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Infrastructure;
+using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Order;
+using OpenAuth.App.Order.ModelDto;
 using OpenAuth.App.Order.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository;
@@ -52,7 +54,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                 viewSales = powers.ViewSales;
                 viewCustom = powers.ViewCustom;
             }
-            DataTable dt = _orderWorkbenchApp.GetSubmtToMe(orderSubmtToMeReq.limit, orderSubmtToMeReq.page, orderSubmtToMeReq.query, orderSubmtToMeReq.sortname, orderSubmtToMeReq.sortorder, UserID,orderSubmtToMeReq.types, orderSubmtToMeReq.Applicator, orderSubmtToMeReq.Customer, orderSubmtToMeReq.Status, orderSubmtToMeReq.BeginDate, orderSubmtToMeReq.EndDate, ViewCustom: viewCustom, ViewSales: viewSales,out rowCount);
+            DataTable dt = _orderWorkbenchApp.GetSubmtToMe(orderSubmtToMeReq.limit, orderSubmtToMeReq.page, orderSubmtToMeReq.query, orderSubmtToMeReq.sortname, orderSubmtToMeReq.sortorder, UserID, orderSubmtToMeReq.types, orderSubmtToMeReq.Applicator, orderSubmtToMeReq.Customer, orderSubmtToMeReq.Status, orderSubmtToMeReq.BeginDate, orderSubmtToMeReq.EndDate, ViewCustom: viewCustom, ViewSales: viewSales, out rowCount);
             result.Data = dt;
             result.Count = rowCount;
             return result;
@@ -84,5 +86,19 @@ namespace OpenAuth.WebApi.Controllers.Order
             result.Count = rowCount;
             return result;
         }
+        /// <summary>
+        /// 审批记录
+        /// </summary>
+        /// <param name="jobID"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetApprovalRecord")]
+        public Response<List<FlowChartDto>> GetApprovalRecord(string jobID,string type)
+        {
+            var result = new Response<List<FlowChartDto>>();
+            result.Result = _orderWorkbenchApp.GetApprovalRecord(jobID, type);
+            return result;
+        }
+
     }
 }
