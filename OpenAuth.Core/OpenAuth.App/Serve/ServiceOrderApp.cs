@@ -140,14 +140,14 @@ namespace OpenAuth.App
             //});
 
             //为职员加上部门前缀
-            //var recepUserOrgInfo = await _userManagerApp.GetUserOrgInfo(result.RecepUserId);
-            //result.RecepUserName = recepUserOrgInfo != null ? recepUserOrgInfo.OrgName + "-" + result.RecepUserName : result.RecepUserName;
+            var recepUserOrgInfo = await _userManagerApp.GetUserOrgInfo(result.RecepUserId);
+            result.RecepUserDept = recepUserOrgInfo != null ? recepUserOrgInfo.OrgName : "";
 
-            //var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(result.SalesManId);
-            //result.SalesMan = salesManOrgInfo != null ? salesManOrgInfo.OrgName + "-" + result.SalesMan : result.SalesMan;
+            var salesManOrgInfo = await _userManagerApp.GetUserOrgInfo(result.SalesManId);
+            result.SalesManDept = salesManOrgInfo != null ? salesManOrgInfo.OrgName : "";
 
-            //var superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(result.SupervisorId);
-            //result.Supervisor = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName + "-" + result.Supervisor : result.Supervisor;
+            var superVisorOrgInfo = await _userManagerApp.GetUserOrgInfo(result.SupervisorId);
+            result.SuperVisorDept = superVisorOrgInfo != null ? superVisorOrgInfo.OrgName : "";
 
             return result;
         }
@@ -4317,6 +4317,34 @@ namespace OpenAuth.App
 
             result.Data = true;
             if (dailyReports==null)
+                result.Data = false;
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取技术员服务单是否有日报
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetTechnicianIsHasDailyReport(GetTechnicianDailyReportReq req)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.TechnicianId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            var dailyReports = await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId).FirstOrDefaultAsync();
+
+            result.Data = true;
+            if (dailyReports == null)
                 result.Data = false;
 
             return result;

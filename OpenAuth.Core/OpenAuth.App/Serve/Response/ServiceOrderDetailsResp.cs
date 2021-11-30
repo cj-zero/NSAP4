@@ -37,9 +37,17 @@ namespace OpenAuth.App.Response
         /// </summary>
         public string Supervisor { get; set; }
         /// <summary>
+        /// 主管部门
+        /// </summary>
+        public string SuperVisorDept { get; set; }
+        /// <summary>
         /// 销售名字
         /// </summary>
         public string SalesMan { get; set; }
+        /// <summary>
+        /// 销售部门
+        /// </summary>
+        public string SalesManDept { get; set; }
         /// <summary>
         /// 最新联系人
         /// </summary>
@@ -64,6 +72,10 @@ namespace OpenAuth.App.Response
         /// 接单人姓名
         /// </summary>
         public string RecepUserName { get; set; }
+        /// <summary>
+        /// 接单人部门
+        /// </summary>
+        public string RecepUserDept { get; set; }
 
         /// <summary>
         /// 省
@@ -193,6 +205,7 @@ namespace OpenAuth.App.Response
         /// 撤销人
         /// </summary>
         public string RevokeUser { get; set; }
+
         /// <summary>
         /// 撤销时间
         /// </summary>
