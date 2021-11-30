@@ -57,7 +57,11 @@ namespace OpenAuth.App.Order
 		/// 取消状态
 		/// </summary>
 		public string CANCELED { get; set; }
-	}
+		/// <summary>
+		/// 是否有附件
+		/// </summary>
+        public string AttachFlag { get; set; }
+    }
 	public class SboInfoDto
 	{
 		/// <summary>
