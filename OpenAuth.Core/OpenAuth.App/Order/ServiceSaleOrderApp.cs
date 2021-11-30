@@ -558,12 +558,12 @@ namespace OpenAuth.App.Order
                     strSql2 += string.Format("LEFT JOIN nsap_oa.file_type AS T1 ON T0.file_type_id = T1.type_id ");
                     strSql2 += string.Format("WHERE T0.file_type_id = {0} AND T0.docEntry = {1} limit 1", int.Parse(fileType), int.Parse(temprow["DocEntry"].ToString()));
                     ResultOrderDto fileflag = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, strSql2, CommandType.Text, null).FirstOrDefault();
-                    temprow["AttachFlag"] = fileflag == null ? "0" : fileflag.Value.ToString();                   
+                    temprow["AttachFlag"] = fileflag == null ? "0" : fileflag.Value.ToString();
                 }
             }
-    
-            tableData.Data= dt.Tolist<SalesDraftDto>();
-           
+
+            tableData.Data = dt.Tolist<SalesDraftDto>();
+
             return tableData;
         }
         /// <summary>
@@ -4035,6 +4035,92 @@ namespace OpenAuth.App.Order
                 return "0";
             }
         }
+        public string ExportShowNew(string val, string Indicator, string sboid, string DocEntry, string host)
+        {
+            DataTable dtb = ExportViewNos(sboid, DocEntry);
+            if (dtb.Rows.Count > 0)
+            {
+                string mbval = "";
+
+
+                mbval = "维修报价单.doc";
+                string jpgName = string.Format("{0}.jpg", Guid.NewGuid().ToString());
+                string path = FileHelper.OrdersFilePath.PhysicalPath;
+                QRCoderHelper.BuildBarcode(int.Parse(dtb.Rows[0][0].ToString()).ToString("d4"), FileHelper.OrdersFilePath.PhysicalPath + jpgName, 3);
+
+                List<FileHelper.WordTemplate> workMarks = new List<FileHelper.WordTemplate>();
+                if (mbval == "销售报价单.doc")
+                {
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 1, XCellMark = 1, YCellMark = 5, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][0].ToString()) ? " " : dtb.Rows[0][0].ToString() });//11150
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 1, XCellMark = 1, YCellMark = 6, ValueType = 1, ValueData = FileHelper.OrdersFilePath.PhysicalPath + jpgName });//D:\\barCode.jpg
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 1, XCellMark = 2, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][15].ToString()) ? " " : dtb.Rows[0][15].ToString() });//2013.03.04 11:55:20
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 1, XCellMark = 3, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][8].ToString()) ? " " : dtb.Rows[0][8].ToString() });//欧阳永志
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 1, XCellMark = 3, YCellMark = 5, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][6].ToString()) ? " " : dtb.Rows[0][6].ToString() });//欧阳永志
+
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 1, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][1].ToString()) ? " " : dtb.Rows[0][1].ToString() });//客户编号
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 1, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][3].ToString()) ? " " : dtb.Rows[0][3].ToString() });//联系人
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 1, YCellMark = 6, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][4].ToString()) ? " " : dtb.Rows[0][4].ToString() });//移动电话
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 1, YCellMark = 8, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][17].ToString()) ? " " : dtb.Rows[0][17].ToString() });//传真
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 1, YCellMark = 10, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][6].ToString()) ? " " : dtb.Rows[0][6].ToString() }); //手机
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 2, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][2].ToString()) ? " " : dtb.Rows[0][2].ToString() });//客户名称
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 3, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][7].ToString()) ? " " : dtb.Rows[0][7].ToString() });//客户地址
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 2, XCellMark = 3, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][19].ToString()) ? " " : dtb.Rows[0][19].ToString() });//交货地址
+
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 3, XCellMark = 1, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][11].ToString()) ? " " : dtb.Rows[0][11].ToString() });//付款条款
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 3, XCellMark = 1, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][14].ToString()) ? " " : dtb.Rows[0][14].ToString() });//交货日期
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 3, XCellMark = 2, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][16].ToString()) ? " " : dtb.Rows[0][16].ToString() });//交货方式
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 3, XCellMark = 2, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][20].ToString()) ? " " : dtb.Rows[0][20].ToString() });//验收期限
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 1, TableMark = 3, XCellMark = 3, YCellMark = 2, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][10].ToString()) ? " " : dtb.Rows[0][10].ToString().Replace("<br>", " ") });//备注
+                }
+                DataTable dTable = new DataTable();
+                dTable.Columns.Add("C1", typeof(string));
+                dTable.Columns.Add("C2", typeof(string));
+                dTable.Columns.Add("C3", typeof(string));
+                dTable.Columns.Add("C4", typeof(string));
+                dTable.Columns.Add("C5", typeof(string));
+                dTable.Columns.Add("C6", typeof(string));
+                dTable.Columns.Add("C7", typeof(string));
+
+                DataTable dtbs = ExportViews(sboid, DocEntry);
+                for (int i = 0; i < dtbs.Rows.Count; i++)
+                {
+                    DataRow dRow = dTable.NewRow();
+                    dRow[0] = i + 1;//"1";
+                    dRow[1] = string.IsNullOrEmpty(dtbs.Rows[i][1].ToString()) ? " " : dtbs.Rows[i][1].ToString(); //"CT-3008-5V5mA";
+                    dRow[2] = string.IsNullOrEmpty(dtbs.Rows[i][2].ToString()) ? " " : dtbs.Rows[i][2].ToString();//"BTS-5V5mA-8通道-钢壳-四线扣式圆头夹具-3U19\"白色机箱";
+                    dRow[3] = string.IsNullOrEmpty(dtbs.Rows[i][3].ToString()) ? " " : dtbs.Rows[i][3].ToString(); //"1";
+                    dRow[4] = string.IsNullOrEmpty(dtbs.Rows[i][4].ToString()) ? " " : dtbs.Rows[i][4].ToString(); //"Pcs";
+                    dRow[5] = string.IsNullOrEmpty(dtbs.Rows[i][5].ToString()) ? " " : dtbs.Rows[i][5].ToString(); //"3200.000000";
+                    dRow[6] = string.IsNullOrEmpty(dtbs.Rows[i][6].ToString()) ? " " : dtbs.Rows[i][6].ToString(); //"3200.00";
+                    dTable.Rows.Add(dRow);
+                }
+                workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 0, TableMark = 1, ValueType = 2, ValueData = dTable });
+                if (mbval == "销售报价单.doc")
+                {
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 2, TableMark = 1, XCellMark = 1, YCellMark = 4, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][13].ToString()) ? " " : dtb.Rows[0][13].ToString() });//合计金额
+                    workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 2, TableMark = 1, XCellMark = 4, YCellMark = 3, ValueType = 0, ValueData = string.IsNullOrEmpty(dtb.Rows[0][18].ToString()) ? " " : dtb.Rows[0][18].ToString() });//操作人
+                }
+                string pdfName = string.Format("{0}.pdf", Guid.NewGuid().ToString());
+                var s = FileHelper.TempletFilePath.PhysicalPath + mbval;
+                var ss = FileHelper.OrdersFilePath.PhysicalPath + jpgName + pdfName;
+                var sss = FileHelper.OrdersFilePath.PhysicalPath + pdfName;
+                _logger.LogInformation(FileHelper.TempletFilePath.PhysicalPath);
+                _logger.LogInformation(host + FileHelper.OrdersFilePath.VirtualPath);
+                _logger.LogInformation(FileHelper.OrdersFilePath.PhysicalPath);
+                if (FileHelper.DOCTemplateToPDF(FileHelper.TempletFilePath.PhysicalPath + mbval, FileHelper.OrdersFilePath.PhysicalPath + pdfName, workMarks))
+                {
+                    return host + FileHelper.OrdersFilePath.VirtualPath + pdfName;
+                }
+                else
+                {
+                    return "false";
+                }
+            }
+            else
+            {
+                return "0";
+            }
+        }
         /// <summary>
         /// 销售报价单主数据导出
         /// </summary>
@@ -4208,7 +4294,7 @@ namespace OpenAuth.App.Order
                     {
                         CustomFields += "," + dt.Rows[i][0].ToString();
                     }
-                } 
+                }
             }
             string U_YWY = string.Empty;
             if (IsExistMySql(tablename, "U_YWY"))
@@ -8497,10 +8583,10 @@ namespace OpenAuth.App.Order
         /// <param name="docentry"></param>
         /// <param name="sboid"></param>
         /// <returns></returns>
-        public  string GetSaleQuotationRemarkById(string docentry, string sboid)
+        public string GetSaleQuotationRemarkById(string docentry, string sboid)
         {
-            string sqlstr = string.Format("select AuditRemark from {0}.sale_oqut where sbo_id={1} and docentry={2} limit 1","nsap_bone", sboid, docentry);
-            object resultentry =UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sqlstr, CommandType.Text, null);
+            string sqlstr = string.Format("select AuditRemark from {0}.sale_oqut where sbo_id={1} and docentry={2} limit 1", "nsap_bone", sboid, docentry);
+            object resultentry = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sqlstr, CommandType.Text, null);
             return resultentry == null ? "" : resultentry.ToString();
         }
 

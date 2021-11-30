@@ -1,5 +1,6 @@
 ﻿
 using Infrastructure;
+using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -8,11 +9,13 @@ using OpenAuth.App.Interface;
 using OpenAuth.App.Order;
 using OpenAuth.App.Order.ModelDto;
 using OpenAuth.App.Order.Request;
+using OpenAuth.App.ProductModel;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Extensions;
 using OpenAuth.Repository.Interface;
+using OpenAuth.WebApi.Comm;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -1446,7 +1449,63 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         #endregion
+        #region
+        /// <summary>
+        /// PDF打印（新）
+        /// </summary>
+        /// <param name="val"></param>
+        /// <param name="Indicator"></param>
+        /// <param name="sboid"></param>
+        /// <param name="DocEntry"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("ExportShowNew")]
+        public Response<string> ExportShowNew( string sboid, string DocEntry)
+        {
+            var result = new Response<string>();
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            try
+            {
+                DataTable dtb = _serviceSaleOrderApp.ExportViewNos(sboid, DocEntry);
 
+                if (dtb.Rows.Count > 0)
+                {
+
+                    OqutParamTemplate oqutParamTemplate = new OqutParamTemplate()
+                    {
+                        DocEntry = string.IsNullOrEmpty(dtb.Rows[0][0].ToString()) ? " " : dtb.Rows[0][0].ToString(),
+                        DateTime = string.IsNullOrEmpty(dtb.Rows[0][15].ToString()) ? " " : dtb.Rows[0][15].ToString(),
+                        SalseName = string.IsNullOrEmpty(dtb.Rows[0][8].ToString()) ? " " : dtb.Rows[0][8].ToString(),
+                        CardCode = string.IsNullOrEmpty(dtb.Rows[0][1].ToString()) ? " " : dtb.Rows[0][1].ToString(),
+                        Name = string.IsNullOrEmpty(dtb.Rows[0][3].ToString()) ? " " : dtb.Rows[0][3].ToString(),
+                        Tel1 = string.IsNullOrEmpty(dtb.Rows[0][4].ToString()) ? " " : dtb.Rows[0][4].ToString(),
+                        Fax = string.IsNullOrEmpty(dtb.Rows[0][17].ToString()) ? " " : dtb.Rows[0][17].ToString(),
+                        Cellolar = string.IsNullOrEmpty(dtb.Rows[0][6].ToString()) ? " " : dtb.Rows[0][6].ToString(),
+                        CardName = string.IsNullOrEmpty(dtb.Rows[0][2].ToString()) ? " " : dtb.Rows[0][2].ToString(),
+                        Address = string.IsNullOrEmpty(dtb.Rows[0][7].ToString()) ? " " : dtb.Rows[0][7].ToString(),
+                        Address2 = string.IsNullOrEmpty(dtb.Rows[0][19].ToString()) ? " " : dtb.Rows[0][19].ToString(),
+                        PymntGroup = string.IsNullOrEmpty(dtb.Rows[0][11].ToString()) ? " " : dtb.Rows[0][11].ToString(),
+                        Date_Format = string.IsNullOrEmpty(dtb.Rows[0][14].ToString()) ? " " : dtb.Rows[0][14].ToString(),
+                        U_YSQX = string.IsNullOrEmpty(dtb.Rows[0][20].ToString()) ? " " : dtb.Rows[0][20].ToString(),
+                        Comments = string.IsNullOrEmpty(dtb.Rows[0][10].ToString()) ? " " : dtb.Rows[0][10].ToString().Replace("<br>", " "),
+                        DocTotal = string.IsNullOrEmpty(dtb.Rows[0][13].ToString()) ? " " : dtb.Rows[0][13].ToString(),
+                        U_YGMD = string.IsNullOrEmpty(dtb.Rows[0][18].ToString()) ? " " : dtb.Rows[0][18].ToString()
+                    };
+                    SpireDocWord.GetDocument(FileHelper.TempletFilePath.PhysicalPath+ "销售报价单 - 副本.doc");
+                    SpireDocWord.ReplaseTemplateWord(oqutParamTemplate);
+                    DataTable dtbs = _serviceSaleOrderApp.ExportViews(sboid, DocEntry);
+                    SpireDocWord.AddTable(dtbs);
+                    SpireDocWord.CreateNewWord(FileHelper.OrdersFilePath.PhysicalPath + DocEntry + "-销售报价单" + ".docx");
+                }
+                result.Result = host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + DocEntry + "-销售报价单.docx";
+            }
+            catch (Exception e)
+            {
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        #endregion
         #region 根据页面地址获取FunId.
         /// <summary>
         /// 根据页面地址获取FunId
@@ -1863,7 +1922,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns></returns>
         [HttpGet]
         [Route("GetSaleQuotationRemarkById")]
-        public Response< string> GetSaleQuotationRemarkById(string DocEntry, string SboId)
+        public Response<string> GetSaleQuotationRemarkById(string DocEntry, string SboId)
         {
             var result = new Response<string>();
             try

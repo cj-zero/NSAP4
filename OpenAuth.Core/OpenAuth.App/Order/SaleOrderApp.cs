@@ -206,6 +206,7 @@ namespace OpenAuth.App.Order
             billDelivery.billBaseEntry = orderReq.JobId.ToString();
             billDelivery.billBaseType = "23";
             billDelivery.Remark = !string.IsNullOrWhiteSpace(orderReq.Remark) ? orderReq.Remark : "";
+            billDelivery.DocStatus = "O";
             int i = 0;
             foreach (var item in billDelivery.billSalesDetails)
             {
