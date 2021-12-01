@@ -23,5 +23,10 @@ namespace OpenAuth.App.Response
         /// </summary>
         public string OrgName { get; set; }
         public string CascadeId { get; set; }
+
+        public string Account { get; set; }
+        public int Sex { get; set; }
+        public string Mobile { get; set; }
+        public string Email { get; set; }
     }
 }

@@ -2445,8 +2445,28 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             TableData result = new TableData();
+            var userinfo = await _userManagerApp.GetUserOrgInfo(req.CreateUserId);
+            var manager = await _orgApp.GetOrgManager(userinfo.OrgId);
+            var nsapusermap = await UnitWork.Find<NsapUserMap>(c => c.UserID == userinfo.Id).FirstOrDefaultAsync();
+            var nsapid = nsapusermap != null ? nsapusermap.NsapUserId : 0;
+            var nsapUserInfo = await UnitWork.Find<base_user_detail>(c => c.user_id == nsapid).FirstOrDefaultAsync();
+            var userdetail = new
+            {
+                Name = userinfo.Name,
+                Account = userinfo.Account,
+                Sex = userinfo.Sex,
+                OrgName = userinfo.OrgName,
+                Manager = manager?.Name,
+                InDate = nsapUserInfo?.try_date,
+                Moblie = userinfo.Mobile,
+                Email = userinfo.Email,
+                OfficeAddr = nsapUserInfo?.office_addr
+            };
+
             //报销单
             var ReimburseInfos = await UnitWork.Find<ReimburseInfo>(r => req.CreateUserId==r.CreateUserId && r.RemburseStatus == 9)
+                                .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()),c=>c.CreateTime>=req.StartDate.Value)
+                                .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.CreateTime < req.EndDate.Value.AddDays(1).Date)
                                .Include(r => r.ReimburseTravellingAllowances)
                                .Include(r => r.ReimburseFares)
                                .Include(r => r.ReimburseAccommodationSubsidies)
@@ -2456,7 +2476,10 @@ namespace OpenAuth.App
 
             //结算单
             var flowInstaceId = await UnitWork.Find<FlowInstance>(c => c.CustomName == "个人代理结算单" && c.ActivityName == "结束").Select(c => c.Id).ToListAsync();
-            var outsource = await UnitWork.Find<Outsourc>(c => flowInstaceId.Contains(c.FlowInstanceId) && c.CreateUserId == req.CreateUserId).Include(c => c.OutsourcExpenses).ToListAsync();
+            var outsource = await UnitWork.Find<Outsourc>(c => flowInstaceId.Contains(c.FlowInstanceId) && c.CreateUserId == req.CreateUserId)
+                                .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), c => c.CreateTime >= req.StartDate.Value)
+                                .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.CreateTime < req.EndDate.Value.AddDays(1).Date)
+                                .Include(c => c.OutsourcExpenses).ToListAsync();
 
             var ServiceOrderIds = ReimburseInfos.Select(c => c?.ServiceOrderId).ToList();
             var serviceDailyExpends = await UnitWork.Find<ServiceDailyExpends>(s => ServiceOrderIds.Contains(s.ServiceOrderId) && s.DailyExpenseType == 1).ToListAsync();
@@ -2579,6 +2602,8 @@ namespace OpenAuth.App
                 r.TerminalCustomerId,
                 r.TerminalCustomer
             }).OrderByDescending(r => r.MainId).ToList();
+            var reimburseMoney = ReimburseInfoRes.Sum(c => c.TotalMoney);
+            var outsourceMoney= outsourceRes.Sum(c => c.TotalMoney);
             ReimburseInfoRes.AddRange(outsourceRes);
             var totalMoney = ReimburseInfoRes.Sum(c => c.TotalMoney);
             var detail = new
@@ -2600,8 +2625,11 @@ namespace OpenAuth.App
             result.Data = new
             {
                 TotalMoney = totalMoney,
+                ReimburseMoney = reimburseMoney,
+                OutsourceMoney = outsourceMoney,
                 Detail = detail,
-                ResultData = resultData
+                ResultData = resultData,
+                UserDetail = userdetail
             };
             return result;
         }

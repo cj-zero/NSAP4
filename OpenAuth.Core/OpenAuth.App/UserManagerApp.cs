@@ -645,7 +645,18 @@ namespace OpenAuth.App
                                     from b in ab.DefaultIfEmpty()
                                     join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id into bc
                                     from c in bc.DefaultIfEmpty()
-                                    select new UserResp { Name = a.Name, Id = a.Id, OrgId = c.Id, OrgName = c.Name, CascadeId = c.CascadeId }).OrderByDescending(u => u.CascadeId).FirstOrDefaultAsync();
+                                    select new UserResp
+                                    {
+                                        Name = a.Name,
+                                        Id = a.Id,
+                                        OrgId = c.Id,
+                                        OrgName = c.Name,
+                                        CascadeId = c.CascadeId,
+                                        Account = a.Account,
+                                        Sex = a.Sex,
+                                        Mobile = a.Mobile,
+                                        Email = a.Email
+                                    }).OrderByDescending(u => u.CascadeId).FirstOrDefaultAsync();
             return petitioner;
         }
     }

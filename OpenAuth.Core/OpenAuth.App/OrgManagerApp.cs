@@ -286,6 +286,22 @@ namespace OpenAuth.App
             };
         }
 
+        /// <summary>
+        /// 获取部门主管
+        /// </summary>
+        /// <param name="orgId">部门ID</param>
+        /// <returns></returns>
+        public async Task<dynamic> GetOrgManager(string orgId)
+        {
+            var query = await (from a in UnitWork.Find<User>(null)
+                               join b in UnitWork.Find<Relevance>(c => c.Key == "OrgRole" && c.SecondId == orgId) on a.Id equals b.FirstId
+                               select new
+                               {
+                                   a
+                               }).FirstOrDefaultAsync();
+            return query;
+        }
+
         public OrgManagerApp(IUnitWork unitWork, IRepository<OpenAuth.Repository.Domain.Org> repository, IAuth auth,
             RevelanceManagerApp revelanceApp) : base(unitWork, repository, auth)
         {
