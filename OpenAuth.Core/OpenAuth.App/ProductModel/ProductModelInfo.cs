@@ -66,7 +66,7 @@ namespace OpenAuth.App.ProductModel
     public class ProductParamTemplate : ExportBase
     {
         public string Weight { get; set; }
-        public string  Title { get; set; }
+        public string Title { get; set; }
         public string DeviceCoding { get; set; }
         public string ChannelNumber { get; set; }
         public string InputPowerType { get; set; }
@@ -146,4 +146,25 @@ namespace OpenAuth.App.ProductModel
             }
         }
     }
+    public class OqutParamTemplate : ExportBase
+    {
+        public string DocEntry { get; set; }
+        public string DateTime { get; set; }
+        public string SalseName { get; set; }
+        public string CardCode { get; set; }
+        public string Name { get; set; }
+        public string Tel1 { get; set; }
+        public string Fax { get; set; }
+        public string Cellolar { get; set; }
+        public string CardName { get; set; }
+        public string Address { get; set; }
+        public string Address2 { get; set; }
+        public string PymntGroup { get; set; }
+        public string Date_Format { get; set; }
+        public string U_YSQX { get; set; }
+        public string Comments { get; set; }
+        public string DocTotal { get; set; }
+        public string U_YGMD { get; set; }
+    }
+   
 }

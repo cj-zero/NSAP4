@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -170,6 +171,38 @@ namespace OpenAuth.WebApi.Comm
 
 
 
+        }
+        public static void AddTable(DataTable dt)
+        {
+            try
+            {
+                Table table = document.Sections[0].Tables[0] as Table;
+                int rowNum = dt.Rows.Count;
+                DataTable dataTable = new DataTable();
+                int a = 1;
+                for (int i = 0; i < dt.Rows.Count; i++)
+                {
+                    table.AddRow(10);
+                    if (i < table.Rows.Count)
+                    {
+                        table[i, 0].AddParagraph().AppendText(a.ToString());
+                        table[i, 1].AddParagraph().AppendText(string.IsNullOrEmpty(dt.Rows[i][1].ToString()) ? " " : dt.Rows[i][1].ToString());
+                        table[i, 2].AddParagraph().AppendText(string.IsNullOrEmpty(dt.Rows[i][2].ToString()) ? " " : dt.Rows[i][2].ToString());
+                        table[i, 3].AddParagraph().AppendText(string.IsNullOrEmpty(dt.Rows[i][3].ToString()) ? " " : dt.Rows[i][3].ToString());
+                        table[i, 4].AddParagraph().AppendText(string.IsNullOrEmpty(dt.Rows[i][4].ToString()) ? " " : dt.Rows[i][4].ToString());
+                        table[i, 5].AddParagraph().AppendText(string.IsNullOrEmpty(dt.Rows[i][5].ToString()) ? " " : dt.Rows[i][5].ToString());
+                        table[i, 6].AddParagraph().AppendText(string.IsNullOrEmpty(dt.Rows[i][6].ToString()) ? " " : dt.Rows[i][6].ToString());
+                    }
+                    a++;
+                }
+                table.AddRow(10);
+                table.ApplyHorizontalMerge(a, 0, 8);
+            }
+            catch (Exception ex)
+            {
+                string errorMsg = ex.Message;
+                throw;
+            }
         }
     }
 }
