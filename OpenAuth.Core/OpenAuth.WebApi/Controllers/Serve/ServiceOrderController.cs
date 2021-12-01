@@ -394,6 +394,7 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
+        [HttpGet]
         public async Task<TableData> GetWorkorderStatusStatistics([FromQuery] QueryServiceOrderListReq req)
         {
             var result = new TableData();
@@ -405,6 +406,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
             }
 
             return result;
