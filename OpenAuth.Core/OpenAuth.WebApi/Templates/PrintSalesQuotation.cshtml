@@ -1,0 +1,159 @@
+﻿@using OpenAuth.App.Serve.Response
+
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <style type="text/css">
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        body {
+            width: 1000px;
+            margin: 0 auto;
+            margin-top: 10px;
+            font-size: 13.5px;
+            font-family: "微软雅黑";
+            color: #7F7F7F;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        #tablebor {
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+
+        .TH td {
+            border-style: solid;
+            border-width: 1px;
+        }
+
+        #divtitle {
+            margin: 0 auto;
+        }
+
+        hr {
+            height: 0px;
+            border-top: 1px solid #808A87;
+            border-right: 0px;
+            border-bottom: 0px;
+            border-left: 0px;
+        }
+
+        #divcode {
+            border-style: solid;
+            border-width: 1px;
+            border-color: #808A87;
+            height: 50px;
+            width: 1000px;
+            margin: 0 auto;
+        }
+
+        #divcode tr {
+            vertical-align: top;
+        }
+    </style>
+</head>
+
+<body>
+    <div style=" width: 1000px; height:60px; margin: 0 auto;">
+        <div id="divtitle" style=" width: 1000px; height:60px;">
+            <div style="float:left;width: 240px; margin-top: 20px;">
+                <img src="data:image/png;base64,@Model.Data.logo" color="#6F6F6F" style="width: 120px;height: 45px;margin-left:20px">
+            </div>
+            <div style="float:left;width: 300px; margin-top: 10px; margin-left:100px">
+                <span style="font-size: 42px;">销售报价单</span>
+            </div>
+            <div style="float:left;width: 180px; margin-top: -3px; margin-left:10px">
+                <span>
+                    报销ID：<span style="font-size: 30px; font-weight: 900;">@Model.Data.DocEntry</span>
+                </span>
+				<br>
+                <br>
+                <span>
+                    日　期：@Model.Data.DateTime
+                </span>
+                <br>
+                <span>
+                    销售：@Model.Data.SalseName
+                </span>
+            </div>
+            <div style="float:right;width: 90px; ">
+                <img src="@Model.Data.QRcode" style="width: 80px;height: 80px; color:#6F6F6F">
+            </div>
+        </div>
+        <table style="margin-top: 10px;" id="divcode">
+            <tr>
+                <td style="width:40pt; " align="left">&nbsp;客户编号：</td>
+                <td style="width:25pt;">@Model.Data.CardCode</td>
+                <td style="width:40pt;" align="left">客户名称：</td>
+                <td style="width:130pt;" align="left">@Model.Data.CardName</td>
+                
+            </tr>
+            <tr>
+                <td style="width:40pt" align="left">&nbsp;&nbsp;&nbsp;客户地址：</td>
+                <td style="width:200pt" align="left">@Model.Data.Address</td>
+                <td style="width:40pt; " align="left">&nbsp;联系人：</td>
+                <td style="width:25pt;">@Model.Data.Name</td>
+                <td style="width:40pt;" align="left">电话：</td>
+                <td style="width:130pt;" align="left">@Model.Data.Tel</td>
+            </tr>
+              <tr>
+                <td style="width:40pt" align="left">&nbsp;&nbsp;&nbsp;供方地址：</td>
+                <td style="width:200pt" align="left">@Model.Data.Address2</td>
+                <td style="width:40pt; " align="left">&nbsp;联系人：</td>
+                <td style="width:25pt;">@Model.Data.SalseName</td>
+                <td style="width:40pt;" align="left">电话：</td>
+                <td style="width:130pt;" align="left">@Model.Data.Cellolar</td>
+            </tr>
+                 <tr>
+                <td style="width:40pt" align="left">&nbsp;&nbsp;&nbsp;交货日期：</td>
+                <td style="width:200pt" align="left">@Model.Data.DATEFORMAT</td>
+                <td style="width:40pt;" align="left">付款条件：</td>
+                <td style="width:130pt;" align="left">@Model.Data.PymntGroup</td>
+                    <td style="width:40pt;" align="left">备注：</td>
+                <td style="width:130pt;" align="left">@Model.Data.Comments</td>
+            </tr>
+        </table>
+        <table style="margin-top: 5px;  width:1000px" id="tablebor">
+            <tr class="TH">
+                <td style="width: 40px;" align="left"># </td>
+                <td style="width: 100px;" align="left">&nbsp; 产品编码</td>
+                <td style="width: 150px;" align="left">&nbsp; 描述</td>
+                <td style="width: 150px;" align="left">&nbsp; 数量</td>
+                <td style="width: 150px;" align="left">&nbsp; 单位</td>
+                <td style="width: 410px;" align="right">&nbsp; 单价</td>
+                <td style="width: 410px; " align="right">&nbsp;金额 </td>
+            </tr>
+            @{int number = 0;}
+            @foreach (var item in Model.Data.ReimburseCosts)
+            {
+                <tr>
+                    <td> @{++number;} @number</td>
+                    <td>&nbsp; @item.ItemCode</td>
+                    <td>&nbsp; @item.Dscription</td>
+                    <td>&nbsp; @item.Quantity</td>
+                    <td>&nbsp; @item.unitMsr</td>
+                    <td>&nbsp; @item.Price</td>
+                    <td>&nbsp; @item.Money </td>
+                    <td align="right">@item.Money &nbsp;</td>
+                </tr>
+            }
+            
+        </table>
+        <hr>
+        <div style="">
+            <div style="font-weight: 800;" align="right">总金额：@Model.Data.DocTotal &nbsp;</div>
+            <hr>
+        </div>
+    </div>
+</body>
+
+</html>

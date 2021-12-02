@@ -1460,50 +1460,17 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns></returns>
         [HttpGet]
         [Route("ExportShowNew")]
-        public Response<string> ExportShowNew( string sboid, string DocEntry)
+        public async Task<FileResult> ExportShowNew( string sboid, string DocEntry)
         {
-            var result = new Response<string>();
-            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
             try
             {
-                DataTable dtb = _serviceSaleOrderApp.ExportViewNos(sboid, DocEntry);
-
-                if (dtb.Rows.Count > 0)
-                {
-
-                    OqutParamTemplate oqutParamTemplate = new OqutParamTemplate()
-                    {
-                        DocEntry = string.IsNullOrEmpty(dtb.Rows[0][0].ToString()) ? " " : dtb.Rows[0][0].ToString(),
-                        DateTime = string.IsNullOrEmpty(dtb.Rows[0][15].ToString()) ? " " : dtb.Rows[0][15].ToString(),
-                        SalseName = string.IsNullOrEmpty(dtb.Rows[0][8].ToString()) ? " " : dtb.Rows[0][8].ToString(),
-                        CardCode = string.IsNullOrEmpty(dtb.Rows[0][1].ToString()) ? " " : dtb.Rows[0][1].ToString(),
-                        Name = string.IsNullOrEmpty(dtb.Rows[0][3].ToString()) ? " " : dtb.Rows[0][3].ToString(),
-                        Tel1 = string.IsNullOrEmpty(dtb.Rows[0][4].ToString()) ? " " : dtb.Rows[0][4].ToString(),
-                        Fax = string.IsNullOrEmpty(dtb.Rows[0][17].ToString()) ? " " : dtb.Rows[0][17].ToString(),
-                        Cellolar = string.IsNullOrEmpty(dtb.Rows[0][6].ToString()) ? " " : dtb.Rows[0][6].ToString(),
-                        CardName = string.IsNullOrEmpty(dtb.Rows[0][2].ToString()) ? " " : dtb.Rows[0][2].ToString(),
-                        Address = string.IsNullOrEmpty(dtb.Rows[0][7].ToString()) ? " " : dtb.Rows[0][7].ToString(),
-                        Address2 = string.IsNullOrEmpty(dtb.Rows[0][19].ToString()) ? " " : dtb.Rows[0][19].ToString(),
-                        PymntGroup = string.IsNullOrEmpty(dtb.Rows[0][11].ToString()) ? " " : dtb.Rows[0][11].ToString(),
-                        Date_Format = string.IsNullOrEmpty(dtb.Rows[0][14].ToString()) ? " " : dtb.Rows[0][14].ToString(),
-                        U_YSQX = string.IsNullOrEmpty(dtb.Rows[0][20].ToString()) ? " " : dtb.Rows[0][20].ToString(),
-                        Comments = string.IsNullOrEmpty(dtb.Rows[0][10].ToString()) ? " " : dtb.Rows[0][10].ToString().Replace("<br>", " "),
-                        DocTotal = string.IsNullOrEmpty(dtb.Rows[0][13].ToString()) ? " " : dtb.Rows[0][13].ToString(),
-                        U_YGMD = string.IsNullOrEmpty(dtb.Rows[0][18].ToString()) ? " " : dtb.Rows[0][18].ToString()
-                    };
-                    SpireDocWord.GetDocument(FileHelper.TempletFilePath.PhysicalPath+ "销售报价单 - 副本.doc");
-                    SpireDocWord.ReplaseTemplateWord(oqutParamTemplate);
-                    DataTable dtbs = _serviceSaleOrderApp.ExportViews(sboid, DocEntry);
-                    SpireDocWord.AddTable(dtbs);
-                    SpireDocWord.CreateNewWord(FileHelper.OrdersFilePath.PhysicalPath + DocEntry + "-销售报价单" + ".docx");
-                }
-                result.Result = host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + DocEntry + "-销售报价单.docx";
+                return File(await _serviceSaleOrderApp.ExportShowNew(sboid,DocEntry), "application/pdf");
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                result.Message = e.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{DocEntry}， 错误：{ex.Message}");
+                throw new Exception("导出失败！" + ex.ToString());
             }
-            return result;
         }
         #endregion
         #region 根据页面地址获取FunId.

@@ -515,15 +515,25 @@ namespace OpenAuth.App
             result.ChannelNumber = productmodelselection.ChannelNumber;
             result.InputPowerType = productmodelselectioninfo.InputPowerType;
             result.InputActivePower = productmodelselectioninfo.InputActivePower + "KW";
-            result.InputCurrent = productmodelselectioninfo.InputCurrent + "A/每相";
-            result.Weight = "约" + productmodelselection.Weight.ToString() + "KG";
+         
             if (Language == "CN")
             {
+                result.InputCurrent = productmodelselectioninfo.InputCurrent + "A/每相";
+                result.Weight = "约" + productmodelselection.Weight.ToString() + "KG";
+                if (productmodelselection.DeviceCoding.Contains("B"))
+                {
+                    result.DeviceType = "四线制连接(充放电异口)";
+                }
+                else
+                {
+                    result.DeviceType = "四线制连接(充放电同口)";
+
+                }
                 if (productmodeltype.Name == "模块机")
                 {
                     result.Efficiency = "90%";
                     result.Noise = "≤65dB";
-                    result.DeviceType = "四线制连接(充放电异口)";
+                 
                     result.PowerControlModuleType = "MOSFET";
                     if (productmodelselectioninfo.InputPowerType.Contains("AC220V"))
                     {
@@ -541,7 +551,6 @@ namespace OpenAuth.App
                 {
                     result.Efficiency = "94%";
                     result.Noise = "≤75dB";
-                    result.DeviceType = "四线制连接(充放电同口)";
                     result.PowerControlModuleType = "IGBT";
                     result.PowerConnection = "三相四线";
                     result.CurrentResponseTime = "≤5ms";
@@ -583,6 +592,8 @@ namespace OpenAuth.App
             }
             else if (Language == "EN")
             {
+                result.InputCurrent = productmodelselectioninfo.InputCurrent + "A/PerPhase";
+                result.Weight = "About" + productmodelselection.Weight.ToString() + "KG";
                 if (productmodeltype.Name == "模块机")
                 {
                     result.Efficiency = "90%";
@@ -631,7 +642,7 @@ namespace OpenAuth.App
                     Temp = 30;//
 
                 }
-                result.CutOffCurrent = Temp.ToString();
+                result.CutOffCurrent = Temp.ToString() + "mA";
                 Temp = (float)(float.Parse(productmodelselection.Voltage) * float.Parse(productmodelselection.Current) * 0.001);
                 result.SinglePower = Temp.ToString() + "KW";
                 result.RecordFreq = productmodelselectioninfo.Fre;
