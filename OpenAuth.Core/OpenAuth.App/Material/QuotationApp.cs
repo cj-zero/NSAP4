@@ -2857,7 +2857,9 @@ namespace OpenAuth.App.Material
             var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"Quotationheader{model.Id}.html");
             System.IO.File.WriteAllText(tempUrl, text);
             var footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Quotationfooter.html");
-            var specialMaterials = new string[] { "S111-SERVICE-GSF-S", "S111-SERVICE-GSF-JH", "S111-SERVICE-CLF" }; //上门维修费、寄回维修费、差旅费数量显示为1,单价等于总价
+            var footerText = System.IO.File.ReadAllText(footerUrl);
+
+            var specialMaterials = new string[] { "S111-SERVICE-GSF-SM", "S111-SERVICE-GSF-JH", "S111-SERVICE-CLF" }; //上门维修费、寄回维修费、差旅费数量显示为1,单价等于总价
             var materials = model.QuotationMergeMaterials.Select(q => new PrintSalesOrderResp
             {
                 MaterialCode = q.MaterialCode,
@@ -2867,6 +2869,7 @@ namespace OpenAuth.App.Material
                 SalesPrice = specialMaterials.Contains(q.MaterialCode) ? (decimal)q.TotalPrice : (q.MaterialType == 1 ? 0.00M : (decimal)q.DiscountPrices),
                 TotalPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.TotalPrice
             }).OrderBy(q => q.MaterialCode).ToList();
+
             var datas = await ExportAllHandler.Exporterpdf(materials, "PrintQuotation.cshtml", pdf =>
             {
                 pdf.IsWriteHtml = true;

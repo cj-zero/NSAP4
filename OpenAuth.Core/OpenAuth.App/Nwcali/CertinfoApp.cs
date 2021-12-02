@@ -1009,8 +1009,15 @@ namespace OpenAuth.App
                     var deleteData = await UnitWork.Find<EntrustmentDetail>(x => x.EntrustmentId == item.Id)?.ToArrayAsync();
                     if (deleteData != null && deleteData.Count() > 0)
                     {
-                        await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deleteData);
-                        await UnitWork.SaveAsync();
+                        try
+                        {
+                            await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deleteData);
+                            await UnitWork.SaveAsync();
+                        }
+                        catch(Exception ex)
+                        {
+                            throw new Exception("数据删除异常", ex);
+                        }
                     }
                     //var deletedt = await UnitWork.FindTrack<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();
                     //await UnitWork.DeleteAsync<EntrustmentDetail>(c => c.EntrustmentId == item.Id);

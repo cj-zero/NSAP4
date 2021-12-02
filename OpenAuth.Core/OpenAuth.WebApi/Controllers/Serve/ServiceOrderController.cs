@@ -389,6 +389,28 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 根据服务单的服务呼叫状态分类,统计各个状态的总数
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetWorkorderStatusStatistics([FromQuery] QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetWorkorderStatusStatistics(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
 
         /// <summary>
         /// 查询可以被派单的技术员列表
