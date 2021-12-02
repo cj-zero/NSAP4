@@ -2449,14 +2449,14 @@ namespace OpenAuth.App
             var manager = await _orgApp.GetOrgManager(userinfo.OrgId);
             var nsapusermap = await UnitWork.Find<NsapUserMap>(c => c.UserID == userinfo.Id).FirstOrDefaultAsync();
             var nsapid = nsapusermap != null ? nsapusermap.NsapUserId : 0;
-            var nsapUserInfo = await UnitWork.Find<base_user_detail>(c => c.user_id == nsapid).FirstOrDefaultAsync();
+            var nsapUserInfo = await UnitWork.Find<base_user_detail>(c => c.user_id == nsapid).Select(c => new { c.try_date, c.office_addr }).FirstOrDefaultAsync();
             var userdetail = new
             {
                 Name = userinfo.Name,
                 Account = userinfo.Account,
                 Sex = userinfo.Sex,
                 OrgName = userinfo.OrgName,
-                Manager = manager?.Name,
+                Manager = manager?.a?.Name,
                 InDate = nsapUserInfo?.try_date,
                 Moblie = userinfo.Mobile,
                 Email = userinfo.Email,
