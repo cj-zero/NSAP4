@@ -166,7 +166,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 billSboId = sboId;
             }
-            List<DropDownOption> dropDownOptions = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@"SELECT b.CntctCode AS id,b.Name AS name FROM  nsap_bone.crm_ocrd a LEFT JOIN  nsap_bone.crm_ocpr b ON a.CardCode=b.CardCode and a.sbo_id=b.sbo_id WHERE a.CardCode='{code}' and a.sbo_id={billSboId} ", CommandType.Text, null);
+            List<DropDownOption> dropDownOptions = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@"SELECT b.CntctCode AS id,b.Name AS name FROM  nsap_bone.crm_ocrd a LEFT JOIN  nsap_bone.crm_ocpr b ON a.CardCode=b.CardCode and a.sbo_id=b.sbo_id WHERE a.CardCode='{code}' and a.sbo_id={billSboId} and b.Active='Y' ", CommandType.Text, null);
             if (dropDownOptions.Count > 0)
             {
                 result.Result = dropDownOptions;

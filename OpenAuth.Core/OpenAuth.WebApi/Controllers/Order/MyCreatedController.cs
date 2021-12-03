@@ -383,7 +383,7 @@ namespace OpenAuth.WebApi.Controllers.Order
 		/// </summary>
 		[HttpGet]
 		[Route("BackReceipt")]
-		public Response<bool> BackReceipt(string jobId, string urlType= "sales / SalesQuotation.aspx")
+		public Response<bool> BackReceipt(string jobId, string urlType= "sales/SalesQuotation.aspx")
 		{
 			var result = new Response<bool>();
 			var UserID = _serviceBaseApp.GetUserNaspId();
