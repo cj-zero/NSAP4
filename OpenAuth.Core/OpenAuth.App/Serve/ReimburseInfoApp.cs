@@ -775,6 +775,7 @@ namespace OpenAuth.App
                 FromTheme = completionreport.FromTheme,
                 Becity = completionreport.Becity,
                 CusBelong = userinfo?.OrgName + "-" + userinfo?.Name,
+                CusBelongId = userinfo?.Id,
                 //CompleteAddress = ServiceOrders.Province + ServiceOrders.City + ServiceOrders.Area + ServiceOrders.Addr,
                 Destination = completionreport.Destination,
                 //BusinessTripDate = CompletionReports.Min(c => c.BusinessTripDate),

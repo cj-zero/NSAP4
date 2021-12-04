@@ -382,6 +382,7 @@ namespace OpenAuth.App.Workbench
                 OrgMoney = orgMoney,
                 Org = userOrgInfo?.OrgName,
                 CusBelong = userinfo?.OrgName + "-" + userinfo?.Name,
+                CusBelongId = userinfo?.Id,
                 ReimburseMainId = reimburseObj.MainId,
                 Files = reimburseObj.ReimburseAttachments.Select(r => new FileResp
                 {

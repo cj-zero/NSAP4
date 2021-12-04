@@ -40,6 +40,10 @@ namespace OpenAuth.App.Workbench.Response
         /// </summary>
         public string CusBelong { get; set; }
         /// <summary>
+        /// 客户所属人ID
+        /// </summary>
+        public string CusBelongId { get; set; }
+        /// <summary>
         /// 创建人ID
         /// </summary>
         public string CreateUserId { get; set; }
