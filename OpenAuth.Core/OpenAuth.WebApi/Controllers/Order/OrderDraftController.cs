@@ -4,6 +4,8 @@ using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Order;
@@ -21,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -36,11 +39,13 @@ namespace OpenAuth.WebApi.Controllers.Order
     {
         private readonly FileApp _app;
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
+        private IHttpClientFactory _httpClient;
         IAuth _auth;
         IUnitWork UnitWork;
         ServiceBaseApp _serviceBaseApp;
-        public OrderDraftController(FileApp app, IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
+        public OrderDraftController(IHttpClientFactory _httpClient, FileApp app, IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
         {
+            this._httpClient = _httpClient;
             this._app = app;
             this.UnitWork = UnitWork;
             this._serviceBaseApp = _serviceBaseApp;
@@ -166,7 +171,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 billSboId = sboId;
             }
-            List<DropDownOption> dropDownOptions = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@"SELECT b.CntctCode AS id,b.Name AS name FROM  nsap_bone.crm_ocrd a LEFT JOIN  nsap_bone.crm_ocpr b ON a.CardCode=b.CardCode and a.sbo_id=b.sbo_id WHERE a.CardCode='{code}' and a.sbo_id={billSboId} ", CommandType.Text, null);
+            List<DropDownOption> dropDownOptions = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@"SELECT b.CntctCode AS id,b.Name AS name FROM  nsap_bone.crm_ocrd a LEFT JOIN  nsap_bone.crm_ocpr b ON a.CardCode=b.CardCode and a.sbo_id=b.sbo_id WHERE a.CardCode='{code}' and a.sbo_id={billSboId} and b.Active='Y' ", CommandType.Text, null);
             if (dropDownOptions.Count > 0)
             {
                 result.Result = dropDownOptions;
@@ -1091,7 +1096,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                 U_YFTCBL = ",IF(" + ViewSales + ",d.U_YFTCBL,0)";
             }
             StringBuilder stringBuilder = new StringBuilder();
-            string strSql = string.Format(" SELECT d.ItemCode,Dscription,Quantity ," +
+            string strSql = string.Format(" SELECT  d.ItemCode,Dscription,Quantity ," +
                 "IF(" + ViewSales + ",d.PriceBefDi,0)PriceBefDi," +
 
                 "IF(" + ViewSales + ",DiscPrcnt,0)DiscPrcnt,d.U_PDXX," +
@@ -1128,13 +1133,13 @@ namespace OpenAuth.WebApi.Controllers.Order
             strSql += string.Format(" LEFT JOIN (select d1.sbo_id,d1.BaseEntry ,d1.BaseLine,SUM(d1.Quantity) as SumQuantity from {0}.sale_DLN1 d1 inner join {0}.sale_odln d0 on d0.docentry=d1.docentry and d0.sbo_id=d1.sbo_id where d0.Canceled='N' AND d1.BaseType=17 and d1.BaseEntry=" + DocNum + " GROUP BY d1.sbo_id,d1.BaseEntry,d1.BaseLine) as T on d.sbo_id=T.sbo_id and d.DocEntry=T.BaseEntry and  d.LineNum=T.BaseLine  ", "nsap_bone");
             strSql += string.Format(" WHERE d.DocEntry=" + DocNum + " AND d.sbo_id={0}", SboId);
             DataTable dts = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
-            int itemindex = 0;
+            //int itemindex = 0;
             if (tablename.ToLower() == "sale_rdr1")
             {
                 foreach (DataRow tempr in dts.Rows)
                 {
-                    itemindex++;
-                    tempr[0] = itemindex.ToString();
+                    //itemindex++;
+                    //tempr[0] = itemindex.ToString();
                     string statusSql = string.Format("select top 1 LineStatus from RDR1 where DocEntry={0} and LineNum={1}", DocNum, tempr["LineNum"].ToString());
                     object statusobj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, statusSql.ToString(), CommandType.Text, null);
                     tempr["LineStatus"] = statusobj == null ? "" : statusobj.ToString();
@@ -1460,50 +1465,17 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns></returns>
         [HttpGet]
         [Route("ExportShowNew")]
-        public Response<string> ExportShowNew( string sboid, string DocEntry)
+        public async Task<FileResult> ExportShowNew(string sboid, string DocEntry)
         {
-            var result = new Response<string>();
-            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
             try
             {
-                DataTable dtb = _serviceSaleOrderApp.ExportViewNos(sboid, DocEntry);
-
-                if (dtb.Rows.Count > 0)
-                {
-
-                    OqutParamTemplate oqutParamTemplate = new OqutParamTemplate()
-                    {
-                        DocEntry = string.IsNullOrEmpty(dtb.Rows[0][0].ToString()) ? " " : dtb.Rows[0][0].ToString(),
-                        DateTime = string.IsNullOrEmpty(dtb.Rows[0][15].ToString()) ? " " : dtb.Rows[0][15].ToString(),
-                        SalseName = string.IsNullOrEmpty(dtb.Rows[0][8].ToString()) ? " " : dtb.Rows[0][8].ToString(),
-                        CardCode = string.IsNullOrEmpty(dtb.Rows[0][1].ToString()) ? " " : dtb.Rows[0][1].ToString(),
-                        Name = string.IsNullOrEmpty(dtb.Rows[0][3].ToString()) ? " " : dtb.Rows[0][3].ToString(),
-                        Tel1 = string.IsNullOrEmpty(dtb.Rows[0][4].ToString()) ? " " : dtb.Rows[0][4].ToString(),
-                        Fax = string.IsNullOrEmpty(dtb.Rows[0][17].ToString()) ? " " : dtb.Rows[0][17].ToString(),
-                        Cellolar = string.IsNullOrEmpty(dtb.Rows[0][6].ToString()) ? " " : dtb.Rows[0][6].ToString(),
-                        CardName = string.IsNullOrEmpty(dtb.Rows[0][2].ToString()) ? " " : dtb.Rows[0][2].ToString(),
-                        Address = string.IsNullOrEmpty(dtb.Rows[0][7].ToString()) ? " " : dtb.Rows[0][7].ToString(),
-                        Address2 = string.IsNullOrEmpty(dtb.Rows[0][19].ToString()) ? " " : dtb.Rows[0][19].ToString(),
-                        PymntGroup = string.IsNullOrEmpty(dtb.Rows[0][11].ToString()) ? " " : dtb.Rows[0][11].ToString(),
-                        Date_Format = string.IsNullOrEmpty(dtb.Rows[0][14].ToString()) ? " " : dtb.Rows[0][14].ToString(),
-                        U_YSQX = string.IsNullOrEmpty(dtb.Rows[0][20].ToString()) ? " " : dtb.Rows[0][20].ToString(),
-                        Comments = string.IsNullOrEmpty(dtb.Rows[0][10].ToString()) ? " " : dtb.Rows[0][10].ToString().Replace("<br>", " "),
-                        DocTotal = string.IsNullOrEmpty(dtb.Rows[0][13].ToString()) ? " " : dtb.Rows[0][13].ToString(),
-                        U_YGMD = string.IsNullOrEmpty(dtb.Rows[0][18].ToString()) ? " " : dtb.Rows[0][18].ToString()
-                    };
-                    SpireDocWord.GetDocument(FileHelper.TempletFilePath.PhysicalPath+ "销售报价单 - 副本.doc");
-                    SpireDocWord.ReplaseTemplateWord(oqutParamTemplate);
-                    DataTable dtbs = _serviceSaleOrderApp.ExportViews(sboid, DocEntry);
-                    SpireDocWord.AddTable(dtbs);
-                    SpireDocWord.CreateNewWord(FileHelper.OrdersFilePath.PhysicalPath + DocEntry + "-销售报价单" + ".docx");
-                }
-                result.Result = host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + DocEntry + "-销售报价单.docx";
+                return File(await _serviceSaleOrderApp.ExportShowNew(sboid, DocEntry), "application/pdf");
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                result.Message = e.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{DocEntry}， 错误：{ex.Message}");
+                throw new Exception("导出失败！" + ex.ToString());
             }
-            return result;
         }
         #endregion
         #region 根据页面地址获取FunId.
@@ -1928,6 +1900,39 @@ namespace OpenAuth.WebApi.Controllers.Order
             try
             {
                 result.Result = _serviceSaleOrderApp.GetSaleQuotationRemarkById(DocEntry, SboId);
+            }
+            catch (Exception e)
+            {
+                result.Message = e.Message;
+            }
+            return result;
+
+        }
+        /// <summary>
+        /// 调用商城接口
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetShopProduct")]
+        public async Task<Response<ShopProductDto>> GetShopProduct(string ErpCode)
+        {
+            var result = new Response<ShopProductDto>();
+            try
+            {
+                //设置请求的路径
+                var url = $"http://shopapi.neware.work:8081/api/v1/product/shopproduct?erpCode={ErpCode}";
+                ////使用注入的httpclientfactory获取client
+                var client = _httpClient.CreateClient();
+                client.BaseAddress = new Uri(url);
+                //设置请求体中的内容，并以post的方式请求
+                var response = await client.GetAsync(url);
+
+                //var request = new HttpRequestMessage(HttpMethod.Get, "http://shopapi.neware.work:8081/?ErpCode={ErpCode}");
+                //HttpResponseMessage response = await client.SendAsync(request);
+                //获取请求到数据，并转化为字符串
+                //result.Result = response.Content.ReadAsStringAsync().Result;
+                result.Result = JsonConvert.DeserializeObject<ShopProductDto>(response.Content.ReadAsStringAsync().Result);
+
             }
             catch (Exception e)
             {

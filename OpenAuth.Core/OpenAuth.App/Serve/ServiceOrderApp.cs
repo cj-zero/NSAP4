@@ -1206,6 +1206,52 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 根据服务单的工单状态分类,统计各个状态的数量及占比
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetWorkorderStatusStatistics(QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+
+            var serviceData = from so in UnitWork.Find<ServiceOrder>(s => s.Status == 2)
+                              .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, s => s.CreateTime >= req.QryCreateTimeFrom && s.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
+                              join swo in UnitWork.Find<ServiceWorkOrder>(null)
+                              on so.Id equals swo.ServiceOrderId
+                              select new { so, swo };
+
+            //因为服务单和工单是一对多的关系,所以各个状态的数量加起来可能会大于总数(即一个服务单可能有不同状态的工单)
+            var statesStatistics = await (serviceData.Select(d => new { d.so.Id, d.swo.Status }).Distinct().GroupBy(x => x.Status).Select(q => new
+            {
+                q.Key,
+                count = q.Count()
+            })).ToListAsync();
+
+            //因为分类表和上面的服务单不在同一个库,所以分开查
+            //查询字典中的工单状态,dtValue为空表示全部状态,数据库中enable为0的表示可用,映射到布尔型的属性为false
+            var states = await UnitWork.Find<Category>(c => c.TypeId == "SYS_ServiceWorkOrderStatus" && !string.IsNullOrWhiteSpace(c.DtValue) && c.Enable == false).ToListAsync();
+
+            //总数
+            var totalCount = await serviceData.Select(d => d.so.Id).Distinct().CountAsync();
+            var data = from s in states
+                       join ss in statesStatistics
+                       on int.Parse(s.DtValue) equals ss.Key into temp
+                       from t in temp.DefaultIfEmpty()
+                       select new
+                       {
+                           stateId = s.DtValue,
+                           stateDesc = s.Name,
+                           count = t == null ? "0" : t.count.ToString("N0"), //千分位
+                           percent = t == null ? "0" : ((decimal)t.count / totalCount).ToString("P2") //保留两位小数
+                       };
+
+            result.Data = data;
+            result.Count = totalCount;
+
+            return result;
+        }
+
+        /// <summary>
         /// 呼叫服务（客服)工单列表
         /// </summary>
         /// <param name="req"></param>

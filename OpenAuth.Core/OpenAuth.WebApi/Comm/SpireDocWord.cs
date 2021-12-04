@@ -37,6 +37,11 @@ namespace OpenAuth.WebApi.Comm
         {
             document.SaveToFile(docxName, FileFormat.Docx);
         }
+        public static void CreateNewPdf(string docxName)
+        {
+
+            document.SaveToFile(docxName, FileFormat.PDF);
+        }
         /// <summary>
         /// 替换模板
         /// </summary>
@@ -176,27 +181,28 @@ namespace OpenAuth.WebApi.Comm
         {
             try
             {
-                Table table = document.Sections[0].Tables[0] as Table;
+                Table table = document.Sections[0].Tables[3] as Table;
                 int rowNum = dt.Rows.Count;
                 DataTable dataTable = new DataTable();
                 int a = 1;
                 for (int i = 0; i < dt.Rows.Count; i++)
                 {
-                    table.AddRow(10);
+                    table.AddRow(7);
                     if (i < table.Rows.Count)
                     {
-                        table[i, 0].AddParagraph().AppendText(a.ToString());
-                        table[i, 1].AddParagraph().AppendText(string.IsNullOrEmpty(dt.Rows[i][1].ToString()) ? " " : dt.Rows[i][1].ToString());
-                        table[i, 2].AddParagraph().AppendText(string.IsNullOrEmpty(dt.Rows[i][2].ToString()) ? " " : dt.Rows[i][2].ToString());
-                        table[i, 3].AddParagraph().AppendText(string.IsNullOrEmpty(dt.Rows[i][3].ToString()) ? " " : dt.Rows[i][3].ToString());
-                        table[i, 4].AddParagraph().AppendText(string.IsNullOrEmpty(dt.Rows[i][4].ToString()) ? " " : dt.Rows[i][4].ToString());
-                        table[i, 5].AddParagraph().AppendText(string.IsNullOrEmpty(dt.Rows[i][5].ToString()) ? " " : dt.Rows[i][5].ToString());
-                        table[i, 6].AddParagraph().AppendText(string.IsNullOrEmpty(dt.Rows[i][6].ToString()) ? " " : dt.Rows[i][6].ToString());
+                        table[i + 1, 0].AddParagraph().AppendText(string.IsNullOrEmpty(dt.Rows[i][0].ToString()) ? " " : dt.Rows[i][0].ToString());
+                        table[i + 1, 1].AddParagraph().AppendText(string.IsNullOrEmpty(dt.Rows[i][2].ToString()) ? " " : dt.Rows[i][2].ToString());
+                        table[i + 1, 2].AddParagraph().AppendText(string.IsNullOrEmpty(dt.Rows[i][3].ToString()) ? " " : dt.Rows[i][3].ToString());
+                        table[i + 1, 3].AddParagraph().AppendText(string.IsNullOrEmpty(dt.Rows[i][4].ToString()) ? " " : dt.Rows[i][4].ToString());
+                        table[i + 1, 4].AddParagraph().AppendText(string.IsNullOrEmpty(dt.Rows[i][5].ToString()) ? " " : dt.Rows[i][5].ToString());
+
+                        table[i + 1, 5].AddParagraph().AppendText(decimal.Round(decimal.Parse(string.IsNullOrEmpty(dt.Rows[i][6].ToString()) ? " " : dt.Rows[i][6].ToString()), 2).ToString());
+                        table[i + 1, 6].AddParagraph().AppendText(string.IsNullOrEmpty(dt.Rows[i][7].ToString()) ? " " : dt.Rows[i][7].ToString());
                     }
                     a++;
                 }
-                table.AddRow(10);
-                table.ApplyHorizontalMerge(a, 0, 8);
+                //  table.AddRow(7);
+                //  table.ApplyHorizontalMerge(a, 0, 7);
             }
             catch (Exception ex)
             {
