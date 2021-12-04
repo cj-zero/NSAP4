@@ -4,6 +4,8 @@ using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Order;
@@ -21,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -36,11 +39,13 @@ namespace OpenAuth.WebApi.Controllers.Order
     {
         private readonly FileApp _app;
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
+        private IHttpClientFactory _httpClient;
         IAuth _auth;
         IUnitWork UnitWork;
         ServiceBaseApp _serviceBaseApp;
-        public OrderDraftController(FileApp app, IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
+        public OrderDraftController(IHttpClientFactory _httpClient, FileApp app, IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
         {
+            this._httpClient = _httpClient;
             this._app = app;
             this.UnitWork = UnitWork;
             this._serviceBaseApp = _serviceBaseApp;
@@ -1091,7 +1096,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                 U_YFTCBL = ",IF(" + ViewSales + ",d.U_YFTCBL,0)";
             }
             StringBuilder stringBuilder = new StringBuilder();
-            string strSql = string.Format(" SELECT d.ItemCode,Dscription,Quantity ," +
+            string strSql = string.Format(" SELECT  d.ItemCode,Dscription,Quantity ," +
                 "IF(" + ViewSales + ",d.PriceBefDi,0)PriceBefDi," +
 
                 "IF(" + ViewSales + ",DiscPrcnt,0)DiscPrcnt,d.U_PDXX," +
@@ -1128,13 +1133,13 @@ namespace OpenAuth.WebApi.Controllers.Order
             strSql += string.Format(" LEFT JOIN (select d1.sbo_id,d1.BaseEntry ,d1.BaseLine,SUM(d1.Quantity) as SumQuantity from {0}.sale_DLN1 d1 inner join {0}.sale_odln d0 on d0.docentry=d1.docentry and d0.sbo_id=d1.sbo_id where d0.Canceled='N' AND d1.BaseType=17 and d1.BaseEntry=" + DocNum + " GROUP BY d1.sbo_id,d1.BaseEntry,d1.BaseLine) as T on d.sbo_id=T.sbo_id and d.DocEntry=T.BaseEntry and  d.LineNum=T.BaseLine  ", "nsap_bone");
             strSql += string.Format(" WHERE d.DocEntry=" + DocNum + " AND d.sbo_id={0}", SboId);
             DataTable dts = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
-            int itemindex = 0;
+            //int itemindex = 0;
             if (tablename.ToLower() == "sale_rdr1")
             {
                 foreach (DataRow tempr in dts.Rows)
                 {
-                    itemindex++;
-                    tempr[0] = itemindex.ToString();
+                    //itemindex++;
+                    //tempr[0] = itemindex.ToString();
                     string statusSql = string.Format("select top 1 LineStatus from RDR1 where DocEntry={0} and LineNum={1}", DocNum, tempr["LineNum"].ToString());
                     object statusobj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, statusSql.ToString(), CommandType.Text, null);
                     tempr["LineStatus"] = statusobj == null ? "" : statusobj.ToString();
@@ -1460,11 +1465,11 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns></returns>
         [HttpGet]
         [Route("ExportShowNew")]
-        public async Task<FileResult> ExportShowNew( string sboid, string DocEntry)
+        public async Task<FileResult> ExportShowNew(string sboid, string DocEntry)
         {
             try
             {
-                return File(await _serviceSaleOrderApp.ExportShowNew(sboid,DocEntry), "application/pdf");
+                return File(await _serviceSaleOrderApp.ExportShowNew(sboid, DocEntry), "application/pdf");
             }
             catch (Exception ex)
             {
@@ -1895,6 +1900,39 @@ namespace OpenAuth.WebApi.Controllers.Order
             try
             {
                 result.Result = _serviceSaleOrderApp.GetSaleQuotationRemarkById(DocEntry, SboId);
+            }
+            catch (Exception e)
+            {
+                result.Message = e.Message;
+            }
+            return result;
+
+        }
+        /// <summary>
+        /// 调用商城接口
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetShopProduct")]
+        public async Task<Response<ShopProductDto>> GetShopProduct(string ErpCode)
+        {
+            var result = new Response<ShopProductDto>();
+            try
+            {
+                //设置请求的路径
+                var url = $"http://shopapi.neware.work:8081/api/v1/product/shopproduct?erpCode={ErpCode}";
+                ////使用注入的httpclientfactory获取client
+                var client = _httpClient.CreateClient();
+                client.BaseAddress = new Uri(url);
+                //设置请求体中的内容，并以post的方式请求
+                var response = await client.GetAsync(url);
+
+                //var request = new HttpRequestMessage(HttpMethod.Get, "http://shopapi.neware.work:8081/?ErpCode={ErpCode}");
+                //HttpResponseMessage response = await client.SendAsync(request);
+                //获取请求到数据，并转化为字符串
+                //result.Result = response.Content.ReadAsStringAsync().Result;
+                result.Result = JsonConvert.DeserializeObject<ShopProductDto>(response.Content.ReadAsStringAsync().Result);
+
             }
             catch (Exception e)
             {

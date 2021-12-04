@@ -641,7 +641,26 @@ namespace OpenAuth.App.Order
         /// <returns></returns>
         public string Save(AddOrderReq orderReq)
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
             int userID = _serviceBaseApp.GetUserNaspId();
+            if (orderReq.JobId != 0)
+            {
+                DataTable objTable = GetAuditObjWithFlowChart(orderReq.JobId.ToString());
+                if (objTable.Rows.Count > 0)
+                {
+                    foreach (DataRow objRow in objTable.Rows)
+                    {
+                        if (!objRow[0].ToString().Contains(loginContext.User.Name))
+                        {
+                            return "单据已提交，请勿重复提交";
+                        }
+                    }
+                }
+            }
             int sboID = _serviceBaseApp.GetUserNaspSboID(userID);
             int funcId = 50;
             string logstring = "";
@@ -3831,7 +3850,7 @@ namespace OpenAuth.App.Order
         }
 
 
-                  #region 销售报价单导出
+        #region 销售报价单导出
         /// <summary>
         ///销售报价单导出
         /// </summary>
