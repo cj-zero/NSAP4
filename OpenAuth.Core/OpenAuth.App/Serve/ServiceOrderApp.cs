@@ -1241,12 +1241,48 @@ namespace OpenAuth.App
                        {
                            stateId = s.DtValue,
                            stateDesc = s.Name,
-                           count = t == null ? "0" : t.count.ToString("N0"), //千分位
+                           count = t == null ? 0 : t.count,
                            percent = t == null ? "0" : ((decimal)t.count / totalCount).ToString("P2") //保留两位小数
                        };
 
             result.Data = data;
             result.Count = totalCount;
+
+            return result;
+        }
+
+        /// <summary>
+        /// 统计各部门在一段时间内处理服务单的占比,以及每个部门内处理天数的统计情况
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetServerCallEfficiency(QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+
+            var serviceData = from so in UnitWork.Find<ServiceOrder>(so => so.Status == 2)
+                              .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null,
+                              so => so.CreateTime >= req.QryCreateTimeFrom && so.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
+                              join sw in UnitWork.Find<ServiceWorkOrder>(null)
+                              on so.Id equals sw.ServiceOrderId
+                              select new
+                              {
+                                  so.Id,
+                                  so.SupervisorId,
+                                  so.Supervisor,
+                                  sw.CreateTime,
+                                  sw.CompleteDate,
+                                  sw.Status,
+                              };
+
+            var totalCount = await serviceData.Select(s => s.Id).Distinct().CountAsync();
+
+            var deptGroupCount = serviceData.GroupBy(s => s.Supervisor).Select(x => new
+            {
+                x.Key,
+                count = x.Count()
+            });
+
 
             return result;
         }
