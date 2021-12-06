@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain
 	/// 
 	/// </summary>
     [Table("base_user_detail")]
-    public partial class base_user_detail : Entity
+    public partial class base_user_detail 
     {
         public base_user_detail()
         {
