@@ -1,6 +1,7 @@
 ﻿using NSAP.Entity.Sales;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 
 namespace OpenAuth.App.Order.Request
@@ -231,8 +232,9 @@ namespace OpenAuth.App.Order.Request
 		/// </summary>
 		public string PrepaData { get; set; }
 		/// <summary>
-		/// 自定义字段
+		/// 生产部门
 		/// </summary>
+		[Required]
 		public string CustomFields { get; set; }
 		/// <summary>
 		/// WhsCode

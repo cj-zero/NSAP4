@@ -2,7 +2,6 @@
 
 <!doctype html>
 <html>
-
 <head>
     <meta charset="utf-8">
     <title></title>
@@ -56,14 +55,74 @@
             margin: 0 auto;
         }
 
-        #divcode tr {
-            vertical-align: top;
+            #divcode tr {
+                vertical-align: top;
+            }
+
+        body {
+            font-family: STSong Microsoft YaHei;
         }
+
+        #container {
+            position: relative;
+            margin: 0 auto;
+            padding: 0 40px 0 50px;
+            width: 794px;
+            height: 1123px;
+        }
+
+        footer {
+            /* position: absolute; */
+            left: 0;
+            bottom: 0;
+            padding: 0 40px 0 50px;
+            width: 100%
+        }
+/*
+            footer hr {
+                height: 2px;
+                background-color: #000;
+                border: none
+            }*/
+
+            footer .footer-title h1 {
+                font-size: 13px;
+                line-height: 20px;
+                font-weight: 400;
+                text-align: center
+            }
+
+            footer .footer-title p {
+                margin-top: 6px;
+                font-size: 12px;
+                line-height: 30px
+            }
+
+            footer .footer-info {
+                margin-top: 8px;
+                font-size: 13px;
+                height: 104px
+            }
+
+                footer .footer-info div {
+                    display: flex;
+                    justify-content: space-between
+                }
+
+                    footer .footer-info div p {
+                        flex: 1;
+                        padding-right: 8px
+                    }
+
+                        footer .footer-info div p.footer-datetime {
+                            margin-top: 8px;
+                            font-size: 10px
+                        }
     </style>
 </head>
 
 <body>
-    <div style=" width: 1000px; height:60px; margin: 0 auto;">
+    <header>
         <div id="divtitle" style=" width: 1000px; height:60px;">
             <div style="float:left;width: 240px; margin-top: 20px;">
                 <img src="data:image/png;base64,@Model.Data.logo" color="#6F6F6F" style="width: 120px;height: 45px;margin-left:20px">
@@ -75,7 +134,7 @@
                 <span>
                     报销ID：<span style="font-size: 30px; font-weight: 900;">@Model.Data.DocEntry</span>
                 </span>
-				<br>
+                <br>
                 <br>
                 <span>
                     日　期：@Model.Data.DateTime
@@ -89,71 +148,114 @@
                 <img src="@Model.Data.QRcode" style="width: 80px;height: 80px; color:#6F6F6F">
             </div>
         </div>
-        <table style="margin-top: 10px;" id="divcode">
+        <table style="margin-top: 30px;" id="divcode">
             <tr>
-                <td style="width:40pt; " align="left">&nbsp;客户编号：</td>
-                <td style="width:25pt;">@Model.Data.CardCode</td>
-                <td style="width:40pt;" align="left">客户名称：</td>
-                <td style="width:130pt;" align="left">@Model.Data.CardName</td>
-                
+                <td align="left" style="width: 55pt; ">&nbsp;客户代码：</td>
+                <td align="left" style="width: 100pt; ">@Model.Data.CardCode</td>
+                <td align="left" style="width: 55pt; ">联系人：</td>
+                <td align="left" style="width: 100pt;">@Model.Data.Name</td>
+                <td align="left" style="width: 35pt;">&nbsp;电话：</td>
+                <td align="left" style="width: 150pt; ">@Model.Data.Tel</td>
+                <td align="left" style="width: 30pt; ">&nbsp;传真：</td>
+                <td align="left" style="width: 100pt; "></td>
             </tr>
             <tr>
-                <td style="width:40pt" align="left">&nbsp;&nbsp;&nbsp;客户地址：</td>
-                <td style="width:200pt" align="left">@Model.Data.Address</td>
-                <td style="width:40pt; " align="left">&nbsp;联系人：</td>
-                <td style="width:25pt;">@Model.Data.Name</td>
-                <td style="width:40pt;" align="left">电话：</td>
-                <td style="width:130pt;" align="left">@Model.Data.Tel</td>
+                <td>&nbsp;客户名称：</td>
+                <td colspan="7">
+                    @Model.Data.CardName
+                </td>
             </tr>
-              <tr>
-                <td style="width:40pt" align="left">&nbsp;&nbsp;&nbsp;供方地址：</td>
-                <td style="width:200pt" align="left">@Model.Data.Address2</td>
-                <td style="width:40pt; " align="left">&nbsp;联系人：</td>
-                <td style="width:25pt;">@Model.Data.SalseName</td>
-                <td style="width:40pt;" align="left">电话：</td>
-                <td style="width:130pt;" align="left">@Model.Data.Cellolar</td>
+        </table>
+        <div style="width:1000px; height: 120px; margin-top: 5px;">
+            <div style="width:498px;border: 1px solid #808A87; height: 120px; float: left;">
+                <p>客户地址</p>
+                <p style="height: 80px;">@Model.Data.Address</p>
+                <span>联系人：</span><span>@Model.Data.Name</span>
+                <span>电话：</span><span>@Model.Data.Tel</span>
+            </div>
+            <div style="width:498px;border: 1px solid #808A87;height: 120px;float: right;">
+                <p>供方地址</p>
+                <p style="height: 80px;">@Model.Data.Address2</p>
+                <span>联系人：</span><span>@Model.Data.SalseName</span>
+                <span>电话：</span><span>@Model.Data.Cellolar</span>
+            </div>
+        </div>
+        <table style="margin-top: 5px;" id="divcode">
+            <tr>
+                <td align="left" style="width: 55pt; ">&nbsp;交货日期：</td>
+                <td align="left" style="width: 40pt; ">@Model.Data.DATEFORMAT</td>
+                <td align="left" style="width: 150pt; "></td>
+                <td align="left" style="width: 55pt; ">交货方式：</td>
+                <td align="left" style="width: 200pt;">物流</td>
+
             </tr>
-                 <tr>
-                <td style="width:40pt" align="left">&nbsp;&nbsp;&nbsp;交货日期：</td>
-                <td style="width:200pt" align="left">@Model.Data.DATEFORMAT</td>
-                <td style="width:40pt;" align="left">付款条件：</td>
-                <td style="width:130pt;" align="left">@Model.Data.PymntGroup</td>
-                    <td style="width:40pt;" align="left">备注：</td>
-                <td style="width:130pt;" align="left">@Model.Data.Comments</td>
+            <tr>
+                <td align="left" style="width: 55pt; ">&nbsp;付款条件：</td>
+                <td align="left" style="width: 40pt; " colspan="2">@Model.Data.PymntGroup</td>
+                <td align="left" style="width: 55pt; ">备注：</td>
+                <td align="left" style="width: 200pt;">@Model.Data.Comments</td>
             </tr>
         </table>
         <table style="margin-top: 5px;  width:1000px" id="tablebor">
             <tr class="TH">
                 <td style="width: 40px;" align="left"># </td>
                 <td style="width: 100px;" align="left">&nbsp; 产品编码</td>
-                <td style="width: 150px;" align="left">&nbsp; 描述</td>
+                <td style="width: 450px;" align="left">&nbsp; 描述</td>
                 <td style="width: 150px;" align="left">&nbsp; 数量</td>
                 <td style="width: 150px;" align="left">&nbsp; 单位</td>
-                <td style="width: 410px;" align="right">&nbsp; 单价</td>
-                <td style="width: 410px; " align="right">&nbsp;金额 </td>
+                <td style="width: 210px;" align="right">&nbsp; 单价</td>
+                <td style="width: 210px; " align="right">&nbsp;金额 </td>
             </tr>
-            @{int number = 0;}
-            @foreach (var item in Model.Data.ReimburseCosts)
-            {
-                <tr>
-                    <td> @{++number;} @number</td>
-                    <td>&nbsp; @item.ItemCode</td>
-                    <td>&nbsp; @item.Dscription</td>
-                    <td>&nbsp; @item.Quantity</td>
-                    <td>&nbsp; @item.unitMsr</td>
-                    <td>&nbsp; @item.Price</td>
-                    <td>&nbsp; @item.Money </td>
-                    <td align="right">@item.Money &nbsp;</td>
-                </tr>
-            }
-            
+
+
         </table>
+    </header>
+    <table style="width:1000px">
+        @{
+            int number = 0;
+        }
+        @foreach (var item in Model.Data.ReimburseCosts)
+        {
+            <tr>
+                <td> @{++number;} @number</td>
+                <td>&nbsp; @item.ItemCode</td>
+                <td>&nbsp; @item.Dscription</td>
+                <td>&nbsp; @item.Quantity</td>
+                <td>&nbsp; @item.unitMsr</td>
+                <td>&nbsp; @item.Price</td>
+                <td>&nbsp; @item.Money </td>
+                <td align="right">@item.Money &nbsp;</td>
+            </tr>
+        }
+    </table>
+    <hr>
+    <div style="">
+        <div style="font-weight: 800;" align="right">总金额：@Model.Data.DocTotal &nbsp;</div>
         <hr>
-        <div style="">
-            <div style="font-weight: 800;" align="right">总金额：@Model.Data.DocTotal &nbsp;</div>
-            <hr>
-        </div>
     </div>
+    <footer>
+       
+        <section class="footer-title">
+            <h1>THANKS FOR CALLING NEWARE！</h1>
+            <h1>新威真诚感谢您能再度惠顾！</h1>
+            <p>所有销售交易均按照新威《销售、服务和技术支持条款及条件》执行，该文件可通过www.neware.com.cn或向新威索取。</p>
+        </section>
+        <hr>
+
+        <section class="footer-info">
+            <div>
+                <p>深圳市新威尔电子有限公司</p>
+                <p>订购咨询专线：0755-83108866</p>
+            </div>
+            <div>
+                <p>深圳市福田区梅林街道梅都社区中康路128号卓越梅林中心广场(北区)3号楼1206</p>
+                <p>免费专线：800-830-8866</p>
+            </div>
+            <div>
+                <p class="footer-datetime">A0.2006.10.20</p>
+            </div>
+        </section>
+    </footer>
 </body>
 
 </html>
