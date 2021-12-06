@@ -4094,12 +4094,12 @@ namespace OpenAuth.App.Order
             {
                 ReimburseCost scon = new ReimburseCost
                 {
-                    ItemCode = string.IsNullOrEmpty(dtbs.Rows[i][1].ToString()) ? " " : dtbs.Rows[i][1].ToString(),
-                    Dscription = string.IsNullOrEmpty(dtbs.Rows[i][2].ToString()) ? " " : dtbs.Rows[i][2].ToString(),
-                    Quantity = string.IsNullOrEmpty(dtbs.Rows[i][2].ToString()) ? " " : dtbs.Rows[i][2].ToString(),
-                    unitMsr = string.IsNullOrEmpty(dtbs.Rows[i][3].ToString()) ? " " : dtbs.Rows[i][3].ToString(),
-                    Price = string.IsNullOrEmpty(dtbs.Rows[i][4].ToString()) ? " " : dtbs.Rows[i][4].ToString(),
-                    Money = string.IsNullOrEmpty(dtbs.Rows[i][5].ToString()) ? " " : dtbs.Rows[i][5].ToString()
+                    ItemCode = string.IsNullOrEmpty(dtbs.Rows[i][2].ToString()) ? " " : dtbs.Rows[i][2].ToString(),
+                    Dscription = string.IsNullOrEmpty(dtbs.Rows[i][3].ToString()) ? " " : dtbs.Rows[i][3].ToString(),
+                    Quantity = string.IsNullOrEmpty(dtbs.Rows[i][4].ToString()) ? " " : dtbs.Rows[i][4].ToString(),
+                    unitMsr = string.IsNullOrEmpty(dtbs.Rows[i][5].ToString()) ? " " : dtbs.Rows[i][5].ToString(),
+                    Price = string.IsNullOrEmpty(dtbs.Rows[i][6].ToString()) ? " " : dtbs.Rows[i][6].ToString(),
+                    Money = string.IsNullOrEmpty(dtbs.Rows[i][7].ToString()) ? " " : dtbs.Rows[i][7].ToString()
 
                 };
                 PrintSalesQuotation.ReimburseCosts.Add(scon);
