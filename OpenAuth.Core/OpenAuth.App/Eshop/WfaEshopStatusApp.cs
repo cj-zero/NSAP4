@@ -175,10 +175,10 @@ namespace OpenAuth.App
         public async Task<TableData> UpdateShipStatusForOrder(string EshopPOrderNo)
         {
             var result = new TableData();
-            var thisorder = await UnitWork.Find<sale_ordr>(w => w.U_EshopNo == EshopPOrderNo && w.sbo_id.Equals(1)).FirstOrDefaultAsync();
+            var thisorder = await UnitWork.Find<sale_ordr>(w => w.U_EshopNo == EshopPOrderNo && w.sbo_id.Equals(1) && w.CANCELED=="N").FirstOrDefaultAsync();
             if (thisorder != null && thisorder.DocEntry > 0)
             {
-                await UnitWork.UpdateAsync<sale_ordr>(w => w.DocEntry == thisorder.DocEntry && w.sbo_id == thisorder.sbo_id, u => new sale_ordr { U_ShipStatus = 1 });
+                await UnitWork.UpdateAsync<sale_ordr>(w => w.DocEntry == thisorder.DocEntry && w.sbo_id == thisorder.sbo_id && w.CANCELED == "N", u => new sale_ordr { U_ShipStatus = 1 });
                 await UnitWork.SaveAsync();
                 result.Message = "更新成功";
             }
@@ -204,7 +204,7 @@ namespace OpenAuth.App
             var result = new TableData();
             if (!string.IsNullOrEmpty(req.EshopOrderNo))
             {
-                var thisorder = await UnitWork.Find<sale_ordr>(w => w.U_EshopNo == req.EshopOrderNo).FirstOrDefaultAsync();
+                var thisorder = await UnitWork.Find<sale_ordr>(w => w.U_EshopNo == req.EshopOrderNo && w.sbo_id.Equals(1) && w.CANCELED == "N").FirstOrDefaultAsync();
                 if (thisorder != null && thisorder.DocEntry > 0)
                 {
                     var newobj = new sale_ordr_plugin();
