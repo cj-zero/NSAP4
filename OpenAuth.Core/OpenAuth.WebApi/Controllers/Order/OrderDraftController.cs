@@ -1411,14 +1411,14 @@ namespace OpenAuth.WebApi.Controllers.Order
                 {
                     DataTable datatable = _serviceSaleOrderApp.SelectBillViewInfo(out rowCount, int.Parse(rp), int.Parse(page), query, sortname, sortorder, type, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewFull, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelf, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelfDepartment, DepID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewCustom, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSales);
                     tabledata.Data = datatable;
-                    tabledata.Count = datatable.Rows.Count;
+                    tabledata.Count = rowCount;
 
                 }
                 else
                 {
-                    DataTable datatable = _serviceSaleOrderApp.SelectBillListInfo(int.Parse(rp), int.Parse(page), query, sortname, sortorder, type, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewFull, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelf, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelfDepartment, DepID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewCustom, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSales, sqlcont, sboname);
+                    DataTable datatable = _serviceSaleOrderApp.SelectBillListInfo(out rowCount, int.Parse(rp), int.Parse(page), query, sortname, sortorder, type, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewFull, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelf, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelfDepartment, DepID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewCustom, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSales, sqlcont, sboname);
                     tabledata.Data = datatable;
-                    tabledata.Count = datatable.Rows.Count;
+                    tabledata.Count = rowCount;
 
                 }
             }

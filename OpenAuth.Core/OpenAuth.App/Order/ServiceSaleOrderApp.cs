@@ -3166,9 +3166,9 @@ namespace OpenAuth.App.Order
         /// 查看视图【主页面 - 帐套开启】
         /// </summary>
         /// <returns></returns>
-        public DataTable SelectBillListInfo(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, string type, bool ViewFull, bool ViewSelf, int UserID, int SboID, bool ViewSelfDepartment, int DepID, bool ViewCustom, bool ViewSales, string sqlcont, string sboname)
+        public DataTable SelectBillListInfo(out int rowCount, int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, string type, bool ViewFull, bool ViewSelf, int UserID, int SboID, bool ViewSelfDepartment, int DepID, bool ViewCustom, bool ViewSales, string sqlcont, string sboname)
         {
-            int rowCount = 0; bool IsSql = true;
+            bool IsSql = true;
             string sortString = string.Empty;
             string filterString = string.Empty;
             string line = string.Empty; int uSboId = SboID;
@@ -3584,7 +3584,7 @@ namespace OpenAuth.App.Order
             }
             if (type.ToLower() == "odln")
             {
-                filedName.Append(",'' as BuyDocEntry,'' as TransportName,'' as TransportID,'' as TransportSum,a.DocDate");
+                filedName.Append(",'' as BuyDocEntry,'' as TransportName,'' as TransportID,'00' as TransportSum,a.DocDate");
             }
             tableName.AppendFormat("" + sboname + type + " a ");
             tableName.AppendFormat(" LEFT JOIN " + sboname + "OSLP c ON a.SlpCode = c.SlpCode");
@@ -3835,7 +3835,6 @@ namespace OpenAuth.App.Order
             };
             sqlParameters[7].Direction = ParameterDirection.Output;
             DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, "sp_common_pager", CommandType.StoredProcedure, sqlParameters);
-            //rowsCount = isTotal == 1 ? Convert.ToInt32(sqlParameters[7].Value) : 0;
             if (dataTable.Rows.Count > 0)
             {
                 rowsCount = isTotal == 1 ? Convert.ToInt32(sqlParameters[7].Value) : 0;
