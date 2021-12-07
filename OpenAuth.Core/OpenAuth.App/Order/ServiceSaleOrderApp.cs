@@ -4055,7 +4055,7 @@ namespace OpenAuth.App.Order
                 return "0";
             }
         }
-        public async Task<byte[]> ExportShowNew(string sboid, string DocEntry)
+        public async Task<byte[]> ExportShow(string sboid, string DocEntry)
         {
             DataTable dtb = ExportViewNos(sboid, DocEntry);
             DataTable dtbs = ExportViews(sboid, DocEntry);
@@ -8573,6 +8573,63 @@ namespace OpenAuth.App.Order
             string sqlstr = string.Format("select AuditRemark from {0}.sale_oqut where sbo_id={1} and docentry={2} limit 1", "nsap_bone", sboid, docentry);
             object resultentry = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sqlstr, CommandType.Text, null);
             return resultentry == null ? "" : resultentry.ToString();
+        }
+        /// <summary>
+        /// 订单打印
+        /// </summary>
+        /// <param name="sboid"></param>
+        /// <param name="DocEntry"></param>
+        /// <returns></returns>
+        public async Task<byte[]> OrderExportShow(string sboid, string DocEntry)
+        {
+            DataTable dtb = ExportViewNos(sboid, DocEntry);
+            DataTable dtbs = ExportViews(sboid, DocEntry);
+            var logopath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
+            var logostr = "";
+            using (var fs = new FileStream(logopath, FileMode.Open))
+            {
+                var photo = new byte[fs.Length];
+                fs.Position = 0;
+                await fs.ReadAsync(photo, 0, photo.Length);
+                logostr = Convert.ToBase64String(photo);
+                Console.WriteLine(logostr);
+            }
+            var PrintSalesQuotation = new PrintSalesQuotation
+            {
+                DocEntry = string.IsNullOrEmpty(dtb.Rows[0][0].ToString()) ? " " : dtb.Rows[0][0].ToString(),
+                DateTime = string.IsNullOrEmpty(dtb.Rows[0][15].ToString()) ? " " : dtb.Rows[0][15].ToString(),
+                SalseName = string.IsNullOrEmpty(dtb.Rows[0][8].ToString()) ? " " : dtb.Rows[0][8].ToString(),
+                CardCode = string.IsNullOrEmpty(dtb.Rows[0][1].ToString()) ? " " : dtb.Rows[0][1].ToString(),
+                Name = string.IsNullOrEmpty(dtb.Rows[0][3].ToString()) ? " " : dtb.Rows[0][3].ToString(),
+                Tel = string.IsNullOrEmpty(dtb.Rows[0][4].ToString()) ? " " : dtb.Rows[0][4].ToString(),
+                Fax = string.IsNullOrEmpty(dtb.Rows[0][17].ToString()) ? " " : dtb.Rows[0][17].ToString(),
+                Cellolar = string.IsNullOrEmpty(dtb.Rows[0][6].ToString()) ? " " : dtb.Rows[0][6].ToString(),
+                CardName = string.IsNullOrEmpty(dtb.Rows[0][2].ToString()) ? " " : dtb.Rows[0][2].ToString(),
+                Address = string.IsNullOrEmpty(dtb.Rows[0][7].ToString()) ? " " : dtb.Rows[0][7].ToString(),
+                Address2 = string.IsNullOrEmpty(dtb.Rows[0][19].ToString()) ? " " : dtb.Rows[0][19].ToString(),
+                PymntGroup = string.IsNullOrEmpty(dtb.Rows[0][11].ToString()) ? " " : dtb.Rows[0][11].ToString(),
+                Comments = string.IsNullOrEmpty(dtb.Rows[0][10].ToString()) ? " " : dtb.Rows[0][10].ToString().Replace("<br>", " "),
+                DocTotal = string.IsNullOrEmpty(dtb.Rows[0][13].ToString()) ? " " : dtb.Rows[0][13].ToString(),
+                DATEFORMAT = string.IsNullOrEmpty(dtb.Rows[0][14].ToString()) ? " " : dtb.Rows[0][14].ToString(),
+                logo = logostr,
+                QRcode = QRCoderHelper.CreateQRCodeToBase64(DocEntry),
+                ReimburseCosts = new List<ReimburseCost>()
+            };
+            for (int i = 0; i < dtbs.Rows.Count; i++)
+            {
+                ReimburseCost scon = new ReimburseCost
+                {
+                    ItemCode = string.IsNullOrEmpty(dtbs.Rows[i][2].ToString()) ? " " : dtbs.Rows[i][2].ToString(),
+                    Dscription = string.IsNullOrEmpty(dtbs.Rows[i][3].ToString()) ? " " : dtbs.Rows[i][3].ToString(),
+                    Quantity = string.IsNullOrEmpty(dtbs.Rows[i][4].ToString()) ? " " : dtbs.Rows[i][4].ToString(),
+                    unitMsr = string.IsNullOrEmpty(dtbs.Rows[i][5].ToString()) ? " " : dtbs.Rows[i][5].ToString(),
+                    Price = string.IsNullOrEmpty(dtbs.Rows[i][6].ToString()) ? " " : dtbs.Rows[i][6].ToString(),
+                    Money = string.IsNullOrEmpty(dtbs.Rows[i][7].ToString()) ? " " : dtbs.Rows[i][7].ToString()
+
+                };
+                PrintSalesQuotation.ReimburseCosts.Add(scon);
+            }
+            return await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesOrders.cshtml");
         }
 
     }

@@ -1465,11 +1465,11 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns></returns>
         [HttpGet]
         [Route("ExportShowNew")]
-        public async Task<FileResult> ExportShowNew(string sboid, string DocEntry)
+        public async Task<FileResult> ExportShow(string sboid, string DocEntry)
         {
             try
             {
-                return File(await _serviceSaleOrderApp.ExportShowNew(sboid, DocEntry), "application/pdf");
+                return File(await _serviceSaleOrderApp.ExportShow(sboid, DocEntry), "application/pdf");
             }
             catch (Exception ex)
             {

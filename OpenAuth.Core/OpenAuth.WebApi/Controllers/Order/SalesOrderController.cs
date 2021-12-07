@@ -7,6 +7,7 @@ using OpenAuth.App.Order.ModelDto;
 using OpenAuth.App.Order.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Interface;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -244,7 +245,28 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             return result;
         }
-
+        /// <summary>
+        /// PDF打印（新）
+        /// </summary>
+        /// <param name="val"></param>
+        /// <param name="Indicator"></param>
+        /// <param name="sboid"></param>
+        /// <param name="DocEntry"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("OrderExportShowNew")]
+        public async Task<FileResult> OrderExportShow(string sboid, string DocEntry)
+        {
+            try
+            {
+                return File(await _serviceSaleOrderApp.OrderExportShow(sboid, DocEntry), "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error($"地址：{Request.Path}，参数：{DocEntry}， 错误：{ex.Message}");
+                throw new Exception("导出失败！" + ex.ToString());
+            }
+        }
         #endregion
     }
 }

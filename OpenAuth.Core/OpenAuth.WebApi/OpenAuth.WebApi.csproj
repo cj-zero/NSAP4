@@ -84,6 +84,9 @@
     <Content Update="appsettings.Production.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Content>
+    <Content Update="Templates\PrintSalesOrders.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Update="Templates\PrintSalesQuotation.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
