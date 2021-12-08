@@ -1,4 +1,5 @@
 ﻿using DotNetCore.CAP;
+using Infrastructure;
 using Microsoft.Extensions.Options;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Order.ModelDto;
@@ -54,6 +55,10 @@ namespace OpenAuth.App
         public int GetUserNaspId()
         {
             var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
             var nsapUserMap = UnitWork.FindSingle<NsapUserMap>(u=>u.UserID==loginContext.User.Id);
             return Convert.ToInt32(nsapUserMap.NsapUserId);
         }

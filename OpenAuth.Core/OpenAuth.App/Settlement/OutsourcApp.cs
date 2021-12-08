@@ -224,7 +224,7 @@ namespace OpenAuth.App
             var serviceEvaluate = await UnitWork.Find<ServiceEvaluate>(s => serviceOrderIds.Contains((int)s.ServiceOrderId)).ToListAsync();
             serviceOrderList.ForEach(s =>
             {
-                var count = s.ServiceWorkOrders.Where(w => (w.Status < 7 || w.ServiceMode != request.ServiceMode) && w.CurrentUserNsapId.Equals(loginContext.User.Id)).Count();
+                var count = s.ServiceWorkOrders.Where(w => (w.Status < 7 || w.ServiceMode != request.ServiceMode) && w.CurrentUserNsapId == loginContext.User.Id).Count();
                 count += serviceEvaluate.Where(s => (s.ServicePrice + s.ServiceAttitude + s.SchemeEffectiveness + s.ProductQuality + s.ResponseSpeed) / 5 < 3).Count();
                 if (count <= 0 && s.ServiceWorkOrders.Where(w => w.CurrentUserNsapId.Equals(loginContext.User.Id)).Count() > 0)
                 {

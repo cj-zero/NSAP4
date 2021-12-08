@@ -1411,14 +1411,14 @@ namespace OpenAuth.WebApi.Controllers.Order
                 {
                     DataTable datatable = _serviceSaleOrderApp.SelectBillViewInfo(out rowCount, int.Parse(rp), int.Parse(page), query, sortname, sortorder, type, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewFull, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelf, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelfDepartment, DepID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewCustom, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSales);
                     tabledata.Data = datatable;
-                    tabledata.Count = datatable.Rows.Count;
+                    tabledata.Count = rowCount;
 
                 }
                 else
                 {
-                    DataTable datatable = _serviceSaleOrderApp.SelectBillListInfo(int.Parse(rp), int.Parse(page), query, sortname, sortorder, type, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewFull, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelf, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelfDepartment, DepID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewCustom, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSales, sqlcont, sboname);
+                    DataTable datatable = _serviceSaleOrderApp.SelectBillListInfo(out rowCount, int.Parse(rp), int.Parse(page), query, sortname, sortorder, type, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewFull, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelf, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSelfDepartment, DepID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewCustom, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesQuotation.aspx", UserID).ViewSales, sqlcont, sboname);
                     tabledata.Data = datatable;
-                    tabledata.Count = datatable.Rows.Count;
+                    tabledata.Count = rowCount;
 
                 }
             }
@@ -1465,11 +1465,11 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns></returns>
         [HttpGet]
         [Route("ExportShowNew")]
-        public async Task<FileResult> ExportShowNew(string sboid, string DocEntry)
+        public async Task<FileResult> ExportShow(string sboid, string DocEntry)
         {
             try
             {
-                return File(await _serviceSaleOrderApp.ExportShowNew(sboid, DocEntry), "application/pdf");
+                return File(await _serviceSaleOrderApp.ExportShow(sboid, DocEntry), "application/pdf");
             }
             catch (Exception ex)
             {
