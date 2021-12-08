@@ -413,6 +413,29 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 统计各部门在一段时间内处理服务单的占比,以及每个部门内处理天数的统计情况
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetServerCallEfficiency([FromQuery] QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetServerCallEfficiency(req);
+            }
+            catch(Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 查询可以被派单的技术员列表
         /// </summary>
         /// <returns></returns>
@@ -1694,6 +1717,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
+        [TypeFilter(typeof(RequestActionFilter))]
         public async Task<Response> AddDailyExpends(AddDailyExpendsReq req)
         {
             var result = new Response();
