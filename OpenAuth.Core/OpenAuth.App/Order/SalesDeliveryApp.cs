@@ -9,6 +9,9 @@ using System.Data;
 using System.Text;
 using NSAP.Entity.Sales;
 using System.Threading.Tasks;
+using OpenAuth.App.Order.ModelDto;
+using OpenAuth.Repository.Extensions;
+using System.Linq;
 
 namespace OpenAuth.App.Order
 {
@@ -189,7 +192,7 @@ namespace OpenAuth.App.Order
         /// <param name="ViewCustom"></param>
         /// <param name="ViewSales"></param>
         /// <returns></returns>
-        public async Task<DataTable> QuerySaleDetailsNew(string DocNum, int SboId, string tablename, bool ViewCustom, bool ViewSales)
+        public async Task<Main> QuerySaleDetailsNew(string DocNum, int SboId, string tablename, bool ViewCustom, bool ViewSales)
         {
             string U_YWY = string.Empty;
             if (await IsExistMySql(tablename, "U_YWY"))
@@ -214,7 +217,9 @@ namespace OpenAuth.App.Order
             }
             strSql += string.Format(" FROM {0}." + tablename + "", "nsap_bone");
             strSql += string.Format(" WHERE DocEntry={0} AND sbo_id={1}", DocNum, SboId);
-            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            //return dt;
+            return dt.Tolist<Main>().FirstOrDefault();
         }
         public async Task<bool> IsExistMySql(string tablename, string filename)
         {
@@ -225,6 +230,218 @@ namespace OpenAuth.App.Order
             { result = false; }
             else { result = true; }
             return result;
+        }
+
+        public async Task<Manager> DropPopupOwnerCodeNew(int SboID, string id)
+        {
+            string strSql = " SELECT empID AS id,CONCAT(lastName,+firstName) AS name FROM " + "nsap_bone" + ".crm_ohem WHERE sbo_id=" + SboID + "";
+            if (id != "0")
+            {
+                strSql += "  AND empID='" + id + "'";
+            }
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).Tolist<Manager>().FirstOrDefault();
+        }
+        public async Task<Sales> DropPopupSlpCodeNew(int SboID, string id)
+        {
+            string strSql = " SELECT SlpCode AS id,SlpName AS name FROM " + "nsap_bone" + ".crm_oslp WHERE sbo_id=" + SboID + "";
+            if (id != "0")
+            {
+                strSql += " AND SlpCode='" + id + "'";
+            }
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).Tolist<Sales>().FirstOrDefault();
+
+        }
+        public async Task<Mark> DropPopupIndicatorNew(int sbo_id, string id)
+        {
+            string strSql = string.Format(" SELECT Code as id,Name AS name FROM {0}.crm_oidc WHERE sbo_id={1}", "nsap_bone", sbo_id);
+            if (id != "" && id != "0")
+            {
+                strSql += string.Format(" AND Code='{0}'", id);
+            }
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).Tolist<Mark>().FirstOrDefault();
+
+
+        }
+        /// <summary>
+        /// 装运类型
+        /// </summary>
+        /// <param name="SboId"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<ShipType> DropPopupTrnspCodeNew(int SboId, string id)
+        {
+            string strSql = " SELECT TrnspCode AS id,TrnspName AS name FROM " + "nsap_bone" + ".crm_oshp WHERE sbo_id=" + SboId + "";
+            if (id != "0")
+            {
+                strSql += " AND TrnspCode='" + id + "'";
+            }
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).Tolist<ShipType>().FirstOrDefault();
+
+        }
+        /// <summary>
+        /// 付款条款（新）
+        /// </summary>
+        public async Task<PaymentCond> GetGroupNumNew(int sbo_id, string id)
+        {
+            string strSql = string.Format(" SELECT GroupNum AS id,PymntGroup AS name FROM {0}.crm_octg WHERE sbo_id={1}", "nsap_bone", sbo_id);
+            if (id != "0")
+            {
+                strSql += string.Format(" AND GroupNum = '{0}'", id);
+            }
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).Tolist<PaymentCond>().FirstOrDefault();
+
+        }
+        /// <summary>
+        /// 货币
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="sboId"></param>
+        /// <returns></returns>
+        public async Task<DocCur> DropPopupDocCurNew(string id, int sboId)
+        {
+            string strSql = " SELECT CurrCode AS id,CurrName AS name FROM " + "nsap_bone" + ".crm_ocrn WHERE sbo_id = " + sboId.ToString() + "";
+            if (id != "0")
+            {
+                strSql += " AND CurrCode='" + id + "'";
+            }
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).Tolist<DocCur>().FirstOrDefault();
+        }
+        /// <summary>
+        /// 获取业务伙伴的所有联系人
+        /// </summary>
+        public async Task<CntctCode> DropPopupCntctPrsnNew(string Code, int SboId, string id)
+        {
+            string sql = string.Format("SELECT b.CntctCode AS id,b.Name AS name FROM  " + "nsap_bone" + ".crm_ocrd a LEFT JOIN  " + "nsap_bone" + ".crm_ocpr b ON a.CardCode=b.CardCode WHERE a.CardCode='{0}'", Code);
+            if (id != "0")
+            {
+                sql += string.Format(" AND b.CntctCode='{0}'", id);
+            }
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null).Tolist<CntctCode>().FirstOrDefault();
+
+        }
+        public async Task<ShipToCode> GetAddressNew(string AdresType, string CardCode, int SboId)
+        {
+            StringBuilder sql = new StringBuilder();
+            sql.Append(" SELECT Address AS name,CONCAT(IFNULL(ZipCode,''),IFNULL(b.Name,''),IFNULL(c.Name,''),IFNULL(City,''),IFNULL(Building,'')) AS id,a.ZipCode,a.State ");
+            sql.AppendFormat(" FROM {0}.crm_crd1 a", "nsap_bone");
+            sql.AppendFormat(" LEFT JOIN {0}.store_ocry b ON a.Country=b.Code", "nsap_bone");
+            sql.AppendFormat(" LEFT JOIN {0}.store_ocst c ON a.State=c.Code", "nsap_bone");
+            sql.AppendFormat(" WHERE AdresType='{0}' AND CardCode='{1}' ", AdresType, CardCode);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql.ToString(), CommandType.Text, null).Tolist<ShipToCode>().FirstOrDefault();
+
+        }
+        /// <summary>
+        /// 查询指定业务伙伴的科目余额
+        /// </summary>
+        public async Task<string> SelectBalanceNew(string cardcode, string SboId)
+        {
+            bool IsOpenSap = _serviceSaleOrderApp.GetSapSboIsOpen(SboId);
+            if (IsOpenSap)
+            {
+                string strSql = string.Format("SELECT ISNULL(Balance,0) AS Balance FROM OCRD WHERE CardCode='{0}'", cardcode);
+                object obj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, strSql, CommandType.Text, null);
+                return obj == null ? "0" : obj.ToString();
+            }
+            else
+            {
+                string strSql = string.Format("SELECT IFNULL(Balance,0) AS Balance FROM {0}.crm_OCRD WHERE sbo_id={1} AND CardCode='{2}'", "nsap_bone", SboId, cardcode);
+
+                object obj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+                return obj == null ? "0" : obj.ToString();
+            }
+        }
+        /// <summary>
+        /// 查询销售员所有客户总的科目余额
+        /// </summary>
+        public async Task<string> GetSumBalDueNew(string slpCode, string type, string SboId)
+        {
+            bool IsOpenSap = _serviceSaleOrderApp.GetSapSboIsOpen(SboId);
+            if (IsOpenSap)
+            {
+                StringBuilder strSql = new StringBuilder();
+                strSql.Append("SELECT sum(ISNULL(b.Balance,0)) AS Balance FROM OCRD b");
+                strSql.AppendFormat(" WHERE b.SlpCode='{0}' and (b.cardtype='C' or b.cardtype='L')", slpCode);
+                object obj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+                return obj == null ? "0" : obj.ToString();
+            }
+            else
+            {
+                StringBuilder strSql = new StringBuilder();
+                strSql.AppendFormat("SELECT SUM(a.Debit-a.Credit) AS Total FROM {0}.finance_jdt1 a ", "nsap_bone");
+                strSql.AppendFormat("LEFT JOIN {0}.crm_ocrd b ON a.sbo_id=b.sbo_id AND a.ShortName=b.CardCode AND a.ShortName LIKE '{1}%' ", "nsap_bone", type);
+                strSql.AppendFormat(" WHERE b.sbo_id={0} AND b.SlpCode={1}", SboId, slpCode);
+
+                object obj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+                return obj == null ? "0" : obj.ToString();
+            }
+        }
+
+
+        public async Task<DataTable> GetItemCodeListNew(string DocNum, string tablename, bool ViewSales, int SboID)
+        {
+            string strSql = string.Format(" SELECT d.DocEntry,d.ItemCode,Dscription,Quantity,IF(" + ViewSales + ",Price,0) AS Price,IF(" + ViewSales + ",d.U_XSTCBL,0) AS U_XSTCBL,IF(" + ViewSales + ",d.U_YWF,0) AS U_YWF,IF(" + ViewSales + ",d.U_FWF,0) AS U_FWF,");
+            strSql += string.Format("IF(" + ViewSales + ",LineTotal,0) AS LineTotal,IF(" + ViewSales + ",StockPrice,0) AS StockPrice,d.WhsCode,w.OnHand,");
+            strSql += string.Format("(CASE m.QryGroup1 WHEN 'N' THEN 0 ELSE '0.5' END) AS QryGroup1,");
+            strSql += string.Format("(CASE m.QryGroup2 WHEN 'N' THEN 0 ELSE '3' END) AS QryGroup2,");
+            strSql += string.Format("(CASE m.QryGroup3 WHEN 'N' THEN 0 ELSE '2' END) AS _QryGroup3,d.OpenQty,m.U_JGF,m.U_JGF1,");
+            strSql += string.Format("IFNULL(m.U_YFCB,0) AS U_YFCB,IFNULL(d.U_SHJSDJ,0) AS U_SHJSDJ,IFNULL(d.U_SHJSJ,0) AS U_SHJSJ,IFNULL(d.U_SHTC,0) AS U_SHTC,");
+            strSql += string.Format("d.LineNum AS BaseLine,d.DocEntry AS BaseEntry,IFNULL(d.U_SHJSJ,0) AS U_SHJSJ,IFNULL(d.U_SHTC,0) AS U_SHTC,U_ZS,IF(" + ViewSales + ",d.PriceBefDi,0) as PriceBefDi,IF(" + ViewSales + ",DiscPrcnt,0) as DiscPrcnt");
+            strSql += string.Format(",IF(" + ViewSales + ",TotalFrgn,0) as LineTotalFC");
+            strSql += string.Format(" FROM {0}." + tablename + " d", "nsap_bone");
+            strSql += string.Format(" LEFT JOIN {0}.store_oitw w ON d.ItemCode=w.ItemCode AND d.WhsCode=w.WhsCode AND d.sbo_id=w.sbo_id", "nsap_bone");
+            strSql += string.Format(" LEFT JOIN {0}.store_oitm m ON d.ItemCode=m.ItemCode AND d.sbo_id=m.sbo_id", "nsap_bone");
+            strSql += string.Format(" WHERE d.DocEntry={0} AND d.sbo_id={1}", DocNum, SboID);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
+        }
+        public async Task<DataTable> QuerySalesCustomNew(string DocNum, int SboId, string tablename)
+        {
+
+
+            string customs = await IsMysqlCustomField(tablename);
+            if (customs != "")
+            {
+                string strSql = string.Format("SELECT " + customs + " FROM {0}." + tablename + " ", "nsap_bone");
+                strSql += string.Format(" WHERE DocNum={0} AND sbo_id={1}", DocNum, SboId);
+                return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            }
+            else
+            {
+                return new DataTable();
+            }
+        }
+        public async Task<string> IsMysqlCustomField(string tableName)
+        {
+            string strSql = string.Format("SELECT GROUP_CONCAT(column_name,'') FROM information_schema.columns WHERE table_schema='{0}' AND table_name ='{1}' AND column_name in (SELECT AliasID FROM {0}.base_cufd WHERE TableID='{1}')", "nsap_bone", tableName);
+            return UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null).ToString();
+        }
+        public async Task<DataTable> DropPopupWhsCodeNew(int sbo_id, string id)
+        {
+            string strSql = string.Format(" SELECT WhsCode AS id,WhsName AS name FROM {0}.store_owhs WHERE sbo_id={1}", "nsap_bone", sbo_id);
+            if (id != "0")
+            {
+                strSql += string.Format(" AND WhsCode='{0}'", id);
+            }
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+        }
+        /// <summary>
+        /// 获取附件信息
+        /// </summary>
+        public async Task<DataTable> GetFilesList(string DocNum, string TypeId, int SboId)
+        {
+            string strSql = string.Format("SELECT a.file_id,b.type_nm,a.file_nm,a.remarks,a.file_path,a.upd_dt,c.user_nm,a.view_file_path,a.file_type_id,a.acct_id ");
+            strSql += string.Format(" FROM {0}.file_main a", "nsap_bone");
+            strSql += string.Format(" LEFT JOIN {0}.file_type b ON a.file_type_id=b.type_id", "nsap_bone");
+            strSql += string.Format(" LEFT JOIN {0}.base_user c ON a.acct_id=c.user_id", "nsap_bone");
+            if (TypeId == "5")//销售订单附件附带销售提成附件
+            {
+                strSql += string.Format(" WHERE a.docEntry='{0}' AND a.file_type_id in ({1},37) AND sbo_id={2}", DocNum, TypeId, SboId);
+            }
+            else
+            {//非销售订单附件
+                strSql += string.Format(" WHERE a.docEntry='{0}' AND a.file_type_id='{1}' AND sbo_id={2}", DocNum, TypeId, SboId);
+            }
+
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text,null );
         }
     }
 }

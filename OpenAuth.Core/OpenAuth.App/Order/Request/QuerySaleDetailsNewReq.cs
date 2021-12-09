@@ -22,5 +22,6 @@ namespace OpenAuth.App.Order.Request
         public bool ViewSales { get; set; }
         public string isCopy { get; set; }
         public string funcID { get; set; }
+        public string linename { get; set; }
     }
 }

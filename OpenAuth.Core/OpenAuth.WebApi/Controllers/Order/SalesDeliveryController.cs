@@ -1,9 +1,11 @@
 ﻿using Infrastructure;
+using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Order;
+using OpenAuth.App.Order.ModelDto;
 using OpenAuth.App.Order.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Interface;
@@ -115,96 +117,84 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// 销售交货详情
         /// </summary>
         /// <returns></returns>
-        //[HttpPost]
-        //[Route("QuerySaleDetailsNew")]
-        //public async Task<TableData> QuerySaleDetailsNew(QuerySaleDetailsNewReq querySaleDetailsNewReq)
-        //{
-        //    var result = new TableData();
-        //    DataTable dtTable = await _salesDeliveryApp.QuerySaleDetailsNew(querySaleDetailsNewReq.DocNum, int.Parse(querySaleDetailsNewReq.SboId), querySaleDetailsNewReq.tablename, querySaleDetailsNewReq.ViewCustom, querySaleDetailsNewReq.ViewSales);
-        //    if (dtTable.Rows.Count == 0) return null;
-        //    string _manager = NSAP.Data.Sales.BillDelivery.DropPopupOwnerCodeNew(SboId, dtTable.Rows[0][31].ToString()).DataTableToJSON();
-        //    string _sales = NSAP.Data.Sales.BillDelivery.DropPopupSlpCodeNew(SboId, dtTable.Rows[0][18].ToString()).DataTableToJSON();
-        //    string _mark = NSAP.Data.Sales.BillDelivery.DropPopupIndicatorNew(SboId, dtTable.Rows[0][24].ToString()).DataTableToJSON();
-        //    string _shipType = NSAP.Data.Sales.BillDelivery.DropPopupTrnspCodeNew(SboId, dtTable.Rows[0][19].ToString()).DataTableToJSON();
-        //    string _paymentCond = NSAP.Data.Sales.BillDelivery.GetGroupNumNew(SboId, dtTable.Rows[0][20].ToString()).DataTableToJSON();
-        //    string _andbuy = NSAP.Data.Sales.BillDelivery.DropPopupSlpCodeNew(SboId, dtTable.Rows[0][35].ToString()).DataTableToJSON();
-        //    string _docCur = NSAP.Data.Sales.BillDelivery.DropPopupDocCurNew(dtTable.Rows[0][4].ToString(), SboId).DataTableToJSON();
-        //    string _cntctCode = NSAP.Data.Sales.BillDelivery.DropPopupCntctPrsnNew(dtTable.Rows[0][0].ToString(), SboId, isCopy == "1" ? "0" : dtTable.Rows[0][2].ToString()).DataTableToJSON();
-        //    string _shipToCode = NSAP.Data.Sales.BillDelivery.GetAddressNew("S", dtTable.Rows[0][0].ToString(), SboId).DataTableToJSON();
-        //    string _payToCode = NSAP.Data.Sales.BillDelivery.GetAddressNew("B", dtTable.Rows[0][0].ToString(), SboId).DataTableToJSON();
-        //    string _balance = NSAP.Data.Sales.BillDelivery.SelectBalanceNew(dtTable.Rows[0][0].ToString(), SboId.ToString());
-        //    string _balanceS = NSAP.Data.Sales.BillDelivery.GetSumBalDueNew(dtTable.Rows[0][18].ToString(), "C", SboId.ToString());
-        //    DataTable _lineTable = new DataTable(); //NSAP.Data.Sales.BillDelivery.GetItemCodeListNew(DocNum, linename, ViewSales, SboId);
-        //    if (tablename.ToString().ToLower() == "buy_opor" || tablename.ToString().ToLower() == "opor")
-        //    {
-        //        _lineTable = NSAP.Data.Sales.BillDelivery.GetItemCodeListPur(DocNum, linename, ViewSales, SboId);
-        //    }
-        //    else
-        //    {
-        //        _lineTable = NSAP.Data.Sales.BillDelivery.GetItemCodeListNew(DocNum, linename, ViewSales, SboId);
-        //    }
-        //    //获得关联报价单的物料成本
-        //    DataTable _stockInfo = NSAP.Data.Sales.BillDelivery.GetCallInfoById(DocNum, SboId.ToString(), tablename, "0", "stock");
-        //    if (_stockInfo.Rows.Count > 0 && _stockInfo.Rows[0][0].ToString() != "")
-        //    {
-        //        for (int i = 0; i < _lineTable.Rows.Count; i++)
-        //        {
-        //            for (int j = 0; j < _stockInfo.Rows.Count; j++)
-        //            {
-        //                if (_lineTable.Rows[i][1].ToString() == _stockInfo.Rows[j][1].ToString())
-        //                {
-        //                    _lineTable.Rows[i][9] = _stockInfo.Rows[j][2];
-        //                }
-        //            }
-        //        }
-        //    }
+        [HttpPost]
+        [Route("QuerySaleDetailsNew")]
+        public async Task<Response<QuerySaleDetailsNewDto>> QuerySaleDetailsNew(QuerySaleDetailsNewReq querySaleDetailsNewReq)
+        {
+            var result = new Response<QuerySaleDetailsNewDto>();
+            var data = new QuerySaleDetailsNewDto();
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            data.main = await _salesDeliveryApp.QuerySaleDetailsNew(querySaleDetailsNewReq.DocNum, int.Parse(querySaleDetailsNewReq.SboId), querySaleDetailsNewReq.tablename, querySaleDetailsNewReq.ViewCustom, querySaleDetailsNewReq.ViewSales);
+            if (data.main == null) return null;
+            data.manager = await _salesDeliveryApp.DropPopupOwnerCodeNew(SboID, data.main.OwnerCode.ToString());
+            data.sales = await _salesDeliveryApp.DropPopupSlpCodeNew(SboID, data.main.SlpCode.ToString());
+            data.mark = await _salesDeliveryApp.DropPopupIndicatorNew(SboID, data.main.Indicator.ToString());
+            data.shipType = await _salesDeliveryApp.DropPopupTrnspCodeNew(SboID, data.main.TrnspCode.ToString());
+            data.paymentCond = await _salesDeliveryApp.GetGroupNumNew(SboID, data.main.GroupNum.ToString());
+            data.andbuy = await _salesDeliveryApp.DropPopupSlpCodeNew(SboID, data.main.SlpCode.ToString());
+            data.docCur = await _salesDeliveryApp.DropPopupDocCurNew(data.main.DocCur.ToString(), SboID);
+            data.cntctCode = await _salesDeliveryApp.DropPopupCntctPrsnNew(data.main.CardCode.ToString(), SboID, querySaleDetailsNewReq.isCopy == "1" ? "0" : data.main.CntctCode.ToString());
+            data.shipToCode = await _salesDeliveryApp.GetAddressNew("S", data.main.CardCode.ToString(), SboID);
+            data.payToCode = await _salesDeliveryApp.GetAddressNew("B", data.main.CardCode.ToString(), SboID);
+            data.balance = await _salesDeliveryApp.SelectBalanceNew(data.main.CardCode.ToString(), SboID.ToString());
+            data.balanceS = await _salesDeliveryApp.GetSumBalDueNew(data.main.SlpCode.ToString(), "C", SboID.ToString());
+            DataTable _lineTable = new DataTable(); //NSAP.Data.Sales.BillDelivery.GetItemCodeListNew(DocNum, linename, ViewSales, SboId);
 
-        //    string _line = _lineTable.DataTableToJSON();
-        //    string _customNew = NSAP.Data.Sales.BillDelivery.QuerySalesCustomNew(DocNum, SboId, tablename).DataRowByIndexToJSON(0);
-        //    string _storehouse = NSAP.Data.Sales.BillDelivery.DropPopupWhsCodeNew(SboId, "0").DataTableToJSON();
-        //    string _attachmentData = "";
-        //    if (!string.IsNullOrEmpty(funcID))
-        //    {
-        //        int fileType = int.Parse(NSAP.Data.Sales.BillDelivery.GetattchtypeByfuncid(int.Parse(funcID)).Rows[0]["type_id"].ToString());
-        //        _attachmentData = NSAP.Data.Sales.BillDelivery.GetFilesList(DocNum, fileType.ToString(), SboId).DataTableToJSON();
-        //    }
+            _lineTable = await _salesDeliveryApp.GetItemCodeListNew(querySaleDetailsNewReq.DocNum, querySaleDetailsNewReq.linename, querySaleDetailsNewReq.ViewSales, int.Parse(querySaleDetailsNewReq.SboId));
 
-        //    //服务呼叫
-        //    DataTable _callInfo = NSAP.Data.Sales.BillDelivery.GetCallInfoById(DocNum, SboId.ToString(), tablename, "0", "call");
-        //    string U_CallID = "", U_CallName = "", U_SerialNumber = "";
-        //    if (_callInfo.Rows.Count > 0 && _callInfo.Rows[0][0].ToString() != "")
-        //    {
-        //        U_CallID = _callInfo.Rows[0][0].ToString();
-        //        U_CallName = _callInfo.Rows[0][1].ToString();
-        //        U_SerialNumber = _callInfo.Rows[0][2].ToString();
-        //    }
-        //    if ((tablename == "sale_ordn" || tablename == "sale_orin") && !string.IsNullOrEmpty(dtTable.Rows[0][37].ToString()))
-        //    {
-        //        U_CallID = dtTable.Rows[0][37].ToString();
-        //        U_CallName = dtTable.Rows[0][38].ToString();
-        //        U_SerialNumber = dtTable.Rows[0][39].ToString();
-        //    }
+            //获得关联报价单的物料成本
+            DataTable _stockInfo = _serviceSaleOrderApp.GetCallInfoById(querySaleDetailsNewReq.DocNum, querySaleDetailsNewReq.SboId.ToString(), querySaleDetailsNewReq.tablename, "0", "stock");
+            if (_stockInfo.Rows.Count > 0 && _stockInfo.Rows[0][0].ToString() != "")
+            {
+                for (int i = 0; i < _lineTable.Rows.Count; i++)
+                {
+                    for (int j = 0; j < _stockInfo.Rows.Count; j++)
+                    {
+                        if (_lineTable.Rows[i][1].ToString() == _stockInfo.Rows[j][1].ToString())
+                        {
+                            _lineTable.Rows[i][9] = _stockInfo.Rows[j][2];
+                        }
+                    }
+                }
+            }
+            data.lineTable = _lineTable;
+            data.CustomNew = await _salesDeliveryApp.QuerySalesCustomNew(querySaleDetailsNewReq.DocNum, int.Parse(querySaleDetailsNewReq.SboId), querySaleDetailsNewReq.tablename);
+            data.Storehouse = await _salesDeliveryApp.DropPopupWhsCodeNew(int.Parse(querySaleDetailsNewReq.SboId), "0");
+            if (!string.IsNullOrEmpty(querySaleDetailsNewReq.funcID))
+            {
+                int fileType = int.Parse(_serviceSaleOrderApp.GetattchtypeByfuncid(int.Parse(querySaleDetailsNewReq.funcID)).Rows[0]["type_id"].ToString());
+                data.AttachmentData = await _salesDeliveryApp.GetFilesList(querySaleDetailsNewReq.DocNum, fileType.ToString(), int.Parse(querySaleDetailsNewReq.SboId));
+            }
 
-        //    string _main = dtTable.DataRowByIndexToJSON(0);
-        //    StringBuilder sMain = new StringBuilder();
-        //    var billSalesName = string.Empty;
-        //    if (dtTable.Rows[0][7].ToString() == "I")
-        //    {
-        //        billSalesName = "billSalesDetails";
-        //    }
-        //    else
-        //    {
-        //        billSalesName = "billSalesAcctCode";
-        //    }
-        //    sMain.AppendFormat("{0},\"WhsCode\":\"{3}\",\"" + billSalesName + "\":{1},\"CustomFields\":{2},\"attachmentData\":{4},\"U_CallID\":\"{5}\",\"U_CallName\":\"{6}\",\"U_SerialNumber\":\"{7}\"", _main.TrimEnd('}'), _line, _customNew, _lineTable.Rows[0]["WhsCode"].ToString(), _attachmentData, U_CallID, U_CallName, U_SerialNumber);
-        //    sMain.Append("}");
-        //    StringBuilder sBuilder = new StringBuilder("{");
-        //    sBuilder.AppendFormat("\"manager\":{0},\"sales\":{1},\"mark\":{2},\"shipType\":{3},\"storehouse\":{14},\"paymentCond\":{4},\"paymentMode\":{5},\"andbuy\":{6},\"docCur\":{7},\"cntctCode\":{8},\"balance\":{9},\"balanceS\":{10},\"main\":{11},\"shipToCode\":{12},\"payToCode\":{13}",
-        //        _manager, _sales, _mark, _shipType, _paymentCond, "[]", _andbuy, _docCur, _cntctCode, _balance == "" ? "0" : _balance, _balanceS == "" ? "0" : _balanceS, sMain, _shipToCode, _payToCode, _storehouse
-        //    );
-        //    sBuilder.Append("}");
-        //    return sBuilder.ToString();
-        //}
+            //服务呼叫
+            DataTable _callInfo = _serviceSaleOrderApp.GetCallInfoById(querySaleDetailsNewReq.DocNum, querySaleDetailsNewReq.SboId.ToString(), querySaleDetailsNewReq.tablename, "0", "call");
+            string U_CallID = "", U_CallName = "", U_SerialNumber = "";
+            if (_callInfo.Rows.Count > 0 && _callInfo.Rows[0][0].ToString() != "")
+            {
+                U_CallID = _callInfo.Rows[0][0].ToString();
+                U_CallName = _callInfo.Rows[0][1].ToString();
+                U_SerialNumber = _callInfo.Rows[0][2].ToString();
+            }
+            data.WhsCode = _lineTable.Rows[0]["WhsCode"].ToString();
+
+            var billSalesName = string.Empty;
+            if (data.main.DocType.ToString() == "I")
+            {
+                billSalesName = "billSalesDetails";
+            }
+            else
+            {
+                billSalesName = "billSalesAcctCode";
+            }
+            data.billSalesName = billSalesName;
+            data.main.U_CallID=U_CallID;
+            data.main.U_CallName = U_CallName;
+            data.main.U_SerialNumber = U_SerialNumber;
+            data.CustomFields = data.CustomNew.DataRowByIndexToJSON(0);
+            result.Result = data;
+            return result;
+        }
         #endregion
 
 

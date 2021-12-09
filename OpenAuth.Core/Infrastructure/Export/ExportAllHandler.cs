@@ -59,7 +59,6 @@ namespace Infrastructure.Export
         /// <typeparam name="T"></typeparam>
         /// <param name="filePath"></param>
         /// <param name="data"></param>
-        /// <param name="data"></param>
         /// <param name="tplPath"></param>
         /// <returns></returns>
         public static async Task<byte[]> Exporterpdf<T>(T data, string tplPath = null, Action<PdfExporterAttribute> action = null) where T : class
@@ -82,6 +81,7 @@ namespace Infrastructure.Export
                 pdf.IsWriteHtml = true;
                 pdf.PaperKind = PaperKind.A4;
                 pdf.Orientation = Orientation.Portrait;
+                pdf.IsEnablePagesCount= true;   
                 pdf.FooterSettings = new FooterSettings() { FontSize = 5, Right = "Page [page] of [toPage]", Line = false, Spacing = 2.812 };
             }
             var result = await exporter.ExportBytesByTemplate(data, pdf, tpl);
