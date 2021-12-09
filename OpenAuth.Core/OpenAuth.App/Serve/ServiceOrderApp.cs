@@ -1260,29 +1260,108 @@ namespace OpenAuth.App
         {
             var result = new TableData();
 
-            var serviceData = from so in UnitWork.Find<ServiceOrder>(so => so.Status == 2)
-                              .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null,
-                              so => so.CreateTime >= req.QryCreateTimeFrom && so.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
-                              join sw in UnitWork.Find<ServiceWorkOrder>(null)
-                              on so.Id equals sw.ServiceOrderId
-                              select new
-                              {
-                                  so.Id,
-                                  so.SupervisorId,
-                                  so.Supervisor,
-                                  sw.CreateTime,
-                                  sw.CompleteDate,
-                                  sw.Status,
-                              };
+            //只看客诉单,状态是已确认的,并且服务单下的工单都是已完成的(只要有一个工单未完成,整个服务单就算未完成)
+            var serviceData = await (from so in UnitWork.Find<ServiceOrder>(so => so.VestInOrg == 1 && so.Status == 2 && !so.ServiceWorkOrders.Any(sw => sw.Status < 6) && so.ServiceWorkOrders.All(sw => sw.CompleteDate != null))
+                       .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, so => so.CreateTime >= req.QryCreateTimeFrom && so.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
+                                     join sw in UnitWork.Find<ServiceWorkOrder>(null)
+                                     on so.Id equals sw.ServiceOrderId
+                                     group new { so, sw } by sw.ServiceOrderId into g
+                                     select new
+                                     {
+                                         serviceId = g.Key,
+                                         createTime = g.Max(x => x.sw.CreateTime),
+                                         endTime = g.Max(x => x.sw.CompleteDate), //取这个服务单下所有工单中最大的那个完成日期为整个服务单的完成日期
+                                         superVisor = g.Max(x => x.so.Supervisor),
+                                     }).ToListAsync();
 
-            var totalCount = await serviceData.Select(s => s.Id).Distinct().CountAsync();
-
-            var deptGroupCount = serviceData.GroupBy(s => s.Supervisor).Select(x => new
+            //按售后主管分类(表里面没存部门,根据售后主管对应部门),统计各处理时效的个数
+            var finishData = serviceData.GroupBy(d => d.superVisor).Select(g => new
             {
-                x.Key,
-                count = x.Count()
+                deptName = _userManagerApp.GetUserOrgInfo(null, g.Key).Result.OrgName,
+                superVisor = g.Key,
+                dFinishCount = g.Select(x => x.serviceId).Distinct().Count(),
+                d1 = g.Where(x => (x.endTime - x.createTime).Value.Days <= 1).Select(x => x.serviceId).Distinct().Count(),
+                d2 = g.Where(x => (x.endTime - x.createTime).Value.Days > 1 && (x.endTime - x.createTime).Value.Days <= 2).Select(x => x.serviceId).Distinct().Count(),
+                d3 = g.Where(x => (x.endTime - x.createTime).Value.Days > 2 && (x.endTime - x.createTime).Value.Days <= 3).Select(x => x.serviceId).Distinct().Count(),
+                d4 = g.Where(x => (x.endTime - x.createTime).Value.Days > 3 && (x.endTime - x.createTime).Value.Days <= 4).Select(x => x.serviceId).Distinct().Count(),
+                d5 = g.Where(x => (x.endTime - x.createTime).Value.Days > 4 && (x.endTime - x.createTime).Value.Days <= 5).Select(x => x.serviceId).Distinct().Count(),
+                d6 = g.Where(x => (x.endTime - x.createTime).Value.Days > 5 && (x.endTime - x.createTime).Value.Days <= 6).Select(x => x.serviceId).Distinct().Count(),
+                d7_14 = g.Where(x => (x.endTime - x.createTime).Value.Days > 6 && (x.endTime - x.createTime).Value.Days <= 14).Select(x => x.serviceId).Distinct().Count(),
+                d15_30 = g.Where(x => (x.endTime - x.createTime).Value.Days > 14 && (x.endTime - x.createTime).Value.Days <= 30).Select(x => x.serviceId).Distinct().Count(),
+                d30 = g.Where(x => (x.endTime - x.createTime).Value.Days > 30).Select(x => x.serviceId).Distinct().Count(),
             });
 
+            //将同一部门下的数据合并
+            var d1 = finishData.GroupBy(f => f.deptName).Select(g => new
+            {
+                dept = g.Key,
+                dFinishCount = g.Sum(x => x.dFinishCount),
+                d1 = g.Sum(x => x.d1),
+                d2 = g.Sum(x => x.d2),
+                d3 = g.Sum(x => x.d3),
+                d4 = g.Sum(x => x.d4),
+                d5 = g.Sum(x => x.d5),
+                d6 = g.Sum(x => x.d6),
+                d7_14 = g.Sum(x => x.d7_14),
+                d15_30 = g.Sum(x => x.d15_30),
+                d30 = g.Sum(x => x.d30)
+            });
+            //每个部门总共有多少个服务单
+            var deptGroupCount = await (UnitWork.Find<ServiceOrder>(so => so.VestInOrg == 1 && so.Status == 2)
+                       .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, so => so.CreateTime >= req.QryCreateTimeFrom && so.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
+                       .Select(x => new { x.Id, x.Supervisor }).Distinct()
+                       .GroupBy(x => x.Supervisor).Select(g => new
+                       {
+                           deptName = _userManagerApp.GetUserOrgInfo(null, g.Key).Result.OrgName,
+                           superVisor = g.Key,
+                           dCount = g.Count()
+                       })).ToListAsync();
+            var d2 = deptGroupCount.GroupBy(d => d.deptName).Select(g => new
+            {
+                dept = g.Key,
+                dcount = g.Sum(x=>x.dCount)
+            });
+            //总数量
+            var totalCount = await UnitWork.Find<ServiceOrder>(so => so.VestInOrg == 1 && so.Status == 2)
+                       .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, so => so.CreateTime >= req.QryCreateTimeFrom && so.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
+                       .Select(x => x.Id).Distinct().CountAsync();
+
+            var tempData = from a in d1
+                           join b in d2 on a.dept equals b.dept
+                           select new
+                           {
+                               a.dept,
+                               b.dcount,
+                               dPer = ((decimal)b.dcount / totalCount).ToString("P2"),
+                               a.d1,
+                               d1Per = ((decimal)a.d1 / b.dcount).ToString("P2"),
+                               a.d2,
+                               d2Per = ((decimal)a.d2 / b.dcount).ToString("P2"),
+                               a.d3,
+                               d3Per = ((decimal)a.d3 / b.dcount).ToString("P2"),
+                               a.d4,
+                               d4Per = ((decimal)a.d4 / b.dcount).ToString("P2"),
+                               a.d5,
+                               d5Per = ((decimal)a.d5 / b.dcount).ToString("P2"),
+                               a.d6,
+                               d6Per = ((decimal)a.d6 / b.dcount).ToString("P2"),
+                               a.d7_14,
+                               d7_14Per = ((decimal)a.d7_14 / b.dcount).ToString("P2"),
+                               a.d15_30,
+                               d15_30Per = ((decimal)a.d15_30 / b.dcount).ToString("P2"),
+                               a.d30,
+                               d30Per = ((decimal)a.d30 / b.dcount).ToString("P2"),
+                               unFinish = b.dcount - a.dFinishCount,
+                               unFinishPer = ((decimal)(b.dcount - a.dFinishCount) / b.dcount).ToString("P2")
+                           };
+
+            var depts = new string[] { "SQ", "S7", "S12", "S14", "S15", "S29", "S36", "S37", "S32", "S20", "E3" };
+            var data = from a in depts
+                       join b in tempData on a equals b.dept into temp
+                       from t in temp.DefaultIfEmpty()
+                       select t;
+
+            result.Data = data;
 
             return result;
         }

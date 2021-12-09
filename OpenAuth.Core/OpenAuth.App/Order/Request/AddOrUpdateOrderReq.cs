@@ -61,7 +61,33 @@ namespace OpenAuth.App.Order.Request
 		/// </summary>
 		public string Remark { get; set; }
 	}
-
+	public class SalesDeliverySaveReq
+	{
+		/// <summary>
+		/// 提交类型
+		/// 0：草稿
+		/// 1：提交
+		/// 2：再次提交
+		/// </summary>
+		public OrderAtion Ations { get; set; }
+		/// <summary>
+		/// 销售报价单ID(创建时为0)
+		/// </summary>
+		public int JobId { get; set; }
+		/// <summary>
+		/// 备注
+		/// </summary>
+		public string Comments { get; set; }
+		/// <summary>
+		/// 审核备注
+		/// </summary>
+		public string Remark { get; set; }
+		/// <summary>
+		/// 自定义字段
+		/// </summary>
+		public string CustomFields { get; set; }
+        
+	}
 	public class OrderDraft
 	{
 		/// <summary>
