@@ -33,7 +33,7 @@ namespace OpenAuth.App.Order
         {
             string result = "", className = "";
             if (jobname == "销售交货") { className = "NSAP.B1Api.BOneODLN"; }
-            billDelivery Model = _serviceSaleOrderApp.GetDeliverySalesInfoNewNos(salesDeliverySaveReq.JobId.ToString(), UserID);
+            billDelivery Model = _serviceSaleOrderApp.GetDeliverySalesInfoNewNos(salesDeliverySaveReq.JobId.ToString(), UserID,7);
             Model.DocStatus = "O";
             Model.Comments += "基于销售订单" + salesDeliverySaveReq.JobId;
             Model.CustomFields = salesDeliverySaveReq.CustomFields;

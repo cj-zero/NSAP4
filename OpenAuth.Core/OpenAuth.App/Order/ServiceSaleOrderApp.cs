@@ -5078,10 +5078,10 @@ namespace OpenAuth.App.Order
 
             return bill;
         }
-        public billDelivery GetDeliverySalesInfoNewNos(string jobId, int userID)
+        public billDelivery GetDeliverySalesInfoNewNos(string jobId, int userID, int typeId)
         {
             billDelivery bill = null;
-            object obj = GetSalesInfoNos(jobId, userID);
+            object obj = GetSalesInfoNos(jobId, userID, typeId);
             if (obj != null)
             {
                 bill = DeSerialize<billDelivery>((byte[])(obj));
@@ -5509,9 +5509,9 @@ namespace OpenAuth.App.Order
         /// </summary>
         /// <param name="jobId"></param>
         /// <returns></returns>
-        public object GetSalesInfoNos(string jobId, int userID)
+        public object GetSalesInfoNos(string jobId, int userID, int typeId)
         {
-            string sql = string.Format("SELECT job_data FROM {0}.wfa_job WHERE job_type_id=13 AND user_id= {1} AND  sbo_itf_return={2}", "nsap_base", userID, jobId);
+            string sql = string.Format("SELECT job_data FROM {0}.wfa_job WHERE job_type_id={1} AND user_id= {2} AND  sbo_itf_return={3}", "nsap_base", typeId, userID, jobId);
             return UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
         }
         public int GetIsEdit(string jobId)

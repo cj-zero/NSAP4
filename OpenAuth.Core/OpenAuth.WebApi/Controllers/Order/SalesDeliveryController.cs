@@ -64,8 +64,8 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             catch (Exception ex)
             {
-                Log.Logger.Error($"地址：{Request.Path}，参数：{salesDeliverySaveReq}， 错误：{ex.Message}");
-                throw new Exception("导出失败！" + ex.ToString());
+                Log.Logger.Error($"地址：{Request.Path}，参数：{salesDeliverySaveReq}， 错误：{ex.Message},堆栈信息：{ex.StackTrace}");
+                throw new Exception("添加失败！" + ex.ToString());
             }
         }
         #endregion

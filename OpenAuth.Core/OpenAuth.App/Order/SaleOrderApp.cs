@@ -191,7 +191,7 @@ namespace OpenAuth.App.Order
             string className = "NSAP.B1Api.BOneORDR";
             string jobname = "销售订单";
             //查询
-            billDelivery billDelivery = GetDeliverySalesInfoNewNos(orderReq.JobId.ToString(), userID);
+            billDelivery billDelivery = GetDeliverySalesInfoNewNos(orderReq.JobId.ToString(), userID,13);
             string josn = JsonConvert.SerializeObject(billDelivery);
             if (billDelivery is null)
             {
