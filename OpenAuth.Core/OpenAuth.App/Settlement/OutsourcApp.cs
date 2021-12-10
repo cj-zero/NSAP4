@@ -64,71 +64,85 @@ namespace OpenAuth.App
             }
             var result = new TableData();
             var query = UnitWork.Find<Outsourc>(null);
-            #region 筛选条件
-            //var schemeContent = await .FirstOrDefaultAsync();
-            List<string> Lines = new List<string>();
-            List<string> flowInstanceIds = new List<string>();
-            var lineId = "";
-            var SchemeContent = await UnitWork.Find<FlowScheme>(f => f.SchemeName.Equals("个人代理结算")).Select(f => f.SchemeContent).FirstOrDefaultAsync();
-            SchemeContentJson schemeJson = JsonHelper.Instance.Deserialize<SchemeContentJson>(SchemeContent);
-            if (request.PageType != null && request.PageType > 0)
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
-                if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")))
+                #region 筛选条件
+                //var schemeContent = await .FirstOrDefaultAsync();
+                List<string> Lines = new List<string>();
+                List<string> flowInstanceIds = new List<string>();
+                var lineId = "";
+                var SchemeContent = await UnitWork.Find<FlowScheme>(f => f.SchemeName.Equals("个人代理结算")).Select(f => f.SchemeContent).FirstOrDefaultAsync();
+                SchemeContentJson schemeJson = JsonHelper.Instance.Deserialize<SchemeContentJson>(SchemeContent);
+                if (request.PageType != null && request.PageType > 0)
                 {
-                    lineId = schemeJson.Nodes.Where(n => n.name.Equals("客服主管审批")).FirstOrDefault()?.id;
-                }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
-                {
-                    lineId = schemeJson.Nodes.Where(n => n.name.Equals("总经理审批")).FirstOrDefault()?.id;
-                }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("出纳")))
-                {
-                    lineId = schemeJson.Nodes.Where(n => n.name.Equals("财务支付")).FirstOrDefault()?.id;
-                }
-            }
-            switch (request.PageType)
-            {
-                case 1:
-
-                    Lines.Add(lineId);
-                    break;
-                case 2:
-                    List<string> lineIds = new List<string>();
-                    var lineIdTo = lineId;
-                    foreach (var item in schemeJson.Lines)
+                    if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")))
                     {
-                        if (schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to != null)
+                        lineId = schemeJson.Nodes.Where(n => n.name.Equals("客服主管审批")).FirstOrDefault()?.id;
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
+                    {
+                        lineId = schemeJson.Nodes.Where(n => n.name.Equals("总经理审批")).FirstOrDefault()?.id;
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("出纳")))
+                    {
+                        lineId = schemeJson.Nodes.Where(n => n.name.Equals("财务支付")).FirstOrDefault()?.id;
+                    }
+                }
+                switch (request.PageType)
+                {
+                    case 1:
+
+                        Lines.Add(lineId);
+                        break;
+                    case 2:
+                        List<string> lineIds = new List<string>();
+                        var lineIdTo = lineId;
+                        foreach (var item in schemeJson.Lines)
                         {
-                            lineIdTo = schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to;
-                            lineIds.Add(lineIdTo);
+                            if (schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to != null)
+                            {
+                                lineIdTo = schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to;
+                                lineIds.Add(lineIdTo);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                        Lines.AddRange(lineIds);
+                        break;
+                    case 3:
+                        Lines.Add(lineId);
+                        break;
+                    case 4:
+                        if (loginContext.Roles.Any(r => r.Name.Equals("出纳")))
+                        {
+                            Lines.Add(schemeJson.Nodes.Where(n => n.name.Equals("结束")).FirstOrDefault()?.id);
+                        }
+                        break;
+                    default:
+                        var orgRole = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.Key == Define.ORGROLE && c.FirstId == loginContext.User.Id).FirstOrDefaultAsync();
+                        if (orgRole != null)//查看本部下数据
+                        {
+                            var orgId = orgRole.SecondId;
+                            var userId = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.SecondId == orgId && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
+                            query = query.Where(r => userId.Contains(r.CreateUserId));
                         }
                         else
                         {
-                            break;
+                            query = query.Where(q => q.CreateUserId.Equals(loginContext.User.Id));
                         }
-                    }
-                    Lines.AddRange(lineIds);
-                    break;
-                case 3:
-                    Lines.Add(lineId);
-                    break;
-                case 4:
-                    if (loginContext.Roles.Any(r => r.Name.Equals("出纳")))
-                    {
-                        Lines.Add(schemeJson.Nodes.Where(n => n.name.Equals("结束")).FirstOrDefault()?.id);
-                    }
-                    break;
-                default:
-                    query = query.Where(q => q.CreateUserId.Equals(loginContext.User.Id));
-                    break;
-            }
-            if (Lines.Count > 0)
-            {
-                flowInstanceIds = await UnitWork.Find<FlowInstance>(f => Lines.Contains(f.ActivityId)).Select(s => s.Id).ToListAsync();
-                query = query.Where(q => flowInstanceIds.Contains(q.FlowInstanceId));
+                        break;
+                }
+                if (Lines.Count > 0)
+                {
+                    flowInstanceIds = await UnitWork.Find<FlowInstance>(f => Lines.Contains(f.ActivityId)).Select(s => s.Id).ToListAsync();
+                    query = query.Where(q => flowInstanceIds.Contains(q.FlowInstanceId));
+                }
+
+                #endregion
             }
 
-            #endregion
             query = query.WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), q => q.CreateUser.Contains(request.CreateName))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.OutsourcId), q => q.Id == int.Parse(request.OutsourcId))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Customer), q => outsourcIds.Contains(q.Id))

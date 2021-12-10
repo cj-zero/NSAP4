@@ -4389,7 +4389,7 @@ namespace OpenAuth.App
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
             }
             //判断当天是否已经填写日报 再次填写则数据清空
-            var serviceDailyReport = await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == req.ServiceOrderId && w.CreateUserId == userInfo.UserID && w.CreateTime.Value.Day == DateTime.Now.Day).FirstOrDefaultAsync();
+            var serviceDailyReport = await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId == req.ServiceOrderId && w.CreateUserId == userInfo.UserID && w.CreateTime.Value.Date == DateTime.Now.Date).FirstOrDefaultAsync();
             if (serviceDailyReport != null)
             {
                 await UnitWork.DeleteAsync(serviceDailyReport);
