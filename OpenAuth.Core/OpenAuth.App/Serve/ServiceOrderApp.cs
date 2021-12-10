@@ -1255,127 +1255,6 @@ namespace OpenAuth.App
         }
 
         /// <summary>
-        /// 使用sql语句查询
-        /// </summary>
-        /// <param name="req"></param>
-        /// <returns></returns>
-        //public async Task<TableData> GetServerCallTest(QueryServiceOrderListReq req)
-        //{
-        //    var result = new TableData();
-        //    var sql = @"select t.supervisor,
-        //                count(distinct case when t.endtime is not null	then t.Id end) as finishcount,
-        //                count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) <= 1 * 1440	then t.Id end) as d1,
-        //                count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) > 1 * 1440 and timestampdiff(minute,t.createtime,t.endtime) <= 2 * 1440	then t.Id end) as d2,
-        //                count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) > 2 * 1440 and timestampdiff(minute,t.createtime,t.endtime) <= 3 * 1440	then t.Id end) as d3,
-        //                count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) > 3 * 1440 and timestampdiff(minute,t.createtime,t.endtime) <= 4 * 1440	then t.Id end) as d4,
-        //                count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) > 4 * 1440 and timestampdiff(minute,t.createtime,t.endtime) <= 5 * 1440	then t.Id end) as d5,
-        //                count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) > 5 * 1440 and timestampdiff(minute,t.createtime,t.endtime) <= 6 * 1440	then t.Id end) as d6,
-        //                count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) > 6 * 1440 and timestampdiff(minute,t.createtime,t.endtime) <= 14 * 1440	then t.Id end) as d7_14,
-        //                count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) > 14 * 1440 and timestampdiff(minute,t.createtime,t.endtime) <= 30 * 1440	then t.Id end) as d15_30,
-        //                count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) > 30 * 1440	then t.Id end) as d30
-        //                from(
-	       //                 select so.Id,
-        //                    max(so.Supervisor) as supervisor,
-        //                    max(so.CreateTime) as createtime,
-        //                    max(sw.CompleteDate) as endtime
-	       //                 from serviceorder as so
-	       //                 inner join serviceworkorder as sw 
-	       //                 on so.Id = sw.ServiceOrderId
-        //                    where so.VestInOrg = 1
-        //                    and so.Status = 2
-	       //                 and so.CreateTime >= {0} and so.CreateTime < {1}
-        //                    and not exists (
-		      //                  select 1
-        //                        from serviceworkorder as s
-        //                        where s.status < 7
-        //                        and s.ServiceOrderId = so.Id
-        //                    )
-        //                    group by so.Id
-        //                ) t
-        //                group by t.supervisor;";
-        //    var parameters = new List<object>();
-        //    parameters.Add(req.QryCreateTimeFrom);
-        //    parameters.Add(req.QryCreateTimeTo.Value.AddDays(1));
-
-        //    var finishData = _dbExtension.GetFinishDatas(sql, parameters.ToArray());
-        //    finishData.ForEach(f => f.Dept = _userManagerApp.GetUserOrgInfo(null, f.SuperVisor).Result.OrgName);
-        //    //将同一部门下的数据合并
-        //    var d1 = finishData.GroupBy(f => f.Dept).Select(g => new
-        //    {
-        //        dept = g.Key,
-        //        dFinishCount = g.Sum(x => x.FinishCount),
-        //        d1 = g.Sum(x => x.D1),
-        //        d2 = g.Sum(x => x.D2),
-        //        d3 = g.Sum(x => x.D3),
-        //        d4 = g.Sum(x => x.D4),
-        //        d5 = g.Sum(x => x.D5),
-        //        d6 = g.Sum(x => x.D6),
-        //        d7_14 = g.Sum(x => x.D7_14),
-        //        d15_30 = g.Sum(x => x.D15_30),
-        //        d30 = g.Sum(x => x.D30)
-        //    });
-
-        //    //每个部门总共有多少个服务单
-        //    var deptGroupCount = await (UnitWork.Find<ServiceOrder>(so => so.VestInOrg == 1 && so.Status == 2)
-        //               .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, so => so.CreateTime >= req.QryCreateTimeFrom && so.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
-        //               .Select(x => new { x.Id, x.Supervisor }).Distinct()
-        //               .GroupBy(x => x.Supervisor).Select(g => new
-        //               {
-        //                   deptName = _userManagerApp.GetUserOrgInfo(null, g.Key).Result.OrgName,
-        //                   superVisor = g.Key,
-        //                   dCount = g.Count()
-        //               })).ToListAsync();
-        //    var d2 = deptGroupCount.GroupBy(d => d.deptName).Select(g => new
-        //    {
-        //        dept = g.Key,
-        //        dcount = g.Sum(x => x.dCount)
-        //    });
-        //    //总数量
-        //    var totalCount = await UnitWork.Find<ServiceOrder>(so => so.VestInOrg == 1 && so.Status == 2)
-        //               .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, so => so.CreateTime >= req.QryCreateTimeFrom && so.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
-        //               .Select(x => x.Id).Distinct().CountAsync();
-
-        //    var tempData = from a in d1
-        //                   join b in d2 on a.dept equals b.dept
-        //                   select new
-        //                   {
-        //                       a.dept,
-        //                       b.dcount,
-        //                       dPer = ((decimal)b.dcount / totalCount).ToString("P2"),
-        //                       a.d1,
-        //                       d1Per = ((decimal)a.d1 / b.dcount).ToString("P2"),
-        //                       a.d2,
-        //                       d2Per = ((decimal)a.d2 / b.dcount).ToString("P2"),
-        //                       a.d3,
-        //                       d3Per = ((decimal)a.d3 / b.dcount).ToString("P2"),
-        //                       a.d4,
-        //                       d4Per = ((decimal)a.d4 / b.dcount).ToString("P2"),
-        //                       a.d5,
-        //                       d5Per = ((decimal)a.d5 / b.dcount).ToString("P2"),
-        //                       a.d6,
-        //                       d6Per = ((decimal)a.d6 / b.dcount).ToString("P2"),
-        //                       a.d7_14,
-        //                       d7_14Per = ((decimal)a.d7_14 / b.dcount).ToString("P2"),
-        //                       a.d15_30,
-        //                       d15_30Per = ((decimal)a.d15_30 / b.dcount).ToString("P2"),
-        //                       a.d30,
-        //                       d30Per = ((decimal)a.d30 / b.dcount).ToString("P2"),
-        //                       unFinish = b.dcount - a.dFinishCount,
-        //                       unFinishPer = ((decimal)(b.dcount - a.dFinishCount) / b.dcount).ToString("P2")
-        //                   };
-
-        //    var depts = new string[] { "SQ", "S7", "S12", "S14", "S15", "S29", "S36", "S37", "S32", "S20", "E3" };
-        //    var data = from a in depts
-        //               join b in tempData on a equals b.dept into temp
-        //               from t in temp.DefaultIfEmpty()
-        //               select t;
-
-        //    result.Data = data;
-
-        //    return result;
-        //}
-
-        /// <summary>
         /// 统计各部门在一段时间内处理服务单的占比,以及每个部门内处理天数的统计情况
         /// </summary>
         /// <param name="req"></param>
@@ -1383,64 +1262,97 @@ namespace OpenAuth.App
         public async Task<TableData> GetServerCallEfficiency(QueryServiceOrderListReq req)
         {
             var result = new TableData();
+            if (req.QryCreateTimeFrom == null || req.QryCreateTimeTo == null)
+            {
+                req.QryCreateTimeFrom = DateTime.Now.Date;
+                req.QryCreateTimeTo = DateTime.Now.Date;
+            }
 
             //只看客诉单,状态是已确认的,并且服务单下的工单都是已完成的(只要有一个工单未完成,整个服务单就算未完成)
-            var serviceData = from so in UnitWork.Find<ServiceOrder>(so => so.VestInOrg == 1 && so.Status == 2 && !so.ServiceWorkOrders.Any(sw => sw.Status < 6) && so.ServiceWorkOrders.All(sw => sw.CompleteDate != null))
-                      .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, so => so.CreateTime >= req.QryCreateTimeFrom && so.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
-                              join sw in UnitWork.Find<ServiceWorkOrder>(null)
-                              on so.Id equals sw.ServiceOrderId
-                              group new { so, sw } by sw.ServiceOrderId into g
-                              select new
-                              {
-                                  serviceId = g.Key,
-                                  createTime = g.Max(x => x.sw.CreateTime),
-                                  endTime = g.Max(x => x.sw.CompleteDate), //取这个服务单下所有工单中最大的那个完成日期为整个服务单的完成日期
-                                  superVisor = g.Max(x => x.so.Supervisor),
-                              };
+            var sql = @"select t.supervisor,
+                        count(distinct case when t.endtime is not null	then t.Id end) as finishcount,
+                        count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) <= 1 * 1440	then t.Id end) as d1,
+                        count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) > 1 * 1440 and timestampdiff(minute,t.createtime,t.endtime) <= 2 * 1440	then t.Id end) as d2,
+                        count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) > 2 * 1440 and timestampdiff(minute,t.createtime,t.endtime) <= 3 * 1440	then t.Id end) as d3,
+                        count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) > 3 * 1440 and timestampdiff(minute,t.createtime,t.endtime) <= 4 * 1440	then t.Id end) as d4,
+                        count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) > 4 * 1440 and timestampdiff(minute,t.createtime,t.endtime) <= 5 * 1440	then t.Id end) as d5,
+                        count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) > 5 * 1440 and timestampdiff(minute,t.createtime,t.endtime) <= 6 * 1440	then t.Id end) as d6,
+                        count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) > 6 * 1440 and timestampdiff(minute,t.createtime,t.endtime) <= 14 * 1440	then t.Id end) as d7_14,
+                        count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) > 14 * 1440 and timestampdiff(minute,t.createtime,t.endtime) <= 30 * 1440	then t.Id end) as d15_30,
+                        count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) > 30 * 1440	then t.Id end) as d30
+                        from(
+	                        select so.Id,
+                            max(so.Supervisor) as supervisor,
+                            max(so.CreateTime) as createtime,
+                            max(sw.CompleteDate) as endtime
+	                        from serviceorder as so
+	                        inner join serviceworkorder as sw 
+	                        on so.Id = sw.ServiceOrderId
+                            where so.VestInOrg = 1
+                            and so.Status = 2
+	                        and so.CreateTime >= {0} and so.CreateTime < {1}
+                            and not exists (
+		                        select 1
+                                from serviceworkorder as s
+                                where s.status < 7
+                                and s.ServiceOrderId = so.Id
+                            )
+                            group by so.Id
+                        ) t
+                        group by t.supervisor;";
+            var parameters = new List<object>();
+            parameters.Add(req.QryCreateTimeFrom);
+            parameters.Add(req.QryCreateTimeTo.Value.AddDays(1));
 
-            var kk = (from so in UnitWork.Find<ServiceOrder>(so => so.VestInOrg == 1 && so.Status == 2 && !so.ServiceWorkOrders.Any(sw => sw.Status < 6) && so.ServiceWorkOrders.All(sw => sw.CompleteDate != null))
-                      .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, so => so.CreateTime >= req.QryCreateTimeFrom && so.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
-                              join sw in UnitWork.Find<ServiceWorkOrder>(null)
-                              on so.Id equals sw.ServiceOrderId
-                              group new { so, sw } by sw.ServiceOrderId into g
-                              select new
-                              {
-                                  serviceId = g.Key,
-                                  createTime = g.Max(x => x.sw.CreateTime),
-                                  endTime = g.Max(x => x.sw.CompleteDate), //取这个服务单下所有工单中最大的那个完成日期为整个服务单的完成日期
-                                  superVisor = g.Max(x => x.so.Supervisor),
-                              }).ToString();
+            var finishData = _dbExtension.GetObjectDataFromSQL<ProcessingEfficiency>(sql, parameters.ToArray(), typeof(Nsap4ServeDbContext))?.ToList();
+            finishData.ForEach(f => f.Dept = _userManagerApp.GetUserOrgInfo(null, f.SuperVisor).Result.OrgName);
+            #region linq方法处理
+            //只看客诉单,状态是已确认的,并且服务单下的工单都是已完成的(只要有一个工单未完成, 整个服务单就算未完成)
+            //var serviceData = await (from so in UnitWork.Find<ServiceOrder>(so => so.VestInOrg == 1 && so.Status == 2 && !so.ServiceWorkOrders.Any(sw => sw.Status < 6) && so.ServiceWorkOrders.All(sw => sw.CompleteDate != null))
+            //          .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, so => so.CreateTime >= req.QryCreateTimeFrom && so.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
+            //                         join sw in UnitWork.Find<ServiceWorkOrder>(null)
+            //                         on so.Id equals sw.ServiceOrderId
+            //                         group new { so, sw } by sw.ServiceOrderId into g
+            //                         select new
+            //                         {
+            //                             serviceId = g.Key,
+            //                             createTime = g.Max(x => x.sw.CreateTime),
+            //                             endTime = g.Max(x => x.sw.CompleteDate), //取这个服务单下所有工单中最大的那个完成日期为整个服务单的完成日期
+            //                             superVisor = g.Max(x => x.so.Supervisor),
+            //                         }).ToListAsync();
+
             //按售后主管分类(表里面没存部门,根据售后主管对应部门),统计各处理时效的服务单个数
-            var finishData = serviceData.GroupBy(d => d.superVisor).Select(g => new
-            {
-                deptName = _userManagerApp.GetUserOrgInfo(null, g.Key).Result.OrgName,
-                superVisor = g.Key,
-                dFinishCount = g.Select(x => x.serviceId).Distinct().Count(),
-                d1 = g.Where(x => (x.endTime - x.createTime).Value.TotalDays <= 1).Select(x => x.serviceId).Distinct().Count(),
-                d2 = g.Where(x => (x.endTime - x.createTime).Value.TotalDays > 1  && (x.endTime - x.createTime).Value.TotalDays <= 2 ).Select(x => x.serviceId).Distinct().Count(),
-                d3 = g.Where(x => (x.endTime - x.createTime).Value.TotalDays > 2  && (x.endTime - x.createTime).Value.TotalDays <= 3 ).Select(x => x.serviceId).Distinct().Count(),
-                d4 = g.Where(x => (x.endTime - x.createTime).Value.TotalDays > 3  && (x.endTime - x.createTime).Value.TotalDays <= 4 ).Select(x => x.serviceId).Distinct().Count(),
-                d5 = g.Where(x => (x.endTime - x.createTime).Value.TotalDays > 4  && (x.endTime - x.createTime).Value.TotalDays <= 5 ).Select(x => x.serviceId).Distinct().Count(),
-                d6 = g.Where(x => (x.endTime - x.createTime).Value.TotalDays > 5  && (x.endTime - x.createTime).Value.TotalDays <= 6 ).Select(x => x.serviceId).Distinct().Count(),
-                d7_14 = g.Where(x => (x.endTime - x.createTime).Value.TotalDays > 6  && (x.endTime - x.createTime).Value.TotalDays <= 14 ).Select(x => x.serviceId).Distinct().Count(),
-                d15_30 = g.Where(x => (x.endTime - x.createTime).Value.TotalDays > 14  && (x.endTime - x.createTime).Value.TotalDays <= 30 ).Select(x => x.serviceId).Distinct().Count(),
-                d30 = g.Where(x => (x.endTime - x.createTime).Value.TotalDays > 30 ).Select(x => x.serviceId).Distinct().Count(),
-            });
+            //var finishData = serviceData.GroupBy(d => d.superVisor).Select(g => new
+            //{
+            //    deptName = _userManagerApp.GetUserOrgInfo(null, g.Key).Result.OrgName,
+            //    superVisor = g.Key,
+            //    dFinishCount = g.Select(x => x.serviceId).Distinct().Count(),
+            //    d1 = g.Where(x => (x.endTime - x.createTime).Value.TotalDays <= 1).Select(x => x.serviceId).Distinct().Count(),
+            //    d2 = g.Where(x => (x.endTime - x.createTime).Value.TotalDays > 1  && (x.endTime - x.createTime).Value.TotalDays <= 2 ).Select(x => x.serviceId).Distinct().Count(),
+            //    d3 = g.Where(x => (x.endTime - x.createTime).Value.TotalDays > 2  && (x.endTime - x.createTime).Value.TotalDays <= 3 ).Select(x => x.serviceId).Distinct().Count(),
+            //    d4 = g.Where(x => (x.endTime - x.createTime).Value.TotalDays > 3  && (x.endTime - x.createTime).Value.TotalDays <= 4 ).Select(x => x.serviceId).Distinct().Count(),
+            //    d5 = g.Where(x => (x.endTime - x.createTime).Value.TotalDays > 4  && (x.endTime - x.createTime).Value.TotalDays <= 5 ).Select(x => x.serviceId).Distinct().Count(),
+            //    d6 = g.Where(x => (x.endTime - x.createTime).Value.TotalDays > 5  && (x.endTime - x.createTime).Value.TotalDays <= 6 ).Select(x => x.serviceId).Distinct().Count(),
+            //    d7_14 = g.Where(x => (x.endTime - x.createTime).Value.TotalDays > 6  && (x.endTime - x.createTime).Value.TotalDays <= 14 ).Select(x => x.serviceId).Distinct().Count(),
+            //    d15_30 = g.Where(x => (x.endTime - x.createTime).Value.TotalDays > 14  && (x.endTime - x.createTime).Value.TotalDays <= 30 ).Select(x => x.serviceId).Distinct().Count(),
+            //    d30 = g.Where(x => (x.endTime - x.createTime).Value.TotalDays > 30 ).Select(x => x.serviceId).Distinct().Count(),
+            //});
+            #endregion
 
             //将同一部门下的数据合并
-            var d1 = finishData.GroupBy(f => f.deptName).Select(g => new
+            var d1 = finishData.GroupBy(f => f.Dept).Select(g => new
             {
                 dept = g.Key,
-                dFinishCount = g.Sum(x => x.dFinishCount),
-                d1 = g.Sum(x => x.d1),
-                d2 = g.Sum(x => x.d2),
-                d3 = g.Sum(x => x.d3),
-                d4 = g.Sum(x => x.d4),
-                d5 = g.Sum(x => x.d5),
-                d6 = g.Sum(x => x.d6),
-                d7_14 = g.Sum(x => x.d7_14),
-                d15_30 = g.Sum(x => x.d15_30),
-                d30 = g.Sum(x => x.d30)
+                dFinishCount = g.Sum(x => x.FinishCount),
+                d1 = g.Sum(x => x.D1),
+                d2 = g.Sum(x => x.D2),
+                d3 = g.Sum(x => x.D3),
+                d4 = g.Sum(x => x.D4),
+                d5 = g.Sum(x => x.D5),
+                d6 = g.Sum(x => x.D6),
+                d7_14 = g.Sum(x => x.D7_14),
+                d15_30 = g.Sum(x => x.D15_30),
+                d30 = g.Sum(x => x.D30)
             });
             //每个部门总共有多少个服务单
             var deptGroupCount = await (UnitWork.Find<ServiceOrder>(so => so.VestInOrg == 1 && so.Status == 2)
@@ -1461,43 +1373,41 @@ namespace OpenAuth.App
             var totalCount = await UnitWork.Find<ServiceOrder>(so => so.VestInOrg == 1 && so.Status == 2)
                        .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, so => so.CreateTime >= req.QryCreateTimeFrom && so.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
                        .Select(x => x.Id).Distinct().CountAsync();
-
-            var tempData = from a in d1
-                           join b in d2 on a.dept equals b.dept
-                           select new
-                           {
-                               a.dept,
-                               b.dcount,
-                               dPer = ((decimal)b.dcount / totalCount).ToString("P2"),
-                               a.d1,
-                               d1Per = ((decimal)a.d1 / b.dcount).ToString("P2"),
-                               a.d2,
-                               d2Per = ((decimal)a.d2 / b.dcount).ToString("P2"),
-                               a.d3,
-                               d3Per = ((decimal)a.d3 / b.dcount).ToString("P2"),
-                               a.d4,
-                               d4Per = ((decimal)a.d4 / b.dcount).ToString("P2"),
-                               a.d5,
-                               d5Per = ((decimal)a.d5 / b.dcount).ToString("P2"),
-                               a.d6,
-                               d6Per = ((decimal)a.d6 / b.dcount).ToString("P2"),
-                               a.d7_14,
-                               d7_14Per = ((decimal)a.d7_14 / b.dcount).ToString("P2"),
-                               a.d15_30,
-                               d15_30Per = ((decimal)a.d15_30 / b.dcount).ToString("P2"),
-                               a.d30,
-                               d30Per = ((decimal)a.d30 / b.dcount).ToString("P2"),
-                               unFinish = b.dcount - a.dFinishCount,
-                               unFinishPer = ((decimal)(b.dcount - a.dFinishCount) / b.dcount).ToString("P2")
-                           };
-
-            var depts = new string[] { "SQ", "S7", "S12", "S14", "S15", "S29", "S36", "S37", "S32", "S20", "E3" };
-            var data = from a in depts
-                       join b in tempData on a equals b.dept into temp
-                       from t in temp.DefaultIfEmpty()
-                       select t;
+            var depts = new string[] { "SQ", "S7", "S12", "S14", "S15", "S29", "S36", "S37", "S32", "S20", "E3" }; //规定要查看的部门
+            var data = from d in depts
+                       join a in d1 on d equals a.dept into temp1
+                       from a in temp1.DefaultIfEmpty()
+                       join b in d2 on a?.dept equals b.dept into temp2
+                       from b in temp2.DefaultIfEmpty()
+                       select new
+                       {
+                           dept = d,
+                           dcount = b != null ? b.dcount : 0,
+                           dPer = b != null ? ((decimal)b.dcount / totalCount).ToString("P2") : "0.00%",
+                           d1 = a != null ? a.d1 : 0,
+                           d1Per = a != null ? ((decimal)a.d1 / b.dcount).ToString("P2") : "0.00%",
+                           d2 = a != null ? a.d2 : 0,
+                           d2Per = a != null ? ((decimal)a.d2 / b.dcount).ToString("P2") : "0.00%",
+                           d3 = a != null ? a.d3 : 0,
+                           d3Per = a != null ? ((decimal)a.d3 / b.dcount).ToString("P2") : "0.00%",
+                           d4 = a != null ? a.d4 : 0,
+                           d4Per = a != null ? ((decimal)a.d4 / b.dcount).ToString("P2") : "0.00%",
+                           d5 = a != null ? a.d5 : 0,
+                           d5Per = a != null ? ((decimal)a.d5 / b.dcount).ToString("P2") : "0.00%",
+                           d6 = a != null ? a.d6 : 0,
+                           d6Per = a != null ? ((decimal)a.d6 / b.dcount).ToString("P2") : "0.00%",
+                           d7_14 = a != null ? a.d7_14 : 0,
+                           d7_14Per = a != null ? ((decimal)a.d7_14 / b.dcount).ToString("P2") : "0.00%",
+                           d15_30 = a != null ? a.d15_30 : 0,
+                           d15_30Per = a != null ? ((decimal)a.d15_30 / b.dcount).ToString("P2") : "0.00%",
+                           d30 = a != null ? a.d30 : 0,
+                           d30Per = a != null ? ((decimal)a.d30 / b.dcount).ToString("P2") : "0.00%",
+                           unFinish = (b != null && a != null) ? b.dcount - a.dFinishCount : 0,
+                           unFinishPer = (b != null && a != null) ? ((decimal)(b.dcount - a.dFinishCount) / b.dcount).ToString("P2") : "0.00%"
+                       };
 
             result.Data = data;
+            result.Count = totalCount;
 
             return result;
         }

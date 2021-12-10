@@ -301,5 +301,21 @@ namespace OpenAuth.App
             var columns = context.Query<SysTableColumn>().FromSqlRaw(sql);
             return columns.ToList();
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="D"></typeparam>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="sql"></param>
+        /// <param name="parameters"></param>
+        /// <param name="contextType"></param>
+        /// <returns></returns>
+        public IEnumerable<T> GetObjectDataFromSQL<T>(string sql, object[] parameters, Type dbContextType) where T : class
+        {
+            var context = _dbContexts.FirstOrDefault(d => d.GetType() == dbContextType);
+            var data = context?.Query<T>().FromSqlRaw(sql, parameters);
+            return data;
+        }
     }
 }
