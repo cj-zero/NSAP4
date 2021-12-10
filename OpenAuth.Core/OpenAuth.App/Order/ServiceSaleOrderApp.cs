@@ -668,10 +668,14 @@ namespace OpenAuth.App.Order
             string result = "";
             try
             {
-                orderReq.Order.FileList.ForEach(zw =>
+                if (orderReq.Order.FileList != null && orderReq.Order.FileList.Count > 0)
                 {
-                    zw.fileUserId = userID.ToString();
-                });
+                    orderReq.Order.FileList.ForEach(zw =>
+                    {
+                        zw.fileUserId = userID.ToString();
+                    });
+                }
+
                 billDelivery billDelivery = BulidBillDelivery(orderReq.Order);
                 if (orderReq.IsCopy)
                 {
