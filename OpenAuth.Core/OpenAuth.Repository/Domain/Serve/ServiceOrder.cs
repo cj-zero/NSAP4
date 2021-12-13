@@ -296,4 +296,58 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public virtual List<ServiceFlow> ServiceFlows { get; set; }
     }
+    
+
+    public class ProcessingEfficiency
+    {
+        /// <summary>
+        /// 部门主管
+        /// </summary>
+        public string SuperVisor { get; set; }
+        /// <summary>
+        /// 部门
+        /// </summary>
+        [NotMapped]
+        public string Dept { get; set; }
+        /// <summary>
+        /// 已完成的服务单数量
+        /// </summary>
+        public int FinishCount { get; set; }
+        /// <summary>
+        /// 处理时间1天内
+        /// </summary>
+        public int D1 { get; set; }
+        /// <summary>
+        /// 处理时间2天
+        /// </summary>
+        public int D2 { get; set; }
+        /// <summary>
+        /// 处理时间3天
+        /// </summary>
+        public int D3 { get; set; }
+        /// <summary>
+        /// 处理时间4天
+        /// </summary>
+        public int D4 { get; set; }
+        /// <summary>
+        /// 处理时间5天
+        /// </summary>
+        public int D5 { get; set; }
+        /// <summary>
+        /// 处理时间6天
+        /// </summary>
+        public int D6 { get; set; }
+        /// <summary>
+        /// 处理时间7-14天
+        /// </summary>
+        public int D7_14 { get; set; }
+        /// <summary>
+        /// 处理时间15-30天
+        /// </summary>
+        public int D15_30 { get; set; }
+        /// <summary>
+        /// 处理时间超过30天
+        /// </summary>
+        public int D30 { get; set; }
+    }
 }

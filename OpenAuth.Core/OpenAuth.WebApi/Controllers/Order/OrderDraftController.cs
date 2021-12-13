@@ -567,10 +567,10 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             catch (Exception ex)
             {
-                Log.Logger.Error($"地址：{Request.Path}, 错误：{result.Message}");
-                throw ex;
-                //result.Code = 500;
-                //result.Message = ex.InnerException?.Message ?? ex.Message;
+                result.Result = "";
+                result.Code = 500;
+                result.Message = "服务器内部错误：" + ex.Message;
+                Log.Logger.Error($"报错地址:{Request.Path},请求方式：{"Post"},参数:{JsonConvert.SerializeObject(orderReq)},异常描述：{ex.Message},堆栈信息：{ex.StackTrace}");
             }
             return result;
         }

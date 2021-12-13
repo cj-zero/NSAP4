@@ -11,7 +11,7 @@ namespace OpenAuth.App.Order.ModelDto
         public Main main { get; set; }
         public Manager manager { get; set; }
         public Sales sales { get; set; }
-        public Mark mark { get; set; }
+        public List<Mark> mark { get; set; }
         public ShipType shipType { get; set; }
         public PaymentCond paymentCond { get; set; }
         public Sales andbuy { get; set; }

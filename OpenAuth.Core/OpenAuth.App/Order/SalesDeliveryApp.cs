@@ -33,7 +33,7 @@ namespace OpenAuth.App.Order
         {
             string result = "", className = "";
             if (jobname == "销售交货") { className = "NSAP.B1Api.BOneODLN"; }
-            billDelivery Model = _serviceSaleOrderApp.GetDeliverySalesInfoNewNos(salesDeliverySaveReq.JobId.ToString(), UserID);
+            billDelivery Model = _serviceSaleOrderApp.GetDeliverySalesInfoNewNos(salesDeliverySaveReq.JobId.ToString(), UserID,7);
             Model.DocStatus = "O";
             Model.Comments += "基于销售订单" + salesDeliverySaveReq.JobId;
             Model.CustomFields = salesDeliverySaveReq.CustomFields;
@@ -251,14 +251,14 @@ namespace OpenAuth.App.Order
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).Tolist<Sales>().FirstOrDefault();
 
         }
-        public async Task<Mark> DropPopupIndicatorNew(int sbo_id, string id)
+        public async Task<List<Mark>> DropPopupIndicatorNew(int sbo_id, string id)
         {
             string strSql = string.Format(" SELECT Code as id,Name AS name FROM {0}.crm_oidc WHERE sbo_id={1}", "nsap_bone", sbo_id);
             if (id != "" && id != "0")
             {
                 strSql += string.Format(" AND Code='{0}'", id);
             }
-            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).Tolist<Mark>().FirstOrDefault();
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).Tolist<Mark>();
 
 
         }
