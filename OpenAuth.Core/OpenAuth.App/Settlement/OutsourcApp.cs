@@ -44,26 +44,34 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            List<int?> outsourcIds = new List<int?>();
+            //List<int?> outsourcIds = new List<int?>();
+            List<int?> serviceOrderId = new List<int?>();
             if (!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()) || !string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()))
             {
                 var completion = await UnitWork.Find<CompletionReport>(c => c.IsReimburse == 4)
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()), c => c.BusinessTripDate > request.CompletionStartTime)
+                    .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()), c => c.EndDate > request.CompletionStartTime)
                     .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()), c => c.EndDate < Convert.ToDateTime(request.CompletionEndTime).AddDays(1))
                     .Select(c => c.ServiceOrderId)
                     .ToListAsync();
-                outsourcIds.AddRange(await UnitWork.Find<OutsourcExpenses>(o => completion.Contains(o.ServiceOrderId)).Select(o => o.OutsourcId).Distinct().ToListAsync());
+                serviceOrderId.AddRange(completion);
             }
-            if (!string.IsNullOrWhiteSpace(request.ServiceOrderSapId))
-            {
-                outsourcIds.AddRange(await UnitWork.Find<OutsourcExpenses>(o => o.ServiceOrderSapId == int.Parse(request.ServiceOrderSapId)).Select(o => o.OutsourcId).Distinct().ToListAsync());
-            }
-            if (!string.IsNullOrWhiteSpace(request.Customer))
-            {
-                outsourcIds.AddRange(await UnitWork.Find<OutsourcExpenses>(o => o.TerminalCustomer.Contains(request.Customer) || o.TerminalCustomerId.Contains(request.Customer)).Select(o => o.OutsourcId).Distinct().ToListAsync());
-            }
+
+            var outsourcIds = await UnitWork.Find<OutsourcExpenses>(null)
+                .WhereIf(serviceOrderId.Count > 0, o => serviceOrderId.Contains(o.ServiceOrderId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderSapId), o => o.ServiceOrderSapId == int.Parse(request.ServiceOrderSapId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.Customer), o => o.TerminalCustomer.Contains(request.Customer) || o.TerminalCustomerId.Contains(request.Customer))
+                .Select(c => c.OutsourcId)
+                .Distinct()
+                .ToListAsync();
+
             var result = new TableData();
-            var query = UnitWork.Find<Outsourc>(null);
+            var query = UnitWork.Find<Outsourc>(null).Include(c => c.OutsourcExpenses)
+                        .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), q => q.CreateUser.Contains(request.CreateName))
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.OutsourcId), q => q.Id == int.Parse(request.OutsourcId))
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.StartTime.ToString()), q => q.CreateTime > request.StartTime)
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), q => q.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1))
+                       .Where(o => outsourcIds.Contains(o.Id));
+
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
                 #region 筛选条件
@@ -143,15 +151,7 @@ namespace OpenAuth.App
                 #endregion
             }
 
-            query = query.WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), q => q.CreateUser.Contains(request.CreateName))
-                       .WhereIf(!string.IsNullOrWhiteSpace(request.OutsourcId), q => q.Id == int.Parse(request.OutsourcId))
-                       .WhereIf(!string.IsNullOrWhiteSpace(request.Customer), q => outsourcIds.Contains(q.Id))
-                       .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderSapId), q => outsourcIds.Contains(q.Id))
-                       .WhereIf(!string.IsNullOrWhiteSpace(request.StartTime.ToString()), q => q.CreateTime > request.StartTime)
-                       .WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), q => q.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1))
-                       .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()), q => outsourcIds.Contains(q.Id))
-                       .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()), q => outsourcIds.Contains(q.Id));
-            var outsourcList = await query.Include(o => o.OutsourcExpenses).OrderByDescending(o => o.UpdateTime).Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+            var outsourcList = await query.OrderByDescending(o => o.UpdateTime).Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
             var serviceOrderIds = outsourcList.Select(o => o.OutsourcExpenses.FirstOrDefault()?.ServiceOrderId).ToList();
             var serviceWorkOrder = await UnitWork.Find<ServiceWorkOrder>(s => serviceOrderIds.Contains(s.ServiceOrderId)).ToListAsync();
             var flowInstanceList = await UnitWork.Find<FlowInstance>(f => outsourcList.Select(o => o.FlowInstanceId).ToList().Contains(f.Id)).ToListAsync();
@@ -1148,100 +1148,114 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
 
-            List<int?> outsourcIds = new List<int?>();
+            //List<int?> outsourcIds = new List<int?>();
+            List<int?> serviceOrderId = new List<int?>();
             if (!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()) || !string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()))
             {
                 var completion = await UnitWork.Find<CompletionReport>(c => c.IsReimburse == 4)
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()), c => c.BusinessTripDate > request.CompletionStartTime)
+                    .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()), c => c.EndDate > request.CompletionStartTime)
                     .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()), c => c.EndDate < Convert.ToDateTime(request.CompletionEndTime).AddDays(1))
                     .Select(c => c.ServiceOrderId)
                     .ToListAsync();
-                outsourcIds.AddRange(await UnitWork.Find<OutsourcExpenses>(o => completion.Contains(o.ServiceOrderId)).Select(o => o.OutsourcId).Distinct().ToListAsync());
+                serviceOrderId.AddRange(completion);
             }
-            if (!string.IsNullOrWhiteSpace(request.ServiceOrderSapId))
-            {
-                outsourcIds.AddRange(await UnitWork.Find<OutsourcExpenses>(o => o.ServiceOrderSapId == int.Parse(request.ServiceOrderSapId)).Select(o => o.OutsourcId).Distinct().ToListAsync());
-            }
-            if (!string.IsNullOrWhiteSpace(request.Customer))
-            {
-                outsourcIds.AddRange(await UnitWork.Find<OutsourcExpenses>(o => o.TerminalCustomer.Contains(request.Customer) || o.TerminalCustomerId.Contains(request.Customer)).Select(o => o.OutsourcId).Distinct().ToListAsync());
-            }
-            var result = new TableData();
-            var query = UnitWork.Find<Outsourc>(null);
-            #region 筛选条件
-            //var schemeContent = await .FirstOrDefaultAsync();
-            List<string> Lines = new List<string>();
-            List<string> flowInstanceIds = new List<string>();
-            var lineId = "";
-            var SchemeContent = await UnitWork.Find<FlowScheme>(f => f.SchemeName.Equals("个人代理结算")).Select(f => f.SchemeContent).FirstOrDefaultAsync();
-            SchemeContentJson schemeJson = JsonHelper.Instance.Deserialize<SchemeContentJson>(SchemeContent);
-            if (request.PageType != null && request.PageType > 0)
-            {
-                if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")))
-                {
-                    lineId = schemeJson.Nodes.Where(n => n.name.Equals("客服主管审批")).FirstOrDefault()?.id;
-                }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
-                {
-                    lineId = schemeJson.Nodes.Where(n => n.name.Equals("总经理审批")).FirstOrDefault()?.id;
-                }
-                else if (loginContext.Roles.Any(r => r.Name.Equals("出纳")))
-                {
-                    lineId = schemeJson.Nodes.Where(n => n.name.Equals("财务支付")).FirstOrDefault()?.id;
-                }
-            }
-            switch (request.PageType)
-            {
-                case 1:
 
-                    Lines.Add(lineId);
-                    break;
-                case 2:
-                    List<string> lineIds = new List<string>();
-                    var lineIdTo = lineId;
-                    foreach (var item in schemeJson.Lines)
+            var outsourcIds = await UnitWork.Find<OutsourcExpenses>(null)
+                .WhereIf(serviceOrderId.Count > 0, o => serviceOrderId.Contains(o.ServiceOrderId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderSapId), o => o.ServiceOrderSapId == int.Parse(request.ServiceOrderSapId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.Customer), o => o.TerminalCustomer.Contains(request.Customer) || o.TerminalCustomerId.Contains(request.Customer))
+                .Select(c => c.OutsourcId)
+                .Distinct()
+                .ToListAsync();
+
+            var result = new TableData();
+            var query = UnitWork.Find<Outsourc>(null).Include(c => c.OutsourcExpenses)
+                        .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), q => q.CreateUser.Contains(request.CreateName))
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.OutsourcId), q => q.Id == int.Parse(request.OutsourcId))
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.StartTime.ToString()), q => q.CreateTime > request.StartTime)
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), q => q.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1))
+                       .Where(o => outsourcIds.Contains(o.Id));
+
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME)
+            {
+                #region 筛选条件
+                //var schemeContent = await .FirstOrDefaultAsync();
+                List<string> Lines = new List<string>();
+                List<string> flowInstanceIds = new List<string>();
+                var lineId = "";
+                var SchemeContent = await UnitWork.Find<FlowScheme>(f => f.SchemeName.Equals("个人代理结算")).Select(f => f.SchemeContent).FirstOrDefaultAsync();
+                SchemeContentJson schemeJson = JsonHelper.Instance.Deserialize<SchemeContentJson>(SchemeContent);
+                if (request.PageType != null && request.PageType > 0)
+                {
+                    if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")))
                     {
-                        if (schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to != null)
+                        lineId = schemeJson.Nodes.Where(n => n.name.Equals("客服主管审批")).FirstOrDefault()?.id;
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
+                    {
+                        lineId = schemeJson.Nodes.Where(n => n.name.Equals("总经理审批")).FirstOrDefault()?.id;
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("出纳")))
+                    {
+                        lineId = schemeJson.Nodes.Where(n => n.name.Equals("财务支付")).FirstOrDefault()?.id;
+                    }
+                }
+                switch (request.PageType)
+                {
+                    case 1:
+
+                        Lines.Add(lineId);
+                        break;
+                    case 2:
+                        List<string> lineIds = new List<string>();
+                        var lineIdTo = lineId;
+                        foreach (var item in schemeJson.Lines)
                         {
-                            lineIdTo = schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to;
-                            lineIds.Add(lineIdTo);
+                            if (schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to != null)
+                            {
+                                lineIdTo = schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to;
+                                lineIds.Add(lineIdTo);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                        Lines.AddRange(lineIds);
+                        break;
+                    case 3:
+                        Lines.Add(lineId);
+                        break;
+                    case 4:
+                        if (loginContext.Roles.Any(r => r.Name.Equals("出纳")))
+                        {
+                            Lines.Add(schemeJson.Nodes.Where(n => n.name.Equals("结束")).FirstOrDefault()?.id);
+                        }
+                        break;
+                    default:
+                        var orgRole = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.Key == Define.ORGROLE && c.FirstId == loginContext.User.Id).FirstOrDefaultAsync();
+                        if (orgRole != null)//查看本部下数据
+                        {
+                            var orgId = orgRole.SecondId;
+                            var userId = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.SecondId == orgId && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
+                            query = query.Where(r => userId.Contains(r.CreateUserId));
                         }
                         else
                         {
-                            break;
+                            query = query.Where(q => q.CreateUserId.Equals(loginContext.User.Id));
                         }
-                    }
-                    Lines.AddRange(lineIds);
-                    break;
-                case 3:
-                    Lines.Add(lineId);
-                    break;
-                case 4:
-                    if (loginContext.Roles.Any(r => r.Name.Equals("出纳")))
-                    {
-                        Lines.Add(schemeJson.Nodes.Where(n => n.name.Equals("结束")).FirstOrDefault()?.id);
-                    }
-                    break;
-                default:
-                    query = query.Where(q => q.CreateUserId.Equals(loginContext.User.Id));
-                    break;
-            }
-            if (Lines.Count > 0)
-            {
-                flowInstanceIds = await UnitWork.Find<FlowInstance>(f => Lines.Contains(f.ActivityId)).Select(s => s.Id).ToListAsync();
-                query = query.Where(q => flowInstanceIds.Contains(q.FlowInstanceId));
+                        break;
+                }
+                if (Lines.Count > 0)
+                {
+                    flowInstanceIds = await UnitWork.Find<FlowInstance>(f => Lines.Contains(f.ActivityId)).Select(s => s.Id).ToListAsync();
+                    query = query.Where(q => flowInstanceIds.Contains(q.FlowInstanceId));
+                }
+
+                #endregion
             }
 
-            #endregion
-            query = query.WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), q => q.CreateUser.Contains(request.CreateName))
-                       .WhereIf(!string.IsNullOrWhiteSpace(request.OutsourcId), q => q.Id == int.Parse(request.OutsourcId))
-                       .WhereIf(!string.IsNullOrWhiteSpace(request.Customer), q => outsourcIds.Contains(q.Id))
-                       .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderSapId), q => outsourcIds.Contains(q.Id))
-                       .WhereIf(!string.IsNullOrWhiteSpace(request.StartTime.ToString()), q => q.CreateTime > request.StartTime)
-                       .WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), q => q.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1))
-                       .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()), q => outsourcIds.Contains(q.Id))
-                       .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()), q => outsourcIds.Contains(q.Id));
-            var outsourcList = await query.Include(o => o.OutsourcExpenses).OrderByDescending(o => o.UpdateTime).ToListAsync();
+            var outsourcList = await query.OrderByDescending(o => o.UpdateTime).ToListAsync();
             var userIds = outsourcList.Select(o => o.CreateUserId).ToList();
             var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
             var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
