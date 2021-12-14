@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="1">
+    <title>Document</title>
+</head>
+<style type="text/css">
+    * {
+        padding: 0;
+        margin: 0;
+    }
+
+    body {
+        width: 1000px;
+        margin: 0 auto;
+        margin-top: 10px;
+        font-size: 13.5px;
+        font-family: "微软雅黑";
+        color: #7F7F7F;
+    }
+
+    table {
+        border-collapse: collapse;
+    }
+
+    #tablebor {
+        margin: 0 auto;
+        border-collapse: collapse;
+    }
+
+    .TH td {
+        border-style: solid;
+        border-width: 1px;
+    }
+
+    #divtitle {
+        margin: 0 auto;
+    }
+
+    hr {
+        height: 0px;
+        border-top: 1px solid #808A87;
+        border-right: 0px;
+        border-bottom: 0px;
+        border-left: 0px;
+    }
+
+    #divcode {
+        border-style: solid;
+        border-width: 1px;
+        border-color: #808A87;
+        height: 50px;
+        width: 1000px;
+        margin: 0 auto;
+    }
+
+        #divcode tr {
+            vertical-align: top;
+        }
+    /* body {
+                    font-family: STSong Microsoft YaHei;
+                } */
+
+    #container {
+        position: relative;
+        margin: 0 auto;
+        padding: 0 40px 0 50px;
+        width: 794px;
+        height: 1123px;
+    }
+
+    footer {
+        /* position: absolute; */
+        left: 0;
+        bottom: 0;
+        padding: 0 40px 0 0;
+        width: 100%
+    }
+        /*
+                    footer hr {
+                        height: 2px;
+                        background-color: #000;
+                        border: none
+                    }*/
+
+        footer .footer-title h1 {
+            font-size: 13px;
+            line-height: 20px;
+            font-weight: 400;
+            text-align: center
+        }
+
+        footer .footer-title p {
+            margin-top: 6px;
+            font-size: 12px;
+            line-height: 30px
+        }
+
+        footer .footer-info {
+            margin-top: 8px;
+            font-size: 13px;
+            height: 104px
+        }
+
+            footer .footer-info div {
+                display: flex;
+                justify-content: space-between
+            }
+
+                footer .footer-info div p {
+                    flex: 1;
+                    padding-right: 8px
+                }
+
+                    footer .footer-info div p.footer-datetime {
+                        margin-top: 8px;
+                        font-size: 10px
+                    }
+
+    .content {
+        clear: both;
+        width: 1100px;
+        /* height: 520px; */
+        border: 2px solid #000;
+        font-weight: 700;
+    }
+
+    .product_one {
+        width: 100%;
+        display: flex;
+        height: 20px;
+        line-height: 20px;
+        flex: 1;
+        border-bottom: 1px dashed #000;
+    }
+
+    .product_one_ {
+        width: 100%;
+        display: flex;
+        height: 20px;
+        line-height: 20px;
+        flex: 1;
+        border-bottom: 1px solid #000;
+    }
+
+    .product_one_left {
+        width: 40%;
+        height: 20px;
+        line-height: 20px;
+        border-right: 1px solid #000;
+        padding-left: 10px;
+        color: #000;
+    }
+
+    .product_one_right {
+        width: 60%;
+        height: 20px;
+        color: #000;
+        line-height: 20px;
+        padding-left: 10px;
+    }
+</style>
+
+<body>
+    <header>
+        <div id="divtitle" style=" width: 1000px; height:60px;">
+            <div style="float:left;width: 240px; margin-top: 20px;">
+                <img src="data:image/png;base64,@Model.Data.logo" color="#6F6F6F" style="width: 120px;height: 45px;margin-left:20px">
+            </div>
+            <div style="float:left;width: 300px; margin-top: 10px; margin-left:100px">
+                <span style="font-size: 42px;">合约评审单</span>
+            </div>
+            <div style="float:left;width: 180px; margin-top: -3px; margin-left:10px">
+                <span>
+                    评审单号：@Model.Data.contract_id
+                </span>
+                <span>
+                    业务员：@Model.Data.SlpName
+                </span>
+                <br>
+                <span>
+                    申请日期：@Model.Data.ApplyDate
+                </span>
+                <span>
+                    交货日期：@Model.Data.DeliverDate
+                </span>
+            </div>
+            <div style="float:right;width: 90px; ">
+                <img src="@Model.Data.QRcode" style="width: 80px;height: 80px; color:#6F6F6F">
+            </div>
+        </div>
+        <div class="content">
+            <div class="product_one">
+                <div class="product_one_left">
+                    <div class="product_one_left_title">
+                        <span style="width:250px;border-right:1px solid #000;margin-right: 10px;">产品型号 : </span> <span style="font-weight: 400;">@Model.Data.ItemCode</span>
+                    </div>
+
+                </div>
+                <div class="product_one_right">
+                    <div class="product_one_right_content">
+                        <span style="width:250px;border-right:1px solid #000;margin-right: 10px;">产品描述 : </span>
+                        <span style="font-weight: 400;">@Model.Data.ItemDesc</span>
+                    </div>
+                </div>
+            </div>
+            <div class="product_one">
+                <div class="product_one_left" style="border-right: none;width: 38.5%;">
+                    <div class="product_one_left_title">
+                        <span style="width:66px;display: inline-block; border-right:1px solid #000;margin-right: 10px;">客户编号 : </span>
+                        <span style="width: 90px;display: inline-block; font-weight: 400;">@Model.Data.CardCode</span>
+
+                    </div>
+
+                </div>
+                <div class="product_one_right">
+                    <div class="product_one_right_content">
+                        <span style="width: 66px;border-right: 1px solid #000;display: inline-block;border-left: 1px solid #000;padding-left: 10px;">客户名称 : </span>
+                        <span style="width: 370px;display: inline-block;padding-left: 10px;font-weight: 400;border-right: 1px solid #000;font-weight: 400;">@Model.Data.CardName </span>
+
+                        <span style="width: 80px;border-right: 1px solid #000;display: inline-block;padding-left: 10px;">客户类型 : </span>
+                        <span style="width: 80px;display: inline-block;padding-left: 10px;font-weight: 400;">@Model.Data.CustomType </span>
+
+                    </div>
+                </div>
+            </div>
+            <div class="product_one">
+                <div class="product_one_left">
+                    <div class="product_one_left_title">
+                        <span style="width:250px;border-right:1px solid #000;margin-right: 10px;">提成比例 : </span>
+                        <span style="width: 100px;display: inline-block;font-weight: 400;">@Model.Data.CommRate</span>
+                        <span style="width:250px;border-right:1px solid #000;border-left:1px solid #000;padding: 0 10px;">
+                            每瓦单价 :
+                        </span>
+                        <span style="font-weight: 400;">@Model.Data.Wattage</span>
+                    </div>
+
+                </div>
+                <div class="product_one_right">
+                    <div class="product_one_right_content">
+                        <span style="border-right: 1px solid #000;width: 66px;display: inline-block;">计量单位 : </span>
+                        <span style="width: 150px;border-right: 1px solid #000;display: inline-block;font-weight: 400;">@Model.Data.UnitMsr</span>
+                        <span style="width: 91px;border-right: 1px solid #000;display: inline-block;padding-left: 10px;">加工费(U) : </span>
+                        <span style="width: 115px;display: inline-block;font-weight: 400;">@Model.Data.U_JGF </span>
+                        <span style="width: 84px;display: inline-block;border-right: 1px solid #000;border-left: 1px solid #000;padding-left: 10px;">负电源个数 :</span>
+                        <span style="font-weight: 400;">@Model.Data.U_FDY</span>
+                    </div>
+                </div>
+            </div>
+            <div class="product_one">
+                <div class="product_one_left">
+                    <div class="product_one_left_title">
+                        <span style="width:65px;border-right:1px solid #000;margin-right: 10px;display: inline-block;">单价 : </span>
+                        <span style="width: 96px;display: inline-block; font-weight: 400;">@Model.Data.Price</span>
+                        <span style="width:62px;border-right:1px solid #000;border-left:1px solid #000;padding: 0 10px;display: inline-block;">
+                            数量 :
+                        </span>
+                        <span style="font-weight: 400;">@Model.Data.Quantity</span>
+                    </div>
+
+                </div>
+                <div class="product_one_right">
+                    <div class="product_one_right_content">
+                        <span style="border-right: 1px solid #000;width: 66px;display: inline-block;">总计 : </span>
+                        <span style="width: 150px;border-right: 1px solid #000;display: inline-block;font-weight: 400;">@Model.Data.SumTotal</span>
+                        <span style="width: 91px;border-right: 1px solid #000;display: inline-block;padding-left: 10px;">总成本 : </span>
+                        <span style="width: 115px;display: inline-block;font-weight: 400;">@Model.Data.CostTotal </span>
+
+                        <span style="width: 84px;display: inline-block;border-right: 1px solid #000;border-left: 1px solid #000;padding-left: 10px;">毛利 :</span>
+                        <span style="font-weight: 400;">@Model.Data.Maori</span>
+                    </div>
+                </div>
+            </div>
+            <div class="product_one">
+                <div class="product_one_left">
+                    <div class="product_one_left_title">
+                        <span style="width:250px;border-right:1px solid #000;margin-right: 10px;">检测能力 : </span>
+                        <span style="font-weight: 400;">@Model.Data.DetectionCapability</span>
+                    </div>
+
+                </div>
+                <div class="product_one_right">
+                    <div class="product_one_right_content">
+                        <span style="width:250px;border-right:1px solid #000;margin-right: 10px;">客户特殊要求 : </span>
+                        <span style="font-weight: 400;">@Model.Data.CustomReq</span>
+                    </div>
+                </div>
+            </div>
+            <div class="product_one">
+                <div class="product_one_left" style="border-right: none;">
+                    <div class="product_one_left_title">
+                        <span style="width:110px;border-right:1px solid #000;margin-right: 10px;display: inline-block;">备注 : </span>
+                        <span style="font-weight: 400;">@Model.Data.Remarks</span>
+                    </div>
+
+                </div>
+
+            </div>
+            <div class="product_one_">
+                <div class="product_one_left" style="border-right: none;">
+                    <div class="product_one_left_title">
+                        <span style="width:110px;border-right:1px solid #000;margin-right: 10px;display: inline-block;">项目情况说明 : </span>
+                        <span style="font-weight: 400;">@Model.Data.ProjectDesc</span>
+                    </div>
+
+                </div>
+
+            </div>
+            <div class="product_one">
+                <div class="product_one_left">
+                    <div class="product_one_left_title">
+                        <span style="width:110px;border-right:1px solid #000;margin-right: 10px;display: inline-block;">机箱颜色 : </span>
+                        <span style="width: 96px;display: inline-block;font-weight: 400;">@Model.Data.CaseColor</span>
+                        <span style="width:62px;border-right:1px solid #000;border-left:1px solid #000;padding: 0 10px;display: inline-block;">
+                            机箱丝印 :
+                        </span>
+                        <span style="font-weight: 400;">@Model.Data.CaseSilkPRT</span>
+                    </div>
+
+                </div>
+                <div class="product_one_right">
+                    <div class="product_one_right_content">
+                        <span style="border-right: 1px solid #000;width: 180px;display: inline-block;">设备最低放电电压 : </span>
+                        <span style="width: 150px;border-right: 1px solid #000;display: inline-block;font-weight: 400;">@Model.Data.MinDischargeVoltage</span>
+                        <span style="width: 110px;border-right: 1px solid #000;display: inline-block;padding-left: 10px;">设备老化时间 : </span>
+                        <span style="width: 115px;display: inline-block;font-weight: 400;">@Model.Data.AgeingTime </span>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="product_one">
+                <div class="product_one_left">
+                    <div class="product_one_left_title">
+                        <span style="width:110px;border-right:1px solid #000;margin-right: 10px;display: inline-block;">主设备型号 : </span>
+                        <span style="width: 96px;display: inline-block;font-weight: 400;">@Model.Data.ItemDesc</span>
+
+                    </div>
+
+                </div>
+                <div class="product_one_right">
+                    <div class="product_one_right_content">
+                        <span style="border-right: 1px solid #000;width: 180px;display: inline-block;">设备精度要求(电压、电流) : </span>
+                        <span style="width: 150px;border-right: 1px solid #000;display: inline-block;font-weight: 400;">@Model.Data.RequiredPrecision</span>
+                        <span style="width: 110px;border-right: 1px solid #000;display: inline-block;padding-left: 10px;">中位机 : </span>
+                        <span style="width: 115px;display: inline-block;font-weight: 400;"> @Model.Data.MiddleMachineType</span>
+
+                    </div>
+                </div>
+            </div>
+            <div class="product_one">
+                <div class="product_one_left">
+                    <div class="product_one_left_title">
+                        <span style="width:110px;border-right:1px solid #000;margin-right: 10px;display: inline-block;">辅助设备箱号 : </span>
+                        <span style="width: 96px;display: inline-block;font-weight: 400">@Model.Data.AdditionalCaseNo</span>
+
+                    </div>
+
+                </div>
+                <div class="product_one_right">
+                    <div class="product_one_right_content">
+                        <span style="border-right: 1px solid #000;width: 180px;display: inline-block;">出线方式 : </span>
+                        <span style="width: 150px;border-right: 1px solid #000;display: inline-block;font-weight: 400">@Model.Data.WiringMethod</span>
+                        <span style="width: 110px;border-right: 1px solid #000;display: inline-block;padding-left: 10px;">中英文版本 : </span>
+                        <span style="width: 115px;display: inline-block;font-weight: 400"> @Model.Data.LanguageVer</span>
+
+                    </div>
+                </div>
+            </div>
+            <div class="product_one_">
+                <div class="product_one_left">
+                    <div class="product_one_left_title">
+                        <span style="width:250px;border-right:1px solid #000;margin-right: 10px;">配电选项 : </span>
+                        <span style="font-weight: 400">@Model.Data.DisOptions</span>
+                    </div>
+
+                </div>
+                <div class="product_one_right">
+                    <div class="product_one_right_content">
+                        <span style="display: inline-block; width:180px;border-right:1px solid #000;margin-right: 10px;">其他特殊要求 : </span>
+                        <span style="font-weight: 400">@Model.Data.MainSpecialRequire</span>
+                    </div>
+                </div>
+            </div>
+            <div class="product_one">
+                <div class="product_one_left" style="border-right: none;">
+                    <div class="product_one_left_title">
+                        <span style="width:110px;border-right:1px solid #000;margin-right: 10px;display: inline-block;">其他要求 : </span>
+                        <span style="font-weight: 400">@Model.Data.MainOtherRequire</span>
+                    </div>
+
+                </div>
+
+            </div>
+            <div class="product_one_">
+                <div class="product_one_left" style="border-right: none;">
+                    <div class="product_one_left_title">
+                        <span style="width:110px;border-right:1px solid #000;margin-right: 10px;display: inline-block;">辅助通道 : </span>
+                        <span style="font-weight: 400">@Model.Data.addchlinfo</span>
+                    </div>
+
+                </div>
+
+            </div>
+            <div class="product_one_">
+                <div class="product_one_left" style="border-right: none;">
+                    <div class="product_one_left_title">
+                        <span style="width:110px;border-right:1px solid #000;margin-right: 10px;display: inline-block;">压床 : </span>
+                        <span style="font-weight: 400">@Model.Data.pressmacinfo</span>
+                    </div>
+
+                </div>
+
+            </div>
+            <div class="product_one_">
+                <div class="product_one_left" style="border-right: none;">
+                    <div class="product_one_left_title">
+                        <span style="width:110px;border-right:1px solid #000;margin-right: 10px;display: inline-block;">高低温箱 : </span>
+                        <span style="font-weight: 400">@Model.Data.hltempinfo</span>
+                    </div>
+
+                </div>
+
+            </div>
+            <div class="product_one_">
+                <div class="product_one_left">
+                    <div class="product_one_left_title">
+                        <span style="width:110px;border-right:1px solid #000;margin-right: 10px;display: inline-block;">网线 : </span>
+                        <span style="width: 96px;display: inline-block;font-weight: 400">@Model.Data.EthernetCable</span>
+                        <span style="width:62px;border-right:1px solid #000;border-left:1px solid #000;padding: 0 10px;display: inline-block;">
+                            电源线 :
+                        </span>
+                        <span style="font-weight: 400">@Model.Data.PowerLine</span>
+                    </div>
+
+                </div>
+                <div class="product_one_right">
+                    <div class="product_one_right_content">
+                        <span style="border-right: 1px solid #000;width: 180px;display: inline-block;">转换插头 : </span>
+                        <span style="width: 150px;border-right: 1px solid #000;display: inline-block;font-weight: 400">@Model.Data.PlugAdaptor</span>
+                        <span style="width: 110px;border-right: 1px solid #000;display: inline-block;padding-left: 10px;">交换机 : </span>
+                        <span style="width: 115px;display: inline-block;font-weight: 400"> @Model.Data.SwitchBoard</span>
+
+                    </div>
+                </div>
+            </div>
+            <div class="product_one">
+                <div class="product_one_left">
+                    <div class="product_one_left_title">
+                        <span style="width:110px;border-right:1px solid #000;margin-right: 10px;display: inline-block;">托盒 : </span>
+                        <span style="width: 96px;display: inline-block;font-weight: 400">@Model.Data.Pallet</span>
+
+                    </div>
+
+                </div>
+                <div class="product_one_right">
+                    <div class="product_one_right_content">
+                        <span style="border-right: 1px solid #000;width: 180px;display: inline-block;">通道电流线 : </span>
+                        <span style="width: 150px;border-right: 1px solid #000;display: inline-block;font-weight: 400">@Model.Data.ChannelElectricCurrentLine</span>
+                        <span style="width: 110px;border-right: 1px solid #000;display: inline-block;padding-left: 10px;">夹具面板 : </span>
+                        <span style="width: 115px;display: inline-block;font-weight: 400"> @Model.Data.FixturePanel</span>
+
+                    </div>
+                </div>
+            </div>
+            <div class="product_one">
+                <div class="product_one_left">
+                    <div class="product_one_left_title">
+                        <span style="display: inline-block; width:110px;border-right:1px solid #000;margin-right: 10px;">龙门架 : </span>
+                        <span style="font-weight: 400">@Model.Data.Gantry</span>
+                    </div>
+
+                </div>
+                <div class="product_one_right">
+                    <div class="product_one_right_content">
+                        <span style="width:250px;border-right:1px solid #000;margin-right: 10px;">通道电压线 : </span>
+                        <span style="font-weight: 400">@Model.Data.ChannelVoltageLine</span>
+                    </div>
+                </div>
+            </div>
+            <div class="product_one_">
+                <div class="product_one_left">
+                    <div class="product_one_left_title">
+                        <span style="display: inline-block; width:110px;border-right:1px solid #000;margin-right: 10px;">定制电池架 : </span>
+                        <span style="font-weight: 400">@Model.Data.CustomBatteryElevator</span>
+                    </div>
+
+                </div>
+                <div class="product_one_right">
+                    <div class="product_one_right_content">
+                        <span style="width:250px;border-right:1px solid #000;margin-right: 10px;">定制防爆箱 : </span>
+                        <span style="font-weight: 400">@Model.Data.CustomAntiExplosionType</span>
+                    </div>
+                </div>
+            </div>
+            <div class="product_one">
+                <div class="product_one_left">
+                    <div class="product_one_left_title">
+                        <span style="width:110px;border-right:1px solid #000;margin-right: 10px;display: inline-block;">园柱电池 : </span>
+                        <span style="width:79px;border-right:1px solid #000;margin-right: 10px;display: inline-block;font-weight: 400;">电池尺寸 : </span>
+                        <span style="font-weight: 400">@Model.Data.CylindricalBatteryInfo_Size</span>
+
+                    </div>
+
+                </div>
+                <div class="product_one_right">
+                    <div class="product_one_right_content">
+                        <span style="display: inline-block; width:78px;border-right:1px solid #000;margin-right: 10px;font-weight: 400;">机柱结构 : </span>
+                        <span style="font-weight: 400">@Model.Data.CylindricalBatteryInfo_Struct</span>
+                    </div>
+                </div>
+            </div>
+            <div class="product_one">
+                <div class="product_one_left">
+                    <div class="product_one_left_title">
+                        <span style="width:110px;border-right:1px solid #000;margin-right: 10px;display: inline-block;">软包电池 : </span>
+                        <span style="width:79px;border-right:1px solid #000;margin-right: 10px;display: inline-block;font-weight: 400;">电池尺寸 : </span>
+                        <span style="font-weight: 400">@Model.Data.SoftPackingBatteryInfo_Size</span>
+
+                    </div>
+
+                </div>
+                <div class="product_one_right">
+                    <div class="product_one_right_content">
+                        <span style="display: inline-block; width:78px;border-right:1px solid #000;margin-right: 10px;"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="product_one">
+                <div class="product_one_left">
+                    <div class="product_one_left_title">
+                        <span style="width:110px;border-right:1px solid #000;margin-right: 10px;display: inline-block;">方形电池 : </span>
+                        <span style="width:79px;border-right:1px solid #000;margin-right: 10px;display: inline-block;font-weight: 400;">电池尺寸 : </span>
+
+                        <span style="display: inline-block;width: 100px;border-right: 1px solid #000;font-weight: 400;">@Model.Data.LiionBatteryInfo_Size</span>
+                        <span style="width:79px;margin-right: 10px;display: inline-block;font-weight: 400;"> </span>
+
+                    </div>
+
+                </div>
+                <div class="product_one_right">
+                    <div class="product_one_right_content">
+                        <span style="display: inline-block; width:78px;border-right:1px solid #000;margin-right: 10px;font-weight: 400;">机柱结构 : </span>
+                        <span style="font-weight: 400;">@Model.Data.LiionBatteryInfo_struct</span>
+                    </div>
+                </div>
+            </div>
+            <div class="product_one_">
+                <div class="product_one_left" style="border-right: none;">
+                    <div class="product_one_left_title">
+                        <span style="width:110px;border-right:1px solid #000;margin-right: 10px;display: inline-block;">成品电池 : </span>
+                        <span style="font-weight: 400;">@Model.Data.ItemDesc</span>
+                    </div>
+
+                </div>
+
+            </div>
+            <div class="product_one" style="border-bottom: none;">
+                <div class="product_one_left" style="border-right: none;">
+                    <div class="product_one_left_title">
+                        <span style="width:110px;border-right:1px solid #000;margin-right: 10px;display: inline-block;">其他特殊要求 : </span>
+                        <span style="font-weight: 400;">@Model.Data.CTSepecialRequire</span>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+        <div style="width: 1100px; height: 18px; border: 1px solid #000;margin-top: 5px;border-bottom: none;font-weight: 700;">
+            <div style="border-bottom:1px dashed #000;">
+                <span style="color: #000;width: 50px;display: inline-block;border-right: 1px solid #000;text-align: center;">#</span>
+                <span style="color: #000;width: 64px;display: inline-block;border-right: 1px solid #000;">类别</span>
+                <span style="color: #000;width: 90px;display: inline-block;border-right: 1px solid #000;">编码</span>
+                <span style="color: #000;width: 223px;display: inline-block;border-right: 1px solid #000;">描述</span>
+                <span style="color: #000;width: 50px;display: inline-block;border-right: 1px solid #000;">数量</span>
+                <span style="color: #000;width: 64px;display: inline-block;border-right: 1px solid #000;">计量单位</span>
+                <span style="color: #000;width: 100px;display: inline-block;border-right: 1px solid #000;">上一次采购单价</span>
+                <span style="color: #000;width: 100px;display: inline-block;border-right: 1px solid #000;text-align: right;">成本价</span>
+                <span style="color: #000;width: 100px;display: inline-block;border-right: 1px solid #000;text-align: right">加工单价</span>
+                <span style="color: #000;width: 210px; display: inline-block;text-align: right">加工费</span>
+
+            </div>
+
+        </div>
+        @{
+            int number = 0;
+        }
+        @foreach (var item in Model.Data.BomCost)
+        {
+            <div style="width: 1100px; height: 18px; font-weight: 400;border: 1px solid #000; ">
+                <span style="border-right: 1px solid #000;font-weight: 400;line-height: 18px; color: #000;width: 50px;display: inline-block;text-align: center;"> @{++number;} @number</span>
+                <span style="border-right: 1px solid #000;font-weight: 400;line-height: 18px; color: #000;width: 64px;display: inline-block;">@item.ItemTypeName</span>
+                <span style="border-right: 1px solid #000;font-weight: 400;line-height: 18px; color: #000;width: 90px;display: inline-block;">@item.ItemCode</span>
+                <span style="border-right: 1px solid #000;font-weight: 400;line-height: 18px; color: #000;width: 223px;display: inline-block;">@item.ItemName</span>
+                <span style="border-right: 1px solid #000;font-weight: 400;line-height: 18px; color: #000;width: 50px;display: inline-block;">@item.qty</span>
+                <span style="border-right: 1px solid #000;font-weight: 400;line-height: 18px; color: #000;width: 64px;display: inline-block;">@item.UnitMsr</span>
+                <span style="border-right: 1px solid #000;font-weight: 400;line-height: 18px; color: #000;width: 100px;display: inline-block;">**************</span>
+                <span style="border-right: 1px solid #000;font-weight: 400;line-height: 18px; color: #000;width: 100px;display: inline-block;text-align: right">**************</span>
+                <span style="border-right: 1px solid #000;font-weight: 400;line-height: 18px; color: #000;width: 100px;display: inline-block;text-align: right">**************</span>
+                <span style="font-weight: 400;line-height: 18px; color: #000;width: 210px;display: inline-block;text-align: right">**************</span>
+
+
+
+            </div>
+        }
+
+    </header>
+</body>
+
+</html>
