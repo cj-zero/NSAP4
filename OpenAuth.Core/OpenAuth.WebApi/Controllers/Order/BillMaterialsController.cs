@@ -555,7 +555,11 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             return result;
         }
+        /// <summary>
         /// 根据funcid获取附件类型
+        /// </summary>
+        /// <param name="funcID"></param>
+        /// <returns></returns>
         [HttpPost]
         [Route("GetattchtypeByfuncid")]
         public TableData GetattchtypeByfuncid(string funcID)
