@@ -165,20 +165,7 @@ namespace OpenAuth.App.Order
                 //filterString += string.Format("DATE_FORMAT(a.UpdateDate,'%Y-%m-%d')  BETWEEN '{0}' AND '{1}' AND ", query.FirstTime, query.LastTime);
                 filterString += string.Format("a.UpdateDate BETWEEN '{0}' AND '{1}' AND ", query.FirstTime, query.LastTime);
             }
-            //if (type == "ODLN")
-            //{
-            //    p = fields[6].Split(':');
-            //    if (!string.IsNullOrEmpty(p[1]))
-            //    {
-            //        filterString += string.Format("a.GroupNum = {1} AND ", p[0], p[1]);
-            //    }
-            //    string[] p7 = fields[7].Split(':');
-            //    string[] p8 = fields[8].Split(':');
-            //    if (!string.IsNullOrEmpty(p8[1]))
-            //    {
-            //        filterString += " (a.CreateDate BETWEEN '" + p7[1].FilterSQL().Trim() + "' AND '" + p8[1].FilterSQL().Trim() + "') AND ";
-            //    }
-            //}
+            
             if (type == "ORDR")
             {
                 if (!string.IsNullOrWhiteSpace(query.Indicator))
@@ -187,30 +174,7 @@ namespace OpenAuth.App.Order
                 }
             }
 
-            //查询关联订单
-            //if (fields.Length > 6)
-            //{
-            //    p = fields[6].Split(':');
-            //    if (!string.IsNullOrEmpty(p[1]))
-            //    {
-            //        if (type == "OPDN")
-            //        {
-            //            filterString += string.Format("EXISTS (select 1 from {0}.dbo.PDN1 p1 LEFT JOIN {0}.dbo.POR1 p2 on p1.BaseEntry=p2.DocEntry and p1.BaseLine=p2.LineNum where p1.docentry=a.docentry and p2.U_RelDoc like '%{1}%') AND ", sboname, p[1].FilterSQL().Trim());
-            //        }
-            //        if (type == "OPOR")
-            //        {
-            //            filterString += string.Format("EXISTS (select 1 from {0}.dbo.POR1 p2  where p2.docentry=a.docentry and p2.U_RelDoc like '%{1}%') AND ", sboname, p[1].FilterSQL().Trim());
-            //        }
-            //    }
-            //}
-            //if (type == "OPDN" && fields.Length > 7)
-            //{
-            //    p = fields[7].Split(':');
-            //    if (!string.IsNullOrEmpty(p[1]))
-            //    {
-            //        filterString += string.Format("EXISTS (select 1 from {0}.dbo.PDN1 p2  where p2.docentry=a.docentry and p2.BaseEntry={1}) AND ", sboname, p[1].FilterSQL().Trim());
-            //    }
-            //}
+           
             #endregion
 
             #region 根据不同的单据显示不同的内容
@@ -304,116 +268,9 @@ namespace OpenAuth.App.Order
             {
                 //视图查询数据
                 tableData = SelectOrdersInfo(out rowCount, pageSize, pageIndex, filterString, sortString, type, line, ViewCustom, ViewSales, sqlcont, sboname);
-                //if (type.ToLower() == "odln")
-                //{
-                //    //thistab.Columns.Add("BuyDocEntry", typeof(string));
-                //    //thistab.Columns.Add("TransportName", typeof(string));
-                //    //thistab.Columns.Add("TransportID", typeof(string));
-                //    //thistab.Columns.Add("TransportSum", typeof(string));
-                //    foreach (DataRow odlnrow in thistab.Rows)
-                //    {
-                //        string docnum = odlnrow["DocEntry"].ToString();
-                //        DataTable thist = NSAP.Data.Sales.BillDelivery.GetSalesDelivery_PurchaseOrderList(docnum, SboID.ToString());
-                //        string buyentry = "";
-                //        string transname = "";
-                //        string transid = "";
-                //        double transsum = 0.00;
-                //        string tempname = "";
-                //        string transDocTotal = "";
-                //        for (int i = 0; i < thist.Rows.Count; i++)
-                //        {
-                //            transsum += double.Parse(thist.Rows[i]["DocTotal"].ToString());// 交货对应采购单总金额
-                //                                                                           //快递单号，对应采购单编号
-                //            if (string.IsNullOrEmpty(buyentry))
-                //            {
-                //                buyentry = thist.Rows[i]["Buy_DocEntry"].ToString();
-                //                transid = string.IsNullOrEmpty(thist.Rows[i]["LicTradNum"].ToString()) ? "000000000" : thist.Rows[i]["LicTradNum"].ToString();
-                //                tempname = thist.Rows[i]["CardName"].ToString();
-                //                transname = tempname;
-                //                transDocTotal = thist.Rows[i]["DocTotal"].ToString();
-                //            }
-                //            else
-                //            {
-                //                buyentry += ";" + thist.Rows[i]["Buy_DocEntry"].ToString();
-                //                transid += ";" + (string.IsNullOrEmpty(thist.Rows[i]["LicTradNum"].ToString()) ? "000000000" : thist.Rows[i]["LicTradNum"].ToString());
-                //                //物流公司名称如果连续重复，则只显示第一个
-                //                if (tempname != thist.Rows[i]["CardName"].ToString())
-                //                    tempname = thist.Rows[i]["CardName"].ToString();
-                //                else
-                //                    tempname = "";
-                //                transname += ";;" + tempname;
-                //                transDocTotal += ";" + thist.Rows[i]["DocTotal"].ToString();
-                //            }
-
-                //        }
-                //        odlnrow["BuyDocEntry"] = buyentry;
-                //        odlnrow["TransportName"] = transname;
-                //        odlnrow["TransportID"] = transid;
-                //        odlnrow["TransportSum"] = transsum.ToString() + ";" + transDocTotal;
-                //    }
-                //}
-                //if (type.ToLower() == "ordr")//对应发票状态
-                //{
-                //    thistab.Columns.Add("billStatus", typeof(string));
-                //    thistab.Columns.Add("bonusStatus", typeof(string));
-                //    thistab.Columns.Add("proStatus", typeof(string));
-                //    thistab.Columns.Add("IndicatorName", typeof(string));
-                //    thistab.Columns.Add("EmpAcctWarn", typeof(string));
-                //    string bonustypeid = NSAP.Data.Client.ClientInfo.GetJobTypeByUrl("sales/SalesBonus.aspx");
-                //    string bonusatypeid = NSAP.Data.Client.ClientInfo.GetJobTypeByUrl("sales/BonusAfterSales.aspx");
-                //    string protypeid = NSAP.Data.Client.ClientInfo.GetJobTypeByUrl("product/ProductionOrder.aspx");
-                //    string protypeid_cp = NSAP.Data.Client.ClientInfo.GetJobTypeByUrl("product/ProductionOrder_CP.aspx");
-                //    string typeidstr = bonustypeid + "," + bonusatypeid + "," + protypeid + "," + protypeid_cp;
-                //    foreach (DataRow ordrrow in thistab.Rows)
-                //    {
-                //        string orderid = ordrrow["DocEntry"].ToString();
-                //        ordrrow["billStatus"] = NSAP.Data.Sales.BillDelivery.GetBillStatusByOrderId(orderid, SboID.ToString());
-                //        DataTable jobtab = NSAP.Data.Sales.BillDelivery.GetJobStateForDoc(orderid, typeidstr, SboID.ToString());
-                //        DataRow[] bonusrows = jobtab.Select("job_type_id=" + bonustypeid + " or job_type_id=" + bonusatypeid);
-                //        DataRow[] prorows = jobtab.Select("job_type_id=" + protypeid + " or job_type_id=" + protypeid_cp, "upd_dt desc");
-                //        ordrrow["bonusStatus"] = "";
-                //        ordrrow["proStatus"] = "";
-                //        if (bonusrows.Length > 0)
-                //        {
-                //            ordrrow["bonusStatus"] = bonusrows[0]["job_state"].ToString();
-                //        }
-                //        if (prorows.Length > 0)
-                //        {
-                //            ordrrow["proStatus"] = prorows[0]["job_state"].ToString();
-                //        }
-                //        ordrrow["IndicatorName"] = NSAP.Data.Sales.BillDelivery.GetBillIndicatorByOrderId(orderid, SboID.ToString());
-                //        ordrrow["EmpAcctWarn"] = NSAP.Data.Sales.BillDelivery.GetEmptyAcctByOrderId(orderid, SboID.ToString());
-                //    }
-                //}
-                //if (type.ToLower() == "opor")
-                //{
-                //    foreach (DataRow temprow in thistab.Rows)
-                //    {
-                //        string indicator = temprow["Indicator"].ToString();
-                //        string taxstr = NSAP.Data.Finance.BillApplication.GetTaxNoByPO(temprow["DocEntry"].ToString(), SboID.ToString());
-                //        temprow["PurchaseBillNo"] = taxstr;
-                //        temprow["IndicatorName"] = NSAP.Data.Finance.BillApplication.GetToCompanyName(SboID.ToString(), indicator);
-                //    }
-                //}
-                //if (type.ToLower() == "opdn")
-                //{
-                //    double totalamount = 0.00;
-                //    foreach (DataRow temprow in thistab.Rows)
-                //    {
-                //        totalamount += double.Parse(temprow["Doctotal"].ToString());
-                //    }
-                //    string pageExtend = string.Format("总金额：{0}", totalamount.ToString("0.00"));
-                //    return thistab.FelxgridDataToJSON(pageIndex.ToString(), rowCount.ToString(), pageExtend);
-                //}
-                //else
-                //{
-                //    return thistab.FelxgridDataToJSON(pageIndex.ToString(), rowCount.ToString());
-                //}
+               
             }
-            else
-            {
-                //  return SelectBillViewInfo(pageSize, pageIndex, filterQuery, sortname, sortorder, type, ViewFull, ViewSelf, UserID, uSboId, ViewSelfDepartment, DepID, ViewCustom, ViewSales);
-            }
+            
             return tableData;
         }
         /// <summary>
@@ -473,14 +330,7 @@ namespace OpenAuth.App.Order
                 new SqlParameter("@pageIndex",pageIndex),
                 new SqlParameter("@strOrder",orderName),
                 new SqlParameter("@strWhere",filterQuery),
-                //new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("strFrom",tableName.ToString()),
-                //new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("strSelect",filedName.ToString()),
-                //new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pageSize",pageSize),
-                //new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pageIndex",pageIndex),
-                //new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("strOrder",orderName),
-                //new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("strWhere",filterQuery),
-                //new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("isStats",1),
-                //new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("rowCount",0),
+               
             };
             SqlParameter isStats = new SqlParameter("@isStats", SqlDbType.Int);
             isStats.Value = 1;
@@ -494,32 +344,7 @@ namespace OpenAuth.App.Order
             {
                 tableData.Count = Convert.ToInt32(paramOut.Value);
                 rowCounts = Convert.ToInt32(sqlParameters[7].Value);
-                //for (int i = 0; i < dt.Rows.Count; i++)
-                //{
-                //    var row = dt.Rows[i];
-                //    var s = row[1].ToString("yyyy-MM-dd");
-                //    if (DateTime.TryParse(s,out var date))
-                //    {
-                //        var dtValue = date.ToString("yyyy-MM-dd");
-                //    }
-                //}
-                //foreach (DataRow temprow in dt.Rows)
-                //{
-                //    var s = temprow["UpdateDate"].ToString();
-                //    if (DateTime.TryParse(s, out var date))
-                //    {
-                //        var dtValue = date.ToString("yyyy-MM-dd");
-                //        temprow["UpdateDate"] = dtValue;
-
-                //    }
-                //    var ss = temprow["CreateDate"].ToString();
-                //    if (DateTime.TryParse(ss, out var dates))
-                //    {
-                //        var dtValue = dates.ToString("yyyy-MM-dd");
-                //        temprow["CreateDate"] = dtValue;
-
-                //    }
-                //}
+              
             }
             else
             {
@@ -856,14 +681,7 @@ namespace OpenAuth.App.Order
             string returns = "1";
             string para_val = setNumber == "" ? "1" : setNumber;
             string strSql = $@"INSERT INTO nsap_base.wfa_job_para (job_id,para_idx,para_val) VALUES({jobID},'1','{para_val}')";
-            //List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
-            //{
-            //    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("job_id",      jobID),
-            //    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("para_idx",   "1"),
-            //    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("para_val", setNumber==""?"1":setNumber)
-            //};
-            //strSql += string.Format(" ON Duplicate KEY UPDATE ");
-            //strSql += string.Format("para_val=VALUES(para_val)");
+           
             object obj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text);
             if (obj != null)
             {
@@ -5017,7 +4835,7 @@ namespace OpenAuth.App.Order
             }
 
             //filterString += string.Format("(b.job_type_nm LIKE '%{0}%' OR b.job_type_nm LIKE '%{1}%') AND ", "销售报价单","销售订单");
-            filterString += string.Format("(b.job_type_nm = '{0}' OR b.job_type_nm = '{1}'  OR b.job_type_nm = '{2}') AND ", "销售报价单", "销售订单","销售交货");
+            filterString += string.Format("(b.job_type_nm = '{0}' OR b.job_type_nm = '{1}'  OR b.job_type_nm = '{2}') AND ", "销售报价单", "销售订单", "销售交货");
             #endregion
             #region
             if (!string.IsNullOrEmpty(filterString))
@@ -5078,10 +4896,10 @@ namespace OpenAuth.App.Order
 
             return bill;
         }
-        public billDelivery GetDeliverySalesInfoNewNos(string jobId, int userID, int typeId)
+        public billDelivery GetDeliverySalesInfoNewNos(string jobId, int typeId)
         {
             billDelivery bill = null;
-            object obj = GetSalesInfoNos(jobId, userID, typeId);
+            object obj = GetSalesInfoNos(jobId, typeId);
             if (obj != null)
             {
                 bill = DeSerialize<billDelivery>((byte[])(obj));
@@ -5509,9 +5327,9 @@ namespace OpenAuth.App.Order
         /// </summary>
         /// <param name="jobId"></param>
         /// <returns></returns>
-        public object GetSalesInfoNos(string jobId, int userID, int typeId)
+        public object GetSalesInfoNos(string jobId, int typeId)
         {
-            string sql = string.Format("SELECT job_data FROM {0}.wfa_job WHERE job_type_id={1} AND user_id= {2} AND  sbo_itf_return={3}", "nsap_base", typeId, userID, jobId);
+            string sql = string.Format("SELECT job_data FROM {0}.wfa_job WHERE job_type_id={1} AND job_state=3 AND sync_stat=4 AND   sbo_itf_return={2}", "nsap_base", typeId, jobId);
             return UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
         }
         public int GetIsEdit(string jobId)
@@ -5525,7 +5343,7 @@ namespace OpenAuth.App.Order
             }
             return isEdit;
             //return int.Parse(Sql.Action.ExecuteScalar(Sql.UTF8ConnectionString, CommandType.Text, sql).ToString());
-        }
+        } 
 
 
 
@@ -7976,6 +7794,1442 @@ namespace OpenAuth.App.Order
                 return "0";
             }
         }
+        public async Task<byte[]> ContractExportShow_ForSaleNew(string sboid, string contractId)
+        {
+            DataTable maintab = GetContractReviewInfo(contractId, "1", "1", true);
+            DataTable bomtab = SelectContractReviewBomData(contractId, "1");
+            var logopath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
+            var logostr = "";
+            using (var fs = new FileStream(logopath, FileMode.Open))
+            {
+                var photo = new byte[fs.Length];
+                fs.Position = 0;
+                await fs.ReadAsync(photo, 0, photo.Length);
+                logostr = Convert.ToBase64String(photo);
+                Console.WriteLine(logostr);
+            }
+            var PrintForSale = new PrintForSale
+            {
+                contract_id = string.IsNullOrEmpty(maintab.Rows[0]["contract_id"].ToString()) ? " " : maintab.Rows[0]["contract_id"].ToString(),
+                SlpName = string.IsNullOrEmpty(maintab.Rows[0]["SlpName"].ToString()) ? " " : maintab.Rows[0]["SlpName"].ToString(),
+                ApplyDate = string.IsNullOrEmpty(maintab.Rows[0]["ApplyDate"].ToString()) ? " " : DateTime.Parse(maintab.Rows[0]["ApplyDate"].ToString()).ToShortDateString(),
+                DeliverDate = string.IsNullOrEmpty(maintab.Rows[0]["DeliverDate"].ToString()) ? " " : DateTime.Parse(maintab.Rows[0]["DeliverDate"].ToString()).ToShortDateString(),
+                ItemCode = (string.IsNullOrEmpty(maintab.Rows[0]["ItemCode"].ToString()) ? " " : maintab.Rows[0]["ItemCode"].ToString()) + (maintab.Rows[0]["IsNew"].ToString() == "1" ? "(新)" : ""),
+                ItemDesc = string.IsNullOrEmpty(maintab.Rows[0]["ItemDesc"].ToString()) ? " " : maintab.Rows[0]["ItemDesc"].ToString(),
+                CardCode = string.IsNullOrEmpty(maintab.Rows[0]["CardCode"].ToString()) ? " " : maintab.Rows[0]["CardCode"].ToString(),
+                CardName = string.IsNullOrEmpty(maintab.Rows[0]["CardName"].ToString()) ? " " : maintab.Rows[0]["CardName"].ToString(),
+                CustomType = string.IsNullOrEmpty(maintab.Rows[0]["CustomType"].ToString()) ? " " : GetCustomFldDescrByValue("saleContractReview", "1", maintab.Rows[0]["CustomType"].ToString()),
+                CommRate = string.IsNullOrEmpty(maintab.Rows[0]["CommRate"].ToString()) ? " " : double.Parse(maintab.Rows[0]["CommRate"].ToString()).ToString("0.00"),
+                Wattage = string.IsNullOrEmpty(maintab.Rows[0]["Wattage"].ToString()) ? " " : maintab.Rows[0]["Wattage"].ToString(),
+                UnitMsr = string.IsNullOrEmpty(maintab.Rows[0]["UnitMsr"].ToString()) ? " " : maintab.Rows[0]["UnitMsr"].ToString(),
+                U_JGF = string.IsNullOrEmpty(maintab.Rows[0]["U_JGF"].ToString()) ? " " : maintab.Rows[0]["U_JGF"].ToString(),
+                U_FDY = string.IsNullOrEmpty(maintab.Rows[0]["U_FDY"].ToString()) ? " " : maintab.Rows[0]["U_FDY"].ToString(),
+                Price = string.IsNullOrEmpty(maintab.Rows[0]["Price"].ToString()) ? " " : double.Parse(maintab.Rows[0]["Price"].ToString()).ToString("0.00"),
+                Quantity = string.IsNullOrEmpty(maintab.Rows[0]["Quantity"].ToString()) ? " " : maintab.Rows[0]["Quantity"].ToString(),
+                SumTotal = string.IsNullOrEmpty(maintab.Rows[0]["SumTotal"].ToString()) ? " " : double.Parse(maintab.Rows[0]["SumTotal"].ToString()).ToString("0.00"),
+                CostTotal = string.IsNullOrEmpty(maintab.Rows[0]["Price"].ToString()) ? " " : double.Parse(maintab.Rows[0]["Price"].ToString()).ToString("0.00"),
+                Maori = string.IsNullOrEmpty(maintab.Rows[0]["Price"].ToString()) ? " " : double.Parse(maintab.Rows[0]["Price"].ToString()).ToString("0.00"),
+                DetectionCapability = string.IsNullOrEmpty(maintab.Rows[0]["DetectionCapability"].ToString()) ? " " : maintab.Rows[0]["DetectionCapability"].ToString(),
+                CustomReq = string.IsNullOrEmpty(maintab.Rows[0]["CustomReq"].ToString()) ? " " : maintab.Rows[0]["CustomReq"].ToString(),
+                Remarks = string.IsNullOrEmpty(maintab.Rows[0]["Remarks"].ToString()) ? " " : maintab.Rows[0]["Remarks"].ToString(),
+                ProjectDesc = string.IsNullOrEmpty(maintab.Rows[0]["ProjectDesc"].ToString()) ? " " : maintab.Rows[0]["ProjectDesc"].ToString(),
+                logo = logostr,
+                QRcode = QRCoderHelper.CreateQRCodeToBase64(contractId),
+                MinDischargeVoltage = maintab.Rows[0]["MinDischargeVoltage"].ToString() + "V",
+                BomCost = new List<BomCost>()
+            };
+            switch (maintab.Rows[0]["DisOptions"].ToString())
+            {
+                case "AC110":
+                    PrintForSale.DisOptions = "单相110V";
+                    break;
+                case "AC220":
+                    PrintForSale.DisOptions = "单相220V";
+                    break;
+                case "TC220":
+                    PrintForSale.DisOptions = "三相220V";
+                    break;
+                case "AC380":
+                    PrintForSale.DisOptions = "三相380V";
+                    break;
+                case "AC420":
+                    PrintForSale.DisOptions = "三相420V";
+                    break;
+                default:
+                    PrintForSale.DisOptions = maintab.Rows[0]["DisOptions"].ToString();
+                    break;
+            }
+            DataTable tempt = GetContractReviewProperty(contractId);
+            string TemptPath = "";
+            if (tempt.Rows.Count > 0)
+            {
+                string[] seprates = { "||" };
+                if (!object.Equals(tempt.Rows[0]["ProductProperty"], DBNull.Value))
+                {
+                    byte[] thisPropbyte = (byte[])tempt.Rows[0]["ProductProperty"]; string[] valuearr;
+                    if (tempt.Rows[0]["ProductType"].ToString() == "CT")
+                    {
+                        TemptPath = "PrintContractReview-CT.cshtml";
+                        saleContractReview_CTPPE ctpro = DeSerialize<saleContractReview_CTPPE>(thisPropbyte);
+                        #region 设备基本要求
+                        if (!string.IsNullOrEmpty(ctpro.CaseColor))//机箱颜色
+                        {
+                            valuearr = ctpro.CaseColor.Split(seprates, StringSplitOptions.None);
+                            if (valuearr.Length > 1)
+                            {
+                                PrintForSale.CaseColor = valuearr[1] + "色";
+                            }
+                            else
+                            {
+                                PrintForSale.CaseColor = "常规（暖灰）";
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.CaseSilkPrint))//机箱丝印
+                        {
+                            valuearr = ctpro.CaseSilkPrint.Split(seprates, StringSplitOptions.None);
+                            if (valuearr.Length > 1)
+                            {
+                                PrintForSale.CaseSilkPRT = valuearr[1];
+                            }
+                            else
+                            {
+                                PrintForSale.CaseSilkPRT = "常规";
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.MinDischargeVoltage))//最低放电电压
+                        {
+                            valuearr = ctpro.MinDischargeVoltage.Split(seprates, StringSplitOptions.None);
+                            if (valuearr.Length > 1)
+                            {
+                                PrintForSale.MinDischargeVoltage = valuearr[1] + "V";
+                            }
+                            else
+                            {
+                                PrintForSale.MinDischargeVoltage = valuearr[0] + "V";
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.AgeingTime))//设备老化时间
+                        {
+                            valuearr = ctpro.AgeingTime.Split(seprates, StringSplitOptions.None);
+                            if (valuearr.Length > 1)
+                            {
+                                PrintForSale.AgeingTime = valuearr[1];
+                            }
+                            else
+                            {
+                                switch (valuearr[0])
+                                {
+                                    case "1":
+                                        PrintForSale.AgeingTime = "公司默认标准";
+                                        break;
+                                    case "2":
+                                        PrintForSale.AgeingTime = "1个星期";
+                                        break;
+                                    case "3":
+                                        PrintForSale.AgeingTime = "半个月";
+                                        break;
+                                    default:
+                                        PrintForSale.AgeingTime = valuearr[0];
+                                        break;
+                                }
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.MainCaseNo))
+                        {
+                            valuearr = ctpro.MainCaseNo.Split(seprates, StringSplitOptions.None);
+                            if (valuearr.Length > 1)
+                            {
+                                PrintForSale.MainCaseNo = "要求从" + valuearr[1] + "箱号开始";
+                            }
+                            else
+                            {
+                                PrintForSale.MainCaseNo = "无要求";
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.RequiredPrecision))
+                        {
+                            switch (ctpro.RequiredPrecision)
+                            {
+                                case "1":
+                                    PrintForSale.RequiredPrecision = "0.1%FS";
+                                    break;
+                                case "2":
+                                    PrintForSale.RequiredPrecision = "0.05%FS";
+                                    break;
+                                case "3":
+                                    PrintForSale.RequiredPrecision = "0.02%FS";
+                                    break;
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.MiddleMachineType))
+                        {
+                            switch (ctpro.MiddleMachineType)
+                            {
+                                case "1":
+                                    PrintForSale.MiddleMachineType = "CT-ZWJ-3'S";
+                                    break;
+                                case "2":
+                                    PrintForSale.MiddleMachineType = "CT-ZWJ-4'S";
+                                    break;
+                                case "3":
+                                    PrintForSale.MiddleMachineType = "内置";
+                                    break;
+                                case "4":
+                                    PrintForSale.MiddleMachineType = "无（原先已配）";
+                                    break;
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.AdditionalCaseNo))
+                        {
+                            valuearr = ctpro.AdditionalCaseNo.Split(seprates, StringSplitOptions.None);
+                            if (valuearr.Length > 1)
+                            {
+                                PrintForSale.AdditionalCaseNo = "要求从" + valuearr[1] + "箱号开始";
+                            }
+                            else
+                            {
+                                PrintForSale.AdditionalCaseNo = "无要求";
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.WiringMethod))
+                        {
+                            valuearr = ctpro.WiringMethod.Split(seprates, StringSplitOptions.None);
+                            if (valuearr.Length > 1)
+                            {
+                                PrintForSale.WiringMethod = valuearr[1];
+                            }
+                            else
+                            {
+                                switch (valuearr[0])
+                                {
+                                    case "1":
+                                        PrintForSale.WiringMethod = "设备前面出线（默认）";
+                                        break;
+                                    case "2":
+                                        PrintForSale.WiringMethod = "设备背部出线";
+                                        break;
+                                    case "3":
+                                        PrintForSale.WiringMethod = "设备底部出线";
+                                        break;
+                                }
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.LanguageVer))
+                        {
+                            switch (ctpro.LanguageVer)
+                            {
+                                case "0":
+                                    PrintForSale.LanguageVer = "中文版";
+                                    break;
+                                case "1":
+                                    PrintForSale.LanguageVer = "中英文版";
+                                    break;
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.DisOptions))
+                        {
+                            valuearr = ctpro.DisOptions.Split(seprates, StringSplitOptions.None);
+                            if (valuearr.Length > 1)
+                            {
+                                PrintForSale.DisOptions = valuearr[1] + "V";
+                                if (valuearr.Length > 2)
+                                {
+                                    PrintForSale.DisOptions += " " + valuearr[2];
+                                }
+                            }
+                            else
+                            {
+                                switch (valuearr[0])
+                                {
+                                    case "AC110":
+                                        PrintForSale.DisOptions = "单相110V";
+                                        break;
+                                    case "AC220":
+                                        PrintForSale.DisOptions = "单相220V";
+                                        break;
+                                    case "TC220":
+                                        PrintForSale.DisOptions = "三相220V";
+                                        break;
+                                    case "AC380":
+                                        PrintForSale.DisOptions = "三相380V";
+                                        break;
+                                    case "AC420":
+                                        PrintForSale.DisOptions = "三相420V";
+                                        break;
+                                }
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.MainSpecialRequire))
+                        {
+                            string[] specReqarr = ctpro.MainSpecialRequire.Split(',');
+                            for (int i = 0; i < specReqarr.Length; i++)
+                            {
+                                switch (specReqarr[i])
+                                {
+                                    case "0":
+                                        PrintForSale.MainSpecialRequire += " 无";
+                                        break;
+                                    case "1":
+                                        PrintForSale.MainSpecialRequire += " 极性切换功能";
+                                        break;
+                                    case "2":
+                                        PrintForSale.MainSpecialRequire += " 恒压放电功能";
+                                        break;
+                                    case "3":
+                                        PrintForSale.MainSpecialRequire += " 带报警灯";
+                                        break;
+                                    case "4":
+                                        PrintForSale.MainSpecialRequire += " 无防反接功能";
+                                        break;
+                                    case "5":
+                                        PrintForSale.MainSpecialRequire += " CAN通讯";
+                                        break;
+                                }
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.MainOtherRequire))
+                        {
+                            PrintForSale.MainOtherRequire = ctpro.MainOtherRequire;
+                        }
+
+                        #endregion
+                        #region 辅助通道
+                        if (ctpro.AddChannelFlag != null && ctpro.AddChannelFlag == "1")
+                        {
+                            StringBuilder addchlinfo = new StringBuilder();
+                            addchlinfo.Append("类型:");
+                            string dRow1value = " ";
+                            if (!string.IsNullOrEmpty(ctpro.AdditionalChannelType))
+                            {
+                                switch (ctpro.AdditionalChannelType)
+                                {
+                                    case "0":
+                                        dRow1value = "无";
+                                        break;
+                                    case "1":
+                                        dRow1value = "CA-4008-1U-VT";
+                                        break;
+                                    case "2":
+                                        dRow1value = "CA-4008-1U-VT-KX";
+                                        break;
+                                    case "3":
+                                        dRow1value = "CA-4008-1U-VT-TX";
+                                        break;
+                                    case "4":
+                                        dRow1value = "CA-5008-1U-VT";
+                                        break;
+                                }
+                            }
+                            addchlinfo.Append(dRow1value);
+                            addchlinfo.Append(" 电压:");
+                            string dRow2value = " ";
+                            if (!string.IsNullOrEmpty(ctpro.AdditionalChannelVoltage))
+                            {
+                                switch (ctpro.AdditionalChannelVoltage)
+                                {
+                                    case "0":
+                                        dRow2value = "无";
+                                        break;
+                                    default:
+                                        dRow2value = ctpro.AdditionalChannelVoltage + "V";
+                                        break;
+                                }
+                            }
+                            addchlinfo.Append(dRow2value);
+                            addchlinfo.Append(" 温度:");
+                            string dRow3value = " ";
+                            if (!string.IsNullOrEmpty(ctpro.AdditionalChannelTemperature))
+                            {
+                                switch (ctpro.AdditionalChannelTemperature)
+                                {
+                                    case "4S":
+                                        dRow3value = "2K热敏电阻(4S)";
+                                        break;
+                                    case "3S":
+                                        dRow3value = "10K热敏电阻(3S)";
+                                        break;
+                                    case "T":
+                                        dRow3value = "T型热电偶";
+                                        break;
+                                    case "K":
+                                        dRow3value = "K型热电偶";
+                                        break;
+                                    case "0":
+                                        dRow3value = "无";
+                                        break;
+                                }
+                            }
+                            addchlinfo.Append(dRow3value);
+                            addchlinfo.Append(" 通道线长度:");
+                            string dRow4value = " ";
+                            if (!string.IsNullOrEmpty(ctpro.AdditionalChannelLinelength))
+                            {
+                                valuearr = ctpro.AdditionalChannelLinelength.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    dRow4value = valuearr[1];
+                                }
+                                else
+                                {
+                                    switch (valuearr[0])
+                                    {
+                                        case "1":
+                                            dRow4value = "0.5米（常规3U）";
+                                            break;
+                                        case "2":
+                                            dRow4value = "2米";
+                                            break;
+                                        case "3":
+                                            dRow4value = "3米";
+                                            break;
+                                    }
+                                }
+                            }
+                            addchlinfo.Append(dRow4value);
+                            addchlinfo.Append(" 电压夹具:");
+                            string dRow5value = " ";
+                            if (!string.IsNullOrEmpty(ctpro.AdditionalChannelFixture))
+                            {
+                                valuearr = ctpro.AdditionalChannelFixture.Split(seprates, StringSplitOptions.None);
+                                switch (valuearr[0])
+                                {
+                                    case "1":
+                                        dRow5value = "鳄鱼夹";
+                                        break;
+                                    case "2":
+                                        dRow5value = "无";
+                                        break;
+                                    case "0":
+                                        dRow5value = "线鼻子";
+                                        break;
+                                }
+                                if (valuearr.Length > 1)
+                                {
+                                    dRow5value += valuearr[1] + "mm";
+                                }
+                            }
+                            addchlinfo.Append(dRow5value);
+                            //添加到单元格中
+                            PrintForSale.addchlinfo = addchlinfo.ToString();
+                        }
+                        else
+                        {
+                            PrintForSale.addchlinfo = "无";//无辅助通道
+                        }
+                        #endregion
+                        #region 压床
+                        if (ctpro.PressMacFlag != null && ctpro.PressMacFlag == "1")
+                        {
+                            StringBuilder pressmacinfo = new StringBuilder();
+                            pressmacinfo.Append("压床类型:");
+                            string dRow1value = " ";
+                            if (!string.IsNullOrEmpty(ctpro.PressType))
+                            {
+                                valuearr = ctpro.PressType.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    switch (valuearr[1])
+                                    {
+                                        case "3":
+                                            dRow1value = "无";
+                                            break;
+                                        case "2":
+                                            dRow1value = "全自动";
+                                            break;
+                                        case "1":
+                                            dRow1value = "半自动";
+                                            break;
+                                    }
+                                    pressmacinfo.Append(dRow1value);
+                                }
+                                else
+                                {
+                                    pressmacinfo.Append("(" + valuearr[0] + ")");
+                                }
+                            }
+                            pressmacinfo.Append("   压床通讯方式:");
+                            if (!string.IsNullOrEmpty(ctpro.PLCLine))
+                            {
+                                switch (ctpro.PLCLine)
+                                {
+                                    case "NO":
+                                        pressmacinfo.Append("无");
+                                        break;
+                                    default:
+                                        pressmacinfo.Append(ctpro.PLCLine);
+                                        break;
+                                }
+                            }
+                            pressmacinfo.Append("   每层通道数:");
+                            if (!string.IsNullOrEmpty(ctpro.ChannelsPerLayer))
+                            {
+                                pressmacinfo.Append(ctpro.ChannelsPerLayer);
+                            }
+                            pressmacinfo.Append("   压床层数:");
+                            if (!string.IsNullOrEmpty(ctpro.PressLayers))
+                            {
+                                pressmacinfo.Append(ctpro.PressLayers);
+                            }
+                            pressmacinfo.Append("   单托盘通道数:");
+                            if (!string.IsNullOrEmpty(ctpro.ChannelsPerPallet))
+                            {
+                                pressmacinfo.Append(ctpro.ChannelsPerPallet);
+                            }
+                            pressmacinfo.Append("   单列通道数:");
+                            if (!string.IsNullOrEmpty(ctpro.ChannelsPerList))
+                            {
+                                pressmacinfo.Append(ctpro.ChannelsPerList);
+                            }
+                            if (!string.IsNullOrEmpty(ctpro.MESBISFlag))
+                            {
+                                pressmacinfo.Append("   ");
+                                valuearr = ctpro.MESBISFlag.Split(seprates, StringSplitOptions.None);
+                                switch (valuearr[0])
+                                {
+                                    case "0":
+                                        break;
+                                    case "NO":
+                                        pressmacinfo.Append("无");
+                                        break;
+                                    default:
+                                        pressmacinfo.Append(valuearr[0]);
+                                        break;
+                                }
+                                if (valuearr.Length > 1)
+                                {
+                                    pressmacinfo.Append(valuearr[1]);
+                                }
+                            }
+                            //添加到单元格中
+                            PrintForSale.pressmacinfo = pressmacinfo.ToString();//压床信息
+                        }
+                        else
+                        {
+                            PrintForSale.pressmacinfo = "无";//无压床
+                        }
+                        #endregion
+                        #region 高低温箱
+                        if (ctpro.HLTempFlag != null && ctpro.HLTempFlag == "1")
+                        {
+                            StringBuilder hltempinfo = new StringBuilder();
+                            hltempinfo.Append("通讯方式:");
+                            if (!string.IsNullOrEmpty(ctpro.HTTemp_PLCLine))
+                            {
+                                switch (ctpro.HTTemp_PLCLine)
+                                {
+                                    case "NO":
+                                        hltempinfo.Append("无");
+                                        break;
+                                    default:
+                                        hltempinfo.Append(ctpro.PLCLine);
+                                        break;
+                                }
+                            }
+                            hltempinfo.Append(" 体积:");
+                            if (!string.IsNullOrEmpty(ctpro.HTTemp_Volume))
+                            {
+                                hltempinfo.Append(ctpro.HTTemp_Volume);
+                            }
+                            hltempinfo.Append(" 供应商");
+                            if (!string.IsNullOrEmpty(ctpro.HTTemp_Vendor))
+                            {
+                                hltempinfo.Append(ctpro.HTTemp_Vendor);
+                            }
+                            PrintForSale.hltempinfo = hltempinfo.ToString();//无高低温箱
+                        }
+                        else
+                        {
+                            PrintForSale.hltempinfo = "无";//无高低温箱
+                        }
+                        #endregion
+                        #region 配件要求
+                        if (!string.IsNullOrEmpty(ctpro.EthernetCable))
+                        {
+                            valuearr = ctpro.EthernetCable.Split(seprates, StringSplitOptions.None);
+                            switch (valuearr[0])
+                            {
+                                case "1":
+                                    PrintForSale.EthernetCable = "0.25米";
+                                    if (valuearr.Length > 1)
+                                    {
+                                        PrintForSale.EthernetCable += valuearr[1] + "条";
+                                    }
+                                    break;
+                                case "2":
+                                    PrintForSale.EthernetCable = "0.5米";
+                                    if (valuearr.Length > 1)
+                                    {
+                                        PrintForSale.EthernetCable += valuearr[1] + "条";
+                                    }
+                                    break;
+                                case "3":
+                                    PrintForSale.EthernetCable = "3米";
+                                    if (valuearr.Length > 1)
+                                    {
+                                        PrintForSale.EthernetCable += valuearr[1] + "条";
+                                    }
+                                    break;
+                                case "4":
+                                    PrintForSale.EthernetCable = "5米";
+                                    if (valuearr.Length > 1)
+                                    {
+                                        PrintForSale.EthernetCable += valuearr[1] + "条";
+                                    }
+                                    break;
+                                case "0":
+                                    if (valuearr.Length > 1)
+                                    {
+                                        PrintForSale.EthernetCable += valuearr[1] + "米";
+                                    }
+                                    break;
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.PowerLine))
+                        {
+                            valuearr = ctpro.PowerLine.Split(seprates, StringSplitOptions.None);
+                            switch (valuearr[0])
+                            {
+                                case "1":
+                                    PrintForSale.PowerLine = "1*1";
+                                    if (valuearr.Length > 1)
+                                    {
+                                        PrintForSale.PowerLine += " " + valuearr[1] + "条";
+                                    }
+                                    if (valuearr.Length > 2)
+                                    {
+                                        string cver = "";
+                                        switch (valuearr[2])
+                                        {
+                                            case "U":
+                                                cver = "欧式";
+                                                break;
+                                            case "A":
+                                                cver = "美式";
+                                                break;
+                                            case "E":
+                                                cver = "英式";
+                                                break;
+                                        }
+                                        PrintForSale.PowerLine += "(" + cver + ")";
+                                    }
+                                    break;
+                                case "2":
+                                    PrintForSale.PowerLine = "1*5";
+                                    if (valuearr.Length > 1)
+                                    {
+                                        PrintForSale.PowerLine += " " + valuearr[1] + "条";
+                                    }
+                                    break;
+                                case "3":
+                                    PrintForSale.PowerLine = "1*6";
+                                    if (valuearr.Length > 1)
+                                    {
+                                        PrintForSale.PowerLine += " " + valuearr[1] + "条";
+                                    }
+                                    break;
+                                case "0":
+                                    PrintForSale.PowerLine = "设备自带";
+                                    break;
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.PlugAdaptor))
+                        {
+                            valuearr = ctpro.PlugAdaptor.Split(seprates, StringSplitOptions.None);
+                            if (valuearr.Length > 1)
+                            {
+                                switch (valuearr[1])
+                                {
+                                    case "U":
+                                        PrintForSale.PlugAdaptor = "欧式";
+                                        break;
+                                    case "A":
+                                        PrintForSale.PlugAdaptor = "美式";
+                                        break;
+                                    case "E":
+                                        PrintForSale.PlugAdaptor = "英式";
+                                        break;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(valuearr[0]))
+                            {
+                                PrintForSale.PlugAdaptor += " " + valuearr[0] + "个";
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.SwitchBoard))
+                        {
+                            switch (ctpro.SwitchBoard)
+                            {
+                                case "CP":
+                                    PrintForSale.SwitchBoard = "电脑";
+                                    break;
+                                default:
+                                    PrintForSale.SwitchBoard = ctpro.SwitchBoard;
+                                    break;
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.ChannelElectricCurrentLine))
+                        {
+                            valuearr = ctpro.ChannelElectricCurrentLine.Split(seprates, StringSplitOptions.None);
+                            if (valuearr.Length > 2)
+                            {
+                                switch (valuearr[1])
+                                {
+                                    case "1":
+                                        PrintForSale.ChannelElectricCurrentLine = "线鼻子";
+                                        if (!string.IsNullOrEmpty(valuearr[2]))
+                                        {
+                                            PrintForSale.ChannelElectricCurrentLine += valuearr[2] + "mm";
+                                        }
+                                        break;
+                                    case "2":
+                                        PrintForSale.ChannelElectricCurrentLine = "鳄鱼夹";
+                                        if (!string.IsNullOrEmpty(valuearr[2]))
+                                        {
+                                            PrintForSale.ChannelElectricCurrentLine += valuearr[2] + "A";
+                                        }
+                                        break;
+                                    case "3":
+                                        PrintForSale.ChannelElectricCurrentLine = "聚合物夹具";
+                                        if (!string.IsNullOrEmpty(valuearr[2]))
+                                        {
+                                            PrintForSale.ChannelElectricCurrentLine += valuearr[2] + "A";
+                                        }
+                                        break;
+                                    case "4":
+                                        PrintForSale.ChannelElectricCurrentLine = "顶针夹具";
+                                        if (!string.IsNullOrEmpty(valuearr[2]))
+                                        {
+                                            PrintForSale.ChannelElectricCurrentLine += valuearr[2] + "A";
+                                        }
+                                        break;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(valuearr[0]))
+                            {
+                                PrintForSale.ChannelElectricCurrentLine += " 长度" + valuearr[0] + "米";
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.ChannelVoltageLine))
+                        {
+                            valuearr = ctpro.ChannelVoltageLine.Split(seprates, StringSplitOptions.None);
+                            if (valuearr.Length > 2)
+                            {
+                                switch (valuearr[1])
+                                {
+                                    case "1":
+                                        PrintForSale.ChannelVoltageLine = "线鼻子";
+                                        if (!string.IsNullOrEmpty(valuearr[2]))
+                                        {
+                                            PrintForSale.ChannelVoltageLine += valuearr[2] + "mm";
+                                        }
+                                        break;
+                                    case "2":
+                                        PrintForSale.ChannelVoltageLine = "鳄鱼夹";
+                                        if (!string.IsNullOrEmpty(valuearr[2]))
+                                        {
+                                            PrintForSale.ChannelVoltageLine += valuearr[2] + "A";
+                                        }
+                                        break;
+                                    case "3":
+                                        PrintForSale.ChannelVoltageLine = "聚合物夹具";
+                                        if (!string.IsNullOrEmpty(valuearr[2]))
+                                        {
+                                            PrintForSale.ChannelVoltageLine += valuearr[2] + "A";
+                                        }
+                                        break;
+                                    case "4":
+                                        PrintForSale.ChannelVoltageLine = "顶针夹具";
+                                        if (!string.IsNullOrEmpty(valuearr[2]))
+                                        {
+                                            PrintForSale.ChannelVoltageLine += valuearr[2] + "A";
+                                        }
+                                        break;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(valuearr[0]))
+                            {
+                                PrintForSale.ChannelVoltageLine += " 长度" + valuearr[0] + "米";
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.Pallet))
+                        {
+                            valuearr = ctpro.Pallet.Split(seprates, StringSplitOptions.None);
+                            switch (valuearr[0])
+                            {
+                                case "1":
+                                    PrintForSale.Pallet = "19寸托盘";
+                                    break;
+                                case "2":
+                                    PrintForSale.Pallet = "24寸托盘";
+                                    break;
+                                case "0":
+                                    if (valuearr.Length > 1)
+                                    {
+                                        PrintForSale.Pallet = valuearr[1];
+                                    }
+                                    break;
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.FixturePanel))
+                        {
+                            switch (ctpro.FixturePanel)
+                            {
+                                case "3":
+                                    PrintForSale.FixturePanel = "3U夹具面板";
+                                    break;
+                                case "4":
+                                    PrintForSale.FixturePanel = "5U夹具面板";
+                                    break;
+                                case "5":
+                                    PrintForSale.FixturePanel = "纽扣夹具";
+                                    break;
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.Gantry))
+                        {
+                            valuearr = ctpro.Gantry.Split(seprates, StringSplitOptions.None);
+                            switch (valuearr[0])
+                            {
+                                case "1":
+                                    PrintForSale.Gantry = "A604-19\"-LMJ-n";
+                                    break;
+                                case "2":
+                                    PrintForSale.Gantry = "A604-19\"-LMJ-m";
+                                    break;
+                                case "0":
+                                    if (valuearr.Length > 1)
+                                    {
+                                        PrintForSale.Gantry = valuearr[1];
+                                    }
+                                    break;
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.CustomBatteryElevator))
+                        {
+                            PrintForSale.CustomBatteryElevator = ctpro.CustomBatteryElevator;
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.CustomAntiExplosionType))
+                        {
+                            PrintForSale.CustomAntiExplosionType = ctpro.CustomAntiExplosionType;
+                        }
+                        #endregion
+                        #region 电池信息
+                        if (!string.IsNullOrEmpty(ctpro.CylindricalBatteryInfo))
+                        {
+                            valuearr = ctpro.CylindricalBatteryInfo.Split(seprates, StringSplitOptions.None);
+                            PrintForSale.CylindricalBatteryInfo_Size = valuearr[0] + " " + valuearr[1];
+                            PrintForSale.CylindricalBatteryInfo_Struct = valuearr[2];
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.SoftPackingBatteryInfo))
+                        {
+                            valuearr = ctpro.SoftPackingBatteryInfo.Split(seprates, StringSplitOptions.None);
+                            PrintForSale.SoftPackingBatteryInfo_Size = valuearr[0] + " " + valuearr[1];
+                            if (valuearr.Length > 2)
+                            {
+                                switch (valuearr[2])
+                                {
+                                    case "1":
+                                        PrintForSale.SoftPackingBatteryInfo_Jtype = "两端出极耳";
+                                        break;
+                                    case "2":
+                                        PrintForSale.SoftPackingBatteryInfo_Jtype = "一端出极耳";
+                                        break;
+                                }
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(ctpro.LiionBatteryInfo))
+                        {
+                            valuearr = ctpro.LiionBatteryInfo.Split(seprates, StringSplitOptions.None);
+                            PrintForSale.LiionBatteryInfo_Size = valuearr[0] + " " + valuearr[1];
+                            PrintForSale.LiionBatteryInfo_struct = valuearr[2];
+                            if (valuearr.Length > 2)
+                            {
+                                switch (valuearr[2])
+                                {
+                                    case "1":
+                                        PrintForSale.LiionBatteryInfo_Jtype = "两端出极耳";
+                                        break;
+                                    case "2":
+                                        PrintForSale.LiionBatteryInfo_Jtype = "一端出极耳";
+                                        break;
+                                }
+                            }
+                        }
+                        #endregion
+                        #region 其它特殊要求
+                        PrintForSale.CTSepecialRequire = ctpro.CTSepecialRequire;//其它特殊要求
+                        #endregion
+                    }
+                    else if (tempt.Rows[0]["ProductType"].ToString() == "CE")
+                    {
+                        TemptPath = "PrintContractReview-CE.cshtml";
+                        saleContractReview_CEPPE cepro = DeSerialize<saleContractReview_CEPPE>(thisPropbyte);
+                        #region 设备基本信息
+                        if (!string.IsNullOrEmpty(cepro.CaseColor))//机箱颜色
+                        {
+                            valuearr = cepro.CaseColor.Split(seprates, StringSplitOptions.None);
+                            if (valuearr.Length > 1)
+                            {
+                                PrintForSale.CaseColor = valuearr[1] + "色";
+                            }
+                            else
+                            {
+                                PrintForSale.CaseColor = "常规（暖灰）";
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(cepro.CaseSilkPrint))//机箱丝印
+                        {
+                            valuearr = cepro.CaseSilkPrint.Split(seprates, StringSplitOptions.None);
+                            if (valuearr.Length > 1)
+                            {
+                                PrintForSale.CaseSilkPRT = valuearr[1];
+                            }
+                            else
+                            {
+                                PrintForSale.CaseSilkPRT = "常规";
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(cepro.MinDischargeVoltage))//最低放电电压
+                        {
+                            valuearr = cepro.MinDischargeVoltage.Split(seprates, StringSplitOptions.None);
+                            if (valuearr.Length > 1)
+                            {
+                                PrintForSale.MinDischargeVoltage = valuearr[1] + "V";
+                            }
+                            else
+                            {
+                                PrintForSale.MinDischargeVoltage = valuearr[0] + "V";
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(cepro.AgeingTime))//设备老化时间
+                        {
+                            PrintForSale.AgeingTime = cepro.AgeingTime + "小时";
+
+                        }
+                        if (!string.IsNullOrEmpty(cepro.MainCaseNo))
+                        {
+                            valuearr = cepro.MainCaseNo.Split(seprates, StringSplitOptions.None);
+                            if (valuearr.Length > 1)
+                            {
+                                PrintForSale.MainCaseNo = "要求从" + valuearr[1] + "箱号开始";
+                            }
+                            else
+                            {
+                                PrintForSale.MainCaseNo = "无要求";
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(cepro.RequiredPrecision))
+                        {
+                            switch (cepro.RequiredPrecision)
+                            {
+                                case "1":
+                                    PrintForSale.RequiredPrecision = "0.1%FS";
+                                    break;
+                                case "2":
+                                    PrintForSale.RequiredPrecision = "0.05%FS(温度25℃±5℃) ";
+                                    break;
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(cepro.MiddleMachineType))
+                        {
+                            switch (cepro.MiddleMachineType)
+                            {
+                                case "1":
+                                    PrintForSale.MiddleMachineType = "ZWJ-4S";
+                                    break;
+                                case "2":
+                                    PrintForSale.MiddleMachineType = "ZWJ-3S";
+                                    break;
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(cepro.AdditionalCaseNo))
+                        {
+                            valuearr = cepro.AdditionalCaseNo.Split(seprates, StringSplitOptions.None);
+                            if (valuearr.Length > 1)
+                            {
+                                PrintForSale.AdditionalCaseNo = "要求从" + valuearr[1] + "箱号开始";
+                            }
+                            else
+                            {
+                                PrintForSale.AdditionalCaseNo = "无要求";
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(cepro.WiringMethod))
+                        {
+                            valuearr = cepro.WiringMethod.Split(seprates, StringSplitOptions.None);
+                            if (valuearr.Length > 1)
+                            {
+                                PrintForSale.WiringMethod = valuearr[1];
+                            }
+                            else
+                            {
+                                switch (valuearr[0])
+                                {
+                                    case "1":
+                                        PrintForSale.WiringMethod = "设备前面出线";
+                                        break;
+                                    case "2":
+                                        PrintForSale.WiringMethod = "设备背部出线";
+                                        break;
+                                    case "3":
+                                        PrintForSale.WiringMethod = "设备底部出线";
+                                        break;
+                                }
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(cepro.LanguageVer))
+                        {
+                            switch (cepro.LanguageVer)
+                            {
+                                case "0":
+                                    PrintForSale.LanguageVer = "中文版";
+                                    break;
+                                case "1":
+                                    PrintForSale.LanguageVer = "英文版";
+                                    break;
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(cepro.DisOptions))
+                        {
+                            valuearr = cepro.DisOptions.Split(seprates, StringSplitOptions.None);
+                            switch (valuearr[0])
+                            {
+                                case "AC110":
+                                    PrintForSale.DisOptions = "单相110V";
+                                    break;
+                                case "AC220":
+                                    PrintForSale.DisOptions = "单相220V";
+                                    break;
+                                case "TC220":
+                                    PrintForSale.DisOptions = "三相220V";
+                                    break;
+                                case "AC380":
+                                    PrintForSale.DisOptions = "三相380V";
+                                    break;
+                                case "AC420":
+                                    PrintForSale.DisOptions = "三相420V";
+                                    break;
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(cepro.MainSpecialRequire))
+                        {
+                            string[] specReqarr = cepro.MainSpecialRequire.Split(',');
+                            for (int i = 0; i < specReqarr.Length; i++)
+                            {
+                                switch (specReqarr[i])
+                                {
+                                    case "0":
+                                        PrintForSale.MainSpecialRequire += "无";
+                                        break;
+                                    case "1":
+                                        PrintForSale.MainSpecialRequire += "极性切换功能";
+                                        break;
+                                    case "2":
+                                        PrintForSale.MainSpecialRequire += "恒压放电功能";
+                                        break;
+                                    case "3":
+                                        PrintForSale.MainSpecialRequire += "带报警灯";
+                                        break;
+                                }
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(cepro.AirExhaustingMethod))
+                        {
+                            switch (cepro.AirExhaustingMethod)
+                            {
+                                case "1":
+                                    PrintForSale.AirExhaustingMethod = "前后";
+                                    break;
+                                case "2":
+                                    PrintForSale.AirExhaustingMethod = "向上";
+                                    break;
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(cepro.MainOtherRequire))
+                        {
+                            PrintForSale.MainOtherRequire = cepro.MainOtherRequire;
+                        }
+
+                        #endregion
+                        #region 辅助通道
+                        if (cepro.AddChannelFlag != null && cepro.AddChannelFlag == "1")
+                        {
+                            StringBuilder addchlinfo = new StringBuilder();
+                            addchlinfo.Append("类型:");
+                            string dRow1value = " ";
+                            if (!string.IsNullOrEmpty(cepro.AdditionalChannelType))
+                            {
+                                switch (cepro.AdditionalChannelType)
+                                {
+                                    case "0":
+                                        dRow1value = "无";
+                                        break;
+                                    case "1":
+                                        dRow1value = "CA-4008-1U-VT";
+                                        break;
+                                    case "2":
+                                        dRow1value = "CA-4008-1U-VT-KX";
+                                        break;
+                                    case "3":
+                                        dRow1value = "CA-4008-1U-VT-TX";
+                                        break;
+                                    case "4":
+                                        dRow1value = "CA-5008-1U-VT";
+                                        break;
+                                }
+                            }
+                            addchlinfo.Append(dRow1value);
+                            addchlinfo.Append(" 电压:");
+                            string dRow2value = " ";
+                            if (!string.IsNullOrEmpty(cepro.AdditionalChannelVoltage))
+                            {
+                                switch (cepro.AdditionalChannelVoltage)
+                                {
+                                    case "0":
+                                        dRow2value = "无";
+                                        break;
+                                    default:
+                                        dRow2value = cepro.AdditionalChannelVoltage + "V";
+                                        break;
+                                }
+                            }
+                            addchlinfo.Append(dRow2value);
+                            addchlinfo.Append(" 温度:");
+                            string dRow3value = " ";
+                            if (!string.IsNullOrEmpty(cepro.AdditionalChannelTemperature))
+                            {
+                                switch (cepro.AdditionalChannelTemperature)
+                                {
+                                    case "4S":
+                                        dRow3value = "2K热敏电阻(4S)";
+                                        break;
+                                    case "3S":
+                                        dRow3value = "10K热敏电阻(3S)";
+                                        break;
+                                    case "T":
+                                        dRow3value = "T型热电偶";
+                                        break;
+                                    case "K":
+                                        dRow3value = "K型热电偶";
+                                        break;
+                                    case "0":
+                                        dRow3value = "无";
+                                        break;
+                                }
+                            }
+                            addchlinfo.Append(dRow3value);
+                            addchlinfo.Append(" 通道线长度:");
+                            string dRow4value = " ";
+                            if (!string.IsNullOrEmpty(cepro.AdditionalChannelLinelength))
+                            {
+                                valuearr = cepro.AdditionalChannelLinelength.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    dRow4value = valuearr[1];
+                                }
+                                else
+                                {
+                                    switch (valuearr[0])
+                                    {
+                                        case "1":
+                                            dRow4value = "0.5米（常规3U）";
+                                            break;
+                                        case "2":
+                                            dRow4value = "2米";
+                                            break;
+                                        case "3":
+                                            dRow4value = "3米";
+                                            break;
+                                    }
+                                }
+                            }
+                            addchlinfo.Append(dRow4value);
+                            addchlinfo.Append(" 电压夹具:");
+                            string dRow5value = " ";
+                            if (!string.IsNullOrEmpty(cepro.AdditionalChannelFixture))
+                            {
+                                valuearr = cepro.AdditionalChannelFixture.Split(seprates, StringSplitOptions.None);
+                                switch (valuearr[0])
+                                {
+                                    case "1":
+                                        dRow5value = "鳄鱼夹";
+                                        break;
+                                    case "2":
+                                        dRow5value = "无";
+                                        break;
+                                    case "0":
+                                        dRow5value = "线鼻子";
+                                        break;
+                                }
+                                if (valuearr.Length > 1)
+                                {
+                                    dRow5value += valuearr[1] + "mm";
+                                }
+                            }
+                            addchlinfo.Append(dRow5value);
+                            //添加到单元格中
+                            PrintForSale.addchlinfo = addchlinfo.ToString();//辅助通道信息
+                        }
+                        else
+                        {
+                            PrintForSale.addchlinfo = "无";//无辅助通道
+                        }
+                        #endregion
+                        #region 压床
+                        if (cepro.PressMacFlag != null && cepro.PressMacFlag == "1")
+                        {
+                            StringBuilder pressmacinfo = new StringBuilder();
+                            pressmacinfo.Append("压床类型:");
+                            string dRow1value = " ";
+                            if (!string.IsNullOrEmpty(cepro.PressType))
+                            {
+                                valuearr = cepro.PressType.Split(seprates, StringSplitOptions.None);
+                                if (valuearr.Length > 1)
+                                {
+                                    switch (valuearr[1])
+                                    {
+                                        case "3":
+                                            dRow1value = "无";
+                                            break;
+                                        case "2":
+                                            dRow1value = "全自动";
+                                            break;
+                                        case "1":
+                                            dRow1value = "半自动";
+                                            break;
+                                    }
+                                    pressmacinfo.Append(dRow1value);
+                                }
+                                else
+                                {
+                                    pressmacinfo.Append("(" + valuearr[0] + ")");
+                                }
+                            }
+                            pressmacinfo.Append("   压床通讯方式:");
+                            if (!string.IsNullOrEmpty(cepro.PLCLine))
+                            {
+                                switch (cepro.PLCLine)
+                                {
+                                    case "NO":
+                                        pressmacinfo.Append("无");
+                                        break;
+                                    default:
+                                        pressmacinfo.Append(cepro.PLCLine);
+                                        break;
+                                }
+                            }
+                            pressmacinfo.Append("   每层通道数:");
+                            if (!string.IsNullOrEmpty(cepro.ChannelsPerLayer))
+                            {
+                                pressmacinfo.Append(cepro.ChannelsPerLayer);
+                            }
+                            pressmacinfo.Append("   压床层数:");
+                            if (!string.IsNullOrEmpty(cepro.PressLayers))
+                            {
+                                pressmacinfo.Append(cepro.PressLayers);
+                            }
+                            pressmacinfo.Append("   单托盘通道数:");
+                            if (!string.IsNullOrEmpty(cepro.ChannelsPerPallet))
+                            {
+                                pressmacinfo.Append(cepro.ChannelsPerPallet);
+                            }
+                            pressmacinfo.Append("   单列通道数:");
+                            if (!string.IsNullOrEmpty(cepro.ChannelsPerList))
+                            {
+                                pressmacinfo.Append(cepro.ChannelsPerList);
+                            }
+                            if (!string.IsNullOrEmpty(cepro.MESBISFlag))
+                            {
+                                pressmacinfo.Append("   ");
+                                valuearr = cepro.MESBISFlag.Split(seprates, StringSplitOptions.None);
+                                switch (valuearr[0])
+                                {
+                                    case "0":
+                                        break;
+                                    case "NO":
+                                        pressmacinfo.Append("无");
+                                        break;
+                                    default:
+                                        pressmacinfo.Append(valuearr[0]);
+                                        break;
+                                }
+                                if (valuearr.Length > 1)
+                                {
+                                    pressmacinfo.Append(valuearr[1]);
+                                }
+                            }
+                            //添加到单元格中
+                            PrintForSale.pressmacinfo = pressmacinfo.ToString();//压床信息
+                        }
+                        else
+                        {
+                            PrintForSale.pressmacinfo = "无";//无压床
+                        }
+                        #endregion
+                        #region 高低温箱
+                        if (cepro.HLTempFlag != null && cepro.HLTempFlag == "1")
+                        {
+                            StringBuilder hltempinfo = new StringBuilder();
+                            hltempinfo.Append("通讯方式:");
+                            if (!string.IsNullOrEmpty(cepro.HTTemp_PLCLine))
+                            {
+                                switch (cepro.HTTemp_PLCLine)
+                                {
+                                    case "NO":
+                                        hltempinfo.Append("无");
+                                        break;
+                                    default:
+                                        hltempinfo.Append(cepro.PLCLine);
+                                        break;
+                                }
+                            }
+                            hltempinfo.Append(" 体积:");
+                            if (!string.IsNullOrEmpty(cepro.HTTemp_Volume))
+                            {
+                                hltempinfo.Append(cepro.HTTemp_Volume);
+                            }
+                            hltempinfo.Append(" 供应商");
+                            if (!string.IsNullOrEmpty(cepro.HTTemp_Vendor))
+                            {
+                                hltempinfo.Append(cepro.HTTemp_Vendor);
+                            }
+                            PrintForSale.hltempinfo = hltempinfo.ToString();//无高低温箱
+                        }
+                        else
+                        {
+                            PrintForSale.hltempinfo = "无";//无高低温箱
+                        }
+                        #endregion
+                        #region 配件要求
+                        if (!string.IsNullOrEmpty(cepro.EthernetCable))
+                        {
+                            PrintForSale.EthernetCable = cepro.EthernetCable + "米";
+                        }
+                        if (!string.IsNullOrEmpty(cepro.PowerLine))
+                        {
+                            PrintForSale.PowerLine = cepro.PowerLine + "米";
+                        }
+
+                        if (!string.IsNullOrEmpty(cepro.SwitchBoard))
+                        {
+                            switch (cepro.SwitchBoard)
+                            {
+                                case "CP":
+                                    PrintForSale.SwitchBoard = "电脑";
+                                    break;
+                                default:
+                                    PrintForSale.SwitchBoard = cepro.SwitchBoard;
+                                    break;
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(cepro.ChannelElectricCurrentLine))
+                        {
+                            valuearr = cepro.ChannelElectricCurrentLine.Split(seprates, StringSplitOptions.None);
+                            if (!string.IsNullOrEmpty(valuearr[0]))
+                            {
+                                PrintForSale.ChannelElectricCurrentLine += " 设备端线鼻子长度" + valuearr[0] + "mm";
+                            }
+                            if (valuearr.Length > 1)
+                            {
+                                if (!string.IsNullOrEmpty(valuearr[1]))
+                                {
+                                    PrintForSale.ChannelElectricCurrentLine += " 压床端线鼻子" + valuearr[1] + "mm";
+                                }
+                            }
+                            if (valuearr.Length > 2)
+                            {
+                                if (!string.IsNullOrEmpty(valuearr[2]))
+                                {
+                                    PrintForSale.ChannelElectricCurrentLine += " 长度" + valuearr[2] + "米";
+                                }
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(cepro.ChannelVoltageLine))
+                        {
+                            valuearr = cepro.ChannelVoltageLine.Split(seprates, StringSplitOptions.None);
+                            if (!string.IsNullOrEmpty(valuearr[0]))
+                            {
+                                PrintForSale.ChannelVoltageLine = "端子类型" + valuearr[0];
+                            }
+                            if (!string.IsNullOrEmpty(valuearr[1]))
+                            {
+                                PrintForSale.ChannelVoltageLine = "长度" + valuearr[1] + "米";
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(cepro.ChannelThermalCouple))
+                        {
+                            valuearr = cepro.ChannelThermalCouple.Split(seprates, StringSplitOptions.None);
+                            if (!string.IsNullOrEmpty(valuearr[0]))
+                            {
+                                PrintForSale.ChannelThermalCouple = "端子类型" + valuearr[0];
+                            }
+                            if (!string.IsNullOrEmpty(valuearr[1]))
+                            {
+                                PrintForSale.ChannelThermalCouple = "长度" + valuearr[1] + "米";
+                            }
+                        }
+                        #endregion
+                        #region 电池信息
+                        if (!string.IsNullOrEmpty(cepro.CylindricalBatteryInfo))
+                        {
+                            valuearr = cepro.CylindricalBatteryInfo.Split(seprates, StringSplitOptions.None);
+                            PrintForSale.CylindricalBatteryInfo_Size = valuearr[0] + " " + valuearr[1];
+                            PrintForSale.CylindricalBatteryInfo_Struct = valuearr[2];
+                        }
+                        if (!string.IsNullOrEmpty(cepro.SoftPackingBatteryInfo))
+                        {
+                            valuearr = cepro.SoftPackingBatteryInfo.Split(seprates, StringSplitOptions.None);
+                            PrintForSale.SoftPackingBatteryInfo_Size = valuearr[0] + " " + valuearr[1];
+                            if (valuearr.Length > 2)
+                            {
+                                switch (valuearr[2])
+                                {
+                                    case "1":
+                                        PrintForSale.SoftPackingBatteryInfo_Jtype = "两端出极耳";
+                                        break;
+                                    case "2":
+                                        PrintForSale.SoftPackingBatteryInfo_Jtype = "一端出极耳";
+                                        break;
+                                }
+                            }
+                        }
+                        if (!string.IsNullOrEmpty(cepro.LiionBatteryInfo))
+                        {
+                            valuearr = cepro.LiionBatteryInfo.Split(seprates, StringSplitOptions.None);
+                            PrintForSale.LiionBatteryInfo_Size = valuearr[0] + " " + valuearr[1];
+                            PrintForSale.LiionBatteryInfo_struct = valuearr[2];
+                            if (valuearr.Length > 2)
+                            {
+                                switch (valuearr[2])
+                                {
+                                    case "1":
+                                        PrintForSale.LiionBatteryInfo_Jtype = "两端出极耳";
+                                        break;
+                                    case "2":
+                                        PrintForSale.LiionBatteryInfo_Jtype = "一端出极耳";
+                                        break;
+                                }
+                            }
+                        }
+                        #endregion
+                    }
+                }
+            }
+            foreach (DataRow tempRow in bomtab.Rows)
+            {
+                BomCost scon = new BomCost
+                {
+                    ItemTypeName = tempRow["ItemTypeName"].ToString(),
+                    ItemCode = tempRow["ItemCode"].ToString(),
+                    ItemName = tempRow["ItemName"].ToString(),
+                    qty = string.IsNullOrEmpty(tempRow["qty"].ToString()) ? "" : double.Parse(tempRow["qty"].ToString()).ToString(),
+                    UnitMsr = tempRow["UnitMsr"].ToString()
+                };
+                PrintForSale.BomCost.Add(scon);
+            }
+            return await ExportAllHandler.Exporterpdf(PrintForSale, TemptPath);
+
+        }
         public bool SetPDFFilePathForContractReview(string ContractId, string fieldName, string PDFFilePath)
         {
             string sqlstr = string.Format(@"update {0}.sale_contract_review set {3}='{1}' where contract_id={2}", "nsap_bone", PDFFilePath, ContractId, fieldName);
@@ -8260,7 +9514,7 @@ namespace OpenAuth.App.Order
                 else
                 {
                     workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 2, TableMark = 1, XCellMark = 4, YCellMark = 4, ValueType = 0, ValueData = PrintNo });//打印编号                                                                                                                                                     
-                    //workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 2, TableMark = 1, XCellMark = 4, YCellMark = 2, ValueType = 0, ValueData = "打印次数: " + PrintNumIndex });//打印次数 
+                                                                                                                                                                       //workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 2, TableMark = 1, XCellMark = 4, YCellMark = 2, ValueType = 0, ValueData = "打印次数: " + PrintNumIndex });//打印次数 
                     if (discSum > 0)
                     {
                         workMarks.Add(new FileHelper.WordTemplate() { MarkPosition = 0, TableMark = 2, XCellMark = 1, YCellMark = 4, ValueType = 0, ValueData = totalall == 0 ? "" : Currency + " " + totalall.ToString("###,###.00") });//合计金额

@@ -12,6 +12,8 @@ using System.Threading.Tasks;
 using OpenAuth.App.Order.ModelDto;
 using OpenAuth.Repository.Extensions;
 using System.Linq;
+using Infrastructure;
+using System;
 
 namespace OpenAuth.App.Order
 {
@@ -33,7 +35,7 @@ namespace OpenAuth.App.Order
         {
             string result = "", className = "";
             if (jobname == "销售交货") { className = "NSAP.B1Api.BOneODLN"; }
-            billDelivery Model = _serviceSaleOrderApp.GetDeliverySalesInfoNewNos(salesDeliverySaveReq.JobId.ToString(), UserID,7);
+            billDelivery Model = _serviceSaleOrderApp.GetDeliverySalesInfoNewNos(salesDeliverySaveReq.JobId.ToString(), 7);
             Model.DocStatus = "O";
             Model.Comments += "基于销售订单" + salesDeliverySaveReq.JobId;
             Model.CustomFields = salesDeliverySaveReq.CustomFields;
@@ -221,6 +223,9 @@ namespace OpenAuth.App.Order
             //return dt;
             return dt.Tolist<Main>().FirstOrDefault();
         }
+
+
+
         public async Task<bool> IsExistMySql(string tablename, string filename)
         {
             bool result = false;
@@ -441,7 +446,314 @@ namespace OpenAuth.App.Order
                 strSql += string.Format(" WHERE a.docEntry='{0}' AND a.file_type_id='{1}' AND sbo_id={2}", DocNum, TypeId, SboId);
             }
 
-            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text,null );
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
         }
+
+
+        /// <summary>
+        /// 草稿保存 提交
+        /// </summary>
+        /// <param name="salesSaveDraftReq"></param>
+        /// <param name="userID"></param>
+        /// <param name="sboID"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public async Task<string> SalesSaveDraft(SalesSaveDraftReq salesSaveDraftReq, int userID, int sboID)
+        {
+            string res = "0";
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            if (salesSaveDraftReq.JobId != 0)
+            {
+                DataTable objTable = _serviceSaleOrderApp.GetAuditObjWithFlowChart(salesSaveDraftReq.JobId.ToString());
+                if (objTable.Rows.Count > 0)
+                {
+                    foreach (DataRow objRow in objTable.Rows)
+                    {
+                        if (!objRow[0].ToString().Contains(loginContext.User.Name))
+                        {
+                            return "单据已提交，请勿重复提交";
+                        }
+                    }
+                }
+            }
+            if (salesSaveDraftReq.Order.FileList != null && salesSaveDraftReq.Order.FileList.Count > 0)
+            {
+                salesSaveDraftReq.Order.FileList.ForEach(zw =>
+                {
+                    zw.fileUserId = userID.ToString();
+                });
+            }
+            billDelivery billDelivery = _serviceSaleOrderApp.BulidBillDelivery(salesSaveDraftReq.Order);
+            bool PurPassAudit = false;
+            if (salesSaveDraftReq.jobType == "opor" && billDelivery.DocType == "I" && billDelivery.billSalesDetails.Count > 0)
+            {
+                bool zhitong = true;
+                foreach (billSalesDetails thedetail in billDelivery.billSalesDetails)
+                {//必须都有关联订单，并且购买数量与关联订单数量一致,采购数量+可用量>0必须审批。成品编码必须审批
+                    if (thedetail.ItemCode.StartsWith("C"))
+                    {
+                        zhitong = false;
+                        break;
+                    }
+                    if (!string.IsNullOrEmpty(thedetail.U_RelDoc))
+                    {
+                        double itemqtyvalid = 0.00;
+                        DataTable avatab = await GetOnhandAndAvailable(thedetail.ItemCode.FilterSQL());
+                        if (avatab != null && avatab.Rows.Count > 0)
+                        {
+                            double.TryParse(avatab.Rows[0]["Available"].ToString(), out itemqtyvalid);
+                        }
+                        itemqtyvalid += double.Parse(thedetail.Quantity);
+                        if (double.Parse(thedetail.Quantity) != await GetRelQty(thedetail.ItemCode.FilterSQL(), thedetail.U_RelDoc)
+                            || itemqtyvalid > 0.00)
+                        {
+                            zhitong = false;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        zhitong = false;
+                        break;
+                    }
+                    //采购订单所有物料高于2次的采购历史，并且价格不高于历史最低价
+                    if (!await GetPORValidFlagForAudit(thedetail.ItemCode.FilterSQL(), "3", thedetail.Price))
+                    {
+                        zhitong = false;
+                        break;
+                    }
+                }
+                //总金额多于5000需审批
+                double doctotal = 0.00, docrate = 0.00;
+                double.TryParse(billDelivery.DocTotal, out doctotal); double.TryParse(billDelivery.DocRate, out docrate);
+                if (doctotal * docrate > 5000)
+                {
+                    zhitong = false;
+                }
+                if (zhitong)
+                {
+                    PurPassAudit = true;
+                    billDelivery.U_New_ORDRID = "Z";
+                }
+            }
+            byte[] job_data = ByteExtension.ToSerialize(billDelivery);
+            if (salesSaveDraftReq.Ations == OrderAtion.DraftUpdate)
+            {
+                if (bool.Parse(_serviceSaleOrderApp.UpdateAudit(salesSaveDraftReq.JobId, job_data, billDelivery.Remark, billDelivery.DocTotal, billDelivery.CardCode, billDelivery.CardName)))
+                {
+                    res = "1";
+                }
+            }
+            else if (salesSaveDraftReq.Ations == OrderAtion.DrafSubmit)
+            {
+                if (bool.Parse(_serviceSaleOrderApp.UpdateAudit(salesSaveDraftReq.JobId, job_data, billDelivery.Remark, billDelivery.DocTotal, billDelivery.CardCode, billDelivery.CardName)))
+                {
+                    int user_id = 0;
+                    if (salesSaveDraftReq.jobType == "opdn" || salesSaveDraftReq.jobType == "orpc" || salesSaveDraftReq.jobType == "orpd")
+                    {
+                        if (int.Parse(await GetUserIdFromBuy(billDelivery.SlpCode, sboID)) > 0)
+                        {
+                            user_id = int.Parse(await GetUserIdFromBuy(billDelivery.SlpCode, sboID));
+                        }
+                        else { user_id = userID; }
+                    }
+                    if (salesSaveDraftReq.jobType == "orin" || salesSaveDraftReq.jobType == "ordn")
+                    {
+                        string saleAfterUser = await GetDfTcnician(billDelivery.CardCode, sboID);
+                        if (!int.TryParse(saleAfterUser, out user_id))
+                        { user_id = userID; }
+                    }
+                    //运输采购单，或达到条件采购订单不需审批直接通过
+                    if ((salesSaveDraftReq.jobType == "opor" && billDelivery.IsTransport == "Y") || PurPassAudit)
+                    {
+                        res = await UpdateWorkFlowState(salesSaveDraftReq.JobId.ToString());
+                        if (res != "0")
+                        {
+                            return "2";//提示审批通过
+                        }
+                    }
+                    //采购订单，保存第一步跳转参数，（服务单或存在第一次采购物料)
+                    if (salesSaveDraftReq.jobType == "opor")
+                    {
+                        //保存单据类型
+                        await UpdateWfaJobPara(salesSaveDraftReq.JobId.ToString(), 2, billDelivery.DocType);
+                        bool needf = false;
+                        foreach (billSalesDetails tempdet in billDelivery.billSalesDetails)
+                        {
+                            if (!string.IsNullOrEmpty(tempdet.ItemCode) && !await ExistPorFlag(tempdet.ItemCode.FilterSQL()))
+                            {
+                                needf = true;
+                                break;
+                            }
+                        }
+                        var par =await SaveJobPara(salesSaveDraftReq.JobId.ToString(), needf ? "1" : "0");
+                    }
+
+                    res = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(salesSaveDraftReq.JobId.ToString()), userID, billDelivery.Remark, "", user_id);
+                    if (int.Parse(res) > 0 && billDelivery.serialNumber.Count > 0)
+                    {
+                        _serviceSaleOrderApp.UpdateSerialNumber(billDelivery.serialNumber, int.Parse(salesSaveDraftReq.JobId.ToString()));
+                    }
+                }
+            }
+            return res;
+        }
+        public async Task<DataTable> GetOnhandAndAvailable(string ItemCode)
+        {
+            string strSql = string.Format("SELECT OnHand,IsCommited,OnOrder,MinLevel,(OnHand-IsCommited+OnOrder) AS Available FROM OITM");
+            strSql += string.Format(" WHERE ItemCode='{0}'", ItemCode);
+            return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql, CommandType.Text, null);
+        }
+        /// <summary>
+        /// 获取物料关联订单的总数量
+        /// </summary>
+        /// <param name="itemcode"></param>
+        /// <param name="relstr"></param>
+        /// <returns></returns>
+        public async Task<double> GetRelQty(string itemcode, string relstr)
+        {
+            double relqty = 0.00;
+            string oworstr = "", ordrstr = "";
+            if (relstr.Contains("生产订单:"))
+            {
+                oworstr = relstr.Substring(relstr.IndexOf("生产订单:") + 5);
+            }
+            if (relstr.Contains("销售订单:"))
+            {
+                if (relstr.Contains(";"))
+                {
+                    ordrstr = relstr.Substring(5, relstr.IndexOf(";") - 5);
+                }
+                else
+                {
+                    ordrstr = relstr.Substring(5);
+                }
+            }
+            string relsql = "";
+            if (!string.IsNullOrEmpty(oworstr))
+            {
+                relsql += string.Format(@" select (v1.PlannedQty-v1.IssuedQty) as openqty from WOR1 v1
+                                        left outer join OWOR v0 on v0.DocEntry=v1.DocEntry
+                                        where v0.Type='S'AND (v0.Status='R' OR v0.Status='P') AND v1.PlannedQty-v1.IssuedQty>0  
+                                        and v1.ItemCode='{0}' and v0.docentry in ({1})", itemcode, oworstr);
+            }
+            if (!string.IsNullOrEmpty(ordrstr))
+            {
+                relsql += !string.IsNullOrEmpty(relsql) ? "UNION ALL" : "";
+                relsql += string.Format(@" select t1.OpenQty as openqty from RDR1 t1 
+                                        left outer join ORDR t0 on t0.DocEntry=t1.DocEntry
+                                        where t0.CANCELED='N' and t1.LineStatus='O' and t1.ItemCode='{0}' and t0.docentry in ({1})", itemcode, ordrstr);
+            }
+            if (!string.IsNullOrEmpty(relsql))
+            {
+                relsql = "select sum(openqty) from (" + relsql + ") v1";
+                object qtyobj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, relsql, CommandType.Text, null);
+                double.TryParse(qtyobj.ToString(), out relqty);
+            }
+            return relqty;
+        }
+        /// <summary>
+        /// 判断采购订单物料达到条件否（比如：采购次数不低于3次并且采购价格不高于历史最低价）
+        /// </summary>
+        /// <param name="itemcode"></param>
+        /// <param name="con1"></param>
+        /// <param name="con2"></param>
+        /// <returns></returns>
+        public async Task<bool> GetPORValidFlagForAudit(string itemcode, string con1, string con2)
+        {
+            string sqlstr = string.Format(@"select 1 from por1 t1 inner join opor t0 on t0.docentry = t1.docentry
+                                                where((linestatus = 'C' AND trgetentry is not null) or linestatus = 'O') and t0.canceled = 'N' and t1.price>0
+                                                and t1.itemcode = '{0}' HAVING COUNT(t1.DOCENTRY)>={1} and Min(t1.price)>={2}", itemcode, con1, con2);
+            object relobj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, sqlstr, CommandType.Text, null);
+            return relobj == null ? false : true;
+        }
+        #region 获取采购员对应的用户
+        /// <summary>
+        /// 获取采购员对应的用户
+        /// </summary>
+        /// <returns></returns>
+        public async Task<string> GetUserIdFromBuy(string sale_id, int sbo_id)
+        {
+            string strSql = string.Format("SELECT user_id FROM {0}.sbo_user WHERE sale_id={1} AND sbo_id={2} LIMIT 1", "nsap", sale_id, sbo_id);
+            object obj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            return obj == null ? "0" : obj.ToString();
+        }
+        #endregion
+        #region 获取业务伙伴收售后主管
+        /// <summary>
+        /// 获取业务伙伴收售后主管
+        /// </summary>
+        /// <returns></returns>
+        public async Task<string> GetDfTcnician(string CardCode, int sbo_id)
+        {
+            //string strSql = string.Format("SELECT user_id FROM {0}.sbo_user WHERE tech_id=", Sql.BaseDatabaseName);
+            //strSql += string.Format("IFNULL((SELECT DfTcnician FROM {0}.crm_ocrd WHERE CardCode=?CardCode AND sbo_id=?sbo_id),0) AND sbo_id=?sbo_id ORDER BY upd_dt DESC LIMIT 1", Sql.BOneDatabaseName);
+
+            string strSql = string.Format(@"SELECT t0.user_id FROM {0}.sbo_user t0
+                                            INNER JOIN {0}.base_user u on u.user_id=t0.user_id
+                                            LEFT JOIN {1}.crm_ohem h on h.empid=t0.tech_id and h.sbo_id=t0.sbo_id
+                                            WHERE u.user_nm=CONCAT(h.lastName,h.firstName) and t0.sbo_id={3} 
+                                           and t0.tech_id=IFNULL((SELECT DfTcnician FROM {1}.crm_ocrd WHERE CardCode={2} AND sbo_id={3}),0) ORDER BY t0.upd_dt DESC LIMIT 1", "nsap_base", "nsap_bone", CardCode, sbo_id);
+
+            object obj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            return obj == null ? "0" : obj.ToString();
+        }
+        #endregion
+        #region updata work flow state
+        public async Task<string> UpdateWorkFlowState(string job_id)
+        {
+            string sql = string.Format("UPDATE {0}.wfa_job SET job_state=3 WHERE job_id={1};", "nsap_base", job_id);
+            object obj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
+            if (obj == null)
+                return "0";
+            else
+                return Convert.ToInt32(obj.ToString()) > 0 ? "1" : "0";
+        }
+
+        #endregion
+        #region 修改流程任务参数值
+        /// <summary>
+        /// 修改流程任务参数值
+        /// </summary>
+        public async Task<bool> UpdateWfaJobPara(string jobId, int para_idx, string para_val)
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.AppendFormat("INSERT INTO {0}.wfa_job_para(job_id,para_idx,para_val)", "nsap_base");
+            strSql.AppendFormat("VALUES({0},{1},{2}) ON DUPLICATE KEY UPDATE para_val=VALUES(para_val)", jobId, para_idx, para_val);
+            int rows = UnitWork.ExecuteSql(strSql.ToString(), ContextType.NsapBaseDbContext);
+            return rows > 0 ? true : false;
+        }
+        #endregion
+        /// <summary>
+        /// 判断物料是否采购过
+        /// </summary>
+        /// <param name="itemcode"></param>
+        /// <returns></returns>
+        public async Task<bool> ExistPorFlag(string itemcode)
+        {
+            string sqlstr = string.Format(@"select 1 from por1 t1 inner join opor t0 on t0.docentry = t1.docentry
+                                                where((linestatus = 'C' AND trgetentry is not null) or linestatus = 'O') and t0.canceled = 'N'
+                                                and t1.itemcode = '{0}'", itemcode);
+            object relobj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, sqlstr, CommandType.Text, null);
+            return relobj == null ? false : true;
+        }
+        #region 保存审核参数
+        /// <summary>
+        /// 保存审核参数
+        /// </summary>
+        /// <returns></returns>
+        public async Task<string> SaveJobPara(string jobID, string setNumber)
+        {
+            string strSql = string.Format("INSERT INTO {0}.wfa_job_para (job_id,para_idx,para_val) VALUES({1},{2},{3})", "nsap_base", jobID, 1, setNumber == "" ? "1" : setNumber);
+            strSql += string.Format(" ON Duplicate KEY UPDATE ");
+            strSql += string.Format("para_val=VALUES(para_val)");
+
+            return UnitWork.ExecuteSql(strSql, ContextType.NsapBaseDbContext) > 0 ? "1" : "0";
+        }
+        #endregion
     }
 }

@@ -188,7 +188,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                 billSalesName = "billSalesAcctCode";
             }
             data.billSalesName = billSalesName;
-            data.main.U_CallID=U_CallID;
+            data.main.U_CallID = U_CallID;
             data.main.U_CallName = U_CallName;
             data.main.U_SerialNumber = U_SerialNumber;
             data.CustomFields = data.CustomNew.DataRowByIndexToJSON(0);
@@ -196,7 +196,34 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         #endregion
-
-
+        /// <summary>
+        /// 销售交货草稿保存和提交
+        /// </summary>
+        /// <param name="rData"></param>
+        /// <param name="JobId"></param>
+        /// <param name="ations"></param>
+        /// <param name="jobType"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        [HttpPost]
+        [Route("SalesSaveDraft")]
+        public async Task<Response<string>> SalesSaveDraft(SalesSaveDraftReq salesSaveDraftReq)
+        {
+            var result = new Response<string>();
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            try
+            {
+                result.Result = await _salesDeliveryApp.SalesSaveDraft(salesSaveDraftReq, UserID, SboID);
+            }
+            catch (Exception ex)
+            {
+                result.Result = "";
+                result.Code = 500;
+                result.Message = "服务器内部错误：" + ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{salesSaveDraftReq}， 错误：{ex.Message},堆栈信息：{ex.StackTrace}");
+            }
+            return result;
+        }
     }
 }
