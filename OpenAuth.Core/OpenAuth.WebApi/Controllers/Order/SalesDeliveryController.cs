@@ -1,6 +1,5 @@
 ﻿using Infrastructure;
 using Infrastructure.Helpers;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
@@ -11,9 +10,7 @@ using OpenAuth.App.Response;
 using OpenAuth.Repository.Interface;
 using Serilog;
 using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace OpenAuth.WebApi.Controllers.Order
@@ -29,26 +26,23 @@ namespace OpenAuth.WebApi.Controllers.Order
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
         private readonly SalesDeliveryApp _salesDeliveryApp;
         ServiceBaseApp _serviceBaseApp;
-
         IAuth _auth;
         IUnitWork _UnitWork;
-
-        //ServiceBaseApp _serviceBaseApp;
-        public SalesDeliveryController(ServiceBaseApp serviceBaseApp, IUnitWork UnitWork, SalesDeliveryApp salesDeliveryApp, /*ServiceBaseApp _serviceBaseApp,*/ IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
+        public SalesDeliveryController(ServiceBaseApp serviceBaseApp, IUnitWork UnitWork, SalesDeliveryApp salesDeliveryApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
         {
             this._UnitWork = UnitWork;
-            //this._serviceBaseApp = _serviceBaseApp;
             this._auth = _auth;
             this._serviceSaleOrderApp = serviceSaleOrderApp;
             this._salesDeliveryApp = salesDeliveryApp;
             this._serviceBaseApp = serviceBaseApp;
 
         }
-        #region 添加销售交货
+        #region 销售订单转交货
         /// <summary>
-        /// 添加销售交货
+        /// 销售订单转交货
         /// </summary>
         [HttpPost]
+        [Route("SalesDeliverySave")]
         public async Task<Response<string>> SalesDeliverySave(SalesDeliverySaveReq salesDeliverySaveReq)
         {
             var result = new Response<string>();
@@ -69,9 +63,10 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
         }
         #endregion
-        #region 查看视图
+
+        #region 查看视图/列表
         /// <summary>
-        /// 查看视图
+        /// 查看视图/列表
         /// </summary>
         [HttpPost]
         [Route("GridDataBind")]
@@ -112,6 +107,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             return TableData;
         }
         #endregion
+
         #region 销售交货详情
         /// <summary>
         /// 销售交货详情
@@ -196,13 +192,11 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         #endregion
+
+        #region 销售交货草稿保存和提交
         /// <summary>
         /// 销售交货草稿保存和提交
         /// </summary>
-        /// <param name="rData"></param>
-        /// <param name="JobId"></param>
-        /// <param name="ations"></param>
-        /// <param name="jobType"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
         [HttpPost]
@@ -225,5 +219,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             return result;
         }
+        #endregion
+
     }
 }

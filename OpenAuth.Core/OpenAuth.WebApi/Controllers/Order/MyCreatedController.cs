@@ -347,6 +347,11 @@ namespace OpenAuth.WebApi.Controllers.Order
 
 			return result;
 		}
+		/// <summary>
+		/// 获取新的自定义字段
+		/// </summary>
+		/// <param name="TableName"></param>
+		/// <returns></returns>
 		[HttpGet]
 		[Route("GetCustomFieldsNew")]
 		public Response<List<CustomFieldsNewDto>> GetCustomFieldsNew(string TableName)
@@ -397,7 +402,7 @@ namespace OpenAuth.WebApi.Controllers.Order
 		#endregion
 		#region 删除(草稿&驳回)
 		/// <summary>
-		/// 删除(草稿&驳回)
+		/// 删除(草稿/驳回)
 		/// </summary>
 		[HttpGet]
 		[Route("Delete")]

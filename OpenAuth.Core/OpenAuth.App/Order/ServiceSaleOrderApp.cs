@@ -165,7 +165,7 @@ namespace OpenAuth.App.Order
                 //filterString += string.Format("DATE_FORMAT(a.UpdateDate,'%Y-%m-%d')  BETWEEN '{0}' AND '{1}' AND ", query.FirstTime, query.LastTime);
                 filterString += string.Format("a.UpdateDate BETWEEN '{0}' AND '{1}' AND ", query.FirstTime, query.LastTime);
             }
-            
+
             if (type == "ORDR")
             {
                 if (!string.IsNullOrWhiteSpace(query.Indicator))
@@ -174,7 +174,7 @@ namespace OpenAuth.App.Order
                 }
             }
 
-           
+
             #endregion
 
             #region 根据不同的单据显示不同的内容
@@ -268,9 +268,9 @@ namespace OpenAuth.App.Order
             {
                 //视图查询数据
                 tableData = SelectOrdersInfo(out rowCount, pageSize, pageIndex, filterString, sortString, type, line, ViewCustom, ViewSales, sqlcont, sboname);
-               
+
             }
-            
+
             return tableData;
         }
         /// <summary>
@@ -330,7 +330,7 @@ namespace OpenAuth.App.Order
                 new SqlParameter("@pageIndex",pageIndex),
                 new SqlParameter("@strOrder",orderName),
                 new SqlParameter("@strWhere",filterQuery),
-               
+
             };
             SqlParameter isStats = new SqlParameter("@isStats", SqlDbType.Int);
             isStats.Value = 1;
@@ -344,7 +344,7 @@ namespace OpenAuth.App.Order
             {
                 tableData.Count = Convert.ToInt32(paramOut.Value);
                 rowCounts = Convert.ToInt32(sqlParameters[7].Value);
-              
+
             }
             else
             {
@@ -681,7 +681,7 @@ namespace OpenAuth.App.Order
             string returns = "1";
             string para_val = setNumber == "" ? "1" : setNumber;
             string strSql = $@"INSERT INTO nsap_base.wfa_job_para (job_id,para_idx,para_val) VALUES({jobID},'1','{para_val}')";
-           
+
             object obj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text);
             if (obj != null)
             {
@@ -5343,7 +5343,7 @@ namespace OpenAuth.App.Order
             }
             return isEdit;
             //return int.Parse(Sql.Action.ExecuteScalar(Sql.UTF8ConnectionString, CommandType.Text, sql).ToString());
-        } 
+        }
 
 
 
@@ -9888,6 +9888,41 @@ namespace OpenAuth.App.Order
             }
             return await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesOrders.cshtml");
         }
+
+        #region 修改单据打印状态
+        /// <summary>
+        /// 修改单据打印状态
+        /// </summary>
+        public async Task<string> UpdatePrintStat(string SboId, string DocEntry, string TableName1, string TableName2)
+        {
+            bool result = false;
+            string sqls = string.Format("UPDATE {0}.{3} SET Printed='Y' WHERE DocEntry={1} and sbo_id={2} ", "nsap_bone", DocEntry, SboId, TableName1);
+            result = UnitWork.ExecuteSql(sqls.ToString(), ContextType.NsapBaseDbContext) > 0 ? true : false;
+            if (result)
+            {
+                string sqlsbo = string.Format("SELECT sql_db,sql_conn FROM {0}.sbo_info WHERE sbo_id={1}", "nsap_base", SboId);
+                DataTable dts = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sqlsbo.ToString(), CommandType.Text, null);
+                if (dts.Rows.Count > 0)
+                {
+                    string sqla = string.Format("SELECT Printed FROM {1} WHERE DocEntry={0} ", DocEntry, TableName2);
+                    DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, sqla.ToString(), CommandType.Text, null);
+                    if (dt.Rows.Count > 0)
+                    {
+                        string sqlss = string.Format("UPDATE {1} SET Printed='Y' WHERE DocEntry={0} ", DocEntry, TableName2);
+                        result = UnitWork.ExecuteSql(sqlss.ToString(), ContextType.SapDbContextType) > 0 ? true : false;
+                    }
+                }
+            }
+            if (result == false)
+            {
+                return "修改状态失败";
+            }
+            else
+            {
+                return "修改状态成功";
+            }
+        }
+        #endregion
 
     }
 }
