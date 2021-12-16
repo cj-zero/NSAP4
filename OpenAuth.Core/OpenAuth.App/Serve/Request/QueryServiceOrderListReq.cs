@@ -120,5 +120,9 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string QrySalesMan { get; set; }
 
+        /// <summary>
+        /// 呼叫来源 -- 1-电话 2-钉钉 3-QQ 4-微信 5-邮件 6-APP 7-Web(在字典中维护)
+        /// </summary>
+        public string QryFromId { get; set; }
     }
 }

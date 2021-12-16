@@ -225,6 +225,7 @@ namespace OpenAuth.App
                          //.WhereIf(Convert.ToInt32(req.QryState) == 2, q => !q.ServiceWorkOrders.All(q => q.Status != 1))
                          //.WhereIf(Convert.ToInt32(req.QryState) == 0, q => q.Status == 1 || (q.Status == 2 && !q.ServiceWorkOrders.All(q => q.Status != 1)))
                          .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => (s.Id == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key))))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), s => s.Supervisor == req.QrySupervisor)
             .OrderBy(r => r.CreateTime).Select(q => new
             {
                 q.Id,
@@ -1149,6 +1150,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryVestInOrg), q => q.VestInOrg == Convert.ToInt32(req.QryVestInOrg))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryAllowOrNot.ToString()), q => q.AllowOrNot == req.QryAllowOrNot)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QrySalesMan), q => q.SalesMan == req.QrySalesMan)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromId), q => q.FromId == Convert.ToInt32(req.QryFromId))
                 .Where(q => ids.Contains(q.Id) && q.Status == 2);
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("工程主管")) && !loginContext.User.Account.Equals("wanghaitao") && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看服务ID")))
@@ -1221,6 +1223,7 @@ namespace OpenAuth.App
                               .WhereIf(!string.IsNullOrWhiteSpace(req.QryVestInOrg), s => s.VestInOrg == Convert.ToInt32(req.QryVestInOrg))
                               .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), s => s.Supervisor == req.QrySupervisor)
                               join swo in UnitWork.Find<ServiceWorkOrder>(null)
+                              .WhereIf(!string.IsNullOrWhiteSpace(req.QryTechName), s => s.CurrentUser == req.QryTechName)
                               on so.Id equals swo.ServiceOrderId
                               select new { so, swo };
 
@@ -4733,6 +4736,14 @@ namespace OpenAuth.App
                 if (dailyReport == null)
                 {
                     throw new Exception("当天未填写行程日报，不允许申请差补");
+                }
+
+                //服务 字典维护的客户,不能申请日费
+                var customerId = (await UnitWork.Find<ServiceOrder>(s => s.Id == req.ServiceOrderId).FirstOrDefaultAsync()).CustomerId;
+                var unAddDailyExpendCustomers = await UnitWork.Find<Category>(c => c.TypeId == "SYS_CannotAddDailyExpendsCustomer").Select(x => x.Name).Distinct().ToListAsync();
+                if (unAddDailyExpendCustomers.Contains(customerId))
+                {
+                    throw new Exception("服务该客户不能申请日费");
                 }
             }
 
