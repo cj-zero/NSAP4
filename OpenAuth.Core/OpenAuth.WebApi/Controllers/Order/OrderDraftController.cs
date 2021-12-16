@@ -526,16 +526,9 @@ namespace OpenAuth.WebApi.Controllers.Order
                 viewSales = powers.ViewSales;
                 viewCustom = powers.ViewCustom;
             }
-            if (isOpen == "0")
-            {
 
-                //return NSAP.Biz.Sales.BillDelivery.SelectBillViewInfo(int.Parse(rp), int.Parse(page), query, sortname, sortorder, type, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewFull, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewSelf, UserID, SboID, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewSelfDepartment, DepID, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewCustom, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewSales);
-            }
-            else
-            {
-                result = _serviceSaleOrderApp.SelectOrderDraftInfo(request.limit, request.page, request, type, viewFull, viewSelf, userId, sboid, viewSelfDepartment, Convert.ToInt32(depId.Value), viewCustom, viewSales, sqlcont, sboname);
-                // return NSAP.Biz.Sales.BillDelivery.SelectBillListInfo(int.Parse(rp), int.Parse(page), query, sortname, sortorder, type, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewFull, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewSelf, UserID, SboID, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewSelfDepartment, DepID, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewCustom, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesQuotation.aspx").ViewSales, sqlcont, sboname);
-            }
+            result = _serviceSaleOrderApp.SelectOrderDraftInfo(request.limit, request.page, request, type, viewFull, viewSelf, userId, sboid, viewSelfDepartment, Convert.ToInt32(depId.Value), viewCustom, viewSales, sqlcont, sboname);
+
             return result;
         }
         /// <summary>
@@ -871,13 +864,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                         }
                         else
                         {
-                            //string strsql = string.Format("SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM {0}.sbo_info WHERE sbo_id={1}", "nsap_base", sboid);
-                            //DataTable dtsql = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strsql, CommandType.Text, null);
-                            //string sqlconn = "";
-                            //if (dt.Rows.Count > 0)
-                            //{
-                            //    sqlconn = dt.Rows[0][5].ToString();
-                            //}
+
                             StringBuilder sql = new StringBuilder();
                             sql.Append(" SELECT Address AS name,(ISNULL(ZipCode,'') + ISNULL(b.Name,'')+ISNULL(c.Name,'')+ISNULL(City,'')+ISNULL(CONVERT(VARCHAR(1000),Building),'')) AS id,a.ZipCode,a.State ");
                             sql.Append(" FROM CRD1 a ");
@@ -1022,11 +1009,11 @@ namespace OpenAuth.WebApi.Controllers.Order
         }
         /// <summary>
         /// 查看附件
-        /// <summary>
         /// <param name="OrderId">订单Id</param>
         /// <param name="TypeId">默认6</param>
         /// <param name="sboId">选择账套Id</param>
         /// <returns></returns>
+        /// </summary>
         [HttpGet]
         [Route("GetFilesList")]
         public Response<List<OrderFile>> GetFilesList(string OrderId, string TypeId, string sboId)
@@ -1465,17 +1452,20 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns></returns>
         [HttpGet]
         [Route("ExportShowNew")]
-        public async Task<FileResult> ExportShow(string sboid, string DocEntry)
+        public async Task<Response<FileResult>> ExportShow(string sboid, string DocEntry)
         {
+            var result = new Response<FileResult>();
             try
             {
-                return File(await _serviceSaleOrderApp.ExportShow(sboid, DocEntry), "application/pdf");
+                result.Result = File(await _serviceSaleOrderApp.ExportShow(sboid, DocEntry), "application/pdf");
             }
             catch (Exception ex)
             {
+                result.Code = 500;
+                result.Message = ex.Message;
                 Log.Logger.Error($"地址：{Request.Path}，参数：{DocEntry}， 错误：{ex.Message}");
-                throw new Exception("导出失败！" + ex.ToString());
             }
+            return result;
         }
         #endregion
         #region 根据页面地址获取FunId.
@@ -1691,7 +1681,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         /// <summary>
-        /// 拟取消订单
+        /// 拟取消订单（new）
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
@@ -1707,6 +1697,11 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
 
         }
+        /// <summary>
+        /// 拟取消订单（old）
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
         [HttpGet]
         [Route("GridRelORDR")]
         public TableData GridRelORDR(string SlpCode, string DocEntry, string cardcode)
@@ -1775,7 +1770,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         /// <summary>
-        /// 合约评审PDF
+        /// 合约评审PDF(old)
         /// </summary>
         /// <param name="contractId"></param>
         /// <returns></returns>
@@ -1794,6 +1789,25 @@ namespace OpenAuth.WebApi.Controllers.Order
                 result.Message = e.Message;
             }
             return result;
+        }
+        /// <summary>
+        /// 合约评审PDF(new)
+        /// </summary>
+        /// <param name="contractId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("ContractExportShow_ForSaleNew")]
+        public async Task<FileResult> ContractExportShow_ForSaleNew(string sboid, string contractId)
+        {
+            try
+            {
+                return File(await _serviceSaleOrderApp.ContractExportShow_ForSaleNew(sboid, contractId), "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error($"地址：{Request.Path}，参数：{contractId}， 错误：{ex.Message}");
+                throw new Exception("导出失败！" + ex.ToString());
+            }
         }
         /// <summary>
         /// 销售报价单审核
@@ -1840,7 +1854,11 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
 
-
+        /// <summary>
+        /// 通过Url获取页面权限
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
         [HttpGet]
         [Route("GetPagePowersByUrl")]
         public Response<string> GetPagePowersByUrl(string url)
@@ -1941,5 +1959,19 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
 
         }
+
+
+        #region 修改单据打印状态
+        /// <summary>
+        /// 修改单据打印状态
+        /// </summary>
+        [HttpGet]
+        [Route("UpdatePrintStat")]
+        public async Task<string> UpdatePrintStat(string DocEntry, string TableName1, string TableName2, string SboId = "1")
+        {
+            return await _serviceSaleOrderApp.UpdatePrintStat(SboId, DocEntry, TableName1, TableName2);
+        }
+        #endregion
+
     }
 }

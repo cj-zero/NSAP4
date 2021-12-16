@@ -2101,8 +2101,9 @@ namespace OpenAuth.App
             }
             if ((bool)req.IsReject)
             {
-                await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id == req.serviceOrderId, s => new ServiceOrder { AllowOrNot = -1});
-                await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"用户:{loginUser.Name}驳回服务单,理由：{req.Message}", ActionType = "驳回服务单", ServiceOrderId = req.serviceOrderId});
+                var action= $"用户:{loginUser.Name}驳回服务单,理由：{req.Message}";
+                await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id == req.serviceOrderId, s => new ServiceOrder { AllowOrNot = -1, Status = 3, Remark = action });
+                await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = action, ActionType = "驳回服务单", ServiceOrderId = req.serviceOrderId });
             }
             else 
             {

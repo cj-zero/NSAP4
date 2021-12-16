@@ -89,9 +89,10 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         #endregion
-        #region MyRegion
+
+        #region GetBaseEntrybyDocId
         /// <summary>
-        /// 
+        /// GetBaseEntrybyDocId
         /// </summary>
         /// <param name="DocEntry"></param>
         /// <param name="SboId"></param>
@@ -113,6 +114,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         #endregion
+
         #region  联系人(业务伙伴所有联系人)
         /// <summary>
         ///  联系人(业务伙伴所有联系人)
@@ -140,6 +142,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         #endregion
+
         #region 销售订单所属公司下拉
         /// <summary>
         /// 销售订单所属公司下拉
@@ -165,6 +168,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         }
 
         #endregion
+
         #region 账套下拉数据
         /// <summary>
         /// 账套下拉数据
@@ -186,6 +190,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         #endregion
+
         #region 付款条件
         /// <summary>
         /// 付款条件
@@ -209,6 +214,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         #endregion
+
         #region  发票类型
         /// <summary>
         /// 发票类型

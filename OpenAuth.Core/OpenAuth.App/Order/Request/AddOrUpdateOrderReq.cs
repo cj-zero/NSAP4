@@ -71,7 +71,7 @@ namespace OpenAuth.App.Order.Request
 		/// </summary>
 		public OrderAtion Ations { get; set; }
 		/// <summary>
-		/// 销售报价单ID(创建时为0)
+		/// 销售订单ID
 		/// </summary>
 		public int JobId { get; set; }
 		/// <summary>
