@@ -91,6 +91,29 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 统计服务单的状态(待确认,已确认,已取消)数量及占比
+        /// 查询条件可选:日期范围、客户、售后主管
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetServiceCallConfirmStatistics([FromQuery] QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result.Data = await _serviceOrderApp.GetServiceCallConfirmStatistics(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 待确认服务申请信息
         /// </summary>
         /// <param name="serviceOrderId">服务单ID</param>
@@ -426,6 +449,29 @@ namespace OpenAuth.WebApi.Controllers
                 result = await _serviceOrderApp.GetServerCallEfficiency(req);
             }
             catch(Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 统计未处理的订单中,从建单到现在经过了多长时间
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetUnFinishServiceCallProcessingTime([FromQuery] QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetUnFinishServiceCallProcessingTime(req);
+            }
+            catch (Exception ex)
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
