@@ -191,7 +191,7 @@ namespace OpenAuth.App.Order
             string className = "NSAP.B1Api.BOneORDR";
             string jobname = "销售订单";
             //查询
-            billDelivery billDelivery = GetDeliverySalesInfoNewNos(orderReq.JobId.ToString(),13);
+            billDelivery billDelivery = GetDeliverySalesInfoNewNos(orderReq.JobId.ToString(), 13);
             string josn = JsonConvert.SerializeObject(billDelivery);
             if (billDelivery is null)
             {
@@ -518,7 +518,7 @@ namespace OpenAuth.App.Order
         /// <param name="IsUpdate"></param>
         /// <param name="vStock"></param>
         /// <returns></returns>
-        public string AuditResubmitNextNew(int jobID, int userID, string recommend, string auditOpinionid, string IsUpdate, string vStock, string Comments, string Remark)
+        public string AuditResubmitNextNew(int jobID, int userID, string recommend, string auditOpinionid, string IsUpdate, string vStock, string Comments, string Remark, string CustomFields, List<billSerialNumberChooseItem> ChoosedSerialNumberList, List<billSerialNumber> serialNumber)
         {
             string res = "";
             byte[] job_data = new byte[] { };
@@ -526,6 +526,21 @@ namespace OpenAuth.App.Order
             Model.Comments = Comments;
             Model.Remark = Remark;
             Model.DocStatus = "C";
+            if (!string.IsNullOrWhiteSpace(CustomFields))
+            {
+                Model.CustomFields = CustomFields;
+            }
+            if (ChoosedSerialNumberList.Count > 0 && ChoosedSerialNumberList != null)
+            {
+                foreach (var item in Model.billSalesDetails)
+                {
+                    item.ChoosedSerialNumberList = ChoosedSerialNumberList;
+                }
+            }
+            if (serialNumber.Count > 0 && serialNumber != null)
+            {
+                Model.serialNumber = serialNumber;
+            }
             if (IsUpdate == "1")
             {
                 job_data = ByteExtension.ToSerialize(Model);

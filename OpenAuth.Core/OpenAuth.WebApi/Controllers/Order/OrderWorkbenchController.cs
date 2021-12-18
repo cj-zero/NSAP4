@@ -1,5 +1,6 @@
 ﻿using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using OpenAuth.App;
 using OpenAuth.App.Order;
 using OpenAuth.App.Order.ModelDto;
@@ -7,6 +8,7 @@ using OpenAuth.App.Order.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Interface;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -93,12 +95,114 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns></returns>
         [HttpGet]
         [Route("GetApprovalRecord")]
-        public Response<List<FlowChartDto>> GetApprovalRecord(string jobID,string type)
+        public Response<List<FlowChartDto>> GetApprovalRecord(string jobID, string type)
         {
             var result = new Response<List<FlowChartDto>>();
             result.Result = _orderWorkbenchApp.GetApprovalRecord(jobID, type);
             return result;
         }
+        #region 判断是否是最后一步
+        /// <summary>
+        /// 判断是否是最后一步
+        /// </summary>
+        /// <param name="jobId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("IsLastStep")]
+        public async Task<Response<string>> IsLastStep(string jobId)
+        {
+            var result = new Response<string>();
+            try
+            {
+                result.Result = await _orderWorkbenchApp.IsLastStep(jobId);
+            }
+            catch (Exception e)
+            {
+                result.Message = e.Message;
+                result.Code = 500;
+                Log.Logger.Error($"报错地址:{Request.Path},请求方式：{"Post"},参数:{JsonConvert.SerializeObject(jobId)},异常描述：{e.Message},堆栈信息：{e.StackTrace}");
+
+            }
+            return result;
+        }
+
+        #endregion
+        #region 判断物料是否活跃
+        /// <summary>
+        /// 判断物料是否活跃
+        /// </summary>
+        /// <param name="isActiveNewReq"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("IsActiveNew")]
+        public async Task<TableData> IsActiveNew(IsActiveNewReq isActiveNewReq)
+        {
+            var result = new TableData();
+            try
+            {
+                result.Data = await _orderWorkbenchApp.IsActive(isActiveNewReq);
+            }
+            catch (Exception e)
+            {
+                result.Message = e.Message;
+                result.Code = 500;
+                Log.Logger.Error($"报错地址:{Request.Path},请求方式：{"Post"},参数:{JsonConvert.SerializeObject(isActiveNewReq)},异常描述：{e.Message},堆栈信息：{e.StackTrace}");
+
+            }
+            return result;
+        }
+        #endregion
+        #region 查询交货序列号
+        /// <summary>
+        /// 查询交货序列号
+        /// </summary>
+        [HttpGet]
+        [Route("SerialDeliveryNew")]
+        public async Task<TableData> SerialDeliveryNew(SerialDeliveryNewReq serialDeliveryNewReq)
+        {
+            var result = new TableData();
+            try
+            {
+                result.Data = await _orderWorkbenchApp.SerialDelivery(serialDeliveryNewReq);
+
+            }
+            catch (Exception e)
+            {
+                result.Message = e.Message;
+                result.Code = 500;
+                Log.Logger.Error($"报错地址:{Request.Path},请求方式：{"Post"},参数:{JsonConvert.SerializeObject(serialDeliveryNewReq)},异常描述：{e.Message},堆栈信息：{e.StackTrace}");
+
+            }
+            return result;
+        }
+
+        #endregion
+        #region 根据物料获取序列号
+
+        /// <summary>
+        /// 根据物料获取序列号
+        /// </summary>
+        /// <param name="getDisrNumberReq"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GetDisrNumber")]
+        public async Task<TableData> GetDisrNumber(GetDisrNumberReq getDisrNumberReq)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _orderWorkbenchApp.GetDisrNumber(getDisrNumberReq);
+            }
+            catch (Exception e)
+            {
+                result.Message = e.Message;
+                result.Code = 500;
+                Log.Logger.Error($"报错地址:{Request.Path},请求方式：{"Post"},参数:{JsonConvert.SerializeObject(getDisrNumberReq)},异常描述：{e.Message},堆栈信息：{e.StackTrace}");
+
+            }
+            return result;
+        }
+        #endregion
 
     }
 }

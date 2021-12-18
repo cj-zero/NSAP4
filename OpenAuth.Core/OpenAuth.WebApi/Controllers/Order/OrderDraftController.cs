@@ -51,6 +51,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             this._serviceBaseApp = _serviceBaseApp;
             this._auth = _auth;
             _serviceSaleOrderApp = serviceSaleOrderApp;
+            _auth.GetCurrentUser();
         }
         /// <summary>
         /// 获取业务伙伴\客户 应收账款
@@ -1822,7 +1823,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             try
             {
                 var userId = _serviceBaseApp.GetUserNaspId();
-                result.Result = _serviceSaleOrderApp.AuditResubmitNextNew(resubmitReq.jobId, userId, resubmitReq.recommend, resubmitReq.auditOpinionid, resubmitReq.IsUpdate, resubmitReq.vStock, resubmitReq.Comments, resubmitReq.Remark);
+                result.Result = _serviceSaleOrderApp.AuditResubmitNextNew(resubmitReq.jobId, userId, resubmitReq.recommend, resubmitReq.auditOpinionid, resubmitReq.IsUpdate, resubmitReq.vStock, resubmitReq.Comments, resubmitReq.Remark, resubmitReq.CustomFields,resubmitReq.ChoosedSerialNumberList,resubmitReq.serialNumber);
             }
             catch (Exception e)
             {
