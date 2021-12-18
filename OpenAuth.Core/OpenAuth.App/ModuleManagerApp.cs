@@ -53,6 +53,18 @@ namespace OpenAuth.App
             return UnitWork.Find<Module>(u => moduleIds.Contains(u.Id)).OrderBy(u => u.SortNo);
         }
 
+        /// <summary>
+        /// 加载有菜单权限的角色
+        /// </summary>
+        /// <param name="moduleId"></param>
+        /// <returns></returns>
+        public IEnumerable<Role> LoadForRoleModule(string moduleId)
+        {
+            var roleIds = UnitWork.Find<Relevance>(u => u.SecondId == moduleId && u.Key == Define.ROLEMODULE)
+                .Select(u => u.FirstId);
+            return UnitWork.Find<Role>(u => roleIds.Contains(u.Id));
+        }
+
         //获取角色可访问的模块字段
         public IEnumerable<string> LoadPropertiesForRole(string roleId, string moduleCode)
         {

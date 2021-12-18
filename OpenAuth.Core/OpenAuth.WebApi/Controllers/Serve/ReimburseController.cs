@@ -470,6 +470,29 @@ namespace OpenAuth.WebApi.Controllers.Serve
         }
 
         /// <summary>
+        /// 获取服务轨迹起始点 
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTdianravelSpot([FromQuery] QueryReimburseInfoListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _reimburseinfoapp.GetTdianravelSpot(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 报表分析
         /// </summary>
         /// <returns></returns>

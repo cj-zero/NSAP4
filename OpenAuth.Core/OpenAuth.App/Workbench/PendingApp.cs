@@ -712,7 +712,7 @@ namespace OpenAuth.App.Workbench
                     var serviceOrderIds = await UnitWork.Find<ServiceOrder>(s=>s.SalesManId.Equals(loginContext.User.Id)).Select(s=>s.Id).ToListAsync();
                     query = query.Where(q => (serviceOrderIds.Contains(q.a.ServiceOrderId) && q.b.ActivityName == "销售员审批" && q.a.OrderType == 1) || q.b.ActivityName != "销售员审批" && q.a.OrderType != 1);
                 }
-                query=query.Where(q => ((q.b.ActivityName == "确认报价单"|| q.b.ActivityName == "回传销售订单")&& q.a.OrderType==1 && q.a.PetitionerId.Equals(loginContext.User.Id)) || (q.b.ActivityName != "确认报价单"&& q.b.ActivityName != "回传销售订单" && q.a.OrderType!=1));
+                query=query.Where(q => ((q.b.ActivityName == "确认报价单"|| q.b.ActivityName == "回传销售订单")&& q.a.OrderType==1 && q.a.PetitionerId.Equals(loginContext.User.Id)) || (q.b.ActivityName != "确认报价单"&& q.b.ActivityName != "回传销售订单"));
                 var pending = await query.OrderByDescending(o => o.a.UpdateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
                 reult.Data = pending.Select(p => new
                 {

@@ -51,6 +51,19 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 加载有菜单权限的角色
+        /// </summary>
+        /// <param name="moduleId">The role identifier.</param>
+        /// <returns>System.String.</returns>
+        [HttpGet]
+        public Response<IEnumerable<Role>> LoadForRoleModule(string moduleId)
+        {
+            var result = new Response<IEnumerable<Role>>();
+            result.Result = _app.LoadForRoleModule(moduleId);
+            return result;
+        }
+
+        /// <summary>
         /// 根据某角色ID获取可访问某模块的菜单项
         /// </summary>
         /// <returns></returns>

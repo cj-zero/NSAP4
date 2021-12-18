@@ -35,6 +35,7 @@ namespace OpenAuth.App
         private readonly OrgManagerApp _orgApp;
         private readonly BusinessPartnerApp _businessPartnerApp;
         private readonly UserManagerApp _userManagerApp;
+        private readonly RealTimeLocationApp _realTimeLocationApp;
 
         //报销单据类型(0 报销单，1 出差补贴， 2 交通费用， 3 住宿补贴， 4 其他费用, 5 我的费用)
         /// <summary>
@@ -2446,6 +2447,33 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             TableData result = new TableData();
+            switch (req.TimeType)
+            {
+                case 2://近7日
+                    req.StartDate = DateTime.Now.AddDays(-7).Date;
+                    req.EndDate = DateTime.Now.Date;
+                    break;
+                case 3://近30日
+                    req.StartDate = DateTime.Now.AddDays(-30).Date;
+                    req.EndDate = DateTime.Now.Date;
+                    break;
+                case 4://近60日
+                    req.StartDate = DateTime.Now.AddDays(-60).Date;
+                    req.EndDate = DateTime.Now.Date;
+                    break;
+                case 5://近90日
+                    req.StartDate = DateTime.Now.AddDays(-90).Date;
+                    req.EndDate = DateTime.Now.Date;
+                    break;
+                case 6://近1年
+                    req.StartDate = DateTime.Now.AddDays(-365).Date;
+                    req.EndDate = DateTime.Now.Date;
+                    break;
+                default:
+                    break;
+            } 
+
+            #region 个人信息
             var userinfo = await _userManagerApp.GetUserOrgInfo(req.CreateUserId);
             var manager = await _orgApp.GetOrgManager(userinfo.OrgId);
             var nsapusermap = await UnitWork.Find<NsapUserMap>(c => c.UserID == userinfo.Id).FirstOrDefaultAsync();
@@ -2463,6 +2491,7 @@ namespace OpenAuth.App
                 Email = userinfo.Email,
                 OfficeAddr = nsapUserInfo?.office_addr
             };
+            #endregion
 
             //报销单
             var ReimburseInfos = await UnitWork.Find<ReimburseInfo>(r => req.CreateUserId==r.CreateUserId && r.RemburseStatus == 9)
@@ -2487,7 +2516,7 @@ namespace OpenAuth.App
 
             outsource.ForEach(o =>
             {
-                ServiceOrderIds.AddRange(o.OutsourcExpenses.Select(c => c.ServiceOrderId).ToList());
+                ServiceOrderIds.Add(o.OutsourcExpenses.FirstOrDefault()?.ServiceOrderId);
             });
 
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => ServiceOrderIds.Contains(c.ServiceOrderId) && (c.IsReimburse == 2 || c.IsReimburse == 4)).Select(c => new
@@ -2515,6 +2544,7 @@ namespace OpenAuth.App
                 r.Id,
                 r.MainId,
                 r.RemburseStatus,
+                r?.ServiceOrderId,
                 Days = r.ReimburseTravellingAllowances.Sum(t => t.Days) <= 0 && serviceDailyExpends.Where(s => s.ServiceOrderId == r.ServiceOrderId) != null ? serviceDailyExpends.Where(s => s.ServiceOrderId == r.ServiceOrderId).Sum(s => s.Days) : r.ReimburseTravellingAllowances.Sum(t => t.Days),
                 r.TotalMoney,
                 FaresMoney = r.ReimburseFares.Sum(f => f.Money),
@@ -2535,6 +2565,7 @@ namespace OpenAuth.App
                 r.Id,
                 r.MainId,
                 r.RemburseStatus,
+                r?.ServiceOrderId,
                 Type = "报销",
                 r.Days,
                 r.TotalMoney,
@@ -2564,6 +2595,7 @@ namespace OpenAuth.App
                     r.Id,
                     MainId = r.Id,
                     RemburseStatus=0,
+                    ServiceOrderId= serviceOrderId,
                     r.TotalMoney,
                     Days = completionReports?.BusinessTripDays,
                     FaresMoney = r.OutsourcExpenses.Where(o => o.ExpenseType == 1).Sum(o => o.Money),//交通
@@ -2584,6 +2616,7 @@ namespace OpenAuth.App
                 r.Id,
                 r.MainId,
                 r.RemburseStatus,
+                r.ServiceOrderId,
                 Type = "结算",
                 r.Days,
                 r.TotalMoney,
@@ -2619,6 +2652,30 @@ namespace OpenAuth.App
                 OCProportion = totalMoney > 0 ? Convert.ToDecimal((ReimburseInfoRes.Sum(c => c.OtherChargesMoney) / totalMoney)).ToString("p") : "0",
             };
 
+            var serviceorder = await UnitWork.Find<ServiceOrder>(c => ServiceOrderIds.Contains(c.Id) && c.VestInOrg == 1).OrderByDescending(c => c.CreateTime).ToListAsync();
+            var customerInfo = serviceorder.GroupBy(c => c.TerminalCustomerId).Select(c => new
+            {
+                CustomerID = c.Key,
+                Customer = c.First().TerminalCustomer,
+                Address = c.First().Province + c.First().City + c.First().Area + c.First().Addr,
+                TotalMoney = ReimburseInfoRes.Where(r => c.Select(s => s?.Id).ToList().Contains(r.ServiceOrderId)).Sum(r => r.TotalMoney),
+                Longitude = c.First().Longitude,
+                Latitude = c.First().Latitude,
+                CreateTime = c.Max(m => m.CreateTime),
+                Count = c.Count(),
+                ReimburseInfosList = c.Select(r => new
+                {
+                    ServiceOrderId = r.Id,
+                    Id = ReimburseInfoRes.Where(w => w.ServiceOrderId == r.Id).FirstOrDefault().Id,
+                    MainId = ReimburseInfoRes.Where(w => w.ServiceOrderId == r.Id).FirstOrDefault().MainId,
+                    TotalMoney = ReimburseInfoRes.Where(w => w.ServiceOrderId == r.Id).FirstOrDefault().TotalMoney,
+                    BusinessTripDate = ReimburseInfoRes.Where(w => w.ServiceOrderId == r.Id).FirstOrDefault().BusinessTripDate,
+                    EndDate = ReimburseInfoRes.Where(w => w.ServiceOrderId == r.Id).FirstOrDefault().EndDate,
+                    Type = ReimburseInfoRes.Where(w => w.ServiceOrderId == r.Id).FirstOrDefault().Type
+                }).OrderByDescending(r => r.BusinessTripDate).ToList()
+            }).OrderByDescending(c => c.CreateTime).ToList();
+
+
             var resultData = ReimburseInfoRes
                                .Skip((req.page - 1) * req.limit)
                                .Take(req.limit);
@@ -2630,11 +2687,71 @@ namespace OpenAuth.App
                 OutsourceMoney = outsourceMoney,
                 Detail = detail,
                 ResultData = resultData,
-                UserDetail = userdetail
+                UserDetail = userdetail,
+                CustomerInfo = customerInfo
             };
             return result;
         }
 
+        /// <summary>
+        /// 获取服务轨迹起始点
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetTdianravelSpot(QueryReimburseInfoListReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var map = await UnitWork.Find<AppUserMap>(w => w.UserID == req.CreateUserId).FirstOrDefaultAsync();
+            if (map == null)
+            {
+                throw new CommonException("当前用户未绑定App", Define.INVALID_TOKEN);
+            }
+            string startDate = string.Empty;
+            string endDate = string.Empty;
+            //获取当前服务单下技术员填写的日报信息
+            var dailyReports = await UnitWork.Find<ServiceDailyReport>(w => w.ServiceOrderId ==Convert.ToInt32(req.ServiceOrderId) && w.CreateUserId == req.CreateUserId).Select(s => s.CreateTime).ToListAsync();
+            if (dailyReports != null && dailyReports.Count>0)
+            {
+                startDate = dailyReports.Min()?.ToString("yyyy-MM-dd 00:00:00");
+                endDate = dailyReports.Max()?.ToString("yyyy-MM-dd 23:59:59");
+            }
+            else
+            {
+                //获取完工报告下的出差开始时间与出差结束时间
+                var completeReports = await UnitWork.Find<CompletionReport>(w => w.ServiceOrderId == Convert.ToInt32(req.ServiceOrderId) && w.CreateUserId == req.CreateUserId).FirstOrDefaultAsync();
+                if (completeReports != null)
+                {
+                    if (completeReports.BusinessTripDate == null || completeReports.EndDate == null)
+                    {
+                        startDate = completeReports.CreateTime?.ToString("yyyy-MM-dd 00:00:00");
+                        endDate = completeReports.CreateTime?.ToString("yyyy-MM-dd 23:59:59");
+                    }
+                    else
+                    {
+                        startDate = completeReports.BusinessTripDate?.ToString("yyyy-MM-dd 00:00:00");
+                        endDate = completeReports.EndDate?.ToString("yyyy-MM-dd 23:59:59");
+                    }
+
+                }
+            }
+            var result = new TableData();
+            var objs = await UnitWork.Find<RealTimeLocation>(w => w.AppUserId == (int)map.AppUserId && w.CreateTime >= Convert.ToDateTime(startDate) && w.CreateTime <= Convert.ToDateTime(endDate)).OrderBy(o => o.CreateTime).Select(s => new { Latitude = s.BaiduLatitude, Longitude = s.BaiduLongitude, s.CreateTime, Address = s.Province + s.City + s.Area + s.Addr }).ToListAsync();
+            var data = objs.GroupBy(g => g.CreateTime.Date).Select(s => new { date = s.Key, list = s.ToList() }).ToList();
+            List<dynamic> list = new List<dynamic>();
+            foreach (var item in data)
+            {
+                var index = data.IndexOf(item);
+                if (index == 0)
+                    list.Add(item.list.First());
+                list.Add(item.list.Last());
+            }
+            result.Data = list;
+            return result;
+        }
         /// <summary>
         /// 报表分析
         /// </summary>
@@ -2686,7 +2803,7 @@ namespace OpenAuth.App
 
         }
 
-        public ReimburseInfoApp(IUnitWork unitWork, ModuleFlowSchemeApp moduleFlowSchemeApp, WorkbenchApp workbenchApp, FlowInstanceApp flowInstanceApp, IAuth auth, QuotationApp quotationApp, OrgManagerApp orgApp, BusinessPartnerApp businessPartnerApp, UserManagerApp userManagerApp) : base(unitWork, auth)
+        public ReimburseInfoApp(IUnitWork unitWork, ModuleFlowSchemeApp moduleFlowSchemeApp, WorkbenchApp workbenchApp, FlowInstanceApp flowInstanceApp, IAuth auth, QuotationApp quotationApp, OrgManagerApp orgApp, BusinessPartnerApp businessPartnerApp, UserManagerApp userManagerApp, RealTimeLocationApp realTimeLocationApp) : base(unitWork, auth)
         {
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _flowInstanceApp = flowInstanceApp;
@@ -2695,6 +2812,7 @@ namespace OpenAuth.App
             _orgApp = orgApp;
             _businessPartnerApp = businessPartnerApp;
             _userManagerApp = userManagerApp;
+            _realTimeLocationApp = realTimeLocationApp;
         }
     }
 }

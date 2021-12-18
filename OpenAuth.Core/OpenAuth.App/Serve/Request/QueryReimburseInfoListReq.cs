@@ -118,5 +118,10 @@ namespace OpenAuth.App.Request
         /// 创建人ID
         /// </summary>
         public string CreateUserId { get; set; }
+
+        /// <summary>
+        /// 日期选择 1.ALL 2.近七日 3.近30日 4.近60日 5.近90日 6.近1年
+        /// </summary>
+        public int TimeType { get; set; }
     }
 }
