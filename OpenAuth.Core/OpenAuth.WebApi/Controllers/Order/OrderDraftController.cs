@@ -1442,7 +1442,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         #endregion
-        #region
+        #region PDF打印（新）
         /// <summary>
         /// PDF打印（新）
         /// </summary>
@@ -1453,20 +1453,13 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns></returns>
         [HttpGet]
         [Route("ExportShowNew")]
-        public async Task<Response<FileResult>> ExportShow(string sboid, string DocEntry)
+        public async Task<FileResult> ExportShow(string sboid, string DocEntry)
         {
-            var result = new Response<FileResult>();
-            try
-            {
-                result.Result = File(await _serviceSaleOrderApp.ExportShow(sboid, DocEntry), "application/pdf");
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.Message;
-                Log.Logger.Error($"地址：{Request.Path}，参数：{DocEntry}， 错误：{ex.Message}");
-            }
-            return result;
+
+
+            return File(await _serviceSaleOrderApp.ExportShow(sboid, DocEntry), "application/pdf");
+            
+             
         }
         #endregion
         #region 根据页面地址获取FunId.

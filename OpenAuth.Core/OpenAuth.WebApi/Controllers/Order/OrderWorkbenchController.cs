@@ -133,7 +133,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// </summary>
         /// <param name="isActiveNewReq"></param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost]
         [Route("IsActiveNew")]
         public async Task<TableData> IsActiveNew(IsActiveNewReq isActiveNewReq)
         {
@@ -156,7 +156,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <summary>
         /// 查询交货序列号
         /// </summary>
-        [HttpGet]
+        [HttpPost]
         [Route("SerialDeliveryNew")]
         public async Task<TableData> SerialDeliveryNew(SerialDeliveryNewReq serialDeliveryNewReq)
         {

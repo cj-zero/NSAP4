@@ -1,0 +1,554 @@
+﻿<!doctype html>
+
+<html>
+
+
+
+<head>
+
+    <meta charset="utf-8">
+
+    <!-- <meta http-equiv="refresh" content="1"> -->
+
+
+
+    <title></title>
+
+    <style type="text/css">
+
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+
+
+        body {
+            width: 1000px;
+            margin: 0 auto;
+            margin-top: 10px;
+            font-size: 13.5px;
+            font-family: "微软雅黑";
+            color: #000;
+        }
+
+
+
+        table {
+            border-collapse: collapse;
+        }
+
+
+
+        #tablebor {
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+
+
+
+        .TH td {
+            border-style: solid;
+            border-width: 1px;
+        }
+
+
+
+        #divtitle {
+            margin: 0 auto;
+        }
+
+
+
+        hr {
+            height: 0px;
+            border-top: 1px solid #808A87;
+            border-right: 0px;
+            border-bottom: 0px;
+            border-left: 0px;
+        }
+
+
+
+        #divcode tr {
+            vertical-align: top;
+        }
+
+
+
+        body {
+            font-family: STSong Microsoft YaHei;
+        }
+
+
+
+        #container {
+            position: relative;
+            margin: 0 auto;
+            padding: 0 40px 0 50px;
+            width: 794px;
+            height: 1123px;
+        }
+
+
+
+        footer {
+            /* position: absolute; */
+
+            left: 0;
+            bottom: 0;
+            padding: 0 40px 0 0;
+            width: 100%
+        }
+
+
+
+        .productList:last-child div {
+            /* border-top: 1px solid #000; */
+
+            border-bottom: 1px solid #000;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+        }
+
+        /*
+
+            footer hr {
+
+                height: 2px;
+
+                background-color: #000;
+
+                border: none
+
+            }*/
+
+
+
+        footer .footer-title h1 {
+            font-size: 13px;
+            line-height: 20px;
+            font-weight: 400;
+            text-align: center;
+            margin-top: 0px;
+        }
+
+
+
+        .type {
+            color: #000;
+            width: 64px;
+            display: inline-block;
+            word-break: break-all;
+            border-right: 1px solid #000;
+        }
+
+
+
+        footer .footer-title p {
+            margin-top: 6px;
+            font-size: 12px;
+            line-height: 30px
+        }
+
+
+
+        footer .footer-info {
+            margin-top: 8px;
+            font-size: 13px;
+            height: 104px
+        }
+
+
+
+            footer .footer-info div {
+                display: flex;
+                justify-content: space-between
+            }
+
+
+
+                footer .footer-info div p {
+                    flex: 1;
+                    padding-right: 8px
+                }
+
+
+
+                    footer .footer-info div p.footer-datetime {
+                        margin-top: 8px;
+                        font-size: 10px
+                    }
+
+
+
+        .index {
+            color: #000;
+            width: 50px;
+            display: inline-block;
+            /* border-right: 1px solid #000; */
+
+            text-align: center;
+            word-break: break-all;
+        }
+
+
+
+        .wlDsc {
+            color: #000;
+            width: 300px;
+            display: inline-block;
+            border-right: 1px solid #000;
+            word-break: break-all;
+        }
+
+
+
+        .wlNum {
+            color: #000;
+            width: 50px;
+            display: inline-block;
+            border-right: 1px solid #000;
+        }
+
+
+
+        .jgfInput {
+            width: 85px;
+            display: inline-block;
+            font-weight: 400;
+        }
+
+
+
+        .prvePrice {
+            color: #000;
+            width: 110px;
+            display: inline-block;
+            text-align: right;
+            word-break: break-all;
+            /* border-right: 1px solid #000; */
+        }
+
+
+
+        .onePrice {
+            color: #000;
+            width: 100px;
+            display: inline-block;
+            text-align: right;
+            border-right: 1px solid #000;
+            word-break: break-all
+        }
+
+
+
+        .num {
+            width: 62px;
+            padding-right: 5px;
+            text-align: right;
+            display: inline-block;
+            word-break: break-all;
+            border-right: 1px solid #000;
+        }
+
+
+
+        .wlCode {
+            color: #000;
+            width: 270px;
+            display: inline-block;
+            border-right: 1px solid #000;
+            border-left: 1px solid #000;
+            word-break: break-all
+        }
+
+
+
+        .remarkInput {
+            color: #000;
+            /* width: 615px; */
+
+            display: inline-block;
+            word-break: break-all;
+            font-weight: 400;
+        }
+
+
+
+        .customerDetail {
+            width: 996px;
+            /* height: 0px; */
+
+            border: 1px solid #000;
+            padding: 10px 0 0 0;
+            font-weight: 700;
+        }
+
+
+
+        .customerDetailMsg {
+            width: 998px;
+            margin-top: 5px;
+            display: flex;
+            flex: 1;
+        }
+
+
+
+        .customerDetail_left {
+            width: 50%;
+            /* height: 0px; */
+            float: left;
+            border: 1px solid #000;
+            border-right: none;
+            padding: 10px 0 0 0;
+            font-weight: 700;
+        }
+
+
+
+        .customerDetail_right {
+            width: 50%;
+            /* height: 0px; */
+
+            padding: 10px 0 0 0;
+            border: 1px solid #000;
+            /* border-left: 1px solid #000; */
+
+            font-weight: 700;
+        }
+
+
+
+        .cardCode {
+            margin-left: 5px;
+            display: inline-block;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+
+
+        .cardName {
+            font-weight: 700;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+
+
+        .customerMar {
+            width: 1000px;
+            margin-top: 5px
+        }
+
+
+
+        .customerMar_ {
+            width: 996px;
+            border: 1px solid #000;
+            margin-top: 5px;
+            border-bottom: none;
+            font-weight: 700;
+        }
+
+
+
+        .common {
+            /* width: 80px; */
+
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+    </style>
+
+</head>
+
+
+
+<body>
+
+    <header>
+
+        <div id="divtitle" style=" width: 1000px; height:60px;">
+
+            <div style="float:left;width: 240px; margin-top: 20px;">
+
+                <img src="@Model.Data.logo" color="#6F6F6F" style="width: 120px;height: 45px;margin-left:20px">
+
+            </div>
+
+            <div style="float:left;width: 300px; margin-top: 10px; margin-left:100px">
+
+                <span style="font-size: 42px;">报价单</span>
+
+            </div>
+
+            <div style="float:left;width: 180px; margin-top: -3px; margin-left:10px">
+
+                <span>
+
+                    <span class="common">单号：</span><span style="font-size: 30px; font-weight: 900;">@Model.Data.DocEntry</span>
+
+                </span>
+
+                <br>
+
+                <span class="common">日期：</span><span style="display: inline-block;">@Model.Data.DateTime</span><br>
+
+                <span>
+
+                    <span class="common">销售：</span><span>@Model.Data.SalseName</span>
+
+                </span>
+
+            </div>
+
+            <div style="float:right;width: 90px; ">
+
+                <img src="@Model.Data.QRcode" style="width: 80px;height: 80px; color:#6F6F6F">
+
+            </div>
+
+        </div>
+
+        <div class="customerDetail" style="margin-top: 40px;">
+
+            <span class="cardCode">客户编号 :</span>
+
+            <span>@Model.Data.CardCode</span>
+
+
+
+            <span class="cardName">联系人 :</span>
+
+            <span>@Model.Data.Name</span>
+
+            <span class="cardName">电话 :</span>
+
+            <span>@Model.Data.Tel</span>
+
+            <span class="cardName">传真 :</span>
+
+            <span>@Model.Data.Fax</span>
+
+            <br>
+
+            <span class="cardCode">客户名称 :</span>
+
+            <span class="cardInput" style="width: 615px;display:inline-block">@Model.Data.CardName</span>
+
+        </div>
+
+        <div class="customerDetailMsg">
+
+
+
+            <div class="customerDetail_left">
+
+
+
+
+
+                <span class="cardCode">客户地址 :</span> <br>
+
+                <span class="cardInput" style="display:inline-block;padding-left: 5px;">@Model.Data.Address</span>
+
+
+
+                <br>
+
+                <span class="cardCode" style="display: inline-block;width: 58px;margin-top: 10px;">联系人: </span>
+
+                <span class="remarkInput">@Model.Data.Name</span>
+
+                <span class="cardCode" style="display: inline-block;width: 58px;margin-top: 10px;">电话: </span>
+
+                <span class="remarkInput">@Model.Data.Tel</span>
+
+            </div>
+
+            <div class="customerDetail_right">
+
+                <span class="cardCode">供方地址 :</span> <br>
+
+                <span class="cardInput" style="display:inline-block;padding-left: 5px;">@Model.Data.Address2</span> <br>
+
+                <span class="cardCode" style="display: inline-block;width: 58px;margin-top: 10px;">联系人: </span>
+
+                <span class="remarkInput">@Model.Data.SalseName</span>
+
+                <span class="cardCode" style="display: inline-block;width: 58px;margin-top: 10px;">电话: </span>
+
+                <span class="remarkInput">@Model.Data.Cellolar</span>
+
+            </div>
+
+        </div>
+
+        <div class="customerMar">
+
+            <div class="customerDetail">
+
+                <span class="cardCode">交货日期 :</span>
+
+                <span class="cardInput" style="display:inline-block">@Model.Data.DATEFORMAT</span>
+
+                <span class="cardCode" style="margin-left: 80px;">交货方式 :</span>
+
+                <span class="cardInput" style="display:inline-block">物流</span>
+
+                <span class="cardCode" style="margin-left: 60px;">付款条件 :</span>
+
+                <span class="cardInput" style="display:inline-block">@Model.Data.PymntGroup</span>
+
+                <br>
+
+                <span class="cardCode" style="display: inline-block;width: 58px;margin-top: 10px;">备注 </span>:
+
+                <span class="remarkInput">@Model.Data.Comments</span>
+
+
+
+            </div>
+
+
+
+        </div>
+
+
+
+        <!-- <hr> -->
+
+        <div class="customerMar_">
+
+            <div style="border-bottom:1px dashed #000;">
+
+                <span class="index">#</span>
+
+                <span class="wlCode">物料编码</span>
+
+                <span class="wlDsc">物料描述</span>
+
+                <span class="num">数量</span>
+
+                <span class="type">单位</span>
+
+                <span class="onePrice">单价</span>
+
+                <span class="prvePrice">金额</span>
+
+
+
+            </div>
+
+        </div>
+
+    </header>
+
+</body>
+
+
+
+</html>

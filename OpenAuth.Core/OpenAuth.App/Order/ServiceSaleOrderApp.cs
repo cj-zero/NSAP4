@@ -35,6 +35,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using System.Net.Http.Headers;
 using Infrastructure.Export;
+using DinkToPdf;
 
 namespace OpenAuth.App.Order
 {
@@ -3877,7 +3878,7 @@ namespace OpenAuth.App.Order
             }
         }
         public async Task<byte[]> ExportShow(string sboid, string DocEntry)
-        {
+           {
             DataTable dtb = ExportViewNos(sboid, DocEntry);
             DataTable dtbs = ExportViews(sboid, DocEntry);
             var logopath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
@@ -3925,7 +3926,46 @@ namespace OpenAuth.App.Order
                 };
                 PrintSalesQuotation.ReimburseCosts.Add(scon);
             }
-            return await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesQuotation.cshtml");
+            var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesQuotationheader.html");
+            var text = System.IO.File.ReadAllText(url);
+            text = text.Replace("@Model.Data.logo", PrintSalesQuotation.logo);
+            text = text.Replace("@Model.Data.DocEntry", PrintSalesQuotation.DocEntry);
+            text = text.Replace("@Model.Data.DateTime", PrintSalesQuotation.DateTime);
+            text = text.Replace("@Model.QRcode", PrintSalesQuotation.QRcode);
+            text = text.Replace("@Model.Data.SalseName", PrintSalesQuotation.SalseName);
+            text = text.Replace("@Model.Data.CardCode", PrintSalesQuotation.CardCode);
+            text = text.Replace("@Model.Data.Name", PrintSalesQuotation.Name);
+            text = text.Replace("@Model.Data.Tel", PrintSalesQuotation.Tel);
+            text = text.Replace("@Model.Data.Fax", PrintSalesQuotation.Fax);
+            text = text.Replace("@Model.Data.CardName", PrintSalesQuotation.CardName);
+            text = text.Replace("@Model.Data.Address", PrintSalesQuotation.Address);
+            text = text.Replace("@Model.Data.Name", PrintSalesQuotation.Name);
+            text = text.Replace("@Model.Data.Address2", PrintSalesQuotation.Address2);
+            text = text.Replace("@Model.Data.SalseName", PrintSalesQuotation.SalseName);
+            text = text.Replace("@Model.Data.Cellolar", PrintSalesQuotation.Cellolar);
+            text = text.Replace("@Model.Data.DATEFORMAT", PrintSalesQuotation.DATEFORMAT);
+            text = text.Replace("@Model.Data.PymntGroup", PrintSalesQuotation.PymntGroup);
+            text = text.Replace("@Model.Data.Comments", PrintSalesQuotation.Comments);
+            var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesQuotationheader{PrintSalesQuotation.DocEntry}.html");
+            System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
+            var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesQuotationfooter.html");
+            var foottext = System.IO.File.ReadAllText(footUrl);
+            //foottext = foottext.Replace("@Model.User", loginContext.User.Name);
+            var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesQuotationfooter{PrintSalesQuotation.DocEntry}.html");
+            System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
+            byte[] basecode= await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesQuotation.cshtml", pdf =>
+            {
+                pdf.Orientation = Orientation.Portrait;
+                pdf.IsWriteHtml = true;
+                pdf.PaperKind = PaperKind.A4;
+                pdf.IsEnablePagesCount = true;
+                pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl, Right = "[page]/[toPage]" };
+            });
+            System.IO.File.Delete(tempUrl);
+            System.IO.File.Delete(foottempUrl);
+            return basecode;
+          
         }
         /// <summary>
         /// 销售报价单主数据导出
