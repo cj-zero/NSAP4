@@ -2836,7 +2836,7 @@ namespace OpenAuth.App.Material
             var model = await UnitWork.Find<Quotation>(q => q.Id.Equals(quotationId)).Include(q => q.QuotationMergeMaterials).Include(q => q.QuotationOperationHistorys).FirstOrDefaultAsync();
             var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_AcquisitionWay") || u.TypeId.Equals("SYS_DeliveryMethod")).Select(u => new { u.Name, u.TypeId, u.DtValue, u.Description }).ToListAsync();
-
+            //动态生成临时页头
             var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Quotationheader.html");
             var text = System.IO.File.ReadAllText(url);
             text = text.Replace("@Model.QuotationId", model.Id.ToString());
@@ -2856,10 +2856,16 @@ namespace OpenAuth.App.Material
             text = text.Replace("@Model.Remark", model?.Remark);
             var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"Quotationheader{model.Id}.html");
             System.IO.File.WriteAllText(tempUrl, text);
+            //动态生成临时页脚
             var footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Quotationfooter.html");
             var footerText = System.IO.File.ReadAllText(footerUrl);
-
-            var specialMaterials = new string[] { "S111-SERVICE-GSF-SM", "S111-SERVICE-GSF-JH", "S111-SERVICE-CLF" }; //上门维修费、寄回维修费、差旅费数量显示为1,单价等于总价
+            var invoiceCompany = await UnitWork.Find<Category>(c => c.TypeId == "SYS_InvoiceCompany" && c.DtValue == model.InvoiceCompany).FirstOrDefaultAsync();
+            footerText = footerText.Replace("@Model.Company", invoiceCompany?.Name);
+            footerText = footerText.Replace("@Model.Address", invoiceCompany?.Description);
+            var tempFooterUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"Quotationfooter{model.Id}.html");
+            System.IO.File.WriteAllText(tempFooterUrl, footerText);
+            //上门维修费、寄回维修费、差旅费数量显示为1,单价等于总价
+            var specialMaterials = new string[] { "S111-SERVICE-GSF-SM", "S111-SERVICE-GSF-JH", "S111-SERVICE-CLF" }; 
             var materials = model.QuotationMergeMaterials.Select(q => new PrintSalesOrderResp
             {
                 MaterialCode = q.MaterialCode,
@@ -2869,16 +2875,19 @@ namespace OpenAuth.App.Material
                 SalesPrice = specialMaterials.Contains(q.MaterialCode) ? (decimal)q.TotalPrice : (q.MaterialType == 1 ? 0.00M : (decimal)q.DiscountPrices),
                 TotalPrice = q.MaterialType == 1 ? 0.00M : (decimal)q.TotalPrice
             }).OrderBy(q => q.MaterialCode).ToList();
-
+            //打印
             var datas = await ExportAllHandler.Exporterpdf(materials, "PrintQuotation.cshtml", pdf =>
             {
                 pdf.IsWriteHtml = true;
                 pdf.PaperKind = PaperKind.A4;
                 pdf.Orientation = Orientation.Portrait;
                 pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
-                pdf.FooterSettings = new FooterSettings() { HtmUrl = footerUrl };
+                pdf.FooterSettings = new FooterSettings() { HtmUrl = tempFooterUrl };
             });
+            //删除临时文件
             System.IO.File.Delete(tempUrl);
+            System.IO.File.Delete(tempFooterUrl);
+
             return datas;
         }
 

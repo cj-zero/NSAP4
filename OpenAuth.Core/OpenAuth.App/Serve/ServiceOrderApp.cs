@@ -279,6 +279,49 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 统计服务单的状态(待确认,已确认,已取消)数量及占比
+        /// 查询条件可选:日期范围、客户、售后主管
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<dynamic> GetServiceCallConfirmStatistics(QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            //查询服务单的数据,按确认状态分类
+            var serviceData = UnitWork.Find<ServiceOrder>(null)
+                .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null,
+                            s => s.CreateTime >= req.QryCreateTimeFrom && s.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), s => s.CustomerName.Contains(req.QryCustomer) || s.CustomerId.Contains(req.QryCustomer))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), s => s.Supervisor == req.QrySupervisor)
+                            .GroupBy(s => s.Status)
+                            .Select(g => new
+                            {
+                                g.Key,
+                                count = g.Count()
+                            });
+            //在字典中查询服务单的各个状态
+            var states = await UnitWork.Find<Category>(c => c.TypeId == "SYS_ServiceOrderStatus" && !string.IsNullOrWhiteSpace(c.DtValue))
+                            .Select(x => new { x.DtValue, x.Name }).ToListAsync();
+            //服务单总数
+            var totalCount = serviceData.Sum(x => x.count);
+            //在查询无数据的时候,数量和百分比显示为0
+            var data = from s in states
+                       join sd in serviceData on int.Parse(s.DtValue) equals sd.Key into temp
+                       from t in temp.DefaultIfEmpty()
+                       select new
+                       {
+                           s.Name,
+                           count = t == null ? 0 : t.count,
+                           percent = t == null ? "0.00%" : ((decimal)t.count / totalCount).ToString("P2") //保留两位小数
+                       };
+
+            result.Data = data;
+            result.Count = totalCount;
+
+            return result;
+        }
+
+        /// <summary>
         /// 待确认服务申请信息
         /// </summary>
         /// <param name="id"></param>
@@ -1411,6 +1454,51 @@ namespace OpenAuth.App
 
             result.Data = data;
             result.Count = totalCount;
+
+            return result;
+        }
+
+        /// <summary>
+        /// 统计未处理的订单中,从建单到现在经过了多长时间
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetUnFinishServiceCallProcessingTime(QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+
+            var serviceData = await (from so in UnitWork.Find<ServiceOrder>(null)
+                                     join sw in UnitWork.Find<ServiceWorkOrder>(null)
+                                     on so.Id equals sw.ServiceOrderId
+                                     where so.VestInOrg == 1 && so.Status == 2 && sw.Status < 7
+                                     select new
+                                     {
+                                         so.Id,
+                                         so.U_SAP_ID,
+                                         sw.WorkOrderNumber,
+                                         sw.CreateTime,
+                                         ProcessingTime = (DateTime.Now - sw.CreateTime).Value.TotalDays
+                                     }).ToListAsync();
+
+            var data = serviceData.GroupBy(q =>
+                    (q.ProcessingTime <= 1) ? "less1" :
+                    (q.ProcessingTime > 1 && q.ProcessingTime <= 3) ? "d2-3" :
+                    (q.ProcessingTime > 3 && q.ProcessingTime <= 5) ? "d4-5" :
+                    (q.ProcessingTime > 5 && q.ProcessingTime <= 8) ? "d6-8" :
+                    (q.ProcessingTime > 8 && q.ProcessingTime <= 12) ? "d9-12" :
+                    (q.ProcessingTime > 12 && q.ProcessingTime <= 15) ? "d13-15" :
+                    (q.ProcessingTime > 15 && q.ProcessingTime <= 18) ? "d16-18" :
+                    (q.ProcessingTime > 18) ? "more18" : ""
+                )
+                .Select(g => new
+                {
+                    g.Key,
+                    count = g.Count(),
+                    lists = g.Select(x => new { x.U_SAP_ID, x.WorkOrderNumber, x.CreateTime })
+                });
+
+            result.Data = data;
+            result.Count = serviceData.Count;
 
             return result;
         }
