@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -62,8 +63,8 @@
             vertical-align: top;
         }
     /* body {
-                    font-family: STSong Microsoft YaHei;
-                } */
+                                    font-family: STSong Microsoft YaHei;
+                                } */
 
     #container {
         position: relative;
@@ -81,11 +82,11 @@
         width: 100%
     }
         /*
-                    footer hr {
-                        height: 2px;
-                        background-color: #000;
-                        border: none
-                    }*/
+                                    footer hr {
+                                        height: 2px;
+                                        background-color: #000;
+                                        border: none
+                                    }*/
 
         footer .footer-title h1 {
             font-size: 13px;
@@ -592,7 +593,11 @@
         @foreach (var item in Model.Data.BomCost)
         {
             <div style="width: 1100px; height: 18px; font-weight: 400;border: 1px solid #000; ">
-                <span style="border-right: 1px solid #000;font-weight: 400;line-height: 18px; color: #000;width: 50px;display: inline-block;text-align: center;"> @{++number;} @number</span>
+                <span style="border-right: 1px solid #000;font-weight: 400;line-height: 18px; color: #000;width: 50px;display: inline-block;text-align: center;">
+                    @{
+                        ++number;
+                    } @number
+                </span>
                 <span style="border-right: 1px solid #000;font-weight: 400;line-height: 18px; color: #000;width: 64px;display: inline-block;">@item.ItemTypeName</span>
                 <span style="border-right: 1px solid #000;font-weight: 400;line-height: 18px; color: #000;width: 90px;display: inline-block;">@item.ItemCode</span>
                 <span style="border-right: 1px solid #000;font-weight: 400;line-height: 18px; color: #000;width: 223px;display: inline-block;">@item.ItemName</span>

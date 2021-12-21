@@ -83,16 +83,16 @@
 
         .productList:last-child div {
             /* border-top: 1px solid #000; */
-            border-bottom: 1px solid #000;
-            border-left: 1px solid #000;
-            border-right: 1px solid #000;
+            /* border-bottom: 1px solid #000;
+                    border-left: 1px solid #000;
+                    border-right: 1px solid #000;*/
         }
         /*
-                                    footer hr {
-                                        height: 2px;
-                                        background-color: #000;
-                                        border: none
-                                    }*/
+                                                    footer hr {
+                                                        height: 2px;
+                                                        background-color: #000;
+                                                        border: none
+                                                    }*/
 
         footer .footer-title h1 {
             font-size: 13px;
@@ -354,29 +354,32 @@
     </style>
 </head>
 <body>
-    @{
-        int number = 0;
-    }
-    @foreach (var item in Model.Data.ReimburseCosts)
-    {
-        <div class="productList" style="width: 1002px; font-weight: 400; ">
+    <div class="productList" style="width: 1002px; font-weight: 400; ">
+        @{
+            int number = 0;
+        }
+        @foreach (var item in Model.Data.ReimburseCosts)
+        {
+
             <div>
-                <span class="index_">@{
+                <span class="index_">
+                    @{
                         ++number;
-                    } @number</span>
-                <span class="wlCode_">&nbsp; @item.ItemCode</span>
-                <span class="wlDsc_">&nbsp; @item.Dscription</span>
-                <span class="num_">&nbsp; @item.Quantity</span>
-                <span class="type_">&nbsp; @item.unitMsr</span>
-                <span class="onePrice_">&nbsp; @item.Price</span>
-                <span class="prvePrice_">&nbsp; @item.Money</span>
+                    } @number
+                </span>
+                <span class="wlCode_">@item.ItemCode</span>
+                <span class="wlDsc_">@item.Dscription</span>
+                <span class="num_">@item.Quantity</span>
+                <span class="type_"> @item.unitMsr</span>
+                <span class="onePrice_">@item.Price</span>
+                <span class="prvePrice_"> @item.Money</span>
             </div>
 
 
-            <div style="font-weight: 800;" align="right">总金额 : @Model.Data.DocTotal &nbsp;</div>
-        </div>
-    }
 
+        }
+      
+    </div>
 
 </body>
 

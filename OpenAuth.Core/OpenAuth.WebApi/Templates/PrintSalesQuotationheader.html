@@ -289,17 +289,22 @@
 
         .customerDetailMsg {
             width: 998px;
+            /* height: ; */
+
             margin-top: 5px;
-            display: flex;
-            flex: 1;
+            margin-bottom: 10px;
+            /* display: flex;
+
+            flex: 1; */
         }
 
 
 
         .customerDetail_left {
-            width: 50%;
-            /* height: 0px; */
+            width: 497px;
             float: left;
+            /* height: 0px; */
+
             border: 1px solid #000;
             border-right: none;
             padding: 10px 0 0 0;
@@ -309,7 +314,8 @@
 
 
         .customerDetail_right {
-            width: 50%;
+            width: 498px;
+            float: right;
             /* height: 0px; */
 
             padding: 10px 0 0 0;
@@ -340,7 +346,9 @@
 
         .customerMar {
             width: 1000px;
-            margin-top: 5px
+            /* margin-top: 10px; */
+
+            clear: both;
         }
 
 
@@ -375,7 +383,7 @@
 
             <div style="float:left;width: 240px; margin-top: 20px;">
 
-                <img src="@Model.Data.logo" color="#6F6F6F" style="width: 120px;height: 45px;margin-left:20px">
+                <img src="data:image/png;base64,@Model.Data.logo" color="#6F6F6F" style="width: 120px;height: 45px;margin-left:20px">
 
             </div>
 
@@ -443,13 +451,7 @@
 
         <div class="customerDetailMsg">
 
-
-
             <div class="customerDetail_left">
-
-
-
-
 
                 <span class="cardCode">客户地址 :</span> <br>
 
@@ -486,6 +488,8 @@
             </div>
 
         </div>
+
+        <div style="height: 5px;width: 100px;clear: both;"></div>
 
         <div class="customerMar">
 

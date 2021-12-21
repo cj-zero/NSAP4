@@ -3931,7 +3931,7 @@ namespace OpenAuth.App.Order
             text = text.Replace("@Model.Data.logo", PrintSalesQuotation.logo);
             text = text.Replace("@Model.Data.DocEntry", PrintSalesQuotation.DocEntry);
             text = text.Replace("@Model.Data.DateTime", PrintSalesQuotation.DateTime);
-            text = text.Replace("@Model.QRcode", PrintSalesQuotation.QRcode);
+            text = text.Replace("@Model.Data.QRcode", PrintSalesQuotation.QRcode);
             text = text.Replace("@Model.Data.SalseName", PrintSalesQuotation.SalseName);
             text = text.Replace("@Model.Data.CardCode", PrintSalesQuotation.CardCode);
             text = text.Replace("@Model.Data.Name", PrintSalesQuotation.Name);
@@ -3950,7 +3950,7 @@ namespace OpenAuth.App.Order
             System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
             var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesQuotationfooter.html");
             var foottext = System.IO.File.ReadAllText(footUrl);
-            //foottext = foottext.Replace("@Model.User", loginContext.User.Name);
+            foottext = foottext.Replace("@Model.Data.DocTotal", PrintSalesQuotation.DocTotal);
             var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesQuotationfooter{PrintSalesQuotation.DocEntry}.html");
             System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
             byte[] basecode= await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesQuotation.cshtml", pdf =>
@@ -3960,7 +3960,7 @@ namespace OpenAuth.App.Order
                 pdf.PaperKind = PaperKind.A4;
                 pdf.IsEnablePagesCount = true;
                 pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
-                pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl, Right = "[page]/[toPage]" };
+                pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
             });
             System.IO.File.Delete(tempUrl);
             System.IO.File.Delete(foottempUrl);
