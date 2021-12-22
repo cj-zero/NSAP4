@@ -75,36 +75,33 @@ namespace OpenAuth.App
             //    .Where(o => o.IsFinish == 1 && o.SchemeId == mf.FlowSchemeId)//校准证书已结束流程
             //    .ToListAsync();
             var fs = await UnitWork.Find<FlowInstance>(null)
-                .Where(o => o.SchemeId == mf.FlowSchemeId  && (o.ActivityName.Contains("已完成") || o.IsFinish==1))//校准证书已完成流程,IsFinish==1为流程改动前真实结束的数据
+                .Where(o => o.SchemeId == mf.FlowSchemeId && (o.ActivityName.Contains("已完成") || o.IsFinish == 1))//校准证书已完成流程,IsFinish==1为流程改动前真实结束的数据
+                .Select(o => new { o.Id, o.ActivityName, o.IsFinish })
                 .ToListAsync();
             var fsid = fs.Select(f => f.Id).ToList();
             var result = new TableData();
-            var certObjs = UnitWork.Find<NwcaliBaseInfo>(null);
-            certObjs = certObjs
+            var certObjs = UnitWork.Find<NwcaliBaseInfo>(null)
                        .Where(o => fsid.Contains(o.FlowInstanceId))
                        .WhereIf(!string.IsNullOrEmpty(request.CertNo), u => u.CertificateNumber.Contains(request.CertNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.AssetNo), u => u.AssetNo.Contains(request.AssetNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Model), u => u.TesterModel.Contains(request.Model))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.TesterSn.Contains(request.Sn))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), u => u.Operator.Contains(request.Operator))
-                       .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.Time >= request.CalibrationDateFrom && u.Time <= request.CalibrationDateTo)
+                       .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.Time >= request.CalibrationDateFrom && u.Time <= request.CalibrationDateTo);
                 ;
             var certList = await certObjs.OrderByDescending(u => u.CreateTime)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
 
-            certList.ForEach(c =>
-            {
-                c.FlowInstance = fs.Find(f => f.Id.Equals(c.FlowInstanceId));
-            });
             var view = certList.Select(c =>
             {
+                var flowinstance = fs.Find(f => f.Id.Equals(c.FlowInstanceId));
                 return new CertinfoView
                 {
                     Id = c.Id,
                     CertNo = c.CertificateNumber,
-                    ActivityName = c.FlowInstance?.ActivityName,
-                    IsFinish = c.FlowInstance?.IsFinish,
+                    ActivityName = flowinstance?.ActivityName,
+                    IsFinish = flowinstance?.IsFinish,
                     CreateTime = c.CreateTime,
                     AssetNo = c.AssetNo,
                     CalibrationDate = c.Time,
@@ -118,16 +115,15 @@ namespace OpenAuth.App
             var certCount1 = await certObjs.CountAsync();
             result.Count = certCount1;
             #region 旧数据
-            var objs = UnitWork.Find<Certinfo>(null);
-            objs = objs
-                       .Where(o => fsid.Contains(o.FlowInstanceId))
+            var objs = UnitWork.Find<Certinfo>(null)
+                        .Where(o => fsid.Contains(o.FlowInstanceId))
                        .WhereIf(!string.IsNullOrEmpty(request.CertNo), u => u.CertNo.Contains(request.CertNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.AssetNo), u => u.AssetNo.Contains(request.AssetNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Model), u => u.Model.Contains(request.Model))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.Sn.Contains(request.Sn))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), u => u.Operator.Contains(request.Operator))
-                       .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.CalibrationDate >= request.CalibrationDateFrom && u.CalibrationDate <= request.CalibrationDateTo)
-                ;
+                       .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.CalibrationDate >= request.CalibrationDateFrom && u.CalibrationDate <= request.CalibrationDateTo);
+                       
             var take = certList.Count == 0 ? request.limit : request.limit - certList.Count;
             var page = certCount1 / request.limit;
             var skip = certList.Count == 0 ? (request.page - page) * request.limit : 0;
@@ -137,19 +133,17 @@ namespace OpenAuth.App
                 var list = await objs.OrderByDescending(u => u.CreateTime)
                     .Skip(skip)
                     .Take(take).ToListAsync();
-                list.ForEach(c =>
-                {
-                    c.FlowInstance = fs.Find(f => f.Id.Equals(c.FlowInstanceId));
-                });
+
                 var view2 = list.Select(c =>
                 {
+                    var flowinstance = fs.Find(f => f.Id.Equals(c.FlowInstanceId));
                     return new CertinfoView
                     {
                         Id = c.Id,
                         CertNo = c.CertNo,
                         EncryptCertNo = Encryption.Encrypt(c.CertNo),
-                        ActivityName = c.FlowInstance?.ActivityName,
-                        IsFinish = c.FlowInstance?.IsFinish,
+                        ActivityName = flowinstance?.ActivityName,
+                        IsFinish = flowinstance?.IsFinish,
                         CreateTime = c.CreateTime,
                         AssetNo = c.AssetNo,
                         CalibrationDate = c.CalibrationDate,
@@ -601,10 +595,11 @@ namespace OpenAuth.App
                     .Select(c=>new NwcaliBaseInfo {TesterSn=c.MnfSerial,TesterModel=c.ItemCode }).ToListAsync();
 
                 var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("校准证书"));
-                var fs = await UnitWork.Find<FlowInstance>(null)
+                var fsid = await UnitWork.Find<FlowInstance>(null)
                     .Where(o => o.SchemeId == mf.FlowSchemeId && (o.ActivityName.Contains("已完成") || o.IsFinish == 1))//校准证书已完成流程,IsFinish==1为流程改动前真实结束的数据
+                    .Select(o => o.Id)
                     .ToListAsync();
-                var fsid = fs.Select(f => f.Id).ToList();
+                //var fsid = fs.Select(f => f.Id).ToList();
 
                 var cerlist = await UnitWork.Find<NwcaliBaseInfo>(o => fsid.Contains(o.FlowInstanceId)).ToListAsync();
                 var test= cerlist.OrderByDescending(c => c.Time).GroupBy(c => c.TesterSn).Select(c => c.First()).ToList();
@@ -682,10 +677,11 @@ namespace OpenAuth.App
             else if (request.PageStatus == 3)//证书列表
             {
                 var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("校准证书"));
-                var fs = await UnitWork.Find<FlowInstance>(null)
+                var fsid = await UnitWork.Find<FlowInstance>(null)
                     .Where(o => o.SchemeId == mf.FlowSchemeId && (o.ActivityName.Contains("已完成") || o.IsFinish == 1))//校准证书已完成流程,IsFinish==1为流程改动前真实结束的数据
+                    .Select(c => c.Id)
                     .ToListAsync();
-                var fsid = fs.Select(f => f.Id).ToList();
+                //var fsid = fs.Select(f => f.Id).ToList();
 
                 var cerinfo = await UnitWork.Find<NwcaliBaseInfo>(o=>fsid.Contains(o.FlowInstanceId))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers), c => c.TesterSn.Equals(request.ManufacturerSerialNumbers))
