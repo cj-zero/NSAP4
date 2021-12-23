@@ -9697,7 +9697,6 @@ namespace OpenAuth.App.Order
                 }
                 //scon.Id = new Guid().ToString();
                 scon.FilePath = host + FileHelper.FilePath.VirtualPath + fileName;
-                scon.FileUpdateTime = DateTime.Now;
                 scon.FileType = suffix;
                 scon.CreateUserName = loginUser.Name;
                 result.Add(scon);

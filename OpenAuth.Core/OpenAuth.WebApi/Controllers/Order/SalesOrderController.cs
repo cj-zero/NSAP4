@@ -274,6 +274,89 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
         }
         #endregion
-       
+        #region 确认是否取消
+        /// <summary>
+        /// 确认是否取消
+        /// </summary>
+        /// <param name="OrderNo"></param>
+        /// <param name="SboId"></param>
+        /// <param name="OrderTitle"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        [HttpGet]
+        [Route("GetPurchaseItemByOrderNo")]
+        public async Task<Response<string>> GetPurchaseItemByOrderNo(string OrderNo, string SboId, string OrderTitle)
+        {
+            var result = new Response<string>();
+            try
+            {
+                result.Result = await _serviceSaleOrderApp.GetPurchaseItemByOrderNo(OrderNo, SboId, OrderTitle);
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error($"地址：{Request.Path}，参数：{OrderNo}， 错误：{ex.Message}");
+                throw new Exception("确认失败！" + ex.ToString());
+            }
+            return result;
+        }
+        #endregion
+
+        #region 取消销售订单
+        /// <summary>
+        /// 取消销售订单
+        /// </summary>
+        /// <param name="DocNum"></param>
+        /// <param name="SboId"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        [HttpGet]
+        [Route("UpdataSalesDoc")]
+        public async Task<Response<bool>> UpdataSalesDoc(string DocNum, string SboId, string type)
+        {
+            var result = new Response<bool>();
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            try
+            {
+                result.Result = _serviceSaleOrderApp.UpdataSalesDoc(DocNum, SboID, type, UserID);
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error($"地址：{Request.Path}，参数：{DocNum}， 错误：{ex.Message}");
+                throw new Exception("取消失败！" + ex.ToString());
+            }
+            return result;
+        }
+        #endregion
+        #region 关闭销售订单
+        /// <summary>
+        /// 关闭销售订单
+        /// </summary>
+        /// <param name="docNum"></param>
+        /// <param name="sboId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("SalesCloseFlow")]
+        public async Task<Response<string>> SalesCloseFlow(string docNum, string sboId)
+        {
+            var result=new Response<string>();
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            try
+            {
+                string funcId = _serviceSaleOrderApp.GetJobTypeByAddress("sales/SalesOrdrFunId.aspx");
+                string jobname = "关闭销售订单";
+                result.Result= _serviceSaleOrderApp.CloseDocFlow(17, int.Parse(docNum), int.Parse(funcId), jobname, UserID, "NSAP.B1Api.BOneORDRClose", sboId);
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error($"地址：{Request.Path}，参数：{docNum}， 错误：{ex.Message}");
+                throw new Exception("关闭失败！" + ex.ToString());
+            }
+            return result;
+        }
+        #endregion
+
     }
 }

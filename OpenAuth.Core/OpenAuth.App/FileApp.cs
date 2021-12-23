@@ -184,7 +184,7 @@ namespace OpenAuth.App
             if (file is null)
                 return null;
             //file.FilePath = Path.Combine(_filePath, file.FilePath);
-            //if (!string.IsNullOrWhiteSpace(file.Thumbnail))
+            //if (!string.IsNullOrWhiteSpace(file.Thu mbnail))
             //{
             //    file.Thumbnail = Path.Combine(_filePath, file.Thumbnail);
             //}
