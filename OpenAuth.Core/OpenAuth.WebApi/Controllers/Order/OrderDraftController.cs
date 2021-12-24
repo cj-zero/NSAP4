@@ -623,6 +623,26 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         /// <summary>
+        /// 加载包材物料数据
+        /// </summary>pp
+        [HttpPost]
+        [Route("PackingMaterialSaleItem")]
+        public async Task<TableData> PackingMaterialSaleItem(ItemRequest request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            request.TypeId = "0";
+            request.IsbillCfg = "1";
+            var result = new TableData();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result = _serviceSaleOrderApp.PackingMaterialSaleItem(request, sboid.ToString());
+            return result;
+        }
+        /// <summary>
         /// 获取物料编码配件信息
         /// </summary>
         /// <param name="ItemCode">item_cfg_id</param>
