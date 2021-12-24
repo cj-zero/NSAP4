@@ -124,5 +124,10 @@ namespace OpenAuth.App.Request
         /// 呼叫来源 -- 1-电话 2-钉钉 3-QQ 4-微信 5-邮件 6-APP 7-Web(在字典中维护)
         /// </summary>
         public string QryFromId { get; set; }
+
+        /// <summary>
+        /// 未完成时间区间
+        /// </summary>
+        public string TimeInterval { get; set; }
     }
 }
