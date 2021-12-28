@@ -57,11 +57,11 @@ namespace OpenAuth.Repository.Extensions
                 var reader = command.ExecuteReader();
                 dt.Load(reader);
                 reader.Close();
-              //  conn.Close();
+                conn.Close();
             }
             catch (Exception ex)
             {
-               // conn.Close();
+                conn.Close();
                 string msg = ex.Message;
                 // throw ex;
             }

@@ -343,7 +343,8 @@ namespace OpenAuth.WebApi.Controllers
             string pathZip = Directory.GetCurrentDirectory() + "/wwwroot/downfile/downfile-" + time + "/";
 
             var num = serialNumber.Split(',').ToList();
-            var bases = await _nwcaliCertApp.GetInfoList(num);
+            //var bases = await _nwcaliCertApp.GetInfoList(num);
+            var bases = await _nwcaliCertApp.GetNwcaliList(num);
             foreach (var baseInfo in bases)
             {
                 //var baseInfo = await _nwcaliCertApp.GetInfo(item);
