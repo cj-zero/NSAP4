@@ -262,6 +262,25 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 获取未完工状态的客诉单
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> LoadServiceOrder()
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+
+            var serviceOrderId = await UnitWork.Find<ServiceWorkOrder>(c => c.Status < 7).Select(c => c.ServiceOrderId).Distinct().ToListAsync();
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => c.VestInOrg == 1 && c.Status==2 && serviceOrderId.Contains(c.Id)).Select(c => new { c.U_SAP_ID, c.Longitude, c.Latitude }).ToListAsync();
+            result.Data = serviceOrder;
+            return result;
+        }
+
+        /// <summary>
         /// 查询技术员轨迹
         /// </summary>
         /// <param name="req"></param>
