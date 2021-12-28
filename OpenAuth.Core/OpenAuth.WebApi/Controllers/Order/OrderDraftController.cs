@@ -623,6 +623,26 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         /// <summary>
+        /// 加载包材物料数据
+        /// </summary>pp
+        [HttpPost]
+        [Route("PackingMaterialSaleItem")]
+        public async Task<TableData> PackingMaterialSaleItem(ItemRequest request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            request.TypeId = "0";
+            request.IsbillCfg = "1";
+            var result = new TableData();
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            result = _serviceSaleOrderApp.PackingMaterialSaleItem(request, sboid.ToString());
+            return result;
+        }
+        /// <summary>
         /// 获取物料编码配件信息
         /// </summary>
         /// <param name="ItemCode">item_cfg_id</param>
@@ -1442,7 +1462,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         #endregion
-        #region
+        #region PDF打印（新）
         /// <summary>
         /// PDF打印（新）
         /// </summary>
@@ -1453,20 +1473,13 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns></returns>
         [HttpGet]
         [Route("ExportShowNew")]
-        public async Task<Response<FileResult>> ExportShow(string sboid, string DocEntry)
+        public async Task<FileResult> ExportShow(string sboid, string DocEntry)
         {
-            var result = new Response<FileResult>();
-            try
-            {
-                result.Result = File(await _serviceSaleOrderApp.ExportShow(sboid, DocEntry), "application/pdf");
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.Message;
-                Log.Logger.Error($"地址：{Request.Path}，参数：{DocEntry}， 错误：{ex.Message}");
-            }
-            return result;
+
+
+            return File(await _serviceSaleOrderApp.ExportShow(sboid, DocEntry), "application/pdf");
+            
+             
         }
         #endregion
         #region 根据页面地址获取FunId.

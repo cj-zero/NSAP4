@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenAuth.App.Order
+namespace OpenAuth.App.Order.ModelDto
 {
     /// <summary>
     /// 销售报价单打印

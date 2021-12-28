@@ -35,6 +35,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using System.Net.Http.Headers;
 using Infrastructure.Export;
+using DinkToPdf;
 
 namespace OpenAuth.App.Order
 {
@@ -954,6 +955,109 @@ namespace OpenAuth.App.Order
                 filterString += string.Format("(m.ItemCode NOT LIKE 'CT%' AND m.ItemCode NOT LIKE 'CE%' AND m.ItemCode NOT LIKE 'CG%') AND ");
             }
             filterString += string.Format("w.WhsCode='{0}' AND m.sbo_id={1} AND ", query.WhsCode == "" ? "01" : query.WhsCode, sboid);
+            if (!string.IsNullOrEmpty(filterString))
+            {
+                filterString = filterString.Substring(0, filterString.Length - 5);
+            }
+            StringBuilder tableName = new StringBuilder();
+            StringBuilder filedName = new StringBuilder();
+            filedName.Append("m.ItemCode,m.ItemName,IFNULL(c.high_price,0) AS high_price,IFNULL(c.low_price,0) AS low_price,w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,(w.OnHand-w.IsCommited+w.OnOrder) AS OnAvailable,");
+            filedName.Append("(m.OnHand-m.IsCommited+m.OnOrder) AS Available,w.WhsCode,IFNULL(U_TDS,'0') AS U_TDS,IFNULL(U_DL,0) AS U_DL,");
+            filedName.Append("IFNULL(U_DY,0) AS U_DY,m.U_JGF,m.LastPurPrc,IFNULL(c.item_cfg_id,0) item_cfg_id,IFNULL(c.pic_path,m.PicturName) pic_path,");
+            filedName.Append("((CASE m.QryGroup1 WHEN 'N' then 0 else 0.5 END)");
+            filedName.Append("+(CASE m.QryGroup2 WHEN 'N' then 0 else 3 END)");
+            filedName.Append("+(CASE m.QryGroup3 WHEN 'N' then 0 else 2 END)) AS QryGroup,c.item_desp,IFNULL(m.U_US,0) U_US,IFNULL(m.U_FS,0) U_FS,m.QryGroup3,m.SVolume,m.SWeight1,");
+            filedName.Append("(CASE m.QryGroup1 WHEN 'N' THEN 0 ELSE '0.5' END) AS QryGroup1,");
+            filedName.Append("(CASE m.QryGroup2 WHEN 'N' THEN 0 ELSE '3' END) AS QryGroup2,");
+            filedName.Append("(CASE m.QryGroup3 WHEN 'N' THEN 0 ELSE '2' END) AS _QryGroup3,m.U_JGF1,IFNULL(m.U_YFCB,'0') U_YFCB,m.MinLevel,m.PurPackUn,c.item_counts,m.buyunitmsr");
+            tableName.AppendFormat(" {0}.store_oitm m", "nsap_bone");
+            tableName.AppendFormat(" LEFT JOIN {0}.store_oitw w ON m.ItemCode = w.ItemCode AND m.sbo_id=w.sbo_id ", "nsap_bone");
+            tableName.AppendFormat(" LEFT JOIN {0}.base_item_cfg c ON m.ItemCode = c.ItemCode AND type_id={1} ", "nsap_bone", query.TypeId);
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pTableName",tableName.ToString()),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pFieldName",filedName.ToString()),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pPageSize",query.limit),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pPageIndex",query.page),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pStrOrder",sortString),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pStrWhere",filterString)
+            };
+            MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter isStats = new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("@pIsTotal", SqlDbType.Int);
+            isStats.Value = 1;
+            sqlParameters.Add(isStats);
+            MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter paramOut = new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("@rowsCount", SqlDbType.Int);
+            paramOut.Value = 0;
+            paramOut.Direction = ParameterDirection.Output;
+            sqlParameters.Add(paramOut);
+            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"nsap_base.sp_common_pager", CommandType.StoredProcedure, sqlParameters);
+            DataTable dtsbo = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM nsap_base.sbo_info WHERE sbo_id={sboid}", CommandType.Text, null); ;
+            string IsOpen = "0";
+            if (dtsbo.Rows.Count > 0)
+            {
+                IsOpen = dtsbo.Rows[0]["is_open"].ToString();
+            }
+            if (IsOpen == "1")
+            {
+                foreach (DataRow tempr in dt.Rows)
+                {
+                    string tempsql = string.Format(@"select w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,(w.OnHand-w.IsCommited+w.OnOrder) AS OnAvailable,(m.OnHand-m.IsCommited+m.OnOrder) AS Available 
+                                              from OITM M LEFT OUTER JOIN OITW W ON m.ItemCode = w.ItemCode where m.ItemCode='{0}' and w.WhsCode={1}", tempr["ItemCode"].ToString().FilterWildCard(), tempr["WhsCode"].ToString());
+                    DataTable tempt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, tempsql, CommandType.Text, null);
+                    if (tempt.Rows.Count > 0)
+                    {
+                        tempr["OnHand"] = tempt.Rows[0]["OnHand"] == null ? 0 : tempt.Rows[0]["OnHand"];
+                        tempr["SumOnHand"] = tempt.Rows[0]["SumOnHand"] == null ? 0 : tempt.Rows[0]["SumOnHand"];
+                        tempr["IsCommited"] = tempt.Rows[0]["IsCommited"] == null ? 0 : tempt.Rows[0]["IsCommited"];
+                        tempr["OnOrder"] = tempt.Rows[0]["OnOrder"] == null ? 0 : tempt.Rows[0]["OnOrder"];
+                        tempr["OnAvailable"] = tempt.Rows[0]["OnAvailable"] == null ? 0 : tempt.Rows[0]["OnAvailable"];
+                        tempr["Available"] = tempt.Rows[0]["Available"] == null ? 0 : tempt.Rows[0]["Available"];
+                    }
+                }
+            }
+            tableData.Data = dt.Tolist<SaleItemDto>();
+            tableData.Count = Convert.ToInt32(paramOut.Value);
+            return tableData;
+        }
+        /// <summary>
+        /// 包材物料数据获取
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="sboid"></param>
+        /// <returns></returns>
+        public TableData PackingMaterialSaleItem(ItemRequest query, string sboid)
+        {
+            TableData tableData = new TableData();
+            string sortString = string.Empty;
+            string filterString = string.Empty;
+            if (!string.IsNullOrEmpty(query.SortName) && !string.IsNullOrEmpty(query.SortOrder))
+            {
+                sortString = string.Format("{0} {1}", query.SortName.Replace("itemcode", "m.itemcode"), query.SortOrder.ToUpper());
+            }
+            if (!string.IsNullOrEmpty(query.ItemCode))
+            {
+                filterString += string.Format("(m.ItemCode LIKE '%{0}%' OR m.ItemName LIKE '%{0}%') AND ", query.ItemCode.FilterWildCard());
+            }
+            filterString += string.Format("(m.ItemCode LIKE '%{0}%' OR ", "F02-003-BTS-1U");
+            filterString += string.Format("m.ItemCode LIKE '%{0}%'  OR ", "F02-003-BTS-3U");
+            filterString += string.Format("m.ItemCode LIKE '%{0}%' OR ", "F02-003-BTS-3U3F-MX");
+            filterString += string.Format("m.ItemCode LIKE '%{0}%' OR ", "F02-003-BTS-6U");
+            filterString += string.Format("m.ItemCode LIKE '%{0}%' OR ", "F02-003-BVIR");
+            filterString += string.Format("m.ItemCode LIKE '%{0}%' OR ", "F02-003-QPD-280-780");
+            filterString += string.Format("m.ItemCode LIKE '%{0}%' OR ", "F02-003-QZD-1U");
+            filterString += string.Format("m.ItemCode LIKE '%{0}%' OR ", "F02-003-QZD-3U");
+            filterString += string.Format("m.ItemCode LIKE '%{0}%' OR ", "F02-003-ZZM");
+            filterString += string.Format("m.ItemCode LIKE '%{0}%' OR ", "F02-003-ZZM-1U");
+            filterString += string.Format("m.ItemCode LIKE '%{0}%' OR ", "E03-LBD");
+            filterString += string.Format("m.ItemCode LIKE '%{0}%' ) AND ", "F02-003-ZZM-BVIR");
+            if (query.TypeId == "1")
+            {
+                filterString += string.Format("(m.ItemCode NOT LIKE 'CT%') AND ");
+            }
+            if (query.TypeId == "2")
+            {
+                filterString += string.Format("(m.ItemCode NOT LIKE 'CT%' AND m.ItemCode NOT LIKE 'CE%' AND m.ItemCode NOT LIKE 'CG%') AND ");
+            }
+            filterString += string.Format("  m.sbo_id={0} AND ",  sboid);
             if (!string.IsNullOrEmpty(filterString))
             {
                 filterString = filterString.Substring(0, filterString.Length - 5);
@@ -3877,7 +3981,7 @@ namespace OpenAuth.App.Order
             }
         }
         public async Task<byte[]> ExportShow(string sboid, string DocEntry)
-        {
+           {
             DataTable dtb = ExportViewNos(sboid, DocEntry);
             DataTable dtbs = ExportViews(sboid, DocEntry);
             var logopath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
@@ -3925,7 +4029,46 @@ namespace OpenAuth.App.Order
                 };
                 PrintSalesQuotation.ReimburseCosts.Add(scon);
             }
-            return await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesQuotation.cshtml");
+            var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesQuotationheader.html");
+            var text = System.IO.File.ReadAllText(url);
+            text = text.Replace("@Model.Data.logo", PrintSalesQuotation.logo);
+            text = text.Replace("@Model.Data.DocEntry", PrintSalesQuotation.DocEntry);
+            text = text.Replace("@Model.Data.DateTime", PrintSalesQuotation.DateTime);
+            text = text.Replace("@Model.Data.QRcode", PrintSalesQuotation.QRcode);
+            text = text.Replace("@Model.Data.SalseName", PrintSalesQuotation.SalseName);
+            text = text.Replace("@Model.Data.CardCode", PrintSalesQuotation.CardCode);
+            text = text.Replace("@Model.Data.Name", PrintSalesQuotation.Name);
+            text = text.Replace("@Model.Data.Tel", PrintSalesQuotation.Tel);
+            text = text.Replace("@Model.Data.Fax", PrintSalesQuotation.Fax);
+            text = text.Replace("@Model.Data.CardName", PrintSalesQuotation.CardName);
+            text = text.Replace("@Model.Data.Address", PrintSalesQuotation.Address);
+            text = text.Replace("@Model.Data.Name", PrintSalesQuotation.Name);
+            text = text.Replace("@Model.Data.Address2", PrintSalesQuotation.Address2);
+            text = text.Replace("@Model.Data.SalseName", PrintSalesQuotation.SalseName);
+            text = text.Replace("@Model.Data.Cellolar", PrintSalesQuotation.Cellolar);
+            text = text.Replace("@Model.Data.DATEFORMAT", PrintSalesQuotation.DATEFORMAT);
+            text = text.Replace("@Model.Data.PymntGroup", PrintSalesQuotation.PymntGroup);
+            text = text.Replace("@Model.Data.Comments", PrintSalesQuotation.Comments);
+            var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesQuotationheader{PrintSalesQuotation.DocEntry}.html");
+            System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
+            var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesQuotationfooter.html");
+            var foottext = System.IO.File.ReadAllText(footUrl);
+            foottext = foottext.Replace("@Model.Data.DocTotal", PrintSalesQuotation.DocTotal);
+            var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesQuotationfooter{PrintSalesQuotation.DocEntry}.html");
+            System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
+            byte[] basecode= await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesQuotation.cshtml", pdf =>
+            {
+                pdf.Orientation = Orientation.Portrait;
+                pdf.IsWriteHtml = true;
+                pdf.PaperKind = PaperKind.A4;
+                pdf.IsEnablePagesCount = true;
+                pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
+            });
+            System.IO.File.Delete(tempUrl);
+            System.IO.File.Delete(foottempUrl);
+            return basecode;
+          
         }
         /// <summary>
         /// 销售报价单主数据导出
@@ -9657,7 +9800,6 @@ namespace OpenAuth.App.Order
                 }
                 //scon.Id = new Guid().ToString();
                 scon.FilePath = host + FileHelper.FilePath.VirtualPath + fileName;
-                scon.FileUpdateTime = DateTime.Now;
                 scon.FileType = suffix;
                 scon.CreateUserName = loginUser.Name;
                 result.Add(scon);

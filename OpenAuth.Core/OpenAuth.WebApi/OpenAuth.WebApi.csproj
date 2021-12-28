@@ -31,11 +31,19 @@
   <ItemGroup>
     <None Remove="Templates\InternalContactHeader.html" />
     <None Remove="Templates\PrintInternalContact.html" />
+    <None Remove="Templates\PrintSalesQuotationfooter.html" />
+    <None Remove="Templates\PrintSalesQuotationheader.html" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="Templates\InternalContactHeader.html" />
     <Content Include="Templates\PrintInternalContact.html" />
+    <Content Include="Templates\PrintSalesQuotationfooter.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Templates\PrintSalesQuotationheader.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

@@ -1,7 +1,6 @@
-﻿@using OpenAuth.App.Order.ModelDto
-
-<!doctype html>
+﻿<!doctype html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <!-- <meta http-equiv="refresh" content="1"> -->
@@ -12,7 +11,7 @@
             padding: 0;
             margin: 0;
         }
-
+        
         body {
             width: 1000px;
             margin: 0 auto;
@@ -21,25 +20,25 @@
             font-family: "微软雅黑";
             color: #000;
         }
-
+        
         table {
             border-collapse: collapse;
         }
-
+        
         #tablebor {
             margin: 0 auto;
             border-collapse: collapse;
         }
-
+        
         .TH td {
             border-style: solid;
             border-width: 1px;
         }
-
+        
         #divtitle {
             margin: 0 auto;
         }
-
+        
         hr {
             height: 0px;
             border-top: 1px solid #808A87;
@@ -47,7 +46,7 @@
             border-bottom: 0px;
             border-left: 0px;
         }
-
+        
         #divcode {
             border-style: solid;
             border-width: 1px;
@@ -56,15 +55,15 @@
             width: 1000px;
             margin: 0 auto;
         }
-
-            #divcode tr {
-                vertical-align: top;
-            }
-
+        
+        #divcode tr {
+            vertical-align: top;
+        }
+        
         body {
             font-family: STSong Microsoft YaHei;
         }
-
+        
         #container {
             position: relative;
             margin: 0 auto;
@@ -72,28 +71,28 @@
             width: 794px;
             height: 1123px;
         }
-
+        
         footer {
             /* position: absolute; */
             left: 0;
             bottom: 0;
-            padding: 0 40px 0 0;
+            /*padding: 0 40px 0 0;*/
             width: 100%
         }
-
+        
         .productList:last-child div {
             /* border-top: 1px solid #000; */
-            /* border-bottom: 1px solid #000;
-                    border-left: 1px solid #000;
-                    border-right: 1px solid #000;*/
+            border-bottom: 1px solid #000;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
         }
         /*
-                                                    footer hr {
-                                                        height: 2px;
-                                                        background-color: #000;
-                                                        border: none
-                                                    }*/
-
+            footer hr {
+                height: 2px;
+                background-color: #000;
+                border: none
+            }*/
+        
         footer .footer-title h1 {
             font-size: 13px;
             line-height: 20px;
@@ -101,7 +100,7 @@
             text-align: center;
             margin-top: 0px;
         }
-
+        
         .type {
             color: #000;
             width: 64px;
@@ -109,7 +108,7 @@
             word-break: break-all;
             border-right: 1px solid #000;
         }
-
+        
         .type_ {
             color: #000;
             width: 64px;
@@ -117,34 +116,34 @@
             word-break: break-all;
             padding-left: 5px;
         }
-
+        
         footer .footer-title p {
             margin-top: 6px;
             font-size: 12px;
             line-height: 30px
         }
-
+        
         footer .footer-info {
             margin-top: 8px;
             font-size: 13px;
             height: 104px
         }
-
-            footer .footer-info div {
-                display: flex;
-                justify-content: space-between
-            }
-
-                footer .footer-info div p {
-                    flex: 1;
-                    padding-right: 8px
-                }
-
-                    footer .footer-info div p.footer-datetime {
-                        margin-top: 8px;
-                        font-size: 10px
-                    }
-
+        
+        footer .footer-info div {
+            display: flex;
+            justify-content: space-between
+        }
+        
+        footer .footer-info div p {
+            flex: 1;
+            padding-right: 8px
+        }
+        
+        footer .footer-info div p.footer-datetime {
+            margin-top: 8px;
+            font-size: 10px
+        }
+        
         .index {
             color: #000;
             width: 50px;
@@ -153,7 +152,7 @@
             text-align: center;
             word-break: break-all;
         }
-
+        
         .index_ {
             color: #000;
             width: 50px;
@@ -161,7 +160,7 @@
             text-align: center;
             word-break: break-all;
         }
-
+        
         .wlDsc {
             color: #000;
             width: 300px;
@@ -169,27 +168,27 @@
             border-right: 1px solid #000;
             word-break: break-all;
         }
-
+        
         .wlDsc_ {
             color: #000;
             width: 300px;
             display: inline-block;
             word-break: break-all;
         }
-
+        
         .wlNum {
             color: #000;
             width: 50px;
             display: inline-block;
             border-right: 1px solid #000;
         }
-
+        
         .jgfInput {
             width: 85px;
             display: inline-block;
             font-weight: 400;
         }
-
+        
         .prvePrice {
             color: #000;
             width: 110px;
@@ -198,7 +197,7 @@
             word-break: break-all;
             /* border-right: 1px solid #000; */
         }
-
+        
         .prvePrice_ {
             color: #000;
             width: 110px;
@@ -206,7 +205,7 @@
             text-align: right;
             word-break: break-all;
         }
-
+        
         .onePrice {
             color: #000;
             width: 100px;
@@ -215,7 +214,7 @@
             border-right: 1px solid #000;
             word-break: break-all
         }
-
+        
         .onePrice_ {
             color: #000;
             width: 110px;
@@ -223,7 +222,7 @@
             text-align: right;
             word-break: break-all
         }
-
+        
         .num {
             width: 62px;
             padding-right: 5px;
@@ -232,14 +231,14 @@
             word-break: break-all;
             border-right: 1px solid #000;
         }
-
+        
         .num_ {
             width: 62px;
             text-align: right;
             display: inline-block;
             word-break: break-all;
         }
-
+        
         .wlCode {
             color: #000;
             width: 270px;
@@ -248,14 +247,14 @@
             border-left: 1px solid #000;
             word-break: break-all
         }
-
+        
         .wlCode_ {
             color: #000;
             width: 270px;
             display: inline-block;
             word-break: break-all;
         }
-
+        
         .remarkInput {
             color: #000;
             /* width: 615px; */
@@ -263,7 +262,7 @@
             word-break: break-all;
             font-weight: 400;
         }
-
+        
         .customerDetail {
             width: 100%;
             /* height: 0px; */
@@ -271,7 +270,7 @@
             padding: 10px 0 0 0;
             font-weight: 700;
         }
-
+        
         .customerDetail_left {
             width: 50%;
             /* height: 0px; */
@@ -280,7 +279,7 @@
             padding: 10px 0 0 0;
             font-weight: 700;
         }
-
+        
         .customerDetail_right {
             width: 50%;
             /* height: 0px; */
@@ -289,41 +288,41 @@
             border-left: 1px solid #000;
             font-weight: 700;
         }
-
+        
         .cardCode {
             margin-left: 5px;
             display: inline-block;
             font-weight: 700;
             margin-bottom: 10px;
         }
-
+        
         .cardName {
             font-weight: 700;
             display: inline-block;
             margin-left: 10px;
         }
-
+        
         .cardInput {
             /* width: 300px; */
         }
-
+        
         .moneyDel {
             width: 609px;
             display: inline-block;
         }
-
+        
         .msg {
             width: 100%;
             line-height: 1.5;
             padding: 5px;
         }
-
+        
         .companyName {
             width: 250px;
             font-size: 16px;
             font-weight: 700;
         }
-
+        
         .bankName {
             width: 300px;
             font-size: 16px;
@@ -331,7 +330,7 @@
             font-weight: 700;
             margin-left: 200px;
         }
-
+        
         .bankNum {
             width: 200px;
             font-size: 16px;
@@ -340,12 +339,12 @@
             margin-left: 100px;
             float: right;
         }
-
+        
         .address {
             display: inline-block;
             margin-top: 10px;
         }
-
+        
         .number {
             display: inline-block;
             margin-top: 10px;
@@ -353,34 +352,34 @@
         }
     </style>
 </head>
+
 <body>
-    <div class="productList" style="width: 1002px; font-weight: 400; ">
-        @{
-            int number = 0;
-        }
-        @foreach (var item in Model.Data.ReimburseCosts)
-        {
+    <footer>
+        <div style="font-weight: 800;padding-top:100px;" align="right">合计金额 &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp;   @Model.Data.DocTotal </div>
+        <hr>
 
+        <section class="footer-title">
+            <h1>THANKS FOR CALLING NEWARE！</h1>
+            <h1>新威真诚感谢您能再度惠顾！</h1>
+            <hr>
+
+            <p>所有销售交易均按照新威《销售、服务和技术支持条款及条件》执行，该文件可通过www.neware.com.cn或向新威索取。</p>
+        </section>
+
+        <section class="footer-info">
             <div>
-                <span class="index_">
-                    @{
-                        ++number;
-                    } @number
-                </span>
-                <span class="wlCode_">@item.ItemCode</span>
-                <span class="wlDsc_">@item.Dscription</span>
-                <span class="num_">@item.Quantity</span>
-                <span class="type_"> @item.unitMsr</span>
-                <span class="onePrice_">@item.Price</span>
-                <span class="prvePrice_"> @item.Money</span>
+                <p style="text-align:left">深圳市新威尔电子有限公司</p>
+                <p style="text-align:right">订购咨询专线：0755-83108866</p>
             </div>
-
-
-
-        }
-      
-    </div>
-
+            <div>
+                <p>深圳市福田区梅林街道梅都社区中康路128号卓越梅林中心广场(北区)3号楼1206</p>
+                <p style="text-align:right">免费专线：800-830-8866</p>
+            </div>
+            <div>
+                <p class="footer-datetime">A0.2006.10.20</p>
+            </div>
+        </section>
+    </footer>
 </body>
 
 </html>

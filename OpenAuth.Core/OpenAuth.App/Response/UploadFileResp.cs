@@ -42,6 +42,6 @@ namespace OpenAuth.App.Response
         /// <summary>
         /// 操作时间
         /// </summary>
-        public DateTime? FileUpdateTime { get; set; }
+        public DateTime? CreateTime { get; set; }
     }
 }
