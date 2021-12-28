@@ -280,10 +280,10 @@ namespace OpenAuth.App.Order
                         string _jobID = result;
                         if ("0" != WorkflowSubmit(int.Parse(result), userID, billDelivery.Remark, "", 0))
                         {
-                            result = SaveProOrder(billDelivery, int.Parse(_jobID)).ToString();
+                           SaveProOrder(billDelivery, int.Parse(_jobID)).ToString();
                             if (billDelivery.serialNumber.Count > 0)
                             {
-                                if (UpdateSerialNumber(billDelivery.serialNumber, int.Parse(_jobID))) { result = "1"; }
+                                UpdateSerialNumber(billDelivery.serialNumber, int.Parse(_jobID));
                             }
                         }
                         else { result = "0"; }
@@ -582,8 +582,15 @@ namespace OpenAuth.App.Order
             string res = "";
             byte[] job_data = new byte[] { };
             billDelivery Model = DeSerialize<billDelivery>((byte[])(GetSalesInfo(jobID.ToString())));
-            Model.Comments = Comments;
-            Model.Remark = Remark;
+            if (!string.IsNullOrWhiteSpace(Comments))
+            {
+                Model.Comments = Comments;
+
+            }
+            if (!string.IsNullOrWhiteSpace(Remark))
+            {
+                Model.Remark = Remark;
+            }
             Model.DocStatus = "C";
             if (!string.IsNullOrWhiteSpace(CustomFields))
             {

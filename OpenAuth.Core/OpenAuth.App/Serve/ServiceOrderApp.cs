@@ -1331,14 +1331,14 @@ namespace OpenAuth.App
         public async Task<TableData> GetServerCallEfficiency(QueryServiceOrderListReq req)
         {
             var result = new TableData();
-            if (req.QryCreateTimeFrom == null || req.QryCreateTimeTo == null)
-            {
-                req.QryCreateTimeFrom = DateTime.Now.Date;
-                req.QryCreateTimeTo = DateTime.Now.Date;
-            }
 
             //只看客诉单,状态是已确认的,并且服务单下的工单都是已完成的(只要有一个工单未完成,整个服务单就算未完成)
-            var sql = @"select t.supervisor,
+            string dateParam = "";
+            if(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null)
+            {
+                dateParam = " and so.CreateTime >= {0} and so.CreateTime < {1}";
+            }
+            var sql = $@"select t.supervisor,
                         count(distinct case when t.endtime is not null	then t.Id end) as finishcount,
                         count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) <= 1 * 1440	then t.Id end) as d1,
                         count(distinct case when t.endtime is not null and timestampdiff(minute,t.createtime,t.endtime) > 1 * 1440 and timestampdiff(minute,t.createtime,t.endtime) <= 2 * 1440	then t.Id end) as d2,
@@ -1359,7 +1359,7 @@ namespace OpenAuth.App
 	                        on so.Id = sw.ServiceOrderId
                             where so.VestInOrg = 1
                             and so.Status = 2
-	                        and so.CreateTime >= {0} and so.CreateTime < {1}
+	                        {dateParam}
                             and not exists (
 		                        select 1
                                 from serviceworkorder as s
@@ -1370,9 +1370,12 @@ namespace OpenAuth.App
                         ) t
                         group by t.supervisor;";
             var parameters = new List<object>();
-            parameters.Add(req.QryCreateTimeFrom);
-            parameters.Add(req.QryCreateTimeTo.Value.AddDays(1));
-
+            if (req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null)
+            {
+                parameters.Add(req.QryCreateTimeFrom);
+                parameters.Add(req.QryCreateTimeTo.Value.AddDays(1));
+            }
+            
             var finishData = _dbExtension.GetObjectDataFromSQL<ProcessingEfficiency>(sql, parameters.ToArray(), typeof(Nsap4ServeDbContext))?.ToList();
             finishData.ForEach(f => f.Dept = _userManagerApp.GetUserOrgInfo(null, f.SuperVisor).Result?.OrgName);
 
@@ -1392,15 +1395,21 @@ namespace OpenAuth.App
                 d30 = g.Sum(x => x.D30)
             });
             //每个部门总共有多少个服务单
-            var deptGroupCount = await (UnitWork.Find<ServiceOrder>(so => so.VestInOrg == 1 && so.Status == 2)
+            var superVisorCount = await (UnitWork.Find<ServiceOrder>(so => so.VestInOrg == 1 && so.Status == 2)
                        .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, so => so.CreateTime >= req.QryCreateTimeFrom && so.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
                        .Select(x => new { x.Id, x.Supervisor }).Distinct()
                        .GroupBy(x => x.Supervisor).Select(g => new
                        {
-                           deptName = _userManagerApp.GetUserOrgInfo(null, g.Key).Result.OrgName,
+                           //deptName = _userManagerApp.GetUserOrgInfo(null, g.Key).Result?.OrgName,
                            superVisor = g.Key,
                            dCount = g.Count()
                        })).ToListAsync();
+            var deptGroupCount = superVisorCount.Select(x => new
+            {
+                x.superVisor,
+                x.dCount,
+                deptName = _userManagerApp.GetUserOrgInfo(null, x.superVisor).Result?.OrgName
+            });
             var d2 = deptGroupCount.GroupBy(d => d.deptName).Select(g => new
             {
                 dept = g.Key,
@@ -1450,14 +1459,14 @@ namespace OpenAuth.App
         }
 
         /// <summary>
-        /// 统计未处理的订单中,从建单到现在经过了多长时间
+        /// 统计未处理的服务单中,从建单到现在经过了多长时间
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
         public async Task<TableData> GetUnFinishServiceCallProcessingTime(QueryServiceOrderListReq req)
         {
             var result = new TableData();
-
+            //查看未完成的服务单
             var serviceData = await (from so in UnitWork.Find<ServiceOrder>(s => s.Status == 2 && s.ServiceWorkOrders.Any(sw => sw.Status < 7))
                                      .WhereIf(!string.IsNullOrWhiteSpace(req.QryVestInOrg), s => s.VestInOrg == int.Parse(req.QryVestInOrg))
                                      .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), s => s.Supervisor == req.QrySupervisor)
@@ -1466,16 +1475,17 @@ namespace OpenAuth.App
                                      {
                                          ProcessingTime = (DateTime.Now - so.CreateTime).Value.TotalDays
                                      }).ToListAsync();
-
+            //在字典维护的时间区间
+            var dateList = await UnitWork.Find<Category>(c => c.TypeId == "SYS_TimeInterval").OrderBy(x => x.SortNo).Select(x => new { x.Name, x.DtValue }).ToListAsync();
+            var sects = dateList.Select(d => new
+            {
+                sectionName = d.Name,
+                minValue = d.DtValue.Split('-')[0],
+                maxValue = d.DtValue.Split('-')[1]
+            });
+            //按处理时间区间进行分类
             var processingData = serviceData.GroupBy(q =>
-                    (q.ProcessingTime <= 1) ? "1天内" :
-                    (q.ProcessingTime > 1 && q.ProcessingTime <= 3) ? "2-3天" :
-                    (q.ProcessingTime > 3 && q.ProcessingTime <= 5) ? "4-5天" :
-                    (q.ProcessingTime > 5 && q.ProcessingTime <= 8) ? "6-8天" :
-                    (q.ProcessingTime > 8 && q.ProcessingTime <= 12) ? "9-12天" :
-                    (q.ProcessingTime > 12 && q.ProcessingTime <= 15) ? "13-15天" :
-                    (q.ProcessingTime > 15 && q.ProcessingTime <= 18) ? "16-18天" :
-                    (q.ProcessingTime > 18) ? "18天以上" : ""
+                    sects.FirstOrDefault(s => (!string.IsNullOrWhiteSpace(s.minValue) ? double.Parse(s.minValue) < q.ProcessingTime : true) && (!string.IsNullOrWhiteSpace(s.maxValue) ? q.ProcessingTime <= double.Parse(s.maxValue) : true))?.sectionName
                 )
                 .Select(g => new
                 {
@@ -1483,14 +1493,13 @@ namespace OpenAuth.App
                     count = g.Count(),
                 });
             var totalCount = serviceData.Count();
-            //var dateList = await UnitWork.Find<Category>(c => c.TypeId == "SYS_TimeInterval").OrderBy(x => x.SortNo).Select(x => new { x.Name, x.DtValue }).ToListAsync();
-            var dateList = new string[] { "1天内", "2-3天", "4-5天", "6-8天", "9-12天", "13-15天", "16-18天", "18天以上" };
+            //左连接,没有则为0
             var data = from d in dateList
-                       join p in processingData on d equals p.Key into temp
+                       join p in processingData on d.Name equals p.Key into temp
                        from t in temp.DefaultIfEmpty()
                        select new
                        {
-                           day = d,
+                           day = d.Name,
                            count = t == null ? 0 : t.count,
                            per = t == null ? "0.00%" : ((decimal)t.count / totalCount).ToString("P2"),
                        };
@@ -5541,7 +5550,7 @@ namespace OpenAuth.App
         /// <param name="id"></param>
         /// <param name="serviceOrderId"></param>
         /// <param name="MaterialType"></param>
-        /// <param name="QryMaterialTypes"></param
+        /// <param name="QryMaterialTypes"></param>
         /// <returns></returns>
         private async Task<bool> CheckCanTransfer(int id, int serviceOrderId, string MaterialType, List<string> QryMaterialTypes)
         {

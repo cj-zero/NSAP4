@@ -55,7 +55,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             var DepID = _serviceBaseApp.GetSalesDepID(UserID);
             var result = new TableData();
             bool rata = false;
-            if (loginUser.Name == "韦京生" || loginUser.Name == "郭睿心")
+            if (loginUser.Name == "韦京生" || loginUser.Name == "郭睿心"||loginUser.Name=="唐琴")
             {
                 rata = true;
             }

@@ -68,11 +68,11 @@ namespace OpenAuth.App.Order
                             {
                                 if (!(jobname == "采购订单" && Model.DocType == "S"))
                                 {
-                                    result = SaveProOrder(Model, int.Parse(_jobID)).ToString();
+                                    SaveProOrder(Model, int.Parse(_jobID)).ToString();
                                 }
                                 if (Model.serialNumber.Count > 0)
                                 {
-                                    if (UpdateSerialNumber(Model.serialNumber, int.Parse(_jobID))) { result = "1"; }
+                                    UpdateSerialNumber(Model.serialNumber, int.Parse(_jobID));
                                 }
                             }
                             else { result = "0"; }
@@ -590,7 +590,7 @@ namespace OpenAuth.App.Order
                                 break;
                             }
                         }
-                        var par =await SaveJobPara(salesSaveDraftReq.JobId.ToString(), needf ? "1" : "0");
+                        var par = await SaveJobPara(salesSaveDraftReq.JobId.ToString(), needf ? "1" : "0");
                     }
 
                     res = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(salesSaveDraftReq.JobId.ToString()), userID, billDelivery.Remark, "", user_id);

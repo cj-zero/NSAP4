@@ -1057,7 +1057,7 @@ namespace OpenAuth.App.Order
             {
                 filterString += string.Format("(m.ItemCode NOT LIKE 'CT%' AND m.ItemCode NOT LIKE 'CE%' AND m.ItemCode NOT LIKE 'CG%') AND ");
             }
-            filterString += string.Format("  m.sbo_id={0} AND ",  sboid);
+            filterString += string.Format("  m.sbo_id={0} AND ", sboid);
             if (!string.IsNullOrEmpty(filterString))
             {
                 filterString = filterString.Substring(0, filterString.Length - 5);
@@ -1500,7 +1500,7 @@ namespace OpenAuth.App.Order
                 CardCode = !string.IsNullOrEmpty(order.CardCode) ? order.CardCode : "",
                 Comments = order.Comments,//备注
                 CurSource = order.CurSource,//货币类型
-                CustomFields = order.CustomFields,//  $"U_ShipName≮1≯≮0≯U_SCBM≮1≯P3-陈友祥",
+                CustomFields = !string.IsNullOrEmpty(order.CustomFields) ? order.CustomFields.Replace(" ", "").Replace("　", "") : "",//  $"U_ShipName≮1≯≮0≯U_SCBM≮1≯P3-陈友祥",
                 BeforeDiscSum = !string.IsNullOrEmpty(order.BeforeDiscSum) ? order.BeforeDiscSum : "0.0",// 折扣前总计
                 DiscSum = !string.IsNullOrEmpty(order.DiscSum.ToString()) ? order.DiscSum.ToString() : "0",//折扣金额
                 DiscPrcnt = !string.IsNullOrEmpty(order.DiscPrcnt.ToString()) ? order.DiscPrcnt.ToString() : "0.0",//折扣（折扣率）
@@ -3981,7 +3981,7 @@ namespace OpenAuth.App.Order
             }
         }
         public async Task<byte[]> ExportShow(string sboid, string DocEntry)
-           {
+        {
             DataTable dtb = ExportViewNos(sboid, DocEntry);
             DataTable dtbs = ExportViews(sboid, DocEntry);
             var logopath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
@@ -4056,19 +4056,19 @@ namespace OpenAuth.App.Order
             foottext = foottext.Replace("@Model.Data.DocTotal", PrintSalesQuotation.DocTotal);
             var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesQuotationfooter{PrintSalesQuotation.DocEntry}.html");
             System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
-            byte[] basecode= await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesQuotation.cshtml", pdf =>
-            {
-                pdf.Orientation = Orientation.Portrait;
-                pdf.IsWriteHtml = true;
-                pdf.PaperKind = PaperKind.A4;
-                pdf.IsEnablePagesCount = true;
-                pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
-                pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
-            });
+            byte[] basecode = await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesQuotation.cshtml", pdf =>
+             {
+                 pdf.Orientation = Orientation.Portrait;
+                 pdf.IsWriteHtml = true;
+                 pdf.PaperKind = PaperKind.A4;
+                 pdf.IsEnablePagesCount = true;
+                 pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                 pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
+             });
             System.IO.File.Delete(tempUrl);
             System.IO.File.Delete(foottempUrl);
             return basecode;
-          
+
         }
         /// <summary>
         /// 销售报价单主数据导出
