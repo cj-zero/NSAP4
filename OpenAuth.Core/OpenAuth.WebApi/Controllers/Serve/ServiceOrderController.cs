@@ -459,7 +459,7 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 统计未处理的订单中,从建单到现在经过了多长时间
+        /// 统计未处理的服务单中,从建单到现在经过了多长时间
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>

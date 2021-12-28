@@ -465,7 +465,7 @@ namespace OpenAuth.App.Material
                 loginUser = await GetUserId(Convert.ToInt32(request.AppId));
             }
             var result = new TableData();
-            var ServiceOrders = from a in UnitWork.Find<ServiceOrder>(s => s.VestInOrg <= 1)
+            var ServiceOrders = from a in UnitWork.Find<ServiceOrder>(s => s.VestInOrg <= 1 && s.AllowOrNot == 0)
                                 join b in UnitWork.Find<ServiceWorkOrder>(s => s.Status < 7) on a.Id equals b.ServiceOrderId
                                 select new { a, b };
             ServiceOrders = ServiceOrders.WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId.ToString()), s => s.a.Id.Equals(request.ServiceOrderId))
