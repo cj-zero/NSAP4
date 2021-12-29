@@ -470,6 +470,28 @@ namespace OpenAuth.WebApi.Controllers.Serve
         }
 
         /// <summary>
+        /// 根据指定时间获取费用单 
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetExpenseBillByDate([FromQuery] QueryReimburseInfoListReq req)
+        {
+            return await _reimburseinfoapp.GetExpenseBillByDate(req);
+        }
+
+        /// <summary>
+        /// 获取指定时间的费用 
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetExpendsByDate([FromQuery] QueryReimburseInfoListReq req)
+        {
+            return await _reimburseinfoapp.GetExpendsByDate(req);
+        }
+
+        /// <summary>
         /// 获取服务轨迹起始点 
         /// </summary>
         /// <param name="req"></param>

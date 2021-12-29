@@ -5,6 +5,10 @@ namespace OpenAuth.App.Request
     public class QueryReimburseInfoListReq : PageReq
     {
         /// <summary>
+        /// Id
+        /// </summary>
+        public int Id { get; set; }
+        /// <summary>
         /// 报销单号
         /// </summary>
         public string MainId { get; set; }
@@ -123,5 +127,10 @@ namespace OpenAuth.App.Request
         /// 日期选择 1.ALL 2.近七日 3.近30日 4.近60日 5.近90日 6.近1年
         /// </summary>
         public int TimeType { get; set; }
+
+        /// <summary>
+        /// 单据类型
+        /// </summary>
+        public int BillType { get; set; }
     }
 }
