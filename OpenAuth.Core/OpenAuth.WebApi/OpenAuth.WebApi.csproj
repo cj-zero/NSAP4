@@ -188,6 +188,12 @@
     <None Update="Templates\Header.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Templates\PrintSalesOrdersfooter.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Templates\PrintSalesOrdersheader.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Templates\tan.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
