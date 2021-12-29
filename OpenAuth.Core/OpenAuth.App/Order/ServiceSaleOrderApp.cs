@@ -1057,7 +1057,7 @@ namespace OpenAuth.App.Order
             {
                 filterString += string.Format("(m.ItemCode NOT LIKE 'CT%' AND m.ItemCode NOT LIKE 'CE%' AND m.ItemCode NOT LIKE 'CG%') AND ");
             }
-            filterString += string.Format("  m.sbo_id={0} AND ",  sboid);
+            filterString += string.Format("  m.sbo_id={0} AND ", sboid);
             if (!string.IsNullOrEmpty(filterString))
             {
                 filterString = filterString.Substring(0, filterString.Length - 5);
@@ -1500,7 +1500,7 @@ namespace OpenAuth.App.Order
                 CardCode = !string.IsNullOrEmpty(order.CardCode) ? order.CardCode : "",
                 Comments = order.Comments,//备注
                 CurSource = order.CurSource,//货币类型
-                CustomFields = order.CustomFields,//  $"U_ShipName≮1≯≮0≯U_SCBM≮1≯P3-陈友祥",
+                CustomFields = !string.IsNullOrEmpty(order.CustomFields) ? order.CustomFields.Replace(" ", "").Replace("　", "") : "",//  $"U_ShipName≮1≯≮0≯U_SCBM≮1≯P3-陈友祥",
                 BeforeDiscSum = !string.IsNullOrEmpty(order.BeforeDiscSum) ? order.BeforeDiscSum : "0.0",// 折扣前总计
                 DiscSum = !string.IsNullOrEmpty(order.DiscSum.ToString()) ? order.DiscSum.ToString() : "0",//折扣金额
                 DiscPrcnt = !string.IsNullOrEmpty(order.DiscPrcnt.ToString()) ? order.DiscPrcnt.ToString() : "0.0",//折扣（折扣率）
@@ -3981,7 +3981,7 @@ namespace OpenAuth.App.Order
             }
         }
         public async Task<byte[]> ExportShow(string sboid, string DocEntry)
-           {
+        {
             DataTable dtb = ExportViewNos(sboid, DocEntry);
             DataTable dtbs = ExportViews(sboid, DocEntry);
             var logopath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
@@ -4056,19 +4056,19 @@ namespace OpenAuth.App.Order
             foottext = foottext.Replace("@Model.Data.DocTotal", PrintSalesQuotation.DocTotal);
             var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesQuotationfooter{PrintSalesQuotation.DocEntry}.html");
             System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
-            byte[] basecode= await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesQuotation.cshtml", pdf =>
-            {
-                pdf.Orientation = Orientation.Portrait;
-                pdf.IsWriteHtml = true;
-                pdf.PaperKind = PaperKind.A4;
-                pdf.IsEnablePagesCount = true;
-                pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
-                pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
-            });
+            byte[] basecode = await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesQuotation.cshtml", pdf =>
+             {
+                 pdf.Orientation = Orientation.Portrait;
+                 pdf.IsWriteHtml = true;
+                 pdf.PaperKind = PaperKind.A4;
+                 pdf.IsEnablePagesCount = true;
+                 pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                 pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
+             });
             System.IO.File.Delete(tempUrl);
             System.IO.File.Delete(foottempUrl);
             return basecode;
-          
+
         }
         /// <summary>
         /// 销售报价单主数据导出
@@ -5804,96 +5804,117 @@ namespace OpenAuth.App.Order
         /// </summary>
         public bool ICreatedBack(string keyIds, string userId, string urlType)
         {
-            string errorMsg = string.Empty;
 
-            List<CmdParameter> cmdParameters = new List<CmdParameter>();
-            IDataParameter[] parameter = new IDataParameter[] { new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_id", keyIds) };
-            CmdParameter qcmdParameter = new CmdParameter();
-            qcmdParameter.Sql = string.Format("DELETE FROM {0}.wfa_jump WHERE job_id ={1};", "nsap_base", keyIds);
-            cmdParameters.Add(qcmdParameter);
-
-            CmdParameter ecmdParameter = new CmdParameter();
-            ecmdParameter.Sql = string.Format("UPDATE {0}.wfa_job SET job_state=0,step_id=0 WHERE job_id ={1};", "nsap_base", keyIds);
-            cmdParameters.Add(ecmdParameter);
-
-            CmdParameter tcmdParameter = new CmdParameter();
-            tcmdParameter.Sql = string.Format("DELETE FROM {0}.wfa_job_para WHERE job_id ={1};", "nsap_base", keyIds);
-            cmdParameters.Add(tcmdParameter);
-
-            CmdParameter rcmdParameter = new CmdParameter();
-            rcmdParameter.Sql = string.Format("INSERT INTO {0}.wfa_log(job_id,user_id,audit_level,state) VALUES({1},{2},{3},{4});", "nsap_base", keyIds, userId, "0", "6");
-            cmdParameters.Add(rcmdParameter);
-
-            //销售序列号撤销
-            if (urlType.ToUpper() == "sales/SalesDelivery.aspx".ToUpper() && urlType.ToUpper() == "sales/salesreturnofgoods.aspx".ToUpper() || urlType.ToUpper() == "sales/salesreturnofgoodsline.aspx".ToUpper() || urlType.ToUpper() == "sales/salescreditmemo.aspx".ToUpper())
+            if (GetJobStateById(keyIds) == "1")
             {
-                billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfo(keyIds)));
-                foreach (billSerialNumber osrn in bill.serialNumber)
+
+                string errorMsg = string.Empty;
+
+                List<CmdParameter> cmdParameters = new List<CmdParameter>();
+                IDataParameter[] parameter = new IDataParameter[] { new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_id", keyIds) };
+                CmdParameter qcmdParameter = new CmdParameter();
+                qcmdParameter.Sql = string.Format("DELETE FROM {0}.wfa_jump WHERE job_id ={1};", "nsap_base", keyIds);
+                cmdParameters.Add(qcmdParameter);
+
+                CmdParameter ecmdParameter = new CmdParameter();
+                ecmdParameter.Sql = string.Format("UPDATE {0}.wfa_job SET job_state=0,step_id=0 WHERE job_id ={1};", "nsap_base", keyIds);
+                cmdParameters.Add(ecmdParameter);
+
+                CmdParameter tcmdParameter = new CmdParameter();
+                tcmdParameter.Sql = string.Format("DELETE FROM {0}.wfa_job_para WHERE job_id ={1};", "nsap_base", keyIds);
+                cmdParameters.Add(tcmdParameter);
+
+                CmdParameter rcmdParameter = new CmdParameter();
+                rcmdParameter.Sql = string.Format("INSERT INTO {0}.wfa_log(job_id,user_id,audit_level,state) VALUES({1},{2},{3},{4});", "nsap_base", keyIds, userId, "0", "6");
+                cmdParameters.Add(rcmdParameter);
+
+                //销售序列号撤销
+                if (urlType.ToUpper() == "sales/SalesDelivery.aspx".ToUpper() && urlType.ToUpper() == "sales/salesreturnofgoods.aspx".ToUpper() || urlType.ToUpper() == "sales/salesreturnofgoodsline.aspx".ToUpper() || urlType.ToUpper() == "sales/salescreditmemo.aspx".ToUpper())
                 {
-                    foreach (billSerialNumberChooseItem serial in osrn.Details)
+                    billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfo(keyIds)));
+                    foreach (billSerialNumber osrn in bill.serialNumber)
                     {
-                        CmdParameter snbParameter = new CmdParameter();
-                        snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode ={1} AND SysNumber ={2};", "nsap_bone", osrn.ItemCode, serial.SysSerial);
-                        cmdParameters.Add(snbParameter);
+                        foreach (billSerialNumberChooseItem serial in osrn.Details)
+                        {
+                            CmdParameter snbParameter = new CmdParameter();
+                            snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode ={1} AND SysNumber ={2};", "nsap_bone", osrn.ItemCode, serial.SysSerial);
+                            cmdParameters.Add(snbParameter);
+                        }
                     }
                 }
-            }
-            //库存转储序列号撤销
-            if (urlType.ToUpper() == "store/stocktransfer.aspx".ToUpper())
-            {
-                storeOWTR bill = DeSerialize<storeOWTR>((byte[])(GetSalesInfo(keyIds)));
-                foreach (billSerialNumber osrn in bill.serialNumber)
+                //库存转储序列号撤销
+                if (urlType.ToUpper() == "store/stocktransfer.aspx".ToUpper())
                 {
-                    foreach (billSerialNumberChooseItem serial in osrn.Details)
+                    storeOWTR bill = DeSerialize<storeOWTR>((byte[])(GetSalesInfo(keyIds)));
+                    foreach (billSerialNumber osrn in bill.serialNumber)
                     {
-                        CmdParameter snbParameter = new CmdParameter();
-                        snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode = {1} AND SysNumber = {2};", "nsap_bone", osrn.ItemCode, serial.SysSerial);
-                        cmdParameters.Add(snbParameter);
+                        foreach (billSerialNumberChooseItem serial in osrn.Details)
+                        {
+                            CmdParameter snbParameter = new CmdParameter();
+                            snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode = {1} AND SysNumber = {2};", "nsap_bone", osrn.ItemCode, serial.SysSerial);
+                            cmdParameters.Add(snbParameter);
+                        }
                     }
                 }
-            }
-            //采购序列号撤销 
-            if (urlType.ToUpper() == "purchase/purchasereturn.aspx".ToUpper() || urlType.ToUpper() == "purchase/purchasecreditmemo.aspx".ToUpper())
-            {
-                billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfo(keyIds)));
-                foreach (billSerialNumber osrn in bill.serialNumber)
+                //采购序列号撤销 
+                if (urlType.ToUpper() == "purchase/purchasereturn.aspx".ToUpper() || urlType.ToUpper() == "purchase/purchasecreditmemo.aspx".ToUpper())
                 {
-                    foreach (billSerialNumberChooseItem serial in osrn.Details)
+                    billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfo(keyIds)));
+                    foreach (billSerialNumber osrn in bill.serialNumber)
                     {
-                        CmdParameter snbParameter = new CmdParameter();
-                        snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode = {1} AND SysNumber = {2};", "nasp_bone", osrn.ItemCode, serial.SysSerial);
-                        cmdParameters.Add(snbParameter);
+                        foreach (billSerialNumberChooseItem serial in osrn.Details)
+                        {
+                            CmdParameter snbParameter = new CmdParameter();
+                            snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode = {1} AND SysNumber = {2};", "nasp_bone", osrn.ItemCode, serial.SysSerial);
+                            cmdParameters.Add(snbParameter);
+                        }
                     }
                 }
-            }
-            // 生产发料 
-            if (urlType.ToUpper() == "product/producematerial.aspx".ToUpper())
-            {
-                proReceipt bill = DeSerialize<proReceipt>((byte[])(GetSalesInfo(keyIds)));
-                foreach (billSerialNumber osrn in bill.serialNumber)
+                // 生产发料 
+                if (urlType.ToUpper() == "product/producematerial.aspx".ToUpper())
                 {
-                    foreach (billSerialNumberChooseItem serial in osrn.Details)
+                    proReceipt bill = DeSerialize<proReceipt>((byte[])(GetSalesInfo(keyIds)));
+                    foreach (billSerialNumber osrn in bill.serialNumber)
                     {
-                        CmdParameter snbParameter = new CmdParameter();
-                        snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode = {1} AND SysNumber = {2};", "nsap_bone", osrn.ItemCode, serial.SysSerial);
-                        cmdParameters.Add(snbParameter);
+                        foreach (billSerialNumberChooseItem serial in osrn.Details)
+                        {
+                            CmdParameter snbParameter = new CmdParameter();
+                            snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode = {1} AND SysNumber = {2};", "nsap_bone", osrn.ItemCode, serial.SysSerial);
+                            cmdParameters.Add(snbParameter);
+                        }
                     }
                 }
-            }
-            int resultCount = ExecuteTransaction(cmdParameters, out errorMsg);
+                int resultCount = ExecuteTransaction(cmdParameters, out errorMsg);
 
-            //解除服务呼叫绑定售后报价单
-            if (urlType.ToUpper() == "sales/SalesQuotation.aspx".ToUpper() && resultCount > 0)
-            {
-                billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfo(keyIds)));
-                if (!string.IsNullOrEmpty(bill.U_CallID))
+                //解除服务呼叫绑定售后报价单
+                if (urlType.ToUpper() == "sales/SalesQuotation.aspx".ToUpper() && resultCount > 0)
                 {
-                    UpdateUsftjbjFromOscl(bill.U_CallID, bill.SboId, "0");
+                    billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfo(keyIds)));
+                    if (!string.IsNullOrEmpty(bill.U_CallID))
+                    {
+                        UpdateUsftjbjFromOscl(bill.U_CallID, bill.SboId, "0");
+                    }
                 }
-            }
 
-            return resultCount > 0 ? true : false;
+                return resultCount > 0 ? true : false;
+            }
+            else
+            {
+                return false;
+            }
         }
+
+        #region 获取流程任务当前状态
+        /// <summary>
+        /// 获取流程任务当前状态
+        /// </summary>
+        /// <returns></returns>
+        public string GetJobStateById(string JobId)
+        {
+            string strSql = string.Format("SELECT job_state FROM {0}.wfa_job WHERE job_id={1}", "nsap_base", JobId);
+            return UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).ToString();
+        }
+        #endregion
         public int ExecuteTransaction(List<CmdParameter> array, out string errorMsg)
         {
             if (array.Count == 0) { errorMsg = string.Empty; return 0; }

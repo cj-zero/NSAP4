@@ -5676,7 +5676,7 @@ namespace OpenAuth.App
         /// <param name="id"></param>
         /// <param name="serviceOrderId"></param>
         /// <param name="MaterialType"></param>
-        /// <param name="QryMaterialTypes"></param
+        /// <param name="QryMaterialTypes"></param>
         /// <returns></returns>
         private async Task<bool> CheckCanTransfer(int id, int serviceOrderId, string MaterialType, List<string> QryMaterialTypes)
         {
