@@ -482,6 +482,74 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 新增未完工原因
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> AddUnCompletedReason(AddServiceUnCompletedReasonReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.ServiceUnCompletedReason(req);
+            }
+            catch(Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 根据服务单Id查询未完工原因
+        /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetUnCompletedReason(int serviceOrderId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetUnCompletedReasonHistory(serviceOrderId);
+            }
+            catch(Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{serviceOrderId}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 查询未完工原因统计
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetUnCompletedReasonInfo()
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetUnCompletedReasonInfo();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{""}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 查询可以被派单的技术员列表
         /// </summary>
         /// <returns></returns>
