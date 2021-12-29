@@ -398,7 +398,20 @@ namespace OpenAuth.WebApi.Controllers.Order
 
             return result;
         }
-
+        #region 获取流程任务当前状态
+        /// <summary>
+        /// 获取流程任务当前状态 1才可请求撤回
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetJobStateById")]
+        public Response<string> GetJobStateById(string JobId)
+        {
+            var result = new Response<string>();
+            result.Result = _serviceSaleOrderApp.GetJobStateById(JobId);
+            return result;
+        }
+        #endregion
         #endregion
         #region 删除(草稿&驳回)
         /// <summary>
@@ -434,7 +447,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             var data = new GetUserInfoDto();
             data.userid = (int)loginContext.User.User_Id;
             data.username = loginContext.User.Name;
-            data.rolename =new  List<string>();
+            data.rolename = new List<string>();
             foreach (var item in loginContext.Roles)
             {
                 data.rolename.Add(item.Name);
