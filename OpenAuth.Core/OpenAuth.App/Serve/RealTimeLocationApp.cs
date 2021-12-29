@@ -274,8 +274,12 @@ namespace OpenAuth.App
             }
             TableData result = new TableData();
 
-            var serviceOrderId = await UnitWork.Find<ServiceWorkOrder>(c => c.Status < 7).Select(c => c.ServiceOrderId).Distinct().ToListAsync();
-            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => c.VestInOrg == 1 && c.Status==2 && serviceOrderId.Contains(c.Id)).Select(c => new { c.U_SAP_ID, c.Longitude, c.Latitude }).ToListAsync();
+            //var serviceOrderId = await UnitWork.Find<ServiceWorkOrder>(c => c.Status < 7).Select(c => c.ServiceOrderId).Distinct().ToListAsync();
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => c.VestInOrg == 1 && c.Status == 2)
+                .Include(c => c.ServiceWorkOrders)
+                .Where(c => c.ServiceWorkOrders.Any(s => c.Status < 7))
+                .Select(c => new { c.U_SAP_ID, c.Longitude, c.Latitude, Status = c.ServiceWorkOrders.First().Status })
+                .ToListAsync();
             result.Data = serviceOrder;
             return result;
         }
