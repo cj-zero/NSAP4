@@ -1035,20 +1035,20 @@ namespace OpenAuth.App.Order
             }
             if (!string.IsNullOrEmpty(query.ItemCode))
             {
-                filterString += string.Format("(m.ItemCode LIKE '%{0}%' OR m.ItemName LIKE '%{0}%') AND ", query.ItemCode.FilterWildCard());
+                filterString += string.Format("m.ItemCode LIKE '%{0}%' AND ", query.ItemCode.FilterWildCard());
             }
-            filterString += string.Format("(m.ItemCode LIKE '%{0}%' OR ", "F02-003-BTS-1U");
-            filterString += string.Format("m.ItemCode LIKE '%{0}%'  OR ", "F02-003-BTS-3U");
-            filterString += string.Format("m.ItemCode LIKE '%{0}%' OR ", "F02-003-BTS-3U3F-MX");
-            filterString += string.Format("m.ItemCode LIKE '%{0}%' OR ", "F02-003-BTS-6U");
-            filterString += string.Format("m.ItemCode LIKE '%{0}%' OR ", "F02-003-BVIR");
-            filterString += string.Format("m.ItemCode LIKE '%{0}%' OR ", "F02-003-QPD-280-780");
-            filterString += string.Format("m.ItemCode LIKE '%{0}%' OR ", "F02-003-QZD-1U");
-            filterString += string.Format("m.ItemCode LIKE '%{0}%' OR ", "F02-003-QZD-3U");
-            filterString += string.Format("m.ItemCode LIKE '%{0}%' OR ", "F02-003-ZZM");
-            filterString += string.Format("m.ItemCode LIKE '%{0}%' OR ", "F02-003-ZZM-1U");
-            filterString += string.Format("m.ItemCode LIKE '%{0}%' OR ", "E03-LBD");
-            filterString += string.Format("m.ItemCode LIKE '%{0}%' ) AND ", "F02-003-ZZM-BVIR");
+            filterString += string.Format("(m.ItemCode ='{0}' OR ", "F02-003-BTS-1U");
+            filterString += string.Format("m.ItemCode = '{0}'  OR ", "F02-003-BTS-3U");
+            filterString += string.Format("m.ItemCode = '{0}' OR ", "F02-003-BTS-3U3F-MX");
+            filterString += string.Format("m.ItemCode = '{0}' OR ", "F02-003-BTS-6U");
+            filterString += string.Format("m.ItemCode = '{0}' OR ", "F02-003-BVIR");
+            filterString += string.Format("m.ItemCode = '{0}' OR ", "F02-003-QPD-280-780");
+            filterString += string.Format("m.ItemCode = '{0}' OR ", "F02-003-QZD-1U");
+            filterString += string.Format("m.ItemCode = '{0}' OR ", "F02-003-QZD-3U");
+            filterString += string.Format("m.ItemCode = '{0}' OR ", "F02-003-ZZM");
+            filterString += string.Format("m.ItemCode = '{0}' OR ", "F02-003-ZZM-1U");
+            filterString += string.Format("m.ItemCode = '{0}' OR ", "E03-LBD");
+            filterString += string.Format("m.ItemCode = '{0}' ) AND ", "F02-003-ZZM-BVIR");
             if (query.TypeId == "1")
             {
                 filterString += string.Format("(m.ItemCode NOT LIKE 'CT%') AND ");
@@ -10002,8 +10002,35 @@ namespace OpenAuth.App.Order
         /// <returns></returns>
         public async Task<byte[]> OrderExportShow(string sboid, string DocEntry)
         {
-            DataTable dtb = ExportViewNos(sboid, DocEntry);
-            DataTable dtbs = ExportViews(sboid, DocEntry);
+            DataTable dtb = OrderExportView(sboid, DocEntry);
+            DataTable dtbs = OrderExportViews(sboid, DocEntry);
+            DataTable dtprint = GetPrintNo(sboid, DocEntry);
+            string PrintNo = Guid.NewGuid().ToString();
+            int PrintNumIndex = 0;
+            if (dtprint.Rows.Count > 0)
+            {
+                if (!string.IsNullOrEmpty(dtprint.Rows[0][0].ToString()))
+                {
+                    PrintNo = dtprint.Rows[0][0].ToString();
+                }
+                if (!string.IsNullOrEmpty(dtprint.Rows[0][1].ToString().Trim()))
+                {
+                    PrintNumIndex = 1 + int.Parse(dtprint.Rows[0][1].ToString().Trim());
+                }
+                else
+                {
+                    PrintNumIndex = 1;
+                }
+            }
+            else
+            {
+                PrintNumIndex = 1;
+            }
+
+            if (UpdatePrintNo(sboid, DocEntry, PrintNo, PrintNumIndex.ToString()) == false)
+            {
+                return null;
+            }
             var logopath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
             var logostr = "";
             using (var fs = new FileStream(logopath, FileMode.Open))
@@ -10014,7 +10041,7 @@ namespace OpenAuth.App.Order
                 logostr = Convert.ToBase64String(photo);
                 Console.WriteLine(logostr);
             }
-            var PrintSalesQuotation = new PrintSalesQuotation
+            var PrintSalesOrder = new PrintSalesOrder
             {
                 DocEntry = string.IsNullOrEmpty(dtb.Rows[0][0].ToString()) ? " " : dtb.Rows[0][0].ToString(),
                 DateTime = string.IsNullOrEmpty(dtb.Rows[0][15].ToString()) ? " " : dtb.Rows[0][15].ToString(),
@@ -10047,9 +10074,52 @@ namespace OpenAuth.App.Order
                     Money = string.IsNullOrEmpty(dtbs.Rows[i][7].ToString()) ? " " : dtbs.Rows[i][7].ToString()
 
                 };
-                PrintSalesQuotation.ReimburseCosts.Add(scon);
+                PrintSalesOrder.ReimburseCosts.Add(scon);
             }
-            return await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesOrders.cshtml");
+            var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesOrdersheader.html");
+            var text = System.IO.File.ReadAllText(url);
+            text = text.Replace("@Model.Data.logo", PrintSalesOrder.logo);
+            text = text.Replace("@Model.Data.DocEntry", PrintSalesOrder.DocEntry);
+            text = text.Replace("@Model.Data.DateTime", PrintSalesOrder.DateTime);
+            text = text.Replace("@Model.Data.QRcode", PrintSalesOrder.QRcode);
+            text = text.Replace("@Model.Data.SalseName", PrintSalesOrder.SalseName);
+            text = text.Replace("@Model.Data.CardCode", PrintSalesOrder.CardCode);
+            text = text.Replace("@Model.Data.Name", PrintSalesOrder.Name);
+            text = text.Replace("@Model.Data.Tel", PrintSalesOrder.Tel);
+            text = text.Replace("@Model.Data.Fax", PrintSalesOrder.Fax);
+            text = text.Replace("@Model.Data.CardName", PrintSalesOrder.CardName);
+            text = text.Replace("@Model.Data.Address", PrintSalesOrder.Address);
+            text = text.Replace("@Model.Data.Name", PrintSalesOrder.Name);
+            text = text.Replace("@Model.Data.Address2", PrintSalesOrder.Address2);
+            text = text.Replace("@Model.Data.SalseName", PrintSalesOrder.SalseName);
+            text = text.Replace("@Model.Data.Cellolar", PrintSalesOrder.Cellolar);
+            text = text.Replace("@Model.Data.DATEFORMAT", PrintSalesOrder.DATEFORMAT);
+            text = text.Replace("@Model.Data.PymntGroup", PrintSalesOrder.PymntGroup);
+            text = text.Replace("@Model.Data.Comments", PrintSalesOrder.Comments);
+            text = text.Replace("@Model.Data.NumAtCard", PrintSalesOrder.NumAtCard);
+            var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesOrdersheader{PrintSalesOrder.DocEntry}.html");
+            System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
+            var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesOrdersfooter.html");
+            var foottext = System.IO.File.ReadAllText(footUrl);
+            foottext = foottext.Replace("@Model.Data.DocTotal", PrintSalesOrder.DocTotal);
+            foottext = foottext.Replace("@Model.Data.PrintNumIndex", PrintSalesOrder.PrintNumIndex);
+            foottext = foottext.Replace("@Model.Data.PrintNo", PrintSalesOrder.PrintNo);
+            foottext = foottext.Replace("@Model.Data.U_SL", PrintSalesOrder.U_SL);
+            var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesOrdersfooter{PrintSalesOrder.DocEntry}.html");
+            System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
+            byte[] basecode = await ExportAllHandler.Exporterpdf(PrintSalesOrder, "PrintSalesOrders.cshtml", pdf =>
+            {
+                pdf.Orientation = Orientation.Portrait;
+                pdf.IsWriteHtml = true;
+                pdf.PaperKind = PaperKind.A4;
+                pdf.IsEnablePagesCount = true;
+                pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
+            });
+            System.IO.File.Delete(tempUrl);
+            System.IO.File.Delete(foottempUrl);
+            return basecode;
+            //return await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesOrders.cshtml");
         }
 
         #region 修改单据打印状态
