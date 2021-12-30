@@ -274,9 +274,12 @@ namespace OpenAuth.App
             }
             TableData result = new TableData();
 
-            var serviceOrderId = await UnitWork.Find<ServiceWorkOrder>(c => c.Status < 7).Select(c => c.ServiceOrderId).Distinct().ToListAsync();
-            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => c.VestInOrg == 1 && c.Status==2 && serviceOrderId.Contains(c.Id)).Select(c => new { c.U_SAP_ID, c.Longitude, c.Latitude }).ToListAsync();
+            var query = await (from a in UnitWork.Find<ServiceOrder>(c => c.VestInOrg == 1 && c.Status == 2)
+                               join b in UnitWork.Find<ServiceWorkOrder>(c => c.Status < 7) on a.Id equals b.ServiceOrderId
+                               select new { a.U_SAP_ID, a.Longitude, a.Latitude, b.Status }).ToListAsync();
+            var serviceOrder = query.GroupBy(c => c.U_SAP_ID).Select(c => c.First()).ToList();
             result.Data = serviceOrder;
+            result.Count = serviceOrder.Count;
             return result;
         }
 

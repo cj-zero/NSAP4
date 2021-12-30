@@ -2446,6 +2446,11 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var map = await UnitWork.Find<AppUserMap>(w => w.UserID == req.CreateUserId).FirstOrDefaultAsync();
+            if (map == null)
+            {
+                throw new CommonException("当前用户未绑定App", Define.INVALID_TOKEN);
+            }
             TableData result = new TableData();
             switch (req.TimeType)
             {
@@ -2652,28 +2657,71 @@ namespace OpenAuth.App
                 OCProportion = totalMoney > 0 ? Convert.ToDecimal((ReimburseInfoRes.Sum(c => c.OtherChargesMoney) / totalMoney)).ToString("p") : "0",
             };
 
-            var serviceorder = await UnitWork.Find<ServiceOrder>(c => ServiceOrderIds.Contains(c.Id) && c.VestInOrg == 1).OrderByDescending(c => c.CreateTime).ToListAsync();
-            var customerInfo = serviceorder.GroupBy(c => c.TerminalCustomerId).Select(c => new
-            {
-                CustomerID = c.Key,
-                Customer = c.First().TerminalCustomer,
-                Address = c.First().Province + c.First().City + c.First().Area + c.First().Addr,
-                TotalMoney = ReimburseInfoRes.Where(r => c.Select(s => s?.Id).ToList().Contains(r.ServiceOrderId)).Sum(r => r.TotalMoney),
-                Longitude = c.First().Longitude,
-                Latitude = c.First().Latitude,
-                CreateTime = c.Max(m => m.CreateTime),
-                Count = c.Count(),
-                ReimburseInfosList = c.Select(r => new
-                {
-                    ServiceOrderId = r.Id,
-                    Id = ReimburseInfoRes.Where(w => w.ServiceOrderId == r.Id).FirstOrDefault().Id,
-                    MainId = ReimburseInfoRes.Where(w => w.ServiceOrderId == r.Id).FirstOrDefault().MainId,
-                    TotalMoney = ReimburseInfoRes.Where(w => w.ServiceOrderId == r.Id).FirstOrDefault().TotalMoney,
-                    BusinessTripDate = ReimburseInfoRes.Where(w => w.ServiceOrderId == r.Id).FirstOrDefault().BusinessTripDate,
-                    EndDate = ReimburseInfoRes.Where(w => w.ServiceOrderId == r.Id).FirstOrDefault().EndDate,
-                    Type = ReimburseInfoRes.Where(w => w.ServiceOrderId == r.Id).FirstOrDefault().Type
-                }).OrderByDescending(r => r.BusinessTripDate).ToList()
-            }).OrderByDescending(c => c.CreateTime).ToList();
+            //var serviceorder = await UnitWork.Find<ServiceOrder>(c => ServiceOrderIds.Contains(c.Id) && c.VestInOrg == 1).OrderByDescending(c => c.CreateTime).ToListAsync();
+            //var customerInfo = serviceorder.GroupBy(c => c.TerminalCustomerId).Select(c => new
+            //{
+            //    CustomerID = c.Key,
+            //    Customer = c.First().TerminalCustomer,
+            //    Address = c.First().Province + c.First().City + c.First().Area + c.First().Addr,
+            //    TotalMoney = ReimburseInfoRes.Where(r => c.Select(s => s?.Id).ToList().Contains(r.ServiceOrderId)).Sum(r => r.TotalMoney),
+            //    Longitude = c.First().Longitude,
+            //    Latitude = c.First().Latitude,
+            //    CreateTime = c.Max(m => m.CreateTime),
+            //    Count = c.Count(),
+            //    ReimburseInfosList = c.Select(r => new
+            //    {
+            //        ServiceOrderId = r.Id,
+            //        Id = ReimburseInfoRes.Where(w => w.ServiceOrderId == r.Id).FirstOrDefault().Id,
+            //        MainId = ReimburseInfoRes.Where(w => w.ServiceOrderId == r.Id).FirstOrDefault().MainId,
+            //        TotalMoney = ReimburseInfoRes.Where(w => w.ServiceOrderId == r.Id).FirstOrDefault().TotalMoney,
+            //        BusinessTripDate = ReimburseInfoRes.Where(w => w.ServiceOrderId == r.Id).FirstOrDefault().BusinessTripDate,
+            //        EndDate = ReimburseInfoRes.Where(w => w.ServiceOrderId == r.Id).FirstOrDefault().EndDate,
+            //        Type = ReimburseInfoRes.Where(w => w.ServiceOrderId == r.Id).FirstOrDefault().Type
+            //    }).OrderByDescending(r => r.BusinessTripDate).ToList()
+            //}).OrderByDescending(c => c.CreateTime).ToList();
+
+            var attendanceClock = await UnitWork.Find<AttendanceClock>(c => c.UserId == req.CreateUserId && c.ClockType == 1)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), c => c.ClockDate >= req.StartDate.Value)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.ClockDate < req.EndDate.Value.AddDays(1).Date)
+                .Select(c => new { c.Location, c.Longitude, c.Latitude, c.ClockDate, CreateTime = $"{c.ClockDate} {c.ClockTime}" })
+                .OrderBy(c => c.ClockDate)
+                .ToListAsync();
+            var servicedailyreport = await UnitWork.Find<ServiceDailyReport>(c => c.CreateUserId == req.CreateUserId)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), c => c.CreateTime >= req.StartDate.Value)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.CreateTime < req.EndDate.Value.AddDays(1).Date)
+                .Select(c => c.CreateTime.Value.Date)
+                .ToListAsync();
+            var servicedailyexpends=await UnitWork.Find<ServiceDailyExpends>(c => c.CreateUserId == req.CreateUserId)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), c => c.CreateTime >= req.StartDate.Value)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.CreateTime < req.EndDate.Value.AddDays(1).Date)
+                .Select(c => c.CreateTime.Value.Date)
+                .ToListAsync();
+
+            var objs = await UnitWork.Find<RealTimeLocation>(w => w.AppUserId == (int)map.AppUserId)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), c => c.CreateTime >= req.StartDate.Value)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), c => c.CreateTime < req.EndDate.Value.AddDays(1).Date)
+                .OrderBy(o => o.CreateTime)
+                .Select(s => new { Latitude = s.BaiduLatitude, Longitude = s.BaiduLongitude, s.CreateTime })
+                .ToListAsync();
+            var data = objs.GroupBy(g => g.CreateTime.Date).Select(s => 
+             {
+                 var bgc = "N";
+                 var border = "N";
+                 if (servicedailyreport.Any(c => c == s.Key))
+                 {
+                     if (attendanceClock.Any(c => c.ClockDate.Value == s.Key)) bgc = "B";
+                     else if (!attendanceClock.Any(c => c.ClockDate.Value == s.Key)) bgc = "Y";
+
+                     if (servicedailyexpends.Any(c => c == s.Key)) border = "Y";
+                 }
+                 return new
+                 {
+                     date = s.Key.ToString("yyyy-MM-dd"),
+                     Bgc = bgc,
+                     Border = border,
+                     list = s.ToList()
+                 };
+            }).ToList();
 
 
             var resultData = ReimburseInfoRes
@@ -2688,8 +2736,273 @@ namespace OpenAuth.App
                 Detail = detail,
                 ResultData = resultData,
                 UserDetail = userdetail,
-                CustomerInfo = customerInfo
+                AttendanceClock = attendanceClock,
+                Date = data,
+                //CustomerInfo = customerInfo
             };
+            return result;
+        }
+
+        /// <summary>
+        /// 根据指定时间获取费用单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetExpenseBillByDate(QueryReimburseInfoListReq req)
+        {
+            TableData result = new TableData();
+            var completionreport = await UnitWork.Find<CompletionReport>(c => c.BusinessTripDate.Value.Date <= req.StartDate && c.EndDate.Value.AddDays(1).Date > req.StartDate && c.CreateUserId == req.CreateUserId).Select(c => new { c.BusinessTripDate, c.EndDate, c.ServiceOrderId }).ToListAsync();
+            var serviceOrderIds = completionreport.Select(c => c.ServiceOrderId).ToList();
+            var reimburseInfos = await UnitWork.Find<ReimburseInfo>(c => serviceOrderIds.Contains(c.ServiceOrderId) && c.CreateUserId == req.CreateUserId && c.RemburseStatus == 9)
+                        .Include(r => r.ReimburseTravellingAllowances)
+                        .Include(r => r.ReimburseFares)
+                        .Include(r => r.ReimburseAccommodationSubsidies)
+                        .Include(r => r.ReimburseOtherCharges)
+                        .ToListAsync();
+            //结算单
+            var flowInstaceId = await UnitWork.Find<FlowInstance>(c => c.CustomName == "个人代理结算单" && c.ActivityName == "结束").Select(c => c.Id).ToListAsync();
+            var outsource = await UnitWork.Find<Outsourc>(c => flowInstaceId.Contains(c.FlowInstanceId) && c.CreateUserId == req.CreateUserId)
+                                .Include(c => c.OutsourcExpenses)
+                                .Where(c => c.OutsourcExpenses.Any(o => serviceOrderIds.Contains(o.ServiceOrderId)))
+                                .ToListAsync();
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => serviceOrderIds.Contains(c.Id)).Select(c => new { c.Id, c.TerminalCustomer, Address = c.Province + c.City + c.Area + c.Addr }).ToListAsync();
+            var dailyexpends = await UnitWork.Find<ServiceDailyExpends>(c => serviceOrderIds.Contains(c.ServiceOrderId)).Select(c => new { c.ServiceOrderId, c.CreateUserId, c.Money }).ToListAsync();
+            var reimburseList = reimburseInfos.Select(c =>
+            {
+                var customer = serviceOrder.Where(s => s.Id == c.ServiceOrderId).FirstOrDefault();
+                var report = completionreport.Where(r => r.ServiceOrderId == c.ServiceOrderId).FirstOrDefault();
+                var current = c.ReimburseTravellingAllowances.Where(r => r.CreateTime.Value.Date == req.StartDate).Sum(r => r.Money) +
+                            c.ReimburseFares.Where(r => r.InvoiceTime.Value.Date == req.StartDate).Sum(r => r.Money) +
+                            c.ReimburseAccommodationSubsidies.Where(r => r.InvoiceTime.Value.Date == req.StartDate).Sum(r => r.Money) +
+                            c.ReimburseOtherCharges.Where(r => r.InvoiceTime.Value.Date == req.StartDate).Sum(r => r.Money);
+                return new
+                {
+                    Type = "报销",
+                    MainId = c.MainId,
+                    c?.ServiceOrderId,
+                    Id = c.Id,
+                    CurrentTime = req.StartDate.Value.ToString("yyyy-MM-dd"),
+                    CurrentMoney = current,
+                    c.TotalMoney,
+                    CustomerName = customer?.TerminalCustomer,
+                    Address = customer?.Address,
+                    report?.BusinessTripDate,
+                    report?.EndDate
+                };
+            }).ToList();
+
+            var outsourceList = outsource.Select(c =>
+            {
+                var serviceOrderId = c.OutsourcExpenses.FirstOrDefault()?.ServiceOrderId;
+                var customer = serviceOrder.Where(s => s.Id == serviceOrderId).FirstOrDefault();
+                var report = completionreport.Where(r => r.ServiceOrderId == serviceOrderId).FirstOrDefault();
+                decimal? current = 0;
+                if (c.ServiceMode == 1)//上门服务
+                {
+                    var expend = c.OutsourcExpenses.Where(c => c.ExpenseType < 3 && c.StartTime.Value.Date <= req.StartDate.Value.Date && c.EndTime.Value.AddDays(1).Date > req.StartDate.Value.Date).ToList();
+                    expend.ForEach(e =>
+                    {
+                        var inter = Math.Ceiling(e.EndTime.Value.Subtract(e.StartTime.Value).TotalDays).ToInt();//向上取整
+                        inter = inter == 0 ? 1 : inter;
+                        var average = Math.Round(e.Money.Value / inter, 2);
+                        current += average;
+                    });
+                }
+                return new
+                {
+                    Type = "结算",
+                    MainId = c.Id,
+                    ServiceOrderId = serviceOrderId,
+                    Id = c.Id,
+                    CurrentTime = req.StartDate.Value.ToString("yyyy-MM-dd"),
+                    CurrentMoney = current,
+                    c.TotalMoney,
+                    CustomerName = customer?.TerminalCustomer,
+                    Address = customer?.Address,
+                    report?.BusinessTripDate,
+                    report?.EndDate
+                };
+            }).ToList();
+            reimburseList.AddRange(outsourceList);
+            var currentTotalMoney = reimburseList.Sum(c => c.CurrentMoney);
+            result.Data = new { currentTotalMoney, reimburseList };
+            result.Count = reimburseList.Count;
+            return result;
+        }
+
+        /// <summary>
+        /// 获取指定时间的费用
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetExpendsByDate(QueryReimburseInfoListReq req)
+        {
+            TableData result = new TableData();
+            if (req.BillType == 1)
+            {
+                var reimburse = await UnitWork.Find<ReimburseInfo>(c => c.Id == req.Id)
+                        .Include(r => r.ReimburseTravellingAllowances)
+                        .Include(r => r.ReimburseFares)
+                        .Include(r => r.ReimburseAccommodationSubsidies)
+                        .Include(r => r.ReimburseOtherCharges)
+                        //.Select(r => new { r.ReimburseTravellingAllowances, r.ReimburseFares, r.ReimburseAccommodationSubsidies, r.ReimburseOtherCharges })
+                        .FirstOrDefaultAsync();
+                reimburse.ReimburseTravellingAllowances = reimburse.ReimburseTravellingAllowances.Where(c => c.CreateTime.Value.Date == req.StartDate.Value.Date).ToList();
+                reimburse.ReimburseFares = reimburse.ReimburseFares.Where(c => c.InvoiceTime.Value.Date == req.StartDate.Value.Date).ToList();
+                reimburse.ReimburseAccommodationSubsidies = reimburse.ReimburseAccommodationSubsidies.Where(c => c.InvoiceTime.Value.Date == req.StartDate.Value.Date).ToList();
+                reimburse.ReimburseOtherCharges = reimburse.ReimburseOtherCharges.Where(c => c.InvoiceTime.Value.Date == req.StartDate.Value.Date).ToList();
+                #region 获取附件
+                reimburse.ReimburseAttachments = await UnitWork.Find<ReimburseAttachment>(r => r.ReimburseId == req.Id && r.ReimburseType == 0).ToListAsync();
+                var ReimburseResp = reimburse.MapTo<ReimburseInfoResp>();
+                List<string> fileids = reimburse.ReimburseAttachments.Select(r => r.FileId).ToList();
+                List<ReimburseAttachment> rffilemodel = new List<ReimburseAttachment>();
+                List<ReimburseExpenseOrg> expenseOrg = new List<ReimburseExpenseOrg>();
+                if (ReimburseResp.ReimburseTravellingAllowances != null && ReimburseResp.ReimburseTravellingAllowances.Count > 0)
+                {
+                    var rtaids = ReimburseResp.ReimburseTravellingAllowances.Select(r => r.Id).ToList();
+                    expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rtaids.Contains(r.ExpenseId) && r.ExpenseType == 1).ToListAsync());
+                }
+                if (ReimburseResp.ReimburseFares != null && ReimburseResp.ReimburseFares.Count > 0)
+                {
+                    var rfids = ReimburseResp.ReimburseFares.Select(r => r.Id).ToList();
+                    rffilemodel = await UnitWork.Find<ReimburseAttachment>(r => rfids.Contains(r.ReimburseId) && r.ReimburseType == 2).ToListAsync();
+                    expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rfids.Contains(r.ExpenseId) && r.ExpenseType == 2).ToListAsync());
+                }
+                if (ReimburseResp.ReimburseAccommodationSubsidies != null && ReimburseResp.ReimburseAccommodationSubsidies.Count > 0)
+                {
+                    var rasids = ReimburseResp.ReimburseAccommodationSubsidies.Select(r => r.Id).ToList();
+                    rffilemodel.AddRange(await UnitWork.Find<ReimburseAttachment>(r => rasids.Contains(r.ReimburseId) && r.ReimburseType == 3).ToListAsync());
+                    expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rasids.Contains(r.ExpenseId) && r.ExpenseType == 3).ToListAsync());
+                }
+                if (ReimburseResp.ReimburseOtherCharges != null && ReimburseResp.ReimburseOtherCharges.Count > 0)
+                {
+                    var rocids = ReimburseResp.ReimburseOtherCharges.Select(r => r.Id).ToList();
+                    rffilemodel.AddRange(await UnitWork.Find<ReimburseAttachment>(r => rocids.Contains(r.ReimburseId) && r.ReimburseType == 4).ToListAsync());
+                    expenseOrg.AddRange(await UnitWork.Find<ReimburseExpenseOrg>(r => rocids.Contains(r.ExpenseId) && r.ExpenseType == 4).ToListAsync());
+                }
+                fileids.AddRange(rffilemodel.Select(f => f.FileId).ToList());
+
+                var file = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
+
+                ReimburseResp.ReimburseAttachments.ForEach(r => { r.AttachmentName = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileName).FirstOrDefault(); r.FileType = file.Where(f => f.Id.Equals(r.FileId)).Select(f => f.FileType).FirstOrDefault(); });
+                if (ReimburseResp.ReimburseTravellingAllowances != null && ReimburseResp.ReimburseTravellingAllowances.Count > 0)
+                {
+                    ReimburseResp.ReimburseTravellingAllowances.ForEach(r =>
+                    {
+                        r.ExpenseType = "1";
+                        r.ReimburseExpenseOrgs = (expenseOrg.Where(e => e.ExpenseId == r.Id && e.ExpenseType == 1).ToList()).MapToList<ReimburseExpenseOrgResp>();
+                    });
+                }
+                if (ReimburseResp.ReimburseFares != null && ReimburseResp.ReimburseFares.Count > 0)
+                {
+                    ReimburseResp.ReimburseFares.ForEach(r =>
+                    {
+                        r.ExpenseType = "2";
+                        r.ReimburseAttachments = rffilemodel.Where(f => f.ReimburseId.Equals(r.Id) && f.ReimburseType == 2).Select(r => new ReimburseAttachmentResp
+                        {
+                            Id = r.Id,
+                            FileId = r.FileId,
+                            AttachmentName = file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileName,
+                            FileType = file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileType,
+                            ReimburseId = r.ReimburseId,
+                            ReimburseType = r.ReimburseType,
+                            AttachmentType = r.AttachmentType
+                        }).ToList();
+                        r.ReimburseExpenseOrgs = (expenseOrg.Where(e => e.ExpenseId == r.Id && e.ExpenseType == 2).ToList()).MapToList<ReimburseExpenseOrgResp>();
+                    });
+                }
+                if (ReimburseResp.ReimburseAccommodationSubsidies != null && ReimburseResp.ReimburseAccommodationSubsidies.Count > 0)
+                {
+                    ReimburseResp.ReimburseAccommodationSubsidies.ForEach(r =>
+                    {
+                        r.ExpenseType = "3";
+                        r.ReimburseAttachments = rffilemodel.Where(f => f.ReimburseId.Equals(r.Id) && f.ReimburseType == 3).Select(r => new ReimburseAttachmentResp
+                        {
+                            Id = r.Id,
+                            FileId = r.FileId,
+                            AttachmentName = file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileName,
+                            FileType = file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileType,
+                            ReimburseId = r.ReimburseId,
+                            ReimburseType = r.ReimburseType,
+                            AttachmentType = r.AttachmentType
+                        }).ToList();
+                        r.ReimburseExpenseOrgs = (expenseOrg.Where(e => e.ExpenseId == r.Id && e.ExpenseType == 3).ToList()).MapToList<ReimburseExpenseOrgResp>();
+                    });
+                }
+                if (ReimburseResp.ReimburseOtherCharges != null && ReimburseResp.ReimburseOtherCharges.Count > 0)
+                {
+                    ReimburseResp.ReimburseOtherCharges.ForEach(r =>
+                    {
+                        r.ExpenseType = "4";
+                        r.ReimburseAttachments = rffilemodel.Where(f => f.ReimburseId.Equals(r.Id) && f.ReimburseType == 4).Select(r => new ReimburseAttachmentResp
+                        {
+                            Id = r.Id,
+                            FileId = r.FileId,
+                            AttachmentName = file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileName,
+                            FileType = file.FirstOrDefault(f => f.Id.Equals(r.FileId)).FileType,
+                            ReimburseId = r.ReimburseId,
+                            ReimburseType = r.ReimburseType,
+                            AttachmentType = r.AttachmentType
+                        }).ToList();
+                        r.ReimburseExpenseOrgs = (expenseOrg.Where(e => e.ExpenseId == r.Id && e.ExpenseType == 4).ToList()).MapToList<ReimburseExpenseOrgResp>();
+                    });
+                }
+
+                #endregion
+                result.Data = ReimburseResp;
+            }
+            else if (req.BillType == 2)
+            {
+                //var outsource = await UnitWork.Find<Outsourc>(c => c.Id == req.Id && c.ServiceMode == 1).Include(c => c.OutsourcExpenses).FirstOrDefaultAsync();
+
+                //var expend = outsource.OutsourcExpenses.Where(c => c.ExpenseType < 3 && c.StartTime.Value.Date <= req.StartDate && c.EndTime.Value.AddDays(1).Date > req.StartDate).ToList();
+                var outsourcObj = await UnitWork.Find<Outsourc>(o => o.Id == req.Id && o.ServiceMode == 1).Include(o => o.OutsourcExpenses).ThenInclude(o => o.outsourcexpensespictures)
+                .FirstOrDefaultAsync();
+                if (outsourcObj != null)
+                {
+                    var expenseIds = outsourcObj.OutsourcExpenses.Select(o => o.Id).ToList();
+                    var expenseOrgs = await UnitWork.Find<OutsourcExpenseOrg>(o => expenseIds.Contains(o.ExpenseId)).ToListAsync();
+                    var outsourcDetails = new OpenAuth.App.Workbench.Response.OutsourcDetailsResp
+                    {
+                        OutsourcId = outsourcObj.Id.ToString(),
+                        ServiceMode = outsourcObj.ServiceMode,
+                        Remark = outsourcObj.Remark,
+                        TotalMoney = outsourcObj.TotalMoney,
+                        UpdateTime = Convert.ToDateTime(outsourcObj.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
+                        OutsourcExpenses = outsourcObj.OutsourcExpenses.Where(c => c.ExpenseType < 3 && c.StartTime.Value.Date <= req.StartDate.Value.Date && c.EndTime.Value.AddDays(1).Date > req.StartDate.Value.Date).Select(e => new OpenAuth.App.Workbench.Response.OutsourcExpensesResp
+                        {
+                            Id = e.Id,
+                            FromLat = e.FromLat,
+                            Days = e.Days,
+                            From = e.From,
+                            FromLng = e.FromLng,
+                            ManHour = e.ManHour,
+                            ExpenseType = e.ExpenseType,
+                            Money = e.Money,
+                            To = e.To,
+                            ToLat = e.ToLat,
+                            ToLng = e.ToLng,
+                            StartTime = e.StartTime,
+                            EndTime = e.EndTime,
+                            OutsourcExpenseOrgs = expenseOrgs.Where(o => o.ExpenseId.Equals(e.Id)).ToList(),
+                            Files = e.outsourcexpensespictures.Select(p => new FileResp
+                            {
+                                FileId = p.PictureId,
+                                FileName = p.FileName,
+                                FileType = p.FileType
+                            }).ToList()
+                        }).OrderBy(r => r.StartTime).ToList()
+                    };
+
+                    outsourcDetails.OutsourcExpenses.ForEach(e =>
+                    {
+                        var inter = Math.Ceiling(e.EndTime.Value.Subtract(e.StartTime.Value).TotalDays).ToInt();//向上取整
+                        inter = inter == 0 ? 1 : inter;
+                        e.Money = Math.Round(e.Money.Value / inter, 2);
+                    });
+                    result.Data = outsourcDetails;
+                }
+            }
             return result;
         }
 
