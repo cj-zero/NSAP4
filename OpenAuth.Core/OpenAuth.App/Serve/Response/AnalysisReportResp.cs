@@ -33,5 +33,8 @@ namespace OpenAuth.App.Serve.Response
         /// </summary>
 
         public int? Count { get; set; }
+
+        public decimal? TotalMoney { get; set; }
+        public string Description { get; set; }
     }
 }

@@ -132,5 +132,10 @@ namespace OpenAuth.App.Request
         /// 单据类型
         /// </summary>
         public int BillType { get; set; }
+
+        /// <summary>
+        /// 呼叫主题
+        /// </summary>
+        public string FromTheme { get; set; }
     }
 }
