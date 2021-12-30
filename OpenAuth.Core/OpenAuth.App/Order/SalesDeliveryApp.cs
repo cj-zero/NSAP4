@@ -39,6 +39,16 @@ namespace OpenAuth.App.Order
             Model.DocStatus = "O";
             Model.Comments += "基于销售订单" + salesDeliverySaveReq.JobId;
             Model.CustomFields = salesDeliverySaveReq.CustomFields;
+            Model.billBaseEntry = salesDeliverySaveReq.JobId.ToString();
+            Model.billBaseType = "17";
+            int i = 0;
+            foreach (var item in Model.billSalesDetails)
+            {
+                item.BaseEntry = salesDeliverySaveReq.JobId.ToString();
+                item.BaseLine = i.ToString();
+                item.BaseType = "17";
+                i++;
+            }
             #region 必须都有关联订单，并且购买数量与关联订单数量一致,采购订单所有物料高于2次的采购历史，并且价格不高于历史最低价，则不需审批直接通过。
             bool PurPassAudit = false;
             #endregion

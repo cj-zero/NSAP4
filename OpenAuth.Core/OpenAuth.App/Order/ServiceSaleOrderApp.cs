@@ -1057,7 +1057,7 @@ namespace OpenAuth.App.Order
             {
                 filterString += string.Format("(m.ItemCode NOT LIKE 'CT%' AND m.ItemCode NOT LIKE 'CE%' AND m.ItemCode NOT LIKE 'CG%') AND ");
             }
-            filterString += string.Format("  m.sbo_id={0} AND ", sboid);
+            filterString += string.Format(" w.WhsCode = '37' AND m.sbo_id={0} AND ", sboid);
             if (!string.IsNullOrEmpty(filterString))
             {
                 filterString = filterString.Substring(0, filterString.Length - 5);
@@ -9781,7 +9781,7 @@ namespace OpenAuth.App.Order
                                         , t2.OnHand as whsOnHand,t2.IsCommited as whsIsCommited,t2.OnOrder as whsOnOrder,(t2.OnHand - t2.IsCommited + t2.OnOrder) as whsOnAvailable
                                         from {0}.store_oitm t1
                                         LEFT OUTER JOIN {0}.store_oitw t2 on t2.ItemCode = t1.ItemCode and t2.sbo_id = t1.sbo_Id and t2.whsCode = '{1}'
-                                        where t1.sbo_id = {2} and t1.ItemCode = '{3}'", "nsap_bone", whsCode, sboId, itemCode);
+                                        where t1.sbo_id = {2} and t1.ItemCode = '{3}'", "nsap_bone", whsCode, sboId, itemCode.FilterSQL());
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sqlstr, CommandType.Text, null);
         }
 
