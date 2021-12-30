@@ -87,7 +87,9 @@ namespace OpenAuth.App.Workbench
                 }).ToList()
             }).FirstOrDefaultAsync();
             serviceOrder.Balance = await UnitWork.Find<OCRD>(o => serviceOrder.TerminalCustomerId.Contains(o.CardCode)).Select(o => o.Balance.ToString()).FirstOrDefaultAsync();
-            serviceOrder.Petitioner = petitioner.OrgName + "-" + petitioner.Name;
+            //serviceOrder.Petitioner = petitioner.OrgName + "-" + petitioner.Name;
+            serviceOrder.Petitioner = petitioner.Name;
+            serviceOrder.PetitionerDept = petitioner.OrgName;
             serviceOrder.PetitionerId = petitioner.Id;
             serviceOrder.RoleIdentity = orgrole.RoleIdentity;
             serviceOrder.ServiceDailyReports = serviceDailyReportList.Select(s => new ServiceDailyReportResp
