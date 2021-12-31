@@ -1267,11 +1267,15 @@ namespace OpenAuth.App
                 var outsourcexpensesObj = o.OutsourcExpenses.FirstOrDefault();
                 outsourcs.Add(new OutsourcExcelDto
                 {
-                    Id=o.Id,
-                    ServiceOrderSapId=outsourcexpensesObj?.ServiceOrderSapId,
+                    Id = o.Id,
+                    ServiceOrderSapId = outsourcexpensesObj?.ServiceOrderSapId,
                     CustomerId = outsourcexpensesObj?.TerminalCustomerId,
-                    CustomerName =outsourcexpensesObj?.TerminalCustomer,
-                    TotalMoney=o.TotalMoney,
+                    CustomerName = outsourcexpensesObj?.TerminalCustomer,
+                    ServiceFee = o.OutsourcExpenses.Where(c => c.ExpenseType == 4).Sum(c => c.Money),
+                    WorkingHoursFee = o.OutsourcExpenses.Where(c => c.ExpenseType == 3).Sum(c => c.Money),
+                    TransportationFee = o.OutsourcExpenses.Where(c => c.ExpenseType == 1).Sum(c => c.Money),
+                    AccommodationFee = o.OutsourcExpenses.Where(c => c.ExpenseType == 2).Sum(c => c.Money),
+                    TotalMoney = o.TotalMoney,
                     CreateUser = orgName == null ? o.CreateUser : orgName + "-" + o.CreateUser
                 });
             });
