@@ -7,6 +7,7 @@ using Newtonsoft.Json.Linq;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using OpenAuth.App.Serve.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Settlement;
 using OpenAuth.Repository.Interface;
@@ -21,6 +22,7 @@ namespace OpenAuth.App
     public class CommonApp : OnlyUnitWorkBaeApp
     {
         private readonly ICacheContext _cacheContext;
+        private readonly ReimburseInfoApp _reimburseInfoApp;
         private readonly List<StatusList> monthTemp = new List<StatusList>
         {
             new StatusList { ID = 1,Name = "1月" } ,
@@ -36,9 +38,10 @@ namespace OpenAuth.App
             new StatusList { ID = 11 ,Name = "11月"},
             new StatusList { ID = 12 ,Name = "12月"}
         };
-        public CommonApp(IUnitWork unitWork, IAuth auth, ICacheContext cacheContext) : base(unitWork, auth)
+        public CommonApp(IUnitWork unitWork, IAuth auth, ICacheContext cacheContext, ReimburseInfoApp reimburseInfoApp) : base(unitWork, auth)
         {
             _cacheContext = cacheContext;
+            _reimburseInfoApp = reimburseInfoApp;
         }
 
         #region 首页报表
@@ -1182,6 +1185,76 @@ namespace OpenAuth.App
         }
         #endregion
 
+        #region 报销模块报表
+        /// <summary>
+        /// 费用归属报表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> CostAnalysisReport(QueryReimburseInfoListReq request)
+        {
+            var result = new TableData();
+            List<AnalysisReportResp> AnalysisReportRespList = new List<AnalysisReportResp>();
+            var ReimburseInfolist = await _reimburseInfoApp.GetCostReimburseInfo(request);
+            var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
+            var SelUserName = await UnitWork.Find<User>(null).Select(u => new { u.Id, u.Name }).ToListAsync();
+            var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
+            //var ServiceOrderIds = ReimburseInfolist.Select(d => d.ServiceOrderId).ToList();
+            //var ServiceOrders = await UnitWork.Find<ServiceOrder>(s => ServiceOrderIds.Contains(s.Id)).ToListAsync();
+            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceMode == 1 && c.IsReimburse == 2)
+                .WhereIf(!string.IsNullOrWhiteSpace(request.FromTheme), c => c.FromTheme.Contains(request.FromTheme))
+                .ToListAsync();
+            var ReimburseResps = from a in ReimburseInfolist
+                                 join b in CompletionReports on a.ServiceOrderId equals b.ServiceOrderId
+                                 join d in SelUserName on a.CreateUserId equals d.Id into ad
+                                 from d in ad.DefaultIfEmpty()
+                                 join e in Relevances on a.CreateUserId equals e.FirstId into ae
+                                 from e in ae.DefaultIfEmpty()
+                                 join f in SelOrgName on e.SecondId equals f.Id into ef
+                                 from f in ef.DefaultIfEmpty()
+                                 select new { a, b, d, f };
+            ReimburseResps = ReimburseResps.GroupBy(r => r.a.Id).Select(r => r.First()).OrderByDescending(r => r.a.UpdateTime).ToList();
+            var ReimburseRespList = ReimburseResps.Select(r => new
+            {
+                r.a.MainId,
+                r.a.TotalMoney,
+                r.b.TerminalCustomerId,
+                r.b.TerminalCustomer,
+                r.b.FromTheme,
+                UserName = r.f.Name == null ? r.d.Name : r.f.Name + "-" + r.d.Name,
+            }).ToList();
+            //报销人
+            var user = ReimburseRespList.GroupBy(c => c.UserName).Select(c => new AnalysisReportSublist { Name = c.Key, Count = c.Count(), TotalMoney = c.Sum(s => s.TotalMoney) }).OrderByDescending(c => c.TotalMoney).ToList();
+            AnalysisReportRespList.Add(new AnalysisReportResp { Name = "User", AnalysisReportSublists = user });
+            //客户
+            var customer = ReimburseRespList.GroupBy(c => c.TerminalCustomer).Select(c => new AnalysisReportSublist { Name = c.Key, Count = c.Count(), TotalMoney = c.Sum(s => s.TotalMoney) }).OrderByDescending(c => c.TotalMoney).ToList();
+            AnalysisReportRespList.Add(new AnalysisReportResp { Name = "Customer", AnalysisReportSublists = customer });
+            //呼叫主题
+            List<ServiceWorkOrderFromTheme> formThemeList = new List<ServiceWorkOrderFromTheme>();
+             ReimburseRespList.ForEach(c =>
+            {
+                var theme = GetServiceTroubleAndSolution(c.FromTheme);
+                if (!string.IsNullOrWhiteSpace(request.FromTheme))
+                    theme = theme.Where(t => t.Code == request.FromTheme).ToList();
+                for (int i = 0; i < theme.Count; i++)
+                {
+                    var item = theme[i];
+                    formThemeList.Add(new ServiceWorkOrderFromTheme { Code = item.Code, Description = item.Description, TotalMoney = c.TotalMoney });
+                }
+            });
+            var formThemeObj = formThemeList.GroupBy(c => c.Code.ToString()).Select(c => new AnalysisReportSublist
+            {
+                Name = c.Key.ToString(),
+                Description = c.First().Description,
+                Count = c.Count(),
+                TotalMoney = c.Sum(s => s.TotalMoney)
+            }).OrderByDescending(c => c.TotalMoney).ToList();
+            AnalysisReportRespList.Add(new AnalysisReportResp { Name = "FromTheme", AnalysisReportSublists = formThemeObj });
+
+            result.Data = AnalysisReportRespList;
+            return result;
+        }
+        #endregion
         private List<ServiceWorkOrderFromTheme> GetServiceTroubleAndSolution(string data)
         {
             List<ServiceWorkOrderFromTheme> result = new List<ServiceWorkOrderFromTheme>();
@@ -1255,6 +1328,8 @@ namespace OpenAuth.App
         public int? Status { get; set; }
 
         public string? ThemeId { get; set; }
+
+        public decimal? TotalMoney { get; set; }
     }
 
     public class DeptServiceTheme
