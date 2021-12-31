@@ -1514,14 +1514,14 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <returns></returns>
         [HttpGet]
         [Route("IsExistDoc")]
-        public Response<bool> IsExistDoc(string base_entry, string base_type)
+        public Response<bool> IsExistDoc(string base_entry, string base_type, string func_id )
         {
             var UserID = _serviceBaseApp.GetUserNaspId();
             var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
             var result = new Response<bool>();
             try
             {
-                result.Result = _serviceSaleOrderApp.IsExistDoc(base_entry, base_type, SboID.ToString());
+                result.Result = _serviceSaleOrderApp.IsExistDoc(base_entry, base_type, SboID.ToString(), func_id);
             }
             catch (Exception e)
             {
