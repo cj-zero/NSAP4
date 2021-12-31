@@ -4114,11 +4114,11 @@ namespace OpenAuth.App.Order
         /// <summary>
         /// 判断审核里是否已经提交该单据（销售订单）
         /// </summary>
-        public bool IsExistDoc(string base_entry, string base_type, string sboId)
+        public bool IsExistDoc(string base_entry, string base_type, string sboId,string func_id)
         {
             bool result = false;
             string strSql = string.Format("SELECT COUNT(*) FROM {0}.wfa_job", "nsap_base");
-            strSql += string.Format(" WHERE (base_type={0} OR base_type=-5 )AND sbo_id={1} AND base_entry={2}  AND (job_state=1 OR job_state=0 OR job_state=2 OR job_state=4)AND job_type_id=(SELECT job_type_id FROM nsap_base.base_func WHERE func_id=33 LIMIT 1)", base_type, sboId, base_entry);
+            strSql += string.Format(" WHERE (base_type={0} OR base_type=-5 )AND sbo_id={1} AND base_entry={2}  AND (job_state=1 OR job_state=0 OR job_state=2 OR job_state=4)AND job_type_id=(SELECT job_type_id FROM nsap_base.base_func WHERE func_id={3} LIMIT 1)", base_type, sboId, base_entry, func_id);
 
             object obj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
             if (obj.ToString() == "0" || obj == null)

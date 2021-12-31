@@ -36,6 +36,16 @@ namespace OpenAuth.App.Order
             string result = "", className = "";
             if (jobname == "销售交货") { className = "NSAP.B1Api.BOneODLN"; }
             billDelivery Model = _serviceSaleOrderApp.GetDeliverySalesInfoNewNos(salesDeliverySaveReq.JobId.ToString(), 7);
+            if (Model is null)
+            {
+                result = "单据不存在";
+                return result;
+            }
+            if (_serviceSaleOrderApp.IsExistDoc(salesDeliverySaveReq.JobId.ToString(), "23", "1", "17"))
+            {
+                result = "该销售订单转销售交货单已提交";
+                return result;
+            }
             Model.DocStatus = "O";
             Model.Comments += "基于销售订单" + salesDeliverySaveReq.JobId;
             Model.CustomFields = salesDeliverySaveReq.CustomFields;
