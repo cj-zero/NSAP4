@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using System.Globalization;
 using System.Linq;
 
 namespace OpenAuth.WebApi
@@ -15,6 +16,8 @@ namespace OpenAuth.WebApi
     {
         public static void Main(string[] args)
         {
+            CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("zh-CN", true) { DateTimeFormat = { ShortDatePattern = "yyyy-MM-dd", FullDateTimePattern = "yyyy-MM-dd HH:mm:ss", LongTimePattern = "HH:mm:ss" } };
+
             CreateHostBuilder(args).Build().Run();
         }
 
@@ -33,7 +36,7 @@ namespace OpenAuth.WebApi
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseUrls("http://*:52789")
-                    .UseSerilog((context,configuration) =>
+                    .UseSerilog((context, configuration) =>
                              configuration.BuildSerilogLogger(context.Configuration)
                         )
                     .UseStartup<Startup>();
