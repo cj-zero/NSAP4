@@ -91,6 +91,19 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 获取未完工状态的客诉单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> LoadServiceOrder()
+        {
+            var result = new TableData();
+            result = await _realTimeLocationApp.LoadServiceOrder();
+            return result;
+        }
+
+        /// <summary>
         /// 查询技术员轨迹
         /// </summary>
         /// <param name="req"></param>

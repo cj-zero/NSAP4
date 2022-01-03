@@ -259,6 +259,11 @@ namespace OpenAuth.WebApi.Controllers
         {
             return await _app.GetErp3UserSingle(id);
         }
+        [HttpGet]
+        public async Task SysnERPUser()
+        {
+             await _app.SysnERPUser();
+        }
 
         public UsersController(UserManagerApp app)
         {

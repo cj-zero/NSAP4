@@ -268,5 +268,29 @@ namespace OpenAuth.WebApi.Controllers
             return await _app.ServiceThemeProgress(req);
         }
         #endregion
+
+        #region 报销模块报表
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> CostAnalysisReport([FromQuery] QueryReimburseInfoListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.CostAnalysisReport(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+        #endregion
     }
 }

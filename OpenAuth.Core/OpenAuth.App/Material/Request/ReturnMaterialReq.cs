@@ -93,6 +93,11 @@ namespace OpenAuth.App.Material.Request
         public string CreateUserName { get; set; }
 
         /// <summary>
+        /// 物料编码
+        /// </summary>
+        public string MaterialCode { get; set; }
+
+        /// <summary>
         /// 物流图片
         /// </summary>
         public List<string> ExpressPictureIds { get; set; }

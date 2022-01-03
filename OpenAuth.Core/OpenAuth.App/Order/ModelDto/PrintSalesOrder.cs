@@ -6,12 +6,12 @@ using System.Text;
 namespace OpenAuth.App.Order.ModelDto
 {
     /// <summary>
-    /// 销售报价单打印
+    /// 销售订单打印
     /// </summary>
-    public class PrintSalesQuotation
+    public class PrintSalesOrder
     {
         /// <summary>
-        /// 销售报价单单号
+        /// 销售订单单号
         /// </summary>
         public string DocEntry { get; set; }
         /// <summary>
@@ -80,6 +80,22 @@ namespace OpenAuth.App.Order.ModelDto
         /// </summary>
         public string DATEFORMAT { get; set; }
         /// <summary>
+        /// 客户po
+        /// </summary>
+        public string NumAtCard{ get; set; }
+        /// <summary>
+        /// 打印次数
+        /// </summary>
+        public string PrintNumIndex { get; set; }
+        /// <summary>
+        /// 打印编号
+        /// </summary>
+        public string PrintNo { get; set; }
+        /// <summary>
+        /// 税率
+        /// </summary>
+        public string U_SL { get; set; }
+        /// <summary>
         /// 物料信息
         /// </summary>
         public List<ReimburseCost> ReimburseCosts { get; set; }
@@ -87,34 +103,5 @@ namespace OpenAuth.App.Order.ModelDto
 
     }
 
-    /// <summary>
-    /// 物料信息
-    /// </summary>
-    public class ReimburseCost 
-    {
-        /// <summary>
-        /// 产品编码
-        /// </summary>
-        public string ItemCode { get; set; }
-        /// <summary>
-        /// 描述
-        /// </summary>
-        public string Dscription { get; set; }
-        /// <summary>
-        /// 数量
-        /// </summary>
-        public string Quantity { get; set; }
-        /// <summary>
-        /// 单位
-        /// </summary>
-        public string unitMsr{ get; set; }
-        /// <summary>
-        /// 单价
-        /// </summary>
-        public string Price { get; set; }
-        /// <summary>
-        /// 金额
-        /// </summary>
-        public string Money { get; set; }
-    }
+    
 }

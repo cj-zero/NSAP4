@@ -22,6 +22,18 @@ namespace OpenAuth.App.Response
         [ExporterHeader(DisplayName = "客户名称")]
         public string CustomerName { get; set; }
 
+        [ExporterHeader(DisplayName = "远程服务费")]
+        public decimal? ServiceFee { get; set; }
+
+        [ExporterHeader(DisplayName = "上门工时费")]
+        public decimal? WorkingHoursFee { get; set; }
+
+        [ExporterHeader(DisplayName = "交通补贴")]
+        public decimal? TransportationFee{ get; set; }
+
+        [ExporterHeader(DisplayName = "住宿补贴")]
+        public decimal? AccommodationFee { get; set; }
+
         [ExporterHeader(DisplayName = "金额")]
         public decimal? TotalMoney { get; set; }
 

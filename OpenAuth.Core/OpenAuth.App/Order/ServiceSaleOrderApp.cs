@@ -35,6 +35,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using System.Net.Http.Headers;
 using Infrastructure.Export;
+using DinkToPdf;
 
 namespace OpenAuth.App.Order
 {
@@ -1018,6 +1019,109 @@ namespace OpenAuth.App.Order
             return tableData;
         }
         /// <summary>
+        /// 包材物料数据获取
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="sboid"></param>
+        /// <returns></returns>
+        public TableData PackingMaterialSaleItem(ItemRequest query, string sboid)
+        {
+            TableData tableData = new TableData();
+            string sortString = string.Empty;
+            string filterString = string.Empty;
+            if (!string.IsNullOrEmpty(query.SortName) && !string.IsNullOrEmpty(query.SortOrder))
+            {
+                sortString = string.Format("{0} {1}", query.SortName.Replace("itemcode", "m.itemcode"), query.SortOrder.ToUpper());
+            }
+            if (!string.IsNullOrEmpty(query.ItemCode))
+            {
+                filterString += string.Format("m.ItemCode LIKE '%{0}%' AND ", query.ItemCode.FilterWildCard());
+            }
+            filterString += string.Format("(m.ItemCode ='{0}' OR ", "F02-003-BTS-1U");
+            filterString += string.Format("m.ItemCode = '{0}'  OR ", "F02-003-BTS-3U");
+            filterString += string.Format("m.ItemCode = '{0}' OR ", "F02-003-BTS-3U3F-MX");
+            filterString += string.Format("m.ItemCode = '{0}' OR ", "F02-003-BTS-6U");
+            filterString += string.Format("m.ItemCode = '{0}' OR ", "F02-003-BVIR");
+            filterString += string.Format("m.ItemCode = '{0}' OR ", "F02-003-QPD-280-780");
+            filterString += string.Format("m.ItemCode = '{0}' OR ", "F02-003-QZD-1U");
+            filterString += string.Format("m.ItemCode = '{0}' OR ", "F02-003-QZD-3U");
+            filterString += string.Format("m.ItemCode = '{0}' OR ", "F02-003-ZZM");
+            filterString += string.Format("m.ItemCode = '{0}' OR ", "F02-003-ZZM-1U");
+            filterString += string.Format("m.ItemCode = '{0}' OR ", "E03-LBD");
+            filterString += string.Format("m.ItemCode = '{0}' ) AND ", "F02-003-ZZM-BVIR");
+            if (query.TypeId == "1")
+            {
+                filterString += string.Format("(m.ItemCode NOT LIKE 'CT%') AND ");
+            }
+            if (query.TypeId == "2")
+            {
+                filterString += string.Format("(m.ItemCode NOT LIKE 'CT%' AND m.ItemCode NOT LIKE 'CE%' AND m.ItemCode NOT LIKE 'CG%') AND ");
+            }
+            filterString += string.Format(" w.WhsCode = '37' AND m.sbo_id={0} AND ", sboid);
+            if (!string.IsNullOrEmpty(filterString))
+            {
+                filterString = filterString.Substring(0, filterString.Length - 5);
+            }
+            StringBuilder tableName = new StringBuilder();
+            StringBuilder filedName = new StringBuilder();
+            filedName.Append("m.ItemCode,m.ItemName,IFNULL(c.high_price,0) AS high_price,IFNULL(c.low_price,0) AS low_price,w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,(w.OnHand-w.IsCommited+w.OnOrder) AS OnAvailable,");
+            filedName.Append("(m.OnHand-m.IsCommited+m.OnOrder) AS Available,w.WhsCode,IFNULL(U_TDS,'0') AS U_TDS,IFNULL(U_DL,0) AS U_DL,");
+            filedName.Append("IFNULL(U_DY,0) AS U_DY,m.U_JGF,m.LastPurPrc,IFNULL(c.item_cfg_id,0) item_cfg_id,IFNULL(c.pic_path,m.PicturName) pic_path,");
+            filedName.Append("((CASE m.QryGroup1 WHEN 'N' then 0 else 0.5 END)");
+            filedName.Append("+(CASE m.QryGroup2 WHEN 'N' then 0 else 3 END)");
+            filedName.Append("+(CASE m.QryGroup3 WHEN 'N' then 0 else 2 END)) AS QryGroup,c.item_desp,IFNULL(m.U_US,0) U_US,IFNULL(m.U_FS,0) U_FS,m.QryGroup3,m.SVolume,m.SWeight1,");
+            filedName.Append("(CASE m.QryGroup1 WHEN 'N' THEN 0 ELSE '0.5' END) AS QryGroup1,");
+            filedName.Append("(CASE m.QryGroup2 WHEN 'N' THEN 0 ELSE '3' END) AS QryGroup2,");
+            filedName.Append("(CASE m.QryGroup3 WHEN 'N' THEN 0 ELSE '2' END) AS _QryGroup3,m.U_JGF1,IFNULL(m.U_YFCB,'0') U_YFCB,m.MinLevel,m.PurPackUn,c.item_counts,m.buyunitmsr");
+            tableName.AppendFormat(" {0}.store_oitm m", "nsap_bone");
+            tableName.AppendFormat(" LEFT JOIN {0}.store_oitw w ON m.ItemCode = w.ItemCode AND m.sbo_id=w.sbo_id ", "nsap_bone");
+            tableName.AppendFormat(" LEFT JOIN {0}.base_item_cfg c ON m.ItemCode = c.ItemCode AND type_id={1} ", "nsap_bone", query.TypeId);
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pTableName",tableName.ToString()),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pFieldName",filedName.ToString()),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pPageSize",query.limit),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pPageIndex",query.page),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pStrOrder",sortString),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("pStrWhere",filterString)
+            };
+            MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter isStats = new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("@pIsTotal", SqlDbType.Int);
+            isStats.Value = 1;
+            sqlParameters.Add(isStats);
+            MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter paramOut = new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("@rowsCount", SqlDbType.Int);
+            paramOut.Value = 0;
+            paramOut.Direction = ParameterDirection.Output;
+            sqlParameters.Add(paramOut);
+            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"nsap_base.sp_common_pager", CommandType.StoredProcedure, sqlParameters);
+            DataTable dtsbo = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM nsap_base.sbo_info WHERE sbo_id={sboid}", CommandType.Text, null); ;
+            string IsOpen = "0";
+            if (dtsbo.Rows.Count > 0)
+            {
+                IsOpen = dtsbo.Rows[0]["is_open"].ToString();
+            }
+            if (IsOpen == "1")
+            {
+                foreach (DataRow tempr in dt.Rows)
+                {
+                    string tempsql = string.Format(@"select w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,(w.OnHand-w.IsCommited+w.OnOrder) AS OnAvailable,(m.OnHand-m.IsCommited+m.OnOrder) AS Available 
+                                              from OITM M LEFT OUTER JOIN OITW W ON m.ItemCode = w.ItemCode where m.ItemCode='{0}' and w.WhsCode={1}", tempr["ItemCode"].ToString().FilterWildCard(), tempr["WhsCode"].ToString());
+                    DataTable tempt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, tempsql, CommandType.Text, null);
+                    if (tempt.Rows.Count > 0)
+                    {
+                        tempr["OnHand"] = tempt.Rows[0]["OnHand"] == null ? 0 : tempt.Rows[0]["OnHand"];
+                        tempr["SumOnHand"] = tempt.Rows[0]["SumOnHand"] == null ? 0 : tempt.Rows[0]["SumOnHand"];
+                        tempr["IsCommited"] = tempt.Rows[0]["IsCommited"] == null ? 0 : tempt.Rows[0]["IsCommited"];
+                        tempr["OnOrder"] = tempt.Rows[0]["OnOrder"] == null ? 0 : tempt.Rows[0]["OnOrder"];
+                        tempr["OnAvailable"] = tempt.Rows[0]["OnAvailable"] == null ? 0 : tempt.Rows[0]["OnAvailable"];
+                        tempr["Available"] = tempt.Rows[0]["Available"] == null ? 0 : tempt.Rows[0]["Available"];
+                    }
+                }
+            }
+            tableData.Data = dt.Tolist<SaleItemDto>();
+            tableData.Count = Convert.ToInt32(paramOut.Value);
+            return tableData;
+        }
+        /// <summary>
         /// 获取物料配置清单
         /// </summary>
         /// <param name="ItemCode"></param>
@@ -1396,7 +1500,7 @@ namespace OpenAuth.App.Order
                 CardCode = !string.IsNullOrEmpty(order.CardCode) ? order.CardCode : "",
                 Comments = order.Comments,//备注
                 CurSource = order.CurSource,//货币类型
-                CustomFields = order.CustomFields,//  $"U_ShipName≮1≯≮0≯U_SCBM≮1≯P3-陈友祥",
+                CustomFields = !string.IsNullOrEmpty(order.CustomFields) ? order.CustomFields.Replace(" ", "").Replace("　", "") : "",//  $"U_ShipName≮1≯≮0≯U_SCBM≮1≯P3-陈友祥",
                 BeforeDiscSum = !string.IsNullOrEmpty(order.BeforeDiscSum) ? order.BeforeDiscSum : "0.0",// 折扣前总计
                 DiscSum = !string.IsNullOrEmpty(order.DiscSum.ToString()) ? order.DiscSum.ToString() : "0",//折扣金额
                 DiscPrcnt = !string.IsNullOrEmpty(order.DiscPrcnt.ToString()) ? order.DiscPrcnt.ToString() : "0.0",//折扣（折扣率）
@@ -3925,7 +4029,46 @@ namespace OpenAuth.App.Order
                 };
                 PrintSalesQuotation.ReimburseCosts.Add(scon);
             }
-            return await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesQuotation.cshtml");
+            var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesQuotationheader.html");
+            var text = System.IO.File.ReadAllText(url);
+            text = text.Replace("@Model.Data.logo", PrintSalesQuotation.logo);
+            text = text.Replace("@Model.Data.DocEntry", PrintSalesQuotation.DocEntry);
+            text = text.Replace("@Model.Data.DateTime", PrintSalesQuotation.DateTime);
+            text = text.Replace("@Model.Data.QRcode", PrintSalesQuotation.QRcode);
+            text = text.Replace("@Model.Data.SalseName", PrintSalesQuotation.SalseName);
+            text = text.Replace("@Model.Data.CardCode", PrintSalesQuotation.CardCode);
+            text = text.Replace("@Model.Data.Name", PrintSalesQuotation.Name);
+            text = text.Replace("@Model.Data.Tel", PrintSalesQuotation.Tel);
+            text = text.Replace("@Model.Data.Fax", PrintSalesQuotation.Fax);
+            text = text.Replace("@Model.Data.CardName", PrintSalesQuotation.CardName);
+            text = text.Replace("@Model.Data.Address", PrintSalesQuotation.Address);
+            text = text.Replace("@Model.Data.Name", PrintSalesQuotation.Name);
+            text = text.Replace("@Model.Data.Address2", PrintSalesQuotation.Address2);
+            text = text.Replace("@Model.Data.SalseName", PrintSalesQuotation.SalseName);
+            text = text.Replace("@Model.Data.Cellolar", PrintSalesQuotation.Cellolar);
+            text = text.Replace("@Model.Data.DATEFORMAT", PrintSalesQuotation.DATEFORMAT);
+            text = text.Replace("@Model.Data.PymntGroup", PrintSalesQuotation.PymntGroup);
+            text = text.Replace("@Model.Data.Comments", PrintSalesQuotation.Comments);
+            var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesQuotationheader{PrintSalesQuotation.DocEntry}.html");
+            System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
+            var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesQuotationfooter.html");
+            var foottext = System.IO.File.ReadAllText(footUrl);
+            foottext = foottext.Replace("@Model.Data.DocTotal", PrintSalesQuotation.DocTotal);
+            var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesQuotationfooter{PrintSalesQuotation.DocEntry}.html");
+            System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
+            byte[] basecode = await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesQuotation.cshtml", pdf =>
+             {
+                 pdf.Orientation = Orientation.Portrait;
+                 pdf.IsWriteHtml = true;
+                 pdf.PaperKind = PaperKind.A4;
+                 pdf.IsEnablePagesCount = true;
+                 pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                 pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
+             });
+            System.IO.File.Delete(tempUrl);
+            System.IO.File.Delete(foottempUrl);
+            return basecode;
+
         }
         /// <summary>
         /// 销售报价单主数据导出
@@ -3971,11 +4114,11 @@ namespace OpenAuth.App.Order
         /// <summary>
         /// 判断审核里是否已经提交该单据（销售订单）
         /// </summary>
-        public bool IsExistDoc(string base_entry, string base_type, string sboId)
+        public bool IsExistDoc(string base_entry, string base_type, string sboId,string func_id)
         {
             bool result = false;
             string strSql = string.Format("SELECT COUNT(*) FROM {0}.wfa_job", "nsap_base");
-            strSql += string.Format(" WHERE (base_type={0} OR base_type=-5 )AND sbo_id={1} AND base_entry={2}  AND (job_state=1 OR job_state=0 OR job_state=2 OR job_state=4)AND job_type_id=(SELECT job_type_id FROM nsap_base.base_func WHERE func_id=33 LIMIT 1)", base_type, sboId, base_entry);
+            strSql += string.Format(" WHERE (base_type={0} OR base_type=-5 )AND sbo_id={1} AND base_entry={2}  AND (job_state=1 OR job_state=0 OR job_state=2 OR job_state=4)AND job_type_id=(SELECT job_type_id FROM nsap_base.base_func WHERE func_id={3} LIMIT 1)", base_type, sboId, base_entry, func_id);
 
             object obj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
             if (obj.ToString() == "0" || obj == null)
@@ -5661,96 +5804,117 @@ namespace OpenAuth.App.Order
         /// </summary>
         public bool ICreatedBack(string keyIds, string userId, string urlType)
         {
-            string errorMsg = string.Empty;
 
-            List<CmdParameter> cmdParameters = new List<CmdParameter>();
-            IDataParameter[] parameter = new IDataParameter[] { new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_id", keyIds) };
-            CmdParameter qcmdParameter = new CmdParameter();
-            qcmdParameter.Sql = string.Format("DELETE FROM {0}.wfa_jump WHERE job_id ={1};", "nsap_base", keyIds);
-            cmdParameters.Add(qcmdParameter);
-
-            CmdParameter ecmdParameter = new CmdParameter();
-            ecmdParameter.Sql = string.Format("UPDATE {0}.wfa_job SET job_state=0,step_id=0 WHERE job_id ={1};", "nsap_base", keyIds);
-            cmdParameters.Add(ecmdParameter);
-
-            CmdParameter tcmdParameter = new CmdParameter();
-            tcmdParameter.Sql = string.Format("DELETE FROM {0}.wfa_job_para WHERE job_id ={1};", "nsap_base", keyIds);
-            cmdParameters.Add(tcmdParameter);
-
-            CmdParameter rcmdParameter = new CmdParameter();
-            rcmdParameter.Sql = string.Format("INSERT INTO {0}.wfa_log(job_id,user_id,audit_level,state) VALUES({1},{2},{3},{4});", "nsap_base", keyIds, userId, "0", "6");
-            cmdParameters.Add(rcmdParameter);
-
-            //销售序列号撤销
-            if (urlType.ToUpper() == "sales/SalesDelivery.aspx".ToUpper() && urlType.ToUpper() == "sales/salesreturnofgoods.aspx".ToUpper() || urlType.ToUpper() == "sales/salesreturnofgoodsline.aspx".ToUpper() || urlType.ToUpper() == "sales/salescreditmemo.aspx".ToUpper())
+            if (GetJobStateById(keyIds) == "1")
             {
-                billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfo(keyIds)));
-                foreach (billSerialNumber osrn in bill.serialNumber)
+
+                string errorMsg = string.Empty;
+
+                List<CmdParameter> cmdParameters = new List<CmdParameter>();
+                IDataParameter[] parameter = new IDataParameter[] { new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_id", keyIds) };
+                CmdParameter qcmdParameter = new CmdParameter();
+                qcmdParameter.Sql = string.Format("DELETE FROM {0}.wfa_jump WHERE job_id ={1};", "nsap_base", keyIds);
+                cmdParameters.Add(qcmdParameter);
+
+                CmdParameter ecmdParameter = new CmdParameter();
+                ecmdParameter.Sql = string.Format("UPDATE {0}.wfa_job SET job_state=0,step_id=0 WHERE job_id ={1};", "nsap_base", keyIds);
+                cmdParameters.Add(ecmdParameter);
+
+                CmdParameter tcmdParameter = new CmdParameter();
+                tcmdParameter.Sql = string.Format("DELETE FROM {0}.wfa_job_para WHERE job_id ={1};", "nsap_base", keyIds);
+                cmdParameters.Add(tcmdParameter);
+
+                CmdParameter rcmdParameter = new CmdParameter();
+                rcmdParameter.Sql = string.Format("INSERT INTO {0}.wfa_log(job_id,user_id,audit_level,state) VALUES({1},{2},{3},{4});", "nsap_base", keyIds, userId, "0", "6");
+                cmdParameters.Add(rcmdParameter);
+
+                //销售序列号撤销
+                if (urlType.ToUpper() == "sales/SalesDelivery.aspx".ToUpper() && urlType.ToUpper() == "sales/salesreturnofgoods.aspx".ToUpper() || urlType.ToUpper() == "sales/salesreturnofgoodsline.aspx".ToUpper() || urlType.ToUpper() == "sales/salescreditmemo.aspx".ToUpper())
                 {
-                    foreach (billSerialNumberChooseItem serial in osrn.Details)
+                    billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfo(keyIds)));
+                    foreach (billSerialNumber osrn in bill.serialNumber)
                     {
-                        CmdParameter snbParameter = new CmdParameter();
-                        snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode ={1} AND SysNumber ={2};", "nsap_bone", osrn.ItemCode, serial.SysSerial);
-                        cmdParameters.Add(snbParameter);
+                        foreach (billSerialNumberChooseItem serial in osrn.Details)
+                        {
+                            CmdParameter snbParameter = new CmdParameter();
+                            snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode ={1} AND SysNumber ={2};", "nsap_bone", osrn.ItemCode, serial.SysSerial);
+                            cmdParameters.Add(snbParameter);
+                        }
                     }
                 }
-            }
-            //库存转储序列号撤销
-            if (urlType.ToUpper() == "store/stocktransfer.aspx".ToUpper())
-            {
-                storeOWTR bill = DeSerialize<storeOWTR>((byte[])(GetSalesInfo(keyIds)));
-                foreach (billSerialNumber osrn in bill.serialNumber)
+                //库存转储序列号撤销
+                if (urlType.ToUpper() == "store/stocktransfer.aspx".ToUpper())
                 {
-                    foreach (billSerialNumberChooseItem serial in osrn.Details)
+                    storeOWTR bill = DeSerialize<storeOWTR>((byte[])(GetSalesInfo(keyIds)));
+                    foreach (billSerialNumber osrn in bill.serialNumber)
                     {
-                        CmdParameter snbParameter = new CmdParameter();
-                        snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode = {1} AND SysNumber = {2};", "nsap_bone", osrn.ItemCode, serial.SysSerial);
-                        cmdParameters.Add(snbParameter);
+                        foreach (billSerialNumberChooseItem serial in osrn.Details)
+                        {
+                            CmdParameter snbParameter = new CmdParameter();
+                            snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode = {1} AND SysNumber = {2};", "nsap_bone", osrn.ItemCode, serial.SysSerial);
+                            cmdParameters.Add(snbParameter);
+                        }
                     }
                 }
-            }
-            //采购序列号撤销 
-            if (urlType.ToUpper() == "purchase/purchasereturn.aspx".ToUpper() || urlType.ToUpper() == "purchase/purchasecreditmemo.aspx".ToUpper())
-            {
-                billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfo(keyIds)));
-                foreach (billSerialNumber osrn in bill.serialNumber)
+                //采购序列号撤销 
+                if (urlType.ToUpper() == "purchase/purchasereturn.aspx".ToUpper() || urlType.ToUpper() == "purchase/purchasecreditmemo.aspx".ToUpper())
                 {
-                    foreach (billSerialNumberChooseItem serial in osrn.Details)
+                    billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfo(keyIds)));
+                    foreach (billSerialNumber osrn in bill.serialNumber)
                     {
-                        CmdParameter snbParameter = new CmdParameter();
-                        snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode = {1} AND SysNumber = {2};", "nasp_bone", osrn.ItemCode, serial.SysSerial);
-                        cmdParameters.Add(snbParameter);
+                        foreach (billSerialNumberChooseItem serial in osrn.Details)
+                        {
+                            CmdParameter snbParameter = new CmdParameter();
+                            snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode = {1} AND SysNumber = {2};", "nasp_bone", osrn.ItemCode, serial.SysSerial);
+                            cmdParameters.Add(snbParameter);
+                        }
                     }
                 }
-            }
-            // 生产发料 
-            if (urlType.ToUpper() == "product/producematerial.aspx".ToUpper())
-            {
-                proReceipt bill = DeSerialize<proReceipt>((byte[])(GetSalesInfo(keyIds)));
-                foreach (billSerialNumber osrn in bill.serialNumber)
+                // 生产发料 
+                if (urlType.ToUpper() == "product/producematerial.aspx".ToUpper())
                 {
-                    foreach (billSerialNumberChooseItem serial in osrn.Details)
+                    proReceipt bill = DeSerialize<proReceipt>((byte[])(GetSalesInfo(keyIds)));
+                    foreach (billSerialNumber osrn in bill.serialNumber)
                     {
-                        CmdParameter snbParameter = new CmdParameter();
-                        snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode = {1} AND SysNumber = {2};", "nsap_bone", osrn.ItemCode, serial.SysSerial);
-                        cmdParameters.Add(snbParameter);
+                        foreach (billSerialNumberChooseItem serial in osrn.Details)
+                        {
+                            CmdParameter snbParameter = new CmdParameter();
+                            snbParameter.Sql = string.Format("DELETE FROM {0}.store_osrn_alreadyexists WHERE ItemCode = {1} AND SysNumber = {2};", "nsap_bone", osrn.ItemCode, serial.SysSerial);
+                            cmdParameters.Add(snbParameter);
+                        }
                     }
                 }
-            }
-            int resultCount = ExecuteTransaction(cmdParameters, out errorMsg);
+                int resultCount = ExecuteTransaction(cmdParameters, out errorMsg);
 
-            //解除服务呼叫绑定售后报价单
-            if (urlType.ToUpper() == "sales/SalesQuotation.aspx".ToUpper() && resultCount > 0)
-            {
-                billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfo(keyIds)));
-                if (!string.IsNullOrEmpty(bill.U_CallID))
+                //解除服务呼叫绑定售后报价单
+                if (urlType.ToUpper() == "sales/SalesQuotation.aspx".ToUpper() && resultCount > 0)
                 {
-                    UpdateUsftjbjFromOscl(bill.U_CallID, bill.SboId, "0");
+                    billDelivery bill = DeSerialize<billDelivery>((byte[])(GetSalesInfo(keyIds)));
+                    if (!string.IsNullOrEmpty(bill.U_CallID))
+                    {
+                        UpdateUsftjbjFromOscl(bill.U_CallID, bill.SboId, "0");
+                    }
                 }
-            }
 
-            return resultCount > 0 ? true : false;
+                return resultCount > 0 ? true : false;
+            }
+            else
+            {
+                return false;
+            }
         }
+
+        #region 获取流程任务当前状态
+        /// <summary>
+        /// 获取流程任务当前状态
+        /// </summary>
+        /// <returns></returns>
+        public string GetJobStateById(string JobId)
+        {
+            string strSql = string.Format("SELECT job_state FROM {0}.wfa_job WHERE job_id={1}", "nsap_base", JobId);
+            return UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null).ToString();
+        }
+        #endregion
         public int ExecuteTransaction(List<CmdParameter> array, out string errorMsg)
         {
             if (array.Count == 0) { errorMsg = string.Empty; return 0; }
@@ -9617,7 +9781,7 @@ namespace OpenAuth.App.Order
                                         , t2.OnHand as whsOnHand,t2.IsCommited as whsIsCommited,t2.OnOrder as whsOnOrder,(t2.OnHand - t2.IsCommited + t2.OnOrder) as whsOnAvailable
                                         from {0}.store_oitm t1
                                         LEFT OUTER JOIN {0}.store_oitw t2 on t2.ItemCode = t1.ItemCode and t2.sbo_id = t1.sbo_Id and t2.whsCode = '{1}'
-                                        where t1.sbo_id = {2} and t1.ItemCode = '{3}'", "nsap_bone", whsCode, sboId, itemCode);
+                                        where t1.sbo_id = {2} and t1.ItemCode = '{3}'", "nsap_bone", whsCode, sboId, itemCode.FilterSQL());
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sqlstr, CommandType.Text, null);
         }
 
@@ -9657,7 +9821,6 @@ namespace OpenAuth.App.Order
                 }
                 //scon.Id = new Guid().ToString();
                 scon.FilePath = host + FileHelper.FilePath.VirtualPath + fileName;
-                scon.FileUpdateTime = DateTime.Now;
                 scon.FileType = suffix;
                 scon.CreateUserName = loginUser.Name;
                 result.Add(scon);
@@ -9839,8 +10002,35 @@ namespace OpenAuth.App.Order
         /// <returns></returns>
         public async Task<byte[]> OrderExportShow(string sboid, string DocEntry)
         {
-            DataTable dtb = ExportViewNos(sboid, DocEntry);
-            DataTable dtbs = ExportViews(sboid, DocEntry);
+            DataTable dtb = OrderExportView(sboid, DocEntry);
+            DataTable dtbs = OrderExportViews(sboid, DocEntry);
+            DataTable dtprint = GetPrintNo(sboid, DocEntry);
+            string PrintNo = Guid.NewGuid().ToString();
+            int PrintNumIndex = 0;
+            if (dtprint.Rows.Count > 0)
+            {
+                if (!string.IsNullOrEmpty(dtprint.Rows[0][0].ToString()))
+                {
+                    PrintNo = dtprint.Rows[0][0].ToString();
+                }
+                if (!string.IsNullOrEmpty(dtprint.Rows[0][1].ToString().Trim()))
+                {
+                    PrintNumIndex = 1 + int.Parse(dtprint.Rows[0][1].ToString().Trim());
+                }
+                else
+                {
+                    PrintNumIndex = 1;
+                }
+            }
+            else
+            {
+                PrintNumIndex = 1;
+            }
+
+            if (UpdatePrintNo(sboid, DocEntry, PrintNo, PrintNumIndex.ToString()) == false)
+            {
+                return null;
+            }
             var logopath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
             var logostr = "";
             using (var fs = new FileStream(logopath, FileMode.Open))
@@ -9851,7 +10041,7 @@ namespace OpenAuth.App.Order
                 logostr = Convert.ToBase64String(photo);
                 Console.WriteLine(logostr);
             }
-            var PrintSalesQuotation = new PrintSalesQuotation
+            var PrintSalesOrder = new PrintSalesOrder
             {
                 DocEntry = string.IsNullOrEmpty(dtb.Rows[0][0].ToString()) ? " " : dtb.Rows[0][0].ToString(),
                 DateTime = string.IsNullOrEmpty(dtb.Rows[0][15].ToString()) ? " " : dtb.Rows[0][15].ToString(),
@@ -9884,9 +10074,52 @@ namespace OpenAuth.App.Order
                     Money = string.IsNullOrEmpty(dtbs.Rows[i][7].ToString()) ? " " : dtbs.Rows[i][7].ToString()
 
                 };
-                PrintSalesQuotation.ReimburseCosts.Add(scon);
+                PrintSalesOrder.ReimburseCosts.Add(scon);
             }
-            return await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesOrders.cshtml");
+            var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesOrdersheader.html");
+            var text = System.IO.File.ReadAllText(url);
+            text = text.Replace("@Model.Data.logo", PrintSalesOrder.logo);
+            text = text.Replace("@Model.Data.DocEntry", PrintSalesOrder.DocEntry);
+            text = text.Replace("@Model.Data.DateTime", PrintSalesOrder.DateTime);
+            text = text.Replace("@Model.Data.QRcode", PrintSalesOrder.QRcode);
+            text = text.Replace("@Model.Data.SalseName", PrintSalesOrder.SalseName);
+            text = text.Replace("@Model.Data.CardCode", PrintSalesOrder.CardCode);
+            text = text.Replace("@Model.Data.Name", PrintSalesOrder.Name);
+            text = text.Replace("@Model.Data.Tel", PrintSalesOrder.Tel);
+            text = text.Replace("@Model.Data.Fax", PrintSalesOrder.Fax);
+            text = text.Replace("@Model.Data.CardName", PrintSalesOrder.CardName);
+            text = text.Replace("@Model.Data.Address", PrintSalesOrder.Address);
+            text = text.Replace("@Model.Data.Name", PrintSalesOrder.Name);
+            text = text.Replace("@Model.Data.Address2", PrintSalesOrder.Address2);
+            text = text.Replace("@Model.Data.SalseName", PrintSalesOrder.SalseName);
+            text = text.Replace("@Model.Data.Cellolar", PrintSalesOrder.Cellolar);
+            text = text.Replace("@Model.Data.DATEFORMAT", PrintSalesOrder.DATEFORMAT);
+            text = text.Replace("@Model.Data.PymntGroup", PrintSalesOrder.PymntGroup);
+            text = text.Replace("@Model.Data.Comments", PrintSalesOrder.Comments);
+            text = text.Replace("@Model.Data.NumAtCard", PrintSalesOrder.NumAtCard);
+            var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesOrdersheader{PrintSalesOrder.DocEntry}.html");
+            System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
+            var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesOrdersfooter.html");
+            var foottext = System.IO.File.ReadAllText(footUrl);
+            foottext = foottext.Replace("@Model.Data.DocTotal", PrintSalesOrder.DocTotal);
+            foottext = foottext.Replace("@Model.Data.PrintNumIndex", PrintSalesOrder.PrintNumIndex);
+            foottext = foottext.Replace("@Model.Data.PrintNo", PrintSalesOrder.PrintNo);
+            foottext = foottext.Replace("@Model.Data.U_SL", PrintSalesOrder.U_SL);
+            var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesOrdersfooter{PrintSalesOrder.DocEntry}.html");
+            System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
+            byte[] basecode = await ExportAllHandler.Exporterpdf(PrintSalesOrder, "PrintSalesOrders.cshtml", pdf =>
+            {
+                pdf.Orientation = Orientation.Portrait;
+                pdf.IsWriteHtml = true;
+                pdf.PaperKind = PaperKind.A4;
+                pdf.IsEnablePagesCount = true;
+                pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
+            });
+            System.IO.File.Delete(tempUrl);
+            System.IO.File.Delete(foottempUrl);
+            return basecode;
+            //return await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesOrders.cshtml");
         }
 
         #region 修改单据打印状态

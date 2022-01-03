@@ -1,10 +1,14 @@
-﻿using Infrastructure.Extensions;
+﻿extern alias MySqlConnectorAlias;
+
+using Infrastructure;
+using Infrastructure.Extensions;
 using Infrastructure.Helpers;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using NSAP.Entity.Sales;
 using OpenAuth.App.Order.Request;
 using OpenAuth.App.Response;
+using OpenAuth.Repository;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.NsapBone;
 using System;
@@ -191,14 +195,14 @@ namespace OpenAuth.App.Order
             string className = "NSAP.B1Api.BOneORDR";
             string jobname = "销售订单";
             //查询
-            billDelivery billDelivery = GetDeliverySalesInfoNewNos(orderReq.JobId.ToString(),13);
+            billDelivery billDelivery = GetDeliverySalesInfoNewNos(orderReq.JobId.ToString(), 13);
             string josn = JsonConvert.SerializeObject(billDelivery);
             if (billDelivery is null)
             {
                 result = "单据不存在";
                 return result;
             }
-            if (IsExistDoc(orderReq.JobId.ToString(), "23", sboID.ToString()))
+            if (IsExistDoc(orderReq.JobId.ToString(), "23", sboID.ToString(), "33"))
             {
                 result = "该销售报价单转销售订单已提交";
                 return result;
@@ -276,10 +280,10 @@ namespace OpenAuth.App.Order
                         string _jobID = result;
                         if ("0" != WorkflowSubmit(int.Parse(result), userID, billDelivery.Remark, "", 0))
                         {
-                            result = SaveProOrder(billDelivery, int.Parse(_jobID)).ToString();
+                           SaveProOrder(billDelivery, int.Parse(_jobID)).ToString();
                             if (billDelivery.serialNumber.Count > 0)
                             {
-                                if (UpdateSerialNumber(billDelivery.serialNumber, int.Parse(_jobID))) { result = "1"; }
+                                UpdateSerialNumber(billDelivery.serialNumber, int.Parse(_jobID));
                             }
                         }
                         else { result = "0"; }
@@ -320,6 +324,61 @@ namespace OpenAuth.App.Order
             }
             return result;
         }
+
+        public string CloseDocFlow(int basetype, int docnum, int funcid, string jobname, int userID, string className, string sboId)
+        {
+            string result = "";
+            billDelivery Model = new billDelivery();
+            Model.DocNum = docnum.ToString();
+            Model.SboId = sboId;
+            byte[] job_data = ByteExtension.ToSerialize(Model);
+            result = WorkflowBuild(jobname, funcid, userID, job_data, "", int.Parse(sboId), "", "", 0, basetype, docnum, "BOneAPI", className);
+            if (int.Parse(result) > 0)
+            {
+                result = WorkflowSubmit(int.Parse(result), userID, "", "", 0);
+            }
+            return result;
+        }
+
+        public async Task<string> GetPurchaseItemByOrderNo(string orderNo, string sboId, string orderTitle)
+        {
+            string strsql = string.Format(@"SELECT t1.docentry,t1.itemcode,t1.U_RelDoc from {0}.buy_por1 t1
+                                                 left join {0}.buy_opor t0 on t0.sbo_id=t1.sbo_id and t0.docentry=t1.docentry 
+                                                 where t0.CANCELED='N' AND t1.sbo_id={1} and t1.U_RelDoc like '%{2}%'", "nsap_bone", sboId, orderTitle);
+            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strsql, CommandType.Text, null);
+            if (dt.Rows.Count > 0)
+            {
+                string returnstr = string.Empty;
+                foreach (DataRow tempr in dt.Rows)
+                {
+                    string[] temparr = tempr["U_RelDoc"].ToString().Split(';');
+                    if (temparr.Length > 0)
+                    {
+                        foreach (string tempstr in temparr)
+                        {
+                            if (tempstr.Split(':')[0] == orderTitle)
+                            {
+                                string[] reldocarr = tempstr.Split(':')[1].Split(',');
+                                foreach (string relstr in reldocarr)//找到关联订单号里面存在现编辑中订单号
+                                {
+                                    if (relstr == orderNo)
+                                    {
+                                        returnstr += (string.IsNullOrEmpty(returnstr) ? "" : ",") + tempr["docentry"].ToString() + "(" + tempr["itemcode"] + ")";
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                return returnstr;
+            }
+            else
+            {
+                return "";
+            }
+        }
+
         /// <summary>
         /// 根据销售报价单下销售订单
         /// </summary>
@@ -518,14 +577,36 @@ namespace OpenAuth.App.Order
         /// <param name="IsUpdate"></param>
         /// <param name="vStock"></param>
         /// <returns></returns>
-        public string AuditResubmitNextNew(int jobID, int userID, string recommend, string auditOpinionid, string IsUpdate, string vStock, string Comments, string Remark)
+        public string AuditResubmitNextNew(int jobID, int userID, string recommend, string auditOpinionid, string IsUpdate, string vStock, string Comments, string Remark, string CustomFields, List<billSerialNumberChooseItem> ChoosedSerialNumberList, List<billSerialNumber> serialNumber)
         {
             string res = "";
             byte[] job_data = new byte[] { };
             billDelivery Model = DeSerialize<billDelivery>((byte[])(GetSalesInfo(jobID.ToString())));
-            Model.Comments = Comments;
-            Model.Remark = Remark;
+            if (!string.IsNullOrWhiteSpace(Comments))
+            {
+                Model.Comments = Comments;
+
+            }
+            if (!string.IsNullOrWhiteSpace(Remark))
+            {
+                Model.Remark = Remark;
+            }
             Model.DocStatus = "C";
+            if (!string.IsNullOrWhiteSpace(CustomFields))
+            {
+                Model.CustomFields = CustomFields;
+            }
+            if (ChoosedSerialNumberList.Count > 0 && ChoosedSerialNumberList != null)
+            {
+                foreach (var item in Model.billSalesDetails)
+                {
+                    item.ChoosedSerialNumberList = ChoosedSerialNumberList;
+                }
+            }
+            if (serialNumber.Count > 0 && serialNumber != null)
+            {
+                Model.serialNumber = serialNumber;
+            }
             if (IsUpdate == "1")
             {
                 job_data = ByteExtension.ToSerialize(Model);
@@ -615,7 +696,7 @@ namespace OpenAuth.App.Order
                     //}
                     if (IsUpdate == "1")
                     {
-                        if (bool.Parse(UpdateAudit(jobID, job_data, Model.Remark, Model.DocTotal, Model.CardCode, Model.CardName)))
+                        if (bool.Parse(UpdateAuditA(jobID, job_data, Model.Remark, Model.DocTotal, Model.CardCode, Model.CardName)))
                         {
                             res = WorkflowSubmit(jobID, userID, recommend, "", 0);
                         }
@@ -706,6 +787,23 @@ namespace OpenAuth.App.Order
         #endregion
 
 
+        /// <summary>
+        /// 修改审核数据（销售交货）
+        /// </summary>
+        public string UpdateAuditA(int jobId, byte[] jobData, string remarks, string doc_total, string card_code, string card_name)
+        {
+            string isSave = "";
+            string strSql = string.Format("UPDATE {0}.wfa_job SET job_data=?job_data,remarks='{1}',doc_total={2},", "nsap_base", remarks, doc_total == "" ? "0" : doc_total);
+            strSql += string.Format("card_code='{0}',card_name='{1}' WHERE job_id ={2}", card_code, card_name, jobId);
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> sqlParameters = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_data",  jobData),
 
+            };
+            isSave = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, sqlParameters).ToString();
+            return isSave == "" ? "true" : "false";
+        }
+
+     
     }
 }

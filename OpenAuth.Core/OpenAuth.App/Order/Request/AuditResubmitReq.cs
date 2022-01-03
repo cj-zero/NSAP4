@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NSAP.Entity.Sales;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -41,5 +42,17 @@ namespace OpenAuth.App.Order.Request
         /// 审核备注
         /// </summary>
         public string Remark { get; set; }
+        /// <summary>
+        /// 自定义字段
+        /// </summary>
+        public string CustomFields { get; set; }
+        /// <summary>
+        /// 已选择的序列号列表
+        /// </summary>
+        public List<billSerialNumberChooseItem> ChoosedSerialNumberList { get; set; }
+        /// <summary>
+        /// 序列号列表
+        /// </summary>
+        public List<billSerialNumber> serialNumber { get; set; }
     }
 }
