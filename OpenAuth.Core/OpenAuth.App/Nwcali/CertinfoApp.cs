@@ -1014,9 +1014,20 @@ namespace OpenAuth.App
                             await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deleteData);
                             await UnitWork.SaveAsync();
                         }
-                        catch(Exception ex)
+                        catch(DbUpdateConcurrencyException ex)
                         {
-                            throw new Exception("数据删除异常", ex);
+                            //throw new Exception("数据删除异常", ex);
+                            foreach(var entry in ex.Entries)
+                            {
+                                if(entry.Entity is EntrustmentDetail)
+                                {
+                                    var databaseValues = entry.GetDatabaseValues();
+
+                                    entry.OriginalValues.SetValues(databaseValues);
+                                }
+                            }
+
+                            await UnitWork.SaveAsync();
                         }
                     }
                     //var deletedt = await UnitWork.FindTrack<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();
