@@ -472,26 +472,31 @@ namespace OpenAuth.App.Order
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            string result = "";
             int userID = _serviceBaseApp.GetUserNaspId();
             if (orderReq.JobId != 0)
             {
-                DataTable objTable = GetAuditObjWithFlowChart(orderReq.JobId.ToString());
-                if (objTable.Rows.Count > 0)
+                if (IsExistDocOqut(orderReq.JobId.ToString(), "-5"))
                 {
-                    foreach (DataRow objRow in objTable.Rows)
-                    {
-                        if (!objRow[0].ToString().Contains(loginContext.User.Name))
-                        {
-                            return "单据已提交，请勿重复提交";
-                        }
-                    }
+                    result = "该销售报价单已提交";
+                    return result;
                 }
+                //DataTable objTable = GetAuditObjWithFlowChart(orderReq.JobId.ToString());
+                //if (objTable.Rows.Count > 0)
+                //{
+                //    foreach (DataRow objRow in objTable.Rows)
+                //    {
+                //        if (!objRow[0].ToString().Contains(loginContext.User.Name))
+                //        {
+                //            return "单据已提交，请勿重复提交";
+                //        }
+                //    }
+                //}
             }
             int sboID = _serviceBaseApp.GetUserNaspSboID(userID);
             int funcId = 50;
             string logstring = "";
             string jobname = "";
-            string result = "";
             try
             {
                 if (orderReq.Order.FileList != null && orderReq.Order.FileList.Count > 0)
@@ -4119,6 +4124,26 @@ namespace OpenAuth.App.Order
             bool result = false;
             string strSql = string.Format("SELECT COUNT(*) FROM {0}.wfa_job", "nsap_base");
             strSql += string.Format(" WHERE (base_type={0} OR base_type=-5 )AND sbo_id={1} AND base_entry={2}  AND (job_state=1 OR job_state=0 OR job_state=2 OR job_state=4)AND job_type_id=(SELECT job_type_id FROM nsap_base.base_func WHERE func_id={3} LIMIT 1)", base_type, sboId, base_entry, func_id);
+
+            object obj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            if (obj.ToString() == "0" || obj == null)
+            {
+                result = false;
+            }
+            else { result = true; }
+
+            return result;
+        }
+        #endregion
+        #region 判断审核里是否已经提交该销售报价单
+        /// <summary>
+        /// 判断审核里是否已经提交该单据（销售报价单）
+        /// </summary>
+        public bool IsExistDocOqut(string job_id, string base_type)
+        {
+            bool result = false;
+            string strSql = string.Format("SELECT COUNT(*) FROM {0}.wfa_job", "nsap_base");
+            strSql += string.Format(" WHERE (base_type={0}) AND job_id={1}  AND (job_state=1  OR job_state=2 OR job_state=4)AND job_type_id=13", base_type, job_id);
 
             object obj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
             if (obj.ToString() == "0" || obj == null)
