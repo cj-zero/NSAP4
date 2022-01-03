@@ -129,5 +129,10 @@ namespace OpenAuth.App.Request
         /// 未完成时间区间
         /// </summary>
         public string TimeInterval { get; set; }
+
+        /// <summary>
+        /// 未完工原因
+        /// </summary>
+        public string UnCompletedReason { get; set; }
     }
 }
