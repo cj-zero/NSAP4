@@ -3005,11 +3005,11 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task ReadMsg(int currentUserId, int serviceOrderId)
         {
-            var msgList = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId).ToListAsync();
+            var msgList = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId).Select(c => c.Id).ToListAsync();
             if (msgList != null)
             {
-                string msgIds = string.Join(",", msgList.Select(s => s.Id).Distinct().ToArray());
-                UnitWork.Update<ServiceOrderMessageUser>(s => msgIds.Contains(s.MessageId) && s.FroUserId == currentUserId.ToString(), u => new ServiceOrderMessageUser { HasRead = true });
+                //string msgIds = string.Join(",", msgList.Select(s => s.Id).Distinct().ToArray());
+                UnitWork.Update<ServiceOrderMessageUser>(s => msgList.Contains(s.MessageId) && s.FroUserId == currentUserId.ToString(), u => new ServiceOrderMessageUser { HasRead = true });
             }
             await UnitWork.SaveAsync();
         }
@@ -3033,52 +3033,52 @@ namespace OpenAuth.App
             {
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
             }
-            var queryService = from a in UnitWork.Find<ServiceWorkOrder>(null)
-                               join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id
-                               select new { a, b };
             //技术员 主管 业务员
-            var serviceIdList = await queryService.Where(w => w.b.SupervisorId == nsapUserId || w.a.CurrentUserId == req.CurrentUserId || w.b.SalesManId == nsapUserId).ToListAsync();
+            var queryService = await (from a in UnitWork.Find<ServiceWorkOrder>(null)
+                                      join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id
+                                      where b.SupervisorId == nsapUserId || a.CurrentUserId == req.CurrentUserId || b.SalesManId == nsapUserId
+                                      select new { b.Id, b.U_SAP_ID }).ToListAsync();
+            var serviceIdList = queryService.Select(c => c?.Id).ToList();
             if (serviceIdList != null)
             {
-                string serviceIds = string.Join(",", serviceIdList.Select(s => s.b.Id).Distinct().ToArray());
-                var query = from a in UnitWork.Find<ServiceOrderMessage>(null)
-                            join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
-                            from b in ab.DefaultIfEmpty()
-                            select new { a, b };
-                var resultsql = query.Where(w => serviceIds.Contains(w.a.ServiceOrderId.ToString())).OrderByDescending(o => o.a.CreateTime).Select(s => new
+                //string serviceIds = string.Join(",", serviceIdList.Select(s => s.b.Id).Distinct().ToArray());
+                var query1 = await UnitWork.Find<ServiceOrderMessage>(c => serviceIdList.Contains(c.ServiceOrderId))
+                .OrderByDescending(o => o.CreateTime)
+                .Select(s => new
                 {
-                    s.b.U_SAP_ID,
-                    s.a.Content,
-                    s.a.CreateTime,
-                    s.a.FroTechnicianName,
-                    s.a.AppUserId,
-                    s.a.ServiceOrderId,
-                    s.a.Replier,
-                    s.a.Id
-                });
-                var messageId = resultsql.Select(c => c.Id).ToList();
-                var meassageUser = await UnitWork.Find<ServiceOrderMessageUser>(c => messageId.Contains(c.MessageId)).ToListAsync();
+                    s.Content,
+                    s.CreateTime,
+                    s.FroTechnicianName,
+                    s.AppUserId,
+                    s.ServiceOrderId,
+                    s.Replier,
+                    s.Id
+                }).ToListAsync();
 
-                //result.Data =
-                //((await resultsql
-                //.ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(g => g.First())).Select(s => new 
-                //{ 
-                //    s.Content, 
-                //    CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"), 
-                //    s.FroTechnicianName, 
-                //    s.AppUserId, 
-                //    s.ServiceOrderId, 
-                //    s.Replier, 
-                //    s.U_SAP_ID 
+                //var query = from a in UnitWork.Find<ServiceOrderMessage>(null)
+                //            join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
+                //            from b in ab.DefaultIfEmpty()
+                //            select new { a, b };
+                //var resultsql = query.Where(w => serviceIdList.Contains(w.a.ServiceOrderId.ToString())).OrderByDescending(o => o.a.CreateTime).Select(s => new
+                //{
+                //    s.b.U_SAP_ID,
+                //    s.a.Content,
+                //    s.a.CreateTime,
+                //    s.a.FroTechnicianName,
+                //    s.a.AppUserId,
+                //    s.a.ServiceOrderId,
+                //    s.a.Replier,
+                //    s.a.Id
                 //});
+                var messageId = query1.Select(c => c.Id).ToList();
+                var meassageUser = await UnitWork.Find<ServiceOrderMessageUser>(c => messageId.Contains(c.MessageId)).Select(c => new { c.MessageId, c.FroUserId, c.HasRead }).ToListAsync();
 
-                result.Data =
-                ((await resultsql
-                .ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(s => 
+                result.Data = query1.GroupBy(g => g.ServiceOrderId).Select(s =>
                 {
                     var first = s.First();
                     var messageid = s.Select(c => c.Id).ToList();
-                    var hasRead = meassageUser.Where(c => messageid.Contains(c.MessageId) && c.FroUserId==req.CurrentUserId.ToString()).All(c => c.HasRead == true);//服务id下消息是否全部已读
+                    var hasRead = meassageUser.Where(c => messageid.Contains(c.MessageId) && c.FroUserId == req.CurrentUserId.ToString()).All(c => c.HasRead == true);//服务id下消息是否全部已读
+                    var sapid = queryService.Where(q => q.Id == first.ServiceOrderId).FirstOrDefault();
                     return new
                     {
                         first.Content,
@@ -3087,10 +3087,29 @@ namespace OpenAuth.App
                         first.AppUserId,
                         first.ServiceOrderId,
                         first.Replier,
-                        first.U_SAP_ID,
+                        U_SAP_ID = sapid?.U_SAP_ID,
                         HasRead = hasRead
                     };
-                }));
+                }).ToList();
+                //result.Data =
+                //((await resultsql
+                //.ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(s => 
+                //{
+                //    var first = s.First();
+                //    var messageid = s.Select(c => c.Id).ToList();
+                //    var hasRead = meassageUser.Where(c => messageid.Contains(c.MessageId) && c.FroUserId==req.CurrentUserId.ToString()).All(c => c.HasRead == true);//服务id下消息是否全部已读
+                //    return new
+                //    {
+                //        first.Content,
+                //        CreateTime = first.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
+                //        first.FroTechnicianName,
+                //        first.AppUserId,
+                //        first.ServiceOrderId,
+                //        first.Replier,
+                //        first.U_SAP_ID,
+                //        HasRead = hasRead
+                //    };
+                //}));
             }
             return result;
         }
@@ -3104,7 +3123,7 @@ namespace OpenAuth.App
         public async Task<TableData> GetMessageCount(int currentUserId)
         {
             var result = new TableData();
-            var msgCount = (await UnitWork.Find<ServiceOrderMessageUser>(s => s.FroUserId == currentUserId.ToString() && s.HasRead == false).ToListAsync()).Count;
+            var msgCount = await UnitWork.Find<ServiceOrderMessageUser>(s => s.FroUserId == currentUserId.ToString() && s.HasRead == false).CountAsync();
             result.Data = msgCount;
             return result;
         }
