@@ -18,7 +18,7 @@ namespace OpenAuth.Repository.Domain.Serve
         /// 自增Id
         /// </summary>
         [Key]
-        public string Id { get; set; }
+        public int Id { get; set; }
         /// <summary>
         /// 服务单Id
         /// </summary>
@@ -43,6 +43,8 @@ namespace OpenAuth.Repository.Domain.Serve
         /// 创建人
         /// </summary>
         public string CreateUserId { get; set; }
+
+        public virtual List<ServiceUnCompletedReasonDetail> ServiceUnCompletedReasonDetails { get; set; }
     }
 
     /// <summary>
@@ -55,12 +57,15 @@ namespace OpenAuth.Repository.Domain.Serve
         /// 自增Id
         /// </summary>
         [Key]
-        public string Id { get; set; }
+        public int Id { get; set; }
 
         /// <summary>
         /// 未完工原因历史Id
         /// </summary>
-        public string HistoryId { get; set; }
+        [Column("HistoryId")]
+        public int ServiceUnCompletedReasonHistoryId { get; set; }
+
+        public virtual ServiceUnCompletedReasonHistory ServiceUnCompletedReasonHistory { get; set; }
 
         /// <summary>
         /// 服务单Id
