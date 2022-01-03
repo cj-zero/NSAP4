@@ -62,6 +62,24 @@ namespace OpenAuth.App.Nwcali
             }
         }
 
+        public async Task UpdateTesterModel()
+        {
+            var query = await UnitWork.Find<NwcaliBaseInfo>(c => !c.TesterModel.Contains("-") && c.TesterSn.StartsWith("T")).ToListAsync();
+            var sn = query.Select(c => c.TesterSn).ToList();
+            var oins = await UnitWork.Find<OINS>(o => sn.Contains(o.manufSN)).Select(o => new { o.itemCode, o.manufSN }).ToListAsync();
+            query.ForEach(c =>
+            {
+                var testerModel = oins.Where(o => o.manufSN.Equals(c.TesterSn)).Select(o => o.itemCode).ToList();
+                if (testerModel != null && testerModel.Count == 1 && !testerModel.Contains("ZWJ"))
+                {
+                    if (testerModel.FirstOrDefault().Contains(c.TesterModel))
+                        c.TesterModel = testerModel.FirstOrDefault();
+                }
+            });
+            await UnitWork.BatchUpdateAsync(query.ToArray());
+            await UnitWork.SaveAsync();
+        }
+
         public async Task<NwcaliBaseInfo> GetInfo(string certNo)
         {
             var info = await UnitWork.Find<NwcaliBaseInfo>(null).Include(b => b.NwcaliTurs).Include(b => b.NwcaliPlcDatas).Include(b => b.PcPlcs).Include(b => b.Etalons)

@@ -260,6 +260,12 @@ namespace OpenAuth.WebApi.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task UpdateTesterModel()
+        {
+            await _nwcaliCertApp.UpdateTesterModel();
+        }
+
         [ServiceFilter(typeof(CertAuthFilter))]
         [HttpGet]
         public async Task<Response<NwcaliBaseInfo>> GetBaseInfo(string serialNumber, string sign, string timespan)
