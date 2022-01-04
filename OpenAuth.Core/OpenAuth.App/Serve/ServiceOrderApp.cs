@@ -1696,12 +1696,12 @@ namespace OpenAuth.App
                               join d in UnitWork.Find<ServiceUnCompletedReasonDetail>(s => !reasons.Contains(s.UnCompletedReasonName))
                               on new { h1.ServiceOrderId, ServiceUnCompletedReasonHistoryId = h1.Id } equals new { d.ServiceOrderId, d.ServiceUnCompletedReasonHistoryId }
                               select d.ServiceOrderId).Distinct().Count();
-            data.Add(new { Name = "其他", Count = otherCount, Per = ((decimal)otherCount / totalCount).ToString("P2"), SortNo = 13 });
+            data.Add(new { Name = "其他", Count = otherCount, Per = (totalCount == 0 ? "0.00%" : ((decimal)otherCount / totalCount).ToString("P2")), SortNo = 13 });
             #endregion
 
             #region 没有未完工原因的,归类为未填写
             var notWriteCount = totalCount - serviceLastRecord.Count();
-            data.Add(new { Name = "未填写", Count = notWriteCount, Per = ((decimal)notWriteCount / totalCount).ToString("P2"), SortNo = 14 });
+            data.Add(new { Name = "未填写", Count = notWriteCount, Per = totalCount == 0 ? "0.00%" : ((decimal)notWriteCount / totalCount).ToString("P2"), SortNo = 14 });
             #endregion
 
             result.Data = data.OrderBy(d => d.SortNo);

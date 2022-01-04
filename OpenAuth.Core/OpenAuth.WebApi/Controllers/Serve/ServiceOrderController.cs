@@ -532,7 +532,7 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetUnCompletedReasonInfo(QueryServiceOrderListReq req)
+        public async Task<TableData> GetUnCompletedReasonInfo([FromQuery] QueryServiceOrderListReq req)
         {
             var result = new TableData();
             try
