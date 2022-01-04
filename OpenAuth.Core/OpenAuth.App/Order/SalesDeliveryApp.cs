@@ -51,14 +51,67 @@ namespace OpenAuth.App.Order
             Model.CustomFields = salesDeliverySaveReq.CustomFields;
             Model.billBaseEntry = salesDeliverySaveReq.JobId.ToString();
             Model.billBaseType = "17";
+            Model.billSalesDetails = new List<billSalesDetails>();
             int i = 0;
-            foreach (var item in Model.billSalesDetails)
+            foreach (var item in salesDeliverySaveReq.OrderItems)
             {
-                item.BaseEntry = salesDeliverySaveReq.JobId.ToString();
-                item.BaseLine = i.ToString();
-                item.BaseType = "17";
-                i++;
+                billSalesDetails billSalesDetail = new billSalesDetails()
+                {
+                    BaseEntry = salesDeliverySaveReq.JobId.ToString(),//基本凭证代码
+                    BaseLine = i.ToString(),//基础行
+                    BaseRef = item.BaseRef,//基本凭证参考
+                    BaseType = "17",//基本凭证类型(-1,0,23，17，16，13，165,默认值为-1)
+                    DiscPrcnt = !string.IsNullOrEmpty(item.DiscPrcnt) ? item.DiscPrcnt : "0",// 每行折扣 %
+                    Dscription = item.Dscription,// 物料/服务描述
+                    ItemCfgId = !string.IsNullOrEmpty(item.ItemCfgId) ? item.ItemCfgId : "0",//物料配置Id
+                    ItemCode = item.ItemCode,//物料号
+                    LineTotal = !string.IsNullOrEmpty(item.LineTotal) ? item.LineTotal : "0",//行总计
+                    OnHand = !string.IsNullOrEmpty(item.OnHand) ? item.OnHand : "0",//库存量
+                    Price = !string.IsNullOrEmpty(item.Price) ? item.Price : "0",//价格
+                    PriceAfVAT = !string.IsNullOrEmpty(item.PriceAfVAT) ? item.PriceAfVAT : "0",//毛价
+                    PriceBefDi = !string.IsNullOrEmpty(item.PriceBefDi) ? item.PriceBefDi : "0",//折扣后价格
+                    Quantity = item.Quantity,//数量
+                    StockPrice = !string.IsNullOrEmpty(item.StockPrice) ? item.StockPrice : "0",//物料成本
+                    TargetType = item.TargetType,//目标凭证类型(-1,0,13,16,203,默认值为-1)
+                    TotalFrgn = !string.IsNullOrEmpty(item.TotalFrgn) ? item.TotalFrgn : "0",//以外币计的行总计
+                    TrgetEntry = item.TrgetEntry,// 目标凭证代码
+                    U_DL = !string.IsNullOrEmpty(item.U_DL) ? item.U_DL : "0",
+                    U_DY = !string.IsNullOrEmpty(item.U_DY) ? item.U_DY : "0",
+                    U_PDXX = item.U_PDXX,//配电选项
+                    U_SCTCJE = !string.IsNullOrEmpty(item.U_SCTCJE) ? item.U_SCTCJE : "0",//生产提成金额
+                    U_TDS = !string.IsNullOrEmpty(item.U_TDS) ? item.U_TDS : "0",
+                    U_XSTCBL = !string.IsNullOrEmpty(item.U_XSTCBL) ? item.U_XSTCBL : "0",//销售提成比例
+                    U_YF = !string.IsNullOrEmpty(item.U_YF) ? item.U_YF : "0",//运费
+                    U_YWF = "0",//业务费
+                    U_FWF = "0",//服务费
+                    VatGroup = "",//税定义
+                    WhsCode = item.WhsCode,
+                    Lowest = "0",//每行税收百分比
+                    VatPrcnt = "",//配电选项
+                    ConfigLowest = "0",//配电选项
+                    IsExistMo = item.IsExistMo,
+                    QryGroup1 = item.QryGroup1,
+                    QryGroup2 = item.QryGroup2,
+                    _QryGroup3 = item._QryGroup3,
+                    Weight = item.Weight,
+                    Volume = item.Volume,
+                    U_JGF = item.U_JGF,
+                    U_JGF1 = item.U_JGF1,
+                    U_YFCB = item.U_YFCB,
+                    QryGroup8 = item.QryGroup8,////3008n
+                    QryGroup9 = item.QryGroup9,//9系列
+                    QryGroup10 = item.QryGroup10,// ES系列
+                    U_YFTCJE = item.U_YFTCJE,//研发提成金额
+                    U_SHJSDJ = item.U_SHJSDJ,
+                    U_SHJSJ = item.U_SHJSJ,
+                    U_SHTC = item.U_SHTC,
+                    U_ZS = !string.IsNullOrEmpty(item.U_ZS) ? item.U_ZS : "",//配置类型，
+                    U_RelDoc = !string.IsNullOrEmpty(item.U_RelDoc) ? item.U_RelDoc : ""//关联订单号
+
+                };
+                Model.billSalesDetails.Add(billSalesDetail);
             }
+        
             #region 必须都有关联订单，并且购买数量与关联订单数量一致,采购订单所有物料高于2次的采购历史，并且价格不高于历史最低价，则不需审批直接通过。
             bool PurPassAudit = false;
             #endregion
