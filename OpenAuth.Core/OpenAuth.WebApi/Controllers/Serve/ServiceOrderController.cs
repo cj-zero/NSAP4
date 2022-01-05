@@ -91,6 +91,28 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 根据条件统计服务呼叫确认情况(按客户/售后主管/销售员分组)
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> UnConfirmedServiceInfo([FromQuery] QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result.Data = await _serviceOrderApp.UnConfirmedServiceInfo(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 统计服务单的状态(待确认,已确认,已取消)数量及占比
         /// 查询条件可选:日期范围、客户、售后主管
         /// </summary>

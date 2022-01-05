@@ -1017,9 +1017,15 @@ namespace OpenAuth.App
                             {
                                 if(entry.Entity is EntrustmentDetail)
                                 {
-                                    var databaseValues = entry.GetDatabaseValues();
+                                    //放弃更新或放弃删除数据库中已经不存在的数据
+                                    entry.State = EntityState.Detached;
 
-                                    entry.OriginalValues.SetValues(databaseValues);
+                                    //数据库优先(用数据库的数据覆盖本地dbContext的数据)
+                                    //entry.Reload();
+
+                                    //客户端优先(用本地dbContext的数据覆盖数据库的数据)
+                                    //var databaseValues = entry.GetDatabaseValues();
+                                    //entry.OriginalValues.SetValues(databaseValues);
                                 }
                             }
 
