@@ -4047,8 +4047,7 @@ namespace OpenAuth.App.Order
             text = text.Replace("@Model.Data.Fax", PrintSalesQuotation.Fax);
             text = text.Replace("@Model.Data.CardName", PrintSalesQuotation.CardName);
             text = text.Replace("@Model.Data.Address", PrintSalesQuotation.Address);
-            text = text.Replace("@Model.Data.Name", PrintSalesQuotation.Name);
-            text = text.Replace("@Model.Data.Address2", PrintSalesQuotation.Address2);
+            text = text.Replace("@Model.Data.Addrestwo", PrintSalesQuotation.Address2);
             text = text.Replace("@Model.Data.SalseName", PrintSalesQuotation.SalseName);
             text = text.Replace("@Model.Data.Cellolar", PrintSalesQuotation.Cellolar);
             text = text.Replace("@Model.Data.DATEFORMAT", PrintSalesQuotation.DATEFORMAT);
@@ -9792,7 +9791,7 @@ namespace OpenAuth.App.Order
         public DataTable OrderExportViews(string sboid, string DocEntry)
         {
             StringBuilder str = new StringBuilder();
-            str.Append(" SELECT b.sbo_id,b.ItemCode,b.Dscription,ROUND(b.Quantity,2),b.unitMsr,ROUND(b.Price,6),ROUND(b.Quantity*b.Price,2),b.Currency ");
+            str.Append(" SELECT  ROW_NUMBER() OVER (ORDER BY b.sbo_id) RowNum, b.sbo_id,b.ItemCode,b.Dscription,ROUND(b.Quantity,2),b.unitMsr,ROUND(b.Price,6),ROUND(b.Quantity*b.Price,2),b.Currency ");
             str.AppendFormat(" from {0}.sale_rdr1  b ", "nsap_bone");
             str.AppendFormat(" LEFT JOIN {0}.sale_ordr a on b.DocEntry=a.DocEntry and b.sbo_id=a.sbo_id ", "nsap_bone");
             str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1} ", DocEntry, sboid);
@@ -10083,8 +10082,13 @@ namespace OpenAuth.App.Order
                 Comments = string.IsNullOrEmpty(dtb.Rows[0][10].ToString()) ? " " : dtb.Rows[0][10].ToString().Replace("<br>", " "),
                 DocTotal = string.IsNullOrEmpty(dtb.Rows[0][13].ToString()) ? " " : dtb.Rows[0][13].ToString(),
                 DATEFORMAT = string.IsNullOrEmpty(dtb.Rows[0][14].ToString()) ? " " : dtb.Rows[0][14].ToString(),
+                NumAtCard = string.IsNullOrEmpty(dtb.Rows[0][14].ToString()) ? " " : dtb.Rows[0][24].ToString(),
+                AcceptanceDates = string.IsNullOrEmpty(dtb.Rows[0][20].ToString()) ? " " : dtb.Rows[0][20].ToString(),
+                U_SL = string.IsNullOrEmpty(dtb.Rows[0][23].ToString()) ? " " : dtb.Rows[0][23].ToString(),
                 logo = logostr,
                 QRcode = QRCoderHelper.CreateQRCodeToBase64(DocEntry),
+                PrintNumIndex= PrintNumIndex.ToString(),
+                PrintNo = PrintNo,
                 ReimburseCosts = new List<ReimburseCost>()
             };
             for (int i = 0; i < dtbs.Rows.Count; i++)
@@ -10115,21 +10119,20 @@ namespace OpenAuth.App.Order
             text = text.Replace("@Model.Data.CardName", PrintSalesOrder.CardName);
             text = text.Replace("@Model.Data.Address", PrintSalesOrder.Address);
             text = text.Replace("@Model.Data.Name", PrintSalesOrder.Name);
-            text = text.Replace("@Model.Data.Address2", PrintSalesOrder.Address2);
+            text = text.Replace("@Model.Data.Addrestwo", PrintSalesOrder.Address2);
             text = text.Replace("@Model.Data.SalseName", PrintSalesOrder.SalseName);
             text = text.Replace("@Model.Data.Cellolar", PrintSalesOrder.Cellolar);
-            text = text.Replace("@Model.Data.DATEFORMAT", PrintSalesOrder.DATEFORMAT);
+            text = text.Replace("@Model.Data.DATEFORMAT", PrintSalesOrder.DATEFORMAT.Substring(0,11));
             text = text.Replace("@Model.Data.PymntGroup", PrintSalesOrder.PymntGroup);
             text = text.Replace("@Model.Data.Comments", PrintSalesOrder.Comments);
             text = text.Replace("@Model.Data.NumAtCard", PrintSalesOrder.NumAtCard);
+            text = text.Replace("@Model.Data.AcceptanceDates", PrintSalesOrder.AcceptanceDates);
             var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesOrdersheader{PrintSalesOrder.DocEntry}.html");
             System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
             var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesOrdersfooter.html");
             var foottext = System.IO.File.ReadAllText(footUrl);
-            foottext = foottext.Replace("@Model.Data.DocTotal", PrintSalesOrder.DocTotal);
             foottext = foottext.Replace("@Model.Data.PrintNumIndex", PrintSalesOrder.PrintNumIndex);
             foottext = foottext.Replace("@Model.Data.PrintNo", PrintSalesOrder.PrintNo);
-            foottext = foottext.Replace("@Model.Data.U_SL", PrintSalesOrder.U_SL);
             var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesOrdersfooter{PrintSalesOrder.DocEntry}.html");
             System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
             byte[] basecode = await ExportAllHandler.Exporterpdf(PrintSalesOrder, "PrintSalesOrders.cshtml", pdf =>
@@ -10141,7 +10144,7 @@ namespace OpenAuth.App.Order
                 pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
                 pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
             });
-            System.IO.File.Delete(tempUrl);
+             System.IO.File.Delete(tempUrl);
             System.IO.File.Delete(foottempUrl);
             return basecode;
             //return await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesOrders.cshtml");
