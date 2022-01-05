@@ -280,6 +280,53 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 根据条件统计服务呼叫确认情况(按客户/售后主管/销售员分组)
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> UnConfirmedServiceInfo(QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+
+            var services = UnitWork.Find<ServiceOrder>(null)
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), s => s.Status == int.Parse(req.QryState));
+            var data1 = services.GroupBy(s => s.CustomerId).Select(g => new
+            {
+                CustomerId = g.Key,
+                CustomerName = g.Max(x => x.CustomerName),
+                SalesMan = g.Max(x => x.SalesMan),
+                Supervisor = g.Max(x => x.Supervisor),
+                count = g.Count()
+            });
+
+            var data2 = await (services.GroupBy(s => s.Supervisor).Select(g => new
+            {
+                Supervisor = g.Key,
+                count = g.Count()
+            })).ToListAsync();
+            var list2 = data2.Select(d => new
+            {
+                Supervisor = _userManagerApp.GetUserOrgInfo(null, d.Supervisor).Result?.OrgName + "-" + d.Supervisor,
+                Count = d.count
+            });
+
+            var data3 = await (services.GroupBy(s => s.SalesMan).Select(g => new { SalesMan = g.Key, count = g.Count() })).ToListAsync();
+            var list3 = data3.Select(d => new
+            {
+                SalesMan = _userManagerApp.GetUserOrgInfo(null, d.SalesMan).Result?.OrgName + "-" + d.SalesMan,
+                Count = d.count
+            });
+
+            var list = new List<dynamic>();
+            list.Add(data1);
+            list.Add(list2);
+            list.Add(list3);
+
+            result.Data = list;
+            return result;
+        }
+
+        /// <summary>
         /// 统计服务单的状态(待确认,已确认,已取消)数量及占比
         /// 查询条件可选:日期范围、客户、售后主管
         /// </summary>
@@ -1200,16 +1247,18 @@ namespace OpenAuth.App
             //未完成的服务单所处时间区间筛选
             if (!string.IsNullOrWhiteSpace(req.TimeInterval))
             {
+                //所有未完工的记录
                 IQueryable<ServiceOrder> services = UnitWork.Find<ServiceOrder>(s => s.Status == 2
                                                         && s.ServiceWorkOrders.Any(sw => sw.Status < 7));
-                
                 var interval = req.TimeInterval.Split('-');
                 var currentTime = DateTime.Now;
+                //开始间隔天数
                 if (!string.IsNullOrWhiteSpace(interval[0]))
                 {
                     var startPoint = double.Parse(interval[0]);
                     services = services.Where(s => currentTime.AddDays(-startPoint) > s.CreateTime);
                 }
+                //结束间隔天数
                 if (!string.IsNullOrWhiteSpace(interval[1]))
                 {
                     var endPoint = double.Parse(interval[1]);
@@ -1222,12 +1271,13 @@ namespace OpenAuth.App
             //未完工原因筛选
             if (!string.IsNullOrWhiteSpace(req.UnCompletedReason))
             {
-                if (req.UnCompletedReason == "未填写")
+                //在未完工历史表中没有记录的都是未填写
+                if (req.UnCompletedReason == "14")
                 {
                     var history = UnitWork.Find<ServiceUnCompletedReasonHistory>(null);
                     query = query.Where(q => q.ServiceWorkOrders.Any(sw => sw.Status < 7) && !history.Any(h => h.ServiceOrderId == q.Id));
                 }
-                else if (req.UnCompletedReason == "其他")
+                else if (req.UnCompletedReason == "13") //取最新一次的填写记录,没有未完工原因id的,说明在新增时在字典中找不到,属于用户自己填写的理由,归类为其他
                 {
                     var lastHistory = UnitWork.Find<ServiceUnCompletedReasonHistory>(null)
                         .GroupBy(s => s.ServiceOrderId).Select(g => new { ServiceOrderId = g.Key, Id = g.Max(x => x.Id) });
@@ -1237,14 +1287,16 @@ namespace OpenAuth.App
                                                 select d.ServiceOrderId).Distinct().ToListAsync();
                     query = query.Where(q => unCompletedIds.Contains(q.Id));
                 }
+                else if (req.UnCompletedReason == "0") //选项为全部时,不做任何过滤
+                {
+                }
                 else
                 {
-                    var unCompletedReasonId = UnitWork.Find<Category>(c => c.TypeId == "SYS_UnCompletedReason" && c.Name == req.UnCompletedReason).FirstOrDefault()?.DtValue;
+                    //var unCompletedReasonId = UnitWork.Find<Category>(c => c.TypeId == "SYS_UnCompletedReason" && c.Name == req.UnCompletedReason).FirstOrDefault()?.DtValue;
                     var lastHistory = UnitWork.Find<ServiceUnCompletedReasonHistory>(null)
                         .GroupBy(s => s.ServiceOrderId).Select(g => new { ServiceOrderId = g.Key, Id = g.Max(x => x.Id) });
-                    var unCompletedIds = await (from d in UnitWork.Find<ServiceUnCompletedReasonDetail>(null)
+                    var unCompletedIds = await (from d in UnitWork.Find<ServiceUnCompletedReasonDetail>(null).WhereIf(!string.IsNullOrWhiteSpace(req.UnCompletedReason), d => d.UnCompletedReasonId == req.UnCompletedReason)
                                                 join l in lastHistory on new { d.ServiceOrderId, Id = d.ServiceUnCompletedReasonHistoryId } equals new { l.ServiceOrderId, l.Id }
-                                                where d.UnCompletedReasonId == unCompletedReasonId
                                                 select d.ServiceOrderId).Distinct().ToListAsync();
                     query = query.Where(q => unCompletedIds.Contains(q.Id));
                 }
@@ -1653,7 +1705,7 @@ namespace OpenAuth.App
                 .Select(s => s.Id);
             var totalCount = await unCompletedService.CountAsync();
             //在字典维护的未完工原因
-            var reasonsInfo = await UnitWork.Find<Category>(c => c.TypeId == "SYS_UnCompletedReason").Where(c => !string.IsNullOrWhiteSpace(c.DtValue)).Select(x => new { x.Name, x.SortNo }).ToListAsync();
+            var reasonsInfo = await UnitWork.Find<Category>(c => c.TypeId == "SYS_UnCompletedReason").Where(c => !new string[] { "0", "13", "14" }.Contains(c.DtValue)).Select(x => new { x.Name, x.SortNo }).ToListAsync();
             var reasons = reasonsInfo.Select(r => r.Name);
 
             #region 有未完工原因的,并且未完工原因是在字典中维护的
