@@ -111,6 +111,15 @@ namespace OpenAuth.Repository
         public virtual DbSet<ProductModelSelection> productmodelselections { get; set; }
         public virtual DbSet<ProductModelSelectionInfo> productmodelselectioninfo { get; set; }
         public virtual DbSet<ProductModelType> productmodeltype { get; set; }
+        #region 线索
+        public virtual DbSet<Clue> Clue { get; set; }
+        public virtual DbSet<ClueContacts> ClueContacts { get; set; }
+        public virtual DbSet<ClueFile> ClueFile { get; set; }
+        public virtual DbSet<ClueFollowUp> ClueFollowUp { get; set; }
+        public virtual DbSet<ClueIntentionProduct> ClueIntentionProduct { get; set; }
+        public virtual DbSet<ClueLog> ClueLog { get; set; }
+        public virtual DbSet<ClueSchedule> ClueSchedule { get; set; }
+        #endregion
 
     }
 }

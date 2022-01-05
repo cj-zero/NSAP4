@@ -1510,6 +1510,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// </summary>
         /// <param name="base_entry"></param>
         /// <param name="base_type"></param>
+        /// <param name="func_id"></param>
         /// <param name="funId"></param>
         /// <returns></returns>
         [HttpGet]
