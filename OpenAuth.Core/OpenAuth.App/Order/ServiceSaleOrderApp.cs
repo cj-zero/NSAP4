@@ -10184,6 +10184,39 @@ namespace OpenAuth.App.Order
             }
         }
         #endregion
-
+        #region 重置单据打印状态
+        /// <summary>
+        /// 重置单据打印状态
+        /// </summary>
+        public async Task<string> ResetPrintStat(string SboId, string DocEntry, string TableName1, string TableName2)
+        {
+            bool result = false;
+            string sqls = string.Format("UPDATE {0}.{3} SET Printed='N' WHERE DocEntry={1} and sbo_id={2} ", "nsap_bone", DocEntry, SboId, TableName1);
+            result = UnitWork.ExecuteSql(sqls.ToString(), ContextType.NsapBaseDbContext) > 0 ? true : false;
+            if (result)
+            {
+                string sqlsbo = string.Format("SELECT sql_db,sql_conn FROM {0}.sbo_info WHERE sbo_id={1}", "nsap_base", SboId);
+                DataTable dts = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sqlsbo.ToString(), CommandType.Text, null);
+                if (dts.Rows.Count > 0)
+                {
+                    string sqla = string.Format("SELECT Printed FROM {1} WHERE DocEntry={0} ", DocEntry, TableName2);
+                    DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, sqla.ToString(), CommandType.Text, null);
+                    if (dt.Rows.Count > 0)
+                    {
+                        string sqlss = string.Format("UPDATE {1} SET Printed='N' WHERE DocEntry={0} ", DocEntry, TableName2);
+                        result = UnitWork.ExecuteSql(sqlss.ToString(), ContextType.SapDbContextType) > 0 ? true : false;
+                    }
+                }
+            }
+            if (result == false)
+            {
+                return "重置状态失败";
+            }
+            else
+            {
+                return "重置状态成功";
+            }
+        }
+        #endregion
     }
 }

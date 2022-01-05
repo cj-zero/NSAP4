@@ -34,8 +34,14 @@ namespace OpenAuth.App
             throw new NotImplementedException();
         }
 
-        public Task<string> AddClueAsync(AddClueReq addClueReq)
+        public async Task<string>  AddClueAsync(AddClueReq addClueReq)
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
             OpenAuth.Repository.Domain.Serve.Clue clue = new Repository.Domain.Serve.Clue
             {
                 CardName = addClueReq.CardName,
@@ -45,11 +51,27 @@ namespace OpenAuth.App
                 WebSite = addClueReq.WebSite,
                 Remark = addClueReq.Remark,
                 IsCertification = addClueReq.IsCertification,
-                Status = 0
+                Status = 0,
+                CreateTime = DateTime.Now,
+                CreateUser = loginUser.Name
             };
             var data = UnitWork.Add<OpenAuth.Repository.Domain.Serve.Clue, int>(clue);
             UnitWork.Save();
-            return null;
+            OpenAuth.Repository.Domain.Serve.ClueContacts cluecontacts = new Repository.Domain.Serve.ClueContacts
+            {
+                ClueId = data.Id,
+                Name = addClueReq.Name,
+                Tel1 = addClueReq.Tel1,
+                Role = addClueReq.Role,
+                Position = addClueReq.Position,
+                Address1 = addClueReq.Address1,
+                Address2 = addClueReq.Address2,
+                CreateTime = DateTime.Now,
+                CreateUser = loginUser.Name
+            };
+            UnitWork.Add<OpenAuth.Repository.Domain.Serve.ClueContacts, int>(cluecontacts);
+            UnitWork.Save();
+            return data.Id.ToString();
         }
     }
 }

@@ -25,7 +25,7 @@ namespace OpenAuth.WebApi.Controllers.Clue
             this.UnitWork = UnitWork;
             this._serviceBaseApp = _serviceBaseApp;
             this._auth = _auth;
-            clueApp = _clueApp;
+            _clueApp = clueApp;
         }
         /// <summary>
         /// 线索列表
@@ -64,7 +64,7 @@ namespace OpenAuth.WebApi.Controllers.Clue
             var result = new Response<string>();
             try
             {
-                result.Result = await _clueApp.AddClueAsync(addClueReq);
+                result.Result= await _clueApp.AddClueAsync(addClueReq);
             }
             catch (Exception ex)
             {
