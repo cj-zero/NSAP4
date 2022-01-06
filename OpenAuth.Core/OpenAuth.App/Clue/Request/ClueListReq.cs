@@ -18,7 +18,7 @@ namespace OpenAuth.App.Clue.Request
         /// <summary>
         /// 状态
         /// </summary>
-        public string Status { get; set; }
+        public int Status { get; set; }
         /// <summary>
         /// 备注
         /// </summary>
@@ -35,5 +35,13 @@ namespace OpenAuth.App.Clue.Request
         /// 地址
         /// </summary>
         public string Address { get; set; }
+        /// <summary>
+        /// 创建开始时间
+        /// </summary>
+        public string StartTime { get; set; }
+        /// <summary>
+        /// 创建结束时间
+        /// </summary>
+        public string EndTime { get; set; }
     }
 }
