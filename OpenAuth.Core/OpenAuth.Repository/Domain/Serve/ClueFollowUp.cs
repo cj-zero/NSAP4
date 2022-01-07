@@ -27,16 +27,16 @@ namespace OpenAuth.Repository.Domain.Serve
         /// 跟进方式（0：电话营销，1：邮件跟进，2：微信跟进，3：拜访客户，4，客户来访，5：其他）
         /// </summary>
         [Description("跟进方式（0：电话营销，1：邮件跟进，2：微信跟进，3：拜访客户，4，客户来访，5：其他）")]
-        public string FollowUpWay { get; set; }
+        public int FollowUpWay { get; set; }
         /// <summary>
         /// 跟进内容
         /// </summary>
         [Description("跟进内容")]
         public string Details { get; set; }
         /// <summary>
-        /// 下次跟进时间
+        /// 跟进时间
         /// </summary>
-        [Description("下次跟进时间")]
+        [Description("跟进时间")]
         public DateTime FollowUpTime { get; set; }
         /// <summary>
         /// 下次跟进时间
