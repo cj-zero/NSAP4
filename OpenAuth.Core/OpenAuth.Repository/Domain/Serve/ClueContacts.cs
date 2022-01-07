@@ -51,7 +51,7 @@ namespace OpenAuth.Repository.Domain.Serve
         /// <summary>
         /// 详细地址
         /// </summary>
-        [Description("详细地址")]
+        [Description("详细地址")] 
         public string Address2 { get; set; }
         /// <summary>
         /// 创建人
