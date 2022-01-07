@@ -80,6 +80,10 @@ namespace OpenAuth.App.Order.ModelDto
         /// </summary>
         public string DATEFORMAT { get; set; }
         /// <summary>
+        /// 验收日期
+        /// </summary>
+        public string AcceptanceDates { get; set; }
+        /// <summary>
         /// 客户po
         /// </summary>
         public string NumAtCard{ get; set; }

@@ -14,7 +14,7 @@ namespace OpenAuth.Repository.Domain.Serve
     public class Clue : BaseEntity<int>
     {
         /// <summary>
-        /// 展会名称
+        /// 客户名称
         /// </summary>
         [Description("客户名称")]
         public string CardName { get; set; }

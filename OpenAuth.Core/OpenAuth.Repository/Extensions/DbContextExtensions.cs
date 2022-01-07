@@ -20,32 +20,40 @@ namespace OpenAuth.Repository.Extensions
         private static DbCommand CreateCommand(DatabaseFacade facade, string sql, out DbConnection connection, CommandType commandType, params object[] parameters)
         {
             var conn = facade.GetDbConnection();
-            connection = conn;
-            if (conn.State != ConnectionState.Open)
+            try
             {
-                conn.Open();
-            }
-            var cmd = conn.CreateCommand();
-            if (parameters != null)
-            {
-                if (facade.IsSqlServer())
+                if (conn.State != ConnectionState.Open)
                 {
-                    foreach (List<SqlParameter> itemp in parameters.ToArray())
+                    conn.Open();
+                }
+                var cmd = conn.CreateCommand();
+                if (parameters != null)
+                {
+                    if (facade.IsSqlServer())
                     {
-                        cmd.Parameters.AddRange(itemp.ToArray());
+                        foreach (List<SqlParameter> itemp in parameters.ToArray())
+                        {
+                            cmd.Parameters.AddRange(itemp.ToArray());
+                        }
+                    }
+                    else
+                    {
+                        foreach (List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> itemp in parameters)
+                        {
+                            cmd.Parameters.AddRange(itemp.ToArray());
+                        }
                     }
                 }
-                else
-                {
-                    foreach (List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> itemp in parameters)
-                    {
-                        cmd.Parameters.AddRange(itemp.ToArray());
-                    }
-                }
+                cmd.CommandType = commandType;
+                cmd.CommandText = sql;
+                connection = conn;
+                return cmd;
             }
-            cmd.CommandType = commandType;
-            cmd.CommandText = sql;
-            return cmd;
+            catch (Exception ex)
+            {
+                conn.Close();
+                throw ex;
+            }
         }
 
         public static DataTable SqlQuery(this DatabaseFacade facade, string sql, CommandType commandType, params object[] parameters)
@@ -62,8 +70,7 @@ namespace OpenAuth.Repository.Extensions
             catch (Exception ex)
             {
                 conn.Close();
-                string msg = ex.Message;
-                // throw ex;
+                throw ex;
             }
             return dt;
         }
@@ -153,24 +160,20 @@ namespace OpenAuth.Repository.Extensions
         /// <returns></returns>
         public static object ExecuteScalar(this DatabaseFacade facade, string sql, CommandType commandType, params object[] parameters)
         {
+            var command = CreateCommand(facade, sql, out DbConnection conn, commandType, parameters);
             try
             {
-                var command = CreateCommand(facade, sql, out DbConnection conn, commandType, parameters);
-                bool flag = false;
                 if (command.Connection.State != ConnectionState.Open)
                 {
                     command.Connection.Open();
-                    flag = true;
                 }
                 object result = command.ExecuteScalar();
-                if (flag)
-                {
-                    conn.Close();
-                }
+                conn.Close();
                 return result;
             }
             catch (Exception ex)
             {
+                conn.Close();
                 string msg = ex.Message;
                 throw ex;
             }

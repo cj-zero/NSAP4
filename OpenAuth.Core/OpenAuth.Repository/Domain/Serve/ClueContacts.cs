@@ -51,7 +51,7 @@ namespace OpenAuth.Repository.Domain.Serve
         /// <summary>
         /// 详细地址
         /// </summary>
-        [Description("详细地址")]
+        [Description("详细地址")] 
         public string Address2 { get; set; }
         /// <summary>
         /// 创建人
@@ -82,7 +82,7 @@ namespace OpenAuth.Repository.Domain.Serve
         /// 是否默认
         /// </summary>
         [Description("是否默认")]
-        public bool IsDefault { get; set; }
+        public bool IsDefault { get; set; } 
 
         public override void GenerateDefaultKeyVal()
         {
