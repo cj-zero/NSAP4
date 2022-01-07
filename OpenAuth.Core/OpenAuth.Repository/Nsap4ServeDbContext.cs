@@ -51,6 +51,12 @@ namespace OpenAuth.Repository
         public virtual DbSet<ServiceOrderLog> Serviceorderlogs { get; set; }
         public virtual DbSet<ServiceUnCompletedReasonHistory> ServiceUnCompletedReasonHistories { get; set; }
         public virtual DbSet<ServiceUnCompletedReasonDetail> ServiceUnCompletedReasonDetails { get; set; }
+        public virtual DbSet<BeforeSaleDemand> BeforeSaleDemands { get; set; }
+        public virtual DbSet<BeforeSaleDemandOrders> Beforesaledemandorders { get; set; }
+        public virtual DbSet<BeforeSaleDemandOperationHistory> BeforeSaleDemandOperationHistories { get; set; }
+        public virtual DbSet<BeforeSaleDemandProject> BeforeSaleDemandProjects { get; set; }
+        public virtual DbSet<BeforeSaleFiles> BeforeSaleFiles { get; set; }
+        public virtual DbSet<BeforeSaleProScheduling> BeforeSaleProSchedulings { get; set; }
 
         public virtual DbSet<ServiceOrderSerial> Serviceorderserials { get; set; }
         public virtual DbSet<AppServiceOrderLog> Appserviceorderlogs { get; set; }
