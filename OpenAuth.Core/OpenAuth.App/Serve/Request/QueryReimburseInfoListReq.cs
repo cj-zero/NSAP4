@@ -79,7 +79,7 @@ namespace OpenAuth.App.Request
         public string ReimburseType { get; set; }
 
         /// <summary>
-        ///页面类型 1我的提交 2 待处理 3 已处理 4 已驳回 5 未支付 6 已支付
+        ///页面类型 1我的提交 2 待处理 3 已处理 4 已驳回 5 未支付 6 已支付 7费用归属
         /// </summary>
         public int? PageType { get; set; }
 

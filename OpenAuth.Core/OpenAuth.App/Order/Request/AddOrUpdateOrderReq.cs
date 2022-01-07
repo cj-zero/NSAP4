@@ -86,7 +86,11 @@ namespace OpenAuth.App.Order.Request
 		/// 自定义字段
 		/// </summary>
 		public string CustomFields { get; set; }
-        
+		/// <summary>
+		/// 行明细
+		/// </summary>
+		public IList<OrderItem> OrderItems { get; set; }
+
 	}
 	public class OrderDraft
 	{

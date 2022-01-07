@@ -1478,8 +1478,8 @@ namespace OpenAuth.WebApi.Controllers.Order
 
 
             return File(await _serviceSaleOrderApp.ExportShow(sboid, DocEntry), "application/pdf");
-            
-             
+
+
         }
         #endregion
         #region 根据页面地址获取FunId.
@@ -1510,18 +1510,19 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// </summary>
         /// <param name="base_entry"></param>
         /// <param name="base_type"></param>
+        /// <param name="func_id"></param>
         /// <param name="funId"></param>
         /// <returns></returns>
         [HttpGet]
         [Route("IsExistDoc")]
-        public Response<bool> IsExistDoc(string base_entry, string base_type)
+        public Response<bool> IsExistDoc(string base_entry, string base_type, string func_id)
         {
             var UserID = _serviceBaseApp.GetUserNaspId();
             var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
             var result = new Response<bool>();
             try
             {
-                result.Result = _serviceSaleOrderApp.IsExistDoc(base_entry, base_type, SboID.ToString());
+                result.Result = _serviceSaleOrderApp.IsExistDoc(base_entry, base_type, SboID.ToString(), func_id);
             }
             catch (Exception e)
             {
@@ -1836,7 +1837,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             try
             {
                 var userId = _serviceBaseApp.GetUserNaspId();
-                result.Result = _serviceSaleOrderApp.AuditResubmitNextNew(resubmitReq.jobId, userId, resubmitReq.recommend, resubmitReq.auditOpinionid, resubmitReq.IsUpdate, resubmitReq.vStock, resubmitReq.Comments, resubmitReq.Remark, resubmitReq.CustomFields,resubmitReq.ChoosedSerialNumberList,resubmitReq.serialNumber);
+                result.Result = _serviceSaleOrderApp.AuditResubmitNextNew(resubmitReq.jobId, userId, resubmitReq.recommend, resubmitReq.auditOpinionid, resubmitReq.IsUpdate, resubmitReq.vStock, resubmitReq.Comments, resubmitReq.Remark, resubmitReq.CustomFields, resubmitReq.ChoosedSerialNumberList, resubmitReq.serialNumber);
             }
             catch (Exception e)
             {
@@ -1985,7 +1986,20 @@ namespace OpenAuth.WebApi.Controllers.Order
         {
             return await _serviceSaleOrderApp.UpdatePrintStat(SboId, DocEntry, TableName1, TableName2);
         }
-        #endregion
 
+        #endregion
+        #region 重置单据打印状态
+        /// <summary>
+        /// 重置单据打印状态
+        /// </summary>
+        [HttpGet]
+        [Route("ResetPrintStat")]
+        public async Task<Response<string>> ResetPrintStat(string SboId, string DocEntry, string TableName1, string TableName2)
+        {
+            var result = new Response<string>();
+            result.Result = await _serviceSaleOrderApp.ResetPrintStat(SboId, DocEntry, TableName1, TableName2);
+            return result;
+        }
+        #endregion
     }
 }

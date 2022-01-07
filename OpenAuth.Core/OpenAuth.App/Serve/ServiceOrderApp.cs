@@ -33,6 +33,7 @@ using OpenAuth.App.Serve.Response;
 using RazorEngine.Compilation.ImpromptuInterface.InvokeExt;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using OpenAuth.Repository.Extensions;
 
 namespace OpenAuth.App
 {
@@ -227,6 +228,7 @@ namespace OpenAuth.App
                          //.WhereIf(Convert.ToInt32(req.QryState) == 0, q => q.Status == 1 || (q.Status == 2 && !q.ServiceWorkOrders.All(q => q.Status != 1)))
                          .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => (s.Id == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key))))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), s => s.Supervisor == req.QrySupervisor)
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.QrySalesMan), s => s.SalesMan == req.QrySalesMan)
             .OrderBy(r => r.CreateTime).Select(q => new
             {
                 q.Id,
@@ -276,6 +278,134 @@ namespace OpenAuth.App
             });
             result.Data = list;
             result.Count = query.Count();
+            return result;
+        }
+
+        /// <summary>
+        /// 根据条件统计服务呼叫确认情况(按客户/售后主管/销售员分组)
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> UnConfirmedServiceInfo(QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            //根据条件过滤服务单数据
+            var services = UnitWork.Find<ServiceOrder>(null)
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), s => s.Status == int.Parse(req.QryState));
+
+            //根据姓名获取用户部门名称
+            Func<IEnumerable<string>, Task<List<UserResp>>> getOrgName = async x => await (from u in UnitWork.Find<User>(null)
+                                                                                           join r in UnitWork.Find<Relevance>(null) on u.Id equals r.FirstId
+                                                                                           join o in UnitWork.Find<Repository.Domain.Org>(null) on r.SecondId equals o.Id
+                                                                                           where x.Contains(u.Name) && r.Key == Define.USERORG
+                                                                                           orderby o.CascadeId descending
+                                                                                           select new UserResp { Name = u.Name, OrgName = o.Name, CascadeId = o.CascadeId }).ToListAsync();
+
+            //按客户分组
+            var query1 = await services.GroupBy(s => s.CustomerId).Select(g => new { CustomerId = g.Key, count = g.Count() }).ToListAsync();
+            //根据客户id去sap查询客户信息(服务单里面也存有,但是不准确)
+            var d1 = await (from a in UnitWork.Find<OCRD>(null)
+                            join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode into ab
+                            from b in ab.DefaultIfEmpty()
+                            join e in UnitWork.Find<OHEM>(null) on a.DfTcnician equals e.empID into ae
+                            from e in ae.DefaultIfEmpty()
+                            where query1.Select(x => x.CustomerId).Contains(a.CardCode)
+                            select new
+                            {
+                                CustomerId = a.CardCode,
+                                CustomerName = a.CardName,
+                                SalesMan = b == null ? "" : b.SlpName,
+                                SuperVisor = e == null ? "" : e.lastName + e.firstName,
+                            }).ToListAsync();
+            var sales = await getOrgName(d1.Select(d => d.SalesMan).Distinct()); //获取部门信息
+            //按姓名进行分组,最CascadeId最大的那条
+            var salesInfo = from s in sales
+                            join g in sales.GroupBy(s => s.Name).Select(g => new { Name = g.Key, CascadeId = g.Max(x => x.CascadeId) })
+                            on new { s.Name, s.CascadeId } equals new { g.Name, g.CascadeId }
+                            select s;
+            var super = await getOrgName(d1.Select(d => d.SuperVisor).Distinct());  //获取部门信息
+            var superInfo = from s in super
+                            join g in super.GroupBy(s => s.Name).Select(g => new { Name = g.Key, CascadeId = g.Max(x => x.CascadeId) })
+                            on new { s.Name, s.CascadeId } equals new { g.Name, g.CascadeId }
+                            select s;
+            var data1 = from q in query1
+                        join d in d1 on q.CustomerId equals d.CustomerId
+                        join s1 in salesInfo on d.SalesMan equals s1.Name into temp1
+                        from t1 in temp1.DefaultIfEmpty()
+                        join s2 in superInfo on d.SuperVisor equals s2.Name into temp2
+                        from t2 in temp2.DefaultIfEmpty()
+                        select new
+                        {
+                            d.CustomerId,
+                            d.CustomerName,
+                            SalesMan = (t1?.OrgName ?? "") + "-" + d.SalesMan, //销售员
+                            SuperVisor = (t2?.OrgName ?? "") + "-" + d.SuperVisor, //售后主管
+                            Count = q.count, //服务单数量
+                        };
+
+            //按售后主管分组
+            var query2 = await services.GroupBy(s => s.Supervisor).Select(g => new { Supervisor = g.Key, count = g.Count() }).ToListAsync();
+            //查询售后主管下有多少个客户
+            var superVisors = (from a in UnitWork.Find<OCRD>(null)
+                               join e in UnitWork.Find<OHEM>(null) on a.DfTcnician equals e.empID
+                               where query2.Select(x => x.Supervisor).Contains(e.lastName + e.firstName)
+                               select new { Supervisor = e.lastName + e.firstName, a.CardCode }).Distinct();
+            var d2 = superVisors.GroupBy(x => x.Supervisor).Select(g => new
+            {
+                Supervisor = g.Key,
+                CustomerCount = g.Count()
+            });
+            var o2 = await getOrgName(query2.Select(q => q.Supervisor));
+            var supervisorOrg = from a in o2
+                                join b in o2.GroupBy(x => x.Name).Select(g => new { Name = g.Key, CascadeId = g.Max(x => x.CascadeId) })
+                                on new { a.Name, a.CascadeId } equals new { b.Name, b.CascadeId }
+                                select a;
+            var data2 = from q in query2
+                        join d in d2 on q.Supervisor equals d.Supervisor
+                        join o in supervisorOrg on q.Supervisor equals o.Name into temp
+                        from t in temp.DefaultIfEmpty()
+                        select new
+                        {
+                            Supervisor = (t?.OrgName ?? "") + "-" + d.Supervisor, //售后主管
+                            d.CustomerCount, //服务的客户数量
+                            Count = q.count //服务单数量
+                        };
+
+            //按销售员分组
+            var query3 = await services.GroupBy(s => s.SalesMan).Select(g => new { SalesMan = g.Key, count = g.Count() }).ToListAsync();
+            //查询销售员下有多少个客户
+            var salesMans = (from a in UnitWork.Find<OCRD>(null)
+                             join b in UnitWork.Find<OSLP>(o => query3.Select(x => x.SalesMan).Contains(o.SlpName)) on a.SlpCode equals b.SlpCode
+                             select new { SalesMan = b.SlpName, a.CardCode }).Distinct();
+            var d3 = salesMans.GroupBy(x => x.SalesMan).Select(g => new
+            {
+                SalesMan = g.Key,
+                CustomerCount = g.Count()
+            });
+            var o3 = await getOrgName(query3.Select(q => q.SalesMan));
+            var salesOrg = from a in o3
+                           join b in o3.GroupBy(x => x.Name).Select(g => new { Name = g.Key, CascadeId = g.Max(x => x.CascadeId) })
+                           on new { a.Name, a.CascadeId } equals new { b.Name, b.CascadeId }
+                           select a;
+            var data3 = from q in query3
+                        join d in d3 on q.SalesMan equals d.SalesMan
+                        join o in salesOrg on q.SalesMan equals o.Name into temp
+                        from t in temp.DefaultIfEmpty()
+                        select new
+                        {
+                            SalesMan = (t?.OrgName ?? "") + "-" + d.SalesMan, //销售员
+                            d.CustomerCount, //服务的客户数量
+                            Count = q.count //服务单数量
+                        };
+
+            var list = new List<dynamic>();
+            list.Add(new { name = "Customer", data = data1.Distinct().OrderByDescending(d => d.Count) });
+            list.Add(new { name = "Supervisor", data = data2.Distinct().OrderByDescending(d => d.Count) });
+            list.Add(new { name = "SalesMan", data = data3.Distinct().OrderByDescending(d => d.Count) });
+
+            result.Data = list;
+            result.Count = services.Count();
+
             return result;
         }
 
@@ -1200,16 +1330,18 @@ namespace OpenAuth.App
             //未完成的服务单所处时间区间筛选
             if (!string.IsNullOrWhiteSpace(req.TimeInterval))
             {
+                //所有未完工的记录
                 IQueryable<ServiceOrder> services = UnitWork.Find<ServiceOrder>(s => s.Status == 2
                                                         && s.ServiceWorkOrders.Any(sw => sw.Status < 7));
-                
                 var interval = req.TimeInterval.Split('-');
                 var currentTime = DateTime.Now;
+                //开始间隔天数
                 if (!string.IsNullOrWhiteSpace(interval[0]))
                 {
                     var startPoint = double.Parse(interval[0]);
                     services = services.Where(s => currentTime.AddDays(-startPoint) > s.CreateTime);
                 }
+                //结束间隔天数
                 if (!string.IsNullOrWhiteSpace(interval[1]))
                 {
                     var endPoint = double.Parse(interval[1]);
@@ -1218,6 +1350,39 @@ namespace OpenAuth.App
 
                 var unFinishServiceIds = await services.Select(s => s.Id).Distinct().ToListAsync();
                 query = query.Where(q => unFinishServiceIds.Contains(q.Id));
+            }
+            //未完工原因筛选
+            if (!string.IsNullOrWhiteSpace(req.UnCompletedReason))
+            {
+                //在未完工历史表中没有记录的都是未填写
+                if (req.UnCompletedReason == "14")
+                {
+                    var history = UnitWork.Find<ServiceUnCompletedReasonHistory>(null);
+                    query = query.Where(q => q.ServiceWorkOrders.Any(sw => sw.Status < 7) && !history.Any(h => h.ServiceOrderId == q.Id));
+                }
+                else if (req.UnCompletedReason == "13") //取最新一次的填写记录,没有未完工原因id的,说明在新增时在字典中找不到,属于用户自己填写的理由,归类为其他
+                {
+                    var lastHistory = UnitWork.Find<ServiceUnCompletedReasonHistory>(null)
+                        .GroupBy(s => s.ServiceOrderId).Select(g => new { ServiceOrderId = g.Key, Id = g.Max(x => x.Id) });
+                    var unCompletedIds = await (from d in UnitWork.Find<ServiceUnCompletedReasonDetail>(null)
+                                                join l in lastHistory on new { d.ServiceOrderId, Id = d.ServiceUnCompletedReasonHistoryId } equals new { l.ServiceOrderId, l.Id }
+                                                where d.UnCompletedReasonId == ""
+                                                select d.ServiceOrderId).Distinct().ToListAsync();
+                    query = query.Where(q => q.ServiceWorkOrders.Any(sw => sw.Status < 7) && unCompletedIds.Contains(q.Id));
+                }
+                else if (req.UnCompletedReason == "0") //选项为全部时,不做任何过滤
+                {
+                }
+                else
+                {
+                    //var unCompletedReasonId = UnitWork.Find<Category>(c => c.TypeId == "SYS_UnCompletedReason" && c.Name == req.UnCompletedReason).FirstOrDefault()?.DtValue;
+                    var lastHistory = UnitWork.Find<ServiceUnCompletedReasonHistory>(null)
+                        .GroupBy(s => s.ServiceOrderId).Select(g => new { ServiceOrderId = g.Key, Id = g.Max(x => x.Id) });
+                    var unCompletedIds = await (from d in UnitWork.Find<ServiceUnCompletedReasonDetail>(null).WhereIf(!string.IsNullOrWhiteSpace(req.UnCompletedReason), d => d.UnCompletedReasonId == req.UnCompletedReason)
+                                                join l in lastHistory on new { d.ServiceOrderId, Id = d.ServiceUnCompletedReasonHistoryId } equals new { l.ServiceOrderId, l.Id }
+                                                select d.ServiceOrderId).Distinct().ToListAsync();
+                    query = query.Where(q => q.ServiceWorkOrders.Any(sw => sw.Status < 7) && unCompletedIds.Contains(q.Id));
+                }
             }
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("工程主管")) && !loginContext.User.Account.Equals("wanghaitao") && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看服务ID")))
@@ -1236,27 +1401,28 @@ namespace OpenAuth.App
                     query = query.Where(q => q.SupervisorId.Equals(loginUser.Id) || sIds.Contains(q.Id) || q.SalesManId.Equals(loginUser.Id) || q.CreateUserId.Equals(loginUser.Id));
                 }
             }
-            var resultsql = query.OrderByDescending(q => q.CreateTime).Select(q => new
+
+            var resultsql = query.OrderByDescending(q => q.CreateTime).Select(q => new ServiceWorkOrderList
             {
                 ServiceOrderId = q.Id,
-                q.CustomerId,
-                q.CustomerName,
-                q.TerminalCustomerId,
-                q.TerminalCustomer,
-                q.RecepUserName,
-                q.Contacter,
-                q.ContactTel,
-                q.NewestContacter,
-                q.NewestContactTel,
-                q.Supervisor,
-                q.SalesMan,
+                CustomerId = q.CustomerId,
+                CustomerName = q.CustomerName,
+                TerminalCustomerId = q.TerminalCustomerId,
+                TerminalCustomer = q.TerminalCustomer,
+                RecepUserName = q.RecepUserName,
+                Contacter = q.Contacter,
+                ContactTel = q.ContactTel,
+                NewestContacter = q.NewestContacter,
+                NewestContactTel = q.NewestContactTel,
+                Supervisor = q.Supervisor,
+                SalesMan = q.SalesMan,
                 //TechName = "",
-                q.U_SAP_ID,
-                q.VestInOrg,
+                U_SAP_ID = q.U_SAP_ID,
+                VestInOrg = q.VestInOrg,
                 ServiceStatus = q.Status,
                 ServiceCreateTime = q.CreateTime,
-                q.AllowOrNot,
-                q.Remark,
+                AllowOrNot = q.AllowOrNot,
+                Remark = q.Remark,
                 ServiceWorkOrders = q.ServiceWorkOrders.Where(a => (string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId) || a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
                 && (string.IsNullOrWhiteSpace(req.QryState) || a.Status.Equals(Convert.ToInt32(req.QryState)))
                 && (string.IsNullOrWhiteSpace(req.QryManufSN) || a.ManufacturerSerialNumber.Contains(req.QryManufSN))
@@ -1267,11 +1433,30 @@ namespace OpenAuth.App
                 && (string.IsNullOrWhiteSpace(req.QryFromTheme) || a.FromTheme.Contains(req.QryFromTheme))
                 && (req.CompleteDate == null || (a.CompleteDate > req.CompleteDate))
                 && (req.EndCompleteDate == null || (a.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1)))
-                ).OrderBy(a => a.Status).ToList()
+                ).OrderBy(a => a.Status).ToList(),
             });
 
-            result.Data = await resultsql.Skip((req.page - 1) * req.limit)
-            .Take(req.limit).ToListAsync();
+            var data = await resultsql.Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+
+            //根据服务id进行分组,取最近的一次未完工原因提交记录
+            var lastUncompletedId = UnitWork.Find<ServiceUnCompletedReasonHistory>(null)
+                                        .Where(s => data.Select(d => d.ServiceOrderId).Contains(s.ServiceOrderId))
+                                        .GroupBy(s => s.ServiceOrderId).Select(g => new { ServiceOrderId = g.Key, Id = g.Max(x => x.Id) });
+            var lastUncompletedReason = await (from r in UnitWork.Find<ServiceUnCompletedReasonHistory>(null)
+                                               join l in lastUncompletedId on r.Id equals l.Id
+                                               select new
+                                               {
+                                                   r.ServiceOrderId,
+                                                   r.Content
+                                               }).ToListAsync();
+            //根据服务id获取最近一次的未完工原因提交记录
+            data.All(d =>
+            {
+                d.UnCompletedReason = lastUncompletedReason.FirstOrDefault(l => l.ServiceOrderId == d.ServiceOrderId)?.Content ?? "";
+                return true;
+            });
+
+            result.Data = data;
             result.Count = query.Count();
             return result;
         }
@@ -1522,34 +1707,46 @@ namespace OpenAuth.App
             var user = loginContext.User;
             var currentTime = DateTime.Now;
 
-            var history = new Repository.Domain.Serve.ServiceUnCompletedReasonHistory
+            using var tran = UnitWork.GetDbContext<ServiceUnCompletedReasonHistory>().Database.BeginTransaction();
+            try
             {
-                Id = Guid.NewGuid().ToString(),
-                ServiceOrderId = req.ServiceOrderId,
-                FroTechnicianId = user.Id,
-                FroTechnicianName = user.Name,
-                Content = req.Content,
-                CreateTime = currentTime,
-                CreateUserId = user.Id
-            };
-            //历史记录
-            await UnitWork.AddAsync(history);
+                //未完工原因历史记录
+                var history = new Repository.Domain.Serve.ServiceUnCompletedReasonHistory
+                {
+                    ServiceOrderId = req.ServiceOrderId,
+                    FroTechnicianId = user.Id,
+                    FroTechnicianName = user.Name,
+                    Content = req.Content,
+                    CreateTime = currentTime,
+                    CreateUserId = user.Id
+                };
 
-            //明细
-            var content = req.Content.Replace("</br>", "");
-            var reasons = content.Trim().Split(';').Where(x => !string.IsNullOrWhiteSpace(x));
-            var details = reasons.Select(x => new Repository.Domain.Serve.ServiceUnCompletedReasonDetail
+                await UnitWork.AddAsync(history);
+                await UnitWork.SaveAsync();
+
+                //未完工原因明细
+                var content = req.Content.Replace("\n", "");
+                var reasons = content.Trim().Split(';').Where(x => !string.IsNullOrWhiteSpace(x));
+                var reasonsInfo = await UnitWork.Find<Category>(c => c.TypeId == "SYS_UnCompletedReason").Where(c => !string.IsNullOrWhiteSpace(c.DtValue)).Select(x => new { x.Name, x.DtValue }).ToListAsync();
+                var details = reasons.Select(x => new Repository.Domain.Serve.ServiceUnCompletedReasonDetail
+                {
+                    ServiceOrderId = req.ServiceOrderId,
+                    ServiceUnCompletedReasonHistoryId = history.Id,
+                    UnCompletedReasonId = reasonsInfo.FirstOrDefault(r => r.Name == x.Split('.')[1])?.DtValue ?? "",
+                    UnCompletedReasonName = x.Split('.')[1],
+                    CreateTime = currentTime,
+                    CreateUserId = user.Id
+                });
+                await UnitWork.BatchAddAsync<Repository.Domain.Serve.ServiceUnCompletedReasonDetail>(details.ToArray());
+                await UnitWork.SaveAsync();
+
+                tran.Commit();
+            }
+            catch (Exception ex)
             {
-                Id = Guid.NewGuid().ToString(),
-                ServiceOrderId = req.ServiceOrderId,
-                HistoryId = history.Id,
-                UnCompletedReasonId = "",
-                UnCompletedReasonName = x,
-                CreateTime = currentTime,
-                CreateUserId = user.Id
-            });
-            await UnitWork.BatchAddAsync<Repository.Domain.Serve.ServiceUnCompletedReasonDetail>(details.ToArray());
-            await UnitWork.SaveAsync();
+                tran.Rollback();
+                throw ex;
+            }
         }
 
         /// <summary>
@@ -1560,13 +1757,13 @@ namespace OpenAuth.App
         public async Task<TableData> GetUnCompletedReasonHistory(int serviceOrderId)
         {
             var result = new TableData();
-            var historys = await UnitWork.Find<Repository.Domain.Serve.ServiceUnCompletedReasonHistory>(s => s.ServiceOrderId == serviceOrderId).ToListAsync();
-            var data = historys.Select(x => new
-            {
-                x.CreateTime,
-                x.FroTechnicianName,
-                x.Content
-            });
+            var data = await (from h in UnitWork.Find<Repository.Domain.Serve.ServiceUnCompletedReasonHistory>(s => s.ServiceOrderId == serviceOrderId).Include(s => s.ServiceUnCompletedReasonDetails)
+                              select new
+                              {
+                                  h.CreateTime,
+                                  h.FroTechnicianName,
+                                  Content = h.ServiceUnCompletedReasonDetails.Select(x => x.UnCompletedReasonName),
+                              }).ToListAsync();
 
             result.Data = data.OrderByDescending(d => d.CreateTime);
             result.Count = data.Count();
@@ -1578,59 +1775,71 @@ namespace OpenAuth.App
         /// 查看未完工原因统计
         /// </summary>
         /// <returns></returns>
-        public async Task<TableData> GetUnCompletedReasonInfo()
+        public async Task<TableData> GetUnCompletedReasonInfo(QueryServiceOrderListReq req)
         {
             var result = new TableData();
-            //查看未完工且有未完工原因的服务单最近一次的未完工记录
-            var query1 = from so in UnitWork.Find<ServiceOrder>(s => s.Status == 2 && s.ServiceWorkOrders.Any(sw => sw.Status < 7))
-                         join h in UnitWork.Find<ServiceUnCompletedReasonHistory>(null)
-                         on so.Id equals h.ServiceOrderId
-                         group new { so, h } by h.ServiceOrderId into g
+
+            //所有未完工的服务
+            var unCompletedService = UnitWork.Find<ServiceOrder>(s => s.Status == 2 && s.ServiceWorkOrders.Any(sw => sw.Status < 7))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryVestInOrg), s => s.VestInOrg == int.Parse(req.QryVestInOrg))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), s => s.Supervisor == req.QrySupervisor)
+                .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, s => s.CreateTime >= req.QryCreateTimeFrom && s.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryTechName), s => s.ServiceWorkOrders.Any(sw => sw.CurrentUser == req.QryTechName))
+                .Select(s => s.Id);
+            var totalCount = await unCompletedService.CountAsync();
+            //在字典维护的未完工原因
+            var reasonsInfo = await UnitWork.Find<Category>(c => c.TypeId == "SYS_UnCompletedReason").Where(c => !new string[] { "0", "13", "14" }.Contains(c.DtValue)).Select(x => new { x.Name, x.SortNo }).ToListAsync();
+            var reasons = reasonsInfo.Select(r => r.Name);
+
+            #region 有未完工原因的,并且未完工原因是在字典中维护的
+            //一个服务单可填写多次未完工原因,统计时取最近的一次
+            var serviceLastRecord = from h in UnitWork.Find<ServiceUnCompletedReasonHistory>(null)
+                                    join u in unCompletedService on h.ServiceOrderId equals u
+                                    group new { h, u } by h.ServiceOrderId into g
+                                    select new
+                                    {
+                                        ServiceOrderId = g.Key,
+                                        Id = g.Max(x => x.h.Id)
+                                    };
+
+            var query1 = from h1 in UnitWork.Find<ServiceUnCompletedReasonHistory>(null)
+                         join q in serviceLastRecord on h1.Id equals q.Id
+                         join d in UnitWork.Find<ServiceUnCompletedReasonDetail>(s => reasons.Contains(s.UnCompletedReasonName))
+                         on new { h1.ServiceOrderId, ServiceUnCompletedReasonHistoryId = h1.Id } equals new { d.ServiceOrderId, d.ServiceUnCompletedReasonHistoryId }
+                         group new { h1, d } by d.UnCompletedReasonName into g2
                          select new
                          {
-                             ServiceOrderId = g.Key,
-                             CreateTime = g.Max(x => x.h.CreateTime)
+                             reason = g2.Key,
+                             count = g2.Count()
                          };
-            //根据服务id和创建时间找到最近一次的未完工原因id
-            var query2 = await (from h in UnitWork.Find<ServiceUnCompletedReasonHistory>(null)
-                                join q in query1 on new { h.ServiceOrderId, h.CreateTime } equals new { q.ServiceOrderId, q.CreateTime }
-                                select new
-                                {
-                                    h.ServiceOrderId,
-                                    h.CreateTime,
-                                    h.Id
-                                }).ToListAsync();
-            //未完工原因
-            var reasonsInfo = await UnitWork.Find<Category>(c => c.TypeId == "SYS_UnCompletedReason").Select(x => new { x.Name, x.SortNo }).ToListAsync();
-            var reasons = reasonsInfo.Select(r => r.Name);
-            //根据服务号和最近一次未完工原因id查找明细,按明细分组
-            var query3 = (from q in query2
-                          join d in UnitWork.Find<ServiceUnCompletedReasonDetail>(s => reasons.Contains(s.UnCompletedReasonName))
-                          on new { q.ServiceOrderId, HistoryId = q.Id } equals new { d.ServiceOrderId, d.HistoryId }
-                          group new { q, d } by d.UnCompletedReasonName into g
-                          select new
-                          {
-                              reason = g.Key,
-                              count = g.Count()
-                          }).ToList();
-            //有未完工原因的服务单总数量
-            var totalCount = query2.Count();
 
             var data = (from r in reasonsInfo
-                        join q in query3 on r.Name equals q.reason into temp
+                        join q in query1 on r.Name equals q.reason into temp
                         from t in temp.DefaultIfEmpty()
                         select new
                         {
                             r.Name,
-                            count = t == null ? 0 : t.count,
-                            per = t == null ? "0.00%" : ((decimal)t.count / totalCount).ToString("P2"),
-                            r.SortNo
+                            Count = t == null ? 0 : t.count,
+                            Per = t == null ? "0.00%" : ((decimal)t.count / totalCount).ToString("P2"),
+                            r.SortNo,
                         }).ToList();
-            var otherCount = UnitWork.Find<ServiceUnCompletedReasonDetail>(s => !reasons.Contains(s.UnCompletedReasonName))
-                                .GroupBy(x => x.ServiceOrderId).Select(g => g.Key).Count();
-            data.Add(new { Name = "其他", count = otherCount, per = ((decimal)otherCount / totalCount).ToString("P2"), SortNo = 13 });
+            #endregion
 
-            result.Data = data.OrderBy(d => d.SortNo).Select(d => new { d.Name, d.count, d.per });
+            #region 有未完工原因的,未完工原因不在字典中维护的,归类为其他
+            var otherCount = (from h1 in UnitWork.Find<ServiceUnCompletedReasonHistory>(null)
+                              join q in serviceLastRecord on h1.Id equals q.Id
+                              join d in UnitWork.Find<ServiceUnCompletedReasonDetail>(s => !reasons.Contains(s.UnCompletedReasonName))
+                              on new { h1.ServiceOrderId, ServiceUnCompletedReasonHistoryId = h1.Id } equals new { d.ServiceOrderId, d.ServiceUnCompletedReasonHistoryId }
+                              select d.ServiceOrderId).Distinct().Count();
+            data.Add(new { Name = "其他", Count = otherCount, Per = (totalCount == 0 ? "0.00%" : ((decimal)otherCount / totalCount).ToString("P2")), SortNo = 13 });
+            #endregion
+
+            #region 没有未完工原因的,归类为未填写
+            var notWriteCount = totalCount - serviceLastRecord.Count();
+            data.Add(new { Name = "未填写", Count = notWriteCount, Per = totalCount == 0 ? "0.00%" : ((decimal)notWriteCount / totalCount).ToString("P2"), SortNo = 14 });
+            #endregion
+
+            result.Data = data.OrderBy(d => d.SortNo);
             result.Count = totalCount;
 
             return result;
@@ -2931,11 +3140,11 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task ReadMsg(int currentUserId, int serviceOrderId)
         {
-            var msgList = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId).ToListAsync();
+            var msgList = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == serviceOrderId).Select(c => c.Id).ToListAsync();
             if (msgList != null)
             {
-                string msgIds = string.Join(",", msgList.Select(s => s.Id).Distinct().ToArray());
-                UnitWork.Update<ServiceOrderMessageUser>(s => msgIds.Contains(s.MessageId) && s.FroUserId == currentUserId.ToString(), u => new ServiceOrderMessageUser { HasRead = true });
+                //string msgIds = string.Join(",", msgList.Select(s => s.Id).Distinct().ToArray());
+                UnitWork.Update<ServiceOrderMessageUser>(s => msgList.Contains(s.MessageId) && s.FroUserId == currentUserId.ToString(), u => new ServiceOrderMessageUser { HasRead = true });
             }
             await UnitWork.SaveAsync();
         }
@@ -2959,52 +3168,52 @@ namespace OpenAuth.App
             {
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
             }
-            var queryService = from a in UnitWork.Find<ServiceWorkOrder>(null)
-                               join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id
-                               select new { a, b };
             //技术员 主管 业务员
-            var serviceIdList = await queryService.Where(w => w.b.SupervisorId == nsapUserId || w.a.CurrentUserId == req.CurrentUserId || w.b.SalesManId == nsapUserId).ToListAsync();
+            var queryService = await (from a in UnitWork.Find<ServiceWorkOrder>(null)
+                                      join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id
+                                      where b.SupervisorId == nsapUserId || a.CurrentUserId == req.CurrentUserId || b.SalesManId == nsapUserId
+                                      select new { b.Id, b.U_SAP_ID }).ToListAsync();
+            var serviceIdList = queryService.Select(c => c?.Id).ToList();
             if (serviceIdList != null)
             {
-                string serviceIds = string.Join(",", serviceIdList.Select(s => s.b.Id).Distinct().ToArray());
-                var query = from a in UnitWork.Find<ServiceOrderMessage>(null)
-                            join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
-                            from b in ab.DefaultIfEmpty()
-                            select new { a, b };
-                var resultsql = query.Where(w => serviceIds.Contains(w.a.ServiceOrderId.ToString())).OrderByDescending(o => o.a.CreateTime).Select(s => new
+                //string serviceIds = string.Join(",", serviceIdList.Select(s => s.b.Id).Distinct().ToArray());
+                var query1 = await UnitWork.Find<ServiceOrderMessage>(c => serviceIdList.Contains(c.ServiceOrderId))
+                .OrderByDescending(o => o.CreateTime)
+                .Select(s => new
                 {
-                    s.b.U_SAP_ID,
-                    s.a.Content,
-                    s.a.CreateTime,
-                    s.a.FroTechnicianName,
-                    s.a.AppUserId,
-                    s.a.ServiceOrderId,
-                    s.a.Replier,
-                    s.a.Id
-                });
-                var messageId = resultsql.Select(c => c.Id).ToList();
-                var meassageUser = await UnitWork.Find<ServiceOrderMessageUser>(c => messageId.Contains(c.MessageId)).ToListAsync();
+                    s.Content,
+                    s.CreateTime,
+                    s.FroTechnicianName,
+                    s.AppUserId,
+                    s.ServiceOrderId,
+                    s.Replier,
+                    s.Id
+                }).ToListAsync();
 
-                //result.Data =
-                //((await resultsql
-                //.ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(g => g.First())).Select(s => new 
-                //{ 
-                //    s.Content, 
-                //    CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"), 
-                //    s.FroTechnicianName, 
-                //    s.AppUserId, 
-                //    s.ServiceOrderId, 
-                //    s.Replier, 
-                //    s.U_SAP_ID 
+                //var query = from a in UnitWork.Find<ServiceOrderMessage>(null)
+                //            join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
+                //            from b in ab.DefaultIfEmpty()
+                //            select new { a, b };
+                //var resultsql = query.Where(w => serviceIdList.Contains(w.a.ServiceOrderId.ToString())).OrderByDescending(o => o.a.CreateTime).Select(s => new
+                //{
+                //    s.b.U_SAP_ID,
+                //    s.a.Content,
+                //    s.a.CreateTime,
+                //    s.a.FroTechnicianName,
+                //    s.a.AppUserId,
+                //    s.a.ServiceOrderId,
+                //    s.a.Replier,
+                //    s.a.Id
                 //});
+                var messageId = query1.Select(c => c.Id).ToList();
+                var meassageUser = await UnitWork.Find<ServiceOrderMessageUser>(c => messageId.Contains(c.MessageId)).Select(c => new { c.MessageId, c.FroUserId, c.HasRead }).ToListAsync();
 
-                result.Data =
-                ((await resultsql
-                .ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(s => 
+                result.Data = query1.GroupBy(g => g.ServiceOrderId).Select(s =>
                 {
                     var first = s.First();
                     var messageid = s.Select(c => c.Id).ToList();
-                    var hasRead = meassageUser.Where(c => messageid.Contains(c.MessageId) && c.FroUserId==req.CurrentUserId.ToString()).All(c => c.HasRead == true);//服务id下消息是否全部已读
+                    var hasRead = meassageUser.Where(c => messageid.Contains(c.MessageId) && c.FroUserId == req.CurrentUserId.ToString()).All(c => c.HasRead == true);//服务id下消息是否全部已读
+                    var sapid = queryService.Where(q => q.Id == first.ServiceOrderId).FirstOrDefault();
                     return new
                     {
                         first.Content,
@@ -3013,10 +3222,29 @@ namespace OpenAuth.App
                         first.AppUserId,
                         first.ServiceOrderId,
                         first.Replier,
-                        first.U_SAP_ID,
+                        U_SAP_ID = sapid?.U_SAP_ID,
                         HasRead = hasRead
                     };
-                }));
+                }).ToList();
+                //result.Data =
+                //((await resultsql
+                //.ToListAsync()).GroupBy(g => g.ServiceOrderId).Select(s => 
+                //{
+                //    var first = s.First();
+                //    var messageid = s.Select(c => c.Id).ToList();
+                //    var hasRead = meassageUser.Where(c => messageid.Contains(c.MessageId) && c.FroUserId==req.CurrentUserId.ToString()).All(c => c.HasRead == true);//服务id下消息是否全部已读
+                //    return new
+                //    {
+                //        first.Content,
+                //        CreateTime = first.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
+                //        first.FroTechnicianName,
+                //        first.AppUserId,
+                //        first.ServiceOrderId,
+                //        first.Replier,
+                //        first.U_SAP_ID,
+                //        HasRead = hasRead
+                //    };
+                //}));
             }
             return result;
         }
@@ -3030,7 +3258,7 @@ namespace OpenAuth.App
         public async Task<TableData> GetMessageCount(int currentUserId)
         {
             var result = new TableData();
-            var msgCount = (await UnitWork.Find<ServiceOrderMessageUser>(s => s.FroUserId == currentUserId.ToString() && s.HasRead == false).ToListAsync()).Count;
+            var msgCount = await UnitWork.Find<ServiceOrderMessageUser>(s => s.FroUserId == currentUserId.ToString() && s.HasRead == false).CountAsync();
             result.Data = msgCount;
             return result;
         }

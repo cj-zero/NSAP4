@@ -65,6 +65,11 @@ namespace OpenAuth.App.Serve.Response
         /// 总金额
         /// </summary>
         public decimal? TotalMoney { get; set; }
+
+        /// <summary>
+        /// 部门承担金额
+        /// </summary>
+        public decimal? Money { get; set; }
         /// <summary>
         /// 支付时间
         /// </summary>
@@ -90,6 +95,10 @@ namespace OpenAuth.App.Serve.Response
         /// 是否已读
         /// </summary>
         public int? IsRead { get; set; }
+        /// <summary>
+        /// 更新时间
+        /// </summary>
+        public System.DateTime UpdateTime { get; set; }
 
         /// <summary>
         /// 出差补贴

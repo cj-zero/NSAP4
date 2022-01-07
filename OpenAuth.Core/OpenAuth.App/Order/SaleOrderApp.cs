@@ -202,7 +202,7 @@ namespace OpenAuth.App.Order
                 result = "单据不存在";
                 return result;
             }
-            if (IsExistDoc(orderReq.JobId.ToString(), "23", sboID.ToString()))
+            if (IsExistDoc(orderReq.JobId.ToString(), "23", sboID.ToString(), "33"))
             {
                 result = "该销售报价单转销售订单已提交";
                 return result;
