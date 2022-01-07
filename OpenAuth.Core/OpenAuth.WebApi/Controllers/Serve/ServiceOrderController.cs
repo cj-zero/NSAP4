@@ -101,7 +101,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result.Data = await _serviceOrderApp.UnConfirmedServiceInfo(req);
+                result = await _serviceOrderApp.UnConfirmedServiceInfo(req);
             }
             catch (Exception ex)
             {
