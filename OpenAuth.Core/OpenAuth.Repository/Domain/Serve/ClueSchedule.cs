@@ -47,7 +47,7 @@ namespace OpenAuth.Repository.Domain.Serve
         /// 相关对象
         /// </summary>
         [Description("相关对象")]
-        public string RelatedObjects { get; set; }
+        public int RelatedObjects { get; set; }
         /// <summary>
         /// 备注
         /// </summary>

@@ -111,6 +111,38 @@ namespace OpenAuth.WebApi.Controllers
         {
             return await _app.Load(request);
         }
+
+        /// <summary>
+        /// 结算费用归属
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> LoadCostAttribution([FromQuery] QueryoutsourcListReq request)
+        {
+            return await _app.LoadCostAttribution(request);
+        }
+
+        /// <summary>
+        /// 获取费用归属总金额
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetMoney([FromQuery] QueryoutsourcListReq request)
+        {
+            return await _app.GetMoney(request);
+        }
+        /// <summary>
+        /// 主管查看费用归属报表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AnalysisReportCostManager([FromQuery] QueryoutsourcListReq request)
+        {
+            return await _app.AnalysisReportCostManager(request);
+        }
         /// <summary>
         /// 获取可结算服务单
         /// </summary>
