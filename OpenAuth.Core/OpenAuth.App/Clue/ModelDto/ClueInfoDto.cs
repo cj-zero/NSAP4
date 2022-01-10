@@ -113,7 +113,7 @@ namespace OpenAuth.App.Clue.ModelDto
         /// <summary>
         /// 操作类型（0：新增，1：编辑，2：删除）
         /// </summary>
-        public string LogType { get; set; }
+        public int LogType { get; set; }
         /// <summary>
         /// 创建时间
         /// </summary>
