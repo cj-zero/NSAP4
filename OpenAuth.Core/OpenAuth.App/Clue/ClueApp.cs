@@ -158,7 +158,8 @@ namespace OpenAuth.App
                 Status = 0,
                 CreateTime = DateTime.Now,
                 CreateUser = loginUser.Name,
-                SerialNumber = await GetCardCode()
+                SerialNumber = !string.IsNullOrEmpty(await GetCardCode()) ? await GetCardCode() : "X00001",
+
             };
             var data = UnitWork.Add<OpenAuth.Repository.Domain.Serve.Clue, int>(clue);
             UnitWork.Save();
@@ -278,16 +279,25 @@ namespace OpenAuth.App
         public async Task<string> GetCardCode()
         {
             string sql = "SELECT SerialNumber FROM Clue ORDER BY SUBSTR(SerialNumber FROM 1 FOR 1),CAST(SUBSTR(SerialNumber FROM 2) AS UNSIGNED) DESC LIMIT 1";
-            var max = UnitWork.ExecuteScalar(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text, null).ToString();
-            string zyt = max.Substring(0, 1).ToUpper();
-            string tmpNum = max.Substring(1, max.Length - 1);
-            string Num = (Convert.ToInt32(tmpNum) + 1).ToString();
-            string mid = string.Empty;
-            for (int i = 0; i < tmpNum.Length - Num.Length; i++)
+            var obj = UnitWork.ExecuteScalar(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text, null);
+            if (obj != null)
             {
-                mid += "0";
+                var max = obj.ToString();
+                string zyt = max.Substring(0, 1).ToUpper();
+                string tmpNum = max.Substring(1, max.Length - 1);
+                string Num = (Convert.ToInt32(tmpNum) + 1).ToString();
+                string mid = string.Empty;
+                for (int i = 0; i < tmpNum.Length - Num.Length; i++)
+                {
+                    mid += "0";
+                }
+                return zyt + mid + Num;
             }
-            return zyt + mid + Num;
+            else
+            {
+                return "";
+            }
+
         }
         #endregion
 
