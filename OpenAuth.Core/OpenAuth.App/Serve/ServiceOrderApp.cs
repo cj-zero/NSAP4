@@ -1030,6 +1030,12 @@ namespace OpenAuth.App
                     isHasNum = true;
                     //throw new Exception("");
                 }
+                if (string.IsNullOrWhiteSpace(s.FromTheme))
+                {
+                    result.Code = 500;
+                    result.Message = "呼叫主题不能为空。";
+                    isHasNum = true;
+                }
                 s.SubmitDate = DateTime.Now;
                 s.SubmitUserId = loginUser.Id;
                 if (req.IsSend != null && (bool)req.IsSend)
