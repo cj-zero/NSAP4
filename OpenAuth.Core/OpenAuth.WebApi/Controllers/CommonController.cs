@@ -292,5 +292,28 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
         #endregion
+
+
+        /// <summary>
+        /// 主管查看费用归属报表-结算
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AnalysisReportCostManager([FromQuery] QueryoutsourcListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.AnalysisReportCostManager(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
     }
 }

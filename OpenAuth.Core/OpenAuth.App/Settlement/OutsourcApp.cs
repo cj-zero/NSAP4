@@ -13,8 +13,10 @@ using Newtonsoft.Json.Linq;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Material;
 using OpenAuth.App.Material.Request;
+using OpenAuth.App.Reponse;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using OpenAuth.App.Serve.Response;
 using OpenAuth.App.Settlement.Request;
 using OpenAuth.App.Workbench;
 using OpenAuth.Repository.Domain;
@@ -188,6 +190,336 @@ namespace OpenAuth.App
             });
             result.Data = outsourcs;
             return result;
+        }
+
+        /// <summary>
+        /// 结算费用归属
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> LoadCostAttribution(QueryoutsourcListReq request)
+        {
+            request.SelectMode = 2;
+            return await CostAttribution(request);
+        }
+
+        /// <summary>
+        /// 主管查看费用归属报表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> AnalysisReportCostManager(QueryoutsourcListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginOrg = loginContext.Orgs.OrderByDescending(o => o.CascadeId).FirstOrDefault();
+
+            List<int?> serviceOrderId = new List<int?>();
+            List<string> expendsId = new List<string>();
+            List<OutsourcExpenseOrg> outsourcExpenseOrg = null;
+            if (!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()) || !string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()))
+            {
+                var completion = await UnitWork.Find<CompletionReport>(c => c.IsReimburse == 4)
+                    .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()), c => c.EndDate > request.CompletionStartTime)
+                    .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()), c => c.EndDate < Convert.ToDateTime(request.CompletionEndTime).AddDays(1))
+                    .Select(c => c.ServiceOrderId)
+                    .ToListAsync();
+                serviceOrderId.AddRange(completion);
+            }
+            if (request.PageType == 1)//主管查看
+            {
+                //归在该部门下的费用
+                outsourcExpenseOrg = await UnitWork.Find<OutsourcExpenseOrg>(c => c.OrgId == loginOrg.Id).ToListAsync();
+                expendsId.AddRange(outsourcExpenseOrg.Select(c => c.ExpenseId).ToList());
+            }
+
+            var outsourcIds = await UnitWork.Find<OutsourcExpenses>(null)
+                .WhereIf(expendsId.Count > 0, o => expendsId.Contains(o.Id))
+                .WhereIf(serviceOrderId.Count > 0, o => serviceOrderId.Contains(o.ServiceOrderId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderSapId), o => o.ServiceOrderSapId == int.Parse(request.ServiceOrderSapId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.Customer), o => o.TerminalCustomer.Contains(request.Customer) || o.TerminalCustomerId.Contains(request.Customer))
+                .Select(c => c.OutsourcId)
+                .Distinct()
+                .ToListAsync();
+
+            var result = new TableData();
+            var query = UnitWork.Find<Outsourc>(null).Include(c => c.OutsourcExpenses)
+                        .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), q => q.CreateUser.Contains(request.CreateName))
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.OutsourcId), q => q.Id == int.Parse(request.OutsourcId))
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.StartTime.ToString()), q => q.CreateTime > request.StartTime)
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), q => q.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1))
+                       .Where(o => outsourcIds.Contains(o.Id));
+
+            #region 取客服主管审批后的单
+            var SchemeContent = await UnitWork.Find<FlowScheme>(f => f.SchemeName.Equals("个人代理结算")).Select(f => f.SchemeContent).FirstOrDefaultAsync();
+            SchemeContentJson schemeJson = JsonHelper.Instance.Deserialize<SchemeContentJson>(SchemeContent);
+            var lineId = schemeJson.Nodes.Where(n => n.name.Equals("客服主管审批")).FirstOrDefault()?.id;
+            List<string> lineIds = new List<string>();
+            List<string> Lines = new List<string>();
+            List<string> flowInstanceIds = new List<string>();
+            var lineIdTo = lineId;
+            foreach (var item in schemeJson.Lines)
+            {
+                if (schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to != null)
+                {
+                    lineIdTo = schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to;
+                    lineIds.Add(lineIdTo);
+                }
+                else
+                {
+                    break;
+                }
+            }
+            Lines.AddRange(lineIds);
+            if (Lines.Count > 0)
+            {
+                flowInstanceIds = await UnitWork.Find<FlowInstance>(f => Lines.Contains(f.ActivityId)).Select(s => s.Id).ToListAsync();
+                query = query.Where(q => flowInstanceIds.Contains(q.FlowInstanceId));
+            }
+            #endregion
+
+            var outsourcList = await query.OrderByDescending(o => o.UpdateTime).Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+            var serviceOrderIds = outsourcList.Select(o => o.OutsourcExpenses.FirstOrDefault()?.ServiceOrderId).ToList();
+            var serviceWorkOrder = await UnitWork.Find<ServiceWorkOrder>(s => serviceOrderIds.Contains(s.ServiceOrderId)).ToListAsync();
+            var flowInstanceList = await UnitWork.Find<FlowInstance>(f => outsourcList.Select(o => o.FlowInstanceId).ToList().Contains(f.Id)).ToListAsync();
+            result.Count = await query.CountAsync();
+            var userIds = outsourcList.Select(o => o.CreateUserId).ToList();
+            var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
+            var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
+
+            List<OutsourceResp> outsourcs = new List<OutsourceResp>();
+            outsourcList.ForEach(o =>
+            {
+                var orgName = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(o.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name;
+                var outsourcexpensesObj = o.OutsourcExpenses.FirstOrDefault();
+                var serviceWorkOrderObj = serviceWorkOrder.Where(s => s.ServiceOrderId == outsourcexpensesObj?.ServiceOrderId && s.CurrentUserNsapId.Equals(o.CreateUserId)).FirstOrDefault();
+                decimal? money = null;
+                if (outsourcExpenseOrg != null)//不是查看全部
+                {
+                    o.OutsourcExpenses.ForEach(e =>
+                    {
+                        var org = outsourcExpenseOrg.Where(u => u.ExpenseId == e.Id && u.OrgId == loginOrg.Id).FirstOrDefault();
+                        if (org != null)
+                        {
+                            money += e.Money * (org.Ratio / 100);
+                        }
+                    });
+                }
+                outsourcs.Add(new OutsourceResp
+                {
+                    CostOrgMoney = money,
+                    TerminalCustomer=outsourcexpensesObj?.TerminalCustomer,
+                    TerminalCustomerId=outsourcexpensesObj?.TerminalCustomerId,
+                    FromTheme=serviceWorkOrderObj?.FromTheme,
+                    TotalMoney=o.TotalMoney,
+                    CreateUser = orgName == null ? o.CreateUser : orgName + "-" + o.CreateUser,
+                });
+            });
+
+            List<AnalysisReportResp> AnalysisReportRespList = new List<AnalysisReportResp>();
+            var user= outsourcs.GroupBy(c => c.CreateUser).Select(c => new AnalysisReportSublist { Name = c.Key, Count = c.Count(), TotalMoney = c.Sum(s => s.TotalMoney) }).OrderByDescending(c => c.TotalMoney).ToList();
+            AnalysisReportRespList.Add(new AnalysisReportResp { Name = "User", AnalysisReportSublists = user });
+            var customer = outsourcs.GroupBy(c => c.TerminalCustomer).Select(c => new AnalysisReportSublist { Name = c.Key, Count = c.Count(), TotalMoney = c.Sum(s => s.TotalMoney) }).OrderByDescending(c => c.TotalMoney).ToList();
+            AnalysisReportRespList.Add(new AnalysisReportResp { Name = "Customer", AnalysisReportSublists = customer });
+
+            result.Data = AnalysisReportRespList;
+            return result;
+        }
+
+        /// <summary>
+        /// 获取费用归属总金额
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetMoney(QueryoutsourcListReq request)
+        {
+            request.SelectMode = 1;
+            TableData result = new TableData();
+            result.Data= await CostAttribution(request);
+            return result;
+        }
+        /// <summary>
+        /// 费用归属 结算
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<dynamic> CostAttribution(QueryoutsourcListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginOrg = loginContext.Orgs.OrderByDescending(o => o.CascadeId).FirstOrDefault();
+
+            List<int> serviceOrderId = new List<int>();
+            List<string> expendsId = new List<string>();
+            List<OutsourcExpenseOrg> outsourcExpenseOrg = null;
+            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.IsReimburse == 4)
+                    .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()), c => c.EndDate > request.CompletionStartTime)
+                    .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()), c => c.EndDate < Convert.ToDateTime(request.CompletionEndTime).AddDays(1))
+                    .WhereIf(!string.IsNullOrWhiteSpace(request.FromTheme), c => c.FromTheme.Contains(request.FromTheme))
+                    .ToListAsync();
+            //if (!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()) || !string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()))
+            //{
+            //    var completion = await UnitWork.Find<CompletionReport>(c => c.IsReimburse == 4)
+            //        .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()), c => c.EndDate > request.CompletionStartTime)
+            //        .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()), c => c.EndDate < Convert.ToDateTime(request.CompletionEndTime).AddDays(1))
+            //        .Select(c => c.ServiceOrderId.Value)
+            //        .ToListAsync();
+            //    serviceOrderId.AddRange(completion);
+            //}
+            //if (!string.IsNullOrWhiteSpace(request.FromTheme))
+            //{
+            //    var ids = await UnitWork.Find<ServiceWorkOrder>(c => c.FromTheme.Contains(request.FromTheme)).Select(c => c.ServiceOrderId).Distinct().ToListAsync();
+            //    serviceOrderId = serviceOrderId.Count > 0 ? serviceOrderId.Intersect(ids).Distinct().ToList() : ids;
+            //}
+            serviceOrderId.AddRange(CompletionReports.Select(c => c.ServiceOrderId.Value).ToList());
+            //int power = 0;
+            if (request.PageType==1)//主管查看
+            {
+                //归在该部门下的费用
+                outsourcExpenseOrg = await UnitWork.Find<OutsourcExpenseOrg>(c => c.OrgId == loginOrg.Id).ToListAsync();
+                expendsId.AddRange(outsourcExpenseOrg.Select(c => c.ExpenseId).ToList());
+            }
+            //if (!loginContext.Roles.Any(r => r.Name.Equals("费用归属-呼叫中心")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
+            //{
+            //    power = 1;
+            //}
+
+            var outsourcIds = await UnitWork.Find<OutsourcExpenses>(null)
+                .WhereIf(request.PageType == 1, o => expendsId.Contains(o.Id))
+                .WhereIf(serviceOrderId.Count > 0, o => serviceOrderId.Contains(o.ServiceOrderId.Value))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderSapId), o => o.ServiceOrderSapId == int.Parse(request.ServiceOrderSapId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.Customer), o => o.TerminalCustomer.Contains(request.Customer) || o.TerminalCustomerId.Contains(request.Customer))
+                .Select(c => c.OutsourcId)
+                .Distinct()
+                .ToListAsync();
+
+            var result = new TableData();
+            var query = UnitWork.Find<Outsourc>(null).Where(c => c.Id >= 285).Include(c => c.OutsourcExpenses)//285之后才有费用归属
+                        .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), q => q.CreateUser.Contains(request.CreateName))
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.OutsourcId), q => q.Id == int.Parse(request.OutsourcId))
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.StartTime.ToString()), q => q.CreateTime > request.StartTime)
+                       .WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), q => q.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1))
+                       .Where(o => outsourcIds.Contains(o.Id));
+
+            #region 取客服主管审批后的单
+            var SchemeContent = await UnitWork.Find<FlowScheme>(f => f.SchemeName.Equals("个人代理结算")).Select(f => f.SchemeContent).FirstOrDefaultAsync();
+            SchemeContentJson schemeJson = JsonHelper.Instance.Deserialize<SchemeContentJson>(SchemeContent);
+            var lineId = schemeJson.Nodes.Where(n => n.name.Equals("客服主管审批")).FirstOrDefault()?.id;
+            List<string> lineIds = new List<string>();
+            List<string> Lines = new List<string>();
+            List<string> flowInstanceIds = new List<string>();
+            var lineIdTo = lineId;
+            foreach (var item in schemeJson.Lines)
+            {
+                if (schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to != null)
+                {
+                    lineIdTo = schemeJson.Lines.Where(l => l.from.Equals(lineIdTo)).FirstOrDefault()?.to;
+                    lineIds.Add(lineIdTo);
+                }
+                else
+                {
+                    break;
+                }
+            }
+            Lines.AddRange(lineIds);
+            if (Lines.Count > 0)
+            {
+                flowInstanceIds = await UnitWork.Find<FlowInstance>(f => Lines.Contains(f.ActivityId)).Select(s => s.Id).ToListAsync();
+                query = query.Where(q => flowInstanceIds.Contains(q.FlowInstanceId));
+            }
+            #endregion
+
+            if (request.SelectMode==1)//查询总金额
+            {
+                var outsourcList = await query.ToListAsync();
+                decimal? money = 0;
+                if (request.PageType == 2)//查看全部数据
+                {
+                    money = outsourcList.Sum(c => c.TotalMoney);
+                }
+                else//查看部门数据
+                {
+                    outsourcList.ForEach(o =>
+                    {
+                        if (outsourcExpenseOrg != null)//不是查看全部
+                        {
+                            o.OutsourcExpenses.ForEach(e =>
+                            {
+                                //
+                                var org = outsourcExpenseOrg.Where(u => u.ExpenseId == e.Id && u.OrgId == loginOrg.Id).FirstOrDefault();
+                                if (org != null)
+                                {
+                                    money += e.Money * (org.Ratio / 100);
+                                }
+                            });
+                        }
+                    });
+                }
+                //result.Data = money;
+                return money;
+            }
+            else
+            {
+                //var outsourcList = await query.ToListAsync();
+                var outsourcList = await query.OrderByDescending(o => o.UpdateTime).Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+                var serviceOrderIds = outsourcList.Select(o => o.OutsourcExpenses.FirstOrDefault()?.ServiceOrderId).ToList();
+                //var serviceWorkOrder = await UnitWork.Find<ServiceWorkOrder>(s => serviceOrderIds.Contains(s.ServiceOrderId)).WhereIf(!string.IsNullOrWhiteSpace(request.FromTheme), c => c.FromTheme.Contains(request.FromTheme)).ToListAsync();
+                var flowInstanceList = await UnitWork.Find<FlowInstance>(f => outsourcList.Select(o => o.FlowInstanceId).ToList().Contains(f.Id)).ToListAsync();
+                result.Count = await query.CountAsync();
+                var userIds = outsourcList.Select(o => o.CreateUserId).ToList();
+                var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
+                var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
+
+                List<dynamic> outsourcs = new List<dynamic>();
+                outsourcList.ForEach(o =>
+                {
+                    var orgName = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(o.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name;
+                    var outsourcexpensesObj = o.OutsourcExpenses.FirstOrDefault();
+                    //var serviceWorkOrderObj = serviceWorkOrder.Where(s => s.ServiceOrderId == outsourcexpensesObj?.ServiceOrderId && s.CurrentUserNsapId.Equals(o.CreateUserId)).FirstOrDefault();
+                    var serviceWorkOrderObj = CompletionReports.Where(s => s.ServiceOrderId == outsourcexpensesObj?.ServiceOrderId && s.CreateUserId.Equals(o.CreateUserId)).FirstOrDefault();
+                    decimal? money = null;
+                    if (outsourcExpenseOrg != null)//不是查看全部
+                    {
+                        o.OutsourcExpenses.ForEach(e =>
+                        {
+                            var org = outsourcExpenseOrg.Where(u => u.ExpenseId == e.Id && u.OrgId == loginOrg.Id).FirstOrDefault();
+                            if (org != null)
+                            {
+                                money += e.Money * (org.Ratio / 100);
+                            }
+                        });
+                    }
+                    outsourcs.Add(new
+                    {
+                        o.Id,
+                        o.ServiceMode,
+                        CostOrgMoney = money,
+                        UpdateTime = Convert.ToDateTime(o.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
+                        CreateTime = Convert.ToDateTime(o.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
+                        outsourcexpensesObj?.ServiceOrderSapId,
+                        outsourcexpensesObj?.TerminalCustomer,
+                        outsourcexpensesObj?.TerminalCustomerId,
+                        serviceWorkOrderObj?.FromTheme,
+                        serviceWorkOrderObj?.ManufacturerSerialNumber,
+                        serviceWorkOrderObj?.MaterialCode,
+                        StatusName = o.FlowInstanceId == null ? "未提交" : flowInstanceList.Where(f => f.Id.Equals(o.FlowInstanceId)).FirstOrDefault()?.IsFinish == FlowInstanceStatus.Rejected ? "驳回" : flowInstanceList.Where(f => f.Id.Equals(o.FlowInstanceId)).FirstOrDefault()?.ActivityName == "开始" ? "未提交" : flowInstanceList.Where(f => f.Id.Equals(o.FlowInstanceId)).FirstOrDefault()?.ActivityName == "结束" ? "已支付" : flowInstanceList.Where(f => f.Id.Equals(o.FlowInstanceId)).FirstOrDefault()?.ActivityName,
+                        PayTime = o.PayTime != null ? Convert.ToDateTime(o.PayTime).ToString("yyyy.MM.dd HH:mm:ss") : null,
+                        o.TotalMoney,
+                        CreateUser = orgName == null ? o.CreateUser : orgName + "-" + o.CreateUser,
+                        o.Remark,
+                        IsRejected = o.IsRejected ? "是" : null
+                    });
+                });
+                result.Data = outsourcs;
+                return result;
+            }
+            //return result;
         }
 
         /// <summary>
