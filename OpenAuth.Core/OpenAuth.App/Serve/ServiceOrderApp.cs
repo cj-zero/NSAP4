@@ -6749,5 +6749,21 @@ namespace OpenAuth.App
             return result;
         }
         #endregion
+
+
+        #region ProblemHelp
+        public async Task<TableData> SetWorkOrderFinlish(string ids)
+        {
+            var idslist = ids.Split(",").ToList();
+            var obj = await UnitWork.Find<ServiceOrder>(c => idslist.Contains(c.U_SAP_ID.ToString())).Select(c => c.Id).ToListAsync();
+            var param = string.Join(",", obj);
+            var sql = $"UPDATE serviceworkorder SET `Status`=7 where ServiceOrderId in ({param})";
+            return new TableData
+            {
+                Data = sql
+            };
+
+        }
+        #endregion
     }
 }
