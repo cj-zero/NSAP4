@@ -1030,6 +1030,12 @@ namespace OpenAuth.App
                     isHasNum = true;
                     //throw new Exception("");
                 }
+                if (string.IsNullOrWhiteSpace(s.FromTheme))
+                {
+                    result.Code = 500;
+                    result.Message = "呼叫主题不能为空。";
+                    isHasNum = true;
+                }
                 s.SubmitDate = DateTime.Now;
                 s.SubmitUserId = loginUser.Id;
                 if (req.IsSend != null && (bool)req.IsSend)
@@ -1488,7 +1494,7 @@ namespace OpenAuth.App
 
             //因为分类表和上面的服务单不在同一个库,所以分开查
             //查询字典中的工单状态,dtValue为空表示全部状态,数据库中enable为0的表示可用,映射到布尔型的属性为false
-            var states = await UnitWork.Find<Category>(c => c.TypeId == "SYS_ServiceWorkOrderStatus" && !string.IsNullOrWhiteSpace(c.DtValue) && c.Enable == false).ToListAsync();
+            var states = await UnitWork.Find<Category>(c => c.TypeId == "SYS_ServiceWorkOrderStatus" && !string.IsNullOrWhiteSpace(c.DtValue) && c.Enable == false).OrderBy(c => c.SortNo).ToListAsync();
 
             //总数
             var totalCount = await serviceData.Select(d => d.so.Id).Distinct().CountAsync();
@@ -6747,6 +6753,22 @@ namespace OpenAuth.App
                     break;
             }
             return result;
+        }
+        #endregion
+
+
+        #region ProblemHelp
+        public async Task<TableData> SetWorkOrderFinlish(string ids)
+        {
+            var idslist = ids.Split(",").ToList();
+            var obj = await UnitWork.Find<ServiceOrder>(c => idslist.Contains(c.U_SAP_ID.ToString())).Select(c => c.Id).ToListAsync();
+            var param = string.Join(",", obj);
+            var sql = $"UPDATE serviceworkorder SET `Status`=7 where ServiceOrderId in ({param})";
+            return new TableData
+            {
+                Data = sql
+            };
+
         }
         #endregion
     }
