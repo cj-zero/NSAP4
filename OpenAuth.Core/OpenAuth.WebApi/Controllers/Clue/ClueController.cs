@@ -104,6 +104,47 @@ namespace OpenAuth.WebApi.Controllers.Clue
             }
             return result;
         }
+        /// <summary>
+        /// 编辑更新线索
+        /// </summary>
+        /// <param name="updateClueReq"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("UpdateClueAsync")]
+        public async Task<Response<bool>> UpdateClueAsync(UpdateClueReq updateClueReq)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _clueApp.UpdateClueAsync(updateClueReq);
+            }
+            catch (Exception ex)
+            {
 
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 删除
+        /// </summary>
+        /// <param name="ClueId"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Route("DeleteClueByIdAsync")]
+        public async Task<Response<bool>> DeleteClueByIdAsync(List<int> ClueId)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _clueApp.DeleteClueByIdAsync(ClueId);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }

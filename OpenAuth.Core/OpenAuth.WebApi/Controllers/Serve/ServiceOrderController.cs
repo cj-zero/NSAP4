@@ -2221,5 +2221,18 @@ namespace OpenAuth.WebApi.Controllers
         #endregion
 
         #endregion
+
+        #region ProblemHelp
+        /// <summary>
+        /// 批量将服务单设为完成
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> SetWorkOrderFinlish(string ids)
+        {
+            return await _serviceOrderApp.SetWorkOrderFinlish(ids);
+        }
+        #endregion
     }
 }

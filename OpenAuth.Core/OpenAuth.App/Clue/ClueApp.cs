@@ -138,6 +138,13 @@ namespace OpenAuth.App
         }
 
 
+
+        /// <summary>
+        /// 新增线索
+        /// </summary>
+        /// <param name="addClueReq"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
         public async Task<string> AddClueAsync(AddClueReq addClueReq)
         {
             var loginContext = _auth.GetCurrentUser();
@@ -158,7 +165,7 @@ namespace OpenAuth.App
                 Status = 0,
                 CreateTime = DateTime.Now,
                 CreateUser = loginUser.Name,
-                SerialNumber = await GetCardCode()
+                SerialNumber = !string.IsNullOrEmpty(await GetCardCode()) ? await GetCardCode() : "X00001",
             };
             var data = UnitWork.Add<OpenAuth.Repository.Domain.Serve.Clue, int>(clue);
             UnitWork.Save();
@@ -177,6 +184,14 @@ namespace OpenAuth.App
             };
             UnitWork.Add<OpenAuth.Repository.Domain.Serve.ClueContacts, int>(cluecontacts);
             UnitWork.Save();
+
+            var log = new AddClueLogReq();
+            log.ClueId = data.Id;
+            log.LogType = 0;
+            log.CreateTime = DateTime.Now;
+            log.CreateUser = loginUser.Name;
+            log.Details = JsonHelper.Instance.Serialize(addClueReq);
+            await AddClueLogAsync(log);
             return data.Id.ToString();
         }
 
@@ -278,16 +293,172 @@ namespace OpenAuth.App
         public async Task<string> GetCardCode()
         {
             string sql = "SELECT SerialNumber FROM Clue ORDER BY SUBSTR(SerialNumber FROM 1 FOR 1),CAST(SUBSTR(SerialNumber FROM 2) AS UNSIGNED) DESC LIMIT 1";
-            var max = UnitWork.ExecuteScalar(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text, null).ToString();
-            string zyt = max.Substring(0, 1).ToUpper();
-            string tmpNum = max.Substring(1, max.Length - 1);
-            string Num = (Convert.ToInt32(tmpNum) + 1).ToString();
-            string mid = string.Empty;
-            for (int i = 0; i < tmpNum.Length - Num.Length; i++)
+            var obj = UnitWork.ExecuteScalar(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text, null);
+            if (obj != null)
             {
-                mid += "0";
+                var max = obj.ToString();
+                string zyt = max.Substring(0, 1).ToUpper();
+                string tmpNum = max.Substring(1, max.Length - 1);
+                string Num = (Convert.ToInt32(tmpNum) + 1).ToString();
+                string mid = string.Empty;
+                for (int i = 0; i < tmpNum.Length - Num.Length; i++)
+                {
+                    mid += "0";
+                }
+                return zyt + mid + Num;
             }
-            return zyt + mid + Num;
+            else
+            {
+                return "";
+            }
+
+        }
+        /// <summary>
+        /// 编辑更新
+        /// </summary>
+        /// <param name="updateClueReq"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<bool> UpdateClueAsync(UpdateClueReq updateClueReq)
+        {
+            bool result = false;
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            var entity = UnitWork.FindSingle<Repository.Domain.Serve.Clue>(q => q.Id == updateClueReq.Id);
+            if (entity == null)
+            {
+                entity.CardName = updateClueReq.CardName;
+                entity.CustomerSource = updateClueReq.CustomerSource;
+                entity.IndustryInvolved = updateClueReq.IndustryInvolved;
+                entity.StaffSize = updateClueReq.StaffSize;
+                entity.WebSite = updateClueReq.WebSite;
+                entity.Remark = updateClueReq.Remark;
+                entity.IsCertification = updateClueReq.IsCertification;
+                entity.UpdateTime = DateTime.Now;
+                entity.UpdateUser = loginUser.Name;
+                var emodel = UnitWork.FindSingle<Repository.Domain.Serve.ClueContacts>(q => q.ClueId == updateClueReq.Id && q.IsDefault);
+                if (emodel == null)
+                {
+                    emodel.ClueId = updateClueReq.Id;
+                    emodel.Name = updateClueReq.Name;
+                    emodel.Tel1 = updateClueReq.Tel1;
+                    emodel.Role = updateClueReq.Role;
+                    emodel.Position = updateClueReq.Position;
+                    emodel.Address1 = updateClueReq.Address1;
+                    emodel.Address2 = updateClueReq.Address2;
+                    emodel.UpdateTime = DateTime.Now;
+                    emodel.UpdateUser = loginUser.Name;
+                    emodel.IsDefault = true;
+                    result = true;
+                    if (result)
+                    {
+
+                        var log = new AddClueLogReq();
+                        log.ClueId = updateClueReq.Id;
+                        log.LogType = 1;
+                        log.CreateTime = DateTime.Now;
+                        log.CreateUser = loginUser.Name;
+                        log.Details = JsonHelper.Instance.Serialize(updateClueReq);
+                        await AddClueLogAsync(log);
+                    }
+                }
+                UnitWork.Update(entity);
+                UnitWork.Save();
+
+            }
+
+            return result;
+        }
+        public async Task<bool> DeleteClueByIdAsync(List<int> clueId)
+        {
+            bool result = false;
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            foreach (var item in clueId)
+            {
+                var clue = await UnitWork.FindSingleAsync<Repository.Domain.Serve.Clue>(q => q.Id == item);
+                if (clue != null)
+                {
+                    clue.IsDelete = true;
+                    await UnitWork.UpdateAsync(clue);
+                    //联系人
+                    var clueContacts = UnitWork.Find<ClueContacts>(q => q.ClueId == item).MapToList<ClueContacts>();
+                    if (clueContacts.Count > 0)
+                    {
+                        foreach (var scon in clueContacts)
+                        {
+                            scon.IsDelete = true;
+                        }
+                        await UnitWork.BatchUpdateAsync(clueContacts.ToArray());
+                    }
+
+                    //日程
+                    var clueSchedule = UnitWork.Find<ClueSchedule>(q => q.ClueId == item).MapToList<ClueSchedule>();
+                    if (clueSchedule.Count > 0)
+                    {
+                        foreach (var scon in clueSchedule)
+                        {
+                            scon.IsDelete = true;
+                        }
+                        await UnitWork.BatchUpdateAsync(clueSchedule.ToArray());
+                    }
+
+                    //跟进
+                    var clueFollowUp = UnitWork.Find<ClueFollowUp>(q => q.ClueId == item).MapToList<ClueFollowUp>();
+                    if (clueFollowUp.Count > 0)
+                    {
+                        foreach (var scon in clueFollowUp)
+                        {
+                            scon.IsDelete = true;
+                        }
+                        await UnitWork.BatchUpdateAsync(clueFollowUp.ToArray());
+                    }
+
+                    //附件
+                    var clueFile = UnitWork.Find<ClueFile>(q => q.ClueId == item).MapToList<ClueFile>();
+                    if (clueFile.Count > 0)
+                    {
+                        foreach (var scon in clueFile)
+                        {
+                            scon.IsDelete = true;
+                        }
+                        await UnitWork.BatchUpdateAsync(clueFile.ToArray());
+                    }
+
+                    //意向商品
+                    var clueIntentionProduct = UnitWork.Find<ClueIntentionProduct>(q => q.ClueId == item).MapToList<ClueIntentionProduct>();
+                    if (clueIntentionProduct.Count > 0)
+                    {
+                        foreach (var scon in clueIntentionProduct)
+                        {
+                            scon.IsDelete = true;
+                        }
+                        await UnitWork.BatchUpdateAsync(clueIntentionProduct.ToArray());
+                    }
+
+                    //日志
+                    var log = new AddClueLogReq();
+                    log.ClueId = item;
+                    log.LogType = 2;
+                    log.CreateTime = DateTime.Now;
+                    log.CreateUser = loginUser.Name;
+                    var mes = "删除线索以及其余附属信息：线索Id为_" + item;
+                    log.Details = JsonHelper.Instance.Serialize(mes);
+                    await AddClueLogAsync(log);
+                    UnitWork.Save();
+                    result = true;
+                }
+
+            }
+            return result;
         }
         #endregion
 
@@ -413,7 +584,11 @@ namespace OpenAuth.App
         }
 
 
-
+        /// <summary>
+        /// 跟进列表
+        /// </summary>
+        /// <param name="clueId"></param>
+        /// <returns></returns>
         public async Task<List<ClueFollowUpListDto>> ClueFollowUpByIdAsync(int clueId)
         {
             var result = new List<ClueFollowUpListDto>();
@@ -623,6 +798,10 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<bool> AddClueLogAsync(AddClueLogReq addClueLogReq)
         {
+            ClueLog clueLog = new ClueLog();
+            addClueLogReq.CopyTo(clueLog);
+            var result = UnitWork.Add<ClueLog, int>(clueLog);
+            UnitWork.Save();
             return true;
         }
         #endregion
