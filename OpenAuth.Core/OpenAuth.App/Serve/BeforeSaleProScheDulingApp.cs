@@ -10,10 +10,13 @@ using OpenAuth.Repository.Interface;
 
 namespace OpenAuth.App
 {
-    public class BeforeSaleProScheDulingApp : BaseApp<BeforeSaleProScheduling>
+    public class BeforeSaleProScheDulingApp : OnlyUnitWorkBaeApp
     {
         private RevelanceManagerApp _revelanceApp;
-
+        public BeforeSaleProScheDulingApp(IUnitWork unitWork,RevelanceManagerApp app, IAuth auth) : base(unitWork, auth)
+        {
+            _revelanceApp = app;
+        }
         /// <summary>
         /// 加载列表
         /// </summary>
@@ -37,7 +40,7 @@ namespace OpenAuth.App
             var objs = UnitWork.Find<BeforeSaleProScheduling>(null);
             if (!string.IsNullOrEmpty(request.key))
             {
-                objs = objs.Where(u => u.Id.Contains(request.key));
+                // objs = objs.Where(u => u.Id.Contains(request.key));
             }
 
 
@@ -57,7 +60,7 @@ namespace OpenAuth.App
             obj.CreateTime = DateTime.Now;
             var user = _auth.GetCurrentUser().User;
             obj.CreateUserId = user.Id;
-            Repository.Add(obj);
+            // Repository.Add(obj);
         }
 
          public void Update(AddOrUpdateBeforeSaleProScheDulingReq obj)
@@ -75,13 +78,6 @@ namespace OpenAuth.App
                 //todo:补充或调整自己需要的字段
             });
 
-        }
-            
-
-        public BeforeSaleProScheDulingApp(IUnitWork unitWork, IRepository<BeforeSaleProScheduling> repository,
-            RevelanceManagerApp app, IAuth auth) : base(unitWork, repository,auth)
-        {
-            _revelanceApp = app;
         }
     }
 }

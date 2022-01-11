@@ -30,7 +30,7 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 关联售前需求Id
         /// </summary>
-        public int? BeforeSaleDemandId { get; set; }
+        public int BeforeSaleDemandId { get; set; }
         /// <summary>
         /// 操作行为
         /// </summary>

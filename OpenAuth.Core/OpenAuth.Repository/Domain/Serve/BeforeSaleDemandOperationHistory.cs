@@ -37,7 +37,7 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("售前申请流程Id")]
         [Browsable(false)]
-        public int? BeforeSaleDemandId { get; set; }
+        public int BeforeSaleDemandId { get; set; }
         /// <summary>
         /// 操作行为
         /// </summary>

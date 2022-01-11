@@ -213,19 +213,21 @@ namespace OpenAuth.Repository.Domain
         public virtual List<BeforeSaleFiles> Beforesalefiles { get; set; }
         /// <summary>
         /// 关联单据
-        /// </summary
+        /// </summary>
         public virtual List<BeforeSaleDemandOrders> BeforeSaleDemandOrders{ get; set; }
         /// <summary>
         /// 售前申请流程关联项目
         /// </summary>
         public virtual List<BeforeSaleDemandProject> Beforesaledemandprojects { get; set; }
-
-
+        /// <summary>
+        /// 项目排期表
+        /// </summary>
         public virtual List<BeforeSaleProScheduling>  BeforeSaleProSchedulings { get; set; }
         /// <summary>
         /// 售前申请项目操作记录
         /// </summary>
         public virtual List<BeforeSaleDemandOperationHistory> Beforesaledemandoperationhistories { get; set; }
+
         public override void GenerateDefaultKeyVal()
         {
         }

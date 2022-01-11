@@ -22,22 +22,21 @@ namespace OpenAuth.WebApi.Controllers
             _app = app;
         }
         //获取详情
-        [HttpGet]
-        public Response<BeforeSaleProScheduling> Get(string id)
-        {
-            var result = new Response<BeforeSaleProScheduling>();
-            try
-            {
-                result.Result = _app.Get(id);
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-            }
-
-            return result;
-        }
+        //[HttpGet]
+        //public Response<BeforeSaleProScheduling> Get(string id)
+        //{
+        //    var result = new Response<BeforeSaleProScheduling>();
+        //    try
+        //    {
+        //        result.Result = _app. Get(id);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Code = 500;
+        //        result.Message = ex.InnerException?.Message ?? ex.Message;
+        //    }
+        //    return result;
+        //}
 
         //添加
        [HttpPost]
@@ -89,22 +88,22 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 批量删除
         /// </summary>
-       [HttpPost]
-        public Response Delete([FromBody]string[] ids)
-        {
-            var result = new Response();
-            try
-            {
-                _app.Delete(ids);
+       //[HttpPost]
+       // public Response Delete([FromBody]string[] ids)
+       // {
+       //     var result = new Response();
+       //     try
+       //     {
+       //         _app.Delete(ids);
 
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-            }
+       //     }
+       //     catch (Exception ex)
+       //     {
+       //         result.Code = 500;
+       //         result.Message = ex.InnerException?.Message ?? ex.Message;
+       //     }
 
-            return result;
-        }
+       //     return result;
+       // }
     }
 }

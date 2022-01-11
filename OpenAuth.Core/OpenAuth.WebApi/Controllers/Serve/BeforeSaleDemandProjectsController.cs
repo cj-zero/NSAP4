@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
@@ -17,27 +18,17 @@ namespace OpenAuth.WebApi.Controllers
     public class BeforeSaleDemandProjectsController : ControllerBase
     {
         private readonly BeforeSaleDemandProjectApp _app;
-        
-        ////获取详情
-        //[HttpGet]
-        //public Response<BeforeSaleDemandProject> Get(string id)
-        //{
-        //    var result = new Response<BeforeSaleDemandProject>();
-        //    try
-        //    {
-        //        result.Result = _app.Load(id);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        result.Code = 500;
-        //        result.Message = ex.InnerException?.Message ?? ex.Message;
-        //    }
 
-        //    return result;
-        //}
+        ////获取详情
+        ///
+        [HttpGet]
+        public async Task<TableData> GetDetails(int id)
+        {
+            return await _app.GetDetails(id);
+        }
 
         //添加
-       [HttpPost]
+        [HttpPost]
         public Response Add(AddOrUpdateBeforeSaleDemandProjectReq obj)
         {
             var result = new Response();
@@ -78,9 +69,9 @@ namespace OpenAuth.WebApi.Controllers
         /// 加载列表
         /// </summary>
         [HttpGet]
-        public TableData Load([FromQuery]QueryBeforeSaleDemandProjectListReq request)
+        public async Task<TableData> Load([FromQuery]QueryBeforeSaleDemandProjectListReq request)
         {
-            return _app.Load(request);
+            return await _app.Load(request);
         }
 
         /// <summary>

@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Infrastructure;
+using Infrastructure.Extensions;
+using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
@@ -19,37 +22,74 @@ namespace OpenAuth.App
             _revelanceApp = app;
         }
         /// <summary>
-        /// 加载列表
+        /// 加载项目列表
         /// </summary>
-        public TableData Load(QueryBeforeSaleDemandProjectListReq request)
+        public async Task<TableData> Load(QueryBeforeSaleDemandProjectListReq req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-
-            //var properties = loginContext.GetProperties("BeforeSaleDemandProject");
-            //if (properties == null || properties.Count == 0)
-            //{
-            //    throw new Exception("当前登录用户没有访问该模块字段的权限，请联系管理员配置");
-            //}
-
-
-            var result = new TableData();
-            var objs = UnitWork.Find<BeforeSaleDemandProject>(null);
-            if (!string.IsNullOrEmpty(request.key))
+            TableData result = new TableData();
+            var query = UnitWork.Find<BeforeSaleDemandProject>(null)
+            //.Include(b => b.BeforeSaleProSchedulings)
+            .WhereIf(!string.IsNullOrWhiteSpace(req.PromoterName), c => c.PromoterName.Contains(req.PromoterName))
+            .WhereIf(!string.IsNullOrWhiteSpace(req.KeyWord), k => k.ProjectName.Contains(req.KeyWord) || k.ProjectNum.Contains(req.KeyWord) || k.ReqUserName.Contains(req.KeyWord) || k.DevUserName.Contains(req.KeyWord) || k.TestUserName.Contains(req.KeyWord))
+            .WhereIf(!string.IsNullOrWhiteSpace(req.CreateTimeStart.ToString()), q => q.CreateTime > req.CreateTimeStart)
+            .WhereIf(!string.IsNullOrWhiteSpace(req.CreateTimeEnd.ToString()), q => q.CreateTime < Convert.ToDateTime(req.CreateTimeStart).AddDays(1));
+            if (req.PageType != 0)//所有项目流程
             {
-                objs = objs.Where(u => u.Id.Equals(request.key));
+                query = query.WhereIf(req.Status != null && req.Status != 0, c => c.Status == req.Status);
             }
+            var resp = await query.OrderByDescending(c => c.CreateTime).Skip((req.page - 1) * req.limit)
+                .Take(req.limit).ToListAsync();
+            result.Data = resp.ToList();
+            result.Count = await query.CountAsync();
+            return result;
+        }
 
 
-            //var propertyStr = string.Join(',', properties.Select(u => u.Key));
-            //result.columnHeaders = properties;
-            result.Data = objs.OrderBy(u => u.Id)
-                .Skip((request.page - 1) * request.limit)
-                .Take(request.limit).ToList();//.Select($"new ({propertyStr})");
-            result.Count = objs.Count();
+        /// <summary>
+        /// 获取项目详情
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetDetails(int id)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+            var detail = await UnitWork.Find<BeforeSaleDemandProject>(c => c.Id == id)
+                            .FirstOrDefaultAsync();
+            //项目排期信息
+            var beforeSaleProSchedulings = await UnitWork.Find<BeforeSaleProScheduling>(c => c.BeforeSaleDemandProjectId == detail.Id)
+                .OrderBy(c => c.Id).Select(h => new
+                {
+                    h.CreateTime,
+                    h.Stage,
+                    h.UserId,
+                    h.UserName,
+                    h.StartDate,
+                    h.EndDate
+                }).ToListAsync();
+                result.Data = new
+                {
+                    detail.ActualStartDate,
+                    detail.SubmitDate,
+                    detail.DevUserId,
+                    detail.DevUserName,
+                    detail.ActualDevStartDate,
+                    detail.ActualDevEndDate,
+                    detail.TestUserId,
+                    detail.TestUserName,
+                    detail.ActualTestStartDate,
+                    detail.ActualTestEndDate,
+                    beforeSaleProSchedulings
+                };
             return result;
         }
 
@@ -64,7 +104,7 @@ namespace OpenAuth.App
             //Repository.Add(obj);
         }
 
-         public void Update(AddOrUpdateBeforeSaleDemandProjectReq obj)
+        public void Update(AddOrUpdateBeforeSaleDemandProjectReq obj)
         {
             var user = _auth.GetCurrentUser().User;
             UnitWork.Update<BeforeSaleDemandProject>(u => u.Id.Equals(obj.Id), u => new BeforeSaleDemandProject

@@ -12,18 +12,20 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
+using AutoMapper.Configuration.Annotations;
 using Infrastructure.AutoMapper;
+using OpenAuth.App.Response;
 using OpenAuth.Repository.Core;
 using OpenAuth.Repository.Domain;
 
-namespace OpenAuth.App.Request
+namespace OpenAuth.App.Reponse
 {
     /// <summary>
 	/// 售前需求申请流程
 	/// </summary>
     [Table("beforesaledemand")]
     [AutoMapTo(typeof(BeforeSaleDemand))]
-    public partial class AddOrUpdateBeforeSaleDemandReq
+    public partial class BeforeSaleDemandResp
     {
 
         /// <summary>
@@ -158,5 +160,10 @@ namespace OpenAuth.App.Request
         /// 售前需求申请流程附件
         /// </summary>
         public List<BeforeSaleFiles> BeforeSaleFiles { get; set; }
+        /// <summary>
+        /// 图片文件列表
+        /// </summary>
+        [Ignore]
+        public virtual List<UploadFileResp> Files { get; set; }
     }
 }

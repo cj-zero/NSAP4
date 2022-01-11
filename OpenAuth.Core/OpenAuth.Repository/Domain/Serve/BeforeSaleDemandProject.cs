@@ -24,7 +24,8 @@ namespace OpenAuth.Repository.Domain
     {
         public BeforeSaleDemandProject()
         {
-          this.ProjectName= string.Empty;
+          this.BeforeSaleDemandId = 0;
+          this.ProjectName = string.Empty;
           this.ProjectNum= string.Empty;
           this.PromoterId= string.Empty;
           this.PromoterName= string.Empty;
@@ -42,6 +43,8 @@ namespace OpenAuth.Repository.Domain
           this.ProjectDocURL= string.Empty;
           this.ActualDevStartDate= DateTime.Now;
           this.ActualDevEndDate= DateTime.Now;
+          this.ActualTestStartDate = DateTime.Now;
+          this.ActualTestEndDate = DateTime.Now;
           this.CreateUserName= string.Empty;
           this.CreateUserId= string.Empty;
           this.CreateTime= DateTime.Now;
@@ -52,7 +55,8 @@ namespace OpenAuth.Repository.Domain
         /// 售前申请流程Id
         /// </summary>
         [Description("售前申请流程Id")]
-        public int BeforeSaleDemandId { get; set; }
+        [Browsable(false)]
+        public int? BeforeSaleDemandId { get; set; }
 
         /// <summary>
         /// 售前需求项目名称
@@ -149,6 +153,17 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("实际开发结束日期")]
         public System.DateTime? ActualDevEndDate { get; set; }
+
+        /// <summary>
+        /// 实际测试开始日期
+        /// </summary>
+        [Description("实际测试开始日期")]
+        public System.DateTime? ActualTestStartDate { get; set; }
+        /// <summary>
+        /// 实际测试结束日期
+        /// </summary>
+        [Description("实际测试结束日期")]
+        public System.DateTime? ActualTestEndDate { get; set; }
         /// <summary>
         /// 创建人名称
         /// </summary>
@@ -170,7 +185,10 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("更新时间")]
         public System.DateTime? UpdateTime { get; set; }
-
+        /// <summary>
+        /// 项目排期列表
+        /// </summary>
+        public virtual List<BeforeSaleProScheduling> BeforeSaleProSchedulings { get; set; }
         public override void GenerateDefaultKeyVal()
         {
         }

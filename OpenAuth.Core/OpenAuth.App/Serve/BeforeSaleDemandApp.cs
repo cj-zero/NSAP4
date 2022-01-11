@@ -6,6 +6,7 @@ using Infrastructure;
 using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Reponse;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.App.Workbench;
@@ -84,21 +85,28 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public async Task<TableData> GetDetails(int id)
+        public async Task<BeforeSaleDemandResp> GetDetails(int id)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var result = new TableData();
             var detail = await UnitWork.Find<BeforeSaleDemand>(c => c.Id == id)
                             .Include(c => c.BeforeSaleDemandOrders)
                             .Include(c => c.Beforesaledemandprojects)
                             .Include(c => c.Beforesaledemandoperationhistories)
                             .Include(c => c.Beforesalefiles)
                             .FirstOrDefaultAsync();
-            result.Data = detail;
+
+            var result = detail.MapTo<BeforeSaleDemandResp>();
+
+            var beforesalefiles = detail.Beforesalefiles.Select(s => new { s.FileId, s.Type }).ToList();
+            var beforesalefileIds = beforesalefiles.Select(s => s.FileId).ToList();
+            var files = await UnitWork.Find<UploadFile>(f => beforesalefileIds.Contains(f.Id)).ToListAsync();
+            result.Files = files.MapTo<List<UploadFileResp>>();
+            result.Files.ForEach(f => f.PictureType = beforesalefiles.Where(p => f.Id.Equals(p.FileId)).Select(p => p.Type).FirstOrDefault());
+
             return result;
         }
         /// <summary>
@@ -118,10 +126,10 @@ namespace OpenAuth.App
             {
                 throw new Exception("请选择客户！");
             }
-            if (req.BeforeSaleDemandOrders != null && req.BeforeSaleDemandOrders.Count == 0)
-            {
-                throw new Exception("请关联单据！");
-            }
+            //if (req.BeforeSaleDemandOrders != null && req.BeforeSaleDemandOrders.Count == 0)
+            //{
+            //    throw new Exception("请关联单据！");
+            //}
             if (req.DemandContents == null)
             {
                 throw new Exception("请填写需求简述！");
@@ -130,10 +138,40 @@ namespace OpenAuth.App
             var dbContext = UnitWork.GetDbContext<BeforeSaleDemand>();
             using (var transaction = await dbContext.Database.BeginTransactionAsync())
             {
-                //销售添加表单数据 
                 try
                 {
-                    //草稿状态 只保存数据 不创建流程
+                    var single = await UnitWork.Find<BeforeSaleDemand>(c => c.Id == req.Id)
+                        .Include(c => c.BeforeSaleDemandOrders)
+                        .Include(c => c.Beforesalefiles)
+                        .Include(c => c.Beforesaledemandoperationhistories)
+                        .FirstOrDefaultAsync();
+                    //关联单据
+                    if (req.BeforeSaleDemandOrders != null && req.BeforeSaleDemandOrders.Count > 0)
+                    {
+                        req.BeforeSaleDemandOrders.ForEach(c =>
+                        {
+                            obj.BeforeSaleDemandOrders.Add(new BeforeSaleDemandOrders
+                            {
+                                CustomerId = c.CustomerId,
+                                CustomerName = c.CustomerName,
+                                MaterialCode = c.MaterialCode,
+                                MaterialDescription = c.MaterialDescription,
+                                Num = c.Num,
+                                Type = c.Type,
+                                BeforeSaleDemandId = (single != null && single.Id > 0) ? single.Id : 0
+                            });
+                        });
+                    }
+                    //售前需求申请附件
+                    if (req.Attchments != null && req.Attchments.Count > 0)
+                    {
+                        req.Attchments.ForEach(c =>
+                        {
+                            obj.Beforesalefiles.Add(new BeforeSaleFiles { FileId = c, BeforeSaleDemandId = (single != null && single.Id > 0) ? single.Id : 0, Type = 0 });
+                        });
+                    }
+                    //特别注意！！！！！
+                    //草稿状态 只保存数据不创建流程
                     if (req.IsDraft)
                     {
                         obj.Status = 0;
@@ -152,36 +190,60 @@ namespace OpenAuth.App
                         //审批流程id
                         obj.FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(flow);
                     }
-                    //添加售前需求申请流程
-                    obj.CreateTime = DateTime.Now;
-                    obj.CreateUserId = loginContext.User.Id;
-                    obj.CreateUserName = loginContext.User.Name;
-                    obj = await UnitWork.AddAsync<BeforeSaleDemand, int>(obj);
+                    if (single != null && single.Id > 0)
+                    {
+                        obj.CreateTime = single.CreateTime;
+                        obj.CreateUserId = single.CreateUserId;
+                        obj.CreateUserName = single.CreateUserName;
 
-                    //1、流程添加成功==>关联单据
-                    obj.BeforeSaleDemandOrders = req.BeforeSaleDemandOrders;
-                    await UnitWork.BatchAddAsync<BeforeSaleDemandOrders>(obj.BeforeSaleDemandOrders.ToArray());
-                    //2、添加流程操作记录
-                    BeforeSaleDemandOperationHistory beforeSaleDemandOperationHistory = new BeforeSaleDemandOperationHistory
-                    {
-                        Action = "发起",
-                        CreateUser = loginContext.User.Name,
-                        CreateUserId = loginContext.User.Id,
-                        CreateTime = DateTime.Now,
-                        BeforeSaleDemandId = obj.Id,
-                        ApprovalStage = 1
-                    };
-                    beforeSaleDemandOperationHistory = await UnitWork.AddAsync<BeforeSaleDemandOperationHistory>(beforeSaleDemandOperationHistory);
-                    //3、关联保存需求附件信息
-                    if (req.Attchments != null && req.Attchments.Count > 0)
-                    {
-                        req.Attchments.ForEach(c =>
+                        obj.UpdateTime = DateTime.Now;
+                        //子表删除重新添加
+                        if (obj.Beforesalefiles.Count > 0)
                         {
-                            obj.Beforesalefiles.Add(new BeforeSaleFiles { FileId = c, BeforeSaleDemandId = obj.Id, Type = 0 });
-                        });
-                        await UnitWork.BatchAddAsync<BeforeSaleFiles>(obj.Beforesalefiles.ToArray());
+                            await UnitWork.BatchDeleteAsync<BeforeSaleFiles>(single.Beforesalefiles.ToArray());
+                            await UnitWork.BatchAddAsync<BeforeSaleFiles>(obj.Beforesalefiles.ToArray());
+                        }
+                        if (obj.BeforeSaleDemandOrders.Count > 0)
+                        {
+                            await UnitWork.BatchDeleteAsync<BeforeSaleDemandOrders>(single.BeforeSaleDemandOrders.ToArray());
+                            await UnitWork.BatchAddAsync<BeforeSaleDemandOrders>(obj.BeforeSaleDemandOrders.ToArray());
+                        }
+                        obj.Beforesalefiles = null;
+                        obj.BeforeSaleDemandOrders = null;
+                        await UnitWork.UpdateAsync(obj);
+                        await UnitWork.SaveAsync();
                     }
-                    await UnitWork.SaveAsync();
+                    else
+                    {
+                        //添加售前需求申请流程
+                        obj.CreateTime = DateTime.Now;
+                        obj.CreateUserId = loginContext.User.Id;
+                        obj.CreateUserName = loginContext.User.Name;
+                        obj = await UnitWork.AddAsync<BeforeSaleDemand, int>(obj);
+                        //1、流程添加成功==>关联单据
+                        //obj.BeforeSaleDemandOrders = req.BeforeSaleDemandOrders;
+                        //await UnitWork.BatchAddAsync<BeforeSaleDemandOrders>(obj.BeforeSaleDemandOrders.ToArray());
+                        //2、添加流程操作记录
+                        await UnitWork.AddAsync<BeforeSaleDemandOperationHistory>(new BeforeSaleDemandOperationHistory
+                        {
+                            Action = "发起",
+                            CreateUser = loginContext.User.Name,
+                            CreateUserId = loginContext.User.Id,
+                            CreateTime = DateTime.Now,
+                            BeforeSaleDemandId = obj.Id,
+                            ApprovalStage = 1
+                        });
+                        //3、关联保存需求附件信息
+                        if (req.Attchments != null && req.Attchments.Count > 0)
+                        {
+                            req.Attchments.ForEach(c =>
+                            {
+                                obj.Beforesalefiles.Add(new BeforeSaleFiles { FileId = c, BeforeSaleDemandId = obj.Id, Type = 0 });
+                            });
+                            await UnitWork.BatchAddAsync<BeforeSaleFiles>(obj.Beforesalefiles.ToArray());
+                        }
+                        await UnitWork.SaveAsync();
+                    }
                     await transaction.CommitAsync();
                 }
                 catch (Exception ex)
@@ -199,7 +261,6 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task Accraditation(AccraditationBeforeSaleDemandReq req)
         {
-
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
@@ -232,82 +293,59 @@ namespace OpenAuth.App
             }
             else
             {
-                if (req.IsDraft)
+                if (loginContext.Roles.Any(c => c.Name.Equal("售前需求申请销售总助审批")) && flowinstace.ActivityName == "销售总助审批")
                 {
-                    //添加操作记录
-                    FlowInstanceOperationHistory flowInstanceOperationHistory = new FlowInstanceOperationHistory
-                    {
-                        InstanceId = beforeSaleDemand.FlowInstanceId,
-                        CreateUserId = loginContext.User.Id,
-                        CreateUserName = loginContext.User.Name,
-                        CreateDate = DateTime.Now,
-                        Content = flowinstace.ActivityName,
-                        Remark = req.Remark,
-                        ApprovalResult = "保存草稿",
-                        //ActivityId = flowInstance.ActivityId,
-                    };
-                    var fioh = await UnitWork.Find<FlowInstanceOperationHistory>(r => r.InstanceId.Equals(beforeSaleDemand.FlowInstanceId)).OrderByDescending(r => r.CreateDate).FirstOrDefaultAsync();
-                    if (fioh != null)
-                    {
-                        flowInstanceOperationHistory.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalSeconds);
-                    }
-                    //添加操作记录
-                    BeforeSaleDemandOperationHistory beforeSaleDemandOperationHistory = new BeforeSaleDemandOperationHistory
-                    {
-                        Action = "保存草稿",
-                        CreateUser = loginContext.User.Name,
-                        CreateUserId = loginContext.User.Id,
-                        CreateTime = DateTime.Now,
-                        BeforeSaleDemandId = req.Id,
-                        ApprovalStage = 0,
-                        ApprovalResult = "保存草稿",
-                    };
-                    await UnitWork.AddAsync(flowInstanceOperationHistory);
-                    await UnitWork.UpdateAsync<BeforeSaleDemand>(c => c.Id == req.Id, c => new BeforeSaleDemand
-                    {
-                        IsDraft = true
-                    });
+                    await _flowInstanceApp.Verification(verificationReq);
+                    beforeSaleDemand.Status = 2;
+                    //设置需求环节执行人
+                    await _flowInstanceApp.ModifyNodeUser(flowinstace.Id, false, new string[] { beforeSaleDemand.FactDemandUserId }, "", false);
                 }
-                else
+                else if (loginContext.Roles.Any(c => c.Name.Equal("售前需求申请销售测试审批")) && flowinstace.ActivityName == "需求初期沟通")
                 {
-                    if (loginContext.Roles.Any(c => c.Name.Equal("售前需求申请销售总助审批")) && flowinstace.ActivityName == "销售总助审批")
-                    {
-                        await _flowInstanceApp.Verification(verificationReq);
-                        beforeSaleDemand.Status = 2;
-                        //设置需求环节执行人
-                        await _flowInstanceApp.ModifyNodeUser(flowinstace.Id, false, new string[] { beforeSaleDemand.FactDemandUserId }, "", false);
-                    }
-                    else if (loginContext.Roles.Any(c => c.Name.Equal("售前需求申请销售测试审批")) && flowinstace.ActivityName == "需求初期沟通")
-                    {
-                        await _flowInstanceApp.Verification(verificationReq);
-                        beforeSaleDemand.Status = 3;
-                    }
-                    else if (loginContext.Roles.Any(c => c.Name.Equal("售前需求申请研发总助审批")) && flowinstace.ActivityName == "研发总助审批")
-                    {
-                        await _flowInstanceApp.Verification(verificationReq);
-                        beforeSaleDemand.Status = 4;
-                        //设置研发环节执行人
-                        await _flowInstanceApp.ModifyNodeUser(flowinstace.Id, false, new string[] { beforeSaleDemand.FactDemandUserId }, "", false);
-                    }
-                    else if (loginContext.Roles.Any(c => c.Name.Equal("售前需求申请研发审批")) && flowinstace.ActivityName == "研发审批")
-                    {
-                        await _flowInstanceApp.Verification(verificationReq);
-                        beforeSaleDemand.Status = 5;
-                    }
-                    else if (loginContext.Roles.Any(c => c.Name.Equal("总经理")) && flowinstace.ActivityName == "总经理审批")
-                    {
-                        await _flowInstanceApp.Verification(verificationReq);
-                        beforeSaleDemand.Status = 4;
-                    }
-                    else if (flowinstace.ActivityName == "提交" && (beforeSaleDemand.Status == 5 || beforeSaleDemand.Status == 6))
-                    {
-                        await _flowInstanceApp.Verification(verificationReq);
-                        beforeSaleDemand.Status = 1;//驳回 撤回提交
-                    }
-                    //beforeSaleDemand.IsTentative = false;
+                    await _flowInstanceApp.Verification(verificationReq);
+                    beforeSaleDemand.Status = 3;
                 }
-            }
+                else if (loginContext.Roles.Any(c => c.Name.Equal("售前需求申请研发总助审批")) && flowinstace.ActivityName == "研发总助审批")
+                {
+                    await _flowInstanceApp.Verification(verificationReq);
+                    beforeSaleDemand.Status = 4;
+                    //设置研发环节执行人
+                    await _flowInstanceApp.ModifyNodeUser(flowinstace.Id, false, new string[] { beforeSaleDemand.FactDemandUserId }, "", false);
+                }
+                else if (loginContext.Roles.Any(c => c.Name.Equal("售前需求申请研发审批")) && flowinstace.ActivityName == "研发审批")
+                {
+                    await _flowInstanceApp.Verification(verificationReq);
+                    beforeSaleDemand.Status = 5;
+                }
+                else if (loginContext.Roles.Any(c => c.Name.Equal("总经理")) && flowinstace.ActivityName == "总经理审批")
+                {
+                    await _flowInstanceApp.Verification(verificationReq);
+                    beforeSaleDemand.Status = 4;
+                }
+                else if (flowinstace.ActivityName == "提交" && (beforeSaleDemand.Status == 5 || beforeSaleDemand.Status == 6))
+                {
+                    await _flowInstanceApp.Verification(verificationReq);
+                    beforeSaleDemand.Status = 1;//驳回 撤回提交
+                }
 
+                //添加操作记录
+                BeforeSaleDemandOperationHistory beforeSaleDemandOperationHistory = new BeforeSaleDemandOperationHistory
+                {
+                    Action = "保存草稿",
+                    CreateUser = loginContext.User.Name,
+                    CreateUserId = loginContext.User.Id,
+                    CreateTime = DateTime.Now,
+                    BeforeSaleDemandId = req.Id,
+                    ApprovalStage = 0,
+                    ApprovalResult = "保存草稿",
+                };
+                var fioh = await UnitWork.Find<FlowInstanceOperationHistory>(r => r.InstanceId.Equals(beforeSaleDemand.FlowInstanceId)).OrderByDescending(r => r.CreateDate).FirstOrDefaultAsync();
+                if (fioh != null)
+                {
+                    beforeSaleDemandOperationHistory.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateDate)).TotalSeconds);
+                }
+                await UnitWork.AddAsync(beforeSaleDemandOperationHistory);
+            }
             await UnitWork.UpdateAsync<BeforeSaleDemand>(c => c.Id == req.Id, c => new BeforeSaleDemand
             {
                 Status = beforeSaleDemand.Status,
@@ -315,15 +353,13 @@ namespace OpenAuth.App
                 IsDevDeploy = beforeSaleDemand.IsDevDeploy,
                 IsRelevanceProject = beforeSaleDemand.IsRelevanceProject
             });
-
-            //修改全局待处理
-            await UnitWork.UpdateAsync<WorkbenchPending>(w => w.SourceNumbers == beforeSaleDemand.Id && w.OrderType == 6, w => new WorkbenchPending
-            {
-                UpdateTime = DateTime.Now,
-            });
             await UnitWork.SaveAsync();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="obj"></param>
         public void Update(AddOrUpdateBeforeSaleDemandReq obj)
         {
             var user = _auth.GetCurrentUser().User;

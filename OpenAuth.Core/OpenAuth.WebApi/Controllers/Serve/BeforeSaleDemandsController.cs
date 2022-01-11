@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
+using OpenAuth.App.Reponse;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
@@ -38,9 +39,20 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetDetails(int id)
+        public async Task<Response<BeforeSaleDemandResp>> GetDetails(int id)
         {
-            return await _beforeSaleDemandApp.GetDetails(id);
+            var result = new Response<BeforeSaleDemandResp>();
+            try
+            {
+                result.Result = await _beforeSaleDemandApp.GetDetails(id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{id}， 错误：{result.Message}");
+            }
+            return result;
         }
 
         /// <summary>

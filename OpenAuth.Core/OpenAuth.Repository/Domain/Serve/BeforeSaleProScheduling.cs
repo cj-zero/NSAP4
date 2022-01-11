@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain
 	/// 售前需求项目排期
 	/// </summary>
     [Table("beforesaleproscheduling")]
-    public partial class BeforeSaleProScheduling : Entity
+    public partial class BeforeSaleProScheduling : BaseEntity<int>
     {
         public BeforeSaleProScheduling()
         {
@@ -32,43 +32,58 @@ namespace OpenAuth.Repository.Domain
           this.CreateTime= DateTime.Now;
         }
 
-        
         /// <summary>
-        /// 
+        /// 关联项目Id
         /// </summary>
-        [Description("")]
+        [Description("关联项目Id")]
+        [Browsable(false)]
+        public int BeforeSaleDemandProjectId { get; set; }
+
+        /// <summary>
+        /// 项目环节：0:需求，1:开发，2：测试
+        /// </summary>
+        [Description("项目环节：0:需求，1:开发，2：测试")]
         public int? Stage { get; set; }
         /// <summary>
-        /// 
+        /// 负责人Id
         /// </summary>
-        [Description("")]
+        [Description("负责人Id")]
         [Browsable(false)]
         public string UserId { get; set; }
         /// <summary>
-        /// 
+        /// 负责人名称
         /// </summary>
-        [Description("")]
+        [Description("负责人名称")]
         public string UserName { get; set; }
         /// <summary>
-        /// 
+        /// 开始时间
         /// </summary>
-        [Description("")]
+        [Description("开始时间")]
         public System.DateTime? StartDate { get; set; }
         /// <summary>
-        /// 
+        /// 结束时间
         /// </summary>
-        [Description("")]
+        [Description("结束时间")]
         public System.DateTime? EndDate { get; set; }
         /// <summary>
-        /// 
+        /// 创建人
         /// </summary>
-        [Description("")]
+        [Description("创建人")]
         [Browsable(false)]
         public string CreateUserId { get; set; }
         /// <summary>
-        /// 
+        /// 创建时间
         /// </summary>
-        [Description("")]
+        [Description("创建时间")]
         public System.DateTime? CreateTime { get; set; }
+
+        public override void GenerateDefaultKeyVal()
+        {
+        }
+
+        public override bool KeyIsNull()
+        {
+            return Id == 0;
+        }
     }
 }
