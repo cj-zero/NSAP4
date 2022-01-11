@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using Newtonsoft.Json;
 using OpenAuth.App.Clue.ModelDto;
 using OpenAuth.App.Clue.Request;
 using OpenAuth.App.Interface;
@@ -10,9 +11,16 @@ using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net;
+using System.Net.Security;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Threading.Tasks;
+using static OpenAuth.App.Clue.ModelDto.KuaiBaosHelper;
 
 namespace OpenAuth.App
 {
@@ -21,6 +29,10 @@ namespace OpenAuth.App
     /// </summary>
     public class ClueApp : OnlyUnitWorkBaeApp
     {
+        private const String host = "https://kop.kuaidihelp.com";
+        private const String path = "/api";
+        private const String requestMethod = "POST";
+        //public static Express express = new Express();
         private RevelanceManagerApp _revelanceApp;
         ServiceBaseApp _serviceBaseApp;
         public ClueApp(ServiceBaseApp serviceBaseApp, IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
@@ -50,7 +62,6 @@ namespace OpenAuth.App
             var loginUser = loginContext.User;
             Expression<Func<OpenAuth.Repository.Domain.Serve.Clue, bool>> exp = t => true;
             exp = exp.And(t => !t.IsDelete);
-            //exp = exp.And(t => t.CreateUser == loginUser.Name);
             if (clueListReq.SboId != -1)
             {
 
@@ -139,6 +150,8 @@ namespace OpenAuth.App
 
 
 
+
+
         /// <summary>
         /// 新增线索
         /// </summary>
@@ -190,7 +203,7 @@ namespace OpenAuth.App
             log.LogType = 0;
             log.CreateTime = DateTime.Now;
             log.CreateUser = loginUser.Name;
-            log.Details = JsonHelper.Instance.Serialize(addClueReq);
+            log.Details = "客户" + "'" + addClueReq.CardName + "'";
             await AddClueLogAsync(log);
             return data.Id.ToString();
         }
@@ -225,9 +238,10 @@ namespace OpenAuth.App
                     result.Essential.Tel1 = cluecontacts.Tel1;
                     result.Essential.Address1 = cluecontacts.Address1;
                     result.Essential.Address2 = cluecontacts.Address2;
+                    result.Essential.Role = cluecontacts.Role;
+                    result.Essential.Position = cluecontacts.Position;
                 }
-                var clueLogList = UnitWork.Find<Repository.Domain.Serve.ClueLog>(q => q.ClueId == clueId).MapToList<ClueLog>();
-                //var clueLog = clueLogList.MapToList<ClueLog>();
+                var clueLogList = UnitWork.Find<Repository.Domain.Serve.ClueLog>(q => q.ClueId == clueId).OrderByDescending(q => q.CreateTime).MapToList<ClueLog>();
                 if (clueLogList.Count > 0 && clueLogList != null)
                 {
                     foreach (var item in clueLogList)
@@ -322,6 +336,7 @@ namespace OpenAuth.App
         public async Task<bool> UpdateClueAsync(UpdateClueReq updateClueReq)
         {
             bool result = false;
+            var mes = "";
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
@@ -329,26 +344,43 @@ namespace OpenAuth.App
             }
             var loginUser = loginContext.User;
             var entity = UnitWork.FindSingle<Repository.Domain.Serve.Clue>(q => q.Id == updateClueReq.Id);
-            if (entity == null)
+            if (entity != null)
             {
+                if (updateClueReq.CardName != null && entity.CardName != updateClueReq.CardName) { mes = updateClueReq.CardName + ":原客户名称'" + entity.CardName + "';"; }
                 entity.CardName = updateClueReq.CardName;
+                if ( entity.CustomerSource != updateClueReq.CustomerSource) { mes += updateClueReq.CustomerSource + ":原客户来源'" + entity.CustomerSource + "'，（0:领英、1:国内展会、2:国外展会、3:客户介绍、4:新威官网、5:其他）;"; }
                 entity.CustomerSource = updateClueReq.CustomerSource;
+                if (entity.IndustryInvolved != updateClueReq.IndustryInvolved)
+                {
+                    mes += updateClueReq.IndustryInvolved + ":原所属行业'" + entity.IndustryInvolved + "'，（0:农、林、牧、渔业,1:制造业,2:电力、热力、燃气及水生产和供应业," +
+"3:建筑业,4:批发和零售业,5:交通运输、仓储和邮政业,6:住宿和餐饮业,7:信息传输、软件和信息技术服务业,8:金融业,9:房地产业,10:租赁和商务服务业,11:科学研究和技术服务业,12:水利、环境和公共设施管理业," +
+"13:居民服务、修理和其他服务业,14:文化、体育和娱乐业,15:其他行业）;";
+                }
                 entity.IndustryInvolved = updateClueReq.IndustryInvolved;
+                if (entity.StaffSize != updateClueReq.StaffSize) { mes += updateClueReq.StaffSize + ":原人员规模'" + entity.StaffSize + "'，（0:1-20、1:20-100、2:100-500、3:500-1000、4:1000-10000、5:10000以上); "; }
                 entity.StaffSize = updateClueReq.StaffSize;
+                if (updateClueReq.WebSite != null&&entity.WebSite != updateClueReq.WebSite) { mes += updateClueReq.WebSite + ":原网址'" + entity.WebSite + "';"; }
                 entity.WebSite = updateClueReq.WebSite;
+                if (updateClueReq.Remark != null && entity.Remark != updateClueReq.Remark) { mes += updateClueReq.Remark + ":原备注'" + entity.Remark + "';"; }
                 entity.Remark = updateClueReq.Remark;
                 entity.IsCertification = updateClueReq.IsCertification;
                 entity.UpdateTime = DateTime.Now;
                 entity.UpdateUser = loginUser.Name;
                 var emodel = UnitWork.FindSingle<Repository.Domain.Serve.ClueContacts>(q => q.ClueId == updateClueReq.Id && q.IsDefault);
-                if (emodel == null)
+                if (emodel != null)
                 {
                     emodel.ClueId = updateClueReq.Id;
+                    if (emodel.Name != updateClueReq.Name) { mes += updateClueReq.Name + ":原客户名称'" + emodel.Name + "';"; }
                     emodel.Name = updateClueReq.Name;
+                    if (emodel.Tel1 != updateClueReq.Tel1) { mes += updateClueReq.Tel1 + ":原联系电话一'" + emodel.Tel1 + "';"; }
                     emodel.Tel1 = updateClueReq.Tel1;
+                    if (emodel.Role != updateClueReq.Role) { mes += updateClueReq.Role + ":原角色'" + emodel.Role + "'，（0：决策者、1：普通人）;"; }
                     emodel.Role = updateClueReq.Role;
+                    if (emodel.Position != updateClueReq.Position) { mes += updateClueReq.Position + ":原职位'" + emodel.Position + "';"; }
                     emodel.Position = updateClueReq.Position;
+                    if (emodel.Address1 != updateClueReq.Address1) { mes += updateClueReq.Address1 + ":原省市'" + emodel.Address1 + "';"; }
                     emodel.Address1 = updateClueReq.Address1;
+                    if (emodel.Address2 != updateClueReq.Address2) { mes += updateClueReq.Address2 + ":原详细地址'" + emodel.Address2 + "';"; }
                     emodel.Address2 = updateClueReq.Address2;
                     emodel.UpdateTime = DateTime.Now;
                     emodel.UpdateUser = loginUser.Name;
@@ -362,9 +394,11 @@ namespace OpenAuth.App
                         log.LogType = 1;
                         log.CreateTime = DateTime.Now;
                         log.CreateUser = loginUser.Name;
-                        log.Details = JsonHelper.Instance.Serialize(updateClueReq);
+                        log.Details = mes;
                         await AddClueLogAsync(log);
                     }
+                    UnitWork.Update(emodel);
+
                 }
                 UnitWork.Update(entity);
                 UnitWork.Save();
@@ -499,6 +533,97 @@ namespace OpenAuth.App
             UnitWork.Save();
             return data.Id.ToString();
         }
+
+        /// <summary>
+        /// 日程详情
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<ClueSchedule> GetScheduleByIdAsync(int id)
+        {
+            return await UnitWork.FindSingleAsync<ClueSchedule>(q => q.Id == id);
+
+        }
+        /// <summary>
+        /// 更新
+        /// </summary>
+        /// <param name="updateClueScheduleReq"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<bool> UpdateScheduleByIdAsync(UpdateClueScheduleReq updateClueScheduleReq)
+        {
+            bool result = false;
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            var clueSchedule = await UnitWork.FindSingleAsync<ClueSchedule>(q => q.Id == updateClueScheduleReq.Id);
+            if (clueSchedule != null)
+            {
+
+
+                DateTime startTime;
+                DateTime.TryParse(updateClueScheduleReq.StartTime, out startTime);
+                DateTime endTime;
+                DateTime.TryParse(updateClueScheduleReq.EndTime, out endTime);
+                DateTime remindTime;
+                DateTime.TryParse(updateClueScheduleReq.RemindTime, out remindTime);
+
+                clueSchedule.ClueId = updateClueScheduleReq.ClueId;
+                clueSchedule.Details = updateClueScheduleReq.Details;
+                clueSchedule.StartTime = startTime;
+                clueSchedule.EndTime = endTime;
+                clueSchedule.Participant = JsonHelper.Instance.Serialize(updateClueScheduleReq.Participant);
+                clueSchedule.RemindTime = remindTime;
+                clueSchedule.RelatedObjects = updateClueScheduleReq.RelatedObjects;
+                clueSchedule.Remark = updateClueScheduleReq.Remark;
+                clueSchedule.UpdateUser = loginUser.Name;
+                clueSchedule.UpdateTime = DateTime.Now;
+
+                await UnitWork.UpdateAsync(clueSchedule);
+                UnitWork.Save();
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 删除日程
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public async Task<bool> DeleteScheduleByIdAsync(List<int> ids)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            bool result = false;
+            foreach (var item in ids)
+            {
+                var clueSchedule = UnitWork.FindSingle<ClueSchedule>(q => q.Id == item);
+                clueSchedule.IsDelete = true;
+                await UnitWork.UpdateAsync(clueSchedule);
+                //日志
+                var log = new AddClueLogReq();
+                log.ClueId = item;
+                log.LogType = 2;
+                log.CreateTime = DateTime.Now;
+                log.CreateUser = loginUser.Name;
+                var mes = "删除线索Id为_" + clueSchedule.ClueId + "下，日程Id为_" + clueSchedule.Id + "的记录";
+                log.Details = JsonHelper.Instance.Serialize(mes);
+                await AddClueLogAsync(log);
+                UnitWork.Save();
+                result = true;
+            }
+            return result;
+        }
+
         /// <summary>
         /// 根据部门id查用户列表
         /// </summary>
@@ -549,6 +674,24 @@ namespace OpenAuth.App
                     result.Add(scon);
 
                 }
+            }
+            return result;
+        }
+        /// <summary>
+        /// 日程完成
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<bool> SuccessByIdAsync(int id)
+        {
+            bool result = false;
+            var clueSchedule = UnitWork.FindSingle<ClueSchedule>(q => q.Id == id);
+            if (clueSchedule != null)
+            {
+                clueSchedule.Status = 1;
+                result = true;
+                await UnitWork.UpdateAsync(clueSchedule);
+                await UnitWork.SaveAsync();
             }
             return result;
         }
@@ -668,7 +811,7 @@ namespace OpenAuth.App
         /// <param name="addClueFileUploadReq"></param>
         /// <returns></returns>
         /// <exception cref="CommonException"></exception>
-        public async Task<bool> AddClueFileUploadAsync(AddClueFileUploadReq addClueFileUploadReq)
+        public async Task<bool> AddClueFileUploadAsync(List<AddClueFileUploadReq> addClueFileUploadReq)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -676,15 +819,21 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
-            ClueFile clueFile = new ClueFile
+            var clueFilelist = new List<ClueFile>();
+            foreach (var item in addClueFileUploadReq)
             {
-                ClueId = addClueFileUploadReq.ClueId,
-                FileName = addClueFileUploadReq.FileName,
-                FileUrl = addClueFileUploadReq.FileUrl,
-                CreateUser = loginUser.Name,
-                CreateTime = DateTime.Now
-            };
-            var data = UnitWork.Add<ClueFile, int>(clueFile);
+                ClueFile clueFile = new ClueFile
+                {
+                    ClueId = item.ClueId,
+                    FileName = item.FileName,
+                    FileUrl = item.FileUrl,
+                    CreateUser = loginUser.Name,
+                    CreateTime = DateTime.Now
+                };
+                clueFilelist.Add(clueFile);
+            }
+
+            await UnitWork.BatchAddAsync<ClueFile, int>(clueFilelist.ToArray());
             UnitWork.Save();
             return true;
         }
@@ -802,6 +951,127 @@ namespace OpenAuth.App
             addClueLogReq.CopyTo(clueLog);
             var result = UnitWork.Add<ClueLog, int>(clueLog);
             UnitWork.Save();
+            return true;
+        }
+        #endregion
+
+
+
+
+        #region 工具方法
+        /// <summary>
+        /// 地址智能解析
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public KuaiBaoResponse GetAddres(string str)
+        {
+            KuaiBaoResponse kuaiBaoResponse = new KuaiBaoResponse();
+            String querys = "";
+            String appId = "107493";
+            String method = "cloud.address.resolve";
+            String ts = GetTimeStamp() + "";
+            String appKey = "9461b36037d07276f85c492b063231847f242afb";
+
+            // 计算签名
+            String signStr = appId + method + ts + appKey;
+            String sign = GetMd5(signStr, 32);
+
+            String bodys = "app_id=" + appId + "&method=" + method + "&ts=" + ts + "&sign=" + sign;
+
+            // data参数是个json格式字符串 建议使用函数或方法生成json字符串
+            KuaiRequest kuaiRequest = new KuaiRequest
+            {
+                text = str
+            };
+            bodys = bodys + "&data=" + JsonConvert.SerializeObject(kuaiRequest);
+            String url = host + path;
+            HttpWebRequest httpRequest = null;
+            HttpWebResponse httpResponse = null;
+            if (0 < querys.Length)
+            {
+                url = url + "?" + querys;
+            }
+
+            if (host.Contains("https://"))
+            {
+                ServicePointManager.ServerCertificateValidationCallback = new RemoteCertificateValidationCallback(CheckValidationResult);
+                httpRequest = (HttpWebRequest)WebRequest.CreateDefault(new Uri(url));
+            }
+            else
+            {
+                httpRequest = (HttpWebRequest)WebRequest.Create(url);
+            }
+            httpRequest.Method = requestMethod;
+
+            //根据API的要求，定义相对应的Content-Type
+            httpRequest.ContentType = "application/x-www-form-urlencoded; charset=UTF-8";
+            if (0 < bodys.Length)
+            {
+                byte[] data = Encoding.UTF8.GetBytes(bodys);
+                using (Stream stream = httpRequest.GetRequestStream())
+                {
+                    stream.Write(data, 0, data.Length);
+                }
+            }
+            try
+            {
+                httpResponse = (HttpWebResponse)httpRequest.GetResponse();
+            }
+            catch (WebException ex)
+            {
+                httpResponse = (HttpWebResponse)ex.Response;
+            }
+            Stream st = httpResponse.GetResponseStream();
+            StreamReader reader = new StreamReader(st, Encoding.GetEncoding("utf-8"));
+            var result = JsonConvert.DeserializeObject<KuaiBao>(reader.ReadToEnd());
+            if (result != null && result.code == 0 && result.data != null)
+            {
+                kuaiBaoResponse.Phone = !string.IsNullOrWhiteSpace(result.data.FirstOrDefault().mobile) ? result.data.FirstOrDefault().mobile : result.data.FirstOrDefault().phone;
+                kuaiBaoResponse.Name = result.data.FirstOrDefault().name;
+                kuaiBaoResponse.ProvinceName = result.data.FirstOrDefault().province_name;
+                kuaiBaoResponse.CityName = result.data.FirstOrDefault().city_name;
+                kuaiBaoResponse.CountyName = result.data.FirstOrDefault().county_name;
+                kuaiBaoResponse.Detail = result.data.FirstOrDefault().detail;
+
+            }
+            return kuaiBaoResponse;
+        }
+        // 计算md5值
+        public static string GetMd5(string md5str, int type)
+        {
+            if (type == 16)
+            {
+                MD5 algorithm = MD5.Create();
+                byte[] data = algorithm.ComputeHash(Encoding.UTF8.GetBytes(md5str));
+                string sh1 = "";
+                for (int i = 0; i < data.Length; i++)
+                {
+                    sh1 += data[i].ToString("x2").ToUpperInvariant();
+                }
+                return sh1.Substring(8, 16).ToLower();
+            }
+            else if (type == 32)
+            {
+                MD5 algorithm = MD5.Create();
+                byte[] data = algorithm.ComputeHash(Encoding.UTF8.GetBytes(md5str));
+                string sh1 = "";
+                for (int i = 0; i < data.Length; i++)
+                {
+                    sh1 += data[i].ToString("x2").ToUpperInvariant();
+                }
+                return sh1.ToLower();
+            }
+            return "";
+        }
+        // 获取当前时间戳
+        public static string GetTimeStamp()
+        {
+            TimeSpan ts = DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, 0);
+            return Convert.ToInt64(ts.TotalSeconds).ToString();
+        }
+        public static bool CheckValidationResult(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors errors)
+        {
             return true;
         }
         #endregion

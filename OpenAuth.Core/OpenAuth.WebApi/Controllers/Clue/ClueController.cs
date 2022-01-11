@@ -12,6 +12,7 @@ using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using static OpenAuth.App.Clue.ModelDto.KuaiBaosHelper;
 
 namespace OpenAuth.WebApi.Controllers.Clue
 {
@@ -138,6 +139,28 @@ namespace OpenAuth.WebApi.Controllers.Clue
             try
             {
                 result.Result = await _clueApp.DeleteClueByIdAsync(ClueId);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 解析地址
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetAddress")]
+        public  Response<KuaiBaoResponse> GetAddress(string address)
+        {
+            var result = new Response<KuaiBaoResponse>();
+            try
+            {
+                result.Result =_clueApp.GetAddres(address);
             }
             catch (Exception ex)
             {

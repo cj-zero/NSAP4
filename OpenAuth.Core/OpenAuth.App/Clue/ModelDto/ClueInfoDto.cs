@@ -96,6 +96,14 @@ namespace OpenAuth.App.Clue.ModelDto
         /// 详细地址
         /// </summary>
         public string Address2 { get; set; }
+        /// <summary>
+        /// 角色（0：决策者、1：普通人）
+        /// </summary>
+        public int Role { get; set; }
+        /// <summary>
+        ///职位
+        /// </summary>
+        public string Position { get; set; }
     }
     /// <summary>
     /// 操作记录

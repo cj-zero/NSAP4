@@ -8,6 +8,7 @@ using OpenAuth.App.Interface;
 using OpenAuth.App.Meeting.ModelDto;
 using OpenAuth.App.ProductModel.Request;
 using OpenAuth.App.Response;
+using OpenAuth.Repository.Domain.Serve;
 using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
@@ -36,7 +37,7 @@ namespace OpenAuth.WebApi.Controllers.Clue
             _clueApp = clueApp;
             this._app = app;
         }
-      
+
         /// <summary>
         /// 新增日程
         /// </summary>
@@ -90,6 +91,90 @@ namespace OpenAuth.WebApi.Controllers.Clue
             try
             {
                 result.Result = await _clueApp.ClueScheduleByIdAsync(ClueId);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 日程完成
+        /// </summary>
+        /// <param name="ClueId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("SuccessByIdAsync")]
+        public async Task<Response<bool>> SuccessByIdAsync(int Id)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _clueApp.SuccessByIdAsync(Id);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 删除
+        /// </summary>
+        /// <param name="ClueId"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Route("DeleteScheduleByIdAsync")]
+        public async Task<Response<bool>> DeleteScheduleByIdAsync(List<int> Ids)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _clueApp.DeleteScheduleByIdAsync(Ids);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 日程详情
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetScheduleByIdAsync")]
+        public async Task<Response<ClueSchedule>> GetScheduleByIdAsync(int Id)
+        {
+            var result = new Response<ClueSchedule>();
+            try
+            {
+                result.Result = await _clueApp.GetScheduleByIdAsync(Id);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 日程编辑更新
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("UpdateScheduleByIdAsync")]
+        public async Task<Response<bool>> UpdateScheduleByIdAsync(UpdateClueScheduleReq updateClueScheduleReq)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _clueApp.UpdateScheduleByIdAsync(updateClueScheduleReq);
             }
             catch (Exception ex)
             {

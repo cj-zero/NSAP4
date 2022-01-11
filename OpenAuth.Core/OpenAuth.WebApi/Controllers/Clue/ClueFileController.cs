@@ -86,7 +86,7 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <returns>服务器存储的文件信息</returns>Fsave
         [HttpPost]
         [Route("AddClueFileUploadAsync")]
-        public async Task<Response<bool>> AddClueFileUploadAsync(AddClueFileUploadReq addClueFileUploadReq)
+        public async Task<Response<bool>> AddClueFileUploadAsync(List<AddClueFileUploadReq> addClueFileUploadReq)
         {
             var result = new Response<bool>();
             try
