@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenAuth.App.Clue.ModelDto
+namespace OpenAuth.App.Clue.Request
 {
     public class AddClueContactsReq
     {

@@ -101,5 +101,26 @@ namespace OpenAuth.WebApi.Controllers.Clue
             }
             return result;
         }
+        /// <summary>
+        /// 删除附件
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Route("DeleteFileByIdAsync")]
+        public async Task<Response<bool>> DeleteFileByIdAsync(int Id)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _clueApp.DeleteFileByIdAsync(Id);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }

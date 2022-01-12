@@ -100,5 +100,47 @@ namespace OpenAuth.WebApi.Controllers.Clue
             }
             return result;
         }
+        /// <summary>
+        /// 编辑更新联系人
+        /// </summary>
+        /// <param name="updateClueContactsReq"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("UpdateClueContactsAsync")]
+        public async Task<Response<bool>> UpdateClueContactsAsync(UpdateClueContactsReq updateClueContactsReq)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _clueApp.UpdateClueContactsAsync(updateClueContactsReq);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 删除联系人
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Route("DeleteContactsByIdAsync")]
+        public async Task<Response<bool>> DeleteContactsByIdAsync(int Id)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _clueApp.DeleteContactsByIdAsync(Id);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }

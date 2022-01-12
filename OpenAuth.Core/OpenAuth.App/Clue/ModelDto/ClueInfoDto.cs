@@ -144,6 +144,11 @@ namespace OpenAuth.App.Clue.ModelDto
         /// 创建人
         /// </summary>
         public string CreateUser { get; set; }
+        /// <summary>
+        /// 状态
+        /// 状态（状态（0：未完成，1：已完成））
+        /// </summary>
+        public int Status { get; set; }
     }
     /// <summary>
     /// 跟进记录

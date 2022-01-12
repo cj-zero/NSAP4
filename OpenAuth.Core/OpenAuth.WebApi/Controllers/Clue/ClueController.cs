@@ -155,12 +155,55 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <returns></returns>
         [HttpGet]
         [Route("GetAddress")]
-        public  Response<KuaiBaoResponse> GetAddress(string address)
+        public Response<KuaiBaoResponse> GetAddress(string address)
         {
             var result = new Response<KuaiBaoResponse>();
             try
             {
-                result.Result =_clueApp.GetAddres(address);
+                result.Result = _clueApp.GetAddres(address);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 新增标签
+        /// </summary>
+        /// <param name="Tags"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("AddTag")]
+        public async Task<Response<bool>> AddTag(AddTag Tags)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _clueApp.AddTag(Tags);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 获取标签
+        /// </summary>
+        /// <param name="ClueId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetClueTagById")]
+        public async Task<Response<List<string>>> GetClueTagById(int ClueId)
+        {
+            var result = new Response<List<string>>();
+            try
+            {
+                result.Result = await _clueApp.GetClueTagById(ClueId);
             }
             catch (Exception ex)
             {

@@ -43,12 +43,12 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <returns></returns>
         [HttpGet]
         [Route("ClueContactsByIdAsync")]
-        public async Task<Response<List<ClueLogListDto>>> ClueLogByIdAsync(int ClueId)
+        public async Task<Response<List<ClueLogListDto>>> ClueLogByIdAsync(int ClueId,string StartTime,string EndTime)
         {
             var result = new Response<List<ClueLogListDto>>();
             try
             {
-                result.Result = await _clueApp.ClueLogByIdAsync(ClueId);
+                result.Result = await _clueApp.ClueLogByIdAsync(ClueId, StartTime,EndTime);
             }
             catch (Exception ex)
             {
@@ -56,6 +56,6 @@ namespace OpenAuth.WebApi.Controllers.Clue
                 result.Message = ex.Message;
             }
             return result;
-        }
+        } 
     }
 }
