@@ -1144,7 +1144,7 @@ namespace OpenAuth.App.Order
             TableData tableData = new TableData();
             if (!string.IsNullOrEmpty(ItemCode))
             {
-                string sql = $@"SELECT a.ItemCode,a.item_name as ItemName,a.high_price,a.low_price,w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,
+                string sql = $@"SELECT ROW_NUMBER() OVER (ORDER BY a.ItemCode) RowNum, a.ItemCode,a.item_name as ItemName,a.high_price,a.low_price,w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,
                         (w.OnHand-w.IsCommited+w.OnOrder) AS OnAvailable,
                         (m.OnHand-m.IsCommited+m.OnOrder) AS Available,
                                                 w.WhsCode,a.Factor_1,a.Factor_2,a.Factor_3,
