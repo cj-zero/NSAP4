@@ -47,6 +47,12 @@ namespace OpenAuth.App.Serve
             {
                 await _hubContext.Clients.User(item.Key).SendAsync("ServiceWordOrderCount", "系统", item.Count());
             }
+            var approve = await UnitWork.Find<ServiceOrder>(c => c.AllowOrNot == 1 && c.Status == 2 && c.VestInOrg == 1).Select(c => c.SalesMan).ToListAsync();
+            var count = approve.GroupBy(c => c).ToList();
+            foreach (var item in count)
+            {
+                await _hubContext.Clients.User(item.Key).SendAsync("ServiceCount", "系统", item.Count());
+            }
             #endregion
             #region 报销单
             var reimburseInfos =await UnitWork.Find<ReimburseInfo>(r => r.RemburseStatus > 3 && r.RemburseStatus < 9).GroupBy(r=>r.RemburseStatus).Select(r=> new{ status=r.Key, count=r.Count()}).ToListAsync();
