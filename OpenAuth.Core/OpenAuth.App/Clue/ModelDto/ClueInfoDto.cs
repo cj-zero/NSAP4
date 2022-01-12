@@ -96,6 +96,14 @@ namespace OpenAuth.App.Clue.ModelDto
         /// 详细地址
         /// </summary>
         public string Address2 { get; set; }
+        /// <summary>
+        /// 角色（0：决策者、1：普通人）
+        /// </summary>
+        public int Role { get; set; }
+        /// <summary>
+        ///职位
+        /// </summary>
+        public string Position { get; set; }
     }
     /// <summary>
     /// 操作记录
@@ -113,7 +121,7 @@ namespace OpenAuth.App.Clue.ModelDto
         /// <summary>
         /// 操作类型（0：新增，1：编辑，2：删除）
         /// </summary>
-        public string LogType { get; set; }
+        public int LogType { get; set; }
         /// <summary>
         /// 创建时间
         /// </summary>
