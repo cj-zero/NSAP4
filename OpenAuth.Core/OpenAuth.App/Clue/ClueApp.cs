@@ -62,6 +62,7 @@ namespace OpenAuth.App
             var loginUser = loginContext.User;
             Expression<Func<OpenAuth.Repository.Domain.Serve.Clue, bool>> exp = t => true;
             exp = exp.And(t => !t.IsDelete);
+            exp = exp.And(t => t.CreateUser == loginUser.Name);
             if (clueListReq.SboId != -1)
             {
 
@@ -348,7 +349,7 @@ namespace OpenAuth.App
             {
                 if (updateClueReq.CardName != null && entity.CardName != updateClueReq.CardName) { mes = updateClueReq.CardName + ":原客户名称'" + entity.CardName + "';"; }
                 entity.CardName = updateClueReq.CardName;
-                if ( entity.CustomerSource != updateClueReq.CustomerSource) { mes += updateClueReq.CustomerSource + ":原客户来源'" + entity.CustomerSource + "'，（0:领英、1:国内展会、2:国外展会、3:客户介绍、4:新威官网、5:其他）;"; }
+                if (entity.CustomerSource != updateClueReq.CustomerSource) { mes += updateClueReq.CustomerSource + ":原客户来源'" + entity.CustomerSource + "'，（0:领英、1:国内展会、2:国外展会、3:客户介绍、4:新威官网、5:其他）;"; }
                 entity.CustomerSource = updateClueReq.CustomerSource;
                 if (entity.IndustryInvolved != updateClueReq.IndustryInvolved)
                 {
@@ -359,7 +360,7 @@ namespace OpenAuth.App
                 entity.IndustryInvolved = updateClueReq.IndustryInvolved;
                 if (entity.StaffSize != updateClueReq.StaffSize) { mes += updateClueReq.StaffSize + ":原人员规模'" + entity.StaffSize + "'，（0:1-20、1:20-100、2:100-500、3:500-1000、4:1000-10000、5:10000以上); "; }
                 entity.StaffSize = updateClueReq.StaffSize;
-                if (updateClueReq.WebSite != null&&entity.WebSite != updateClueReq.WebSite) { mes += updateClueReq.WebSite + ":原网址'" + entity.WebSite + "';"; }
+                if (updateClueReq.WebSite != null && entity.WebSite != updateClueReq.WebSite) { mes += updateClueReq.WebSite + ":原网址'" + entity.WebSite + "';"; }
                 entity.WebSite = updateClueReq.WebSite;
                 if (updateClueReq.Remark != null && entity.Remark != updateClueReq.Remark) { mes += updateClueReq.Remark + ":原备注'" + entity.Remark + "';"; }
                 entity.Remark = updateClueReq.Remark;
