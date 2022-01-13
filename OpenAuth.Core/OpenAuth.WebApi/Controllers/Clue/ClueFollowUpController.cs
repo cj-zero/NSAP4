@@ -166,5 +166,26 @@ namespace OpenAuth.WebApi.Controllers.Clue
             }
             return result;
         }
+        /// <summary>
+        /// 跟进附件
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GetClueFileByIdAsync")]
+        public async Task<Response<List<ClueFileUploadDto>>> GetClueFileByIdAsync(int Id)
+        {
+            var result = new Response<List<ClueFileUploadDto>>();
+            try
+            {
+                result.Result = await _clueApp.GetClueFileByIdAsync(Id);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }

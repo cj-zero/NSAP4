@@ -29,6 +29,14 @@ namespace OpenAuth.Repository.Domain.Serve
         [Description("地址或者是mimoID")]
         public string FileUrl { get; set; }
         /// <summary>
+        /// 跟进ID
+        /// </summary>
+        public int ClueFollowUpId { get; set; }
+        /// <summary>
+        /// 文件类型
+        /// </summary>
+        public string FileType { get; set; }
+        /// <summary>
         /// 创建人
         /// </summary>
         [Description("创建人")]

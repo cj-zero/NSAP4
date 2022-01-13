@@ -33,5 +33,9 @@ namespace OpenAuth.App.Clue.Request
         /// 下次跟进时间
         /// </summary>
         public DateTime NextFollowTime { get; set; }
+        /// <summary>
+        /// 附件
+        /// </summary>
+        public List<AddClueFileUploadReq> AddClueFileUploadReq { get; set; }
     }
 }

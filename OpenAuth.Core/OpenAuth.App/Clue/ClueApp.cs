@@ -4,6 +4,7 @@ using OpenAuth.App.Clue.ModelDto;
 using OpenAuth.App.Clue.Request;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Meeting.ModelDto;
+using OpenAuth.App.Order.ModelDto;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Domain.ProductModel;
 using OpenAuth.Repository.Domain.Serve;
@@ -15,6 +16,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
+using System.Net.Http;
 using System.Net.Security;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -29,6 +31,7 @@ namespace OpenAuth.App
     /// </summary>
     public class ClueApp : OnlyUnitWorkBaeApp
     {
+        private IHttpClientFactory _httpClient;
         private const String host = "https://kop.kuaidihelp.com";
         private const String path = "/api";
         private const String requestMethod = "POST";
@@ -148,6 +151,12 @@ namespace OpenAuth.App
             rowcount = list.Count;
             return datascoure;
         }
+
+
+
+
+
+
         /// <summary>
         /// 获取标签
         /// </summary>
@@ -531,8 +540,7 @@ namespace OpenAuth.App
                     log.LogType = 2;
                     log.CreateTime = DateTime.Now;
                     log.CreateUser = loginUser.Name;
-                    var mes = "删除线索以及其余附属信息：线索Id为_" + item;
-                    log.Details = JsonHelper.Instance.Serialize(mes);
+                    log.Details = "删除线索以及其余附属信息：线索Id为_" + item; ;
                     await AddClueLogAsync(log);
                     UnitWork.Save();
                     result = true;
@@ -787,6 +795,28 @@ namespace OpenAuth.App
 
         #region 跟进
         /// <summary>
+        /// 跟进附件
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<List<ClueFileUploadDto>> GetClueFileByIdAsync(int id)
+        {
+            var data = new List<ClueFileUploadDto>();
+            var clueFile = UnitWork.Find<ClueFile>(q => q.ClueFollowUpId == id && !q.IsDelete).MapToList<ClueFile>();
+            foreach (var item in clueFile)
+            {
+                var scon = new ClueFileUploadDto();
+                scon.ClueId = item.ClueId;
+                scon.ClueFollowUpId = item.Id;
+                scon.FileType = item.FileType;
+                scon.FileName = item.FileName;
+                scon.FileUrl = item.FileUrl;
+                data.Add(scon);
+            }
+            return data;
+        }
+        /// <summary>
         /// 删除
         /// </summary>
         /// <param name="id"></param>
@@ -838,8 +868,13 @@ namespace OpenAuth.App
                 CreateUser = loginUser.Name,
                 CreateTime = DateTime.Now
             };
-            var data = UnitWork.Add<OpenAuth.Repository.Domain.Serve.ClueFollowUp, int>(clueFollowUp);
+            var data = UnitWork.Add<ClueFollowUp, int>(clueFollowUp);
             UnitWork.Save();
+            if (addClueFollowUpReq.AddClueFileUploadReq.Count > 0)
+            {
+                addClueFollowUpReq.AddClueFileUploadReq.ForEach(f => { f.ClueFollowUpId = data.Id; });
+                await AddClueFileUploadAsync(addClueFollowUpReq.AddClueFileUploadReq);
+            }
             //日志
             var log = new AddClueLogReq();
             log.ClueId = data.Id;
@@ -904,7 +939,7 @@ namespace OpenAuth.App
         {
             var result = new List<ClueFollowUpListDto>();
             var clue = UnitWork.FindSingle<Repository.Domain.Serve.Clue>(q => q.Id == clueId);
-            if (clue == null)
+            if (clue != null)
             {
                 var clueSchedule = UnitWork.Find<Repository.Domain.Serve.ClueFollowUp>(q => q.ClueId == clueId && !q.IsDelete).MapToList<ClueFollowUp>();
                 foreach (var item in clueSchedule)
@@ -932,7 +967,7 @@ namespace OpenAuth.App
         public async Task<List<TextVaule>> ContactsListAsync(int ClueId)
         {
             var list = new List<TextVaule>();
-            var data = UnitWork.Find<ClueContacts>(q => q.ClueId == ClueId);
+            var data = UnitWork.Find<ClueContacts>(q => q.ClueId == ClueId && !q.IsDelete);
             var asc = data.MapToList<ClueContacts>();
             list = asc.Select(m => new TextVaule
             {
@@ -1004,10 +1039,12 @@ namespace OpenAuth.App
                 ClueFile clueFile = new ClueFile
                 {
                     ClueId = item.ClueId,
+                    FileType = item.FileType,
                     FileName = item.FileName,
                     FileUrl = item.FileUrl,
                     CreateUser = loginUser.Name,
-                    CreateTime = DateTime.Now
+                    CreateTime = DateTime.Now,
+                    ClueFollowUpId = item.ClueFollowUpId.Value
                 };
                 clueFilelist.Add(clueFile);
                 //日志
@@ -1408,6 +1445,109 @@ namespace OpenAuth.App
         {
             return true;
         }
+
+
+        public async Task<ShopProductDto> GetShopProduct(string ErpCode)
+        {
+            var url = $"http://shopapi.neware.work:8081/api/v1/product/shopproduct?erpCode={ErpCode}";
+            ////使用注入的httpclientfactory获取client
+            var client = _httpClient.CreateClient();
+            client.BaseAddress = new Uri(url);
+            //设置请求体中的内容，并以post的方式请求
+            var response = await client.GetAsync(url);
+            //获取请求到数据，并转化为字符串
+            //result.Result = response.Content.ReadAsStringAsync().Result;
+            return JsonConvert.DeserializeObject<ShopProductDto>(response.Content.ReadAsStringAsync().Result);
+        }
+        #endregion
+
+
+        #region 意向商品
+        /// <summary>
+        /// 新增意向商品
+        /// </summary>
+        /// <param name="addClueIntentionProductReq"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<bool> AddClueIntentionProductAsync(List<AddClueIntentionProductReq> addClueIntentionProductReq)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            var clueIntentionProductList = new List<ClueIntentionProduct>();
+            foreach (var item in addClueIntentionProductReq)
+            {
+                var codeinfo = await GetShopProduct(item.ItemCode);
+                var clueIntentionProduct = new ClueIntentionProduct
+                {
+                    ClueId = item.ClueId,
+                    ItemCode = item.ItemCode,
+                    ItemName = item.ItemName,
+                    ItemDescription = item.ItemDescription,
+                    AvailableStock = item.AvailableStock,
+                    UnitCost = item.UnitCost,
+                    Pic = codeinfo.MainImgUrl,
+                    CommoditySellingPoint = codeinfo.SellingPoints
+                };
+                clueIntentionProductList.Add(clueIntentionProduct);
+                //日志
+                var log = new AddClueLogReq();
+                log.ClueId = item.ClueId;
+                log.LogType = 0;
+                log.CreateTime = DateTime.Now;
+                log.CreateUser = loginUser.Name;
+                log.Details = "'" + item.ItemCode + "',意向产品";
+                await AddClueLogAsync(log);
+            }
+
+            await UnitWork.BatchAddAsync<ClueIntentionProduct, int>(clueIntentionProductList.ToArray());
+            return true;
+        }
+        /// <summary>
+        /// 意向商品列表
+        /// </summary>
+        /// <param name="clueId"></param>
+        /// <returns></returns>
+        public async Task<List<ClueIntentionProduct>> ClueIntentionProductByIdAsync(int clueId)
+        {
+            return UnitWork.Find<ClueIntentionProduct>(q => q.ClueId == clueId).OrderByDescending(q => q.CreateTime).MapToList<ClueIntentionProduct>();
+        }
+        /// <summary>
+        /// 删除意向商品
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<bool> DeleteClueIntentionProductByIdAsync(int id)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            var clueIntentionProduct = await UnitWork.FindSingleAsync<ClueIntentionProduct>(q => q.Id == id);
+            if (clueIntentionProduct != null)
+            {
+                clueIntentionProduct.IsDelete = true;
+                await UnitWork.UpdateAsync(clueIntentionProduct);
+                await UnitWork.SaveAsync();
+                //日志
+                var log = new AddClueLogReq();
+                log.ClueId = clueIntentionProduct.ClueId;
+                log.LogType = 2;
+                log.CreateTime = DateTime.Now;
+                log.CreateUser = loginUser.Name;
+                log.Details = "'" + clueIntentionProduct.ItemCode + "',意向产品";
+                await AddClueLogAsync(log);
+            }
+            return true;
+        }
+
+
         #endregion
     }
 }

@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenAuth.App.Clue.Request
+namespace OpenAuth.App.Clue.ModelDto
 {
     /// <summary>
-    /// 上传附件model
+    /// 跟进附件
     /// </summary>
-    public class AddClueFileUploadReq
+    public class ClueFileUploadDto
     {
+        public int Id { get; set; }
         /// <summary>
         /// 线索ID
         /// </summary>
