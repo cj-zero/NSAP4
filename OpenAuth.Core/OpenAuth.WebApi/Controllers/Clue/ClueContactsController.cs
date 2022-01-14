@@ -43,12 +43,14 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <returns></returns>
         [HttpGet]
         [Route("ClueContactsByIdAsync")]
-        public async Task<Response<List<ClueContactsListDto>>> ClueContactsByIdAsync(int ClueId)
+        public TableData ClueContactsByIdAsync(int ClueId)
         {
-            var result = new Response<List<ClueContactsListDto>>();
+            int rowcount = 0;
+
+            var result = new TableData();
             try
             {
-                result.Result = await _clueApp.ClueContactsByIdAsync(ClueId);
+                result.Data = _clueApp.ClueContactsByIdAsync(ClueId, out rowcount);
             }
             catch (Exception ex)
             {
@@ -86,12 +88,12 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <returns></returns>
         [HttpGet]
         [Route("AddClueContactsAsync")]
-        public async Task<Response<bool>> IsDefaultClueContactsAsync(int Id,int ClueId)
+        public async Task<Response<bool>> IsDefaultClueContactsAsync(int Id, int ClueId)
         {
             var result = new Response<bool>();
             try
             {
-                result.Result = await _clueApp.IsDefaultClueContactsAsync(Id,ClueId);
+                result.Result = await _clueApp.IsDefaultClueContactsAsync(Id, ClueId);
             }
             catch (Exception ex)
             {
@@ -128,12 +130,12 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <returns></returns>
         [HttpDelete]
         [Route("DeleteContactsByIdAsync")]
-        public async Task<Response<bool>> DeleteContactsByIdAsync(int Id)
+        public async Task<Response<bool>> DeleteContactsByIdAsync(List<int> Ids)
         {
             var result = new Response<bool>();
             try
             {
-                result.Result = await _clueApp.DeleteContactsByIdAsync(Id);
+                result.Result = await _clueApp.DeleteContactsByIdAsync(Ids);
             }
             catch (Exception ex)
             {

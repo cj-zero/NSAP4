@@ -109,7 +109,8 @@ namespace OpenAuth.App
                 result.CreateTime = item.CreateTime;
                 result.UpdateTime = item.UpdateTime;
                 result.Status = item.Status;
-                Expression<Func<OpenAuth.Repository.Domain.Serve.ClueContacts, bool>> exps = t => true;
+                result.Tags = !string.IsNullOrWhiteSpace(item.Tags) ? JsonConvert.DeserializeObject<List<string>>(item.Tags) : null;
+                Expression<Func<ClueContacts, bool>> exps = t => true;
                 exps = exps.And(t => !t.IsDelete);
                 exps = exps.And(t => t.ClueId == item.Id);
                 exps = exps.And(t => t.IsDefault == true);
@@ -162,9 +163,14 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="clueId"></param>
         /// <returns></returns>
+        /// 
         public async Task<List<string>> GetClueTagById(int clueId)
         {
             var clue = await UnitWork.FindSingleAsync<Repository.Domain.Serve.Clue>(q => q.Id == clueId);
+            if (clue == null)
+            {
+                return null;
+            }
             return JsonHelper.Instance.Deserialize<List<string>>(clue.Tags);
         }
 
@@ -1099,13 +1105,13 @@ namespace OpenAuth.App
         /// <param name="clueId"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public async Task<List<ClueContactsListDto>> ClueContactsByIdAsync(int clueId)
+        public List<ClueContactsListDto> ClueContactsByIdAsync(int clueId, out int rowcount)
         {
             var result = new List<ClueContactsListDto>();
             var clue = UnitWork.FindSingle<Repository.Domain.Serve.Clue>(q => q.Id == clueId);
             if (clue != null)
             {
-                var clueContacts = UnitWork.Find<Repository.Domain.Serve.ClueContacts>(q => q.Id == clueId).MapToList<ClueContacts>();
+                var clueContacts = UnitWork.Find<Repository.Domain.Serve.ClueContacts>(q => q.ClueId == clueId && !q.IsDelete).MapToList<ClueContacts>();
                 foreach (var item in clueContacts)
                 {
                     var scon = new ClueContactsListDto();
@@ -1122,6 +1128,7 @@ namespace OpenAuth.App
                     result.Add(scon);
                 }
             }
+            rowcount = result.Count;
             return result;
         }
 
@@ -1170,7 +1177,7 @@ namespace OpenAuth.App
         /// <param name="id"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public async Task<bool> DeleteContactsByIdAsync(int id)
+        public async Task<bool> DeleteContactsByIdAsync(List<int> ids)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -1178,19 +1185,22 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
+            foreach (var item in ids)
+            {
+                var clueContacts = UnitWork.FindSingle<ClueContacts>(q => q.Id == item);
+                clueContacts.IsDelete = true;
+                UnitWork.Update(clueContacts);
+                UnitWork.Save();
+                //日志
+                var log = new AddClueLogReq();
+                log.ClueId = clueContacts.ClueId;
+                log.LogType = 2;
+                log.CreateTime = DateTime.Now;
+                log.CreateUser = loginUser.Name;
+                log.Details = "'" + clueContacts.Name + "'联系人";
+                await AddClueLogAsync(log);
+            }
 
-            var clueContacts = UnitWork.FindSingle<ClueContacts>(q => q.Id == id);
-            clueContacts.IsDelete = true;
-            UnitWork.Update(clueContacts);
-            UnitWork.Save();
-            //日志
-            var log = new AddClueLogReq();
-            log.ClueId = clueContacts.ClueId;
-            log.LogType = 2;
-            log.CreateTime = DateTime.Now;
-            log.CreateUser = loginUser.Name;
-            log.Details = "'" + clueContacts.Name + "'联系人";
-            await AddClueLogAsync(log);
             return true;
         }
 
