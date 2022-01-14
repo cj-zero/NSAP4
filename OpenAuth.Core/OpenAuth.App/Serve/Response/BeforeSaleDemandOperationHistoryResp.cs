@@ -12,26 +12,21 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
+using AutoMapper.Configuration.Annotations;
+using Infrastructure.AutoMapper;
+using OpenAuth.App.Response;
 using OpenAuth.Repository.Core;
+using OpenAuth.Repository.Domain;
 
-namespace OpenAuth.Repository.Domain
+namespace OpenAuth.App.Reponse
 {
     /// <summary>
 	/// 售前需求对接申请流程操作历史记录
 	/// </summary>
-    [Table("beforesaledemandoperationhistory")]
-    public partial class BeforeSaleDemandOperationHistory : Entity
+    [AutoMapTo(typeof(BeforeSaleDemandOperationHistory))]
+    public partial class BeforeSaleDemandOperationHistoryResp
     {
-        public BeforeSaleDemandOperationHistory()
-        {
-          this.Action= string.Empty;
-          this.CreateUser= string.Empty;
-          this.CreateUserId= string.Empty;
-          this.CreateTime= DateTime.Now;
-          this.ApprovalResult= string.Empty;
-          this.Remark= string.Empty;
-        }
-        
+        public string Id { get; set; }
         /// <summary>
         /// 售前申请流程Id
         /// </summary>
@@ -83,6 +78,11 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 售前需求流程申请审核附件
         /// </summary>
-        public virtual List<BeforeSaleFiles> BeforeSaleFiles { get; set; }
+        public List<BeforeSaleFiles> BeforeSaleFiles { get; set; }
+        /// <summary>
+        /// 图片文件列表
+        /// </summary>
+        [Ignore]
+        public virtual List<UploadFileResp> Files { get; set; }
     }
 }

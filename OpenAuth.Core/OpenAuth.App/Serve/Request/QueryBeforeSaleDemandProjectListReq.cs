@@ -7,7 +7,7 @@
         /// </summary>
         public string KeyWord { get; set; }
         /// <summary>
-        /// 状态 1-立项 2-需求 3-开发 4-测试5-实施 6-验收 7-结束
+        /// 项目状态 1-立项 2-需求 3-开发 4-测试5-实施 6-验收 7-结束
         /// </summary>
         public int? Status { get; set; }
         /// <summary>

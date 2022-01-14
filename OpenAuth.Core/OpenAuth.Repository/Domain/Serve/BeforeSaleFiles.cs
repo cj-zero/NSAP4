@@ -25,9 +25,7 @@ namespace OpenAuth.Repository.Domain
         public BeforeSaleFiles()
         {
           this.FileId= string.Empty;
-        }
-
-        
+        }        
         /// <summary>
         /// 售前申请流程Id
         /// </summary>
@@ -35,13 +33,19 @@ namespace OpenAuth.Repository.Domain
         [Browsable(false)]
         public int BeforeSaleDemandId { get; set; }
         /// <summary>
+        /// 售前流程审批操作记录Id
+        /// </summary>
+        [Description("售前流程审批操作记录Id")]
+        [Browsable(false)]
+        public string BeforeSaleDemandOperationHistoryId { get; set; }
+        /// <summary>
         /// 文件Id
         /// </summary>
         [Description("文件Id")]
         [Browsable(false)]
         public string FileId { get; set; }
         /// <summary>
-        /// 文件类型
+        /// 文件类型 0:售前需求申请表单附件 1:售前流程审批附件 2项目审批文件
         /// </summary>
         [Description("文件类型")]
         public int? Type { get; set; }

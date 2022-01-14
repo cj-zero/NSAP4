@@ -30,6 +30,7 @@ namespace OpenAuth.Repository.Domain
           this.EndDate= DateTime.Now;
           this.CreateUserId= string.Empty;
           this.CreateTime= DateTime.Now;
+            this.BeforeSaleDemandProjectId = 0;
         }
 
         /// <summary>

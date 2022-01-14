@@ -33,7 +33,7 @@ namespace OpenAuth.App.Reponse
         /// </summary>
         public int Id { get; set; }
         /// <summary>
-        /// 
+        /// 售前需求申请流程编号
         /// </summary>
         public string BeforeDemandCode { get; set; }
         /// <summary>
@@ -89,9 +89,15 @@ namespace OpenAuth.App.Reponse
         /// </summary>
         public string FlowInstanceId { get; set; }
         /// <summary>
-        /// 状态 1-销售提交需求 2-销售总助审批 3-需求组提交需求 4-研发总助审批 5-研发确认 6-总经理审批 7-已完成 8-撤回 9-驳回 10-草稿
+        /// 状态 0-草稿 1-销售提交需求 2-销售总助审批 3-需求组提交需求 
+        /// 4-研发总助审批 5-研发确认 6-总经理审批 7-立项 8-驳回
         /// </summary>
         public int Status { get; set; }
+        /// <summary>
+        /// 流程步骤 1-销售提交需求 2-销售总助审批 3-需求组提交需求 4-研发总助审批 5-研发确认 
+        /// 6-总经理审批 7-立项 8-需求提交 9-研发提交 10-测试提交 11-实施提交 12-客户验收
+        /// </summary>
+        public int Step { get; set; }
         /// <summary>
         /// 需求简述~申请人简单描述需求内容
         /// </summary>
@@ -121,6 +127,16 @@ namespace OpenAuth.App.Reponse
         /// 是否是草稿 默认否false
         /// </summary>
         public bool IsDraft { get; set; }
+
+        /// <summary>
+        /// 开发投入预估（开发预估工期+测试预估工期）*预估开发成本
+        /// </summary>
+        public int? DevCost { get; set; }
+        /// <summary>
+        /// 是否收费 默认空
+        /// 1:“单独研发收费”，2“免费技术支持”
+        /// </summary>
+        public int? IsCharge { get; set; }
         /// <summary>
         /// 是否需要开发部署项目：默认0
         /// </summary>
@@ -165,5 +181,14 @@ namespace OpenAuth.App.Reponse
         /// </summary>
         [Ignore]
         public virtual List<UploadFileResp> Files { get; set; }
+
+        /// <summary>
+        /// 确定开发部门列表
+        /// </summary>
+        public List<BeforeSaleDemandDeptInfo> BeforeSaleDemandDeptInfos { get; set; }
+        /// <summary>
+        /// 判断当前用户是否有页面的审核权限 默认否false
+        /// </summary>
+        public bool IsHandle { get; set; }
     }
 }

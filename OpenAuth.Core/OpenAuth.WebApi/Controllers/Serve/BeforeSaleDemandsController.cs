@@ -125,6 +125,18 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 获取售前需求申请流程操作记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetBeforeSaleDemandOperationHistory([FromQuery] QueryBeforeSaleDemandOperationHistoryListReq req)
+        {
+            return await _beforeSaleDemandApp.GetBeforeSaleDemandOperationHistory(req);
+        }
+
+
+        /// <summary>
         /// 批量删除
         /// </summary>
         [HttpPost]

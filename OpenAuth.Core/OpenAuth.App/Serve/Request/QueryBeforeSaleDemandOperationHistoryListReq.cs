@@ -2,6 +2,9 @@
 {
     public class QueryBeforeSaleDemandOperationHistoryListReq : PageReq
     {
-        //todo:添加自己的请求字段
+        /// <summary>
+        /// 关联售前需求Id
+        /// </summary>
+        public int BeforeSaleDemandId { get; set; }
     }
 }

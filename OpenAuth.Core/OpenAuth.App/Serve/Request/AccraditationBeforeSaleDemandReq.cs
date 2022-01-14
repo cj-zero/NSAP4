@@ -17,9 +17,11 @@ using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.App.Request
 {
+    /// <summary>
+    /// 售前流程审批
+    /// </summary>
     public partial class AccraditationBeforeSaleDemandReq
     {
-
         /// <summary>
         /// 售前申请流程Id
         /// </summary>
@@ -29,22 +31,6 @@ namespace OpenAuth.App.Request
         /// </summary>
         public bool IsReject { get; set; }
         /// <summary>
-        /// 是否草稿
-        /// </summary>
-        public bool IsDraft { get; set; }
-        /// <summary>
-        /// 期望需求人员Id
-        /// </summary>
-        public string ExpectUserId { get; set; }
-        /// <summary>
-        /// 执行日期
-        /// </summary>
-        public System.DateTime? ExpectDate { get; set; }
-        /// <summary>
-        /// 执行人名字
-        /// </summary>
-        public string ExpectUserName { get; set; }
-        /// <summary>
         /// 确定需求人员Id
         /// </summary>
         public string FactDemandUserId { get; set; }
@@ -53,27 +39,11 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string FactDemandUser { get; set; }
         /// <summary>
-        /// 客户编号
-        /// </summary>
-        public string CustomerId { get; set; }
-        /// <summary>
-        /// 客户名称
-        /// </summary>
-        public string CustomerName { get; set; }
-        /// <summary>
-        /// 客户联系人
-        /// </summary>
-        public string CustomerLinkMan { get; set; }
-        /// <summary>
-        /// 客户联系电话
-        /// </summary>
-        public string LinkManPhone { get; set; }
-        /// <summary>
         /// 审批流程Id
         /// </summary>
         public string FlowInstanceId { get; set; }
         /// <summary>
-        /// 状态 1-销售提交需求 2-销售总助审批 3-需求组提交需求 4-研发总助审批 5-研发确认 6-总经理审批 7-已完成 8-撤回 9-驳回 10-草稿
+        /// 当前流程状态0-草稿 1-销售提交需求 2-销售总助审批 3-需求组提交需求 4-研发总助审批 5-研发确认 6-总经理审批 7-立项 8-需求提交 9-研发提交10-测试提交11-实施提交12-客户验收(流程结束)13-驳回状态
         /// </summary>
         public int Status { get; set; }
         /// <summary>
@@ -97,7 +67,7 @@ namespace OpenAuth.App.Request
         /// </summary>
         public int? TestEstimate { get; set; }
         /// <summary>
-        /// 备注
+        /// 审批流程时的备注信息
         /// </summary>
         public string Remark { get; set; }
         /// <summary>
@@ -105,35 +75,70 @@ namespace OpenAuth.App.Request
         /// </summary>
         public int? IsDevDeploy { get; set; }
         /// <summary>
-        /// 是否关联项目：默认0
+        /// 是否关联项目：默认0不关联项目
         /// </summary>
         public int? IsRelevanceProject { get; set; }
         /// <summary>
-        /// 创建人
-        /// </summary>
-        public string CreateUserName { get; set; }
-        /// <summary>
-        /// 创建人Id
-        /// </summary>
-        public string CreateUserId { get; set; }
-        /// <summary>
-        /// 创建时间
-        /// </summary>
-        public System.DateTime? CreateTime { get; set; }
-        /// <summary>
-        /// 修改时间
-        /// </summary>
-        public System.DateTime? UpdateTime { get; set; }
-
-        //todo:添加自己的请求字段
-
-        /// <summary>
-        /// 售前售前流程附件
+        /// 审批流程时上传的附件信息
         /// </summary>
         public List<string> Attchments { get; set; }
 
-        public List<BeforeSaleFiles> BeforeSaleFiles { get; set; }
+        /// <summary>
+        /// 研发部门id
+        /// </summary>
+        public List<string> DevDeptInfoIds { get; set; }
+        /// <summary>
+        /// 确定开发部门列表
+        /// </summary>
+        public List<BeforeSaleDemandDeptInfo> BeforeSaleDemandDeptInfos { get; set; }
 
-        public List<BeforeSaleProScheduling> beforeSaleProSchedulings { get; set; }
+        /// <summary>
+        /// 关联项目名称
+        /// </summary>
+        public string BeforeSaleDemandProjectName { get; set; }
+        /// <summary>
+        /// 流程关联项目信息
+        /// </summary>
+        public BeforeSaleDemandProject BeforeSaleDemandProject { get; set; }
+
+        /// <summary>
+        /// 项目链接
+        /// </summary>
+        public string ProjcetUrl { get; set; }
+        /// <summary>
+        /// 需求文档/URL
+        /// </summary>
+        public string ProjectDocURL { get; set; }
+        /// <summary>
+        /// 实际开始日期
+        /// </summary>
+        [Description("实际开始日期")]
+        public System.DateTime? ActualStartDate { get; set; }
+        /// <summary>
+        /// 提交日期
+        /// </summary>
+        [Description("提交日期")]
+        public System.DateTime? SubmitDate { get; set; }
+        /// <summary>
+        /// 实际研发开始日期
+        /// </summary>
+       public DateTime? ActualDevStartDate { get; set; }
+        /// <summary>
+        /// 实际研发结束日期
+        /// </summary>
+        public DateTime? ActualDevEndDate { get; set; }
+        /// <summary>
+        /// 实际测试开始日期
+        /// </summary>
+        public DateTime? ActualTestStartDate { get; set; }
+        /// <summary>
+        /// 实际测试结束日期
+        /// </summary>
+        public DateTime? ActualTestEndDate { get; set; }
+        /// <summary>
+        /// 项目排期列表
+        /// </summary>
+        public List<BeforeSaleProScheduling> BeforeSaleProSchedulings { get; set; }
+
     }
 }

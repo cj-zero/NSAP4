@@ -136,9 +136,9 @@ namespace OpenAuth.Repository.Domain
         [Browsable(false)]
         public string FlowInstanceId { get; set; }
         /// <summary>
-        /// 状态0-草稿 1-销售提交需求 2-销售总助审批 3-需求组提交需求 4-研发总助审批 5-研发确认 6-总经理审批 7-已完成 8-驳回
+        /// 状态0-草稿 1-销售提交需求 2-销售总助审批 3-需求组提交需求 4-研发总助审批 5-研发确认 6-总经理审批 7-立项 8-需求提交 9-研发提交10-测试提交11-实施提交12-客户验收(流程结束)13-驳回状态
         /// </summary>
-        [Description("状态0-草稿 1-销售提交需求 2-销售总助审批 3-需求组提交需求 4-研发总助审批 5-研发确认 6-总经理审批 7-已完成 8-驳回")]
+        [Description("状态0-草稿 1-销售提交需求 2-销售总助审批 3-需求组提交需求 4-研发总助审批 5-研发确认 6-总经理审批 7-立项 8-需求提交 9-研发提交10-测试提交11-实施提交12-客户验收")]
         public int Status { get; set; }
 
         /// <summary>
@@ -185,6 +185,16 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("是否关联项目")]
         public int? IsRelevanceProject { get; set; }
+
+        /// <summary>
+        /// 开发投入预估（开发预估工期+测试预估工期）*预估开发成本
+        /// </summary>
+        public int? DevCost { get; set; }
+        /// <summary>
+        /// 是否收费 默认空
+        /// 1:“单独研发收费”，2“免费技术支持”
+        /// </summary>
+        public int? IsCharge { get; set; }
         /// <summary>
         /// 创建人
         /// </summary>
@@ -227,6 +237,11 @@ namespace OpenAuth.Repository.Domain
         /// 售前申请项目操作记录
         /// </summary>
         public virtual List<BeforeSaleDemandOperationHistory> Beforesaledemandoperationhistories { get; set; }
+
+        /// <summary>
+        /// 确定开发部门列表
+        /// </summary>
+        public virtual List<BeforeSaleDemandDeptInfo> BeforeSaleDemandDeptInfos { get; set; }
 
         public override void GenerateDefaultKeyVal()
         {

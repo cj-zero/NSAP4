@@ -55,6 +55,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<BeforeSaleDemandOrders> Beforesaledemandorders { get; set; }
         public virtual DbSet<BeforeSaleDemandOperationHistory> BeforeSaleDemandOperationHistories { get; set; }
         public virtual DbSet<BeforeSaleDemandProject> BeforeSaleDemandProjects { get; set; }
+        public virtual DbSet<BeforeSaleDemandDeptInfo> BeforeSaleDemandDeptInfos { get; set; }
         public virtual DbSet<BeforeSaleFiles> BeforeSaleFiles { get; set; }
         public virtual DbSet<BeforeSaleProScheduling> BeforeSaleProSchedulings { get; set; }
 
