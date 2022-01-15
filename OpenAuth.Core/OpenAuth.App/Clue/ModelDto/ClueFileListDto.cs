@@ -27,8 +27,12 @@ namespace OpenAuth.App.Clue.ModelDto
         /// </summary>
         public string CreateUser { get; set; }
         /// <summary>
-        /// 更新时间
+        /// 创建时间
         /// </summary>
-        public DateTime? UpdateTime { get; set; }
+        public DateTime? CreateTime { get; set; }
+        /// <summary>
+        ///附件大小
+        /// </summary>
+        public string FileSize { get; set; }
     }
 }

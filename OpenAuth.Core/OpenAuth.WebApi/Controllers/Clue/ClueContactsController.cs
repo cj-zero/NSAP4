@@ -8,6 +8,7 @@ using OpenAuth.App.Interface;
 using OpenAuth.App.Meeting.ModelDto;
 using OpenAuth.App.ProductModel.Request;
 using OpenAuth.App.Response;
+using OpenAuth.Repository.Domain.Serve;
 using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
@@ -60,6 +61,27 @@ namespace OpenAuth.WebApi.Controllers.Clue
             return result;
         }
         /// <summary>
+        /// 联系人详情
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("ContactsByIdInfoAsync")]
+        public async Task<Response<ClueContacts>> ContactsByIdInfoAsync(int Id)
+        {
+            var result = new Response<ClueContacts>();
+            try
+            {
+                result.Result = await _clueApp.ContactsByIdInfoAsync(Id);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
         /// 新增联系人
         /// </summary>
         /// <param name="addClueContactsReq"></param>
@@ -87,7 +109,7 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <param name="ClueId"></param>
         /// <returns></returns>
         [HttpGet]
-        [Route("AddClueContactsAsync")]
+        [Route("IsDefaultClueContactsAsync")]
         public async Task<Response<bool>> IsDefaultClueContactsAsync(int Id, int ClueId)
         {
             var result = new Response<bool>();

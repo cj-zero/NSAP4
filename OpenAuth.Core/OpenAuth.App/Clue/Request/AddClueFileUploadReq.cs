@@ -29,5 +29,9 @@ namespace OpenAuth.App.Clue.Request
         /// 文件类型
         /// </summary>
         public string FileType { get; set; }
+        /// <summary>
+        /// 文件大小
+        /// </summary>
+        public string FileSize { get; set; }
     }
 }

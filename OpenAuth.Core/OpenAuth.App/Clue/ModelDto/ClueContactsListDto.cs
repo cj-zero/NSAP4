@@ -46,5 +46,9 @@ namespace OpenAuth.App.Clue.ModelDto
         /// 是否默认
         /// </summary>
         public bool IsDefault { get; set; }
+        /// <summary>
+        /// 邮箱
+        /// </summary>
+        public string Email { get; set; }
     }
 }

@@ -15,10 +15,6 @@ namespace OpenAuth.App.Clue.Request
         /// </summary>
         public string ItemCode { get; set; }
         /// <summary>
-        /// 物料名称
-        /// </summary>
-        public string ItemName { get; set; }
-        /// <summary>
         /// 物料描述
         /// </summary>
         public string ItemDescription { get; set; }

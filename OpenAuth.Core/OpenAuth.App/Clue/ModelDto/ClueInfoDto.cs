@@ -104,6 +104,10 @@ namespace OpenAuth.App.Clue.ModelDto
         ///职位
         /// </summary>
         public string Position { get; set; }
+        /// <summary>
+        /// 邮箱
+        /// </summary>
+        public string Email { get; set; }
     }
     /// <summary>
     /// 操作记录

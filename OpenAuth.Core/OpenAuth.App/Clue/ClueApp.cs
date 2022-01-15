@@ -38,9 +38,10 @@ namespace OpenAuth.App
         //public static Express express = new Express();
         private RevelanceManagerApp _revelanceApp;
         ServiceBaseApp _serviceBaseApp;
-        public ClueApp(ServiceBaseApp serviceBaseApp, IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
+        public ClueApp(IHttpClientFactory _httpClient, ServiceBaseApp serviceBaseApp, IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
         {
             _serviceBaseApp = serviceBaseApp;
+            this._httpClient = _httpClient;
 
         }
 
@@ -129,6 +130,7 @@ namespace OpenAuth.App
                     result.Tel1 = data.Tel1;
                     result.Address1 = data.Address1;
                     result.Address2 = data.Address2;
+                    result.Email = data.Email;
                     var cluefollowup = UnitWork.FindSingle<ClueFollowUp>(q => q.ClueId == item.Id);
                     if (cluefollowup != null)
                     {
@@ -152,12 +154,6 @@ namespace OpenAuth.App
             rowcount = list.Count;
             return datascoure;
         }
-
-
-
-
-
-
         /// <summary>
         /// 获取标签
         /// </summary>
@@ -243,6 +239,7 @@ namespace OpenAuth.App
                 Name = addClueReq.Name,
                 Tel1 = addClueReq.Tel1,
                 Role = addClueReq.Role,
+                Email = addClueReq.Email,
                 Position = addClueReq.Position,
                 Address1 = addClueReq.Address1,
                 Address2 = addClueReq.Address2,
@@ -295,6 +292,7 @@ namespace OpenAuth.App
                     result.Essential.Address2 = cluecontacts.Address2;
                     result.Essential.Role = cluecontacts.Role;
                     result.Essential.Position = cluecontacts.Position;
+                    result.Essential.Email = cluecontacts.Email;
                 }
                 var clueLogList = UnitWork.Find<Repository.Domain.Serve.ClueLog>(q => q.ClueId == clueId).OrderByDescending(q => q.CreateTime).MapToList<ClueLog>();
                 if (clueLogList.Count > 0 && clueLogList != null)
@@ -1009,7 +1007,7 @@ namespace OpenAuth.App
             var clue = UnitWork.FindSingle<Repository.Domain.Serve.Clue>(q => q.Id == clueId);
             if (clue != null)
             {
-                var clueFile = UnitWork.Find<Repository.Domain.Serve.ClueFile>(q => q.Id == clueId).MapToList<ClueFile>();
+                var clueFile = UnitWork.Find<Repository.Domain.Serve.ClueFile>(q => q.ClueId == clueId && !q.IsDelete).MapToList<ClueFile>();
                 foreach (var item in clueFile)
                 {
                     var scon = new ClueFileListDto();
@@ -1018,7 +1016,8 @@ namespace OpenAuth.App
                     scon.FileName = item.FileName;
                     scon.FileUrl = item.FileUrl;
                     scon.CreateUser = item.CreateUser;
-                    scon.UpdateTime = item.UpdateTime;
+                    scon.CreateTime = item.CreateTime;
+                    scon.FileSize = item.FileSize;
                     result.Add(scon);
 
                 }
@@ -1048,6 +1047,7 @@ namespace OpenAuth.App
                     FileType = item.FileType,
                     FileName = item.FileName,
                     FileUrl = item.FileUrl,
+                    FileSize = item.FileSize,
                     CreateUser = loginUser.Name,
                     CreateTime = DateTime.Now,
                     ClueFollowUpId = item.ClueFollowUpId.Value
@@ -1070,10 +1070,10 @@ namespace OpenAuth.App
         /// <summary>
         /// 删除
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="Ids"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public async Task<bool> DeleteFileByIdAsync(int id)
+        public async Task<bool> DeleteFileByIdAsync(List<int> Ids)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -1081,18 +1081,22 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
-            var clueFile = await UnitWork.FindSingleAsync<ClueFile>(q => q.Id == id);
-            clueFile.IsDelete = true;
-            await UnitWork.UpdateAsync(clueFile);
-            await UnitWork.SaveAsync();
-            //日志
-            var log = new AddClueLogReq();
-            log.ClueId = clueFile.ClueId;
-            log.LogType = 2;
-            log.CreateTime = DateTime.Now;
-            log.CreateUser = loginUser.Name;
-            log.Details = "'" + clueFile.FileName + "'附件";
-            await AddClueLogAsync(log);
+            foreach (var item in Ids)
+            {
+                var clueFile = await UnitWork.FindSingleAsync<ClueFile>(q => q.Id == item);
+                clueFile.IsDelete = true;
+                await UnitWork.UpdateAsync(clueFile);
+                await UnitWork.SaveAsync();
+                //日志
+                var log = new AddClueLogReq();
+                log.ClueId = clueFile.ClueId;
+                log.LogType = 2;
+                log.CreateTime = DateTime.Now;
+                log.CreateUser = loginUser.Name;
+                log.Details = "'" + clueFile.FileName + "'附件";
+                await AddClueLogAsync(log);
+            }
+
             return true;
         }
 
@@ -1125,6 +1129,7 @@ namespace OpenAuth.App
                     scon.IsDefault = item.IsDefault;
                     scon.Role = item.Role;
                     scon.Position = item.Position;
+                    scon.Email = item.Email;
                     result.Add(scon);
                 }
             }
@@ -1203,7 +1208,16 @@ namespace OpenAuth.App
 
             return true;
         }
-
+        /// <summary>
+        /// 获取当前联系人
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<ClueContacts> ContactsByIdInfoAsync(int id)
+        {
+            return await UnitWork.FindSingleAsync<ClueContacts>(q => q.Id == id);
+        }
 
         /// <summary>
         /// 设置默认联系人
@@ -1222,20 +1236,28 @@ namespace OpenAuth.App
 
             var clueContacts = UnitWork.Find<ClueContacts>(q => q.ClueId == clueId).MapToList<ClueContacts>();
             clueContacts.ForEach(zw => { zw.IsDefault = false; });
-            UnitWork.Update(clueContacts);
-            UnitWork.Save();
-            var entity = UnitWork.FindSingle<ClueContacts>(q => q.Id == id && q.ClueId == clueId);
-            entity.IsDefault = true;
-            UnitWork.Update(entity);
-            UnitWork.Save();
+            foreach (var item in clueContacts)
+            {
+                if (item.Id == id)
+                {
+                    item.IsDefault = true;
+                    var log = new AddClueLogReq();
+                    log.ClueId = item.Id;
+                    log.LogType = 1;
+                    log.CreateTime = DateTime.Now;
+                    log.CreateUser = loginUser.Name;
+                    log.Details = "将'" + item.Name + "'设置为默认联系人";
+                    await AddClueLogAsync(log);
+                }
+            }
+
+            await UnitWork.BatchUpdateAsync(clueContacts.ToArray());
+            //var entity = UnitWork.FindSingle<ClueContacts>(q => q.Id == id && q.ClueId == clueId);
+            //entity.IsDefault = true;
+            //await UnitWork.UpdateAsync(entity);
+            await UnitWork.SaveAsync();
             //日志
-            var log = new AddClueLogReq();
-            log.ClueId = entity.Id;
-            log.LogType = 1;
-            log.CreateTime = DateTime.Now;
-            log.CreateUser = loginUser.Name;
-            log.Details = "将'" + entity.Name + "'设置为默认联系人";
-            await AddClueLogAsync(log);
+
             return true;
         }
         /// <summary>
@@ -1279,6 +1301,11 @@ namespace OpenAuth.App
                 {
                     mes += "'" + updateClueContactsReq.Position + "'职位，原：职位'" + clueContacts.Position + "'，修改为'" + updateClueContactsReq.Position + "'";
                 }
+                if (updateClueContactsReq.Email != null && updateClueContactsReq.Email != clueContacts.Email)
+                {
+                    mes += "'" + updateClueContactsReq.Email + "'邮箱，原：邮箱'" + clueContacts.Email + "'，修改为'" + updateClueContactsReq.Email + "'";
+                }
+                clueContacts.Email = updateClueContactsReq.Email;
                 clueContacts.Position = updateClueContactsReq.Position;
                 clueContacts.Address1 = updateClueContactsReq.Address1;
                 clueContacts.Address2 = updateClueContactsReq.Address2;
@@ -1491,17 +1518,20 @@ namespace OpenAuth.App
             foreach (var item in addClueIntentionProductReq)
             {
                 var codeinfo = await GetShopProduct(item.ItemCode);
-                var clueIntentionProduct = new ClueIntentionProduct
+                var clueIntentionProduct = new ClueIntentionProduct();
+
+                clueIntentionProduct.ClueId = item.ClueId;
+                clueIntentionProduct.ItemCode = item.ItemCode;
+
+                clueIntentionProduct.ItemDescription = item.ItemDescription;
+                clueIntentionProduct.AvailableStock = item.AvailableStock;
+                clueIntentionProduct.UnitCost = item.UnitCost;
+                if (codeinfo != null)
                 {
-                    ClueId = item.ClueId,
-                    ItemCode = item.ItemCode,
-                    ItemName = item.ItemName,
-                    ItemDescription = item.ItemDescription,
-                    AvailableStock = item.AvailableStock,
-                    UnitCost = item.UnitCost,
-                    Pic = codeinfo.MainImgUrl,
-                    CommoditySellingPoint = codeinfo.SellingPoints
-                };
+                    clueIntentionProduct.ItemName = !string.IsNullOrWhiteSpace(codeinfo.ProductName) ? codeinfo.ProductName : "";
+                    clueIntentionProduct.Pic = !string.IsNullOrWhiteSpace(codeinfo.MainImgUrl) ? codeinfo.MainImgUrl : "";
+                    clueIntentionProduct.CommoditySellingPoint = !string.IsNullOrWhiteSpace(codeinfo.SellingPoints) ? codeinfo.SellingPoints : "";
+                }
                 clueIntentionProductList.Add(clueIntentionProduct);
                 //日志
                 var log = new AddClueLogReq();

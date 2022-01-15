@@ -63,5 +63,9 @@ namespace OpenAuth.App.Clue.ModelDto
         /// 标签集合
         /// </summary>
         public List<string> Tags { get; set; }
+        /// <summary>
+        /// 邮箱
+        /// </summary>
+        public string Email { get; set; }
     }
 }
