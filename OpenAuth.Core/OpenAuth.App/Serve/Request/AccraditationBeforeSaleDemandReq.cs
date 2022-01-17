@@ -74,6 +74,16 @@ namespace OpenAuth.App.Request
         /// 是否需要开发部署项目：默认0
         /// </summary>
         public int? IsDevDeploy { get; set; }
+
+        /// <summary>
+        /// 是否收费 默认空
+        /// 1:“单独研发收费”，2“免费技术支持”
+        /// </summary>
+        public int? IsCharge { get; set; }
+        /// <summary>
+        /// 开发投入预估（开发预估工期+测试预估工期）*预估开发成本
+        /// </summary>
+        public int? DevCost { get; set; }        
         /// <summary>
         /// 是否关联项目：默认0不关联项目
         /// </summary>

@@ -30,7 +30,6 @@ namespace OpenAuth.Repository.Domain
           this.EndDate= DateTime.Now;
           this.CreateUserId= string.Empty;
           this.CreateTime= DateTime.Now;
-            this.BeforeSaleDemandProjectId = 0;
         }
 
         /// <summary>
@@ -39,6 +38,14 @@ namespace OpenAuth.Repository.Domain
         [Description("关联项目Id")]
         [Browsable(false)]
         public int BeforeSaleDemandProjectId { get; set; }
+
+
+        /// <summary>
+        /// 关联项目Id
+        /// </summary>
+        [Description("关联申请流程Id")]
+        [Browsable(false)]
+        public int BeforeSaleDemandId { get; set; }
 
         /// <summary>
         /// 项目环节：0:需求，1:开发，2：测试

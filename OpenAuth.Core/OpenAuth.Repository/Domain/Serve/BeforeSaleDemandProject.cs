@@ -113,6 +113,17 @@ namespace OpenAuth.Repository.Domain
         [Description("测试负责人")]
         public string TestUserName { get; set; }
         /// <summary>
+        /// 实施负责人Id
+        /// </summary>
+        [Description("实施负责人Id")]
+        [Browsable(false)]
+        public string ExecutorUserId { get; set; }
+        /// <summary>
+        /// 实施负责人
+        /// </summary>
+        [Description("实施负责人")]
+        public string ExecutorName { get; set; }
+        /// <summary>
         /// 实际开始日期
         /// </summary>
         [Description("实际开始日期")]

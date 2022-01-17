@@ -38,9 +38,9 @@ namespace OpenAuth.App
             .WhereIf(!string.IsNullOrWhiteSpace(req.KeyWord), k => k.ProjectName.Contains(req.KeyWord) || k.ProjectNum.Contains(req.KeyWord) || k.ReqUserName.Contains(req.KeyWord) || k.DevUserName.Contains(req.KeyWord) || k.TestUserName.Contains(req.KeyWord))
             .WhereIf(!string.IsNullOrWhiteSpace(req.CreateTimeStart.ToString()), q => q.CreateTime > req.CreateTimeStart)
             .WhereIf(!string.IsNullOrWhiteSpace(req.CreateTimeEnd.ToString()), q => q.CreateTime < Convert.ToDateTime(req.CreateTimeStart).AddDays(1));
-            if (req.PageType != 0)//所有项目流程
+            if (req.Status != 0)//所有项目流程
             {
-                query = query.WhereIf(req.Status != null && req.Status != 0, c => c.Status == req.Status);
+                query = query.Where(c => c.Status == req.Status);
             }
             var resp = await query.OrderByDescending(c => c.CreateTime).Skip((req.page - 1) * req.limit)
                 .Take(req.limit).ToListAsync();
