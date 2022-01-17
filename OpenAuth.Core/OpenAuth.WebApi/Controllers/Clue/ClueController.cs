@@ -212,5 +212,17 @@ namespace OpenAuth.WebApi.Controllers.Clue
             }
             return result;
         }
+        /// <summary>
+        /// 百度图片解析ocr
+        /// </summary>
+        /// <param name="image"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GetAccurateBasic")]
+        public string GetAccurateBasic(string files)
+        {
+            return _clueApp.accurateBasic(files);
+
+        }
     }
 }
