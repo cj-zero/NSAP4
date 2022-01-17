@@ -6,9 +6,9 @@ using System.Text;
 namespace OpenAuth.App.Clue.ModelDto
 {
     /// <summary>
-    /// 日程列表Dto
+    /// 日程详情Dto
     /// </summary>
-    public class ClueScheduleListDto
+    public class ClueScheduleInfoDto
     {
         public int Id { get; set; }
         /// <summary>
@@ -31,6 +31,10 @@ namespace OpenAuth.App.Clue.ModelDto
         /// 参与人员
         /// </summary>
         public List<TextVaule> Participant { get; set; }
+        /// <summary>
+        /// 开始时间
+        /// </summary>
+        public DateTime StartTime { get; set; }
         /// <summary>
         /// 提醒时间
         /// </summary>

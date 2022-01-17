@@ -148,9 +148,9 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <returns></returns>
         [HttpGet]
         [Route("GetScheduleByIdAsync")]
-        public async Task<Response<ClueSchedule>> GetScheduleByIdAsync(int Id)
+        public async Task<Response<ClueScheduleInfoDto>> GetScheduleByIdAsync(int Id)
         {
-            var result = new Response<ClueSchedule>();
+            var result = new Response<ClueScheduleInfoDto>();
             try
             {
                 result.Result = await _clueApp.GetScheduleByIdAsync(Id);
@@ -167,7 +167,7 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// </summary>
         /// <param name="Id"></param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost]
         [Route("UpdateScheduleByIdAsync")]
         public async Task<Response<bool>> UpdateScheduleByIdAsync(UpdateClueScheduleReq updateClueScheduleReq)
         {

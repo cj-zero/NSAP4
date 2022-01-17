@@ -13,11 +13,17 @@ namespace OpenAuth.Repository.Domain.Serve
     [Table("cluefile")]
     public class ClueFile : BaseEntity<int>
     {
+
         /// <summary>
         /// 线索ID
         /// </summary>
         [Description("线索ID")]
         public int ClueId { get; set; }
+        /// <summary>
+        /// 线索ID
+        /// </summary>
+        [Description("文件大小")]
+        public string FileSize { get; set; }
         /// <summary>
         /// 文件名称
         /// </summary>
@@ -28,6 +34,14 @@ namespace OpenAuth.Repository.Domain.Serve
         /// </summary>
         [Description("地址或者是mimoID")]
         public string FileUrl { get; set; }
+        /// <summary>
+        /// 跟进ID
+        /// </summary>
+        public int ClueFollowUpId { get; set; }
+        /// <summary>
+        /// 文件类型
+        /// </summary>
+        public string FileType { get; set; }
         /// <summary>
         /// 创建人
         /// </summary>

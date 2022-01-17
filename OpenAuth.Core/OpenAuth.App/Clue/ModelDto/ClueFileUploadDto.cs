@@ -5,9 +5,9 @@ using System.Text;
 namespace OpenAuth.App.Clue.ModelDto
 {
     /// <summary>
-    /// 附件列表model
+    /// 跟进附件
     /// </summary>
-    public class ClueFileListDto
+    public class ClueFileUploadDto
     {
         public int Id { get; set; }
         /// <summary>
@@ -23,16 +23,12 @@ namespace OpenAuth.App.Clue.ModelDto
         /// </summary>
         public string FileUrl { get; set; }
         /// <summary>
-        /// 创建人
+        /// 跟进id
         /// </summary>
-        public string CreateUser { get; set; }
+        public int? ClueFollowUpId { get; set; }
         /// <summary>
-        /// 创建时间
+        /// 文件类型
         /// </summary>
-        public DateTime? CreateTime { get; set; }
-        /// <summary>
-        ///附件大小
-        /// </summary>
-        public string FileSize { get; set; }
+        public string FileType { get; set; }
     }
 }

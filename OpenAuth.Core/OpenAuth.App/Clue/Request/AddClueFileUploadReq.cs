@@ -21,5 +21,17 @@ namespace OpenAuth.App.Clue.Request
         /// 地址或者是mimoID
         /// </summary>
         public string FileUrl { get; set; }
+        /// <summary>
+        /// 跟进id
+        /// </summary>
+        public int? ClueFollowUpId { get; set; }
+        /// <summary>
+        /// 文件类型
+        /// </summary>
+        public string FileType { get; set; }
+        /// <summary>
+        /// 文件大小
+        /// </summary>
+        public string FileSize { get; set; }
     }
 }

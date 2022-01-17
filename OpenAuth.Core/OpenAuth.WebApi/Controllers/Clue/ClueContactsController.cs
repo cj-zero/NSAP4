@@ -8,6 +8,7 @@ using OpenAuth.App.Interface;
 using OpenAuth.App.Meeting.ModelDto;
 using OpenAuth.App.ProductModel.Request;
 using OpenAuth.App.Response;
+using OpenAuth.Repository.Domain.Serve;
 using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
@@ -43,12 +44,35 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <returns></returns>
         [HttpGet]
         [Route("ClueContactsByIdAsync")]
-        public async Task<Response<List<ClueContactsListDto>>> ClueContactsByIdAsync(int ClueId)
+        public TableData ClueContactsByIdAsync(int ClueId)
         {
-            var result = new Response<List<ClueContactsListDto>>();
+            int rowcount = 0;
+
+            var result = new TableData();
             try
             {
-                result.Result = await _clueApp.ClueContactsByIdAsync(ClueId);
+                result.Data = _clueApp.ClueContactsByIdAsync(ClueId, out rowcount);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 联系人详情
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("ContactsByIdInfoAsync")]
+        public async Task<Response<ClueContacts>> ContactsByIdInfoAsync(int Id)
+        {
+            var result = new Response<ClueContacts>();
+            try
+            {
+                result.Result = await _clueApp.ContactsByIdInfoAsync(Id);
             }
             catch (Exception ex)
             {
@@ -85,13 +109,55 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <param name="ClueId"></param>
         /// <returns></returns>
         [HttpGet]
-        [Route("AddClueContactsAsync")]
-        public async Task<Response<bool>> IsDefaultClueContactsAsync(int Id,int ClueId)
+        [Route("IsDefaultClueContactsAsync")]
+        public async Task<Response<bool>> IsDefaultClueContactsAsync(int Id, int ClueId)
         {
             var result = new Response<bool>();
             try
             {
-                result.Result = await _clueApp.IsDefaultClueContactsAsync(Id,ClueId);
+                result.Result = await _clueApp.IsDefaultClueContactsAsync(Id, ClueId);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 编辑更新联系人
+        /// </summary>
+        /// <param name="updateClueContactsReq"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("UpdateClueContactsAsync")]
+        public async Task<Response<bool>> UpdateClueContactsAsync(UpdateClueContactsReq updateClueContactsReq)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _clueApp.UpdateClueContactsAsync(updateClueContactsReq);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 删除联系人
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpDelete]
+        [Route("DeleteContactsByIdAsync")]
+        public async Task<Response<bool>> DeleteContactsByIdAsync(List<int> Ids)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _clueApp.DeleteContactsByIdAsync(Ids);
             }
             catch (Exception ex)
             {

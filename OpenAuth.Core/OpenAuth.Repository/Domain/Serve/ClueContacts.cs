@@ -34,6 +34,10 @@ namespace OpenAuth.Repository.Domain.Serve
         [Description("联系方式2")]
         public string Tel2 { get; set; }
         /// <summary>
+        /// 邮箱
+        /// </summary>
+        public string Email { get; set; }
+        /// <summary>
         /// 角色（0：决策者、1：普通人）
         /// </summary>
         [Description("角色")]
