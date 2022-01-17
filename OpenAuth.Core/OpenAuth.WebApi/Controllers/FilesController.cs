@@ -218,5 +218,19 @@ namespace OpenAuth.WebApi.Controllers
             var fileStream = await _app.GetFileStreamAsync(file.BucketName, file.FilePath);
             return File(fileStream, contentType);//, file.FileName
         }
+
+        /// <summary>
+        /// 上传文件到华为云obs
+        /// </summary>
+        /// <param name="prefix"></param>
+        /// <param name="version"></param>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<List<UploadFileResp>> UploadFileToHuaweiOBS(string prefix, string version, IFormFile file)
+        {
+            var result = await _app.UploadFileToHuaweiOBS(prefix, version, file);
+            return result;
+        }
     }
 }
