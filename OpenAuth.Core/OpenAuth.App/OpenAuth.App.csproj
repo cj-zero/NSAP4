@@ -60,6 +60,9 @@
     <Reference Include="ENTITY">
       <HintPath>..\package\ENTITY.dll</HintPath>
     </Reference>
+    <Reference Include="esdk_obs_.net_core">
+      <HintPath>..\..\..\..\..\Desktop\dll\esdk_obs_.net_core.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Infrastructure;
+using Infrastructure.HuaweiOBS;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using OpenAuth.App.Files;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
@@ -203,6 +205,30 @@ namespace OpenAuth.App
             //}
             var stream = await _fileStore.DownloadFile(bucketName, fileName);
             return stream;
+        }
+
+        /// <summary>
+        /// 上传文件到华为云obs
+        /// </summary>
+        /// <param name="prefix"></param>
+        /// <param name="version"></param>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        public async Task<List<UploadFileResp>> UploadFileToHuaweiOBS(string prefix, string version, IFormFile file)
+        {
+            var result = new List<UploadFileResp>();
+
+            var obsHelper = new HuaweiOBSHelper();
+            var fileName = "bts-rom/" + prefix + version + DateTime.Now.ToString("yyyyMMddHHmmss") + file.FileName;
+            var stream = file.OpenReadStream();
+            var response = obsHelper.PutObjectResponse(fileName, stream);
+            result.Add(new UploadFileResp
+            {
+                FileName = fileName,
+                FilePath = response.ObjectUrl
+            });
+
+            return result;
         }
     }
 }

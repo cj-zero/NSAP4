@@ -1,5 +1,7 @@
 ﻿using Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Debug;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Material;
 
@@ -11,6 +13,14 @@ namespace OpenAuth.Repository
         public Nsap4MaterialDbContext(DbContextOptions<Nsap4MaterialDbContext> options)
           : base(options)
         { }
+
+        public static readonly LoggerFactory loggerFactory = new LoggerFactory(new[] { new DebugLoggerProvider() });
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            base.OnConfiguring(optionsBuilder);
+            optionsBuilder.UseLoggerFactory(loggerFactory);
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //当主键为联合主键时，需要把这里的内容拷贝到对应的位置
@@ -65,5 +75,12 @@ namespace OpenAuth.Repository
         public virtual DbSet<MaterialReplaceRecord> MaterialReplaceRecords { get; set; }
         public virtual DbSet<InternalcontactMaterial> InternalcontactMaterials { get; set; }
         public virtual DbSet<CommonUsedMaterial> CommonUsedMaterials { get; set; }
+
+        #region 中位机和下位机
+        public virtual DbSet<ZWJSoftwareVersion> ZWJSoftwareVersions { get; set; }
+        public virtual DbSet<ZWJHardware> ZWJHardwares { get; set; }
+        public virtual DbSet<XWJSoftwareVersion> XWJSoftwareVersions { get; set; }
+        public virtual DbSet<XWJHardware> XWJHardwares { get; set; }
+        #endregion
     }
 }
