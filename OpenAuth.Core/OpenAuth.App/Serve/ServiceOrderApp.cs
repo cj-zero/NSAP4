@@ -5530,38 +5530,38 @@ namespace OpenAuth.App
             .Take(req.limit).ToListAsync();
 
             result.Data =
-           data.Select(s => new
-           {
-               s.Id,
-               s.CustomerId,
-               s.CustomerName,
-               s.Services,
-               CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
-               s.Contacter,
-               s.ContactTel,
-               s.Supervisor,
-               s.SalesMan,
-               s.Status,
-               s.Province,
-               s.City,
-               s.Area,
-               s.Addr,
-               s.U_SAP_ID,
-               s.Latitude,
-               s.Longitude,
-               WorkOrderCount = s.ServiceWorkOrders?.Count(),
-               ServiceWorkOrders = s.MaterialInfo.GroupBy(o => o.MaterialType).ToList().Select(a => new
-               {
-                   MaterialType = a?.Key,
-                   UnitName = "台",
-                   Count = a?.Count(),
-                   Status = s.ServiceWorkOrders?.FirstOrDefault(b => "无序列号".Equals(a.Key) ? b.MaterialCode == "无序列号" : b.MaterialCode.Contains(a.Key))?.Status,
-                   MaterialTypeName = "无序列号".Equals(a.Key) ? "无序列号" : MaterialTypeModel?.Where(m => m.TypeAlias == a.Key)?.FirstOrDefault().TypeName,
-                   TechnicianId = s.ServiceWorkOrders?.FirstOrDefault(b => "无序列号".Equals(a.Key) ? b.MaterialCode == "无序列号" : b.MaterialCode.Contains(a.Key))?.CurrentUserId,
-               }),
-               ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.MaterialInfo?.FirstOrDefault().ProblemType.Name : s.ProblemTypeName,
-               ProblemTypeId = string.IsNullOrEmpty(s.ProblemTypeId) ? s.MaterialInfo?.FirstOrDefault()?.ProblemTypeId : s.ProblemTypeId
-           });
+            data.Select(s => new
+            {
+                s.Id,
+                s.CustomerId,
+                s.CustomerName,
+                s.Services,
+                CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
+                s.Contacter,
+                s.ContactTel,
+                s.Supervisor,
+                s.SalesMan,
+                s.Status,
+                s.Province,
+                s.City,
+                s.Area,
+                s.Addr,
+                s.U_SAP_ID,
+                s.Latitude,
+                s.Longitude,
+                WorkOrderCount = s.ServiceWorkOrders?.Count(),
+                ServiceWorkOrders = s.MaterialInfo.GroupBy(o => o.MaterialType).ToList().Select(a => new
+                {
+                    MaterialType = a?.Key,
+                    UnitName = "台",
+                    Count = a?.Count(),
+                    Status = s.ServiceWorkOrders?.FirstOrDefault(b => "无序列号".Equals(a.Key) ? b.MaterialCode == "无序列号" : b.MaterialCode.Contains(a.Key))?.Status,
+                    MaterialTypeName = "无序列号".Equals(a.Key) ? "无序列号" : MaterialTypeModel?.Where(m => m.TypeAlias == a.Key)?.FirstOrDefault().TypeName,
+                    TechnicianId = s.ServiceWorkOrders?.FirstOrDefault(b => "无序列号".Equals(a.Key) ? b.MaterialCode == "无序列号" : b.MaterialCode.Contains(a.Key))?.CurrentUserId,
+                }),
+                ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.MaterialInfo?.FirstOrDefault()?.ProblemType?.Name : s.ProblemTypeName,
+                ProblemTypeId = string.IsNullOrEmpty(s.ProblemTypeId) ? s.MaterialInfo?.FirstOrDefault()?.ProblemTypeId : s.ProblemTypeId
+            });
             result.Count = query.Count();
             return result;
         }
