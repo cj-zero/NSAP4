@@ -86,12 +86,12 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <returns></returns>
         [HttpDelete]
         [Route("DeleteClueIntentionProductByIdAsync")]
-        public async Task<Response<bool>> DeleteClueIntentionProductByIdAsync(int Id)
+        public async Task<Response<bool>> DeleteClueIntentionProductByIdAsync(List<int> Ids)
         {
             var result = new Response<bool>();
             try
             {
-                result.Result = await _clueApp.DeleteClueIntentionProductByIdAsync(Id);
+                result.Result = await _clueApp.DeleteClueIntentionProductByIdAsync(Ids);
             }
             catch (Exception ex)
             {
