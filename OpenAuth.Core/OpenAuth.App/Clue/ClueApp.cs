@@ -74,6 +74,7 @@ namespace OpenAuth.App
             {
 
             }
+
             if (!string.IsNullOrWhiteSpace(clueListReq.Key))
             {
                 exp = exp.And(t => t.CardName.Contains(clueListReq.Key) || t.SerialNumber.Contains(clueListReq.Key));
@@ -100,7 +101,7 @@ namespace OpenAuth.App
             {
                 exp = exp.And(t => t.Tags.Contains(clueListReq.Tag));
             }
-            var objs = UnitWork.Find(clueListReq.page, clueListReq.limit, "", exp);
+            var objs = UnitWork.Find(clueListReq.page, clueListReq.limit, !string.IsNullOrWhiteSpace(clueListReq.sortName) ? (clueListReq.sortName + (!string.IsNullOrWhiteSpace(clueListReq.sortOrder) ? " " + clueListReq.sortOrder : "")) : "", exp);
             var list = objs.MapToList<Repository.Domain.Serve.Clue>();
             foreach (var item in list)
             {
@@ -1189,7 +1190,7 @@ namespace OpenAuth.App
             ClueContacts clueContacts = new ClueContacts
             {
                 ClueId = addClueContactsReq.ClueId,
-                Email=addClueContactsReq.Email,
+                Email = addClueContactsReq.Email,
                 Name = addClueContactsReq.Name,
                 Tel1 = addClueContactsReq.Tel1,
                 Tel2 = addClueContactsReq.Tel2,
