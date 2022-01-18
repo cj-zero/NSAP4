@@ -1536,7 +1536,7 @@ namespace OpenAuth.App
 
 
         // 通用文字识别（高精度版）
-        public string accurateBasic(string files)
+        public string accurateBasic(AccurateBasicReq accurateBasicReq)
         {
 
             var token = getAccessToken();
@@ -1547,7 +1547,9 @@ namespace OpenAuth.App
             request.KeepAlive = true;
             // 图片的base64编码
             //string base64 = getFileBase64(@"C:\Users\neware.com.cn\Desktop\1.png");
-            String str = "image=" + HttpUtility.UrlEncode(files);
+            //string base642 = getFileBase64(@"C:\Users\neware.com.cn\Desktop\2.png");
+            String str = "image=" + HttpUtility.UrlEncode(accurateBasicReq.files);
+            //String str = "image=" + HttpUtility.UrlEncode(base642);
             byte[] buffer = encoding.GetBytes(str);
             request.ContentLength = buffer.Length;
             request.GetRequestStream().Write(buffer, 0, buffer.Length);
@@ -1559,15 +1561,15 @@ namespace OpenAuth.App
             return result;
         }
 
-        //public String getFileBase64(String fileName)
-        //{
-        //    FileStream filestream = new FileStream(fileName, FileMode.Open);
-        //    byte[] arr = new byte[filestream.Length];
-        //    filestream.Read(arr, 0, (int)filestream.Length);
-        //    string baser64 = Convert.ToBase64String(arr);
-        //    filestream.Close();
-        //    return baser64;
-        //}
+        public String getFileBase64(String fileName)
+        {
+            FileStream filestream = new FileStream(fileName, FileMode.Open);
+            byte[] arr = new byte[filestream.Length];
+            filestream.Read(arr, 0, (int)filestream.Length);
+            string baser64 = Convert.ToBase64String(arr);
+            filestream.Close();
+            return baser64;
+        }
         public static BaiduAccessToken getAccessToken()
         {
             String authHost = "https://aip.baidubce.com/oauth/2.0/token";

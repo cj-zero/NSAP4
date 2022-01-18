@@ -219,9 +219,9 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <returns></returns>
         [HttpPost]
         [Route("GetAccurateBasic")]
-        public string GetAccurateBasic(string files)
+        public string GetAccurateBasic(AccurateBasicReq accurateBasicReq)
         {
-            return _clueApp.accurateBasic(files);
+            return _clueApp.accurateBasic(accurateBasicReq);
 
         }
     }
