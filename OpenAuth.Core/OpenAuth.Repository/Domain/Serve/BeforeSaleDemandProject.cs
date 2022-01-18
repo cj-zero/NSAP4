@@ -39,7 +39,7 @@ namespace OpenAuth.Repository.Domain
           this.SubmitDate= DateTime.Now;
           this.FlowInstanceId= string.Empty;
           this.Status= 0;
-          this.ProjcetUrl= string.Empty;
+          this.ProjectUrl= string.Empty;
           this.ProjectDocURL= string.Empty;
           this.ActualDevStartDate= DateTime.Now;
           this.ActualDevEndDate= DateTime.Now;
@@ -148,7 +148,7 @@ namespace OpenAuth.Repository.Domain
         /// 项目链接
         /// </summary>
         [Description("项目链接")]
-        public string ProjcetUrl { get; set; }
+        public string ProjectUrl { get; set; }
         /// <summary>
         /// 需求文档/URL
         /// </summary>

@@ -190,5 +190,14 @@ namespace OpenAuth.App.Reponse
         /// 判断当前用户是否有页面的审核权限 默认否false
         /// </summary>
         public bool IsHandle { get; set; }
+
+        /// <summary>
+        /// 售前申请流程关联项目
+        /// </summary>
+        public List<BeforeSaleDemandProject> Beforesaledemandprojects { get; set; }
+        /// <summary>
+        /// 项目排期表
+        /// </summary>
+        public List<BeforeSaleProScheduling> BeforeSaleProSchedulings { get; set; }
     }
 }

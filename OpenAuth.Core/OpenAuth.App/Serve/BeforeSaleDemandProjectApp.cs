@@ -122,7 +122,7 @@ namespace OpenAuth.App
                 SubmitDate = obj.SubmitDate,
                 FlowInstanceId = obj.FlowInstanceId,
                 Status = obj.Status,
-                ProjcetUrl = obj.ProjcetUrl,
+                ProjectUrl = obj.ProjectUrl,
                 ProjectDocURL = obj.ProjectDocURL,
                 ActualDevStartDate = obj.ActualDevStartDate,
                 ActualDevEndDate = obj.ActualDevEndDate,

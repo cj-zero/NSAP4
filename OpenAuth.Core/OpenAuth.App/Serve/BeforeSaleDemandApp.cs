@@ -112,6 +112,7 @@ namespace OpenAuth.App
                             .Include(c => c.BeforeSaleDemandDeptInfos)
                             .Include(c => c.Beforesaledemandprojects)
                             .Include(c => c.Beforesaledemandoperationhistories)
+                            .Include(c => c.BeforeSaleProSchedulings)
                             .Include(c => c.Beforesalefiles)
                             .FirstOrDefaultAsync();
 
@@ -162,7 +163,7 @@ namespace OpenAuth.App
                 {
                     //1、如A01-5【研发确认】中选择了需开发人员实施，则流向A01-7【立项】指定的开发负责人，此时自动填充，且不可更改
                     //2、如不需要开发人员实施，由测试人员录入实际实施人员，
-                    if (detail.IsDevDeploy==1)
+                    if (detail.IsDevDeploy == 1)
                     {
                     }
                     result.IsHandle = true;
@@ -309,15 +310,20 @@ namespace OpenAuth.App
                         //obj.BeforeSaleDemandOrders = req.BeforeSaleDemandOrders;
                         //await UnitWork.BatchAddAsync<BeforeSaleDemandOrders>(obj.BeforeSaleDemandOrders.ToArray());
                         //2、添加流程操作记录
-                        await UnitWork.AddAsync<BeforeSaleDemandOperationHistory>(new BeforeSaleDemandOperationHistory
+                        //添加售前需求审批流程操作记录
+                        //这样才能取到BeforeSaleDemandId = obj.Id
+                        obj.Beforesaledemandoperationhistories = new List<BeforeSaleDemandOperationHistory>();
+                        obj.Beforesaledemandoperationhistories.Add(new BeforeSaleDemandOperationHistory
                         {
                             Action = "发起",
                             CreateUser = loginContext.User.Name,
                             CreateUserId = loginContext.User.Id,
                             CreateTime = DateTime.Now,
                             BeforeSaleDemandId = obj.Id,
-                            ApprovalStage = 1
+                            ApprovalStage = 1,
+                            Remark = req.Remark
                         });
+                        await UnitWork.BatchAddAsync<BeforeSaleDemandOperationHistory>(obj.Beforesaledemandoperationhistories.ToArray());
                         //3、关联保存需求附件信息
                         if (req.Attchments != null && req.Attchments.Count > 0)
                         {
@@ -452,6 +458,12 @@ namespace OpenAuth.App
                 }
                 else if (loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-研发总助")) && flowinstace.ActivityName == "立项")
                 {
+                    //立项时指定下一节点【需求提交】执行人
+                    verificationReq.NodeDesignateType = Setinfo.RUNTIME_SPECIAL_USER;
+                    verificationReq.NodeDesignates = new string[] { beforeSaleDemand.FactDemandUserId };
+                    //项目立项 指定下一节点：
+                    await _flowInstanceApp.Verification(verificationReq);
+                    beforeSaleDemand.Status = 7;//项目立项
                     //1、是否关联项目
                     beforeSaleDemand.IsRelevanceProject = req.IsRelevanceProject;
                     if (req.IsRelevanceProject == 1)
@@ -464,7 +476,7 @@ namespace OpenAuth.App
                         beforeSaleDemand.Beforesaledemandprojects.Add((new BeforeSaleDemandProject
                         {
                             //创建项目
-                            Status=1,//项目立项
+                            Status = 1,//项目立项
                             ProjectName = req.BeforeSaleDemandProjectName,
                             PromoterId = beforeSaleDemand.ApplyUserId,//项目发起人ID
                             PromoterName = beforeSaleDemand.ApplyUserName,//项目发起人
@@ -478,6 +490,7 @@ namespace OpenAuth.App
                             CreateUserId = loginContext.User.Id
                         }));
                         await UnitWork.BatchAddAsync<BeforeSaleDemandProject, int>(beforeSaleDemand.Beforesaledemandprojects.ToArray());
+                        UnitWork.Save();
                     }
                     req.BeforeSaleProSchedulings.ForEach(c =>
                     {
@@ -491,31 +504,28 @@ namespace OpenAuth.App
                             CreateTime = DateTime.Now,
                             CreateUserId = loginContext.User.Id,
                             BeforeSaleDemandId = beforeSaleDemand.Id,
-                            BeforeSaleDemandProjectId = beforeSaleDemand.BeforeSaleDemandProjectId.Value
+                            BeforeSaleDemandProjectId = beforeSaleDemand.Beforesaledemandprojects[0].Id
                         });
                     });
+                    //更新流程申请表的项目id和项目名称
+                    beforeSaleDemand.BeforeSaleDemandProjectId = beforeSaleDemand.Beforesaledemandprojects[0].Id;
+                    beforeSaleDemand.BeforeSaleDemandProjectName = beforeSaleDemand.Beforesaledemandprojects[0].ProjectName;
                     //批量添加项目排期
                     if (req.BeforeSaleProSchedulings != null && req.BeforeSaleProSchedulings.Count > 0)
                     {
                         await UnitWork.BatchAddAsync<BeforeSaleProScheduling, int>(beforeSaleDemand.BeforeSaleProSchedulings.ToArray());
                     }
-                    //立项时指定下一节点【需求提交】执行人
-                    verificationReq.NodeDesignateType = Setinfo.RUNTIME_SPECIAL_USER;
-                    verificationReq.NodeDesignates = new string[] { beforeSaleDemand.FactDemandUserId };
-                    //项目立项 指定下一节点：
-                    await _flowInstanceApp.Verification(verificationReq);
-                    beforeSaleDemand.Status = 7;//项目立项
                 }
                 else if (loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-需求工程师")) && flowinstace.ActivityName == "需求提交")
                 {
                     //需求提交时指定下一节点【研发提交】执行人
                     verificationReq.NodeDesignateType = Setinfo.RUNTIME_SPECIAL_USER;
-                    verificationReq.NodeDesignates = new string[] { beforeSaleDemand.Beforesaledemandprojects.Find(x=>x.BeforeSaleDemandId.Value==beforeSaleDemand.Id).DevUserId};
+                    verificationReq.NodeDesignates = new string[] { beforeSaleDemand.Beforesaledemandprojects.Find(x => x.BeforeSaleDemandId.Value == beforeSaleDemand.Id).DevUserId };
                     await _flowInstanceApp.Verification(verificationReq);
                     beforeSaleDemand.Status = 8;
                     beforeSaleDemand.Beforesaledemandprojects.FirstOrDefault().Status = 2;
                     beforeSaleDemand.Beforesaledemandprojects.FirstOrDefault().UpdateTime = DateTime.Now;
-                    beforeSaleDemand.Beforesaledemandprojects.FirstOrDefault().ProjcetUrl = req.ProjcetUrl;
+                    beforeSaleDemand.Beforesaledemandprojects.FirstOrDefault().ProjectUrl = req.ProjectUrl;
                     beforeSaleDemand.Beforesaledemandprojects.FirstOrDefault().ProjectDocURL = req.ProjectDocURL;
                     beforeSaleDemand.Beforesaledemandprojects.FirstOrDefault().ActualStartDate = req.ActualStartDate;
                     beforeSaleDemand.Beforesaledemandprojects.FirstOrDefault().SubmitDate = req.SubmitDate;
@@ -540,7 +550,7 @@ namespace OpenAuth.App
                     verificationReq.NodeDesignateType = Setinfo.RUNTIME_SPECIAL_USER;
                     //1、如A01-5【研发确认】中选择了需开发人员实施，则流向A01-7【立项】指定的开发负责人，此时自动填充，且不可更改
                     //2、如不需要开发人员实施，有测试人员录入实际实施人员
-                    verificationReq.NodeDesignates = new string[] { beforeSaleDemand.Beforesaledemandprojects.Find(x => x.BeforeSaleDemandId.Value == beforeSaleDemand.Id).DevUserId};
+                    verificationReq.NodeDesignates = new string[] { beforeSaleDemand.Beforesaledemandprojects.Find(x => x.BeforeSaleDemandId.Value == beforeSaleDemand.Id).DevUserId };
                     await _flowInstanceApp.Verification(verificationReq);
                     beforeSaleDemand.Status = 10;//测试提交=》实际测试开始日期
                     beforeSaleDemand.Beforesaledemandprojects.FirstOrDefault().Status = 4;
@@ -549,8 +559,11 @@ namespace OpenAuth.App
                     beforeSaleDemand.Beforesaledemandprojects.FirstOrDefault().ActualTestEndDate = req.ActualTestEndDate;
                     await UnitWork.UpdateAsync<BeforeSaleDemandProject>(beforeSaleDemand.Beforesaledemandprojects.First());
                 }
-                else if (loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-实施工程师")) && flowinstace.ActivityName == "实施提交")
+                else if (flowinstace.ActivityName == "实施提交" && beforeSaleDemand.Beforesaledemandprojects.Any() && beforeSaleDemand.Beforesaledemandprojects.First().ExecutorUserId == loginContext.User.Id)
                 {
+                    //实施提交时指定下一节点【客户验收】执行人：项目申请人
+                    verificationReq.NodeDesignateType = Setinfo.RUNTIME_SPECIAL_USER;
+                    verificationReq.NodeDesignates = new string[] { beforeSaleDemand.ApplyUserId };
                     await _flowInstanceApp.Verification(verificationReq);
                     beforeSaleDemand.Status = 11;
                     beforeSaleDemand.Beforesaledemandprojects.FirstOrDefault().Status = 5;
@@ -565,7 +578,7 @@ namespace OpenAuth.App
                     beforeSaleDemand.Beforesaledemandprojects.FirstOrDefault().UpdateTime = DateTime.Now;
                     await UnitWork.UpdateAsync<BeforeSaleDemandProject>(beforeSaleDemand.Beforesaledemandprojects.First());
                 }
-                //添加售前需求审批流程操作记录
+                #region 添加售前需求审批流程操作记录
                 BeforeSaleDemandOperationHistory beforeSaleDemandOperationHistory = new BeforeSaleDemandOperationHistory
                 {
                     Action = flowinstace.ActivityName,
@@ -582,7 +595,9 @@ namespace OpenAuth.App
                     beforeSaleDemandOperationHistory.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(fioh.CreateTime)).TotalSeconds);
                 }
                 await UnitWork.AddAsync(beforeSaleDemandOperationHistory);
+                #endregion
 
+                #region 添加审批附件
                 if (req.Attchments != null && req.Attchments.Count > 0)
                 {
                     List<BeforeSaleFiles> beforeSaleFiles = new List<BeforeSaleFiles>();
@@ -592,11 +607,11 @@ namespace OpenAuth.App
                     });
                     await UnitWork.BatchAddAsync<BeforeSaleFiles>(beforeSaleFiles.ToArray());
                 }
+                #endregion
             }
             //异步执行更新售前需求申请表单详情信息
             beforeSaleDemand.UpdateTime = DateTime.Now;//更新时间
             await UnitWork.UpdateAsync<BeforeSaleDemand>(beforeSaleDemand);
-
             await UnitWork.SaveAsync();
         }
 
@@ -616,7 +631,7 @@ namespace OpenAuth.App
 
             var result = new TableData();
             var historyList = await UnitWork.Find<BeforeSaleDemandOperationHistory>(x => x.BeforeSaleDemandId == req.BeforeSaleDemandId)
-                        .Include(c => c.BeforeSaleFiles).Where(c => c.BeforeSaleDemandId == req.BeforeSaleDemandId).ToListAsync();
+                        .Include(c => c.BeforeSaleFiles).Where(c => c.BeforeSaleDemandId == req.BeforeSaleDemandId).OrderBy(r => r.CreateTime).ToListAsync();
             listResp = historyList.MapToList<BeforeSaleDemandOperationHistoryResp>();
             List<string> fileids = new List<string>();
             historyList.ForEach(q => fileids.AddRange(q.BeforeSaleFiles.Select(f => f.FileId).ToList()));

@@ -86,7 +86,7 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 项目链接
         /// </summary>
-        public string ProjcetUrl { get; set; }
+        public string ProjectUrl { get; set; }
         /// <summary>
         /// 需求文档/URL
         /// </summary>
