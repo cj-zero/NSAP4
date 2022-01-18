@@ -227,7 +227,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="file"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<List<UploadFileResp>> UploadFileToHuaweiOBS(string prefix, string version, IFormFile file)
+        public async Task<List<UploadFileResp>> UploadFileToHuaweiOBS([FromForm] string prefix, [FromForm] string version, IFormFile file)
         {
             var result = await _app.UploadFileToHuaweiOBS(prefix, version, file);
             return result;

@@ -221,10 +221,10 @@ namespace OpenAuth.App
             var obsHelper = new HuaweiOBSHelper();
             var fileName = "bts-rom/" + prefix + version + DateTime.Now.ToString("yyyyMMddHHmmss") + file.FileName;
             var stream = file.OpenReadStream();
-            var response = obsHelper.PutObjectResponse(fileName, stream);
+            var response = obsHelper.PutObject(fileName, null, stream, out string objectKey);
             result.Add(new UploadFileResp
             {
-                FileName = fileName,
+                FileName = objectKey,
                 FilePath = response.ObjectUrl
             });
 
