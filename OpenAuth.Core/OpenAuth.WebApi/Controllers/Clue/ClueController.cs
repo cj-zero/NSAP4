@@ -224,5 +224,17 @@ namespace OpenAuth.WebApi.Controllers.Clue
             return _clueApp.accurateBasic(accurateBasicReq);
 
         }
+        /// <summary>
+        /// 百度图片解析地址
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GetAddressBasic")]
+        public async Task<string> GetAddressBasic(string address)
+        {
+            return await _clueApp.GetAddressBasic(address);
+
+        }
     }
 }

@@ -155,7 +155,7 @@ namespace OpenAuth.App
                 }
                 datascoure.Add(result);
             }
-            rowcount = list.Count;
+            rowcount = UnitWork.GetCount<Repository.Domain.Serve.Clue>(q => !q.IsDelete && q.CreateUser == loginUser.Name);
             return datascoure;
         }
         /// <summary>
@@ -173,6 +173,8 @@ namespace OpenAuth.App
             }
             return JsonHelper.Instance.Deserialize<List<string>>(clue.Tags);
         }
+
+
 
         /// <summary>
         /// 添加标签
@@ -1547,10 +1549,8 @@ namespace OpenAuth.App
             request.Method = "post";
             request.KeepAlive = true;
             // 图片的base64编码
-            //string base64 = getFileBase64(@"C:\Users\neware.com.cn\Desktop\1.png");
-            //string base642 = getFileBase64(@"C:\Users\neware.com.cn\Desktop\2.png");
-            String str = "image=" + HttpUtility.UrlEncode(accurateBasicReq.files);
-            //String str = "image=" + HttpUtility.UrlEncode(base642);
+
+            string str = "image=" + HttpUtility.UrlEncode(accurateBasicReq.files);
             byte[] buffer = encoding.GetBytes(str);
             request.ContentLength = buffer.Length;
             request.GetRequestStream().Write(buffer, 0, buffer.Length);
@@ -1579,6 +1579,46 @@ namespace OpenAuth.App
             paraList.Add(new KeyValuePair<string, string>("grant_type", "client_credentials"));
             paraList.Add(new KeyValuePair<string, string>("client_id", "zG4MnrnTv2gG8jo0yGgEu9Yw"));
             paraList.Add(new KeyValuePair<string, string>("client_secret", "9Tfd9AC2nmc0TM2NQmx1Ip7P0Xqk5OKH"));
+
+            HttpResponseMessage response = client.PostAsync(authHost, new FormUrlEncodedContent(paraList)).Result;
+            BaiduAccessToken result = JsonConvert.DeserializeObject<BaiduAccessToken>(response.Content.ReadAsStringAsync().Result);
+            Console.WriteLine(result);
+            return result;
+        }
+
+        /// <summary>
+        /// 解析地址
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<string> GetAddressBasic(string address)
+        {
+
+            var token = getAccessTokenAddress();
+
+            var url = $"https://aip.baidubce.com/rpc/2.0/nlp/v1/address?access_token=" + token.access_token;
+            string responseBody = string.Empty;
+            var client = _httpClient.CreateClient();
+
+            client.BaseAddress = new Uri(url);
+            var content = new
+            {
+                text = address
+            };
+            HttpHelper httpHelper = new HttpHelper(url);
+
+            return httpHelper.Post(content, url, "");
+
+        }
+        public static BaiduAccessToken getAccessTokenAddress()
+        {
+            String authHost = "https://aip.baidubce.com/oauth/2.0/token";
+            HttpClient client = new HttpClient();
+            List<KeyValuePair<String, String>> paraList = new List<KeyValuePair<string, string>>();
+            paraList.Add(new KeyValuePair<string, string>("grant_type", "client_credentials"));
+            paraList.Add(new KeyValuePair<string, string>("client_id", "YpGG9H3jIqhmg8bXmzFMvGx7"));
+            paraList.Add(new KeyValuePair<string, string>("client_secret", "Zqi6u7NUbdiWAzEGXnBGe3nEkR2qsZH1"));
 
             HttpResponseMessage response = client.PostAsync(authHost, new FormUrlEncodedContent(paraList)).Result;
             BaiduAccessToken result = JsonConvert.DeserializeObject<BaiduAccessToken>(response.Content.ReadAsStringAsync().Result);
