@@ -1,4 +1,6 @@
 ﻿using Infrastructure;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using OpenAuth.App.Clue.ModelDto;
 using OpenAuth.App.Clue.Request;
@@ -22,6 +24,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using static OpenAuth.App.Clue.ModelDto.KuaiBaosHelper;
 
 namespace OpenAuth.App
@@ -436,6 +439,8 @@ namespace OpenAuth.App
                     emodel.Address1 = updateClueReq.Address1;
                     if (emodel.Address2 != updateClueReq.Address2) { mes += updateClueReq.Address2 + ":原详细地址'" + emodel.Address2 + "';"; }
                     emodel.Address2 = updateClueReq.Address2;
+                    if (emodel.Email != updateClueReq.Email) { mes += updateClueReq.Email + ":原邮箱'" + emodel.Email + "';"; }
+                    emodel.Email = updateClueReq.Email;
                     emodel.UpdateTime = DateTime.Now;
                     emodel.UpdateUser = loginUser.Name;
                     emodel.IsDefault = true;
@@ -925,11 +930,20 @@ namespace OpenAuth.App
             clueFollowUp.NextFollowTime = updateClueFollowUpReq.NextFollowTime;
             clueFollowUp.UpdateUser = loginUser.Name;
             clueFollowUp.UpdateTime = DateTime.Now;
-            var data = UnitWork.Add<OpenAuth.Repository.Domain.Serve.ClueFollowUp, int>(clueFollowUp);
-            UnitWork.Save();
+            UnitWork.Update(clueFollowUp);
+
+            if (updateClueFollowUpReq.AddClueFileUploadReq.Count > 0)
+            {
+                var clueFile = UnitWork.Find<ClueFile>(q => q.ClueId == clueFollowUp.ClueId).MapToList<ClueFile>();
+                clueFile.ForEach(clueFile => { clueFile.IsDelete = true; });
+                await UnitWork.BatchUpdateAsync(clueFile.ToArray());
+                UnitWork.Save();
+                updateClueFollowUpReq.AddClueFileUploadReq.ForEach(f => { f.ClueFollowUpId = updateClueFollowUpReq.Id; });
+                await AddClueFileUploadAsync(updateClueFollowUpReq.AddClueFileUploadReq);
+            }
             //日志
             var log = new AddClueLogReq();
-            log.ClueId = data.Id;
+            log.ClueId = clueFollowUp.ClueId;
             log.LogType = 1;
             log.CreateTime = DateTime.Now;
             log.CreateUser = loginUser.Name;
@@ -990,9 +1004,27 @@ namespace OpenAuth.App
         /// <param name="id"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public async Task<ClueFollowUp> FollowByIdAsync(int id)
+        public async Task<ClueFollowUpInfoDto> FollowByIdAsync(int id)
         {
-            return await UnitWork.FindSingleAsync<ClueFollowUp>(q => q.Id == id && !q.IsDelete);
+            var result = new ClueFollowUpInfoDto();
+            var clueFollowUp = await UnitWork.FindSingleAsync<ClueFollowUp>(q => q.Id == id && !q.IsDelete);
+            result.ClueId = clueFollowUp.ClueId;
+            result.ContactsId = clueFollowUp.ContactsId;
+            result.UpdateTime = clueFollowUp.UpdateTime;
+            result.NextFollowTime = clueFollowUp.NextFollowTime;
+            result.FollowUpTime = clueFollowUp.FollowUpTime;
+            result.FollowUpWay = clueFollowUp.FollowUpWay;
+            result.Details = clueFollowUp.Details;
+            result.CreateUser = clueFollowUp.CreateUser;
+            result.CreateTime = clueFollowUp.CreateTime;
+            result.UpdateUser = clueFollowUp.UpdateUser;
+            var clueFile = UnitWork.Find<ClueFile>(q => q.ClueFollowUpId == id && !q.IsDelete).MapToList<ClueFile>();
+            foreach (var item in clueFile)
+            {
+                result.ClueFileList.Add(item);
+            }
+
+            return result;
         }
 
 
@@ -1157,6 +1189,7 @@ namespace OpenAuth.App
             ClueContacts clueContacts = new ClueContacts
             {
                 ClueId = addClueContactsReq.ClueId,
+                Email=addClueContactsReq.Email,
                 Name = addClueContactsReq.Name,
                 Tel1 = addClueContactsReq.Tel1,
                 Tel2 = addClueContactsReq.Tel2,
@@ -1499,6 +1532,55 @@ namespace OpenAuth.App
             //获取请求到数据，并转化为字符串
             //result.Result = response.Content.ReadAsStringAsync().Result;
             return JsonConvert.DeserializeObject<ShopProductDto>(response.Content.ReadAsStringAsync().Result);
+        }
+
+
+        // 通用文字识别（高精度版）
+        public string accurateBasic(string files)
+        {
+
+            var token = getAccessToken();
+            string host = "https://aip.baidubce.com/rest/2.0/ocr/v1/accurate_basic?access_token=" + token.access_token;
+            Encoding encoding = Encoding.Default;
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(host);
+            request.Method = "post";
+            request.KeepAlive = true;
+            // 图片的base64编码
+            //string base64 = getFileBase64(@"C:\Users\neware.com.cn\Desktop\1.png");
+            String str = "image=" + HttpUtility.UrlEncode(files);
+            byte[] buffer = encoding.GetBytes(str);
+            request.ContentLength = buffer.Length;
+            request.GetRequestStream().Write(buffer, 0, buffer.Length);
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            StreamReader reader = new StreamReader(response.GetResponseStream(), Encoding.Default);
+            string result = reader.ReadToEnd();
+            Console.WriteLine("通用文字识别（高精度版）:");
+            Console.WriteLine(result);
+            return result;
+        }
+
+        //public String getFileBase64(String fileName)
+        //{
+        //    FileStream filestream = new FileStream(fileName, FileMode.Open);
+        //    byte[] arr = new byte[filestream.Length];
+        //    filestream.Read(arr, 0, (int)filestream.Length);
+        //    string baser64 = Convert.ToBase64String(arr);
+        //    filestream.Close();
+        //    return baser64;
+        //}
+        public static BaiduAccessToken getAccessToken()
+        {
+            String authHost = "https://aip.baidubce.com/oauth/2.0/token";
+            HttpClient client = new HttpClient();
+            List<KeyValuePair<String, String>> paraList = new List<KeyValuePair<string, string>>();
+            paraList.Add(new KeyValuePair<string, string>("grant_type", "client_credentials"));
+            paraList.Add(new KeyValuePair<string, string>("client_id", "zG4MnrnTv2gG8jo0yGgEu9Yw"));
+            paraList.Add(new KeyValuePair<string, string>("client_secret", "9Tfd9AC2nmc0TM2NQmx1Ip7P0Xqk5OKH"));
+
+            HttpResponseMessage response = client.PostAsync(authHost, new FormUrlEncodedContent(paraList)).Result;
+            BaiduAccessToken result = JsonConvert.DeserializeObject<BaiduAccessToken>(response.Content.ReadAsStringAsync().Result);
+            Console.WriteLine(result);
+            return result;
         }
         #endregion
 

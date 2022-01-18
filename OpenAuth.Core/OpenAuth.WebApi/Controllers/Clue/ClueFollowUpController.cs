@@ -109,9 +109,9 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <returns></returns>
         [HttpGet]
         [Route("FollowByIdAsync")]
-        public async Task<Response<ClueFollowUp>> FollowByIdAsync(int Id)
+        public async Task<Response<ClueFollowUpInfoDto>> FollowByIdAsync(int Id)
         {
-            var result = new Response<ClueFollowUp>();
+            var result = new Response<ClueFollowUpInfoDto>();
             try
             {
                 result.Result = await _clueApp.FollowByIdAsync(Id);
