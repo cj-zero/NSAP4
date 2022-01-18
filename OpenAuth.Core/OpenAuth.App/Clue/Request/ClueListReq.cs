@@ -43,5 +43,14 @@ namespace OpenAuth.App.Clue.Request
         /// 创建结束时间
         /// </summary>
         public string EndTime { get; set; }
+        /// <summary>
+        /// 排序方式
+        /// </summary>
+        public string sortOrder { get; set; }
+        /// <summary>
+        /// 排序字段
+        /// </summary>
+        public string sortName { get; set; }
+
     }
 }
