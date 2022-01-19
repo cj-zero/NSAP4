@@ -150,7 +150,7 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// </summary>
         /// <param name="Id"></param>
         /// <returns></returns>
-        [HttpDelete]
+        [HttpPost]
         [Route("DeleteFollowByIdAsync")]
         public async Task<Response<bool>> DeleteFollowByIdAsync(List<int> Ids)
         {

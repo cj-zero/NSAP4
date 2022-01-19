@@ -106,7 +106,7 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// </summary>
         /// <param name="Id"></param>
         /// <returns></returns>
-        [HttpDelete]
+        [HttpPost]
         [Route("DeleteFileByIdAsync")]
         public async Task<Response<bool>> DeleteFileByIdAsync(List<int> Ids)
         {

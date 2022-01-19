@@ -121,11 +121,11 @@ namespace OpenAuth.App
                 exps = exps.And(t => t.IsDefault == true);
                 if (!string.IsNullOrEmpty(clueListReq.Contacts))
                 {
-                    exps = exps.And(t => t.Name.Contains(clueListReq.Remark));
+                    exps = exps.And(t => t.Name.Contains(clueListReq.Contacts));
                 }
                 if (!string.IsNullOrEmpty(clueListReq.Address))
                 {
-                    exps = exps.And(t => t.Address2.Contains(clueListReq.Tag));
+                    exps = exps.And(t => t.Address2.Contains(clueListReq.Address));
                 }
                 var data = UnitWork.FindSingle(exps);
                 if (data != null)
@@ -155,7 +155,7 @@ namespace OpenAuth.App
                 }
                 datascoure.Add(result);
             }
-            rowcount = UnitWork.GetCount<Repository.Domain.Serve.Clue>(q => !q.IsDelete && q.CreateUser == loginUser.Name);
+            rowcount = UnitWork.GetCount(exp);
             return datascoure;
         }
         /// <summary>
@@ -200,8 +200,9 @@ namespace OpenAuth.App
             }
             log.CreateTime = DateTime.Now;
             log.CreateUser = loginUser.Name;
-            log.Details = "'" + tags.Tag + "'标签";
             clue.Tags = JsonHelper.Instance.Serialize(tags.Tag);
+            log.Details = "'" + clue.Tags + "'标签";
+
             await UnitWork.UpdateAsync(clue);
             await UnitWork.SaveAsync();
             await AddClueLogAsync(log);
@@ -285,7 +286,7 @@ namespace OpenAuth.App
                 result.CreateTime = clue.CreateTime.ToString();
                 result.Essential.CustomerSource = clue.CustomerSource;
                 result.Essential.IndustryInvolved = clue.IndustryInvolved;
-                result.Essential.Tags = clue.Tags;
+                result.Essential.Tags = !string.IsNullOrWhiteSpace(clue.Tags) ? JsonConvert.DeserializeObject<List<string>>(clue.Tags) : null;
                 result.Essential.StaffSize = clue.StaffSize;
                 result.Essential.WebSite = clue.WebSite;
                 result.Essential.Remark = clue.Remark;
@@ -489,6 +490,10 @@ namespace OpenAuth.App
                 var clue = await UnitWork.FindSingleAsync<Repository.Domain.Serve.Clue>(q => q.Id == item);
                 if (clue != null)
                 {
+                    if (clue.IsDelete)
+                    {
+                        return false;
+                    }
                     clue.IsDelete = true;
                     await UnitWork.UpdateAsync(clue);
                     //联系人
@@ -599,7 +604,7 @@ namespace OpenAuth.App
             var data = UnitWork.Add<OpenAuth.Repository.Domain.Serve.ClueSchedule, int>(clueSchedule);
             UnitWork.Save();
             var log = new AddClueLogReq();
-            log.ClueId = data.Id;
+            log.ClueId = addClueScheduleReq.ClueId;
             log.LogType = 0;
             log.CreateTime = DateTime.Now;
             log.CreateUser = loginUser.Name;
@@ -722,7 +727,7 @@ namespace OpenAuth.App
         /// 根据部门id查用户列表
         /// </summary>
         /// <returns></returns>
-        public List<TextVaule> UserListAsync()
+        public List<TextVaule> UserListAsync(string Name)
         {
             var userId = _serviceBaseApp.GetUserNaspId();
             var depId = _serviceBaseApp.GetSalesDepID(userId);
@@ -731,6 +736,10 @@ namespace OpenAuth.App
             foreach (var item in test)
             {
                 var scon = UnitWork.FindSingle<Repository.Domain.base_user>(q => q.user_id == item.user_id);
+                if (!string.IsNullOrWhiteSpace(Name))
+                {
+                    scon = UnitWork.FindSingle<Repository.Domain.base_user>(q => q.user_id == item.user_id && q.user_nm.Contains(Name));
+                }
                 if (scon != null)
                 {
                     var nes = new TextVaule();
@@ -873,13 +882,27 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
+            DateTime followUpTime;
+            DateTime.TryParse(addClueFollowUpReq.FollowUpTime, out followUpTime);
+            DateTime nextFollowTime;
+            if (!string.IsNullOrWhiteSpace(addClueFollowUpReq.NextFollowTime))
+            {
+
+                DateTime.TryParse(addClueFollowUpReq.NextFollowTime, out nextFollowTime);
+            }
+            else
+            {
+                nextFollowTime = followUpTime.AddMonths(1);
+
+
+            }
             ClueFollowUp clueFollowUp = new ClueFollowUp
             {
                 ClueId = addClueFollowUpReq.ClueId,
                 ContactsId = addClueFollowUpReq.ContactsId,
                 FollowUpWay = addClueFollowUpReq.FollowUpWay,
-                FollowUpTime = addClueFollowUpReq.FollowUpTime,
-                NextFollowTime = addClueFollowUpReq.NextFollowTime,
+                FollowUpTime = followUpTime,
+                NextFollowTime = nextFollowTime,
                 Details = addClueFollowUpReq.Details,
                 CreateUser = loginUser.Name,
                 CreateTime = DateTime.Now
@@ -893,7 +916,7 @@ namespace OpenAuth.App
             }
             //日志
             var log = new AddClueLogReq();
-            log.ClueId = data.Id;
+            log.ClueId = addClueFollowUpReq.ClueId;
             log.LogType = 0;
             log.CreateTime = DateTime.Now;
             log.CreateUser = loginUser.Name;
@@ -1208,7 +1231,7 @@ namespace OpenAuth.App
             UnitWork.Save();
             //日志
             var log = new AddClueLogReq();
-            log.ClueId = data.Id;
+            log.ClueId = addClueContactsReq.ClueId;
             log.LogType = 0;
             log.CreateTime = DateTime.Now;
             log.CreateUser = loginUser.Name;
@@ -1592,24 +1615,23 @@ namespace OpenAuth.App
         /// <param name="address"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public async Task<string> GetAddressBasic(string address)
+        public string GetAddressBasic(string address)
         {
 
             var token = getAccessTokenAddress();
 
             var url = $"https://aip.baidubce.com/rpc/2.0/nlp/v1/address?access_token=" + token.access_token;
-            string responseBody = string.Empty;
+            byte[] encodeBytes = Encoding.UTF8.GetBytes(address);
+            string inputString = Encoding.UTF8.GetString(encodeBytes);
+            //string urlcode = WebUtility.UrlEncode(address);
             var client = _httpClient.CreateClient();
-
             client.BaseAddress = new Uri(url);
             var content = new
             {
-                text = address
+                text = inputString
             };
             HttpHelper httpHelper = new HttpHelper(url);
-
             return httpHelper.Post(content, url, "");
-
         }
         public static BaiduAccessToken getAccessTokenAddress()
         {

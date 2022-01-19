@@ -28,11 +28,11 @@ namespace OpenAuth.App.Clue.Request
         /// <summary>
         /// 跟进时间
         /// </summary>
-        public DateTime FollowUpTime { get; set; }
+        public string FollowUpTime { get; set; }
         /// <summary>
         /// 下次跟进时间
         /// </summary>
-        public DateTime NextFollowTime { get; set; }
+        public string NextFollowTime { get; set; }
         /// <summary>
         /// 附件
         /// </summary>
