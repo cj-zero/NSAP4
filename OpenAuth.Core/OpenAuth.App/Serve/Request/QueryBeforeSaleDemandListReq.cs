@@ -11,6 +11,10 @@
         /// </summary>
         public string ApplyUserId { get; set; }
         /// <summary>
+        /// 关联售前项目Id
+        /// </summary>
+        public int BeforeSaleDemandProjectId { get; set; }
+        /// <summary>
         /// 申请人
         /// </summary>
         public string ApplyUserName { get; set; }

@@ -43,9 +43,10 @@ namespace OpenAuth.App
             }
             TableData result = new TableData();
             var query = UnitWork.Find<BeforeSaleDemand>(null)
+                        //.Include(c => c.FlowInstances)
                         //.Include(c => c.Beforesalefiles)
                         //.Include(c => c.Beforesaledemandprojects)
-                        //.Include(c => c.Beforesaledemandoperationhistories)
+                        .Include(c => c.Beforesaledemandoperationhistories)
                         .WhereIf(!string.IsNullOrWhiteSpace(req.ApplyUserName), c => c.ApplyUserName.Contains(req.ApplyUserName))
                         //.WhereIf(!string.IsNullOrWhiteSpace(req.ApplyUserId), c => c.ApplyUserName.Contains(req.ApplyUserId))
                         .WhereIf(!string.IsNullOrWhiteSpace(req.KeyWord), k => k.BeforeDemandCode.Contains(req.KeyWord) || k.BeforeSaleDemandProjectName.Contains(req.KeyWord) || k.ApplyUserName.Contains(req.KeyWord))
@@ -53,6 +54,11 @@ namespace OpenAuth.App
                         .WhereIf(!string.IsNullOrWhiteSpace(req.ApplyDateEnd.ToString()), q => q.ApplyDate < Convert.ToDateTime(req.ApplyDateEnd).AddDays(1))
                         .WhereIf(!string.IsNullOrWhiteSpace(req.UpdateDateStart.ToString()), q => q.UpdateTime > req.UpdateDateStart)
                         .WhereIf(!string.IsNullOrWhiteSpace(req.UpdateDateEnd.ToString()), q => q.UpdateTime < Convert.ToDateTime(req.UpdateDateEnd).AddDays(1));
+
+            if (req.BeforeSaleDemandProjectId>0)
+            {
+                query = query.Where(q=>q.BeforeSaleDemandProjectId==req.BeforeSaleDemandProjectId);
+            }
 
             //流程状态0-草稿 1-审批中 2-结束
             //数据状态0-草稿 1-销售提交需求 2-销售总助审批 3-需求组提交需求 4-研发总助审批 5-研发确认 6-总经理审批
@@ -86,9 +92,27 @@ namespace OpenAuth.App
                 query = query.Where(c => instances.Contains(c.FlowInstanceId) && c.CreateUserId != loginContext.User.Id);
             }
 
-            var resp = await query.OrderByDescending(c => c.Id).Skip((req.page - 1) * req.limit)
-                .Take(req.limit).ToListAsync();
-            result.Data = resp.ToList();
+            var resp = await query
+                                .OrderByDescending(c => c.Id)
+                                .Skip((req.page - 1) * req.limit)
+                                .Take(req.limit)
+                                .ToListAsync();
+            result.Data = resp.Select(c=>new 
+            {
+                c.Id,
+                c.BeforeDemandCode,
+                c.ApplyDate,
+                c.ApplyUserId,
+                c.ApplyUserName,
+                c.CustomerId,
+                c.CustomerName,
+                c.CreateTime,
+                c.BeforeSaleDemandProjectName,
+                c.BeforeSaleDemandProjectId,
+                CurrentProcessor= c.Beforesaledemandoperationhistories.OrderByDescending(x => x.CreateTime).FirstOrDefault().CreateUser+"—"+c.Beforesaledemandoperationhistories.OrderByDescending(x=>x.CreateTime).FirstOrDefault().Action,
+                c.UpdateTime,
+                c.Status
+            }).ToList();
             //List<string> fileids = new List<string>();
             //resp.ForEach(q => fileids.AddRange(q.Beforesalefiles.Select(f => f.FileId).ToList()));
             result.Count = await query.CountAsync();
@@ -298,6 +322,7 @@ namespace OpenAuth.App
                     else
                     {
                         //添加售前需求申请流程
+                        obj.UpdateTime = DateTime.Now;
                         obj.CreateTime = DateTime.Now;
                         obj.CreateUserId = loginContext.User.Id;
                         obj.CreateUserName = loginContext.User.Name;
@@ -486,9 +511,10 @@ namespace OpenAuth.App
                             DevUserName = req.BeforeSaleProSchedulings.Find(x => x.Stage == 1).UserName,
                             TestUserId = req.BeforeSaleProSchedulings.Find(x => x.Stage == 2).UserId,//测试负责人
                             TestUserName = req.BeforeSaleProSchedulings.Find(x => x.Stage == 2).UserName,
+                            ExecutorUserId = beforeSaleDemand.IsDevDeploy.Value == 1 ? "" : "",
                             CreateTime = DateTime.Now,
                             CreateUserId = loginContext.User.Id
-                        }));
+                        })); ;
                         await UnitWork.BatchAddAsync<BeforeSaleDemandProject, int>(beforeSaleDemand.Beforesaledemandprojects.ToArray());
                         UnitWork.Save();
                     }
