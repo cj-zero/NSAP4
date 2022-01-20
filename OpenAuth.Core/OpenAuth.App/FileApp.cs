@@ -208,25 +208,36 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 判断桶中是否已经存在文件名
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public bool IsExistsFileName(string fileName)
+        {
+            var obsHelper = new HuaweiOBSHelper();
+            var response = obsHelper.IsExistsObject(fileName, null);
+
+            return response;
+        }
+
+        /// <summary>
         /// 上传文件到华为云obs
         /// </summary>
         /// <param name="prefix"></param>
         /// <param name="version"></param>
         /// <param name="file"></param>
         /// <returns></returns>
-        public async Task<List<UploadFileResp>> UploadFileToHuaweiOBS(string prefix, string version, IFormFile file)
+        public async Task<UploadFileResp> UploadFileToHuaweiOBS(IFormFile file)
         {
-            var result = new List<UploadFileResp>();
-
             var obsHelper = new HuaweiOBSHelper();
-            var fileName = "bts-rom/" + prefix + version + DateTime.Now.ToString("yyyyMMddHHmmss") + file.FileName;
-            var stream = file.OpenReadStream();
+            var fileName = "bts-rom/" + file.FileName;
+            var stream = file?.OpenReadStream();
             var response = obsHelper.PutObject(fileName, null, stream, out string objectKey);
-            result.Add(new UploadFileResp
+            var result = new UploadFileResp
             {
                 FileName = objectKey,
                 FilePath = response.ObjectUrl
-            });
+            };
 
             return result;
         }
