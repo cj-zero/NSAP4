@@ -74,7 +74,14 @@ namespace OpenAuth.App.Request
         /// 是否需要开发部署项目：默认0
         /// </summary>
         public int? IsDevDeploy { get; set; }
-
+        /// <summary>
+        /// 实施负责人Id
+        /// </summary>
+        public string ExecutorUserId { get; set; }
+        /// <summary>
+        /// 实施负责人
+        /// </summary>
+        public string ExecutorName { get; set; }
         /// <summary>
         /// 是否收费 默认空
         /// 1:“单独研发收费”，2“免费技术支持”

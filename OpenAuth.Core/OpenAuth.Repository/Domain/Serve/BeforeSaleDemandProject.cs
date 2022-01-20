@@ -35,16 +35,10 @@ namespace OpenAuth.Repository.Domain
           this.DevUserName= string.Empty;
           this.TestUserId= string.Empty;
           this.TestUserName= string.Empty;
-          this.ActualStartDate= DateTime.Now;
-          this.SubmitDate= DateTime.Now;
           this.FlowInstanceId= string.Empty;
           this.Status= 0;
           this.ProjectUrl= string.Empty;
           this.ProjectDocURL= string.Empty;
-          this.ActualDevStartDate= DateTime.Now;
-          this.ActualDevEndDate= DateTime.Now;
-          this.ActualTestStartDate = DateTime.Now;
-          this.ActualTestEndDate = DateTime.Now;
           this.CreateUserName= string.Empty;
           this.CreateUserId= string.Empty;
           this.CreateTime= DateTime.Now;
