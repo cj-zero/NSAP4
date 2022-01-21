@@ -25,6 +25,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using AutoMapper;
 using static OpenAuth.App.Clue.ModelDto.KuaiBaosHelper;
 
 namespace OpenAuth.App
@@ -91,7 +92,7 @@ namespace OpenAuth.App
                 DateTime.TryParse(clueListReq.StartTime, out startTime);
                 DateTime endTime;
                 DateTime.TryParse(clueListReq.EndTime, out endTime);
-                exp = exp.And(t => t.CreateTime >= startTime && t.CreateTime <= endTime);
+                exp = exp.And(t => t.CreateTime >= startTime && t.CreateTime <= endTime.AddDays(1));
             }
             if (!string.IsNullOrEmpty(clueListReq.Remark))
             {
@@ -103,21 +104,28 @@ namespace OpenAuth.App
             }
             var objs = UnitWork.Find(clueListReq.page, clueListReq.limit, !string.IsNullOrWhiteSpace(clueListReq.sortName) ? (clueListReq.sortName + (!string.IsNullOrWhiteSpace(clueListReq.sortOrder) ? " " + clueListReq.sortOrder : "")) : "", exp);
             var list = objs.MapToList<Repository.Domain.Serve.Clue>();
-            foreach (var item in list)
+            //rowcount = UnitWork.GetCount(exp);
+            rowcount = list.Count;
+
+            for (int i = list.Count - 1; i >= 0; i--)
             {
+
+                //}
+                //foreach (var item in list)
+                //{
                 var result = new ClueListDto();
-                result.Id = item.Id;
-                result.Remark = item.Remark;
-                result.SerialNumber = item.SerialNumber;
-                result.CardName = item.CardName;
-                result.CustomerSource = item.CustomerSource;
-                result.CreateTime = item.CreateTime;
-                result.UpdateTime = item.UpdateTime;
-                result.Status = item.Status;
-                result.Tags = !string.IsNullOrWhiteSpace(item.Tags) ? JsonConvert.DeserializeObject<List<string>>(item.Tags) : null;
+                result.Id = list[i].Id;
+                result.Remark = list[i].Remark;
+                result.SerialNumber = list[i].SerialNumber;
+                result.CardName = list[i].CardName;
+                result.CustomerSource = list[i].CustomerSource;
+                result.CreateTime = list[i].CreateTime;
+                result.UpdateTime = list[i].UpdateTime;
+                result.Status = list[i].Status;
+                result.Tags = !string.IsNullOrWhiteSpace(list[i].Tags) ? JsonConvert.DeserializeObject<List<string>>(list[i].Tags) : null;
                 Expression<Func<ClueContacts, bool>> exps = t => true;
                 exps = exps.And(t => !t.IsDelete);
-                exps = exps.And(t => t.ClueId == item.Id);
+                exps = exps.And(t => t.ClueId == list[i].Id);
                 exps = exps.And(t => t.IsDefault == true);
                 if (!string.IsNullOrEmpty(clueListReq.Contacts))
                 {
@@ -135,7 +143,7 @@ namespace OpenAuth.App
                     result.Address1 = data.Address1;
                     result.Address2 = data.Address2;
                     result.Email = data.Email;
-                    var cluefollowup = UnitWork.FindSingle<ClueFollowUp>(q => q.ClueId == item.Id);
+                    var cluefollowup = UnitWork.FindSingle<ClueFollowUp>(q => q.ClueId == list[i].Id);
                     if (cluefollowup != null)
                     {
                         result.FollowUpTime = cluefollowup.FollowUpTime.ToString();
@@ -150,12 +158,12 @@ namespace OpenAuth.App
                 }
                 else
                 {
-                    result.DaysNotFollowedUp = "0天";
-                    result.FollowUpTime = "暂无跟进时间";
+                    list.Remove(list[i]);
+                    rowcount--;
+                    continue;
                 }
                 datascoure.Add(result);
             }
-            rowcount = UnitWork.GetCount(exp);
             return datascoure;
         }
         /// <summary>
@@ -191,6 +199,11 @@ namespace OpenAuth.App
             }
             var loginUser = loginContext.User;
             var clue = await UnitWork.FindSingleAsync<Repository.Domain.Serve.Clue>(q => q.Id == tags.ClueId);
+            if (tags.Tag.Count > 6)
+            {
+
+                return false;
+            }
             var log = new AddClueLogReq();
             log.ClueId = clue.Id;
             log.LogType = 1;
@@ -1410,7 +1423,7 @@ namespace OpenAuth.App
                 exp = exp.And(t => t.CreateTime >= startTime && t.CreateTime < endTime.AddDays(1));
 
             }
-            var result = UnitWork.Find<ClueLog>(exp).MapToList<ClueLogListDto>();
+            var result = UnitWork.Find<ClueLog>(exp).OrderByDescending(q => q.CreateTime).MapToList<ClueLogListDto>();
             return result;
         }
 
@@ -1647,6 +1660,55 @@ namespace OpenAuth.App
             Console.WriteLine(result);
             return result;
         }
+        /// <summary>
+        /// 递归
+        /// </summary>
+        /// <param name="pid">父级Id</param>
+        /// <param name="demos">数据源</param>
+        /// <returns></returns>
+        private List<ClassificationDto> GetTypes(int pid, List<ClassificationDto> demos = null)
+        {
+            /*
+             思路：1.从数据源中找到父级
+                   2.循环父级并赋值，再循环父级时查找子集
+                   3.如果有子集调用用GetMenu（父级Id,数据源）方法一层一层向下找
+                   4.注意：（，是套娃模式。也就是循环第二层第三层的时候还是在一个父
+                   级下面）个人注意点因为我在这里差点没想通，总是想着是平级
+             */
+            var parent = demos.Where(P => P.ParentId == pid);
+            List<ClassificationDto> lists = new List<ClassificationDto>();
+            foreach (var item in parent)
+            {
+
+                ClassificationDto DemosChilder = new ClassificationDto();
+                DemosChilder.Id = item.Id;
+                DemosChilder.Name = item.Name;
+                DemosChilder.Level = item.Level;
+                DemosChilder.ParentId = item.ParentId;
+                DemosChilder.CreateTime = item.CreateTime;
+                DemosChilder.CreateUser = item.CreateUser;
+                DemosChilder.UpdateTime = item.UpdateTime;
+                DemosChilder.UpdateUser = item.UpdateUser;
+                DemosChilder.Children = GetSon(DemosChilder, demos);
+                lists.Add(DemosChilder);
+            }
+
+
+            //找子集有就返回NUll，并执行Add
+            List<ClassificationDto> GetSon(ClassificationDto demos, List<ClassificationDto> demosd = null)
+            {
+                if (!demosd.Exists(x => x.ParentId == demos.Id))
+                {
+                    return null;
+                }
+                else
+                {
+                    return GetTypes(demos.Id, demosd);
+                }
+            }
+            return lists;
+        }
+
         #endregion
 
 
@@ -1744,5 +1806,57 @@ namespace OpenAuth.App
 
 
         #endregion
+
+        #region 分类字典
+        /// <summary>
+        /// 新增
+        /// </summary>
+        /// <param name="addClassificationReq"></param>
+        /// <returns></returns>
+        public async Task<string> AddClassificationAsync(AddClassificationReq addClassificationReq)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var loginUser = loginContext.User;
+            if (await UnitWork.IsExistAsync<ClueClassification>(u => u.Name == addClassificationReq.Name))
+            {
+                return "名称已存在";
+            }
+            var entity = await UnitWork.FindSingleAsync<ClueClassification>(q => q.Id == addClassificationReq.ParentId);
+            var clueClassification = new ClueClassification
+            {
+                Name = addClassificationReq.Name,
+            };
+            if (entity != null)
+            {
+                clueClassification.Level = ++entity.Level;
+                clueClassification.ParentId = addClassificationReq.ParentId;
+            }
+            else
+            {
+                clueClassification.Level = 0;
+                clueClassification.ParentId = 0;
+            }
+            clueClassification.CreateTime = DateTime.Now;
+            clueClassification.CreateUser = loginUser.Name;
+            var data = await UnitWork.AddAsync<ClueClassification, int>(clueClassification);
+            await UnitWork.SaveAsync();
+            return data.Id.ToString();
+        }
+
+
+        #endregion
+
+        public async Task<List<ClassificationDto>> ClassificationAsync()
+        {
+            var entity = UnitWork.Find<ClueClassification>(q => true).MapToList<ClassificationDto>();
+            var res = GetTypes(0, entity);
+            return res;
+        }
+
     }
 }

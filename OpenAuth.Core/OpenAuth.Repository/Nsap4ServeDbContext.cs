@@ -119,6 +119,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<ClueIntentionProduct> ClueIntentionProduct { get; set; }
         public virtual DbSet<ClueLog> ClueLog { get; set; }
         public virtual DbSet<ClueSchedule> ClueSchedule { get; set; }
+        public virtual DbSet<ClueClassification> ClueClassification { get; set; }
         #endregion
 
     }
