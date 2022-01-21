@@ -38,7 +38,7 @@ namespace OpenAuth.App
             .WhereIf(!string.IsNullOrWhiteSpace(req.KeyWord), k => k.ProjectName.Contains(req.KeyWord) || k.ProjectNum.Contains(req.KeyWord) || k.ReqUserName.Contains(req.KeyWord) || k.DevUserName.Contains(req.KeyWord) || k.TestUserName.Contains(req.KeyWord))
             .WhereIf(!string.IsNullOrWhiteSpace(req.CreateTimeStart.ToString()), q => q.CreateTime > req.CreateTimeStart)
             .WhereIf(!string.IsNullOrWhiteSpace(req.CreateTimeEnd.ToString()), q => q.CreateTime < Convert.ToDateTime(req.CreateTimeStart).AddDays(1));
-            if (req.Status != 0)//所有项目流程
+            if (req.Status != null && req.Status != 0)//所有项目流程
             {
                 query = query.Where(c => c.Status == req.Status);
             }
@@ -76,20 +76,20 @@ namespace OpenAuth.App
                     h.StartDate,
                     h.EndDate
                 }).ToListAsync();
-                result.Data = new
-                {
-                    detail.ActualStartDate,
-                    detail.SubmitDate,
-                    detail.DevUserId,
-                    detail.DevUserName,
-                    detail.ActualDevStartDate,
-                    detail.ActualDevEndDate,
-                    detail.TestUserId,
-                    detail.TestUserName,
-                    detail.ActualTestStartDate,
-                    detail.ActualTestEndDate,
-                    beforeSaleProSchedulings
-                };
+            result.Data = new
+            {
+                detail.ActualStartDate,
+                detail.SubmitDate,
+                detail.DevUserId,
+                detail.DevUserName,
+                detail.ActualDevStartDate,
+                detail.ActualDevEndDate,
+                detail.TestUserId,
+                detail.TestUserName,
+                detail.ActualTestStartDate,
+                detail.ActualTestEndDate,
+                beforeSaleProSchedulings
+            };
             return result;
         }
 
