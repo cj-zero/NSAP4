@@ -12,6 +12,7 @@ using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using static OpenAuth.App.Clue.ModelDto.KuaiBaosHelper;
 
 namespace OpenAuth.WebApi.Controllers.Clue
 {
@@ -130,7 +131,7 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// </summary>
         /// <param name="ClueId"></param>
         /// <returns></returns>
-        [HttpDelete]
+        [HttpPost]
         [Route("DeleteClueByIdAsync")]
         public async Task<Response<bool>> DeleteClueByIdAsync(List<int> ClueId)
         {
@@ -145,6 +146,95 @@ namespace OpenAuth.WebApi.Controllers.Clue
                 result.Message = ex.Message;
             }
             return result;
+        }
+
+        /// <summary>
+        /// 快宝解析地址
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetAddress")]
+        public Response<KuaiBaoResponse> GetAddress(string address)
+        {
+            var result = new Response<KuaiBaoResponse>();
+            try
+            {
+                result.Result = _clueApp.GetAddres(address);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 新增标签
+        /// </summary>
+        /// <param name="Tags"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("AddTag")]
+        public async Task<Response<bool>> AddTag(AddTag Tags)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _clueApp.AddTag(Tags);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 获取标签
+        /// </summary>
+        /// <param name="ClueId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetClueTagById")]
+        public async Task<Response<List<string>>> GetClueTagById(int ClueId)
+        {
+            var result = new Response<List<string>>();
+            try
+            {
+                result.Result = await _clueApp.GetClueTagById(ClueId);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 百度图片解析ocr
+        /// </summary>
+        /// <param name="image"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GetAccurateBasic")]
+        public string GetAccurateBasic(AccurateBasicReq accurateBasicReq)
+        {
+            return _clueApp.accurateBasic(accurateBasicReq);
+
+        }
+        /// <summary>
+        /// 百度图片解析地址
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GetAddressBasic")]
+        public string GetAddressBasic(string address)
+        {
+            return  _clueApp.GetAddressBasic(address);
+
         }
     }
 }

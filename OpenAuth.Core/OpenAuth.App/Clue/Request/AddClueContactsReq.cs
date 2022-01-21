@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenAuth.App.Clue.ModelDto
+namespace OpenAuth.App.Clue.Request
 {
     public class AddClueContactsReq
     {
@@ -38,5 +38,9 @@ namespace OpenAuth.App.Clue.ModelDto
         /// 详细地址
         /// </summary>
         public string Address2 { get; set; }
+        /// <summary>
+        /// 邮箱
+        /// </summary>
+        public string Email { get; set; }
     }
 }

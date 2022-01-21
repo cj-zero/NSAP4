@@ -16,19 +16,19 @@ using System.Threading.Tasks;
 namespace OpenAuth.WebApi.Controllers.Clue
 {
     /// <summary>
-    /// 线索操作日志
+    /// 线索分类字典
     /// </summary>
     [Route("api/Clue/[controller]")]
     [ApiController]
     [ApiExplorerSettings(GroupName = "Clue")]
-    public class ClueLogController : Controller
+    public class ClueClassificationController : Controller
     {
         private readonly ClueApp _clueApp;
         private readonly FileApp _app;
         IAuth _auth;
         IUnitWork UnitWork;
         ServiceBaseApp _serviceBaseApp;
-        public ClueLogController(IUnitWork UnitWork, FileApp app, ServiceBaseApp _serviceBaseApp, IAuth _auth, ClueApp clueApp)
+        public ClueClassificationController(IUnitWork UnitWork, FileApp app, ServiceBaseApp _serviceBaseApp, IAuth _auth, ClueApp clueApp)
         {
             this.UnitWork = UnitWork;
             this._serviceBaseApp = _serviceBaseApp;
@@ -37,18 +37,18 @@ namespace OpenAuth.WebApi.Controllers.Clue
             this._app = app;
         }
         /// <summary>
-        /// 操作记录列表
+        /// 分类字典列表
         /// </summary>
         /// <param name="ClueId"></param>
         /// <returns></returns>
         [HttpGet]
-        [Route("ClueContactsByIdAsync")]
-        public async Task<Response<List<ClueLogListDto>>> ClueLogByIdAsync(int ClueId,string StartTime,string EndTime)
+        [Route("ClassificationAsync")]
+        public async Task<Response<List<ClassificationDto>>> ClassificationAsync()
         {
-            var result = new Response<List<ClueLogListDto>>();
+            var result = new Response<List<ClassificationDto>> ();
             try
             {
-                result.Result = await _clueApp.ClueLogByIdAsync(ClueId, StartTime,EndTime);
+                result.Result = await _clueApp.ClassificationAsync();
             }
             catch (Exception ex)
             {
@@ -56,6 +56,28 @@ namespace OpenAuth.WebApi.Controllers.Clue
                 result.Message = ex.Message;
             }
             return result;
-        } 
+        }
+
+        /// <summary>
+        /// 新增
+        /// </summary>
+        /// <param name="addClassificationReq"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("AddClassificationAsync")]
+        public async Task<Response<string>> AddClassificationAsync(AddClassificationReq addClassificationReq)
+        {
+            var result = new Response<string>();
+            try
+            {
+                result.Result = await _clueApp.AddClassificationAsync(addClassificationReq);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
     }
 }

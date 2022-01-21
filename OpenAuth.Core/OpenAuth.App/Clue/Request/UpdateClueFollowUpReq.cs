@@ -5,14 +5,14 @@ using System.Text;
 namespace OpenAuth.App.Clue.Request
 {
     /// <summary>
-    /// 新增跟进model
+    /// 更新跟进model
     /// </summary>
-    public class AddClueFollowUpReq
+    public class UpdateClueFollowUpReq
     {
         /// <summary>
-        /// 线索ID
+        /// ID
         /// </summary>
-        public int ClueId { get; set; }
+        public int Id { get; set; }
         /// <summary>
         /// 联系人ID
         /// </summary>
@@ -28,11 +28,11 @@ namespace OpenAuth.App.Clue.Request
         /// <summary>
         /// 跟进时间
         /// </summary>
-        public string FollowUpTime { get; set; }
+        public DateTime FollowUpTime { get; set; }
         /// <summary>
         /// 下次跟进时间
         /// </summary>
-        public string NextFollowTime { get; set; }
+        public DateTime NextFollowTime { get; set; }
         /// <summary>
         /// 附件
         /// </summary>

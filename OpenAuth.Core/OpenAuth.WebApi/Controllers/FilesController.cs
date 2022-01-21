@@ -218,5 +218,32 @@ namespace OpenAuth.WebApi.Controllers
             var fileStream = await _app.GetFileStreamAsync(file.BucketName, file.FilePath);
             return File(fileStream, contentType);//, file.FileName
         }
+
+        /// <summary>
+        /// 判断桶中是否已经存在文件名
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public bool IsExistsFileName(string fileName)
+        {
+            var result = _app.IsExistsFileName("bts-rom/" + fileName);
+            return result;
+        }
+
+        /// <summary>
+        /// 上传文件到华为云obs
+        /// </summary>
+        /// <param name="prefix"></param>
+        /// <param name="version"></param>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [DisableRequestSizeLimit] 
+        public async Task<UploadFileResp> UploadFileToHuaweiOBS(IFormFile file)
+        {
+            var result = await _app.UploadFileToHuaweiOBS(file);
+            return result;
+        }
     }
 }

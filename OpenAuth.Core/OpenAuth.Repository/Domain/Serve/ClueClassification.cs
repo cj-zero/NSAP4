@@ -8,40 +8,26 @@ using System.Text;
 namespace OpenAuth.Repository.Domain.Serve
 {
     /// <summary>
-    /// 线索附件
+    /// 字典分类  
     /// </summary>
-    [Table("cluefile")]
-    public class ClueFile : BaseEntity<int>
+    [Table("clueclassification")]
+    public class ClueClassification : BaseEntity<int>
     {
-
         /// <summary>
-        /// 线索ID
+        /// 名称
         /// </summary>
-        [Description("线索ID")]
-        public int ClueId { get; set; }
+        [Description("名称")]
+        public string Name { get; set; }
         /// <summary>
-        /// 线索ID
+        /// 父级Id
         /// </summary>
-        [Description("文件大小")]
-        public string FileSize { get; set; }
+        [Description("父级Id")]
+        public int ParentId { get; set; }
         /// <summary>
-        /// 文件名称
+        /// 层级
         /// </summary>
-        [Description("文件名称")]
-        public string FileName { get; set; }
-        /// <summary>
-        /// 地址或者是mimoID
-        /// </summary>
-        [Description("地址或者是mimoID")]
-        public string FileUrl { get; set; }
-        /// <summary>
-        /// 跟进ID
-        /// </summary>
-        public int ClueFollowUpId { get; set; }
-        /// <summary>
-        /// 文件类型
-        /// </summary>
-        public string FileType { get; set; }
+        [Description("层级")]
+        public int Level { get; set; }
         /// <summary>
         /// 创建人
         /// </summary>
@@ -53,20 +39,16 @@ namespace OpenAuth.Repository.Domain.Serve
         [Description("创建时间")]
         public System.DateTime CreateTime { get; set; }
         /// <summary>
-        /// 更新人
+        ///更新人
         /// </summary>
         [Description("更新人")]
         public string UpdateUser { get; set; }
         /// <summary>
         /// 更新时间
         /// </summary>
-        [Description("更新时间")]
-        public DateTime? UpdateTime { get; set; }
-        /// <summary>
-        /// 是否删除
-        /// </summary>
-        [Description("是否删除")]
-        public bool IsDelete { get; set; } = false;
+        [Description("创建时间")]
+        public DateTime UpdateTime { get; set; }
+
 
         public override void GenerateDefaultKeyVal()
         {

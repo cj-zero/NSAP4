@@ -1,14 +1,13 @@
-﻿using System;
+﻿using OpenAuth.Repository.Domain.Serve;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenAuth.App.Clue.Request
+namespace OpenAuth.App.Clue.ModelDto
 {
-    /// <summary>
-    /// 新增跟进model
-    /// </summary>
-    public class AddClueFollowUpReq
+    public class ClueFollowUpInfoDto
     {
+        public int Id { get; set; }
         /// <summary>
         /// 线索ID
         /// </summary>
@@ -28,14 +27,30 @@ namespace OpenAuth.App.Clue.Request
         /// <summary>
         /// 跟进时间
         /// </summary>
-        public string FollowUpTime { get; set; }
+        public DateTime FollowUpTime { get; set; }
         /// <summary>
         /// 下次跟进时间
         /// </summary>
-        public string NextFollowTime { get; set; }
+        public DateTime NextFollowTime { get; set; }
+        /// <summary>
+        /// 创建人
+        /// </summary>
+        public string CreateUser { get; set; }
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        public System.DateTime CreateTime { get; set; }
+        /// <summary>
+        /// 更新人
+        /// </summary>
+        public string UpdateUser { get; set; }
+        /// <summary>
+        /// 更新时间
+        /// </summary>
+        public DateTime? UpdateTime { get; set; }
         /// <summary>
         /// 附件
         /// </summary>
-        public List<AddClueFileUploadReq> AddClueFileUploadReq { get; set; }
+        public List<ClueFile> ClueFileList { get; set; } = new List<ClueFile>();
     }
 }

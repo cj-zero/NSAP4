@@ -2,18 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenAuth.App.Clue.ModelDto
+namespace OpenAuth.App.Clue.Request
 {
-    /// <summary>
-    /// 联系人model
-    /// </summary>
-    public class ClueContactsListDto
+    public class UpdateClueContactsReq
     {
         public int Id { get; set; }
-        /// <summary>
-        /// 线索ID
-        /// </summary>
-        public int ClueId { get; set; }
         /// <summary>
         /// 联系人名称
         /// </summary>
@@ -42,10 +35,6 @@ namespace OpenAuth.App.Clue.ModelDto
         /// 详细地址
         /// </summary>
         public string Address2 { get; set; }
-        /// <summary>
-        /// 是否默认
-        /// </summary>
-        public bool IsDefault { get; set; }
         /// <summary>
         /// 邮箱
         /// </summary>

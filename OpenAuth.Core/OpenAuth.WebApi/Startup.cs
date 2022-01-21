@@ -15,6 +15,7 @@ using Infrastructure.TecentOCR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
@@ -200,6 +201,11 @@ namespace OpenAuth.WebApi
             services.AddSingleton<TecentOCR>();
             services.AddSingleton<HuaweiOCR>();
             services.AddScoped<CertAuthFilter>();
+            //解决文件上传Request body too large
+            services.Configure<FormOptions>(x =>
+            {
+                x.MultipartBodyLengthLimit = 1073741824;
+            });
         }
         private List<string> GetControllers()
         {

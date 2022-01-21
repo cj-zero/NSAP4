@@ -75,7 +75,7 @@ namespace OpenAuth.App.Clue.ModelDto
         /// <summary>
         /// 标签集合
         /// </summary>
-        public string Tags { get; set; }
+        public List<string> Tags { get; set; }
         /// <summary>
         ///备注
         /// </summary>
@@ -96,6 +96,18 @@ namespace OpenAuth.App.Clue.ModelDto
         /// 详细地址
         /// </summary>
         public string Address2 { get; set; }
+        /// <summary>
+        /// 角色（0：决策者、1：普通人）
+        /// </summary>
+        public int Role { get; set; }
+        /// <summary>
+        ///职位
+        /// </summary>
+        public string Position { get; set; }
+        /// <summary>
+        /// 邮箱
+        /// </summary>
+        public string Email { get; set; }
     }
     /// <summary>
     /// 操作记录
@@ -136,6 +148,11 @@ namespace OpenAuth.App.Clue.ModelDto
         /// 创建人
         /// </summary>
         public string CreateUser { get; set; }
+        /// <summary>
+        /// 状态
+        /// 状态（状态（0：未完成，1：已完成））
+        /// </summary>
+        public int Status { get; set; }
     }
     /// <summary>
     /// 跟进记录
