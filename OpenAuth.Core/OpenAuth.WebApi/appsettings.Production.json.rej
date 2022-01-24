@@ -1,0 +1,30 @@
+diff a/OpenAuth.Core/OpenAuth.WebApi/appsettings.Production.json b/OpenAuth.Core/OpenAuth.WebApi/appsettings.Production.json	(rejected hunks)
+@@ -7,16 +7,18 @@
+   "AllowedHosts": "*",
+   "DataProtection": "temp-keys/",
+   "ConnectionStrings": {
+-    //"OpenAuthDBContext": "Data Source=.;Initial Catalog=Nsap4Base;User=sa;Password=000000",
+-    //"OpenAuthDBContext": "Data Source=.;Initial Catalog=Nsap4Base;Trusted_Connection=True;"
+-    "OpenAuthDBContext": "server=192.168.0.208;user id=root;database=nsap4;password=neware@nsapv3.0", //my sql
+-    "Nsap4NwcaliDbContext": "server=192.168.0.208;user id=root;database=nsap4_nwcali;password=neware@nsapv3.0", //my sql
+-    "NsapBaseDbContext": "server=192.168.0.208;user id=root;database=nsap_base;password=neware@nsapv3.0", //my sql
+-    "Nsap4ServeDbContext": "server=192.168.0.208;user id=root;database=nsap4_serve;password=neware@nsapv3.0", //my sql
+-    //"SapDbContext": "Server=192.168.1.207;Database=newareDemo3;UID=sa;Pwd=SAPB1Admin;Connection Timeout=30;", //Sql server 测试
+-    "SapDbContext": "Server=192.168.0.209;Database=NEWARE_201304;UID=sa;Pwd=SAPB1Admin;Connection Timeout=30;", //Sql server 生产
+-    "Nsap4MaterialDbContext": "server=192.168.0.208;user id=root;database=nsap4_material;password=neware@nsapv3.0",
+-    "Nsap4SettlementContext": "server=192.168.0.208;user id=root;database=nsap4_settlement;password=neware@nsapv3.0"
++    "OpenAuthDBContext": "server=172.16.3.186;user id=root;database=nsap4;password=XinWei123@neware", //my sql
++    "Nsap4NwcaliDbContext": "server=172.16.3.186;user id=root;database=nsap4_nwcali;password=XinWei123@neware", //my sql
++    //"NsapBaseDbContext": "server=172.16.3.186;user id=root;database=nsap_base;password=XinWei123@neware", //my sql
++    //"NsapBoneDbContext": "server=172.16.3.186;user id=root;database=nsap_bone;password=XinWei123@neware",//my sql
++    "NsapBaseDbContext": "server=172.16.3.186;user id=root;database=nsap_base;password=XinWei123@neware", //my sqlnsap_base
++    "NsapBoneDbContext": "server=172.16.3.186;user id=root;database=nsap_bone;password=XinWei123@neware", //nsap_bone
++    "Nsap4ServeDbContext": "server=172.16.3.186;user id=root;database=nsap4_serve;password=XinWei123@neware", //my sql
++    "SapDbContext": "Server=172.16.3.186;Database=neware_202005;UID=sa;Pwd=SAPB1Admin;Connection Timeout=30;", //Sql server 测试
++    //"SapDbContext": "Server=192.168.0.209;Database=NEWARE_201304;UID=sa;Pwd=SAPB1Admin;Connection Timeout=30;", //Sql server 生产
++    "Nsap4MaterialDbContext": "server=172.16.3.186;user id=root;database=nsap4_material;password=XinWei123@neware",
++    "Nsap4SettlementContext": "server=172.16.3.186;user id=root;database=nsap4_settlement;password=XinWei123@neware",
++    "NsapOaDbContext": "server=172.16.3.186;user id=root;database=nsap_oa;password=XinWei123@neware"
+   },
+   "AppSetting": {
+     "IdentityServerUrl": "", //IdentityServer服务器地址。如果为空，则不启用OAuth认证
