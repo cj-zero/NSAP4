@@ -332,7 +332,8 @@ namespace OpenAuth.App
                         obj.ApplyUserId = loginContext.User.Id;//申请人id
                         obj.ApplyUserName = loginContext.User.Name;//申请人
                         obj.ApplyDate = DateTime.Now;//申请日期
-                        obj.BeforeDemandCode = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();//流程编号
+                        obj.BeforeDemandCode = "XQ" + DateTime.Now.ToString("yyyyMMddHHmm");//售前需求申请编号:XQ202201241453
+                        //obj.BeforeDemandCode = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();//流程编号
                         obj = await UnitWork.AddAsync<BeforeSaleDemand, int>(obj);
                         //1、流程添加成功==>关联单据
                         //obj.BeforeSaleDemandOrders = req.BeforeSaleDemandOrders;
@@ -508,6 +509,8 @@ namespace OpenAuth.App
                             BeforeSaleDemandId = beforeSaleDemand.Id,
                             ProjectName = req.BeforeSaleDemandProjectName,
                             ProjectNum = "XM" + DateTime.Now.ToString("yyyyMMddHHmm"),//项目编号:XM202201202023
+                            CustomerId = beforeSaleDemand.CustomerId,//客户编号
+                            CustomerName = beforeSaleDemand.CustomerName,//客户名称
                             PromoterId = beforeSaleDemand.ApplyUserId,//项目发起人ID
                             PromoterName = beforeSaleDemand.ApplyUserName,//项目发起人
                             ReqUserId = beforeSaleDemand.FactDemandUserId,//需求负责人Id
@@ -586,7 +589,7 @@ namespace OpenAuth.App
                     //1、如A01-5【研发确认】中选择了需开发人员实施，则流向A01-7【立项】指定的开发负责人，此时自动填充，且不可更改
                     //2、如不需要开发人员实施，有测试人员录入实际实施人员
                     var executorUserId = beforeSaleDemand.Beforesaledemandprojects.Find(x => x.BeforeSaleDemandId.Value == beforeSaleDemand.Id).DevUserId;
-                    var executorName = beforeSaleDemand.Beforesaledemandprojects.Find(x => x.BeforeSaleDemandId.Value == beforeSaleDemand.Id).DevUserName;                    
+                    var executorName = beforeSaleDemand.Beforesaledemandprojects.Find(x => x.BeforeSaleDemandId.Value == beforeSaleDemand.Id).DevUserName;
                     if (beforeSaleDemand.IsDevDeploy.HasValue && beforeSaleDemand.IsDevDeploy == 1)
                     {
                         beforeSaleDemand.Beforesaledemandprojects.Find(x => x.BeforeSaleDemandId.Value == beforeSaleDemand.Id).ExecutorUserId = executorUserId;
