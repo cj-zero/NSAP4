@@ -12,6 +12,7 @@ using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using OpenAuth.Repository.Domain.Serve;
 
 namespace OpenAuth.WebApi.Controllers.Clue
 {
@@ -45,7 +46,7 @@ namespace OpenAuth.WebApi.Controllers.Clue
         [Route("ClassificationAsync")]
         public async Task<Response<List<ClassificationDto>>> ClassificationAsync()
         {
-            var result = new Response<List<ClassificationDto>> ();
+            var result = new Response<List<ClassificationDto>>();
             try
             {
                 result.Result = await _clueApp.ClassificationAsync();
@@ -71,6 +72,89 @@ namespace OpenAuth.WebApi.Controllers.Clue
             try
             {
                 result.Result = await _clueApp.AddClassificationAsync(addClassificationReq);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 获取详情
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetClassificationByIdAsync")]
+        public async Task<Response<ClueClassification>> GetClassificationByIdAsync(int Id)
+        {
+            var result = new Response<ClueClassification>();
+            try
+            {
+                result.Result = await _clueApp.GetClassificationByIdAsync(Id);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 更新
+        /// </summary>
+        /// <param name="updateClassificationReq"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("UpdateClassificationAsync")]
+        public async Task<Response<string>> UpdateClassificationAsync(UpdateClassificationReq updateClassificationReq)
+        {
+            var result = new Response<string>();
+            try
+            {
+                result.Result = await _clueApp.UpdateClassificationAsync(updateClassificationReq);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 删除
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("DeleteClassificationByIdAsync")]
+        public async Task<Response<string>> DeleteClassificationByIdAsync(int Id)
+        {
+            var result = new Response<string>();
+            try
+            {
+                result.Result = await _clueApp.DeleteClassificationByIdAsync(Id);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 行业下拉
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("IndustryDropDownAsync")]
+        public async Task<Response<List<ClassificationDto>>> IndustryDropDownAsync()
+        {
+            var result = new Response<List<ClassificationDto>>();
+            try
+            {
+                result.Result = await _clueApp.IndustryDropDownAsync();
             }
             catch (Exception ex)
             {

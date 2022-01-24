@@ -166,6 +166,9 @@ namespace OpenAuth.App
             }
             return datascoure;
         }
+
+
+
         /// <summary>
         /// 获取标签
         /// </summary>
@@ -1848,15 +1851,79 @@ namespace OpenAuth.App
             return data.Id.ToString();
         }
 
-
-        #endregion
-
+        //列表
         public async Task<List<ClassificationDto>> ClassificationAsync()
         {
-            var entity = UnitWork.Find<ClueClassification>(q => true).MapToList<ClassificationDto>();
+            var entity = UnitWork.Find<ClueClassification>(q => !q.IsDelete).MapToList<ClassificationDto>();
             var res = GetTypes(0, entity);
             return res;
         }
+        //详情
+        public async Task<ClueClassification> GetClassificationByIdAsync(int id)
+        {
+            return await UnitWork.FindSingleAsync<ClueClassification>(q => q.Id == id);
+        }
+        /// <summary>
+        /// 更新
+        /// </summary>
+        /// <param name="updateClassificationReq"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<string> UpdateClassificationAsync(UpdateClassificationReq updateClassificationReq)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var loginUser = loginContext.User;
+            var clueClassification = await UnitWork.FindSingleAsync<ClueClassification>(q => q.Id == updateClassificationReq.Id);
+            clueClassification.Name = updateClassificationReq.Name;
+            clueClassification.UpdateTime = DateTime.Now;
+            clueClassification.UpdateUser = loginUser.Name;
+            await UnitWork.UpdateAsync(clueClassification);
+            await UnitWork.SaveAsync();
+            return "true";
+        }
+
+        /// <summary>
+        /// 删除
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<string> DeleteClassificationByIdAsync(int id)
+        {
+            var clueClassification = await UnitWork.FindSingleAsync<ClueClassification>(q => q.Id == id);
+            if (clueClassification != null)
+            {
+                clueClassification.IsDelete = true;
+                await UnitWork.UpdateAsync(clueClassification);
+                var clueClassificationchaid = UnitWork.Find<ClueClassification>(q => q.ParentId == id).MapToList<ClueClassification>();
+                if (clueClassificationchaid.Count > 0)
+                {
+                    foreach (var item in clueClassificationchaid)
+                    {
+                        item.IsDelete = true;
+                        await UnitWork.UpdateAsync(item);
+                    }
+                }
+                await UnitWork.SaveAsync();
+                return "true";
+
+            }
+
+            return "false";
+        }
+        public async Task<List<ClassificationDto>> IndustryDropDownAsync()
+        {
+            var entity = UnitWork.Find<ClueClassification>(q => !q.IsDelete).MapToList<ClassificationDto>();
+            var res = GetTypes(1, entity);
+            return res;
+        }
+        #endregion
+
 
     }
 }

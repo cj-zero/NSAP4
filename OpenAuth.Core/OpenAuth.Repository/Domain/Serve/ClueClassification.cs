@@ -48,7 +48,11 @@ namespace OpenAuth.Repository.Domain.Serve
         /// </summary>
         [Description("创建时间")]
         public DateTime UpdateTime { get; set; }
-
+        /// <summary>
+        /// 是否删除
+        /// </summary>
+        [Description("是否删除")]
+        public bool IsDelete { get; set; } = false;
 
         public override void GenerateDefaultKeyVal()
         {

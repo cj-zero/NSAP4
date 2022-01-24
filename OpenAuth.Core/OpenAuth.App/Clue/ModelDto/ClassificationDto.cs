@@ -39,6 +39,10 @@ namespace OpenAuth.App.Clue.ModelDto
         /// 子级
         /// </summary>
         public List<ClassificationDto> Children { get; set; }
+        /// <summary>
+        /// 是否删除
+        /// </summary>
+        public bool IsDelete { get; set; } = false;
     }
 
 }
