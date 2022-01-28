@@ -468,7 +468,7 @@ namespace OpenAuth.App.Sap.Service
                              PurchaseTime = o.dlvryDate.Value,
                              WarrantyTime = o.dlvryDate.Value.AddYears(1) //保修期为1年
                          };
-            serials.AddRange(query1.OrderByDescending(x => x.PurchaseTime).Skip((request.page - 1) * request.limit).Take(request.limit));
+            serials.AddRange(query1);
             //如果sap没记录则查询
             if (query1.Count() == 0)
             {
@@ -496,7 +496,7 @@ namespace OpenAuth.App.Sap.Service
                                   PurchaseTime = q.PurchaseTime.Value,
                                   WarrantyTime = q.WarrantyTime //保修期为1年
                               }).ToList();
-                serials.AddRange(query3.OrderByDescending(x => x.PurchaseTime).Skip((request.page - 1) * request.limit).Take(request.limit));
+                serials.AddRange(query3);
             }
 
             //客户信息
@@ -526,10 +526,10 @@ namespace OpenAuth.App.Sap.Service
                     s.SerialNum,
                     s.MaterialCode,
                     s.MaterialDesc,
-                    PurchaseAmount = s.PurchaseAmount.ToString("N2"),
+                    s.PurchaseAmount,
                     s.PurchaseTime,
                     s.WarrantyTime,
-                }).OrderByDescending(s => s.PurchaseTime),
+                }).OrderByDescending(s => s.PurchaseTime).Skip((request.page - 1) * request.limit).Take(request.limit),
             };
             result.Count = serials.Count();
 
