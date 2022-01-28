@@ -419,8 +419,26 @@ namespace OpenAuth.App
             {
                 UserIds.AddRange(await UnitWork.Find<User>(u => u.Name.Contains(request.CreateUserName)).Select(u => u.Id).ToListAsync());
             }
+            List<int> serviceOrderIds = new List<int>();
+            if (!string.IsNullOrWhiteSpace(request.TerminalCustomer))
+            {
+                serviceOrderIds.AddRange(await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Contains(request.TerminalCustomer) || s.TerminalCustomerId.Contains(request.TerminalCustomer)).Select(s => s.Id).ToListAsync());
+            }
+            List<string> orgUserIds = new List<string>();
+            if (!string.IsNullOrWhiteSpace(request.OrgName))
+            {
+                var orgids = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Name.Contains(request.OrgName)).Select(o => o.Id).ToListAsync();
+                orgUserIds.AddRange(await UnitWork.Find<Relevance>(r => orgids.Contains(r.SecondId) && r.Key == Define.USERORG).Select(r => r.FirstId).ToListAsync());
+            }
             var result = new TableData();
-            var reimburseInfos = UnitWork.Find<ReimburseInfo>(null).WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId));
+            var reimburseInfos = UnitWork.Find<ReimburseInfo>(null)
+                .WhereIf(!string.IsNullOrWhiteSpace(request.MainId) && int.TryParse(request.MainId, out int mainId), r => r.MainId == int.Parse(request.MainId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.TerminalCustomer), r => serviceOrderIds.Contains(r.ServiceOrderId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId) && int.TryParse(request.ServiceOrderId, out int serviceOrderId), r => r.ServiceOrderId == int.Parse(request.ServiceOrderId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.OrgName), r => orgUserIds.Contains(r.CreateUserId))
+                .WhereIf(request.StartDate != null && request.EndDate != null, r => r.CreateTime >= request.StartDate && r.CreateTime < request.EndDate.Value.AddDays(1))
+                .WhereIf(request.PaymentStartDate != null && request.PaymentEndDate != null, r => r.PayTime >= request.PaymentStartDate && r.PayTime < request.PaymentEndDate.Value.AddDays(1));
             List<string> currentUser = new List<string>();
             if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginContext.Roles.Any(r => r.Name.Equals("总经理")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
@@ -445,7 +463,8 @@ namespace OpenAuth.App
             var expends = await UnitWork.Find<ServiceDailyExpends>(null)
                 .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId))
                 .WhereIf(currsoids != null, r => currsoids.Contains(r.ServiceOrderId))//不能查看全部的则查看自己或部门下的服务单关联的日费
-                .WhereIf(currsoids == null, s => !serverOrderIds.Contains(s.ServiceOrderId))//全部日费
+                //.WhereIf(currsoids == null, s => !serverOrderIds.Contains(s.ServiceOrderId))//全部日费
+                .WhereIf(currsoids == null, s => serverOrderIds.Contains(s.ServiceOrderId))
                 .SumAsync(s => s.TotalMoney);
             var totalmoney = reimburseInfoList.Sum(r => r.TotalMoney) + expends;
             var havepaid = reimburseInfoList.Where(r => r.RemburseStatus == 9).Sum(r => r.TotalMoney);
@@ -1870,7 +1889,15 @@ namespace OpenAuth.App
                 VerificationReqModle.VerificationFinally = "3";
                 VerificationReqModle.VerificationOpinion = req.Remark;
                 VerificationReqModle.NodeRejectType = "1";
-                await _flowInstanceApp.Verification(VerificationReqModle);
+                if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && (obj.RemburseStatus > 4 && obj.RemburseStatus <= 6))
+                {
+                    //客服主管在财务初审和财务复审阶段可以不走节点权限验证
+                }
+                else
+                {
+                    //节点权限验证
+                    await _flowInstanceApp.Verification(VerificationReqModle);
+                }
                 obj.RemburseStatus = 2;
                 eoh.ApprovalResult = "驳回";
                 var rtaIds = obj.ReimburseTravellingAllowances.Select(r => r.Id).ToList();

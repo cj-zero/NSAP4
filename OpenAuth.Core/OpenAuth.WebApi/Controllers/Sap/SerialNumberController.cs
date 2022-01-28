@@ -122,5 +122,27 @@ namespace OpenAuth.WebApi.Controllers.Sap
             }
             return result;
         }
+
+        /// <summary>
+        /// 根据客户代码获取已购买的设备信息
+        /// </summary>
+        /// <param name="customerCode"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetEquipments([FromQuery] QuerySerialNumberListReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serialNumberApp.GetEquipments(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
     }
 }

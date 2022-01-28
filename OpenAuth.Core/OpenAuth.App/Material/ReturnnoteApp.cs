@@ -78,7 +78,7 @@ namespace OpenAuth.App
             var returnNotes = UnitWork.Find<ReturnNote>(null).Include(r => r.ReturnNotePictures).Include(r => r.ReturnNoteProducts).ThenInclude(r => r.ReturnNoteMaterials)
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.SapId.ToString()), r => r.ServiceOrderSapId == req.SapId)
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()), r => r.SalesOrderId == req.SalesOrderId)
-                                .WhereIf(!string.IsNullOrWhiteSpace(req.MaterialCode), r => r.ReturnNoteProducts.Any(x => x.MaterialCode == req.MaterialCode))
+                                .WhereIf(!string.IsNullOrWhiteSpace(req.MaterialCode), r => r.ReturnNoteProducts.Any(x => x.ReturnNoteMaterials.Any(m => m.MaterialCode == req.MaterialCode)))
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), r => r.CreateTime > req.StartDate)
                                 .WhereIf(serviceOrderIds.Count() > 0, r => serviceOrderIds.Contains(r.ServiceOrderId))
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), r => r.CreateTime < Convert.ToDateTime(req.EndDate).AddDays(1));
