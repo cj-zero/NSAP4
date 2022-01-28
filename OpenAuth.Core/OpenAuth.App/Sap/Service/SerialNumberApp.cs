@@ -444,6 +444,96 @@ namespace OpenAuth.App.Sap.Service
             return sMoney;
         }
 
-        
+        /// <summary>
+        /// 根据客户代码获取已购买的设备信息
+        /// </summary>
+        /// <param name="customerCode"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetEquipments(QuerySerialNumberListReq request)
+        {
+            var result = new TableData();
+
+            var serials = new List<SerialInfo>();
+            //根据交货单号和物料编码找到物料单价(本地)
+            var query1 = from o in UnitWork.Find<OINS>(null).Where(o => o.customer == request.CardCode)
+                         join d in UnitWork.Find<DLN1>(null) //发货明细表
+                         on new { DocEntry = o.delivery, ItemCode = o.itemCode } equals new { d.DocEntry, d.ItemCode } into temp
+                         from t in temp.DefaultIfEmpty()
+                         select new SerialInfo
+                         {
+                             SerialNum = o.manufSN,
+                             MaterialCode = o.itemCode,
+                             MaterialDesc = o.itemName,
+                             PurchaseAmount = t == null ? (decimal)0.00 : (t.LineTotal / t.Quantity).Value,
+                             PurchaseTime = o.dlvryDate.Value,
+                             WarrantyTime = o.dlvryDate.Value.AddYears(1) //保修期为1年
+                         };
+            serials.AddRange(query1.OrderByDescending(x => x.PurchaseTime).Skip((request.page - 1) * request.limit).Take(request.limit));
+            //如果sap没记录则查询
+            if (query1.Count() == 0)
+            {
+                var query2 = await UnitWork.Find<service_oins>(null).Where(o => o.customer == request.CardCode)
+                            .Select(o => new
+                            {
+                                o.deliveryNo,
+                                SerialNum = o.manufSN,
+                                MaterialCode = o.itemCode,
+                                MaterialDesc = o.itemName,
+                                PurchaseTime = o.dlvryDate,
+                                WarrantyTime = o.dlvryDate.Value.AddYears(1) //保修期为1年
+                            }).ToListAsync();
+
+                var query3 = (from q in query2
+                              join d in UnitWork.Find<DLN1>(null)
+                              on new { DocEntry = q.deliveryNo, ItemCode = q.MaterialCode } equals new { d.DocEntry, d.ItemCode } into temp
+                              from t in temp.DefaultIfEmpty()
+                              select new SerialInfo
+                              {
+                                  SerialNum = q.SerialNum,
+                                  MaterialCode = q.MaterialCode,
+                                  MaterialDesc = q.MaterialDesc,
+                                  PurchaseAmount = t == null ? (decimal)0.00 : (t.LineTotal / t.Quantity).Value,
+                                  PurchaseTime = q.PurchaseTime.Value,
+                                  WarrantyTime = q.WarrantyTime //保修期为1年
+                              }).ToList();
+                serials.AddRange(query3.OrderByDescending(x => x.PurchaseTime).Skip((request.page - 1) * request.limit).Take(request.limit));
+            }
+
+            //客户信息
+            var customerInfo = await (from a in UnitWork.Find<OINS>(null)
+                                      join b in UnitWork.Find<OCRD>(null) on a.customer equals b.CardCode into temp1
+                                      from t1 in temp1.DefaultIfEmpty()
+                                      join f in UnitWork.Find<OCRY>(null) on t1.Country equals f.Code into temp2
+                                      from t2 in temp2.DefaultIfEmpty()
+                                      join g in UnitWork.Find<OCST>(null) on t1.State1 equals g.Code into temp3
+                                      from t3 in temp3.DefaultIfEmpty()
+                                      where a.customer == request.CardCode
+                                      select new
+                                      {
+                                          a.customer,
+                                          a.custmrName,
+                                          Address = $"{ t2.Name ?? "" }{ t3.Name ?? "" }{ t1.City ?? "" }{ t1.Building ?? "" }",
+                                          Address2 = $"{ t2.Name ?? "" }{ t3.Name ?? "" }{ t1.MailCity ?? "" }{ t1.MailBuildi ?? "" }",
+                                      }).FirstOrDefaultAsync();
+            result.Data = new
+            {
+                customer = customerInfo?.customer,
+                custmrName = customerInfo?.custmrName,
+                Address = customerInfo?.Address ?? customerInfo?.Address2 ?? "",
+                totalAccount = serials.Sum(s => s.PurchaseAmount).ToString("N2"),
+                Serials = serials.Select(s => new
+                {
+                    s.SerialNum,
+                    s.MaterialCode,
+                    s.MaterialDesc,
+                    PurchaseAmount = s.PurchaseAmount.ToString("N2"),
+                    s.PurchaseTime,
+                    s.WarrantyTime,
+                }).OrderByDescending(s => s.PurchaseTime),
+            };
+            result.Count = serials.Count();
+
+            return result;
+        }
     }
 }
