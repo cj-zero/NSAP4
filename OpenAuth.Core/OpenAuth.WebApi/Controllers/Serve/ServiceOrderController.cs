@@ -320,10 +320,10 @@ namespace OpenAuth.WebApi.Controllers
         [HttpPost]
         public async Task<Response> CustomerServiceAgentCreateOrder(CustomerServiceAgentCreateOrderReq req)
         {
-            var result = new Response();
+            Response result = new Response();
             try
             {
-                result=await _serviceOrderApp.CustomerServiceAgentCreateOrder(req);
+                result = await _serviceOrderApp.CustomerServiceAgentCreateOrder(req);
             }
             catch (Exception ex)
             {

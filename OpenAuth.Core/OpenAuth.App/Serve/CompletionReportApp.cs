@@ -181,7 +181,6 @@ namespace OpenAuth.App
             //判断为非草稿提交 则修改对应状态和发送消息
             if (req.IsDraft == 0)
             {
-                await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id), s => new ServiceWorkOrder { Status = 7 });
                 await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
                 {
                     Title = "技术员完成服务",
@@ -203,11 +202,13 @@ namespace OpenAuth.App
                 await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = logMessage, ActionType = "完成服务单", ServiceOrderId = req.ServiceOrderId, MaterialType = req.MaterialType });
                 //反写完工报告Id至工单
                 await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId && s.CurrentUserId == req.CurrentUserId && workorder.Contains(s.Id),
-                    o => new ServiceWorkOrder { CompletionReportId = completionReportId, CompleteDate = DateTime.Now });
+                    o => new ServiceWorkOrder { CompletionReportId = completionReportId, CompleteDate = DateTime.Now, Status = 7 });
                 //获取当前服务单下的所有消息Id集合
                 var msgList = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == req.ServiceOrderId).Select(s => s.Id).ToListAsync();
                 //清空消息为已读
                 await UnitWork.UpdateAsync<ServiceOrderMessageUser>(s => s.FroUserId == req.CurrentUserId.ToString() && msgList.Contains(s.MessageId), e => new ServiceOrderMessageUser { HasRead = true });
+                //如果服务单来源于内联单，同步改变状态
+                await UnitWork.UpdateAsync<InternalContactServiceOrder>(c => c.ServiceOrderId == req.ServiceOrderId, c => new InternalContactServiceOrder { Status = "已完成" });
             }
             //解除隐私号码绑定
             //await UnbindProtectPhone(req.ServiceOrderId, req.MaterialType);
@@ -309,6 +310,16 @@ namespace OpenAuth.App
                     var msgList = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == obj.ServiceOrderId).Select(s => s.Id).ToListAsync();
                     //清空消息为已读
                     await UnitWork.UpdateAsync<ServiceOrderMessageUser>(s => s.FroUserId == obj.CurrentUserId.ToString() && msgList.Contains(s.MessageId), e => new ServiceOrderMessageUser { HasRead = true });
+                    //如果服务单来源于内联单，同步改变状态
+                    var ts = await UnitWork.FindSingleAsync<InternalContactTaskServiceOrder>(c => c.ServiceOrderId == obj.ServiceOrderId);
+                    if (ts != null)
+                    {
+                        await UnitWork.UpdateAsync<InternalContactTaskServiceOrder>(c => c.ServiceOrderId == obj.ServiceOrderId, c => new InternalContactTaskServiceOrder { IsFinish = true });
+                        var ict = await UnitWork.FindSingleAsync<InternalContactTask>(c => c.Id == ts.InternalContactTaskId);
+                        ict.FinishedQty += 1;
+                        await UnitWork.UpdateAsync(ict);
+                        await UnitWork.SaveAsync();
+                    }
                 }
                 else
                 {
@@ -666,6 +677,15 @@ namespace OpenAuth.App
                     var msgList = await UnitWork.Find<ServiceOrderMessage>(s => s.ServiceOrderId == req.ServiceOrderId).Select(s => s.Id).ToListAsync();
                     //清空消息为已读
                     await UnitWork.UpdateAsync<ServiceOrderMessageUser>(s => s.FroUserId == req.CurrentUserId.ToString() && msgList.Contains(s.MessageId), e => new ServiceOrderMessageUser { HasRead = true });
+                    //如果服务单来源于内联单，同步改变状态
+                    var ts = await UnitWork.FindSingleAsync<InternalContactTaskServiceOrder>(c => c.ServiceOrderId == req.ServiceOrderId);
+                    if (ts != null)
+                    {
+                        await UnitWork.UpdateAsync<InternalContactTaskServiceOrder>(c => c.ServiceOrderId == req.ServiceOrderId, c => new InternalContactTaskServiceOrder { IsFinish = true });
+                        var ict = await UnitWork.FindSingleAsync<InternalContactTask>(c => c.Id == ts.InternalContactTaskId);
+                        ict.FinishedQty += 1;
+                        await UnitWork.UpdateAsync(ict);
+                    }
                 }
                 else
                 {

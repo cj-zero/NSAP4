@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App.Material;
 using OpenAuth.App.Material.Request;
+using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.WebApi.Model;
 using Serilog;
@@ -170,6 +171,61 @@ namespace OpenAuth.WebApi.Controllers.Material
             TableData data = new TableData();
             data.Data = _app.UpdloadImg(files);
             return data;
+        }
+
+        /// <summary>
+        /// 获取生产订单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> GetProductionOrder(QueryProductionOrderReq req)
+        {
+            return await _app.GetProductionOrder(req);
+        }
+
+        /// <summary>
+        /// 获取未出货物料，归属部门
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> GetUndeliveredMaterial(QueryProductionOrderReq req)
+        {
+            return await _app.GetUndeliveredMaterial(req);
+        }
+
+        /// <summary>
+        /// 获取已出货物料，设备序列号
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> GetShippedMaterial(QueryProductionOrderReq req)
+        {
+            return await _app.GetShippedMaterial(req);
+        }
+
+        /// <summary>
+        /// 生成服务单、任务单
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task GenerateWorkOrder(int id)
+        {
+            await _app.GenerateWorkOrder(id);
+        }
+        /// <summary>
+        /// 获取内联单内容
+        /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <param name="vestInOrg"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<string> GetInternalContactContent(int serviceOrderId, int vestInOrg)
+        {
+            return await _app.GetInternalContactContent(serviceOrderId, vestInOrg);
         }
 
         [HttpGet]

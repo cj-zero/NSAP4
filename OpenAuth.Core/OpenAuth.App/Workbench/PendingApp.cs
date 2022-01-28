@@ -504,7 +504,10 @@ namespace OpenAuth.App.Workbench
                             .Include(c => c.InternalContactBatchNumbers)
                             .Include(c => c.InternalContactDeptInfos)
                             .Include(c => c.InternalcontactMaterials)
+                            .Include(c => c.InternalContactTasks)
+                            .Include(c => c.InternalContactServiceOrders)
                             .FirstOrDefaultAsync();
+            var internalContactProductions = await UnitWork.Find<InternalContactProduction>(c => c.InternalContactId == detail.Id).ToListAsync();
             //操作历史
             var operationHistories = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.InstanceId == detail.FlowInstanceId)
                 .OrderBy(c => c.CreateDate).Select(h => new
@@ -558,7 +561,10 @@ namespace OpenAuth.App.Workbench
                 reviceOrgList,
                 execOrgList,
                 InternalcontactMaterials = detail.InternalcontactMaterials,
-                operationHistories
+                operationHistories,
+                detail.InternalContactTasks,
+                detail.InternalContactServiceOrders,
+                InternalContactProductions = internalContactProductions
             };
         }
 

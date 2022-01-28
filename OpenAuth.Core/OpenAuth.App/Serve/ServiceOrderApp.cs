@@ -959,14 +959,14 @@ namespace OpenAuth.App
         /// 客服新建服务单
         /// </summary>
         /// <returns></returns>
-        public async Task<Infrastructure.Response> CustomerServiceAgentCreateOrder(CustomerServiceAgentCreateOrderReq req)
+        public async Task<Infrastructure.Response<int>> CustomerServiceAgentCreateOrder(CustomerServiceAgentCreateOrderReq req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            Infrastructure.Response result = new Infrastructure.Response();
+            Infrastructure.Response<int> result = new Infrastructure.Response<int>();
 
             var loginUser = loginContext.User;
             var loginUserOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).Select(c=>new UserResp { Name = "", Id = "", OrgId = c.Id, OrgName = c.Name, CascadeId = c.CascadeId }).FirstOrDefault();
@@ -975,12 +975,24 @@ namespace OpenAuth.App
                 loginUser = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(req.AppUserId)).Include(u => u.User).Select(u => u.User).FirstOrDefaultAsync();
                 loginUserOrg = await _userManagerApp.GetUserOrgInfo(loginUser.Id);
             }
+            if (req.FromId == 8)//来源内联单
+            {
+                loginUser = await UnitWork.Find<User>(c => c.Account == Define.SYSTEM_USERNAME).FirstOrDefaultAsync();
+            }
             var d = await _businessPartnerApp.GetDetails(req.TerminalCustomerId.ToUpper());
             var obj = req.MapTo<ServiceOrder>();
             obj.CustomerId = req.CustomerId.ToUpper();
             obj.TerminalCustomerId = req.TerminalCustomerId.ToUpper();
-            obj.RecepUserName = loginUser.Name;
-            obj.RecepUserId = loginUser.Id;
+            if (req.FromId == 8)//来源内联单
+            {
+                obj.RecepUserName = "刘静";
+                obj.RecepUserId = "204c4bd6-c7c6-11ea-bc9e-54bf645e326d";
+            }
+            else
+            {
+                obj.RecepUserName = loginUser.Name;
+                obj.RecepUserId = loginUser.Id;
+            }
             obj.CreateUserId = loginUser.Id;
             obj.Status = 2;
             obj.SalesMan = d.SlpName;
@@ -1110,6 +1122,7 @@ namespace OpenAuth.App
                 });
                 await _signalrmessage.SendSystemMessage(SignalRSendType.User, $"系统已自动分配了{assignedWorks.Count()}个新的售后服务，请尽快处理", new List<string>() { obj.Supervisor });
             }
+            result.Result = obj.Id;
             return result;
         }
         /// <summary>
@@ -1117,7 +1130,7 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task CISECreateServiceOrder(CustomerServiceAgentCreateOrderReq req)
+        public async Task<Infrastructure.Response<int>> CISECreateServiceOrder(CustomerServiceAgentCreateOrderReq req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -1134,13 +1147,27 @@ namespace OpenAuth.App
                 }
                 loginUser = await UnitWork.Find<User>(u => u.Id.Equals(userid)).FirstOrDefaultAsync();
             }
-            req.Supervisor = "樊静涛";//默认售后主管为E3主管
+            if (req.FromId == 8)//来源内联单
+            {
+                loginUser = await UnitWork.Find<User>(c => c.Account == Define.SYSTEM_USERNAME).FirstOrDefaultAsync();
+            }
+            Infrastructure.Response<int> result = new Response<int>();
             var d = await _businessPartnerApp.GetDetails(req.CustomerId.ToUpper());
             var obj = req.MapTo<ServiceOrder>();
             obj.CustomerId = req.CustomerId.ToUpper();
             obj.TerminalCustomerId = req.TerminalCustomerId.ToUpper();
-            obj.RecepUserName = loginUser.Name;
-            obj.RecepUserId = loginUser.Id;
+            if (req.FromId == 8)//来源内联单
+            {
+                obj.RecepUserName = "刘静";
+                obj.RecepUserId = "204c4bd6-c7c6-11ea-bc9e-54bf645e326d";
+            }
+            else
+            {
+                obj.RecepUserName = loginUser.Name;
+                obj.RecepUserId = loginUser.Id;
+                req.Supervisor = "樊静涛";//默认售后主管为E3主管
+            }
+            var supervisorinfo = await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(req.Supervisor));
             obj.CreateUserId = loginUser.Id;
             obj.Status = 2;
             obj.SalesMan = d.SlpName;
@@ -1150,7 +1177,7 @@ namespace OpenAuth.App
             obj.NewestContacter = loginUser.Name;
             obj.Contacter = loginUser.Name;
             //obj.Supervisor = d.TechName;
-            obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(req.Supervisor)))?.Id;
+            obj.SupervisorId = supervisorinfo?.Id;
             #region 该客户在5天内已有服务ID
             //var workOrders = obj.ServiceWorkOrders.Select(s => new { s.ManufacturerSerialNumber, s.FromTheme }).ToList();
             //var msNumbers = workOrders.Select(s => s.ManufacturerSerialNumber).ToList();
@@ -1187,11 +1214,11 @@ namespace OpenAuth.App
                 s.SubmitDate = DateTime.Now;
                 s.SubmitUserId = loginUser.Id;
                 s.Status = 2;
-                s.CurrentUserNsapId = loginUser.Id;
+                s.CurrentUserNsapId = req.FromId == 8 ? supervisorinfo?.Id : loginUser.Id;//来源内联单派给主管
                 s.CurrentUserId = AppUserId;
                 s.FromType = 1;
                 s.FeeType = 1;
-                s.CurrentUser = loginUser.Name;
+                s.CurrentUser = req.FromId == 8 ? supervisorinfo?.Name : loginUser.Name;
                 s.OrderTakeType = 1;
             });
             var e = await UnitWork.AddAsync<ServiceOrder, int>(obj);
@@ -1205,6 +1232,8 @@ namespace OpenAuth.App
             #region 同步到SAP 并拿到服务单主键
             _capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
             #endregion
+            result.Result = obj.Id;
+            return result;
         }
         /// <summary>
         /// 新建行政单

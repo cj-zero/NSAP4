@@ -19,6 +19,9 @@ using Infrastructure.Export;
 using DinkToPdf;
 using OpenAuth.Repository.Domain.Workbench;
 using Microsoft.AspNetCore.Http;
+using System.Linq.Expressions;
+using OpenAuth.Repository.Domain.Sap;
+using OpenAuth.App.Sap.BusinessPartner;
 
 namespace OpenAuth.App.Material
 {
@@ -30,11 +33,15 @@ namespace OpenAuth.App.Material
         private readonly FlowInstanceApp _flowInstanceApp;
         private readonly WorkbenchApp _workbenchApp;
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
-        public InternalContactApp(IUnitWork unitWork, IAuth auth, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, ModuleFlowSchemeApp moduleFlowSchemeApp) :base(unitWork, auth)
+        private readonly BusinessPartnerApp _businessPartnerApp;
+        private readonly ServiceOrderApp _serviceOrderApp;
+        public InternalContactApp(IUnitWork unitWork, IAuth auth, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, ModuleFlowSchemeApp moduleFlowSchemeApp, BusinessPartnerApp businessPartnerApp, ServiceOrderApp serviceOrderApp) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
             _workbenchApp = workbenchApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
+            _businessPartnerApp = businessPartnerApp;
+            _serviceOrderApp = serviceOrderApp;
         }
 
         /// <summary>
@@ -154,9 +161,11 @@ namespace OpenAuth.App.Material
                         .Include(c => c.InternalContactAttchments)
                         .Include(c => c.InternalContactBatchNumbers)
                         .Include(c => c.InternalContactDeptInfos)
-                        .Include(c=>c.InternalcontactMaterials)
+                        .Include(c => c.InternalcontactMaterials)
+                        .Include(c => c.InternalContactTasks)
+                        .Include(c => c.InternalContactServiceOrders)
                         .FirstOrDefaultAsync();
-
+                    var icp = await UnitWork.Find<InternalContactProduction>(c => c.InternalContactId == req.Id).ToListAsync();
                     obj.Status = 1;
                     obj.CardCode = string.Join(",", req.CardCodes);
                     obj.CardName = string.Join(",", req.CardNames);
@@ -225,7 +234,8 @@ namespace OpenAuth.App.Material
                         obj.CreateTime = single.CreateTime;
                         obj.CreateUserId = single.CreateUserId;
                         obj.CreateUser = single.CreateUser;
-                        //子表删除重新添加
+
+                        #region 子表删除重新添加
                         if (obj.InternalContactAttchments.Count > 0)
                         {
                             await UnitWork.BatchDeleteAsync<InternalContactAttchment>(single.InternalContactAttchments.ToArray());
@@ -248,9 +258,26 @@ namespace OpenAuth.App.Material
                             await UnitWork.BatchDeleteAsync<InternalcontactMaterial>(single.InternalcontactMaterials.ToArray());
                             await UnitWork.BatchAddAsync<InternalcontactMaterial>(obj.InternalcontactMaterials.ToArray());
                         }
+                        if (obj.InternalContactTasks.Count > 0)
+                        {
+                            await UnitWork.BatchDeleteAsync<InternalContactTask>(single.InternalContactTasks.ToArray());
+                            await UnitWork.BatchAddAsync<InternalContactTask>(obj.InternalContactTasks.ToArray());
+                        }
+                        if (obj.InternalContactServiceOrders.Count > 0)
+                        {
+                            await UnitWork.BatchDeleteAsync<InternalContactServiceOrder>(single.InternalContactServiceOrders.ToArray());
+                            await UnitWork.BatchAddAsync<InternalContactServiceOrder>(obj.InternalContactServiceOrders.ToArray());
+                        }
+                        if (obj.InternalContactServiceOrders.Count > 0)
+                        {
+                            await UnitWork.BatchDeleteAsync<InternalContactProduction>(icp.ToArray());
+                            await UnitWork.BatchAddAsync<InternalContactProduction>(obj.InternalContactProductions.ToArray());
+                        }
                         obj.InternalContactAttchments = null;
                         obj.InternalContactBatchNumbers = null;
                         obj.InternalContactDeptInfos = null;
+
+                        #endregion
 
                         await UnitWork.UpdateAsync(obj);
 
@@ -443,7 +470,10 @@ namespace OpenAuth.App.Material
                             .Include(c => c.InternalContactBatchNumbers)
                             .Include(c => c.InternalContactDeptInfos)
                             .Include(c => c.InternalcontactMaterials)
+                            .Include(c => c.InternalContactTasks)
+                            .Include(c => c.InternalContactServiceOrders)
                             .FirstOrDefaultAsync();
+            var internalContactProductions = await UnitWork.Find<InternalContactProduction>(c => c.InternalContactId == detail.Id).ToListAsync();
             //操作历史
             var operationHistories = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.InstanceId == detail.FlowInstanceId)
                 .OrderBy(c => c.CreateDate).Select(h => new
@@ -496,7 +526,10 @@ namespace OpenAuth.App.Material
                 reviceOrgList,
                 execOrgList,
                 InternalcontactMaterials = detail.InternalcontactMaterials,
-                operationHistories
+                operationHistories,
+                detail.InternalContactTasks,
+                detail.InternalContactServiceOrders,
+                InternalContactProductions = internalContactProductions
             };
             return result;
         }
@@ -651,6 +684,204 @@ namespace OpenAuth.App.Material
         }
 
         /// <summary>
+        /// 生成服务单、任务单
+        /// </summary>
+        /// <returns></returns>
+        public async Task GenerateWorkOrder(int id)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var taskOrder = await UnitWork.Find<InternalContactTask>(c => c.InternalContactId == id).ToListAsync();
+            var serviceOrder = await UnitWork.Find<InternalContactServiceOrder>(c => c.InternalContactId == id).ToListAsync();
+            List<ServiceOrder> serviceOrdersList = new List<ServiceOrder>();
+            var customerInfo = serviceOrder.GroupBy(c => c.CardCode).Select(c => new { CardCode = c.Key, List = c.ToList() }).ToList();
+            //服务单
+            foreach (var item in customerInfo)
+            {
+                string addr = "", area = "", city = "", province = "", longitude = "", latitude = "";
+                var customer = await GetCardInfo(item.CardCode);
+                //var customer = customerRes.Data[0];
+                if (!string.IsNullOrWhiteSpace(customer.Address2))
+                {
+                    var locationResult = AmapUtil.GetLocation(customer.Address2);
+                    longitude = locationResult["result"]["location"]["lng"].ToString();
+                    latitude = locationResult["result"]["location"]["lat"].ToString();
+                    province = locationResult["result"]["addressComponent"]["province"].ToString();
+                    city = locationResult["result"]["addressComponent"]["city"].ToString();
+                    area = locationResult["result"]["addressComponent"]["district"].ToString();
+                    addr = $"{locationResult["result"]["addressComponent"]["street"].ToString()}{locationResult["result"]["addressComponent"]["street_number"].ToString()}";
+                }
+
+                foreach (var child in item.List)
+                {
+                    CustomerServiceAgentCreateOrderReq s = new CustomerServiceAgentCreateOrderReq()
+                    {
+                        Addr = addr,
+                        Address = customer.Address2,
+                        AddressDesignator = "运达到",
+                        Area = area,
+                        City = city,
+                        Province = province,
+                        Longitude = decimal.Parse(longitude),
+                        Latitude = decimal.Parse(latitude),
+                        FromId = 8,
+                        CustomerId = child.CardCode,
+                        CustomerName = child.CardName,
+                        TerminalCustomerId = child.CardCode,
+                        TerminalCustomer = child.CardName,
+                        IsSend = false,
+                        Contacter = "",
+                        NewestContacter = customer.CntctPrsn,
+                        NewestContactTel = customer.Phone1,
+                        SalesMan = customer.SlpName,
+                        Supervisor = child.Supervisor,
+                        ServiceWorkOrders = new List<AddServiceWorkOrderReq>() {
+                        new AddServiceWorkOrderReq{
+                            Status=1,
+                            FeeType=2,
+                            FromTheme=child.FromTheme,
+                            FromType=1,
+                            ManufacturerSerialNumber=child.MnfSerial,
+                            MaterialCode=child.ItemCode,
+                            MaterialDescription=child.ItemName,
+                            Priority=1,
+                            Remark=""
+                        }
+                        }
+                    };
+                    var createResult = await _serviceOrderApp.CustomerServiceAgentCreateOrder(s);
+                    var serviceOrderId = createResult.Result;
+                    await UnitWork.UpdateAsync<InternalContactServiceOrder>(c => c.Id == child.Id, c => new InternalContactServiceOrder
+                    {
+                        ServiceOrderId = serviceOrderId
+                    });
+                    await UnitWork.SaveAsync();
+                }
+            }
+            //维修单
+            foreach (var item in taskOrder)
+            {
+                var supervisor = "";
+                //生产部门派给对应主管，其他部门派给E3樊静涛
+                if (item.ProductionOrg.Contains("P"))
+                    supervisor = item.ProductionOrgManager;
+                else
+                    supervisor = "樊静涛";
+                //如有关联关系先删除
+                var count = await UnitWork.Find<InternalContactTaskServiceOrder>(c => c.InternalContactTaskId == item.Id).CountAsync();
+                if (count > 0)
+                    await UnitWork.DeleteAsync<InternalContactTaskServiceOrder>(c => c.InternalContactTaskId == item.Id);
+                List<InternalContactTaskServiceOrder> addlist = new List<InternalContactTaskServiceOrder>();
+                //归属量多少生成多少维修单
+                for (int i = 0; i < item.BelongQty; i++)
+                {
+                    CustomerServiceAgentCreateOrderReq s = new CustomerServiceAgentCreateOrderReq
+                    {
+                        Contacter = "",
+                        CustomerId = "C37852",
+                        CustomerName = "东莞新威检测技术有限公司",
+                        FromId = 8,
+                        TerminalCustomer = "东莞新威检测技术有限公司",
+                        TerminalCustomerId = "C37852",
+                        Supervisor = supervisor,
+                        ServiceWorkOrders = new List<AddServiceWorkOrderReq>() {
+                        new AddServiceWorkOrderReq{
+                            FromTheme=item.FromTheme,
+                            FromType=1,
+                            Priority=1,
+                            RepairMaterialCode=item.ItemCode,
+                            ManufacturerSerialNumber="",
+                            MaterialCode="",
+                            Remark=$"基于生产订单WO-{item.ProductionId}"
+                        }
+                    }
+                    };
+                    var createResult = await _serviceOrderApp.CISECreateServiceOrder(s);
+                    var serviceOrderId = createResult.Result;
+                    addlist.Add(new InternalContactTaskServiceOrder { InternalContactTaskId = item.Id, ServiceOrderId = serviceOrderId, IsFinish = false });
+                }
+                await UnitWork.BatchAddAsync(addlist.ToArray());
+                await UnitWork.SaveAsync();
+            }
+
+            //等待CAP将服务单创建完，取到SAPID再反写
+            await Task.Delay(5000);
+            serviceOrder = await UnitWork.Find<InternalContactServiceOrder>(c => c.InternalContactId == id).ToListAsync();
+            var serviceId = serviceOrder.Select(c => c.ServiceOrderId).ToList();
+            var serviceOrderObj = await UnitWork.Find<ServiceOrder>(c => serviceId.Contains(c.Id)).Select(c => new { c.Id, c.U_SAP_ID }).ToListAsync();
+            if (serviceOrder.Count > 0)
+            {
+                foreach (var item in serviceOrder)
+                {
+                    var sapId = serviceOrderObj.Where(c => c.Id == item.ServiceOrderId).FirstOrDefault()?.U_SAP_ID;
+                    if (!string.IsNullOrWhiteSpace(sapId.ToString()))
+                        item.ServiceOrderSapId = sapId;
+                }
+                await UnitWork.BatchUpdateAsync(serviceOrder.ToArray());
+                await UnitWork.SaveAsync();
+            }
+        }
+
+        /// <summary>
+        /// 获取内联单内容
+        /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <param name="vestInOrg"></param>
+        /// <returns></returns>
+        public async Task<string> GetInternalContactContent(int serviceOrderId, int vestInOrg)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            string result = "";
+            if (vestInOrg == 1)
+            {
+                result = await (from a in UnitWork.Find<InternalContact>(null)
+                                join b in UnitWork.Find<InternalContactServiceOrder>(null) on a.Id equals b.InternalContactId
+                                where b.ServiceOrderId == serviceOrderId
+                                select a.Content).FirstOrDefaultAsync();
+            }
+            else
+            {
+                result = await (from a in UnitWork.Find<InternalContact>(null)
+                                join b in UnitWork.Find<InternalContactTask>(null) on a.Id equals b.InternalContactId
+                                join c in UnitWork.Find<InternalContactTaskServiceOrder>(null) on b.Id equals c.InternalContactTaskId
+                                where c.ServiceOrderId == serviceOrderId
+                                select a.Content).FirstOrDefaultAsync();
+            }
+            return result;
+        }
+
+        public async Task<dynamic> GetCardInfo(string cardcode)
+        {
+
+            var query = await (from a in UnitWork.Find<OCRD>(null).WhereIf(!string.IsNullOrWhiteSpace(cardcode), q => q.CardCode.Contains(cardcode) || q.CardName.Contains(cardcode))
+                               join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode into ab
+                               from b in ab.DefaultIfEmpty()
+                               join f in UnitWork.Find<OCRY>(null) on a.Country equals f.Code into af
+                               from f in af.DefaultIfEmpty()
+                               join g in UnitWork.Find<OCST>(null) on a.State1 equals g.Code into ag
+                               from g in ag.DefaultIfEmpty()
+                               select new
+                               {
+                                   a.CardCode,
+                                   a.CardName,
+                                   a.CntctPrsn,
+                                   a.Phone1,
+                                   b.SlpName,
+                                   Address2 = $"{ f.Name ?? "" }{ g.Name ?? "" }{ a.MailCity ?? "" }{ a.MailBuildi ?? "" }"
+                               }).FirstOrDefaultAsync();
+            return query;
+
+        }
+
+        /// <summary>
         /// 撤销\过期\停用\启用
         /// </summary>
         /// <param name="internalContactId"></param>
@@ -767,6 +998,342 @@ namespace OpenAuth.App.Material
             }
             await UnitWork.SaveAsync();
 
+        }
+
+        /// <summary>
+        /// 获取生产订单
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetProductionOrder(QueryProductionOrderReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();  
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            var query = ProductionOrderInfo(req);
+
+            var queryData=await query.OrderByDescending(c => c.DocEntry)
+                                    .Skip((req.page - 1) * req.limit).Take(req.limit)
+                                    .ToListAsync();
+            result.Count = await query.CountAsync();
+            result.Data = queryData.Select(c =>
+            {
+                var orginfo = c.U_WO_LTDW.Split("-");
+                return new
+                {
+                    c.DocEntry,
+                    c.ItemCode,
+                    c.PartItemCode,
+                    c.PartPlannedQty,
+                    ProductionOrg = orginfo[0],
+                    ProductionOrgManager = orginfo.Count() > 1 ? orginfo[1] : "",
+                    WareHouse = c.wareHouse
+                };
+            });
+            return result;
+        }
+
+        /// <summary>
+        /// 获取生产订单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        private IQueryable<product_owor_wor1> ProductionOrderInfo(QueryProductionOrderReq req)
+        {
+            string filter = "and (";
+            string filterString = "";
+            if (req.MaterialInfos.Count > 0)
+            {
+                if (req.QueryType == 1)
+                {
+                    var itemcode = string.Join("','", req.MaterialInfos.Select(c => c.MaterialCode).ToList());
+                    filterString = $" b.ItemCode in ('{itemcode}') ";
+                }
+                else
+                {
+                    req.MaterialInfos.ForEach(c =>
+                    {
+                        var wh = string.Join("','", c.WareHouse == null ? new string[] { } : c.WareHouse);
+                        if (!string.IsNullOrWhiteSpace(filterString))
+                            filterString += " or ";
+                        filterString += $" (b.ItemCode='{c.MaterialCode}'  ";
+                        if (!string.IsNullOrWhiteSpace(wh))
+                            filterString += $" and b.Warehouse in ('{wh}')";
+                        filterString += ")";
+                    });
+                }
+                filter += filterString + ")";
+            }
+            filter = !string.IsNullOrWhiteSpace(filterString) ? filter : "";
+            //两年内的生产单
+            var sql = @$"SELECT a.DocEntry,a.ItemCode,b.ItemCode as PartItemCode,a.PlannedQty,b.PlannedQty as PartPlannedQty,a.CmpltQty,a.U_WO_LTDW,b.wareHouse FROM product_owor a
+                        INNER JOIN product_wor1 b on a.DocEntry=b.DocEntry 
+                        where a.CreateDate >= DATE_SUB(date_format(now(),'%y-%m-%d 00:00:00'), INTERVAL 2 YEAR) {filter} ORDER BY DocEntry desc";
+            var query = UnitWork.Query<product_owor_wor1>(sql).Select(c => new product_owor_wor1
+                                    {
+                                        DocEntry = c.DocEntry,
+                                        ItemCode = c.ItemCode,
+                                        PartItemCode = c.PartItemCode,
+                                        PlannedQty = c.PlannedQty,
+                                        PartPlannedQty = c.PartPlannedQty,
+                                        CmpltQty = c.CmpltQty, 
+                                        U_WO_LTDW = c.U_WO_LTDW,
+                                        wareHouse = c.wareHouse
+                                    })
+                                    .WhereIf(!string.IsNullOrWhiteSpace(req.ProductionOrg), c => c.U_WO_LTDW.Contains(req.ProductionOrg))
+                                    .WhereIf(!string.IsNullOrWhiteSpace(req.ProductionOrgManager), c => EF.Functions.Like(c.U_WO_LTDW, $"%{req.ProductionOrgManager}%"))
+                                    .WhereIf(req.ProductionId != null && req.ProductionId.Count > 0, c => req.ProductionId.Contains(c.DocEntry))
+                                    .WhereIf(!string.IsNullOrWhiteSpace(req.DocEntry.ToString()), c => c.DocEntry == req.DocEntry);
+            return query;
+        }
+
+        /// <summary>
+        /// 获取未出货物料，归属部门
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetUndeliveredMaterial(QueryProductionOrderReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            //除C开头外的成品物料
+            var finishedMaterialObj = await UnitWork.Find<FinishedMaterial>(null).Select(c => c.ItemCode).ToListAsync();
+            List<SemiFinishedMaterial> FinishedMaterial = new List<SemiFinishedMaterial>();
+            List<SemiFinishedMaterial> SemiFinishedMaterial = new List<SemiFinishedMaterial>();
+            var orderInfo = await ProductionOrderInfo(req).ToListAsync();
+            var auto = orderInfo.MapToList<SemiFinishedMaterial>();
+            //完成数量为0即都未生产收货
+            SemiFinishedMaterial.AddRange(auto.Where(c => c.CmpltQty == 0).ToList());
+
+            //生产成品物料的生产单，有收货的成品
+            FinishedMaterial.AddRange(auto.Where(c => (c.ItemCode.StartsWith("C") || finishedMaterialObj.Contains(c.ItemCode)) && c.CmpltQty != 0).ToList());
+            //生产半成品的生产单，找到使用改半成品的成产单，有收货的半成品
+            var noFinishedMaterial = auto.Where(c => !c.ItemCode.StartsWith("C") && !finishedMaterialObj.Contains(c.ItemCode) && c.CmpltQty != 0).ToList();
+            if (noFinishedMaterial.Count > 0)
+            {
+                //半成品再去找使用生产成品的生产单
+                var materialInfoReq = noFinishedMaterial.Select(c => new MaterialInfo { MaterialCode = c.ItemCode }).ToList();
+                var newMaterial = await ProductionOrderInfo(new QueryProductionOrderReq { MaterialInfos = materialInfoReq, QueryType = 1 }).ToListAsync();
+                var query = (from a in noFinishedMaterial
+                             join b in newMaterial on a.ItemCode equals b.PartItemCode
+                             select new SemiFinishedMaterial
+                             {
+                                 DocEntry = b.DocEntry,
+                                 ItemCode = b.ItemCode,
+                                 PartItemCode = a.PartItemCode,
+                                 ChildEntry = a.DocEntry,
+                                 PlannedQty = b.PlannedQty,
+                                 CmpltQty = b.CmpltQty
+                             }).ToList();
+                FinishedMaterial.AddRange(query);
+            }
+            var groupDocEntry = FinishedMaterial.GroupBy(c => c.DocEntry).Select(c => new
+            {
+                DocEntry = c.Key,
+                PartItemCode = string.Join(",", c.Select(s => s.PartItemCode).Distinct().ToList())
+            }).ToList();
+
+            var productionId = groupDocEntry.Select(c => c.DocEntry).ToList();
+            //生产收货
+            var ign1 = await UnitWork.Find<product_ign1>(c => productionId.Contains(c.BaseEntry.Value) && c.BaseType == 202).Select(c => new { c.BaseEntry, c.DocEntry, c.LineNum, c.Quantity }).ToListAsync();
+            var filter = "";
+            ign1.ForEach(c =>
+            {
+                if (!string.IsNullOrWhiteSpace(filter))
+                    filter += " or ";
+                filter += $" (o.BaseEntry={c.DocEntry} and o.Quantity={c.Quantity} and o.BaseLinNum={c.LineNum}) ";
+            });
+            filter = !string.IsNullOrWhiteSpace(filter) ? $" or ({filter}) and o.status=0 and o.BaseType=59 " : "";
+            //var sql = @$"select o.BaseEntry,o.Quantity,o.BaseLinNum,isnull(o.SuppSerial,'') as SuppSerial,o.ItemCode,'' as CardCode,'' as CardName,'' as Technician,'' as PartItemCode from OSRI o where 1!=1 {filter}";
+            //var querySuppSerial = await UnitWork.FromSql<OSRIModel>(sql).ToListAsync();
+            var sql = @$"select o.BaseEntry,o.Quantity,o.BaseLinNum,isnull(o.SuppSerial,'') as SuppSerial,o.ItemCode,o.WhsCode from OSRI o where 1!=1 {filter}";
+            var querySuppSerial = await UnitWork.FromSql<OSRIModel>(sql).Select(c => new { c.BaseEntry, c.Quantity, c.BaseLinNum, c.SuppSerial, c.ItemCode, c.WhsCode }).ToListAsync();
+            //有成品未出货的生产单
+            var queryFinilished = (from a in ign1
+                                   join b in querySuppSerial on new { a.DocEntry, a.Quantity, a.LineNum } equals new { DocEntry = b.BaseEntry.Value, b.Quantity, LineNum = b.BaseLinNum.Value }
+                                   select new FinilishedItem { DocEntry = a.BaseEntry, PartPlannedQty = a.Quantity, PartItemCode = b.ItemCode, WareHouse = b.WhsCode, productionOrg = "E3", productionOrgManager = "樊静涛", PartQty = a.Quantity }).ToList();
+            queryFinilished = queryFinilished.GroupBy(c => c.DocEntry).Select(c => c.First()).ToList();
+            //查询条件下所有生产成品物料生产单
+            FinishedMaterial.ForEach(c =>
+            {
+                //无收货
+                if (c.CmpltQty == 0)
+                {
+                    //半成品获取的成品生产单
+                    if (c.ChildEntry > 0)
+                        SemiFinishedMaterial.Add(auto.Where(o => o.DocEntry == c.ChildEntry).FirstOrDefault());
+                    else
+                        SemiFinishedMaterial.Add(c);
+                }
+                //部分收货
+                else if (c.CmpltQty > 0 && c.CmpltQty < c.PlannedQty)
+                {
+                    //成品是否出货
+                    var list = queryFinilished.Where(q => q.DocEntry == c.DocEntry).ToList();
+                    //半成品获取的成品生产单
+                    if (c.ChildEntry > 0)
+                    {
+                        var item = auto.Where(o => o.DocEntry == c.ChildEntry).FirstOrDefault();
+                        if (list.Count > 0)
+                            item.FinilishedItems = list;
+                        SemiFinishedMaterial.Add(item);
+                    }
+                    else
+                    {
+                        //var list = queryFinilished.Where(q => q.DocEntry == c.DocEntry).ToList();
+                        if (list.Count > 0)
+                            c.FinilishedItems = list;
+                        SemiFinishedMaterial.Add(c);
+                    }
+                }
+                else if (c.CmpltQty == c.PlannedQty)//全部收货
+                {
+                    //成品是否出货
+                    var list = queryFinilished.Where(q => q.DocEntry == c.DocEntry).ToList();
+                    if (list.Count>0)//存在未交货成品
+                    {
+                        //半成品获取的成品生产单
+                        if (c.ChildEntry > 0)
+                        {
+                            var item = auto.Where(o => o.DocEntry == c.ChildEntry).FirstOrDefault();
+                            item.FinilishedItems = list;
+                            SemiFinishedMaterial.Add(item);
+                        }
+                        else
+                        {
+                            c.FinilishedItems = list;
+                            SemiFinishedMaterial.Add(c);
+                        }
+
+                    }
+                }
+            });
+
+            var data = SemiFinishedMaterial.GroupBy(c => c.DocEntry).Select(c =>
+               {
+                   var orginfo = c.First().U_WO_LTDW.Split("-");
+                   return new
+                   {
+                       DocEntry = c.Key,
+                       c.First().FinilishedItems,
+                       c.First().ItemCode,
+                       c.First().PartItemCode,
+                       c.First().PartPlannedQty,
+                       c.First().PlannedQty,
+                       c.First().wareHouse,
+                       c.First().CmpltQty,
+                       PartQty = c.First().PartPlannedQty,
+                       ProductionOrg = orginfo[0],
+                       ProductionOrgManager = orginfo.Count() > 1 ? orginfo[1] : "",
+                   };
+               });
+            result.Data = data;
+            return result;
+        }
+
+        /// <summary>
+        /// 获取已出货物料，设备序列号
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetShippedMaterial(QueryProductionOrderReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            //除C开头外的成品物料
+            var finishedMaterialObj = await UnitWork.Find<FinishedMaterial>(null).Select(c => c.ItemCode).ToListAsync();
+            List<product_owor_wor1> FinishedMaterial = new List<product_owor_wor1>();
+            List<product_owor_wor1> SemiFinishedMaterial = new List<product_owor_wor1>();
+            var orderInfo = await ProductionOrderInfo(req).ToListAsync();
+            //生产成品物料的,有生产收货的生产单
+            FinishedMaterial.AddRange(orderInfo.Where(c => (c.ItemCode.StartsWith("C") || finishedMaterialObj.Contains(c.ItemCode)) && c.CmpltQty > 0).ToList());
+            //生产半成品的,有生产收货的生产单，找到使用改半成品的成产单
+            var noFinishedMaterial = orderInfo.Where(c => !c.ItemCode.StartsWith("C") && !finishedMaterialObj.Contains(c.ItemCode) && c.CmpltQty > 0).ToList();
+            if (noFinishedMaterial.Count>0)
+            {
+                //半成品再去找使用生产成品的生产单
+                var materialInfoReq = noFinishedMaterial.Select(c =>new MaterialInfo {MaterialCode= c.ItemCode } ).ToList();
+                var newMaterial = await ProductionOrderInfo(new QueryProductionOrderReq { MaterialInfos = materialInfoReq, QueryType = 1 }).ToListAsync();
+                var query = (from a in noFinishedMaterial
+                             join b in newMaterial on a.ItemCode equals b.PartItemCode
+                             select new product_owor_wor1 { DocEntry = b.DocEntry,
+                                 PlannedQty = b.PlannedQty,
+                                 CmpltQty = b.CmpltQty, ItemCode = b.ItemCode, PartItemCode = a.PartItemCode }).ToList();
+                FinishedMaterial.AddRange(query.Where(c => c.CmpltQty > 0).ToList());
+            }
+            var groupDocEntry = FinishedMaterial.GroupBy(c => c.DocEntry).Select(c => new
+            {
+                DocEntry = c.Key,
+                PartItemCode = string.Join(",", c.Select(s => s.PartItemCode).Distinct().ToList())
+            }).ToList();
+
+            var productionId = groupDocEntry.Select(c => c.DocEntry).ToList();
+            //生产收货
+            var ign1 = await UnitWork.Find<product_ign1>(c => productionId.Contains(c.BaseEntry.Value) && c.BaseType == 202).Select(c => new { c.BaseEntry, c.DocEntry, c.LineNum, c.Quantity }).ToListAsync();
+            var filter = "";
+            ign1.ForEach(c =>
+            {
+                if (!string.IsNullOrWhiteSpace(filter))
+                    filter += " or ";
+                filter += $" (o.BaseEntry={c.DocEntry} and o.Quantity={c.Quantity} and o.BaseLinNum={c.LineNum}) ";
+            });
+
+            //序列号
+            //var osri = await UnitWork.Find<OSRI>(c => c.BaseType == 59 && ign1.Contains(c.BaseEntry.Value)).ToListAsync();
+            var sql = @$"SELECT DISTINCT  
+                     o.BaseEntry,o.Quantity,o.BaseLinNum,o.SuppSerial,o.ItemCode,o.ItemName,o.WhsCode,c.CardCode,c.CardName,e.lastName + e.firstName as Technician,'' as PartItemCode
+                    from OSRI o
+                    INNER JOIN OITL a on a.ItemCode = o.ItemCode and a.DocType = 15 and o.BaseType = 59 and o.STATUS = 1
+                    INNER JOIN ITL1 b on a.LogEntry = b.LogEntry and o.SysSerial = b.SysNumber
+                    INNER JOIN ODLN c on a.DocEntry = c.DocEntry
+                    INNER JOIN OCRD d on c.CardCode = d.CardCode
+                    INNER JOIN OHEM e on d.DfTcnician = e.empID
+                    where ({filter})";
+            var querySuppSerial = UnitWork.Query<OSRIModel>(sql)
+                                    .WhereIf(!string.IsNullOrWhiteSpace(req.ManufSN), c => c.SuppSerial == req.ManufSN)
+                                    .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), c => c.CardCode.Contains(req.CardCode))
+                                    .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), c => c.CardName.Contains(req.CardName));
+            result.Count = await querySuppSerial.CountAsync();
+            var suppSerial = await querySuppSerial
+                                    .Skip((req.page - 1) * req.limit).Take(req.limit)
+                                    .ToListAsync();
+            var data = suppSerial.Select(c =>
+            {
+                //根据交货找生产单
+                var ign2 = ign1.Where(i => i.DocEntry == c.BaseEntry && i.LineNum == c.BaseLinNum && i.Quantity == c.Quantity).FirstOrDefault()?.BaseEntry;
+                return new
+                {
+                    BaseEntry = c.BaseEntry,
+                    Quantity = c.Quantity,
+                    BaseLinNum = c.BaseLinNum,
+                    SuppSerial = c.SuppSerial,
+                    ItemCode = c.ItemCode,
+                    c.ItemName,
+                    CardCode = c.CardCode,
+                    CardName = c.CardName,
+                    Technician = c.Technician,
+                    ServiceOrderId = "",
+                    Status = "",
+                    PartItemCode = groupDocEntry.Where(g => g.DocEntry == ign2).FirstOrDefault()?.PartItemCode
+                };
+            });
+            //suppSerial.ForEach(c =>
+            //{
+            //    var ign2 = ign1.Where(i => i.DocEntry == c.BaseEntry && i.LineNum == c.BaseLinNum && i.Quantity == c.Quantity).FirstOrDefault()?.BaseEntry;
+            //    c.PartItemCode = groupDocEntry.Where(g => g.DocEntry == ign2).FirstOrDefault()?.PartItemCode;
+            //});
+            result.Data = data;
+            return result;
         }
 
         /// <summary>
@@ -966,5 +1533,19 @@ namespace OpenAuth.App.Material
             await UnitWork.BatchAddAsync<InternalContact, int>(internalContacts.ToArray());
             await UnitWork.SaveAsync();
         }
+
+        #region Extension
+
+        //public static IQueryable<product_wor1> GetFilterExpression<product_wor1>(this IQueryable<product_wor1> source, bool excute, Expression<Func<product_wor1, bool>> predicate, List<MaterialInfo> condition)
+        //{
+        //    if (excute)
+        //    {
+        //        condition.ForEach(c=>{
+        //            predicate.Or<product_wor1>(t=>t.)
+        //        })
+        //    }
+
+        //}
+        #endregion
     }
 }

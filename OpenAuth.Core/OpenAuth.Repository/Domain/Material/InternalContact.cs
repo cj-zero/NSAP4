@@ -13,6 +13,7 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using OpenAuth.Repository.Core;
+using OpenAuth.Repository.Domain.Material;
 
 namespace OpenAuth.Repository.Domain
 {
@@ -172,6 +173,9 @@ namespace OpenAuth.Repository.Domain
         public List<InternalContactBatchNumber> InternalContactBatchNumbers { get; set; }
         public List<InternalContactDeptInfo> InternalContactDeptInfos { get; set; }
         public List<InternalcontactMaterial> InternalcontactMaterials { get; set; }
+        public List<InternalContactTask> InternalContactTasks { get; set; }
+        public List<InternalContactServiceOrder> InternalContactServiceOrders { get; set; }
+        public List<InternalContactProduction> InternalContactProductions { get; set; }
         public override void GenerateDefaultKeyVal()
         {
 

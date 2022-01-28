@@ -131,5 +131,17 @@ namespace OpenAuth.App.Material.Request
         /// 
         /// </summary>
         public List<InternalContactDeptInfoReq> InternalContactReceiveDepts { get; set; }
+        /// <summary>
+        /// 任务单
+        /// </summary>
+        public List<InternalContactTaskReq> InternalContactTasks { get; set; }
+        /// <summary>
+        /// 服务呼叫
+        /// </summary>
+        public List<InternalContactServiceOrderReq> InternalContactServiceOrders { get; set; }
+        /// <summary>
+        /// 生产订单
+        /// </summary>
+        public List<InternalContactProductionReq> InternalContactProductions { get; set; }
     }
 }
