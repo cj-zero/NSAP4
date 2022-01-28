@@ -236,5 +236,17 @@ namespace OpenAuth.WebApi.Controllers.Clue
             return  _clueApp.GetAddressBasic(address);
 
         }
+        /// <summary>
+        /// 天眼查模糊搜索
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetCompanyNameBasic")]
+        public string GetCompanyNameBasic(string name)
+        {
+            return _clueApp.GetCompanyNameBasic(name);
+
+        }
     }
 }

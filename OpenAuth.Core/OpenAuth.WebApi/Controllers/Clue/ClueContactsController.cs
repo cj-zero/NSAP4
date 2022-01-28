@@ -152,9 +152,9 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <returns></returns>
         [HttpPost]
         [Route("DeleteContactsByIdAsync")]
-        public async Task<Response<bool>> DeleteContactsByIdAsync(List<int> Ids)
+        public async Task<Response<string>> DeleteContactsByIdAsync(List<int> Ids)
         {
-            var result = new Response<bool>();
+            var result = new Response<string>();
             try
             {
                 result.Result = await _clueApp.DeleteContactsByIdAsync(Ids);

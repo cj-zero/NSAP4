@@ -31,18 +31,20 @@ namespace OpenAuth.App.Clue.ModelDto
         /// 更新时间
         /// </summary>
         public DateTime? UpdateTime { get; set; }
+
         /// <summary>
         /// 跟进时间
         /// </summary>
-        public string FollowUpTime { get; set; }
+        public string FollowUpTime { get; set; } = "暂无跟进时间";
         /// <summary>
         /// 状态（0：销售线索，1：已转客户）
         /// </summary>
         public int Status { get; set; }
+
         /// <summary>
         /// 未跟进天数
         /// </summary>
-        public string DaysNotFollowedUp { get; set; }
+        public string DaysNotFollowedUp { get; set; } = "0天";
         /// <summary>
         /// 联系人名称
         /// </summary>
