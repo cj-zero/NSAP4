@@ -181,8 +181,10 @@ namespace OpenAuth.App
 
             var data = await (from a in UnitWork.Find<AppUserMap>(null).WhereIf(req.AppUserId?.Count > 0, a => req.AppUserId.Contains(a.AppUserId))
                               join b in UnitWork.Find<User>(c => c.Status == 0).WhereIf(req.Name?.Count > 0, c => req.Name.Contains(c.Name)).WhereIf(userIds.Count > 0, c => userIds.Contains(c.Id)) on a.UserID equals b.Id
-                              select new User { Id = b.Id, Name = b.Name, Mobile = b.Mobile }).ToListAsync();
-
+                              join c in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG) on b.Id equals c.FirstId
+                              join d in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on c.SecondId equals d.Id
+                              select new { Id = b.Id, Name = b.Name, Mobile = b.Mobile, OrgName = d.Name, d.CascadeId }).ToListAsync();
+            data = data.GroupBy(c => c.Id).Select(c => c.OrderByDescending(o => o.CascadeId).First()).ToList();
             var da1 = data.Select(c =>
              {
                  //当天是否有定位记录
@@ -229,6 +231,7 @@ namespace OpenAuth.App
                      Longitude = longi,
                      Latitude = lati,
                      TotalHour = totalHour,
+                     OrgName = c.OrgName
                  };
 
              });
