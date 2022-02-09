@@ -69,6 +69,8 @@ namespace OpenAuth.App
             var beforeSaleProSchedulings = await UnitWork.Find<BeforeSaleProScheduling>(c => c.BeforeSaleDemandProjectId == detail.Id)
                 .OrderBy(c => c.Id).Select(h => new
                 {
+                    h.BeforeSaleDemandId,
+                    h.BeforeSaleDemandProjectId,
                     h.CreateTime,
                     h.Stage,
                     h.UserId,

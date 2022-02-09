@@ -73,7 +73,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 客户名称
         /// </summary>
-        [Description("")]
+        [Description("客户名称")]
         public string CustomerName { get; set; }
         /// <summary>
         /// 发起人Id
