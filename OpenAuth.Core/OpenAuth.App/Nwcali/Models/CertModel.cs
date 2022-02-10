@@ -51,6 +51,7 @@ namespace OpenAuth.App.Nwcali.Models
         public string CertificateNo { get; set; }
         public string DueDate { get; set; }
         public string CalibrationEntity { get; set; }
+        public string EnName { get; set; }
     }
     public class TurTable
     {
@@ -92,6 +93,8 @@ namespace OpenAuth.App.Nwcali.Models
 
     public class DataSheet 
     {
+        public int Sort1 { get; set; }
+        public int Sort2 { get; set; }
         public string Channel { get; set; }
         public string Range { get; set; }
         public string Indication { get; set; }

@@ -65,12 +65,12 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <returns></returns>
         [HttpGet]
         [Route("UserListAsync")]
-        public async Task<Response<List<TextVaule>>> UserListAsync()
+        public async Task<Response<List<TextVaule>>> UserListAsync(string Name)
         {
             var result = new Response<List<TextVaule>>();
             try
             {
-                result.Result = _clueApp.UserListAsync();
+                result.Result = _clueApp.UserListAsync(Name);
             }
             catch (Exception ex)
             {
@@ -125,7 +125,7 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// </summary>
         /// <param name="ClueId"></param>
         /// <returns></returns>
-        [HttpDelete]
+        [HttpPost]
         [Route("DeleteScheduleByIdAsync")]
         public async Task<Response<bool>> DeleteScheduleByIdAsync(List<int> Ids)
         {

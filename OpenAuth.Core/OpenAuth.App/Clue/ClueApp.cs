@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http;
@@ -25,6 +26,9 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using AutoMapper;
+using MailKit.Search;
+using Microsoft.EntityFrameworkCore.Internal;
 using static OpenAuth.App.Clue.ModelDto.KuaiBaosHelper;
 
 namespace OpenAuth.App
@@ -82,7 +86,6 @@ namespace OpenAuth.App
             if (clueListReq.Status != -1)
             {
                 exp = exp.And(t => t.Status == clueListReq.Status);
-
             }
             if (!string.IsNullOrEmpty(clueListReq.StartTime) && !string.IsNullOrEmpty(clueListReq.EndTime))
             {
@@ -90,7 +93,7 @@ namespace OpenAuth.App
                 DateTime.TryParse(clueListReq.StartTime, out startTime);
                 DateTime endTime;
                 DateTime.TryParse(clueListReq.EndTime, out endTime);
-                exp = exp.And(t => t.CreateTime >= startTime && t.CreateTime <= endTime);
+                exp = exp.And(t => t.CreateTime >= startTime && t.CreateTime <= endTime.AddDays(1));
             }
             if (!string.IsNullOrEmpty(clueListReq.Remark))
             {
@@ -100,63 +103,57 @@ namespace OpenAuth.App
             {
                 exp = exp.And(t => t.Tags.Contains(clueListReq.Tag));
             }
-            var objs = UnitWork.Find(clueListReq.page, clueListReq.limit, "", exp);
-            var list = objs.MapToList<Repository.Domain.Serve.Clue>();
-            foreach (var item in list)
+            var clue = UnitWork.Find(exp).MapToList<Repository.Domain.Serve.Clue>();
+            var clueFollowUp = new List<ClueFollowUp>();
+            foreach (var item in clue)
             {
-                var result = new ClueListDto();
-                result.Id = item.Id;
-                result.Remark = item.Remark;
-                result.SerialNumber = item.SerialNumber;
-                result.CardName = item.CardName;
-                result.CustomerSource = item.CustomerSource;
-                result.CreateTime = item.CreateTime;
-                result.UpdateTime = item.UpdateTime;
-                result.Status = item.Status;
-                result.Tags = !string.IsNullOrWhiteSpace(item.Tags) ? JsonConvert.DeserializeObject<List<string>>(item.Tags) : null;
-                Expression<Func<ClueContacts, bool>> exps = t => true;
-                exps = exps.And(t => !t.IsDelete);
-                exps = exps.And(t => t.ClueId == item.Id);
-                exps = exps.And(t => t.IsDefault == true);
-                if (!string.IsNullOrEmpty(clueListReq.Contacts))
-                {
-                    exps = exps.And(t => t.Name.Contains(clueListReq.Remark));
-                }
-                if (!string.IsNullOrEmpty(clueListReq.Address))
-                {
-                    exps = exps.And(t => t.Address2.Contains(clueListReq.Tag));
-                }
-                var data = UnitWork.FindSingle(exps);
-                if (data != null)
-                {
-                    result.Name = data.Name;
-                    result.Tel1 = data.Tel1;
-                    result.Address1 = data.Address1;
-                    result.Address2 = data.Address2;
-                    result.Email = data.Email;
-                    var cluefollowup = UnitWork.FindSingle<ClueFollowUp>(q => q.ClueId == item.Id);
-                    if (cluefollowup != null)
-                    {
-                        result.FollowUpTime = cluefollowup.FollowUpTime.ToString();
-                        var subTime = (DateTime.Now.Subtract(cluefollowup.FollowUpTime));
-                        result.DaysNotFollowedUp = $"{subTime.Days}天";
-                    }
-                    else
-                    {
-                        result.DaysNotFollowedUp = "0天";
-                        result.FollowUpTime = "暂无跟进时间";
-                    }
-                }
-                else
-                {
-                    result.DaysNotFollowedUp = "0天";
-                    result.FollowUpTime = "暂无跟进时间";
-                }
-                datascoure.Add(result);
+                var scon = UnitWork.Find<ClueFollowUp>(q => !q.IsDelete && q.ClueId == item.Id).MapToList<ClueFollowUp>().OrderByDescending(q => q.FollowUpTime).Take(1);
+                clueFollowUp.AddRange(scon);
             }
-            rowcount = list.Count;
-            return datascoure;
+            var clueContacts = UnitWork.Find<ClueContacts>(q => !q.IsDelete && q.IsDefault).MapToList<ClueContacts>();
+            var queryAllCustomers = from a in clue
+                                    join b in clueContacts on a.Id equals b.ClueId
+
+                                    where !string.IsNullOrEmpty(clueListReq.Contacts) ? b.Name.Contains(clueListReq.Contacts) : true
+                                    where !string.IsNullOrEmpty(clueListReq.Address) ? b.Address2.Contains(clueListReq.Address) : true
+                                    orderby a.Id descending
+                                    select new ClueListDto
+                                    {
+                                        Id = a.Id,
+                                        Remark = a.Remark,
+                                        SerialNumber = a.SerialNumber,
+                                        CardName = a.CardName,
+                                        CustomerSource = a.CustomerSource,
+                                        CreateTime = a.CreateTime,
+                                        UpdateTime = a.UpdateTime,
+                                        Status = a.Status,
+                                        Tags = !string.IsNullOrWhiteSpace(a.Tags)
+                                            ? JsonConvert.DeserializeObject<List<string>>(a.Tags)
+                                            : null,
+                                        Name = b.Name,
+                                        Tel1 = b.Tel1,
+                                        Address1 = b.Address1,
+                                        Address2 = b.Address2,
+                                        Email = b.Email
+                                    };
+            rowcount = queryAllCustomers.Count();
+            var datas = queryAllCustomers.Skip((clueListReq.page - 1) * clueListReq.limit).Take(clueListReq.limit);
+            foreach (var item in datas)
+            {
+                var cluefollowups = UnitWork.FindSingle<ClueFollowUp>(q => q.ClueId == item.Id);
+                if (cluefollowups != null)
+                {
+                    item.FollowUpTime = cluefollowups.FollowUpTime.ToString();
+                    var subTime = (DateTime.Now.Subtract(cluefollowups.FollowUpTime));
+                    item.DaysNotFollowedUp = $"{subTime.Days}天";
+                }
+            }
+            var list = datas.MapToList<ClueListDto>();
+            return list;
         }
+
+
+
         /// <summary>
         /// 获取标签
         /// </summary>
@@ -173,6 +170,8 @@ namespace OpenAuth.App
             return JsonHelper.Instance.Deserialize<List<string>>(clue.Tags);
         }
 
+
+
         /// <summary>
         /// 添加标签
         /// </summary>
@@ -188,6 +187,11 @@ namespace OpenAuth.App
             }
             var loginUser = loginContext.User;
             var clue = await UnitWork.FindSingleAsync<Repository.Domain.Serve.Clue>(q => q.Id == tags.ClueId);
+            if (tags.Tag.Count > 6)
+            {
+
+                return false;
+            }
             var log = new AddClueLogReq();
             log.ClueId = clue.Id;
             log.LogType = 1;
@@ -197,8 +201,9 @@ namespace OpenAuth.App
             }
             log.CreateTime = DateTime.Now;
             log.CreateUser = loginUser.Name;
-            log.Details = "'" + tags.Tag + "'标签";
             clue.Tags = JsonHelper.Instance.Serialize(tags.Tag);
+            log.Details = "'" + clue.Tags + "'标签";
+
             await UnitWork.UpdateAsync(clue);
             await UnitWork.SaveAsync();
             await AddClueLogAsync(log);
@@ -282,7 +287,7 @@ namespace OpenAuth.App
                 result.CreateTime = clue.CreateTime.ToString();
                 result.Essential.CustomerSource = clue.CustomerSource;
                 result.Essential.IndustryInvolved = clue.IndustryInvolved;
-                result.Essential.Tags = clue.Tags;
+                result.Essential.Tags = !string.IsNullOrWhiteSpace(clue.Tags) ? JsonConvert.DeserializeObject<List<string>>(clue.Tags) : null;
                 result.Essential.StaffSize = clue.StaffSize;
                 result.Essential.WebSite = clue.WebSite;
                 result.Essential.Remark = clue.Remark;
@@ -486,6 +491,10 @@ namespace OpenAuth.App
                 var clue = await UnitWork.FindSingleAsync<Repository.Domain.Serve.Clue>(q => q.Id == item);
                 if (clue != null)
                 {
+                    if (clue.IsDelete)
+                    {
+                        return false;
+                    }
                     clue.IsDelete = true;
                     await UnitWork.UpdateAsync(clue);
                     //联系人
@@ -596,7 +605,7 @@ namespace OpenAuth.App
             var data = UnitWork.Add<OpenAuth.Repository.Domain.Serve.ClueSchedule, int>(clueSchedule);
             UnitWork.Save();
             var log = new AddClueLogReq();
-            log.ClueId = data.Id;
+            log.ClueId = addClueScheduleReq.ClueId;
             log.LogType = 0;
             log.CreateTime = DateTime.Now;
             log.CreateUser = loginUser.Name;
@@ -719,7 +728,7 @@ namespace OpenAuth.App
         /// 根据部门id查用户列表
         /// </summary>
         /// <returns></returns>
-        public List<TextVaule> UserListAsync()
+        public List<TextVaule> UserListAsync(string Name)
         {
             var userId = _serviceBaseApp.GetUserNaspId();
             var depId = _serviceBaseApp.GetSalesDepID(userId);
@@ -728,6 +737,10 @@ namespace OpenAuth.App
             foreach (var item in test)
             {
                 var scon = UnitWork.FindSingle<Repository.Domain.base_user>(q => q.user_id == item.user_id);
+                if (!string.IsNullOrWhiteSpace(Name))
+                {
+                    scon = UnitWork.FindSingle<Repository.Domain.base_user>(q => q.user_id == item.user_id && q.user_nm.Contains(Name));
+                }
                 if (scon != null)
                 {
                     var nes = new TextVaule();
@@ -870,13 +883,27 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
+            DateTime followUpTime;
+            DateTime.TryParse(addClueFollowUpReq.FollowUpTime, out followUpTime);
+            DateTime nextFollowTime;
+            if (!string.IsNullOrWhiteSpace(addClueFollowUpReq.NextFollowTime))
+            {
+
+                DateTime.TryParse(addClueFollowUpReq.NextFollowTime, out nextFollowTime);
+            }
+            else
+            {
+                nextFollowTime = followUpTime.AddMonths(1);
+
+
+            }
             ClueFollowUp clueFollowUp = new ClueFollowUp
             {
                 ClueId = addClueFollowUpReq.ClueId,
                 ContactsId = addClueFollowUpReq.ContactsId,
                 FollowUpWay = addClueFollowUpReq.FollowUpWay,
-                FollowUpTime = addClueFollowUpReq.FollowUpTime,
-                NextFollowTime = addClueFollowUpReq.NextFollowTime,
+                FollowUpTime = followUpTime,
+                NextFollowTime = nextFollowTime,
                 Details = addClueFollowUpReq.Details,
                 CreateUser = loginUser.Name,
                 CreateTime = DateTime.Now
@@ -890,7 +917,7 @@ namespace OpenAuth.App
             }
             //日志
             var log = new AddClueLogReq();
-            log.ClueId = data.Id;
+            log.ClueId = addClueFollowUpReq.ClueId;
             log.LogType = 0;
             log.CreateTime = DateTime.Now;
             log.CreateUser = loginUser.Name;
@@ -1189,7 +1216,7 @@ namespace OpenAuth.App
             ClueContacts clueContacts = new ClueContacts
             {
                 ClueId = addClueContactsReq.ClueId,
-                Email=addClueContactsReq.Email,
+                Email = addClueContactsReq.Email,
                 Name = addClueContactsReq.Name,
                 Tel1 = addClueContactsReq.Tel1,
                 Tel2 = addClueContactsReq.Tel2,
@@ -1205,7 +1232,7 @@ namespace OpenAuth.App
             UnitWork.Save();
             //日志
             var log = new AddClueLogReq();
-            log.ClueId = data.Id;
+            log.ClueId = addClueContactsReq.ClueId;
             log.LogType = 0;
             log.CreateTime = DateTime.Now;
             log.CreateUser = loginUser.Name;
@@ -1219,7 +1246,7 @@ namespace OpenAuth.App
         /// <param name="id"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public async Task<bool> DeleteContactsByIdAsync(List<int> ids)
+        public async Task<string> DeleteContactsByIdAsync(List<int> ids)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -1230,6 +1257,10 @@ namespace OpenAuth.App
             foreach (var item in ids)
             {
                 var clueContacts = UnitWork.FindSingle<ClueContacts>(q => q.Id == item);
+                if (clueContacts.IsDelete == true)
+                {
+                    return "不可删除默认联系人";
+                }
                 clueContacts.IsDelete = true;
                 UnitWork.Update(clueContacts);
                 UnitWork.Save();
@@ -1243,7 +1274,7 @@ namespace OpenAuth.App
                 await AddClueLogAsync(log);
             }
 
-            return true;
+            return "true";
         }
         /// <summary>
         /// 获取当前联系人
@@ -1384,7 +1415,7 @@ namespace OpenAuth.App
                 exp = exp.And(t => t.CreateTime >= startTime && t.CreateTime < endTime.AddDays(1));
 
             }
-            var result = UnitWork.Find<ClueLog>(exp).MapToList<ClueLogListDto>();
+            var result = UnitWork.Find<ClueLog>(exp).OrderByDescending(q => q.CreateTime).MapToList<ClueLogListDto>();
             return result;
         }
 
@@ -1536,7 +1567,7 @@ namespace OpenAuth.App
 
 
         // 通用文字识别（高精度版）
-        public string accurateBasic(string files)
+        public string accurateBasic(AccurateBasicReq accurateBasicReq)
         {
 
             var token = getAccessToken();
@@ -1546,8 +1577,8 @@ namespace OpenAuth.App
             request.Method = "post";
             request.KeepAlive = true;
             // 图片的base64编码
-            //string base64 = getFileBase64(@"C:\Users\neware.com.cn\Desktop\1.png");
-            String str = "image=" + HttpUtility.UrlEncode(files);
+
+            string str = "image=" + HttpUtility.UrlEncode(accurateBasicReq.files);
             byte[] buffer = encoding.GetBytes(str);
             request.ContentLength = buffer.Length;
             request.GetRequestStream().Write(buffer, 0, buffer.Length);
@@ -1559,15 +1590,15 @@ namespace OpenAuth.App
             return result;
         }
 
-        //public String getFileBase64(String fileName)
-        //{
-        //    FileStream filestream = new FileStream(fileName, FileMode.Open);
-        //    byte[] arr = new byte[filestream.Length];
-        //    filestream.Read(arr, 0, (int)filestream.Length);
-        //    string baser64 = Convert.ToBase64String(arr);
-        //    filestream.Close();
-        //    return baser64;
-        //}
+        public String getFileBase64(String fileName)
+        {
+            FileStream filestream = new FileStream(fileName, FileMode.Open);
+            byte[] arr = new byte[filestream.Length];
+            filestream.Read(arr, 0, (int)filestream.Length);
+            string baser64 = Convert.ToBase64String(arr);
+            filestream.Close();
+            return baser64;
+        }
         public static BaiduAccessToken getAccessToken()
         {
             String authHost = "https://aip.baidubce.com/oauth/2.0/token";
@@ -1582,6 +1613,94 @@ namespace OpenAuth.App
             Console.WriteLine(result);
             return result;
         }
+
+        /// <summary>
+        /// 解析地址
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public string GetAddressBasic(string address)
+        {
+
+            var token = getAccessTokenAddress();
+
+            var url = $"https://aip.baidubce.com/rpc/2.0/nlp/v1/address?access_token=" + token.access_token;
+            byte[] encodeBytes = Encoding.UTF8.GetBytes(address);
+            string inputString = Encoding.UTF8.GetString(encodeBytes);
+            //string urlcode = WebUtility.UrlEncode(address);
+            var client = _httpClient.CreateClient();
+            client.BaseAddress = new Uri(url);
+            var content = new
+            {
+                text = inputString
+            };
+            HttpHelper httpHelper = new HttpHelper(url);
+            return httpHelper.Post(content, url, "");
+        }
+        public static BaiduAccessToken getAccessTokenAddress()
+        {
+            String authHost = "https://aip.baidubce.com/oauth/2.0/token";
+            HttpClient client = new HttpClient();
+            List<KeyValuePair<String, String>> paraList = new List<KeyValuePair<string, string>>();
+            paraList.Add(new KeyValuePair<string, string>("grant_type", "client_credentials"));
+            paraList.Add(new KeyValuePair<string, string>("client_id", "YpGG9H3jIqhmg8bXmzFMvGx7"));
+            paraList.Add(new KeyValuePair<string, string>("client_secret", "Zqi6u7NUbdiWAzEGXnBGe3nEkR2qsZH1"));
+
+            HttpResponseMessage response = client.PostAsync(authHost, new FormUrlEncodedContent(paraList)).Result;
+            BaiduAccessToken result = JsonConvert.DeserializeObject<BaiduAccessToken>(response.Content.ReadAsStringAsync().Result);
+            Console.WriteLine(result);
+            return result;
+        }
+        /// <summary>
+        /// 递归
+        /// </summary>
+        /// <param name="pid">父级Id</param>
+        /// <param name="demos">数据源</param>
+        /// <returns></returns>
+        private List<ClassificationDto> GetTypes(int pid, List<ClassificationDto> demos = null)
+        {
+            /*
+             思路：1.从数据源中找到父级
+                   2.循环父级并赋值，再循环父级时查找子集
+                   3.如果有子集调用用GetMenu（父级Id,数据源）方法一层一层向下找
+                   4.注意：（，是套娃模式。也就是循环第二层第三层的时候还是在一个父
+                   级下面）个人注意点因为我在这里差点没想通，总是想着是平级
+             */
+            var parent = demos.Where(P => P.ParentId == pid);
+            List<ClassificationDto> lists = new List<ClassificationDto>();
+            foreach (var item in parent)
+            {
+
+                ClassificationDto DemosChilder = new ClassificationDto();
+                DemosChilder.Id = item.Id;
+                DemosChilder.Name = item.Name;
+                DemosChilder.Level = item.Level;
+                DemosChilder.ParentId = item.ParentId;
+                DemosChilder.CreateTime = item.CreateTime;
+                DemosChilder.CreateUser = item.CreateUser;
+                DemosChilder.UpdateTime = item.UpdateTime;
+                DemosChilder.UpdateUser = item.UpdateUser;
+                DemosChilder.Children = GetSon(DemosChilder, demos);
+                lists.Add(DemosChilder);
+            }
+
+
+            //找子集有就返回NUll，并执行Add
+            List<ClassificationDto> GetSon(ClassificationDto demos, List<ClassificationDto> demosd = null)
+            {
+                if (!demosd.Exists(x => x.ParentId == demos.Id))
+                {
+                    return null;
+                }
+                else
+                {
+                    return GetTypes(demos.Id, demosd);
+                }
+            }
+            return lists;
+        }
+
         #endregion
 
 
@@ -1679,5 +1798,163 @@ namespace OpenAuth.App
 
 
         #endregion
+
+        #region 分类字典
+        /// <summary>
+        /// 新增
+        /// </summary>
+        /// <param name="addClassificationReq"></param>
+        /// <returns></returns>
+        public async Task<string> AddClassificationAsync(AddClassificationReq addClassificationReq)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var loginUser = loginContext.User;
+            //if (await UnitWork.IsExistAsync<ClueClassification>(u => u.Name == addClassificationReq.Name))
+            //{
+            //    return "名称已存在";
+            //}
+            var entity = await UnitWork.FindSingleAsync<ClueClassification>(q => q.Id == addClassificationReq.ParentId);
+            var clueClassification = new ClueClassification
+            {
+                Name = addClassificationReq.Name,
+            };
+            if (entity != null)
+            {
+                clueClassification.Level = ++entity.Level;
+                clueClassification.ParentId = addClassificationReq.ParentId;
+            }
+            else
+            {
+                clueClassification.Level = 0;
+                clueClassification.ParentId = 0;
+            }
+            clueClassification.CreateTime = DateTime.Now;
+            clueClassification.CreateUser = loginUser.Name;
+            var data = await UnitWork.AddAsync<ClueClassification, int>(clueClassification);
+            await UnitWork.SaveAsync();
+            return data.Id.ToString();
+        }
+
+        //列表
+        public async Task<List<ClassificationDto>> ClassificationAsync()
+        {
+            var entity = UnitWork.Find<ClueClassification>(q => !q.IsDelete).MapToList<ClassificationDto>();
+            var res = GetTypes(0, entity);
+            return res;
+        }
+        //详情
+        public async Task<ClueClassification> GetClassificationByIdAsync(int id)
+        {
+            return await UnitWork.FindSingleAsync<ClueClassification>(q => q.Id == id);
+        }
+        /// <summary>
+        /// 更新
+        /// </summary>
+        /// <param name="updateClassificationReq"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<string> UpdateClassificationAsync(UpdateClassificationReq updateClassificationReq)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var loginUser = loginContext.User;
+            var clueClassification = await UnitWork.FindSingleAsync<ClueClassification>(q => q.Id == updateClassificationReq.Id);
+            clueClassification.Name = updateClassificationReq.Name;
+            clueClassification.UpdateTime = DateTime.Now;
+            clueClassification.UpdateUser = loginUser.Name;
+            await UnitWork.UpdateAsync(clueClassification);
+            await UnitWork.SaveAsync();
+            return "true";
+        }
+
+        /// <summary>
+        /// 删除
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<string> DeleteClassificationByIdAsync(int id)
+        {
+            var clueClassification = await UnitWork.FindSingleAsync<ClueClassification>(q => q.Id == id);
+            if (clueClassification != null)
+            {
+                clueClassification.IsDelete = true;
+                await UnitWork.UpdateAsync(clueClassification);
+                var clueClassificationchaid = UnitWork.Find<ClueClassification>(q => q.ParentId == id).MapToList<ClueClassification>();
+                if (clueClassificationchaid.Count > 0)
+                {
+                    foreach (var item in clueClassificationchaid)
+                    {
+                        item.IsDelete = true;
+                        await UnitWork.UpdateAsync(item);
+                    }
+                }
+                await UnitWork.SaveAsync();
+                return "true";
+
+            }
+
+            return "false";
+        }
+        public async Task<List<ClassificationDto>> IndustryDropDownAsync()
+        {
+            var entity = UnitWork.Find<ClueClassification>(q => !q.IsDelete).MapToList<ClassificationDto>();
+            var res = GetTypes(1, entity);
+            return res;
+        }
+        #endregion
+
+
+        public string GetCompanyNameBasic(string name)
+        {
+            // token可以从 数据中心 -> 我的接口 中获取
+            var token = "57fe81b8-35db-4363-b097-59dc1db82334";
+            var url = $"http://open.api.tianyancha.com/services/open/search/2.0?word={name}&pageSize=20&pageNum=1";
+
+            // 请求处理
+            var responseStr = httpGet(url, token);
+            return responseStr;
+        }
+        static String httpGet(String url, String token)
+        {
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+
+            // set header
+            WebHeaderCollection headers = new WebHeaderCollection();
+            headers.Add("Authorization", token);
+            request.UserAgent = null;
+            request.Headers = headers;
+            request.Method = "GET";
+
+            // response deal
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            var httpStatusCode = (int)response.StatusCode;
+            Console.WriteLine("返回码为 {0}", httpStatusCode);
+            if (httpStatusCode == 200)
+            {
+                Stream myResponseStream = response.GetResponseStream();
+                StreamReader myStreamReader = new StreamReader(myResponseStream, Encoding.GetEncoding("utf-8"));
+                string retString = myStreamReader.ReadToEnd();
+                myStreamReader.Close();
+                myResponseStream.Close();
+                return retString;
+            }
+            else
+            {   // todo 可以通过返回码判断处理
+                Console.WriteLine("未返回数据 {0}", httpStatusCode);
+                throw new Exception("no data response");
+            }
+
+        }
+
     }
 }

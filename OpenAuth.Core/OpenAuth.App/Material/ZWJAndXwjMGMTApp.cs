@@ -201,8 +201,14 @@ namespace OpenAuth.App.Material
             {
                 await UnitWork.DeleteAsync<ZWJSoftwareVersion>(x => x.Id == id);
                 await UnitWork.DeleteAsync<ZWJHardware>(x => x.ZWJSoftwareVersionId == id);
-
+                
                 await UnitWork.SaveAsync();
+                if (!string.IsNullOrWhiteSpace(softwareObj?.FileName))
+                {
+                    //删除文件
+                    new HuaweiOBSHelper().DeleteObject(softwareObj?.FileName, null);
+                }
+
                 await tran.CommitAsync();
             }
             catch(Exception ex)
@@ -342,18 +348,37 @@ namespace OpenAuth.App.Material
         public async Task<TableData> DeleteXWJSoftwareVersion(int id)
         {
             var result = new TableData();
-            var existsXWJHardware = (from s in UnitWork.Find<XWJSoftwareVersion>(null)
-                                     join h in UnitWork.Find<XWJHardware>(null)
-                                     on s.Alias equals h.Alias
-                                     where s.Id == id
-                                     select s.Id).Any();
+            var existsXWJHardware = await (from s in UnitWork.Find<XWJSoftwareVersion>(null)
+                                           join h in UnitWork.Find<XWJHardware>(null)
+                                           on s.Alias equals h.Alias
+                                           where s.Id == id
+                                           select s.FileName).AnyAsync();
             if (existsXWJHardware)
             {
                 throw new Exception("该程序版本仍有硬件使用.");
             }
-                                    
-            await UnitWork.DeleteAsync<XWJSoftwareVersion>(x => x.Id == id);
-            await UnitWork.SaveAsync();
+
+            var xwjVersion = await UnitWork.Find<XWJSoftwareVersion>(null).FirstOrDefaultAsync(x => x.Id == id);
+
+            //开启事务
+            using var tran = UnitWork.GetDbContext<ZWJSoftwareVersion>().Database.BeginTransaction();
+            try
+            {
+                await UnitWork.DeleteAsync<XWJSoftwareVersion>(x => x.Id == id);
+                await UnitWork.SaveAsync();
+                if (!string.IsNullOrWhiteSpace(xwjVersion?.FileName))
+                {
+                    //删除文件
+                    new HuaweiOBSHelper().DeleteObject(xwjVersion?.FileName, null);
+                }
+
+                await tran.CommitAsync();
+            }
+            catch(Exception ex)
+            {
+                await tran.RollbackAsync();
+                throw ex;
+            }
 
             return result;
         }

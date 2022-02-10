@@ -80,10 +80,34 @@ namespace OpenAuth.App.Nwcali
             await UnitWork.SaveAsync();
         }
 
-        public async Task<NwcaliBaseInfo> GetInfo(string certNo)
+        public async Task<NwcaliBaseInfo> GetInfos(string certNo)
         {
             var info = await UnitWork.Find<NwcaliBaseInfo>(null).Include(b => b.NwcaliTurs).Include(b => b.NwcaliPlcDatas).Include(b => b.PcPlcs).Include(b => b.Etalons)
                 .FirstOrDefaultAsync(b => b.CertificateNumber.Equals(certNo));
+            return info;
+        }
+        public async Task<NwcaliBaseInfo> GetInfo(string certNo)
+        {
+            var info = await UnitWork.Find<NwcaliBaseInfo>(null).FirstOrDefaultAsync(b => b.CertificateNumber.Equals(certNo));
+            if (info != null)
+            {
+                info.NwcaliTurs = await UnitWork.Find<NwcaliTur>(c => c.NwcaliBaseInfoId == info.Id).ToListAsync();
+                info.NwcaliPlcDatas = await UnitWork.Find<NwcaliPlcData>(c => c.NwcaliBaseInfoId == info.Id).ToListAsync();
+                info.PcPlcs = await UnitWork.Find<PcPlc>(c => c.NwcaliBaseInfoId == info.Id).ToListAsync();
+                info.Etalons = await UnitWork.Find<Etalon>(c => c.NwcaliBaseInfoId == info.Id).ToListAsync();
+            }
+            return info;
+        }
+        public async Task<NwcaliBaseInfo> GetInfoBySn(string testerSn)
+        {
+            var info = await UnitWork.Find<NwcaliBaseInfo>(null).FirstOrDefaultAsync(b => b.TesterSn.Equals(testerSn));
+            if (info!=null)
+            {
+                info.NwcaliTurs = await UnitWork.Find<NwcaliTur>(c => c.NwcaliBaseInfoId == info.Id).ToListAsync();
+                info.NwcaliPlcDatas = await UnitWork.Find<NwcaliPlcData>(c => c.NwcaliBaseInfoId == info.Id).ToListAsync();
+                info.PcPlcs = await UnitWork.Find<PcPlc>(c => c.NwcaliBaseInfoId == info.Id).ToListAsync();
+                info.Etalons = await UnitWork.Find<Etalon>(c => c.NwcaliBaseInfoId == info.Id).ToListAsync();
+            }
             return info;
         }
 

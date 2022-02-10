@@ -131,7 +131,7 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// </summary>
         /// <param name="ClueId"></param>
         /// <returns></returns>
-        [HttpDelete]
+        [HttpPost]
         [Route("DeleteClueByIdAsync")]
         public async Task<Response<bool>> DeleteClueByIdAsync(List<int> ClueId)
         {
@@ -149,7 +149,7 @@ namespace OpenAuth.WebApi.Controllers.Clue
         }
 
         /// <summary>
-        /// 解析地址
+        /// 快宝解析地址
         /// </summary>
         /// <param name="address"></param>
         /// <returns></returns>
@@ -219,9 +219,33 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <returns></returns>
         [HttpPost]
         [Route("GetAccurateBasic")]
-        public string GetAccurateBasic(string files)
+        public string GetAccurateBasic(AccurateBasicReq accurateBasicReq)
         {
-            return _clueApp.accurateBasic(files);
+            return _clueApp.accurateBasic(accurateBasicReq);
+
+        }
+        /// <summary>
+        /// 百度图片解析地址
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GetAddressBasic")]
+        public string GetAddressBasic(string address)
+        {
+            return  _clueApp.GetAddressBasic(address);
+
+        }
+        /// <summary>
+        /// 天眼查模糊搜索
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetCompanyNameBasic")]
+        public string GetCompanyNameBasic(string name)
+        {
+            return _clueApp.GetCompanyNameBasic(name);
 
         }
     }

@@ -220,6 +220,18 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 判断桶中是否已经存在文件名
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public bool IsExistsFileName(string fileName)
+        {
+            var result = _app.IsExistsFileName("bts-rom/" + fileName);
+            return result;
+        }
+
+        /// <summary>
         /// 上传文件到华为云obs
         /// </summary>
         /// <param name="prefix"></param>
@@ -227,9 +239,10 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="file"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<List<UploadFileResp>> UploadFileToHuaweiOBS(string prefix, string version, IFormFile file)
+        [DisableRequestSizeLimit] 
+        public async Task<UploadFileResp> UploadFileToHuaweiOBS(IFormFile file)
         {
-            var result = await _app.UploadFileToHuaweiOBS(prefix, version, file);
+            var result = await _app.UploadFileToHuaweiOBS(file);
             return result;
         }
     }

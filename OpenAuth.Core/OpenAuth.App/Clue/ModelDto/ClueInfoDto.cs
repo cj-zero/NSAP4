@@ -75,7 +75,7 @@ namespace OpenAuth.App.Clue.ModelDto
         /// <summary>
         /// 标签集合
         /// </summary>
-        public string Tags { get; set; }
+        public List<string> Tags { get; set; }
         /// <summary>
         ///备注
         /// </summary>
