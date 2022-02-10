@@ -44,7 +44,7 @@ namespace OpenAuth.Repository.Domain.Serve
         /// </summary>
         /// </summary>
         [Description("所属行业")]
-        public int IndustryInvolved { get; set; }
+        public string IndustryInvolved { get; set; }
         /// <summary>
         /// 人员规模
         /// </summary>
