@@ -82,7 +82,7 @@ namespace OpenAuth.App
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), r => r.CreateTime > req.StartDate)
                                 .WhereIf(serviceOrderIds.Count() > 0, r => serviceOrderIds.Contains(r.ServiceOrderId))
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), r => r.CreateTime < Convert.ToDateTime(req.EndDate).AddDays(1));
-            if (loginUser.Account!=Define.SYSTEM_USERNAME)
+            if (loginUser.Account!=Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-派送服务ID")))
             {
                 #region 筛选条件
                 //var schemeContent = await .FirstOrDefaultAsync();
