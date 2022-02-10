@@ -1021,6 +1021,7 @@ namespace OpenAuth.App
             var AppUser = await UnitWork.Find<AppUserMap>(s => s.UserID == obj.SupervisorId).Include(s => s.User).FirstOrDefaultAsync();
             var AppUserId = await UnitWork.Find<AppUserMap>(s => s.UserID == loginUser.Id).Select(s => s.AppUserId).FirstOrDefaultAsync();
             var isHasNum = false;
+            var serialNumber = await CheckManufSn(obj.CustomerId);
             obj.ServiceWorkOrders.ForEach(s =>
             {
                 if (s.ManufacturerSerialNumber== "无序列号" && loginUserOrg.OrgName!="S19")
@@ -1034,6 +1035,12 @@ namespace OpenAuth.App
                 {
                     result.Code = 500;
                     result.Message = "呼叫主题不能为空。";
+                    isHasNum = true;
+                }
+                if (!serialNumber.Any(c => c.ManufSN == s.ManufacturerSerialNumber && c.ItemCode == s.MaterialCode))
+                {
+                    result.Code = 500;
+                    result.Message = "序列号和物料编码不匹配，请关闭窗口重新选择。";
                     isHasNum = true;
                 }
                 s.SubmitDate = DateTime.Now;
@@ -1111,6 +1118,27 @@ namespace OpenAuth.App
                 await _signalrmessage.SendSystemMessage(SignalRSendType.User, $"系统已自动分配了{assignedWorks.Count()}个新的售后服务，请尽快处理", new List<string>() { obj.Supervisor });
             }
             return result;
+        }
+
+        /// <summary>
+        /// 获取客户下序列号
+        /// </summary>
+        /// <param name="cardCode"></param>
+        /// <returns></returns>
+        public async Task<List<SerialNumberResp>> CheckManufSn(string cardCode)
+        {
+            var query = await UnitWork.Find<OINS>(c => c.customer == cardCode).Select(c => new SerialNumberResp { ManufSN = c.manufSN, ItemCode = c.itemCode, DeliveryNo = c.deliveryNo }).ToListAsync();
+
+            var ServiceOinsModels =await UnitWork.Find<ServiceOins>(q => q.customer == cardCode).Select(q => new SerialNumberResp
+            {
+                ManufSN = q.manufSN,
+                ItemCode = q.itemCode,
+                DeliveryNo = q.deliveryNo
+            }).ToListAsync();
+
+            var MergeModels = query.Union(ServiceOinsModels);
+            var mergelist = MergeModels.GroupBy(d => new { d.ManufSN, d.ItemCode, d.DeliveryNo }).Select(g => g.First()).ToList();
+            return mergelist;
         }
         /// <summary>
         /// 工程部新建服务单
