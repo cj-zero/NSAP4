@@ -36,7 +36,7 @@ namespace OpenAuth.App.Clue.Request
         /// 14文化、体育和娱乐业(5)
         /// 15其他行业(9)
         /// </summary>
-        public int IndustryInvolved { get; set; }
+        public string IndustryInvolved { get; set; }
         /// <summary>
         /// 人员规模
         /// 0:1-20、1:20-100、2:100-500、3:500-1000、4:1000-10000、5:10000以上
