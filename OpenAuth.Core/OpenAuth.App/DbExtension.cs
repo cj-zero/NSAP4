@@ -49,7 +49,8 @@ namespace OpenAuth.App
             // var entity = _context.Model.GetEntityTypes().FirstOrDefault(u => u.Name.Contains(moduleName, StringComparison.OrdinalIgnoreCase));
             if (entity == null)
             {
-                throw new Exception($"未能找到{moduleName}对应的实体类");
+                //throw new Exception($"未能找到{moduleName}对应的实体类");
+                return null;
             }
 
             foreach (var property in entity.ClrType.GetProperties())
