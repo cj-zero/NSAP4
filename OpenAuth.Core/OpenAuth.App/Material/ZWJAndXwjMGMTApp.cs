@@ -22,6 +22,19 @@ namespace OpenAuth.App.Material
         }
 
         #region 中位机版本管理
+        /// <summary>
+        /// 是否存在中位机默认版本
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> IsExistsDefaultZWJVersion()
+        {
+            var result = new TableData();
+
+            var data = await UnitWork.Find<ZWJSoftwareVersion>(null).FirstOrDefaultAsync(x => x.DefaultVersion == true);
+            result.Data = data?.Id;
+
+            return result;
+        }
 
         /// <summary>
         /// 新增中位机软件版本记录
@@ -36,6 +49,7 @@ namespace OpenAuth.App.Material
             var zwjObj = new ZWJSoftwareVersion()
             {
                 ProjectName = req.ProjectName,
+                DefaultVersion = req.DefaultVersion,
                 ZWJSoftwareVersionName = req.ZWJSoftwareVersionName,
                 Remark = req.Remark,
                 CreateUser = _auth.GetCurrentUser()?.User?.Id ?? "",
@@ -54,8 +68,19 @@ namespace OpenAuth.App.Material
             using var tran = UnitWork.GetDbContext<ZWJSoftwareVersion>().Database.BeginTransaction();
             try
             {
+                //如果是默认版本,则覆盖之前的版本(默认版本只能有一个)
+                if (zwjObj.DefaultVersion)
+                {
+                    UnitWork.Update<ZWJSoftwareVersion>(x => x.DefaultVersion == true, e => new ZWJSoftwareVersion
+                    {
+                        DefaultVersion = false
+                    });
+                }
+
+                //新增软件版本
                 await UnitWork.AddAsync(zwjObj);
                 await UnitWork.SaveAsync();
+
                 //将硬件和软件对应起来
                 zwjHardwares.All(x =>
                 {
@@ -92,6 +117,7 @@ namespace OpenAuth.App.Material
                             x.Id,
                             x.ProjectName,
                             x.ZWJSoftwareVersionName,
+                            x.DefaultVersion,
                             x.FilePath,
                             x.FileName,
                             Count = x.ZWJHardwares.Count(),
@@ -129,6 +155,7 @@ namespace OpenAuth.App.Material
             }
 
             softwareObj.ProjectName = req.ProjectName;
+            softwareObj.DefaultVersion = req.DefaultVersion;
             softwareObj.ZWJSoftwareVersionName = req.ZWJSoftwareVersionName;
             softwareObj.Remark = req.Remark;
             softwareObj.UpdateTime = DateTime.Now;
@@ -141,10 +168,20 @@ namespace OpenAuth.App.Material
             using var tran = UnitWork.GetDbContext<ZWJSoftwareVersion>().Database.BeginTransaction();
             try
             {
+                //如果是默认版本,则覆盖之前的版本(默认版本只能有一个)
+                if (req.DefaultVersion)
+                {
+                    UnitWork.Update<ZWJSoftwareVersion>(x => x.DefaultVersion == true, e => new ZWJSoftwareVersion
+                    {
+                        DefaultVersion = false
+                    });
+                }
+
                 //更新软件信息
                 await UnitWork.UpdateAsync<ZWJSoftwareVersion>(z => z.Id == req.Id, e => new ZWJSoftwareVersion
                 {
                     ProjectName = softwareObj.ProjectName,
+                    DefaultVersion = softwareObj.DefaultVersion,
                     ZWJSoftwareVersionName = softwareObj.ZWJSoftwareVersionName,
                     Remark = softwareObj.Remark,
                     UpdateTime = softwareObj.UpdateTime,
@@ -415,6 +452,7 @@ namespace OpenAuth.App.Material
             {
                 XWJSn = req.XWJSn,
                 Alias = req.Alias,
+                AliasEn = req.AliasEn ?? "",
                 Remark = req.Remark,
                 CreateUser = _auth.GetCurrentUser()?.User?.Id ?? "",
                 CreateTime = DateTime.Now,
@@ -441,11 +479,16 @@ namespace OpenAuth.App.Material
                        join s in UnitWork.Find<XWJSoftwareVersion>(null)
                        .WhereIf(!string.IsNullOrWhiteSpace(req.XWJSoftwareVersionName), x => x.XWJSoftwareVersionName == req.XWJSoftwareVersionName)
                        on h.Alias equals s.Alias
+                       join e in UnitWork.Find<XWJSoftwareVersion>(null)
+                       on h.AliasEn equals e.Alias into temp
+                       from t in temp.DefaultIfEmpty()
                        select new
                        {
                            h.XWJSn,
                            s.XWJSoftwareVersionName,
                            s.Alias,
+                           XWJSoftwareVersionNameEn = t == null ? "" : t.XWJSoftwareVersionName,
+                           AliasEn = t == null ? "" : t.Alias,
                            h.Remark,
                            h.CreateTime,
                            h.Id
@@ -470,6 +513,7 @@ namespace OpenAuth.App.Material
             {
                 XWJSn = req.XWJSn,
                 Alias = req.Alias,
+                AliasEn = req.AliasEn ?? "",
                 Remark = req.Remark,
                 UpdateTime = DateTime.Now
             });
@@ -489,6 +533,153 @@ namespace OpenAuth.App.Material
             var result = new TableData();
 
             await UnitWork.DeleteAsync<XWJHardware>(x => x.Id == id);
+            await UnitWork.SaveAsync();
+
+            return result;
+        }
+        #endregion
+
+        #region 临时版本管理
+        /// <summary>
+        /// 获取中位机程序版本
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetZWJSoftwareVersionNames()
+        {
+            var result = new TableData();
+
+            var data = UnitWork.Find<ZWJSoftwareVersion>(null)
+                        .OrderByDescending(x => x.CreateTime)
+                        .Select(x => new { x.Id, x.ZWJSoftwareVersionName });
+
+            result.Data = await data.ToListAsync();
+            result.Count = await data.CountAsync();
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取下位机程序版本
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetXWJSoftwareVersionNames()
+        {
+            var result = new TableData();
+
+            var data = UnitWork.Find<XWJSoftwareVersion>(null)
+                        .OrderByDescending(x => x.CreateTime)
+                        .Select(x => new { x.Id, x.Alias });
+            result.Data = await data.ToListAsync();
+            result.Count = await data.CountAsync();
+
+            return result;
+        }
+
+        /// <summary>
+        /// 新增临时版本管理记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> AddTempVersion(AddOrUpdateTempVersionReq req)
+        {
+            var result = new TableData();
+
+            var tempObject = new TempVersion
+            {
+                ContractNo = req.ContractNo,
+                HardwareType = req.HardwareType,
+                SoftwareVersionId = req.SoftwareVersionId,
+                Remark = req.Remark,
+                CreateTime = DateTime.Now,
+                UpdateTime = DateTime.Now,
+            };
+
+            await UnitWork.AddAsync(tempObject);
+            await UnitWork.SaveAsync();
+
+            return result;
+        }
+
+        /// <summary>
+        /// 查询临时版本记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetTempVesionInfo(QueryTempVersionReq req)
+        {
+            var result = new TableData();
+
+            var query1 = from t in UnitWork.Find<TempVersion>(null)
+                         join z in UnitWork.Find<ZWJSoftwareVersion>(null)
+                         on t.SoftwareVersionId equals z.Id
+                         where t.HardwareType == "中位机"
+                         select new
+                         {
+                             t.Id,
+                             t.ContractNo,
+                             t.HardwareType,
+                             VersionId = z.Id,
+                             VersionName = z.ZWJSoftwareVersionName,
+                             VersionRemark = z.Remark,
+                             t.Remark,
+                             t.CreateTime
+                         };
+
+            var query2 = from t in UnitWork.Find<TempVersion>(null)
+                         join x in UnitWork.Find<XWJSoftwareVersion>(null)
+                         on t.SoftwareVersionId equals x.Id
+                         where t.HardwareType == "下位机"
+                         select new
+                         {
+                             t.Id,
+                             t.ContractNo,
+                             t.HardwareType,
+                             VersionId = x.Id,
+                             VersionName = x.XWJSoftwareVersionName,
+                             VersionRemark = x.Remark,
+                             t.Remark,
+                             t.CreateTime
+                         };
+            var query3 = query1.Concat(query2);
+
+            result.Data = await query3.OrderByDescending(x => x.CreateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+            result.Count = await query3.CountAsync();
+
+            return result;
+        }
+
+        /// <summary>
+        /// 修改临时版本记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> UpdateTempVersion(AddOrUpdateTempVersionReq req)
+        {
+            var result = new TableData();
+
+            await UnitWork.UpdateAsync<TempVersion>(x => x.Id == req.Id, e => new TempVersion
+            {
+                ContractNo = req.ContractNo,
+                HardwareType = req.HardwareType,
+                SoftwareVersionId = req.SoftwareVersionId,
+                Remark = req.Remark,
+                UpdateTime = DateTime.Now
+            });
+            await UnitWork.SaveAsync();
+
+            return result;
+        }
+
+        /// <summary>
+        /// 删除临时版本记录
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<TableData> DeleteTempVersion(int id)
+        {
+            var result = new TableData();
+
+            await UnitWork.DeleteAsync<TempVersion>(x => x.Id == id);
             await UnitWork.SaveAsync();
 
             return result;
