@@ -35,7 +35,7 @@ namespace OpenAuth.App
             var query = UnitWork.Find<BeforeSaleDemandProject>(null)
             //.Include(b => b.BeforeSaleProSchedulings)
             .WhereIf(!string.IsNullOrWhiteSpace(req.PromoterName), c => c.PromoterName.Contains(req.PromoterName))
-            .WhereIf(!string.IsNullOrWhiteSpace(req.KeyWord), k => k.ProjectName.Contains(req.KeyWord) || k.ProjectNum.Contains(req.KeyWord) || k.ReqUserName.Contains(req.KeyWord) || k.DevUserName.Contains(req.KeyWord) || k.TestUserName.Contains(req.KeyWord))
+            .WhereIf(!string.IsNullOrWhiteSpace(req.KeyWord), k => k.ProjectName.Contains(req.KeyWord) || k.ProjectNum.Contains(req.KeyWord) || k.CustomerId.Contains(req.KeyWord) || k.CustomerName.Contains(req.KeyWord) || k.ReqUserName.Contains(req.KeyWord) || k.DevUserName.Contains(req.KeyWord) || k.TestUserName.Contains(req.KeyWord))
             .WhereIf(!string.IsNullOrWhiteSpace(req.CreateTimeStart.ToString()), q => q.CreateTime > req.CreateTimeStart)
             .WhereIf(!string.IsNullOrWhiteSpace(req.CreateTimeEnd.ToString()), q => q.CreateTime < Convert.ToDateTime(req.CreateTimeStart).AddDays(1));
             if (req.Status != null && req.Status != 0)//所有项目流程
@@ -69,6 +69,8 @@ namespace OpenAuth.App
             var beforeSaleProSchedulings = await UnitWork.Find<BeforeSaleProScheduling>(c => c.BeforeSaleDemandProjectId == detail.Id)
                 .OrderBy(c => c.Id).Select(h => new
                 {
+                    h.BeforeSaleDemandId,
+                    h.BeforeSaleDemandProjectId,
                     h.CreateTime,
                     h.Stage,
                     h.UserId,

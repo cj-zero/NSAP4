@@ -5475,7 +5475,7 @@ namespace OpenAuth.App.Order
                 return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql.ToString(), CommandType.Text, null).DataTableToJSON();
             }
         }
-        public static T DeSerialize<T>(byte[] bytes)
+        public T DeSerialize<T>(byte[] bytes)
         {
             T oClass = default(T);
             if (bytes.Length == 0 || bytes == null) return oClass;

@@ -69,5 +69,20 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("测试预估工期")]
         public int TestEstimate { get; set; }
+        /// <summary>
+        /// 是否需要开发实施 默认为0不需要
+        /// </summary>
+        [Description("是否需要开发实施")]
+        public int IsDevDeploy { get; set; }
+        /// <summary>
+        /// 是否确认 默认0 确认表示执行研发提交
+        /// </summary>
+        [Description("是否确认 默认0 确认表示执行研发提交")]
+        public int IsConfirm { get; set; }
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        [Description("创建时间")]
+        public System.DateTime? CreateTime { get; set; }
     }
 }

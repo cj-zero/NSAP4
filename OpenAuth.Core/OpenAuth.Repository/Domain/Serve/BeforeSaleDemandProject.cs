@@ -24,25 +24,27 @@ namespace OpenAuth.Repository.Domain
     {
         public BeforeSaleDemandProject()
         {
-          this.BeforeSaleDemandId = 0;
-          this.ProjectName = string.Empty;
-          this.ProjectNum= string.Empty;
-          this.PromoterId= string.Empty;
-          this.PromoterName= string.Empty;
-          this.ReqUserId= string.Empty;
-          this.ReqUserName= string.Empty;
-          this.DevUserId= string.Empty;
-          this.DevUserName= string.Empty;
-          this.TestUserId= string.Empty;
-          this.TestUserName= string.Empty;
-          this.FlowInstanceId= string.Empty;
-          this.Status= 0;
-          this.ProjectUrl= string.Empty;
-          this.ProjectDocURL= string.Empty;
-          this.CreateUserName= string.Empty;
-          this.CreateUserId= string.Empty;
-          this.CreateTime= DateTime.Now;
-          this.UpdateTime= DateTime.Now;
+            this.BeforeSaleDemandId = 0;
+            this.ProjectName = string.Empty;
+            this.ProjectNum = string.Empty;
+            this.CustomerName = string.Empty;
+            this.CustomerName = string.Empty;
+            this.PromoterId = string.Empty;
+            this.PromoterName = string.Empty;
+            this.ReqUserId = string.Empty;
+            this.ReqUserName = string.Empty;
+            this.DevUserId = string.Empty;
+            this.DevUserName = string.Empty;
+            this.TestUserId = string.Empty;
+            this.TestUserName = string.Empty;
+            this.FlowInstanceId = string.Empty;
+            this.Status = 0;
+            this.ProjectUrl = string.Empty;
+            this.ProjectDocURL = string.Empty;
+            this.CreateUserName = string.Empty;
+            this.CreateUserId = string.Empty;
+            this.CreateTime = DateTime.Now;
+            this.UpdateTime = DateTime.Now;
         }
 
         /// <summary>
@@ -62,6 +64,17 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("售前需求项目编号")]
         public string ProjectNum { get; set; }
+        /// <summary>
+        /// 客户编号
+        /// </summary>
+        [Description("客户编号")]
+        [Browsable(false)]
+        public string CustomerId { get; set; }
+        /// <summary>
+        /// 客户名称
+        /// </summary>
+        [Description("客户名称")]
+        public string CustomerName { get; set; }
         /// <summary>
         /// 发起人Id
         /// </summary>

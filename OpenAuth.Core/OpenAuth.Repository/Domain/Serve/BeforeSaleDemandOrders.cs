@@ -27,10 +27,8 @@ namespace OpenAuth.Repository.Domain
             this.OrderId = string.Empty;
             this.CustomerId = string.Empty;
             this.CustomerName = string.Empty;
-            this.MaterialCode = string.Empty;
-            this.MaterialDescription = string.Empty;
+            this.Remarks = string.Empty;
         }
-
 
         /// <summary>
         /// 售前需求Id
@@ -61,24 +59,30 @@ namespace OpenAuth.Repository.Domain
         [Description("单据类型 0:销售单 1:报价单")]
         public int? Type { get; set; }
         /// <summary>
-        /// 物料编码
+        /// 备注信息
         /// </summary>
-        [Description("物料编码")]
-        public string MaterialCode { get; set; }
-        /// <summary>
-        /// 物料描述
-        /// </summary>
-        [Description("物料描述")]
-        public string MaterialDescription { get; set; }
-        /// <summary>
-        /// 数量
-        /// </summary>
-        [Description("数量")]
-        public int? Num { get; set; }
+        [Description("备注信息")]
+        public string Remarks { get; set; }
         /// <summary>
         /// 金额
         /// </summary>
         [Description("金额")]
         public decimal? Amount { get; set; }
+        /// <summary>
+        /// 创建人
+        /// </summary>
+        [Description("创建人")]
+        public string CreateUserName { get; set; }
+        /// <summary>
+        /// 创建人ID
+        /// </summary>
+        [Description("创建人ID")]
+        [Browsable(false)]
+        public string CreateUserId { get; set; }
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        [Description("创建时间")]
+        public System.DateTime? CreateTime { get; set; }
     }
 }
