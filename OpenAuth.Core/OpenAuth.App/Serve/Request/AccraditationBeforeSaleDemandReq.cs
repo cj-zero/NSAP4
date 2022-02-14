@@ -110,6 +110,10 @@ namespace OpenAuth.App.Request
         public List<BeforeSaleDemandDeptInfo> BeforeSaleDemandDeptInfos { get; set; }
 
         /// <summary>
+        /// 关联售前项目Id
+        /// </summary>
+        public int? BeforeSaleDemandProjectId { get; set; }
+        /// <summary>
         /// 关联项目名称
         /// </summary>
         public string BeforeSaleDemandProjectName { get; set; }

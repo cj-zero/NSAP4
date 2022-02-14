@@ -218,6 +218,63 @@ namespace OpenAuth.Repository.Domain
         public System.DateTime? UpdateTime { get; set; }
 
         /// <summary>
+        /// 实施负责人Id
+        /// </summary>
+        [Description("实施负责人Id")]
+        [Browsable(false)]
+        public string ExecutorUserId { get; set; }
+        /// <summary>
+        /// 实施负责人
+        /// </summary>
+        [Description("实施负责人")]
+        public string ExecutorName { get; set; }
+        /// <summary>
+        /// 实际开始日期
+        /// </summary>
+        [Description("实际开始日期")]
+        public System.DateTime? ActualStartDate { get; set; }
+        /// <summary>
+        /// 提交日期
+        /// </summary>
+        [Description("提交日期")]
+        public System.DateTime? SubmitDate { get; set; }
+        /// <summary>
+        /// 状态 1-立项 2-需求 3-开发 4-测试5-实施 6-验收 7-结束
+        /// </summary>
+        [Description("项目状态 1-立项 2-需求 3-开发 4-测试5-实施 6-验收 7-结束")]
+        public int ProjectStatus { get; set; }
+        /// <summary>
+        /// 项目链接
+        /// </summary>
+        [Description("项目链接")]
+        public string ProjectUrl { get; set; }
+        /// <summary>
+        /// 需求文档/URL
+        /// </summary>
+        [Description("需求文档/URL")]
+        public string ProjectDocURL { get; set; }
+        /// <summary>
+        /// 实际开发开始日期
+        /// </summary>
+        [Description("实际开发开始日期")]
+        public System.DateTime? ActualDevStartDate { get; set; }
+        /// <summary>
+        /// 实际开发结束日期
+        /// </summary>
+        [Description("实际开发结束日期")]
+        public System.DateTime? ActualDevEndDate { get; set; }
+
+        /// <summary>
+        /// 实际测试开始日期
+        /// </summary>
+        [Description("实际测试开始日期")]
+        public System.DateTime? ActualTestStartDate { get; set; }
+        /// <summary>
+        /// 实际测试结束日期
+        /// </summary>
+        [Description("实际测试结束日期")]
+        public System.DateTime? ActualTestEndDate { get; set; }
+        /// <summary>
         /// 售前申请附件
         /// </summary>
         public virtual List<BeforeSaleFiles> Beforesalefiles { get; set; }
