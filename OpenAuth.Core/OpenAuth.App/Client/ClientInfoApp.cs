@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Text;
 using System.Threading.Tasks;
+using Infrastructure;
 using Infrastructure.Extensions;
 using Newtonsoft.Json;
 using NSAP.Entity.Client;
@@ -17,6 +18,8 @@ using OpenAuth.Repository;
 using billAttchment = NSAP.Entity.Sales.billAttchment;
 using clientCRD1 = NSAP.Entity.Client.clientCRD1;
 using clientOCPR = NSAP.Entity.Client.clientOCPR;
+using OpenAuth.Repository.Domain;
+using clientAcct1 = NSAP.Entity.Client.clientAcct1;
 
 namespace OpenAuth.App.Client
 {
@@ -585,8 +588,12 @@ namespace OpenAuth.App.Client
                 AddrList = new List<clientCRD1>(),//地址列表
                 FilesDetails = new List<billAttchment>(),//附件列表
                 EshopUserId = clientInfo.EshopUserId,
-
-                //  AcctList = new List<clientAcct1>()
+                AcctList = new List<clientAcct1>(),
+                U_SuperClient = clientInfo.U_SuperClient,//上级客户
+                U_StaffScale = clientInfo.U_StaffScale,//人员规模
+                U_ClientSource = clientInfo.U_ClientSource,//客户来源
+                U_TradeType = clientInfo.U_TradeType,//贸易类型
+                U_CompSector = clientInfo.U_CompSector//所属行业
             };
             foreach (var item in clientInfo.ContactList)
             {
@@ -728,7 +735,7 @@ namespace OpenAuth.App.Client
         /// </summary>
         public object GetAuditInfo(string jobId)
         {
-            string sql = string.Format("SELECT job_data FROM {0}.wfa_job WHERE job_id=?{1} ", "nsap_bone", jobId);
+            string sql = string.Format("SELECT job_data FROM {0}.wfa_job WHERE job_id={1}", "nsap_base", jobId);
             return UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
         }
         #endregion
@@ -738,7 +745,7 @@ namespace OpenAuth.App.Client
         /// </summary>
         public clientOCRD GetAuditInfoNew(string jobId)
         {
-            clientOCRD bill = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])(GetAuditInfo(jobId)));
+            clientOCRD bill = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(jobId));
             return bill;
         }
         #endregion

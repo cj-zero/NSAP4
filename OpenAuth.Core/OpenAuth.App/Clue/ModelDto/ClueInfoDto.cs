@@ -58,7 +58,7 @@ namespace OpenAuth.App.Clue.ModelDto
         /// <summary>
         /// 客户来源 0:领英、1:国内展会、2:国外展会、3:客户介绍、4:新威官网、5:其他
         /// </summary>
-        public int CustomerSource { get; set; }
+        public string  CustomerSource { get; set; }
 
         /// <summary>
         /// 所属行业
@@ -67,7 +67,7 @@ namespace OpenAuth.App.Clue.ModelDto
         /// <summary>
         /// 人员规模
         /// </summary>
-        public int StaffSize { get; set; }
+        public string  StaffSize { get; set; }
         /// <summary>
         /// 网址
         /// </summary>
@@ -99,7 +99,7 @@ namespace OpenAuth.App.Clue.ModelDto
         /// <summary>
         /// 角色（0：决策者、1：普通人）
         /// </summary>
-        public int Role { get; set; }
+        public string Role { get; set; }
         /// <summary>
         ///职位
         /// </summary>
