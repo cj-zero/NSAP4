@@ -341,7 +341,7 @@ namespace OpenAuth.App
             if (request.CompletionStartDate != null || request.CompletionEndDate != null)
             {
                 var CompletionReportGroupBy = CompletionReports.GroupBy(c => c.ServiceOrderId).Select(c => c).ToList();
-                CompletionReportGroupBy = CompletionReportGroupBy.Where(c => c.Min(m => m.BusinessTripDate) > request.CompletionStartDate && c.Max(m => m.EndDate) <= Convert.ToDateTime(request.CompletionEndDate).AddDays(1)).ToList();
+                CompletionReportGroupBy = CompletionReportGroupBy.Where(c => c.Min(m => m.BusinessTripDate) >= request.CompletionStartDate && c.Max(m => m.EndDate) < Convert.ToDateTime(request.CompletionEndDate).AddDays(1)).ToList();
                 ServiceOrderIds = CompletionReportGroupBy.Select(c => (int)c.Key).ToList();
                 CompletionReportGroupBy.ForEach(f => CompletionReportList.AddRange(f.ToList()));
             }
@@ -349,7 +349,7 @@ namespace OpenAuth.App
             {
                 CompletionReports = CompletionReportList;
             }
-            ReimburseInfos = ReimburseInfos.WhereIf(ServiceOrderIds.Count > 0, r => ServiceOrderIds.Contains(r.ServiceOrderId));
+            ReimburseInfos = ReimburseInfos.WhereIf(request.CompletionStartDate != null && request.CompletionEndDate != null, r => ServiceOrderIds.Contains(r.ServiceOrderId));
 
             result.Count = ReimburseInfos.Count();
             var ReimburseInfolist = await ReimburseInfos.Skip((request.page - 1) * request.limit)
@@ -433,6 +433,23 @@ namespace OpenAuth.App
                 var orgids = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Name.Contains(request.OrgName)).Select(o => o.Id).ToListAsync();
                 orgUserIds.AddRange(await UnitWork.Find<Relevance>(r => orgids.Contains(r.SecondId) && r.Key == Define.USERORG).Select(r => r.FirstId).ToListAsync());
             }
+            //根据完工日期,查找出服务单id
+            var ids = new List<int>();
+            if(request.CompletionStartDate != null && request.CompletionEndDate != null)
+            {
+                var reportData = from c in UnitWork.Find<CompletionReport>(null)
+                                 where c.ServiceMode == 1 && c.IsReimburse == 2
+                                 && c.BusinessTripDate >= request.CompletionStartDate
+                                 && c.EndDate < request.CompletionEndDate.Value.AddDays(1)
+                                 group c by c.ServiceOrderId into g
+                                 select new
+                                 {
+                                     Id = g.Key,
+                                     StartDate = g.Min(c => c.BusinessTripDate),
+                                     EndDate = g.Max(c => c.EndDate)
+                                 };
+                ids.AddRange(await reportData.Where(x => x.StartDate >= request.CompletionStartDate && x.EndDate < request.CompletionEndDate.Value.AddDays(1)).Select(x => x.Id.Value).Distinct().ToListAsync());
+            }
             var result = new TableData();
             var reimburseInfos = UnitWork.Find<ReimburseInfo>(null)
                 .WhereIf(!string.IsNullOrWhiteSpace(request.MainId) && int.TryParse(request.MainId, out int mainId), r => r.MainId == int.Parse(request.MainId))
@@ -442,7 +459,8 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(request.OrgName), r => orgUserIds.Contains(r.CreateUserId))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Status) && int.TryParse(request.Status, out int status), r => r.RemburseStatus == int.Parse(request.Status))
                 .WhereIf(request.StartDate != null && request.EndDate != null, r => r.CreateTime >= request.StartDate && r.CreateTime < request.EndDate.Value.AddDays(1))
-                .WhereIf(request.PaymentStartDate != null && request.PaymentEndDate != null, r => r.PayTime >= request.PaymentStartDate && r.PayTime < request.PaymentEndDate.Value.AddDays(1));
+                .WhereIf(request.PaymentStartDate != null && request.PaymentEndDate != null, r => r.PayTime >= request.PaymentStartDate && r.PayTime < request.PaymentEndDate.Value.AddDays(1))
+                .WhereIf(request.CompletionStartDate != null && request.CompletionEndDate != null, r => ids.Contains(r.ServiceOrderId));
             List<string> currentUser = new List<string>();
             if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginContext.Roles.Any(r => r.Name.Equals("总经理")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
@@ -2539,27 +2557,45 @@ namespace OpenAuth.App
             List<string> UserIds = new List<string>();
             List<int> ServiceOrderIds = new List<int>();
             List<string> OrgUserIds = new List<string>();
+            //创建人
             if (!string.IsNullOrWhiteSpace(request.CreateUserName))
             {
                 UserIds.AddRange(await UnitWork.Find<User>(u => u.Name.Contains(request.CreateUserName)).Select(u => u.Id).ToListAsync());
             }
-
+            //客户
             if (!string.IsNullOrWhiteSpace(request.TerminalCustomer))
             {
                 ServiceOrderIds.AddRange(await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Contains(request.TerminalCustomer) || s.TerminalCustomerId.Contains(request.TerminalCustomer)).Select(s => s.Id).ToListAsync());
             }
-
+            //报销部门
             if (!string.IsNullOrWhiteSpace(request.OrgName))
             {
                 var orgids = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Name.Contains(request.OrgName)).Select(o => o.Id).ToListAsync();
                 OrgUserIds.AddRange(await UnitWork.Find<Relevance>(r => orgids.Contains(r.SecondId) && r.Key == Define.USERORG).Select(r => r.FirstId).ToListAsync());
+            }
+            //根据完工日期筛选
+            var ids = new List<int>();
+            if (request.CompletionStartDate != null && request.CompletionEndDate != null)
+            {
+                var reportData = from c in UnitWork.Find<CompletionReport>(null)
+                                 where c.ServiceMode == 1 && c.IsReimburse == 2
+                                 && c.BusinessTripDate >= request.CompletionStartDate
+                                 && c.EndDate < request.CompletionEndDate.Value.AddDays(1)
+                                 group c by c.ServiceOrderId into g
+                                 select new
+                                 {
+                                     Id = g.Key,
+                                     StartDate = g.Min(c => c.BusinessTripDate),
+                                     EndDate = g.Max(c => c.EndDate)
+                                 };
+                ids.AddRange(await reportData.Where(x => x.StartDate >= request.CompletionStartDate && x.EndDate < request.CompletionEndDate.Value.AddDays(1)).Select(x => x.Id.Value).Distinct().ToListAsync());
             }
             var objs = UnitWork.Find<ReimburseInfo>(null).Include(r => r.ReimburseTravellingAllowances);
             var ReimburseInfos = objs.WhereIf(!string.IsNullOrWhiteSpace(request.MainId), r => r.MainId.ToString().Contains(request.MainId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId), r => r.ServiceOrderSapId.ToString().Contains(request.ServiceOrderId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.BearToPay), r => r.BearToPay.Contains(request.BearToPay))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.Responsibility), r => r.Responsibility.Contains(request.Responsibility))
-                      .WhereIf(request.StartDate != null, r => r.CreateTime > request.StartDate)
+                      .WhereIf(request.StartDate != null, r => r.CreateTime >= request.StartDate)
                       .WhereIf(request.EndDate != null, r => r.CreateTime < Convert.ToDateTime(request.EndDate).AddMinutes(1440))
                       //.WhereIf(!string.IsNullOrWhiteSpace(request.IsDraft.ToString()), r => r.IsDraft == request.IsDraft)
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ReimburseType), r => r.ReimburseType.Equals(request.ReimburseType))
@@ -2568,8 +2604,9 @@ namespace OpenAuth.App
                       .WhereIf(!string.IsNullOrWhiteSpace(request.TerminalCustomer), r => ServiceOrderIds.Contains(r.ServiceOrderId))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceRelations), r => r.ServiceRelations.Contains(request.ServiceRelations))
                       .WhereIf(!string.IsNullOrWhiteSpace(request.Status), r => r.RemburseStatus.Equals(request.Status))
-                      .WhereIf(request.PaymentStartDate != null, r => r.PayTime > request.PaymentStartDate)
-                      .WhereIf(request.PaymentEndDate != null, r => r.PayTime < Convert.ToDateTime(request.PaymentEndDate).AddDays(1));
+                      .WhereIf(request.PaymentStartDate != null, r => r.PayTime >= request.PaymentStartDate)
+                      .WhereIf(request.PaymentEndDate != null, r => r.PayTime < Convert.ToDateTime(request.PaymentEndDate).AddDays(1))
+                      .WhereIf(request.CompletionStartDate != null && request.CompletionEndDate != null, r => ids.Contains(r.ServiceOrderId));
 
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ServiceRelations") && u.Enable == false).Select(u => u.Name).ToListAsync();
             var categoryStatus = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_RemburseStatus") && u.Enable == true).Select(u => new { u.Name, u.DtValue }).ToListAsync();
@@ -2632,9 +2669,9 @@ namespace OpenAuth.App
 
             var ReimburseRespList = ReimburseResps.Select(r => new
             {
-                报销单号=r.a.MainId,
-                服务ID=r.a.ServiceOrderSapId,
-                报销状态= categoryStatus.Where(c=>c.DtValue==r.a.RemburseStatus.ToString()).FirstOrDefault()?.Name,
+                报销单号 = r.a.MainId,
+                服务ID = r.a.ServiceOrderSapId,
+                报销状态 = categoryStatus.Where(c => c.DtValue == r.a.RemburseStatus.ToString()).FirstOrDefault()?.Name,
                 创建时间 = r.a.CreateTime.ToString("yyyy-MM-dd"),
                 客户代码 = r.b.TerminalCustomerId,
                 客户名称 = r.b.TerminalCustomer,
