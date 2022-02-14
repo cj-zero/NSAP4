@@ -1037,7 +1037,7 @@ namespace OpenAuth.App
                     result.Message = "呼叫主题不能为空。";
                     isHasNum = true;
                 }
-                if (!serialNumber.Any(c => c.ManufSN == s.ManufacturerSerialNumber && c.ItemCode == s.MaterialCode))
+                if (s.ManufacturerSerialNumber != "无序列号" && !serialNumber.Any(c => c.ManufSN == s.ManufacturerSerialNumber && c.ItemCode == s.MaterialCode))
                 {
                     result.Code = 500;
                     result.Message = "序列号和物料编码不匹配，请关闭窗口重新选择。";
