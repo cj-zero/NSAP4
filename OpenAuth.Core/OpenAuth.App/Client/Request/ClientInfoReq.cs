@@ -727,356 +727,6 @@ namespace OpenAuth.App.Client.Request
         /// </summary>
 
         public string QryGroup6 { get; set; }
-
-        /// <summary>
-        /// 属性 7
-        /// </summary>
-
-        public string QryGroup7 { get; set; }
-
-        /// <summary>
-        /// 属性 8
-        /// </summary>
-
-        public string QryGroup8 { get; set; }
-
-        /// <summary>
-        /// 属性 9
-        /// </summary>
-
-        public string QryGroup9 { get; set; }
-
-        /// <summary>
-        /// 属性 10
-        /// </summary>
-
-        public string QryGroup10 { get; set; }
-
-        /// <summary>
-        /// 属性 11
-        /// </summary>
-
-        public string QryGroup11 { get; set; }
-
-        /// <summary>
-        /// 属性 12
-        /// </summary>
-
-        public string QryGroup12 { get; set; }
-
-        /// <summary>
-        /// 属性 13
-        /// </summary>
-
-        public string QryGroup13 { get; set; }
-
-        /// <summary>
-        /// 属性 14
-        /// </summary>
-
-        public string QryGroup14 { get; set; }
-
-        /// <summary>
-        /// 属性 15
-        /// </summary>
-
-        public string QryGroup15 { get; set; }
-
-        /// <summary>
-        /// 属性 16
-        /// </summary>
-
-        public string QryGroup16 { get; set; }
-
-        /// <summary>
-        /// 属性 17
-        /// </summary>
-
-        public string QryGroup17 { get; set; }
-
-        /// <summary>
-        /// 属性 18
-        /// </summary>
-
-        public string QryGroup18 { get; set; }
-
-        /// <summary>
-        /// 属性 19
-        /// </summary>
-
-        public string QryGroup19 { get; set; }
-
-        /// <summary>
-        /// 属性 20
-        /// </summary>
-
-        public string QryGroup20 { get; set; }
-
-        /// <summary>
-        /// 属性 21
-        /// </summary>
-
-        public string QryGroup21 { get; set; }
-
-        /// <summary>
-        /// 属性 22
-        /// </summary>
-
-        public string QryGroup22 { get; set; }
-
-        /// <summary>
-        /// 属性 23
-        /// </summary>
-
-        public string QryGroup23 { get; set; }
-
-        /// <summary>
-        /// 属性 24
-        /// </summary>
-
-        public string QryGroup24 { get; set; }
-
-        /// <summary>
-        /// 属性 25
-        /// </summary>
-
-        public string QryGroup25 { get; set; }
-
-        /// <summary>
-        /// 属性 26
-        /// </summary>
-
-        public string QryGroup26 { get; set; }
-
-        /// <summary>
-        /// 属性 27
-        /// </summary>
-
-        public string QryGroup27 { get; set; }
-
-        /// <summary>
-        /// 属性 28
-        /// </summary>
-
-        public string QryGroup28 { get; set; }
-
-        /// <summary>
-        /// 属性 29
-        /// </summary>
-
-        public string QryGroup29 { get; set; }
-
-        /// <summary>
-        /// 属性 30
-        /// </summary>
-
-        public string QryGroup30 { get; set; }
-
-        /// <summary>
-        /// 属性 31
-        /// </summary>
-
-        public string QryGroup31 { get; set; }
-
-        /// <summary>
-        /// 属性 32
-        /// </summary>
-
-        public string QryGroup32 { get; set; }
-
-        /// <summary>
-        /// 属性 33
-        /// </summary>
-
-        public string QryGroup33 { get; set; }
-
-        /// <summary>
-        /// 属性 34
-        /// </summary>
-
-        public string QryGroup34 { get; set; }
-
-        /// <summary>
-        /// 属性 35
-        /// </summary>
-
-        public string QryGroup35 { get; set; }
-
-        /// <summary>
-        /// 属性 36
-        /// </summary>
-
-        public string QryGroup36 { get; set; }
-
-        /// <summary>
-        /// 属性 37
-        /// </summary>
-
-        public string QryGroup37 { get; set; }
-
-        /// <summary>
-        /// 属性 38
-        /// </summary>
-
-        public string QryGroup38 { get; set; }
-
-        /// <summary>
-        /// 属性 39
-        /// </summary>
-
-        public string QryGroup39 { get; set; }
-
-        /// <summary>
-        /// 属性 40
-        /// </summary>
-
-        public string QryGroup40 { get; set; }
-
-        /// <summary>
-        /// 属性 41
-        /// </summary>
-
-        public string QryGroup41 { get; set; }
-
-        /// <summary>
-        /// 属性 42
-        /// </summary>
-
-        public string QryGroup42 { get; set; }
-
-        /// <summary>
-        /// 属性 43
-        /// </summary>
-
-        public string QryGroup43 { get; set; }
-
-        /// <summary>
-        /// 属性 44
-        /// </summary>
-
-        public string QryGroup44 { get; set; }
-
-        /// <summary>
-        /// 属性 45
-        /// </summary>
-
-        public string QryGroup45 { get; set; }
-
-        /// <summary>
-        /// 属性 46
-        /// </summary>
-
-        public string QryGroup46 { get; set; }
-
-        /// <summary>
-        /// 属性 47
-        /// </summary>
-
-        public string QryGroup47 { get; set; }
-
-        /// <summary>
-        /// 属性 48
-        /// </summary>
-
-        public string QryGroup48 { get; set; }
-
-        /// <summary>
-        /// 属性 49
-        /// </summary>
-
-        public string QryGroup49 { get; set; }
-
-        /// <summary>
-        /// 属性 50
-        /// </summary>
-
-        public string QryGroup50 { get; set; }
-
-        /// <summary>
-        /// 属性 51
-        /// </summary>
-
-        public string QryGroup51 { get; set; }
-
-        /// <summary>
-        /// 属性 52
-        /// </summary>
-
-        public string QryGroup52 { get; set; }
-
-        /// <summary>
-        /// 属性 53
-        /// </summary>
-
-        public string QryGroup53 { get; set; }
-
-        /// <summary>
-        /// 属性 54
-        /// </summary>
-
-        public string QryGroup54 { get; set; }
-
-        /// <summary>
-        /// 属性 55
-        /// </summary>
-
-        public string QryGroup55 { get; set; }
-
-        /// <summary>
-        /// 属性 56
-        /// </summary>
-
-        public string QryGroup56 { get; set; }
-
-        /// <summary>
-        /// 属性 57
-        /// </summary>
-
-        public string QryGroup57 { get; set; }
-
-        /// <summary>
-        /// 属性 58
-        /// </summary>
-
-        public string QryGroup58 { get; set; }
-
-        /// <summary>
-        /// 属性 59
-        /// </summary>
-
-        public string QryGroup59 { get; set; }
-
-        /// <summary>
-        /// 属性 60
-        /// </summary>
-
-        public string QryGroup60 { get; set; }
-
-        /// <summary>
-        /// 属性 61
-        /// </summary>
-
-        public string QryGroup61 { get; set; }
-
-        /// <summary>
-        /// 属性 62
-        /// </summary>
-
-        public string QryGroup62 { get; set; }
-
-        /// <summary>
-        /// 属性 63
-        /// </summary>
-
-        public string QryGroup63 { get; set; }
-
-        /// <summary>
-        /// 属性 64
-        /// </summary>
-
-        public string QryGroup64 { get; set; }
-
-
         /// <summary>
         /// 业务伙伴操作类型
         /// </summary>
@@ -1188,27 +838,53 @@ namespace OpenAuth.App.Client.Request
         /// 联系人列表
         /// </summary>
 
-        public List<clientOCPR> ContactList { get; set; }
+        public List<clientOCPRReq> ContactList { get; set; }
 
         /// <summary>
         /// 地址列表
         /// </summary>
 
-        public List<clientCRD1> AddrList { get; set; }
+        public List<clientCRD1Req> AddrList { get; set; }
 
         /// <summary>
         /// 附件列表
         /// </summary>
 
-        public List<billAttchment> FilesDetails { get; set; }
+        public List<billAttchmentReq> FilesDetails { get; set; }
 
 
         public string EshopUserId { get; set; }
 
 
-        public List<clientAcct1> AcctList { get; set; }
+        public List<clientAcct1Req> AcctList { get; set; }
+        public string BankName { get; set; }
+        /// <summary>
+        /// 上级客户
+        /// </summary>
+
+        public string U_SuperClient { get; set; }
+        /// <summary>
+        /// 人员规模
+        /// </summary>
+
+        public string U_StaffScale { get; set; }
+        /// <summary>
+        /// 贸易类型
+        /// </summary>
+
+        public string U_TradeType { get; set; }
+        /// <summary>
+        /// 客户来源
+        /// </summary>
+
+        public string U_ClientSource { get; set; }
+        /// <summary>
+        /// 所属行业
+        /// </summary>
+
+        public string U_CompSector { get; set; }
     }
-    public class clientCRD1
+    public class clientCRD1Req
     {
         /// <summary>
         /// 序号
@@ -1345,7 +1021,7 @@ namespace OpenAuth.App.Client.Request
 
 
     }
-    public class clientOCPR
+    public class clientOCPRReq
     {
         /// <summary>
         /// 序号
@@ -1558,7 +1234,7 @@ namespace OpenAuth.App.Client.Request
         public string IsDefault { get; set; }
 
     }
-    public class billAttchment
+    public class billAttchmentReq
     {
         /// <summary>
         /// 附件ID
@@ -1616,7 +1292,7 @@ namespace OpenAuth.App.Client.Request
 
         public string fileUserId { get; set; }
     }
-    public class clientAcct1
+    public class clientAcct1Req
     {
         // <summary>
         /// 帐套ID
@@ -1648,6 +1324,6 @@ namespace OpenAuth.App.Client.Request
         /// 开户行
         /// </summary>
 
-        public string BankName { get; set; }
+ 
     }
 }

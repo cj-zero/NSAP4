@@ -1360,7 +1360,7 @@ namespace OpenAuth.App
                     mes += "'" + updateClueContactsReq.Name + "'联系方式二，原：联系方式二'" + clueContacts.Tel2 + "'，修改为'" + updateClueContactsReq.Tel2 + "'";
                 }
                 clueContacts.Tel2 = updateClueContactsReq.Tel2;
-                if (updateClueContactsReq.Role != -1 && updateClueContactsReq.Role != clueContacts.Role)
+                if (updateClueContactsReq.Role != "" && updateClueContactsReq.Role != clueContacts.Role)
                 {
                     mes += "'" + updateClueContactsReq.Role + "'角色，原：角色'" + clueContacts.Role + "'，修改为'" + updateClueContactsReq.Role + "'，（0：决策者、1：普通人）";
                 }

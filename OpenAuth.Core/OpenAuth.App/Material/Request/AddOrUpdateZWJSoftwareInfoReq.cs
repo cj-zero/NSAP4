@@ -22,6 +22,11 @@ namespace OpenAuth.App.Material.Request
         public string ProjectName { get; set; }
 
         /// <summary>
+        /// 是否是默认版本
+        /// </summary>
+        public bool DefaultVersion { get; set; }
+
+        /// <summary>
         /// 程序版本号
         /// </summary>
         public string ZWJSoftwareVersionName { get; set; }
@@ -128,9 +133,14 @@ namespace OpenAuth.App.Material.Request
         public string XWJSn { get; set; }
 
         /// <summary>
-        /// 下位机软件版本别名
+        /// 下位机中文程序版本别名
         /// </summary>
         public string Alias { get; set; }
+
+        /// <summary>
+        /// 下位机英文程序版本别名
+        /// </summary>
+        public string AliasEn { get; set; }
 
         /// <summary>
         /// 备注
@@ -162,5 +172,44 @@ namespace OpenAuth.App.Material.Request
         /// 下位机软件版本别名
         /// </summary>
         public string Alias { get; set; }
+    }
+
+    /// <summary>
+    /// 新增或修改临时版本记录
+    /// </summary>
+    public class AddOrUpdateTempVersionReq
+    {
+        /// <summary>
+        /// 主键
+        /// </summary>
+        public int Id { get; set; }
+
+        /// <summary>
+        /// 销售合同号
+        /// </summary>
+        public string ContractNo { get; set; }
+
+        /// <summary>
+        /// 硬件类型
+        /// </summary>
+        public string HardwareType { get; set; }
+
+        /// <summary>
+        /// 程序版本Id
+        /// </summary>
+        public int SoftwareVersionId { get; set; }
+
+        /// <summary>
+        /// 备注
+        /// </summary>
+        public string Remark { get; set; }
+    }
+
+    /// <summary>
+    /// 查询版本记录
+    /// </summary>
+    public class QueryTempVersionReq : PageReq
+    {
+        public string ContractNo { get; set; }
     }
 }

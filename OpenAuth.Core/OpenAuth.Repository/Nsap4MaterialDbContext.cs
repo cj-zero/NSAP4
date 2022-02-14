@@ -81,6 +81,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<ZWJHardware> ZWJHardwares { get; set; }
         public virtual DbSet<XWJSoftwareVersion> XWJSoftwareVersions { get; set; }
         public virtual DbSet<XWJHardware> XWJHardwares { get; set; }
+        public virtual DbSet<TempVersion> TempVersions { get; set; }
         #endregion
     }
 }

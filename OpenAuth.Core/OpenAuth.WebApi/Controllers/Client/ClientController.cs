@@ -2,15 +2,12 @@
 using System.Data;
 using System.Threading.Tasks;
 using Infrastructure;
-using Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NSAP.Entity.Client;
-using NSAP.Entity.Sales;
 using OpenAuth.App;
 using OpenAuth.App.Client;
 using OpenAuth.App.Client.Request;
-using OpenAuth.App.Clue.Request;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Order;
 using OpenAuth.App.Response;
@@ -77,13 +74,15 @@ namespace OpenAuth.WebApi.Controllers.Client
         /// 查询属性对应的名称
         /// </summary>
         /// <returns></returns>
-        [HttpPost]
+        [HttpGet]
         [Route("GetPropertyName")]
         [AllowAnonymous]
-        public DataTable GetPropertyName()
+        public TableData GetPropertyName()
         {
-            string strSql = string.Format("SELECT GroupCode AS PropertyCode,GroupName AS PropertyName FROM {0}.crm_OCQG WHERE sbo_id={1}", "nsap_base", "1");
-            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            var result = new TableData();
+            string strSql = string.Format("SELECT GroupCode AS PropertyCode,GroupName AS PropertyName FROM {0}.crm_OCQG WHERE sbo_id={1}", "nsap_bone", "1");
+            result.Data = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            return result;
         }
         /// <summary>
         /// 获取销售员信息
@@ -135,20 +134,43 @@ namespace OpenAuth.WebApi.Controllers.Client
             return result;
 
         }
-        /// <summary>
-        /// 根据jobId获取审核任务信息
-        /// </summary>
-        //[HttpGet]
-        //[Route("GetAuditInfo")]
-        //public Response<clientOCRD> GetAuditInfo(string jobId)
-        //{
-
-        //    var result = new Response<clientOCRD>();
-        //    result.Result = _clientInfoApp.GetAuditInfoNew(jobId);
-        //    return result;
-
-        //}
-
         #endregion
+        /// <summary>
+        /// 根据jobId获取审核任务信息(我的创建/审批)
+        /// </summary>
+        [HttpGet]
+        [Route("GetAuditInfo")]
+        public Response<NSAP.Entity.Client.clientOCRD> GetAuditInfo(string jobId)
+        {
+
+            var result = new Response<clientOCRD>
+            {
+                Result = _clientInfoApp.GetAuditInfoNew(jobId)
+            };
+            return result;
+
+        }
+        /// <summary>
+        /// 上级客户下拉
+        /// </summary>
+        [HttpGet]
+        [Route("GetSuperClient")]
+        public TableData GetSuperClient()
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            var sql = string.Format("SELECT A.CardCode,A. CardName FROM OCRD A LEFT JOIN OSLP B ON B.SlpCode=A.SlpCode WHERE b.SlpName='{0}' ORDER BY  A.CardCode", loginUser.Name);
+            var result = new TableData
+            {
+                Data = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, sql, CommandType.Text, null)
+            };
+            return result;
+
+        }
+
     }
 }

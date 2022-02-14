@@ -25,7 +25,7 @@ namespace OpenAuth.App.Clue.Request
         /// <summary>
         /// 角色（0：决策者、1：普通人）
         /// </summary>
-        public int Role { get; set; }
+        public string Role { get; set; }
         /// <summary>
         ///职位
         /// </summary>

@@ -1118,6 +1118,42 @@ namespace OpenAuth.App
                         QuotationProducts = new List<QuotationProductReq>()
                     });
                     outsourcObj.QuotationId = int.Parse(quotationId);
+
+                    //outSource和outSourceExpense为一对多关系,当服务方式为远程时,只会产生远程费用,实际是一对一的方式
+                    if (outsourcObj.ServiceMode == 2)
+                    {
+                        //在客服主管审批这一步也做一次结算金额的调整,方便客服主管审批完之后查看
+                        outsourcObj.TotalMoney = 0;
+                        //判断该用户在当月已经有了多少单(除开本单以及被驳回的)
+                        var completeDate = outsourcObj.OutsourcExpenses.FirstOrDefault(x => x.ExpenseType == 4)?.CompleteTime;
+                        var startDate = new DateTime(completeDate.Value.Year, completeDate.Value.Month, 1);
+                        var endDate = startDate.AddMonths(1);
+                        var countInMonth = await (from o in UnitWork.Find<Outsourc>(null)
+                                                  join oe in UnitWork.Find<OutsourcExpenses>(null)
+                                                  on o.Id equals oe.OutsourcId
+                                                  where o.CreateUserId == outsourcObj.CreateUserId
+                                                  && oe.ExpenseType == 4 && oe.IsOverseas == false
+                                                  && o.Id != outsourcObj.Id && o.IsRejected == false
+                                                  && oe.CompleteTime >= startDate && oe.CompleteTime < endDate
+                                                  //&& oe.SerialNumber != null && oe.SerialNumber > 0
+                                                  select o.Id).Distinct().CountAsync();
+                        outsourcObj.OutsourcExpenses.ForEach(o =>
+                        {
+                            o.SerialNumber = ++countInMonth;
+                            if (o.IsOverseas)
+                            {
+                                o.SerialNumber = 0;
+                                o.Money = 50;
+                            }
+                            else
+                            {
+                                o.Money = Calculation((int)o.SerialNumber);
+                            }
+
+                            outsourcObj.TotalMoney += o.Money;
+                        });
+                        await UnitWork.BatchUpdateAsync(outsourcObj.OutsourcExpenses.ToArray());
+                    }
                 }
                 if (flowInstanceObj.ActivityName.Equals("总经理审批") && outsourcObj.ServiceMode == 2)
                 {
@@ -1267,6 +1303,62 @@ namespace OpenAuth.App
             }
 
 
+        }
+
+        /// <summary>
+        /// 撤回单个
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task SingleRecall(AccraditationOutsourcReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //如果用户的角色不包括客服主管,则不能进行撤回操作
+            if (!loginContext.Roles.Any(r => r.Name.Equals("客服主管")))
+            {
+                throw new Exception("只有客服主管能进行撤回操作");
+            }
+
+            var outsourcObj = await UnitWork.Find<Outsourc>(o => o.Id == int.Parse(req.OutsourcId)).Include(o => o.OutsourcExpenses).FirstOrDefaultAsync();
+            var flowInstanceObj = await UnitWork.Find<FlowInstance>(f => f.Id.Equals(outsourcObj.FlowInstanceId)).FirstOrDefaultAsync();
+            //总经理审批环节完了之后，到了下一步，客服主管不能再撤回
+            if (flowInstanceObj.ActivityName.Equals("财务支付"))
+            {
+                throw new Exception("当前流程状态不能撤回");
+            }
+
+            RecallFlowInstanceReq recallFlowInstanceReq = new RecallFlowInstanceReq
+            {
+                NodeRejectType = "0", //0代表返回上一节点
+                NodeRejectStep = "", //当NodeRejectType = 2时,需要指明节点
+                FlowInstanceId = outsourcObj.FlowInstanceId,
+            };
+            //撤回操作
+            await _flowInstanceApp.ReCall2(recallFlowInstanceReq);
+            //调整金额
+            await UnitWork.UpdateAsync<OutsourcExpenses>(o => o.OutsourcId == outsourcObj.Id && o.ExpenseType == 3, o => new OutsourcExpenses { Money = 0 });
+            await UnitWork.DeleteAsync<OutsourcExpenseOrg>(o => outsourcObj.OutsourcExpenses.Select(e => e.Id).Contains(o.ExpenseId));
+            if (!string.IsNullOrWhiteSpace(outsourcObj.QuotationId.ToString())) await _quotationApp.CancellationSalesOrder(new QueryQuotationListReq { QuotationId = outsourcObj.QuotationId });
+
+            await UnitWork.UpdateAsync<Outsourc>(r => r.Id == outsourcObj.Id, r => new Outsourc
+            {
+                //Status = returnNoteStatus,
+                UpdateTime = DateTime.Now,
+                TotalMoney = outsourcObj.TotalMoney,
+                PayTime = outsourcObj.PayTime,
+                QuotationId = outsourcObj.QuotationId
+            });
+            //修改全局待处理
+            await UnitWork.UpdateAsync<WorkbenchPending>(w => w.SourceNumbers == outsourcObj.Id && w.OrderType == 3, w => new WorkbenchPending
+            {
+                TotalMoney = outsourcObj.TotalMoney,
+                UpdateTime = DateTime.Now,
+            });
+            await UnitWork.SaveAsync();
         }
 
         /// <summary>
