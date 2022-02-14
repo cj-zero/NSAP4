@@ -66,6 +66,10 @@ namespace OpenAuth.App.Response
         /// 间隔总时长
         /// </summary>
         public double? TotalHour { get; set; }
+        /// <summary>
+        /// 部门
+        /// </summary>
+        public string OrgName { get; set; }
 
     }
 

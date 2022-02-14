@@ -80,6 +80,29 @@ namespace OpenAuth.WebApi.Controllers
         {
             return await _app.ASingleRejection(req);
         }
+
+        /// <summary>
+        /// 撤回单个
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> SingleRecall(AccraditationOutsourcReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.SingleRecall(req);
+            }
+            catch(Exception ex)
+            {
+                result.Message = ex?.Message ?? ex?.InnerException?.Message ?? "";
+                result.Code = 500;
+            }
+
+            return result;
+        }
+
         /// <summary>
         /// 修改
         /// </summary>
@@ -110,6 +133,38 @@ namespace OpenAuth.WebApi.Controllers
         public async Task<TableData> Load([FromQuery] QueryoutsourcListReq request)
         {
             return await _app.Load(request);
+        }
+
+        /// <summary>
+        /// 结算费用归属
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> LoadCostAttribution([FromQuery] QueryoutsourcListReq request)
+        {
+            return await _app.LoadCostAttribution(request);
+        }
+
+        /// <summary>
+        /// 获取费用归属总金额
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetMoney([FromQuery] QueryoutsourcListReq request)
+        {
+            return await _app.GetMoney(request);
+        }
+        /// <summary>
+        /// 主管查看费用归属报表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AnalysisReportCostManager([FromQuery] QueryoutsourcListReq request)
+        {
+            return await _app.AnalysisReportCostManager(request);
         }
         /// <summary>
         /// 获取可结算服务单

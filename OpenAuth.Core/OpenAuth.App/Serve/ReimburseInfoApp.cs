@@ -50,11 +50,13 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-
+            var loginOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault();
             #region 查询条件
             List<string> UserIds = new List<string>();
             List<int> ServiceOrderIds = new List<int>();
             List<string> OrgUserIds = new List<string>();
+            List<int> reimburseInfoId = new List<int>();
+            List<CostInfoResp> fee = null;
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceMode == 1 && c.IsReimburse == 2).ToListAsync();
             if (!string.IsNullOrWhiteSpace(request.CreateUserName))
             {
@@ -133,20 +135,83 @@ namespace OpenAuth.App
 
                 }
             }
-            if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && request.PageType == 1 && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
+            if (request.PageType == 7)//费用归属用
             {
-                var orgRole = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.Key == Define.ORGROLE && c.FirstId == loginContext.User.Id).FirstOrDefaultAsync();
-                if (orgRole != null)//查看本部下数据
+                List<ReimburseTravellingAllowance> reimburseTravellingAllowance = new List<ReimburseTravellingAllowance>();
+                List<ReimburseFare> reimburseFare = new List<ReimburseFare>();
+                List<ReimburseAccommodationSubsidy> reimburseAccommodationSubsidy = new List<ReimburseAccommodationSubsidy>();
+                List<ReimburseOtherCharges> reimburseOtherCharges = new List<ReimburseOtherCharges>();
+                fee = reimburseTravellingAllowance.Select(c => new CostInfoResp { Id = c.ReimburseInfoId, Money = c.Money }).ToList();
+
+                if (!loginContext.Roles.Any(r => r.Name.Equals("费用归属-呼叫中心")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
                 {
-                    var orgId = orgRole.SecondId;
-                    var userIds = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.SecondId == orgId && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
-                    ReimburseInfos = ReimburseInfos.Where(r => userIds.Contains(r.CreateUserId));
+                    List<string> orgid = new List<string> { loginOrg.Id };
+                    if (loginOrg.Name == "S0")
+                        orgid.Add("eb5d38df-14e2-4a46-98ec-9fd5da19f4e4");//深圳市新威尔电子有限公司
+
+                    var expendsOrg = await UnitWork.Find<ReimburseExpenseOrg>(c => orgid.Contains(c.OrgId)).ToListAsync();
+
+                    var ids = expendsOrg.Where(c => c.ExpenseType == 1).Select(c => c.ExpenseId).ToList();
+                    reimburseTravellingAllowance.AddRange(await UnitWork.Find<ReimburseTravellingAllowance>(c => ids.Contains(c.Id)).ToListAsync());
+                    ids = expendsOrg.Where(c => c.ExpenseType == 2).Select(c => c.ExpenseId).ToList();
+                    reimburseFare.AddRange(await UnitWork.Find<ReimburseFare>(c => ids.Contains(c.Id)).ToListAsync());
+                    ids = expendsOrg.Where(c => c.ExpenseType == 3).Select(c => c.ExpenseId).ToList();
+                    reimburseAccommodationSubsidy.AddRange(await UnitWork.Find<ReimburseAccommodationSubsidy>(c => ids.Contains(c.Id)).ToListAsync());
+                    ids = expendsOrg.Where(c => c.ExpenseType == 4).Select(c => c.ExpenseId).ToList();
+                    reimburseOtherCharges.AddRange(await UnitWork.Find<ReimburseOtherCharges>(c => ids.Contains(c.Id)).ToListAsync());
+
+                    reimburseInfoId.AddRange(reimburseTravellingAllowance.Select(c => c.ReimburseInfoId).ToList());
+                    reimburseInfoId.AddRange(reimburseFare.Select(c => c.ReimburseInfoId).ToList());
+                    reimburseInfoId.AddRange(reimburseAccommodationSubsidy.Select(c => c.ReimburseInfoId).ToList());
+                    reimburseInfoId.AddRange(reimburseOtherCharges.Select(c => c.ReimburseInfoId).ToList());
+
+
+                    var rta = reimburseTravellingAllowance.GroupBy(c => c.ReimburseInfoId).Select(c => new { c.Key, List = c.Select(s => s.Id).ToList() }).ToList();
+                    rta.ForEach(c =>
+                    {
+                        var sum = expendsOrg.Where(e => c.List.Contains(e.ExpenseId) && e.ExpenseType == 1).Sum(e => e.Money);
+                        fee.Add(new CostInfoResp { Id = c.Key, Money = sum });
+                    });
+                    var rf = reimburseFare.GroupBy(c => c.ReimburseInfoId).Select(c => new { c.Key, List = c.Select(s => s.Id).ToList() }).ToList();
+                    rf.ForEach(c =>
+                    {
+                        var sum = expendsOrg.Where(e => c.List.Contains(e.ExpenseId) && e.ExpenseType == 2).Sum(e => e.Money);
+                        fee.Add(new CostInfoResp { Id = c.Key, Money = sum });
+                    });
+                    var ras = reimburseAccommodationSubsidy.GroupBy(c => c.ReimburseInfoId).Select(c => new { c.Key, List = c.Select(s => s.Id).ToList() }).ToList();
+                    ras.ForEach(c =>
+                    {
+                        var sum = expendsOrg.Where(e => c.List.Contains(e.ExpenseId) && e.ExpenseType == 3).Sum(e => e.Money);
+                        fee.Add(new CostInfoResp { Id = c.Key, Money = sum });
+                    });
+                    var roc = reimburseOtherCharges.GroupBy(c => c.ReimburseInfoId).Select(c => new { c.Key, List = c.Select(s => s.Id).ToList() }).ToList();
+                    roc.ForEach(c =>
+                    {
+                        var sum = expendsOrg.Where(e => c.List.Contains(e.ExpenseId) && e.ExpenseType == 4).Sum(e => e.Money);
+                        fee.Add(new CostInfoResp { Id = c.Key, Money = sum });
+                    });
+                    fee = fee.GroupBy(c => c.Id).Select(c => new CostInfoResp { Id = c.Key, Money = c.Sum(s => s.Money) }).ToList();
+
+                    ReimburseInfos = ReimburseInfos.Where(r => reimburseInfoId.Contains(r.Id));
                 }
-                else
+            }
+            else
+            {
+                if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && request.PageType == 1 && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
                 {
-                    ReimburseInfos = ReimburseInfos.Where(r => r.CreateUserId.Equals(loginContext.User.Id));
-                }
-            };
+                    var orgRole = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.Key == Define.ORGROLE && c.FirstId == loginContext.User.Id).FirstOrDefaultAsync();
+                    if (orgRole != null)//查看本部下数据
+                    {
+                        var orgId = orgRole.SecondId;
+                        var userIds = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.SecondId == orgId && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
+                        ReimburseInfos = ReimburseInfos.Where(r => userIds.Contains(r.CreateUserId));
+                    }
+                    else
+                    {
+                        ReimburseInfos = ReimburseInfos.Where(r => r.CreateUserId.Equals(loginContext.User.Id));
+                    }
+                };
+            }
             result.Count = ReimburseInfos.Count();
             #endregion
 
@@ -320,6 +385,7 @@ namespace OpenAuth.App
             var ReimburseRespList = ReimburseResps.Select(r => new
             {
                 ReimburseResp = r.a,
+                CostOrgMoney = fee?.Where(f => r.a.Id == f.Id).FirstOrDefault()?.Money,
                 fillTime = r.a.CreateTime.ToString("yyyy.MM.dd HH:mm:ss"),
                 r.b.TerminalCustomerId,
                 r.b.TerminalCustomer,
@@ -348,39 +414,77 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            //哪些用户创建的(因为是模糊查询,所以可能有多个)
             List<string> UserIds = new List<string>();
             if (!string.IsNullOrWhiteSpace(request.CreateUserName))
             {
                 UserIds.AddRange(await UnitWork.Find<User>(u => u.Name.Contains(request.CreateUserName)).Select(u => u.Id).ToListAsync());
             }
+            //根据服务的客户(名称或代码),查找出服务单id
+            List<int> serviceOrderIds = new List<int>();
+            if (!string.IsNullOrWhiteSpace(request.TerminalCustomer))
+            {
+                serviceOrderIds.AddRange(await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Contains(request.TerminalCustomer) || s.TerminalCustomerId.Contains(request.TerminalCustomer)).Select(s => s.Id).ToListAsync());
+            }
+            //根据部门，查找该部门下所有的用户id
+            List<string> orgUserIds = new List<string>();
+            if (!string.IsNullOrWhiteSpace(request.OrgName))
+            {
+                var orgids = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Name.Contains(request.OrgName)).Select(o => o.Id).ToListAsync();
+                orgUserIds.AddRange(await UnitWork.Find<Relevance>(r => orgids.Contains(r.SecondId) && r.Key == Define.USERORG).Select(r => r.FirstId).ToListAsync());
+            }
             var result = new TableData();
-            var reimburseInfos = UnitWork.Find<ReimburseInfo>(null).WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId));
+            var reimburseInfos = UnitWork.Find<ReimburseInfo>(null)
+                .WhereIf(!string.IsNullOrWhiteSpace(request.MainId) && int.TryParse(request.MainId, out int mainId), r => r.MainId == int.Parse(request.MainId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.TerminalCustomer), r => serviceOrderIds.Contains(r.ServiceOrderId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId) && int.TryParse(request.ServiceOrderId, out int serviceOrderId), r => r.ServiceOrderSapId == int.Parse(request.ServiceOrderId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.OrgName), r => orgUserIds.Contains(r.CreateUserId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.Status) && int.TryParse(request.Status, out int status), r => r.RemburseStatus == int.Parse(request.Status))
+                .WhereIf(request.StartDate != null && request.EndDate != null, r => r.CreateTime >= request.StartDate && r.CreateTime < request.EndDate.Value.AddDays(1))
+                .WhereIf(request.PaymentStartDate != null && request.PaymentEndDate != null, r => r.PayTime >= request.PaymentStartDate && r.PayTime < request.PaymentEndDate.Value.AddDays(1));
             List<string> currentUser = new List<string>();
             if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginContext.Roles.Any(r => r.Name.Equals("总经理")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
+                //如果用户不属于以上角色,则查看本部门下所有人的数据
                 var orgRole = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.Key == Define.ORGROLE && c.FirstId == loginContext.User.Id).FirstOrDefaultAsync();
                 if (orgRole != null)//查看本部下数据
                 {
                     var orgId = orgRole.SecondId;
                     var userIds = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.SecondId == orgId && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
                     reimburseInfos = reimburseInfos.Where(r => userIds.Contains(r.CreateUserId));
-                    currentUser.AddRange(userIds);
+                    currentUser.AddRange(userIds); 
                 }
                 else
                 {
+                    //如果没有部门,则查看自己创建的
                     reimburseInfos = reimburseInfos.Where(r => r.CreateUserId.Equals(loginContext.User.Id));
                     currentUser.Add(loginContext.User.Id);
                 }
             };
 
+            //本部门下或自己创建的服务单id
             var currsoids = currentUser.Count > 0 ? await UnitWork.Find<ServiceWorkOrder>(c => currentUser.Contains(c.CurrentUserNsapId)).Select(c => c.ServiceOrderId).Distinct().ToListAsync() : null;
+            //根据条件过滤出来的报销单信息
             var reimburseInfoList = await reimburseInfos.Select(r => new { r.RemburseStatus, r.TotalMoney, r.ServiceOrderId }).ToListAsync();
+            //已提交报销单的服务id
             var serverOrderIds = reimburseInfoList.Select(r => r.ServiceOrderId).ToList();
-            var expends = await UnitWork.Find<ServiceDailyExpends>(null)
-                .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId))
-                .WhereIf(currsoids != null, r => currsoids.Contains(r.ServiceOrderId))//不能查看全部的则查看自己或部门下的服务单关联的日费
-                .WhereIf(currsoids == null, s => !serverOrderIds.Contains(s.ServiceOrderId))//全部日费
-                .SumAsync(s => s.TotalMoney);
+            //日费中未提交报销单的那部分(根据条件筛选出符合条件的日费,除开已提交报销单的那部分)
+            decimal expends = 0;
+            //如果选择了条件,则四种费用都不包含日费
+            if (string.IsNullOrWhiteSpace(request.MainId) && string.IsNullOrWhiteSpace(request.CreateUserName) && string.IsNullOrWhiteSpace(request.TerminalCustomer)
+                && string.IsNullOrWhiteSpace(request.ServiceOrderId) && string.IsNullOrWhiteSpace(request.OrgName) && string.IsNullOrWhiteSpace(request.Status)
+                && request.StartDate == null && request.EndDate == null
+                && request.PaymentStartDate == null && request.PaymentEndDate == null
+                && request.CompletionStartDate == null && request.CompletionEndDate == null)
+            {
+                expends = (await UnitWork.Find<ServiceDailyExpends>(null)
+                        .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId))
+                        .WhereIf(currsoids != null, r => currsoids.Contains(r.ServiceOrderId))//不能查看全部的则查看自己或部门下的服务单关联的日费
+                        .WhereIf(currsoids == null, s => !serverOrderIds.Contains(s.ServiceOrderId))//全部日费
+                        .SumAsync(s => s.TotalMoney)).Value;
+            }
+            //总费用 = 已提交报销的部分 + 未提交报销的部分(在日费，但不在报销单中的那部分)
             var totalmoney = reimburseInfoList.Sum(r => r.TotalMoney) + expends;
             var havepaid = reimburseInfoList.Where(r => r.RemburseStatus == 9).Sum(r => r.TotalMoney);
             var unpaid = reimburseInfoList.Where(r => r.RemburseStatus < 9 && r.RemburseStatus > 3).Sum(r => r.TotalMoney);
@@ -395,23 +499,18 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> GetMoneyForCost(QueryReimburseInfoListReq request)
         {
-            var result = new TableData();
-            var data = await GetCostReimburseInfo(request);
-            result.Data = data.Sum(c => c.TotalMoney);
-            return result;
-        }
-
-        public async Task<List<ReimburseInfo>> GetCostReimburseInfo(QueryReimburseInfoListReq request)
-        {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            var loginOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault();
             #region 查询条件
             List<string> UserIds = new List<string>();
             List<int> ServiceOrderIds = new List<int>();
             List<string> OrgUserIds = new List<string>();
+            List<int> reimburseInfoId = new List<int>();
+            List<CostInfoResp> fee = null;
             var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceMode == 1 && c.IsReimburse == 2).ToListAsync();
             if (!string.IsNullOrWhiteSpace(request.CreateUserName))
             {
@@ -430,8 +529,8 @@ namespace OpenAuth.App
                 //    .Distinct()
                 //    .ToListAsync();
                 CompletionReports = CompletionReports.Where(c => c.FromTheme.Contains(request.FromTheme)).ToList();
-                var ids = CompletionReports.Select(c => c.ServiceOrderId.Value).ToList();
-                ServiceOrderIds = ServiceOrderIds.Count > 0 ? ServiceOrderIds.Intersect(ids).ToList() : ids;
+                var ids = CompletionReports.Select(c => c.ServiceOrderId.Value).Distinct().ToList();
+                ServiceOrderIds = ServiceOrderIds.Count > 0 ? ServiceOrderIds.Intersect(ids).Distinct().ToList() : ids;
             }
 
             if (!string.IsNullOrWhiteSpace(request.OrgName))
@@ -490,23 +589,263 @@ namespace OpenAuth.App
 
                 }
             }
-            if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && request.PageType == 1 && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
+            int power = 0;
+            if (request.PageType == 7)//费用归属用
             {
-                var orgRole = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.Key == Define.ORGROLE && c.FirstId == loginContext.User.Id).FirstOrDefaultAsync();
-                if (orgRole != null)//查看本部下数据
+                List<ReimburseTravellingAllowance> reimburseTravellingAllowance = new List<ReimburseTravellingAllowance>();
+                List<ReimburseFare> reimburseFare = new List<ReimburseFare>();
+                List<ReimburseAccommodationSubsidy> reimburseAccommodationSubsidy = new List<ReimburseAccommodationSubsidy>();
+                List<ReimburseOtherCharges> reimburseOtherCharges = new List<ReimburseOtherCharges>();
+                fee = new List<CostInfoResp>();
+
+                if (!loginContext.Roles.Any(r => r.Name.Equals("费用归属-呼叫中心")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
                 {
-                    var orgId = orgRole.SecondId;
-                    var userIds = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.SecondId == orgId && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
-                    ReimburseInfos = ReimburseInfos.Where(r => userIds.Contains(r.CreateUserId));
+                    power = 1;
+                    List<string> orgid = new List<string> { loginOrg.Id };
+                    if (loginOrg.Name == "S0")
+                        orgid.Add("eb5d38df-14e2-4a46-98ec-9fd5da19f4e4");//深圳市新威尔电子有限公司
+
+                    var expendsOrg = await UnitWork.Find<ReimburseExpenseOrg>(c => orgid.Contains(c.OrgId)).ToListAsync();
+
+                    var ids = expendsOrg.Where(c => c.ExpenseType == 1).Select(c => c.ExpenseId).ToList();
+                    reimburseTravellingAllowance.AddRange(await UnitWork.Find<ReimburseTravellingAllowance>(c => ids.Contains(c.Id)).ToListAsync());
+                    ids = expendsOrg.Where(c => c.ExpenseType == 2).Select(c => c.ExpenseId).ToList();
+                    reimburseFare.AddRange(await UnitWork.Find<ReimburseFare>(c => ids.Contains(c.Id)).ToListAsync());
+                    ids = expendsOrg.Where(c => c.ExpenseType == 3).Select(c => c.ExpenseId).ToList();
+                    reimburseAccommodationSubsidy.AddRange(await UnitWork.Find<ReimburseAccommodationSubsidy>(c => ids.Contains(c.Id)).ToListAsync());
+                    ids = expendsOrg.Where(c => c.ExpenseType == 4).Select(c => c.ExpenseId).ToList();
+                    reimburseOtherCharges.AddRange(await UnitWork.Find<ReimburseOtherCharges>(c => ids.Contains(c.Id)).ToListAsync());
+
+                    reimburseInfoId.AddRange(reimburseTravellingAllowance.Select(c => c.ReimburseInfoId).ToList());
+                    reimburseInfoId.AddRange(reimburseFare.Select(c => c.ReimburseInfoId).ToList());
+                    reimburseInfoId.AddRange(reimburseAccommodationSubsidy.Select(c => c.ReimburseInfoId).ToList());
+                    reimburseInfoId.AddRange(reimburseOtherCharges.Select(c => c.ReimburseInfoId).ToList());
+
+
+                    var rta = reimburseTravellingAllowance.GroupBy(c => c.ReimburseInfoId).Select(c => new { c.Key, List = c.Select(s => s.Id).ToList() }).ToList();
+                    rta.ForEach(c =>
+                    {
+                        var sum = expendsOrg.Where(e => c.List.Contains(e.ExpenseId) && e.ExpenseType == 1).Sum(e => e.Money);
+                        fee.Add(new CostInfoResp { Id = c.Key, Money = sum });
+                    });
+                    var rf = reimburseFare.GroupBy(c => c.ReimburseInfoId).Select(c => new { c.Key, List = c.Select(s => s.Id).ToList() }).ToList();
+                    rf.ForEach(c =>
+                    {
+                        var sum = expendsOrg.Where(e => c.List.Contains(e.ExpenseId) && e.ExpenseType == 2).Sum(e => e.Money);
+                        fee.Add(new CostInfoResp { Id = c.Key, Money = sum });
+                    });
+                    var ras = reimburseAccommodationSubsidy.GroupBy(c => c.ReimburseInfoId).Select(c => new { c.Key, List = c.Select(s => s.Id).ToList() }).ToList();
+                    ras.ForEach(c =>
+                    {
+                        var sum = expendsOrg.Where(e => c.List.Contains(e.ExpenseId) && e.ExpenseType == 3).Sum(e => e.Money);
+                        fee.Add(new CostInfoResp { Id = c.Key, Money = sum });
+                    });
+                    var roc = reimburseOtherCharges.GroupBy(c => c.ReimburseInfoId).Select(c => new { c.Key, List = c.Select(s => s.Id).ToList() }).ToList();
+                    roc.ForEach(c =>
+                    {
+                        var sum = expendsOrg.Where(e => c.List.Contains(e.ExpenseId) && e.ExpenseType == 4).Sum(e => e.Money);
+                        fee.Add(new CostInfoResp { Id = c.Key, Money = sum });
+                    });
+                    fee = fee.GroupBy(c => c.Id).Select(c => new CostInfoResp { Id = c.Key, Money = c.Sum(s => s.Money) }).ToList();
+
+                    ReimburseInfos = ReimburseInfos.Where(r => reimburseInfoId.Contains(r.Id));
                 }
-                else
-                {
-                    ReimburseInfos = ReimburseInfos.Where(r => r.CreateUserId.Equals(loginContext.User.Id));
-                }
-            };
-            //result.Data = ReimburseInfos.Sum(c => c.TotalMoney);
-            return await ReimburseInfos.ToListAsync();
+            }
+            //result.Count = ReimburseInfos.Count();
             #endregion
+            if (power == 0)
+                result.Data = await ReimburseInfos.SumAsync(c => c.TotalMoney);//查看全部算单据总金额
+            else 
+            {
+                decimal? money = 0;
+                var data = await ReimburseInfos.Select(c => c.Id).ToListAsync();
+                data.ForEach(c =>
+                {
+                    money+= fee?.Where(f => c == f.Id).FirstOrDefault()?.Money;
+                });
+                result.Data = money;//查看部门下算部门金额
+            }
+            return result;
+        }
+
+        public async Task<List<ReimburseInfoResp>> GetCostReimburseInfo(QueryReimburseInfoListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault();
+            #region 查询条件
+            List<string> UserIds = new List<string>();
+            List<int> ServiceOrderIds = new List<int>();
+            List<string> OrgUserIds = new List<string>();
+            List<int> reimburseInfoId = new List<int>();
+            List<CostInfoResp> fee = null;
+            var CompletionReports = await UnitWork.Find<CompletionReport>(c => c.ServiceMode == 1 && c.IsReimburse == 2).ToListAsync();
+            if (!string.IsNullOrWhiteSpace(request.CreateUserName))
+            {
+                UserIds.AddRange(await UnitWork.Find<User>(u => u.Name.Contains(request.CreateUserName)).Select(u => u.Id).ToListAsync());
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.TerminalCustomer))
+            {
+                ServiceOrderIds.AddRange(await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Contains(request.TerminalCustomer) || s.TerminalCustomerId.Contains(request.TerminalCustomer)).Select(s => s.Id).ToListAsync());
+            }
+            if (!string.IsNullOrWhiteSpace(request.FromTheme))//费用归属查询
+            {
+                //var workorder = await UnitWork.Find<ServiceWorkOrder>(c => c.FromTheme.Contains(request.FromTheme))
+                //    .WhereIf(ServiceOrderIds.Count > 0, c => ServiceOrderIds.Contains(c.ServiceOrderId))
+                //    .Select(c => c.ServiceOrderId)
+                //    .Distinct()
+                //    .ToListAsync();
+                CompletionReports = CompletionReports.Where(c => c.FromTheme.Contains(request.FromTheme)).ToList();
+                var ids = CompletionReports.Select(c => c.ServiceOrderId.Value).Distinct().ToList();
+                ServiceOrderIds = ServiceOrderIds.Count > 0 ? ServiceOrderIds.Intersect(ids).Distinct().ToList() : ids;
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.OrgName))
+            {
+                var orgids = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Name.Contains(request.OrgName)).Select(o => o.Id).ToListAsync();
+                OrgUserIds.AddRange(await UnitWork.Find<Relevance>(r => orgids.Contains(r.SecondId) && r.Key == Define.USERORG).Select(r => r.FirstId).ToListAsync());
+            }
+            var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ServiceRelations") && u.Enable == false).Select(u => u.Name).ToListAsync();
+
+            var result = new TableData();
+            var objs = UnitWork.Find<ReimburseInfo>(null).Include(r => r.ReimburseTravellingAllowances).Include(r => r.ReimurseOperationHistories);
+            var ReimburseInfos = objs.WhereIf(!string.IsNullOrWhiteSpace(request.MainId), r => r.MainId.ToString().Contains(request.MainId))
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderId), r => r.ServiceOrderSapId.ToString().Contains(request.ServiceOrderId))
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.BearToPay), r => r.BearToPay.Contains(request.BearToPay))
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.Responsibility), r => r.Responsibility.Contains(request.Responsibility))
+                      .WhereIf(request.StartDate != null, r => r.CreateTime > request.StartDate)
+                      .WhereIf(request.EndDate != null, r => r.CreateTime < Convert.ToDateTime(request.EndDate).AddMinutes(1440))
+                      //.WhereIf(!string.IsNullOrWhiteSpace(request.IsDraft.ToString()), r => r.IsDraft == request.IsDraft)
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.ReimburseType), r => r.ReimburseType.Equals(request.ReimburseType))
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId))
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.OrgName), r => OrgUserIds.Contains(r.CreateUserId))
+                      //.WhereIf(!string.IsNullOrWhiteSpace(request.TerminalCustomer), r => ServiceOrderIds.Contains(r.ServiceOrderId))
+                      .WhereIf(ServiceOrderIds.Count > 0, r => ServiceOrderIds.Contains(r.ServiceOrderId))
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceRelations), r => r.ServiceRelations.Contains(request.ServiceRelations))
+                      .WhereIf(!string.IsNullOrWhiteSpace(request.Status), r => r.RemburseStatus.Equals(int.Parse(request.Status)))
+                      .WhereIf(request.PaymentStartDate != null, r => r.PayTime > request.PaymentStartDate)
+                      .WhereIf(request.PaymentEndDate != null, r => r.PayTime < Convert.ToDateTime(request.PaymentEndDate).AddDays(1))
+                      ;
+            if (CategoryList != null && CategoryList.Where(c => c.Equals("All")).Count() >= 1)
+            {
+                ReimburseInfos = ReimburseInfos.Where(r => CategoryList.Contains(r.ServiceRelations));
+            }
+            else
+            {
+                ReimburseInfos = ReimburseInfos.Where(r => r.ServiceRelations.Equals(loginContext.User.ServiceRelations));
+            }
+            if (!string.IsNullOrWhiteSpace(request.RemburseStatus))
+            {
+                switch (request.RemburseStatus)
+                {
+                    case "1":
+                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 1 || r.RemburseStatus == 2);
+                        break;
+                    case "3":
+                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 3);
+                        break;
+                    case "4":
+                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus >= 4 && r.RemburseStatus < 9);
+                        break;
+                    case "9":
+                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 9);
+                        break;
+                    case "0"://费用归属用
+                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus > 4 && r.RemburseStatus <= 9);
+                        break;
+
+                }
+            }
+            if (request.PageType == 7)//费用归属用
+            {
+                List<ReimburseTravellingAllowance> reimburseTravellingAllowance = new List<ReimburseTravellingAllowance>();
+                List<ReimburseFare> reimburseFare = new List<ReimburseFare>();
+                List<ReimburseAccommodationSubsidy> reimburseAccommodationSubsidy = new List<ReimburseAccommodationSubsidy>();
+                List<ReimburseOtherCharges> reimburseOtherCharges = new List<ReimburseOtherCharges>();
+                fee = reimburseTravellingAllowance.Select(c => new CostInfoResp { Id = c.ReimburseInfoId, Money = c.Money }).ToList();
+
+                if (!loginContext.Roles.Any(r => r.Name.Equals("费用归属-呼叫中心")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
+                {
+                    List<string> orgid = new List<string> { loginOrg.Id };
+                    if (loginOrg.Name=="S0")
+                        orgid.Add("eb5d38df-14e2-4a46-98ec-9fd5da19f4e4");//深圳市新威尔电子有限公司
+
+                    var expendsOrg = await UnitWork.Find<ReimburseExpenseOrg>(c => orgid.Contains(c.OrgId)).ToListAsync();
+
+                    var ids = expendsOrg.Where(c => c.ExpenseType == 1).Select(c => c.ExpenseId).ToList();
+                    reimburseTravellingAllowance.AddRange(await UnitWork.Find<ReimburseTravellingAllowance>(c => ids.Contains(c.Id)).ToListAsync());
+                    ids = expendsOrg.Where(c => c.ExpenseType == 2).Select(c => c.ExpenseId).ToList();
+                    reimburseFare.AddRange(await UnitWork.Find<ReimburseFare>(c => ids.Contains(c.Id)).ToListAsync());
+                    ids = expendsOrg.Where(c => c.ExpenseType == 3).Select(c => c.ExpenseId).ToList();
+                    reimburseAccommodationSubsidy.AddRange(await UnitWork.Find<ReimburseAccommodationSubsidy>(c => ids.Contains(c.Id)).ToListAsync());
+                    ids = expendsOrg.Where(c => c.ExpenseType == 4).Select(c => c.ExpenseId).ToList();
+                    reimburseOtherCharges.AddRange(await UnitWork.Find<ReimburseOtherCharges>(c => ids.Contains(c.Id)).ToListAsync());
+
+                    reimburseInfoId.AddRange(reimburseTravellingAllowance.Select(c => c.ReimburseInfoId).ToList());
+                    reimburseInfoId.AddRange(reimburseFare.Select(c => c.ReimburseInfoId).ToList());
+                    reimburseInfoId.AddRange(reimburseAccommodationSubsidy.Select(c => c.ReimburseInfoId).ToList());
+                    reimburseInfoId.AddRange(reimburseOtherCharges.Select(c => c.ReimburseInfoId).ToList());
+
+
+                    var rta = reimburseTravellingAllowance.GroupBy(c => c.ReimburseInfoId).Select(c => new { c.Key, List = c.Select(s => s.Id).ToList() }).ToList();
+                    rta.ForEach(c =>
+                    {
+                        var sum = expendsOrg.Where(e => c.List.Contains(e.ExpenseId) && e.ExpenseType == 1).Sum(e => e.Money);
+                        fee.Add(new CostInfoResp { Id = c.Key, Money = sum });
+                    });
+                    var rf = reimburseFare.GroupBy(c => c.ReimburseInfoId).Select(c => new { c.Key, List = c.Select(s => s.Id).ToList() }).ToList();
+                    rf.ForEach(c =>
+                    {
+                        var sum = expendsOrg.Where(e => c.List.Contains(e.ExpenseId) && e.ExpenseType == 2).Sum(e => e.Money);
+                        fee.Add(new CostInfoResp { Id = c.Key, Money = sum });
+                    });
+                    var ras = reimburseAccommodationSubsidy.GroupBy(c => c.ReimburseInfoId).Select(c => new { c.Key, List = c.Select(s => s.Id).ToList() }).ToList();
+                    ras.ForEach(c =>
+                    {
+                        var sum = expendsOrg.Where(e => c.List.Contains(e.ExpenseId) && e.ExpenseType == 3).Sum(e => e.Money);
+                        fee.Add(new CostInfoResp { Id = c.Key, Money = sum });
+                    });
+                    var roc = reimburseOtherCharges.GroupBy(c => c.ReimburseInfoId).Select(c => new { c.Key, List = c.Select(s => s.Id).ToList() }).ToList();
+                    roc.ForEach(c =>
+                    {
+                        var sum = expendsOrg.Where(e => c.List.Contains(e.ExpenseId) && e.ExpenseType == 4).Sum(e => e.Money);
+                        fee.Add(new CostInfoResp { Id = c.Key, Money = sum });
+                    });
+                    fee = fee.GroupBy(c => c.Id).Select(c => new CostInfoResp { Id = c.Key, Money = c.Sum(s => s.Money) }).ToList();
+
+                    ReimburseInfos = ReimburseInfos.Where(r => reimburseInfoId.Contains(r.Id));
+                }
+            }
+            else
+            {
+                if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && request.PageType == 1 && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && loginContext.User.Account != Define.SYSTEM_USERNAME)
+                {
+                    var orgRole = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.Key == Define.ORGROLE && c.FirstId == loginContext.User.Id).FirstOrDefaultAsync();
+                    if (orgRole != null)//查看本部下数据
+                    {
+                        var orgId = orgRole.SecondId;
+                        var userIds = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.SecondId == orgId && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
+                        ReimburseInfos = ReimburseInfos.Where(r => userIds.Contains(r.CreateUserId));
+                    }
+                    else
+                    {
+                        ReimburseInfos = ReimburseInfos.Where(r => r.CreateUserId.Equals(loginContext.User.Id));
+                    }
+                };
+            }
+            //result.Count = ReimburseInfos.Count();
+            #endregion
+            var data = await ReimburseInfos.ToListAsync();
+            var resp = data.MapToList<ReimburseInfoResp>();
+            //resp.ForEach(c =>
+            //{
+            //    c.Money = fee?.Where(f => c.Id == f.Id).FirstOrDefault()?.Money;
+            //});
+            return resp;
         }
 
         /// <summary>
@@ -1569,7 +1908,15 @@ namespace OpenAuth.App
                 VerificationReqModle.VerificationFinally = "3";
                 VerificationReqModle.VerificationOpinion = req.Remark;
                 VerificationReqModle.NodeRejectType = "1";
-                await _flowInstanceApp.Verification(VerificationReqModle);
+                if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && (obj.RemburseStatus > 4 && obj.RemburseStatus <= 6))
+                {
+                    //客服主管在财务初审和财务复审阶段可以不走节点权限验证
+                }
+                else
+                {
+                    //节点权限验证
+                    await _flowInstanceApp.Verification(VerificationReqModle);
+                }
                 obj.RemburseStatus = 2;
                 eoh.ApprovalResult = "驳回";
                 var rtaIds = obj.ReimburseTravellingAllowances.Select(r => r.Id).ToList();

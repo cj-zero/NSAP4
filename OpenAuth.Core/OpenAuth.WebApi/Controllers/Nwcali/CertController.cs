@@ -260,6 +260,12 @@ namespace OpenAuth.WebApi.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task UpdateTesterModel()
+        {
+            await _nwcaliCertApp.UpdateTesterModel();
+        }
+
         [ServiceFilter(typeof(CertAuthFilter))]
         [HttpGet]
         public async Task<Response<NwcaliBaseInfo>> GetBaseInfo(string serialNumber, string sign, string timespan)
@@ -530,8 +536,24 @@ namespace OpenAuth.WebApi.Controllers
                 var entrustment = await _certinfoApp.GetEntrustment(model.CalibrationCertificate.TesterSn);
                 model.CalibrationCertificate.EntrustedUnit = entrustment?.CertUnit;
                 model.CalibrationCertificate.EntrustedUnitAdress = entrustment?.CertCountry + entrustment?.CertProvince + entrustment?.CertCity + entrustment?.CertAddress;
+                //委托日期需小于校准日期
+                if (entrustment != null && !string.IsNullOrWhiteSpace(entrustment.EntrustedDate.ToString()) && entrustment?.EntrustedDate > DateTime.Parse(model.CalibrationCertificate.CalibrationDate))
+                    entrustment.EntrustedDate = entrustment.EntrustedDate.Value.AddDays(-2);
+
                 model.CalibrationCertificate.EntrustedDate = !string.IsNullOrWhiteSpace(entrustment?.EntrustedDate.ToString()) ? entrustment?.EntrustedDate.Value.ToString("yyyy年MM月dd日") : "";
                 model.CalibrationCertificate.CalibrationDate = DateTime.Parse(model.CalibrationCertificate.CalibrationDate).ToString("yyyy年MM月dd日");
+                foreach (var item in model.MainStandardsUsed)
+                {
+                    if (!string.IsNullOrWhiteSpace(item.DueDate))
+                        item.DueDate = DateTime.Parse(item.DueDate).ToString("yyyy-MM-dd");
+                    if (item.Name.Contains(","))
+                    {
+                        var split = item.Name.Split(",");
+                        item.EnName = split[0];
+                        item.Name = split[1];
+                    }
+                    item.Characterisics = item.Characterisics.Replace("Urel", "<i>U</i><sub>rel</sub>").Replace("k=", "<i>k</i>=");
+                }
 
                 var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "CNAS Header.html");
                 var text = System.IO.File.ReadAllText(url);
@@ -544,13 +566,65 @@ namespace OpenAuth.WebApi.Controllers
                     pdf.IsWriteHtml = true;
                     pdf.PaperKind = PaperKind.A4;
                     pdf.Orientation = Orientation.Portrait;
-                    pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
-                    pdf.FooterSettings = new FooterSettings() { FontSize = 6, Right = "Page [page] of [toPage] ", Line = false, Spacing = 2.812, HtmUrl = footerUrl };
+                    pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };//2.812
+                    pdf.FooterSettings = new FooterSettings() { FontSize = 6, Right = "Page [page] of [toPage] ", Line = false, Spacing = 0, HtmUrl = footerUrl };
                 });
                 System.IO.File.Delete(tempUrl);
                 return File(datas, "application/pdf");
             }
             return new NotFoundResult();
+        }
+
+        [HttpGet]
+        public async Task TestDownload(string serialNumber1,string serialNumber2)
+        {
+            int a = Convert.ToInt32(serialNumber1);
+            int b =Convert.ToInt32(serialNumber2);
+            for (int i = a; i <= b; i++)
+            {
+                var temp = $"T2112-{i}";
+
+                var baseInfo = await _nwcaliCertApp.GetInfoBySn(temp);
+                if (baseInfo != null)
+                {
+                    var model = await BuildModel(baseInfo);
+                    //获取委托单
+                    var entrustment = await _certinfoApp.GetEntrustment(model.CalibrationCertificate.TesterSn);
+                    model.CalibrationCertificate.EntrustedUnit = entrustment?.CertUnit;
+                    model.CalibrationCertificate.EntrustedUnitAdress = entrustment?.CertCountry + entrustment?.CertProvince + entrustment?.CertCity + entrustment?.CertAddress;
+                    model.CalibrationCertificate.EntrustedDate = !string.IsNullOrWhiteSpace(entrustment?.EntrustedDate.ToString()) ? entrustment?.EntrustedDate.Value.ToString("yyyy年MM月dd日") : "";
+                    model.CalibrationCertificate.CalibrationDate = DateTime.Parse(model.CalibrationCertificate.CalibrationDate).ToString("yyyy年MM月dd日");
+                    foreach (var item in model.MainStandardsUsed)
+                    {
+                        if (!string.IsNullOrWhiteSpace(item.DueDate))
+                            item.DueDate = DateTime.Parse(item.DueDate).ToString("yyyy-MM-dd");
+                        if (item.Name.Contains(","))
+                        {
+                            var split = item.Name.Split(",");
+                            item.EnName = split[0];
+                            item.Name = split[1];
+                        }
+                        item.Characterisics = item.Characterisics.Replace("Urel", "<i>U</i><sub>rel</sub>").Replace("k=", "<i>k</i>=");
+                    }
+
+                    var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "CNAS Header.html");
+                    var text = System.IO.File.ReadAllText(url);
+                    text = text.Replace("@Model.Data.BarCode", model.BarCode);
+                    var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"Header{Guid.NewGuid()}.html");
+                    System.IO.File.WriteAllText(tempUrl, text);
+                    var footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "CNAS Footer.html");
+                    var datas = await ExportAllHandler.Exporterpdf(model, "Calibration Certificate CNAS.cshtml", pdf =>
+                    {
+                        pdf.IsWriteHtml = true;
+                        pdf.PaperKind = PaperKind.A4;
+                        pdf.Orientation = Orientation.Portrait;
+                        pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                        pdf.FooterSettings = new FooterSettings() { FontSize = 6, Right = "Page [page] of [toPage] ", Line = false, Spacing = 2.812, HtmUrl = footerUrl };
+                    });
+                    System.IO.File.Delete(tempUrl);
+                    Bytes2File(datas, $"D:\\钉钉下载\\校准证书\\T2112-{serialNumber1}-{serialNumber2}\\", baseInfo.CertificateNumber + ".pdf");
+                }
+            }
         }
 
         [ServiceFilter(typeof(CertAuthFilter))]
@@ -848,13 +922,14 @@ namespace OpenAuth.WebApi.Controllers
                 int l = 1;
                 foreach (var item in plcGroupData)
                 {
-                    var data = item.Where(p => p.VoltsorAmps.Equals("Volts") && p.Mode.Equals(mode) && p.VerifyType.Equals("Post-Calibration")).GroupBy(d => d.Channel);
+                    var data = item.Where(p => p.VoltsorAmps.Equals("Volts") && p.Mode.Equals(mode) && p.VerifyType.Equals("Post-Calibration")).GroupBy(d => d.Channel).ToList();
                     foreach (var item2 in data)
                     {
                         var cvDataList = item2.OrderBy(dd => dd.CommandedValue).ToList();
                         foreach (var cvData in cvDataList)
                         {
-                            var cvCHH = $"{l}-{cvData.Channel}";
+                            //var cvCHH = $"{l}-{cvData.Channel}";
+                            var cvCHH = $"{item.Key}-{cvData.Channel}";
                             var cvRange = cvData.Scale;
                             var cvIndication = cvData.MeasuredValue;
                             var cvMeasuredValue = cvData.StandardValue;
@@ -978,6 +1053,8 @@ namespace OpenAuth.WebApi.Controllers
                             {
                                 model.ChargingVoltage.Add(new DataSheet
                                 {
+                                    Sort1 = item.Key,
+                                    Sort2 = cvData.Channel,
                                     Channel = cvCHH,
                                     Range = cvRange.ToString(),
                                     Indication = IndicationReduce,
@@ -992,6 +1069,8 @@ namespace OpenAuth.WebApi.Controllers
                             {
                                 model.DischargingVoltage.Add(new DataSheet
                                 {
+                                    Sort1 = item.Key,
+                                    Sort2 = cvData.Channel,
                                     Channel = cvCHH,
                                     Range = cvRange.ToString(),
                                     Indication = IndicationReduce,
@@ -1020,7 +1099,8 @@ namespace OpenAuth.WebApi.Controllers
                         var cvDataList = item2.OrderBy(dd => dd.Scale).ThenBy(dd => dd.CommandedValue).ToList();
                         foreach (var cvData in cvDataList)
                         {
-                            var CHH = $"{l}-{cvData.Channel}";
+                            //var CHH = $"{l}-{cvData.Channel}";
+                            var CHH = $"{item.Key}-{cvData.Channel}";
                             var Range = cvData.Scale;
                             var Indication = cvData.MeasuredValue;
                             var MeasuredValue = cvData.StandardValue;
@@ -1147,6 +1227,8 @@ namespace OpenAuth.WebApi.Controllers
                             {
                                 model.ChargingCurrent.Add(new DataSheet
                                 {
+                                    Sort1 = item.Key ,
+                                    Sort2 = cvData.Channel,
                                     Channel = CHH,
                                     Range = baseInfo.TesterModel.Contains("mA") ? Range.ToString() : ((double)Range / 1000).ToString(),
                                     Indication = IndicationReduce,
@@ -1161,6 +1243,8 @@ namespace OpenAuth.WebApi.Controllers
                             {
                                 model.DischargingCurrent.Add(new DataSheet
                                 {
+                                    Sort1 = item.Key,
+                                    Sort2 = cvData.Channel,
                                     Channel = CHH,
                                     Range = baseInfo.TesterModel.Contains("mA") ? Range.ToString() : ((double)Range / 1000).ToString(),
                                     Indication = IndicationReduce,
@@ -1182,22 +1266,22 @@ namespace OpenAuth.WebApi.Controllers
 
             #region Charging Voltage
             CalculateVoltage("Charge", 8, int.Parse(CategoryObj.DtValue));
-            model.ChargingVoltage = model.ChargingVoltage.OrderBy(s => s.Channel).ToList();
+            model.ChargingVoltage = model.ChargingVoltage.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
             #endregion
 
             #region Discharging Voltage
             CalculateVoltage("DisCharge", 9, int.Parse(CategoryObj.DtValue));
-            model.DischargingVoltage = model.DischargingVoltage.OrderBy(s => s.Channel).ToList();
+            model.DischargingVoltage = model.DischargingVoltage.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
             #endregion
 
             #region Charging Current
             CalculateCurrent("Charge", 10, int.Parse(CategoryObj.Description), int.Parse(CategoryObj.DtCode));
-            model.ChargingCurrent = model.ChargingCurrent.OrderBy(s => s.Channel).ToList();
+            model.ChargingCurrent = model.ChargingCurrent.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
             #endregion
 
             #region Discharging Current
             CalculateCurrent("DisCharge", 10, int.Parse(CategoryObj.Description), int.Parse(CategoryObj.DtCode));
-            model.DischargingCurrent = model.DischargingCurrent.OrderBy(s => s.Channel).ToList();
+            model.DischargingCurrent = model.DischargingCurrent.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
             #endregion
 
 

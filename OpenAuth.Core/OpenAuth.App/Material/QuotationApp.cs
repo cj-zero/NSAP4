@@ -82,9 +82,11 @@ namespace OpenAuth.App.Material
                                 .WhereIf(request.QuotationStatus != null, q => q.QuotationStatus == request.QuotationStatus)
                                 .WhereIf(request.SalesOrderId != null, q => q.SalesOrderId == request.SalesOrderId)
                                 .WhereIf(ServiceOrderids.Count() > 0, q => ServiceOrderids.Contains(q.ServiceOrderId))
-                                .WhereIf(request.Remark!=null, q => q.Remark.Contains(request.Remark))
+                                .WhereIf(request.Remark != null, q => q.Remark.Contains(request.Remark))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.CancelRequest), q => q.CancelRequest == int.Parse(request.CancelRequest))
-                                .Select(q=>new {
+                                .WhereIf(!string.IsNullOrWhiteSpace(request.MaterialCode), q => q.QuotationMergeMaterials.Any(x => x.MaterialCode == request.MaterialCode))
+                                .Select(q => new
+                                {
                                     q.Id,
                                     q.ServiceOrderSapId,
                                     q.ServiceOrderId,

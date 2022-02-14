@@ -1012,18 +1012,7 @@ namespace OpenAuth.App
                         }
                         catch(DbUpdateConcurrencyException ex)
                         {
-                            //throw new Exception("数据删除异常", ex);
-                            foreach(var entry in ex.Entries)
-                            {
-                                if(entry.Entity is EntrustmentDetail)
-                                {
-                                    var databaseValues = entry.GetDatabaseValues();
-
-                                    entry.OriginalValues.SetValues(databaseValues);
-                                }
-                            }
-
-                            await UnitWork.SaveAsync();
+                            throw new Exception("数据删除异常", ex);
                         }
                     }
                     //var deletedt = await UnitWork.FindTrack<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();

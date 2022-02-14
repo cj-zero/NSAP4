@@ -71,7 +71,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 if (isOpen == "1")
                 {
-                    DataTable dts = _serviceSaleOrderApp.SelectBillListInfo_ORDR(out rowCount, model, type, rata, true, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewSelfDepartment, DepID, true, rata, sqlcont, sboname);
+                    DataTable dts = _serviceSaleOrderApp.SelectBillListInfo_ORDR(out rowCount, model, type, rata, true, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewSelfDepartment, DepID, true, true, sqlcont, sboname);
                     result.Data = dts;
                     result.Count = rowCount;
                 }

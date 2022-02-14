@@ -84,5 +84,11 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string OutsourcExpensesId { get; set; }
         //todo:添加自己的请求字段
+        public int SelectMode { get; set; }
+
+        /// <summary>
+        /// 呼叫主题
+        /// </summary>
+        public string FromTheme { get; set; }
     }
 }

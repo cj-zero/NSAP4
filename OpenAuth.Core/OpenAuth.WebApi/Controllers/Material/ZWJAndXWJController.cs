@@ -1,0 +1,501 @@
+﻿using Infrastructure;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using OpenAuth.App.Material;
+using OpenAuth.App.Material.Request;
+using OpenAuth.App.Response;
+using Serilog;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace OpenAuth.WebApi.Controllers.Material
+{
+    /// <summary>
+    /// BTS中位机和下位机软件版本管理相关
+    /// </summary>
+    [Route("api/Material/[controller]/[action]")]
+    [ApiController]
+    [ApiExplorerSettings(GroupName = "Material")]
+    public class ZWJAndXWJController : ControllerBase
+    {
+        private readonly ZWJAndXwjMGMTApp _app;
+        public ZWJAndXWJController(ZWJAndXwjMGMTApp app)
+        {
+            _app = app;
+        }
+
+        #region 中位机软件版本管理
+        /// <summary>
+        /// 是否存在中位机默认版本
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> IsExistsDefaultZWJVersion()
+        {
+            var result = new TableData();
+            try
+            {
+                result.Data = await _app.IsExistsDefaultZWJVersion();
+            }
+            catch(Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{""}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 新增中位机软件版本记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> AddZWJSoftwareVersion(AddOrUpdateZWJSoftwareInfoReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.AddZWJSoftwareVersion(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 查询中位机软件版本记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetZWJSoftwareVersions([FromQuery] QueryZWJSoftwareListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.GetZWJSoftwareVersions(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 修改中位机软件版本记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> UpdateZWJSoftwareVersion(AddOrUpdateZWJSoftwareInfoReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.UpdateZWJSoftwareVersion(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 删除中位机软件版本记录
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> DeleteZWJSoftwareVersion(int id)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.DeleteZWJSoftwareVersion(id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{id.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+        #endregion
+
+        #region 下位机软件版本管理
+        /// <summary>
+        /// 新增下位机软件版本记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> AddXWJSoftwareVersion(AddOrUpdateXWJSoftwareInfoReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.AddXWJSoftwareVersion(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 查询下位机软件版本记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetXWJSoftwareVersions([FromQuery] QueryXWJSoftwareListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.GetXWJSoftwareVersions(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 修改下位机软件版本记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> UpdateXWJSoftwareVersion(AddOrUpdateXWJSoftwareInfoReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.UpdateXWJSoftwareVersion(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 删除下位机软件版本记录
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> DeleteXWJSoftwareVersion(int id)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.DeleteXWJSoftwareVersion(id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{id.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        #endregion
+
+        #region 下位机版本映射
+        /// <summary>
+        /// 获取下位机软件版本别名
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetXWJSoftwareVersionAlias()
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.GetXWJSoftwareVersionAlias();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{""}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 新增下位机版本映射
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> AddXWJHardwareMap(AddOrUpdateXWJMapReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.AddXWJHardwareMap(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 查询下位机版本映射记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetXWJHarewareMaps([FromQuery] QueryXWJHarewareListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.GetXWJHarewareMaps(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 修改下位机版本映射
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> UpdateXWJHarewareMap(AddOrUpdateXWJMapReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.UpdateXWJHarewareMap(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 删除下位机版本映射
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> DeleteXWJHarewareMap(int id)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.DeleteXWJHarewareMap(id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{id.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+        #endregion
+
+        #region 临时版本管理
+
+        /// <summary>
+        /// 获取中位机程序版本
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetZWJSoftwareVersionNames()
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _app.GetZWJSoftwareVersionNames();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{""}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取下位机程序版本
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetXWJSoftwareVersionNames()
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _app.GetXWJSoftwareVersionNames();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{""}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 新增临时版本管理记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> AddTempVersion(AddOrUpdateTempVersionReq req)
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _app.AddTempVersion(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 查询临时版本记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTempVersionInfos([FromQuery] QueryTempVersionReq req)
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _app.GetTempVesionInfo(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 修改临时版本记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> UpdateTempVersion(AddOrUpdateTempVersionReq req)
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _app.UpdateTempVersion(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 删除临时版本记录
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> DeleteTempVersion(int id)
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _app.DeleteTempVersion(id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{id.ToString()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+        #endregion
+    }
+}
