@@ -1049,7 +1049,7 @@ namespace OpenAuth.App
                     result.Message = "呼叫主题不能为空。";
                     isHasNum = true;
                 }
-                if (!serialNumber.Any(c => c.ManufSN == s.ManufacturerSerialNumber && c.ItemCode == s.MaterialCode))
+                if (s.ManufacturerSerialNumber != "无序列号" && !serialNumber.Any(c => c.ManufSN == s.ManufacturerSerialNumber && c.ItemCode == s.MaterialCode))
                 {
                     result.Code = 500;
                     result.Message = "序列号和物料编码不匹配，请关闭窗口重新选择。";
@@ -1359,13 +1359,20 @@ namespace OpenAuth.App
             }
             var result = new TableData();
             List<string> techName = new List<string>();
+            List<int> status = new List<int>();
             if (!string.IsNullOrWhiteSpace(req.QryTechName))
                 techName = req.QryTechName.Split(",").ToList();
+            if (!string.IsNullOrWhiteSpace(req.QryStateList))
+            {
+                var num= req.QryStateList.Split(",");
+                status = Array.ConvertAll(num, int.Parse).ToList();
+            }
 
             var ids = await UnitWork.Find<ServiceWorkOrder>(null)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.Status.Equals(Convert.ToInt32(req.QryState)))
-                .WhereIf(req.QryStateList != null && req.QryStateList?.Count() > 0, q => req.QryStateList.Contains(q.Status.Value))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryStateList), q => status.Contains(q.Status.Value))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceMode), q => q.ServiceMode.Equals(Convert.ToInt32(req.QryServiceMode)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ManufacturerSerialNumber.Contains(req.QryManufSN))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ProblemTypeId.Equals(req.QryProblemType))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromType), q => q.FromType.Equals(Convert.ToInt32(req.QryFromType)))
@@ -1488,6 +1495,8 @@ namespace OpenAuth.App
                 Remark = q.Remark,
                 ServiceWorkOrders = q.ServiceWorkOrders.Where(a => (string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId) || a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
                 && (string.IsNullOrWhiteSpace(req.QryState) || a.Status.Equals(Convert.ToInt32(req.QryState)))
+                && (status.Count == 0 || status.Contains(a.Status.Value))
+                && (string.IsNullOrWhiteSpace(req.QryServiceMode) || a.ServiceMode.Equals(Convert.ToInt32(req.QryServiceMode)))
                 && (string.IsNullOrWhiteSpace(req.QryManufSN) || a.ManufacturerSerialNumber.Contains(req.QryManufSN))
                 //&& ((req.QryCreateTimeFrom == null || req.QryCreateTimeTo == null) || (a.CreateTime >= req.QryCreateTimeFrom && a.CreateTime <= req.QryCreateTimeTo))
                 && (string.IsNullOrWhiteSpace(req.QryFromType) || a.FromType.Equals(Convert.ToInt32(req.QryFromType)))
@@ -2181,10 +2190,18 @@ namespace OpenAuth.App
             }
             var result = new TableData();
 
+            List<int> status = new List<int>();
+            if (!string.IsNullOrWhiteSpace(req.QryStateList))
+            {
+                var num = req.QryStateList.Split(",");
+                status = Array.ConvertAll(num, int.Parse).ToList();
+            }
             var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceWorkOrders)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryU_SAP_ID), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.QryU_SAP_ID)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.ServiceWorkOrders.Any(a => a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId))))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.ServiceWorkOrders.Any(a => a.Status.Equals(Convert.ToInt32(req.QryState))))
+                .WhereIf(status.Count() > 0, q => q.ServiceWorkOrders.Any(a => status.Contains(a.Status.Value)))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceMode), q => q.ServiceWorkOrders.Any(a => a.ServiceMode.Equals(Convert.ToInt32(req.QryServiceMode))))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceWorkOrders.Any(a => a.ManufacturerSerialNumber.Contains(req.QryManufSN)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.RecepUserName.Contains(req.QryRecepUser))
@@ -2678,8 +2695,14 @@ namespace OpenAuth.App
             }
 
             List<string> techName = new List<string>();
+            List<int> status = new List<int>();
             if (!string.IsNullOrWhiteSpace(req.QryTechName))
                 techName = req.QryTechName.Split(",").ToList();
+            if (!string.IsNullOrWhiteSpace(req.QryStateList))
+            {
+                var num = req.QryStateList.Split(",");
+                status = Array.ConvertAll(num, int.Parse).ToList();
+            }
 
             var query = UnitWork.Find<ServiceOrder>(null)
                 .Include(s => s.ServiceWorkOrders).ThenInclude(c => c.ProblemType)
@@ -2687,6 +2710,8 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryU_SAP_ID), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.QryU_SAP_ID)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.ServiceWorkOrders.Any(a => a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId))))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.ServiceWorkOrders.Any(a => a.Status.Equals(Convert.ToInt32(req.QryState))))
+                .WhereIf(status.Count > 0, q => q.ServiceWorkOrders.Any(a => status.Contains(a.Status.Value)))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceMode), q => q.ServiceWorkOrders.Any(a => a.ServiceMode.Equals(Convert.ToInt32(req.QryServiceMode))))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceWorkOrders.Any(a => a.ManufacturerSerialNumber.Contains(req.QryManufSN)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.RecepUserName.Contains(req.QryRecepUser))
@@ -2700,7 +2725,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromType), q => q.ServiceWorkOrders.Any(a => a.FromType.Equals(Convert.ToInt32(req.QryFromType))))
                 .WhereIf(req.CompleteDate != null, q => q.ServiceWorkOrders.Any(s => s.CompleteDate > req.CompleteDate))
                 .WhereIf(req.EndCompleteDate != null, q => q.ServiceWorkOrders.Any(s => s.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1)))
-                .WhereIf(techName.Count > 0, q => q.ServiceWorkOrders.Any(s=> techName.Contains(s.CurrentUser)))
+                .WhereIf(techName.Count > 0, q => q.ServiceWorkOrders.Any(s => techName.Contains(s.CurrentUser)))
                 .Where(q => q.Status == 2);
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))

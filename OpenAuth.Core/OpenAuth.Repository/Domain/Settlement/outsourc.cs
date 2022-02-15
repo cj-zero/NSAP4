@@ -44,7 +44,7 @@ namespace OpenAuth.Repository.Domain.Settlement
         [Description("总金额")]
         public decimal? TotalMoney { get; set; }
         /// <summary>
-        /// 结算方式
+        /// 服务方式 1-上门 2-远程
         /// </summary>
         [Description("结算方式")]
         public int? ServiceMode { get; set; }

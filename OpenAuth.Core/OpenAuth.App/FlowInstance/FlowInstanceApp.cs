@@ -883,6 +883,65 @@ namespace OpenAuth.App
             await UnitWork.SaveAsync();
         }
 
+        /// <summary>
+        /// 撤回,可以根据NodeRejectType指定返回到哪一个节点
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<bool> ReCall2(RecallFlowInstanceReq request)
+        {
+            var user = _auth.GetCurrentUser().User;
+            FlowInstance flowInstance = Get(request.FlowInstanceId);
+            if (flowInstance.IsFinish == FlowInstanceStatus.Draft
+                || flowInstance.IsFinish == FlowInstanceStatus.Finished)
+            {
+                throw new Exception("当前流程状态不能撤回");
+            }
+
+            FlowRuntime wfruntime = new FlowRuntime(flowInstance);
+
+            string resnode = "";
+            resnode = string.IsNullOrEmpty(request.NodeRejectStep) ? wfruntime.RejectNode(request.NodeRejectType) : request.NodeRejectStep;
+
+            var tag = new Tag
+            {
+                Description = "",
+                Taged = (int)TagState.Reject,
+                UserId = user.Id,
+                UserName = user.Name
+            };
+
+            wfruntime.MakeTagNode(wfruntime.currentNodeId, tag);
+
+            flowInstance.IsFinish = FlowInstanceStatus.Draft;
+            flowInstance.PreviousId = flowInstance.ActivityId;
+            flowInstance.ActivityId = resnode;
+            flowInstance.ActivityType = wfruntime.GetNodeType(resnode);
+            flowInstance.ActivityName = wfruntime.Nodes[resnode].name;
+            flowInstance.MakerList = await GetNodeMarkers(wfruntime.Nodes[resnode], flowInstance.CreateUserId);
+
+            UnitWork.Update(flowInstance);
+
+            UnitWork.Add(new FlowInstanceOperationHistory
+            {
+                InstanceId = request.FlowInstanceId
+                ,
+                CreateUserId = user.Id
+                ,
+                CreateUserName = user.Name
+                ,
+                CreateDate = DateTime.Now
+                ,
+                Content = $"客服主管撤回,{DateTime.Now.ToString("yyyy-MM-dd HH:mm")}"
+            });
+
+            UnitWork.Save();
+
+            await wfruntime.NotifyThirdParty(_httpClientFactory.CreateClient(), tag);
+
+            return true;
+        }
+
         /// <summary>启动流程</summary>
         /// <remarks> 通常是对状态为【草稿】的流程进行操作，进入运行状态 </remarks>
         public async Task Start(StartFlowInstanceReq request)

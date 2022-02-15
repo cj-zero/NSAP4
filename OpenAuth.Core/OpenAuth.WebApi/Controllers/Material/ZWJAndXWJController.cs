@@ -28,6 +28,28 @@ namespace OpenAuth.WebApi.Controllers.Material
 
         #region 中位机软件版本管理
         /// <summary>
+        /// 是否存在中位机默认版本
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> IsExistsDefaultZWJVersion()
+        {
+            var result = new TableData();
+            try
+            {
+                result.Data = await _app.IsExistsDefaultZWJVersion();
+            }
+            catch(Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{""}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 新增中位机软件版本记录
         /// </summary>
         /// <param name="req"></param>
@@ -325,6 +347,151 @@ namespace OpenAuth.WebApi.Controllers.Material
                 result.Code = 500;
                 result.Message = ex.Message;
                 Log.Logger.Error($"地址：{Request.Path}，参数：{id.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+        #endregion
+
+        #region 临时版本管理
+
+        /// <summary>
+        /// 获取中位机程序版本
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetZWJSoftwareVersionNames()
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _app.GetZWJSoftwareVersionNames();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{""}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取下位机程序版本
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetXWJSoftwareVersionNames()
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _app.GetXWJSoftwareVersionNames();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{""}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 新增临时版本管理记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> AddTempVersion(AddOrUpdateTempVersionReq req)
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _app.AddTempVersion(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 查询临时版本记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTempVersionInfos([FromQuery] QueryTempVersionReq req)
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _app.GetTempVesionInfo(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 修改临时版本记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> UpdateTempVersion(AddOrUpdateTempVersionReq req)
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _app.UpdateTempVersion(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 删除临时版本记录
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> DeleteTempVersion(int id)
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _app.DeleteTempVersion(id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{id.ToString()}, 错误：{result.Message}");
             }
 
             return result;

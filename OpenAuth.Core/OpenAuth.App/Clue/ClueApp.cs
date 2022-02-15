@@ -1360,7 +1360,7 @@ namespace OpenAuth.App
                     mes += "'" + updateClueContactsReq.Name + "'联系方式二，原：联系方式二'" + clueContacts.Tel2 + "'，修改为'" + updateClueContactsReq.Tel2 + "'";
                 }
                 clueContacts.Tel2 = updateClueContactsReq.Tel2;
-                if (updateClueContactsReq.Role != -1 && updateClueContactsReq.Role != clueContacts.Role)
+                if (updateClueContactsReq.Role != "" && updateClueContactsReq.Role != clueContacts.Role)
                 {
                     mes += "'" + updateClueContactsReq.Role + "'角色，原：角色'" + clueContacts.Role + "'，修改为'" + updateClueContactsReq.Role + "'，（0：决策者、1：普通人）";
                 }
@@ -1665,7 +1665,7 @@ namespace OpenAuth.App
                    2.循环父级并赋值，再循环父级时查找子集
                    3.如果有子集调用用GetMenu（父级Id,数据源）方法一层一层向下找
                    4.注意：（，是套娃模式。也就是循环第二层第三层的时候还是在一个父
-                   级下面）个人注意点因为我在这里差点没想通，总是想着是平级
+                   级下面）
              */
             var parent = demos.Where(P => P.ParentId == pid);
             List<ClassificationDto> lists = new List<ClassificationDto>();

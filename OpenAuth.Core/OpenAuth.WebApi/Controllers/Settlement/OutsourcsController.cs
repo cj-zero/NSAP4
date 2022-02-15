@@ -80,6 +80,29 @@ namespace OpenAuth.WebApi.Controllers
         {
             return await _app.ASingleRejection(req);
         }
+
+        /// <summary>
+        /// 撤回单个
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> SingleRecall(AccraditationOutsourcReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.SingleRecall(req);
+            }
+            catch(Exception ex)
+            {
+                result.Message = ex?.Message ?? ex?.InnerException?.Message ?? "";
+                result.Code = 500;
+            }
+
+            return result;
+        }
+
         /// <summary>
         /// 修改
         /// </summary>

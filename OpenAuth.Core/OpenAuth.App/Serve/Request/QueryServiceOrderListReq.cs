@@ -20,7 +20,7 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 呼叫状态查询条件多选
         /// </summary>
-        public List<int> QryStateList { get; set; }
+        public string QryStateList { get; set; }
         /// <summary>
         /// 客户查询条件
         /// </summary>
@@ -134,5 +134,9 @@ namespace OpenAuth.App.Request
         /// 未完工原因
         /// </summary>
         public string UnCompletedReason { get; set; }
+        /// <summary>
+        /// 服务方式
+        /// </summary>
+        public string QryServiceMode { get; set; }
     }
 }

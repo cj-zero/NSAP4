@@ -5010,7 +5010,7 @@ namespace OpenAuth.App.Order
             }
 
             //filterString += string.Format("(b.job_type_nm LIKE '%{0}%' OR b.job_type_nm LIKE '%{1}%') AND ", "销售报价单","销售订单");
-            filterString += string.Format("(b.job_type_nm = '{0}' OR b.job_type_nm = '{1}'  OR b.job_type_nm = '{2}') AND ", "销售报价单", "销售订单", "销售交货");
+            filterString += string.Format("(b.job_type_nm = '{0}' OR b.job_type_nm = '{1}'  OR b.job_type_nm = '{2}' OR b.job_type_nm = '{3}') AND ", "销售报价单", "销售订单", "销售交货", "业务伙伴审核");
             #endregion
             #region
             if (!string.IsNullOrEmpty(filterString))
@@ -5475,7 +5475,7 @@ namespace OpenAuth.App.Order
                 return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql.ToString(), CommandType.Text, null).DataTableToJSON();
             }
         }
-        public static T DeSerialize<T>(byte[] bytes)
+        public T DeSerialize<T>(byte[] bytes)
         {
             T oClass = default(T);
             if (bytes.Length == 0 || bytes == null) return oClass;

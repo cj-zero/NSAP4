@@ -40,7 +40,7 @@ namespace OpenAuth.Repository.Domain.Settlement
         [Description("结算表id")]
         public int? OutsourcId { get; set; }
         /// <summary>
-        /// 费用类型
+        /// 费用类型 1-交通 2-住宿 3-工时 4-远程
         /// </summary>
         [Description("费用类型")]
         public int? ExpenseType { get; set; }

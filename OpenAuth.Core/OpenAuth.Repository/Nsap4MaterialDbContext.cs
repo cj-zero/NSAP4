@@ -88,5 +88,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<InternalContactProduction> InternalContactProduction { get; set; }
         public virtual DbSet<InternalContactServiceOrder> InternalContactServiceOrders { get; set; }
         public virtual DbSet<InternalContactTaskServiceOrder> InternalContactTaskServiceOrders { get; set; }
+        public virtual DbSet<TempVersion> TempVersions { get; set; }
+        #endregion
     }
 }

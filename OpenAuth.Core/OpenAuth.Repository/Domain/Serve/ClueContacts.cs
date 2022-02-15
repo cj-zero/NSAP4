@@ -41,7 +41,7 @@ namespace OpenAuth.Repository.Domain.Serve
         /// 角色（0：决策者、1：普通人）
         /// </summary>
         [Description("角色")]
-        public int Role { get; set; }
+        public string Role { get; set; }
         /// <summary>
         ///职位
         /// </summary>
