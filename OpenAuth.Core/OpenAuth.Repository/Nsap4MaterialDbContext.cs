@@ -81,6 +81,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<ZWJHardware> ZWJHardwares { get; set; }
         public virtual DbSet<XWJSoftwareVersion> XWJSoftwareVersions { get; set; }
         public virtual DbSet<XWJHardware> XWJHardwares { get; set; }
+        public virtual DbSet<TempVersion> TempVersions { get; set; }
         # endregion
         public virtual DbSet<FinishedMaterial> FinishedMaterials { get; set; }
         
@@ -88,7 +89,5 @@ namespace OpenAuth.Repository
         public virtual DbSet<InternalContactProduction> InternalContactProduction { get; set; }
         public virtual DbSet<InternalContactServiceOrder> InternalContactServiceOrders { get; set; }
         public virtual DbSet<InternalContactTaskServiceOrder> InternalContactTaskServiceOrders { get; set; }
-        public virtual DbSet<TempVersion> TempVersions { get; set; }
-        #endregion
     }
 }
