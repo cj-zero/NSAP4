@@ -144,6 +144,12 @@ namespace OpenAuth.App
                             .FirstOrDefaultAsync();
 
             var result = detail.MapTo<BeforeSaleDemandResp>();
+            //判断当前用户是否有查看金额信息的权限 默认否false
+            result.IsShowAmount = false;
+            if (loginContext.User.CreateId==result.CreateUserId|| loginContext.User.Account == Define.SYSTEM_USERNAME|| loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-销售总助"))|| loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-研发总助"))|| loginContext.Roles.Any(c => c.Name.Equal("总经理")))
+            {
+                result.IsShowAmount = true;
+            }
             //判断当前用户是否有页面的审核权限 默认否false
             result.IsHandle = false;
             if (result.Status > 0 && result.FlowInstanceId != null)
