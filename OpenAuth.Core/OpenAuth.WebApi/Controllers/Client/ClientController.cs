@@ -171,6 +171,74 @@ namespace OpenAuth.WebApi.Controllers.Client
             return result;
 
         }
+        /// <summary>
+        /// 查询单个业务伙伴信息
+        /// </summary>
+        [HttpGet]
+        [Route("SelectCrmClientInfo")]
+
+        public TableData SelectCrmClientInfo(string CardCode, string IsOpenSap)
+        {
+            var result = new TableData();
+            var UserId = _serviceBaseApp.GetUserNaspId();
+            var SboId = _serviceBaseApp.GetUserNaspSboID(UserId);
+            bool rIsViewSales = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", UserId).ViewSales;
+            bool rIsOpenSap = IsOpenSap == "1" ? true : false;
+            if (!string.IsNullOrEmpty(CardCode) && !string.IsNullOrEmpty(SboId.ToString()))
+                result.Data = _clientInfoApp.SelectCrmClientInfo(CardCode, SboId.ToString(), rIsOpenSap, rIsViewSales);
+            return result;
+        }
+
+        /// <summary>
+        /// 查询业务伙伴的联系人
+        /// </summary>
+        [HttpGet]
+        [Route("SelectClientContactData")]
+
+        public TableData SelectClientContactData(string CardCode, string IsOpenSap)
+        {
+
+            var result = new TableData();
+            var UserId = _serviceBaseApp.GetUserNaspId();
+            var SboId = _serviceBaseApp.GetUserNaspSboID(UserId);
+            bool rIsViewFull = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", UserId).ViewFull;
+            bool rIsViewSelf = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", UserId).ViewSelf;
+            bool rIsOpenSap = IsOpenSap == "1" ? true : false;
+            if (!string.IsNullOrEmpty(CardCode) && !string.IsNullOrEmpty(SboId.ToString()))
+                result.Data = _clientInfoApp.SelectClientContactData(CardCode, SboId.ToString(), rIsOpenSap, rIsViewFull);
+            return result;
+        }
+        /// <summary>
+        /// 查询业务伙伴的地址
+        /// </summary>
+        [HttpGet]
+        [Route("SelectClientAddrData")]
+        public TableData SelectClientAddrData(string CardCode, string SboId, string IsOpenSap)
+        {
+            var result = new TableData();
+            bool rIsOpenSap = IsOpenSap == "1" ? true : false;
+            if (!string.IsNullOrEmpty(CardCode) && !string.IsNullOrEmpty(SboId))
+                result.Data = _clientInfoApp.SelectClientAddrData(CardCode, SboId, rIsOpenSap);
+            return result;
+        }
+
+        /// <summary>
+        /// 查询所有技术员
+        /// </summary>
+        [HttpPost]
+        [Route("GetTcnicianInfo")]
+        public TableData GetTcnicianInfo(GetTcnicianInfoReq getTcnicianInfoReq)
+        {
+            var result = new TableData();
+            int rowsCount = 0;
+            result.Data = _clientInfoApp.GetTcnicianInfo(getTcnicianInfoReq.limit, getTcnicianInfoReq.page, getTcnicianInfoReq.query, getTcnicianInfoReq.sortname, getTcnicianInfoReq.sortorder, getTcnicianInfoReq.SboId, "1", out rowsCount);
+            result.Count = rowsCount;
+            return result;
+
+        }
+
 
     }
+
 }
+

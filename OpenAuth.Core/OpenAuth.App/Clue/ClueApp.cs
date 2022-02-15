@@ -1905,10 +1905,11 @@ namespace OpenAuth.App
 
             return "false";
         }
-        public async Task<List<ClassificationDto>> IndustryDropDownAsync()
+        public async Task<List<ClassificationDto>> IndustryDropDownAsync(string Name)
         {
+            var model = await UnitWork.FindSingleAsync<ClueClassification>(q => q.Name == Name);
             var entity = UnitWork.Find<ClueClassification>(q => !q.IsDelete).MapToList<ClassificationDto>();
-            var res = GetTypes(1, entity);
+            var res = GetTypes(model.Id, entity);
             return res;
         }
         #endregion
