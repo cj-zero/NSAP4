@@ -565,7 +565,7 @@ namespace OpenAuth.App
                 }
                 else
                 {
-                    query = query.WhereIf(!(bool)request.IsMonth, c => c.a.CreateTime.Value.Month == DateTime.Now.Month - 1);
+                    query = query.WhereIf(!(bool)request.IsMonth, c => c.a.CreateTime.Value.Month == DateTime.Now.Month - 1 && c.a.CreateTime.Value.Year == DateTime.Now.Year);
                 }
             }
             var serviceOrderList = await query.Select(q => new { q.b.Id, q.b.U_SAP_ID, q.b.TerminalCustomer, q.b.TerminalCustomerId, q.b.ServiceWorkOrders, q.a.CreateTime }).OrderByDescending(u => u.Id).ToListAsync();
