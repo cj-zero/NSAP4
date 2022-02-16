@@ -7,7 +7,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Text;
 using System.Threading.Tasks;
+using Infrastructure;
 using Infrastructure.Extensions;
+using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
 using NSAP.Entity.Client;
 using NSAP.Entity.Sales;
@@ -17,6 +19,8 @@ using OpenAuth.Repository;
 using billAttchment = NSAP.Entity.Sales.billAttchment;
 using clientCRD1 = NSAP.Entity.Client.clientCRD1;
 using clientOCPR = NSAP.Entity.Client.clientOCPR;
+using OpenAuth.Repository.Domain;
+using clientAcct1 = NSAP.Entity.Client.clientAcct1;
 
 namespace OpenAuth.App.Client
 {
@@ -585,8 +589,12 @@ namespace OpenAuth.App.Client
                 AddrList = new List<clientCRD1>(),//地址列表
                 FilesDetails = new List<billAttchment>(),//附件列表
                 EshopUserId = clientInfo.EshopUserId,
-
-                //  AcctList = new List<clientAcct1>()
+                AcctList = new List<clientAcct1>(),
+                U_SuperClient = clientInfo.U_SuperClient,//上级客户
+                U_StaffScale = clientInfo.U_StaffScale,//人员规模
+                U_ClientSource = clientInfo.U_ClientSource,//客户来源
+                U_TradeType = clientInfo.U_TradeType,//贸易类型
+                U_CompSector = clientInfo.U_CompSector//所属行业
             };
             foreach (var item in clientInfo.ContactList)
             {
@@ -728,7 +736,7 @@ namespace OpenAuth.App.Client
         /// </summary>
         public object GetAuditInfo(string jobId)
         {
-            string sql = string.Format("SELECT job_data FROM {0}.wfa_job WHERE job_id=?{1} ", "nsap_bone", jobId);
+            string sql = string.Format("SELECT job_data FROM {0}.wfa_job WHERE job_id={1}", "nsap_base", jobId);
             return UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
         }
         #endregion
@@ -738,7 +746,7 @@ namespace OpenAuth.App.Client
         /// </summary>
         public clientOCRD GetAuditInfoNew(string jobId)
         {
-            clientOCRD bill = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])(GetAuditInfo(jobId)));
+            clientOCRD bill = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(jobId));
             return bill;
         }
         #endregion
@@ -794,6 +802,240 @@ namespace OpenAuth.App.Client
             return ret;
 
         }
+        #region 查询业务伙伴详细
+        /// <summary>
+        /// 查询业务伙伴详细
+        /// </summary>
+        /// <returns></returns>
+        public DataTable SelectCrmClientInfo(string CardCode, string SboId, bool IsOpenSap, bool IsViewSales)
+        {
 
+            string CustomFields = "";
+            DataTable dt = _serviceSaleOrderApp.GetCustomFields("crm_OCRD");
+            if (IsOpenSap)
+            {
+                if (dt.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dt.Rows.Count; i++)
+                    {
+                        if (_serviceSaleOrderApp.QueryExistsStoreItemTypeField("OCRD", dt.Rows[i][0].ToString(), true))
+                        {
+                            CustomFields += "," + dt.Rows[i][0].ToString();
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (dt.Rows.Count > 0)
+                {
+                    for (int i = 0; i < dt.Rows.Count; i++)
+                    {
+                        if (_serviceSaleOrderApp.QueryExistsStoreItemTypeField("crm_OCRD", dt.Rows[i][0].ToString(), false))
+                        {
+                            CustomFields += "," + dt.Rows[i][0].ToString();
+                        }
+                    }
+                }
+            }
+            StringBuilder strSql = new StringBuilder("SELECT ");
+            if (!IsOpenSap) { strSql.Append("a.sbo_id,"); }
+            strSql.Append("a.CardCode, a.CardName, CardFName, a.CardType, a.GroupCode, a.CmpPrivate, a.Notes, ");
+            if (IsViewSales) { strSql.Append("a.Balance, "); } else { strSql.Append("'****' AS Balance, "); }
+            strSql.Append("a.GroupNum, a.LicTradNum, a.Free_Text AS 'FreeText', a.SlpCode, a.Currency, ");
+            strSql.Append("a.Cellular, a.E_Mail, a.Fax, a.CntctPrsn, a.Phone1, a.Phone2, ");
+            strSql.Append("a.QryGroup1, a.QryGroup2, a.QryGroup3, a.QryGroup4, a.QryGroup5, a.QryGroup6, a.QryGroup7, a.QryGroup8, a.QryGroup9, a.QryGroup10, ");
+            strSql.Append("a.QryGroup11, a.QryGroup12, a.QryGroup13, a.QryGroup14, a.QryGroup15, a.QryGroup16, a.QryGroup17, a.QryGroup18, a.QryGroup19, a.QryGroup20, ");
+            strSql.Append("a.QryGroup21, a.QryGroup22, a.QryGroup23, a.QryGroup24, a.QryGroup25, a.QryGroup26, a.QryGroup27, a.QryGroup28, a.QryGroup29, a.QryGroup30, ");
+            strSql.Append("a.QryGroup31, a.QryGroup32, a.QryGroup33, a.QryGroup34, a.QryGroup35, a.QryGroup36, a.QryGroup37, a.QryGroup38, a.QryGroup39, a.QryGroup40, ");
+            strSql.Append("a.QryGroup41, a.QryGroup42, a.QryGroup43, a.QryGroup44, a.QryGroup45, a.QryGroup46, a.QryGroup47, a.QryGroup48, a.QryGroup49, a.QryGroup50, ");
+            strSql.Append("a.QryGroup51, a.QryGroup52, a.QryGroup53, a.QryGroup54, a.QryGroup55, a.QryGroup56, a.QryGroup57, a.QryGroup58, a.QryGroup59, a.QryGroup60, ");
+            strSql.Append("a.QryGroup61, a.QryGroup62, a.QryGroup63, a.QryGroup64, a.DocEntry, ");
+            strSql.Append("a.validFor AS ValidFor, a.validFrom AS ValidFrom, a.validTo AS ValidTo, a.ValidComm, ");
+            strSql.Append("a.frozenFor AS FrozenFor, a.frozenFrom AS FrozenFrom, a.frozenTo AS FrozenTo, a.FrozenComm, ");
+            strSql.Append("a.VatGroup, a.Indicator, a.ShipType, a.AliasName, ");
+            //默认开票到 DefAddrBill, BillToDef, AddrType, Country, State1, City, Building, ZipCode, County 
+            strSql.Append("a.Address, a.BillToDef, a.AddrType, a.Country, a.State1, a.City, a.Building, a.ZipCode, ");
+            //默认运达到 DefAddrShip, ShipToDef,MailAddrTy,MailCountr,State2,MailCity,MailBuildi,MailZipCod, MailCounty
+            strSql.Append("a.MailAddres, a.ShipToDef, a.MailAddrTy, a.MailCountr, a.State2, a.MailCity, a.MailBuildi, a.MailZipCod, ");
+            strSql.Append("a.DfTcnician as DfTcnicianCode, a.Territory, a.IndustryC, ");//a.StreetNo, a.MailStrNo, 
+            if (IsOpenSap) { strSql.Append("ISNULL(c.lastName,'')+ISNULL(c.firstName,'') as DfTcnician, "); } else { strSql.Append("CONCAT(IFNULL(c.lastName,''),IFNULL(c.firstName,'')) as DfTcnician, "); }
+            strSql.Append("a.GTSRegNum, a.GTSBankAct, a.GTSBilAddr,b.SlpName, d.DocDueDate, a.IntrntSite, ");
+            strSql.AppendFormat("U_Prefix AS CardNamePrefix,U_Name AS CardNameCore,U_Suffix AS CardNameSuffix,U_is_reseller AS is_reseller,U_EndCustomerName AS EndCustomerName,U_EndCustomerContact AS EndCustomerContact  {0} ", CustomFields);
+            DataTable dtRet;
+
+            if (IsOpenSap)
+            {
+                strSql.Append("FROM OCRD a LEFT JOIN OSLP b ON a.SlpCode=b.SlpCode LEFT JOIN OHEM c ON a.DfTcnician=c.empID ");
+                strSql.AppendFormat("LEFT JOIN (SELECT TOP 1 DocDueDate,CardCode FROM ODLN WHERE CardCode='{0}' AND DocTotal>=2000 ORDER BY DocDueDate DESC) d ON a.CardCode=d.CardCode ", CardCode);
+                strSql.AppendFormat("WHERE a.CardCode=@CardCode ", CardCode);
+                dtRet = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+
+            }
+            else
+            {
+                strSql.AppendFormat("FROM {0}.crm_OCRD a LEFT JOIN {0}.crm_OSLP b ON a.sbo_id=b.sbo_id AND a.SlpCode=b.SlpCode ", "nsap_bone");
+                strSql.AppendFormat("LEFT JOIN {0}.crm_OHEM c ON a.sbo_id=c.sbo_id AND a.DfTcnician=c.empID ", "nsap_bone");
+                strSql.AppendFormat("LEFT JOIN  (SELECT DocDueDate,CardCode FROM {0}.sale_ODLN WHERE CardCode='{0}' AND DocTotal>=2000 ORDER BY DocDueDate DESC LIMIT 1) d ON a.CardCode=d.CardCode ", "nsap_bone");
+                strSql.AppendFormat("WHERE a.sbo_id={0} AND a.CardCode={1} ", SboId, CardCode);
+
+
+                dtRet = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
+
+            }
+
+            string sDfTcnician = dtRet.Rows[0]["DfTcnicianCode"].ToString();
+
+            SetSavefTcnician_sql(CardCode, sDfTcnician, SboId);
+            return dtRet;
+        }
+        #endregion
+        #region 是否选择新的售后主管
+        public void SetSavefTcnician_sql(string sCardCode, string sfTcnician, string SboId)
+        {
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCardCode",    sCardCode),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pDfTcnician",     string.IsNullOrEmpty(sfTcnician)?"0":sfTcnician),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pSboId",     SboId)
+
+            };
+            UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, string.Format("{0}.sp_userTemp_Add", "nsapa_base"), CommandType.StoredProcedure, strPara);
+
+        }
+
+
+        #endregion
+        #region 查询业务伙伴的联系人
+        /// <summary>
+        /// 查询业务伙伴的联系人
+        /// </summary>
+        /// <returns></returns>
+        public DataTable SelectClientContactData(string CardCode, string SboId, bool IsOpenSap, bool IsViewFull)
+        {
+            string StrWhere = IsViewFull ? "" : " AND Active='Y' ";
+            StringBuilder strSql = new StringBuilder();
+            if (IsOpenSap)
+            {
+                strSql.Append("SELECT CardCode,CntctCode,Active,'0' AS IsDefault,Name,Gender,Title,Position,[Address],Notes1,Notes2,Tel1,Tel2,Cellolar,Fax,E_MailL,BirthDate,U_ACCT,U_BANK FROM OCPR ");
+                strSql.AppendFormat("WHERE CardCode=@CardCode {0} ", StrWhere);
+                SqlParameter[] para = {
+                    new SqlParameter("@CardCode", CardCode)
+                };
+                return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, para);
+            }
+            else
+            {
+                strSql.Append("SELECT CardCode,CntctCode,Active,'0' AS IsDefault,Name,Gender,Title,Position,Address,Notes1,Notes2,Tel1,Tel2,Cellolar,Fax,E_MailL,BirthDate,U_ACCT,U_BANK ");
+                strSql.AppendFormat("FROM {0}.crm_OCPR WHERE sbo_id=?sbo_id AND CardCode=?CardCode {1} ORDER BY Name ASC", "nsap_bone", StrWhere);
+
+                List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+                {
+                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?sbo_id",    SboId),
+                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?CardCode",   CardCode)
+                };
+                return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text,
+                    strPara);
+            }
+        }
+        #endregion
+        #region 查询业务伙伴的地址
+        /// <summary>
+        /// 查询业务伙伴的地址
+        /// </summary>
+        /// <returns></returns>
+        public DataTable SelectClientAddrData(string CardCode, string SboId, bool IsOpenSap)
+        {
+            StringBuilder strSql = new StringBuilder();
+            if (IsOpenSap)
+            {
+                strSql.Append("SELECT CardCode,LineNum,U_Active AS Active,'0' AS IsDefault,a.AdresType,a.Address,b.Name AS Country,c.Name AS 'State',a.City,a.Building,a.ZipCode,a.Country AS CountryId,a.State AS StateId ");
+                strSql.Append("FROM CRD1 a LEFT JOIN OCRY b ON a.Country=b.Code LEFT JOIN OCST c ON a.State=c.Code ");
+                strSql.Append("WHERE a.CardCode=@CardCode ");
+                SqlParameter[] para = {
+                    new SqlParameter("@CardCode", CardCode)
+                };
+                return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, para);
+            }
+            else
+            {
+                strSql.Append("SELECT CardCode,LineNum,U_Active AS Active,'0' AS IsDefault,a.AdresType,a.Address,b.Name AS Country,c.Name AS 'State',a.City,a.Building,a.ZipCode,a.Country AS CountryId,a.State AS StateId ");
+                strSql.AppendFormat("FROM {0}.crm_CRD1 a LEFT JOIN {0}.crm_OCRY b ON a.Country=b.Code LEFT JOIN {0}.crm_OCST c ON a.State=c.Code ", "nsap_bone");
+                strSql.Append("WHERE a.sbo_id=?sbo_id AND a.CardCode=?CardCode ORDER BY a.Address ASC");
+
+
+                List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> para = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+                {
+                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?sbo_id",    SboId),
+                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?CardCode",     CardCode)
+
+                };
+                return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, para);
+            }
+        }
+        #endregion
+        #region 查询所有技术员
+        /// <summary>
+        /// 查询所有技术员
+        /// </summary>
+        /// <returns></returns>
+        public DataTable GetTcnicianInfo(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, string SboId, string Type, out int rowsCount)
+        {
+            string sortString = string.Empty;
+            string filterString = "1=1 ";
+            if (Type == "1") { filterString += "AND role_nm LIKE '%技术主管%' "; }
+            if (!string.IsNullOrEmpty(sortname) && !string.IsNullOrEmpty(sortorder))
+                sortString = string.Format("{0} {1}", sortname, sortorder.ToUpper());
+            if (!string.IsNullOrEmpty(filterQuery))
+            {
+                string[] whereArray = filterQuery.Split('`');
+                for (int i = 0; i < whereArray.Length; i++)
+                {
+                    string[] p = whereArray[i].Split(':');
+                    if (!string.IsNullOrEmpty(p[1]))
+                    {
+                        filterString += string.Format("AND {0} LIKE '%{1}%' ", p[0], p[1].Trim().FilterSQL().Replace("*", "%"));
+                    }
+                }
+            }
+            DataTable dt;
+            StringBuilder filedName = new StringBuilder();
+            StringBuilder tableName = new StringBuilder();
+            filedName.Append("tech_id,user_nm,TcnicianNm,role_nm,dep_alias,post_nm,telphone");
+            tableName.Append("(SELECT h.tech_id,a.user_nm,CONCAT(IFNULL(lastName,''),IFNULL(firstName,'')) AS TcnicianNm,");
+            tableName.Append("GROUP_CONCAT(DISTINCT f.role_nm ORDER BY f.role_nm SEPARATOR ',') as role_nm,c.dep_alias,d.post_nm,a.telphone ");
+            tableName.AppendFormat("FROM {0}.base_user a LEFT JOIN {0}.base_user_detail b ON a.user_id=b.user_id ", "nsap_base");
+            tableName.AppendFormat("LEFT JOIN {0}.base_dep c ON b.dep_id=c.dep_id LEFT JOIN {0}.base_post d ON b.post_id=d.post_id ", "nsap_base");
+            tableName.AppendFormat("LEFT JOIN {0}.base_user_role e ON a.user_id=e.user_id LEFT JOIN {0}.base_role f ON e.role_id=f.role_id ", "nsap_base");
+            tableName.AppendFormat("LEFT JOIN {0}.sbo_user h ON h.sbo_id={1} AND a.user_id=h.user_id ", "nsap_base", SboId);
+            tableName.AppendFormat("LEFT JOIN {0}.crm_ohem i ON h.sbo_id=i.sbo_id AND h.tech_id=i.empID WHERE h.tech_id>0 GROUP BY a.user_id) T ", "nsap_bone");
+            return SelectPagingNoneRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, sortString, filterQuery, out rowsCount);
+
+        }
+        public DataTable SelectPagingNoneRowsCount(string tableName, string fieldName, int pageSize, int pageIndex, string strOrder, string strWhere, out int rowsCount)
+        {
+            return SelectPaging(tableName, fieldName, pageSize, pageIndex, strOrder, strWhere, 0, out rowsCount);
+        }
+        public DataTable SelectPaging(string tableName, string fieldName, int pageSize, int pageIndex, string strOrder, string strWhere, int isTotal, out int rowsCount)
+        {
+
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> para = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+            {
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pTableName",    tableName),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pFieldName",     fieldName),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pPageSize",     pageSize),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pPageIndex",     pageIndex),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pStrOrder",     strOrder),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pStrWhere",     strWhere),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pIsTotal",     isTotal),
+                new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?rowsCount",     0)
+
+            };
+            para[7].Direction = ParameterDirection.Output;
+            DataTable dataTable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, string.Format("{0}.sp_common_pager", "nsap_base"), CommandType.StoredProcedure, para);
+            rowsCount = isTotal == 1 ? Convert.ToInt32(para[7].Value) : 0;
+            return dataTable;
+        }
+        #endregion
     }
 }
