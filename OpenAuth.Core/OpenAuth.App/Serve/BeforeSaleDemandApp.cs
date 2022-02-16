@@ -144,6 +144,12 @@ namespace OpenAuth.App
                             .FirstOrDefaultAsync();
 
             var result = detail.MapTo<BeforeSaleDemandResp>();
+            //判断当前用户是否有查看金额信息的权限 默认否false
+            result.IsShowAmount = false;
+            if (result.CreateUserId == loginContext.User.Id || loginContext.User.Account == Define.SYSTEM_USERNAME || loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-销售总助")) || loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-研发总助")) || loginContext.Roles.Any(c => c.Name.Equal("总经理")))
+            {
+                result.IsShowAmount = true;
+            }
             //判断当前用户是否有页面的审核权限 默认否false
             result.IsHandle = false;
             if (result.Status > 0 && result.FlowInstanceId != null)
@@ -535,7 +541,7 @@ namespace OpenAuth.App
                             TestUserName = req.BeforeSaleProSchedulings.Find(x => x.Stage == 2).UserName,
                             FlowInstanceId = beforeSaleDemand.FlowInstanceId,//流程id
                             //需要研发实施，实施负责人为研发负责人
-                            ExecutorUserId = beforeSaleDemand.IsDevDeploy.HasValue&&beforeSaleDemand.IsDevDeploy.Value == 1 ? req.BeforeSaleProSchedulings.Find(x => x.Stage == 1).UserId : "",
+                            ExecutorUserId = beforeSaleDemand.IsDevDeploy.HasValue && beforeSaleDemand.IsDevDeploy.Value == 1 ? req.BeforeSaleProSchedulings.Find(x => x.Stage == 1).UserId : "",
                             ExecutorName = beforeSaleDemand.IsDevDeploy.HasValue && beforeSaleDemand.IsDevDeploy.Value == 1 ? req.BeforeSaleProSchedulings.Find(x => x.Stage == 1).UserName : "",
                             CreateTime = DateTime.Now,
                             CreateUserId = loginContext.User.Id,

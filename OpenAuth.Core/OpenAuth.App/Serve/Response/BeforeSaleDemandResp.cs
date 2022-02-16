@@ -190,7 +190,10 @@ namespace OpenAuth.App.Reponse
         /// 判断当前用户是否有页面的审核权限 默认否false
         /// </summary>
         public bool IsHandle { get; set; }
-
+        /// <summary>
+        /// 判断当前用户是否有查看金额信息的权限 默认否false
+        /// </summary>
+        public bool IsShowAmount { get; set; }
         /// <summary>
         /// 售前申请流程关联项目
         /// </summary>
