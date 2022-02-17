@@ -255,7 +255,7 @@ namespace OpenAuth.App.Client
             DataTable clientTable = new DataTable();
 
             if (!IsOpenSap) { filedName.Append("sbo_id,"); }
-            filedName.Append("CardCode, CardName, SlpName, Technician, CntctPrsn, Address, Phone1, Cellular, ");
+            filedName.Append("CardCode, CardName, SlpName, Technician, CntctPrsn, Address, Phone1, Cellular,U_is_reseller, ");
             if (rIsViewSales)
             {
                 filedName.Append("Balance,  BalanceTotal, DNotesBal, OrdersBal, OprCount, ");
@@ -264,7 +264,7 @@ namespace OpenAuth.App.Client
             {
                 filedName.Append("'****' AS Balance, '******************************' AS BalanceTotal, '****' AS DNotesBal, '****' AS OrdersBal, '****' AS OprCount, ");
             }
-            filedName.Append("UpdateDate , ");
+            filedName.Append("CreateDate,UpdateDate , ");
             filedName.Append(" validFor,validFrom,validTo,ValidComm,frozenFor,frozenFrom,frozenTo,FrozenComm ,GroupName,Free_Text");
             filedName.Append(",case when INVTotal90P>0 and Due90>0 then (Due90/INVTotal90P)*100 else 0 end as Due90Percent");
 
@@ -272,8 +272,8 @@ namespace OpenAuth.App.Client
             {
                 tableName.Append("(SELECT A.CardCode,A.CardName,B.SlpName,(ISNULL(E.lastName,'')+ISNULL(E.firstName,'')) as Technician,");
                 tableName.Append("A.CntctPrsn,(ISNULL(F.Name,'')+ISNULL(G.Name,'')+ISNULL(A.City,'')+ISNULL(CONVERT(NVARCHAR(100),A.Building),'')) AS Address, ");
-                tableName.Append("A.Phone1,A.Cellular,");//,A.Balance,ISNULL(A.Balance,0) + ISNULL(H.doctoal,0) AS BalanceTotal
-                tableName.Append("A.DNotesBal,A.OrdersBal,A.OprCount,A.UpdateDate,A.SlpCode,A.DfTcnician ");
+                tableName.Append("A.Phone1,A.Cellular,A.U_is_reseller,");//,A.Balance,ISNULL(A.Balance,0) + ISNULL(H.doctoal,0) AS BalanceTotal
+                tableName.Append("A.DNotesBal,A.OrdersBal,A.OprCount,A.CreateDate,A.UpdateDate,A.SlpCode,A.DfTcnician ");
                 tableName.Append(",isnull(A.Balance,0) as Balance,0.00000000 as BalanceTotal ");
                 tableName.Append(" , A.validFor,A.validFrom,A.validTo,A.ValidComm,A.frozenFor,A.frozenFrom,A.frozenTo,A.FrozenComm,A.QryGroup2,A.QryGroup3 ");
                 tableName.Append(",C.GroupName,A.Free_Text");
@@ -323,6 +323,9 @@ namespace OpenAuth.App.Client
                 tableName.AppendFormat("LEFT JOIN {0}.crm_OHEM E ON E.empID=A.DfTcnician AND E.sbo_id=A.sbo_id ", "nsap_bone");
                 tableName.AppendFormat("LEFT JOIN {0}.crm_OCRY F ON F.Code=A.Country ", "nsap_bone");
                 tableName.AppendFormat("LEFT JOIN {0}.crm_OCST G ON G.Code=A.State1 ", "nsap_bone");
+                tableName.AppendFormat("LEFT JOIN {0}.wfa_job H ON H.sbo_itf_return=A.CardCode ", "nsap_base");
+                tableName.AppendFormat("LEFT JOIN {0}.clue I ON I.Id=H.base_entry", "nsap_serve");
+                tableName.AppendFormat("LEFT JOIN {0}.cluefollowup J ON J.ClueId=I.Id ORDER BY b.FollowUpTime DESC LIMIT 1 ", "nsap_serve");
                 //tableName.AppendFormat("LEFT JOIN {0}.crm_balance_sum H ON H.CardCode=A.CardCode) T ", Sql.BOneDatabaseName);
                 tableName.Append(") T");
                 //tableName.AppendFormat("LEFT JOIN {0}.crm_clerk_tech I ON I.sbo_id=A.sbo_id AND I.CardCode=A.CardCode ", Sql.BOneDatabaseName);
@@ -345,6 +348,14 @@ namespace OpenAuth.App.Client
                 }
                 clientrow["BalanceTotal"] = totalbalance;
             }
+
+
+            clientTable.Columns.Add("U_ClientSource", typeof(string));
+            clientTable.Columns.Add("U_CompSector", typeof(string));
+            clientTable.Columns.Add("U_TradeType", typeof(string));
+            clientTable.Columns.Add("FollowUpTime", typeof(string));
+            clientTable.Columns.Add("FollowUpDay", typeof(string));
+
             return clientTable;
 
         }
@@ -749,20 +760,30 @@ namespace OpenAuth.App.Client
         public bool UpdateAuditJob(string jobId, string jobName, string remarks, byte[] wfaJob, bool isEditStatus)
         {
             StringBuilder strSql = new StringBuilder();
-            int rows = 0;
+            object rows;
             if (isEditStatus)
             {
-                strSql.AppendFormat("UPDATE IGNORE {0}.wfa_job SET job_nm={1},", "nsap_base", jobName);
-                strSql.AppendFormat("job_data={0},remarks={1},job_state={2} WHERE job_id={3}", wfaJob, remarks, 0, jobId);
-                rows = UnitWork.ExecuteSql(strSql.ToString(), ContextType.NsapBaseDbContext);
+                strSql.AppendFormat("UPDATE IGNORE {0}.wfa_job SET job_nm='{1}',", "nsap_base", jobName);
+                strSql.AppendFormat("job_data=?job_data,remarks='{0}',job_state={1} WHERE job_id={2}", remarks, 0, jobId);
+                List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+                {
+                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_data",     wfaJob)
+
+                };
+                rows = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara);
             }
             else
             {
                 strSql.AppendFormat("UPDATE IGNORE {0}.wfa_job SET ", "nsap_base");
-                strSql.AppendFormat("job_nm={0},job_data={1},remarks={2} WHERE job_id={3}", jobName, wfaJob, remarks, jobId);
-                rows = UnitWork.ExecuteSql(strSql.ToString(), ContextType.NsapBaseDbContext);
+                strSql.AppendFormat("job_nm='{0}',job_data=?job_data,remarks='{1}' WHERE job_id={2}", jobName, remarks, jobId);
+                List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+                {
+                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_data",     wfaJob)
+
+                };
+                rows = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara);
             }
-            return rows > 0 ? true : false;
+            return rows != null ? true : false;
         }
 
         #region 修改审核数据（修改客户名称）
@@ -772,30 +793,38 @@ namespace OpenAuth.App.Client
         public bool UpdateAuditJob(string jobId, string jobName, string cardName, string remarks, byte[] wfaJob, bool isEditStatus)
         {
             StringBuilder strSql = new StringBuilder();
-            object rows;
-            if (isEditStatus)
+            bool result = true;
+            try
             {
-                strSql.AppendFormat("UPDATE IGNORE {0}.wfa_job SET job_nm='{1}',", "nsap_base", jobName);
-                strSql.AppendFormat("job_data=?job_data,card_name='{0}',remarks='{1}',job_state={2} WHERE job_id={3}", cardName, remarks, 0, jobId);
-                List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+                if (isEditStatus)
+                {
+                    strSql.AppendFormat("UPDATE IGNORE {0}.wfa_job SET job_nm='{1}',", "nsap_base", jobName);
+                    strSql.AppendFormat("job_data=?job_data,card_name='{0}',remarks='{1}',job_state={2} WHERE job_id={3}", cardName, remarks, 0, jobId);
+                    List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
                 {
                     new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_data",    wfaJob)
 
                 };
-                rows = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara);
-            }
-            else
-            {
-                strSql.AppendFormat("UPDATE IGNORE {0}.wfa_job SET ", "nsap_base");
-                strSql.AppendFormat("job_nm='{0}',job_data=?job_data,card_name='{1}',remarks='{2}' WHERE job_id={3}", jobName, cardName, remarks, jobId);
-                List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+                    object rows = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara);
+                }
+                else
+                {
+                    strSql.AppendFormat("UPDATE IGNORE {0}.wfa_job SET ", "nsap_base");
+                    strSql.AppendFormat("job_nm='{0}',job_data=?job_data,card_name='{1}',remarks='{2}' WHERE job_id={3}", jobName, cardName, remarks, jobId);
+                    List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
                 {
                     new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_data",    wfaJob)
 
                 };
-                rows = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara);
+                    object rows = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara);
+                }
             }
-            return rows != null ? true : false;
+            catch (Exception ex)
+            {
+                result = false;
+                throw;
+            }
+            return result;
         }
         #endregion
         /// <summary>
