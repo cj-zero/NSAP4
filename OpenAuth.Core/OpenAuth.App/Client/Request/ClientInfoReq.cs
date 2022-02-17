@@ -16,7 +16,26 @@ namespace OpenAuth.App.Client.Request
         /// 请求类型add或者edit
         /// </summary>
         public string type { get; set; }
+        /// <summary>
+        /// 线索单号
+        /// </summary>
+        public int baseEntry { get; set; }
+        public ClientInfo clientInfo { get; set; }
+    }
 
+    public class UpdateClientJobReq
+    {
+        /// <summary>
+        /// 审批id
+        /// </summary>
+        public string JobId { get; set; }
+        /// <summary>
+        /// 提交或是保存草稿
+        /// </summary>
+        public string submitType { get; set; }
+        /// <summary>
+        /// 详情
+        /// </summary>
         public ClientInfo clientInfo { get; set; }
     }
 
@@ -1324,6 +1343,22 @@ namespace OpenAuth.App.Client.Request
         /// 开户行
         /// </summary>
 
- 
+
+    }
+
+    public class SaveCrmAuditInfoReq
+    {
+        public string AuditType { get; set; }
+        public string CardCode { get; set; }
+        public string DfTcnician { get; set; }
+        public string JobId { get; set; }
+    }
+
+    public class AuditResubmitNextReq
+    {
+        public int jobId { get; set; }
+        public string recommend { get; set; }
+        public string auditOpinionid { get; set; }
+
     }
 }
