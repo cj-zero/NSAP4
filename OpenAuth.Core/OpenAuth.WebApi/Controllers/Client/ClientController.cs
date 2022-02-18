@@ -122,7 +122,7 @@ namespace OpenAuth.WebApi.Controllers.Client
         }
         #region 查询视图集合
         /// <summary>
-        /// 查询视图集合
+        /// 查询客户列表
         /// </summary>
         [HttpPost]
         [Route("View")]
