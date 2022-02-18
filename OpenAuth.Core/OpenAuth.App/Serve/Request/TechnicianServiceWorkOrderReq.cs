@@ -23,6 +23,11 @@ namespace OpenAuth.App.Request
         /// 技术员类型 1-普通 2-E3 
         /// </summary>
         public int TechOrg { get; set; }
+        /// <summary>
+        /// 服务单类型
+        /// </summary>
+        [Required]
+        public int OrderType { get; set; }
 
         ///// <summary>
         ///// 经度
