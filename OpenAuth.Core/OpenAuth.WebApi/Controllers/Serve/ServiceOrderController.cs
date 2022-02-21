@@ -948,6 +948,19 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 导出日报信息
+        /// </summary>
+        /// <param name="startDate"></param>
+        /// <param name="endDate"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> ExportDailyReport(DateTime startDate, DateTime endDate)
+        {
+            var data = await _serviceOrderApp.ExportDailyReport(startDate, endDate);
+            return File(data, "application/vnd.ms-excel");
+        }
+
+        /// <summary>
         /// 查询费用归属数据
         /// </summary>
         /// <param name="name"></param>

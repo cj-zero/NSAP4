@@ -51,12 +51,13 @@ namespace OpenAuth.App
         private readonly ServiceFlowApp _serviceFlowApp;
         private readonly UserManagerApp _userManagerApp;
         private readonly DbExtension _dbExtension;
+        private readonly RevelanceManagerApp _revelanceManagerApp;
 
         public ServiceOrderApp(IUnitWork unitWork,
              RevelanceManagerApp app, ServiceOrderLogApp serviceOrderLogApp, BusinessPartnerApp businessPartnerApp,
              IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus,
              ServiceOrderLogApp ServiceOrderLogApp, SignalRMessageApp signalrmessage, ServiceFlowApp serviceFlowApp,
-             UserManagerApp userManagerApp,DbExtension dbExtension) : base(unitWork, auth)
+             UserManagerApp userManagerApp, DbExtension dbExtension, RevelanceManagerApp revelanceManagerApp) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
             _revelanceApp = app;
@@ -69,6 +70,7 @@ namespace OpenAuth.App
             _serviceFlowApp = serviceFlowApp;
             _userManagerApp = userManagerApp;
             _dbExtension = dbExtension;
+            _revelanceManagerApp = revelanceManagerApp;
         }
 
         #region<<nSAP System>>
@@ -1426,7 +1428,40 @@ namespace OpenAuth.App
                 }
             }
 
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("工程主管")) && !loginContext.User.Account.Equals("wanghaitao") && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看服务ID")))
+            //根据员工信息获取员工部门信息
+            var user = loginContext.User;
+            var orgInfo = await _userManagerApp.GetUserOrgInfo(user.Id); //部门信息
+            var orgId = orgInfo.OrgId;
+            var orgName = orgInfo.OrgName;
+
+            //SYH部门的主管,可以看到自己部门下员工承接的工单                                              
+            if (new string[] { "SYH" }.Contains(orgName))
+            {
+                //获取所有部门的管理人员信息
+                var deptManage = _revelanceManagerApp.GetDeptManager();
+                //根据部门Id查找部门管理者中是否含有登录人的id
+                var dept = deptManage.FirstOrDefault(d => d.OrgId == orgId);
+                var isManager = deptManage.FirstOrDefault(d => d.OrgId == orgId)?.UserId.Any(x => x == user.Id);
+                //主管可以查看自己部门下所有成员的服务单
+                if (isManager.Value)
+                {
+                    var orgids = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Name.Equals(orgName)).Select(o => o.Id).ToListAsync();
+                    //查看自己部门下的成员
+                    var orgUserIds = new List<string>();
+                    orgUserIds.AddRange(await UnitWork.Find<Relevance>(r => orgids.Contains(r.SecondId) && r.Key == Define.USERORG).Select(r => r.FirstId).ToListAsync());
+                    //根据员工id过滤服务单id
+                    var sIds = await UnitWork.Find<ServiceWorkOrder>(q => orgUserIds.Contains(q.CurrentUserNsapId)).OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+                    query = query.Where(q => sIds.Contains(q.Id));
+                }
+                else
+                {
+                    //非主管只能查看自己的
+                    var sIds = await UnitWork.Find<ServiceWorkOrder>(q => q.CurrentUserNsapId == user.Id).OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+                    query = query.Where(q => sIds.Contains(q.Id));
+                }
+
+            }
+            else if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("工程主管")) && !loginContext.User.Account.Equals("wanghaitao") && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")) && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看服务ID")))
             {
                 if (loginContext.Roles.Any(r => r.Name.Equals("售后文员")))
                 {
@@ -2628,6 +2663,46 @@ namespace OpenAuth.App
             var data = dailyReports.GroupBy(g => g.CreateTime?.Date).Select(s => new ReportResult { DailyDate = s.Key?.Date.ToString("yyyy-MM-dd"), ReportDetails = s.ToList() }).ToList();
             result.Data = new DailyReportResp { DailyDates = dailyReportDates, ReportResults = data.OrderBy(d => d.DailyDate).ToList() };
             return result;
+        }
+
+        /// <summary>
+        /// 按时间段导出日报数据,字段包括(序列号、物料编码、呼叫主题、问题描述、解决方案)
+        /// </summary>
+        /// <param name="startDate"></param>
+        /// <param name="endDate"></param>
+        /// <returns></returns>
+        public async Task<byte[]> ExportDailyReport(DateTime startDate, DateTime endDate)
+        {
+            var result = new TableData();
+
+            var dailyReports = from s in UnitWork.Find<ServiceOrder>(null)
+                               join sw in UnitWork.Find<ServiceWorkOrder>(null) on s.Id equals sw.ServiceOrderId
+                               join sr in UnitWork.Find<ServiceDailyReport>(null) on new { ServiceOrderId = s.Id, sw.ManufacturerSerialNumber, sw.MaterialCode } equals new { ServiceOrderId = sr.ServiceOrderId.Value, sr.ManufacturerSerialNumber, sr.MaterialCode }
+                               where s.Status == 2 && s.VestInOrg == 1 && s.CreateTime >= startDate && s.CreateTime < endDate.AddDays(1)
+                               select new
+                               {
+                                   sr.ManufacturerSerialNumber,
+                                   sr.MaterialCode,
+                                   sw.FromTheme,
+                                   sr.TroubleDescription,
+                                   sr.ProcessDescription,
+                                   s.CreateTime
+                               };
+
+            var data = (await dailyReports.OrderBy(x => x.CreateTime).ToListAsync()).Select(x => new DailyReportDetail
+            {
+                ManufacturerSerialNumber = x.ManufacturerSerialNumber,
+                MaterialCode = x.MaterialCode,
+                FromTheme = string.Join(";", GetServiceFromTheme(x.FromTheme)),
+                TroubleDescription = string.Join(";", GetServiceTroubleAndSolution(x.TroubleDescription)),
+                ProcessDescription = string.Join(";", GetServiceTroubleAndSolution(x.ProcessDescription))
+            }).ToList();
+
+            result.Count = await dailyReports.CountAsync();
+
+            IExporter exporter = new ExcelExporter();
+            var bytes = await exporter.ExportAsByteArray<DailyReportDetail>(data);
+            return bytes;
         }
 
         #endregion
