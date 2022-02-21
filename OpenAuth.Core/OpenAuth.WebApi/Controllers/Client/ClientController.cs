@@ -13,6 +13,7 @@ using OpenAuth.App.Order;
 using OpenAuth.App.Response;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Interface;
+using Serilog;
 
 namespace OpenAuth.WebApi.Controllers.Client
 {
@@ -37,7 +38,6 @@ namespace OpenAuth.WebApi.Controllers.Client
             this._serviceBaseApp = _serviceBaseApp;
             this._auth = _auth;
             _serviceSaleOrderApp = serviceSaleOrderApp;
-
         }
         /// <summary>
         /// 新增/修改客户
@@ -65,8 +65,9 @@ namespace OpenAuth.WebApi.Controllers.Client
             }
             catch (Exception ex)
             {
-
-                result.Message = ex.Message;
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{addClientInfoReq.ToJson()}， 错误：{result.Message}");
             }
             return result;
         }
@@ -80,8 +81,17 @@ namespace OpenAuth.WebApi.Controllers.Client
         public TableData GetPropertyName()
         {
             var result = new TableData();
-            string strSql = string.Format("SELECT GroupCode AS PropertyCode,GroupName AS PropertyName FROM {0}.crm_OCQG WHERE sbo_id={1}", "nsap_bone", "1");
-            result.Data = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            try
+            {
+                string strSql = string.Format("SELECT GroupCode AS PropertyCode,GroupName AS PropertyName FROM {0}.crm_OCQG WHERE sbo_id={1}", "nsap_bone", "1");
+                result.Data = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{null}， 错误：{result.Message}");
+            }
             return result;
         }
         /// <summary>
@@ -92,17 +102,27 @@ namespace OpenAuth.WebApi.Controllers.Client
         public TableData GetSellerInfo()
         {
             var result = new TableData();
-            var userId = _serviceBaseApp.GetUserNaspId();
-            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            try
+            {
+                var userId = _serviceBaseApp.GetUserNaspId();
+                var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
 
-            var dt = _clientInfoApp.GetSellerInfo(sboid.ToString(), userId.ToString());
-            result.Data = dt;
-            result.Count = dt.Rows.Count;
+                var dt = _clientInfoApp.GetSellerInfo(sboid.ToString(), userId.ToString());
+                result.Data = dt;
+                result.Count = dt.Rows.Count;
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{null}， 错误：{result.Message}");
+            }
             return result;
         }
         #region 查询视图集合
         /// <summary>
-        /// 查询视图集合
+        /// 查询客户列表
         /// </summary>
         [HttpPost]
         [Route("View")]
@@ -129,10 +149,18 @@ namespace OpenAuth.WebApi.Controllers.Client
                 rIsViewFull = true;
             }
             bool rIsViewSales = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", userId).ViewSales;
-            result.Data = _clientInfoApp.SelectClientList(clientListReq.limit, clientListReq.page, clientListReq.query, clientListReq.sortname, clientListReq.sortorder, sboid, userId, rIsViewSales, rIsViewSelf, rIsViewSelfDepartment, rIsViewFull, depID, out rowCount);
-            result.Count = rowCount;
+            try
+            {
+                result.Data = _clientInfoApp.SelectClientList(clientListReq.limit, clientListReq.page, clientListReq.query, clientListReq.sortname, clientListReq.sortorder, sboid, userId, rIsViewSales, rIsViewSelf, rIsViewSelfDepartment, rIsViewFull, depID, out rowCount);
+                result.Count = rowCount;
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{clientListReq.ToJson()}， 错误：{result.Message}");
+            }
             return result;
-
         }
         #endregion
         /// <summary>
@@ -142,13 +170,18 @@ namespace OpenAuth.WebApi.Controllers.Client
         [Route("GetAuditInfo")]
         public Response<NSAP.Entity.Client.clientOCRD> GetAuditInfo(string jobId)
         {
-
-            var result = new Response<clientOCRD>
+            var result = new Response<clientOCRD>();
+            try
             {
-                Result = _clientInfoApp.GetAuditInfoNew(jobId)
-            };
+                result.Result = _clientInfoApp.GetAuditInfoNew(jobId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{jobId.ToJson()}， 错误：{result.Message}");
+            }
             return result;
-
         }
         /// <summary>
         /// 上级客户下拉
@@ -162,14 +195,21 @@ namespace OpenAuth.WebApi.Controllers.Client
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var loginUser = loginContext.User;
-            var sql = string.Format("SELECT A.CardCode,A. CardName FROM OCRD A LEFT JOIN OSLP B ON B.SlpCode=A.SlpCode WHERE b.SlpName='{0}' ORDER BY  A.CardCode", loginUser.Name);
-            var result = new TableData
-            {
-                Data = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, sql, CommandType.Text, null)
-            };
-            return result;
+            var result = new TableData();
 
+            try
+            {
+                var loginUser = loginContext.User;
+                var sql = string.Format("SELECT A.CardCode,A. CardName FROM OCRD A LEFT JOIN OSLP B ON B.SlpCode=A.SlpCode WHERE b.SlpName='{0}' ORDER BY  A.CardCode", loginUser.Name);
+                result.Data = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, sql, CommandType.Text, null);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{null}， 错误：{result.Message}");
+            }
+            return result;
         }
         /// <summary>
         /// 查询单个业务伙伴信息
@@ -180,15 +220,24 @@ namespace OpenAuth.WebApi.Controllers.Client
         public TableData SelectCrmClientInfo(string CardCode, string IsOpenSap)
         {
             var result = new TableData();
-            var UserId = _serviceBaseApp.GetUserNaspId();
-            var SboId = _serviceBaseApp.GetUserNaspSboID(UserId);
-            bool rIsViewSales = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", UserId).ViewSales;
-            bool rIsOpenSap = IsOpenSap == "1" ? true : false;
-            if (!string.IsNullOrEmpty(CardCode) && !string.IsNullOrEmpty(SboId.ToString()))
-                result.Data = _clientInfoApp.SelectCrmClientInfo(CardCode, SboId.ToString(), rIsOpenSap, rIsViewSales);
+
+            try
+            {
+                var UserId = _serviceBaseApp.GetUserNaspId();
+                var SboId = _serviceBaseApp.GetUserNaspSboID(UserId);
+                bool rIsViewSales = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", UserId).ViewSales;
+                bool rIsOpenSap = IsOpenSap == "1" ? true : false;
+                if (!string.IsNullOrEmpty(CardCode) && !string.IsNullOrEmpty(SboId.ToString()))
+                    result.Data = _clientInfoApp.SelectCrmClientInfo(CardCode, SboId.ToString(), rIsOpenSap, rIsViewSales);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{CardCode}， 错误：{result.Message}");
+            }
             return result;
         }
-
         /// <summary>
         /// 查询业务伙伴的联系人
         /// </summary>
@@ -199,13 +248,22 @@ namespace OpenAuth.WebApi.Controllers.Client
         {
 
             var result = new TableData();
-            var UserId = _serviceBaseApp.GetUserNaspId();
-            var SboId = _serviceBaseApp.GetUserNaspSboID(UserId);
-            bool rIsViewFull = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", UserId).ViewFull;
-            bool rIsViewSelf = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", UserId).ViewSelf;
-            bool rIsOpenSap = IsOpenSap == "1" ? true : false;
-            if (!string.IsNullOrEmpty(CardCode) && !string.IsNullOrEmpty(SboId.ToString()))
-                result.Data = _clientInfoApp.SelectClientContactData(CardCode, SboId.ToString(), rIsOpenSap, rIsViewFull);
+            try
+            {
+                var UserId = _serviceBaseApp.GetUserNaspId();
+                var SboId = _serviceBaseApp.GetUserNaspSboID(UserId);
+                bool rIsViewFull = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", UserId).ViewFull;
+                bool rIsViewSelf = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", UserId).ViewSelf;
+                bool rIsOpenSap = IsOpenSap == "1" ? true : false;
+                if (!string.IsNullOrEmpty(CardCode) && !string.IsNullOrEmpty(SboId.ToString()))
+                    result.Data = _clientInfoApp.SelectClientContactData(CardCode, SboId.ToString(), rIsOpenSap, rIsViewFull);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{CardCode}， 错误：{result.Message}");
+            }
             return result;
         }
         /// <summary>
@@ -216,12 +274,20 @@ namespace OpenAuth.WebApi.Controllers.Client
         public TableData SelectClientAddrData(string CardCode, string SboId, string IsOpenSap)
         {
             var result = new TableData();
-            bool rIsOpenSap = IsOpenSap == "1" ? true : false;
-            if (!string.IsNullOrEmpty(CardCode) && !string.IsNullOrEmpty(SboId))
-                result.Data = _clientInfoApp.SelectClientAddrData(CardCode, SboId, rIsOpenSap);
+            try
+            {
+                bool rIsOpenSap = IsOpenSap == "1" ? true : false;
+                if (!string.IsNullOrEmpty(CardCode) && !string.IsNullOrEmpty(SboId))
+                    result.Data = _clientInfoApp.SelectClientAddrData(CardCode, SboId, rIsOpenSap);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{CardCode}， 错误：{result.Message}");
+            }
             return result;
         }
-
         /// <summary>
         /// 查询所有技术员
         /// </summary>
@@ -231,14 +297,91 @@ namespace OpenAuth.WebApi.Controllers.Client
         {
             var result = new TableData();
             int rowsCount = 0;
-            result.Data = _clientInfoApp.GetTcnicianInfo(getTcnicianInfoReq.limit, getTcnicianInfoReq.page, getTcnicianInfoReq.query, getTcnicianInfoReq.sortname, getTcnicianInfoReq.sortorder, getTcnicianInfoReq.SboId, "1", out rowsCount);
-            result.Count = rowsCount;
+            try
+            {
+                result.Data = _clientInfoApp.GetTcnicianInfo(getTcnicianInfoReq.limit, getTcnicianInfoReq.page, getTcnicianInfoReq.query, getTcnicianInfoReq.sortname, getTcnicianInfoReq.sortorder, getTcnicianInfoReq.SboId, "1", out rowsCount);
+                result.Count = rowsCount;
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{getTcnicianInfoReq.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 修改方法与新增方法
+        /// </summary>
+        [HttpPost]
+        [Route("UpdateClientJob")]
+        public Response<string> UpdateClientJob(UpdateClientJobReq updateClientJobReq)
+        {
+            var result = new Response<string>();
+            try
+            {
+                result.Result = _clientInfoApp.UpdateClientJob(updateClientJobReq);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{updateClientJobReq.ToJson()}， 错误：{result.Message}");
+            }
             return result;
 
         }
+        #region 保存业务伙伴审核的录入方案
+        /// <summary>
+        /// 保存业务伙伴审核的录入方案
+        /// </summary>
+        [HttpPost]
+        [Route("SaveCrmAuditInfo")]
 
+        public Response<string> SaveCrmAuditInfo(SaveCrmAuditInfoReq saveCrmAuditInfoReq)
+        {
+            var result = new Response<string>();
+            try
+            {
+                if (!string.IsNullOrEmpty(saveCrmAuditInfoReq.AuditType) && !string.IsNullOrEmpty(saveCrmAuditInfoReq.JobId) && ((saveCrmAuditInfoReq.AuditType == "Edit" && !string.IsNullOrEmpty(saveCrmAuditInfoReq.CardCode)) || saveCrmAuditInfoReq.AuditType == "Add"))
+                    result.Result = _clientInfoApp.SaveCrmAuditInfo(saveCrmAuditInfoReq.AuditType, saveCrmAuditInfoReq.CardCode, saveCrmAuditInfoReq.DfTcnician, saveCrmAuditInfoReq.JobId);
+                else
+                    result.Result = "0";
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{saveCrmAuditInfoReq.ToJson()}， 错误：{result.Message}");
+            }
 
+            return result;
+        }
+        /// <summary>
+        /// 审核
+        /// </summary>
+        [HttpPost]
+        [Route("AuditResubmitNext")]
+        public Response<string> AuditResubmitNext(AuditResubmitNextReq auditResubmitNextReq)
+        {
+            var result = new Response<string>();
+            var UserId = _serviceBaseApp.GetUserNaspId();
+            try
+            {
+                result.Result = _clientInfoApp.AuditResubmitNext(auditResubmitNextReq.jobId, UserId, auditResubmitNextReq.recommend, auditResubmitNextReq.auditOpinionid);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{auditResubmitNextReq.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+        #endregion
     }
-
 }
 

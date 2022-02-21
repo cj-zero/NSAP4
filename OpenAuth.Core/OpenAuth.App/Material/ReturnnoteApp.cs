@@ -103,7 +103,7 @@ namespace OpenAuth.App
                         }
                         break;
                     case 3:
-                        if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
+                        if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) || loginContext.Roles.Any(r => r.Name.Equals("郭睿心")))
                         {
                             lineId = schemeJson.Nodes.Where(n => n.name.Equals("总经理审批")).FirstOrDefault()?.id;
                         }
@@ -775,7 +775,7 @@ namespace OpenAuth.App
                     }
                     break;
                 case "总经理审批":
-                    if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
+                    if (loginContext.Roles.Any(r => r.Name.Equals("总经理")) || loginContext.Roles.Any(r => r.Name.Equals("郭睿心")))
                     {
                         return true;
                     }

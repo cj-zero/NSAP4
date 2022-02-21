@@ -3312,17 +3312,19 @@ namespace OpenAuth.App
             {
                 //string serviceIds = string.Join(",", serviceIdList.Select(s => s.b.Id).Distinct().ToArray());
                 var query1 = await UnitWork.Find<ServiceOrderMessage>(c => serviceIdList.Contains(c.ServiceOrderId))
-                .OrderByDescending(o => o.CreateTime)
-                .Select(s => new
-                {
-                    s.Content,
-                    s.CreateTime,
-                    s.FroTechnicianName,
-                    s.AppUserId,
-                    s.ServiceOrderId,
-                    s.Replier,
-                    s.Id
-                }).ToListAsync();
+                                .Skip((req.page - 1) * req.limit)
+                                .Take(req.limit)
+                                .OrderByDescending(o => o.CreateTime)
+                                .Select(s => new
+                                {
+                                    s.Content,
+                                    s.CreateTime,
+                                    s.FroTechnicianName,
+                                    s.AppUserId,
+                                    s.ServiceOrderId,
+                                    s.Replier,
+                                    s.Id
+                                }).ToListAsync();
 
                 //var query = from a in UnitWork.Find<ServiceOrderMessage>(null)
                 //            join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
@@ -4788,7 +4790,7 @@ namespace OpenAuth.App
             var completeReportList = await UnitWork.Find<CompletionReport>(w => serviceOrderIds.Contains((int)w.ServiceOrderId)).Select(s => new { s.ServiceOrderId, s.TechnicianId, s.IsReimburse, s.Id, s.ServiceMode, MaterialType = s.MaterialCode == "无序列号" ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) }).ToListAsync();
             //获取我的报销单集合
             var reimburseList = await UnitWork.Find<ReimburseInfo>(r => r.CreateUserId == userInfo.UserID).ToListAsync();
-            var query = UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id) && w.AllowOrNot == 0)
+            var query = UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id) && w.AllowOrNot == 0 && w.VestInOrg == req.OrderType)
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                 .Include(s => s.ServiceFlows)
                 .WhereIf(req.Type == 1, s => s.ServiceWorkOrders.All(a => a.OrderTakeType == 0))//待处理 所有设备类型都未操作
@@ -4796,7 +4798,7 @@ namespace OpenAuth.App
                 .WhereIf(req.Type == 2, s => !s.ServiceWorkOrders.All(a => a.OrderTakeType == 0) && !s.ServiceWorkOrders.All(a => a.Status >= 7))//进行中 有任意一个设备类型进行了操作
                 .WhereIf(req.Type == 3, s => s.ServiceWorkOrders.All(a => a.Status >= 7)) //已完成 所有设备类型都已完成
                  .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => s.U_SAP_ID == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key)))
-                 .WhereIf(req.TechOrg != 2, s => s.VestInOrg == 1 || s.VestInOrg == 3)//E3技术员可查看e3的单
+                 //.WhereIf(req.TechOrg != 2, s => s.VestInOrg == 1 || s.VestInOrg == 3)//E3技术员可查看e3的单
                 .Select(s => new
                 {
                     s.Id,
@@ -4957,6 +4959,82 @@ namespace OpenAuth.App
               .Where(s => s.ServiceWorkOrders.Any(a => a.ServiceMode == 1) && s.ServiceWorkOrders.All(a => a.Status >= 7))
               .ToList()).Count;
             result.Data = new { pendingQty, goingQty, finishQty, reimburseQty = doorQty - isReimburseQty };
+            return result;
+        }
+
+        /// <summary>
+        /// 获取技术员客诉、行政、维修单数量
+        /// </summary>
+        /// <param name="TechnicianId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetTechnicianServiceOrderCount(int TechnicianId)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == TechnicianId && s.FromType == 1)
+               .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+            //获取转派的已完成的单据
+            var redeployList = await UnitWork.Find<ServiceRedeploy>(w => w.TechnicianId == TechnicianId).ToListAsync();
+            var redeployIds = redeployList.Select(s => s.ServiceOrderId).Distinct().ToList();
+            if (redeployIds.Count > 0)
+            {
+                redeployIds.ForEach(f => serviceOrderIds.Add((int)f));
+                serviceOrderIds = serviceOrderIds.Distinct().ToList();
+            }
+
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => c.AllowOrNot == 0 && serviceOrderIds.Contains(c.Id)).Select(c => c.VestInOrg).ToListAsync();
+            var groupCount = serviceOrder.GroupBy(c => c).Select(c=>new {c.Key, Count=c.Count() }).ToList();
+            result.Data = new { 
+                CusQty = groupCount.Where(w => w.Key == 1).FirstOrDefault()?.Count,
+                RepairQty = groupCount.Where(w => w.Key == 2).FirstOrDefault()?.Count,
+                XZQty = groupCount.Where(w => w.Key == 3).FirstOrDefault()?.Count,
+            };
+            return result;
+        }
+
+        /// <summary>
+        /// 获取技术员单据明细数量
+        /// </summary>
+        /// <param name="TechnicianId">技术员ID</param>
+        /// <param name="orderType">1.客诉单 2.维修单 3.行政单</param>
+        /// <returns></returns>
+        public async Task<TableData> GetTechnicianServiceOrderCountDetail(int TechnicianId,int orderType)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            List<int> workIds = new List<int>();
+            var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == TechnicianId && s.FromType == 1)
+               .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+            var serviceWorkOrderList = await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id) && w.AllowOrNot == 0 && w.VestInOrg == orderType)
+               .Include(s => s.ServiceWorkOrders)
+               .ToListAsync();
+            //获取待处理单据数量
+            var pendingQty = (serviceWorkOrderList.Where(s => s.ServiceWorkOrders.All(a => a.OrderTakeType == 0))
+               .ToList()).Count;
+            //获取进行中的单据数量
+            var goingQty = (serviceWorkOrderList
+               .Where(s => !s.ServiceWorkOrders.All(a => a.OrderTakeType == 0) && !s.ServiceWorkOrders.All(a => a.Status >= 7))
+               .ToList()).Count;
+
+            //获取已完成的单据数量
+            //获取转派的已完成的单据
+            var redeployList = await UnitWork.Find<ServiceRedeploy>(w => w.TechnicianId == TechnicianId).ToListAsync();
+            var redeployIds = redeployList.Select(s => s.ServiceOrderId).Distinct().ToList();
+            if (redeployIds.Count > 0)
+            {
+                redeployIds.ForEach(f => serviceOrderIds.Add((int)f));
+                serviceOrderIds = serviceOrderIds.Distinct().ToList();
+            }
+            var finishQty = await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id) && w.AllowOrNot == 0 && w.VestInOrg == orderType && w.ServiceWorkOrders.All(s => s.Status >= 7)).CountAsync();
+            result.Data = new { pendingQty, goingQty, finishQty};
             return result;
         }
 

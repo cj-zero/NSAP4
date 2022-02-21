@@ -54,7 +54,7 @@ namespace OpenAuth.App.Client
             byte[] job_data = ByteExtension.ToSerialize(OCRD);
             if (addClientInfoReq.submitType == "Temporary")
             {
-                result = _serviceSaleOrderApp.WorkflowBuild(rJobNm, addClientInfoReq.funcId, userID, job_data, OCRD.FreeText.FilterESC(), Convert.ToInt32(OCRD.SboId), OCRD.CardCode, OCRD.CardName, 0, 0, 0, "BOneAPI", "NSAP.B1Api.BOneOCRD");
+                result = _serviceSaleOrderApp.WorkflowBuild(rJobNm, addClientInfoReq.funcId, userID, job_data, OCRD.FreeText.FilterESC(), Convert.ToInt32(OCRD.SboId), OCRD.CardCode, OCRD.CardName, 0, 0, addClientInfoReq.baseEntry, "BOneAPI", "NSAP.B1Api.BOneOCRD");
                 bool updParaCardCode = UpdateWfaJobPara(result, 1, OCRD.CardCode);
                 bool updParaCardName = UpdateWfaJobPara(result, 2, OCRD.CardName);
                 bool updParaOperateType = UpdateWfaJobPara(result, 3, OCRD.ClientOperateType);
@@ -62,7 +62,7 @@ namespace OpenAuth.App.Client
             }
             else if (addClientInfoReq.submitType == "Submit")
             {
-                result = _serviceSaleOrderApp.WorkflowBuild(rJobNm, addClientInfoReq.funcId, userID, job_data, OCRD.FreeText.FilterESC(), Convert.ToInt32(OCRD.SboId), OCRD.CardCode, OCRD.CardName, 0, 0, 0, "BOneAPI", "NSAP.B1Api.BOneOCRD");
+                result = _serviceSaleOrderApp.WorkflowBuild(rJobNm, addClientInfoReq.funcId, userID, job_data, OCRD.FreeText.FilterESC(), Convert.ToInt32(OCRD.SboId), OCRD.CardCode, OCRD.CardName, 0, 0, addClientInfoReq.baseEntry, "BOneAPI", "NSAP.B1Api.BOneOCRD");
                 bool updParaCardCode = UpdateWfaJobPara(result, 1, OCRD.CardCode);
                 bool updParaCardName = UpdateWfaJobPara(result, 2, OCRD.CardName);
                 bool updParaOperateType = UpdateWfaJobPara(result, 3, OCRD.ClientOperateType);
@@ -255,7 +255,7 @@ namespace OpenAuth.App.Client
             DataTable clientTable = new DataTable();
 
             if (!IsOpenSap) { filedName.Append("sbo_id,"); }
-            filedName.Append("CardCode, CardName, SlpName, Technician, CntctPrsn, Address, Phone1, Cellular, ");
+            filedName.Append("CardCode, CardName, SlpName, Technician, CntctPrsn, Address, Phone1, Cellular,U_is_reseller, ");
             if (rIsViewSales)
             {
                 filedName.Append("Balance,  BalanceTotal, DNotesBal, OrdersBal, OprCount, ");
@@ -264,7 +264,7 @@ namespace OpenAuth.App.Client
             {
                 filedName.Append("'****' AS Balance, '******************************' AS BalanceTotal, '****' AS DNotesBal, '****' AS OrdersBal, '****' AS OprCount, ");
             }
-            filedName.Append("UpdateDate , ");
+            filedName.Append("CreateDate,UpdateDate , ");
             filedName.Append(" validFor,validFrom,validTo,ValidComm,frozenFor,frozenFrom,frozenTo,FrozenComm ,GroupName,Free_Text");
             filedName.Append(",case when INVTotal90P>0 and Due90>0 then (Due90/INVTotal90P)*100 else 0 end as Due90Percent");
 
@@ -272,8 +272,8 @@ namespace OpenAuth.App.Client
             {
                 tableName.Append("(SELECT A.CardCode,A.CardName,B.SlpName,(ISNULL(E.lastName,'')+ISNULL(E.firstName,'')) as Technician,");
                 tableName.Append("A.CntctPrsn,(ISNULL(F.Name,'')+ISNULL(G.Name,'')+ISNULL(A.City,'')+ISNULL(CONVERT(NVARCHAR(100),A.Building),'')) AS Address, ");
-                tableName.Append("A.Phone1,A.Cellular,");//,A.Balance,ISNULL(A.Balance,0) + ISNULL(H.doctoal,0) AS BalanceTotal
-                tableName.Append("A.DNotesBal,A.OrdersBal,A.OprCount,A.UpdateDate,A.SlpCode,A.DfTcnician ");
+                tableName.Append("A.Phone1,A.Cellular,A.U_is_reseller,");//,A.Balance,ISNULL(A.Balance,0) + ISNULL(H.doctoal,0) AS BalanceTotal
+                tableName.Append("A.DNotesBal,A.OrdersBal,A.OprCount,A.CreateDate,A.UpdateDate,A.SlpCode,A.DfTcnician ");
                 tableName.Append(",isnull(A.Balance,0) as Balance,0.00000000 as BalanceTotal ");
                 tableName.Append(" , A.validFor,A.validFrom,A.validTo,A.ValidComm,A.frozenFor,A.frozenFrom,A.frozenTo,A.FrozenComm,A.QryGroup2,A.QryGroup3 ");
                 tableName.Append(",C.GroupName,A.Free_Text");
@@ -323,6 +323,9 @@ namespace OpenAuth.App.Client
                 tableName.AppendFormat("LEFT JOIN {0}.crm_OHEM E ON E.empID=A.DfTcnician AND E.sbo_id=A.sbo_id ", "nsap_bone");
                 tableName.AppendFormat("LEFT JOIN {0}.crm_OCRY F ON F.Code=A.Country ", "nsap_bone");
                 tableName.AppendFormat("LEFT JOIN {0}.crm_OCST G ON G.Code=A.State1 ", "nsap_bone");
+                tableName.AppendFormat("LEFT JOIN {0}.wfa_job H ON H.sbo_itf_return=A.CardCode ", "nsap_base");
+                tableName.AppendFormat("LEFT JOIN {0}.clue I ON I.Id=H.base_entry", "nsap_serve");
+                tableName.AppendFormat("LEFT JOIN {0}.cluefollowup J ON J.ClueId=I.Id ORDER BY b.FollowUpTime DESC LIMIT 1 ", "nsap_serve");
                 //tableName.AppendFormat("LEFT JOIN {0}.crm_balance_sum H ON H.CardCode=A.CardCode) T ", Sql.BOneDatabaseName);
                 tableName.Append(") T");
                 //tableName.AppendFormat("LEFT JOIN {0}.crm_clerk_tech I ON I.sbo_id=A.sbo_id AND I.CardCode=A.CardCode ", Sql.BOneDatabaseName);
@@ -345,6 +348,14 @@ namespace OpenAuth.App.Client
                 }
                 clientrow["BalanceTotal"] = totalbalance;
             }
+
+
+            clientTable.Columns.Add("U_ClientSource", typeof(string));
+            clientTable.Columns.Add("U_CompSector", typeof(string));
+            clientTable.Columns.Add("U_TradeType", typeof(string));
+            clientTable.Columns.Add("FollowUpTime", typeof(string));
+            clientTable.Columns.Add("FollowUpDay", typeof(string));
+
             return clientTable;
 
         }
@@ -429,7 +440,6 @@ namespace OpenAuth.App.Client
             object strObj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
             return strObj == null ? "0" : strObj.ToString();
         }
-
         public DataTable GetSellerInfo(string sboId, string userId)
         {
             StringBuilder strSql = new StringBuilder();
@@ -439,7 +449,6 @@ namespace OpenAuth.App.Client
 
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
         }
-
         /// <summary>
         /// 构建客户草稿
         /// </summary>
@@ -724,11 +733,6 @@ namespace OpenAuth.App.Client
             }
             return res;
         }
-
-
-
-
-
         #endregion
         #region 根据jobId获取审核任务信息
         /// <summary>
@@ -756,21 +760,73 @@ namespace OpenAuth.App.Client
         public bool UpdateAuditJob(string jobId, string jobName, string remarks, byte[] wfaJob, bool isEditStatus)
         {
             StringBuilder strSql = new StringBuilder();
-            int rows = 0;
+            object rows;
             if (isEditStatus)
             {
-                strSql.AppendFormat("UPDATE IGNORE {0}.wfa_job SET job_nm={1},", "nsap_base", jobName);
-                strSql.AppendFormat("job_data={0},remarks={1},job_state={2} WHERE job_id={3}", wfaJob, remarks, 0, jobId);
-                rows = UnitWork.ExecuteSql(strSql.ToString(), ContextType.NsapBaseDbContext);
+                strSql.AppendFormat("UPDATE IGNORE {0}.wfa_job SET job_nm='{1}',", "nsap_base", jobName);
+                strSql.AppendFormat("job_data=?job_data,remarks='{0}',job_state={1} WHERE job_id={2}", remarks, 0, jobId);
+                List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+                {
+                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_data",     wfaJob)
+
+                };
+                rows = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara);
             }
             else
             {
                 strSql.AppendFormat("UPDATE IGNORE {0}.wfa_job SET ", "nsap_base");
-                strSql.AppendFormat("job_nm={0},job_data={1},remarks={2} WHERE job_id={3}", jobName, wfaJob, remarks, jobId);
-                rows = UnitWork.ExecuteSql(strSql.ToString(), ContextType.NsapBaseDbContext);
+                strSql.AppendFormat("job_nm='{0}',job_data=?job_data,remarks='{1}' WHERE job_id={2}", jobName, remarks, jobId);
+                List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+                {
+                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_data",     wfaJob)
+
+                };
+                rows = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara);
             }
-            return rows > 0 ? true : false;
+            return rows != null ? true : false;
         }
+
+        #region 修改审核数据（修改客户名称）
+        /// <summary>
+        /// 修改审核数据（修改客户名称）
+        /// </summary>
+        public bool UpdateAuditJob(string jobId, string jobName, string cardName, string remarks, byte[] wfaJob, bool isEditStatus)
+        {
+            StringBuilder strSql = new StringBuilder();
+            bool result = true;
+            try
+            {
+                if (isEditStatus)
+                {
+                    strSql.AppendFormat("UPDATE IGNORE {0}.wfa_job SET job_nm='{1}',", "nsap_base", jobName);
+                    strSql.AppendFormat("job_data=?job_data,card_name='{0}',remarks='{1}',job_state={2} WHERE job_id={3}", cardName, remarks, 0, jobId);
+                    List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+                {
+                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_data",    wfaJob)
+
+                };
+                    object rows = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara);
+                }
+                else
+                {
+                    strSql.AppendFormat("UPDATE IGNORE {0}.wfa_job SET ", "nsap_base");
+                    strSql.AppendFormat("job_nm='{0}',job_data=?job_data,card_name='{1}',remarks='{2}' WHERE job_id={3}", jobName, cardName, remarks, jobId);
+                    List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+                {
+                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_data",    wfaJob)
+
+                };
+                    object rows = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara);
+                }
+            }
+            catch (Exception ex)
+            {
+                result = false;
+                throw;
+            }
+            return result;
+        }
+        #endregion
         /// <summary>
         /// 是否选择新的售后主管
         /// </summary>
@@ -903,8 +959,6 @@ namespace OpenAuth.App.Client
             UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, string.Format("{0}.sp_userTemp_Add", "nsapa_base"), CommandType.StoredProcedure, strPara);
 
         }
-
-
         #endregion
         #region 查询业务伙伴的联系人
         /// <summary>
@@ -1037,5 +1091,119 @@ namespace OpenAuth.App.Client
             return dataTable;
         }
         #endregion
+
+        #region 修改流程任务
+        /// <summary>
+        /// 修改流程任务
+        /// </summary>
+        public string UpdateClientJob(UpdateClientJobReq updateClientJobReq)
+        {
+            string result = "";
+            var UserId = _serviceBaseApp.GetUserNaspId();
+            clientOCRD OCRD = BulidClientJob(updateClientJobReq.clientInfo);
+            //根据客户类型生成业务伙伴编码
+            if (!string.IsNullOrEmpty(OCRD.CardNameCore.Trim())) { OCRD.U_Name = OCRD.CardNameCore; }
+            string rJobNm = string.Format("{0}{1}", OCRD.ClientOperateType == "edit" ? "修改" : "添加", OCRD.CardType == "S" ? "供应商" : "业务伙伴");
+            byte[] job_data = ByteExtension.ToSerialize(OCRD);
+            if (updateClientJobReq.submitType == "Temporary")
+            {
+                result = UpdateAuditJob(updateClientJobReq.JobId, rJobNm, OCRD.CardName, OCRD.FreeText.FilterESC(), job_data, true) ? "1" : "0";
+                bool updParaCardCode = UpdateWfaJobPara(updateClientJobReq.JobId, 1, OCRD.CardCode);
+                bool updParaCardName = UpdateWfaJobPara(updateClientJobReq.JobId, 2, OCRD.CardName);
+                bool updParaOperateType = UpdateWfaJobPara(updateClientJobReq.JobId, 3, OCRD.ClientOperateType);
+                bool updParaAppChange = UpdateWfaJobPara(updateClientJobReq.JobId, 4, OCRD.IsApplicationChange);
+            }
+            else if (updateClientJobReq.submitType == "Resubmit")
+            {
+                bool res = UpdateAuditJob(updateClientJobReq.JobId, rJobNm, OCRD.CardName, OCRD.FreeText.FilterESC(), job_data, false);
+                bool updParaCardCode = UpdateWfaJobPara(updateClientJobReq.JobId, 1, OCRD.CardCode);
+                bool updParaCardName = UpdateWfaJobPara(updateClientJobReq.JobId, 2, OCRD.CardName);
+                bool updParaOperateType = UpdateWfaJobPara(updateClientJobReq.JobId, 3, OCRD.ClientOperateType);
+                bool updParaAppChange = UpdateWfaJobPara(updateClientJobReq.JobId, 4, OCRD.IsApplicationChange);
+                if (res)
+                {
+                    result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(updateClientJobReq.JobId), UserId, OCRD.FreeText, "", 0);
+                    if (result == "1")
+                    {
+                        if (rJobNm == "添加业务伙伴")
+                        {
+                            result = SaveCrmAuditInfo1(updateClientJobReq.JobId, UserId, rJobNm);
+                        }
+                        else if (rJobNm == "修改业务伙伴")
+                        {
+                            string sfTcnician = OCRD.DfTcnicianCode;
+                            string sCardCode = OCRD.CardCode;
+
+                            switch (GetSavefTcnician_sql(sCardCode, sfTcnician))
+                            {
+                                case "1":
+                                    result = SaveCrmAuditInfo1(updateClientJobReq.JobId, UserId, rJobNm);
+                                    break;
+                                case "0":
+                                    SetSavefTcnicianStep_sql(sCardCode, sfTcnician, Convert.ToInt32(updateClientJobReq.JobId));
+                                    bool bChangeTcnician = true;
+                                    UpdateWfaJobPara(updateClientJobReq.JobId, 4, bChangeTcnician.ToString());
+                                    break;
+                                default:
+                                    break;
+                            }
+                            //result =SaveCrmAuditInfo1(JobId, UserID, rJobNm);
+                        }
+                    }
+
+                }
+            }
+            else if (updateClientJobReq.submitType == "Edit")
+            {
+                result = UpdateAuditJob(updateClientJobReq.JobId, rJobNm, OCRD.CardName, OCRD.FreeText.FilterESC(), job_data, false) ? "1" : "0";
+                bool updParaCardCode = UpdateWfaJobPara(updateClientJobReq.JobId, 1, OCRD.CardCode);
+                bool updParaCardName = UpdateWfaJobPara(updateClientJobReq.JobId, 2, OCRD.CardName);
+                bool updParaOperateType = UpdateWfaJobPara(updateClientJobReq.JobId, 3, OCRD.ClientOperateType);
+                bool updParaAppChange = UpdateWfaJobPara(updateClientJobReq.JobId, 4, OCRD.IsApplicationChange);
+            }
+            return result;
+        }
+        #endregion
+
+        #region 保存业务伙伴审核的录入方案
+        /// <summary>
+        /// 保存业务伙伴审核的录入方案
+        /// </summary>
+        public string SaveCrmAuditInfo(string AuditType, string CardCode, string DfTcnician, string JobId)
+        {
+            clientOCRD client = new clientOCRD();
+            client = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(JobId));
+            client.ChangeType = AuditType;
+            client.ChangeCardCode = CardCode;
+            if (AuditType == "Edit")
+            {
+                client.DfTcnicianCode = DfTcnician;
+            }
+            string rJobNm = string.Format("{0}{1}", client.ClientOperateType == "edit" ? "修改" : "添加", client.CardType == "S" ? "供应商" : "业务伙伴");
+            byte[] job_data = ByteExtension.ToSerialize(client);
+            return UpdateAuditJob(JobId, rJobNm, client.FreeText.FilterESC(), job_data, false) ? "1" : "0";
+
+        }
+        #endregion
+        /// <summary>
+        /// 审核
+        /// </summary>
+        public string AuditResubmitNext(int jobID, int userID, string recommend, string auditOpinionid)
+        {
+            string res = "";
+            if (auditOpinionid == "agree")
+            {
+                res = _serviceSaleOrderApp.WorkflowSubmit(jobID, userID, recommend, "", 0);
+            }
+            else if (auditOpinionid == "reject")
+            {
+                res = _serviceSaleOrderApp.WorkflowReject(jobID, userID, recommend, "", 0);
+            }
+            else if (auditOpinionid == "pending")
+            {
+                res = _serviceSaleOrderApp.SavePanding(jobID, userID, recommend);
+            }
+            return res;
+        }
     }
 }

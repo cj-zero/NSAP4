@@ -1294,16 +1294,16 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-                Dictionary<string, object> parameters = new Dictionary<string, object>();
-                parameters.Add("TechnicianId", req.TechnicianId);
-                parameters.Add("Type", req.Type);
-                parameters.Add("TechOrg", req.TechOrg);
-                parameters.Add("limit", req.limit);
-                parameters.Add("page", req.page);
-                parameters.Add("key", req.key);
-                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetTechnicianServiceOrderNew");
-                result = JsonConvert.DeserializeObject<TableData>(r);
-                //result = await _serviceOrderApp.GetTechnicianServiceOrder(req);
+                //Dictionary<string, object> parameters = new Dictionary<string, object>();
+                //parameters.Add("TechnicianId", req.TechnicianId);
+                //parameters.Add("Type", req.Type);
+                //parameters.Add("TechOrg", req.TechOrg);
+                //parameters.Add("limit", req.limit);
+                //parameters.Add("page", req.page);
+                //parameters.Add("key", req.key);
+                //var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetTechnicianServiceOrderNew");
+                //result = JsonConvert.DeserializeObject<TableData>(r);
+                result = await _serviceOrderApp.GetTechnicianServiceOrderNew(req);
             }
             catch (Exception ex)
             {
@@ -1592,24 +1592,69 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="CurrentUserId"></param>
         /// <returns></returns>
+        //[HttpGet]
+        //public async Task<TableData> GetTechnicianServiceOrderCount(int CurrentUserId, int TechOrg)
+        //{
+        //    var result = new TableData();
+        //    try
+        //    {
+        //        Dictionary<string, object> parameters = new Dictionary<string, object>();
+        //        parameters.Add("CurrentUserId", CurrentUserId);
+        //        parameters.Add("TechOrg", TechOrg);
+
+        //        var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetTechnicianServiceOrderCount");
+        //        result = JsonConvert.DeserializeObject<TableData>(r);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Code = 500;
+        //        result.Message = ex.Message;
+        //        Log.Logger.Error($"地址：{Request.Path}，参数：{CurrentUserId}， 错误：{result.Message}");
+        //    }
+        //    return result;
+        //}
+
+        /// <summary>
+        /// 获取技术员单据数量列表
+        /// </summary>
+        /// <param name="CurrentUserId"></param>
+        /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetTechnicianServiceOrderCount(int CurrentUserId, int TechOrg)
+        public async Task<TableData> GetTechnicianServiceOrderCount(int currentUserId)
         {
             var result = new TableData();
             try
             {
-                Dictionary<string, object> parameters = new Dictionary<string, object>();
-                parameters.Add("CurrentUserId", CurrentUserId);
-                parameters.Add("TechOrg", TechOrg);
-
-                var r = await _httpClienService.Get(parameters, "api/serve/ServiceOrder/GetTechnicianServiceOrderCount");
-                result = JsonConvert.DeserializeObject<TableData>(r);
+                result = await _serviceOrderApp.GetTechnicianServiceOrderCount(currentUserId);
             }
             catch (Exception ex)
             {
                 result.Code = 500;
                 result.Message = ex.Message;
-                Log.Logger.Error($"地址：{Request.Path}，参数：{CurrentUserId}， 错误：{result.Message}");
+                Log.Logger.Error($"地址：{Request.Path}，参数：{currentUserId}， 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取技术员单据明细数量
+        /// </summary>
+        /// <param name="TechnicianId">技术员ID</param>
+        /// <param name="orderType">1.客诉单 2.维修单 3.行政单</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTechnicianServiceOrderCountDetail(int currentUserId, int orderType)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetTechnicianServiceOrderCountDetail(currentUserId, orderType);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{currentUserId},{orderType}， 错误：{result.Message}");
             }
             return result;
         }

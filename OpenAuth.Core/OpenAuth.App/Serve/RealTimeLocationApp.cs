@@ -7,10 +7,13 @@ using Infrastructure.Extensions;
 using Magicodes.ExporterAndImporter.Core;
 using Magicodes.ExporterAndImporter.Excel;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository.Interface;
 
 
@@ -677,12 +680,66 @@ namespace OpenAuth.App
         /// 获取所有客户
         /// </summary>
         /// <returns></returns>
-        public async Task<TableData> GetCustomer() 
+        public async Task<TableData> GetCustomer(QueryLocationInfoReq req) 
         {
             TableData result = new TableData();
-            var data = await UnitWork.Find<crm_ocrd>(null).Select(c => new { Name = c.CardName, Code = c.CardCode }).Distinct().ToListAsync();
+            var data = await UnitWork.Find<CustomerLocation>(null)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), c => c.CardCode.Contains(req.CardCode) || c.CardName.Contains(req.CardCode))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.Province), c => c.Province.Contains(req.Province))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.City), c => c.City.Contains(req.City))
+                .Select(c => new { c.CardCode, c.CardName, c.Longitude, c.Latitude }).ToListAsync();
             result.Data = data;
             return result;
+        }
+
+        /// <summary>
+        /// 近五年有交货记录的客户的地址信息
+        /// </summary>
+        /// <returns></returns>
+        public async Task SetCustomerLocation()
+        {
+            var loaction = await UnitWork.Find<CustomerLocation>(null).ToListAsync();
+            var cardcode = loaction.Select(c => c.CardCode).ToList();
+            System.Net.Http.HttpClient client = new System.Net.Http.HttpClient();
+            var query = await (from a in UnitWork.Find<ODLN>(c => c.DocDate.Value >= DateTime.Now.AddDays(-1825) && c.DocDate.Value < DateTime.Now).Select(c => c.CardCode).Distinct()
+                               join b in UnitWork.Find<OCRD>(null) on a equals b.CardCode into ab
+                               from b in ab.DefaultIfEmpty()
+                               join c in UnitWork.Find<CRD1>(null) on new { b.CardCode, Address = b.ShipToDef } equals new { c.CardCode, c.Address } into bc
+                               from c in bc.DefaultIfEmpty()
+                               join d in UnitWork.Find<OCRY>(null) on c.Country equals d.Code into dc
+                               from d in dc.DefaultIfEmpty()
+                               join e in UnitWork.Find<OCST>(null) on c.State equals e.Code into de
+                               from e in de.DefaultIfEmpty()
+                               where c.U_Active == "Y" && c.AdresType == "S"
+                               select new { b.CardCode, b.CardName, Country = d.Name, Province = e.Name, c.City, c.Building }).ToListAsync();
+            var groupbydata = query.Where(c => !cardcode.Contains(c.CardCode)).Select(c => new
+            {
+                c.CardCode,
+                c.CardName,
+                Address = c.Country + c.Province + c.City + c.Building
+            }).ToList();
+            //await UnitWork.BatchDeleteAsync(loaction.ToArray());
+
+            List<CustomerLocation> list = new List<CustomerLocation>();
+            groupbydata.ForEach(c =>
+            {
+                var xy = GetXY(c.Address, client);
+                list.Add(new CustomerLocation
+                {
+                    CardCode = c.CardCode,
+                    CardName = c.CardName,
+                    Longitude = xy.lng.ToDecimal(),
+                    Latitude = xy.lat.ToDecimal(),
+                    Country = xy.country,
+                    Province = xy.province,
+                    City = xy.city,
+                    Area = xy.area,
+                    Addr = (string.IsNullOrWhiteSpace(xy.country) && string.IsNullOrWhiteSpace(xy.province) && string.IsNullOrWhiteSpace(xy.city) && string.IsNullOrWhiteSpace(xy.addr)) ? c.Address : xy.addr,
+                    CreateTime = DateTime.Now
+                });
+            });
+            await UnitWork.BatchAddAsync(list.ToArray());
+            await UnitWork.SaveAsync();
         }
 
         public async Task UpdateLoca()
@@ -715,6 +772,63 @@ namespace OpenAuth.App
             double tempLat = z * Math.Sin(theta) + 0.006;
             double[] gps = { tempLat, tempLon };
             return gps;
+        }
+
+        /// <summary>
+        /// 获取经纬度 高德API
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        public static (double? lng,double? lat,string country,string province,string city,string area,string addr) GetXY(string address, System.Net.Http.HttpClient client)
+        {
+            string gdkey = "53aa0193d72ff1fb9482847d145f49dc";//高德key
+            string bdkey = "o3Shlf9DguFsv6mH9wQ9RSVGjKjq0THU";//百度key
+            //高德API会把地址拆分成省市区和坐标返回，百度只返回坐标
+            string url = String.Format("https://restapi.amap.com/v3/geocode/geo?address={0}&output=json&key={1}", address, gdkey);
+            //结果
+            string result = client.GetStringAsync(url).Result;
+            var locationResult = (JObject)JsonConvert.DeserializeObject(result);
+            if (locationResult["status"].ToString() == "1" && locationResult["geocodes"].Count() > 0)
+            {
+                var coordinate = locationResult["geocodes"][0]["location"].ToString().Split(",");
+                var country = locationResult["geocodes"][0]["country"].ToString().Replace("[]", "");
+                var province = locationResult["geocodes"][0]["province"].ToString().Replace("[]", "");
+                var city = locationResult["geocodes"][0]["city"].ToString().Replace("[]", "");
+                var district = locationResult["geocodes"][0]["district"].ToString().Replace("[]", "");
+                var street = locationResult["geocodes"][0]["street"].ToString().Replace("[]","");
+                var number = locationResult["geocodes"][0]["number"].ToString().Replace("[]", "");
+                double? lng = null, lat = null;
+                if (coordinate.Length == 2)
+                {
+                    string lngStr = coordinate[0];
+                    string latStr = coordinate[1];
+                    lng = double.Parse(lngStr);
+                    lat = double.Parse(latStr);
+                    //高德坐标转百度
+                    var baiduXY = Gcj02ToBd09(lat.Value, lng.Value);
+                    lng = baiduXY[1];
+                    lat = baiduXY[0];
+                }
+                return (lng, lat, country, province, city, district, street + number);
+            }
+            else
+            {
+                url = String.Format("http://api.map.baidu.com/geocoding/v3/?address={0}&output=json&ak={1}", address, bdkey);
+                result = client.GetStringAsync(url).Result;
+                locationResult = (JObject)JsonConvert.DeserializeObject(result);
+                if (locationResult["status"].ToString() == "0")
+                {
+                    string lngStr = locationResult["result"]["location"]["lng"].ToString();
+                    string latStr = locationResult["result"]["location"]["lat"].ToString();
+                    double lng = double.Parse(lngStr);
+                    double lat = double.Parse(latStr);
+                    return (lng, lat, "", "", "", "", "");
+                }
+                else
+                {
+                    return (null, null, "", "", "", "", "");
+                }
+            }
         }
     }
 }
