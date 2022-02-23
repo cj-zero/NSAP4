@@ -30,4 +30,13 @@ namespace OpenAuth.App.Serve.Response
 
         public List<string> ProcessDescription { get; set; }
     }
+
+    public class DailyReportDetail
+    {
+        public string ManufacturerSerialNumber { get; set; }
+        public string MaterialCode { get; set; }
+        public string FromTheme { get; set; }
+        public string TroubleDescription { get; set; }
+        public string ProcessDescription { get; set; } 
+    }
 }

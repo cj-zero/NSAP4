@@ -144,6 +144,11 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
+        public string AdresType { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
         public string StreetNo { get; set; }
         /// <summary>
         /// 

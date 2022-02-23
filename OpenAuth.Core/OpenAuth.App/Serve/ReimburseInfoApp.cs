@@ -1926,15 +1926,8 @@ namespace OpenAuth.App
                 VerificationReqModle.VerificationFinally = "3";
                 VerificationReqModle.VerificationOpinion = req.Remark;
                 VerificationReqModle.NodeRejectType = "1";
-                if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && (obj.RemburseStatus > 4 && obj.RemburseStatus <= 6))
-                {
-                    //客服主管在财务初审和财务复审阶段可以不走节点权限验证
-                }
-                else
-                {
-                    //节点权限验证
-                    await _flowInstanceApp.Verification(VerificationReqModle);
-                }
+                //节点权限验证
+                await _flowInstanceApp.Verification(VerificationReqModle);
                 obj.RemburseStatus = 2;
                 eoh.ApprovalResult = "驳回";
                 var rtaIds = obj.ReimburseTravellingAllowances.Select(r => r.Id).ToList();

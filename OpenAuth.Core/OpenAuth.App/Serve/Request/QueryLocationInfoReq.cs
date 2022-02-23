@@ -15,6 +15,9 @@ namespace OpenAuth.App.Request
 
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
+
+        public string CardCode { get; set; }
+        public string CardName { get; set; }
     }
 
     public class NameAndAppUserId

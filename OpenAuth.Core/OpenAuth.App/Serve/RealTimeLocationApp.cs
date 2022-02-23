@@ -7,10 +7,13 @@ using Infrastructure.Extensions;
 using Magicodes.ExporterAndImporter.Core;
 using Magicodes.ExporterAndImporter.Excel;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository.Interface;
 
 
@@ -19,10 +22,15 @@ namespace OpenAuth.App
     public class RealTimeLocationApp : BaseApp<RealTimeLocation>
     {
         private RevelanceManagerApp _revelanceApp;
+        private readonly UserManagerApp _userManagerApp;
+        private readonly RevelanceManagerApp _revelanceManagerApp;
+
         public RealTimeLocationApp(IUnitWork unitWork, IRepository<RealTimeLocation> repository,
-    RevelanceManagerApp app, IAuth auth) : base(unitWork, repository, auth)
+    RevelanceManagerApp app, IAuth auth, UserManagerApp userManagerApp, RevelanceManagerApp revelanceManagerApp) : base(unitWork, repository, auth)
         {
             _revelanceApp = app;
+            _userManagerApp = userManagerApp;
+            _revelanceManagerApp = revelanceManagerApp;
         }
 
         /// <summary>
@@ -126,18 +134,44 @@ namespace OpenAuth.App
                                     .Select(c => c.CurrentUserNsapId)
                                     .Distinct()
                                     .ToListAsync();
-            //userIds.AddRange(noComplete);
+
+            //根据员工信息获取员工部门信息
+            var user = loginContext.User;
+            var orgInfo = await _userManagerApp.GetUserOrgInfo(user.Id); //部门信息
+            var orgName = orgInfo.OrgName;
+
+            var syhUserIds = new List<string>();
+            //SYH部门的主管,可以看到自己部门下员工承接的工单                                              
+            if (new string[] { "SYH" }.Contains(orgName))
+            {
+                var orgId = orgInfo.OrgId;
+                //获取所有部门的管理人员信息
+                var deptManage = _revelanceManagerApp.GetDeptManager();
+                //根据部门Id查找部门管理者中是否含有登录人的id
+                var dept = deptManage.FirstOrDefault(d => d.OrgId == orgId);
+                var isManager = deptManage.FirstOrDefault(d => d.OrgId == orgId)?.UserId.Any(x => x == user.Id);
+                //主管可以查看自己部门下所有成员的服务单
+                if (isManager.Value)
+                {
+                    var query = from o in UnitWork.Find<Repository.Domain.Org>(null)
+                                join r in UnitWork.Find<Repository.Domain.Relevance>(null)
+                                on o.Id equals r.SecondId
+                                where r.Key == Define.USERORG && o.Name == "SYH"
+                                select r.FirstId;
+                    syhUserIds.AddRange(await query.ToListAsync());
+                }
+                else
+                {
+                    //非主管只能查看自己的
+                    syhUserIds.Add(user.Id);
+                }
+
+            }
 
             DateTime start = DateTime.Now.Date;
             DateTime end = Convert.ToDateTime(DateTime.Now.AddDays(1).ToString("D").ToString()).AddSeconds(-1);
             DateTime monthAgo = Convert.ToDateTime(DateTime.Now.AddDays(-30).ToString("D").ToString());
-            var pppUserMap = await UnitWork.Find<AppUserMap>(null).ToListAsync();
-
-            //所有人最新定位信息
-            //var realTimeLocationHis = await UnitWork.FromSql<RealTimeLocation>(@$"SELECT * from realtimelocation where Id in  (
-            //                            SELECT max(Id) as Id from realtimelocation GROUP BY AppUserId
-            //                            ) ORDER BY CreateTime desc")
-            //                            .ToListAsync();
+            var pppUserMap = await UnitWork.Find<AppUserMap>(null).WhereIf(syhUserIds.Count() > 0, a => syhUserIds.Contains(a.UserID)).ToListAsync();
 
             //根据name查询appUserId
             int? appUserIdByName = null;
@@ -153,6 +187,7 @@ namespace OpenAuth.App
             var ids = from r1 in Repository.Find(null)
                        .WhereIf(req.AppUserId?.Count() > 0, x => req.AppUserId.Contains(x.AppUserId))
                        .WhereIf(appUserIdByName != null, x => x.AppUserId == appUserIdByName)
+                       .WhereIf(pppUserMap != null, x => pppUserMap.Select(p => p.AppUserId).Contains(x.AppUserId))
                       group r1 by r1.AppUserId into g
                       select g.Max(x => x.Id);
 
@@ -179,7 +214,7 @@ namespace OpenAuth.App
             //                  join b in UnitWork.Find<User>(c => c.Status == 0).WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)).WhereIf(userIds.Count > 0, c => userIds.Contains(c.Id)) on a.UserID equals b.Id
             //                  select new User { Id = b.Id, Name = b.Name, Mobile = b.Mobile }).ToListAsync();
 
-            var data = await (from a in UnitWork.Find<AppUserMap>(null).WhereIf(req.AppUserId?.Count > 0, a => req.AppUserId.Contains(a.AppUserId))
+            var data = await (from a in UnitWork.Find<AppUserMap>(null).WhereIf(req.AppUserId?.Count > 0, a => req.AppUserId.Contains(a.AppUserId)).WhereIf(syhUserIds.Count() > 0, a => syhUserIds.Contains(a.UserID))
                               join b in UnitWork.Find<User>(c => c.Status == 0).WhereIf(req.Name?.Count > 0, c => req.Name.Contains(c.Name)).WhereIf(userIds.Count > 0, c => userIds.Contains(c.Id)) on a.UserID equals b.Id
                               join c in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG) on b.Id equals c.FirstId
                               join d in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on c.SecondId equals d.Id
@@ -677,12 +712,66 @@ namespace OpenAuth.App
         /// 获取所有客户
         /// </summary>
         /// <returns></returns>
-        public async Task<TableData> GetCustomer() 
+        public async Task<TableData> GetCustomer(QueryLocationInfoReq req) 
         {
             TableData result = new TableData();
-            var data = await UnitWork.Find<crm_ocrd>(null).Select(c => new { Name = c.CardName, Code = c.CardCode }).Distinct().ToListAsync();
+            var data = await UnitWork.Find<CustomerLocation>(null)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), c => c.CardCode.Contains(req.CardCode) || c.CardName.Contains(req.CardCode))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.Province), c => c.Province.Contains(req.Province))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.City), c => c.City.Contains(req.City))
+                .Select(c => new { c.CardCode, c.CardName, c.Longitude, c.Latitude }).ToListAsync();
             result.Data = data;
             return result;
+        }
+
+        /// <summary>
+        /// 近五年有交货记录的客户的地址信息
+        /// </summary>
+        /// <returns></returns>
+        public async Task SetCustomerLocation()
+        {
+            var loaction = await UnitWork.Find<CustomerLocation>(null).ToListAsync();
+            var cardcode = loaction.Select(c => c.CardCode).ToList();
+            System.Net.Http.HttpClient client = new System.Net.Http.HttpClient();
+            var query = await (from a in UnitWork.Find<ODLN>(c => c.DocDate.Value >= DateTime.Now.AddDays(-1825) && c.DocDate.Value < DateTime.Now).Select(c => c.CardCode).Distinct()
+                               join b in UnitWork.Find<OCRD>(null) on a equals b.CardCode into ab
+                               from b in ab.DefaultIfEmpty()
+                               join c in UnitWork.Find<CRD1>(null) on new { b.CardCode, Address = b.ShipToDef } equals new { c.CardCode, c.Address } into bc
+                               from c in bc.DefaultIfEmpty()
+                               join d in UnitWork.Find<OCRY>(null) on c.Country equals d.Code into dc
+                               from d in dc.DefaultIfEmpty()
+                               join e in UnitWork.Find<OCST>(null) on c.State equals e.Code into de
+                               from e in de.DefaultIfEmpty()
+                               where c.U_Active == "Y" && c.AdresType == "S"
+                               select new { b.CardCode, b.CardName, Country = d.Name, Province = e.Name, c.City, c.Building }).ToListAsync();
+            var groupbydata = query.Where(c => !cardcode.Contains(c.CardCode)).Select(c => new
+            {
+                c.CardCode,
+                c.CardName,
+                Address = c.Country + c.Province + c.City + c.Building
+            }).ToList();
+            //await UnitWork.BatchDeleteAsync(loaction.ToArray());
+
+            List<CustomerLocation> list = new List<CustomerLocation>();
+            groupbydata.ForEach(c =>
+            {
+                var xy = GetXY(c.Address, client);
+                list.Add(new CustomerLocation
+                {
+                    CardCode = c.CardCode,
+                    CardName = c.CardName,
+                    Longitude = xy.lng.ToDecimal(),
+                    Latitude = xy.lat.ToDecimal(),
+                    Country = xy.country,
+                    Province = xy.province,
+                    City = xy.city,
+                    Area = xy.area,
+                    Addr = (string.IsNullOrWhiteSpace(xy.country) && string.IsNullOrWhiteSpace(xy.province) && string.IsNullOrWhiteSpace(xy.city) && string.IsNullOrWhiteSpace(xy.addr)) ? c.Address : xy.addr,
+                    CreateTime = DateTime.Now
+                });
+            });
+            await UnitWork.BatchAddAsync(list.ToArray());
+            await UnitWork.SaveAsync();
         }
 
         public async Task UpdateLoca()
@@ -715,6 +804,63 @@ namespace OpenAuth.App
             double tempLat = z * Math.Sin(theta) + 0.006;
             double[] gps = { tempLat, tempLon };
             return gps;
+        }
+
+        /// <summary>
+        /// 获取经纬度 高德API
+        /// </summary>
+        /// <param name="address"></param>
+        /// <returns></returns>
+        public static (double? lng,double? lat,string country,string province,string city,string area,string addr) GetXY(string address, System.Net.Http.HttpClient client)
+        {
+            string gdkey = "53aa0193d72ff1fb9482847d145f49dc";//高德key
+            string bdkey = "o3Shlf9DguFsv6mH9wQ9RSVGjKjq0THU";//百度key
+            //高德API会把地址拆分成省市区和坐标返回，百度只返回坐标
+            string url = String.Format("https://restapi.amap.com/v3/geocode/geo?address={0}&output=json&key={1}", address, gdkey);
+            //结果
+            string result = client.GetStringAsync(url).Result;
+            var locationResult = (JObject)JsonConvert.DeserializeObject(result);
+            if (locationResult["status"].ToString() == "1" && locationResult["geocodes"].Count() > 0)
+            {
+                var coordinate = locationResult["geocodes"][0]["location"].ToString().Split(",");
+                var country = locationResult["geocodes"][0]["country"].ToString().Replace("[]", "");
+                var province = locationResult["geocodes"][0]["province"].ToString().Replace("[]", "");
+                var city = locationResult["geocodes"][0]["city"].ToString().Replace("[]", "");
+                var district = locationResult["geocodes"][0]["district"].ToString().Replace("[]", "");
+                var street = locationResult["geocodes"][0]["street"].ToString().Replace("[]","");
+                var number = locationResult["geocodes"][0]["number"].ToString().Replace("[]", "");
+                double? lng = null, lat = null;
+                if (coordinate.Length == 2)
+                {
+                    string lngStr = coordinate[0];
+                    string latStr = coordinate[1];
+                    lng = double.Parse(lngStr);
+                    lat = double.Parse(latStr);
+                    //高德坐标转百度
+                    var baiduXY = Gcj02ToBd09(lat.Value, lng.Value);
+                    lng = baiduXY[1];
+                    lat = baiduXY[0];
+                }
+                return (lng, lat, country, province, city, district, street + number);
+            }
+            else
+            {
+                url = String.Format("http://api.map.baidu.com/geocoding/v3/?address={0}&output=json&ak={1}", address, bdkey);
+                result = client.GetStringAsync(url).Result;
+                locationResult = (JObject)JsonConvert.DeserializeObject(result);
+                if (locationResult["status"].ToString() == "0")
+                {
+                    string lngStr = locationResult["result"]["location"]["lng"].ToString();
+                    string latStr = locationResult["result"]["location"]["lat"].ToString();
+                    double lng = double.Parse(lngStr);
+                    double lat = double.Parse(latStr);
+                    return (lng, lat, "", "", "", "", "");
+                }
+                else
+                {
+                    return (null, null, "", "", "", "", "");
+                }
+            }
         }
     }
 }
