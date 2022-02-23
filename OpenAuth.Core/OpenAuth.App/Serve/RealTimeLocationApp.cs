@@ -22,10 +22,15 @@ namespace OpenAuth.App
     public class RealTimeLocationApp : BaseApp<RealTimeLocation>
     {
         private RevelanceManagerApp _revelanceApp;
+        private readonly UserManagerApp _userManagerApp;
+        private readonly RevelanceManagerApp _revelanceManagerApp;
+
         public RealTimeLocationApp(IUnitWork unitWork, IRepository<RealTimeLocation> repository,
-    RevelanceManagerApp app, IAuth auth) : base(unitWork, repository, auth)
+    RevelanceManagerApp app, IAuth auth, UserManagerApp userManagerApp, RevelanceManagerApp revelanceManagerApp) : base(unitWork, repository, auth)
         {
             _revelanceApp = app;
+            _userManagerApp = userManagerApp;
+            _revelanceManagerApp = revelanceManagerApp;
         }
 
         /// <summary>
@@ -129,18 +134,44 @@ namespace OpenAuth.App
                                     .Select(c => c.CurrentUserNsapId)
                                     .Distinct()
                                     .ToListAsync();
-            //userIds.AddRange(noComplete);
+
+            //根据员工信息获取员工部门信息
+            var user = loginContext.User;
+            var orgInfo = await _userManagerApp.GetUserOrgInfo(user.Id); //部门信息
+            var orgName = orgInfo.OrgName;
+
+            var syhUserIds = new List<string>();
+            //SYH部门的主管,可以看到自己部门下员工承接的工单                                              
+            if (new string[] { "SYH" }.Contains(orgName))
+            {
+                var orgId = orgInfo.OrgId;
+                //获取所有部门的管理人员信息
+                var deptManage = _revelanceManagerApp.GetDeptManager();
+                //根据部门Id查找部门管理者中是否含有登录人的id
+                var dept = deptManage.FirstOrDefault(d => d.OrgId == orgId);
+                var isManager = deptManage.FirstOrDefault(d => d.OrgId == orgId)?.UserId.Any(x => x == user.Id);
+                //主管可以查看自己部门下所有成员的服务单
+                if (isManager.Value)
+                {
+                    var query = from o in UnitWork.Find<Repository.Domain.Org>(null)
+                                join r in UnitWork.Find<Repository.Domain.Relevance>(null)
+                                on o.Id equals r.SecondId
+                                where r.Key == Define.USERORG && o.Name == "SYH"
+                                select r.FirstId;
+                    syhUserIds.AddRange(await query.ToListAsync());
+                }
+                else
+                {
+                    //非主管只能查看自己的
+                    syhUserIds.Add(user.Id);
+                }
+
+            }
 
             DateTime start = DateTime.Now.Date;
             DateTime end = Convert.ToDateTime(DateTime.Now.AddDays(1).ToString("D").ToString()).AddSeconds(-1);
             DateTime monthAgo = Convert.ToDateTime(DateTime.Now.AddDays(-30).ToString("D").ToString());
-            var pppUserMap = await UnitWork.Find<AppUserMap>(null).ToListAsync();
-
-            //所有人最新定位信息
-            //var realTimeLocationHis = await UnitWork.FromSql<RealTimeLocation>(@$"SELECT * from realtimelocation where Id in  (
-            //                            SELECT max(Id) as Id from realtimelocation GROUP BY AppUserId
-            //                            ) ORDER BY CreateTime desc")
-            //                            .ToListAsync();
+            var pppUserMap = await UnitWork.Find<AppUserMap>(null).WhereIf(syhUserIds.Count() > 0, a => syhUserIds.Contains(a.UserID)).ToListAsync();
 
             //根据name查询appUserId
             int? appUserIdByName = null;
@@ -156,6 +187,7 @@ namespace OpenAuth.App
             var ids = from r1 in Repository.Find(null)
                        .WhereIf(req.AppUserId?.Count() > 0, x => req.AppUserId.Contains(x.AppUserId))
                        .WhereIf(appUserIdByName != null, x => x.AppUserId == appUserIdByName)
+                       .WhereIf(pppUserMap != null, x => pppUserMap.Select(p => p.AppUserId).Contains(x.AppUserId))
                       group r1 by r1.AppUserId into g
                       select g.Max(x => x.Id);
 
@@ -182,7 +214,7 @@ namespace OpenAuth.App
             //                  join b in UnitWork.Find<User>(c => c.Status == 0).WhereIf(req.Name.Count > 0, c => req.Name.Contains(c.Name)).WhereIf(userIds.Count > 0, c => userIds.Contains(c.Id)) on a.UserID equals b.Id
             //                  select new User { Id = b.Id, Name = b.Name, Mobile = b.Mobile }).ToListAsync();
 
-            var data = await (from a in UnitWork.Find<AppUserMap>(null).WhereIf(req.AppUserId?.Count > 0, a => req.AppUserId.Contains(a.AppUserId))
+            var data = await (from a in UnitWork.Find<AppUserMap>(null).WhereIf(req.AppUserId?.Count > 0, a => req.AppUserId.Contains(a.AppUserId)).WhereIf(syhUserIds.Count() > 0, a => syhUserIds.Contains(a.UserID))
                               join b in UnitWork.Find<User>(c => c.Status == 0).WhereIf(req.Name?.Count > 0, c => req.Name.Contains(c.Name)).WhereIf(userIds.Count > 0, c => userIds.Contains(c.Id)) on a.UserID equals b.Id
                               join c in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG) on b.Id equals c.FirstId
                               join d in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on c.SecondId equals d.Id
