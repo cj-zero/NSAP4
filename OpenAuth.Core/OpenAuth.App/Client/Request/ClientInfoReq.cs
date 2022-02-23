@@ -1361,4 +1361,23 @@ namespace OpenAuth.App.Client.Request
         public string auditOpinionid { get; set; }
 
     }
+    /// <summary>
+    /// 提交给我的相似客户
+    /// </summary>
+    public class CheckCardSimilarReq
+    {
+        public string qtype { get; set; }
+       
+        public string query { get; set; }
+       
+        public string sortname { get; set; }
+      
+        public string sortorder { get; set; }
+      
+        public string JobId { get; set; }
+       
+        public string SearchAll { get; set; }
+
+    }
+
 }
