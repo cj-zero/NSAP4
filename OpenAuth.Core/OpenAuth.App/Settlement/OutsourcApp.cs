@@ -1077,7 +1077,8 @@ namespace OpenAuth.App
                                 EndTime = DateTime.Now,
                             });
                         }
-                        outsourcObj.TotalMoney += decimal.Parse(req.Money);
+                        //outsourcObj.TotalMoney += decimal.Parse(req.Money);
+                        outsourcObj.TotalMoney = outsourcObj.OutsourcExpenses.Sum(x => x.Money) + decimal.Parse(req.Money);
                     }
                     var outsourcExpenseOrgs = req.OutsourcExpenseOrgReqs.MapToList<OutsourcExpenseOrg>();
                     outsourcExpenseOrgs.ForEach(o =>
@@ -1337,28 +1338,42 @@ namespace OpenAuth.App
                 NodeRejectStep = "", //当NodeRejectType = 2时,需要指明节点
                 FlowInstanceId = outsourcObj.FlowInstanceId,
             };
-            //撤回操作
-            await _flowInstanceApp.ReCall2(recallFlowInstanceReq);
-            //调整金额
-            await UnitWork.UpdateAsync<OutsourcExpenses>(o => o.OutsourcId == outsourcObj.Id && o.ExpenseType == 3, o => new OutsourcExpenses { Money = 0 });
-            await UnitWork.DeleteAsync<OutsourcExpenseOrg>(o => outsourcObj.OutsourcExpenses.Select(e => e.Id).Contains(o.ExpenseId));
-            if (!string.IsNullOrWhiteSpace(outsourcObj.QuotationId.ToString())) await _quotationApp.CancellationSalesOrder(new QueryQuotationListReq { QuotationId = outsourcObj.QuotationId });
 
-            await UnitWork.UpdateAsync<Outsourc>(r => r.Id == outsourcObj.Id, r => new Outsourc
+            using var tran = await UnitWork.GetDbContext<Outsourc>().Database.BeginTransactionAsync();
+            try
             {
-                //Status = returnNoteStatus,
-                UpdateTime = DateTime.Now,
-                TotalMoney = outsourcObj.TotalMoney,
-                PayTime = outsourcObj.PayTime,
-                QuotationId = outsourcObj.QuotationId
-            });
-            //修改全局待处理
-            await UnitWork.UpdateAsync<WorkbenchPending>(w => w.SourceNumbers == outsourcObj.Id && w.OrderType == 3, w => new WorkbenchPending
+                //撤回操作
+                await _flowInstanceApp.ReCall2(recallFlowInstanceReq);
+                //调整金额
+                await UnitWork.UpdateAsync<OutsourcExpenses>(o => o.OutsourcId == outsourcObj.Id && o.ExpenseType == 3, o => new OutsourcExpenses { Money = 0 });
+                await UnitWork.DeleteAsync<OutsourcExpenseOrg>(o => outsourcObj.OutsourcExpenses.Select(e => e.Id).Contains(o.ExpenseId));
+                if (!string.IsNullOrWhiteSpace(outsourcObj.QuotationId.ToString())) await _quotationApp.CancellationSalesOrder(new QueryQuotationListReq { QuotationId = outsourcObj.QuotationId });
+                //将工时费用重置为0,其他费用不变
+                outsourcObj.OutsourcExpenses.Where(x => x.ExpenseType == 3).All(x => { x.Money = 0; return true; });
+                //重新计算总费用
+                outsourcObj.TotalMoney = outsourcObj.OutsourcExpenses.Sum(x => x.Money);
+
+                await UnitWork.UpdateAsync<Outsourc>(r => r.Id == outsourcObj.Id, r => new Outsourc
+                {
+                    UpdateTime = DateTime.Now,
+                    TotalMoney = outsourcObj.TotalMoney,
+                    PayTime = outsourcObj.PayTime,
+                    QuotationId = outsourcObj.QuotationId
+                });
+                //修改全局待处理
+                await UnitWork.UpdateAsync<WorkbenchPending>(w => w.SourceNumbers == outsourcObj.Id && w.OrderType == 3, w => new WorkbenchPending
+                {
+                    TotalMoney = outsourcObj.TotalMoney,
+                    UpdateTime = DateTime.Now,
+                });
+                await UnitWork.SaveAsync();
+                await tran.CommitAsync();
+            }
+            catch(Exception ex)
             {
-                TotalMoney = outsourcObj.TotalMoney,
-                UpdateTime = DateTime.Now,
-            });
-            await UnitWork.SaveAsync();
+                await tran.RollbackAsync();
+                throw new Exception("撤回失败。请重试" + ex.Message);
+            }
         }
 
         /// <summary>
