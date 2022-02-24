@@ -607,6 +607,30 @@ namespace OpenAuth.WebApi.Controllers.Client
             }
             return result;
         }
+
+        /// <summary>
+        /// 查询业务伙伴附件
+        /// </summary>
+        [HttpGet]
+        [Route("SelectClientFiles")]
+        public TableData SelectClientFiles(string FileType, string SboId, string IssueReason)
+        {
+            var result = new TableData();
+            try
+            {
+                if (!string.IsNullOrEmpty(FileType) && !string.IsNullOrEmpty(SboId) && !string.IsNullOrEmpty(IssueReason))
+                    result.Data = _clientInfoApp.SelectClientFiles(FileType, SboId, IssueReason);
+
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{FileType.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
     }
 }
 
