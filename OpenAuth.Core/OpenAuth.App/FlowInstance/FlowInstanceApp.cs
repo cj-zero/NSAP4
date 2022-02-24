@@ -411,7 +411,8 @@ namespace OpenAuth.App
 
                 await AddTransHistory(wfruntime);
             }
-
+            //驳回之后-更新流程模板内容，才能在流程图标识显示驳回效果！
+            flowInstance.SchemeContent = JsonHelper.Instance.Serialize(wfruntime.ToSchemeObj());
             await UnitWork.UpdateAsync(flowInstance);
             FlowInstanceOperationHistory flowInstanceOperationHistory = new FlowInstanceOperationHistory
             {
