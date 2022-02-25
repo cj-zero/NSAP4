@@ -3754,8 +3754,8 @@ namespace OpenAuth.App
                 s.Supervisor,
                 s.SalesMan,
                 s.U_SAP_ID,
-                ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Name : s.ProblemTypeName,
-                ProblemTypeId = string.IsNullOrEmpty(s.ProblemTypeId) ? s.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Id : s.ProblemTypeId,
+                ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ServiceWorkOrders.FirstOrDefault()?.ProblemType?.Name : s.ProblemTypeName,
+                ProblemTypeId = string.IsNullOrEmpty(s.ProblemTypeId) ? s.ServiceWorkOrders.FirstOrDefault()?.ProblemType?.Id : s.ProblemTypeId,
                 DeviceInfos = s.ServiceOrderSNs.GroupBy(o => "无序列号".Equals(o.ItemCode) ? "无序列号" : o.ItemCode.Substring(0, o.ItemCode.IndexOf("-"))).ToList()
                 .Select(a => new
                 {
@@ -4106,8 +4106,8 @@ namespace OpenAuth.App
                 s.SalesMan,
                 s.U_SAP_ID,
                 s.CustomerId,
-                ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Name : s.ProblemTypeName,
-                ProblemTypeId = string.IsNullOrEmpty(s.ProblemTypeId) ? s.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Id : s.ProblemTypeId,
+                ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ServiceWorkOrders.FirstOrDefault()?.ProblemType?.Name : s.ProblemTypeName,
+                ProblemTypeId = string.IsNullOrEmpty(s.ProblemTypeId) ? s.ServiceWorkOrders.FirstOrDefault()?.ProblemType?.Id : s.ProblemTypeId,
                 DeviceInfos = s.ServiceWorkOrders.GroupBy(o => "无序列号".Equals(o.MaterialCode) ? "无序列号" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-"))).ToList()
                 .Select(a => new
                 {
@@ -4725,7 +4725,7 @@ namespace OpenAuth.App
                 s.CustomerName,
                 s.TerminalCustomer,
                 s.Count,
-                ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ProblemType.Name : s.ProblemTypeName,
+                ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ProblemType?.Name : s.ProblemTypeName,
                 MaterialTypeQty = s.MaterialInfo.GroupBy(o => o.MaterialType).Select(i => i.Key).ToList().Count,
                 MaterialInfo = s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
                 .Select(o => new
@@ -5835,8 +5835,8 @@ namespace OpenAuth.App
                     a.NewestContacter,
                     a.NewestContactTel,
                     a.AppCustId,
-                    ProblemTypeName = string.IsNullOrEmpty(a.ProblemTypeName) ? a.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Name : a.ProblemTypeName,
-                    ProblemTypeId = string.IsNullOrEmpty(a.ProblemTypeId) ? a.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Id : a.ProblemTypeId,
+                    ProblemTypeName = string.IsNullOrEmpty(a.ProblemTypeName) ? a.ServiceWorkOrders.FirstOrDefault()?.ProblemType?.Name : a.ProblemTypeName,
+                    ProblemTypeId = string.IsNullOrEmpty(a.ProblemTypeId) ? a.ServiceWorkOrders.FirstOrDefault()?.ProblemType?.Id : a.ProblemTypeId,
                     a.Services,
                     a.CustomerName,
                     a.Supervisor,
@@ -6220,7 +6220,7 @@ namespace OpenAuth.App
                 s.CustomerId,
                 s.CustomerName,
                 s.TerminalCustomer,
-                ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ProblemType.Name : s.ProblemTypeName,
+                ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.ProblemType?.Name : s.ProblemTypeName,
                 MaterialTypeQty = s.MaterialInfo.GroupBy(o => o.MaterialType).Select(i => i.Key).ToList().Count,
                 MaterialInfo = s.MaterialInfo.GroupBy(o => o.MaterialType).ToList()
                 .Select(o => new
@@ -6324,8 +6324,8 @@ namespace OpenAuth.App
                     a.CustomerId,
                     a.TerminalCustomer,
                     a.TerminalCustomerId,
-                    ProblemTypeName = string.IsNullOrEmpty(a.ProblemTypeName) ? a.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Name : a.ProblemTypeName,
-                    ProblemTypeId = string.IsNullOrEmpty(a.ProblemTypeId) ? a.ServiceWorkOrders.FirstOrDefault()?.ProblemType.Id : a.ProblemTypeId,
+                    ProblemTypeName = string.IsNullOrEmpty(a.ProblemTypeName) ? a.ServiceWorkOrders.FirstOrDefault()?.ProblemType?.Name : a.ProblemTypeName,
+                    ProblemTypeId = string.IsNullOrEmpty(a.ProblemTypeId) ? a.ServiceWorkOrders.FirstOrDefault()?.ProblemType?.Id : a.ProblemTypeId,
                     Services = GetServiceFromTheme(a.ServiceWorkOrders.FirstOrDefault()?.FromTheme),
                     Priority = a.ServiceWorkOrders.FirstOrDefault()?.Priority == 3 ? "高" : a.ServiceWorkOrders.FirstOrDefault()?.Priority == 2 ? "中" : "低",
                     ServiceWorkOrders = a.ServiceWorkOrders.GroupBy(o => o.MaterialType).Select(s => new
