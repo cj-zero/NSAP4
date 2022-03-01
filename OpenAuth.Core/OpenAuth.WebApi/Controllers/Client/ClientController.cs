@@ -133,7 +133,7 @@ namespace OpenAuth.WebApi.Controllers.Client
             return result;
         }
 
-        #region 查询视图集合
+
 
         /// <summary>
         /// 查询客户列表
@@ -183,7 +183,6 @@ namespace OpenAuth.WebApi.Controllers.Client
             return result;
         }
 
-        #endregion
 
         /// <summary>
         /// 根据jobId获取审核任务信息(我的创建/审批)
@@ -375,7 +374,7 @@ namespace OpenAuth.WebApi.Controllers.Client
 
         }
 
-        #region 保存业务伙伴审核的录入方案
+
 
         /// <summary>
         /// 保存业务伙伴审核的录入方案
@@ -431,7 +430,6 @@ namespace OpenAuth.WebApi.Controllers.Client
             return result;
         }
 
-        #endregion
 
         /// <summary>
         /// 查询 国家·省·市
@@ -627,6 +625,52 @@ namespace OpenAuth.WebApi.Controllers.Client
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
                 Log.Logger.Error($"地址：{Request.Path}，参数：{FileType.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+        /// <summary>
+        /// 查询业务伙伴报价单
+        /// </summary>
+        [HttpPost]
+        [Route("SelectOqut")]
+        public TableData SelectOqut(SelectOqutReq selectOqutReq)
+        {
+            var result = new TableData();
+            try
+            {
+                if (!string.IsNullOrEmpty(selectOqutReq.CardCode))
+                    result.Data = _clientInfoApp.SelectOqut(selectOqutReq);
+
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{selectOqutReq.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+        /// <summary>
+        /// 查询业务伙伴订单
+        /// </summary>
+        [HttpPost]
+        [Route("SelectOrdr")]
+        public TableData SelectOrdr(SelectOrdrReq selectOrdrReq)
+        {
+            var result = new TableData();
+            try
+            {
+                if (!string.IsNullOrEmpty(selectOrdrReq.CardCode))
+                    result.Data = _clientInfoApp.SelectOrdr(selectOrdrReq);
+
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{selectOrdrReq.ToJson()}， 错误：{result.Message}");
             }
 
             return result;

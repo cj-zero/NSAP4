@@ -37,4 +37,30 @@ namespace OpenAuth.App.Client.Request
         public string StateId { get; set; }
 
     }
+    /// <summary>
+    /// 客户下销售报价单
+    /// </summary>
+    public class SelectOqutReq 
+    {
+
+        public string Docentry { get; set; }
+        public string Slpname { get; set; }
+        public string Status { get; set; }
+        public string StartTime { get; set; }
+        public string EndTime { get; set; }
+        public string CardCode { get; set; }
+    }
+    /// <summary>
+    /// 客户下销售订单
+    /// </summary>
+    public class SelectOrdrReq
+    {
+
+        public string Docentry { get; set; }
+        public string Slpname { get; set; }
+        public string Status { get; set; }
+        public string StartTime { get; set; }
+        public string EndTime { get; set; }
+        public string CardCode { get; set; }
+    }
 }

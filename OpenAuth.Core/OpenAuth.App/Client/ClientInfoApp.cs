@@ -33,6 +33,7 @@ namespace OpenAuth.App.Client
             _serviceBaseApp = serviceBaseApp;
             _serviceSaleOrderApp = serviceSaleOrderApp;
         }
+        #region 客户新增草稿 修改草稿
         /// <summary>
         /// 客户新增草稿 修改草稿
         /// </summary>
@@ -112,9 +113,11 @@ namespace OpenAuth.App.Client
                 }
             }
             return result;
-        }
+        } 
+        #endregion
+        #region 查询列表
         /// <summary>
-        /// 查询视图集合
+        /// 查询列表
         /// </summary>
         public DataTable SelectClientList(int limit, int page, string query, string sortname, string sortorder, int sboid, int userId, bool rIsViewSales, bool rIsViewSelf, bool rIsViewSelfDepartment, bool rIsViewFull, int depID, out int rowCount)
         {
@@ -387,7 +390,9 @@ namespace OpenAuth.App.Client
 
             return clientTable;
 
-        }
+        } 
+        #endregion
+        #region 查詢指定業務夥伴的科目余额
         /// <summary>
         /// 查詢指定業務夥伴的科目余额（老系统用excel导入的crm_ocrd_oldsbo_balance)
         /// </summary>
@@ -414,7 +419,8 @@ namespace OpenAuth.App.Client
                 if (balobj != null) { returnstr = balobj.ToString(); }
                 return returnstr;
             }
-        }
+        } 
+        #endregion
         #region 采购员   客户组分配
         private bool OCRDisSpecial(string rPurCode, string v1, string v2)
         {
@@ -478,6 +484,7 @@ namespace OpenAuth.App.Client
 
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
         }
+        #region 构建客户草稿
         /// <summary>
         /// 构建客户草稿
         /// </summary>
@@ -727,7 +734,8 @@ namespace OpenAuth.App.Client
 
             billDelivery.EshopUserId = clientInfo.EshopUserId;
             return billDelivery;
-        }
+        } 
+        #endregion
         #region 修改流程任务参数值
         /// <summary>
         /// 修改流程任务参数值
@@ -784,6 +792,7 @@ namespace OpenAuth.App.Client
             return bill;
         }
         #endregion
+        #region 修改审核数据
         /// <summary>
         /// 修改审核数据
         /// </summary>
@@ -814,7 +823,8 @@ namespace OpenAuth.App.Client
                 rows = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara);
             }
             return rows != null ? true : false;
-        }
+        } 
+        #endregion
 
         #region 修改审核数据（修改客户名称）
         /// <summary>
@@ -857,6 +867,7 @@ namespace OpenAuth.App.Client
             return result;
         }
         #endregion
+        #region 是否选择新的售后主管
         /// <summary>
         /// 是否选择新的售后主管
         /// </summary>
@@ -887,7 +898,8 @@ namespace OpenAuth.App.Client
             string ret = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, string.Format("{0}.sp_SetTcnicianStep", "nsap_base"), CommandType.StoredProcedure, strPara).ToString();
             return ret;
 
-        }
+        } 
+        #endregion
         #region 查询业务伙伴详细
         /// <summary>
         /// 查询业务伙伴详细
@@ -959,7 +971,7 @@ namespace OpenAuth.App.Client
                 dtRet.Columns.Add("U_ClientSource", typeof(string));//客户来源
                 dtRet.Columns.Add("U_CompSector", typeof(string));//所属行业
                 dtRet.Columns.Add("U_TradeType", typeof(string));//贸易类型
-                dtRet.Columns.Add("U_CardTypeStr", typeof(string));//新版客户类型
+                //dtRet.Columns.Add("U_CardTypeStr", typeof(string));//新版客户类型
                 foreach (DataRow clientrow in dtRet.Rows)
                 {
                     var sql = string.Format(
@@ -974,7 +986,7 @@ namespace OpenAuth.App.Client
                             clientrow["U_ClientSource"] = clientSource["U_ClientSource"];
                             clientrow["U_CompSector"] = clientSource["U_CompSector"];
                             clientrow["U_TradeType"] = clientSource["U_TradeType"];
-                            clientrow["U_CardTypeStr"] = clientSource["U_CardTypeStr"];
+                            //clientrow["U_CardTypeStr"] = clientSource["U_CardTypeStr"];
                         }
                     }
                 }
@@ -1232,6 +1244,7 @@ namespace OpenAuth.App.Client
 
         }
         #endregion
+        #region 审核
         /// <summary>
         /// 审核
         /// </summary>
@@ -1310,6 +1323,7 @@ namespace OpenAuth.App.Client
             }
             return _serviceSaleOrderApp.SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, sortString, filterQuery, out rowCounts);
         }
+        #endregion 
         #endregion
 
         #region 查询指定城市的邮编
@@ -1893,6 +1907,98 @@ namespace OpenAuth.App.Client
 
 
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
+        }
+        #endregion
+        #region 查询业务伙伴报价单
+        /// <summary>
+        /// 查询业务伙伴报价单
+        /// </summary>
+        public DataTable SelectOqut(SelectOqutReq selectOqutReq)
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append(
+                "SELECT  A.DocEntry,B.SlpName,A.DocTotal, (A.DocTotal-A.PaidToDate)  AS OpenDocTotal,A.CreateDate,A.DocStatus,A.Printed  ");
+            strSql.AppendFormat("FROM OQUT A LEFT JOIN OSLP B ON A.SlpCode=B.SlpCode WHERE A.CardCode='{0}'", selectOqutReq.CardCode);
+            if (!string.IsNullOrWhiteSpace(selectOqutReq.Docentry))
+            {
+                strSql.AppendFormat("AND A.DocEntry='{0}' ", selectOqutReq.Docentry);
+            }
+            if (!string.IsNullOrWhiteSpace(selectOqutReq.Slpname))
+            {
+                strSql.AppendFormat("AND B.SlpName='{0}' ", selectOqutReq.Slpname);
+            }
+            if (selectOqutReq.Status == "ON")
+            {
+                strSql.AppendFormat("AND (a.DocStatus = 'O' AND a.Printed = 'N' AND a.CANCELED = 'N') ");
+            }
+            if (selectOqutReq.Status == "OY")
+            {
+                strSql.AppendFormat("AND (a.DocStatus = 'O' AND a.Printed = 'Y' AND a.CANCELED = 'N') ");
+            }
+            if (selectOqutReq.Status == "CY")
+            {
+                strSql.AppendFormat("AND a.CANCELED = 'Y'  ");
+            }
+            if (selectOqutReq.Status == "CN")
+            {
+                strSql.AppendFormat("AND (a.DocStatus = 'C' AND a.CANCELED = 'N') ");
+            }
+
+            //时间区间
+            if (!string.IsNullOrWhiteSpace(selectOqutReq.StartTime) && !string.IsNullOrWhiteSpace(selectOqutReq.EndTime))
+            {
+
+                strSql.AppendFormat("a.UpdateDate BETWEEN '{0}' AND '{1}' AND ", selectOqutReq.StartTime, selectOqutReq.EndTime);
+            }
+            strSql.AppendFormat("ORDER BY A.DocEntry DESC");
+
+            return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+        }
+        #endregion
+        #region 查询业务伙销售订单
+        /// <summary>
+        /// 查询业务伙销售订单
+        /// </summary>
+        public DataTable SelectOrdr(SelectOrdrReq selectOrdrReq)
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append(
+                "SELECT  A.DocEntry,B.SlpName,A.DocTotal, (A.DocTotal-A.PaidToDate)  AS OpenDocTotal,A.CreateDate,A.DocStatus,A.Printed  ");
+            strSql.AppendFormat("FROM ORDR A LEFT JOIN OSLP B ON A.SlpCode=B.SlpCode WHERE A.CardCode='{0}'", selectOrdrReq.CardCode);
+            if (!string.IsNullOrWhiteSpace(selectOrdrReq.Docentry))
+            {
+                strSql.AppendFormat("AND A.DocEntry='{0}' ", selectOrdrReq.Docentry);
+            }
+            if (!string.IsNullOrWhiteSpace(selectOrdrReq.Slpname))
+            {
+                strSql.AppendFormat("AND B.SlpName='{0}' ", selectOrdrReq.Slpname);
+            }
+            if (selectOrdrReq.Status == "ON")
+            {
+                strSql.AppendFormat("AND (a.DocStatus = 'O' AND a.Printed = 'N' AND a.CANCELED = 'N') ");
+            }
+            if (selectOrdrReq.Status == "OY")
+            {
+                strSql.AppendFormat("AND (a.DocStatus = 'O' AND a.Printed = 'Y' AND a.CANCELED = 'N') ");
+            }
+            if (selectOrdrReq.Status == "CY")
+            {
+                strSql.AppendFormat("AND a.CANCELED = 'Y'  ");
+            }
+            if (selectOrdrReq.Status == "CN")
+            {
+                strSql.AppendFormat("AND (a.DocStatus = 'C' AND a.CANCELED = 'N') ");
+            }
+
+            //时间区间
+            if (!string.IsNullOrWhiteSpace(selectOrdrReq.StartTime) && !string.IsNullOrWhiteSpace(selectOrdrReq.EndTime))
+            {
+
+                strSql.AppendFormat("a.UpdateDate BETWEEN '{0}' AND '{1}' AND ", selectOrdrReq.StartTime, selectOrdrReq.EndTime);
+            }
+            strSql.AppendFormat("ORDER BY A.DocEntry DESC");
+
+            return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
         }
         #endregion
     }
