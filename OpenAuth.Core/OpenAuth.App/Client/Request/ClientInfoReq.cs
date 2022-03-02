@@ -902,6 +902,10 @@ namespace OpenAuth.App.Client.Request
         /// </summary>
 
         public string U_CompSector { get; set; }
+        /// <summary>
+        /// 新版客户类型
+        /// </summary>
+        public string U_CardTypeStr { get; set; }
     }
     public class clientCRD1Req
     {

@@ -33,6 +33,7 @@ namespace OpenAuth.App.Client
             _serviceBaseApp = serviceBaseApp;
             _serviceSaleOrderApp = serviceSaleOrderApp;
         }
+        #region 客户新增草稿 修改草稿
         /// <summary>
         /// 客户新增草稿 修改草稿
         /// </summary>
@@ -112,9 +113,11 @@ namespace OpenAuth.App.Client
                 }
             }
             return result;
-        }
+        } 
+        #endregion
+        #region 查询列表
         /// <summary>
-        /// 查询视图集合
+        /// 查询列表
         /// </summary>
         public DataTable SelectClientList(int limit, int page, string query, string sortname, string sortorder, int sboid, int userId, bool rIsViewSales, bool rIsViewSelf, bool rIsViewSelfDepartment, bool rIsViewFull, int depID, out int rowCount)
         {
@@ -387,7 +390,9 @@ namespace OpenAuth.App.Client
 
             return clientTable;
 
-        }
+        } 
+        #endregion
+        #region 查詢指定業務夥伴的科目余额
         /// <summary>
         /// 查詢指定業務夥伴的科目余额（老系统用excel导入的crm_ocrd_oldsbo_balance)
         /// </summary>
@@ -414,7 +419,8 @@ namespace OpenAuth.App.Client
                 if (balobj != null) { returnstr = balobj.ToString(); }
                 return returnstr;
             }
-        }
+        } 
+        #endregion
         #region 采购员   客户组分配
         private bool OCRDisSpecial(string rPurCode, string v1, string v2)
         {
@@ -478,6 +484,7 @@ namespace OpenAuth.App.Client
 
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
         }
+        #region 构建客户草稿
         /// <summary>
         /// 构建客户草稿
         /// </summary>
@@ -632,7 +639,8 @@ namespace OpenAuth.App.Client
                 U_StaffScale = clientInfo.U_StaffScale,//人员规模
                 U_ClientSource = clientInfo.U_ClientSource,//客户来源
                 U_TradeType = clientInfo.U_TradeType,//贸易类型
-                U_CompSector = clientInfo.U_CompSector//所属行业
+                U_CompSector = clientInfo.U_CompSector,//所属行业
+                U_CardTypeStr = clientInfo.U_CardTypeStr//新版客户类型
             };
             foreach (var item in clientInfo.ContactList)
             {
@@ -726,7 +734,8 @@ namespace OpenAuth.App.Client
 
             billDelivery.EshopUserId = clientInfo.EshopUserId;
             return billDelivery;
-        }
+        } 
+        #endregion
         #region 修改流程任务参数值
         /// <summary>
         /// 修改流程任务参数值
@@ -783,6 +792,7 @@ namespace OpenAuth.App.Client
             return bill;
         }
         #endregion
+        #region 修改审核数据
         /// <summary>
         /// 修改审核数据
         /// </summary>
@@ -813,7 +823,8 @@ namespace OpenAuth.App.Client
                 rows = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara);
             }
             return rows != null ? true : false;
-        }
+        } 
+        #endregion
 
         #region 修改审核数据（修改客户名称）
         /// <summary>
@@ -856,6 +867,7 @@ namespace OpenAuth.App.Client
             return result;
         }
         #endregion
+        #region 是否选择新的售后主管
         /// <summary>
         /// 是否选择新的售后主管
         /// </summary>
@@ -864,7 +876,7 @@ namespace OpenAuth.App.Client
         /// <returns></returns>
         public string GetSavefTcnician_sql(string sCardCode, string sfTcnician)
         {
-            IDataParameter[] strPara = new IDataParameter[]
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
             {
                 new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCardCode", sCardCode),
                 new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pDfTcnician", sfTcnician)
@@ -876,7 +888,7 @@ namespace OpenAuth.App.Client
         public string SetSavefTcnicianStep_sql(string sCardCode, string sfTcnician, int JobId)
         {
 
-            IDataParameter[] strPara = new IDataParameter[]
+            List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
             {
                 new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pCardCode", sCardCode),
                 new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?pDfTcnician", sfTcnician),
@@ -886,7 +898,8 @@ namespace OpenAuth.App.Client
             string ret = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, string.Format("{0}.sp_SetTcnicianStep", "nsap_base"), CommandType.StoredProcedure, strPara).ToString();
             return ret;
 
-        }
+        } 
+        #endregion
         #region 查询业务伙伴详细
         /// <summary>
         /// 查询业务伙伴详细
@@ -955,7 +968,28 @@ namespace OpenAuth.App.Client
                 strSql.AppendFormat("LEFT JOIN (SELECT TOP 1 DocDueDate,CardCode FROM ODLN WHERE CardCode='{0}' AND DocTotal>=2000 ORDER BY DocDueDate DESC) d ON a.CardCode=d.CardCode ", CardCode);
                 strSql.AppendFormat("WHERE a.CardCode='{0}' ", CardCode);
                 dtRet = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
-
+                dtRet.Columns.Add("U_ClientSource", typeof(string));//客户来源
+                dtRet.Columns.Add("U_CompSector", typeof(string));//所属行业
+                dtRet.Columns.Add("U_TradeType", typeof(string));//贸易类型
+                //dtRet.Columns.Add("U_CardTypeStr", typeof(string));//新版客户类型
+                foreach (DataRow clientrow in dtRet.Rows)
+                {
+                    var sql = string.Format(
+                        "SELECT U_TradeType,U_ClientSource,U_CompSector FROM crm_ocrd WHERE CardCode='{0}'",
+                        clientrow["CardCode"]);
+                    var ClientSource =
+                        UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, sql, CommandType.Text, null);
+                    if (ClientSource.Rows.Count > 0)
+                    {
+                        foreach (DataRow clientSource in ClientSource.Rows)
+                        {
+                            clientrow["U_ClientSource"] = clientSource["U_ClientSource"];
+                            clientrow["U_CompSector"] = clientSource["U_CompSector"];
+                            clientrow["U_TradeType"] = clientSource["U_TradeType"];
+                            //clientrow["U_CardTypeStr"] = clientSource["U_CardTypeStr"];
+                        }
+                    }
+                }
             }
             else
             {
@@ -1001,11 +1035,9 @@ namespace OpenAuth.App.Client
             if (IsOpenSap)
             {
                 strSql.Append("SELECT CardCode,CntctCode,Active,'0' AS IsDefault,Name,Gender,Title,Position,[Address],Notes1,Notes2,Tel1,Tel2,Cellolar,Fax,E_MailL,BirthDate,U_ACCT,U_BANK FROM OCPR ");
-                strSql.AppendFormat("WHERE CardCode=@CardCode {0} ", StrWhere);
-                SqlParameter[] para = {
-                    new SqlParameter("@CardCode", CardCode)
-                };
-                return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, para);
+                strSql.AppendFormat("WHERE CardCode='{0}' {1} ", CardCode, StrWhere);
+
+                return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
             }
             else
             {
@@ -1034,11 +1066,9 @@ namespace OpenAuth.App.Client
             {
                 strSql.Append("SELECT CardCode,LineNum,U_Active AS Active,'0' AS IsDefault,a.AdresType,a.Address,b.Name AS Country,c.Name AS 'State',a.City,a.Building,a.ZipCode,a.Country AS CountryId,a.State AS StateId ");
                 strSql.Append("FROM CRD1 a LEFT JOIN OCRY b ON a.Country=b.Code LEFT JOIN OCST c ON a.State=c.Code ");
-                strSql.Append("WHERE a.CardCode=@CardCode ");
-                SqlParameter[] para = {
-                    new SqlParameter("@CardCode", CardCode)
-                };
-                return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, para);
+                strSql.AppendFormat("WHERE a.CardCode='{0}' ", CardCode);
+
+                return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
             }
             else
             {
@@ -1214,6 +1244,7 @@ namespace OpenAuth.App.Client
 
         }
         #endregion
+        #region 审核
         /// <summary>
         /// 审核
         /// </summary>
@@ -1292,6 +1323,7 @@ namespace OpenAuth.App.Client
             }
             return _serviceSaleOrderApp.SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, sortString, filterQuery, out rowCounts);
         }
+        #endregion 
         #endregion
 
         #region 查询指定城市的邮编
@@ -1854,6 +1886,119 @@ namespace OpenAuth.App.Client
             strSql.Append(") T ");
 
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
+        }
+        #endregion
+        #region 查询业务伙伴附件
+        /// <summary>
+        /// 查询业务伙伴附件
+        /// </summary>
+        public DataTable SelectClientFiles(string FileType, string SboId, string IssueReason)
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("SELECT file_id,sbo_id,file_sn,file_nm,file_type_id,docEntry,job_id,file_ver,acct_id,issue_reason,");
+            strSql.Append("file_path,view_file_path,content,remarks,file_status,upd_dt,user_nm,type_nm ");
+
+            strSql.Append("FROM (SELECT a.file_id,a.sbo_id,a.file_sn,a.file_nm,a.file_type_id,a.docEntry,a.job_id,a.file_ver,a.acct_id,");
+            strSql.Append("a.issue_reason,a.file_path,a.view_file_path,a.content,a.remarks,a.file_status,a.upd_dt,b.user_nm,c.type_nm ");
+            strSql.AppendFormat("FROM {0}.file_main a LEFT JOIN {1}.base_user b ON a.acct_id=b.user_id ", "nsap_oa", "nsap_base");
+            strSql.AppendFormat("LEFT JOIN {0}.file_type c ON a.file_type_id=c.type_id) T ", "nsap_oa");
+
+            strSql.AppendFormat("WHERE file_type_id={0} AND sbo_id={1} AND issue_reason={2} AND file_status<>{3} ", FileType, SboId, IssueReason, 3);
+
+
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
+        }
+        #endregion
+        #region 查询业务伙伴报价单
+        /// <summary>
+        /// 查询业务伙伴报价单
+        /// </summary>
+        public DataTable SelectOqut(SelectOqutReq selectOqutReq)
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append(
+                "SELECT  A.DocEntry,B.SlpName,A.DocTotal, (A.DocTotal-A.PaidToDate)  AS OpenDocTotal,A.CreateDate,A.DocStatus,A.Printed  ");
+            strSql.AppendFormat("FROM OQUT A LEFT JOIN OSLP B ON A.SlpCode=B.SlpCode WHERE A.CardCode='{0}'", selectOqutReq.CardCode);
+            if (!string.IsNullOrWhiteSpace(selectOqutReq.Docentry))
+            {
+                strSql.AppendFormat("AND A.DocEntry='{0}' ", selectOqutReq.Docentry);
+            }
+            if (!string.IsNullOrWhiteSpace(selectOqutReq.Slpname))
+            {
+                strSql.AppendFormat("AND B.SlpName='{0}' ", selectOqutReq.Slpname);
+            }
+            if (selectOqutReq.Status == "ON")
+            {
+                strSql.AppendFormat("AND (a.DocStatus = 'O' AND a.Printed = 'N' AND a.CANCELED = 'N') ");
+            }
+            if (selectOqutReq.Status == "OY")
+            {
+                strSql.AppendFormat("AND (a.DocStatus = 'O' AND a.Printed = 'Y' AND a.CANCELED = 'N') ");
+            }
+            if (selectOqutReq.Status == "CY")
+            {
+                strSql.AppendFormat("AND a.CANCELED = 'Y'  ");
+            }
+            if (selectOqutReq.Status == "CN")
+            {
+                strSql.AppendFormat("AND (a.DocStatus = 'C' AND a.CANCELED = 'N') ");
+            }
+
+            //时间区间
+            if (!string.IsNullOrWhiteSpace(selectOqutReq.StartTime) && !string.IsNullOrWhiteSpace(selectOqutReq.EndTime))
+            {
+
+                strSql.AppendFormat("a.UpdateDate BETWEEN '{0}' AND '{1}' AND ", selectOqutReq.StartTime, selectOqutReq.EndTime);
+            }
+            strSql.AppendFormat("ORDER BY A.DocEntry DESC");
+
+            return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+        }
+        #endregion
+        #region 查询业务伙销售订单
+        /// <summary>
+        /// 查询业务伙销售订单
+        /// </summary>
+        public DataTable SelectOrdr(SelectOrdrReq selectOrdrReq)
+        {
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append(
+                "SELECT  A.DocEntry,B.SlpName,A.DocTotal, (A.DocTotal-A.PaidToDate)  AS OpenDocTotal,A.CreateDate,A.DocStatus,A.Printed  ");
+            strSql.AppendFormat("FROM ORDR A LEFT JOIN OSLP B ON A.SlpCode=B.SlpCode WHERE A.CardCode='{0}'", selectOrdrReq.CardCode);
+            if (!string.IsNullOrWhiteSpace(selectOrdrReq.Docentry))
+            {
+                strSql.AppendFormat("AND A.DocEntry='{0}' ", selectOrdrReq.Docentry);
+            }
+            if (!string.IsNullOrWhiteSpace(selectOrdrReq.Slpname))
+            {
+                strSql.AppendFormat("AND B.SlpName='{0}' ", selectOrdrReq.Slpname);
+            }
+            if (selectOrdrReq.Status == "ON")
+            {
+                strSql.AppendFormat("AND (a.DocStatus = 'O' AND a.Printed = 'N' AND a.CANCELED = 'N') ");
+            }
+            if (selectOrdrReq.Status == "OY")
+            {
+                strSql.AppendFormat("AND (a.DocStatus = 'O' AND a.Printed = 'Y' AND a.CANCELED = 'N') ");
+            }
+            if (selectOrdrReq.Status == "CY")
+            {
+                strSql.AppendFormat("AND a.CANCELED = 'Y'  ");
+            }
+            if (selectOrdrReq.Status == "CN")
+            {
+                strSql.AppendFormat("AND (a.DocStatus = 'C' AND a.CANCELED = 'N') ");
+            }
+
+            //时间区间
+            if (!string.IsNullOrWhiteSpace(selectOrdrReq.StartTime) && !string.IsNullOrWhiteSpace(selectOrdrReq.EndTime))
+            {
+
+                strSql.AppendFormat("a.UpdateDate BETWEEN '{0}' AND '{1}' AND ", selectOrdrReq.StartTime, selectOrdrReq.EndTime);
+            }
+            strSql.AppendFormat("ORDER BY A.DocEntry DESC");
+
+            return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
         }
         #endregion
     }
