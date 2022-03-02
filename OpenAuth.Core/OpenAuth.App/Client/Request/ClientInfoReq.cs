@@ -691,7 +691,7 @@ namespace OpenAuth.App.Client.Request
         /// 创建时间
         /// </summary>
 
-        public string CreateDate { get; set; }
+        public string CreateDate { get; set; } = DateTime.Now.ToString();
 
         /// <summary>
         /// 修改时间
@@ -1371,15 +1371,15 @@ namespace OpenAuth.App.Client.Request
     public class CheckCardSimilarReq
     {
         public string qtype { get; set; }
-       
+
         public string query { get; set; }
-       
+
         public string sortname { get; set; }
-      
+
         public string sortorder { get; set; }
-      
+
         public string JobId { get; set; }
-       
+
         public string SearchAll { get; set; }
 
     }
