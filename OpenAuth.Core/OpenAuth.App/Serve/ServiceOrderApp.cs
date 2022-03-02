@@ -34,6 +34,8 @@ using RazorEngine.Compilation.ImpromptuInterface.InvokeExt;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 using OpenAuth.Repository.Extensions;
+using OpenAuth.App.Sap.Request;
+using System.Text.RegularExpressions;
 
 namespace OpenAuth.App
 {
@@ -969,7 +971,36 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             Infrastructure.Response result = new Infrastructure.Response();
-
+            #region 验证客户联系人，SAP没有则新增
+            var contact = await UnitWork.Find<OCPR>(c => c.CardCode == req.TerminalCustomerId).Select(c => new { c.Name, c.Tel1 }).ToListAsync();
+            if (!contact.Exists(c => c.Name == req.NewestContacter && c.Tel1 == req.NewestContactTel))
+            {
+                //姓名+电话组合不存在的情况而名字单独存在的情况下
+                if (contact.Exists(c => c.Name == req.NewestContacter))
+                {
+                    result.Code = 500;
+                    result.Message = "该客户已存在同名联系人。若手动修改了联系人或联系方式，请确保两个同时修改。";
+                    return result;
+                }
+                else if (contact.Exists(c => c.Tel1 == req.NewestContactTel))
+                {
+                    result.Code = 500;
+                    result.Message = "该客户已存在该联系方式。若手动修改了联系人或联系方式，请确保两个同时修改。";
+                    return result;
+                }
+                else//名字和电话都不存在则新增
+                {
+                    AddCoustomerContact cc = new AddCoustomerContact()
+                    {
+                        CardCode = req.TerminalCustomerId,
+                        NewestContacter = req.NewestContacter,
+                        NewestContactTel = req.NewestContactTel,
+                        Address = req.Province + req.City + req.Area + req.Addr
+                    };
+                    _capBus.Publish("Serve.OCPR.Create", cc);
+                }
+            }
+            #endregion
             var loginUser = loginContext.User;
             var loginUserOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).Select(c=>new UserResp { Name = "", Id = "", OrgId = c.Id, OrgName = c.Name, CascadeId = c.CascadeId }).FirstOrDefault();
             if (loginContext.User.Account == Define.USERAPP && req.AppUserId != null)
@@ -1120,6 +1151,11 @@ namespace OpenAuth.App
                 await _signalrmessage.SendSystemMessage(SignalRSendType.User, $"系统已自动分配了{assignedWorks.Count()}个新的售后服务，请尽快处理", new List<string>() { obj.Supervisor });
             }
             return result;
+        }
+
+        public async Task CehckContacter(AddCoustomerContact obj)
+        {
+            _capBus.Publish("Serve.OCPR.Create", obj);
         }
 
         /// <summary>
@@ -5075,8 +5111,20 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var ManufacturerSerialNumbers = await UnitWork.Find<ServiceWorkOrder>(w => w.CurrentUserId == req.TechnicianId && w.ServiceOrderId == req.ServiceOrderId).Select(s => new { s.ManufacturerSerialNumber, s.MaterialCode }).ToListAsync();
-            result.Data = ManufacturerSerialNumbers;
+            var knowledgebases = await UnitWork.Find<KnowledgeBase>(k => k.Rank == 1 && k.IsNew == true && !string.IsNullOrWhiteSpace(k.Content)).ToListAsync();
+            var ManufacturerSerialNumbers = await UnitWork.Find<ServiceWorkOrder>(w => w.CurrentUserId == req.TechnicianId && w.ServiceOrderId == req.ServiceOrderId).Select(s => new 
+            { 
+                s.ManufacturerSerialNumber, 
+                s.MaterialCode
+            }).ToListAsync();
+
+            var data = ManufacturerSerialNumbers.Select(s => new
+            {
+                s.ManufacturerSerialNumber,
+                s.MaterialCode,
+                Code = knowledgebases.Where(k => Regex.IsMatch(s.MaterialCode, k.Content)).Select(k => k.Code).FirstOrDefault() == null ? s.MaterialCode.Substring(0, 1) == "M" ? "023" : "024" : knowledgebases.Where(k => Regex.IsMatch(s.MaterialCode, k.Content)).Select(k => k.Code).FirstOrDefault()
+            }).ToList();
+            result.Data = data;
             return result;
         }
 
@@ -5762,7 +5810,7 @@ namespace OpenAuth.App
                     UnitName = "台",
                     Count = a?.Count(),
                     Status = s.ServiceWorkOrders?.FirstOrDefault(b => "无序列号".Equals(a.Key) ? b.MaterialCode == "无序列号" : b.MaterialCode.Contains(a.Key))?.Status,
-                    MaterialTypeName = "无序列号".Equals(a.Key) ? "无序列号" : MaterialTypeModel?.Where(m => m.TypeAlias == a.Key)?.FirstOrDefault().TypeName,
+                    MaterialTypeName = "无序列号".Equals(a.Key) ? "无序列号" : MaterialTypeModel?.Where(m => m.TypeAlias == a.Key)?.FirstOrDefault()?.TypeName,
                     TechnicianId = s.ServiceWorkOrders?.FirstOrDefault(b => "无序列号".Equals(a.Key) ? b.MaterialCode == "无序列号" : b.MaterialCode.Contains(a.Key))?.CurrentUserId,
                 }),
                 ProblemTypeName = string.IsNullOrEmpty(s.ProblemTypeName) ? s.MaterialInfo?.FirstOrDefault()?.ProblemType?.Name : s.ProblemTypeName,

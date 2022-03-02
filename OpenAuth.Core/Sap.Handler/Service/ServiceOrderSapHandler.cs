@@ -285,5 +285,124 @@ namespace Sap.Handler.Service
             }
             return false;
         }
+
+        /// <summary>
+        /// 新建联系人
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="type">单据类型 1.服务单 2.物料单</param>
+        /// <returns></returns>
+        [CapSubscribe("Serve.OCPR.Create")]
+        public async Task HandleCreateContact(AddCoustomerContact obj)
+        {
+            StringBuilder allerror = new StringBuilder();
+            try
+            {
+                int res, eCode;
+                string eMesg;
+                SAPbobsCOM.BusinessPartners bp = (SAPbobsCOM.BusinessPartners)company.GetBusinessObject(BoObjectTypes.oBusinessPartners);
+                bp.GetByKey(obj.CardCode);
+                Log.Logger.Warning($"cardcode:{obj.CardCode}");
+
+                var rLineNum = await UnitWork.Find<OCPR>(c => c.CardCode == obj.CardCode).CountAsync();
+                Log.Logger.Warning($"rLineNum:{rLineNum}");
+                bp.ContactEmployees.Add();
+                bp.ContactEmployees.SetCurrentLine(rLineNum);
+                bp.ContactEmployees.Active = BoYesNoEnum.tYES;
+                bp.ContactEmployees.Name = obj.NewestContacter.Trim();       //联系人名称
+                bp.ContactEmployees.Phone1 = obj.NewestContactTel;             //电话1
+                bp.ContactEmployees.Address = obj.Address;
+                res = bp.Update();
+                if (res != 0)
+                {
+                    company.GetLastError(out eCode, out eMesg);
+                    allerror.Append("添加客户联系人到SAP时异常！错误代码：" + eCode + "错误信息：" + eMesg);
+                }
+                else
+                {
+                    //同步至3.0
+                    Log.Logger.Warning($"开始同步至3.0", typeof(ServiceOrderSapHandler));
+                    await HandleERPCreateContact(obj.CardCode);
+                    Log.Logger.Warning($"同步成功", typeof(ServiceOrderSapHandler));
+
+                }
+            }
+            catch (Exception e)
+            {
+                allerror.Append("调用SBO接口添加客户联系人时异常：" + e.ToString() + "");
+            }
+            if (!string.IsNullOrWhiteSpace(allerror.ToString()))
+            {
+                Log.Logger.Error(allerror.ToString(), typeof(ServiceOrderSapHandler));
+            }
+        }
+
+        /// <summary>
+        /// 同步至3.0
+        /// </summary>
+        /// <returns></returns>
+        [CapSubscribe("Serve.OCPR.ERPCreate")]
+        public async Task HandleERPCreateContact(string cardcode)
+        {
+            try
+            {
+                var erpctList = await UnitWork.Find<crm_ocpr>(c => c.CardCode == cardcode).Select(c => c.CntctCode).ToListAsync();
+                //新增的联系人
+                var contactList = await UnitWork.Find<OCPR>(c => c.CardCode == cardcode && !erpctList.Contains(c.CntctCode)).Select(c => new
+                {
+                    c.CntctCode,
+                    c.CardCode,
+                    c.Name,
+                    c.Position,
+                    c.Address,
+                    c.Tel1,
+                    c.Tel2,
+                    c.Cellolar,
+                    c.Fax,
+                    c.E_MailL,
+                    c.Notes1,
+                    c.Notes2,
+                    c.BirthDate,
+                    c.Gender,
+                    c.Active,
+                    c.U_ACCT,
+                    c.U_BANK
+                }).ToListAsync();
+
+                List<crm_ocpr> ocpr = new List<crm_ocpr>();
+                foreach (var c in contactList)
+                {
+                    crm_ocpr crm_Ocpr = new crm_ocpr
+                    {
+                        CntctCode = c.CntctCode,
+                        CardCode = c.CardCode,
+                        Name = c.Name,
+                        Position = c.Position,
+                        Address = c.Address,
+                        Tel1 = c.Tel1,
+                        Tel2 = c.Tel2,
+                        Cellolar = c.Cellolar,
+                        Fax = c.Fax,
+                        E_MailL = c.E_MailL,
+                        Notes1 = c.Notes1,
+                        Notes2 = c.Notes2,
+                        BirthDate = c.BirthDate,
+                        Gender = c.Gender,
+                        Active = c.Active,
+                        U_ACCT = c.U_ACCT,
+                        U_BANK = c.U_BANK
+                    };
+                    ocpr.Add(crm_Ocpr);
+                    //await UnitWork.AddAsync<crm_ocpr,int>(crm_Ocpr);
+                }
+                await UnitWork.BatchAddAsync<crm_ocpr, int>(ocpr.ToArray());
+                await UnitWork.SaveAsync();
+                Log.Logger.Debug($"同步3.0成功，CntctCode：{contactList.Select(c => c.CntctCode).ToList()}", typeof(SellOrderSapHandler));
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error($"同步3.0失败，" + ex.Message, typeof(SellOrderSapHandler));
+            }
+        }
     }
 }

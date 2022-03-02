@@ -59,6 +59,14 @@ namespace OpenAuth.App.Material.Request
         public DateTime PayTime { get; set; }
 
         /// <summary>
+        /// 最新联系人
+        /// </summary>
+        public string NewestContacter { get; set; }
+        /// <summary>
+        /// 最新联系人电话号码
+        /// </summary>
+        public string NewestContactTel { get; set; }
+        /// <summary>
         ///创建人名
         /// </summary>
         public string CreateUser { get; set; }

@@ -17,6 +17,7 @@ using OpenAuth.Repository.Domain;
 using Serilog;
 using static Infrastructure.HttpHelper;
 using OpenAuth.WebApi.Model;
+using OpenAuth.App.Sap.Request;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -333,6 +334,13 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        [HttpGet]
+        public async Task CehckContacter([FromQuery] AddCoustomerContact obj)
+        {
+            await _serviceOrderApp.CehckContacter(obj);
+        }
+        
         /// <summary>
         /// 工程部新建服务单
         /// </summary>
