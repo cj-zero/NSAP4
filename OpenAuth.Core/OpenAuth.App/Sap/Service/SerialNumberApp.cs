@@ -240,7 +240,7 @@ namespace OpenAuth.App.Sap.Service
                 q.a.customer,
                 q.a.custmrName,
                 q.b.ContractID,
-                dlvryDate = q.a.dlvryDate.Value.AddYears(1),
+                DlvryDate = q.a.dlvryDate.Value.AddYears(1),
                 q.a.itemCode,
                 q.a.itemName
             });
@@ -258,16 +258,41 @@ namespace OpenAuth.App.Sap.Service
                   ItemCode = q.itemCode,
                   ItemName = q.itemName
               });
-            result.Data = await query2
+            var knowledgebases = await UnitWork.Find<KnowledgeBase>(k => k.Rank == 1 && k.IsNew == true && !string.IsNullOrWhiteSpace(k.Content)).ToListAsync();
+
+            var objs= await query2
                 .Skip((req.page - 1) * req.limit)
                 .Take(req.limit).ToListAsync();
+            result.Data = objs.Select(c => new
+            {
+                c.manufSN,
+                c.internalSN,
+                c.customer,
+                c.custmrName,
+                c.ContractID,
+                c.DlvryDate,
+                c.itemCode,
+                c.itemName,
+                Code = knowledgebases.Where(k => Regex.IsMatch(c.itemCode, k.Content)).Select(k => k.Code).FirstOrDefault() == null ? c.itemCode.Substring(0, 1) == "M" ? "023" : "024" : knowledgebases.Where(k => Regex.IsMatch(c.itemCode, k.Content)).Select(k => k.Code).FirstOrDefault()
+            }).ToList();
             result.Count = await query2.CountAsync();
             if (result.Count == 0)
             {
-
-                result.Data = await query3
+                var obj= await query3
                     .Skip((req.page - 1) * req.limit)
                     .Take(req.limit).ToListAsync();
+                result.Data = obj.Select(c => new
+                {
+                    c.ManufSN,
+                    c.InternalSN,
+                    c.Customer,
+                    c.CustmrName,
+                    c.ContractID,
+                    c.DlvryDate,
+                    c.ItemCode,
+                    c.ItemName,
+                    Code = knowledgebases.Where(k => Regex.IsMatch(c.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault() == null ? c.ItemCode.Substring(0, 1) == "M" ? "023" : "024" : knowledgebases.Where(k => Regex.IsMatch(c.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault()
+                }).ToList();
                 result.Count = await query3.CountAsync();
             }
             return result;

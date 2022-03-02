@@ -41,6 +41,8 @@ namespace OpenAuth.Repository.Domain
             this.CollectionAddress = "";
             this.QuotationStatus = 0;
             this.ErpOrApp = 1;
+            this.NewestContacter = string.Empty;
+            this.NewestContactTel = string.Empty;
 
         }
         /// <summary>
@@ -132,6 +134,16 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("备注")]
         public string Remark { get; set; }
+        /// <summary>
+        /// 联系人
+        /// </summary>
+        [Description("联系人")]
+        public string NewestContacter { get; set; }
+        /// <summary>
+        /// 联系人电话
+        /// </summary>
+        [Description("联系人电话")]
+        public string NewestContactTel { get; set; }
 
         /// <summary>
         ///收货地址
