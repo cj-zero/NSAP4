@@ -1511,7 +1511,7 @@ namespace OpenAuth.App.Order
                 CardName = order.CardName,//供应商名称
 
                 CardCode = !string.IsNullOrEmpty(order.CardCode) ? order.CardCode : "",
-                Comments = order.Comments,//备注
+                Comments = order.Comments.Replace("'","\'"),//备注
                 CurSource = order.CurSource,//货币类型
                 CustomFields = !string.IsNullOrEmpty(order.CustomFields) ? order.CustomFields.Replace(" ", "").Replace("　", "") : "",//  $"U_ShipName≮1≯≮0≯U_SCBM≮1≯P3-陈友祥",
                 BeforeDiscSum = !string.IsNullOrEmpty(order.BeforeDiscSum) ? order.BeforeDiscSum : "0.0",// 折扣前总计
@@ -1542,7 +1542,7 @@ namespace OpenAuth.App.Order
                 PeyMethod = order.PeyMethod,
                 PrepaData = order.PrepaData,
                 Printed = "N",//未清
-                Remark = order.Remark,
+                Remark = order.Remark.Replace("'", "\'"),
                 SboId = sboID.ToString(),
                 ShipToCode = order.ShipToCode,
                 SlpCode = order.SlpCode.ToString(),

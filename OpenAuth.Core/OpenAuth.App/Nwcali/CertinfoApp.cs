@@ -1012,24 +1012,7 @@ namespace OpenAuth.App
                         }
                         catch(DbUpdateConcurrencyException ex)
                         {
-                            //throw new Exception("数据删除异常", ex);
-                            foreach(var entry in ex.Entries)
-                            {
-                                if(entry.Entity is EntrustmentDetail)
-                                {
-                                    //放弃更新或放弃删除数据库中已经不存在的数据
-                                    entry.State = EntityState.Detached;
-
-                                    //数据库优先(用数据库的数据覆盖本地dbContext的数据)
-                                    //entry.Reload();
-
-                                    //客户端优先(用本地dbContext的数据覆盖数据库的数据)
-                                    //var databaseValues = entry.GetDatabaseValues();
-                                    //entry.OriginalValues.SetValues(databaseValues);
-                                }
-                            }
-
-                            await UnitWork.SaveAsync();
+                            throw new Exception("数据删除异常", ex);
                         }
                     }
                     //var deletedt = await UnitWork.FindTrack<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();

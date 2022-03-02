@@ -149,12 +149,12 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <returns></returns>
         [HttpGet]
         [Route("IndustryDropDownAsync")]
-        public async Task<Response<List<ClassificationDto>>> IndustryDropDownAsync()
+        public async Task<Response<List<ClassificationDto>>> IndustryDropDownAsync(string Name)
         {
             var result = new Response<List<ClassificationDto>>();
             try
             {
-                result.Result = await _clueApp.IndustryDropDownAsync();
+                result.Result = await _clueApp.IndustryDropDownAsync(Name);
             }
             catch (Exception ex)
             {

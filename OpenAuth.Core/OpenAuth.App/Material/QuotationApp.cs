@@ -14,6 +14,7 @@ using OpenAuth.App.Material.Request;
 using OpenAuth.App.Material.Response;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
+using OpenAuth.App.Sap.Request;
 using OpenAuth.App.Workbench;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Material;
@@ -1514,7 +1515,9 @@ namespace OpenAuth.App.Material
                             TravelExpenseCost = QuotationObj.TravelExpenseCost,
                             PrintWarehouse = 1,
                             MoneyMeans = QuotationObj.MoneyMeans,
-                            UpDateTime = DateTime.Now
+                            UpDateTime = DateTime.Now,
+                            NewestContacter = QuotationObj.NewestContacter,
+                            NewestContactTel = QuotationObj.NewestContactTel
                             //todo:要修改的字段赋值
                         });
                         await UnitWork.SaveAsync();
@@ -1588,6 +1591,8 @@ namespace OpenAuth.App.Material
                             MoneyMeans = QuotationObj.MoneyMeans,
                             UpDateTime = DateTime.Now,
                             FlowInstanceId = QuotationObj.FlowInstanceId,
+                            NewestContacter = QuotationObj.NewestContacter,
+                            NewestContactTel = QuotationObj.NewestContactTel
                             //todo:要修改的字段赋值
                         });
                         await UnitWork.AddAsync<QuotationOperationHistory>(new QuotationOperationHistory
@@ -2578,6 +2583,35 @@ namespace OpenAuth.App.Material
             {
                 throw new Exception("暂无销售权限，请联系呼叫中心");
             }
+
+            #region 验证客户联系人，SAP没有则新增
+            var TerminalCustomerId = await UnitWork.Find<ServiceOrder>(c => c.Id == obj.ServiceOrderId).Select(c => c.TerminalCustomerId).FirstOrDefaultAsync();
+            var contact = await UnitWork.Find<OCPR>(c => c.CardCode == TerminalCustomerId).Select(c => new { c.Name, c.Tel1 }).ToListAsync();
+            if (!contact.Exists(c => c.Name == obj.NewestContacter && c.Tel1 == obj.NewestContactTel))
+            {
+                //姓名+电话组合不存在的情况而名字单独存在的情况下
+                if (contact.Exists(c => c.Name == obj.NewestContacter))
+                {
+                    throw new Exception("该客户已存在同名联系人。若手动修改了联系人或联系方式，请确保两个同时修改。");
+                }
+                else if (contact.Exists(c => c.Tel1 == obj.NewestContactTel))
+                {
+                    throw new Exception("该客户已存在该联系方式。若手动修改了联系人或联系方式，请确保两个同时修改。");
+                }
+                else//名字和电话都不存在则新增
+                {
+                    AddCoustomerContact cc = new AddCoustomerContact()
+                    {
+                        CardCode = TerminalCustomerId,
+                        NewestContacter = obj.NewestContacter,
+                        NewestContactTel = obj.NewestContactTel,
+                        Address = obj.ShippingAddress
+                    };
+                    _capBus.Publish("Serve.OCPR.Create", cc);
+                }
+            }
+            #endregion
+
             return null;
         }
 

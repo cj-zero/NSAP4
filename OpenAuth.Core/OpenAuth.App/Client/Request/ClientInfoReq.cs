@@ -16,7 +16,26 @@ namespace OpenAuth.App.Client.Request
         /// 请求类型add或者edit
         /// </summary>
         public string type { get; set; }
+        /// <summary>
+        /// 线索单号
+        /// </summary>
+        public int baseEntry { get; set; }
+        public ClientInfo clientInfo { get; set; }
+    }
 
+    public class UpdateClientJobReq
+    {
+        /// <summary>
+        /// 审批id
+        /// </summary>
+        public string JobId { get; set; }
+        /// <summary>
+        /// 提交或是保存草稿
+        /// </summary>
+        public string submitType { get; set; }
+        /// <summary>
+        /// 详情
+        /// </summary>
         public ClientInfo clientInfo { get; set; }
     }
 
@@ -883,6 +902,10 @@ namespace OpenAuth.App.Client.Request
         /// </summary>
 
         public string U_CompSector { get; set; }
+        /// <summary>
+        /// 新版客户类型
+        /// </summary>
+        public string U_CardTypeStr { get; set; }
     }
     public class clientCRD1Req
     {
@@ -1324,6 +1347,41 @@ namespace OpenAuth.App.Client.Request
         /// 开户行
         /// </summary>
 
- 
+
     }
+
+    public class SaveCrmAuditInfoReq
+    {
+        public string AuditType { get; set; }
+        public string CardCode { get; set; }
+        public string DfTcnician { get; set; }
+        public string JobId { get; set; }
+    }
+
+    public class AuditResubmitNextReq
+    {
+        public int jobId { get; set; }
+        public string recommend { get; set; }
+        public string auditOpinionid { get; set; }
+
+    }
+    /// <summary>
+    /// 提交给我的相似客户
+    /// </summary>
+    public class CheckCardSimilarReq
+    {
+        public string qtype { get; set; }
+       
+        public string query { get; set; }
+       
+        public string sortname { get; set; }
+      
+        public string sortorder { get; set; }
+      
+        public string JobId { get; set; }
+       
+        public string SearchAll { get; set; }
+
+    }
+
 }

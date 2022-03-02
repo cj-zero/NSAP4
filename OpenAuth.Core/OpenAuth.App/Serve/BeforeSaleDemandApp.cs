@@ -41,7 +41,6 @@ namespace OpenAuth.App
             }
             TableData result = new TableData();
             var query = UnitWork.Find<BeforeSaleDemand>(null)
-                        //.Include(c => c.FlowInstances)
                         //.Include(c => c.Beforesalefiles)
                         //.Include(c => c.Beforesaledemandprojects)
                         .Include(c => c.Beforesaledemandoperationhistories)
@@ -94,12 +93,26 @@ namespace OpenAuth.App
                 var instances = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.CreateUserId == loginContext.User.Id).Select(c => c.InstanceId).Distinct().ToListAsync();
                 query = query.Where(c => instances.Contains(c.FlowInstanceId));
             }
-
-            var resp = await query
-                                .OrderByDescending(c => c.Id)
-                                .Skip((req.page - 1) * req.limit)
-                                .Take(req.limit)
-                                .ToListAsync();
+            //查询所有需求审批相关的流程
+            var flowInstanceIds = await query.Select(q => q.FlowInstanceId).ToListAsync();
+            var flowInstanceList = await UnitWork.Find<FlowInstance>(f => flowInstanceIds.Contains(f.Id)).ToListAsync();
+            //查询所有的执行人信息
+            var makerLists = flowInstanceList.Select(x => x.MakerList).Distinct().ToList();
+            List<string> userIds = new List<string>();
+            foreach (var item in makerLists)
+            {
+                userIds.AddRange(item.Split(","));
+            }
+            var userList =await UnitWork.Find<User>(u => userIds.Contains(u.Id)).ToListAsync();
+            var flowinstanceObjs = flowInstanceList.Select(s => new 
+            { 
+                s.Id,
+                s.ActivityName,
+                s.MakerList,
+                Name =string.Join(",",userList.Where(x=>s.MakerList.Contains(x.Id)).Select(x=>x.Name).ToArray())
+            });
+            var resp = await query.OrderByDescending(c => c.Id).Skip((req.page - 1) * req.limit)
+                                .Take(req.limit).ToListAsync();
             result.Data = resp.Select(c => new
             {
                 c.Id,
@@ -113,11 +126,10 @@ namespace OpenAuth.App
                 c.BeforeSaleDemandProjectName,
                 c.BeforeSaleDemandProjectId,
                 CurrentProcessor = c.Beforesaledemandoperationhistories.OrderByDescending(x => x.CreateTime).FirstOrDefault().CreateUser + "—" + c.Beforesaledemandoperationhistories.OrderByDescending(x => x.CreateTime).FirstOrDefault().Action,
+                NextUser= flowinstanceObjs.Where(f => f.Id.Equals(c.FlowInstanceId)).FirstOrDefault()?.ActivityName + "—"+ flowinstanceObjs.Where(f => f.Id.Equals(c.FlowInstanceId)).FirstOrDefault()?.Name,
                 c.UpdateTime,
                 c.Status
             }).ToList();
-            //List<string> fileids = new List<string>();
-            //resp.ForEach(q => fileids.AddRange(q.Beforesalefiles.Select(f => f.FileId).ToList()));
             result.Count = await query.CountAsync();
             return result;
         }
@@ -144,6 +156,12 @@ namespace OpenAuth.App
                             .FirstOrDefaultAsync();
 
             var result = detail.MapTo<BeforeSaleDemandResp>();
+            //判断当前用户是否有查看金额信息的权限 默认否false
+            result.IsShowAmount = false;
+            if (result.CreateUserId == loginContext.User.Id || loginContext.User.Account == Define.SYSTEM_USERNAME || loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-销售总助")) || loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-研发总助")) || loginContext.Roles.Any(c => c.Name.Equal("总经理")))
+            {
+                result.IsShowAmount = true;
+            }
             //判断当前用户是否有页面的审核权限 默认否false
             result.IsHandle = false;
             if (result.Status > 0 && result.FlowInstanceId != null)
@@ -535,7 +553,7 @@ namespace OpenAuth.App
                             TestUserName = req.BeforeSaleProSchedulings.Find(x => x.Stage == 2).UserName,
                             FlowInstanceId = beforeSaleDemand.FlowInstanceId,//流程id
                             //需要研发实施，实施负责人为研发负责人
-                            ExecutorUserId = beforeSaleDemand.IsDevDeploy.HasValue&&beforeSaleDemand.IsDevDeploy.Value == 1 ? req.BeforeSaleProSchedulings.Find(x => x.Stage == 1).UserId : "",
+                            ExecutorUserId = beforeSaleDemand.IsDevDeploy.HasValue && beforeSaleDemand.IsDevDeploy.Value == 1 ? req.BeforeSaleProSchedulings.Find(x => x.Stage == 1).UserId : "",
                             ExecutorName = beforeSaleDemand.IsDevDeploy.HasValue && beforeSaleDemand.IsDevDeploy.Value == 1 ? req.BeforeSaleProSchedulings.Find(x => x.Stage == 1).UserName : "",
                             CreateTime = DateTime.Now,
                             CreateUserId = loginContext.User.Id,

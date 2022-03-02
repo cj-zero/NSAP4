@@ -169,11 +169,21 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetCustomer()
+        public async Task<TableData> GetCustomer([FromQuery] QueryLocationInfoReq req)
         {
             var res = new TableData();
-            res = await _realTimeLocationApp.GetCustomer();
+            res = await _realTimeLocationApp.GetCustomer(req);
             return res;
+        }
+
+        /// <summary>
+        ///设置客户定位
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task SetCustomerLocation()
+        {
+            await _realTimeLocationApp.SetCustomerLocation();
         }
 
     }

@@ -631,7 +631,9 @@ namespace OpenAuth.App.Workbench
                             returnnoteDetails.Add(await ReturnnoteDetails(item.Id));
                         }
                     }
-                    quotation = await UnitWork.Find<Quotation>(q => q.ServiceOrderId.Equals(pendingObj.ServiceOrderId) && q.QuotationStatus>=3.1M).OrderByDescending(q => q.CreateTime).ToListAsync();
+
+                    var quotaId = (await UnitWork.Find<Outsourc>(null).FirstOrDefaultAsync(x => x.Id == int.Parse(req.SourceNumbers))).QuotationId;
+                    quotation = await UnitWork.Find<Quotation>(q => q.Id == quotaId && q.ServiceOrderId.Equals(pendingObj.ServiceOrderId) && q.QuotationStatus >= 3.1M).OrderByDescending(q => q.CreateTime).ToListAsync();
                     if (quotation != null && quotation.Count()>0)
                     {
                         foreach (var item in quotation)
