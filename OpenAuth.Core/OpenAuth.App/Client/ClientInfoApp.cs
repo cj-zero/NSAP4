@@ -497,6 +497,7 @@ namespace OpenAuth.App.Client
             int funcId = 50;
             clientOCRD billDelivery = new clientOCRD()
             {
+                SboId = clientInfo.SboId,
                 CardName = clientInfo.CardName,//供应商名称
                 CardCode = !string.IsNullOrEmpty(clientInfo.CardCode) ? clientInfo.CardCode : "",//业务伙伴代码
                 CardFName = clientInfo.CardFName,//外文名称

@@ -70,7 +70,7 @@ namespace OpenAuth.App.Client.Request
         /// 业务伙伴类型
         /// </summary>
 
-        public string CardType { get; set; }
+        public string CardType { get; set; } = "C";
 
         /// <summary>
         /// 组代码
