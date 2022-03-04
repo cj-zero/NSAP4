@@ -189,6 +189,7 @@ namespace OpenAuth.App.Material
                     UpdateTime = softwareObj.UpdateTime,
                     FilePath = softwareObj.FilePath,
                     FileName = softwareObj.FileName,
+                    PublishNum = softwareObj.PublishNum + 1
                 });
 
                 //更新对应的硬件序列号信息
@@ -374,6 +375,7 @@ namespace OpenAuth.App.Material
                 UpdateTime = xwjSoftware.UpdateTime,
                 FilePath = xwjSoftware.FilePath,
                 FileName = xwjSoftware.FileName,
+                PublishNum = xwjSoftware.PublishNum + 1
             });
 
             await UnitWork.SaveAsync();
@@ -664,7 +666,7 @@ namespace OpenAuth.App.Material
         public async Task<TableData> UpdateTempVersion(AddOrUpdateTempVersionReq req)
         {
             var result = new TableData();
-
+            var tempObj = await UnitWork.Find<TempVersion>(null).FirstOrDefaultAsync(x => x.Id == req.Id);
             await UnitWork.UpdateAsync<TempVersion>(x => x.Id == req.Id, e => new TempVersion
             {
                 ContractNo = req.ContractNo,
@@ -672,6 +674,7 @@ namespace OpenAuth.App.Material
                 SoftwareVersionId = req.SoftwareVersionId,
                 Remark = req.Remark,
                 UpdateTime = DateTime.Now,
+                PublishNum = tempObj.PublishNum + 1
             });
             await UnitWork.SaveAsync();
 
