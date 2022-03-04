@@ -350,4 +350,22 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public int D30 { get; set; }
     }
+
+    public class ProblemTypeMonth
+    {
+        /// <summary>
+        /// 问题类型
+        /// </summary>
+        public string ProblemTypeId { get; set; }
+
+        /// <summary>
+        /// 月份
+        /// </summary>
+        public string Months { get; set; }
+
+        /// <summary>
+        /// 个数
+        /// </summary>
+        public int Num { get; set; }
+    }
 }

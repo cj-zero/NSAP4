@@ -2342,6 +2342,79 @@ namespace OpenAuth.App
             return result;
         }
 
+        /// <summary>
+        /// 根据时间段筛选问题类型数据,按问题类型、月份分组统计
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetProblemType(QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+
+            DateTime startDate; //开始时间
+            DateTime endDate; //结束时间
+            if (req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null)
+            {
+                startDate = req.QryCreateTimeFrom.Value;
+                endDate = req.QryCreateTimeTo.Value;
+            }
+            else
+            {
+                startDate = DateTime.Now;
+                endDate = DateTime.Now;
+            }
+
+            //计算两个日期的月份差
+            var diffMonths = (endDate.Year - startDate.Year) * 12 + (endDate.Month - startDate.Month) + 1;
+            //根据月份差生成连续月份
+            var months = new List<string>();
+            for (int i = 0; i < diffMonths; i++)
+            {
+                months.Add(startDate.AddMonths(i).ToString("yyyy-MM"));
+            }
+
+            //查询所有的问题类型
+            var problemTypes = await UnitWork.Find<ProblemType>(null).Select(x => new { x.Id, x.Name }).Distinct().ToListAsync();
+            //生成笛卡尔积(问题类型,月份)
+            var problemMonth = from p in problemTypes
+                               from m in months
+                               select new
+                               {
+                                   ProblemTypeId = p.Id,
+                                   ProblemTypeName = p.Name,
+                                   Months = m
+                               };
+            //根据时间段查询问题类型,按问题类型、年月分组统计
+            var sql = @"select sw.ProblemTypeId,date_format(sw.CreateTime,'%Y-%m') as months,count(*) as Num
+	                    from serviceworkorder as sw 
+	                    where sw.CreateTime >= {0}
+	                    and sw.CreateTime < {1}
+	                    and sw.ProblemTypeId is not null and sw.ProblemTypeId <> ''
+	                    group by sw.ProblemTypeId,months";
+            var parameters = new List<object>();
+            parameters.Add(startDate);
+            parameters.Add(endDate.AddMonths(1));
+            var problems = _dbExtension.GetObjectDataFromSQL<ProblemTypeMonth>(sql, parameters.ToArray(), typeof(Nsap4ServeDbContext))?.ToList();
+
+            //问题类型没有,统计则补0
+            var data = from pm in problemMonth
+                       join p in problems on new { pm.ProblemTypeId, pm.Months } equals new { p.ProblemTypeId, p.Months }
+                       into temp
+                       from t in temp.DefaultIfEmpty()
+                       select new
+                       {
+                           pm.ProblemTypeId,
+                           pm.ProblemTypeName,
+                           pm.Months,
+                           Num = t == null ? 0 : t.Num
+                       };
+
+            result.Data = data.OrderBy(d => d.ProblemTypeId).ThenBy(d => d.Months);
+            result.Count = data.Sum(x => x.Num);
+
+            return result;
+        }
+
 
         /// <summary>
         /// 获取工单详情根据工单Id
@@ -2709,36 +2782,115 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<byte[]> ExportDailyReport(DateTime startDate, DateTime endDate)
         {
-            var result = new TableData();
+            //var result = new TableData();
 
-            var dailyReports = from s in UnitWork.Find<ServiceOrder>(null)
-                               join sw in UnitWork.Find<ServiceWorkOrder>(null) on s.Id equals sw.ServiceOrderId
-                               join sr in UnitWork.Find<ServiceDailyReport>(null) on new { ServiceOrderId = s.Id, sw.ManufacturerSerialNumber, sw.MaterialCode } equals new { ServiceOrderId = sr.ServiceOrderId.Value, sr.ManufacturerSerialNumber, sr.MaterialCode }
-                               where s.Status == 2 && s.VestInOrg == 1 && s.CreateTime >= startDate && s.CreateTime < endDate.AddDays(1)
-                               select new
-                               {
-                                   sr.ManufacturerSerialNumber,
-                                   sr.MaterialCode,
-                                   sw.FromTheme,
-                                   sr.TroubleDescription,
-                                   sr.ProcessDescription,
-                                   s.CreateTime
-                               };
+            //var dailyReports = from s in UnitWork.Find<ServiceOrder>(null)
+            //                   join sw in UnitWork.Find<ServiceWorkOrder>(null) on s.Id equals sw.ServiceOrderId
+            //                   join sr in UnitWork.Find<ServiceDailyReport>(null) on new { ServiceOrderId = s.Id, sw.ManufacturerSerialNumber, sw.MaterialCode } equals new { ServiceOrderId = sr.ServiceOrderId.Value, sr.ManufacturerSerialNumber, sr.MaterialCode }
+            //                   where s.Status == 2 && s.VestInOrg == 1 && s.CreateTime >= startDate && s.CreateTime < endDate.AddDays(1)
+            //                   select new
+            //                   {
+            //                       sr.ManufacturerSerialNumber,
+            //                       sr.MaterialCode,
+            //                       sw.FromTheme,
+            //                       sr.TroubleDescription,
+            //                       sr.ProcessDescription,
+            //                       s.CreateTime
+            //                   };
 
-            var data = (await dailyReports.OrderBy(x => x.CreateTime).ToListAsync()).Select(x => new DailyReportDetail
+            //var data = (await dailyReports.OrderBy(x => x.CreateTime).ToListAsync()).Select(x => new DailyReportDetail
+            //{
+            //    ManufacturerSerialNumber = x.ManufacturerSerialNumber,
+            //    MaterialCode = x.MaterialCode,
+            //    FromTheme = string.Join(";", GetServiceFromTheme(x.FromTheme)),
+            //    TroubleDescription = string.Join(";", GetServiceTroubleAndSolution(x.TroubleDescription)),
+            //    ProcessDescription = string.Join(";", GetServiceTroubleAndSolution(x.ProcessDescription))
+            //}).ToList();
+
+            //result.Count = await dailyReports.CountAsync();
+
+            var query = from a in UnitWork.Find<ServiceEvaluate>(null)
+                        join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
+                        from b in ab.DefaultIfEmpty()
+                        select new { a, b };
+
+            var objs = query.Where(x => x.a.CommentDate >= startDate && x.a.CommentDate < endDate.AddDays(1)).Select(s => new 
             {
-                ManufacturerSerialNumber = x.ManufacturerSerialNumber,
-                MaterialCode = x.MaterialCode,
-                FromTheme = string.Join(";", GetServiceFromTheme(x.FromTheme)),
-                TroubleDescription = string.Join(";", GetServiceTroubleAndSolution(x.TroubleDescription)),
-                ProcessDescription = string.Join(";", GetServiceTroubleAndSolution(x.ProcessDescription))
+                ServiceOrderId = s.a.ServiceOrderId.Value, //服务单号
+                CustomerId = s.a.CustomerId, //客户代码
+                Cutomer = s.a.Cutomer, //客户名称
+                Contact = s.a.Contact, //联系人
+                CaontactTel = s.a.CaontactTel, //联系电话
+
+                Technician = s.a.Technician, //技术员
+
+                ResponseSpeed = s.a.ResponseSpeed, //响应速度
+                SchemeEffectiveness = s.a.SchemeEffectiveness, //方案有效性
+                ServiceAttitude = s.a.ServiceAttitude, //服务态度
+                ProductQuality = s.a.ProductQuality, //产品质量
+
+                ServicePrice = s.a.ServicePrice, //服务价格
+                Comment = s.a.Comment, //客户意见或建议
+                VisitPeople = s.a.VisitPeople, //回访人
+                CreateTime = s.b.CreateTime.Value, //呼叫日期
+                CommentDate = s.a.CommentDate.Value, //评价日期
             }).ToList();
 
-            result.Count = await dailyReports.CountAsync();
+            var data = objs.Select(s => new DailyReportDetail
+            {
+                ServiceOrderId = s.ServiceOrderId, //服务单号
+                CustomerId = s.CustomerId, //客户代码
+                Cutomer = s.Cutomer, //客户名称
+                Contact = s.Contact, //联系人
+                CaontactTel = s.CaontactTel, //联系电话
+
+                Technician = s.Technician, //技术员
+
+                ResponseSpeed = s.ResponseSpeed == null ? "" : GetEvaluate(s.ResponseSpeed.Value), //响应速度
+                SchemeEffectiveness = s.SchemeEffectiveness == null ? "" : GetEvaluate(s.SchemeEffectiveness.Value), //方案有效性
+                ServiceAttitude = s.ServiceAttitude == null ? "" : GetEvaluate(s.ServiceAttitude.Value), //服务态度
+                ProductQuality = s.ProductQuality == null ? "" : GetEvaluate(s.ProductQuality.Value), //产品质量
+
+                ServicePrice = s.ServicePrice == null ? "" : GetEvaluate(s.ServicePrice.Value), //服务价格
+                Comment = s.Comment, //客户意见或建议
+                VisitPeople = s.VisitPeople, //回访人
+                CreateTime = s.CreateTime.ToString("yyyy-MM-dd HH:mm:ss"), //呼叫日期
+                CommentDate = s.CommentDate.ToString("yyyy-MM-dd HH:mm:ss"), //评价日期
+            });
 
             IExporter exporter = new ExcelExporter();
-            var bytes = await exporter.ExportAsByteArray<DailyReportDetail>(data);
+            var bytes = await exporter.ExportAsByteArray<DailyReportDetail>(data.ToList());
             return bytes;
+        }
+
+        public string GetEvaluate(int a)
+        {
+            if (a == 0)
+            {
+                return "未统计";
+            }
+            else if (a == 1)
+            {
+                return "非常差";
+            }
+            else if (a == 2)
+            {
+                return "差";
+            }
+            else if (a == 3)
+            {
+                return "一般";
+            }
+            else if (a == 4)
+            {
+                return "满意";
+            }
+            else if (a == 5)
+            {
+                return "非常满意";
+            }
+
+            return "";
         }
 
         #endregion
