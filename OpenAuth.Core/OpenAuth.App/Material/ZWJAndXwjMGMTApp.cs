@@ -123,6 +123,8 @@ namespace OpenAuth.App.Material
                             Count = x.ZWJHardwares.Count(),
                             x.Remark,
                             x.CreateTime,
+                            PublishTime = x.UpdateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                            x.PublishNum,
                             Sns = x.ZWJHardwares.Select(x => x.ZWJSn)
                         });
 
@@ -187,6 +189,7 @@ namespace OpenAuth.App.Material
                     UpdateTime = softwareObj.UpdateTime,
                     FilePath = softwareObj.FilePath,
                     FileName = softwareObj.FileName,
+                    PublishNum = softwareObj.PublishNum + 1
                 });
 
                 //更新对应的硬件序列号信息
@@ -312,7 +315,9 @@ namespace OpenAuth.App.Material
                            x.FilePath,
                            x.FileName,
                            x.Remark,
-                           x.CreateTime
+                           x.CreateTime,
+                           PublishTime = x.UpdateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                           x.PublishNum
                        });
 
             result.Data = await data.OrderByDescending(d => d.CreateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
@@ -370,6 +375,7 @@ namespace OpenAuth.App.Material
                 UpdateTime = xwjSoftware.UpdateTime,
                 FilePath = xwjSoftware.FilePath,
                 FileName = xwjSoftware.FileName,
+                PublishNum = xwjSoftware.PublishNum + 1
             });
 
             await UnitWork.SaveAsync();
@@ -622,7 +628,9 @@ namespace OpenAuth.App.Material
                              VersionName = z.ZWJSoftwareVersionName,
                              VersionRemark = z.Remark,
                              t.Remark,
-                             t.CreateTime
+                             t.CreateTime,
+                             PublishTime = t.UpdateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                             t.PublishNum
                          };
 
             var query2 = from t in UnitWork.Find<TempVersion>(null)
@@ -638,12 +646,14 @@ namespace OpenAuth.App.Material
                              VersionName = x.XWJSoftwareVersionName,
                              VersionRemark = x.Remark,
                              t.Remark,
-                             t.CreateTime
+                             t.CreateTime,
+                             PublishTime = t.UpdateTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                             t.PublishNum
                          };
-            var query3 = query1.Concat(query2);
+            var query3 = query1.AsEnumerable().Concat(query2.AsEnumerable());
 
-            result.Data = await query3.OrderByDescending(x => x.CreateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
-            result.Count = await query3.CountAsync();
+            result.Data = query3.OrderByDescending(x => x.CreateTime).Skip((req.page - 1) * req.limit).Take(req.limit);
+            result.Count = query3.Count();
 
             return result;
         }
@@ -656,14 +666,15 @@ namespace OpenAuth.App.Material
         public async Task<TableData> UpdateTempVersion(AddOrUpdateTempVersionReq req)
         {
             var result = new TableData();
-
+            var tempObj = await UnitWork.Find<TempVersion>(null).FirstOrDefaultAsync(x => x.Id == req.Id);
             await UnitWork.UpdateAsync<TempVersion>(x => x.Id == req.Id, e => new TempVersion
             {
                 ContractNo = req.ContractNo,
                 HardwareType = req.HardwareType,
                 SoftwareVersionId = req.SoftwareVersionId,
                 Remark = req.Remark,
-                UpdateTime = DateTime.Now
+                UpdateTime = DateTime.Now,
+                PublishNum = tempObj.PublishNum + 1
             });
             await UnitWork.SaveAsync();
 

@@ -5,6 +5,7 @@ using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Infrastructure;
@@ -113,7 +114,7 @@ namespace OpenAuth.App.Client
                 }
             }
             return result;
-        } 
+        }
         #endregion
         #region 查询列表
         /// <summary>
@@ -270,7 +271,7 @@ namespace OpenAuth.App.Client
             filedName.Append("CreateDate,UpdateDate , ");
             filedName.Append(" validFor,validFrom,validTo,ValidComm,frozenFor,frozenFrom,frozenTo,FrozenComm ,GroupName,Free_Text");
             filedName.Append(",case when INVTotal90P>0 and Due90>0 then (Due90/INVTotal90P)*100 else 0 end as Due90Percent");
-
+            var CardCodes = "";
             if (IsOpenSap)
             {
                 tableName.Append("(SELECT A.CardCode,A.CardName,B.SlpName,(ISNULL(E.lastName,'')+ISNULL(E.firstName,'')) as Technician,");
@@ -305,10 +306,22 @@ namespace OpenAuth.App.Client
                 clientTable.Columns.Add("U_TradeType", typeof(string));//贸易类型
                 clientTable.Columns.Add("FollowUpTime", typeof(string));//最后跟进时间
                 clientTable.Columns.Add("FollowUpDay", typeof(string));//未跟进天数
+                clientTable.Columns.Add("U_CardTypeStr", typeof(string));//新版客户类型
+
+                var Array = from DataRow dr in clientTable.Rows select dr[1].ToString();
+                var heet = "";
+                foreach (var item in Array)
+                {
+                    heet += "'" + item + "',";
+                }
+
+                CardCodes = heet.TrimEnd(',');
+                var sql = string.Format("SELECT U_TradeType,U_ClientSource,U_CompSector,U_CardTypeStr FROM crm_ocrd WHERE CardCode IN ({0})", CardCodes);
+                var ClientSource = UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, sql, CommandType.Text, null);
+                var strsql = string.Format("SELECT A.FollowUpTime FROM erp4_serve.cluefollowup   A LEFT JOIN nsap_base.wfa_job B ON B.sbo_itf_return=A.ClueId LEFT JOIN  nsap_bone.crm_ocrd C ON C.CardCode=B.sbo_itf_return  WHERE B.job_type_id=72 AND C.CardCode IN ({0}) ORDER BY  A.FollowUpTime  DESC LIMIT 1", CardCodes);
+                var FollowUpTime = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, strsql, CommandType.Text, null);
                 foreach (DataRow clientrow in clientTable.Rows)
                 {
-                    var sql = string.Format("SELECT U_TradeType,U_ClientSource,U_CompSector FROM crm_ocrd WHERE CardCode='{0}'", clientrow["CardCode"]);
-                    var ClientSource = UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, sql, CommandType.Text, null);
                     if (ClientSource.Rows.Count > 0)
                     {
                         foreach (DataRow clientSource in ClientSource.Rows)
@@ -316,10 +329,10 @@ namespace OpenAuth.App.Client
                             clientrow["U_ClientSource"] = clientSource["U_ClientSource"];
                             clientrow["U_CompSector"] = clientSource["U_CompSector"];
                             clientrow["U_TradeType"] = clientSource["U_TradeType"];
+                            clientrow["U_CardTypeStr"] = clientSource["U_CardTypeStr"];
                         }
                     }
-                    var strsql = string.Format("SELECT A.FollowUpTime FROM nsap4_serve.cluefollowup   A LEFT JOIN nsap_base.wfa_job B ON B.sbo_itf_return=A.ClueId LEFT JOIN  nsap_bone.crm_ocrd C ON C.CardCode=B.sbo_itf_return  WHERE B.job_type_id=72 AND C.CardCode='{0}' ORDER BY  A.FollowUpTime  DESC LIMIT 1", clientrow["CardCode"]);
-                    var FollowUpTime = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, strsql, CommandType.Text, null);
+
                     if (FollowUpTime.Rows.Count > 0)
                     {
                         clientrow["FollowUpTime"] = FollowUpTime.Rows[0]["FollowUpTime"];
@@ -370,27 +383,66 @@ namespace OpenAuth.App.Client
             //统计业务伙伴总的科目余额
             DataTable sbotable = new DataTable();
             sbotable = _serviceSaleOrderApp.DropListSboId();
+            var Arrays = from DataRow dr in sbotable.Rows select dr[0].ToString();
+            var heets = "";
+            foreach (var item in Arrays)
+            {
+                heets += "'" + item + "',";
+            }
+            var ids = heets.TrimEnd(',');
+            var sbobalancestr = GetClientSboBalanceNew(CardCodes, ids);
             foreach (DataRow clientrow in clientTable.Rows)
             {
                 decimal totalbalance = 0;
-                foreach (DataRow sborow in sbotable.Rows)
+                foreach (DataRow item in sbobalancestr.Rows)
                 {
-                    string sbobalancestr = GetClientSboBalance(clientrow["CardCode"].ToString(), sborow["id"].ToString());
                     decimal sbobalance = 0;
-                    if (!string.IsNullOrEmpty(sbobalancestr) && Decimal.TryParse(sbobalancestr, out sbobalance))
+                    if (!string.IsNullOrEmpty(item["Balance"].ToString()) &&
+                        Decimal.TryParse(item["Balance"].ToString(), out sbobalance) && clientrow["CardCode"].ToString() == item["CardCode"].ToString())
                         totalbalance += sbobalance;
-                    if (clientTable.Columns.Contains("sbo_id") && clientrow["sbo_id"].ToString() == sborow["id"].ToString())
+                    if (clientTable.Columns.Contains("sbo_id") &&
+                        clientrow["sbo_id"].ToString() == item["id"].ToString() && clientrow["CardCode"].ToString() == item["CardCode"].ToString())
                         clientrow["Balance"] = sbobalance;
                 }
                 clientrow["BalanceTotal"] = totalbalance;
 
+                //foreach (DataRow sborow in sbotable.Rows)
+                //{
+                //    string sbobalancestr = GetClientSboBalance(clientrow["CardCode"].ToString(), sborow["id"].ToString());
+                //    decimal sbobalance = 0;
+                //    if (!string.IsNullOrEmpty(sbobalancestr) && Decimal.TryParse(sbobalancestr, out sbobalance))
+                //        totalbalance += sbobalance;
+                //    if (clientTable.Columns.Contains("sbo_id") && clientrow["sbo_id"].ToString() == sborow["id"].ToString())
+                //        clientrow["Balance"] = sbobalance;
+                //}
+                //clientrow["BalanceTotal"] = totalbalance;
+            }
+
+            foreach (DataRow clientrows in clientTable.Rows)
+            {
+                decimal totalbalance = 0;
+                foreach (DataRow sborow in sbotable.Rows)
+                {
+
+                    string sbobalancestrs = GetClientSboBalance(clientrows["CardCode"].ToString(), sborow["id"].ToString());
+                    decimal sbobalance = 0;
+                    if (!string.IsNullOrEmpty(sbobalancestrs) && Decimal.TryParse(sbobalancestrs, out sbobalance) && sbobalancestrs != "0.000000")
+                        totalbalance += sbobalance;
+                    //if (clientTable.Columns.Contains("sbo_id") && clientrows["sbo_id"].ToString() == sborow["id"].ToString())
+                    //    clientrows["Balance"] = sbobalance;
+                }
+
+                if (clientrows["BalanceTotal"].ToString() == "0")
+                {
+                    clientrows["BalanceTotal"] = totalbalance;
+                }
             }
 
 
 
             return clientTable;
 
-        } 
+        }
         #endregion
         #region 查詢指定業務夥伴的科目余额
         /// <summary>
@@ -399,27 +451,27 @@ namespace OpenAuth.App.Client
         /// <param name="CardCode">客戶代碼</param>
         /// <param name="SboId">賬套</param>
         /// <returns></returns>
+        public DataTable GetClientSboBalanceNew(string CardCode, string SboId)
+        {
+            DataTable dt = new DataTable();
+            string strmySql = string.Format("SELECT sbo_id,CardCode,Balance FROM {0}.crm_ocrd_oldsbo_balance WHERE sbo_id IN({1}) and CardCode IN ({2})", "nsap_bone", SboId, CardCode);
+            dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strmySql, CommandType.Text, null);
+            return dt;
+        }
         public string GetClientSboBalance(string CardCode, string SboId)
         {
+            var sapbobjs = "";
             bool sapflag = _serviceSaleOrderApp.GetSapSboIsOpen(SboId);
             if (sapflag)
             {
 
                 string strSql = string.Format("SELECT Balance FROM OCRD WHERE CardCode = '{0}'", CardCode);
                 object sapbobj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, strSql, CommandType.Text, null);
-                return sapbobj == null ? "" : sapbobj.ToString();
+                sapbobjs = sapbobj == null ? "" : sapbobj.ToString();
             }
-            else
-            {
-                string returnstr = "";
-                string strSql = string.Format("SELECT Balance FROM {0}.crm_ocrd_oldsbo_balance WHERE sbo_id={1} and CardCode='{2}'", "nsap_bone", SboId, CardCode);
 
-                object balobj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
-
-                if (balobj != null) { returnstr = balobj.ToString(); }
-                return returnstr;
-            }
-        } 
+            return sapbobjs;
+        }
         #endregion
         #region 采购员   客户组分配
         private bool OCRDisSpecial(string rPurCode, string v1, string v2)
@@ -497,6 +549,7 @@ namespace OpenAuth.App.Client
             int funcId = 50;
             clientOCRD billDelivery = new clientOCRD()
             {
+                SboId = clientInfo.SboId,
                 CardName = clientInfo.CardName,//供应商名称
                 CardCode = !string.IsNullOrEmpty(clientInfo.CardCode) ? clientInfo.CardCode : "",//业务伙伴代码
                 CardFName = clientInfo.CardFName,//外文名称
@@ -644,6 +697,13 @@ namespace OpenAuth.App.Client
             };
             foreach (var item in clientInfo.ContactList)
             {
+                if (item.IsDefault == "1")
+                {
+                    billDelivery.CntctPrsn = item.Name; //联系人
+                    billDelivery.Phone1 = item.Tel1;//电话1
+                    billDelivery.Phone2 = item.Tel2;//电话2
+                    billDelivery.Cellular = item.Cellolar; //移动电话
+                }
                 clientOCPR clientOCPR = new clientOCPR()
                 {
                     SeqId = item.SeqId,//序号
@@ -734,7 +794,7 @@ namespace OpenAuth.App.Client
 
             billDelivery.EshopUserId = clientInfo.EshopUserId;
             return billDelivery;
-        } 
+        }
         #endregion
         #region 修改流程任务参数值
         /// <summary>
@@ -823,7 +883,7 @@ namespace OpenAuth.App.Client
                 rows = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara);
             }
             return rows != null ? true : false;
-        } 
+        }
         #endregion
 
         #region 修改审核数据（修改客户名称）
@@ -898,7 +958,7 @@ namespace OpenAuth.App.Client
             string ret = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, string.Format("{0}.sp_SetTcnicianStep", "nsap_base"), CommandType.StoredProcedure, strPara).ToString();
             return ret;
 
-        } 
+        }
         #endregion
         #region 查询业务伙伴详细
         /// <summary>
@@ -971,11 +1031,11 @@ namespace OpenAuth.App.Client
                 dtRet.Columns.Add("U_ClientSource", typeof(string));//客户来源
                 dtRet.Columns.Add("U_CompSector", typeof(string));//所属行业
                 dtRet.Columns.Add("U_TradeType", typeof(string));//贸易类型
-                //dtRet.Columns.Add("U_CardTypeStr", typeof(string));//新版客户类型
+                dtRet.Columns.Add("U_CardTypeStr", typeof(string));//新版客户类型
                 foreach (DataRow clientrow in dtRet.Rows)
                 {
                     var sql = string.Format(
-                        "SELECT U_TradeType,U_ClientSource,U_CompSector FROM crm_ocrd WHERE CardCode='{0}'",
+                        "SELECT U_TradeType,U_ClientSource,U_CompSector,U_CardTypeStr FROM crm_ocrd WHERE CardCode='{0}'",
                         clientrow["CardCode"]);
                     var ClientSource =
                         UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, sql, CommandType.Text, null);
@@ -986,7 +1046,7 @@ namespace OpenAuth.App.Client
                             clientrow["U_ClientSource"] = clientSource["U_ClientSource"];
                             clientrow["U_CompSector"] = clientSource["U_CompSector"];
                             clientrow["U_TradeType"] = clientSource["U_TradeType"];
-                            //clientrow["U_CardTypeStr"] = clientSource["U_CardTypeStr"];
+                            clientrow["U_CardTypeStr"] = clientSource["U_CardTypeStr"];
                         }
                     }
                 }
@@ -1486,22 +1546,22 @@ namespace OpenAuth.App.Client
         /// </summary>
         public DataTable SelectClientSimilarData(clientOCRD Model, string SboId, string Query, bool IsSearchAll)
         {
-            string pubSql = " SELECT D.U_EndCustomerName,D.U_EndCustomerContact, D.sbo_id,D.CardCode,D.CardName,D.CardFName,P.SlpName,D.CntctPrsn,";
+            string pubSql = " SELECT  D.sbo_id,D.CardCode,D.CardName,D.CardFName,P.SlpName,D.CntctPrsn,";
             pubSql += "CONCAT(IFNULL(Y.Name,''),IFNULL(T.Name,''),IFNULL(D.MailCity,''),IFNULL(D.MailBuildi,'')) AS Address,";
-            pubSql += "D.Phone1,D.Cellular,D.Balance,D.U_Name,{0} FROM {1}.crm_OCRD D ";
+            pubSql += "D.Phone1,D.Cellular,D.Balance,D.U_Name,D.U_EndCustomerName,D.U_EndCustomerContact,{0} FROM {1}.crm_OCRD D ";
             pubSql += "LEFT JOIN {1}.crm_OCRY Y ON Y.Code=D.MailCountr LEFT JOIN {1}.crm_OCST T ON T.Code=D.State2 ";
             pubSql += "LEFT JOIN {1}.crm_OSLP P ON P.SlpCode=D.SlpCode AND P.sbo_id=D.sbo_id ";
-            string strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10 ";
+            string strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,0 AS Similarity12 ";
 
             StringBuilder strSql = new StringBuilder();
-            strSql.Append("SELECT  U_EndCustomerName,U_EndCustomerContact, sbo_id,CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,");
-            strSql.Append("Similarity1, Similarity2, Similarity3, Similarity4, Similarity5, Similarity6, Similarity7, Similarity8, Similarity9, Similarity10,DfTcnician FROM ( ");
+            strSql.Append("SELECT   sbo_id,CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact,");
+            strSql.Append("Similarity1, Similarity2, Similarity3, Similarity4, Similarity5, Similarity6, Similarity7, Similarity8, Similarity9, Similarity10,Similarity11,Similarity12,DfTcnician FROM ( ");
 
             if (IsSearchAll)  //根据搜索条件全局搜索
             {
-                strSql.Append("SELECT U_EndCustomerName,U_EndCustomerContact, sbo_id,CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,");
+                strSql.Append("SELECT  sbo_id,CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact,");
                 strSql.Append("SUM(Similarity1) AS Similarity1,SUM(Similarity2) AS Similarity2,SUM(Similarity3) AS Similarity3,SUM(Similarity4) AS Similarity4,SUM(Similarity5) AS Similarity5,");
-                strSql.Append("SUM(Similarity6) AS Similarity6,SUM(Similarity7) AS Similarity7,SUM(Similarity8) AS Similarity8,SUM(Similarity9) AS Similarity9,SUM(Similarity10) AS Similarity10,DfTcnician ");
+                strSql.Append("SUM(Similarity6) AS Similarity6,SUM(Similarity7) AS Similarity7,SUM(Similarity8) AS Similarity8,SUM(Similarity9) AS Similarity9,SUM(Similarity10) AS Similarity10,SUM(Similarity11) AS Similarity11,SUM(Similarity12) AS Similarity12,DfTcnician ");
                 strSql.Append(" FROM (");
 
                 string[] whereArray = Query.Split('`');
@@ -1514,14 +1574,14 @@ namespace OpenAuth.App.Client
                     {
                         if (i == 0)         //业务伙伴名称
                         {
-                            strSimilarity = "1 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10, 1 AS Grade,D.DfTcnician ";
+                            strSimilarity = "1 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,0 AS Similarity12, 1 AS Grade,D.DfTcnician ";
                             strSql.Append(string.Format(pubSql, strSimilarity, "nsap_bone"));
                             strSql.AppendFormat("WHERE D.sbo_id={0} AND D.CardCode NOT LIKE 'V%' AND D.CardName LIKE '%{1}%' ", SboId, p[1].Trim().FilterSQL());
                             rLineNum++;
                         }
                         else if (i == 1)     //外文名称
                         {
-                            strSimilarity = "0 AS Similarity1, 1 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10, 2 AS Grade,D.DfTcnician ";
+                            strSimilarity = "0 AS Similarity1, 1 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,0 AS Similarity12, 2 AS Grade,D.DfTcnician ";
                             strSql.Append(rLineNum > 0 ? " UNION ALL " : "");
                             strSql.Append(string.Format(pubSql, strSimilarity, "nsap_bone"));
                             strSql.AppendFormat("WHERE D.sbo_id={0} AND D.CardCode NOT LIKE 'V%' AND D.CardFName LIKE '%{1}%' ", SboId, p[1].Trim().FilterSQL());
@@ -1529,7 +1589,7 @@ namespace OpenAuth.App.Client
                         }
                         else if (i == 2)     //电话
                         {
-                            strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 1 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10, 3 AS Grade,D.DfTcnician ";
+                            strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 1 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,0 AS Similarity12, 3 AS Grade,D.DfTcnician ";
                             strSql.Append(rLineNum > 0 ? " UNION ALL " : "");
                             strSql.Append(string.Format(pubSql, strSimilarity, "nsap_bone"));
                             strSql.AppendFormat(" INNER JOIN (SELECT DISTINCT sbo_id,CardCode FROM {0}.crm_TEL WHERE sbo_id={1} AND CardCode NOT LIKE 'V%' AND Phone LIKE '%{2}%') A ON A.CardCode=D.CardCode AND A.sbo_id=D.sbo_id ", "nsap_bone", SboId, p[1].Trim().Replace("*", "%"));
@@ -1537,7 +1597,7 @@ namespace OpenAuth.App.Client
                         }
                         else if (i == 3)     //联系人
                         {
-                            strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 1 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10, 4 AS Grade,D.DfTcnician ";
+                            strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 1 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,0 AS Similarity12, 4 AS Grade,D.DfTcnician ";
                             strSql.Append(rLineNum > 0 ? " UNION ALL " : "");
                             strSql.Append(string.Format(pubSql, strSimilarity, "nsap_bone"));
                             strSql.AppendFormat(" LEFT JOIN {0}.crm_OCPR R ON D.CardCode=R.CardCode AND R.sbo_id=D.sbo_id WHERE D.sbo_id={1} AND D.CardCode NOT LIKE 'V%' AND R.Name LIKE '%{2}%' ", "nsap_bone", SboId, p[1].Trim().FilterSQL());
@@ -1545,7 +1605,7 @@ namespace OpenAuth.App.Client
                         }
                         else if (i == 4)     //联系人地址
                         {
-                            strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 1 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10, 5 AS Grade,D.DfTcnician ";
+                            strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 1 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,0 AS Similarity12, 5 AS Grade,D.DfTcnician ";
                             strSql.Append(rLineNum > 0 ? " UNION ALL " : "");
                             strSql.Append(string.Format(pubSql, strSimilarity, "nsap_bone"));
                             strSql.AppendFormat(" INNER JOIN (SELECT DISTINCT sbo_id,CardCode FROM {0}.crm_OCPR WHERE sbo_id={1} AND CardCode NOT LIKE 'V%' AND Address LIKE '%{2}%' ", "nsap_bone", SboId, p[1].Trim().FilterSQL());
@@ -1554,14 +1614,14 @@ namespace OpenAuth.App.Client
                         }
                         else if (i == 5)         //终端用户名
                         {
-                            strSimilarity = "1 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10, 1 AS Grade,D.DfTcnician ";
+                            strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,1 AS Similarity11,0 AS Similarity12, 11 AS Grade,D.DfTcnician ";
                             strSql.Append(string.Format(pubSql, strSimilarity, "nsap_bone"));
                             strSql.AppendFormat("WHERE D.sbo_id={0} AND D.U_EndCustomerName NOT LIKE 'V%' AND D.U_EndCustomerName LIKE '%{1}%' ", SboId, p[1].Trim().FilterSQL());
                             rLineNum++;
                         }
                         else if (i == 6)         //终端联系人
                         {
-                            strSimilarity = "1 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10, 1 AS Grade,D.DfTcnician ";
+                            strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,1 AS Similarity12, 12 AS Grade,D.DfTcnician ";
                             strSql.Append(string.Format(pubSql, strSimilarity, "nsap_bone"));
                             strSql.AppendFormat("WHERE D.sbo_id={0} AND D.U_EndCustomerContact NOT LIKE 'V%' AND D.U_EndCustomerContact LIKE '%{1}%' ", SboId, p[1].Trim().FilterSQL());
                             rLineNum++;
@@ -1569,8 +1629,8 @@ namespace OpenAuth.App.Client
                     }
                     #endregion
                 }
-                strSql.Append(") AS E GROUP BY CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name ");
-                strSql.Append(" ORDER BY SUM(Similarity1+Similarity2+Similarity3+Similarity4+Similarity5+Similarity6+Similarity7+Similarity8+Similarity9+Similarity10) DESC,MIN(Grade) ASC LIMIT 50 ");
+                strSql.Append(") AS E GROUP BY CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact, ");
+                strSql.Append(" ORDER BY SUM(Similarity1+Similarity2+Similarity3+Similarity4+Similarity5+Similarity6+Similarity7+Similarity8+Similarity9+Similarity10+Similarity11+Similarity12) DESC,MIN(Grade) ASC LIMIT 50 ");
                 if (rLineNum == 0)
                 {
                     DataTable dt = new DataTable();
@@ -1579,25 +1639,25 @@ namespace OpenAuth.App.Client
             }
             else
             {  //搜索当前业务伙伴相似
-                strSql.Append("SELECT U_EndCustomerName,U_EndCustomerContact,sbo_id,CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,");
+                strSql.Append("SELECT sbo_id,CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact,");
                 strSql.Append("SUM(Similarity1) AS Similarity1,SUM(Similarity2) AS Similarity2,SUM(Similarity3) AS Similarity3,SUM(Similarity4) AS Similarity4,SUM(Similarity5) AS Similarity5,");
-                strSql.Append("SUM(Similarity6) AS Similarity6,SUM(Similarity7) AS Similarity7,SUM(Similarity8) AS Similarity8,SUM(Similarity9) AS Similarity9,SUM(Similarity10) AS Similarity10,DfTcnician ");
+                strSql.Append("SUM(Similarity6) AS Similarity6,SUM(Similarity7) AS Similarity7,SUM(Similarity8) AS Similarity8,SUM(Similarity9) AS Similarity9,SUM(Similarity10) AS Similarity10,SUM(Similarity11) AS Similarity11,SUM(Similarity12) AS Similarity12,DfTcnician ");
                 strSql.Append(" FROM (");
                 #region CardName
                 //==
-                strSimilarity = "10 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10, 1 AS Grade ,D.DfTcnician ";
+                strSimilarity = "10 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,0 AS Similarity12, 1 AS Grade ,D.DfTcnician ";
                 strSql.Append(string.Format(pubSql, strSimilarity, "nsap_bone"));
                 strSql.AppendFormat("LEFT JOIN {0}.crm_Tel Tel on Tel.CardCode = D.CardCode and Tel.sbo_id=D.sbo_id ", "nsap_bone");
                 strSql.AppendFormat("WHERE D.sbo_id={0} AND D.CardName IS NOT NULL AND D.CardName='{1}' ", SboId, Model.CardName.FilterSQL());
                 //LIKE
-                strSimilarity = "1 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10, 1 AS Grade ,D.DfTcnician ";
+                strSimilarity = "1 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,0 AS Similarity12, 1 AS Grade ,D.DfTcnician ";
                 strSql.Append(" UNION ALL " + string.Format(pubSql, strSimilarity, "nsap_bone"));
                 strSql.AppendFormat("LEFT JOIN {0}.crm_Tel Tel on Tel.CardCode = D.CardCode and Tel.sbo_id=D.sbo_id ", "nsap_bone");
                 strSql.AppendFormat("WHERE D.sbo_id={0} AND D.CardName IS NOT NULL AND D.CardName like '%{1}%' AND D.CardName<>'{1}' ", SboId, Model.CardName.FilterSQL());
                 #endregion
 
                 #region U_Name
-                strSimilarity = "0 AS Similarity1, 1 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10, 2 AS Grade ,D.DfTcnician ";
+                strSimilarity = "0 AS Similarity1, 1 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,0 AS Similarity12, 2 AS Grade ,D.DfTcnician ";
                 if (!string.IsNullOrEmpty(Model.U_Name))
                 {
                     strSql.Append(" UNION ALL " + string.Format(pubSql, strSimilarity, "nsap_bone"));
@@ -1613,7 +1673,7 @@ namespace OpenAuth.App.Client
                 #region OCRD表
                 if (!string.IsNullOrEmpty(Model.Phone1))  //Phone1
                 {
-                    strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 1 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10, 3 AS Grade,D.DfTcnician ";
+                    strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 1 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,0 AS Similarity12, 3 AS Grade,D.DfTcnician ";
                     strSql.Append(" UNION ALL " + string.Format(pubSql, strSimilarity, "nsap_bone"));
                     strSql.AppendFormat("LEFT JOIN {0}.crm_Tel Tel on Tel.CardCode = D.CardCode and Tel.sbo_id=D.sbo_id ", "nsap_bone");
                     strSql.AppendFormat("WHERE D.sbo_id={0} AND D.CardName IS NOT NULL AND D.CardCode NOT LIKE 'V%' AND (Tel.Phone LIKE '%{1}%' OR '{1}' LIKE CONCAT('%',Tel.Phone,'%')) ", SboId, crmDealTel(Model.Phone1.Trim()));
@@ -1625,16 +1685,24 @@ namespace OpenAuth.App.Client
                 //    strSql.AppendFormat("LEFT JOIN {0}.crm_Tel Tel on Tel.CardCode = D.CardCode and Tel.sbo_id=D.sbo_id ", "nsap_bone");
                 //    strSql.AppendFormat("WHERE D.sbo_id={0} AND D.CardName IS NOT NULL AND D.CardCode NOT LIKE 'V%' AND (Tel.Phone LIKE '%{1}%' OR '{1}' LIKE CONCAT('%',Tel.Phone,'%')) ", SboId, crmDealTel(Model.Phone2.Trim()));
                 //}
+
+
+
+
+
+
+
+
                 if (!string.IsNullOrEmpty(Model.Cellular))  //Cellular
                 {
-                    strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 1 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10, 5 AS Grade,D.DfTcnician  ";
+                    strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 1 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,0 AS Similarity12, 5 AS Grade,D.DfTcnician  ";
                     strSql.Append(" UNION ALL " + string.Format(pubSql, strSimilarity, "nsap_bone"));
                     strSql.AppendFormat("LEFT JOIN {0}.crm_Tel Tel on Tel.CardCode = D.CardCode and Tel.sbo_id=D.sbo_id ", "nsap_bone");
                     strSql.AppendFormat("WHERE D.sbo_id={0} AND D.CardName IS NOT NULL AND D.CardCode NOT LIKE 'V%' AND (Tel.Phone LIKE '%{1}%' OR '{1}' LIKE CONCAT('%',Tel.Phone,'%')) ", SboId, crmDealTel(Model.Cellular.Trim()));
                 }
                 if (!string.IsNullOrEmpty(Model.Fax))       //Fax
                 {
-                    strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 1 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10, 6 AS Grade,D.DfTcnician  ";
+                    strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 1 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,0 AS Similarity12, 6 AS Grade,D.DfTcnician  ";
                     strSql.Append(" UNION ALL " + string.Format(pubSql, strSimilarity, "nsap_bone"));
                     strSql.AppendFormat("LEFT JOIN {0}.crm_Tel Tel on Tel.CardCode = D.CardCode and Tel.sbo_id=D.sbo_id ", "nsap_bone");
                     strSql.AppendFormat("WHERE D.sbo_id={0} AND D.CardName IS NOT NULL AND D.CardCode NOT LIKE 'V%' AND (Tel.Phone LIKE '%{1}%' OR '{1}' LIKE CONCAT('%',Tel.Phone,'%')) ", SboId, crmDealTel(Model.Fax.Trim()));
@@ -1646,7 +1714,7 @@ namespace OpenAuth.App.Client
                 {
                     if (!string.IsNullOrEmpty(ocpr.Tel1))  //Tel1
                     {
-                        strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 1 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10, 7 AS Grade,D.DfTcnician";
+                        strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 1 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,0 AS Similarity12, 7 AS Grade,D.DfTcnician";
                         strSql.Append(" UNION ALL " + string.Format(pubSql, strSimilarity, "nsap_bone"));
                         strSql.AppendFormat("LEFT JOIN {0}.crm_Tel Tel on Tel.CardCode = D.CardCode and Tel.sbo_id=D.sbo_id ", "nsap_bone");
                         strSql.AppendFormat("WHERE D.sbo_id={0} AND D.CardName IS NOT NULL AND D.CardCode NOT LIKE 'V%' AND (Tel.Phone LIKE '%{1}%' OR '{1}' LIKE CONCAT('%',Tel.Phone,'%')) ", SboId, crmDealTel(ocpr.Tel1.Trim()));
@@ -1660,18 +1728,45 @@ namespace OpenAuth.App.Client
                     //}
                     if (!string.IsNullOrEmpty(ocpr.Cellolar))  //Cellolar
                     {
-                        strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 1 AS Similarity9, 0 AS Similarity10, 9 AS Grade,D.DfTcnician";
+                        strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 1 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,0 AS Similarity12, 9 AS Grade,D.DfTcnician";
                         strSql.Append(" UNION ALL " + string.Format(pubSql, strSimilarity, "nsap_bone"));
                         strSql.AppendFormat("LEFT JOIN {0}.crm_Tel Tel on Tel.CardCode = D.CardCode and Tel.sbo_id=D.sbo_id ", "nsap_bone");
                         strSql.AppendFormat("WHERE D.sbo_id={0} AND D.CardName IS NOT NULL AND D.CardCode NOT LIKE 'V%' AND (Tel.Phone LIKE '%{1}%' OR '{1}' LIKE CONCAT('%',Tel.Phone,'%')) ", SboId, crmDealTel(ocpr.Cellolar.Trim()));
                     }
                     if (!string.IsNullOrEmpty(ocpr.Fax))   //Fax
                     {
-                        strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 1 AS Similarity10, 10 AS Grade,D.DfTcnician ";
+                        strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 1 AS Similarity10,0 AS Similarity11,0 AS Similarity12, 10 AS Grade,D.DfTcnician ";
                         strSql.Append(" UNION ALL " + string.Format(pubSql, strSimilarity, "nsap_bone"));
                         strSql.AppendFormat("LEFT JOIN {0}.crm_Tel Tel on Tel.CardCode = D.CardCode and Tel.sbo_id=D.sbo_id ", "nsap_bone");
                         strSql.AppendFormat("WHERE D.sbo_id={0} AND D.CardName IS NOT NULL AND D.CardCode NOT LIKE 'V%' AND (Tel.Phone LIKE '%{1}%' OR '{1}' LIKE CONCAT('%',Tel.Phone,'%')) ", SboId, crmDealTel(ocpr.Fax.Trim()));
                     }
+                }
+                if (!string.IsNullOrEmpty(Model.EndCustomerName))  //EndCustomerName
+                {
+                    //==
+                    strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,10 AS Similarity11,0 AS Similarity12, 11 AS Grade ,D.DfTcnician ";
+                    strSql.Append(" UNION ALL " + string.Format(pubSql, strSimilarity, "nsap_bone"));
+                    strSql.AppendFormat("LEFT JOIN {0}.crm_Tel Tel on Tel.CardCode = D.CardCode and Tel.sbo_id=D.sbo_id ", "nsap_bone");
+                    strSql.AppendFormat("WHERE D.sbo_id={0} AND D.U_EndCustomerName IS NOT NULL AND D.U_EndCustomerName='{1}' ", SboId, Model.EndCustomerName.FilterSQL());
+                    //LIKE
+                    strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,1 AS Similarity11,0 AS Similarity12, 11 AS Grade ,D.DfTcnician ";
+                    strSql.Append(" UNION ALL " + string.Format(pubSql, strSimilarity, "nsap_bone"));
+                    strSql.AppendFormat("LEFT JOIN {0}.crm_Tel Tel on Tel.CardCode = D.CardCode and Tel.sbo_id=D.sbo_id ", "nsap_bone");
+                    strSql.AppendFormat("WHERE D.sbo_id={0} AND D.U_EndCustomerName IS NOT NULL AND D.U_EndCustomerName like '%{1}%' AND D.U_EndCustomerName<>'{1}' ", SboId, Model.EndCustomerName.FilterSQL());
+
+                }
+                if (!string.IsNullOrEmpty(Model.EndCustomerContact))  //EndCustomerContact
+                {
+                    //==
+                    strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,10 AS Similarity12, 12 AS Grade ,D.DfTcnician ";
+                    strSql.Append(" UNION ALL " + string.Format(pubSql, strSimilarity, "nsap_bone"));
+                    strSql.AppendFormat("LEFT JOIN {0}.crm_Tel Tel on Tel.CardCode = D.CardCode and Tel.sbo_id=D.sbo_id ", "nsap_bone");
+                    strSql.AppendFormat("WHERE D.sbo_id={0} AND D.U_EndCustomerContact IS NOT NULL AND D.U_EndCustomerContact='{1}' ", SboId, Model.EndCustomerContact.FilterSQL());
+                    //LIKE
+                    strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,1 AS Similarity12, 12 AS Grade ,D.DfTcnician ";
+                    strSql.Append(" UNION ALL " + string.Format(pubSql, strSimilarity, "nsap_bone"));
+                    strSql.AppendFormat("LEFT JOIN {0}.crm_Tel Tel on Tel.CardCode = D.CardCode and Tel.sbo_id=D.sbo_id ", "nsap_bone");
+                    strSql.AppendFormat("WHERE D.sbo_id={0} AND D.U_EndCustomerContact IS NOT NULL AND D.U_EndCustomerContact like '%{1}%' AND D.U_EndCustomerContact<>'{1}' ", SboId, Model.EndCustomerContact.FilterSQL());
                 }
                 #endregion
                 strSql.Append(") AS E ");
@@ -1690,8 +1785,8 @@ namespace OpenAuth.App.Client
                     }
                 }
                 #endregion
-                strSql.Append(" GROUP BY CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name ");
-                strSql.Append(" ORDER BY SUM(Similarity1+Similarity2+Similarity3+Similarity4+Similarity5+Similarity6+Similarity7+Similarity8+Similarity9+Similarity10) DESC,MIN(Grade) ASC LIMIT 50 ");
+                strSql.Append(" GROUP BY CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact ");
+                strSql.Append(" ORDER BY SUM(Similarity1+Similarity2+Similarity3+Similarity4+Similarity5+Similarity6+Similarity7+Similarity8+Similarity9+Similarity10+Similarity11+Similarity12) DESC,MIN(Grade) ASC LIMIT 50 ");
             }
             strSql.Append(") T ");
 

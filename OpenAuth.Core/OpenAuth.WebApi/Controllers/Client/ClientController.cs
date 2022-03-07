@@ -165,7 +165,8 @@ namespace OpenAuth.WebApi.Controllers.Client
                 rIsViewFull = true;
             }
 
-            bool rIsViewSales = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", userId).ViewSales;
+            //bool rIsViewSales = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", userId).ViewSales;
+            bool rIsViewSales = true;
             try
             {
                 result.Data = _clientInfoApp.SelectClientList(clientListReq.limit, clientListReq.page,

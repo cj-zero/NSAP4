@@ -580,6 +580,29 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 根据时间段筛选问题类型数据,按问题类型、月份分组统计
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetProblemType([FromQuery] QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetProblemType(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{""}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 查询可以被派单的技术员列表
         /// </summary>
         /// <returns></returns>

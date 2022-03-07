@@ -103,13 +103,13 @@ namespace OpenAuth.App
             {
                 userIds.AddRange(item.Split(","));
             }
-            var userList =await UnitWork.Find<User>(u => userIds.Contains(u.Id)).ToListAsync();
-            var flowinstanceObjs = flowInstanceList.Select(s => new 
-            { 
+            var userList = await UnitWork.Find<User>(u => userIds.Contains(u.Id)).ToListAsync();
+            var flowinstanceObjs = flowInstanceList.Select(s => new
+            {
                 s.Id,
                 s.ActivityName,
                 s.MakerList,
-                Name =string.Join(",",userList.Where(x=>s.MakerList.Contains(x.Id)).Select(x=>x.Name).ToArray())
+                Name = string.Join(",", userList.Where(x => s.MakerList.Contains(x.Id)).Select(x => x.Name).ToArray())
             });
             var resp = await query.OrderByDescending(c => c.Id).Skip((req.page - 1) * req.limit)
                                 .Take(req.limit).ToListAsync();
@@ -126,7 +126,7 @@ namespace OpenAuth.App
                 c.BeforeSaleDemandProjectName,
                 c.BeforeSaleDemandProjectId,
                 CurrentProcessor = c.Beforesaledemandoperationhistories.OrderByDescending(x => x.CreateTime).FirstOrDefault().CreateUser + "—" + c.Beforesaledemandoperationhistories.OrderByDescending(x => x.CreateTime).FirstOrDefault().Action,
-                NextUser= flowinstanceObjs.Where(f => f.Id.Equals(c.FlowInstanceId)).FirstOrDefault()?.ActivityName + "—"+ flowinstanceObjs.Where(f => f.Id.Equals(c.FlowInstanceId)).FirstOrDefault()?.Name,
+                NextUser = flowinstanceObjs.Where(f => f.Id.Equals(c.FlowInstanceId)).FirstOrDefault()?.ActivityName + "—" + flowinstanceObjs.Where(f => f.Id.Equals(c.FlowInstanceId)).FirstOrDefault()?.Name,
                 c.UpdateTime,
                 c.Status
             }).ToList();
@@ -433,8 +433,10 @@ namespace OpenAuth.App
             if (req.IsReject)//驳回
             {
                 verificationReq.VerificationFinally = "3";
-                verificationReq.NodeRejectType = "0";//驳回上一步
-                //beforeSaleDemand.Status = 13;//驳回状态
+                //verificationReq.NodeRejectType = "0";//驳回上一步
+                //beforeSaleDemand.Status = beforeSaleDemand.Status > 1 ? beforeSaleDemand.Status - 1 : beforeSaleDemand.Status;//驳回状态
+                verificationReq.NodeRejectType = "1";//2022年3月7日确定【驳回】直接驳回至 流程申请人
+                beforeSaleDemand.Status = 13;
                 await _flowInstanceApp.Verification(verificationReq);
             }
             else
@@ -497,7 +499,9 @@ namespace OpenAuth.App
                         DevEstimate = req.DevEstimate.Value,//开发预估
                         TestEstimate = req.TestEstimate.Value,//测试预估
                         IsDevDeploy = req.IsDevDeploy.Value,//是否需要开发支持实施项目
-                        IsConfirm = 1           //表示研发确认
+                        IsConfirm = 1,           //表示研发确认
+                        DevOpinions = req.DevOpinions,//研发意见
+                        UpdateTime = DateTime.Now//修改时间
                     });
                     //查询已指派的部门是否完成研发确认
                     var cnt = UnitWork.Find<BeforeSaleDemandDeptInfo>(d => d.BeforeSaleDemandId == req.Id && d.IsConfirm == 0).Count();
