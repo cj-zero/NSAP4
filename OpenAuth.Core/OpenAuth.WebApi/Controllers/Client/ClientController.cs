@@ -254,7 +254,8 @@ namespace OpenAuth.WebApi.Controllers.Client
             {
                 var UserId = _serviceBaseApp.GetUserNaspId();
                 var SboId = _serviceBaseApp.GetUserNaspSboID(UserId);
-                bool rIsViewSales = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", UserId).ViewSales;
+                //bool rIsViewSales = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", UserId).ViewSales;
+                bool rIsViewSales = true;
                 bool rIsOpenSap = IsOpenSap == "1" ? true : false;
                 if (!string.IsNullOrEmpty(CardCode) && !string.IsNullOrEmpty(SboId.ToString()))
                     result.Data =
