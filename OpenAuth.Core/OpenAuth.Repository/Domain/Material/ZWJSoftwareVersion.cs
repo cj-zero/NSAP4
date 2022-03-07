@@ -66,6 +66,11 @@ namespace OpenAuth.Repository.Domain.Material
         [Column("Is_DefaultVersion")]
         public bool DefaultVersion { get; set; }
 
+        /// <summary>
+        /// 发布轮次(每次update时候自增1)
+        /// </summary>
+        [Column("publish_num")]
+        public int PublishNum { get; set; }
 
         public virtual List<ZWJHardware> ZWJHardwares { get; set; }
     }
@@ -146,6 +151,12 @@ namespace OpenAuth.Repository.Domain.Material
         /// 修改时间
         /// </summary>
         public DateTime UpdateTime { get; set; }
+
+        /// <summary>
+        /// 发布轮次(每次update时候自增1)
+        /// </summary>
+        [Column("publish_num")]
+        public int PublishNum { get; set; }
     }
 
     /// <summary>
@@ -237,5 +248,11 @@ namespace OpenAuth.Repository.Domain.Material
         /// 修改时间
         /// </summary>
         public DateTime UpdateTime { get; set; }
+
+        /// <summary>
+        /// 发布轮次(每次update时候自增1)
+        /// </summary>
+        [Column("publish_num")]
+        public int PublishNum { get; set; }
     }
 }
