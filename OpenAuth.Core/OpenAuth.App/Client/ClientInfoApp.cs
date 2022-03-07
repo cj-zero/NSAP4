@@ -318,7 +318,7 @@ namespace OpenAuth.App.Client
                 CardCodes = heet.TrimEnd(',');
                 var sql = string.Format("SELECT U_TradeType,U_ClientSource,U_CompSector,U_CardTypeStr FROM crm_ocrd WHERE CardCode IN ({0})", CardCodes);
                 var ClientSource = UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, sql, CommandType.Text, null);
-                var strsql = string.Format("SELECT A.FollowUpTime FROM nsap4_serve.cluefollowup   A LEFT JOIN nsap_base.wfa_job B ON B.sbo_itf_return=A.ClueId LEFT JOIN  nsap_bone.crm_ocrd C ON C.CardCode=B.sbo_itf_return  WHERE B.job_type_id=72 AND C.CardCode IN ({0}) ORDER BY  A.FollowUpTime  DESC LIMIT 1", CardCodes);
+                var strsql = string.Format("SELECT A.FollowUpTime FROM erp4_serve.cluefollowup   A LEFT JOIN nsap_base.wfa_job B ON B.sbo_itf_return=A.ClueId LEFT JOIN  nsap_bone.crm_ocrd C ON C.CardCode=B.sbo_itf_return  WHERE B.job_type_id=72 AND C.CardCode IN ({0}) ORDER BY  A.FollowUpTime  DESC LIMIT 1", CardCodes);
                 var FollowUpTime = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, strsql, CommandType.Text, null);
                 foreach (DataRow clientrow in clientTable.Rows)
                 {
