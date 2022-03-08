@@ -160,7 +160,7 @@ namespace OpenAuth.WebApi.Controllers.Client
                 .ViewSelfDepartment;
             //bool rIsViewFull = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", userId).ViewFull;
             bool rIsViewFull = false;
-            if (loginUser.Name == "韦京生" || loginUser.Name == "郭睿心")
+            if (loginUser.Name == "韦京生" || loginUser.Name == "郭睿心"|| loginUser.Name == "骆灵芝")
             {
                 rIsViewFull = true;
             }

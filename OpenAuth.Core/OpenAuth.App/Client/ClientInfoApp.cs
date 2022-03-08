@@ -327,7 +327,7 @@ namespace OpenAuth.App.Client
                 CardCodes = heet.TrimEnd(',');
                 if (!string.IsNullOrWhiteSpace(CardCodes))
                 {
-                    var sql = string.Format("SELECT U_TradeType,U_ClientSource,U_CompSector,U_CardTypeStr FROM crm_ocrd WHERE CardCode IN ({0})", CardCodes);
+                    var sql = string.Format("SELECT U_TradeType,U_ClientSource,U_CompSector,U_CardTypeStr,CardCode FROM crm_ocrd WHERE CardCode IN ({0})", CardCodes);
                     var ClientSource = UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, sql, CommandType.Text, null);
                     foreach (DataRow clientrow in clientTable.Rows)
                     {
@@ -337,10 +337,13 @@ namespace OpenAuth.App.Client
                         {
                             foreach (DataRow clientSource in ClientSource.Rows)
                             {
-                                clientrow["U_ClientSource"] = clientSource["U_ClientSource"];
-                                clientrow["U_CompSector"] = clientSource["U_CompSector"];
-                                clientrow["U_TradeType"] = clientSource["U_TradeType"];
-                                clientrow["U_CardTypeStr"] = clientSource["U_CardTypeStr"];
+                                if (clientrow["CardCode"].ToString() == clientSource["CardCode"].ToString())
+                                {
+                                    clientrow["U_ClientSource"] = clientSource["U_ClientSource"];
+                                    clientrow["U_CompSector"] = clientSource["U_CompSector"];
+                                    clientrow["U_TradeType"] = clientSource["U_TradeType"];
+                                    clientrow["U_CardTypeStr"] = clientSource["U_CardTypeStr"];
+                                }
                             }
                         }
                         var strsql = string.Format("SELECT A.base_entry FROM nsap_base.wfa_job   A LEFT JOIN nsap_bone.crm_ocrd B ON B.CardCode=A.sbo_itf_return WHERE A.job_type_id=72 AND B.CardCode ='{0}' ", clientrow["CardCode"]);
@@ -1529,7 +1532,7 @@ namespace OpenAuth.App.Client
             DataTable dataTable = new DataTable();
             clientOCRD OCRDModel = new clientOCRD();
             OCRDModel = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])(GetAuditInfo(JobId)));
-            if (OCRDModel==null)
+            if (OCRDModel == null)
             {
                 return dataTable;
             }
