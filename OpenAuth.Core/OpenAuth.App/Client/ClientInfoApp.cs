@@ -325,37 +325,38 @@ namespace OpenAuth.App.Client
                 }
 
                 CardCodes = heet.TrimEnd(',');
-                var sql = string.Format("SELECT U_TradeType,U_ClientSource,U_CompSector,U_CardTypeStr FROM crm_ocrd WHERE CardCode IN ({0})", CardCodes);
-                var ClientSource = UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, sql, CommandType.Text, null);
-
-
-                foreach (DataRow clientrow in clientTable.Rows)
+                if (!string.IsNullOrWhiteSpace(CardCodes))
                 {
-                    clientrow["FollowUpDay"] = "暂无跟进天数";
-                    clientrow["FollowUpTime"] = "暂无跟进时间";
-                    if (ClientSource.Rows.Count > 0)
+                    var sql = string.Format("SELECT U_TradeType,U_ClientSource,U_CompSector,U_CardTypeStr FROM crm_ocrd WHERE CardCode IN ({0})", CardCodes);
+                    var ClientSource = UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, sql, CommandType.Text, null);
+                    foreach (DataRow clientrow in clientTable.Rows)
                     {
-                        foreach (DataRow clientSource in ClientSource.Rows)
+                        clientrow["FollowUpDay"] = "暂无跟进天数";
+                        clientrow["FollowUpTime"] = "暂无跟进时间";
+                        if (ClientSource.Rows.Count > 0)
                         {
-                            clientrow["U_ClientSource"] = clientSource["U_ClientSource"];
-                            clientrow["U_CompSector"] = clientSource["U_CompSector"];
-                            clientrow["U_TradeType"] = clientSource["U_TradeType"];
-                            clientrow["U_CardTypeStr"] = clientSource["U_CardTypeStr"];
+                            foreach (DataRow clientSource in ClientSource.Rows)
+                            {
+                                clientrow["U_ClientSource"] = clientSource["U_ClientSource"];
+                                clientrow["U_CompSector"] = clientSource["U_CompSector"];
+                                clientrow["U_TradeType"] = clientSource["U_TradeType"];
+                                clientrow["U_CardTypeStr"] = clientSource["U_CardTypeStr"];
+                            }
                         }
-                    }
-                    var strsql = string.Format("SELECT A.base_entry FROM nsap_base.wfa_job   A LEFT JOIN nsap_bone.crm_ocrd B ON B.CardCode=A.sbo_itf_return WHERE A.job_type_id=72 AND B.CardCode ='{0}' ", clientrow["CardCode"]);
-                    var Baseentry = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strsql, CommandType.Text, null);
-                    foreach (DataRow item in Baseentry.Rows)
-                    {
-                        var ClueId = item["base_entry"].ToInt();
-                        var FollowUpTime = UnitWork.FindSingle<ClueFollowUp>(q => q.Id == ClueId);
-                        //var strsql4 = string.Format("SELECT FollowUpTime FROM erp4_serve.cluefollowup   WHERE ClueId ={0}   ORDER BY  FollowUpTime  DESC LIMIT 1", item["base_entry"]);
-                        //var FollowUpTime = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, strsql4, CommandType.Text, null);
-                        if (FollowUpTime != null)
+                        var strsql = string.Format("SELECT A.base_entry FROM nsap_base.wfa_job   A LEFT JOIN nsap_bone.crm_ocrd B ON B.CardCode=A.sbo_itf_return WHERE A.job_type_id=72 AND B.CardCode ='{0}' ", clientrow["CardCode"]);
+                        var Baseentry = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strsql, CommandType.Text, null);
+                        foreach (DataRow item in Baseentry.Rows)
                         {
-                            clientrow["FollowUpTime"] = FollowUpTime.FollowUpTime;
-                            var subTime = (DateTime.Now.Subtract(FollowUpTime.FollowUpTime));
-                            clientrow["FollowUpDay"] = $"{subTime.Days}天";
+                            var ClueId = item["base_entry"].ToInt();
+                            var FollowUpTime = UnitWork.FindSingle<ClueFollowUp>(q => q.Id == ClueId);
+                            //var strsql4 = string.Format("SELECT FollowUpTime FROM erp4_serve.cluefollowup   WHERE ClueId ={0}   ORDER BY  FollowUpTime  DESC LIMIT 1", item["base_entry"]);
+                            //var FollowUpTime = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, strsql4, CommandType.Text, null);
+                            if (FollowUpTime != null)
+                            {
+                                clientrow["FollowUpTime"] = FollowUpTime.FollowUpTime;
+                                var subTime = (DateTime.Now.Subtract(FollowUpTime.FollowUpTime));
+                                clientrow["FollowUpDay"] = $"{subTime.Days}天";
+                            }
                         }
                     }
                 }
@@ -405,34 +406,36 @@ namespace OpenAuth.App.Client
                 heets += "'" + item + "',";
             }
             var ids = heets.TrimEnd(',');
-            var sbobalancestr = GetClientSboBalanceNew(CardCodes, ids);
-            foreach (DataRow clientrow in clientTable.Rows)
+            if (!string.IsNullOrWhiteSpace(CardCodes))
             {
-                decimal totalbalance = 0;
-                foreach (DataRow item in sbobalancestr.Rows)
+                var sbobalancestr = GetClientSboBalanceNew(CardCodes, ids);
+                foreach (DataRow clientrow in clientTable.Rows)
                 {
-                    decimal sbobalance = 0;
-                    if (!string.IsNullOrEmpty(item["Balance"].ToString()) &&
-                        Decimal.TryParse(item["Balance"].ToString(), out sbobalance) && clientrow["CardCode"].ToString() == item["CardCode"].ToString())
-                        totalbalance += sbobalance;
-                    if (clientTable.Columns.Contains("sbo_id") &&
-                        clientrow["sbo_id"].ToString() == item["id"].ToString() && clientrow["CardCode"].ToString() == item["CardCode"].ToString())
-                        clientrow["Balance"] = sbobalance;
+                    decimal totalbalance = 0;
+                    foreach (DataRow item in sbobalancestr.Rows)
+                    {
+                        decimal sbobalance = 0;
+                        if (!string.IsNullOrEmpty(item["Balance"].ToString()) &&
+                            Decimal.TryParse(item["Balance"].ToString(), out sbobalance) && clientrow["CardCode"].ToString() == item["CardCode"].ToString())
+                            totalbalance += sbobalance;
+                        if (clientTable.Columns.Contains("sbo_id") &&
+                            clientrow["sbo_id"].ToString() == item["id"].ToString() && clientrow["CardCode"].ToString() == item["CardCode"].ToString())
+                            clientrow["Balance"] = sbobalance;
+                    }
+                    clientrow["BalanceTotal"] = totalbalance;
+
+                    //foreach (DataRow sborow in sbotable.Rows)
+                    //{
+                    //    string sbobalancestr = GetClientSboBalance(clientrow["CardCode"].ToString(), sborow["id"].ToString());
+                    //    decimal sbobalance = 0;
+                    //    if (!string.IsNullOrEmpty(sbobalancestr) && Decimal.TryParse(sbobalancestr, out sbobalance))
+                    //        totalbalance += sbobalance;
+                    //    if (clientTable.Columns.Contains("sbo_id") && clientrow["sbo_id"].ToString() == sborow["id"].ToString())
+                    //        clientrow["Balance"] = sbobalance;
+                    //}
+                    //clientrow["BalanceTotal"] = totalbalance;
                 }
-                clientrow["BalanceTotal"] = totalbalance;
-
-                //foreach (DataRow sborow in sbotable.Rows)
-                //{
-                //    string sbobalancestr = GetClientSboBalance(clientrow["CardCode"].ToString(), sborow["id"].ToString());
-                //    decimal sbobalance = 0;
-                //    if (!string.IsNullOrEmpty(sbobalancestr) && Decimal.TryParse(sbobalancestr, out sbobalance))
-                //        totalbalance += sbobalance;
-                //    if (clientTable.Columns.Contains("sbo_id") && clientrow["sbo_id"].ToString() == sborow["id"].ToString())
-                //        clientrow["Balance"] = sbobalance;
-                //}
-                //clientrow["BalanceTotal"] = totalbalance;
             }
-
             foreach (DataRow clientrows in clientTable.Rows)
             {
                 decimal totalbalance = 0;
@@ -1523,10 +1526,13 @@ namespace OpenAuth.App.Client
         #region 提交给我的相似客户
         public DataTable CheckCardSimilar(string Query, string JobId, bool IsSearchAll)
         {
+            DataTable dataTable = new DataTable();
             clientOCRD OCRDModel = new clientOCRD();
             OCRDModel = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])(GetAuditInfo(JobId)));
-
-            DataTable dataTable = new DataTable();
+            if (OCRDModel==null)
+            {
+                return dataTable;
+            }
             if (OCRDModel.CardType.ToUpper() == "C" || OCRDModel.CardType.ToUpper() == "L")
             {
                 if (!IsSearchAll)
@@ -1577,7 +1583,7 @@ namespace OpenAuth.App.Client
 
             if (IsSearchAll)  //根据搜索条件全局搜索
             {
-                strSql.Append("SELECT  sbo_id,CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact,");
+                strSql.Append("SELECT  sbo_id,CardCode ,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact,");
                 strSql.Append("SUM(Similarity1) AS Similarity1,SUM(Similarity2) AS Similarity2,SUM(Similarity3) AS Similarity3,SUM(Similarity4) AS Similarity4,SUM(Similarity5) AS Similarity5,");
                 strSql.Append("SUM(Similarity6) AS Similarity6,SUM(Similarity7) AS Similarity7,SUM(Similarity8) AS Similarity8,SUM(Similarity9) AS Similarity9,SUM(Similarity10) AS Similarity10,SUM(Similarity11) AS Similarity11,SUM(Similarity12) AS Similarity12,DfTcnician ");
                 strSql.Append(" FROM (");
@@ -1647,7 +1653,7 @@ namespace OpenAuth.App.Client
                     }
                     #endregion
                 }
-                strSql.Append(") AS E GROUP BY CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact, ");
+                strSql.Append(") AS E GROUP BY CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact ");
                 strSql.Append(" ORDER BY SUM(Similarity1+Similarity2+Similarity3+Similarity4+Similarity5+Similarity6+Similarity7+Similarity8+Similarity9+Similarity10+Similarity11+Similarity12) DESC,MIN(Grade) ASC LIMIT 50 ");
                 if (rLineNum == 0)
                 {
