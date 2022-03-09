@@ -160,7 +160,7 @@ namespace OpenAuth.WebApi.Controllers.Client
                 .ViewSelfDepartment;
             //bool rIsViewFull = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", userId).ViewFull;
             bool rIsViewFull = false;
-            if (loginUser.Name == "韦京生" || loginUser.Name == "郭睿心")
+            if (loginUser.Name == "韦京生" || loginUser.Name == "郭睿心"|| loginUser.Name == "骆灵芝")
             {
                 rIsViewFull = true;
             }
@@ -254,7 +254,8 @@ namespace OpenAuth.WebApi.Controllers.Client
             {
                 var UserId = _serviceBaseApp.GetUserNaspId();
                 var SboId = _serviceBaseApp.GetUserNaspSboID(UserId);
-                bool rIsViewSales = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", UserId).ViewSales;
+                //bool rIsViewSales = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", UserId).ViewSales;
+                bool rIsViewSales = true;
                 bool rIsOpenSap = IsOpenSap == "1" ? true : false;
                 if (!string.IsNullOrEmpty(CardCode) && !string.IsNullOrEmpty(SboId.ToString()))
                     result.Data =

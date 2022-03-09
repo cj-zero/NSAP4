@@ -80,9 +80,19 @@ namespace OpenAuth.Repository.Domain
         [Description("是否确认 默认0 确认表示执行研发提交")]
         public int IsConfirm { get; set; }
         /// <summary>
+        /// 研发意见
+        /// </summary>
+        [Description("研发意见")]
+        public string DevOpinions { get; set; }
+        /// <summary>
         /// 创建时间
         /// </summary>
         [Description("创建时间")]
         public System.DateTime? CreateTime { get; set; }
+        /// <summary>
+        /// 修改时间
+        /// </summary>
+        [Description("修改时间")]
+        public System.DateTime? UpdateTime { get; set; }
     }
 }
