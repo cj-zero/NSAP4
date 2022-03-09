@@ -324,6 +324,59 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 批量删除校准证书
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> DeleteCertinfo(List<string> ids)
+        {
+            var response = new Infrastructure.Response();
+
+            //信息存储在两个表中(新：NwcaliBaseInfo，旧：Certinfo,页面显示的结果是两个表的并集,因此前端传过来的id两个表都有可能)
+            var query1 = UnitWork.Find<NwcaliBaseInfo>(null).Where(x => ids.Contains(x.Id));
+            var query2 = UnitWork.Find<Certinfo>(null).Where(x => ids.Contains(x.Id));
+
+            var nwInfos = await query1.Select(x => new { x.Id, x.FlowInstanceId }).ToListAsync();
+            var certInfos = await query2.Select(x => new { x.Id, x.FlowInstanceId }).ToListAsync();
+            //流程实例id
+            var flowInstanceIds = nwInfos.Select(n => n.FlowInstanceId).Union(certInfos.Select(c => c.FlowInstanceId));
+
+            using var tran = UnitWork.GetDbContext<NwcaliBaseInfo>().Database.BeginTransaction();
+            //删除记录及删除字表和流程实例
+            try
+            {
+                await UnitWork.DeleteAsync<NwcaliBaseInfo>(x => nwInfos.Select(n => n.Id).Contains(x.Id));
+                await UnitWork.DeleteAsync<Etalon>(x => nwInfos.Select(n => n.Id).Contains(x.NwcaliBaseInfoId));
+                await UnitWork.DeleteAsync<NwcaliPlcData>(x => nwInfos.Select(n => n.Id).Contains(x.NwcaliBaseInfoId));
+                await UnitWork.DeleteAsync<NwcaliTur>(x => nwInfos.Select(n => n.Id).Contains(x.NwcaliBaseInfoId));
+                await UnitWork.DeleteAsync<PcPlc>(x => nwInfos.Select(n => n.Id).Contains(x.NwcaliBaseInfoId));
+
+                await UnitWork.DeleteAsync<Certinfo>(x => certInfos.Select(c => c.Id).Contains(x.Id));
+                await UnitWork.DeleteAsync<CertOperationHistory>(x => certInfos.Select(c => c.Id).Contains(x.Id));
+                await UnitWork.DeleteAsync<Certplc>(x => certInfos.Select(c => c.Id).Contains(x.Id));
+
+                await UnitWork.SaveAsync();
+
+                await tran.CommitAsync();
+
+                //提交没问题后,删除流程实例
+                await UnitWork.DeleteAsync<FlowInstance>(f => flowInstanceIds.Contains(f.Id));
+                await UnitWork.SaveAsync();
+            }
+            catch (Exception ex)
+            {
+                await tran.RollbackAsync();
+
+                response.Code = 500;
+                response.Message = ex?.Message ?? ex?.InnerException?.Message ?? "";
+
+                throw new Exception(ex?.Message ?? ex?.InnerException?.Message ?? "");
+            }
+
+            return response;
+        }
+
+        /// <summary>
         /// 多个序列号获取证书
         /// </summary>
         /// <param name="serialNumber"></param>

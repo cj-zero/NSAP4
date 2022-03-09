@@ -26,7 +26,11 @@ namespace OpenAuth.App.Serve.Response
 
         public string ManufacturerSerialNumber { get; set; }
 
+        public List<string> TroubleCode { get; set; }
+
         public List<string> TroubleDescription { get; set; }
+
+        public List<string> ProcessCode { get; set; }
 
         public List<string> ProcessDescription { get; set; }
     }

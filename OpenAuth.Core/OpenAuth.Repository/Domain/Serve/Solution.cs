@@ -37,6 +37,10 @@ namespace OpenAuth.Repository.Domain
           this.UpdateUserName= string.Empty;
         }
 
+        /// <summary>
+        /// 解决方案编码
+        /// </summary>
+        public string Code { get; set; }
 
         /// <summary>
         /// 编号
@@ -106,5 +110,22 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("更新人名字")]
         public string UpdateUserName { get; set; }
+
+        /// <summary>
+        /// 父节点流水号
+        /// </summary>
+        [Description("父节点流水号")]
+        public string ParentId { get; set; }
+
+        /// <summary>
+        /// 父节点名称
+        /// </summary>
+        [Description("父节点名称")]
+        public string ParentName { get; set; }
+
+        /// <summary>
+        /// 是否新增(新增的有code、ParentId、ParentName以及description存的是上一级的code)
+        /// </summary>
+        public bool? IsNew { get; set; }
     }
 }

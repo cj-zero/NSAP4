@@ -42,6 +42,28 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 批量删除证书
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Infrastructure.Response> DeleteCertinfo(List<string> ids)
+        {
+            var result = new Response();
+            try
+            {
+                result = await _app.DeleteCertinfo(ids);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{ids.ToJson()}， 错误：{ex.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 业务员证书查询列表
         /// </summary>
         /// <param name="req"></param>
