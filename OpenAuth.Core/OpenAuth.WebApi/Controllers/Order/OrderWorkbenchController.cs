@@ -54,7 +54,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 Powers powers = new Powers(power.AuthMap);
                 viewSales = powers.ViewSales;
-                viewCustom = powers.ViewCustom;
+                viewCustom = true;
             }
             DataTable dt = _orderWorkbenchApp.GetSubmtToMe(orderSubmtToMeReq.limit, orderSubmtToMeReq.page, orderSubmtToMeReq.query, orderSubmtToMeReq.sortname, orderSubmtToMeReq.sortorder, UserID, orderSubmtToMeReq.types, orderSubmtToMeReq.Applicator, orderSubmtToMeReq.Customer, orderSubmtToMeReq.Status, orderSubmtToMeReq.BeginDate, orderSubmtToMeReq.EndDate, ViewCustom: viewCustom, ViewSales: viewSales, out rowCount);
             result.Data = dt;
