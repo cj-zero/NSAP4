@@ -2796,7 +2796,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrEmpty(startDate), w => w.CreateTime.Value.Date >= Convert.ToDateTime(startDate).Date)
                 .WhereIf(!string.IsNullOrEmpty(endDate), w => w.CreateTime.Value.Date <= Convert.ToDateTime(endDate).Date)
                 .WhereIf(!string.IsNullOrEmpty(UserId), w => w.CreateUserId == UserId)
-                .ToListAsync()).Select(s => new ReportDetail { CreateTime = s.CreateTime, MaterialCode = s.MaterialCode, ManufacturerSerialNumber = s.ManufacturerSerialNumber, TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription), ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription) }).OrderByDescending(o => o.CreateTime).ToList();
+                .ToListAsync()).Select(s => new ReportDetail { CreateTime = s.CreateTime, MaterialCode = s.MaterialCode, ManufacturerSerialNumber = s.ManufacturerSerialNumber, TroubleCode = GetServiceTroubleAndSolution(s.TroubleDescription, "code"), TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription, "description"), ProcessCode = GetServiceTroubleAndSolution(s.ProcessDescription, "code"), ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription, "description") }).OrderByDescending(o => o.CreateTime).ToList();
             var dailyReportDates = dailyReports.OrderByDescending(o => o.CreateTime).Select(s => s.CreateTime?.Date.ToString("yyyy-MM-dd")).Distinct().ToList();
 
             var data = dailyReports.GroupBy(g => g.CreateTime?.Date).Select(s => new ReportResult { DailyDate = s.Key?.Date.ToString("yyyy-MM-dd"), ReportDetails = s.ToList() }).ToList();
@@ -5389,7 +5389,7 @@ namespace OpenAuth.App
                 endDate = new DateTime(date.Year, date.Month, DateTime.DaysInMonth(date.Year, date.Month));
             }
             //获取当月的所有日报信息
-            var dailyReports = (await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId && w.CreateTime.Value.Date >= startDate && w.CreateTime.Value.Date <= endDate).ToListAsync()).Select(s => new ReportDetail { CreateTime = s.CreateTime, MaterialCode = s.MaterialCode, ManufacturerSerialNumber = s.ManufacturerSerialNumber, TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription), ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription) }).ToList();
+            var dailyReports = (await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId && w.CreateTime.Value.Date >= startDate && w.CreateTime.Value.Date <= endDate).ToListAsync()).Select(s => new ReportDetail { CreateTime = s.CreateTime, MaterialCode = s.MaterialCode, ManufacturerSerialNumber = s.ManufacturerSerialNumber, TroubleCode = GetServiceTroubleAndSolution(s.TroubleDescription,"code"), TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription, "description"), ProcessCode = GetServiceTroubleAndSolution(s.ProcessDescription,"code"),ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription, "description") }).ToList();
             var dailyReportDates = dailyReports.OrderBy(o => o.CreateTime).Select(s => s.CreateTime?.Date.ToString("yyyy-MM-dd")).Distinct().ToList();
 
             var data = dailyReports.GroupBy(g => g.CreateTime?.Date).Select(s => new ReportResult { DailyDate = s.Key?.Date.ToString("yyyy-MM-dd"), ReportDetails = s.ToList() }).ToList();
@@ -5487,7 +5487,7 @@ namespace OpenAuth.App
             return result;
         }
 
-        private List<string> GetServiceTroubleAndSolution(string data)
+        private List<string> GetServiceTroubleAndSolution(string data, string objectCode)
         {
             List<string> result = new List<string>();
             if (!string.IsNullOrEmpty(data))
@@ -5495,7 +5495,7 @@ namespace OpenAuth.App
                 JArray jArray = (JArray)JsonConvert.DeserializeObject(data);
                 foreach (var item in jArray)
                 {
-                    result.Add(item["description"].ToString());
+                    result.Add(item[objectCode] == null ? "" : item[objectCode].ToString());
                 }
             }
             return result;
@@ -6020,6 +6020,7 @@ namespace OpenAuth.App
                         .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                         .Select(a => new
                         {
+                            a.TerminalCustomerId,
                             ServiceOrderId = a.Id,
                             a.CreateTime,
                             a.Province,
@@ -6041,6 +6042,7 @@ namespace OpenAuth.App
                             {
                                 o.Id,
                                 o.Status,
+                                o.FromTheme,
                                 o.ManufacturerSerialNumber,
                                 o.MaterialCode,
                                 o.CurrentUserId,
@@ -6056,6 +6058,7 @@ namespace OpenAuth.App
                 .ToListAsync())
                 .Select(a => new
                 {
+                    a.TerminalCustomerId,
                     a.ServiceOrderId,
                     CreateTime = a.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
                     a.Province,
@@ -6083,7 +6086,7 @@ namespace OpenAuth.App
                         UnitName = "台",
                         MaterialTypeName = string.IsNullOrEmpty(s.Key) ? "无序列号" : MaterialTypeModel.Where(a => a.TypeAlias == s.Key).FirstOrDefault().TypeName,
                         WorkOrders = s.Select(i => i.Id).ToList(),
-                        Orders = s.Select(s => new { s.Id, s.MaterialCode, s.ManufacturerSerialNumber }).ToList()
+                        Orders = s.Select(s => new { s.Id, s.MaterialCode, s.ManufacturerSerialNumber, s.FromTheme }).ToList()
                     }
                     ).ToList()
                 });

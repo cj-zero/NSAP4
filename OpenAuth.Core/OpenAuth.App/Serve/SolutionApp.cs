@@ -36,7 +36,6 @@ namespace OpenAuth.App
             //    throw new Exception("当前登录用户没有访问该模块字段的权限，请联系管理员配置");
             //}
 
-
             var result = new TableData();
             var objs = UnitWork.Find<Solution>(s => s.UseBy == 1);
             if (!string.IsNullOrEmpty(request.key))
@@ -73,7 +72,8 @@ namespace OpenAuth.App
 
 
             var result = new TableData();
-            var objs = UnitWork.Find<Solution>(s => s.UseBy == 2);
+            //var objs = UnitWork.Find<Solution>(s => s.UseBy == 2);
+            var objs = UnitWork.Find<Solution>(s => s.IsNew == true);
             if (!string.IsNullOrEmpty(request.key))
             {
                 objs = objs.Where(u => u.Id.Contains(request.key) || u.Subject.Contains(request.key) || u.Symptom.Contains(request.key)).WhereIf(int.TryParse(request.key, out int code), u => u.SltCode == code);
@@ -84,7 +84,7 @@ namespace OpenAuth.App
             result.columnHeaders = properties;
             result.Data = await objs.OrderByDescending(u => u.SltCode)
                 .Skip((request.page - 1) * request.limit)
-                .Take(request.limit).ToListAsync();//.Select($"new ({propertyStr})");
+                .Take(request.limit).Select(x => new { x.Id, code = x.Descriptio + "-" + x.Code, x.Subject }).ToListAsync();//.Select($"new ({propertyStr})");
             result.Count = await objs.CountAsync();
             return result;
         }

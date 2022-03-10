@@ -59,7 +59,11 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var nsapUserMap = UnitWork.FindSingle<NsapUserMap>(u=>u.UserID==loginContext.User.Id);
+            var nsapUserMap = UnitWork.FindSingle<NsapUserMap>(u => u.UserID == loginContext.User.Id);
+            if (nsapUserMap == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
             return Convert.ToInt32(nsapUserMap.NsapUserId);
         }
         /// <summary>
