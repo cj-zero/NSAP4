@@ -5990,6 +5990,7 @@ namespace OpenAuth.App
                         .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                         .Select(a => new
                         {
+                            a.TerminalCustomerId,
                             ServiceOrderId = a.Id,
                             a.CreateTime,
                             a.Province,
@@ -6011,6 +6012,7 @@ namespace OpenAuth.App
                             {
                                 o.Id,
                                 o.Status,
+                                o.FromTheme,
                                 o.ManufacturerSerialNumber,
                                 o.MaterialCode,
                                 o.CurrentUserId,
@@ -6026,6 +6028,7 @@ namespace OpenAuth.App
                 .ToListAsync())
                 .Select(a => new
                 {
+                    a.TerminalCustomerId,
                     a.ServiceOrderId,
                     CreateTime = a.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
                     a.Province,
@@ -6053,7 +6056,7 @@ namespace OpenAuth.App
                         UnitName = "台",
                         MaterialTypeName = string.IsNullOrEmpty(s.Key) ? "无序列号" : MaterialTypeModel.Where(a => a.TypeAlias == s.Key).FirstOrDefault().TypeName,
                         WorkOrders = s.Select(i => i.Id).ToList(),
-                        Orders = s.Select(s => new { s.Id, s.MaterialCode, s.ManufacturerSerialNumber }).ToList()
+                        Orders = s.Select(s => new { s.Id, s.MaterialCode, s.ManufacturerSerialNumber, s.FromTheme }).ToList()
                     }
                     ).ToList()
                 });

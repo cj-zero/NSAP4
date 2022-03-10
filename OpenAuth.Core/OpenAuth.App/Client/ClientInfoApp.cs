@@ -808,7 +808,7 @@ namespace OpenAuth.App.Client
                     attachPath = item.attachPath,//附件预览路径
                     filetime = item.filetime,//上传时间
                     username = item.username,//操作者
-                    fileUserId = item.fileUserId//用户Id
+                    fileUserId = userID.ToString()//用户Id
                 };
                 billDelivery.FilesDetails.Add(billAttchment);
             }
@@ -2025,7 +2025,7 @@ namespace OpenAuth.App.Client
             strSql.AppendFormat("FROM {0}.file_main a LEFT JOIN {1}.base_user b ON a.acct_id=b.user_id ", "nsap_oa", "nsap_base");
             strSql.AppendFormat("LEFT JOIN {0}.file_type c ON a.file_type_id=c.type_id) T ", "nsap_oa");
 
-            strSql.AppendFormat("WHERE file_type_id={0} AND sbo_id={1} AND issue_reason={2} AND file_status<>{3} ", FileType, SboId, IssueReason, 3);
+            strSql.AppendFormat("WHERE file_type_id={0} AND sbo_id={1} AND issue_reason='{2}' AND file_status<>{3} ", FileType, SboId, IssueReason, 3);
 
 
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
