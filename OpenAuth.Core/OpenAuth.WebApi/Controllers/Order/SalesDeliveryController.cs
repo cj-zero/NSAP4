@@ -122,7 +122,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             var UserID = _serviceBaseApp.GetUserNaspId();
             var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
             data.main = await _salesDeliveryApp.QuerySaleDetailsNew(querySaleDetailsNewReq.DocNum, int.Parse(querySaleDetailsNewReq.SboId), querySaleDetailsNewReq.tablename, querySaleDetailsNewReq.ViewCustom, querySaleDetailsNewReq.ViewSales);
-            if (data.main == null) return null;
+            if (data.main == null) return result;
             data.manager = await _salesDeliveryApp.DropPopupOwnerCodeNew(SboID, data.main.OwnerCode.ToString());
             data.sales = await _salesDeliveryApp.DropPopupSlpCodeNew(SboID, data.main.SlpCode.ToString());
             data.mark = await _salesDeliveryApp.DropPopupIndicatorNew(SboID, data.main.Indicator.ToString());

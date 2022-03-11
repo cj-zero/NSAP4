@@ -28,7 +28,7 @@ namespace Sap.Handler.Service
             UnitWork = unitWork;
             this.company = company;
         }
-        [CapSubscribe("Serve.ServcieOrder.Create")]
+        [CapSubscribe("Serve.Client.Create")]
         public async Task ClientHandle(int jobID)
         {
             var wfa_job = UnitWork.FindSingle<wfa_job>(s => s.job_id == jobID);

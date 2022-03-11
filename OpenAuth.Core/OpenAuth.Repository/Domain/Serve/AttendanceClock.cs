@@ -25,17 +25,18 @@ namespace OpenAuth.Repository.Domain
     {
         public AttendanceClock()
         {
-          this.Name= string.Empty;
-          this.UserId= string.Empty;
-          this.Org= string.Empty;
-          this.OrgId= string.Empty;
-          this.ClockDate= DateTime.Now;
-          this.Location= string.Empty;
-          this.SpecificLocation= string.Empty;
-          this.VisitTo= string.Empty;
-          this.Remark= string.Empty;
-          this.PhoneId= string.Empty;
-          this.Ip= string.Empty;
+            this.Name = string.Empty;
+            this.UserId = string.Empty;
+            this.Org = string.Empty;
+            this.OrgId = string.Empty;
+            this.ClockDate = DateTime.Now;
+            this.Location = string.Empty;
+            this.SpecificLocation = string.Empty;
+            this.VisitTo = string.Empty;
+            this.Remark = string.Empty;
+            this.PhoneId = string.Empty;
+            this.Ip = string.Empty;
+            this.CreateTime = DateTime.Now;
         }
 
 
@@ -123,6 +124,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("打卡类型")]
         public int? ClockType { get; set; }
+
+        /// <summary>
+        /// 记录创建时间
+        /// </summary>
+        public DateTime? CreateTime { get; set; }
+
         /// <summary>
         /// 打卡记录图片
         /// </summary>

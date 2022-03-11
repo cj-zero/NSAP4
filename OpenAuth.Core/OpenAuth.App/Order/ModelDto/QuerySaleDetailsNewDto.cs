@@ -139,7 +139,7 @@ namespace OpenAuth.App.Order.ModelDto
     {
 
 
-        public string id { get; set; }
+        public int id { get; set; }
         public string name { get; set; }
 
     }
