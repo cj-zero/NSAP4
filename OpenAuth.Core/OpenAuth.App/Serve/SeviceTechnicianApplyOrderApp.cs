@@ -72,7 +72,7 @@ namespace OpenAuth.App
                             obj.FromTheme = currentMaterialTypeInfo.FromTheme;
                             obj.FromType = currentMaterialTypeInfo.FromType;
                             obj.ProblemTypeId = currentMaterialTypeInfo.ProblemTypeId;
-                            obj.ProblemTypeName = currentMaterialTypeInfo.ProblemType.Name;
+                            obj.ProblemTypeName = currentMaterialTypeInfo.ProblemType?.Name;
                             obj.CurrentUser = currentMaterialTypeInfo.CurrentUser;
                             obj.CurrentUserNsapId = currentMaterialTypeInfo.CurrentUserNsapId;
 
@@ -125,7 +125,7 @@ namespace OpenAuth.App
                                 obj.FromTheme = currentMaterialTypeInfo.FromTheme;
                                 obj.FromType = currentMaterialTypeInfo.FromType;
                                 obj.ProblemTypeId = currentMaterialTypeInfo.ProblemTypeId;
-                                obj.ProblemTypeName = currentMaterialTypeInfo.ProblemType.Name;
+                                obj.ProblemTypeName = currentMaterialTypeInfo.ProblemType?.Name;
                                 obj.CurrentUser = currentMaterialTypeInfo.CurrentUser;
                                 obj.CurrentUserNsapId = currentMaterialTypeInfo.CurrentUserNsapId;
                             }
@@ -180,7 +180,7 @@ namespace OpenAuth.App
                         obj.FromTheme = currentMaterialTypeInfo.FromTheme;
                         obj.FromType = currentMaterialTypeInfo.FromType;
                         obj.ProblemTypeId = currentMaterialTypeInfo.ProblemTypeId;
-                        obj.ProblemTypeName = currentMaterialTypeInfo.ProblemType.Name;
+                        obj.ProblemTypeName = currentMaterialTypeInfo.ProblemType?.Name;
                         obj.CurrentUser = currentMaterialTypeInfo.CurrentUser;
                         obj.CurrentUserNsapId = currentMaterialTypeInfo.CurrentUserNsapId;
                     }

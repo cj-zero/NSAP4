@@ -464,6 +464,21 @@ namespace OpenAuth.App.Client
             return clientTable;
 
         }
+
+        #region 同步
+        public async Task<bool> Synchronous(int clueId)
+        {
+            var clue = await UnitWork.FindSingleAsync<Repository.Domain.Serve.Clue>(q => q.Id == clueId);
+            if (clue == null)
+            {
+                return false;
+            }
+            clue.Status = 1;
+            await UnitWork.UpdateAsync(clue);
+            await UnitWork.SaveAsync();
+            return true;
+        }
+        #endregion
         #endregion
         #region 查詢指定業務夥伴的科目余额
         /// <summary>

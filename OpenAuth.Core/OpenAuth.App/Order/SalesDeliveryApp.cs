@@ -394,7 +394,7 @@ namespace OpenAuth.App.Order
             string sql = string.Format("SELECT b.CntctCode AS id,b.Name AS name FROM  " + "nsap_bone" + ".crm_ocrd a LEFT JOIN  " + "nsap_bone" + ".crm_ocpr b ON a.CardCode=b.CardCode WHERE a.CardCode='{0}'", Code);
             if (id != "0")
             {
-                sql += string.Format(" AND b.CntctCode='{0}'", id);
+                sql += string.Format(" AND b.CntctCode='{0}' LIMIT 1", id);
             }
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null).Tolist<CntctCode>().FirstOrDefault();
 
@@ -509,9 +509,9 @@ namespace OpenAuth.App.Order
         public async Task<DataTable> GetFilesList(string DocNum, string TypeId, int SboId)
         {
             string strSql = string.Format("SELECT a.file_id,b.type_nm,a.file_nm,a.remarks,a.file_path,a.upd_dt,c.user_nm,a.view_file_path,a.file_type_id,a.acct_id ");
-            strSql += string.Format(" FROM {0}.file_main a", "nsap_bone");
-            strSql += string.Format(" LEFT JOIN {0}.file_type b ON a.file_type_id=b.type_id", "nsap_bone");
-            strSql += string.Format(" LEFT JOIN {0}.base_user c ON a.acct_id=c.user_id", "nsap_bone");
+            strSql += string.Format(" FROM {0}.file_main a", "nsap_oa");
+            strSql += string.Format(" LEFT JOIN {0}.file_type b ON a.file_type_id=b.type_id", "nsap_oa");
+            strSql += string.Format(" LEFT JOIN {0}.base_user c ON a.acct_id=c.user_id", "nsap_base");
             if (TypeId == "5")//销售订单附件附带销售提成附件
             {
                 strSql += string.Format(" WHERE a.docEntry='{0}' AND a.file_type_id in ({1},37) AND sbo_id={2}", DocNum, TypeId, SboId);

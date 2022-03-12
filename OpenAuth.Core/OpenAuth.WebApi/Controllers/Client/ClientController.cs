@@ -677,6 +677,29 @@ namespace OpenAuth.WebApi.Controllers.Client
 
             return result;
         }
+        /// <summary>
+        /// 线索同步接口
+        /// </summary>
+        [HttpGet]
+        [AllowAnonymous]
+        [Route("Synchronous")]
+        public async Task<Response<bool>> Synchronous(int ClueId)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                    result.Result =await _clientInfoApp.Synchronous(ClueId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{ClueId.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
     }
 }
 
