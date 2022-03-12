@@ -68,15 +68,24 @@ namespace OpenAuth.App
             //如果请求的orgId不为空
             if (!string.IsNullOrEmpty(request.orgId))
             {
-                var org = loginUser.Orgs.SingleOrDefault(u => u.Id == request.orgId);
-                var cascadeId = org.CascadeId;
+                //如果用户的角色标识是管理员,则查看该组织及子部门下的所有成员
+                if (loginUser.Roles.Select(x => x.Identity).Where(x => x != null).Any(x => x.Equals("5")))
+                {
+                    var cascade = UnitWork.Find<Repository.Domain.Org>(null).Where(o => o.Id == request.orgId).FirstOrDefault()?.CascadeId;
+                    var ids = UnitWork.Find<Repository.Domain.Org>(null).Where(o => o.CascadeId.Contains(cascade)).Select(x => x.Id);
+                    userOrgs = userOrgs.Where(x => ids.Contains(x.OrgId));
+                }
+                else
+                {
+                    var org = loginUser.Orgs.SingleOrDefault(u => u.Id == request.orgId);
+                    var cascadeId = org.CascadeId;
 
-                var orgIds = loginUser.Orgs.Where(u => u.CascadeId.Contains(cascadeId)).Select(u => u.Id).ToArray();
+                    var orgIds = loginUser.Orgs.Where(u => u.CascadeId.Contains(cascadeId)).Select(u => u.Id).ToArray();
 
-                //只获取机构里面的用户
-                userOrgs = userOrgs.Where(u => u.Key == Define.USERORG && orgIds.Contains(u.OrgId));
+                    //只获取机构里面的用户
+                    userOrgs = userOrgs.Where(u => u.Key == Define.USERORG && orgIds.Contains(u.OrgId));
+                }
             }
-
             else  //todo:如果请求的orgId为空，即为跟节点，这时可以额外获取到机构已经被删除的用户，从而进行机构分配。可以根据自己需求进行调整
             {
                 var orgIds = loginUser.Orgs.Select(u => u.Id).ToArray();
@@ -107,6 +116,108 @@ namespace OpenAuth.App
                 Data = userViews.OrderBy(u => u.Name)
                     .Skip((request.page - 1) * request.limit)
                     .Take(request.limit),
+            };
+        }
+
+        /// <summary>
+        /// 根据token获取最终父节点下的所有用户
+        /// </summary>
+        /// <returns></returns>
+        public TableData GetUsers(QueryUserListReq request)
+        {
+            var loginUser = _auth.GetCurrentUser();
+            var orgIds = new List<string>(); //用户所属最终父节点的id
+            //用户的节点cascade
+            var cascadeIds = loginUser.Orgs.Select(x => x.CascadeId);
+            //最终的父节点cascade
+            var parenCascadeIds = UnitWork.Find<Repository.Domain.Org>(null).Where(o => string.IsNullOrWhiteSpace(o.ParentId)).Select(x => new { x.Id, x.CascadeId });
+            foreach (var item1 in parenCascadeIds)
+            {
+                foreach(var item2 in cascadeIds)
+                {
+                    if (item2.Contains(item1.CascadeId))
+                    {
+                        orgIds.Add(item1.Id);
+                        break;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+                
+            }
+
+            var userOrgs = from user in UnitWork.Find<User>(null)
+                           join relevance in UnitWork.Find<Relevance>(u => u.Key == Define.USERORG)
+                               on user.Id equals relevance.FirstId into temp
+                           from r in temp.DefaultIfEmpty()
+                           join org in UnitWork.Find<Repository.Domain.Org>(null)
+                               on r.SecondId equals org.Id into orgtmp
+                           from o in orgtmp.DefaultIfEmpty()
+                           select new
+                           {
+                               user.Account,
+                               user.Name,
+                               user.Id,
+                               user.Sex,
+                               user.Status,
+                               user.BizCode,
+                               user.CreateId,
+                               user.CreateTime,
+                               user.TypeId,
+                               user.TypeName,
+                               user.ServiceRelations,
+                               user.CardNo,
+                               r.Key,
+                               r.SecondId,
+                               OrgId = o.Id,
+                               OrgName = o.Name
+                           };
+
+
+
+            var cascadeId = UnitWork.Find<Repository.Domain.Org>(null).FirstOrDefault(o => orgIds.Distinct().Contains(o.Id))?.CascadeId;
+            //模糊查询,查询所有包含cascadeId的org
+            var orgIdsData = UnitWork.Find<Repository.Domain.Org>(null).Where(o => o.CascadeId.Contains(cascadeId)).Select(x => x.Id).ToList();
+            userOrgs = userOrgs.Where(u => orgIdsData.Contains(u.OrgId));
+
+            if (!string.IsNullOrWhiteSpace(request.name))
+            {
+                userOrgs = userOrgs.Where(u => u.Name.Contains(request.name));
+            }
+            if (!string.IsNullOrWhiteSpace(request.account))
+            {
+                userOrgs = userOrgs.Where(u => u.Account == request.account);
+            }
+            if (!string.IsNullOrWhiteSpace(request.orgId))
+            {
+                var cascade = UnitWork.Find<Repository.Domain.Org>(null).Where(o => o.Id == request.orgId).FirstOrDefault()?.CascadeId;
+                var ids = UnitWork.Find<Repository.Domain.Org>(null).Where(o => o.CascadeId.Contains(cascade)).Select(x => x.Id);
+                userOrgs = userOrgs.Where(u => ids.Contains(u.OrgId));
+            }
+
+
+            var userViews = userOrgs.ToList().GroupBy(b => b.Account).Select(u => new UserView
+            {
+                Id = u.First().Id,
+                Account = u.Key,
+                Name = u.First().Name,
+                Sex = u.First().Sex,
+                Status = u.First().Status,
+                CreateTime = u.First().CreateTime,
+                CreateUser = u.First().CreateId,
+                ServiceRelations = u.First()?.ServiceRelations,
+                CardNo = u.First()?.CardNo,
+                OrganizationIds = string.Join(",", u.Select(x => x.OrgId)),
+                Organizations = string.Join(",", u.Select(x => x.OrgName))
+            });
+
+            return new TableData
+            {
+                Count = userViews.Count(),
+                Data = userViews.OrderBy(u => u.Name).Skip((request.page - 1) * request.limit)
+                    .Take(request.limit)
             };
         }
 

@@ -115,6 +115,16 @@ namespace OpenAuth.WebApi.Controllers
             return _app.Load(request);
         }
 
+        /// <summary>
+        /// 根据token获取最终父节点下的所有用户
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public TableData GetUsers([FromQuery]QueryUserListReq request)
+        {
+            return _app.GetUsers(request);
+        }
+
         [HttpPost]
         public Response Delete([FromBody] string[] ids)
         {
