@@ -20,6 +20,7 @@ using OpenAuth.App.Serve.Response;
 using OpenAuth.App.Settlement.Request;
 using OpenAuth.App.Workbench;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository.Domain.Settlement;
 using OpenAuth.Repository.Domain.Workbench;
 using OpenAuth.Repository.Interface;
@@ -1704,6 +1705,38 @@ namespace OpenAuth.App
             var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
             var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
 
+            //modify by yangis @2022.03.14 导出内容中新加售后归属字段
+            var customerIds = new List<string>(); //客户代码
+            outsourcList.ForEach(x => customerIds.AddRange(x.OutsourcExpenses.Select(o => o.TerminalCustomerId)));
+            //根据客户代码查找售后主管
+            var supervisors = await (from r in UnitWork.Find<OCRD>(null)
+                                     join e in UnitWork.Find<OHEM>(null) on r.DfTcnician equals e.empID
+                                     where customerIds.Distinct().Contains(r.CardCode)
+                                     select new
+                                     {
+                                         customerId = r.CardCode ?? "",
+                                         supervisorName = (e.lastName ?? "") + (e.firstName ?? "")
+                                     }).ToListAsync();
+            //根据姓名查找部门
+            Func<IEnumerable<string>, Task<List<UserResp>>> getOrgName = async x =>
+             await (from u in UnitWork.Find<User>(null)
+                    join r in UnitWork.Find<Relevance>(null) on u.Id equals r.FirstId
+                    join o in UnitWork.Find<Repository.Domain.Org>(null) on r.SecondId equals o.Id
+                    where x.Contains(u.Name) && r.Key == Define.USERORG
+                    orderby o.CascadeId descending
+                    select new UserResp { Name = u.Name ?? "", OrgName = o.Name ?? "", CascadeId = o.CascadeId ?? "" }).ToListAsync();
+            var orgNames = await getOrgName(supervisors.Select(s => s.supervisorName).Distinct());
+            //将客户代码、售后主管、部门进行数据合并
+            var supervisorData = from s in supervisors
+                                 join o in orgNames on s.supervisorName equals o.Name
+                                 select new
+                                 {
+                                     CustomerId = s.customerId ?? "",
+                                     SupervisorName = (o.OrgName ?? "") + (s.supervisorName ?? ""),
+                                     OrgName = o.OrgName ?? "",
+                                     CascadeId = o.CascadeId ?? ""
+                                 };
+
             List<OutsourcExcelDto> outsourcs = new List<OutsourcExcelDto>();
             outsourcList.ForEach(o =>
             {
@@ -1715,6 +1748,7 @@ namespace OpenAuth.App
                     ServiceOrderSapId = outsourcexpensesObj?.ServiceOrderSapId,
                     CustomerId = outsourcexpensesObj?.TerminalCustomerId,
                     CustomerName = outsourcexpensesObj?.TerminalCustomer,
+                    Supervisor = supervisorData.Where(s => s.CustomerId == outsourcexpensesObj?.TerminalCustomerId).OrderByDescending(x => x.CascadeId)?.Take(1)?.FirstOrDefault()?.SupervisorName,
                     ServiceFee = o.OutsourcExpenses.Where(c => c.ExpenseType == 4).Sum(c => c.Money),
                     WorkingHoursFee = o.OutsourcExpenses.Where(c => c.ExpenseType == 3).Sum(c => c.Money),
                     TransportationFee = o.OutsourcExpenses.Where(c => c.ExpenseType == 1).Sum(c => c.Money),
