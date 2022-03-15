@@ -4247,7 +4247,7 @@ namespace OpenAuth.App
                 workOrderIds.Add(id);
             }
             //获取解决方案名称
-            var SolutionName = (await UnitWork.Find<Solution>(s => s.UseBy == 2 && s.Id == req.SolutionId).FirstOrDefaultAsync()).Subject;
+            var SolutionName = (await UnitWork.Find<Solution>(s => s.UseBy == 2 && s.Id == req.SolutionId).FirstOrDefaultAsync())?.Subject;
             await UnitWork.UpdateAsync<ServiceWorkOrder>(s => workOrderIds.Contains(s.Id), o => new ServiceWorkOrder
             {
                 ProcessDescription = SolutionName
