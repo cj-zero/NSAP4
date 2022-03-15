@@ -220,6 +220,26 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         #endregion
+        #region 打印
 
+        [HttpGet]
+        [Route("DeliveryExportShow")]
+        public async Task<Response<string>> DeliveryExportShow(string sboid, string DocEntry)
+        {
+            var result = new Response<string>();
+            try
+            {
+                result.Result = await _salesDeliveryApp.DeliveryExportShow(sboid, DocEntry);
+            }
+            catch (Exception ex)
+            {
+                result.Result = "";
+                result.Code = 500;
+                result.Message = "服务器内部错误：" + ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{DocEntry}， 错误：{ex.Message},堆栈信息：{ex.StackTrace}");
+            }
+            return result;
+        }
+        #endregion
     }
 }

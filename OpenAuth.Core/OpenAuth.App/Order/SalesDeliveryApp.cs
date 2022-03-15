@@ -260,6 +260,7 @@ namespace OpenAuth.App.Order
             }
             return res > 0 ? true : false;
         }
+
         /// <summary>
         /// 交货详情主数据
         /// </summary>
@@ -830,5 +831,14 @@ namespace OpenAuth.App.Order
             return UnitWork.ExecuteSql(strSql, ContextType.NsapBaseDbContext) > 0 ? "1" : "0";
         }
         #endregion
+
+
+        #region 打印
+        public Task<string> DeliveryExportShow(string sboid, string docEntry)
+        {
+            throw new NotImplementedException();
+        } 
+        #endregion
+
     }
 }
