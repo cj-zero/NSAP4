@@ -14,6 +14,10 @@ using OpenAuth.Repository.Extensions;
 using System.Linq;
 using Infrastructure;
 using System;
+using Microsoft.AspNetCore.Mvc;
+using System.IO;
+using DinkToPdf;
+using Infrastructure.Export;
 
 namespace OpenAuth.App.Order
 {
@@ -260,6 +264,7 @@ namespace OpenAuth.App.Order
             }
             return res > 0 ? true : false;
         }
+
         /// <summary>
         /// 交货详情主数据
         /// </summary>
@@ -830,5 +835,133 @@ namespace OpenAuth.App.Order
             return UnitWork.ExecuteSql(strSql, ContextType.NsapBaseDbContext) > 0 ? "1" : "0";
         }
         #endregion
+
+
+        #region 打印
+        public async Task<byte[]> DeliveryExportShow(string sboid, string docEntry)
+        {
+            DataTable dtb = DeliveryExportView(sboid, docEntry);
+            DataTable dtbs = DeliveryExportViews(sboid, docEntry);
+            var logopath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
+            var logostr = "";
+            using (var fs = new FileStream(logopath, FileMode.Open))
+            {
+                var photo = new byte[fs.Length];
+                fs.Position = 0;
+                await fs.ReadAsync(photo, 0, photo.Length);
+                logostr = Convert.ToBase64String(photo);
+                Console.WriteLine(logostr);
+            }
+            var PrintSalesQuotation = new PrintSalesQuotation
+            {
+                DocEntry = string.IsNullOrEmpty(dtb.Rows[0][0].ToString()) ? " " : dtb.Rows[0][0].ToString(),
+                DateTime = string.IsNullOrEmpty(dtb.Rows[0][15].ToString()) ? " " : dtb.Rows[0][15].ToString(),
+                SalseName = string.IsNullOrEmpty(dtb.Rows[0][8].ToString()) ? " " : dtb.Rows[0][8].ToString(),
+                CardCode = string.IsNullOrEmpty(dtb.Rows[0][1].ToString()) ? " " : dtb.Rows[0][1].ToString(),
+                Name = string.IsNullOrEmpty(dtb.Rows[0][3].ToString()) ? " " : dtb.Rows[0][3].ToString(),
+                Tel = string.IsNullOrEmpty(dtb.Rows[0][4].ToString()) ? " " : dtb.Rows[0][4].ToString(),
+                Fax = string.IsNullOrEmpty(dtb.Rows[0][17].ToString()) ? " " : dtb.Rows[0][17].ToString(),
+                Cellolar = string.IsNullOrEmpty(dtb.Rows[0][6].ToString()) ? " " : dtb.Rows[0][6].ToString(),
+                CardName = string.IsNullOrEmpty(dtb.Rows[0][2].ToString()) ? " " : dtb.Rows[0][2].ToString(),
+                Address = string.IsNullOrEmpty(dtb.Rows[0][7].ToString()) ? " " : dtb.Rows[0][7].ToString(),
+                Address2 = string.IsNullOrEmpty(dtb.Rows[0][19].ToString()) ? " " : dtb.Rows[0][19].ToString(),
+                PymntGroup = string.IsNullOrEmpty(dtb.Rows[0][11].ToString()) ? " " : dtb.Rows[0][11].ToString(),
+                Comments = string.IsNullOrEmpty(dtb.Rows[0][10].ToString()) ? " " : dtb.Rows[0][10].ToString().Replace("<br>", " "),
+                DocTotal = string.IsNullOrEmpty(dtb.Rows[0][13].ToString()) ? " " : dtb.Rows[0][13].ToString(),
+                DATEFORMAT = string.IsNullOrEmpty(dtb.Rows[0][14].ToString()) ? " " : dtb.Rows[0][14].ToString(),
+                logo = logostr,
+                QRcode = QRCoderHelper.CreateQRCodeToBase64(docEntry),
+                ReimburseCosts = new List<ReimburseCost>()
+            };
+            for (int i = 0; i < dtbs.Rows.Count; i++)
+            {
+                ReimburseCost scon = new ReimburseCost
+                {
+                    ItemCode = string.IsNullOrEmpty(dtbs.Rows[i][2].ToString()) ? " " : dtbs.Rows[i][2].ToString(),
+                    Dscription = string.IsNullOrEmpty(dtbs.Rows[i][3].ToString()) ? " " : dtbs.Rows[i][3].ToString(),
+                    Quantity = string.IsNullOrEmpty(dtbs.Rows[i][4].ToString()) ? " " : dtbs.Rows[i][4].ToString(),
+                    unitMsr = string.IsNullOrEmpty(dtbs.Rows[i][5].ToString()) ? " " : dtbs.Rows[i][5].ToString(),
+                    Price = string.IsNullOrEmpty(dtbs.Rows[i][6].ToString()) ? " " : dtbs.Rows[i][6].ToString(),
+                    Money = string.IsNullOrEmpty(dtbs.Rows[i][7].ToString()) ? " " : dtbs.Rows[i][7].ToString()
+
+                };
+                PrintSalesQuotation.ReimburseCosts.Add(scon);
+            }
+            var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesQuotationheader.html");
+            var text = System.IO.File.ReadAllText(url);
+            text = text.Replace("@Model.Data.logo", PrintSalesQuotation.logo);
+            text = text.Replace("@Model.Data.DocEntry", PrintSalesQuotation.DocEntry);
+            text = text.Replace("@Model.Data.DateTime", PrintSalesQuotation.DateTime);
+            text = text.Replace("@Model.Data.QRcode", PrintSalesQuotation.QRcode);
+            text = text.Replace("@Model.Data.SalseName", PrintSalesQuotation.SalseName);
+            text = text.Replace("@Model.Data.CardCode", PrintSalesQuotation.CardCode);
+            text = text.Replace("@Model.Data.Name", PrintSalesQuotation.Name);
+            text = text.Replace("@Model.Data.Tel", PrintSalesQuotation.Tel);
+            text = text.Replace("@Model.Data.Fax", PrintSalesQuotation.Fax);
+            text = text.Replace("@Model.Data.CardName", PrintSalesQuotation.CardName);
+            text = text.Replace("@Model.Data.Address", PrintSalesQuotation.Address);
+            text = text.Replace("@Model.Data.Addrestwo", PrintSalesQuotation.Address2);
+            text = text.Replace("@Model.Data.SalseName", PrintSalesQuotation.SalseName);
+            text = text.Replace("@Model.Data.Cellolar", PrintSalesQuotation.Cellolar);
+            text = text.Replace("@Model.Data.DATEFORMAT", PrintSalesQuotation.DATEFORMAT);
+            text = text.Replace("@Model.Data.PymntGroup", PrintSalesQuotation.PymntGroup);
+            text = text.Replace("@Model.Data.Comments", PrintSalesQuotation.Comments);
+            var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesQuotationheader{PrintSalesQuotation.DocEntry}.html");
+            System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
+            var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesQuotationfooter.html");
+            var foottext = System.IO.File.ReadAllText(footUrl);
+            foottext = foottext.Replace("@Model.Data.DocTotal", PrintSalesQuotation.DocTotal);
+            var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesQuotationfooter{PrintSalesQuotation.DocEntry}.html");
+            System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
+            byte[] basecode = await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesQuotation.cshtml", pdf =>
+            {
+                pdf.Orientation = Orientation.Portrait;
+                pdf.IsWriteHtml = true;
+                pdf.PaperKind = PaperKind.A4;
+                pdf.IsEnablePagesCount = true;
+                pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
+            });
+            System.IO.File.Delete(tempUrl);
+            System.IO.File.Delete(foottempUrl);
+            return basecode;
+
+        }
+        #endregion
+        /// <summary>
+        /// 销售交货信息
+        /// </summary>
+        /// <param name="sboid"></param>
+        /// <param name="DocEntry"></param>
+        /// <returns></returns>
+        public DataTable DeliveryExportView(string sboid, string DocEntry)
+        {
+            StringBuilder str = new StringBuilder();
+            str.Append("SELECT a.DocEntry,DATE_FORMAT(a.CreateDate,'%Y.%m.%d') as CreateDate,c.SlpName,c.Memo,a.NumAtCard,a.CardCode,a.CardName,b.Name as CntctName,b.Tel1,b.Tel2,b.Cellolar,b.Fax,b.Address");
+            str.Append(",DATE_FORMAT(a.DocDueDate,'%Y.%m.%d') as DeliveryDate,a.U_CPH,a.indicator");
+            //str.Append(" a.DocTotal,CONCAT(e.Currency,' ',ROUND(a.DocTotal,2)) ,DATE_FORMAT(a.DocDate,'%Y.%m.%d'),a.U_ShipName,b.Fax,a.U_YGMD,a.Address2,a.U_YSQX,a.BnkAccount,f.HouseBank,CONCAT(ROUND(a.U_SL,0),'%')U_SL,a.NumAtCard ");
+            str.AppendFormat(" FROM {0}.sale_odln a ", "nsap_bone");
+            str.AppendFormat(" left join {0}.crm_ocpr b on a.CntctCode=b.CntctCode and a.sbo_id=b.sbo_id and a.CardCode=b.CardCode ", "nsap_bone");
+            str.AppendFormat(" left join {0}.crm_oslp c on a.SlpCode=c.SlpCode and a.sbo_id=c.sbo_id ", "nsap_bone");
+            //str.AppendFormat(" left join {0}.crm_octg d on a.GroupNum=d.GroupNum AND a.sbo_id=d.sbo_id ", Sql.BOneDatabaseName);
+            //str.AppendFormat(" left join {0}.crm_ocrd f on a.DocEntry=f.CardCode and a.sbo_id=f.sbo_id ", Sql.BOneDatabaseName);
+            str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1}", DocEntry, sboid);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, str.ToString(), CommandType.Text, null);
+        }
+        /// <summary>
+        /// 交货明细
+        /// </summary>
+        /// <param name="sboid"></param>
+        /// <param name="DocEntry"></param>
+        /// <returns></returns>
+        public DataTable DeliveryExportViews(string sboid, string DocEntry)
+        {
+            StringBuilder str = new StringBuilder();
+            str.Append(" SELECT b.ItemCode,b.Dscription,ROUND(b.Quantity,2),b.unitMsr,b.WhsCode,ROUND(b.Price,6),b.BaseEntry,ROUND(b.Quantity*b.Price,2),b.Currency ");
+            str.AppendFormat(" from {0}.sale_odln  a ", "nsap_bone");
+            str.AppendFormat(" LEFT JOIN {0}.sale_dln1 b on b.DocEntry=a.DocEntry and b.sbo_id=a.sbo_id ", "nsap_bone");
+            str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1} ", DocEntry, sboid);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, str.ToString(), CommandType.Text, null);
+        }
     }
 }

@@ -220,6 +220,14 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         #endregion
+        #region 打印
 
+        [HttpGet]
+        [Route("DeliveryExportShow")]
+        public async Task<FileResult> DeliveryExportShow(string sboid, string DocEntry)
+        {
+                return File(await _serviceSaleOrderApp.ExportShow(sboid, DocEntry), "application/pdf");
+        }
+        #endregion
     }
 }
