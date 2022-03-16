@@ -1174,13 +1174,13 @@ namespace OpenAuth.App
         public dynamic GetAddress(string cardcode, int sboid)
         {
             var query = from a in UnitWork.Find<crm_crd1>(null)
-                        join d in UnitWork.Find< crm_ocrd >(null) on a.CardCode equals d.CardCode into ad
+                        join d in UnitWork.Find< crm_ocrd >(null) on new { a.CardCode,a.Address }  equals new { d.CardCode, Address=d.BillToDef } into ad
                         from d in ad.DefaultIfEmpty()
                         join b in UnitWork.Find<crm_ocry>(null) on a.Country equals b.Code into ab
                         from b in ab.DefaultIfEmpty()
                         join c in UnitWork.Find<crm_ocst>(null) on a.State equals c.Code into ac
                         from c in ac.DefaultIfEmpty()
-                        where a.sbo_id == sboid && a.CardCode == cardcode && a.AdresType=="B" && a.Address== "开票到"
+                        where d.sbo_id == sboid && a.CardCode == cardcode // && a.AdresType=="B" && a.Address== "开票到"
                         select new { d.CardCode,d.CardName, a.LineNum, Active = a.U_Active, a.AdresType, a.Address, Country = b.Name, State = c.Name, a.City, a.Building };
             return query.FirstOrDefault();
         }

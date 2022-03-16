@@ -542,6 +542,7 @@ namespace OpenAuth.WebApi.Controllers
 
                 model.CalibrationCertificate.EntrustedDate = !string.IsNullOrWhiteSpace(entrustment?.EntrustedDate.ToString()) ? entrustment?.EntrustedDate.Value.ToString("yyyy年MM月dd日") : "";
                 model.CalibrationCertificate.CalibrationDate = DateTime.Parse(model.CalibrationCertificate.CalibrationDate).ToString("yyyy年MM月dd日");
+                model.CalibrationCertificate.Temperature = Convert.ToInt32(model.CalibrationCertificate.Temperature).ToString("0.0");
                 foreach (var item in model.MainStandardsUsed)
                 {
                     if (!string.IsNullOrWhiteSpace(item.DueDate))
@@ -982,6 +983,12 @@ namespace OpenAuth.WebApi.Controllers
                                     cvAcceptance = accpetedTolerance;
                                 }
                             }
+                            else//默认为0的处理方法
+                            {
+
+                                var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyV * 1000;
+                                cvAcceptance = accpetedTolerance;
+                            }
                             //约分
                             //var (IndicationReduce, MeasuredValueReduce, ErrorReduce, AcceptanceReduce, UncertaintyReduce) = ReduceVoltage(cvIndication, cvMeasuredValue, cvError, cvAcceptance, cvUncertainty);
 
@@ -1049,6 +1056,19 @@ namespace OpenAuth.WebApi.Controllers
                                     }
                                 }
                             }
+                            else//默认为0的处理方法
+                            {
+
+                                if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
+                                {
+                                    cvConclustion = "P";
+                                }
+                                else
+                                {
+                                    cvConclustion = "F";
+                                }
+                            }
+
                             if (mode.Equals("Charge"))
                             {
                                 model.ChargingVoltage.Add(new DataSheet
@@ -1154,6 +1174,11 @@ namespace OpenAuth.WebApi.Controllers
                                     Acceptance = accpetedTolerance;
                                 }
                             }
+                            else//默认为0的处理方法
+                            {
+                                var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyC;
+                                Acceptance = accpetedTolerance;
+                            }
                             //约分
                             //var (IndicationReduce, MeasuredValueReduce, ErrorReduce, AcceptanceReduce, UncertaintyReduce) = ReduceCurrent(Math.Abs(Indication), Math.Abs(MeasuredValue), Error, Acceptance, Uncertainty);
                             string IndicationReduce = "", MeasuredValueReduce = "", ErrorReduce = "", AcceptanceReduce = "", UncertaintyReduce = "";
@@ -1220,6 +1245,17 @@ namespace OpenAuth.WebApi.Controllers
                                     {
                                         Conclustion = "F";
                                     }
+                                }
+                            }
+                            else//默认为0的处理方法
+                            {
+                                if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
+                                {
+                                    Conclustion = "P";
+                                }
+                                else
+                                {
+                                    Conclustion = "F";
                                 }
                             }
 
