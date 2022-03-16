@@ -1,0 +1,116 @@
+﻿<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+        
+        body {
+            width: 1000px;
+            margin: 0 auto;
+            margin-top: 10px;
+            font-size: 13.5px;
+            color: #7F7F7F;
+        }
+        
+        table {
+            border-collapse: collapse;
+        }
+        
+        #tablebor {
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+        
+        .TH td {
+            border-style: solid;
+            border-width: 1px;
+        }
+        
+        #divtitle {
+            margin: 0 auto;
+        }
+        
+        hr {
+            margin-top: 80px;
+            height: 0px;
+            border-top: 1px solid #808A87;
+            border-right: 0px;
+            border-bottom: 0px;
+            border-left: 0px;
+        }
+        
+        #divcode {
+            height: 50px;
+            width: 1000px;
+            margin: 0 auto;
+            border: 1px solid #808A87;
+        }
+    </style>
+</head>
+
+<header>
+    <div id="divtitle" style=" width: 1000px; height:60px;">
+        <!-- <div style="position: fixed;">
+            <img style="width: 120px;height: 45px;" src="data:image/png;base64,@Model.Data.logo" color="#6F6F6F">
+        </div> -->
+        <div style="float:left;width: 300px;  margin-left:260px">
+            <span style="font-size: 42px;">装箱清单</span><br/>
+            <span style="font-size: 42px;">发货单</span>
+        </div>
+        <div style="float:left;width: 200px;  ">
+            <p>单号：PL-<span style="font-size: 30px; font-weight: 900;">@Model.Data.DocEntry</span></p>
+            <p style="margin-top: 5px; ">日期：@Model.Data.CreateDate</p>
+            <p style="margin-top: 5px; ">基础凭证：@Model.Data.BaseEntry</p>
+            <p style="margin-top: 7px; ">销售：@Model.Data.SlpName</p>
+            <p style="margin-top: 7px; ">客户PO：</p>
+        </div>
+        <div style="float:right; width: 240px; ">
+            <img color="#6F6F6F" style="width: 90px;height:90px; float: right; margin-top: -10px;" src="@Model.Data.QRcode" />
+        </div>
+    </div>
+    <table style="margin-top: 30px;" id="divcode">
+        <tr>
+            <td align="left" style="width: 55pt; ">&nbsp;客户编号：</td>
+            <td align="left" style="width: 140pt; ">@Model.Data.CardCode</td>
+            <td align="left" style="width: 55pt; ">联系人：</td>
+            <td align="left" style="width: 140pt;">@Model.Data.CntactName</td>
+            <td align="left" style="width: 30pt; ">&nbsp;电话：</td>
+            <td align="left" style="width: 140pt; ">@Model.Data.Tel</td>
+        </tr>
+        <tr>
+            <td>&nbsp;客户名称：</td>
+            <td colspan="7">
+                @Model.Data.CardName
+            </td>
+        </tr>
+        <tr>
+            <td>&nbsp;交货地址：</td>
+            <td colspan="7">
+                @Model.Data.Address
+            </td>
+        </tr>
+    </table>
+
+    <table style="margin-top: 5px;" id="divcode">
+        <tr>
+            <td align="left" style="width: 100px; ">&nbsp;交货日期：</td>
+            <td align="left" style="width: 250px; ">@Model.Data.DeliveryDate</td>
+            <td align="left" style="width: 100px; ">交货方式：</td>
+            <td align="left" style="width: 50pt;" colspan="4">自提</td>
+        </tr>
+    </table>
+    <table style="margin-top:2px; width:1000px;">
+        <tr class="TH">
+            <td style="width: 30px;" align="center"># </td>
+            <td style="width: 80px;" align="left">&nbsp; 物料编码</td>
+            <td style="width: 250px;" align="left">&nbsp; 描述</td>
+            <td style="width: 50px;" align="right">&nbsp; 数量</td>
+            <td style="width: 50px; " align="left">&nbsp;单位</td>
+            <td style="width: 80px; " align="right">仓库 &nbsp;</td>
+        </tr>
+    </table>
+</header>

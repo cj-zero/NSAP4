@@ -1,0 +1,86 @@
+@using OpenAuth.App.Order.ModelDto
+<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        body {
+            width: 1000px;
+            margin: 0 auto;
+            margin-top: 10px;
+            font-size: 13.5px;
+            color: #7F7F7F;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        #tablebor {
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+
+        .TH td {
+            border-style: solid;
+            border-width: 1px;
+        }
+
+        #divtitle {
+            margin: 0 auto;
+        }
+
+        hr {
+            margin-top: 80px;
+            height: 0px;
+            border-top: 1px solid #808A87;
+            border-right: 0px;
+            border-bottom: 0px;
+            border-left: 0px;
+        }
+
+        #divcode {
+            height: 50px;
+            width: 1000px;
+            margin: 0 auto;
+            border: 1px solid #808A87;
+        }
+    </style>
+</head>
+
+<body>
+    @{
+        decimal TotalPrice = 0;
+    }
+    @{
+        int number = 0;
+    }
+    <table style="width:1000px">
+        @foreach (var item in Model.Data.SalesDeliveryDeatils)
+        {
+            <tr>
+                <td style="width: 30px;" align="left">
+                    @{
+                        ++number;
+                    } @number
+                </td>
+                <td style="width: 80px;" align="left">@item.ItemCode</td>
+                <td style="width: 250px;" align="left">@item.Dscription</td>
+                <td style="width: 50px;" align="right">@item.Quantity </td>
+                <td style="width: 50px; " align="left">&nbsp; @item.unitMsr</td>
+                <td style="width: 80px; " align="right">@item.WhsCode</td>
+            </tr>
+        }
+    </table>
+    <table style="width:1000px;">
+        <div style="width:1000px;height:80px;border: 1px solid #000;">
+            <p style="font-weight: 700;color: #000;margin-top: 5px;margin-left: 5px;">产品编号/箱号：</p>
+            <p style="color: #000;margin-left: 5px;">@Model.Data.U_CPH</p>
+        </div>
+    </table>
+</body>

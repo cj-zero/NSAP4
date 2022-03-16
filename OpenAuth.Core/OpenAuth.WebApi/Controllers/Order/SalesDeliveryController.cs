@@ -226,7 +226,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         [Route("DeliveryExportShow")]
         public async Task<FileResult> DeliveryExportShow(string sboid, string DocEntry)
         {
-                return File(await _serviceSaleOrderApp.ExportShow(sboid, DocEntry), "application/pdf");
+                return File(await _salesDeliveryApp.DeliveryExportShow(sboid, DocEntry), "application/pdf");
         }
         #endregion
     }

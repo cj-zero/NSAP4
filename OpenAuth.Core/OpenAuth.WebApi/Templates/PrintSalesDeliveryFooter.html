@@ -1,0 +1,474 @@
+<!doctype html>
+
+<html>
+
+
+
+<head>
+
+    <meta charset="utf-8">
+
+    <!-- <meta http-equiv="refresh" content="1"> -->
+
+
+
+    <title></title>
+
+    <style type="text/css">
+        * {
+            padding: 0;
+            margin: 0;
+        }
+
+        body {
+            width: 1000px;
+            margin: 0 auto;
+            margin-top: 10px;
+            font-size: 13.5px;
+            font-family: "微软雅黑";
+            color: #000;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        #tablebor {
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+
+        .TH td {
+            border-style: solid;
+            border-width: 1px;
+        }
+
+        #divtitle {
+            margin: 0 auto;
+        }
+
+        hr {
+            height: 0px;
+            border-top: 1px solid #808A87;
+            border-right: 0px;
+            border-bottom: 0px;
+            border-left: 0px;
+        }
+
+        #divcode {
+            border-style: solid;
+            border-width: 1px;
+            border-color: #808A87;
+            height: 50px;
+            width: 1000px;
+            margin: 0 auto;
+        }
+
+            #divcode tr {
+                vertical-align: top;
+            }
+
+        body {
+            font-family: STSong Microsoft YaHei;
+        }
+
+        #container {
+            position: relative;
+            margin: 0 auto;
+            padding: 0 40px 0 50px;
+            width: 794px;
+            height: 1123px;
+        }
+
+        footer {
+            /* position: absolute; */
+            left: 0;
+            bottom: 0;
+            /*padding: 0 40px 0 0;*/
+            width: 100%
+        }
+
+        .productList:last-child div {
+            /* border-top: 1px solid #000; */
+            border-bottom: 1px solid #000;
+            border-left: 1px solid #000;
+            border-right: 1px solid #000;
+        }
+        /*
+
+            footer hr {
+
+                height: 2px;
+
+                background-color: #000;
+
+                border: none
+
+            }*/
+
+        footer .footer-title h1 {
+            font-size: 13px;
+            line-height: 20px;
+            font-weight: 400;
+            text-align: center;
+            margin-top: 0px;
+        }
+
+        .type {
+            color: #000;
+            width: 64px;
+            display: inline-block;
+            word-break: break-all;
+            border-right: 1px solid #000;
+        }
+
+        .type_ {
+            color: #000;
+            width: 64px;
+            display: inline-block;
+            word-break: break-all;
+            padding-left: 5px;
+        }
+
+        footer .footer-title p {
+            margin-top: 6px;
+            font-size: 12px;
+            line-height: 30px
+        }
+
+        footer .footer-info {
+            margin-top: 8px;
+            font-size: 13px;
+            height: 104px
+        }
+
+            footer .footer-info div {
+                display: flex;
+                justify-content: space-between
+            }
+
+                footer .footer-info div p {
+                    flex: 1;
+                    padding-right: 8px
+                }
+
+                    footer .footer-info div p.footer-datetime {
+                        margin-top: 8px;
+                        font-size: 10px
+                    }
+
+        .index {
+            color: #000;
+            width: 50px;
+            display: inline-block;
+            /* border-right: 1px solid #000; */
+            text-align: center;
+            word-break: break-all;
+        }
+
+        .index_ {
+            color: #000;
+            width: 50px;
+            display: inline-block;
+            text-align: center;
+            word-break: break-all;
+        }
+
+        .wlDsc {
+            color: #000;
+            width: 300px;
+            display: inline-block;
+            border-right: 1px solid #000;
+            word-break: break-all;
+        }
+
+        .wlDsc_ {
+            color: #000;
+            width: 300px;
+            display: inline-block;
+            word-break: break-all;
+        }
+
+        .wlNum {
+            color: #000;
+            width: 50px;
+            display: inline-block;
+            border-right: 1px solid #000;
+        }
+
+        .jgfInput {
+            width: 85px;
+            display: inline-block;
+            font-weight: 400;
+        }
+
+        .prvePrice {
+            color: #000;
+            width: 110px;
+            display: inline-block;
+            text-align: right;
+            word-break: break-all;
+            /* border-right: 1px solid #000; */
+        }
+
+        .prvePrice_ {
+            color: #000;
+            width: 110px;
+            display: inline-block;
+            text-align: right;
+            word-break: break-all;
+        }
+
+        .onePrice {
+            color: #000;
+            width: 100px;
+            display: inline-block;
+            text-align: right;
+            border-right: 1px solid #000;
+            word-break: break-all
+        }
+
+        .onePrice_ {
+            color: #000;
+            width: 110px;
+            display: inline-block;
+            text-align: right;
+            word-break: break-all
+        }
+
+        .num {
+            width: 62px;
+            padding-right: 5px;
+            text-align: right;
+            display: inline-block;
+            word-break: break-all;
+            border-right: 1px solid #000;
+        }
+
+        .num_ {
+            width: 62px;
+            text-align: right;
+            display: inline-block;
+            word-break: break-all;
+        }
+
+        .wlCode {
+            color: #000;
+            width: 270px;
+            display: inline-block;
+            border-right: 1px solid #000;
+            border-left: 1px solid #000;
+            word-break: break-all
+        }
+
+        .wlCode_ {
+            color: #000;
+            width: 270px;
+            display: inline-block;
+            word-break: break-all;
+        }
+
+        .remarkInput {
+            color: #000;
+            /* width: 615px; */
+            display: inline-block;
+            word-break: break-all;
+            font-weight: 400;
+        }
+
+        .customerDetail {
+            width: 100%;
+            /* height: 0px; */
+            border: 2px solid #000;
+            padding: 10px 0 0 0;
+            font-weight: 700;
+        }
+
+        .customerDetail_left {
+            width: 50%;
+            /* height: 0px; */
+            border: 2px solid #000;
+            border-right: none;
+            padding: 10px 0 0 0;
+            font-weight: 700;
+        }
+
+        .customerDetail_right {
+            width: 50%;
+            /* height: 0px; */
+            padding: 10px 0 0 0;
+            border: 2px solid #000;
+            border-left: 1px solid #000;
+            font-weight: 700;
+        }
+
+        .cardCode {
+            margin-left: 5px;
+            display: inline-block;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .cardName {
+            font-weight: 700;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .cardInput {
+            /* width: 300px; */
+        }
+
+        .moneyDel {
+            width: 609px;
+            display: inline-block;
+        }
+
+        .msg {
+            width: 100%;
+            line-height: 1.5;
+            padding: 5px;
+        }
+
+        .companyName {
+            width: 250px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .bankName {
+            width: 300px;
+            font-size: 16px;
+            font-weight: 400;
+            font-weight: 700;
+            margin-left: 200px;
+        }
+
+        .bankNum {
+            width: 200px;
+            font-size: 16px;
+            display: inline-block;
+            font-weight: 700;
+            margin-left: 100px;
+            float: right;
+        }
+
+        .address {
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .number {
+            display: inline-block;
+            margin-top: 10px;
+            margin-left: 150px;
+        }
+    </style>
+
+</head>
+
+
+
+<body>
+    <table style="width:1000px;">
+        <div style="padding:15px;color: #000;">
+            <p style="display: inline-block;width: 33%;">发货经办人： <span style="border-bottom: 1px solid #000;width: 150px;display: inline-block;">张三1</span></p>
+            <p style="display: inline-block;width: 33%;">仓库主管： <span style="border-bottom: 1px solid #000;width: 150px;display: inline-block;">张三1</span></p>
+            <p style="display: inline-block;width: 33%;">品质主管： <span style="border-bottom: 1px solid #000;width: 150px;display: inline-block;">张三1</span></p>
+
+            <p style="display: inline-block;width: 33%;margin-top: 10px;">生产经办人： <span style="border-bottom: 1px solid #000;width: 150px;display: inline-block;">张三1</span></p>
+            <p style="display: inline-block;width: 33%;margin-top: 10px;">门卫负责人： <span style="border-bottom: 1px solid #000;width: 150px;display: inline-block;">张三1</span></p>
+
+        </div>
+    </table>
+    <table style="width:1000px;">
+        <div style="width:80%;height:20px;border:1px solid #000">
+            <p style="border-right: 1px solid #000; display: inline-block;line-height: 20px;padding: 0 20px;width:120px;color: #000;text-align: center;">产品合格证</p>
+            <p style="border-right: 1px solid #000; display: inline-block;line-height: 20px;padding: 0 20px;width:120px;color: #000;text-align: center;">检验结论</p>
+            <p style="border-right: 1px solid #000; display: inline-block;line-height: 20px;padding: 0 20px;width:120px;color: #000;text-align: center;">合格</p>
+            <p style="border-right: 1px solid #000; display: inline-block;line-height: 20px;padding: 0 20px;width:120px;color: #000;text-align: center;">检验员</p>
+        </div>
+    </table>
+    <table style="width:1000px;">
+        <div style="width:100%;height:100px;border:1px solid #000;margin-top: 10px;color: #000;padding-bottom: 30px;display: flex;flex: 1;">
+            <div style="width: 80%;">
+                <p>备注：</p>
+                <p style="margin-top: 10px;"> 1.货物外包装完好：是</p>
+                <p style="margin-top: 10px;"> 2.若外包装破损，请详细注明箱号及破损情况</p>
+                <p style="margin-top: 10px;"> 3.核对后，请签字确认，交送货人或传真至我司</p>
+            </div>
+            <div style="width: 20%;border-left: 1px solid #000;height: 130px;color: #000;">
+                <div style="width: 100%;height: 43px;border-bottom: 1px solid #000;">
+                    <p>公司印章：</p>
+                    <p>111</p>
+                </div>
+                <div style="width: 100%;height: 42px;border-bottom: 1px solid #000;">
+                    <p>签收人及日期：</p>
+                    <p>111</p>
+                </div>
+                <div style="width: 100%;height: 42px;">
+                    <p>身份证号码：</p>
+                    <p>111</p>
+                </div>
+            </div>
+
+        </div>
+
+    </table>
+    <footer>
+
+
+        <hr>
+
+
+
+        <section class="footer-title">
+
+            <h1>THANKS FOR CALLING NEWARE！</h1>
+
+            <h1>新威真诚感谢您能再度惠顾！</h1>
+
+            <hr>
+
+
+
+
+        </section>
+
+
+
+        <section class="footer-info">
+
+            <div>
+
+                <p style="text-align:left;">www.neware.com.cn</p>
+
+                <p style="text-align:left">电话：0755-83108866</p>
+
+            </div>
+
+
+
+            <div style="text-align:right;float: right;">
+                <P style="font-size: 38px;"> NEWARE</P>
+            </div>
+            <div>
+
+                <p class="footer-datetime">A0.2006.10.20</p>
+
+            </div>
+            <div>
+
+                <p class="footer-datetime" style="text-align:center">操作者</p>
+
+            </div>
+
+        </section>
+
+    </footer>
+
+</body>
+
+
+
+</html>

@@ -852,68 +852,68 @@ namespace OpenAuth.App.Order
                 logostr = Convert.ToBase64String(photo);
                 Console.WriteLine(logostr);
             }
-            var PrintSalesQuotation = new PrintSalesQuotation
+            var PrintSalesDelivery = new PrintSalesDelivery
             {
                 DocEntry = string.IsNullOrEmpty(dtb.Rows[0][0].ToString()) ? " " : dtb.Rows[0][0].ToString(),
-                DateTime = string.IsNullOrEmpty(dtb.Rows[0][15].ToString()) ? " " : dtb.Rows[0][15].ToString(),
-                SalseName = string.IsNullOrEmpty(dtb.Rows[0][8].ToString()) ? " " : dtb.Rows[0][8].ToString(),
-                CardCode = string.IsNullOrEmpty(dtb.Rows[0][1].ToString()) ? " " : dtb.Rows[0][1].ToString(),
-                Name = string.IsNullOrEmpty(dtb.Rows[0][3].ToString()) ? " " : dtb.Rows[0][3].ToString(),
-                Tel = string.IsNullOrEmpty(dtb.Rows[0][4].ToString()) ? " " : dtb.Rows[0][4].ToString(),
-                Fax = string.IsNullOrEmpty(dtb.Rows[0][17].ToString()) ? " " : dtb.Rows[0][17].ToString(),
-                Cellolar = string.IsNullOrEmpty(dtb.Rows[0][6].ToString()) ? " " : dtb.Rows[0][6].ToString(),
-                CardName = string.IsNullOrEmpty(dtb.Rows[0][2].ToString()) ? " " : dtb.Rows[0][2].ToString(),
-                Address = string.IsNullOrEmpty(dtb.Rows[0][7].ToString()) ? " " : dtb.Rows[0][7].ToString(),
-                Address2 = string.IsNullOrEmpty(dtb.Rows[0][19].ToString()) ? " " : dtb.Rows[0][19].ToString(),
-                PymntGroup = string.IsNullOrEmpty(dtb.Rows[0][11].ToString()) ? " " : dtb.Rows[0][11].ToString(),
-                Comments = string.IsNullOrEmpty(dtb.Rows[0][10].ToString()) ? " " : dtb.Rows[0][10].ToString().Replace("<br>", " "),
-                DocTotal = string.IsNullOrEmpty(dtb.Rows[0][13].ToString()) ? " " : dtb.Rows[0][13].ToString(),
-                DATEFORMAT = string.IsNullOrEmpty(dtb.Rows[0][14].ToString()) ? " " : dtb.Rows[0][14].ToString(),
+                CreateDate = string.IsNullOrEmpty(dtb.Rows[0][1].ToString()) ? " " : dtb.Rows[0][1].ToString(),
+                SlpName = string.IsNullOrEmpty(dtb.Rows[0]["SlpName"].ToString()) ? " " : dtb.Rows[0]["SlpName"].ToString(),
+                CardCode = string.IsNullOrEmpty(dtb.Rows[0]["CardCode"].ToString()) ? " " : dtb.Rows[0]["CardCode"].ToString(),
+                CardName = string.IsNullOrEmpty(dtb.Rows[0]["CardName"].ToString()) ? " " : dtb.Rows[0]["CardName"].ToString(),
+                CntactName = string.IsNullOrEmpty(dtb.Rows[0]["CntactName"].ToString()) ? " " : dtb.Rows[0]["CntactName"].ToString(),
+                Tel1 = string.IsNullOrEmpty(dtb.Rows[0]["Tel1"].ToString()) ? " " : dtb.Rows[0]["Tel1"].ToString(),
+                Address = string.IsNullOrEmpty(dtb.Rows[0]["Address"].ToString()) ? " " : dtb.Rows[0]["Address"].ToString(),
+                Fax = string.IsNullOrEmpty(dtb.Rows[0]["Fax"].ToString()) ? " " : dtb.Rows[0]["Fax"].ToString(),
+                DeliveryDate = string.IsNullOrEmpty(dtb.Rows[0]["DeliveryDate"].ToString()) ? " " : dtb.Rows[0]["DeliveryDate"].ToString(),
+                U_CPH = string.IsNullOrEmpty(dtb.Rows[0]["U_CPH"].ToString()) ? " " : dtb.Rows[0]["U_CPH"].ToString().Replace("<br>", " "),
                 logo = logostr,
                 QRcode = QRCoderHelper.CreateQRCodeToBase64(docEntry),
-                ReimburseCosts = new List<ReimburseCost>()
+                SalesDeliveryDeatils = new List<SalesDeliveryDeatils>()
             };
             for (int i = 0; i < dtbs.Rows.Count; i++)
             {
-                ReimburseCost scon = new ReimburseCost
+                SalesDeliveryDeatils scon = new SalesDeliveryDeatils
                 {
-                    ItemCode = string.IsNullOrEmpty(dtbs.Rows[i][2].ToString()) ? " " : dtbs.Rows[i][2].ToString(),
-                    Dscription = string.IsNullOrEmpty(dtbs.Rows[i][3].ToString()) ? " " : dtbs.Rows[i][3].ToString(),
-                    Quantity = string.IsNullOrEmpty(dtbs.Rows[i][4].ToString()) ? " " : dtbs.Rows[i][4].ToString(),
-                    unitMsr = string.IsNullOrEmpty(dtbs.Rows[i][5].ToString()) ? " " : dtbs.Rows[i][5].ToString(),
-                    Price = string.IsNullOrEmpty(dtbs.Rows[i][6].ToString()) ? " " : dtbs.Rows[i][6].ToString(),
-                    Money = string.IsNullOrEmpty(dtbs.Rows[i][7].ToString()) ? " " : dtbs.Rows[i][7].ToString()
+                    ItemCode = string.IsNullOrEmpty(dtbs.Rows[i][0].ToString()) ? " " : dtbs.Rows[i][0].ToString(),
+                    Dscription = string.IsNullOrEmpty(dtbs.Rows[i][1].ToString()) ? " " : dtbs.Rows[i][1].ToString(),
+                    Quantity = string.IsNullOrEmpty(dtbs.Rows[i][2].ToString()) ? " " : dtbs.Rows[i][2].ToString(),
+                    unitMsr = string.IsNullOrEmpty(dtbs.Rows[i][3].ToString()) ? " " : dtbs.Rows[i][3].ToString(),
+                    Price = string.IsNullOrEmpty(dtbs.Rows[i][4].ToString()) ? " " : dtbs.Rows[i][4].ToString(),
+                    WhsCode = string.IsNullOrEmpty(dtbs.Rows[i][5].ToString()) ? " " : dtbs.Rows[i][5].ToString(),
+                    BaseEntry = string.IsNullOrEmpty(dtbs.Rows[i][6].ToString()) ? " " : dtbs.Rows[i][6].ToString(),
+                    Total = string.IsNullOrEmpty(dtbs.Rows[i][7].ToString()) ? " " : dtbs.Rows[i][7].ToString(),
+                    Currency = string.IsNullOrEmpty(dtbs.Rows[i][8].ToString()) ? " " : dtbs.Rows[i][8].ToString()
+
 
                 };
-                PrintSalesQuotation.ReimburseCosts.Add(scon);
+                PrintSalesDelivery.BaseEntry = scon.BaseEntry;
+
+
+                PrintSalesDelivery.SalesDeliveryDeatils.Add(scon);
             }
-            var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesQuotationheader.html");
+            var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesDeliveryHeader.html");
             var text = System.IO.File.ReadAllText(url);
-            text = text.Replace("@Model.Data.logo", PrintSalesQuotation.logo);
-            text = text.Replace("@Model.Data.DocEntry", PrintSalesQuotation.DocEntry);
-            text = text.Replace("@Model.Data.DateTime", PrintSalesQuotation.DateTime);
-            text = text.Replace("@Model.Data.QRcode", PrintSalesQuotation.QRcode);
-            text = text.Replace("@Model.Data.SalseName", PrintSalesQuotation.SalseName);
-            text = text.Replace("@Model.Data.CardCode", PrintSalesQuotation.CardCode);
-            text = text.Replace("@Model.Data.Name", PrintSalesQuotation.Name);
-            text = text.Replace("@Model.Data.Tel", PrintSalesQuotation.Tel);
-            text = text.Replace("@Model.Data.Fax", PrintSalesQuotation.Fax);
-            text = text.Replace("@Model.Data.CardName", PrintSalesQuotation.CardName);
-            text = text.Replace("@Model.Data.Address", PrintSalesQuotation.Address);
-            text = text.Replace("@Model.Data.Addrestwo", PrintSalesQuotation.Address2);
-            text = text.Replace("@Model.Data.SalseName", PrintSalesQuotation.SalseName);
-            text = text.Replace("@Model.Data.Cellolar", PrintSalesQuotation.Cellolar);
-            text = text.Replace("@Model.Data.DATEFORMAT", PrintSalesQuotation.DATEFORMAT);
-            text = text.Replace("@Model.Data.PymntGroup", PrintSalesQuotation.PymntGroup);
-            text = text.Replace("@Model.Data.Comments", PrintSalesQuotation.Comments);
-            var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesQuotationheader{PrintSalesQuotation.DocEntry}.html");
+            text = text.Replace("@Model.Data.logo", PrintSalesDelivery.logo);
+            text = text.Replace("@Model.Data.DocEntry", PrintSalesDelivery.DocEntry);
+            text = text.Replace("@Model.Data.BaseEntry", PrintSalesDelivery.BaseEntry);
+            text = text.Replace("@Model.Data.CreateDate", PrintSalesDelivery.CreateDate);
+            text = text.Replace("@Model.Data.QRcode", PrintSalesDelivery.QRcode);
+            text = text.Replace("@Model.Data.SlpName", PrintSalesDelivery.SlpName);
+            text = text.Replace("@Model.Data.CardCode", PrintSalesDelivery.CardCode);
+            text = text.Replace("@Model.Data.CntactName", PrintSalesDelivery.CntactName);
+            text = text.Replace("@Model.Data.Tel", PrintSalesDelivery.Tel1);
+            text = text.Replace("@Model.Data.Fax", PrintSalesDelivery.Fax);
+            text = text.Replace("@Model.Data.CardName", PrintSalesDelivery.CardName);
+            text = text.Replace("@Model.Data.Address", PrintSalesDelivery.Address);
+            text = text.Replace("@Model.Data.Cellolar", PrintSalesDelivery.Cellolar);
+            text = text.Replace("@Model.Data.DeliveryDate", PrintSalesDelivery.DeliveryDate);
+            text = text.Replace("@Model.Data.U_CPH", PrintSalesDelivery.U_CPH);
+            var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesDeliveryHeader{PrintSalesDelivery.DocEntry}.html");
             System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
-            var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesQuotationfooter.html");
+            var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesDeliveryFooter.html");
             var foottext = System.IO.File.ReadAllText(footUrl);
-            foottext = foottext.Replace("@Model.Data.DocTotal", PrintSalesQuotation.DocTotal);
-            var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesQuotationfooter{PrintSalesQuotation.DocEntry}.html");
+            var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesDeliveryFooter{PrintSalesDelivery.DocEntry}.html");
             System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
-            byte[] basecode = await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesQuotation.cshtml", pdf =>
+            byte[] basecode = await ExportAllHandler.Exporterpdf(PrintSalesDelivery, "PrintSalesDelivery.cshtml", pdf =>
             {
                 pdf.Orientation = Orientation.Portrait;
                 pdf.IsWriteHtml = true;
