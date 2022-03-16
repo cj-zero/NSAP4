@@ -36,10 +36,52 @@ namespace OpenAuth.App.Order.Request
         /// </summary>
         public OrderDraft Order { get; set; }
     }
-    /// <summary>
-    /// 销售订单
-    /// </summary>
-    public class SalesOrderSaveReq
+	/// <summary>
+	/// 应收发票新增/交货转应收
+	/// </summary>
+	public class SalesDeliverySaveNewReq
+	{
+		/// <summary>
+		/// 提交类型
+		/// 0：草稿
+		/// 1：提交
+		/// 2：再次提交
+		/// </summary>
+		public OrderAtion Ations { get; set; }
+		/// <summary>
+		/// 销售交货单号 
+		/// </summary>
+		public string DocEntry { get; set; }
+		/// <summary>
+		///审批单号 
+		/// </summary>
+		public string JobId { get; set; }
+		/// <summary>
+		/// 联系人
+		/// </summary>
+		public string CntctCode { get; set; }
+		/// <summary>
+		/// 过帐时间，由程序更新。
+		/// </summary>
+		public string DocDate { get; set; }
+		/// <summary>
+		/// 起息日
+		/// </summary>
+		public string DocDueDate { get; set; }
+		/// <summary>
+		/// 生产部门/箱号
+		/// </summary>
+		[Required]
+		public string CustomFields { get; set; }
+		/// <summary>
+		/// 附件
+		/// </summary>
+		public List<billAttchment> FileList { get; set; }
+	}
+	/// <summary>
+	/// 销售订单
+	/// </summary>
+	public class SalesOrderSaveReq
     {
         /// <summary>
         /// 提交类型

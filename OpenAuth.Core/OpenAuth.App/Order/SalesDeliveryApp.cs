@@ -27,12 +27,13 @@ namespace OpenAuth.App.Order
     public partial class SalesDeliveryApp : OnlyUnitWorkBaeApp
     {
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
+        ServiceBaseApp _serviceBaseApp;
 
 
-        public SalesDeliveryApp(IUnitWork unitWork, IAuth auth, ServiceSaleOrderApp serviceSaleOrderApp) : base(unitWork, auth)
+        public SalesDeliveryApp(ServiceBaseApp _serviceBaseApp, IUnitWork unitWork, IAuth auth, ServiceSaleOrderApp serviceSaleOrderApp) : base(unitWork, auth)
         {
             this._serviceSaleOrderApp = serviceSaleOrderApp;
-
+            this._serviceBaseApp = _serviceBaseApp;
         }
         public async Task<string> SalesDeliverySave(SalesDeliverySaveReq salesDeliverySaveReq, int UserID, int FuncID, string jobdata,
             string jobname, int SboID, string IsTemplate)
@@ -963,5 +964,227 @@ namespace OpenAuth.App.Order
             str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1} ", DocEntry, sboid);
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, str.ToString(), CommandType.Text, null);
         }
+        #region 添加销售交货
+        /// <summary>
+        /// 添加销售交货
+        /// </summary>
+        /// <returns></returns>
+        public async Task<string> SalesDeliverySaveNew(SalesDeliverySaveNewReq salesDeliverySaveNewReq)
+        {
+            string result = "", className = "NSAP.B1Api.BOneOINV", jobname = "应收发票";
+            int FuncID = 54;
+            //查询
+            billDelivery billDelivery = _serviceSaleOrderApp.GetDeliverySalesInfoNewNos(salesDeliverySaveNewReq.DocEntry, 1);
+            if (!string.IsNullOrWhiteSpace(salesDeliverySaveNewReq.CntctCode))
+            {
+                billDelivery.CntctCode = salesDeliverySaveNewReq.CntctCode;
+            }
+            if (!string.IsNullOrWhiteSpace(salesDeliverySaveNewReq.DocDate))
+            {
+                billDelivery.DocDate = salesDeliverySaveNewReq.DocDate;
+            }
+            if (!string.IsNullOrWhiteSpace(salesDeliverySaveNewReq.DocDueDate))
+            {
+                billDelivery.DocDueDate = salesDeliverySaveNewReq.DocDueDate;
+            }
+            if (!string.IsNullOrWhiteSpace(salesDeliverySaveNewReq.CustomFields))
+            {
+                billDelivery.CustomFields = salesDeliverySaveNewReq.CustomFields;
+            }
+            if (salesDeliverySaveNewReq.FileList.Count > 0)
+            {
+                billDelivery.attachmentData = salesDeliverySaveNewReq.FileList;
+            }
+            //billDelivery billDelivery = _serviceSaleOrderApp.BulidBillDelivery(salesDeliverySaveNewReq.Order);
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            byte[] job_data = ByteExtension.ToSerialize(billDelivery);
+            if (salesDeliverySaveNewReq.Ations == OrderAtion.Draft)
+            {
+                result = _serviceSaleOrderApp.WorkflowBuild(jobname, FuncID, UserID, job_data, billDelivery.Remark, int.Parse(billDelivery.SboId), billDelivery.CardCode, billDelivery.CardName, (double.Parse(billDelivery.DocTotal == "" ? "0" : billDelivery.DocTotal) > 0 ? double.Parse(billDelivery.DocTotal) : 0), int.Parse(billDelivery.billBaseType == null ? "-1" : billDelivery.billBaseType), int.Parse(billDelivery.billBaseEntry == null ? "0" : billDelivery.billBaseEntry), "BOneAPI", className);
+            }
+            if (salesDeliverySaveNewReq.Ations == OrderAtion.Submit)
+            {
+                result = _serviceSaleOrderApp.WorkflowBuild(jobname, FuncID, UserID, job_data, billDelivery.Remark, int.Parse(billDelivery.SboId), billDelivery.CardCode, billDelivery.CardName, (double.Parse(billDelivery.DocTotal == "" ? "0" : billDelivery.DocTotal) > 0 ? double.Parse(billDelivery.DocTotal) : 0), int.Parse(billDelivery.billBaseType == null ? "-1" : billDelivery.billBaseType), int.Parse(billDelivery.billBaseEntry == null ? "0" : billDelivery.billBaseEntry), "BOneAPI", className);
+                if (int.Parse(result) > 0)
+                {
+                    int user_id = 0;
+                    if (jobname == "采购收货" || jobname == "采购退货" || jobname == "应付贷项凭证")
+                    {
+                        if (int.Parse(await GetUserIdFromBuy(billDelivery.SlpCode, SboID)) > 0)
+                        {
+                            user_id = int.Parse(await GetUserIdFromBuy(billDelivery.SlpCode, SboID));
+                        }
+                        else { user_id = UserID; }
+
+                    }
+                    if (jobname == "销售退货" || jobname == "应收贷项凭证")
+                    {
+                        string saleAfterUser = await GetDfTcnician(billDelivery.CardCode, SboID);
+                        if (!int.TryParse(saleAfterUser, out user_id))
+                        { user_id = UserID; }
+                    }
+
+                    string res = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(result), UserID, billDelivery.Remark, "", user_id);
+                    if (int.Parse(res) <= 0)
+                    {
+                        result = res;
+                    }
+                    else
+                    {
+                        if (billDelivery.serialNumber.Count > 0)
+                        {
+                            UpdateSerialNumber(billDelivery.serialNumber, int.Parse(result));
+                        }
+                    }
+                }
+
+
+            }
+            return result;
+        }
+        #endregion
+        #region 我的创建保存/提交（应收发票）
+        public async Task<string> SalesSaveDraftNew(SalesDeliverySaveNewReq salesDeliverySaveNewReq)
+        {
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            string res = "0", jobType = "oinv";
+            //查询
+            billDelivery billDelivery = _serviceSaleOrderApp.GetDeliverySalesInfoNewNos(salesDeliverySaveNewReq.DocEntry, 32);
+            //billDelivery Model = NSAP.Helper.Json.ParseModel<billDelivery>(rData.FilterSerialize());
+            #region 必须都有关联订单，并且购买数量与关联订单数量一致,采购订单所有物料高于2次的采购历史，并且价格不高于历史最低价，则不需审批直接通过
+            bool PurPassAudit = false;
+            if (jobType == "opor" && billDelivery.DocType == "I" && billDelivery.billSalesDetails.Count > 0)
+            {
+                bool zhitong = true;
+                foreach (billSalesDetails thedetail in billDelivery.billSalesDetails)
+                {//必须都有关联订单，并且购买数量与关联订单数量一致,采购数量+可用量>0必须审批。成品编码必须审批
+                    if (thedetail.ItemCode.StartsWith("C"))
+                    {
+                        zhitong = false;
+                        break;
+                    }
+                    if (!string.IsNullOrEmpty(thedetail.U_RelDoc))
+                    {
+                        double itemqtyvalid = 0.00;
+                        DataTable avatab = await GetOnhandAndAvailable(thedetail.ItemCode.FilterSQL());
+                        if (avatab != null && avatab.Rows.Count > 0)
+                        {
+                            double.TryParse(avatab.Rows[0]["Available"].ToString(), out itemqtyvalid);
+                        }
+                        itemqtyvalid += double.Parse(thedetail.Quantity);
+                        if (double.Parse(thedetail.Quantity) != await GetRelQty(thedetail.ItemCode.FilterSQL(), thedetail.U_RelDoc)
+                            || itemqtyvalid > 0.00)
+                        {
+                            zhitong = false;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        zhitong = false;
+                        break;
+                    }
+                    //采购订单所有物料高于2次的采购历史，并且价格不高于历史最低价
+                    if (!await GetPORValidFlagForAudit(thedetail.ItemCode.FilterSQL(), "3", thedetail.Price))
+                    {
+                        zhitong = false;
+                        break;
+                    }
+                }
+                //总金额多于5000需审批
+                double doctotal = 0.00, docrate = 0.00;
+                double.TryParse(billDelivery.DocTotal, out doctotal); double.TryParse(billDelivery.DocRate, out docrate);
+                if (doctotal * docrate > 5000)
+                {
+                    zhitong = false;
+                }
+                if (zhitong)
+                {
+                    PurPassAudit = true;
+                    billDelivery.U_New_ORDRID = "Z";
+                }
+            }
+            #endregion
+
+            byte[] job_data = ByteExtension.ToSerialize(billDelivery);
+
+            if (salesDeliverySaveNewReq.Ations == OrderAtion.Draft)
+            {
+                if (bool.Parse(_serviceSaleOrderApp.UpdateAudit(int.Parse(salesDeliverySaveNewReq.JobId), job_data, billDelivery.Remark, billDelivery.DocTotal, billDelivery.CardCode, billDelivery.CardName)))
+                {
+                    res = "1";
+                }
+            }
+            else if (salesDeliverySaveNewReq.Ations == OrderAtion.Submit)
+            {
+                if (bool.Parse(_serviceSaleOrderApp.UpdateAudit(int.Parse(salesDeliverySaveNewReq.JobId), job_data, billDelivery.Remark, billDelivery.DocTotal, billDelivery.CardCode, billDelivery.CardName)))
+                {
+                    int user_id = 0;
+                    if (jobType == "opdn" || jobType == "orpc" || jobType == "orpd")
+                    {
+                        if (int.Parse(await GetUserIdFromBuy(billDelivery.SlpCode, SboID)) > 0)
+                        {
+                            user_id = int.Parse(await GetUserIdFromBuy(billDelivery.SlpCode, SboID));
+                        }
+                        else { user_id = UserID; }
+                    }
+                    if (jobType == "orin" || jobType == "ordn")
+                    {
+                        string saleAfterUser = await GetDfTcnician(billDelivery.CardCode, SboID);
+                        if (!int.TryParse(saleAfterUser, out user_id))
+                        { user_id = UserID; }
+                    }
+                    //运输采购单，或达到条件采购订单不需审批直接通过
+                    if ((jobType == "opor" && billDelivery.IsTransport == "Y") || PurPassAudit)
+                    {
+                        res = await UpdateWorkFlowState(salesDeliverySaveNewReq.JobId);
+                        if (res != "0")
+                        {
+                            return "2";//提示审批通过
+                        }
+                    }
+                    //采购订单，保存第一步跳转参数，（服务单或存在第一次采购物料)
+                    if (jobType == "opor")
+                    {
+                        //保存单据类型
+                        UpdateWfaJobPara(salesDeliverySaveNewReq.JobId, 2, billDelivery.DocType);
+                        bool needf = false;
+                        foreach (billSalesDetails tempdet in billDelivery.billSalesDetails)
+                        {
+                            if (!string.IsNullOrEmpty(tempdet.ItemCode) && !await ExistPorFlag(tempdet.ItemCode.FilterSQL()))
+                            {
+                                needf = true;
+                                break;
+                            }
+                        }
+                        var par = SaveJobPara(salesDeliverySaveNewReq.JobId, needf ? "1" : "0");
+                    }
+
+                    res = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(salesDeliverySaveNewReq.JobId), UserID, billDelivery.Remark, "", user_id);
+                    if (int.Parse(res) > 0 && billDelivery.serialNumber.Count > 0)
+                    {
+                        UpdateSerialNumber(billDelivery.serialNumber, int.Parse(salesDeliverySaveNewReq.JobId));
+                    }
+                }
+            }
+            return res;
+        }
+        #endregion
+        #region 修改服务呼叫状态
+        /// <summary>
+        /// 修改服务呼叫状态（U_SFTJBJ 0未关联报价单  1已关联报价单）
+        /// </summary>
+        /// <param name="callID">服务呼叫ID</param>
+        /// <param name="sbo_id">帐套ID</param>
+        /// <returns></returns>
+        public async Task<int> UpdateUsftjbjFromOscl(string callID, string sbo_id, string state)
+        {
+            string sqlStr = string.Format("UPDATE {0}.service_oscl SET U_SFTJBJ={1} WHERE callID = {2} AND sbo_id = {3};", "nsap_bone", state, callID, sbo_id);
+            return UnitWork.ExecuteSql(sqlStr, ContextType.NsapBaseDbContext);
+        }
+        #endregion
+
     }
 }

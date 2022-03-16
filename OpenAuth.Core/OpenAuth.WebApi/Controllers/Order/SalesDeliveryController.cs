@@ -221,13 +221,96 @@ namespace OpenAuth.WebApi.Controllers.Order
         }
         #endregion
         #region 打印
-
+        /// <summary>
+        /// 打印
+        /// </summary>
+        /// <param name="sboid"></param>
+        /// <param name="DocEntry"></param>
+        /// <returns></returns>
         [HttpGet]
         [Route("DeliveryExportShow")]
         public async Task<FileResult> DeliveryExportShow(string sboid, string DocEntry)
         {
-                return File(await _salesDeliveryApp.DeliveryExportShow(sboid, DocEntry), "application/pdf");
+            return File(await _salesDeliveryApp.DeliveryExportShow(sboid, DocEntry), "application/pdf");
         }
         #endregion
+
+        #region 交货转应收发票
+        /// <summary>
+        /// 交货转应收发票
+        /// </summary>
+        /// <param name="salesDeliverySaveNewReq"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("SalesDeliverySaveNew")]
+        public async Task<Response<string>> SalesDeliverySaveNew(SalesDeliverySaveNewReq salesDeliverySaveNewReq)
+        {
+            var result = new Response<string>();
+            try
+            {
+                result.Result = await _salesDeliveryApp.SalesDeliverySaveNew(salesDeliverySaveNewReq);
+            }
+            catch (Exception ex)
+            {
+                result.Result = "";
+                result.Code = 500;
+                result.Message = "服务器内部错误：" + ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{salesDeliverySaveNewReq.ToJson()}， 错误：{ex.Message},堆栈信息：{ex.StackTrace}");
+            }
+            return result;
+        }
+        #endregion
+        #region 我的创建保存/提交（应收发票）
+        /// <summary>
+        /// 我的创建保存/提交
+        /// </summary>
+        /// <param name="jobType"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("SalesSaveDraft")]
+        public async Task<Response<string>> SalesSaveDraftNew(SalesDeliverySaveNewReq salesDeliverySaveNewReq)
+        {
+            var result = new Response<string>();
+            try
+            {
+                result.Result = await _salesDeliveryApp.SalesSaveDraftNew(salesDeliverySaveNewReq);
+            }
+            catch (Exception ex)
+            {
+                result.Result = "";
+                result.Code = 500;
+                result.Message = "服务器内部错误：" + ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{salesDeliverySaveNewReq.ToJson()}， 错误：{ex.Message},堆栈信息：{ex.StackTrace}");
+            }
+            return result;
+        }
+        #endregion
+        /// <summary>
+        /// 修改服务ID状态（U_SFTJBJ 0未关联报价单  1已关联报价单）
+        /// </summary>
+        /// <param name="callID">服务呼叫ID</param>
+        /// <param name="sbo_id">帐套ID</param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("UpdateUsftjbjFromOscl")]
+        public async Task<Response<int>> UpdateUsftjbjFromOscl(string callID, string state)
+        {
+            var result = new Response<int>();
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            try
+            {
+                result.Result = await _salesDeliveryApp.UpdateUsftjbjFromOscl(callID, SboID.ToString(), state);
+            }
+            catch (Exception ex)
+            {
+                result.Result = 0;
+                result.Code = 500;
+                result.Message = "服务器内部错误：" + ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{callID.ToJson()}， 错误：{ex.Message},堆栈信息：{ex.StackTrace}");
+            }
+            return result;
+
+        }
     }
 }
