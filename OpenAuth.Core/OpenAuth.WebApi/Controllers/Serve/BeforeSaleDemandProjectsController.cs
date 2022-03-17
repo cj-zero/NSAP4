@@ -6,6 +6,7 @@ using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
+using Serilog;
 
 namespace OpenAuth.WebApi.Controllers
 {
@@ -25,6 +26,29 @@ namespace OpenAuth.WebApi.Controllers
         public async Task<TableData> GetDetails(int id)
         {
             return await _app.GetDetails(id);
+        }
+
+
+        /// <summary>
+        /// 获取项目进度甘特图数据
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<TableData>> GetGanttData([FromQuery] QueryBeforeSaleDemandProjectListReq query)
+        {
+            var result = new Response<TableData>();
+            try
+            {
+                result.Result = await _app.GetGanttData(query);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{query.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
         }
 
         //添加
