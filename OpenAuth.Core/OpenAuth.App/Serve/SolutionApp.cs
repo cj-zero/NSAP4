@@ -37,7 +37,8 @@ namespace OpenAuth.App
             //}
 
             var result = new TableData();
-            var objs = UnitWork.Find<Solution>(s => s.UseBy == 1);
+            //var objs = UnitWork.Find<Solution>(s => s.UseBy == 1);
+            var objs = UnitWork.Find<Solution>(s => s.IsNew == true);
             if (!string.IsNullOrEmpty(request.key))
             {
                 objs = objs.Where(u => u.Id.Contains(request.key) || u.Subject.Contains(request.key) || u.Symptom.Contains(request.key)).WhereIf(int.TryParse(request.key, out int code), u => u.SltCode == code);
@@ -48,7 +49,14 @@ namespace OpenAuth.App
             result.columnHeaders = properties;
             result.Data = await objs.OrderByDescending(u => u.SltCode)
                 .Skip((request.page - 1) * request.limit)
-                .Take(request.limit).ToListAsync();//.Select($"new ({propertyStr})");
+                .Take(request.limit).Select(x => new
+                {
+                    x.Id,
+                    x.SltCode,
+                    x.Symptom,
+                    x.Subject,
+                    Code = x.Descriptio + "-" + x.Code
+                }).ToListAsync();//.Select($"new ({propertyStr})");
             result.Count = await objs.CountAsync();
             return result;
         }
