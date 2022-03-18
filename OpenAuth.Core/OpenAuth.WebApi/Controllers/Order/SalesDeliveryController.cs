@@ -267,7 +267,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <param name="jobType"></param>
         /// <returns></returns>
         [HttpPost]
-        [Route("SalesSaveDraft")]
+        [Route("SalesSaveDraftNew")]
         public async Task<Response<string>> SalesSaveDraftNew(SalesDeliverySaveNewReq salesDeliverySaveNewReq)
         {
             var result = new Response<string>();

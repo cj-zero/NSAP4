@@ -71,7 +71,6 @@ namespace OpenAuth.App.Order.Request
 		/// <summary>
 		/// 生产部门/箱号
 		/// </summary>
-		[Required]
 		public string CustomFields { get; set; }
 		/// <summary>
 		/// 附件
