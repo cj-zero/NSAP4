@@ -20,7 +20,7 @@ namespace OpenAuth.App.Request
     /// <summary>
     /// 售前流程审批
     /// </summary>
-    public partial class AccraditationBeforeSaleDemandReq
+    public partial class AccraditationBeforeSaleDemandReq: VerificationReq
     {
         /// <summary>
         /// 售前申请流程Id

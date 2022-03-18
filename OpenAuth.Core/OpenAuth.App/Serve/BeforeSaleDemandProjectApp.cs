@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
@@ -31,8 +32,12 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+
+            var BeforeSaleDemandIds = await UnitWork.Find<BeforeSaleDemandOperationHistory>(x => x.CreateUserId == loginContext.User.Id).Select(x => x.BeforeSaleDemandId).Distinct().ToListAsync();
+
             TableData result = new TableData();
             var query = UnitWork.Find<BeforeSaleDemandProject>(null)
+             .Where(x=> BeforeSaleDemandIds.Contains(x.BeforeSaleDemandId.Value))
             //.Include(b => b.BeforeSaleProSchedulings)
             .WhereIf(!string.IsNullOrWhiteSpace(req.PromoterName), c => c.PromoterName.Contains(req.PromoterName))
             .WhereIf(!string.IsNullOrWhiteSpace(req.KeyWord), k => k.ProjectName.Contains(req.KeyWord) || k.ProjectNum.Contains(req.KeyWord) || k.CustomerId.Contains(req.KeyWord) || k.CustomerName.Contains(req.KeyWord) || k.ReqUserName.Contains(req.KeyWord) || k.DevUserName.Contains(req.KeyWord) || k.TestUserName.Contains(req.KeyWord))
@@ -92,6 +97,26 @@ namespace OpenAuth.App
                 detail.ActualTestEndDate,
                 beforeSaleProSchedulings
             };
+            return result;
+        }
+        
+        public async Task<TableData> GetGanttData(QueryBeforeSaleDemandProjectListReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            TableData result = new TableData();
+            var query = UnitWork.Find<BeforeSaleDemand>(null)
+                        .Include(c => c.BeforeSaleProSchedulings)
+                        .Where(c => c.BeforeSaleDemandProjectId ==req.ProjectId);
+
+            var resp = await query.OrderByDescending(c => c.CreateTime).Skip((req.page - 1) * req.limit)
+                .Take(req.limit).ToListAsync();
+            result.Data = resp.ToList();
+            result.Count = await query.CountAsync();
             return result;
         }
 

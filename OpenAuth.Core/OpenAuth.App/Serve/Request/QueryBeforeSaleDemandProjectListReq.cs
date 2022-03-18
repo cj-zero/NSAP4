@@ -10,6 +10,11 @@
         /// 项目状态0所有流程 1-立项 2-需求 3-开发 4-测试5-实施 6-验收 7-结束
         /// </summary>
         public int? Status { get; set; }
+
+        /// <summary>
+        /// 项目id
+        /// </summary>
+        public int ProjectId { get; set; }
         /// <summary>
         /// 售前需求项目名称
         /// </summary>

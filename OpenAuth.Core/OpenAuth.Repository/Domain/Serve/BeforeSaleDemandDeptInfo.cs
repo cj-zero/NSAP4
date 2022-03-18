@@ -75,9 +75,9 @@ namespace OpenAuth.Repository.Domain
         [Description("是否需要开发实施")]
         public int IsDevDeploy { get; set; }
         /// <summary>
-        /// 是否确认 默认0 确认表示执行研发提交
+        /// 是否确认 默认0 确认1-表示执行研发提交
         /// </summary>
-        [Description("是否确认 默认0 确认表示执行研发提交")]
+        [Description("是否确认 默认0 确认1-表示执行研发提交")]
         public int IsConfirm { get; set; }
         /// <summary>
         /// 研发意见

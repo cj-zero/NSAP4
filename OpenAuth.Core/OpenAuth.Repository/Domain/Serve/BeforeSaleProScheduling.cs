@@ -41,7 +41,7 @@ namespace OpenAuth.Repository.Domain
 
 
         /// <summary>
-        /// 关联项目Id
+        /// 关联申请流程Id
         /// </summary>
         [Description("关联申请流程Id")]
         [Browsable(false)]
@@ -73,6 +73,27 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("结束时间")]
         public System.DateTime? EndDate { get; set; }
+
+        /// <summary>
+        /// 实际开始时间
+        /// </summary>
+        [Description("实际开始时间")]
+        public System.DateTime? ActualStartDate { get; set; }
+        /// <summary>
+        /// 实际结束时间
+        /// </summary>
+        [Description("实际结束时间")]
+        public System.DateTime? ActualEndDate { get; set; }
+        /// <summary>
+        /// 备用字段：需求文档/URL
+        /// </summary>
+        [Description("需求文档/URL")]
+        public string ProjectDocURL { get; set; }
+        /// <summary>
+        /// 是否确认 默认0 确认1-表示已经确认提交
+        /// </summary>
+        [Description("是否确认 默认0 确认1-表示已经确认提交")]
+        public int IsConfirm { get; set; }
         /// <summary>
         /// 创建人
         /// </summary>
@@ -84,6 +105,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("创建时间")]
         public System.DateTime? CreateTime { get; set; }
+        /// <summary>
+        /// 修改时间
+        /// </summary>
+        [Description("修改时间")]
+        public System.DateTime? UpdateTime { get; set; }
 
         public override void GenerateDefaultKeyVal()
         {
