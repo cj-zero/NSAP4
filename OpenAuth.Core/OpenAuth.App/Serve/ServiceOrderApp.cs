@@ -257,6 +257,14 @@ namespace OpenAuth.App
                 q.FromAppUserId
             });
 
+            var loginContext = _auth.GetCurrentUser();
+            var user = loginContext.User;
+            //如果是销售员角色,只能看到自己名下的客户
+            if (loginContext.Roles.Select(r=>r.Name).Contains("销售员"))
+            {
+                query = query.Where(q => q.SalesMan == user.Name);
+            }
+
             var list = (await query
             .Skip((req.page - 1) * req.limit)
             .Take(req.limit).ToListAsync()).Select(s => new
@@ -295,7 +303,18 @@ namespace OpenAuth.App
             var result = new TableData();
             //根据条件过滤服务单数据
             var services = UnitWork.Find<ServiceOrder>(null)
+                            .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, s =>
+                            s.CreateTime >= req.QryCreateTimeFrom && s.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
                             .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), s => s.Status == int.Parse(req.QryState));
+
+            //如果是销售员角色,只能看到自己名下的客户
+            var loginContext = _auth.GetCurrentUser();
+            var user = loginContext.User;
+            var isSalesMan = loginContext.Roles.Select(r => r.Name).Contains("销售员");
+            if (isSalesMan)
+            {
+                services = services.Where(q => q.SalesMan == user.Name);
+            }
 
             //根据姓名获取用户部门名称
             Func<IEnumerable<string>, Task<List<UserResp>>> getOrgName = async x => await (from u in UnitWork.Find<User>(null)
