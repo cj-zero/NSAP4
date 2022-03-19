@@ -5010,7 +5010,7 @@ namespace OpenAuth.App.Order
             }
 
             //filterString += string.Format("(b.job_type_nm LIKE '%{0}%' OR b.job_type_nm LIKE '%{1}%') AND ", "销售报价单","销售订单");
-            filterString += string.Format("(b.job_type_nm = '{0}' OR b.job_type_nm = '{1}'  OR b.job_type_nm = '{2}' OR b.job_type_nm = '{3}') AND ", "销售报价单", "销售订单", "销售交货", "业务伙伴审核");
+            filterString += string.Format("(b.job_type_nm = '{0}' OR b.job_type_nm = '{1}'  OR b.job_type_nm = '{2}' OR b.job_type_nm = '{3}'OR b.job_type_nm = '{4}' OR b.job_type_nm = '{3}') AND ", "销售报价单", "销售订单", "销售交货", "业务伙伴审核","应收发票");
             #endregion
             #region
             if (!string.IsNullOrEmpty(filterString))
