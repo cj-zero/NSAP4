@@ -15,16 +15,20 @@ namespace OpenAuth.Repository.Domain
         }
 
         public int DocEntry { get; set; }
-        public int? ChildEntry { get; set; }
+        public string Code { get; set; }
+        public int ProductionId { get; set; }
+        public string ItemName { get; set; }
         public string ItemCode { get; set; }
-        public string PartItemCode { get; set; }
         public decimal? PlannedQty { get; set; }
-        public decimal? PartPlannedQty { get; set; }
+        public decimal? OpenQty { get; set; }
+        public string Org { get; set; }
+        public string Warehouse { get; set; }
+        public string Remark { get; set; }
+        public string FromTheme { get; set; }
         /// <summary>
         /// 完成数量
         /// </summary>
         public decimal? CmpltQty { get; set; }
-        public string U_WO_LTDW { get; set; }
-        public string wareHouse { get; set; }
+        public string Version { get; set; }
     }
 }

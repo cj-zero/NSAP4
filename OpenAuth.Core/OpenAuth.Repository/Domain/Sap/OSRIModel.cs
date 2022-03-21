@@ -23,7 +23,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 序列号
         /// </summary>
-        public string? SuppSerial { get; set; }
+        public string SuppSerial { get; set; }
         /// <summary>
         /// 仓库号
         /// </summary>
@@ -40,6 +40,7 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         public int? BaseEntry { get; set; }
+        public int? DocEntry { get; set; }
         /// <summary>
         /// 
         /// </summary>

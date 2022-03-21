@@ -9,7 +9,8 @@ namespace Infrastructure
 {
     public class AmapUtil
     {
-        private readonly static string key = "uGyEag9q02RPI81dcfk7h7vT8tUovWfG";
+        private readonly static string key = "o3Shlf9DguFsv6mH9wQ9RSVGjKjq0THU";
+        private readonly static string gdkey = "53aa0193d72ff1fb9482847d145f49dc";//高德key
         private static HttpClient client = new HttpClient();
 
         /// <summary>

@@ -503,7 +503,7 @@ namespace OpenAuth.App.Workbench
                             .Include(c => c.InternalContactAttchments)
                             .Include(c => c.InternalContactBatchNumbers)
                             .Include(c => c.InternalContactDeptInfos)
-                            .Include(c => c.InternalcontactMaterials)
+                            .Include(c => c.InternalContactMaterials)
                             .Include(c => c.InternalContactTasks)
                             .Include(c => c.InternalContactServiceOrders)
                             .FirstOrDefaultAsync();
@@ -560,7 +560,7 @@ namespace OpenAuth.App.Workbench
                 detail.Content,
                 reviceOrgList,
                 execOrgList,
-                InternalcontactMaterials = detail.InternalcontactMaterials,
+                InternalContactMaterials = detail.InternalContactMaterials,
                 operationHistories,
                 detail.InternalContactTasks,
                 detail.InternalContactServiceOrders,

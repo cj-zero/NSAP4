@@ -55,6 +55,7 @@ namespace OpenAuth.Repository.Domain
         [Description("")]
         [Browsable(false)]
         public int? ProductionId { get; set; }
+        //public string ProductionOrgId { get; set; }
         /// <summary>
         /// 
         /// </summary>

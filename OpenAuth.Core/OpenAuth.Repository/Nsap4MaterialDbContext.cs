@@ -73,7 +73,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<InternalContactBatchNumber> InternalContactBatchNumbers { get; set; }
         public virtual DbSet<InternalContactDeptInfo> InternalContactDeptInfos { get; set; }
         public virtual DbSet<MaterialReplaceRecord> MaterialReplaceRecords { get; set; }
-        public virtual DbSet<InternalcontactMaterial> InternalcontactMaterials { get; set; }
+        public virtual DbSet<InternalContactMaterial> InternalContactMaterials { get; set; }
         public virtual DbSet<CommonUsedMaterial> CommonUsedMaterials { get; set; }
 
         #region 中位机和下位机

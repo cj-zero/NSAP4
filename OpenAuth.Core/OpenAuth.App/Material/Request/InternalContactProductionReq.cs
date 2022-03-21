@@ -12,6 +12,14 @@ namespace OpenAuth.App.Material.Request
         public int? InternalContactId { get; set; }
         public int ProductionId { get; set; }
         public string ItemCode { get; set; }
-        public int BelongQty { get; set; }
+        public string ItemName { get; set; }
+        public string Dept { get; set; }
+        public int? PlannedQty { get; set; }
+        public int? CmpltQty { get; set; }
+        public int? OpenQty { get; set; }
+        public string Remark { get; set; }
+        public string FromTheme { get; set; }
+        public string FromThemeCode { get; set; }
+        public string FromThemeName { get; set; }
     }
 }

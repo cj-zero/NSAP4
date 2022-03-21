@@ -73,6 +73,17 @@ namespace OpenAuth.WebApi.Controllers.Material
         }
 
         /// <summary>
+        /// 查看工单
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> WorkOrder(int id)
+        {
+            return await _app.WorkOrder(id);
+        }
+
+        /// <summary>
         /// 审批、执行
         /// </summary>
         /// <param name="req"></param>
@@ -178,34 +189,94 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpPost]
-        public async Task<TableData> GetProductionOrder(QueryProductionOrderReq req)
+        //[HttpPost]
+        //public async Task<TableData> GetProductionOrder(QueryProductionOrderReq req)
+        //{
+        //    return await _app.GetProductionOrder(req);
+        //}
+
+        ///// <summary>
+        ///// 获取未出货物料，归属部门
+        ///// </summary>
+        ///// <param name="req"></param>
+        ///// <returns></returns>
+        //[HttpPost]
+        //public async Task<TableData> GetUndeliveredMaterial(QueryProductionOrderReq req)
+        //{
+        //    return await _app.GetUndeliveredMaterial(req);
+        //}
+
+        ///// <summary>
+        ///// 获取已出货物料，设备序列号
+        ///// </summary>
+        ///// <param name="req"></param>
+        ///// <returns></returns>
+        //[HttpPost]
+        //public async Task<TableData> GetShippedMaterial(QueryProductionOrderReq req)
+        //{
+        //    return await _app.GetShippedMaterial(req);
+        //}
+
+        //
+
+
+
+        /// <summary>
+        /// 获取客户信息
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> CustomerInfo([FromQuery] QueryCustomerOrder req)
         {
-            return await _app.GetProductionOrder(req);
+            return await _app.CustomerInfo(req);
         }
 
         /// <summary>
-        /// 获取未出货物料，归属部门
+        /// 获取销售订单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> SaleOrderInfo([FromQuery] QueryCustomerOrder req)
+        {
+            return await _app.SaleOrderInfo(req);
+        }
+
+        /// <summary>
+        /// 获取成品物料前缀
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetItemType()
+        {
+            TableData result = new TableData();
+            result=await _app.GetItemType();
+            return result;
+        }
+
+        /// <summary>
+        /// 获取特殊要求、系列下拉框
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetItemTypeExtra()
+        {
+            TableData result = new TableData();
+            result = await _app.GetItemTypeExtra();
+            return result;
+        }
+
+        /// <summary>
+        /// 获取设备生产情况（生产单）
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<TableData> GetUndeliveredMaterial(QueryProductionOrderReq req)
+        public async Task<TableData> ProductionOrderInfo(List<QueryProductionOrderReq> req)
         {
-            return await _app.GetUndeliveredMaterial(req);
+            return await _app.ProductionOrderInfo(req);
         }
-
-        /// <summary>
-        /// 获取已出货物料，设备序列号
-        /// </summary>
-        /// <param name="req"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public async Task<TableData> GetShippedMaterial(QueryProductionOrderReq req)
-        {
-            return await _app.GetShippedMaterial(req);
-        }
-
         /// <summary>
         /// 生成服务单、任务单
         /// </summary>

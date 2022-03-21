@@ -45,13 +45,17 @@ namespace OpenAuth.Repository.Domain
           this.CreateUser= string.Empty;
             this.IsTentative = false;
             this.MaterialOrder = string.Empty;
+            this.FlowInstanceId = string.Empty;
         }
 
         /// <summary>
         /// IW号
         /// </summary>
         public string IW { get; set; }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        public int? Types { get; set; }
         //public bool IsStop { get; set; }
         /// <summary>
         /// 
@@ -172,7 +176,7 @@ namespace OpenAuth.Repository.Domain
         public List<InternalContactAttchment> InternalContactAttchments { get; set; }
         public List<InternalContactBatchNumber> InternalContactBatchNumbers { get; set; }
         public List<InternalContactDeptInfo> InternalContactDeptInfos { get; set; }
-        public List<InternalcontactMaterial> InternalcontactMaterials { get; set; }
+        public List<InternalContactMaterial> InternalContactMaterials { get; set; }
         public List<InternalContactTask> InternalContactTasks { get; set; }
         public List<InternalContactServiceOrder> InternalContactServiceOrders { get; set; }
         public List<InternalContactProduction> InternalContactProductions { get; set; }

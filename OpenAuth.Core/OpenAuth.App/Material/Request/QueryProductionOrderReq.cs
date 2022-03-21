@@ -9,52 +9,37 @@ namespace OpenAuth.App.Request
         public QueryProductionOrderReq()
         {
         }
-        /// <summary>
-        /// 单号
-        /// </summary>
-        public int? DocEntry { get; set; }
+        //public List<Equipment> Equipments { get; set; }
 
-        public List<int?> ProductionId { get; set; }
         /// <summary>
-        /// 仓库
+        /// 前缀
         /// </summary>
-        public string WareHouse { get; set; }
-        /// <summary>
-        /// 物料编码
-        /// </summary>
-        public string ItemCode { get; set; }
-        /// <summary>
-        /// 生产部门
-        /// </summary>
-        public string ProductionOrg { get; set; }
-        /// <summary>
-        /// 部门主管
-        /// </summary>
-        public string ProductionOrgManager { get; set; }
-        /// <summary>
-        /// 序列号
-        /// </summary>
-        public string ManufSN { get; set; }
-        /// <summary>
-        /// 客户代码
-        /// </summary>
-        public string CardCode { get; set; }
-        /// <summary>
-        /// 客户名称
-        /// </summary>
-        public string CardName { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public int QueryType { get; set; }
-        /// <summary>
-        /// 物料信息
-        /// </summary>
-        public List<MaterialInfo> MaterialInfos { get; set; }
-    }
+        public List<string> Prefix { get; set; }
 
-    public class MaterialInfo
-    {
+        /// <summary>
+        /// 系列
+        /// </summary>
+        public List<string> Series { get; set; }
+        /// <summary>
+        /// 电压开始
+        /// </summary>
+        public int? VoltsStart { get; set; }
+        /// <summary>
+        /// 电压结束
+        /// </summary>
+        public int? VoltseEnd { get; set; }
+        /// <summary>
+        /// 电流开始
+        /// </summary>
+        public int? AmpsStart { get; set; }
+        /// <summary>
+        /// 电流结束
+        /// </summary>
+        public int? AmpsEnd { get; set; }
+        /// <summary>
+        /// 特殊要求
+        /// </summary>
+        public List<string> Special { get; set; }
         /// <summary>
         /// 物料编码
         /// </summary>
@@ -62,10 +47,94 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 物料编码
         /// </summary>
-        public string MaterialDescription { get; set; }
+        //public string MaterialDescription { get; set; }
         /// <summary>
         /// 仓库
         /// </summary>
-        public string[] WareHouse { get; set; }
+        //public string[] WareHouse { get; set; }
+        /// <summary>
+        /// 开始执行时间
+        /// </summary>
+        public DateTime StartExcelTime { get; set; }
+        /// <summary>
+        /// 结束执行时间
+        /// </summary>
+        public DateTime EndExcelTime { get; set; }
+
+        public string FromTheme { get; set; }
+        public string FromThemeList { get; set; }
+        public string SelectList { get; set; }
+    }
+
+    //public class MaterialInfo
+    //{
+    //}
+
+    public class Equipment 
+    {
+        /// <summary>
+        /// 前缀
+        /// </summary>
+        public List<string> Prefix { get; set; }
+
+        /// <summary>
+        /// 系列
+        /// </summary>
+        public List<int> Series { get; set; }
+        /// <summary>
+        /// 电压开始
+        /// </summary>
+        public int VoltsStart { get; set; }
+        /// <summary>
+        /// 电压结束
+        /// </summary>
+        public int VoltseEnd { get; set; }
+        /// <summary>
+        /// 电流开始
+        /// </summary>
+        public int AmpsStart { get; set; }
+        /// <summary>
+        /// 电流结束
+        /// </summary>
+        public int AmpsEnd { get; set; }
+        /// <summary>
+        /// 特殊要求
+        /// </summary>
+        public List<string> Special { get; set; }
+    }
+
+
+    public class QueryProduction 
+    {
+        public List<Versions> Versions { get; set; }
+        /// <summary>
+        /// 开始执行时间
+        /// </summary>
+        public DateTime StartExcelTime { get; set; }
+        /// <summary>
+        /// 结束执行时间
+        /// </summary>
+        public DateTime EndExcelTime { get; set; }
+
+        public string FromTheme { get; set; }
+    }
+
+    public class Versions
+    {
+        /// <summary>
+        /// 物料
+        /// </summary>
+        public string ItemCode { get; set; }
+        /// <summary>
+        /// BOM版本
+        /// </summary>
+        public string Version { get; set; }
+    }
+
+    public class QueryCustomerOrder : PageReq
+    {
+        public List<string> CardCode { get; set; }
+        public int? SaleCode { get; set; }
+        public string CustomerId { get; set; }
     }
 }
