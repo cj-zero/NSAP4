@@ -1051,7 +1051,7 @@ namespace OpenAuth.App.Order
             var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
             string res = "0", jobType = "oinv";
             //查询
-            billDelivery billDelivery = _serviceSaleOrderApp.GetDeliverySalesInfoNewNos(salesDeliverySaveNewReq.DocEntry, 32);
+            billDelivery billDelivery = _serviceSaleOrderApp.GetDeliverySalesInfoNew(salesDeliverySaveNewReq.JobId, "5", "odln");
             //billDelivery Model = NSAP.Helper.Json.ParseModel<billDelivery>(rData.FilterSerialize());
             #region 必须都有关联订单，并且购买数量与关联订单数量一致,采购订单所有物料高于2次的采购历史，并且价格不高于历史最低价，则不需审批直接通过
             bool PurPassAudit = false;
@@ -1185,6 +1185,55 @@ namespace OpenAuth.App.Order
             return UnitWork.ExecuteSql(sqlStr, ContextType.NsapBaseDbContext);
         }
         #endregion
+        #region 销售交货单修改
+        public async Task<string> UpdateDocFlow(UpdateDeliveryFlowReq updateDeliveryFlowReq, int basetype, int funcid, string jobname, int userid, string className)
+        {
+            string result = "";
+            billDelivery billDelivery = _serviceSaleOrderApp.GetDeliverySalesInfoNewNos(updateDeliveryFlowReq.DocEntry.ToString(), 1);
+            if (!string.IsNullOrWhiteSpace(updateDeliveryFlowReq.Indicator))
+            {
+                billDelivery.Indicator=updateDeliveryFlowReq.Indicator;
+            }
+            if (!string.IsNullOrWhiteSpace(updateDeliveryFlowReq.U_FPLB))
+            {
+                billDelivery.U_FPLB = updateDeliveryFlowReq.U_FPLB;
 
+            }
+            if (!string.IsNullOrWhiteSpace(updateDeliveryFlowReq.U_SL))
+            {
+                billDelivery.U_SL = updateDeliveryFlowReq.U_SL;
+
+            }
+            if (!string.IsNullOrWhiteSpace(updateDeliveryFlowReq.Comments))
+            {
+                billDelivery.Comments = updateDeliveryFlowReq.Comments;
+
+            }
+            if (!string.IsNullOrWhiteSpace(updateDeliveryFlowReq.Remark))
+            {
+                billDelivery.Remark = updateDeliveryFlowReq.Indicator;
+
+            }
+            if (!string.IsNullOrWhiteSpace(updateDeliveryFlowReq.CustomFields))
+            {
+                billDelivery.CustomFields = updateDeliveryFlowReq.CustomFields;
+
+            }
+            if (updateDeliveryFlowReq.OrderItems.Count>0)
+            {
+                billDelivery.billSalesDetails = updateDeliveryFlowReq.OrderItems;
+
+            }
+            //billDelivery Model = NSAP.Helper.Json.ParseModel<billDelivery>(rdata.FilterSerialize());
+            billDelivery.DocNum = updateDeliveryFlowReq.DocEntry.ToString();
+            byte[] job_data = ByteExtension.ToSerialize(billDelivery);
+            result = _serviceSaleOrderApp.WorkflowBuild(jobname, funcid, userid, job_data, "", int.Parse(billDelivery.SboId), "", "", 0, basetype, updateDeliveryFlowReq.DocEntry, "BOneAPI", className);
+            if (int.Parse(result) > 0)
+            {
+                result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(result), userid, "", "", 0);
+            }
+            return result;
+        }
+        #endregion
     }
 }

@@ -370,5 +370,65 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         #endregion
+        #region 销售交货单修改
+        /// <summary>
+        /// 销售交货单修改
+        /// </summary>
+        /// <param name="updateDeliveryFlowReq"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("UpdateDeliveryFlow")]
+        public async Task<Response<string>> UpdateDeliveryFlow(UpdateDeliveryFlowReq updateDeliveryFlowReq)
+        {
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            var DepID = _serviceBaseApp.GetSalesDepID(UserID);
+            var result = new Response<string>();
+            try
+            {
+                string funcId = _serviceSaleOrderApp.GetJobTypeByAddress("sales/SalesDelivery_Update.aspx");
+                string jobname = "销售交货单";
+
+                result.Result = await _salesDeliveryApp.UpdateDocFlow(updateDeliveryFlowReq, 15,  int.Parse(funcId), jobname, UserID, "NSAP.B1Api.BOneODLNUpdate");
+            }
+            catch (Exception ex)
+            {
+                result.Result = null;
+                result.Code = 500;
+                result.Message = "服务器内部错误：" + ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{updateDeliveryFlowReq.ToJson()}， 错误：{ex.Message},堆栈信息：{ex.StackTrace}");
+            }
+
+            return result;
+        }
+        #endregion
+        #region 取消销售交货单
+        /// <summary>
+        /// 取消销售交货单
+        /// </summary>
+        /// <param name="DocNum"></param>
+        /// <param name="SboId=1"></param>
+        /// <param name="type=odln"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        [HttpGet]
+        [Route("UpdataSalesDoc")]
+        public async Task<Response<bool>> UpdataSalesDoc(string DocNum, string SboId, string type)
+        {
+            var result = new Response<bool>();
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            try
+            {
+                result.Result = _serviceSaleOrderApp.UpdataSalesDoc(DocNum, SboID, type, UserID);
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error($"地址：{Request.Path}，参数：{DocNum}， 错误：{ex.Message}");
+                throw new Exception("取消失败！" + ex.ToString());
+            }
+            return result;
+        }
+        #endregion
     }
 }
