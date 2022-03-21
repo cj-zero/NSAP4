@@ -190,7 +190,7 @@ namespace OpenAuth.App.Sap.BusinessPartner
             if (!string.IsNullOrWhiteSpace(req.Technician)) query2 = query2.Where(q => q.Technician.Contains(req.Technician)).ToList();
             if (!string.IsNullOrWhiteSpace(req.Address)) query2 = query2.Where(q => q.Address2.Contains(req.Address)).ToList();
 
-            result.Data = query2.Skip((req.page - 1) * req.limit).Take(req.limit);
+            result.Data = query2.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
             result.Count = query2.Count;
 
             return result;

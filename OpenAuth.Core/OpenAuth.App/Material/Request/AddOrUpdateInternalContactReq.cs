@@ -1,4 +1,5 @@
 ﻿using Infrastructure.AutoMapper;
+using OpenAuth.App.Request;
 using OpenAuth.Repository.Domain;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,7 @@ namespace OpenAuth.App.Material.Request
         /// IW号
         /// </summary>
         public string IW { get; set; }
+        public int? Types { get; set; }
 
         /// <summary>
         /// 主题
@@ -46,7 +48,7 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         /// 销售单号
         /// </summary>
-        public string SaleOrderNo { get; set; }
+        public List<string> SaleOrderNo { get; set; }
         /// <summary>
         /// 生产单号
         /// </summary>
@@ -100,6 +102,10 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public System.DateTime? CreateTime { get; set; }
         /// <summary>
+        /// 是否草稿
+        /// </summary>
+        public bool IsDraft { get; set; }
+        /// <summary>
         /// 创建人ID
         /// </summary>
         public string CreateUserId { get; set; }
@@ -118,11 +124,11 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         /// 批次号
         /// </summary>
-        public List<InternalContactBatchNumberReq> InternalContactBatchNumbers { get; set; }
+        //public List<InternalContactBatchNumberReq> InternalContactBatchNumbers { get; set; }
         /// <summary>
         /// 联络单物料
         /// </summary>
-        public List<InternalcontactMaterialReq> InternalcontactMaterials { get; set; }
+        //public List<InternalContactMaterialReq> InternalContactMaterials { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -131,5 +137,18 @@ namespace OpenAuth.App.Material.Request
         /// 
         /// </summary>
         public List<InternalContactDeptInfoReq> InternalContactReceiveDepts { get; set; }
+        /// <summary>
+        /// 任务单
+        /// </summary>
+        public List<InternalContactTaskReq> InternalContactTasks { get; set; }
+        /// <summary>
+        /// 服务呼叫
+        /// </summary>
+        public List<InternalContactServiceOrderReq> InternalContactServiceOrders { get; set; }
+        /// <summary>
+        /// 生产订单
+        /// </summary>
+        public List<InternalContactProductionReq> InternalContactProductions { get; set; }
+        public List<QueryProductionOrderReq> MaterialInfo { get; set; }
     }
 }
