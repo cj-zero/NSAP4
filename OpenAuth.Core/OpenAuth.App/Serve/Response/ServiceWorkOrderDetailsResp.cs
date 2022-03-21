@@ -86,6 +86,10 @@ namespace OpenAuth.App.Response
         /// </summary>
         public string MaterialCode { get; set; }
         /// <summary>
+        /// 物料编码
+        /// </summary>
+        public string RepairMaterialCode { get; set; }
+        /// <summary>
         /// 物料描述
         /// </summary>
         public string MaterialDescription { get; set; }

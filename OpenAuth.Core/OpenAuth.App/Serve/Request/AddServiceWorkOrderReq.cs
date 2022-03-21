@@ -52,6 +52,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         public int? FromType { get; set; }
         /// <summary>
+        /// 维修物料编码
+        /// </summary>
+        public string RepairMaterialCode { get; set; }
+        /// <summary>
         /// 物料编码
         /// </summary>
         public string MaterialCode { get; set; }

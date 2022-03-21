@@ -9,8 +9,8 @@ namespace OpenAuth.App.Material.Request
     /// <summary>
     /// 联络单物料
     /// </summary>
-    [AutoMapTo(typeof(InternalcontactMaterial))]
-    public class InternalcontactMaterialReq
+    [AutoMapTo(typeof(InternalContactMaterial))]
+    public class InternalContactMaterialReq
     {
         /// <summary>
         /// 联络单ID

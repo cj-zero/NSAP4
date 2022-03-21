@@ -73,7 +73,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<InternalContactBatchNumber> InternalContactBatchNumbers { get; set; }
         public virtual DbSet<InternalContactDeptInfo> InternalContactDeptInfos { get; set; }
         public virtual DbSet<MaterialReplaceRecord> MaterialReplaceRecords { get; set; }
-        public virtual DbSet<InternalcontactMaterial> InternalcontactMaterials { get; set; }
+        public virtual DbSet<InternalContactMaterial> InternalContactMaterials { get; set; }
         public virtual DbSet<CommonUsedMaterial> CommonUsedMaterials { get; set; }
 
         #region 中位机和下位机
@@ -82,6 +82,12 @@ namespace OpenAuth.Repository
         public virtual DbSet<XWJSoftwareVersion> XWJSoftwareVersions { get; set; }
         public virtual DbSet<XWJHardware> XWJHardwares { get; set; }
         public virtual DbSet<TempVersion> TempVersions { get; set; }
-        #endregion
+        # endregion
+        public virtual DbSet<FinishedMaterial> FinishedMaterials { get; set; }
+        
+        public virtual DbSet<InternalContactTask> InternalContactTasks { get; set; }
+        public virtual DbSet<InternalContactProduction> InternalContactProduction { get; set; }
+        public virtual DbSet<InternalContactServiceOrder> InternalContactServiceOrders { get; set; }
+        public virtual DbSet<InternalContactTaskServiceOrder> InternalContactTaskServiceOrders { get; set; }
     }
 }

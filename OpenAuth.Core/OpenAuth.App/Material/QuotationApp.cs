@@ -789,7 +789,10 @@ namespace OpenAuth.App.Material
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var query = await UnitWork.Find<OITW>(o => o.ItemCode == request.MaterialCode && o.OnHand > 0).Select(c => new { c.ItemCode, c.OnHand, c.WhsCode }).ToListAsync();
+            var query = await UnitWork.Find<OITW>(o => o.ItemCode == request.MaterialCode && o.OnHand > 0)
+                .WhereIf(!string.IsNullOrWhiteSpace(request.WhsCode), c => c.WhsCode == request.WhsCode)
+                .Select(c => new { c.ItemCode, c.OnHand, c.WhsCode })
+                .ToListAsync();
             return new TableData
             {
                 Data = query
