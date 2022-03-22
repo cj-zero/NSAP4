@@ -654,7 +654,7 @@ namespace OpenAuth.App
                 else if (loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-需求工程师")) && flowinstace.ActivityName == "需求提交")
                 {
                     //更新实际需求完成时间
-                    await UnitWork.UpdateAsync<BeforeSaleProScheduling>(x => x.UserId == loginContext.User.Id && x.Stage == 0, x => new BeforeSaleProScheduling
+                    await UnitWork.UpdateAsync<BeforeSaleProScheduling>(x => x.BeforeSaleDemandId==req.Id && x.UserId == loginContext.User.Id && x.Stage == 0, x => new BeforeSaleProScheduling
                     {
                         ActualStartDate = req.ActualStartDate,//需求实际开始时间
                         ActualEndDate = req.SubmitDate,//需求实际完成时间
