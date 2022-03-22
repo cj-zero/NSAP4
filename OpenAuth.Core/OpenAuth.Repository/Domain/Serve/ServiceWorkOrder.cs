@@ -42,6 +42,7 @@ namespace OpenAuth.Repository.Domain
             this.VisitTime = DateTime.Now;
             this.LiquidationDate = DateTime.Now;
             this.ServiceMode = 0;
+            this.RepairMaterialCode = string.Empty;
         }
         /// <summary>
         /// 工单ID
@@ -133,6 +134,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("呼叫类型")]
         public int? FromType { get; set; }
+        /// <summary>
+        /// 物料编码
+        /// </summary>
+        [Description("维修物料编码")]
+        public string RepairMaterialCode { get; set; }
         /// <summary>
         /// 物料编码
         /// </summary>

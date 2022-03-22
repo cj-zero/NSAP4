@@ -33,6 +33,7 @@ namespace OpenAuth.Repository
             #region 序列号
             modelBuilder.Entity<OINS>().HasKey(o => o.insID);
             modelBuilder.Entity<CTR1>().HasKey(o => new { o.ContractID, o.Line });
+            modelBuilder.Entity<OSRIModel>().HasKey(o => o.SuppSerial);
             #endregion
             #region 物料编码
             modelBuilder.Entity<OITM>().HasKey(o => o.ItemCode);
@@ -73,7 +74,8 @@ namespace OpenAuth.Repository
         }
         //非数据库表格
         public virtual DbSet<SysEquipmentColumn> SysEquipmentColumns { get; set; }
-        
+        public virtual DbSet<OSRIModel> Osris { get; set; }
+
         public virtual DbQuery<SysTableColumn> SysTableColumns { get; set; }
         //public virtual DbSet<AAC1> Aac1s { get; set; }
         //public virtual DbSet<AACP> Aacps { get; set; }

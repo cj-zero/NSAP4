@@ -1221,7 +1221,7 @@ namespace OpenAuth.App.Client
             tableName.AppendFormat("LEFT JOIN {0}.base_user_role e ON a.user_id=e.user_id LEFT JOIN {0}.base_role f ON e.role_id=f.role_id ", "nsap_base");
             tableName.AppendFormat("LEFT JOIN {0}.sbo_user h ON h.sbo_id={1} AND a.user_id=h.user_id ", "nsap_base", SboId);
             tableName.AppendFormat("LEFT JOIN {0}.crm_ohem i ON h.sbo_id=i.sbo_id AND h.tech_id=i.empID WHERE h.tech_id>0 GROUP BY a.user_id) T ", "nsap_bone");
-            return SelectPagingNoneRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, sortString, filterQuery, out rowsCount);
+            return SelectPagingNoneRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, sortString, filterString, out rowsCount);
 
         }
         public DataTable SelectPagingNoneRowsCount(string tableName, string fieldName, int pageSize, int pageIndex, string strOrder, string strWhere, out int rowsCount)

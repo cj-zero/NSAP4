@@ -19,16 +19,15 @@ namespace OpenAuth.Repository.Domain
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("internalcontactmaterial")]
-    public partial class InternalContactMaterial : Entity
+    [Table("internalcontactproduction")]
+    public partial class InternalContactProduction : Entity
     {
-        public InternalContactMaterial()
+        public InternalContactProduction()
         {
-          this.InternalContactId= 0;
-          this.MaterialCode= string.Empty;
-          this.Prefix= string.Empty;
-          this.Series= string.Empty;
-          this.Special= string.Empty;
+          this.ItemCode= string.Empty;
+          this.ItemName= string.Empty;
+          this.Dept= string.Empty;
+          this.Remark= string.Empty;
         }
 
         
@@ -37,51 +36,50 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         [Browsable(false)]
-        public int InternalContactId { get; set; }
+        public int? InternalContactId { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string MaterialCode { get; set; }
+        [Browsable(false)]
+        public int? ProductionId { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string Prefix { get; set; }
+        public string ItemCode { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string Series { get; set; }
+        public string ItemName { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? VoltsStart { get; set; }
+        public string Dept { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? VoltseEnd { get; set; }
+        public int? PlannedQty { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? AmpsStart { get; set; }
+        public int? CmpltQty { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? AmpsEnd { get; set; }
+        public int? OpenQty { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string Special { get; set; }
-        public DateTime? StartExcelTime { get; set; }
-        public DateTime? EndExcelTime { get; set; }
+        public string Remark { get; set; }
         public string FromTheme { get; set; }
-        public string FromThemeList { get; set; }
-        public string SelectList { get; set; }
+        public string FromThemeName { get; set; }
+        public string FromThemeCode { get; set; }
     }
 }

@@ -19,16 +19,17 @@ namespace OpenAuth.Repository.Domain
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("internalcontactmaterial")]
-    public partial class InternalContactMaterial : Entity
+    [Table("internalcontacttask")]
+    public partial class InternalContactTask : Entity
     {
-        public InternalContactMaterial()
+        public InternalContactTask()
         {
-          this.InternalContactId= 0;
-          this.MaterialCode= string.Empty;
-          this.Prefix= string.Empty;
-          this.Series= string.Empty;
-          this.Special= string.Empty;
+          this.ItemCode= string.Empty;
+          this.FromTheme= string.Empty;
+          this.ProductionOrg= string.Empty;
+          this.ProductionOrgManager= string.Empty;
+          this.WareHouse= string.Empty;
+            this.FinishedQty = 0;
         }
 
         
@@ -37,51 +38,53 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         [Browsable(false)]
-        public int InternalContactId { get; set; }
+        public int? InternalContactId { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string MaterialCode { get; set; }
+        public string ItemCode { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string Prefix { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string Series { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? VoltsStart { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? VoltseEnd { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? AmpsStart { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? AmpsEnd { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string Special { get; set; }
-        public DateTime? StartExcelTime { get; set; }
-        public DateTime? EndExcelTime { get; set; }
         public string FromTheme { get; set; }
-        public string FromThemeList { get; set; }
-        public string SelectList { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        [Browsable(false)]
+        public int? ProductionId { get; set; }
+        //public string ProductionOrgId { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string ProductionOrg { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string ProductionOrgManager { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string WareHouse { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? FinishedQty { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? BelongQty { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? RectifyQty { get; set; }
     }
 }

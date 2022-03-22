@@ -1,5 +1,7 @@
 ﻿using Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Debug;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.NsapBone;
 using System;
@@ -13,6 +15,12 @@ namespace OpenAuth.Repository
     {
         public NsapBoneDbContext(DbContextOptions<NsapBoneDbContext> options) : base(options)
         {
+        }
+        public static readonly LoggerFactory loggerFactory = new LoggerFactory(new[] { new DebugLoggerProvider() });
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            base.OnConfiguring(optionsBuilder);
+            optionsBuilder.UseLoggerFactory(loggerFactory);
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -48,6 +56,12 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<product_owor>().HasKey(o => new { o.sbo_id, o.DocEntry,o.DocNum }); 
             modelBuilder.Entity<crm_crd1>().HasKey(o => new { o.sbo_id, o.Address,o.CardCode,o.AdresType });
             modelBuilder.Entity<crm_ocpr>().HasKey(o => new { o.sbo_id, o.CardCode, o.CntctCode });
+            modelBuilder.Entity<product_wor1>().HasKey(o => new { o.sbo_id, o.DocEntry, o.LineNum });
+            modelBuilder.Entity<product_oign>().HasKey(o => new { o.sbo_id, o.DocEntry });
+            modelBuilder.Entity<product_ign1>().HasKey(o => new { o.sbo_id, o.DocEntry, o.LineNum });
+            modelBuilder.Entity<product_owor_wor1>().HasKey(o => new { o.DocEntry });
+            modelBuilder.Entity<store_item_type>().HasKey(o => new { o.type_id });
+            modelBuilder.Entity<store_itemtype_ufd1>().HasKey(o => new { o.TypeID, o.Fld_nm, o.IndexID });
         }
 
         public virtual DbSet<sale_transport> sale_transports { get; set; }
@@ -83,8 +97,17 @@ namespace OpenAuth.Repository
         public virtual DbSet<crm_ocpr> crm_ocpr { get; set; }
         public virtual DbSet<service_oins> service_oins { get; set; }
         public virtual DbSet<crm_crd1> crm_crd1 { get; set; }
+        
         public virtual DbSet<product_owor> product_owors { get; set; }
         
+        public virtual DbSet<product_wor1> product_wor1s { get; set; }
+        /// <summary>
+        /// 生产订单关联查询，非数据库表
+        /// </summary>
+        public virtual DbSet<product_owor_wor1> product_owor_wor1s { get; set; }
+        public virtual DbSet<product_oign> product_oigns { get; set; }
+        public virtual DbSet<product_ign1> product_ign1s { get; set; }
+
 
         //非数据库表格
         public virtual DbSet<v_storeitemstock> v_storeitemstocks { get; set; }
@@ -93,6 +116,8 @@ namespace OpenAuth.Repository
 
         public virtual DbSet<store_drawing_job> store_drawing_job { get; set; }
         public virtual DbSet<store_osrn_alreadyexists> store_osrn_alreadyexists { get; set; }
+        public virtual DbSet<store_item_type> store_item_types { get; set; }
+        public virtual DbSet<store_itemtype_ufd1> store_itemtype_ufd1s { get; set; }
 
     }
 }
