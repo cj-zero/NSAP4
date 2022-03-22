@@ -42,6 +42,29 @@ namespace OpenAuth.WebApi.Controllers.Serve
             }
             return result;
         }
+
+        /// <summary>
+        /// 根据id撤回消息
+        /// </summary>
+        /// <param name="messageId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> RecallMessage(ServiceMessage serviceMessage)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderMessageApp.RecallMessage(serviceMessage.messageId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{""}， 错误：{result.Message}");
+            }
+            return result;
+        }
+
         /// <summary>
         /// 发消息给技术员
         /// </summary>

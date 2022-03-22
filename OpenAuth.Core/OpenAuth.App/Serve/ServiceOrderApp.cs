@@ -260,7 +260,7 @@ namespace OpenAuth.App
             var loginContext = _auth.GetCurrentUser();
             var user = loginContext.User;
             //如果是销售员角色,只能看到自己名下的客户
-            if (loginContext.Roles.Select(r=>r.Name).Contains("销售员"))
+            if (loginContext.Roles.Select(r => r.Name).Contains("销售员") && !loginContext.Roles.Select(r => r.Name).Contains("呼叫中心"))
             {
                 query = query.Where(q => q.SalesMan == user.Name);
             }
@@ -311,7 +311,7 @@ namespace OpenAuth.App
             var loginContext = _auth.GetCurrentUser();
             var user = loginContext.User;
             var isSalesMan = loginContext.Roles.Select(r => r.Name).Contains("销售员");
-            if (isSalesMan)
+            if (isSalesMan && !loginContext.Roles.Select(r => r.Name).Contains("呼叫中心"))
             {
                 services = services.Where(q => q.SalesMan == user.Name);
             }
