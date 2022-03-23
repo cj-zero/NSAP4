@@ -100,11 +100,13 @@ namespace OpenAuth.Repository.Domain
         [Description("")]
         [Browsable(false)]
         public string UpdateUserId { get; set; }
+
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
         public System.DateTime? UpdateTime { get; set; }
+
         /// <summary>
         /// 更新人名字
         /// </summary>
@@ -115,17 +117,26 @@ namespace OpenAuth.Repository.Domain
         /// 父节点流水号
         /// </summary>
         [Description("父节点流水号")]
+        [Browsable(false)]
         public string ParentId { get; set; }
 
         /// <summary>
         /// 父节点名称
         /// </summary>
         [Description("父节点名称")]
+        [Browsable(false)]
         public string ParentName { get; set; }
 
         /// <summary>
         /// 是否新增(新增的有code、ParentId、ParentName以及description存的是上一级的code)
         /// </summary>
+        [Browsable(false)]
         public bool? IsNew { get; set; }
+
+        /// <summary>
+        /// 等级
+        /// </summary>
+        [Browsable(false)]
+        public int? Rank { get; set; }
     }
 }
