@@ -55,11 +55,11 @@ namespace OpenAuth.App.Request
         /// <summary>
         /// 开始执行时间
         /// </summary>
-        public DateTime StartExcelTime { get; set; }
+        public DateTime? StartExcelTime { get; set; }
         /// <summary>
         /// 结束执行时间
         /// </summary>
-        public DateTime EndExcelTime { get; set; }
+        public DateTime? EndExcelTime { get; set; }
 
         public string FromTheme { get; set; }
         public string FromThemeList { get; set; }

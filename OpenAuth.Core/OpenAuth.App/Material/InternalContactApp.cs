@@ -511,8 +511,8 @@ namespace OpenAuth.App.Material
                             //.Include(c => c.InternalContactBatchNumbers)
                             .Include(c => c.InternalContactDeptInfos)
                             .Include(c => c.InternalContactMaterials)
-                            //.Include(c => c.InternalContactTasks)
-                            //.Include(c => c.InternalContactServiceOrders)
+                            .Include(c => c.InternalContactTasks)
+                            .Include(c => c.InternalContactServiceOrders)
                             .FirstOrDefaultAsync();
             var internalContactProductions = await UnitWork.Find<InternalContactProduction>(c => c.InternalContactId == detail.Id).ToListAsync();
             //操作历史
@@ -526,9 +526,9 @@ namespace OpenAuth.App.Material
                     h.Content,
                     h.ApprovalResult,
                 }).ToListAsync();
-            var fileId = detail.InternalContactAttchments.Select(c => c.FileId).ToList();
-            var files = await UnitWork.Find<UploadFile>(c => fileId.Contains(c.Id)).ToListAsync();
-            var returnFile = files.MapTo<List<UploadFileResp>>();
+            //var fileId = detail.InternalContactAttchments.Select(c => c.FileId).ToList();
+            //var files = await UnitWork.Find<UploadFile>(c => fileId.Contains(c.Id)).ToListAsync();
+            //var returnFile = files.MapTo<List<UploadFileResp>>();
             var reviceOrgList = detail.InternalContactDeptInfos.Where(c => c.Type == 1).Select(c => new
             {
                 c.OrgName,
@@ -548,7 +548,7 @@ namespace OpenAuth.App.Material
                 detail.IW,
                 detail.Theme,
                 detail.IsTentative,
-                Files = returnFile,
+                //Files = returnFile,
                 CardCodes = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardCode.Split(",") : new string[] { },
                 CardNames = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardName.Split(",") : new string[] { },
                 detail.Status,
@@ -572,8 +572,8 @@ namespace OpenAuth.App.Material
                 execOrgList,
                 InternalContactMaterials = detail.InternalContactMaterials,
                 operationHistories,
-                //detail.InternalContactTasks,
-                //detail.InternalContactServiceOrders,
+                detail.InternalContactTasks,
+                detail.InternalContactServiceOrders,
                 InternalContactProductions = internalContactProductions,
                 MaterialInfo = detail.InternalContactMaterials.Select(c => new QueryProductionOrderReq
                 {
@@ -581,11 +581,11 @@ namespace OpenAuth.App.Material
                     VoltseEnd = c.VoltseEnd,
                     AmpsStart = c.AmpsStart,
                     AmpsEnd = c.AmpsEnd,
-                    StartExcelTime = c.StartExcelTime.Value,
-                    EndExcelTime = c.EndExcelTime.Value,
-                    Prefix = c.Prefix.Split(",").ToList(),
-                    Series = c.Series.Split(",").ToList(),
-                    Special = !string.IsNullOrWhiteSpace(c.Special) ? c.Special.Split(",").ToList() : null,
+                    StartExcelTime = c?.StartExcelTime,
+                    EndExcelTime = c?.EndExcelTime,
+                    Prefix = !string.IsNullOrWhiteSpace(c.Prefix) ? c.Prefix.Split(",").ToList() : new List<string>(),
+                    Series = !string.IsNullOrWhiteSpace(c.Series) ? c.Series.Split(",").ToList() : new List<string>(),
+                    Special = !string.IsNullOrWhiteSpace(c.Special) ? c.Special.Split(",").ToList() : new List<string>(),
                     MaterialCode = c.MaterialCode,
                     FromThemeList = c.FromThemeList,
                     SelectList = c.SelectList,
@@ -1500,7 +1500,7 @@ namespace OpenAuth.App.Material
         public async Task<TableData> GetItemType()
         {
             TableData result = new TableData();
-            result.Data = await UnitWork.Find<store_item_type>(c => c.valid == true && c.parent_id == 13).Select(c => new { Id = c.type_alias, Name = $"{c.type_alias} {c.type_nm}" }).ToListAsync();
+            result.Data = await UnitWork.Find<store_item_type>(c => c.valid == true && c.parent_id == 13).Select(c => new { Id = c.type_alias, Name = c.type_alias }).ToListAsync();
             return result;
         }
 
@@ -1512,7 +1512,7 @@ namespace OpenAuth.App.Material
         {
             TableData result = new TableData();
             //成品下
-            var objs = await UnitWork.Find<store_itemtype_ufd1>(c => c.TypeID == 20 && c.Fld_nm == "U_TSYQ").Select(c => new { Id = c.FldValue, Name = c.Descr }).ToListAsync();
+            var objs = await UnitWork.Find<store_itemtype_ufd1>(c => c.TypeID == 20 && c.Fld_nm == "U_TSYQ").Select(c => new { Id = c.FldValue, Name = c.FldValue }).ToListAsync();
             var catetory = await UnitWork.Find<Category>(c => c.TypeId == "SYS_MaterialSeries").Select(c => new { Id = c.DtValue, c.Name }).ToListAsync();
             result.Data = new
             {
@@ -1593,7 +1593,7 @@ namespace OpenAuth.App.Material
                 storeoitm = storeoitm.Intersect(itemcode).ToList();
                 //有BOM的成品物料
                 var finlishedBomOrder = BomOrder(storeoitm);
-                var productOrder = GetProductionOrderInfo(new QueryProduction { StartExcelTime = e.StartExcelTime, EndExcelTime = e.EndExcelTime, Versions = finlishedBomOrder});
+                var productOrder = GetProductionOrderInfo(new QueryProduction { StartExcelTime = e.StartExcelTime.Value, EndExcelTime = e.EndExcelTime.Value, Versions = finlishedBomOrder});
                 productOrder.ForEach(pr => { pr.FromTheme = e.FromTheme; });
                 productList.AddRange(productOrder);
                 //BOM有被使用的物料
@@ -1601,7 +1601,7 @@ namespace OpenAuth.App.Material
 
                 //有BOM的零件物料
                 var b01BomOrder =  BomOrder(e.MaterialCode.Select(c=>c.ToString()).ToList());
-                var b01ProductOrder = GetProductionOrderInfo(new QueryProduction { StartExcelTime = e.StartExcelTime, EndExcelTime = e.EndExcelTime, Versions = b01BomOrder });
+                var b01ProductOrder = GetProductionOrderInfo(new QueryProduction { StartExcelTime = e.StartExcelTime.Value, EndExcelTime = e.EndExcelTime.Value, Versions = b01BomOrder });
                 b01ProductOrder.ForEach(pr => { pr.FromTheme = e.FromTheme; });
                 //productList.AddRange(productOrder);
                 var partItem= b01ProductOrder.GroupBy(c => new { c.ItemCode, c.Version }).Select(c => new Versions { ItemCode = c.Key.ItemCode, Version = c.Key.Version }).ToList();
@@ -1638,7 +1638,7 @@ namespace OpenAuth.App.Material
                 {
                     //生产半成品物料的生产单,B01(半成品)->BTE/BT/BE(半成品)->C(成品)
                     var preProduct = b01ProductOrder.Where(c => !c.ItemCode.StartsWith("C")).Select(c => c.ItemCode).ToList();
-                    var finishedProduct =  FinishedProduct(preProduct, e.StartExcelTime, e.EndExcelTime);
+                    var finishedProduct =  FinishedProduct(preProduct, e.StartExcelTime.Value, e.EndExcelTime.Value);
                     //包含成品则添加
                     var finishIt = finishedProduct.Where(c => c.ItemCode.StartsWith("C")).ToList();
                     finishIt.ForEach(fl => { fl.FromTheme = e.FromTheme; });
@@ -1648,7 +1648,7 @@ namespace OpenAuth.App.Material
                     if (preProduct.Count > 0)
                     {
                         //BTE/BT/BE(半成品)->C(成品)
-                        finishedProduct =  FinishedProduct(preProduct, e.StartExcelTime, e.EndExcelTime);
+                        finishedProduct =  FinishedProduct(preProduct, e.StartExcelTime.Value, e.EndExcelTime.Value);
                         finishIt = finishedProduct.Where(c => c.ItemCode.StartsWith("C")).ToList();
                         finishIt.ForEach(fl => { fl.FromTheme = e.FromTheme; });
                         productList.AddRange(finishIt);
@@ -1748,8 +1748,8 @@ namespace OpenAuth.App.Material
                 if (!string.IsNullOrWhiteSpace(filter))
                 {
                     //没有序列号的生产单
-                    var isHasSql = @$"SELECT o.BaseEntry,o.Quantity,o.BaseLinNum,ISNULL(o.SuppSerial, '') as SuppSerial,o.ItemCode from OSRI o  
-                                where ({filter}) and o.BaseType=59 and STATUS=0";
+                    var isHasSql = @$"SELECT o.BaseEntry,o.Quantity,o.BaseLinNum,ISNULL(o.SuppSerial, '') as SuppSerial,o.SysSerial,o.ItemCode,o.STATUS as Status from OSRI o  
+                                where ({filter}) and o.BaseType=59";
                     var query = UnitWork.Query<OSRIModel>(isHasSql).Select(c => new OSRIModel
                     {
                         BaseEntry = c.BaseEntry,
@@ -1757,9 +1757,11 @@ namespace OpenAuth.App.Material
                         BaseLinNum = c.BaseLinNum,
                         SuppSerial = c.SuppSerial,
                         ItemCode = c.ItemCode,
+                        SysSerial = c.SysSerial,
+                        Status = c.Status
                         //DocEntry = 0
                     }).ToList();
-                    var querygb = query.GroupBy(c => new
+                    var querygb = query.Where(c => c.Status == 0).GroupBy(c => new
                     {
                         c.BaseEntry,
                         c.Quantity,
@@ -1798,33 +1800,63 @@ namespace OpenAuth.App.Material
                     //有序列号的情况
                     //序列号详细
                     //var osri = await UnitWork.Find<OSRI>(c => c.BaseType == 59 && ign1.Contains(c.BaseEntry.Value)).ToListAsync();
-                    var sqldetail = @$"SELECT DISTINCT  
-                             o.BaseEntry,o.Quantity,o.BaseLinNum,o.SuppSerial,o.ItemCode,o.ItemName,o.WhsCode,c.CardCode,c.CardName,e.lastName + e.firstName as Technician
-                            from OSRI o
-                            INNER JOIN OITL a on a.ItemCode = o.ItemCode and a.DocType = 15 and o.BaseType = 59 and o.STATUS = 1
-                            INNER JOIN ITL1 b on a.LogEntry = b.LogEntry and o.SysSerial = b.SysNumber
-                            INNER JOIN ODLN c on a.DocEntry = c.DocEntry
-                            INNER JOIN OCRD d on c.CardCode = d.CardCode
-                            INNER JOIN OHEM e on d.DfTcnician = e.empID
-                            where ({filter})";
-                    var querySuppSerial = UnitWork.Query<OSRIModel>(sqldetail).Select(c => new OSRIModel
-                    {
-                        BaseEntry = c.BaseEntry,
-                        Quantity = c.Quantity,
-                        BaseLinNum = c.BaseLinNum,
-                        SuppSerial = c.SuppSerial,
-                        ItemCode = c.ItemCode,
-                        ItemName = c.ItemName,
-                        WhsCode = c.WhsCode,
-                        CardCode = c.CardCode,
-                        CardName = c.CardName,
-                        Technician = c.Technician
-                    }).ToList();
+                    var otherEn = query.Where(c => c.Status == 1).ToList();
+
+                    var itemcodes = otherEn.Select(c => c.ItemCode).Distinct().ToList();
+                    var sysSerial = otherEn.Select(c => c.SysSerial).ToList();
+
+                    var qq = (from a in UnitWork.Find<OITL>(null)
+                                           join b in UnitWork.Find<ITL1>(null) on a.LogEntry equals b.LogEntry
+                                           join c in UnitWork.Find<ODLN>(null) on a.DocEntry equals c.DocEntry
+                                           join d in UnitWork.Find<OCRD>(null) on c.CardCode equals d.CardCode
+                                           join ee in UnitWork.Find<OHEM>(null) on d.DfTcnician equals ee.empID
+                                           where itemcodes.Contains(a.ItemCode) && a.DocType == 15 && sysSerial.Contains(b.SysNumber)
+                                           select new { a.ItemCode, a.ItemName, b.SysNumber, c.CardCode, c.CardName, Technician = ee.lastName + ee.firstName }).ToList();
+
+                    var querySuppSerial = (from a in otherEn
+                              join b in qq on new { a.ItemCode, SysNumber = a.SysSerial } equals new { b.ItemCode, b.SysNumber }
+                              select new OSRIModel
+                              {
+                                  //BaseEntry = c.BaseEntry,
+                                  Quantity = a.Quantity,
+                                  //BaseLinNum = c.BaseLinNum,
+                                  SuppSerial = a.SuppSerial,
+                                  ItemCode = b.ItemCode,
+                                  ItemName = b.ItemName,
+                                  //WhsCode = c.WhsCode,
+                                  CardCode = b.CardCode,
+                                  CardName = b.CardName,
+                                  Technician = b.Technician
+                              }).ToList();
+
+                    //var sqldetail = @$"SELECT DISTINCT  
+                    //         o.BaseEntry,o.Quantity,o.BaseLinNum,o.SuppSerial,o.ItemCode,o.ItemName,o.WhsCode,c.CardCode,c.CardName,e.lastName + e.firstName as Technician
+                    //        from OSRI o
+                    //        INNER JOIN OITL a on a.ItemCode = o.ItemCode and a.DocType = 15 and o.BaseType = 59 and o.STATUS = 1
+                    //        INNER JOIN ITL1 b on a.LogEntry = b.LogEntry and o.SysSerial = b.SysNumber
+                    //        INNER JOIN ODLN c on a.DocEntry = c.DocEntry
+                    //        INNER JOIN OCRD d on c.CardCode = d.CardCode
+                    //        INNER JOIN OHEM e on d.DfTcnician = e.empID
+                    //        where ({filter})";
+                    //var querySuppSerial = UnitWork.Query<OSRIModel>(sqldetail).Select(c => new OSRIModel
+                    //{
+                    //    BaseEntry = c.BaseEntry,
+                    //    Quantity = c.Quantity,
+                    //    BaseLinNum = c.BaseLinNum,
+                    //    SuppSerial = c.SuppSerial,
+                    //    ItemCode = c.ItemCode,
+                    //    ItemName = c.ItemName,
+                    //    WhsCode = c.WhsCode,
+                    //    CardCode = c.CardCode,
+                    //    CardName = c.CardName,
+                    //    Technician = c.Technician
+                    //}).ToList();
                     if (querySuppSerial.Count > 0)
                     {
                         //服务单
                         querySuppSerial.ForEach(q =>
                         {
+                            //var osrn = otherEn.Where(c => c.SysSerial == q.SysNumber).FirstOrDefault();
                             contactServiceOrders.Add(new InternalContactServiceOrder
                             {
                                 ItemCode = q.ItemCode,
@@ -1865,6 +1897,7 @@ namespace OpenAuth.App.Material
             });
             result.Data = new
             {
+                Count = ReturnProductList.Count(),
                 ProductList = ReturnProductList,
                 InternalContactTask = contactTasks,
                 InternalContactServiceOrder = contactServiceOrders,

@@ -46,6 +46,8 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public int? BaseLinNum { get; set; }
         public string WhsCode { get; set; }
+        public int? SysSerial { get; set; }
+        public int? Status { get; set; }
         /// <summary>
         /// 
         /// </summary>
