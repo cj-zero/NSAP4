@@ -38,12 +38,11 @@ namespace OpenAuth.App
 
             var result = new TableData();
             //var objs = UnitWork.Find<Solution>(s => s.UseBy == 1);
-            var objs = UnitWork.Find<Solution>(s => s.IsNew == true);
+            var objs = UnitWork.Find<Solution>(s => s.IsNew == true).WhereIf(request.Rank != 0, s => s.Rank == request.Rank);
             if (!string.IsNullOrEmpty(request.key))
             {
                 objs = objs.Where(u => u.Id.Contains(request.key) || u.Subject.Contains(request.key) || u.Symptom.Contains(request.key)).WhereIf(int.TryParse(request.key, out int code), u => u.SltCode == code);
             }
-
 
             //var propertyStr = string.Join(',', properties.Select(u => u.Key));
             result.columnHeaders = properties;
@@ -52,10 +51,15 @@ namespace OpenAuth.App
                 .Take(request.limit).Select(x => new
                 {
                     x.Id,
-                    x.SltCode,
-                    x.Symptom,
-                    x.Subject,
-                    Code = x.Descriptio + "-" + x.Code
+                    x.SltCode, //编号
+                    x.Status, //状态
+                    x.Symptom, //症状
+                    x.Subject, //解决方案
+                    x.Cause, //原因
+                    Code = x.Descriptio + "-" + x.Code, //编码
+                    x.Descriptio, //备注
+                    x.UpdateUserName, //更新人名字
+                    x.CreateTime, //创建时间
                 }).ToListAsync();//.Select($"new ({propertyStr})");
             result.Count = await objs.CountAsync();
             return result;

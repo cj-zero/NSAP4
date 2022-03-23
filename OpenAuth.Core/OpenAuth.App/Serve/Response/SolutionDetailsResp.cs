@@ -33,5 +33,10 @@ namespace OpenAuth.App.Response
         /// 备注
         /// </summary>
         public string Descriptio { get; set; }
+
+        /// <summary>
+        /// 解决方案编码
+        /// </summary>
+        public string Code { get; set; }
     }
 }

@@ -162,6 +162,17 @@ namespace OpenAuth.WebApi.Controllers
         {
             return await _app.LoadByRoleName(request);
         }
+
+        /// <summary>
+        /// 通过角色查人员部门信息
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> LoadInfoByRoleName(string roleName)
+        {
+            return await _app.LoadInfoByRoleName(roleName);
+        }
         /// <summary>
         /// 绑定App用户Id
         /// </summary>

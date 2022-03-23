@@ -42,4 +42,9 @@ namespace OpenAuth.App.Request
         [Ignore]
         public virtual List<ServiceOrderMessagePicture> ServiceOrderMessagePictures { get; set; }
     }
+
+    public class ServiceMessage
+    {
+        public string messageId { get; set; }
+    }
 }
