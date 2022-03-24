@@ -136,11 +136,11 @@ namespace OpenAuth.App.nwcali
         /// </summary>
         /// <param name="categoryIds"></param>
         /// <returns></returns>
-        public async Task<TableData> GetAssetCategoryDetails(string[] categoryIds)
+        public async Task<TableData> GetAssetCategoryDetails(string categoryIds)
         {
             var result = new TableData();
-
-            var query = UnitWork.Find<Category>(null).Where(c => categoryIds.Contains(c.Id));
+            var category_ids = categoryIds.Split(",");
+            var query = UnitWork.Find<Category>(null).Where(c => category_ids.Contains(c.Id));
 
             result.Data = await query.ToListAsync();
             result.Count = await query.CountAsync();

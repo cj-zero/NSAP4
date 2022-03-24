@@ -106,7 +106,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="categoryIds"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetAssetCategoryDetails([FromQuery] string[] categoryIds)
+        public async Task<TableData> GetAssetCategoryDetails([FromQuery] string categoryIds)
         {
             var result = new TableData();
 
