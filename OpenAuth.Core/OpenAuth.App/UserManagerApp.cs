@@ -443,6 +443,27 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 通过角色查人员部门信息
+        /// </summary>
+        /// <param name="roleName"></param>
+        /// <returns></returns>
+        public async Task<TableData> LoadInfoByRoleName(string roleName)
+        {
+            var query = await (from a in UnitWork.Find<Role>(null)
+                               join b in UnitWork.Find<Relevance>(null) on a.Id equals b.SecondId
+                               join c in UnitWork.Find<User>(null) on b.FirstId equals c.Id
+                               join d in UnitWork.Find<Relevance>(null) on c.Id equals d.FirstId
+                               join e in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on d.SecondId equals e.Id
+                               where a.Name == roleName && b.Key == "UserRole" && d.Key == "UserOrg"
+                               select new { Id = c.Id, Name = c.Name, OrgId = e.Id, OrgName = e.Name, e.CascadeId }).ToListAsync();
+            query = query.GroupBy(c => c.Id).Select(c => c.OrderByDescending(o => o.CascadeId).First()).ToList();
+            return new TableData
+            {
+                Data = query
+            };
+        }
+
+        /// <summary>
         /// 绑定App用户Id
         /// </summary>
         /// <param name="appUserMap"></param>

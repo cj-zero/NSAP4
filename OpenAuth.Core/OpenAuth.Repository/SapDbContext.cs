@@ -6,12 +6,20 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Debug;
 
 namespace OpenAuth.Repository
 {
     [ConnectionString("SapDbContext", DbType = "SqlServer")]
     public class SapDbContext : DbContext
     {
+        public static readonly LoggerFactory loggerFactory = new LoggerFactory(new[] { new DebugLoggerProvider() });
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            base.OnConfiguring(optionsBuilder);
+            optionsBuilder.UseLoggerFactory(loggerFactory);
+        }
         public SapDbContext(DbContextOptions<SapDbContext> options) : base(options)
         {
             

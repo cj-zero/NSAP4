@@ -430,5 +430,29 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         #endregion
+        /// <summary>
+        /// 获取基础单号
+        /// </summary>
+        /// <param name="InvoiceNo"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        [HttpGet]
+        [Route("GetOrderNoByInvoiceNo")]
+        public async Task<Response<string>>  GetOrderNoByInvoiceNo(string InvoiceNo)
+        {
+            var result = new Response<string>();
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            try
+            {
+                result.Result=await _salesDeliveryApp.GetOrderNoByInvoiceNo(InvoiceNo, SboID.ToString());
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error($"地址：{Request.Path}，参数：{InvoiceNo}， 错误：{ex.Message}");
+                throw new Exception("取消失败！" + ex.ToString());
+            }
+            return result;
+        }
     }
 }

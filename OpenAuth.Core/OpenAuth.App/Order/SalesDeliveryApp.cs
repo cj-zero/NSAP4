@@ -971,7 +971,19 @@ namespace OpenAuth.App.Order
         /// <returns></returns>
         public async Task<string> SalesDeliverySaveNew(SalesDeliverySaveNewReq salesDeliverySaveNewReq)
         {
-            string result = "", className = "NSAP.B1Api.BOneOINV", jobname = "应收发票";
+            string result = "", className = "";
+            if (salesDeliverySaveNewReq.jobname == "销售交货") { className = "NSAP.B1Api.BOneODLN"; }
+            else if (salesDeliverySaveNewReq.jobname == "销售订单") { className = "NSAP.B1Api.BOneORDR"; }
+            else if (salesDeliverySaveNewReq.jobname == "应收发票") { className = "NSAP.B1Api.BOneOINV"; }
+            else if (salesDeliverySaveNewReq.jobname == "销售报价单") { className = "NSAP.B1Api.BOneOQUT"; }
+            else if (salesDeliverySaveNewReq.jobname == "应收贷项凭证") { className = "NSAP.B1Api.BOneORIN"; }
+            else if (salesDeliverySaveNewReq.jobname == "销售退货") { className = "NSAP.B1Api.BOneORDN"; }
+            else if (salesDeliverySaveNewReq.jobname == "采购报价单") { className = "NSAP.B1Api.BOneOPQT"; }
+            else if (salesDeliverySaveNewReq.jobname == "采购订单") { className = "NSAP.B1Api.BOneOPOR"; }
+            else if (salesDeliverySaveNewReq.jobname == "采购收货") { className = "NSAP.B1Api.BOneOPDN"; }
+            else if (salesDeliverySaveNewReq.jobname == "应付发票") { className = "NSAP.B1Api.BOneOPCH"; }
+            else if (salesDeliverySaveNewReq.jobname == "应付贷项凭证") { className = "NSAP.B1Api.BOneORPC"; }
+            else if (salesDeliverySaveNewReq.jobname == "采购退货") { className = "NSAP.B1Api.BOneORPD"; }
             int FuncID = 54;
             //查询
             billDelivery billDelivery = _serviceSaleOrderApp.GetDeliverySalesInfoNewNos(salesDeliverySaveNewReq.DocEntry, 1);
@@ -1001,15 +1013,15 @@ namespace OpenAuth.App.Order
             byte[] job_data = ByteExtension.ToSerialize(billDelivery);
             if (salesDeliverySaveNewReq.Ations == OrderAtion.Draft)
             {
-                result = _serviceSaleOrderApp.WorkflowBuild(jobname, FuncID, UserID, job_data, billDelivery.Remark, int.Parse(billDelivery.SboId), billDelivery.CardCode, billDelivery.CardName, (double.Parse(billDelivery.DocTotal == "" ? "0" : billDelivery.DocTotal) > 0 ? double.Parse(billDelivery.DocTotal) : 0), int.Parse(billDelivery.billBaseType == null ? "-1" : billDelivery.billBaseType), int.Parse(billDelivery.billBaseEntry == null ? "0" : billDelivery.billBaseEntry), "BOneAPI", className);
+                result = _serviceSaleOrderApp.WorkflowBuild(salesDeliverySaveNewReq.jobname, FuncID, UserID, job_data, billDelivery.Remark, int.Parse(billDelivery.SboId), billDelivery.CardCode, billDelivery.CardName, (double.Parse(billDelivery.DocTotal == "" ? "0" : billDelivery.DocTotal) > 0 ? double.Parse(billDelivery.DocTotal) : 0), int.Parse(billDelivery.billBaseType == null ? "-1" : billDelivery.billBaseType), int.Parse(billDelivery.billBaseEntry == null ? "0" : billDelivery.billBaseEntry), "BOneAPI", className);
             }
             if (salesDeliverySaveNewReq.Ations == OrderAtion.Submit)
             {
-                result = _serviceSaleOrderApp.WorkflowBuild(jobname, FuncID, UserID, job_data, billDelivery.Remark, int.Parse(billDelivery.SboId), billDelivery.CardCode, billDelivery.CardName, (double.Parse(billDelivery.DocTotal == "" ? "0" : billDelivery.DocTotal) > 0 ? double.Parse(billDelivery.DocTotal) : 0), int.Parse(billDelivery.billBaseType == null ? "-1" : billDelivery.billBaseType), int.Parse(billDelivery.billBaseEntry == null ? "0" : billDelivery.billBaseEntry), "BOneAPI", className);
+                result = _serviceSaleOrderApp.WorkflowBuild(salesDeliverySaveNewReq.jobname, FuncID, UserID, job_data, billDelivery.Remark, int.Parse(billDelivery.SboId), billDelivery.CardCode, billDelivery.CardName, (double.Parse(billDelivery.DocTotal == "" ? "0" : billDelivery.DocTotal) > 0 ? double.Parse(billDelivery.DocTotal) : 0), int.Parse(billDelivery.billBaseType == null ? "-1" : billDelivery.billBaseType), int.Parse(billDelivery.billBaseEntry == null ? "0" : billDelivery.billBaseEntry), "BOneAPI", className);
                 if (int.Parse(result) > 0)
                 {
                     int user_id = 0;
-                    if (jobname == "采购收货" || jobname == "采购退货" || jobname == "应付贷项凭证")
+                    if (salesDeliverySaveNewReq.jobname == "采购收货" || salesDeliverySaveNewReq.jobname == "采购退货" || salesDeliverySaveNewReq.jobname == "应付贷项凭证")
                     {
                         if (int.Parse(await GetUserIdFromBuy(billDelivery.SlpCode, SboID)) > 0)
                         {
@@ -1018,7 +1030,7 @@ namespace OpenAuth.App.Order
                         else { user_id = UserID; }
 
                     }
-                    if (jobname == "销售退货" || jobname == "应收贷项凭证")
+                    if (salesDeliverySaveNewReq.jobname == "销售退货" || salesDeliverySaveNewReq.jobname == "应收贷项凭证")
                     {
                         string saleAfterUser = await GetDfTcnician(billDelivery.CardCode, SboID);
                         if (!int.TryParse(saleAfterUser, out user_id))
@@ -1192,7 +1204,7 @@ namespace OpenAuth.App.Order
             billDelivery billDelivery = _serviceSaleOrderApp.GetDeliverySalesInfoNewNos(updateDeliveryFlowReq.DocEntry.ToString(), 1);
             if (!string.IsNullOrWhiteSpace(updateDeliveryFlowReq.Indicator))
             {
-                billDelivery.Indicator=updateDeliveryFlowReq.Indicator;
+                billDelivery.Indicator = updateDeliveryFlowReq.Indicator;
             }
             if (!string.IsNullOrWhiteSpace(updateDeliveryFlowReq.U_FPLB))
             {
@@ -1219,7 +1231,7 @@ namespace OpenAuth.App.Order
                 billDelivery.CustomFields = updateDeliveryFlowReq.CustomFields;
 
             }
-            if (updateDeliveryFlowReq.OrderItems.Count>0)
+            if (updateDeliveryFlowReq.OrderItems.Count > 0)
             {
                 billDelivery.billSalesDetails = updateDeliveryFlowReq.OrderItems;
 
@@ -1235,5 +1247,12 @@ namespace OpenAuth.App.Order
             return result;
         }
         #endregion
+        public async Task<string> GetOrderNoByInvoiceNo(string invoiceno, string sboid)
+        {
+            string selsql = string.Format(@"select d1.BaseEntry from {0}.sale_inv1 i1 left outer join {0}.sale_dln1 d1 on i1.BaseType=15 and i1.BaseEntry=d1.DocEntry and i1.BaseLine=d1.LineNum
+                                            where i1.DocEntry = {1} and d1.BaseType = 17 limit 1", "nsap_bone", invoiceno);
+            object noobj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, selsql, CommandType.Text, null);
+            return noobj == null ? "" : noobj.ToString();
+        }
     }
 }
