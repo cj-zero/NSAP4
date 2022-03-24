@@ -53,6 +53,77 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 获取失效日期大于当前时间的资产信息
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetExpiredAssets(string categoryId)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetExpiredAssets(categoryId);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{""}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取资产分类列表,可以根据资产分类名称筛选,不传则查询全部
+        /// </summary>
+        /// <param name="categoryName"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetAssetCategories(string categoryName = "")
+        {
+            var result = new TableData();
+
+            try
+            {
+                return await _app.GetAssetCategories(categoryName);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{categoryName.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 根据资产分类id查询资产分类详情,可批量查询
+        /// </summary>
+        /// <param name="categoryIds"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetAssetCategoryDetails([FromQuery] string[] categoryIds)
+        {
+            var result = new TableData();
+
+            try
+            {
+                return await _app.GetAssetCategoryDetails(categoryIds);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{categoryIds.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
 
         /// <summary>
         /// 获取单个自资产详情

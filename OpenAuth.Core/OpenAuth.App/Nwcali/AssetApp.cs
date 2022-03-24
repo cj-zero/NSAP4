@@ -92,6 +92,63 @@ namespace OpenAuth.App.nwcali
         }
 
         /// <summary>
+        /// 获取失效日期大于当前时间的资产信息
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetExpiredAssets(string categoryId)
+        {
+            var result = new TableData();
+            //查询资产分类
+            var assetCategory = await UnitWork.Find<Category>(null)
+                .Where(c => c.Id == categoryId)
+                .Select(x => x.Name).FirstOrDefaultAsync();
+
+            //查询当前未过期资产
+            var query = UnitWork.Find<Asset>(null).Where(a => a.AssetCategory == assetCategory && a.AssetEndDate > DateTime.Now).Select(a => new { a.Id, a.AssetNumber, a.AssetEndDate, CategoryName = a.AssetCategory, CategoryId = categoryId });
+
+            result.Data = await query.ToListAsync();
+            result.Count = await query.CountAsync();
+
+            return result;
+        }
+
+        /// <summary>
+        /// 查询分类列表
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetAssetCategories(string categoryName = "")
+        {
+            var result = new TableData();
+
+            var query = UnitWork.Find<Category>(null)
+                .Where(c => c.TypeId == "SYS_AssetCategory")
+                .WhereIf(!string.IsNullOrWhiteSpace(categoryName), c => c.Name.Contains(categoryName))
+                .Select(c => new { c.Id, c.Name });
+
+            result.Data = await query.ToListAsync();
+            result.Count = await query.CountAsync();
+
+            return result;
+        }
+
+        /// <summary>
+        /// 根据id获取分类详情
+        /// </summary>
+        /// <param name="categoryIds"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetAssetCategoryDetails(string[] categoryIds)
+        {
+            var result = new TableData();
+
+            var query = UnitWork.Find<Category>(null).Where(c => categoryIds.Contains(c.Id));
+
+            result.Data = await query.ToListAsync();
+            result.Count = await query.CountAsync();
+
+            return result;
+        }
+
+        /// <summary>
         /// 获取单个资产
         /// </summary>
         /// <param name="assetid"></param>

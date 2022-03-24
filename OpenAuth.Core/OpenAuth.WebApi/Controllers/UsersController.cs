@@ -285,9 +285,9 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public TableData GetAppUserInfo(string keyword)
+        public async Task< TableData> GetAppUserInfo(string keyword)
         {
-            return _app.GetAppUserInfo(keyword);
+            return await _app.GetAppUserInfo(keyword);
         }
     }
 }
