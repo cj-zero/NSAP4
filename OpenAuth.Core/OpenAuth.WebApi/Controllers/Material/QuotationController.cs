@@ -190,6 +190,17 @@ namespace OpenAuth.WebApi.Controllers.Material
         }
 
         /// <summary>
+        /// 获取所有物料
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetMaterial([FromQuery] QueryQuotationListReq request)
+        {
+            return await _app.GetMaterial(request);
+        }
+
+        /// <summary>
         /// 加载物料列表
         /// </summary>
         /// <returns></returns>

@@ -169,10 +169,12 @@ namespace OpenAuth.App.Material
                         .FirstOrDefaultAsync();
                     var icp = await UnitWork.Find<InternalContactProduction>(c => c.InternalContactId == req.Id).ToListAsync();
                     obj.Status = 11;//未提交
-                    obj.CardCode = string.Join(",", req.CardCodes);
-                    obj.CardName = string.Join(",", req.CardNames);
+                    //obj.CardCode = string.Join(",", req.CardCodes);
+                    //obj.CardName = string.Join(",", req.CardNames);
+                    obj.CardCode = req.CardCodes;
+                    obj.CardName = req.CardNames;
                     obj.Reason = string.Join(",", req.Reasons);
-                    obj.SaleOrderNo = string.Join(",", req.SaleOrderNo);
+                    //obj.SaleOrderNo = string.Join(",", req.SaleOrderNo);
                     //obj.MaterialOrder = string.Join(",", req.MaterialOrder);
                     //obj.AdaptiveRange = string.Join(",", req.AdaptiveRanges);
 
@@ -507,8 +509,8 @@ namespace OpenAuth.App.Material
             }
             var result = new TableData();
             var detail = await UnitWork.Find<InternalContact>(c => c.Id == id)
-                            .Include(c => c.InternalContactAttchments)
-                            //.Include(c => c.InternalContactBatchNumbers)
+                            //.Include(c => c.InternalContactAttchments)
+                            .Include(c => c.InternalContactBatchNumbers)
                             .Include(c => c.InternalContactDeptInfos)
                             .Include(c => c.InternalContactMaterials)
                             .Include(c => c.InternalContactTasks)
@@ -549,11 +551,14 @@ namespace OpenAuth.App.Material
                 detail.Theme,
                 detail.IsTentative,
                 //Files = returnFile,
-                CardCodes = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardCode.Split(",") : new string[] { },
-                CardNames = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardName.Split(",") : new string[] { },
+                //CardCodes = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardCode.Split(",") : new string[] { },
+                //CardNames = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardName.Split(",") : new string[] { },
+                CardCodes = detail.CardCode,
+                CardNames = detail.CardCode,
                 detail.Status,
                 detail.RdmsNo,
-                SaleOrderNo = !string.IsNullOrWhiteSpace(detail.SaleOrderNo) ? detail.SaleOrderNo.Split(",") : new string[] { },
+                //SaleOrderNo = !string.IsNullOrWhiteSpace(detail.SaleOrderNo) ? detail.SaleOrderNo.Split(",") : new string[] { },
+                SaleOrderNo = detail.SaleOrderNo,
                 detail.AdaptiveModel,
                 detail.ProductionNo,
                 AdaptiveRanges = detail.AdaptiveRange.Split(","),
@@ -1542,10 +1547,27 @@ namespace OpenAuth.App.Material
             };
             var passageway = await UnitWork.Find<store_itemtype_ufd1>(c => c.TypeID == 20 && c.Fld_nm == "U_TDS").OrderBy(c => c.IndexID).Select(c => c.FldValue).ToListAsync(); 
             var knowledgebases = await UnitWork.Find<KnowledgeBase>(k => k.Rank == 1 && k.IsNew == true && !string.IsNullOrWhiteSpace(k.Content)).ToListAsync();
+            var tsyq = await UnitWork.Find<store_itemtype_ufd1>(c => c.TypeID == 20 && c.Fld_nm == "U_TSYQ").Select(c => c.FldValue).ToListAsync();
             List<product_owor_wor1> ReturnProductList = new List<product_owor_wor1>();
             List<InternalContactServiceOrder> contactServiceOrders = new List<InternalContactServiceOrder>();
             List<InternalContactTask> contactTasks = new List<InternalContactTask>();
             #region 
+            req.ForEach(e =>
+            {
+                List<string> sp = new List<string>();
+                e.Special.ForEach(s =>
+                {
+                    sp.AddRange(tsyq.Where(c => c.Contains(s)).ToList());
+                });
+                e.Special = sp.Distinct().ToList();
+                //Expression<Func<store_itemtype_ufd1, bool>> waitExp = c => (c.TypeID == 20 && c.Fld_nm == "U_TSYQ");
+                ////var eps = QueryableExtension.True<store_itemtype_ufd1>();
+                //e.Special.ForEach(c =>
+                //{
+                //    waitExp = waitExp.Or(o => o.FldValue.Contains(c));
+                //});
+                //var rte = UnitWork.Find(waitExp).ToList();
+            });
             req.ForEach(e =>
             {
                 List<product_owor_wor1> productList = new List<product_owor_wor1>();//成品生产订单
@@ -1578,7 +1600,6 @@ namespace OpenAuth.App.Material
                                     {
                                         itemcode.Add(am);
                                     }
-                                       
                                 }
                             }
                         });

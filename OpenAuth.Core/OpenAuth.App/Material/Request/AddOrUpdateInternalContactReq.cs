@@ -32,11 +32,11 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         /// 客户编号
         /// </summary>
-        public List<string> CardCodes { get; set; }
+        public string CardCodes { get; set; }
         /// <summary>
         /// 客户名称
         /// </summary>
-        public List<string> CardNames { get; set; }
+        public string CardNames { get; set; }
         /// <summary>
         /// 状态
         /// </summary>
@@ -48,7 +48,7 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         /// 销售单号
         /// </summary>
-        public List<string> SaleOrderNo { get; set; }
+        public string SaleOrderNo { get; set; }
         /// <summary>
         /// 生产单号
         /// </summary>

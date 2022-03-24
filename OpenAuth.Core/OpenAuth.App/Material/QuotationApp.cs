@@ -800,6 +800,26 @@ namespace OpenAuth.App.Material
         }
 
         /// <summary>
+        /// 获取所有物料
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetMaterial(QueryQuotationListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var result = new TableData();
+            var query = UnitWork.Find<OITM>(c => c.ItemCode.Contains(request.ItemCode)).Select(c => new { c.ItemCode, c.ItemName });
+            result.Count = await query.CountAsync();
+            result.Data=await query.Skip((request.page - 1) * request.limit)
+                .Take(request.limit).ToListAsync();
+            return result;
+        }
+
+        /// <summary>
         /// 获取报价单详情
         /// </summary>
         /// <param name="request"></param>
