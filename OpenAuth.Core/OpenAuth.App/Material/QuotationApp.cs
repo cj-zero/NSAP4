@@ -3097,7 +3097,7 @@ namespace OpenAuth.App.Material
             var text = System.IO.File.ReadAllText(url);
             text = text.Replace("@Model.QuotationId", model.Id.ToString());
             text = text.Replace("@Model.SalesOrderId", model.SalesOrderId.ToString());
-            text = text.Replace("@Model.CreateTime", DateTime.Now.ToString("yyyy.MM.dd hh:mm"));//model.CreateTime.ToString("yyyy.MM.dd hh:mm")
+            text = text.Replace("@Model.CreateTime", DateTime.Now.ToString("yyyy.MM.dd HH:mm"));//model.CreateTime.ToString("yyyy.MM.dd hh:mm")
             text = text.Replace("@Model.SalesUser", model?.CreateUser.ToString());
             text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.Id.ToString()));
             text = text.Replace("@Model.CustomerId", serverOrder?.TerminalCustomerId.ToString());
