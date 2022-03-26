@@ -26,6 +26,11 @@ namespace Infrastructure
 
             var locationResult = (JObject)JsonConvert.DeserializeObject(result);
 
+            if (locationResult["status"].ToString() == "1")
+            {
+                return null;
+            }
+
             string lngStr = locationResult["result"]["location"]["lng"].ToString();
 
             string latStr = locationResult["result"]["location"]["lat"].ToString();
@@ -45,6 +50,10 @@ namespace Infrastructure
         public static JObject GetLocation(string address)
         {
             var xy = GetXY(address);
+            if (xy == null)
+            {
+                return null;
+            }
             string url = String.Format("http://api.map.baidu.com/reverse_geocoding/v3/?location={0},{1}&output=json&ak={2}", xy[1], xy[0], key);
             string result = client.GetStringAsync(url).Result;
             var locationResult = (JObject)JsonConvert.DeserializeObject(result);

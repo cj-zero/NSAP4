@@ -510,12 +510,15 @@ namespace OpenAuth.App.Material
             var result = new TableData();
             var detail = await UnitWork.Find<InternalContact>(c => c.Id == id)
                             //.Include(c => c.InternalContactAttchments)
-                            .Include(c => c.InternalContactBatchNumbers)
+                            //.Include(c => c.InternalContactBatchNumbers)
                             .Include(c => c.InternalContactDeptInfos)
                             .Include(c => c.InternalContactMaterials)
-                            .Include(c => c.InternalContactTasks)
-                            .Include(c => c.InternalContactServiceOrders)
+                            //.Include(c => c.InternalContactTasks)
+                            //.Include(c => c.InternalContactServiceOrders)
                             .FirstOrDefaultAsync();
+            detail.InternalContactTasks=await UnitWork.Find<InternalContactTask>(c => c.InternalContactId == detail.Id).ToListAsync();
+            detail.InternalContactServiceOrders = await UnitWork.Find<InternalContactServiceOrder>(c => c.InternalContactId == detail.Id).ToListAsync();
+            detail.InternalContactBatchNumbers=await UnitWork.Find<InternalContactBatchNumber>(c => c.InternalContactId == detail.Id).ToListAsync();
             var internalContactProductions = await UnitWork.Find<InternalContactProduction>(c => c.InternalContactId == detail.Id).ToListAsync();
             //操作历史
             var operationHistories = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.InstanceId == detail.FlowInstanceId)
@@ -811,63 +814,79 @@ namespace OpenAuth.App.Material
             {
                 string addr = "", area = "", city = "", province = "", longitude = "", latitude = "";
                 var customer = await GetCardInfo(item.CardCode);
+                var cnt = await UnitWork.Find<OCPR>(c => c.CardCode == item.CardCode).Select(c => new { c.Name, c.Tel1 }).FirstOrDefaultAsync();
                 //var customer = customerRes.Data[0];
                 if (!string.IsNullOrWhiteSpace(customer.Address2))
                 {
                     var locationResult = AmapUtil.GetLocation(customer.Address2);
-                    longitude = locationResult["result"]["location"]["lng"].ToString();
-                    latitude = locationResult["result"]["location"]["lat"].ToString();
-                    province = locationResult["result"]["addressComponent"]["province"].ToString();
-                    city = locationResult["result"]["addressComponent"]["city"].ToString();
-                    area = locationResult["result"]["addressComponent"]["district"].ToString();
-                    addr = $"{locationResult["result"]["addressComponent"]["street"].ToString()}{locationResult["result"]["addressComponent"]["street_number"].ToString()}";
+                    if (!string.IsNullOrWhiteSpace(locationResult))
+                    {
+                        longitude = locationResult["result"]["location"]["lng"].ToString();
+                        latitude = locationResult["result"]["location"]["lat"].ToString();
+                        province = locationResult["result"]["addressComponent"]["province"].ToString();
+                        city = locationResult["result"]["addressComponent"]["city"].ToString();
+                        area = locationResult["result"]["addressComponent"]["district"].ToString();
+                        addr = $"{locationResult["result"]["addressComponent"]["street"].ToString()}{locationResult["result"]["addressComponent"]["street_number"].ToString()}";
+                    }
                 }
 
-                foreach (var child in item.List)
+                CustomerServiceAgentCreateOrderReq s = new CustomerServiceAgentCreateOrderReq()
                 {
-                    CustomerServiceAgentCreateOrderReq s = new CustomerServiceAgentCreateOrderReq()
+                    Addr = addr,
+                    Address = customer.Address2,
+                    AddressDesignator = "运达到",
+                    Area = area,
+                    City = city,
+                    Province = province,
+                    Longitude = !string.IsNullOrWhiteSpace(longitude) ? decimal.Parse(longitude) : 0,
+                    Latitude = !string.IsNullOrWhiteSpace(latitude) ? decimal.Parse(latitude) : 0,
+                    FromId = 8,
+                    CustomerId = item.List.First().CardCode,
+                    CustomerName = item.List.First().CardName,
+                    TerminalCustomerId = item.List.First().CardCode,
+                    TerminalCustomer = item.List.First().CardName,
+                    IsSend = false,
+                    Contacter = "",
+                    NewestContacter = cnt.Name,
+                    NewestContactTel = cnt.Tel1,
+                    SalesMan = customer.SlpName,
+                    Supervisor = item.List.First().Supervisor,
+                    ServiceWorkOrders = item.List.Select(s => new AddServiceWorkOrderReq
                     {
-                        Addr = addr,
-                        Address = customer.Address2,
-                        AddressDesignator = "运达到",
-                        Area = area,
-                        City = city,
-                        Province = province,
-                        Longitude = decimal.Parse(longitude),
-                        Latitude = decimal.Parse(latitude),
-                        FromId = 8,
-                        CustomerId = child.CardCode,
-                        CustomerName = child.CardName,
-                        TerminalCustomerId = child.CardCode,
-                        TerminalCustomer = child.CardName,
-                        IsSend = false,
-                        Contacter = "",
-                        NewestContacter = customer.CntctPrsn,
-                        NewestContactTel = customer.Phone1,
-                        SalesMan = customer.SlpName,
-                        Supervisor = child.Supervisor,
-                        ServiceWorkOrders = new List<AddServiceWorkOrderReq>() {
-                        new AddServiceWorkOrderReq{
-                            Status=1,
-                            FeeType=2,
-                            FromTheme=child.FromTheme,
-                            FromType=1,
-                            ManufacturerSerialNumber=child.MnfSerial,
-                            MaterialCode=child.ItemCode,
-                            MaterialDescription=child.ItemName,
-                            Priority=1,
-                            Remark=""
-                        }
-                        }
-                    };
-                    var createResult = await _serviceOrderApp.CustomerServiceAgentCreateOrder(s);
-                    var serviceOrderId = createResult.Result;
-                    await UnitWork.UpdateAsync<InternalContactServiceOrder>(c => c.Id == child.Id, c => new InternalContactServiceOrder
-                    {
-                        ServiceOrderId = serviceOrderId
-                    });
-                    await UnitWork.SaveAsync();
-                }
+                        Status = 1,
+                        FeeType = 2,
+                        FromTheme = s.FromTheme,
+                        FromType = 1,
+                        ManufacturerSerialNumber = s.MnfSerial,
+                        MaterialCode = s.ItemCode,
+                        MaterialDescription = s.ItemName,
+                        Priority = 1,
+                        Remark = ""
+                    }).ToList()
+                    //ServiceWorkOrders = new List<AddServiceWorkOrderReq>() {
+                    //    new AddServiceWorkOrderReq{
+                    //        Status=1,
+                    //        FeeType=2,
+                    //        FromTheme=child.FromTheme,
+                    //        FromType=1,
+                    //        ManufacturerSerialNumber=child.MnfSerial,
+                    //        MaterialCode=child.ItemCode,
+                    //        MaterialDescription=child.ItemName,
+                    //        Priority=1,
+                    //        Remark=""
+                    //    }
+                    //    }
+                };
+                var createResult = await _serviceOrderApp.CustomerServiceAgentCreateOrder(s);
+                var serviceOrderId = createResult.Result;
+                await UnitWork.UpdateAsync<InternalContactServiceOrder>(c => c.InternalContactId == id && c.CardCode == item.CardCode, c => new InternalContactServiceOrder
+                {
+                    ServiceOrderId = serviceOrderId
+                });
+                await UnitWork.SaveAsync();
+                //foreach (var child in item.List)
+                //{
+                //}
             }
             //维修单
             foreach (var item in taskOrder)
@@ -985,10 +1004,10 @@ namespace OpenAuth.App.Material
                                from g in ag.DefaultIfEmpty()
                                select new
                                {
-                                   a.CardCode,
-                                   a.CardName,
-                                   a.CntctPrsn,
-                                   a.Phone1,
+                                   //a.CardCode,
+                                   //a.CardName,
+                                   //a.CntctPrsn,
+                                   //a.Phone1,
                                    b.SlpName,
                                    Address2 = $"{ f.Name ?? "" }{ g.Name ?? "" }{ a.MailCity ?? "" }{ a.MailBuildi ?? "" }"
                                }).FirstOrDefaultAsync();
