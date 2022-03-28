@@ -484,6 +484,11 @@ namespace OpenAuth.App
                     {
                         beforeSaleDemand.Status = nodeArray.ToList().IndexOf(nodeName);
                     }
+                    if (beforeSaleDemand.Status<=3)
+                    {
+                        //表示驳回到研发总助审批之前的节点，删除掉确认部门信息，重新分配
+                        await UnitWork.BatchDeleteAsync<BeforeSaleDemandDeptInfo>(beforeSaleDemand.BeforeSaleDemandDeptInfos.ToArray());
+                    }
                 }
 
                 await _flowInstanceApp.Verification(verificationReq);
@@ -694,7 +699,7 @@ namespace OpenAuth.App
                 else if (loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-研发工程师")) && flowinstace.ActivityName == "研发提交")
                 {
                     //更新实际研发完成时间
-                    await UnitWork.UpdateAsync<BeforeSaleProScheduling>(x => x.UserId == loginContext.User.Id && x.Stage == 1, x => new BeforeSaleProScheduling
+                    await UnitWork.UpdateAsync<BeforeSaleProScheduling>(x => x.BeforeSaleDemandId == req.Id && x.UserId == loginContext.User.Id && x.Stage == 1, x => new BeforeSaleProScheduling
                     {
                         ActualStartDate = req.ActualDevStartDate,//研发实际开始时间
                         ActualEndDate = req.ActualDevEndDate,//研发实际完成时间
@@ -730,7 +735,7 @@ namespace OpenAuth.App
                 else if (loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-测试工程师")) && flowinstace.ActivityName == "测试提交")
                 {
                     //更新实际测试提交时间
-                    await UnitWork.UpdateAsync<BeforeSaleProScheduling>(x => x.UserId == loginContext.User.Id && x.Stage == 2, x => new BeforeSaleProScheduling
+                    await UnitWork.UpdateAsync<BeforeSaleProScheduling>(x => x.BeforeSaleDemandId == req.Id && x.UserId == loginContext.User.Id && x.Stage == 2, x => new BeforeSaleProScheduling
                     {
                         ActualStartDate = req.ActualTestStartDate,//研发实际开始时间
                         ActualEndDate = req.ActualTestEndDate,//研发实际完成时间
