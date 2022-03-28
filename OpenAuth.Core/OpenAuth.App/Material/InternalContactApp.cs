@@ -616,10 +616,9 @@ namespace OpenAuth.App.Material
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
 
-            var detail = await UnitWork.Find<InternalContact>(c => c.Id == id)
-                            .Include(c => c.InternalContactTasks)
-                            .Include(c => c.InternalContactServiceOrders)
-                            .FirstOrDefaultAsync();
+            var detail = await UnitWork.Find<InternalContact>(c => c.Id == id).FirstOrDefaultAsync();
+            detail.InternalContactTasks = await UnitWork.Find<InternalContactTask>(c => c.InternalContactId == id).ToListAsync();
+            detail.InternalContactServiceOrders = await UnitWork.Find<InternalContactServiceOrder>(c => c.InternalContactId == id).OrderBy(c => c.CardCode).ToListAsync();
             detail.InternalContactTasks.ForEach(c =>
             {
                 if (string.IsNullOrWhiteSpace(c.ProductionId.ToString()))
