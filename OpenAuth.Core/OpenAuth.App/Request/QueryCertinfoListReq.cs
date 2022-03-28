@@ -32,5 +32,7 @@ namespace OpenAuth.App.Request
         /// 校准日期结束
         /// </summary>
         public DateTime? CalibrationDateTo { get; set; }
+
+        public int? ProductionNo { get; set; }
     }
 }
