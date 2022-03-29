@@ -176,6 +176,28 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 查询生产订单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> ProductionOrderList([FromQuery] QueryCertinfoListReq request)
+        {
+            return await _app.ProductionOrderList(request);
+        }
+
+        /// <summary>
+        /// 生产单物料详情
+        /// </summary>
+        /// <param name="docEntry"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> MaterialDetail(int docEntry)
+        {
+            return await _app.MaterialDetail(docEntry);
+        }
+
         [HttpGet]
         public async Task<Response> SynSalesDelivery()
         {

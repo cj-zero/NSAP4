@@ -1350,6 +1350,55 @@ namespace OpenAuth.App
             return result;
         }
 
+        /// <summary>
+        /// 查询生产订单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> ProductionOrderList(QueryCertinfoListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            var loginOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault();
+            var query = from a in UnitWork.Find<product_owor>(null).WhereIf(!string.IsNullOrWhiteSpace(request.ProductionNo.ToString()), c => EF.Functions.Like(c.DocEntry, $"{request.ProductionNo}"))
+                        join b in UnitWork.Find<sale_ordr>(null) on new { a.OriginAbs, a.sbo_id } equals new { OriginAbs = b.DocEntry, b.sbo_id } into ab
+                        from b in ab.DefaultIfEmpty()
+                        join c in UnitWork.Find<crm_oslp>(null) on new { b.SlpCode, b.sbo_id } equals new { SlpCode = (short?)c.SlpCode, sbo_id = c.sbo_id.Value } into bc
+                        from c in bc.DefaultIfEmpty()
+                        select new { a.DocEntry, a.ItemCode, ItemName = a.txtitemName, a.PlannedQty, OrgName = a.U_WO_LTDW, SaleOrderNo = a.OriginAbs, c.SlpName };
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME)
+            {
+                query = query.Where(c => loginOrg.Name.Contains(c.OrgName));
+            }
+            result.Count = await query.CountAsync();
+            result.Data = await query.OrderByDescending(c => c.DocEntry).Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+            return result;
+        }
+
+        /// <summary>
+        /// 生产单物料详情
+        /// </summary>
+        /// <param name="docEntry"></param>
+        /// <returns></returns>
+        public async Task<TableData> MaterialDetail(int docEntry)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            var query = await UnitWork.Find<product_wor1>(c => c.DocEntry == docEntry && c.ItemCode.StartsWith("B01")).Select(c => c.ItemCode).ToListAsync();
+
+            query = query.GroupBy(c => string.Join("-", c.Split('-').Take(2))).Select(c => c.First()).Take(4).ToList();
+            result.Data = query;
+            return result;
+        }
+
 
         /// <summary>
         /// 构建证书模板参数
