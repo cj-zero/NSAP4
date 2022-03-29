@@ -853,6 +853,16 @@ namespace OpenAuth.App.Order
                 logostr = Convert.ToBase64String(photo);
                 Console.WriteLine(logostr);
             }
+            var Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", "新威尔.png");
+            var Chapter = "";
+            using (var fs = new FileStream(Chapterpath, FileMode.Open))
+            {
+                var photo = new byte[fs.Length];
+                fs.Position = 0;
+                await fs.ReadAsync(photo, 0, photo.Length);
+                Chapter = Convert.ToBase64String(photo);
+                Console.WriteLine(Chapter);
+            }
             var PrintSalesDelivery = new PrintSalesDelivery
             {
                 DocEntry = string.IsNullOrEmpty(dtb.Rows[0][0].ToString()) ? " " : dtb.Rows[0][0].ToString(),
@@ -860,7 +870,7 @@ namespace OpenAuth.App.Order
                 SlpName = string.IsNullOrEmpty(dtb.Rows[0]["SlpName"].ToString()) ? " " : dtb.Rows[0]["SlpName"].ToString(),
                 CardCode = string.IsNullOrEmpty(dtb.Rows[0]["CardCode"].ToString()) ? " " : dtb.Rows[0]["CardCode"].ToString(),
                 CardName = string.IsNullOrEmpty(dtb.Rows[0]["CardName"].ToString()) ? " " : dtb.Rows[0]["CardName"].ToString(),
-                CntactName = string.IsNullOrEmpty(dtb.Rows[0]["CntactName"].ToString()) ? " " : dtb.Rows[0]["CntactName"].ToString(),
+                CntctName = string.IsNullOrEmpty(dtb.Rows[0]["CntctName"].ToString()) ? " " : dtb.Rows[0]["CntctName"].ToString(),
                 Tel1 = string.IsNullOrEmpty(dtb.Rows[0]["Tel1"].ToString()) ? " " : dtb.Rows[0]["Tel1"].ToString(),
                 Address = string.IsNullOrEmpty(dtb.Rows[0]["Address"].ToString()) ? " " : dtb.Rows[0]["Address"].ToString(),
                 Fax = string.IsNullOrEmpty(dtb.Rows[0]["Fax"].ToString()) ? " " : dtb.Rows[0]["Fax"].ToString(),
@@ -900,7 +910,7 @@ namespace OpenAuth.App.Order
             text = text.Replace("@Model.Data.QRcode", PrintSalesDelivery.QRcode);
             text = text.Replace("@Model.Data.SlpName", PrintSalesDelivery.SlpName);
             text = text.Replace("@Model.Data.CardCode", PrintSalesDelivery.CardCode);
-            text = text.Replace("@Model.Data.CntactName", PrintSalesDelivery.CntactName);
+            text = text.Replace("@Model.Data.CntctName", PrintSalesDelivery.CntctName);
             text = text.Replace("@Model.Data.Tel", PrintSalesDelivery.Tel1);
             text = text.Replace("@Model.Data.Fax", PrintSalesDelivery.Fax);
             text = text.Replace("@Model.Data.CardName", PrintSalesDelivery.CardName);
@@ -912,6 +922,7 @@ namespace OpenAuth.App.Order
             System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
             var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesDeliveryFooter.html");
             var foottext = System.IO.File.ReadAllText(footUrl);
+            foottext = foottext.Replace("@Model.Data.Chapter", Chapter);
             var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesDeliveryFooter{PrintSalesDelivery.DocEntry}.html");
             System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
             byte[] basecode = await ExportAllHandler.Exporterpdf(PrintSalesDelivery, "PrintSalesDelivery.cshtml", pdf =>
