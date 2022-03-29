@@ -1569,6 +1569,7 @@ namespace OpenAuth.App.Order
             {
                 billSalesDetails billSalesDetail = new billSalesDetails()
                 {
+                    IsCfgMainCode = item.IsCfgMainCode,
                     BaseEntry = item.BaseEntry,//基本凭证代码
                     BaseLine = !string.IsNullOrEmpty(item.BaseLine) ? item.BaseLine : "0",//基础行
                     BaseRef = item.BaseRef,//基本凭证参考
@@ -4007,6 +4008,16 @@ namespace OpenAuth.App.Order
                 logostr = Convert.ToBase64String(photo);
                 Console.WriteLine(logostr);
             }
+            var Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", "新威尔.png");
+            var Chapter = "";
+            using (var fs = new FileStream(Chapterpath, FileMode.Open))
+            {
+                var photo = new byte[fs.Length];
+                fs.Position = 0;
+                await fs.ReadAsync(photo, 0, photo.Length);
+                Chapter = Convert.ToBase64String(photo);
+                Console.WriteLine(Chapter);
+            }
             var PrintSalesQuotation = new PrintSalesQuotation
             {
                 DocEntry = string.IsNullOrEmpty(dtb.Rows[0][0].ToString()) ? " " : dtb.Rows[0][0].ToString(),
@@ -4065,6 +4076,7 @@ namespace OpenAuth.App.Order
             System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
             var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesQuotationfooter.html");
             var foottext = System.IO.File.ReadAllText(footUrl);
+            foottext = foottext.Replace("@Model.Data.Chapter", Chapter);
             foottext = foottext.Replace("@Model.Data.DocTotal", PrintSalesQuotation.DocTotal);
             var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesQuotationfooter{PrintSalesQuotation.DocEntry}.html");
             System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
@@ -10073,6 +10085,16 @@ namespace OpenAuth.App.Order
                 logostr = Convert.ToBase64String(photo);
                 Console.WriteLine(logostr);
             }
+            var Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", "新威尔.png");
+            var Chapter = "";
+            using (var fs = new FileStream(Chapterpath, FileMode.Open))
+            {
+                var photo = new byte[fs.Length];
+                fs.Position = 0;
+                await fs.ReadAsync(photo, 0, photo.Length);
+                Chapter = Convert.ToBase64String(photo);
+                Console.WriteLine(Chapter);
+            }
             var PrintSalesOrder = new PrintSalesOrder
             {
                 DocEntry = string.IsNullOrEmpty(dtb.Rows[0][0].ToString()) ? " " : dtb.Rows[0][0].ToString(),
@@ -10139,6 +10161,7 @@ namespace OpenAuth.App.Order
             System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
             var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesOrdersfooter.html");
             var foottext = System.IO.File.ReadAllText(footUrl);
+            foottext = foottext.Replace("@Model.Data.Chapter", Chapter);
             foottext = foottext.Replace("@Model.Data.PrintNumIndex", PrintSalesOrder.PrintNumIndex);
             foottext = foottext.Replace("@Model.Data.PrintNo", PrintSalesOrder.PrintNo);
             var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesOrdersfooter{PrintSalesOrder.DocEntry}.html");

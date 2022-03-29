@@ -389,7 +389,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                 string funcId = _serviceSaleOrderApp.GetJobTypeByAddress("sales/SalesDelivery_Update.aspx");
                 string jobname = "销售交货单";
 
-                result.Result = await _salesDeliveryApp.UpdateDocFlow(updateDeliveryFlowReq, 15,  int.Parse(funcId), jobname, UserID, "NSAP.B1Api.BOneODLNUpdate");
+                result.Result = await _salesDeliveryApp.UpdateDocFlow(updateDeliveryFlowReq, 15, int.Parse(funcId), jobname, UserID, "NSAP.B1Api.BOneODLNUpdate");
             }
             catch (Exception ex)
             {
@@ -438,14 +438,14 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <exception cref="Exception"></exception>
         [HttpGet]
         [Route("GetOrderNoByInvoiceNo")]
-        public async Task<Response<string>>  GetOrderNoByInvoiceNo(string InvoiceNo)
+        public async Task<Response<string>> GetOrderNoByInvoiceNo(string InvoiceNo)
         {
             var result = new Response<string>();
             var UserID = _serviceBaseApp.GetUserNaspId();
             var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
             try
             {
-                result.Result=await _salesDeliveryApp.GetOrderNoByInvoiceNo(InvoiceNo, SboID.ToString());
+                result.Result = await _salesDeliveryApp.GetOrderNoByInvoiceNo(InvoiceNo, SboID.ToString());
             }
             catch (Exception ex)
             {
@@ -454,5 +454,65 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             return result;
         }
+
+        #region 应收贷项凭证列表
+        /// <summary>
+        /// 应收贷项凭证列表
+        /// </summary>
+        [HttpPost]
+        [Route("SalesCreditMemoGridDataBind")]
+        public async Task<TableData> SalesCreditMemoGridDataBind(SalesInvoiceGridDataBindReq GridDataBindReq)
+        {
+            int rowCount = 0;
+            var result = new TableData();
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            var DepID = _serviceBaseApp.GetSalesDepID(UserID);
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            string type = "ORIN";
+            DataTable dt = _serviceSaleOrderApp.GetSboNamePwd(SboID);
+            string dRowData = string.Empty; string isOpen = "0"; string sqlcont = string.Empty; string sboname = string.Empty;
+            if (dt.Rows.Count > 0)
+            {
+                isOpen = dt.Rows[0][6].ToString();
+                sqlcont = dt.Rows[0][5].ToString(); sboname = dt.Rows[0][0].ToString();
+            }
+            bool ViewFull = false;
+            bool ViewSelf = true;
+            bool ViewSelfDepartment = false;
+            bool ViewSales = true;
+            bool ViewCustom = true;
+            if (loginContext.User.Name == "韦京生" || loginContext.User.Name == "郭睿心")
+            {
+                ViewFull = true;
+
+            }
+            try
+            {
+                if (isOpen == "0")
+                {
+                    //result.Data = _serviceSaleOrderApp.SelectBillViewInfo(int.Parse(rp), int.Parse(page), query, sortname, sortorder, type, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesCreditMemo.aspx").ViewFull, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesCreditMemo.aspx").ViewSelf, UserID, SboID, ViewSelfDepartment, DepID, ViewCustom, ViewSales);
+                }
+                else
+                {
+                    result.Data = _serviceSaleOrderApp.SelectBillListInfo(out rowCount, GridDataBindReq.limit, GridDataBindReq.page, GridDataBindReq.query, GridDataBindReq.sortname, GridDataBindReq.sortorder, type, ViewFull, ViewSelf, UserID, SboID, ViewSelfDepartment, DepID, ViewCustom, ViewSales, sqlcont, sboname);
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Data = null;
+                result.Code = 500;
+                result.Message = "服务器内部错误：" + ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{GridDataBindReq.ToJson()}， 错误：{ex.Message},堆栈信息：{ex.StackTrace}");
+            }
+
+            return result;
+        }
+        #endregion
+
     }
 }
