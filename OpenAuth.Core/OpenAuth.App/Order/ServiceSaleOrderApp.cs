@@ -1511,7 +1511,7 @@ namespace OpenAuth.App.Order
                 CardName = order.CardName,//供应商名称
 
                 CardCode = !string.IsNullOrEmpty(order.CardCode) ? order.CardCode : "",
-                Comments = order.Comments.Replace("'","\'"),//备注
+                Comments = order.Comments.Replace("'", "\'"),//备注
                 CurSource = order.CurSource,//货币类型
                 CustomFields = !string.IsNullOrEmpty(order.CustomFields) ? order.CustomFields.Replace(" ", "").Replace("　", "") : "",//  $"U_ShipName≮1≯≮0≯U_SCBM≮1≯P3-陈友祥",
                 BeforeDiscSum = !string.IsNullOrEmpty(order.BeforeDiscSum) ? order.BeforeDiscSum : "0.0",// 折扣前总计
@@ -5022,7 +5022,7 @@ namespace OpenAuth.App.Order
             }
 
             //filterString += string.Format("(b.job_type_nm LIKE '%{0}%' OR b.job_type_nm LIKE '%{1}%') AND ", "销售报价单","销售订单");
-            filterString += string.Format("(b.job_type_nm = '{0}' OR b.job_type_nm = '{1}'  OR b.job_type_nm = '{2}' OR b.job_type_nm = '{3}'OR b.job_type_nm = '{4}' OR b.job_type_nm = '{5}'OR b.job_type_nm = '{6}') AND ", "销售报价单", "销售订单", "销售交货", "业务伙伴审核","应收发票", "销售交货修改工作流", "取消销售订单");
+            filterString += string.Format("(b.job_type_nm = '{0}' OR b.job_type_nm = '{1}'  OR b.job_type_nm = '{2}' OR b.job_type_nm = '{3}'OR b.job_type_nm = '{4}' OR b.job_type_nm = '{5}'OR b.job_type_nm = '{6}') AND ", "销售报价单", "销售订单", "销售交货", "业务伙伴审核", "应收发票", "销售交货修改工作流", "取消销售订单");
             #endregion
             #region
             if (!string.IsNullOrEmpty(filterString))
@@ -5073,6 +5073,24 @@ namespace OpenAuth.App.Order
             }
             string type = bill.DocType;
             string _main = JsonHelper.ParseModel(bill);
+            DateTime docDate;
+            DateTime.TryParse(bill.DocDate, out docDate);
+            bill.DocDate = docDate.ToString("yyyy.MM.dd");
+            DateTime docDueDate;
+            DateTime.TryParse(bill.DocDueDate, out docDueDate);
+            bill.DocDueDate = docDueDate.ToString("yyyy.MM.dd");
+            DateTime prepaData;
+            DateTime.TryParse(bill.PrepaData, out prepaData);
+            bill.PrepaData = prepaData.ToString("yyyy.MM.dd");
+            DateTime goodsToDate;
+            DateTime.TryParse(bill.GoodsToDate, out goodsToDate);
+            bill.GoodsToDate = goodsToDate.ToString("yyyy.MM.dd");
+            foreach (var files in bill.attachmentData)
+            {
+                DateTime filetime;
+                DateTime.TryParse(files.filetime, out filetime);
+                files.filetime = filetime.ToString("yyyy.MM.dd hh:mm:ss");
+            }
             //if (bill.CustomFields.ToString().Contains("≯"))
             //{
             //	var ba = bill.CustomFields.Split("≯")[3];

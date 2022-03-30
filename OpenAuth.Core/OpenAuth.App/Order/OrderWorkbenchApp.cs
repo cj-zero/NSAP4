@@ -343,7 +343,9 @@ namespace OpenAuth.App.Order
                     {
                         scon.realAuditorsName = doin.Name;
                         scon.realAuditorsComment = doin.Comment;
-                        scon.realAuditorsCheckTime = doin.CheckTime;
+                        DateTime checkTime;
+                        DateTime.TryParse(doin.CheckTime, out checkTime);
+                        scon.realAuditorsCheckTime = checkTime.ToString("yyyy.MM.dd hh:mm:ss");
                         scon.realAuditorsResult = doin.Result;
                         var dts = new DateTime();
                         dts = (DateTime)doin.CheckTime.ToDateTime();
