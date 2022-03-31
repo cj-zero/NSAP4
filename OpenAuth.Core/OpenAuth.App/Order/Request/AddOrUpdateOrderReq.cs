@@ -342,6 +342,10 @@ namespace OpenAuth.App.Order.Request
     public class OrderItem
     {
         /// <summary>
+        /// 是否是配置主编码
+        /// </summary>
+        public string IsCfgMainCode { get; set; }
+        /// <summary>
         /// 物料号
         /// </summary>
         public string ItemCode { get; set; }

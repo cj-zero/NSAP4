@@ -39,4 +39,11 @@ namespace OpenAuth.App.Response
         /// </summary>
         public string Code { get; set; }
     }
+
+    public class SolutionInfo
+    {
+        public string Code { get; set; }
+        public string Desc { get; set; }
+        public int Count { get; set; }
+    }
 }

@@ -476,6 +476,71 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 统计解决方案类型
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetSolutionInfo(QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            if (req.QryCreateTimeFrom == null || req.QryCreateTimeTo == null)
+            {
+                req.QryCreateTimeFrom = DateTime.Now;
+                req.QryCreateTimeTo = DateTime.Now;
+            }
+            //根据日期从数据库查询日报中的解决方案
+            var processDescriptions = await UnitWork.Find<ServiceDailyReport>(null)
+                .Where(s => s.CreateTime >= req.QryCreateTimeFrom && s.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
+                .Select(s => s.ProcessDescription).ToListAsync();
+            //处理json格式的解决方案数据
+            var processInfoData = processDescriptions.Select(p => new
+            {
+                processCode = GetServiceTroubleAndSolution(p, "code"),
+                processDescription = GetServiceTroubleAndSolution(p, "description")
+            });
+            //将多读多的关系转换为列表
+            var query = new List<AddOrUpdateSolutionReq>();
+            processInfoData.ForEach(p =>
+            {
+                for (int i = 0; i < p.processCode.Count(); i++)
+                {
+                    query.Add(new AddOrUpdateSolutionReq { Code = p.processCode[i], Descriptio = p.processDescription[i] });
+                }
+            });
+            //统计,没有code的一律视为自定义
+            var data = query.GroupBy(d => d.Code).Select(g => new
+            {
+                code = g.Key == "" ? "自定义" : g.Key,
+                count = g.Count(),
+                desc = g.Key == "" ? "自定义" : query.FirstOrDefault(x => x.Code == g.Key)?.Descriptio
+            });
+            //左连接,时间段内没有的,数量为0,方便前端显示
+            var resultData = (from s in await UnitWork.Find<Solution>(null).Where(s => s.IsNew == true)
+                             .Select(s => new { code = s.Descriptio + "-" + s.Code, desc = s.Subject }).ToListAsync()
+                              join d in data on s.code equals d.code into temp
+                              from t in temp.DefaultIfEmpty()
+                              select new SolutionInfo
+                              {
+                                  Code = s.code,
+                                  Count = t == null ? 0 : t.count,
+                                  Desc = s.desc
+                              }).ToList();
+            //加上自定义的
+            var custom = data.FirstOrDefault(d => d.code == "自定义");
+            resultData.Add(new SolutionInfo
+            {
+                Code = "自定义",
+                Count = custom == null ? 0 : custom.count,
+                Desc = "自定义",
+            });
+
+            result.Data = resultData.OrderByDescending(r => r.Count);
+            result.Count = resultData.Count();
+
+            return result;
+        }
+
+        /// <summary>
         /// 待确认服务申请信息
         /// </summary>
         /// <param name="id"></param>

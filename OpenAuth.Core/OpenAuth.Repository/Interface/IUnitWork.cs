@@ -29,7 +29,7 @@ namespace OpenAuth.Repository.Interface
     /// <para>因为架构采用的是EF访问数据库，暂时可以不用考虑采用传统Unit Work的注册机制</para>
     /// </summary>
     public interface IUnitWork
-    {    
+    {
         DbContext GetDbContext<T>() where T : class;
         T FindSingle<T>(Expression<Func<T, bool>> exp = null) where T : class;
         Task<T> FindSingleAsync<T>(Expression<Func<T, bool>> exp = null, CancellationToken cancellationToken = default) where T : class;
@@ -133,5 +133,8 @@ namespace OpenAuth.Repository.Interface
         /// <param name="param"></param>
         /// <returns></returns>
         object ExecuteScalar(Type contextType, string sql, CommandType commandType, params object[] param);
+
+        int ExecuteNonQuery(Type contextType, CommandType commandType, string sql, params object[] param);
+
     }
 }
