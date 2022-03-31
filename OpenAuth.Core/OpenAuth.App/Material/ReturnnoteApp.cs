@@ -19,6 +19,9 @@ using OpenAuth.App.Material;
 using OpenAuth.Repository.Domain.Workbench;
 using OpenAuth.App.Workbench;
 using OpenAuth.Repository.Domain.Material;
+using System.Text;
+using OpenAuth.App.SignalR;
+using Microsoft.AspNetCore.SignalR;
 
 namespace OpenAuth.App
 {
@@ -34,8 +37,10 @@ namespace OpenAuth.App
         private readonly OrgManagerApp _orgApp;
         private readonly UserManagerApp _userManagerApp;
 
-        public ReturnNoteApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, PendingApp pending, 
-            ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth, ICapPublisher capBus, OrgManagerApp orgApp,UserManagerApp userManagerApp) : base(unitWork, auth)
+        private readonly IHubContext<MessageHub> _hubContext;
+
+        public ReturnNoteApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, PendingApp pending,
+            ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth, ICapPublisher capBus, OrgManagerApp orgApp, UserManagerApp userManagerApp, IHubContext<MessageHub> hubContext) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
@@ -46,6 +51,7 @@ namespace OpenAuth.App
             _pending = pending;
             _orgApp = orgApp;
             _userManagerApp = userManagerApp;
+            _hubContext = hubContext;
         }
 
         #region app和erp通用
@@ -361,7 +367,7 @@ namespace OpenAuth.App
             //查询应收发票  && s.LineStatus == "O"
             var saleinv1s = await UnitWork.Find<sale_inv1>(s => s.DocEntry == req.InvoiceDocEntry).ToListAsync();
             //是否存在退料记录
-            var returnNoteProducts = await UnitWork.Find<ReturnNoteProduct>(r=>r.ProductCode.Equals(req.ProductCode)).Include(r=>r.ReturnNoteMaterials).Where(r=>r.ReturnNoteMaterials.Any(m=> req.InvoiceDocEntry ==m.InvoiceDocEntry)).ToListAsync();
+            var returnNoteProducts = await UnitWork.Find<ReturnNoteProduct>(r => r.ProductCode.Equals(req.ProductCode)).Include(r => r.ReturnNoteMaterials).Where(r => r.ReturnNoteMaterials.Any(m => req.InvoiceDocEntry == m.InvoiceDocEntry)).ToListAsync();
             List<ReturnNoteMaterial> materials = new List<ReturnNoteMaterial>();
             returnNoteProducts.ForEach(r =>
             {
@@ -435,6 +441,7 @@ namespace OpenAuth.App
                 }
             });
             result.Data = listResps;
+            result.Count = listResps.Count();
             //result.Data = saleinv1List.Select(s => new ReturnMaterialListResp
             //{
             //    MaterialCode = replaceRecord.Where(r => r.MaterialCode == s.ItemCode).FirstOrDefault()?.ReplaceMaterialCode,
@@ -541,6 +548,7 @@ namespace OpenAuth.App
                 c.a.Id,
                 c.a.ServiceOrderId,
                 c.a.ServiceOrderSapId,
+                c.a.SalesOrderId,
                 c.b.TerminalCustomerId,
                 c.b.TerminalCustomer,
                 c.a.TotalMoney,
@@ -813,6 +821,14 @@ namespace OpenAuth.App
 
             obj.ReturnNoteProducts.ForEach(c =>
             {
+                //modify by yangsiming @2022/3/23 检查每个产品下有多少个物料,如果查询数量和提交的数量不一致,说明是部分提交,则提示不能部分提交
+                var planCount = GetMaterialList(new ReturnMaterialReq { SalesOrderId = obj.SalesOrderId, InvoiceDocEntry = obj.InvoiceDocEntry, ProductCode = c.ProductCode }).Result.Count;
+                var realCount = c.ReturnNoteMaterials?.Count();
+                if (planCount != realCount)
+                {
+                    throw new Exception($"序列号{c.ProductCode},不能部分退料。");
+                }
+
                 var sort = 0;
                 var hasMaterials = c.ReturnNoteMaterials.OrderBy(c => c.ReplaceMaterialCode).ToList();
                 var groupbyMaterials = hasMaterials.GroupBy(c => c.ReplaceMaterialCode).Select(c => new { c.Key, Item = c.Select(i => i).ToList() }).ToList();
@@ -820,7 +836,7 @@ namespace OpenAuth.App
                 {
                     sort = 0;
                     var first = g.Item.FirstOrDefault()?.MaterialCode;
-                    if (!g.Item.All(c=>c.MaterialCode==first))
+                    if (!g.Item.All(c => c.MaterialCode == first))
                     {
                         throw new Exception($"物料{g.Key}，需退料的物料编码不一致，不同编码需分开退料！");
                     }
@@ -959,6 +975,14 @@ namespace OpenAuth.App
             }
             obj.ReturnNoteProducts.ForEach(c =>
             {
+                //modify by yangsiming @2022/3/23 检查每个产品下有多少个物料,如果查询数量和提交的数量不一致,说明是部分提交,则提示不能部分提交
+                var planCount = GetMaterialList(new ReturnMaterialReq { SalesOrderId = obj.SalesOrderId, InvoiceDocEntry = obj.InvoiceDocEntry, ProductCode = c.ProductCode }).Result.Count;
+                var realCount = c.ReturnNoteMaterials?.Count();
+                if (planCount != realCount)
+                {
+                    throw new Exception($"序列号{c.ProductCode},不能部分退料。");
+                }
+
                 var sort = 0;
                 var hasMaterials = c.ReturnNoteMaterials.OrderBy(c => c.ReplaceMaterialCode).ToList();
                 var groupbyMaterials = hasMaterials.GroupBy(c => c.ReplaceMaterialCode).Select(c => new { c.Key, Item = c.Select(i => i).ToList() }).ToList();
@@ -1318,5 +1342,69 @@ namespace OpenAuth.App
             }
         }
         #endregion
+
+        /// <summary>
+        /// 发送消息给有退料单未提交(包括未提交和驳回)，且时间超过7天的用户
+        /// </summary>
+        /// <returns></returns>
+        public async Task SendUnSubmitMessage()
+        {
+            //查询符合条件的用户和退料信息
+            //查询退料单实例中,状态为开始的流程id
+            var flowInstanceIds = await (from s in UnitWork.Find<FlowScheme>(null)
+                                         join i in UnitWork.Find<FlowInstance>(null)
+                                         on s.Id equals i.SchemeId
+                                         where s.SchemeName == "退料单审批" && i.ActivityName == "开始"
+                                         select i.Id).Distinct().ToListAsync();
+
+            //根据流程id查找退料信息(流程id为空表示未提交,流程id包含的表示被驳回,需要重新提交)
+            var returnNotes = await UnitWork.Find<ReturnNote>(null).Where(r => (flowInstanceIds.Contains(r.FlowInstanceId) || string.IsNullOrWhiteSpace(r.FlowInstanceId))).Select(r => new { r.Id, r.ServiceOrderSapId, r.SalesOrderId, r.CreateUser }).ToListAsync();
+
+            //按提交人进行分组
+            var groupData = returnNotes.GroupBy(r => r.CreateUser);
+            //向每个提交人发送提醒消息
+            foreach(var item in groupData)
+            {
+                var user = item.Key;
+                var message = new StringBuilder();
+                foreach (var d in item)
+                {
+                    var returnNoteId = d.Id;
+                    var serviceSapId = d.ServiceOrderSapId;
+                    var salesOrderId = d.SalesOrderId;
+                    message.AppendLine($"退料单号:{returnNoteId}");
+                }
+                message.AppendLine("已超过7天未提交,请尽快提交.");
+
+                await _hubContext.Clients.User(user).SendAsync("ReceiveMessage", "系统", message.ToString());
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public async Task SendUnSubmitCount()
+        {
+            //查询符合条件的用户和退料信息
+            //查询退料单实例中,状态为开始的流程id
+            var flowInstanceIds = await (from s in UnitWork.Find<FlowScheme>(null)
+                                         join i in UnitWork.Find<FlowInstance>(null)
+                                         on s.Id equals i.SchemeId
+                                         where s.SchemeName == "退料单审批" && i.ActivityName == "开始"
+                                         select i.Id).Distinct().ToListAsync();
+
+            //根据流程id查找退料信息(流程id为空表示未提交,流程id包含的表示被驳回,需要重新提交)
+            var returnNotes = await UnitWork.Find<ReturnNote>(null).Where(r => (flowInstanceIds.Contains(r.FlowInstanceId) || string.IsNullOrWhiteSpace(r.FlowInstanceId))).Select(r => new { r.Id, r.ServiceOrderSapId, r.SalesOrderId, r.CreateUser }).ToListAsync();
+
+            //按提交人进行分组
+            var groupData = returnNotes.GroupBy(r => r.CreateUser);
+            //向每个提交人发送提醒消息
+            foreach (var item in groupData)
+            {
+                var user = item.Key;
+                await _hubContext.Clients.User(user).SendAsync("ReturnNoteUnSubmitCount", "系统", item.Count());
+            }
+        }
     }
 }
