@@ -86,5 +86,6 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         public int? RectifyQty { get; set; }
+        public int? ServiceOrderId { get; set; }
     }
 }

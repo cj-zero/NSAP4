@@ -303,6 +303,14 @@ namespace OpenAuth.App.Material
                         }
                         if (obj.InternalContactProductions.Count > 0)
                         {
+                            obj.InternalContactProductions.ForEach(c =>
+                            {
+                                c.InternalContactId = null;
+                                c.InternalContactProductionDetails.ForEach(d =>
+                                {
+                                    d.InternalContactProductionId = null;
+                                });
+                            });
                             await UnitWork.BatchDeleteAsync<InternalContactProduction>(icp.ToArray());
                             await UnitWork.BatchAddAsync<InternalContactProduction>(obj.InternalContactProductions.ToArray());
                         }
@@ -847,7 +855,7 @@ namespace OpenAuth.App.Material
                 if (!string.IsNullOrWhiteSpace(customer.Address2))
                 {
                     var locationResult = AmapUtil.GetLocation(customer.Address2);
-                    if (!string.IsNullOrWhiteSpace(locationResult))
+                    if (locationResult != null)
                     {
                         longitude = locationResult["result"]["location"]["lng"].ToString();
                         latitude = locationResult["result"]["location"]["lat"].ToString();
@@ -925,30 +933,69 @@ namespace OpenAuth.App.Material
                     supervisor = item.ProductionOrgManager;
                 else
                     supervisor = "樊静涛";
-                //如有关联关系先删除
-                var count = await UnitWork.Find<InternalContactTaskServiceOrder>(c => c.InternalContactTaskId == item.Id).CountAsync();
-                if (count > 0)
-                    await UnitWork.DeleteAsync<InternalContactTaskServiceOrder>(c => c.InternalContactTaskId == item.Id);
-                List<InternalContactTaskServiceOrder> addlist = new List<InternalContactTaskServiceOrder>();
-                //归属量多少生成多少维修单
-                for (int i = 0; i < item.BelongQty; i++)
+
+                #region MyRegion
+                ////如有关联关系先删除
+                //var count = await UnitWork.Find<InternalContactTaskServiceOrder>(c => c.InternalContactTaskId == item.Id).CountAsync();
+                //if (count > 0)
+                //    await UnitWork.DeleteAsync<InternalContactTaskServiceOrder>(c => c.InternalContactTaskId == item.Id);
+                //List<InternalContactTaskServiceOrder> addlist = new List<InternalContactTaskServiceOrder>();
+                ////归属量多少生成多少维修单
+                //for (int i = 0; i < item.BelongQty; i++)
+                //{
+                //    var remark = "";
+                //    if (item.ProductionId != null)
+                //        remark = $"基于生产订单WO-{item.ProductionId}";
+                //    else
+                //        remark = $"基于BOM，{item.ItemCode}";
+
+                //    CustomerServiceAgentCreateOrderReq s = new CustomerServiceAgentCreateOrderReq
+                //    {
+                //        Contacter = "",
+                //        CustomerId = "C37852",
+                //        CustomerName = "东莞新威检测技术有限公司",
+                //        FromId = 8,
+                //        TerminalCustomer = "东莞新威检测技术有限公司",
+                //        TerminalCustomerId = "C37852",
+                //        Supervisor = supervisor,
+                //        ServiceWorkOrders = new List<AddServiceWorkOrderReq>()
+                //        {
+                //            new AddServiceWorkOrderReq
+                //            {
+                //                FromTheme=item.FromTheme,
+                //                FromType=1,
+                //                Priority=1,
+                //                RepairMaterialCode=item.ItemCode,
+                //                ManufacturerSerialNumber="",
+                //                MaterialCode="",
+                //                Remark=remark
+                //            }
+                //        }
+                //    };
+                //    var createResult = await _serviceOrderApp.CISECreateServiceOrder(s);
+                //    var serviceOrderId = createResult.Result;
+                //    addlist.Add(new InternalContactTaskServiceOrder { InternalContactTaskId = item.Id, ServiceOrderId = serviceOrderId, IsFinish = false });
+                //}
+                //await UnitWork.BatchAddAsync(addlist.ToArray());
+
+                #endregion
+
+                var remark = "";
+                if (item.ProductionId != null)
+                    remark = $"基于生产订单WO-{item.ProductionId}";
+                else
+                    remark = $"基于BOM，{item.ItemCode}";
+
+                CustomerServiceAgentCreateOrderReq s = new CustomerServiceAgentCreateOrderReq
                 {
-                    var remark = "";
-                    if (item.ProductionId != null)
-                        remark = $"基于生产订单WO-{item.ProductionId}";
-                    else
-                        remark = $"基于BOM，{item.ItemCode}";
-                            
-                    CustomerServiceAgentCreateOrderReq s = new CustomerServiceAgentCreateOrderReq
-                    {
-                        Contacter = "",
-                        CustomerId = "C37852",
-                        CustomerName = "东莞新威检测技术有限公司",
-                        FromId = 8,
-                        TerminalCustomer = "东莞新威检测技术有限公司",
-                        TerminalCustomerId = "C37852",
-                        Supervisor = supervisor,
-                        ServiceWorkOrders = new List<AddServiceWorkOrderReq>() 
+                    Contacter = "",
+                    CustomerId = "C37852",
+                    CustomerName = "东莞新威检测技术有限公司",
+                    FromId = 8,
+                    TerminalCustomer = "东莞新威检测技术有限公司",
+                    TerminalCustomerId = "C37852",
+                    Supervisor = supervisor,
+                    ServiceWorkOrders = new List<AddServiceWorkOrderReq>()
                         {
                             new AddServiceWorkOrderReq
                             {
@@ -960,13 +1007,15 @@ namespace OpenAuth.App.Material
                                 MaterialCode="",
                                 Remark=remark
                             }
-                        }   
-                    };
-                    var createResult = await _serviceOrderApp.CISECreateServiceOrder(s);
-                    var serviceOrderId = createResult.Result;
-                    addlist.Add(new InternalContactTaskServiceOrder { InternalContactTaskId = item.Id, ServiceOrderId = serviceOrderId, IsFinish = false });
-                }
-                await UnitWork.BatchAddAsync(addlist.ToArray());
+                        }
+                };
+                var createResult = await _serviceOrderApp.CISECreateServiceOrder(s);
+                var serviceOrderId = createResult.Result;
+                await UnitWork.UpdateAsync<InternalContactTask>(c => c.Id == item.Id, c => new InternalContactTask
+                {
+                    ServiceOrderId = serviceOrderId
+                });
+
                 await UnitWork.SaveAsync();
             }
 
