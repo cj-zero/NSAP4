@@ -160,13 +160,21 @@ namespace OpenAuth.App.Material
                 try
                 {
                     var single = await UnitWork.Find<InternalContact>(c => c.Id == req.Id)
-                        .Include(c => c.InternalContactAttchments)
+                        //.Include(c => c.InternalContactAttchments)
                         //.Include(c => c.InternalContactBatchNumbers)
-                        .Include(c => c.InternalContactDeptInfos)
-                        .Include(c => c.InternalContactMaterials)
-                        .Include(c => c.InternalContactTasks)
-                        .Include(c => c.InternalContactServiceOrders)
+                        //.Include(c => c.InternalContactDeptInfos)
+                        //.Include(c => c.InternalContactMaterials)
+                        //.Include(c => c.InternalContactTasks)
+                        //.Include(c => c.InternalContactServiceOrders)
                         .FirstOrDefaultAsync();
+                    if (single!=null)
+                    {
+                        single.InternalContactAttchments = await UnitWork.Find<InternalContactAttchment>(c => c.InternalContactId == req.Id).ToListAsync();
+                        single.InternalContactDeptInfos = await UnitWork.Find<InternalContactDeptInfo>(c => c.InternalContactId == req.Id).ToListAsync();
+                        single.InternalContactMaterials = await UnitWork.Find<InternalContactMaterial>(c => c.InternalContactId == req.Id).ToListAsync();
+                        single.InternalContactTasks = await UnitWork.Find<InternalContactTask>(c => c.InternalContactId == req.Id).ToListAsync();
+                        single.InternalContactServiceOrders = await UnitWork.Find<InternalContactServiceOrder>(c => c.InternalContactId == req.Id).ToListAsync();
+                    }
                     var icp = await UnitWork.Find<InternalContactProduction>(c => c.InternalContactId == req.Id).ToListAsync();
                     obj.Status = 11;//未提交
                     //obj.CardCode = string.Join(",", req.CardCodes);
@@ -293,7 +301,7 @@ namespace OpenAuth.App.Material
                             await UnitWork.BatchDeleteAsync<InternalContactServiceOrder>(single.InternalContactServiceOrders.ToArray());
                             await UnitWork.BatchAddAsync<InternalContactServiceOrder>(obj.InternalContactServiceOrders.ToArray());
                         }
-                        if (obj.InternalContactServiceOrders.Count > 0)
+                        if (obj.InternalContactProductions.Count > 0)
                         {
                             await UnitWork.BatchDeleteAsync<InternalContactProduction>(icp.ToArray());
                             await UnitWork.BatchAddAsync<InternalContactProduction>(obj.InternalContactProductions.ToArray());
@@ -1102,7 +1110,7 @@ namespace OpenAuth.App.Material
                 .ToListAsync();
             if (handleType==1)//撤销
             {
-                var single = internalContact.Where(c => c.Status <= 6).FirstOrDefault();
+                var single = internalContact.Where(c => c.Status <= 6 || c.Status == 10).FirstOrDefault();
                 if (single == null)
                 {
                     throw new Exception("该联络单状态不可撤销。");
