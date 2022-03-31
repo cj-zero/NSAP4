@@ -160,13 +160,21 @@ namespace OpenAuth.App.Material
                 try
                 {
                     var single = await UnitWork.Find<InternalContact>(c => c.Id == req.Id)
-                        .Include(c => c.InternalContactAttchments)
+                        //.Include(c => c.InternalContactAttchments)
                         //.Include(c => c.InternalContactBatchNumbers)
-                        .Include(c => c.InternalContactDeptInfos)
-                        .Include(c => c.InternalContactMaterials)
-                        .Include(c => c.InternalContactTasks)
-                        .Include(c => c.InternalContactServiceOrders)
+                        //.Include(c => c.InternalContactDeptInfos)
+                        //.Include(c => c.InternalContactMaterials)
+                        //.Include(c => c.InternalContactTasks)
+                        //.Include(c => c.InternalContactServiceOrders)
                         .FirstOrDefaultAsync();
+                    if (single!=null)
+                    {
+                        single.InternalContactAttchments = await UnitWork.Find<InternalContactAttchment>(c => c.InternalContactId == req.Id).ToListAsync();
+                        single.InternalContactDeptInfos = await UnitWork.Find<InternalContactDeptInfo>(c => c.InternalContactId == req.Id).ToListAsync();
+                        single.InternalContactMaterials = await UnitWork.Find<InternalContactMaterial>(c => c.InternalContactId == req.Id).ToListAsync();
+                        single.InternalContactTasks = await UnitWork.Find<InternalContactTask>(c => c.InternalContactId == req.Id).ToListAsync();
+                        single.InternalContactServiceOrders = await UnitWork.Find<InternalContactServiceOrder>(c => c.InternalContactId == req.Id).ToListAsync();
+                    }
                     var icp = await UnitWork.Find<InternalContactProduction>(c => c.InternalContactId == req.Id).ToListAsync();
                     obj.Status = 11;//未提交
                     //obj.CardCode = string.Join(",", req.CardCodes);
@@ -223,6 +231,7 @@ namespace OpenAuth.App.Material
                             UserId = user?.b?.Id,
                             UserName = user?.b?.Name,
                             Type = 2,
+                            Count = c.OrgName == "S19" ? obj.InternalContactServiceOrders.Count() : obj.InternalContactTasks.Where(m => m.ProductionOrg == c.OrgName).Count(),
                             InternalContactId = (single != null && single.Id > 0) ? single.Id : 0
                         });
                     });
@@ -292,7 +301,7 @@ namespace OpenAuth.App.Material
                             await UnitWork.BatchDeleteAsync<InternalContactServiceOrder>(single.InternalContactServiceOrders.ToArray());
                             await UnitWork.BatchAddAsync<InternalContactServiceOrder>(obj.InternalContactServiceOrders.ToArray());
                         }
-                        if (obj.InternalContactServiceOrders.Count > 0)
+                        if (obj.InternalContactProductions.Count > 0)
                         {
                             await UnitWork.BatchDeleteAsync<InternalContactProduction>(icp.ToArray());
                             await UnitWork.BatchAddAsync<InternalContactProduction>(obj.InternalContactProductions.ToArray());
@@ -519,7 +528,7 @@ namespace OpenAuth.App.Material
             detail.InternalContactTasks=await UnitWork.Find<InternalContactTask>(c => c.InternalContactId == detail.Id).ToListAsync();
             detail.InternalContactServiceOrders = await UnitWork.Find<InternalContactServiceOrder>(c => c.InternalContactId == detail.Id).ToListAsync();
             detail.InternalContactBatchNumbers=await UnitWork.Find<InternalContactBatchNumber>(c => c.InternalContactId == detail.Id).ToListAsync();
-            var internalContactProductions = await UnitWork.Find<InternalContactProduction>(c => c.InternalContactId == detail.Id).ToListAsync();
+            var internalContactProductions = await UnitWork.Find<InternalContactProduction>(c => c.InternalContactId == detail.Id).Include(c => c.InternalContactProductionDetails).ToListAsync();
             //操作历史
             var operationHistories = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.InstanceId == detail.FlowInstanceId)
                 .OrderBy(c => c.CreateDate).Select(h => new
@@ -544,7 +553,8 @@ namespace OpenAuth.App.Material
             {
                 c.OrgName,
                 Detail = c.Content,
-                ExecTime = c.HandleTime
+                ExecTime = c.HandleTime,
+                Count = c.Count
             });
             result.Data = new
             {
@@ -607,33 +617,52 @@ namespace OpenAuth.App.Material
         /// 查看工单
         /// </summary>
         /// <param name="id"></param>
+        /// <param name="type"></param>
+        /// <param name="org"></param>
         /// <returns></returns>
-        public async Task<TableData> WorkOrder(int id)
+        public async Task<TableData> WorkOrder(int id, int type, string org)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-
-            var detail = await UnitWork.Find<InternalContact>(c => c.Id == id).FirstOrDefaultAsync();
-            detail.InternalContactTasks = await UnitWork.Find<InternalContactTask>(c => c.InternalContactId == id).ToListAsync();
-            detail.InternalContactServiceOrders = await UnitWork.Find<InternalContactServiceOrder>(c => c.InternalContactId == id).OrderBy(c => c.CardCode).ToListAsync();
-            detail.InternalContactTasks.ForEach(c =>
+            TableData result = new TableData();
+            //var detail = await UnitWork.Find<InternalContact>(c => c.Id == id).FirstOrDefaultAsync();
+            var InternalContactTasks = await UnitWork.Find<InternalContactTask>(c => c.InternalContactId == id).OrderBy(c => c.ItemCode).ToListAsync();
+            var InternalContactServiceOrders = await UnitWork.Find<InternalContactServiceOrder>(c => c.InternalContactId == id).OrderBy(c => c.CardCode).ToListAsync();
+            if (type == 1)
             {
-                if (string.IsNullOrWhiteSpace(c.ProductionId.ToString()))
+                InternalContactTasks.ForEach(c =>
                 {
-                    c.ProductionOrg = null;
-                }
-            });
-            return new TableData
+                    if (string.IsNullOrWhiteSpace(c.ProductionId.ToString()))
+                    {
+                        c.ProductionOrg = null;
+                    }
+                });
+                result.Data = new
+                {
+                    InternalContactTasks,
+                    InternalContactServiceOrders
+                };
+            }
+            else if (type == 2)
             {
-                Data = new
+                InternalContactTasks = InternalContactTasks.Where(c => c.ProductionOrg == org).OrderBy(c => c.ItemCode).ToList();
+                InternalContactTasks.ForEach(c =>
                 {
-                    detail.InternalContactTasks,
-                    detail.InternalContactServiceOrders
-                }
-            };
+                    if (string.IsNullOrWhiteSpace(c.ProductionId.ToString()))
+                    {
+                        c.ProductionOrg = null;
+                    }
+                });
+                result.Data = InternalContactTasks;
+            }
+            else
+            {
+                result.Data = InternalContactServiceOrders;
+            }
+            return result;
         }
 
         /// <summary>
@@ -1081,7 +1110,7 @@ namespace OpenAuth.App.Material
                 .ToListAsync();
             if (handleType==1)//撤销
             {
-                var single = internalContact.Where(c => c.Status <= 6).FirstOrDefault();
+                var single = internalContact.Where(c => c.Status <= 6 || c.Status == 10).FirstOrDefault();
                 if (single == null)
                 {
                     throw new Exception("该联络单状态不可撤销。");
@@ -1566,7 +1595,7 @@ namespace OpenAuth.App.Material
             var passageway = await UnitWork.Find<store_itemtype_ufd1>(c => c.TypeID == 20 && c.Fld_nm == "U_TDS").OrderBy(c => c.IndexID).Select(c => c.FldValue).ToListAsync(); 
             var knowledgebases = await UnitWork.Find<KnowledgeBase>(k => k.Rank == 1 && k.IsNew == true && !string.IsNullOrWhiteSpace(k.Content)).ToListAsync();
             var tsyq = await UnitWork.Find<store_itemtype_ufd1>(c => c.TypeID == 20 && c.Fld_nm == "U_TSYQ").Select(c => c.FldValue).ToListAsync();
-            List<product_owor_wor1> ReturnProductList = new List<product_owor_wor1>();
+            List<InternalContactProductionReq> ReturnProductList = new List<InternalContactProductionReq>();
             List<InternalContactServiceOrder> contactServiceOrders = new List<InternalContactServiceOrder>();
             List<InternalContactTask> contactTasks = new List<InternalContactTask>();
             #region 
@@ -1589,6 +1618,7 @@ namespace OpenAuth.App.Material
             req.ForEach(e =>
             {
                 List<product_owor_wor1> productList = new List<product_owor_wor1>();//成品生产订单
+                List<InternalContactProductionReq> resplist = new List<InternalContactProductionReq>();
                 List<string> itemcode = new List<string>();
                 #region 匹配物料编码
                 e.Prefix.ForEach(c =>
@@ -1639,7 +1669,8 @@ namespace OpenAuth.App.Material
                 var hasOrderItem = productOrder.GroupBy(c => new { c.ItemCode, c.Version }).Select(c => new Versions { ItemCode = c.Key.ItemCode, Version = c.Key.Version }).ToList();
 
                 //有BOM的零件物料
-                var b01BomOrder =  BomOrder(e.MaterialCode.Select(c=>c.ToString()).ToList());
+                var param = new List<string>() { e.MaterialCode };
+                var b01BomOrder =  BomOrder(param);
                 var b01ProductOrder = GetProductionOrderInfo(new QueryProduction { StartExcelTime = e.StartExcelTime.Value, EndExcelTime = e.EndExcelTime.Value, Versions = b01BomOrder });
                 b01ProductOrder.ForEach(pr => { pr.FromTheme = e.FromTheme; });
                 //productList.AddRange(productOrder);
@@ -1908,15 +1939,87 @@ namespace OpenAuth.App.Material
                             });
                         });
                     }
+
+                    resplist = productList.Select(f =>
+                     {
+                         var ign3 = ign1.Where(ig => ig.BaseEntry == f.ProductionId).ToList();
+                         List<InternalContactProductionDetailReq> internalContactProductionDetailReq = new List<InternalContactProductionDetailReq>();
+                         if (ign3 != null && ign3.Count() > 0)
+                         {
+                             List<OSRIModel> osri3 = new List<OSRIModel>();
+                             ign3.ForEach(ig =>
+                             {
+                                 osri3.AddRange(query.Where(os => os.BaseEntry == ig.DocEntry && os.Quantity == ig.Quantity && os.BaseLinNum == ig.LineNum).ToList());
+                             });
+
+                             if (osri3.Count() > 0)
+                             {
+                                 var detail = osri3.Select(o =>
+                                 {
+                                     return new InternalContactProductionDetailReq
+                                     {
+                                         MnfSerial = o.SuppSerial,
+                                         Quantity = 1,
+                                         WhsCode = o.Status == 0 ? string.Join(",", ign3.Select(i3 => i3.WhsCode).ToList()) : "",
+                                         OrgName = o.Status == 0 ? "E3" : "S19"
+                                     };
+                                 }).ToList();
+                                 internalContactProductionDetailReq.AddRange(detail);
+                             }
+                             else
+                             {
+                                 internalContactProductionDetailReq.Add(new InternalContactProductionDetailReq { MnfSerial = "", WhsCode = string.Join(",", ign3.Select(i3 => i3.WhsCode).ToList()), OrgName = "E3", Quantity = (int)ign3.Sum(i3 => i3.Quantity) });
+                             }
+
+                         }
+                         return new InternalContactProductionReq
+                         {
+                             InternalContactProductionDetails = internalContactProductionDetailReq,
+                             CmpltQty = (int)f.CmpltQty,
+                             Code = f.Code,
+                             FromTheme = f.FromTheme,
+                             ItemCode = f.ItemCode,
+                             ItemName = f.ItemName,
+                             OpenQty = (int)f.OpenQty,
+                             OrderType = f.OrderType,
+                             OrgName = f.Org,
+                             PlannedQty = (int)f.PlannedQty,
+                             ProductionId = f.ProductionId,
+                             Remark = f.Remark,
+                             Version = f.Version,
+                             Warehouse = f.Warehouse
+                         };
+                     }).ToList();
                 }
                 #endregion
 
-                ReturnProductList.AddRange(productList);
-                ReturnProductList.AddRange(b01ProductOrder);
+                //ReturnProductList.AddRange(productList);
+                //ReturnProductList.AddRange(b01ProductOrder);
+                ReturnProductList.AddRange(resplist);
+                ReturnProductList.AddRange(b01ProductOrder.Select(f => new InternalContactProductionReq
+                {
+                    CmpltQty = (int)f.CmpltQty,
+                    Code = f.Code,
+                    FromTheme = f.FromTheme,
+                    ItemCode = f.ItemCode,
+                    ItemName = f.ItemName,
+                    OpenQty = (int)f.OpenQty,
+                    OrderType = f.OrderType,
+                    OrgName = f.Org,
+                    PlannedQty = (int)f.PlannedQty,
+                    ProductionId = f.ProductionId,
+                    Remark = f.Remark,
+                    Version = f.Version,
+                    Warehouse = f.Warehouse
+                }).ToList());
             });
             #endregion
 
             var orgName = contactTasks.Select(c => c.ProductionOrg).ToList();
+            if (contactServiceOrders.Count > 0)
+            {
+                orgName.Add("S19");//有服务单增加
+            }
             var checkOrg = UnitWork.Find<OpenAuth.Repository.Domain.Org>(c => orgName.Contains(c.Name)).Select(c => c.Id).ToList();
             //设置呼叫主题
             ReturnProductList.ForEach(q =>
@@ -1937,7 +2040,7 @@ namespace OpenAuth.App.Material
             result.Data = new
             {
                 Count = ReturnProductList.Count(),
-                ProductList = ReturnProductList,
+                ProductList = ReturnProductList.OrderBy(c => c.ItemCode).ToList(),
                 InternalContactTask = contactTasks,
                 InternalContactServiceOrder = contactServiceOrders,
                 CheckOrg = checkOrg
@@ -1972,7 +2075,7 @@ namespace OpenAuth.App.Material
             {
                 return new List<product_owor_wor1>();
             }
-            var sql = @$"SELECT a.DocEntry as ProductionId,a.ItemCode,a.txtitemName as ItemName,a.PlannedQty,a.CmpltQty,a.U_WO_LTDW as Org,a.PlannedQty - a.CmpltQty as OpenQty,a.U_BOM_BBH as Version,Warehouse FROM product_owor a
+            var sql = @$"SELECT a.DocEntry as ProductionId,a.ItemCode,a.txtitemName as ItemName,a.PlannedQty,a.CmpltQty,a.U_WO_LTDW as Org,a.PlannedQty - a.CmpltQty as OpenQty,a.U_BOM_BBH as Version,Warehouse,Type as OrderType FROM product_owor a
                         where a.CreateDate >= '{req.StartExcelTime.Date}' and a.CreateDate<'{req.EndExcelTime.AddDays(1).Date}' {filter} ORDER BY DocEntry desc";
             var query = UnitWork.Query<product_owor_wor1>(sql).Select(c => new product_owor_wor1
             {
@@ -1984,7 +2087,8 @@ namespace OpenAuth.App.Material
                 Org = c.Org,
                 OpenQty = c.OpenQty,
                 Version = c.Version,
-                Warehouse = c.Warehouse
+                Warehouse = c.Warehouse,
+                OrderType = c.OrderType
             }).ToList();
             return query;
         }

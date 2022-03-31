@@ -78,9 +78,9 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> WorkOrder(int id)
+        public async Task<TableData> WorkOrder(int id, int type, string org)
         {
-            return await _app.WorkOrder(id);
+            return await _app.WorkOrder(id, type, org);
         }
 
         /// <summary>
