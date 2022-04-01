@@ -88,13 +88,14 @@ namespace OpenAuth.App.Material
             {
                 var mf = _moduleFlowSchemeApp.Get(c => c.Module.Name == "内部联络单");
                 var flowinstace = await UnitWork.Find<FlowInstance>(c => c.SchemeId == mf.FlowSchemeId && c.MakerList.Contains(loginContext.User.Id)).Select(c => c.Id).ToListAsync();
-                query = query.Where(c => flowinstace.Contains(c.FlowInstanceId) && c.CreateUserId != loginContext.User.Id && c.Status != 9);
-
+                query = query.Where(c => flowinstace.Contains(c.FlowInstanceId) && c.Status != 9 && c.Status != 5 && c.Status != 6 && c.Status != 11);
+                //c.CreateUserId != loginContext.User.Id &&
             }
             else if (req.PageType == 3)//已审批
             {
                 var instances = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.CreateUserId == loginContext.User.Id).Select(c => c.InstanceId).Distinct().ToListAsync();
-                query = query.Where(c => instances.Contains(c.FlowInstanceId) && c.CreateUserId != loginContext.User.Id && c.Status != 9);
+                query = query.Where(c => instances.Contains(c.FlowInstanceId)  && c.Status != 9);
+                //&& c.CreateUserId != loginContext.User.Id
             }
             else if (req.PageType == 4)//待执行
             {
@@ -1832,7 +1833,13 @@ namespace OpenAuth.App.Material
 
                 #region B01是否转储
                 //是否在生产仓有库存
-                var onhand =  UnitWork.Find<store_oitw>(c => c.ItemCode == e.MaterialCode && c.OnHand > 0).Sum(c => c.OnHand);
+                decimal? onhand = 0;
+                var sbo = UnitWork.Find<sbo_info>(c => c.sbo_id == 1).Select(c => c.is_open).FirstOrDefault();
+                if (sbo)
+                    onhand = UnitWork.Find<OITW>(c => c.ItemCode == e.MaterialCode && c.OnHand > 0).Sum(c => c.OnHand);
+                else
+                    onhand = UnitWork.Find<store_oitw>(c => c.ItemCode == e.MaterialCode && c.OnHand > 0).Sum(c => c.OnHand);
+                
                 if (onhand>0)
                 {
                     //E3维修任务单
