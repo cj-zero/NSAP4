@@ -53,21 +53,25 @@ namespace OpenAuth.App.Serve
         /// 撤回信息
         /// </summary>
         /// <returns></returns>
-        public async Task RecallMessage(string messageId)
+        public async Task<Infrastructure.Response> RecallMessage(string messageId)
         {
+            var response = new Infrastructure.Response();
+
             var loginContext = _auth.GetCurrentUser();
             var userId = loginContext.User.Id ?? "";
             var orgInfo = await _userManagerApp.GetUserOrgInfo(userId); //部门信息
             if (orgInfo?.OrgName != "S19")
             {
-                throw new Exception("非S19部门,不能撤回消息");
+                response.Code = 500;
+                response.Message = "非S19人员不能撤回信息";
             }
             var obj = await UnitWork.Find<ServiceOrderMessage>(null).FirstOrDefaultAsync(s => s.Id == messageId);
             if (obj != null)
             {
                 if (userId != obj.ReplierId)
                 {
-                    throw new Exception("只能撤回自己创建的消息");
+                    response.Code = 500;
+                    response.Message = "只能撤回自己创建的消息";
                 }
 
                 await UnitWork.DeleteAsync<ServiceOrderMessage>(s => s.Id == messageId);
@@ -75,8 +79,11 @@ namespace OpenAuth.App.Serve
             }
             else
             {
-                throw new Exception("只能撤回自己创建的消息");
+                response.Code = 500;
+                response.Message = "只能撤回自己创建的消息";
             }
+
+            return response;
         }
 
         public async Task SendMessageToTechnician(SendMessageToTechnicianReq req)

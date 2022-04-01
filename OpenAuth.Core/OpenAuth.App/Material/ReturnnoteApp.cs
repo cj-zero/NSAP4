@@ -491,6 +491,7 @@ namespace OpenAuth.App
                                     .WhereIf(!string.IsNullOrWhiteSpace(req.QuotationId.ToString()), c => c.Id == req.QuotationId)
                                     .WhereIf(!string.IsNullOrWhiteSpace(req.CreateUserName), c => c.CreateUser == req.CreateUserName)
                                     .WhereIf(!string.IsNullOrWhiteSpace(req.SapId.ToString()), c => c.ServiceOrderSapId == req.SapId)
+                                    .WhereIf(req.SalesOrderId != null, c => c.SalesOrderId == req.SalesOrderId)
                                     .WhereIf(ServiceOrderids.Count > 0, c => ServiceOrderids.Contains(c.ServiceOrderId))
                                     .WhereIf(quotationIds.Count > 0, c => quotationIds.Contains(c.Id.ToString()))
                                     ;
