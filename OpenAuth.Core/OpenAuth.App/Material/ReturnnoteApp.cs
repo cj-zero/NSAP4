@@ -78,10 +78,12 @@ namespace OpenAuth.App
             List<int> serviceOrderIds = new List<int>();
             if (!string.IsNullOrWhiteSpace(req.Customer))
             {
-                var serviceOrderList = await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Contains(req.Customer) && s.TerminalCustomerId.Contains(req.Customer)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.NewestContacter, s.NewestContactTel }).ToListAsync();
+                var serviceOrderList = await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Contains(req.Customer) || s.TerminalCustomerId.Contains(req.Customer)).Select(s => new { s.Id }).Distinct().ToListAsync();
                 serviceOrderIds = serviceOrderList.Select(s => s.Id).ToList();
             }
             var returnNotes = UnitWork.Find<ReturnNote>(null).Include(r => r.ReturnNotePictures).Include(r => r.ReturnNoteProducts).ThenInclude(r => r.ReturnNoteMaterials)
+                                .WhereIf(req.returnNoteId != null, r => r.Id == req.returnNoteId)
+                                .WhereIf(!string.IsNullOrWhiteSpace(req.CreateUserName), r => r.CreateUser.Contains(req.CreateUserName))
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.SapId.ToString()), r => r.ServiceOrderSapId == req.SapId)
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()), r => r.SalesOrderId == req.SalesOrderId)
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.MaterialCode), r => r.ReturnNoteProducts.Any(x => x.ReturnNoteMaterials.Any(m => m.MaterialCode == req.MaterialCode)))
