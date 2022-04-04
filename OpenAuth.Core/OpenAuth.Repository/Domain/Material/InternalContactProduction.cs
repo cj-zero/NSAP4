@@ -26,7 +26,7 @@ namespace OpenAuth.Repository.Domain
         {
           this.ItemCode= string.Empty;
           this.ItemName= string.Empty;
-          this.Dept= string.Empty;
+          this.OrgName= string.Empty;
           this.Remark= string.Empty;
         }
 
@@ -57,7 +57,7 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         [Description("")]
-        public string Dept { get; set; }
+        public string OrgName { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -81,5 +81,8 @@ namespace OpenAuth.Repository.Domain
         public string FromTheme { get; set; }
         public string FromThemeName { get; set; }
         public string FromThemeCode { get; set; }
+        public string OrderType { get; set; }
+
+        public List<InternalContactProductionDetail> InternalContactProductionDetails { get; set; }
     }
 }

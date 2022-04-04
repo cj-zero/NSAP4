@@ -103,6 +103,7 @@ namespace OpenAuth.App.Serve.Response
         /// 未完工原因
         /// </summary>
         public string UnCompletedReason { get; set; }
+        public int? FromId { get; set; }
         public List<ServiceWorkOrder> ServiceWorkOrders { get; set; }
     }
 }

@@ -117,6 +117,28 @@ namespace OpenAuth.App.Serve
                 }
             }
             #endregion
+            #region 退料单
+            //查询符合条件的用户和退料信息
+            //查询退料单实例中,状态为开始的流程id
+            var flowInstanceIds = await (from s in UnitWork.Find<FlowScheme>(null)
+                                         join i in UnitWork.Find<FlowInstance>(null)
+                                         on s.Id equals i.SchemeId
+                                         where s.SchemeName == "退料单审批" && i.ActivityName == "开始"
+                                         select i.Id).Distinct().ToListAsync();
+
+            //根据流程id查找退料信息(流程id为空表示未提交,流程id包含的表示被驳回,需要重新提交)
+            var returnNotes = await UnitWork.Find<ReturnNote>(null).Where(r => (flowInstanceIds.Contains(r.FlowInstanceId) || string.IsNullOrWhiteSpace(r.FlowInstanceId))).Select(r => new { r.Id, r.ServiceOrderSapId, r.SalesOrderId, r.CreateUser }).ToListAsync();
+
+            //按提交人进行分组
+            var groupData = returnNotes.GroupBy(r => r.CreateUser);
+            //向每个提交人发送提醒消息
+            foreach (var item in groupData)
+            {
+                var user = item.Key;
+                await _hubContext.Clients.User(user).SendAsync("ReturnNoteUnSubmitCount", "系统", item.Count());
+            }
+            #endregion
+
             //推送版本号
             await _hubContext.Clients.All.SendAsync("Version", "系统", _appConfiguration.Value.Version);
         }

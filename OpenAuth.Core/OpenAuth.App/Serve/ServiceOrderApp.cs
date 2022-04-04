@@ -1649,6 +1649,7 @@ namespace OpenAuth.App
                 ServiceCreateTime = q.CreateTime,
                 AllowOrNot = q.AllowOrNot,
                 Remark = q.Remark,
+                FromId = q.FromId,
                 ServiceWorkOrders = q.ServiceWorkOrders.Where(a => (string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId) || a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
                 && (string.IsNullOrWhiteSpace(req.QryState) || a.Status.Equals(Convert.ToInt32(req.QryState)))
                 && (status.Count == 0 || status.Contains(a.Status.Value))
@@ -1868,6 +1869,104 @@ namespace OpenAuth.App
 
             result.Data = data;
             result.Count = totalCount;
+
+            return result;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetServerCallEfficiencyTest(QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            //查询服务单和工单数据
+            var query = await (from so in UnitWork.Find<ServiceOrder>(null)
+                        .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, s => s.CreateTime >= req.QryCreateTimeFrom && s.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
+                               join sw in UnitWork.Find<ServiceWorkOrder>(null)
+                               on so.Id equals sw.ServiceOrderId
+                               //类型是服务单,状态是已确认
+                               where so.VestInOrg == 1 && so.Status == 2
+                               group new { so, sw } by so.Id into g
+                               select new
+                               {
+                                   ServiceOrderId = g.Key, //服务单id
+                                   Status = g.Min(x => x.sw.Status), //工单状态
+                                   StartTime = g.Min(x => x.so.CreateTime), //服务单创建时间为开始时间
+                                   EndTime = g.Max(x => x.sw.CompleteDate), //工单中最大的时间为结束时间
+                                   SuperVisor = g.Max(x => x.so.Supervisor) //售后主管
+                               }).ToListAsync();
+            //按售后主管进行分组统计
+            var query2 = query.GroupBy(q => q.SuperVisor).Select(g => new ProcessingEfficiency
+            {
+                SuperVisor = g.Key,
+                FinishCount = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null),//服务单和工单是一对多关系,如果工单中最小的状态都大于等于7,说明这个服务单下所有的工单都是已完成的,这个服务单才算完成(服务单对应的工单只要有一个未完成,整个服务单就算未完成,工单没有完工时间的,也算未完成)
+                UnFinishCount = g.Count() - g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null),
+                D1 = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null && (x.EndTime - x.StartTime).Value.TotalDays <= 1),
+                D2 = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null && (x.EndTime - x.StartTime).Value.TotalDays > 1 && (x.EndTime - x.StartTime).Value.TotalDays <= 2),
+                D3 = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null && (x.EndTime - x.StartTime).Value.TotalDays > 2 && (x.EndTime - x.StartTime).Value.TotalDays <= 3),
+                D4 = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null && (x.EndTime - x.StartTime).Value.TotalDays > 3 && (x.EndTime - x.StartTime).Value.TotalDays <= 4),
+                D5 = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null && (x.EndTime - x.StartTime).Value.TotalDays > 4 && (x.EndTime - x.StartTime).Value.TotalDays <= 5),
+                D6 = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null && (x.EndTime - x.StartTime).Value.TotalDays > 5 && (x.EndTime - x.StartTime).Value.TotalDays <= 6),
+                D7_14 = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null && (x.EndTime - x.StartTime).Value.TotalDays > 6 && (x.EndTime - x.StartTime).Value.TotalDays <= 14),
+                D15_30 = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null && (x.EndTime - x.StartTime).Value.TotalDays > 14 && (x.EndTime - x.StartTime).Value.TotalDays <= 30),
+                D30 = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null && (x.EndTime - x.StartTime).Value.TotalDays > 30)
+            });
+            //将售后主管转换为所在部门
+            var query3 = query2.ToList();
+            query3.ForEach(f => f.Dept = _userManagerApp.GetUserOrgInfo(null, f.SuperVisor).Result?.OrgName);
+            //将同一部门下的数据合并
+            var query4 = query3.GroupBy(f => f.Dept).Select(g => new
+            {
+                dept = g.Key,
+                Count = g.Sum(x => x.FinishCount) + g.Sum(x => x.UnFinishCount),
+                FinishCount = g.Sum(x => x.FinishCount),
+                UnFinishCount = g.Sum(x => x.UnFinishCount),
+                d1 = g.Sum(x => x.D1),
+                d2 = g.Sum(x => x.D2),
+                d3 = g.Sum(x => x.D3),
+                d4 = g.Sum(x => x.D4),
+                d5 = g.Sum(x => x.D5),
+                d6 = g.Sum(x => x.D6),
+                d7_14 = g.Sum(x => x.D7_14),
+                d15_30 = g.Sum(x => x.D15_30),
+                d30 = g.Sum(x => x.D30)
+            });
+
+            var depts = new string[] { "SQ", "S7", "S12", "S14", "S15", "S29", "S36", "S37", "S32", "S20", "E3" }; //规定要查看的部门
+            var data = from d in depts
+                       join q in query4 on d equals q.dept into temp
+                       from t in temp.DefaultIfEmpty()
+                       select new
+                       {
+                           dept = d,
+                           dcount = t != null ? t.Count : 0,
+                           dPer = t != null ? ((decimal)t.Count / query.Count).ToString("P2") : "0.00%",
+                           d1 = t != null ? t.d1 : 0,
+                           d1Per = t != null ? ((decimal)t.d1 / t.Count).ToString("P2") : "0.00%",
+                           d2 = t != null ? t.d2 : 0,
+                           d2Per = t != null ? ((decimal)t.d2 / t.Count).ToString("P2") : "0.00%",
+                           d3 = t != null ? t.d3 : 0,
+                           d3Per = t != null ? ((decimal)t.d3 / t.Count).ToString("P2") : "0.00%",
+                           d4 = t != null ? t.d4 : 0,
+                           d4Per = t != null ? ((decimal)t.d4 / t.Count).ToString("P2") : "0.00%",
+                           d5 = t != null ? t.d5 : 0,
+                           d5Per = t != null ? ((decimal)t.d5 / t.Count).ToString("P2") : "0.00%",
+                           d6 = t != null ? t.d6 : 0,
+                           d6Per = t != null ? ((decimal)t.d6 / t.Count).ToString("P2") : "0.00%",
+                           d7_14 = t != null ? t.d7_14 : 0,
+                           d7_14Per = t != null ? ((decimal)t.d7_14 / t.Count).ToString("P2") : "0.00%",
+                           d15_30 = t != null ? t.d15_30 : 0,
+                           d15_30Per = t != null ? ((decimal)t.d15_30 / t.Count).ToString("P2") : "0.00%",
+                           d30 = t != null ? t.d30 : 0,
+                           d30Per = t != null ? ((decimal)t.d30 / t.Count).ToString("P2") : "0.00%",
+                           unFinish = t != null ? t.UnFinishCount : 0,
+                           unFinishPer = t != null ? ((decimal)t.UnFinishCount / t.Count).ToString("P2") : "0.00%"
+                       };
+
+            result.Data = data;
+            result.Count = data.Count();
 
             return result;
         }
@@ -3052,29 +3151,46 @@ namespace OpenAuth.App
                 status = Array.ConvertAll(num, int.Parse).ToList();
             }
 
+            var ids = await UnitWork.Find<ServiceWorkOrder>(null)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.Status.Equals(Convert.ToInt32(req.QryState)))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryStateList), q => status.Contains(q.Status.Value))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceMode), q => q.ServiceMode.Equals(Convert.ToInt32(req.QryServiceMode)))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ManufacturerSerialNumber.Contains(req.QryManufSN))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ProblemTypeId.Equals(req.QryProblemType))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromType), q => q.FromType.Equals(Convert.ToInt32(req.QryFromType)))
+                //.WhereIf(!string.IsNullOrWhiteSpace(req.QryTechName), q => q.CurrentUser.Contains(req.QryTechName))
+                .WhereIf(techName.Count > 0, q => techName.Contains(q.CurrentUser))
+                //.WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromTheme), q => q.FromTheme.Contains(req.QryFromTheme))
+                .WhereIf(req.CompleteDate != null, q => q.CompleteDate > req.CompleteDate)
+                .WhereIf(req.EndCompleteDate != null, q => q.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1))
+                .OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+
             var query = UnitWork.Find<ServiceOrder>(null)
                 .Include(s => s.ServiceWorkOrders).ThenInclude(c => c.ProblemType)
                 .Include(a => a.ServiceWorkOrders).ThenInclude(b => b.Solution)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryU_SAP_ID), q => q.U_SAP_ID.Equals(Convert.ToInt32(req.QryU_SAP_ID)))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.ServiceWorkOrders.Any(a => a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId))))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.ServiceWorkOrders.Any(a => a.Status.Equals(Convert.ToInt32(req.QryState))))
-                .WhereIf(status.Count > 0, q => q.ServiceWorkOrders.Any(a => status.Contains(a.Status.Value)))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceMode), q => q.ServiceWorkOrders.Any(a => a.ServiceMode.Equals(Convert.ToInt32(req.QryServiceMode))))
+                //.WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.ServiceWorkOrders.Any(a => a.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId))))
+                //.WhereIf(!string.IsNullOrWhiteSpace(req.QryState), q => q.ServiceWorkOrders.Any(a => a.Status.Equals(Convert.ToInt32(req.QryState))))
+                //.WhereIf(status.Count > 0, q => q.ServiceWorkOrders.Any(a => status.Contains(a.Status.Value)))
+                //.WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceMode), q => q.ServiceWorkOrders.Any(a => a.ServiceMode.Equals(Convert.ToInt32(req.QryServiceMode))))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryCustomer), q => q.CustomerId.Contains(req.QryCustomer) || q.CustomerName.Contains(req.QryCustomer))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceWorkOrders.Any(a => a.ManufacturerSerialNumber.Contains(req.QryManufSN)))
+                //.WhereIf(!string.IsNullOrWhiteSpace(req.QryManufSN), q => q.ServiceWorkOrders.Any(a => a.ManufacturerSerialNumber.Contains(req.QryManufSN)))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryRecepUser), q => q.RecepUserName.Contains(req.QryRecepUser))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryVestInOrg), q => q.VestInOrg == Convert.ToInt32(req.QryVestInOrg))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.Supervisor.Contains(req.QrySupervisor))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryAllowOrNot.ToString()), q => q.AllowOrNot == req.QryAllowOrNot)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QrySalesMan), q => q.SalesMan == req.QrySalesMan)
-                .WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ServiceWorkOrders.Any(a => a.ProblemTypeId.Equals(req.QryProblemType)))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromId), q => q.FromId == Convert.ToInt32(req.QryFromId))
+                //.WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ServiceWorkOrders.Any(a => a.ProblemTypeId.Equals(req.QryProblemType)))
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromType), q => q.ServiceWorkOrders.Any(a => a.FromType.Equals(Convert.ToInt32(req.QryFromType))))
-                .WhereIf(req.CompleteDate != null, q => q.ServiceWorkOrders.Any(s => s.CompleteDate > req.CompleteDate))
-                .WhereIf(req.EndCompleteDate != null, q => q.ServiceWorkOrders.Any(s => s.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1)))
-                .WhereIf(techName.Count > 0, q => q.ServiceWorkOrders.Any(s => techName.Contains(s.CurrentUser)))
-                .Where(q => q.Status == 2);
+                //.WhereIf(!string.IsNullOrWhiteSpace(req.QryFromType), q => q.ServiceWorkOrders.Any(a => a.FromType.Equals(Convert.ToInt32(req.QryFromType))))
+                //.WhereIf(req.CompleteDate != null, q => q.ServiceWorkOrders.Any(s => s.CompleteDate > req.CompleteDate))
+                //.WhereIf(req.EndCompleteDate != null, q => q.ServiceWorkOrders.Any(s => s.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1)))
+                //.WhereIf(techName.Count > 0, q => q.ServiceWorkOrders.Any(s => techName.Contains(s.CurrentUser)))
+                .Where(q => ids.Contains(q.Id) && q.Status == 2);
 
             if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
             {

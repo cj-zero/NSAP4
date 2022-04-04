@@ -314,6 +314,10 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public int FinishCount { get; set; }
         /// <summary>
+        /// 未完成的服务单数量
+        /// </summary>
+        public int UnFinishCount { get; set; }
+        /// <summary>
         /// 处理时间1天内
         /// </summary>
         public int D1 { get; set; }

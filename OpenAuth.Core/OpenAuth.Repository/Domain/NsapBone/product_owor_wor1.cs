@@ -16,6 +16,7 @@ namespace OpenAuth.Repository.Domain
 
         public int DocEntry { get; set; }
         public string Code { get; set; }
+        public string OrderType { get; set; }
         public int ProductionId { get; set; }
         public string ItemName { get; set; }
         public string ItemCode { get; set; }
@@ -30,5 +31,15 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public decimal? CmpltQty { get; set; }
         public string Version { get; set; }
+
+        //public List<OrderDetail> OrderDetails { get; set; }
     }
+
+    //public class OrderDetail
+    //{
+    //    public string MnfSerial { get; set; }
+    //    public string WhsCode { get; set; }
+    //    public string Org { get; set; }
+    //    public decimal? Quantity { get; set; }
+    //}
 }
