@@ -316,6 +316,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 未完成的服务单数量
         /// </summary>
+        [NotMapped]
         public int UnFinishCount { get; set; }
         /// <summary>
         /// 处理时间1天内
