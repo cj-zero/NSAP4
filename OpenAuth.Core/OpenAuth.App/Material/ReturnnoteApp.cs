@@ -90,6 +90,25 @@ namespace OpenAuth.App
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), r => r.CreateTime > req.StartDate)
                                 .WhereIf(serviceOrderIds.Count() > 0, r => serviceOrderIds.Contains(r.ServiceOrderId))
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), r => r.CreateTime < Convert.ToDateTime(req.EndDate).AddDays(1));
+            if (!string.IsNullOrWhiteSpace(req.Status))
+            {
+                if (req.Status == "驳回")
+                {
+                    flowInstanceIds.AddRange(await UnitWork.Find<FlowInstance>(f => f.IsFinish == FlowInstanceStatus.Rejected).Select(s => s.Id).ToListAsync());
+                }
+                else
+                {
+                    flowInstanceIds.AddRange(await UnitWork.Find<FlowInstance>(f => f.ActivityName.Equals(req.Status)).Select(s => s.Id).ToListAsync());
+                }
+                if (req.Status == "开始")
+                {
+                    returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId) || string.IsNullOrEmpty(r.FlowInstanceId));
+                }
+                else
+                {
+                    returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId));
+                }
+            }
             if (loginUser.Account!=Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-派送服务ID")))
             {
                 #region 筛选条件
@@ -163,26 +182,6 @@ namespace OpenAuth.App
                         flowInstanceIds = await UnitWork.Find<FlowInstance>(f => Lines.Contains(f.ActivityId)).Select(s => s.Id).ToListAsync();
                         returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId));
                     }
-                }
-                if (!string.IsNullOrWhiteSpace(req.Status))
-                {
-                    if (req.Status == "驳回")
-                    {
-                        flowInstanceIds.AddRange(await UnitWork.Find<FlowInstance>(f => f.IsFinish == FlowInstanceStatus.Rejected).Select(s => s.Id).ToListAsync());
-                    }
-                    else
-                    {
-                        flowInstanceIds.AddRange(await UnitWork.Find<FlowInstance>(f => f.ActivityName.Equals(req.Status)).Select(s => s.Id).ToListAsync());
-                    }
-                    if (req.Status == "开始")
-                    {
-                        returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId) || string.IsNullOrEmpty(r.FlowInstanceId));
-                    }
-                    else
-                    {
-                        returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId));
-                    }
-
                 }
                 #endregion
             }
@@ -617,7 +616,7 @@ namespace OpenAuth.App
                         ReplaceMaterialDescription = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.ReplaceMaterialDescription,
                         ReplaceSNandPN = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.ReplaceSNandPN,
                         Count = c.UnitPrice,
-                        Status = !string.IsNullOrWhiteSpace(replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.SNandPN) ? "已更新" : "未提交"
+                        Status = c.MaterialType == 3 ? "赠送" : !string.IsNullOrWhiteSpace(replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.SNandPN) ? "已更新" : "未提交"
                     });
                 }
             });
