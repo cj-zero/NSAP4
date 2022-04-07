@@ -368,12 +368,12 @@ namespace OpenAuth.App
             //查询应收发票  && s.LineStatus == "O"
             var saleinv1s = await UnitWork.Find<sale_inv1>(s => s.DocEntry == req.InvoiceDocEntry).ToListAsync();
             //是否存在退料记录
-            var returnNoteProducts = await UnitWork.Find<ReturnNoteProduct>(r => r.ProductCode.Equals(req.ProductCode)).Include(r => r.ReturnNoteMaterials).Where(r => r.ReturnNoteMaterials.Any(m => req.InvoiceDocEntry == m.InvoiceDocEntry)).ToListAsync();
+            //var returnNoteProducts = await UnitWork.Find<ReturnNoteProduct>(r => r.ProductCode.Equals(req.ProductCode)).Include(r => r.ReturnNoteMaterials).Where(r => r.ReturnNoteMaterials.Any(m => req.InvoiceDocEntry == m.InvoiceDocEntry)).ToListAsync();
             List<ReturnNoteMaterial> materials = new List<ReturnNoteMaterial>();
-            returnNoteProducts.ForEach(r =>
-            {
-                materials.AddRange(r.ReturnNoteMaterials.ToList());
-            });
+            //returnNoteProducts.ForEach(r =>
+            //{
+            //    materials.AddRange(r.ReturnNoteMaterials.ToList());
+            //});
             List<sale_inv1> saleinv1List = new List<sale_inv1>();
             //saleinv1s.ForEach(s =>
             //{

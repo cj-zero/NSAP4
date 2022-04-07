@@ -131,6 +131,16 @@ namespace OpenAuth.App.Request
         public string TimeInterval { get; set; }
 
         /// <summary>
+        /// 部门名称
+        /// </summary>
+        public string QryDeptName { get; set; }
+
+        /// <summary>
+        /// 完工时间区间
+        /// </summary>
+        public string FinishTimeInterval { get; set; }
+
+        /// <summary>
         /// 未完工原因
         /// </summary>
         public string UnCompletedReason { get; set; }

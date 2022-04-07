@@ -113,7 +113,7 @@ namespace OpenAuth.App
             return new TableData
             {
                 Count = userViews.Count(),
-                Data = userViews.OrderBy(u => u.Name)
+                Data = userViews.OrderBy(u => u.Status)
                     .Skip((request.page - 1) * request.limit)
                     .Take(request.limit),
             };

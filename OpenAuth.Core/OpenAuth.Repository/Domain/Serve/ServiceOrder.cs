@@ -373,4 +373,13 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public int Num { get; set; }
     }
+
+    public class ServiceOrderData
+    {
+        public int Id { get; set; }
+        //public int status { get; set; }
+        //public DateTime starttime { get; set; }
+        //public DateTime? endtime { get; set; }
+        //public string? supervisor { get; set; }
+    }
 }
