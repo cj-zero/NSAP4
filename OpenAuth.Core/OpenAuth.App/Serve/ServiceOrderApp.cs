@@ -1590,7 +1590,7 @@ namespace OpenAuth.App
 	                            and so.status = 2
 	                            group by so.Id
                             ) t where 1 = 1";
-                var timeinterval = await UnitWork.Find<Category>(c => c.TypeId == "SYS_efficiency" && c.Name == req.FinishTimeInterval).Select(c => c.DtValue).FirstOrDefaultAsync();
+                var timeinterval = await UnitWork.Find<Category>(c => c.TypeId == "SYS_efficiency" && c.DtValue == req.FinishTimeInterval).Select(c => c.DtValue).FirstOrDefaultAsync();
                 if (!string.IsNullOrEmpty(timeinterval) && timeinterval != "0")
                 {
                     sql += " and t.status >= 7";
