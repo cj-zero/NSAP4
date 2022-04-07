@@ -388,7 +388,6 @@ namespace OpenAuth.App.Order
                     temprow["AttachFlag"] = fileflag == null ? "0" : fileflag.Value.ToString();
                 }
             }
-
             tableData.Data = dt.Tolist<SalesDraftDto>();
 
             return tableData;
@@ -1619,7 +1618,8 @@ namespace OpenAuth.App.Order
                     U_SHJSJ = item.U_SHJSJ,
                     U_SHTC = item.U_SHTC,
                     U_ZS = !string.IsNullOrEmpty(item.U_ZS) ? item.U_ZS : "",//配置类型，
-                    U_RelDoc = !string.IsNullOrEmpty(item.U_RelDoc) ? item.U_RelDoc : ""//关联订单号
+                    U_RelDoc = !string.IsNullOrEmpty(item.U_RelDoc) ? item.U_RelDoc : "",//关联订单号
+                    ChildBillSalesDetails = item.ChildBillSalesDetails
 
                 };
                 billDelivery.billSalesDetails.Add(billSalesDetail);
