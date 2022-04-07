@@ -29,7 +29,7 @@ namespace OpenAuth.App
                 roles = roles.Where(u => u.Name.Contains(request.key)).ToList();
             }
 
-            return roles;
+            return roles.OrderBy(r => r.Name).ToList();
         }
 
 

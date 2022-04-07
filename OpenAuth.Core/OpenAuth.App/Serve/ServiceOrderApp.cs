@@ -1520,6 +1520,100 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromId), q => q.FromId == Convert.ToInt32(req.QryFromId))
                 .Where(q => ids.Contains(q.Id) && q.Status == 2);
 
+            //根据部门筛选数据
+            if (!string.IsNullOrWhiteSpace(req.QryDeptName))
+            {
+                //查询服务单中所有主管的名字
+                var supervisorNames = await UnitWork.Find<ServiceOrder>(null).Select(s => s.Supervisor).Distinct().ToListAsync();
+
+                //根据姓名获取用户部门名称
+                Func<IEnumerable<string>, Task<List<UserResp>>> GetOrgName = async x =>
+                           await (from u in UnitWork.Find<User>(null)
+                                  join r in UnitWork.Find<Relevance>(null) on u.Id equals r.FirstId
+                                  join o in UnitWork.Find<Repository.Domain.Org>(null) on r.SecondId equals o.Id
+                                  where x.Contains(u.Name) && r.Key == Define.USERORG
+                                  orderby o.CascadeId descending
+                                  select new UserResp { Name = u.Name, OrgName = o.Name, CascadeId = o.CascadeId }).ToListAsync();
+                var supervisorInfos = (await GetOrgName(supervisorNames)).Select(x => new ProcessingEfficiency { Dept = x.OrgName, SuperVisor = x.Name });
+
+                //筛选出查询部门主管的名字
+                var superVisors = supervisorInfos.Where(s => s.Dept == req.QryDeptName).Select(s => s.SuperVisor).ToList();
+                var param1 = "";
+                if (superVisors != null && superVisors.Count() > 0)
+                {
+                    var object1 = "";
+                    foreach (var item in superVisors)
+                    {
+                        object1 += $",'{item}'";
+                    }
+                    param1 = $" and so.supervisor in ({object1.Substring(1)})";
+                }
+                else
+                {
+                    param1 = " and true = false";
+                }
+
+                string sql = $@"select t.Id
+                            from(
+	                            select so.Id,
+	                            min(sw.Status) as status,
+	                            min(so.CreateTime) as starttime,
+	                            max(sw.CompleteDate) as endtime,
+	                            max(so.Supervisor) as supervisor
+	                            from serviceorder as so
+	                            join serviceworkorder as sw 
+	                            on so.Id = sw.ServiceOrderId
+	                            where so.VestInOrg = 1
+	                            and so.status = 2
+                                {param1}
+	                            group by so.Id
+                            ) t where 1 = 1";
+
+                var parameters = new List<object>();
+                var finishData = _dbExtension.GetObjectDataFromSQL<ServiceOrderData>(sql, parameters.ToArray(), typeof(Nsap4ServeDbContext))?.ToList();
+                query = query.Where(q => finishData.Select(x => x.Id).Contains(q.Id));
+            }
+            //根据处理时效区间筛选数据
+            if (!string.IsNullOrWhiteSpace(req.FinishTimeInterval))
+            {
+                string sql = $@"select t.Id
+                            from(
+	                            select so.Id,
+	                            min(sw.Status) as status,
+	                            min(so.CreateTime) as starttime,
+	                            max(sw.CompleteDate) as endtime,
+	                            max(so.Supervisor) as supervisor
+	                            from serviceorder as so
+	                            join serviceworkorder as sw 
+	                            on so.Id = sw.ServiceOrderId
+	                            where so.VestInOrg = 1
+	                            and so.status = 2
+	                            group by so.Id
+                            ) t where 1 = 1";
+                var timeinterval = await UnitWork.Find<Category>(c => c.TypeId == "SYS_efficiency" && c.DtValue == req.FinishTimeInterval).Select(c => c.DtValue).FirstOrDefaultAsync();
+                if (!string.IsNullOrEmpty(timeinterval) && timeinterval != "0")
+                {
+                    sql += " and t.status >= 7";
+                    if (!string.IsNullOrWhiteSpace(timeinterval.Split(':')[0]))
+                    {
+                        var startPoint = timeinterval.Split(':')[0];
+                        sql += $" and timestampdiff(minute,t.starttime,t.endtime) > 24*60*{startPoint}";
+                    }
+                    if (!string.IsNullOrWhiteSpace(timeinterval.Split(':')[1]))
+                    {
+                        var endPoint = timeinterval.Split(':')[1];
+                        sql += $" and timestampdiff(minute,t.starttime,t.endtime) <= 24*60*{endPoint}";
+                    }
+                }
+                else if (timeinterval == "0")
+                {
+                    sql += " and t.status < 7 or t.endtime is null";
+                }
+
+                var parameters = new List<object>();
+                var finishData = _dbExtension.GetObjectDataFromSQL<ServiceOrderData>(sql, parameters.ToArray(), typeof(Nsap4ServeDbContext))?.ToList();
+                query = query.Where(q => finishData.Select(x => x.Id).Contains(q.Id));
+            }
             //未完成的服务单所处时间区间筛选
             if (!string.IsNullOrWhiteSpace(req.TimeInterval))
             {
@@ -1767,7 +1861,7 @@ namespace OpenAuth.App
                         from(
 	                        select so.Id,
                             max(so.Supervisor) as supervisor,
-                            max(so.CreateTime) as createtime,
+                            min(so.CreateTime) as createtime,
                             max(sw.CompleteDate) as endtime
 	                        from serviceorder as so
 	                        inner join serviceworkorder as sw 
@@ -1810,7 +1904,7 @@ namespace OpenAuth.App
                 d30 = g.Sum(x => x.D30)
             });
             //每个部门总共有多少个服务单
-            var superVisorCount = await (UnitWork.Find<ServiceOrder>(so => so.VestInOrg == 1 && so.Status == 2)
+            var superVisorCount = await (UnitWork.Find<ServiceOrder>(so => so.VestInOrg == 1 && so.Status == 2 && so.ServiceWorkOrders.Count() > 0)
                        .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, so => so.CreateTime >= req.QryCreateTimeFrom && so.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
                        .Select(x => new { x.Id, x.Supervisor }).Distinct()
                        .GroupBy(x => x.Supervisor).Select(g => new
@@ -1831,7 +1925,7 @@ namespace OpenAuth.App
                 dcount = g.Sum(x=>x.dCount)
             });
             //总数量
-            var totalCount = await UnitWork.Find<ServiceOrder>(so => so.VestInOrg == 1 && so.Status == 2)
+            var totalCount = await UnitWork.Find<ServiceOrder>(so => so.VestInOrg == 1 && so.Status == 2 && so.ServiceWorkOrders.Count() > 0)
                        .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, so => so.CreateTime >= req.QryCreateTimeFrom && so.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
                        .Select(x => x.Id).Distinct().CountAsync();
             var depts = new string[] { "SQ", "S7", "S12", "S14", "S15", "S29", "S36", "S37", "S32", "S20", "E3" }; //规定要查看的部门
@@ -1869,6 +1963,188 @@ namespace OpenAuth.App
 
             result.Data = data;
             result.Count = totalCount;
+
+            return result;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetServerCallEfficiencyTest(QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            //查询服务单和工单数据
+            var query = await (from so in UnitWork.Find<ServiceOrder>(null)
+                        .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, s => s.CreateTime >= req.QryCreateTimeFrom && s.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
+                               join sw in UnitWork.Find<ServiceWorkOrder>(null)
+                               on so.Id equals sw.ServiceOrderId
+                               //类型是服务单,状态是已确认
+                               where so.VestInOrg == 1 && so.Status == 2
+                               group new { so, sw } by so.Id into g
+                               select new
+                               {
+                                   ServiceOrderId = g.Key, //服务单id
+                                   Status = g.Min(x => x.sw.Status), //工单状态
+                                   StartTime = g.Min(x => x.so.CreateTime), //服务单创建时间为开始时间
+                                   EndTime = g.Max(x => x.sw.CompleteDate), //工单中最大的时间为结束时间
+                                   SuperVisor = g.Max(x => x.so.Supervisor) //售后主管
+                               }).ToListAsync();
+            //按售后主管进行分组统计
+            var query2 = query.GroupBy(q => q.SuperVisor).Select(g => new ProcessingEfficiency
+            {
+                SuperVisor = g.Key,
+                FinishCount = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null),//服务单和工单是一对多关系,如果工单中最小的状态都大于等于7,说明这个服务单下所有的工单都是已完成的,这个服务单才算完成(服务单对应的工单只要有一个未完成,整个服务单就算未完成,工单没有完工时间的,也算未完成)
+                UnFinishCount = g.Count() - g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null),
+                D1 = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null && (x.EndTime - x.StartTime).Value.TotalDays <= 1),
+                D2 = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null && (x.EndTime - x.StartTime).Value.TotalDays > 1 && (x.EndTime - x.StartTime).Value.TotalDays <= 2),
+                D3 = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null && (x.EndTime - x.StartTime).Value.TotalDays > 2 && (x.EndTime - x.StartTime).Value.TotalDays <= 3),
+                D4 = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null && (x.EndTime - x.StartTime).Value.TotalDays > 3 && (x.EndTime - x.StartTime).Value.TotalDays <= 4),
+                D5 = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null && (x.EndTime - x.StartTime).Value.TotalDays > 4 && (x.EndTime - x.StartTime).Value.TotalDays <= 5),
+                D6 = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null && (x.EndTime - x.StartTime).Value.TotalDays > 5 && (x.EndTime - x.StartTime).Value.TotalDays <= 6),
+                D7_14 = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null && (x.EndTime - x.StartTime).Value.TotalDays > 6 && (x.EndTime - x.StartTime).Value.TotalDays <= 14),
+                D15_30 = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null && (x.EndTime - x.StartTime).Value.TotalDays > 14 && (x.EndTime - x.StartTime).Value.TotalDays <= 30),
+                D30 = g.Count(x => x.Status != null && x.Status.Value >= 7 && x.EndTime != null && (x.EndTime - x.StartTime).Value.TotalDays > 30)
+            });
+            //将售后主管转换为所在部门
+            var query3 = query2.ToList();
+            query3.ForEach(f => f.Dept = _userManagerApp.GetUserOrgInfo(null, f.SuperVisor).Result?.OrgName);
+            //将同一部门下的数据合并
+            var query4 = query3.GroupBy(f => f.Dept).Select(g => new
+            {
+                dept = g.Key,
+                Count = g.Sum(x => x.FinishCount) + g.Sum(x => x.UnFinishCount),
+                FinishCount = g.Sum(x => x.FinishCount),
+                UnFinishCount = g.Sum(x => x.UnFinishCount),
+                d1 = g.Sum(x => x.D1),
+                d2 = g.Sum(x => x.D2),
+                d3 = g.Sum(x => x.D3),
+                d4 = g.Sum(x => x.D4),
+                d5 = g.Sum(x => x.D5),
+                d6 = g.Sum(x => x.D6),
+                d7_14 = g.Sum(x => x.D7_14),
+                d15_30 = g.Sum(x => x.D15_30),
+                d30 = g.Sum(x => x.D30)
+            });
+
+            var depts = new string[] { "SQ", "S7", "S12", "S14", "S15", "S29", "S36", "S37", "S32", "S20", "E3" }; //规定要查看的部门
+            var data = from d in depts
+                       join q in query4 on d equals q.dept into temp
+                       from t in temp.DefaultIfEmpty()
+                       select new
+                       {
+                           dept = d,
+                           dcount = t != null ? t.Count : 0,
+                           dPer = t != null ? ((decimal)t.Count / query.Count).ToString("P2") : "0.00%",
+                           d1 = t != null ? t.d1 : 0,
+                           d1Per = t != null ? ((decimal)t.d1 / t.Count).ToString("P2") : "0.00%",
+                           d2 = t != null ? t.d2 : 0,
+                           d2Per = t != null ? ((decimal)t.d2 / t.Count).ToString("P2") : "0.00%",
+                           d3 = t != null ? t.d3 : 0,
+                           d3Per = t != null ? ((decimal)t.d3 / t.Count).ToString("P2") : "0.00%",
+                           d4 = t != null ? t.d4 : 0,
+                           d4Per = t != null ? ((decimal)t.d4 / t.Count).ToString("P2") : "0.00%",
+                           d5 = t != null ? t.d5 : 0,
+                           d5Per = t != null ? ((decimal)t.d5 / t.Count).ToString("P2") : "0.00%",
+                           d6 = t != null ? t.d6 : 0,
+                           d6Per = t != null ? ((decimal)t.d6 / t.Count).ToString("P2") : "0.00%",
+                           d7_14 = t != null ? t.d7_14 : 0,
+                           d7_14Per = t != null ? ((decimal)t.d7_14 / t.Count).ToString("P2") : "0.00%",
+                           d15_30 = t != null ? t.d15_30 : 0,
+                           d15_30Per = t != null ? ((decimal)t.d15_30 / t.Count).ToString("P2") : "0.00%",
+                           d30 = t != null ? t.d30 : 0,
+                           d30Per = t != null ? ((decimal)t.d30 / t.Count).ToString("P2") : "0.00%",
+                           unFinish = t != null ? t.UnFinishCount : 0,
+                           unFinishPer = t != null ? ((decimal)t.UnFinishCount / t.Count).ToString("P2") : "0.00%"
+                       };
+
+            result.Data = data;
+            result.Count = data.Count();
+
+            return result;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="deptName"></param>
+        /// <param name="timediff"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetServiceOrderInfo(string deptName,string timediff)
+        {
+            var result = new TableData();
+
+            //查询服务单中所有主管的名字
+            var supervisorNames = await UnitWork.Find<ServiceOrder>(null).Select(s => s.Supervisor).Distinct().ToListAsync();
+
+            //根据姓名获取用户部门名称
+            Func<IEnumerable<string>, Task<List<UserResp>>> GetOrgName = async x =>
+                       await (from u in UnitWork.Find<User>(null)
+                              join r in UnitWork.Find<Relevance>(null) on u.Id equals r.FirstId
+                              join o in UnitWork.Find<Repository.Domain.Org>(null) on r.SecondId equals o.Id
+                              where x.Contains(u.Name) && r.Key == Define.USERORG
+                              orderby o.CascadeId descending
+                              select new UserResp { Name = u.Name, OrgName = o.Name, CascadeId = o.CascadeId }).ToListAsync();
+            var supervisorInfos = (await GetOrgName(supervisorNames)).Select(x => new ProcessingEfficiency { Dept = x.OrgName, SuperVisor = x.Name });
+
+            //筛选出查询部门主管的名字
+            var superVisors = supervisorInfos.Where(s => s.Dept == deptName).Select(s => s.SuperVisor).ToList();
+            var param1 = "";
+            if(superVisors!=null && superVisors.Count() > 0)
+            {
+                var object1 = "";
+                foreach (var item in superVisors)
+                {
+                    object1 += $",'{item}'";
+                }
+                param1 = $" and so.supervisor in ({object1.Substring(1)})";
+            }
+            else
+            {
+                param1 = " and true = false";
+            }
+
+            string sql = $@"select t.Id
+                            from(
+	                            select so.Id,
+	                            min(sw.Status) as status,
+	                            min(so.CreateTime) as starttime,
+	                            max(sw.CompleteDate) as endtime,
+	                            max(so.Supervisor) as supervisor
+	                            from serviceorder as so
+	                            join serviceworkorder as sw 
+	                            on so.Id = sw.ServiceOrderId
+	                            where so.VestInOrg = 1
+	                            and so.status = 2
+                                {param1}
+	                            group by so.Id
+                            ) t where 1 = 1";
+            var timeinterval = await UnitWork.Find<Category>(c => c.TypeId == "SYS_efficiency" && c.DtValue == timediff).Select(c => c.DtValue).FirstOrDefaultAsync();
+            if (!string.IsNullOrEmpty(timeinterval) && timeinterval != "0")
+            {
+                sql += " and t.status >= 7";
+                if (!string.IsNullOrWhiteSpace(timeinterval.Split(':')[0]))
+                {
+                    var startPoint = timeinterval.Split(':')[0];
+                    sql += $" and timestampdiff(minute,t.starttime,t.endtime) > 24*60*{startPoint}";
+                }
+                if (!string.IsNullOrWhiteSpace(timeinterval.Split(':')[1]))
+                {
+                    var endPoint = timeinterval.Split(':')[1];
+                    sql += $" and timestampdiff(minute,t.starttime,t.endtime) <= 24*60*{endPoint}";
+                }
+            }
+            else if (timeinterval == "0")
+            {
+                sql += " and t.status < 7 or t.endtime is null";
+            }
+
+            var parameters = new List<object>();
+            var finishData = _dbExtension.GetObjectDataFromSQL<ServiceOrderData>(sql, parameters.ToArray(), typeof(Nsap4ServeDbContext))?.ToList();
+
+            result.Data = finishData;
+            result.Count = finishData.Count();
 
             return result;
         }

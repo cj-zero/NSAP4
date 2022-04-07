@@ -352,7 +352,8 @@ namespace OpenAuth.App.Order
                         if (i != 0)
                         {
                             var subTime = dts.Subtract(dt.ToDateTime());
-                            scon.Audittime = $"{subTime.Days}天{subTime.Hours}小时{subTime.Minutes}分钟{subTime.Seconds}秒{subTime.Milliseconds}毫秒";
+                            //scon.Audittime = $"{subTime.Days}天{subTime.Hours}小时{subTime.Minutes}分钟{subTime.Seconds}秒{subTime.Milliseconds}毫秒";
+                            scon.Audittime = $"{subTime.Days}天{subTime.Hours}小时{subTime.Minutes}分钟";
                         }
                         dt = (DateTime)doin.CheckTime.ToDateTime();
                         i++;

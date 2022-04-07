@@ -495,6 +495,11 @@ namespace OpenAuth.App.Order.Request
         public string U_YFTC_3008n { get; set; }//3008n
         public string SumQuantity { get; set; }//出货数量(新增)
         public string U_RelDoc { get; set; }//采购物料对应的订单情况
+        public IList<billSalesDetails> ChildBillSalesDetails
+        {
+            get;
+            set;
+        }
     }
     /// <summary>
     /// 订单操作类型
