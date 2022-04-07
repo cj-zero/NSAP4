@@ -29,4 +29,10 @@ namespace OpenAuth.App.Response
         public string WareHouse { get; set; }
         public decimal? PartQty { get; set; }
     }
+
+    public class WarehouseBasics
+    {
+        public string WhsCode { get; set; }
+        public decimal? OnHand { get; set; }
+    }
 }
