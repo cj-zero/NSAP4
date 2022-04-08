@@ -22,6 +22,7 @@ namespace OpenAuth.App.Response
     public class FinilishedItem
     {
         public int? DocEntry { get; set; }
+        public string ItemCode { get; set; }
         public string PartItemCode { get; set; }
         public decimal? PartPlannedQty { get; set; }
         public string productionOrg { get; set; }

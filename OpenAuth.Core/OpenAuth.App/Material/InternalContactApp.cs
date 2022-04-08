@@ -1646,14 +1646,17 @@ namespace OpenAuth.App.Material
             TableData result = new TableData();
             Dictionary<string, string> mananer = new Dictionary<string, string>() 
             { 
-                { "R2", "刘西林" }, { "R5", "刘西林" }, { "R22", "胡呈期" }, { "R28", "胡呈期" } 
+                { "R2", "刘西林" }, { "R5", "刘西林" }, { "R22", "胡呈期" }, { "R28", "胡呈期" } , { "E1", "刘西林" }
             };
-            var passageway = await UnitWork.Find<store_itemtype_ufd1>(c => c.TypeID == 20 && c.Fld_nm == "U_TDS").OrderBy(c => c.IndexID).Select(c => c.FldValue).ToListAsync(); 
+            var passageway = await UnitWork.Find<store_itemtype_ufd1>(c => c.TypeID == 20 && c.Fld_nm == "U_TDS").OrderBy(c => c.IndexID).Select(c => c.FldValue).ToListAsync();
+            var catetory = await UnitWork.Find<Category>(c => c.TypeId == "SYS_ExtraPassageWay").Select(c => c.DtValue).ToListAsync();
+            catetory.Add("");
             var knowledgebases = await UnitWork.Find<KnowledgeBase>(k => k.Rank == 1 && k.IsNew == true && !string.IsNullOrWhiteSpace(k.Content)).ToListAsync();
             var tsyq = await UnitWork.Find<store_itemtype_ufd1>(c => c.TypeID == 20 && c.Fld_nm == "U_TSYQ").Select(c => c.FldValue).ToListAsync();
             List<InternalContactProductionReq> ReturnProductList = new List<InternalContactProductionReq>();
             List<InternalContactServiceOrder> contactServiceOrders = new List<InternalContactServiceOrder>();
             List<InternalContactTask> contactTasks = new List<InternalContactTask>();
+            List<FinilishedItem> finilishedItems = new List<FinilishedItem>();
             #region 
             req.ForEach(e =>
             {
@@ -1683,28 +1686,50 @@ namespace OpenAuth.App.Material
                     e.Series.ForEach(s =>
                     {
                         var series = $"{refix}-{s}";
+                        //通道
                         passageway.ForEach(p =>
                         {
                             var pg = $"{series}{p}";
-                            for (int i = e.VoltsStart.Value; i <= e.VoltseEnd; i++)
+                            //额外通道 Tn n
+                            catetory.ForEach(ct =>
                             {
-                                var v = $"{pg}-{i}V";
-                                for (int j = e.AmpsStart.Value; j <= e.AmpsEnd; j++)
+                                var ca = $"{pg}{ct}";
+                                for (int i = e.VoltsStart.Value; i <= e.VoltseEnd; i++)
                                 {
-                                    var am = $"{v}{j}{e.CurrentUnit}";
-                                    //夹具
-                                    if (e.Fixture!=null && e.Fixture.Count > 0)
+                                    var v = $"{ca}-{i}V";
+                                    for (int j = e.AmpsStart.Value; j <= e.AmpsEnd; j++)
                                     {
-                                        e.Fixture.ForEach(fi =>
+                                        var am = $"{v}{j}{e.CurrentUnit}";
+                                        //夹具
+                                        if (e.Fixture != null && e.Fixture.Count > 0)
                                         {
-                                            var ft = $"{am}-{fi}";
-                                            itemcode.Add(ft);
+                                            e.Fixture.ForEach(fi =>
+                                            {
+                                                var ft = $"{am}-{fi}";
+                                                itemcode.Add(ft);
+                                                //后缀
+                                                if (e.Special != null && e.Special.Count > 0)
+                                                {
+                                                    e.Special.ForEach(sp =>
+                                                    {
+                                                        var s = $"{ft}{sp}";
+                                                        itemcode.Add(s);
+                                                    });
+                                                }
+                                                else
+                                                {
+                                                    itemcode.Add(am);
+                                                }
+                                            });
+                                        }
+                                        else
+                                        {
                                             //后缀
                                             if (e.Special != null && e.Special.Count > 0)
                                             {
                                                 e.Special.ForEach(sp =>
                                                 {
-                                                    var s = $"{ft}{sp}";
+                                                    var s = $"{am}{sp}";
                                                     itemcode.Add(s);
                                                 });
                                             }
@@ -1712,26 +1737,10 @@ namespace OpenAuth.App.Material
                                             {
                                                 itemcode.Add(am);
                                             }
-                                        });
-                                    }
-                                    else
-                                    {
-                                        //后缀
-                                        if (e.Special != null && e.Special.Count > 0)
-                                        {
-                                            e.Special.ForEach(sp =>
-                                            {
-                                                var s = $"{am}{sp}";
-                                                itemcode.Add(s);
-                                            });
-                                        }
-                                        else
-                                        {
-                                            itemcode.Add(am);
                                         }
                                     }
                                 }
-                            }
+                            });
                         });
                     });
                 });
@@ -1772,17 +1781,18 @@ namespace OpenAuth.App.Material
                     //建任务单
                     //exceptLs.ForEach(c =>
                     //{
-                        contactTasks.Add(new InternalContactTask
-                        {
-                            ItemCode = e.MaterialCode,
-                            ProductionId = null,
-                            ProductionOrg = orgInfo.Name,
-                            ProductionOrgManager = mananerName,
-                            WareHouse = "",
-                            BelongQty = 1,
-                            RectifyQty = 1,
-                            FromTheme = e.FromTheme
-                        });
+                    contactTasks.Add(new InternalContactTask
+                    {
+                        ItemCode = e.MaterialCode,
+                        ProductionId = null,
+                        ProductionOrg = orgInfo.Name,
+                        ProductionOrgManager = mananerName,
+                        WareHouse = "",
+                        BelongQty = 1,
+                        RectifyQty = 1,
+                        FromTheme = e.FromTheme,
+                        Remark = "基于BOM"
+                    });
                     //});
                 }
 
@@ -1808,6 +1818,13 @@ namespace OpenAuth.App.Material
                     }
                     //筛选条件内的成品生产订单
                     productList = productList.Where(c => storeoitm.Contains(c.ItemCode)).ToList();
+
+                    var onlyitem = productList.Select(c => c.ItemCode).Distinct().ToList();
+                    finilishedItems.AddRange(onlyitem.Select(c => new FinilishedItem
+                    {
+                        ItemCode = c,
+                        PartItemCode = e.MaterialCode
+                    }).ToList());
                 }
                 #endregion
 
@@ -1833,7 +1850,8 @@ namespace OpenAuth.App.Material
                             WareHouse = c.Warehouse,
                             BelongQty = (int?)c.OpenQty,
                             RectifyQty = (int?)c.OpenQty,
-                            FromTheme = e.FromTheme
+                            FromTheme = e.FromTheme,
+                            Remark = "B01未收货"
                         });
 
                     });
@@ -1846,6 +1864,7 @@ namespace OpenAuth.App.Material
                 //unReceivedMaterial = productList.Where(c => c.OpenQty > 0).ToList();
                 //if (unReceivedMaterial.Count > 0)
                 //{
+
                 //    //建任务单，生产部门修改
                 //    unReceivedMaterial.ForEach(c =>
                 //    {
@@ -1898,10 +1917,11 @@ namespace OpenAuth.App.Material
                             ProductionId = null,
                             ProductionOrg = "E3",
                             ProductionOrgManager = "樊静涛",
-                            WareHouse = "",
+                            WareHouse = item.WhsCode,
                             BelongQty = (int?)item.OnHand,
                             RectifyQty = (int?)item.OnHand,
-                            FromTheme = e.FromTheme
+                            FromTheme = e.FromTheme,
+                            Remark = "B01在37仓"
                         });
                     }
                     else if (owhsInfo.WhsName.StartsWith("P"))//生产部门
@@ -1912,10 +1932,11 @@ namespace OpenAuth.App.Material
                             ProductionId = null,
                             ProductionOrg = owhsInfo.OrgName,
                             ProductionOrgManager = owhsInfo.OrgManager,
-                            WareHouse = "",
+                            WareHouse = item.WhsCode,
                             BelongQty = (int?)item.OnHand,
                             RectifyQty = (int?)item.OnHand,
-                            FromTheme = e.FromTheme
+                            FromTheme = e.FromTheme,
+                            Remark = "B01已转储"
                         });
                     }
                     else//其他仓库情况
@@ -1926,10 +1947,11 @@ namespace OpenAuth.App.Material
                             ProductionId = null,
                             ProductionOrg = "E3",
                             ProductionOrgManager = "樊静涛",
-                            WareHouse = "",
+                            WareHouse = item.WhsCode,
                             BelongQty = (int?)item.OnHand,
                             RectifyQty = (int?)item.OnHand,
-                            FromTheme = e.FromTheme
+                            FromTheme = e.FromTheme,
+                            Remark = "B01已转储"
                         });
                     }
                 }
@@ -1997,7 +2019,8 @@ namespace OpenAuth.App.Material
                                 WareHouse = ign2?.WhsCode,
                                 BelongQty = c.Count,
                                 RectifyQty = c.Count,
-                                FromTheme = e.FromTheme
+                                FromTheme = e.FromTheme,
+                                Remark = "无序列号"
                             });
                         });
                     }
@@ -2183,8 +2206,9 @@ namespace OpenAuth.App.Material
                 ProductList = ReturnProductList.GroupBy(c=>c.ProductionId).Select(c=>c.First()).OrderBy(c => c.ItemCode).ToList(),
                 InternalContactTask = contactTasks,
                 InternalContactServiceOrder = contactServiceOrders,
-                CheckOrg = checkOrg
-            }; ;
+                CheckOrg = checkOrg,
+                finilishedItems
+            }; 
             return result;
         }
 
