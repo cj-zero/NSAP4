@@ -29,6 +29,14 @@ namespace OpenAuth.App.Request
         /// </summary>
         public int? VoltseEnd { get; set; }
         /// <summary>
+        /// 电流单位
+        /// </summary>
+        public string CurrentUnit { get; set; }
+        /// <summary>
+        /// 夹具
+        /// </summary>
+        public List<string> Fixture { get; set; }
+        /// <summary>
         /// 电流开始
         /// </summary>
         public int? AmpsStart { get; set; }
@@ -117,6 +125,8 @@ namespace OpenAuth.App.Request
         public DateTime EndExcelTime { get; set; }
 
         public string FromTheme { get; set; }
+
+        public string ItemCode { get; set; }
     }
 
     public class Versions

@@ -24,6 +24,7 @@ using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.App.Sap.BusinessPartner;
 using System.Text.RegularExpressions;
 using OpenAuth.App.Serve.Response;
+using OpenAuth.Repository.Domain.NsapBone;
 
 namespace OpenAuth.App.Material
 {
@@ -256,7 +257,9 @@ namespace OpenAuth.App.Material
                             EndExcelTime = c.EndExcelTime,
                             FromThemeList = c.FromThemeList,
                             SelectList = c.SelectList,
-                            FromTheme = c.FromTheme
+                            FromTheme = c.FromTheme,
+                            CurrentUnit = c.CurrentUnit,
+                            Fixture = c.Fixture != null ? string.Join(",", c.Fixture) : null
                         });
                     });
                     #endregion
@@ -616,7 +619,9 @@ namespace OpenAuth.App.Material
                     MaterialCode = c.MaterialCode,
                     FromThemeList = c.FromThemeList,
                     SelectList = c.SelectList,
-                    FromTheme = c.FromTheme
+                    FromTheme = c.FromTheme,
+                    CurrentUnit = c.CurrentUnit,
+                    Fixture = !string.IsNullOrWhiteSpace(c.Fixture) ? c.Fixture.Split(",").ToList() : new List<string>(),
                 })
             };
             return result;
@@ -986,6 +991,7 @@ namespace OpenAuth.App.Material
                     remark = $"基于生产订单WO-{item.ProductionId}";
                 else
                     remark = $"基于BOM，{item.ItemCode}";
+                //remark = $"基于BOM，{item.ItemCode}";
 
                 CustomerServiceAgentCreateOrderReq s = new CustomerServiceAgentCreateOrderReq
                 {
@@ -1064,8 +1070,8 @@ namespace OpenAuth.App.Material
             {
                 result = await (from a in UnitWork.Find<InternalContact>(null)
                                 join b in UnitWork.Find<InternalContactTask>(null) on a.Id equals b.InternalContactId
-                                join c in UnitWork.Find<InternalContactTaskServiceOrder>(null) on b.Id equals c.InternalContactTaskId
-                                where c.ServiceOrderId == serviceOrderId
+                                //join c in UnitWork.Find<InternalContactTaskServiceOrder>(null) on b.Id equals c.InternalContactTaskId
+                                where b.ServiceOrderId == serviceOrderId
                                 select a.Content).FirstOrDefaultAsync();
             }
             return result;
@@ -1640,14 +1646,17 @@ namespace OpenAuth.App.Material
             TableData result = new TableData();
             Dictionary<string, string> mananer = new Dictionary<string, string>() 
             { 
-                { "R2", "刘西林" }, { "R5", "刘西林" }, { "R22", "胡呈期" }, { "R28", "胡呈期" } 
+                { "R2", "刘西林" }, { "R5", "刘西林" }, { "R22", "胡呈期" }, { "R28", "胡呈期" } , { "E1", "刘西林" }
             };
-            var passageway = await UnitWork.Find<store_itemtype_ufd1>(c => c.TypeID == 20 && c.Fld_nm == "U_TDS").OrderBy(c => c.IndexID).Select(c => c.FldValue).ToListAsync(); 
+            var passageway = await UnitWork.Find<store_itemtype_ufd1>(c => c.TypeID == 20 && c.Fld_nm == "U_TDS").OrderBy(c => c.IndexID).Select(c => c.FldValue).ToListAsync();
+            var catetory = await UnitWork.Find<Category>(c => c.TypeId == "SYS_ExtraPassageWay").Select(c => c.DtValue).ToListAsync();
+            catetory.Add("");
             var knowledgebases = await UnitWork.Find<KnowledgeBase>(k => k.Rank == 1 && k.IsNew == true && !string.IsNullOrWhiteSpace(k.Content)).ToListAsync();
             var tsyq = await UnitWork.Find<store_itemtype_ufd1>(c => c.TypeID == 20 && c.Fld_nm == "U_TSYQ").Select(c => c.FldValue).ToListAsync();
             List<InternalContactProductionReq> ReturnProductList = new List<InternalContactProductionReq>();
             List<InternalContactServiceOrder> contactServiceOrders = new List<InternalContactServiceOrder>();
             List<InternalContactTask> contactTasks = new List<InternalContactTask>();
+            List<FinilishedItem> finilishedItems = new List<FinilishedItem>();
             #region 
             req.ForEach(e =>
             {
@@ -1677,29 +1686,61 @@ namespace OpenAuth.App.Material
                     e.Series.ForEach(s =>
                     {
                         var series = $"{refix}-{s}";
+                        //通道
                         passageway.ForEach(p =>
                         {
                             var pg = $"{series}{p}";
-                            for (int i = e.VoltsStart.Value; i <= e.VoltseEnd; i++)
+                            //额外通道 Tn n
+                            catetory.ForEach(ct =>
                             {
-                                var v = $"{pg}-{i}V";
-                                for (int j = e.AmpsStart.Value; j <= e.AmpsEnd; j++)
+                                var ca = $"{pg}{ct}";
+                                for (int i = e.VoltsStart.Value; i <= e.VoltseEnd; i++)
                                 {
-                                    var am = $"{v}{j}A";
-                                    if (e.Special != null && e.Special.Count > 0)
+                                    var v = $"{ca}-{i}V";
+                                    for (int j = e.AmpsStart.Value; j <= e.AmpsEnd; j++)
                                     {
-                                        e.Special.ForEach(sp =>
+                                        var am = $"{v}{j}{e.CurrentUnit}";
+                                        //夹具
+                                        if (e.Fixture != null && e.Fixture.Count > 0)
                                         {
-                                            var s = $"{am}{sp}";
-                                            itemcode.Add(s);
-                                        });
-                                    }
-                                    else
-                                    {
-                                        itemcode.Add(am);
+                                            e.Fixture.ForEach(fi =>
+                                            {
+                                                var ft = $"{am}-{fi}";
+                                                itemcode.Add(ft);
+                                                //后缀
+                                                if (e.Special != null && e.Special.Count > 0)
+                                                {
+                                                    e.Special.ForEach(sp =>
+                                                    {
+                                                        var s = $"{ft}{sp}";
+                                                        itemcode.Add(s);
+                                                    });
+                                                }
+                                                else
+                                                {
+                                                    itemcode.Add(am);
+                                                }
+                                            });
+                                        }
+                                        else
+                                        {
+                                            //后缀
+                                            if (e.Special != null && e.Special.Count > 0)
+                                            {
+                                                e.Special.ForEach(sp =>
+                                                {
+                                                    var s = $"{am}{sp}";
+                                                    itemcode.Add(s);
+                                                });
+                                            }
+                                            else
+                                            {
+                                                itemcode.Add(am);
+                                            }
+                                        }
                                     }
                                 }
-                            }
+                            });
                         });
                     });
                 });
@@ -1708,49 +1749,51 @@ namespace OpenAuth.App.Material
 
                 #region 是否批量，BOM有被使用为已批量
                 //过滤出正确的成品物料编码啊
-                var storeoitm = UnitWork.Find<store_oitm>(c => c.ItemCode.StartsWith("C")).Select(c => c.ItemCode).ToList();
+                var storeoitm = UnitWork.Find<store_oitm>(c => c.ItemCode.StartsWith("C")).Distinct().Select(c => c.ItemCode).ToList();
                 storeoitm = storeoitm.Intersect(itemcode).ToList();
                 //有BOM的成品物料
-                var finlishedBomOrder = BomOrder(storeoitm);
-                var productOrder = GetProductionOrderInfo(new QueryProduction { StartExcelTime = e.StartExcelTime.Value, EndExcelTime = e.EndExcelTime.Value, Versions = finlishedBomOrder});
-                productOrder.ForEach(pr => { pr.FromTheme = e.FromTheme; });
-                productList.AddRange(productOrder);
-                //BOM有被使用的物料
-                var hasOrderItem = productOrder.GroupBy(c => new { c.ItemCode, c.Version }).Select(c => new Versions { ItemCode = c.Key.ItemCode, Version = c.Key.Version }).ToList();
+                //var finlishedBomOrder = BomOrder(storeoitm);
+                //var productOrder = GetProductionOrderInfo(new QueryProduction { StartExcelTime = e.StartExcelTime.Value, EndExcelTime = e.EndExcelTime.Value, Versions = finlishedBomOrder});
+                //productOrder.ForEach(pr => { pr.FromTheme = e.FromTheme; });
+                //productList.AddRange(productOrder);
+                ////BOM有被使用的物料
+                //var hasOrderItem = productOrder.GroupBy(c => new { c.ItemCode, c.Version }).Select(c => new Versions { ItemCode = c.Key.ItemCode, Version = c.Key.Version }).ToList();
 
                 //有BOM的零件物料
-                var param = new List<string>() { e.MaterialCode };
-                var b01BomOrder =  BomOrder(param);
-                var b01ProductOrder = GetProductionOrderInfo(new QueryProduction { StartExcelTime = e.StartExcelTime.Value, EndExcelTime = e.EndExcelTime.Value, Versions = b01BomOrder });
+                //var param = new List<string>() { e.MaterialCode };
+                //var b01BomOrder =  BomOrder(param);
+                //B01生产单
+                var b01ProductOrder = GetProductionOrderInfo(new QueryProduction { StartExcelTime = e.StartExcelTime.Value, EndExcelTime = e.EndExcelTime.Value, ItemCode = e.MaterialCode });
                 b01ProductOrder.ForEach(pr => { pr.FromTheme = e.FromTheme; });
                 //productList.AddRange(productOrder);
-                var partItem= b01ProductOrder.GroupBy(c => new { c.ItemCode, c.Version }).Select(c => new Versions { ItemCode = c.Key.ItemCode, Version = c.Key.Version }).ToList();
+                //var partItem= b01ProductOrder.GroupBy(c => new { c.ItemCode, c.Version }).Select(c => new Versions { ItemCode = c.Key.ItemCode, Version = c.Key.Version }).ToList();
 
-                finlishedBomOrder.AddRange(b01BomOrder);
-                hasOrderItem.AddRange(partItem);
+                //finlishedBomOrder.AddRange(b01BomOrder);
+                //hasOrderItem.AddRange(partItem);
 
-                //有BOM却未被使用的物料,即没有批量
-                var exceptLs = finlishedBomOrder.Select(c=>c.ItemCode).ToList().Except(hasOrderItem.Select(c => c.ItemCode).ToList()).ToList();
-                if (exceptLs.Count > 0)
+                //有BOM却未被使用的物料(有无生产单),即没有批量
+                //var exceptLs = finlishedBomOrder.Select(c=>c.ItemCode).ToList().Except(hasOrderItem.Select(c => c.ItemCode).ToList()).ToList();
+                if (!(b01ProductOrder.Count > 0))
                 {
                     var mananerName = "";
                     if (mananer.Keys.Contains(orgInfo.Name))
                         mananerName = mananer[orgInfo.Name];
                     //建任务单
-                    exceptLs.ForEach(c =>
+                    //exceptLs.ForEach(c =>
+                    //{
+                    contactTasks.Add(new InternalContactTask
                     {
-                        contactTasks.Add(new InternalContactTask
-                        {
-                            ItemCode = c,
-                            ProductionId = null,
-                            ProductionOrg = orgInfo.Name,
-                            ProductionOrgManager = mananerName,
-                            WareHouse = "",
-                            BelongQty = 1,
-                            RectifyQty = 1,
-                            FromTheme = e.FromTheme
-                        });
+                        ItemCode = e.MaterialCode,
+                        ProductionId = null,
+                        ProductionOrg = orgInfo.Name,
+                        ProductionOrgManager = mananerName,
+                        WareHouse = "",
+                        BelongQty = 1,
+                        RectifyQty = 1,
+                        FromTheme = e.FromTheme,
+                        Remark = "基于BOM"
                     });
+                    //});
                 }
 
                 //筛选出B01用在哪些成品生产订单上
@@ -1773,6 +1816,15 @@ namespace OpenAuth.App.Material
                         finishIt.ForEach(fl => { fl.FromTheme = e.FromTheme; });
                         productList.AddRange(finishIt);
                     }
+                    //筛选条件内的成品生产订单
+                    productList = productList.Where(c => storeoitm.Contains(c.ItemCode)).ToList();
+
+                    var onlyitem = productList.Select(c => c.ItemCode).Distinct().ToList();
+                    finilishedItems.AddRange(onlyitem.Select(c => new FinilishedItem
+                    {
+                        ItemCode = c,
+                        PartItemCode = e.MaterialCode
+                    }).ToList());
                 }
                 #endregion
 
@@ -1798,7 +1850,8 @@ namespace OpenAuth.App.Material
                             WareHouse = c.Warehouse,
                             BelongQty = (int?)c.OpenQty,
                             RectifyQty = (int?)c.OpenQty,
-                            FromTheme = e.FromTheme
+                            FromTheme = e.FromTheme,
+                            Remark = "B01未收货"
                         });
 
                     });
@@ -1808,53 +1861,101 @@ namespace OpenAuth.App.Material
                 //已收货，部分/全部收货
                 var receivedMaterial = productList.Where(c => c.CmpltQty > 0).ToList();
                 //未收货
-                unReceivedMaterial = productList.Where(c => c.OpenQty > 0).ToList();
-                if (unReceivedMaterial.Count > 0)
-                {
-                    //建任务单，生产部门修改
-                    unReceivedMaterial.ForEach(c =>
-                    {
-                        var org = c.Org.Split("-");
-                        contactTasks.Add(new InternalContactTask
-                        {
-                            ItemCode = c.ItemCode,
-                            ProductionId = c.ProductionId,
-                            ProductionOrg = org[0],
-                            ProductionOrgManager = org.Count() > 1 ? org[1] : "",
-                            WareHouse = c.Warehouse,
-                            BelongQty = (int?)c.OpenQty,
-                            RectifyQty = (int?)c.OpenQty,
-                            FromTheme = e.FromTheme
-                        });
+                //unReceivedMaterial = productList.Where(c => c.OpenQty > 0).ToList();
+                //if (unReceivedMaterial.Count > 0)
+                //{
 
-                    });
-                }
+                //    //建任务单，生产部门修改
+                //    unReceivedMaterial.ForEach(c =>
+                //    {
+                //        var org = c.Org.Split("-");
+                //        contactTasks.Add(new InternalContactTask
+                //        {
+                //            ItemCode = c.ItemCode,
+                //            ProductionId = c.ProductionId,
+                //            ProductionOrg = org[0],
+                //            ProductionOrgManager = org.Count() > 1 ? org[1] : "",
+                //            WareHouse = c.Warehouse,
+                //            BelongQty = (int?)c.OpenQty,
+                //            RectifyQty = (int?)c.OpenQty,
+                //            FromTheme = e.FromTheme
+                //        });
+
+                //    });
+                //}
                 #endregion
 
                 #region B01是否转储
+                //仓库所属部门及主管
+                var owhsBasics = UnitWork.Query<q_owhs_basics>(@"select a.WhsCode,a.WhsName,b.dep_alias as OrgName,user_nm as OrgManager 
+                                            from nsap_bone.store_owhs  a
+                                            LEFT JOIN nsap_base.base_dep b on a.dep_id = b.dep_id
+                                            LEFT JOIN nsap_base.base_boss c ON c.dep_id = b.dep_id
+                                            LEFT JOIN nsap_base.base_user d ON d.user_id = c.user_id
+                                            where  a.sbo_id = 1").ToList();
                 //是否在生产仓有库存
                 decimal? onhand = 0;
+                List<WarehouseBasics> oitw = new List<WarehouseBasics>();
                 var sbo = UnitWork.Find<sbo_info>(c => c.sbo_id == 1).Select(c => c.is_open).FirstOrDefault();
                 if (sbo)
-                    onhand = UnitWork.Find<OITW>(c => c.ItemCode == e.MaterialCode && c.OnHand > 0).Sum(c => c.OnHand);
-                else
-                    onhand = UnitWork.Find<store_oitw>(c => c.ItemCode == e.MaterialCode && c.OnHand > 0).Sum(c => c.OnHand);
-                
-                if (onhand>0)
                 {
-                    //E3维修任务单
-                    contactTasks.Add(new InternalContactTask
-                    {
-                        ItemCode = e.MaterialCode,
-                        ProductionId = null,
-                        ProductionOrg = "E3",
-                        ProductionOrgManager = "樊静涛",
-                        WareHouse = "",
-                        BelongQty = (int?)onhand,
-                        RectifyQty = (int?)onhand,
-                        FromTheme = e.FromTheme
-                    });
+                    oitw = UnitWork.Find<OITW>(c => c.ItemCode == e.MaterialCode && c.OnHand > 0).Select(c => new WarehouseBasics { WhsCode = c.WhsCode, OnHand = c.OnHand }).ToList();
                 }
+                else
+                {
+                    oitw = UnitWork.Find<store_oitw>(c => c.ItemCode == e.MaterialCode && c.OnHand > 0).Select(c => new WarehouseBasics { WhsCode = c.WhsCode, OnHand = c.OnHand }).ToList();
+                }
+                foreach (var item in oitw)
+                {
+                    var owhsInfo = owhsBasics.Where(c => c.WhsCode == item.WhsCode).FirstOrDefault();
+                    if (item.WhsCode == "37")//主仓库
+                    {
+                        //E3维修任务单
+                        contactTasks.Add(new InternalContactTask
+                        {
+                            ItemCode = e.MaterialCode,
+                            ProductionId = null,
+                            ProductionOrg = "E3",
+                            ProductionOrgManager = "樊静涛",
+                            WareHouse = item.WhsCode,
+                            BelongQty = (int?)item.OnHand,
+                            RectifyQty = (int?)item.OnHand,
+                            FromTheme = e.FromTheme,
+                            Remark = "B01在37仓"
+                        });
+                    }
+                    else if (owhsInfo.WhsName.StartsWith("P"))//生产部门
+                    {
+                        contactTasks.Add(new InternalContactTask
+                        {
+                            ItemCode = e.MaterialCode,
+                            ProductionId = null,
+                            ProductionOrg = owhsInfo.OrgName,
+                            ProductionOrgManager = owhsInfo.OrgManager,
+                            WareHouse = item.WhsCode,
+                            BelongQty = (int?)item.OnHand,
+                            RectifyQty = (int?)item.OnHand,
+                            FromTheme = e.FromTheme,
+                            Remark = "B01已转储"
+                        });
+                    }
+                    else//其他仓库情况
+                    {
+                        contactTasks.Add(new InternalContactTask
+                        {
+                            ItemCode = e.MaterialCode,
+                            ProductionId = null,
+                            ProductionOrg = "E3",
+                            ProductionOrgManager = "樊静涛",
+                            WareHouse = item.WhsCode,
+                            BelongQty = (int?)item.OnHand,
+                            RectifyQty = (int?)item.OnHand,
+                            FromTheme = e.FromTheme,
+                            Remark = "B01已转储"
+                        });
+                    }
+                }
+
                 #endregion
 
                 #region 是否有序列号
@@ -1918,7 +2019,8 @@ namespace OpenAuth.App.Material
                                 WareHouse = ign2?.WhsCode,
                                 BelongQty = c.Count,
                                 RectifyQty = c.Count,
-                                FromTheme = e.FromTheme
+                                FromTheme = e.FromTheme,
+                                Remark = "无序列号"
                             });
                         });
                     }
@@ -1983,16 +2085,19 @@ namespace OpenAuth.App.Material
                         querySuppSerial.ForEach(q =>
                         {
                             //var osrn = otherEn.Where(c => c.SysSerial == q.SysNumber).FirstOrDefault();
-                            contactServiceOrders.Add(new InternalContactServiceOrder
+                            if (contactServiceOrders.Where(co => co.MnfSerial == q.SuppSerial).Count() == 0)
                             {
-                                ItemCode = q.ItemCode,
-                                ItemName = q.ItemName,
-                                MnfSerial = q.SuppSerial,
-                                CardCode = q.CardCode,
-                                CardName = q.CardName,
-                                Supervisor = q.Technician,
-                                FromTheme = e.FromTheme
-                            });
+                                contactServiceOrders.Add(new InternalContactServiceOrder
+                                {
+                                    ItemCode = q.ItemCode,
+                                    ItemName = q.ItemName,
+                                    MnfSerial = q.SuppSerial,
+                                    CardCode = q.CardCode,
+                                    CardName = q.CardName,
+                                    Supervisor = q.Technician,
+                                    FromTheme = e.FromTheme
+                                });
+                            }
                         });
                     }
 
@@ -2083,6 +2188,8 @@ namespace OpenAuth.App.Material
                 q.Code = knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault() == null ? q.ItemCode.Substring(0, 1) == "M" ? "023" : "024" : knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault();
                 q.FromTheme = HandleFromTheme(q.FromTheme, q.Code);
             });
+
+            contactTasks = contactTasks.GroupBy(c => new { c.BelongQty, c.FinishedQty, c.FromTheme, c.ItemCode, c.ProductionId, c.ProductionOrg, c.ProductionOrgManager, c.RectifyQty, c.WareHouse }).Select(c => c.First()).ToList();
             contactTasks.ForEach(q =>
             {
                 var Code = knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault() == null ? q.ItemCode.Substring(0, 1) == "M" ? "023" : "024" : knowledgebases.Where(k => Regex.IsMatch(q.ItemCode, k.Content)).Select(k => k.Code).FirstOrDefault();
@@ -2096,11 +2203,12 @@ namespace OpenAuth.App.Material
             result.Data = new
             {
                 Count = ReturnProductList.Count(),
-                ProductList = ReturnProductList.OrderBy(c => c.ItemCode).ToList(),
+                ProductList = ReturnProductList.GroupBy(c=>c.ProductionId).Select(c=>c.First()).OrderBy(c => c.ItemCode).ToList(),
                 InternalContactTask = contactTasks,
                 InternalContactServiceOrder = contactServiceOrders,
-                CheckOrg = checkOrg
-            };
+                CheckOrg = checkOrg,
+                finilishedItems
+            }; 
             return result;
         }
 
@@ -2111,28 +2219,28 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         private List<product_owor_wor1> GetProductionOrderInfo(QueryProduction req)
         {
-            string filter = "and (";
-            string filterString = "";
-            if (req.Versions.Count > 0)
-            {
-                    req.Versions.ForEach(c =>
-                    {
-                        if (!string.IsNullOrWhiteSpace(filterString))
-                            filterString += " or ";
-                        filterString += $" (a.ItemCode='{c.ItemCode}'";
-                        if (!string.IsNullOrWhiteSpace(c.Version))
-                            filterString += $" and a.U_BOM_BBH = '{c.Version}' ";
-                        filterString += ")";
-                    });
-                filter += filterString + ")";
-            }
-            filter = !string.IsNullOrWhiteSpace(filterString) ? filter : "";
-            if (string.IsNullOrWhiteSpace(filter))
-            {
-                return new List<product_owor_wor1>();
-            }
+            //string filter = "and (";
+            //string filterString = "";
+            //if (req.Versions.Count > 0)
+            //{
+            //        req.Versions.ForEach(c =>
+            //        {
+            //            if (!string.IsNullOrWhiteSpace(filterString))
+            //                filterString += " or ";
+            //            filterString += $" (a.ItemCode='{c.ItemCode}'";
+            //            if (!string.IsNullOrWhiteSpace(c.Version))
+            //                filterString += $" and a.U_BOM_BBH = '{c.Version}' ";
+            //            filterString += ")";
+            //        });
+            //    filter += filterString + ")";
+            //}
+            //filter = !string.IsNullOrWhiteSpace(filterString) ? filter : "";
+            //if (string.IsNullOrWhiteSpace(filter))
+            //{
+            //    return new List<product_owor_wor1>();
+            //}
             var sql = @$"SELECT a.DocEntry as ProductionId,a.ItemCode,a.txtitemName as ItemName,a.PlannedQty,a.CmpltQty,a.U_WO_LTDW as Org,a.PlannedQty - a.CmpltQty as OpenQty,a.U_BOM_BBH as Version,Warehouse,Type as OrderType FROM product_owor a
-                        where a.CreateDate >= '{req.StartExcelTime.Date}' and a.CreateDate<'{req.EndExcelTime.AddDays(1).Date}' {filter} ORDER BY DocEntry desc";
+                        where a.CreateDate >= '{req.StartExcelTime.Date}' and a.CreateDate<'{req.EndExcelTime.AddDays(1).Date}' and a.ItemCode='{req.ItemCode}'  ORDER BY DocEntry desc";
             var query = UnitWork.Query<product_owor_wor1>(sql).Select(c => new product_owor_wor1
             {
                 ProductionId = c.ProductionId,
