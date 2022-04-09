@@ -10267,5 +10267,198 @@ namespace OpenAuth.App.Order
             }
         }
         #endregion
+        /// <summary>
+        /// 查看视图【行明细 - 帐套关闭】
+        /// </summary>
+        /// <returns></returns>
+        public  DataTable SelectBillView(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, string type, bool ViewFull, bool ViewSelf, int UserID, int SboID, bool ViewSelfDepartment, int DepID, bool ViewCustom, bool ViewSales)
+        {
+            int rowCount = 0;
+            string sortString = string.Empty;
+            string filterString = string.Empty;
+            string line = string.Empty;
+            if (!string.IsNullOrEmpty(sortname) && !string.IsNullOrEmpty(sortorder))
+                sortString = string.Format("{0} {1}", sortname, sortorder.ToUpper());
+            #region 搜索条件
+            if (!string.IsNullOrEmpty(filterQuery))
+            {
+                string[] fields = filterQuery.Split('`');
+                string[] p = fields[0].Split(':');
+                if (!string.IsNullOrEmpty(p[1]))
+                {
+                    filterString += string.Format("a.sbo_id = {0} AND ", p[1]);
+                }
+                p = fields[1].Split(':');
+                if (!string.IsNullOrEmpty(p[1]))
+                {
+                    filterString += string.Format("{0} LIKE '{1}' AND ", p[0], p[1].FilterSQL().Trim());
+                }
+                p = fields[2].Split(':');
+                if (!string.IsNullOrEmpty(p[1]))
+                {
+                    filterString += string.Format("({0} LIKE '%{1}%' OR a.CardName LIKE '%{1}%') AND ", p[0], p[1].FilterWildCard());
+                }
+                p = fields[3].Split(':');
+                if (!string.IsNullOrEmpty(p[1]))
+                {
+                    filterString += string.Format("({0} LIKE '%{1}%' OR b.Dscription LIKE '%{1}%') AND ", p[0], p[1].FilterWildCard());
+                }
+                p = fields[4].Split(':');
+                if (!string.IsNullOrEmpty(p[1]))
+                {
+                    if (p[1] == "ON") { filterString += string.Format(" (a.DocStatus = 'O' AND a.Printed = 'N' AND a.CANCELED = 'N') AND "); }
+                    if (p[1] == "OY") { filterString += string.Format(" (a.DocStatus = 'O' AND a.Printed = 'Y' AND a.CANCELED = 'N') AND "); }
+                    if (p[1] == "CY") { filterString += string.Format(" a.CANCELED = 'Y' AND "); }
+                    if (p[1] == "CN") { filterString += string.Format(" (a.DocStatus = 'C' AND a.CANCELED = 'N') AND "); }
+                    if (p[1] == "NC") { filterString += string.Format(" a.CANCELED = 'N' AND "); }
+                }
+                p = fields[5].Split(':');
+                if (!string.IsNullOrEmpty(p[1]))
+                {
+                    filterString += string.Format("a.Comments LIKE '%{0}%' AND ", p[1].FilterWildCard());
+                }
+                p = fields[6].Split(':');
+                if (!string.IsNullOrEmpty(p[1]))
+                {
+                    filterString += string.Format("{0} LIKE '%{1}%' AND ", p[0], p[1].FilterSQL().Trim());
+                }
+                if ((type == "OPDN" || type == "OPOR" || type == "ORDR") && fields.Length > 7)
+                {
+                    p = fields[7].Split(':');
+                    if (!string.IsNullOrEmpty(p[1]))
+                    {
+                        filterString += string.Format("{0} LIKE '%{1}%' AND ", p[0], p[1].FilterSQL().Trim());
+                    }
+                }
+                if (type == "OPDN" && fields.Length > 8)
+                {
+                    p = fields[8].Split(':');
+                    if (!string.IsNullOrEmpty(p[1]))
+                    {
+                        filterString += string.Format("{0}={1} AND ", p[0], p[1].FilterSQL().Trim());
+                    }
+                }
+            }
+            else
+            {
+                filterString += string.Format("a.sbo_id={0} AND ", SboID);
+            }
+            #endregion
+
+            #region 根据不同的单据显示不同的内容
+            if (!string.IsNullOrEmpty(type))
+            {
+                if (type == "OQUT") { type = "sale_oqut"; line = "sale_qut1"; }//销售报价单
+                else if (type == "ORDR") { type = "sale_ordr"; line = "sale_rdr1"; }//销售订单
+                else if (type == "ODLN") { type = "sale_odln"; line = "sale_dln1"; }//销售交货单
+                else if (type == "OINV") { type = "sale_oinv"; line = "sale_inv1"; }//应收发票
+                else if (type == "ORDN") { type = "sale_ordn"; line = "sale_rdn1"; }//销售退货单
+                else if (type == "ORIN") { type = "sale_orin"; line = "sale_rin1"; }//应收贷项凭证
+                else if (type == "OPQT") { type = "buy_opqt"; line = "buy_pqt1"; }//采购报价单
+                else if (type == "OPOR") { type = "buy_opor"; line = "buy_por1"; }//采购订单
+                else if (type == "OPDN") { type = "buy_opdn"; line = "buy_pdn1"; }//采购收货单
+                else if (type == "OPCH") { type = "buy_opch"; line = "buy_pch1"; }//应付发票
+                else if (type == "ORPD") { type = "buy_orpd"; line = "buy_rpd1"; }//采购退货单
+                else if (type == "ORPC") { type = "buy_orpc"; line = "buy_rpc1"; }//应付贷项凭证
+                else { type = "OQUT"; line = "QUT1"; }
+            }
+            #endregion
+
+            #region 判断权限
+            //if (!ViewFull)
+            //{
+            string arr_roles =GetRolesName(UserID);
+            if ((line.Contains("buy")) && ((!arr_roles.Contains("物流文员")) && (!arr_roles.Contains("系统管理员"))))//若不含有物流文员角色，则则屏蔽运输采购单
+            {
+                filterString += string.Format(" d.QryGroup1='N' AND ");
+            }
+            //}
+            if (ViewSelfDepartment && !ViewFull)
+            {
+                DataTable rDataRows =GetSboSlpCodeIds(DepID, SboID);
+                if (rDataRows.Rows.Count > 0)
+                {
+                    filterString += string.Format(" (a.SlpCode IN(");
+                    for (int i = 0; i < rDataRows.Rows.Count; i++)
+                    {
+                        filterString += string.Format("{0},", rDataRows.Rows[i][0]);
+                    }
+                    if (!string.IsNullOrEmpty(filterString))
+                        filterString = filterString.Substring(0, filterString.Length - 1);
+                    filterString += string.Format(") OR d.DfTcnician IN (");
+                    for (int i = 0; i < rDataRows.Rows.Count; i++)
+                    {
+                        filterString += string.Format("{0},", rDataRows.Rows[i][1]);
+                    }
+                    if (!string.IsNullOrEmpty(filterString))
+                        filterString = filterString.Substring(0, filterString.Length - 1);
+                    filterString += string.Format(")) AND ");
+                }
+
+            }
+            if (ViewSelf && !ViewFull && !ViewSelfDepartment)
+            {
+                DataTable rDataRowsSlp = GetSboSlpCodeId(UserID, SboID);
+                if (rDataRowsSlp.Rows.Count > 0)
+                {
+                    string slpCode = rDataRowsSlp.Rows[0][0].ToString();
+                    string DfTcnician = rDataRowsSlp.Rows[0][1].ToString();
+                    filterString += string.Format(" (a.SlpCode = {0}) AND ", slpCode);// OR d.DfTcnician={1}   , DfTcnician  不允许售后查看业务员的单
+                }
+                else
+                {
+                    filterString = string.Format(" (a.SlpCode = {0}) AND ", 0);
+                }
+            }
+            #endregion
+            if (!string.IsNullOrEmpty(filterString))
+                filterString = filterString.Substring(0, filterString.Length - 5);
+            return SelectBillViewDetails(out rowCount, pageSize, pageIndex, filterString, sortString, type, line, ViewCustom, ViewSales);
+
+        }
+        /// <summary>
+        /// 查询单据列表（MySql）
+        /// </summary>
+        public  DataTable SelectBillViewDetails(out int rowCounts, int pageSize, int pageIndex, string filterQuery, string orderName, string type, string line, bool ViewCustom, bool ViewSales)
+        {
+            StringBuilder tableName = new StringBuilder();
+            StringBuilder filedName = new StringBuilder();
+            filedName.Append(" '',a.UpdateDate,a.DocEntry,a.CardCode,IF(" + ViewCustom + ",a.CardName,'******'),b.ItemCode,b.Dscription,b.Quantity,IF(" + ViewSales + ",b.Price,'******') Price,IF(" + ViewSales + ",b.LineTotal,'******') LineTotal,IF(" + ViewSales + ",a.DocTotal,'******') DocTotal,IF(" + ViewSales + ",(a.DocTotal-a.PaidToDate),'******') OpenDocTotal,a.CreateDate,a.SlpCode,a.Comments,a.DocStatus,a.Printed,c.SlpName,a.CANCELED,a.Indicator,a.DocDueDate,e.Quantity eQuantity");
+            if (line.ToLower() == "buy_por1")
+            {
+                filedName.Append(",b.ActualDocDueDate,b.LineNum,b.U_RelDoc");
+            }
+            if (line.ToLower() == "buy_pdn1")
+            {
+                filedName.Append(",case when b.BaseType=22 then b.BaseEntry else '' end as BaseEntry,'' as LineNum");
+            }
+            filedName.Append(",a.U_YGMD");
+            if (line.ToLower() == "buy_pdn1")
+            {
+                filedName.Append(",f.CreateDate as por_CreateDate,f.DocDueDate as por_DocDueDate,'' as ActualDocDueDate,b.BaseLine,f1.U_RelDoc");
+            }
+            if (line.ToLower() == "sale_dln1")
+            {
+                filedName.Append(",f.CreateDate as rdr_CreateDate,f.DocDueDate as rdr_DocDueDate,b.u_reldoc,a.docdate");
+            }
+            if (line.ToLower() == "sale_rdr1")
+            {
+                filedName.Append(",b.LineNum,b.U_RelDoc");
+            }
+            tableName.AppendFormat("{0}." + type + " a LEFT JOIN  {0}." + line + " b ON a.DocEntry=b.DocEntry AND a.sbo_id=b.sbo_id ", "nsap_bone");
+            tableName.AppendFormat(" LEFT JOIN {0}.crm_oslp c ON a.SlpCode = c.SlpCode AND a.sbo_id=c.sbo_id", "nsap_bone");
+            tableName.AppendFormat(" LEFT JOIN {0}.crm_ocrd d ON a.CardCode = d.CardCode AND a.sbo_id=d.sbo_id", "nsap_bone");
+            tableName.AppendFormat(" LEFT JOIN {0}.buy_pdn1 e ON a.DocEntry = e.BaseEntry AND e.ItemCode = b.ItemCode AND e.BaseType = 22 AND a.sbo_id=e.sbo_id", "nsap_bone");//查询订单物料交货数
+            if (line.ToLower() == "buy_pdn1")
+            {
+                tableName.AppendFormat(" LEFT JOIN {0}.buy_opor f ON b.BaseEntry = f.DocEntry", "nsap_bone");
+                tableName.AppendFormat(" LEFT JOIN {0}.buy_POR1 f1 on b.BaseEntry=f1.docentry and b.BaseLine=f1.LineNum", "nsap_bone");
+            }
+            if (line.ToLower() == "sale_dln1")
+            {
+                tableName.AppendFormat(" LEFT JOIN {0}.sale_ordr f ON b.BaseEntry = f.DocEntry", "nsap_bone");
+            }
+            return SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCounts);
+        }
     }
 }
