@@ -1691,7 +1691,7 @@ namespace OpenAuth.App
                 var serviceOrderIds = await (from s in UnitWork.Find<ServiceOrder>(null)
                                              join m in UnitWork.Find<ServiceOrderMessage>(null)
                                              .WhereIf(req.UrgedStartTime != null, x => x.CreateTime >= req.UrgedStartTime)
-                                             .WhereIf(req.UrgedEndTime != null, x => x.CreateTime < req.UrgedEndTime.Value.AddDays(1))
+                                             .WhereIf(req.UrgedEndTime != null, x => x.CreateTime < req.UrgedEndTime.Value.AddMonths(1))
                                              on s.Id equals m.ServiceOrderId
                                              where superVisors.Contains(s.Supervisor) && m.Content.Contains("催办")
                                              select s.Id).Distinct().ToListAsync();

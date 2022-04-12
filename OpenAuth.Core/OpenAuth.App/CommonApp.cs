@@ -884,7 +884,7 @@ namespace OpenAuth.App
             TableData result = new TableData();
             var serviceMessage = await UnitWork.Find<ServiceOrderMessage>(c => c.Content.Contains("催办"))
                 .WhereIf(req.StartTime != null, c => c.CreateTime.Value >= req.StartTime)
-                .WhereIf(req.EndTime != null, c => c.CreateTime.Value < req.EndTime.Value.AddDays(1))
+                .WhereIf(req.EndTime != null, c => c.CreateTime.Value < req.EndTime.Value.AddMonths(1))
                 .Select(s => new { s.Id, s.ServiceOrderId, s.ReplierId, s.Replier })
                 .ToListAsync();
             if (req.Range == "user")
