@@ -930,7 +930,7 @@ namespace OpenAuth.App.Material
                 //{
                 //}
             }
-            //维修单
+            ////维修单
             foreach (var item in taskOrder)
             {
                 var supervisor = "";
@@ -941,68 +941,30 @@ namespace OpenAuth.App.Material
                     supervisor = "樊静涛";
 
                 #region MyRegion
-                ////如有关联关系先删除
-                //var count = await UnitWork.Find<InternalContactTaskServiceOrder>(c => c.InternalContactTaskId == item.Id).CountAsync();
-                //if (count > 0)
-                //    await UnitWork.DeleteAsync<InternalContactTaskServiceOrder>(c => c.InternalContactTaskId == item.Id);
-                //List<InternalContactTaskServiceOrder> addlist = new List<InternalContactTaskServiceOrder>();
-                ////归属量多少生成多少维修单
-                //for (int i = 0; i < item.BelongQty; i++)
-                //{
-                //    var remark = "";
-                //    if (item.ProductionId != null)
-                //        remark = $"基于生产订单WO-{item.ProductionId}";
-                //    else
-                //        remark = $"基于BOM，{item.ItemCode}";
-
-                //    CustomerServiceAgentCreateOrderReq s = new CustomerServiceAgentCreateOrderReq
-                //    {
-                //        Contacter = "",
-                //        CustomerId = "C37852",
-                //        CustomerName = "东莞新威检测技术有限公司",
-                //        FromId = 8,
-                //        TerminalCustomer = "东莞新威检测技术有限公司",
-                //        TerminalCustomerId = "C37852",
-                //        Supervisor = supervisor,
-                //        ServiceWorkOrders = new List<AddServiceWorkOrderReq>()
-                //        {
-                //            new AddServiceWorkOrderReq
-                //            {
-                //                FromTheme=item.FromTheme,
-                //                FromType=1,
-                //                Priority=1,
-                //                RepairMaterialCode=item.ItemCode,
-                //                ManufacturerSerialNumber="",
-                //                MaterialCode="",
-                //                Remark=remark
-                //            }
-                //        }
-                //    };
-                //    var createResult = await _serviceOrderApp.CISECreateServiceOrder(s);
-                //    var serviceOrderId = createResult.Result;
-                //    addlist.Add(new InternalContactTaskServiceOrder { InternalContactTaskId = item.Id, ServiceOrderId = serviceOrderId, IsFinish = false });
-                //}
-                //await UnitWork.BatchAddAsync(addlist.ToArray());
-
-                #endregion
-
-                var remark = "";
-                if (item.ProductionId != null)
-                    remark = $"基于生产订单WO-{item.ProductionId}";
-                else
-                    remark = $"基于BOM，{item.ItemCode}";
-                //remark = $"基于BOM，{item.ItemCode}";
-
-                CustomerServiceAgentCreateOrderReq s = new CustomerServiceAgentCreateOrderReq
+                //如有关联关系先删除
+                var count = await UnitWork.Find<InternalContactTaskServiceOrder>(c => c.InternalContactTaskId == item.Id).CountAsync();
+                if (count > 0)
+                    await UnitWork.DeleteAsync<InternalContactTaskServiceOrder>(c => c.InternalContactTaskId == item.Id);
+                List<InternalContactTaskServiceOrder> addlist = new List<InternalContactTaskServiceOrder>();
+                //归属量多少生成多少维修单
+                for (int i = 0; i < item.BelongQty; i++)
                 {
-                    Contacter = "",
-                    CustomerId = "C37852",
-                    CustomerName = "东莞新威检测技术有限公司",
-                    FromId = 8,
-                    TerminalCustomer = "东莞新威检测技术有限公司",
-                    TerminalCustomerId = "C37852",
-                    Supervisor = supervisor,
-                    ServiceWorkOrders = new List<AddServiceWorkOrderReq>()
+                    var remark = "";
+                    if (item.ProductionId != null)
+                        remark = $"基于生产订单WO-{item.ProductionId}";
+                    //else
+                    //    remark = $"基于BOM，{item.ItemCode}";
+
+                    CustomerServiceAgentCreateOrderReq s = new CustomerServiceAgentCreateOrderReq
+                    {
+                        Contacter = "",
+                        CustomerId = "C37852",
+                        CustomerName = "东莞新威检测技术有限公司",
+                        FromId = 8,
+                        TerminalCustomer = "东莞新威检测技术有限公司",
+                        TerminalCustomerId = "C37852",
+                        Supervisor = supervisor,
+                        ServiceWorkOrders = new List<AddServiceWorkOrderReq>()
                         {
                             new AddServiceWorkOrderReq
                             {
@@ -1015,13 +977,51 @@ namespace OpenAuth.App.Material
                                 Remark=remark
                             }
                         }
-                };
-                var createResult = await _serviceOrderApp.CISECreateServiceOrder(s);
-                var serviceOrderId = createResult.Result;
-                await UnitWork.UpdateAsync<InternalContactTask>(c => c.Id == item.Id, c => new InternalContactTask
-                {
-                    ServiceOrderId = serviceOrderId
-                });
+                    };
+                    var createResult = await _serviceOrderApp.CISECreateServiceOrder(s);
+                    var serviceOrderId = createResult.Result;
+                    addlist.Add(new InternalContactTaskServiceOrder { InternalContactTaskId = item.Id, ServiceOrderId = serviceOrderId, IsFinish = false });
+                }
+                await UnitWork.BatchAddAsync(addlist.ToArray());
+
+                #endregion
+
+                //var remark = "";
+                //if (item.ProductionId != null)
+                //    remark = $"基于生产订单WO-{item.ProductionId}";
+                //else
+                //    remark = $"基于BOM，{item.ItemCode}";
+                ////remark = $"基于BOM，{item.ItemCode}";
+
+                //CustomerServiceAgentCreateOrderReq s = new CustomerServiceAgentCreateOrderReq
+                //{
+                //    Contacter = "",
+                //    CustomerId = "C37852",
+                //    CustomerName = "东莞新威检测技术有限公司",
+                //    FromId = 8,
+                //    TerminalCustomer = "东莞新威检测技术有限公司",
+                //    TerminalCustomerId = "C37852",
+                //    Supervisor = supervisor,
+                //    ServiceWorkOrders = new List<AddServiceWorkOrderReq>()
+                //        {
+                //            new AddServiceWorkOrderReq
+                //            {
+                //                FromTheme=item.FromTheme,
+                //                FromType=1,
+                //                Priority=1,
+                //                RepairMaterialCode=item.ItemCode,
+                //                ManufacturerSerialNumber="",
+                //                MaterialCode="",
+                //                Remark=remark
+                //            }
+                //        }
+                //};
+                //var createResult = await _serviceOrderApp.CISECreateServiceOrder(s);
+                //var serviceOrderId = createResult.Result;
+                //await UnitWork.UpdateAsync<InternalContactTask>(c => c.Id == item.Id, c => new InternalContactTask
+                //{
+                //    ServiceOrderId = serviceOrderId
+                //});
 
                 await UnitWork.SaveAsync();
             }
@@ -1951,7 +1951,7 @@ namespace OpenAuth.App.Material
                             BelongQty = (int?)item.OnHand,
                             RectifyQty = (int?)item.OnHand,
                             FromTheme = e.FromTheme,
-                            Remark = "B01已转储"
+                            Remark = "B01在其他仓"
                         });
                     }
                 }
@@ -1974,8 +1974,7 @@ namespace OpenAuth.App.Material
 
                 if (!string.IsNullOrWhiteSpace(filter))
                 {
-                    //没有序列号的生产单
-                    var isHasSql = @$"SELECT o.BaseEntry,o.Quantity,o.BaseLinNum,ISNULL(o.SuppSerial, '') as SuppSerial,o.SysSerial,o.ItemCode,o.STATUS as Status from OSRI o  
+                    var isHasSql = @$"SELECT o.BaseEntry,o.Quantity,o.BaseLinNum,ISNULL(o.SuppSerial, '') as SuppSerial,o.SysSerial,o.ItemCode,o.STATUS as Status from OSRI o
                                 where ({filter}) and o.BaseType=59";
                     var query = UnitWork.Query<OSRIModel>(isHasSql).Select(c => new OSRIModel
                     {
@@ -1988,6 +1987,7 @@ namespace OpenAuth.App.Material
                         Status = c.Status
                         //DocEntry = 0
                     }).ToList();
+                    //没有序列号的生产单
                     var querygb = query.Where(c => c.Status == 0).GroupBy(c => new
                     {
                         c.BaseEntry,

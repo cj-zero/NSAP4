@@ -170,6 +170,14 @@ namespace OpenAuth.App.Workbench.Response
         /// <summary>
         /// 解决方案
         /// </summary>
+        public List<string> ProcessCode { get; set; }
+        /// <summary>
+        /// 问题类型
+        /// </summary>
+        public List<string> TroubleCode { get; set; }
+        /// <summary>
+        /// 解决方案
+        /// </summary>
         public List<string> ProcessDescription { get; set; }
         /// <summary>
         /// 问题类型

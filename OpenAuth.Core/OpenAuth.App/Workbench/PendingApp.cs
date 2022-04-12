@@ -97,8 +97,10 @@ namespace OpenAuth.App.Workbench
                 CreateTime = Convert.ToDateTime(s.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 ManufacturerSerialNumber = s.ManufacturerSerialNumber,
                 MaterialCode = s.MaterialCode,
-                ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription),
-                TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription)
+                ProcessCode = GetServiceTroubleAndSolution(s.ProcessDescription, "code"),
+                ProcessDescription = GetServiceTroubleAndSolution(s.ProcessDescription, "description"),
+                TroubleCode = GetServiceTroubleAndSolution(s.TroubleDescription, "code"),
+                TroubleDescription = GetServiceTroubleAndSolution(s.TroubleDescription, "description")
             }).ToList();
             return serviceOrder;
         }
@@ -785,7 +787,7 @@ namespace OpenAuth.App.Workbench
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        private List<string> GetServiceTroubleAndSolution(string data)
+        private List<string> GetServiceTroubleAndSolution(string data, string objectCode)
         {
             List<string> result = new List<string>();
             if (!string.IsNullOrEmpty(data))
@@ -793,7 +795,7 @@ namespace OpenAuth.App.Workbench
                 JArray jArray = (JArray)JsonConvert.DeserializeObject(data);
                 foreach (var item in jArray)
                 {
-                    result.Add(item["description"].ToString());
+                    result.Add(item[objectCode] == null ? "" : item[objectCode].ToString());
                 }
             }
             return result;

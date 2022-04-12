@@ -1101,6 +1101,7 @@ namespace OpenAuth.App
             var obj = req.MapTo<ServiceOrder>();
             obj.CustomerId = req.CustomerId.ToUpper();
             obj.TerminalCustomerId = req.TerminalCustomerId.ToUpper();
+            obj.AllowOrNot = 0;
             if (req.FromId == 8)//来源内联单
             {
                 obj.RecepUserName = "刘静";
@@ -1110,6 +1111,11 @@ namespace OpenAuth.App
             {
                 obj.RecepUserName = loginUser.Name;
                 obj.RecepUserId = loginUser.Id;
+
+                if (!obj.SalesManId.Equals(loginUser.Id))
+                {
+                    obj.AllowOrNot = await IsAllowOrNo(req);
+                }
             }
             obj.CreateUserId = loginUser.Id;
             obj.Status = 2;
@@ -1118,11 +1124,6 @@ namespace OpenAuth.App
             obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
             //obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(req.Supervisor)))?.Id;
-            obj.AllowOrNot = 0;
-            if (!obj.SalesManId.Equals(loginUser.Id)) 
-            {
-                obj.AllowOrNot = await IsAllowOrNo(req);
-            }
             if (string.IsNullOrWhiteSpace(obj.NewestContacter) && string.IsNullOrWhiteSpace(obj.NewestContactTel))
             {
                 obj.NewestContacter = obj.Contacter;
