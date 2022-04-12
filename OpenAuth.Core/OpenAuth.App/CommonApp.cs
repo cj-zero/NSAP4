@@ -883,32 +883,44 @@ namespace OpenAuth.App
             }
             TableData result = new TableData();
             var serviceMessage = await UnitWork.Find<ServiceOrderMessage>(c => c.Content.Contains("催办"))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.Year), c => c.CreateTime.Value.Year == int.Parse(req.Year))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.Month), c => c.CreateTime.Value.Month == int.Parse(req.Month))
+                .WhereIf(req.StartTime != null, c => c.CreateTime.Value >= req.StartTime)
+                .WhereIf(req.EndTime != null, c => c.CreateTime.Value < req.EndTime.Value.AddDays(1))
+                .Select(s => new { s.Id, s.ServiceOrderId, s.ReplierId, s.Replier })
                 .ToListAsync();
             if (req.Range == "user")
             {
                 if (req.Name != null && req.Name.Count > 0)
                     serviceMessage = serviceMessage.Where(c => req.Name.Contains(c.Replier)).ToList();
-                result.Data = serviceMessage.GroupBy(c => c.Replier).Select(c => new { Name = c.Key, Count = c.Count() }).ToList();
+                result.Data = serviceMessage.GroupBy(c => c.Replier).Select(c => new { Name = c.Key, Count = c.Count(), marker = "user" }).ToList();
             }
             else
             {
-                var nsapUserId = serviceMessage.Select(c => c.ReplierId).ToList();
-                var userInfo = await (from a in UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.Key == Define.USERORG && nsapUserId.Contains(c.FirstId))
-                                      join b in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals b.Id //into ab
-                                      //from b in ab.DefaultIfEmpty()
-                                      select new { a.FirstId, b.CascadeId, b.Name }).ToListAsync();
+                //根据服务单id查找售后主管id
+                var supervisorIds = await UnitWork.Find<ServiceOrder>(s => serviceMessage.Select(x => x.ServiceOrderId).Contains(s.Id)).Select(s => new { s.Id, s.SupervisorId, s.Supervisor }).ToListAsync();
+                //var nsapUserId = serviceMessage.Select(c => c.ReplierId).ToList();
+                //根据人员id查找部门
+                var userInfo = await (from a in UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.Key == Define.USERORG && supervisorIds.Select(s => s.SupervisorId).Contains(c.FirstId))
+                                      join b in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals b.Id //
+                                      select new { a.FirstId, b.CascadeId, orgName = b.Name }).ToListAsync();
                 var userInfoOnly = userInfo.GroupBy(c => c.FirstId).Select(c => c.OrderByDescending(o => o.CascadeId).First()).ToList();
 
                 if (req.Name != null && req.Name.Count > 0)
-                    userInfoOnly = userInfoOnly.Where(c => req.Name.Contains(c.Name)).ToList();
+                    userInfoOnly = userInfoOnly.Where(c => req.Name.Contains(c.orgName)).ToList();
 
-                var query = from a in userInfoOnly
-                            join b in serviceMessage on a.FirstId equals b.ReplierId into ab
-                            from b in ab.DefaultIfEmpty()
-                            select new { a, b };
-                result.Data = query.GroupBy(c => c.a.Name).Select(c => new { Name = c.Key, Count = c.Count() }).ToList();
+                var query = (from sm in serviceMessage
+                             join sv in supervisorIds on sm.ServiceOrderId equals sv.Id
+                             join u in userInfoOnly on sv.SupervisorId equals u.FirstId
+                             select new
+                             {
+                                 ServiceOrderMessageId = sm.Id,
+                                 OrgName = u.orgName
+                             }).ToList();
+
+                //var query = from a in userInfoOnly
+                //            join b in serviceMessage on a.FirstId equals b.ReplierId into ab
+                //            from b in ab.DefaultIfEmpty()
+                //            select new { a, b };
+                result.Data = query.GroupBy(c => c.OrgName).Select(c => new { Name = c.Key, Count = c.Count(), marker = "org" }).ToList();
             }
             return result;
         }

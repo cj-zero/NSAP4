@@ -1671,6 +1671,31 @@ namespace OpenAuth.App
                     query = query.Where(q => q.ServiceWorkOrders.Any(sw => sw.Status < 7) && unCompletedIds.Contains(q.Id));
                 }
             }
+            if(!string.IsNullOrWhiteSpace(req.UrgedDept))
+            {
+                //查询服务单中所有主管的名字
+                var supervisorNames = await UnitWork.Find<ServiceOrder>(null).Select(s => s.Supervisor).Distinct().ToListAsync();
+                //根据姓名获取用户部门名称
+                Func<IEnumerable<string>, Task<List<UserResp>>> GetOrgName = async x =>
+                           await (from u in UnitWork.Find<User>(null)
+                                  join r in UnitWork.Find<Relevance>(null) on u.Id equals r.FirstId
+                                  join o in UnitWork.Find<Repository.Domain.Org>(null) on r.SecondId equals o.Id
+                                  where x.Contains(u.Name) && r.Key == Define.USERORG
+                                  orderby o.CascadeId descending
+                                  select new UserResp { Name = u.Name, OrgName = o.Name, CascadeId = o.CascadeId }).ToListAsync();
+                var supervisorInfos = (await GetOrgName(supervisorNames)).Select(x => new ProcessingEfficiency { Dept = x.OrgName, SuperVisor = x.Name });
+
+                //筛选出查询部门主管的名字
+                var superVisors = supervisorInfos.Where(s => s.Dept == req.UrgedDept).Select(s => s.SuperVisor).ToList();
+                var serviceOrderIds = await (from s in UnitWork.Find<ServiceOrder>(null)
+                                             join m in UnitWork.Find<ServiceOrderMessage>(null)
+                                             .WhereIf(req.UrgedStartTime != null, x => x.CreateTime >= req.UrgedStartTime)
+                                             .WhereIf(req.UrgedEndTime != null, x => x.CreateTime < req.UrgedEndTime.Value.AddDays(1))
+                                             on s.Id equals m.ServiceOrderId
+                                             where superVisors.Contains(s.Supervisor) && m.Content.Contains("催办")
+                                             select s.Id).Distinct().ToListAsync();
+                query = query.Where(q => serviceOrderIds.Contains(q.Id));
+            }
 
             //根据员工信息获取员工部门信息
             var user = loginContext.User;
