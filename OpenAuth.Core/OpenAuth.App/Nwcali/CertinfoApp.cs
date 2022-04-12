@@ -1364,7 +1364,7 @@ namespace OpenAuth.App
             }
             TableData result = new TableData();
             var loginOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault();
-            var query = from a in UnitWork.Find<product_owor>(null).WhereIf(!string.IsNullOrWhiteSpace(request.ProductionNo.ToString()), c => EF.Functions.Like(c.DocEntry, $"{request.ProductionNo}"))
+            var query = from a in UnitWork.Find<product_owor>(c => c.ItemCode.StartsWith("C") && c.CreateDate >= DateTime.Parse("2022-04-01")).WhereIf(!string.IsNullOrWhiteSpace(request.ProductionNo.ToString()), c => EF.Functions.Like(c.DocEntry, $"{request.ProductionNo}"))
                         join b in UnitWork.Find<sale_ordr>(null) on new { a.OriginAbs, a.sbo_id } equals new { OriginAbs = b.DocEntry, b.sbo_id } into ab
                         from b in ab.DefaultIfEmpty()
                         join c in UnitWork.Find<crm_oslp>(null) on new { b.SlpCode, b.sbo_id } equals new { SlpCode = (short?)c.SlpCode, sbo_id = c.sbo_id.Value } into bc

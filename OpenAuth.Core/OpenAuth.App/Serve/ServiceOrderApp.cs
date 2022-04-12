@@ -1102,6 +1102,7 @@ namespace OpenAuth.App
             obj.CustomerId = req.CustomerId.ToUpper();
             obj.TerminalCustomerId = req.TerminalCustomerId.ToUpper();
             obj.AllowOrNot = 0;
+            obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
             if (req.FromId == 8)//来源内联单
             {
                 obj.RecepUserName = "刘静";
@@ -1121,7 +1122,6 @@ namespace OpenAuth.App
             obj.Status = 2;
             obj.SalesMan = d.SlpName;
             obj.VestInOrg = 1;
-            obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
             //obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(req.Supervisor)))?.Id;
             if (string.IsNullOrWhiteSpace(obj.NewestContacter) && string.IsNullOrWhiteSpace(obj.NewestContactTel))
