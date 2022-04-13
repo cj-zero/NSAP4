@@ -1372,7 +1372,7 @@ namespace OpenAuth.App
                         select new { a.DocEntry, a.ItemCode, ItemName = a.txtitemName, a.PlannedQty, OrgName = a.U_WO_LTDW, SaleOrderNo = a.OriginAbs, c.SlpName };
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
-                query = query.Where(c => loginOrg.Name.Contains(c.OrgName));
+                query = query.Where(c => c.OrgName.Contains(loginOrg.Name));
             }
             result.Count = await query.CountAsync();
             result.Data = await query.OrderByDescending(c => c.DocEntry).Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
