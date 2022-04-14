@@ -137,8 +137,10 @@ namespace OpenAuth.App.Workbench.Response
         /// </summary>
         public virtual List<OperationHistoryResp> QuotationOperationHistorys { get; set; }
 
-        
-
+        /// <summary>
+        /// 交货物料
+        /// </summary>
+        public virtual List<LogisticsRecordResp> LogisticsRecords { get; set; }
     }
 
     /// <summary>
@@ -267,5 +269,16 @@ namespace OpenAuth.App.Workbench.Response
         /// 物料附件
         /// </summary>
         public virtual List<FileResp> Files { get; set; }
+    }
+
+    public class LogisticsRecordResp
+    {
+        public string MaterialCode { get; set; }
+        public string MaterialDescription { get; set; }
+        public int? Count { get; set; }
+        public string Unit { get; set; }
+        public int? SentQuantity { get; set; }
+        public int? Quantity { get; set; }
+        public string WhsCode { get; set; }
     }
 }

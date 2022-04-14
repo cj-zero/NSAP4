@@ -124,6 +124,26 @@ namespace OpenAuth.App.Workbench
                 materialCodes.AddRange(q.QuotationMaterials.Select(m => m.MaterialCode).ToList());
             });
             var fileList = await UnitWork.Find<UploadFile>(f => (quotationPictures.Select(q => q.PictureId).ToList()).Contains(f.Id)).ToListAsync();
+            List<LogisticsRecord> LogisticsRecords = new List<LogisticsRecord>();
+            var QuotationMergeMaterials = await UnitWork.Find<QuotationMergeMaterial>(q => q.QuotationId == QuotationId).ToListAsync();
+            var ExpressageList = await UnitWork.Find<Expressage>(e => e.QuotationId == QuotationId).Include(e => e.LogisticsRecords).ToListAsync();
+            foreach (var item in ExpressageList)
+            {
+                LogisticsRecords.AddRange(item.LogisticsRecords.ToList());
+            }
+
+            var MergeMaterials = from a in QuotationMergeMaterials
+                                 join b in LogisticsRecords on a.Id equals b.QuotationMaterialId
+                                 select new LogisticsRecordResp
+                                 {
+                                     MaterialCode = a.MaterialCode,
+                                     MaterialDescription = a.MaterialDescription,
+                                     Count = a.Count,
+                                     Unit = a.Unit,
+                                     SentQuantity = a.SentQuantity,
+                                     Quantity = b.Quantity,
+                                     WhsCode = a.WhsCode
+                                 };
 
             var quotationDetails = new QuotationDetailsResp
             {
@@ -200,7 +220,8 @@ namespace OpenAuth.App.Workbench
                     FileId = q.PictureId,
                     FileName = fileList.Where(f => f.Id.Equals(q.PictureId)).FirstOrDefault()?.FileName,
                     FileType = fileList.Where(f => f.Id.Equals(q.PictureId)).FirstOrDefault()?.FileType
-                }).ToList()
+                }).ToList(),
+                LogisticsRecords = MergeMaterials.ToList()
             };
             if (!string.IsNullOrWhiteSpace(quotationObj.FlowInstanceId)) 
             {
