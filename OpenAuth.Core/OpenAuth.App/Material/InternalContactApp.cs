@@ -1650,6 +1650,7 @@ namespace OpenAuth.App.Material
             };
             var passageway = await UnitWork.Find<store_itemtype_ufd1>(c => c.TypeID == 20 && c.Fld_nm == "U_TDS").OrderBy(c => c.IndexID).Select(c => c.FldValue).ToListAsync();
             var catetory = await UnitWork.Find<Category>(c => c.TypeId == "SYS_ExtraPassageWay").Select(c => c.DtValue).ToListAsync();
+            var catetoryOrg = await UnitWork.Find<Category>(c => c.TypeId == "SYS_InternalContactOrg").Select(c => c.Name).ToListAsync();
             catetory.Add("");
             var knowledgebases = await UnitWork.Find<KnowledgeBase>(k => k.Rank == 1 && k.IsNew == true && !string.IsNullOrWhiteSpace(k.Content)).ToListAsync();
             var tsyq = await UnitWork.Find<store_itemtype_ufd1>(c => c.TypeID == 20 && c.Fld_nm == "U_TSYQ").Select(c => c.FldValue).ToListAsync();
@@ -2182,6 +2183,7 @@ namespace OpenAuth.App.Material
                 orgName.Add("S19");//有服务单增加
             }
             var checkOrg = UnitWork.Find<OpenAuth.Repository.Domain.Org>(c => orgName.Contains(c.Name)).Select(c => c.Id).ToList();
+            var acceptOrg= UnitWork.Find<OpenAuth.Repository.Domain.Org>(c => catetoryOrg.Contains(c.Name)).Select(c => c.Id).ToList();
             //设置呼叫主题
             ReturnProductList.ForEach(q =>
             {
@@ -2203,12 +2205,13 @@ namespace OpenAuth.App.Material
             result.Data = new
             {
                 Count = ReturnProductList.Count(),
-                ProductList = ReturnProductList.GroupBy(c=>c.ProductionId).Select(c=>c.First()).OrderBy(c => c.ItemCode).ToList(),
+                ProductList = ReturnProductList.GroupBy(c => c.ProductionId).Select(c => c.First()).OrderBy(c => c.ItemCode).ToList(),
                 InternalContactTask = contactTasks,
                 InternalContactServiceOrder = contactServiceOrders,
                 CheckOrg = checkOrg,
+                acceptOrg,
                 finilishedItems
-            }; 
+            };
             return result;
         }
 
