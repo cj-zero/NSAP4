@@ -137,7 +137,7 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         [Description("")]
-        public string DocEntry { get; set; }
+        public int DocEntry { get; set; }
         /// <summary>
         /// 
         /// </summary>

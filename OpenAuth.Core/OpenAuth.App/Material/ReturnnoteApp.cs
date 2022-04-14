@@ -545,6 +545,7 @@ namespace OpenAuth.App
                         join b in serviceOrder on a.ServiceOrderId equals b.Id
                         select new { a, b };
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ShieldingMaterials")).Select(u => u.Name).ToListAsync();
+
             result.Data = query.Select(c => new
             {
                 c.a.Id,
@@ -559,7 +560,8 @@ namespace OpenAuth.App
                 DeviceNum = c.a.QuotationProducts.Count(),
                 c.a.CreateTime,
                 c.a.CreateUser,
-                Status = materialReplaceRecord.Where(m => m.QuotationId == c.a.Id).Count() > 0 ? (materialReplaceRecord.Where(m => m.QuotationId == c.a.Id).Count() == c.a.QuotationMergeMaterials.Where(c => !CategoryList.Contains(c.MaterialCode)).Sum(s => s.Count) ? "已更新" : "部分更新") : "待更新"
+                //modify by yangsiming @2022.04.14 MaterialType=3,即赠送的物料不在填写计划内
+                Status = materialReplaceRecord.Where(m => m.QuotationId == c.a.Id).Count() > 0 ? (materialReplaceRecord.Where(m => m.QuotationId == c.a.Id && m.MaterialType != 3).Count() == c.a.QuotationMergeMaterials.Where(c => c.MaterialType != 3 && !CategoryList.Contains(c.MaterialCode)).Sum(s => s.Count) ? "已更新" : "部分更新") : "待更新"
             });
             return result;
         }
@@ -585,7 +587,9 @@ namespace OpenAuth.App
             }
 
             var materialObj = obj.MaterialReplaceRecordReqs.MapToList<MaterialReplaceRecord>();
-
+            //新增前先删除原有的记录
+            var quotationId = obj.MaterialReplaceRecordReqs.Where(m => m != null).Select(x => x.QuotationId).FirstOrDefault();
+            await UnitWork.DeleteAsync<MaterialReplaceRecord>(m => m.QuotationId == quotationId);
             await UnitWork.BatchAddAsync(materialObj.ToArray());
             await UnitWork.SaveAsync();
         }

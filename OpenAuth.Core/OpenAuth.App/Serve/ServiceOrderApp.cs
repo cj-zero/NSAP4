@@ -1704,8 +1704,9 @@ namespace OpenAuth.App
             var orgId = orgInfo.OrgId;
             var orgName = orgInfo.OrgName;
 
-            //SYH部门的主管,可以看到自己部门下员工承接的工单                                              
-            if (new string[] { "SYH" }.Contains(orgName))
+            var specialDepts = await UnitWork.Find<Category>(c => c.TypeId == "SYS_SpecialDept").Select(c => c.DtValue).ToListAsync();
+            //在字典维护的特殊部门的主管,可以看到自己部门下员工承接的工单                                              
+            if (specialDepts.Contains(orgName))
             {
                 //获取所有部门的管理人员信息
                 var deptManage = _revelanceManagerApp.GetDeptManager();
@@ -1713,7 +1714,7 @@ namespace OpenAuth.App
                 var dept = deptManage.FirstOrDefault(d => d.OrgId == orgId);
                 var isManager = deptManage.FirstOrDefault(d => d.OrgId == orgId)?.UserId.Any(x => x == user.Id);
                 //主管可以查看自己部门下所有成员的服务单
-                if (isManager.Value)
+                if (isManager != null && isManager.Value)
                 {
                     var orgids = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Name.Equals(orgName)).Select(o => o.Id).ToListAsync();
                     //查看自己部门下的成员
