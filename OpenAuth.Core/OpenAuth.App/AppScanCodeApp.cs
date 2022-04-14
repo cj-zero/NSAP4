@@ -2,6 +2,7 @@
 using OpenAuth.App.Interface;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
@@ -101,6 +102,27 @@ namespace OpenAuth.App
                                        select new { a.MnfSerial,a.ItemCode, c.BaseEntry,d.DocDate }).FirstOrDefaultAsync();
             return result;
         }
+
+        /// <summary>
+        /// 通过序列号查询销售交货明细
+        /// </summary>
+        /// <param name="sn"></param>
+        /// <param name="customer_code"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetSalesDeliveryDetail(string sn,string customer_code)
+        {
+            var result = new TableData();
+            List<string> list = new List<string>();
+            result.Data = await (from a in UnitWork.Find<OSRIModel>(null)
+                                 join b in UnitWork.Find<OITL>(null) on a.ItemCode equals b.ItemCode
+                                 join c in UnitWork.Find<ITL1>(null) on new { b.LogEntry, SysNumber = a.SysSerial } equals new { c.LogEntry, c.SysNumber }
+                                 join d in UnitWork.Find<ODLN>(null) on b.DocEntry equals d.DocEntry
+                                 join e in UnitWork.Find<DLN1>(null) on new { d.DocEntry,a.ItemCode } equals new { e.DocEntry,e.ItemCode }
+                                 where b.DocType == 15 && a.SuppSerial == sn && d.CardCode== customer_code
+                                 select new { a.SuppSerial, d.CardCode, d.CardName, d.DocEntry,e.ItemCode, e.Quantity }).ToListAsync();
+            return result;
+        }
+
         /// <summary>
         /// 判断用户是否有服务单
         /// </summary>
