@@ -542,7 +542,8 @@ namespace OpenAuth.WebApi.Controllers
 
                 model.CalibrationCertificate.EntrustedDate = !string.IsNullOrWhiteSpace(entrustment?.EntrustedDate.ToString()) ? entrustment?.EntrustedDate.Value.ToString("yyyy年MM月dd日") : "";
                 model.CalibrationCertificate.CalibrationDate = DateTime.Parse(model.CalibrationCertificate.CalibrationDate).ToString("yyyy年MM月dd日");
-                model.CalibrationCertificate.Temperature = Convert.ToInt32(model.CalibrationCertificate.Temperature).ToString("0.0");
+                var temp = Math.Round(Convert.ToDecimal(model.CalibrationCertificate.Temperature), 1);
+                model.CalibrationCertificate.Temperature = temp.ToString();
                 foreach (var item in model.MainStandardsUsed)
                 {
                     if (!string.IsNullOrWhiteSpace(item.DueDate))
