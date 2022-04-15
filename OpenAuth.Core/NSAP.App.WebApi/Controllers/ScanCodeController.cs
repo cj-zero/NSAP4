@@ -83,6 +83,50 @@ namespace NSAP.App.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 通过序列号查询销售交货明细
+        /// </summary>
+        /// <param name="sn"></param>
+        /// <param name="customer_code"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetSalesDeliveryDetail(string sn,string customer_code)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _appScanCodeApp.GetSalesDeliveryDetail(sn, customer_code);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 判断客户代码是否为直销客户
+        /// </summary>
+        /// <param name="customer_code"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> IsDirectCustomer(string customer_code)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _appScanCodeApp.IsDirectCustomer(customer_code);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
         /// <summary>
         /// 判断用户是否有服务单
         /// </summary>

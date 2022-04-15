@@ -148,5 +148,20 @@ namespace OpenAuth.App.Request
         /// 服务方式
         /// </summary>
         public string QryServiceMode { get; set; }
+
+        /// <summary>
+        /// 被催办部门
+        /// </summary>
+        public string UrgedDept { get; set; }
+
+        /// <summary>
+        /// 催办时间段-开始时间
+        /// </summary>
+        public DateTime? UrgedStartTime { get; set; }
+
+        /// <summary>
+        /// 催办时间段-结束时间
+        /// </summary>
+        public DateTime? UrgedEndTime { get; set; }
     }
 }

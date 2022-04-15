@@ -1101,6 +1101,8 @@ namespace OpenAuth.App
             var obj = req.MapTo<ServiceOrder>();
             obj.CustomerId = req.CustomerId.ToUpper();
             obj.TerminalCustomerId = req.TerminalCustomerId.ToUpper();
+            obj.AllowOrNot = 0;
+            obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
             if (req.FromId == 8)//来源内联单
             {
                 obj.RecepUserName = "刘静";
@@ -1110,19 +1112,18 @@ namespace OpenAuth.App
             {
                 obj.RecepUserName = loginUser.Name;
                 obj.RecepUserId = loginUser.Id;
+
+                if (!obj.SalesManId.Equals(loginUser.Id))
+                {
+                    obj.AllowOrNot = await IsAllowOrNo(req);
+                }
             }
             obj.CreateUserId = loginUser.Id;
             obj.Status = 2;
             obj.SalesMan = d.SlpName;
             obj.VestInOrg = 1;
-            obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
             //obj.Supervisor = d.TechName;
             obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(req.Supervisor)))?.Id;
-            obj.AllowOrNot = 0;
-            if (!obj.SalesManId.Equals(loginUser.Id)) 
-            {
-                obj.AllowOrNot = await IsAllowOrNo(req);
-            }
             if (string.IsNullOrWhiteSpace(obj.NewestContacter) && string.IsNullOrWhiteSpace(obj.NewestContactTel))
             {
                 obj.NewestContacter = obj.Contacter;
@@ -1671,6 +1672,31 @@ namespace OpenAuth.App
                     query = query.Where(q => q.ServiceWorkOrders.Any(sw => sw.Status < 7) && unCompletedIds.Contains(q.Id));
                 }
             }
+            if(!string.IsNullOrWhiteSpace(req.UrgedDept))
+            {
+                //查询服务单中所有主管的名字
+                var supervisorNames = await UnitWork.Find<ServiceOrder>(null).Select(s => s.Supervisor).Distinct().ToListAsync();
+                //根据姓名获取用户部门名称
+                Func<IEnumerable<string>, Task<List<UserResp>>> GetOrgName = async x =>
+                           await (from u in UnitWork.Find<User>(null)
+                                  join r in UnitWork.Find<Relevance>(null) on u.Id equals r.FirstId
+                                  join o in UnitWork.Find<Repository.Domain.Org>(null) on r.SecondId equals o.Id
+                                  where x.Contains(u.Name) && r.Key == Define.USERORG
+                                  orderby o.CascadeId descending
+                                  select new UserResp { Name = u.Name, OrgName = o.Name, CascadeId = o.CascadeId }).ToListAsync();
+                var supervisorInfos = (await GetOrgName(supervisorNames)).Select(x => new ProcessingEfficiency { Dept = x.OrgName, SuperVisor = x.Name });
+
+                //筛选出查询部门主管的名字
+                var superVisors = supervisorInfos.Where(s => s.Dept == req.UrgedDept).Select(s => s.SuperVisor).ToList();
+                var serviceOrderIds = await (from s in UnitWork.Find<ServiceOrder>(null)
+                                             join m in UnitWork.Find<ServiceOrderMessage>(null)
+                                             .WhereIf(req.UrgedStartTime != null, x => x.CreateTime >= req.UrgedStartTime)
+                                             .WhereIf(req.UrgedEndTime != null, x => x.CreateTime < req.UrgedEndTime.Value.AddMonths(1))
+                                             on s.Id equals m.ServiceOrderId
+                                             where superVisors.Contains(s.Supervisor) && m.Content.Contains("催办")
+                                             select s.Id).Distinct().ToListAsync();
+                query = query.Where(q => serviceOrderIds.Contains(q.Id));
+            }
 
             //根据员工信息获取员工部门信息
             var user = loginContext.User;
@@ -1678,8 +1704,9 @@ namespace OpenAuth.App
             var orgId = orgInfo.OrgId;
             var orgName = orgInfo.OrgName;
 
-            //SYH部门的主管,可以看到自己部门下员工承接的工单                                              
-            if (new string[] { "SYH" }.Contains(orgName))
+            var specialDepts = await UnitWork.Find<Category>(c => c.TypeId == "SYS_SpecialDept").Select(c => c.DtValue).ToListAsync();
+            //在字典维护的特殊部门的主管,可以看到自己部门下员工承接的工单                                              
+            if (specialDepts.Contains(orgName))
             {
                 //获取所有部门的管理人员信息
                 var deptManage = _revelanceManagerApp.GetDeptManager();
@@ -1687,7 +1714,7 @@ namespace OpenAuth.App
                 var dept = deptManage.FirstOrDefault(d => d.OrgId == orgId);
                 var isManager = deptManage.FirstOrDefault(d => d.OrgId == orgId)?.UserId.Any(x => x == user.Id);
                 //主管可以查看自己部门下所有成员的服务单
-                if (isManager.Value)
+                if (isManager != null && isManager.Value)
                 {
                     var orgids = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Name.Equals(orgName)).Select(o => o.Id).ToListAsync();
                     //查看自己部门下的成员

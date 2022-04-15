@@ -31,6 +31,7 @@ using Org.BouncyCastle.Ocsp;
 using NSAP.Entity;
 using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository;
+using System.Text.RegularExpressions;
 
 namespace OpenAuth.App
 {
@@ -401,6 +402,33 @@ namespace OpenAuth.App
             }
             return result;
         }
+
+        /// <summary>
+        /// 单个guid获取证书
+        /// </summary>
+        /// <param name="serialNumber"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetCertListBySingle(string serialNumber)
+        {
+            TableData result = new TableData();
+            var query = await (from a in UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId))
+                               join b in UnitWork.Find<PcPlc>(c => serialNumber == c.Guid)
+                               on a.Id equals b.NwcaliBaseInfoId
+                               select new NwcailView { CertNo = a.CertificateNumber, No = b.No, TesterModel = a.TesterModel, CalibrationDate = a.Time, ExpirationDate = a.ExpirationDate }).ToListAsync();
+
+            result.Data = query;
+            var certNos = await UnitWork.Find<Certplc>(p => serialNumber.Contains(p.PlcGuid)).Select(c => c.CertNo).ToListAsync();
+            if (certNos.Count > 0)
+            {
+                var nos = string.Join("','", certNos);
+                var certinfo = await UnitWork.FromSql<Certinfo>($@"SELECT a.* from certinfo a JOIN erp4.flowinstance b on a.FlowInstanceId=b.Id
+                                    where CertNo in ('{nos}') and ActivityName='结束'").Select(c => new NwcailView { CertNo = c.CertNo, No = null, TesterModel = c.Model, CalibrationDate = c.CalibrationDate, ExpirationDate = c.ExpirationDate }).ToListAsync();
+
+                if (certinfo.Count > 0) result.Data = query.Concat(certinfo);
+            }
+            return result;
+        }
+
         /// <summary>
         /// 证书审批操作
         /// </summary>
@@ -1364,7 +1392,7 @@ namespace OpenAuth.App
             }
             TableData result = new TableData();
             var loginOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault();
-            var query = from a in UnitWork.Find<product_owor>(null).WhereIf(!string.IsNullOrWhiteSpace(request.ProductionNo.ToString()), c => EF.Functions.Like(c.DocEntry, $"{request.ProductionNo}"))
+            var query = from a in UnitWork.Find<product_owor>(c => c.ItemCode.StartsWith("C") && c.CreateDate >= DateTime.Parse("2021-10-01")).WhereIf(!string.IsNullOrWhiteSpace(request.ProductionNo.ToString()), c => EF.Functions.Like(c.DocEntry, $"{request.ProductionNo}"))
                         join b in UnitWork.Find<sale_ordr>(null) on new { a.OriginAbs, a.sbo_id } equals new { OriginAbs = b.DocEntry, b.sbo_id } into ab
                         from b in ab.DefaultIfEmpty()
                         join c in UnitWork.Find<crm_oslp>(null) on new { b.SlpCode, b.sbo_id } equals new { SlpCode = (short?)c.SlpCode, sbo_id = c.sbo_id.Value } into bc
@@ -1372,7 +1400,7 @@ namespace OpenAuth.App
                         select new { a.DocEntry, a.ItemCode, ItemName = a.txtitemName, a.PlannedQty, OrgName = a.U_WO_LTDW, SaleOrderNo = a.OriginAbs, c.SlpName };
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
-                query = query.Where(c => loginOrg.Name.Contains(c.OrgName));
+                query = query.Where(c => c.OrgName.Contains(loginOrg.Name));
             }
             result.Count = await query.CountAsync();
             result.Data = await query.OrderByDescending(c => c.DocEntry).Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
@@ -1392,10 +1420,17 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             TableData result = new TableData();
+            List<string> itemcode = new List<string>();
+            var category = await UnitWork.Find<Category>(c => c.TypeId == "SYS_B01").Select(c => c.DtValue).ToListAsync();
             var query = await UnitWork.Find<product_wor1>(c => c.DocEntry == docEntry && c.ItemCode.StartsWith("B01")).Select(c => c.ItemCode).ToListAsync();
-
-            query = query.GroupBy(c => string.Join("-", c.Split('-').Take(2))).Select(c => c.First()).Take(4).ToList();
-            result.Data = query;
+            category.ForEach(c =>
+            {
+                var regex = "^" + c + "-[0-9].";
+                itemcode.AddRange(query.Where(q => Regex.IsMatch(q, regex)).ToList());
+            });
+            //分别取一条
+            var data = itemcode.GroupBy(c => string.Join("-", c.Split('-').Take(2))).Select(c => c.First()).Take(4).ToList();
+            result.Data = data;
             return result;
         }
 
