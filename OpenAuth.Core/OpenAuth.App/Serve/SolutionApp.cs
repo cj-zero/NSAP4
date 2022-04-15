@@ -85,7 +85,8 @@ namespace OpenAuth.App
 
             var result = new TableData();
             //var objs = UnitWork.Find<Solution>(s => s.UseBy == 2);
-            var objs = UnitWork.Find<Solution>(s => s.IsNew == true);
+            var objs = UnitWork.Find<Solution>(s => s.IsNew == true && s.Rank == request.Rank);
+                //.WhereIf(!string.IsNullOrWhiteSpace(request.Subject), c => c.Subject.Contains(request.Subject));
             if (!string.IsNullOrEmpty(request.key))
             {
                 objs = objs.Where(u => u.Id.Contains(request.key) || u.Subject.Contains(request.key) || u.Symptom.Contains(request.key)).WhereIf(int.TryParse(request.key, out int code), u => u.SltCode == code);
@@ -94,9 +95,9 @@ namespace OpenAuth.App
 
             //var propertyStr = string.Join(',', properties.Select(u => u.Key));
             result.columnHeaders = properties;
-            result.Data = await objs.OrderByDescending(u => u.SltCode)
+            result.Data = await objs.OrderByDescending(u => u.CreateTime)
                 .Skip((request.page - 1) * request.limit)
-                .Take(request.limit).Select(x => new { x.Id, code = x.Descriptio + "-" + x.Code, x.Subject }).ToListAsync();//.Select($"new ({propertyStr})");
+                .Take(request.limit).Select(x => new { x.Id, x.Code, ParentCode = x.Descriptio, x.Subject, x.CreateTime, x.CreateUserName, x.UpdateTime }).ToListAsync();
             result.Count = await objs.CountAsync();
             return result;
         }
@@ -126,29 +127,46 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var maxCode = await Repository.Find(s=>s.UseBy == 2).Select(s => s.SltCode).MaxAsync();
-            req.SltCode = ++maxCode;
+            //var maxCode = await Repository.Find(s=>s.UseBy == 2).Select(s => s.SltCode).MaxAsync();
+            //req.SltCode = ++maxCode;
             var obj = req.MapTo<Solution>();
+            if (!string.IsNullOrWhiteSpace(obj.Descriptio))
+            {
+                var parent = await UnitWork.Find<Solution>(c => c.Code == obj.Descriptio).Select(c => new { c.Id, c.Subject }).FirstOrDefaultAsync();
+                obj.ParentId = parent.Id;
+                obj.ParentName = parent.Subject;
+            }
             //todo:补充或调整自己需要的字段
             obj.CreateTime = DateTime.Now;
             var user = loginContext.User;
             obj.CreateUserId = user.Id;
             obj.CreateUserName = user.Name;
-            obj.UseBy = 2;
+            obj.IsNew = true;
+            //obj.UseBy = 2;
             await Repository.AddAsync(obj);
         }
 
          public void Update(AddOrUpdateSolutionReq obj)
         {
             var user = _auth.GetCurrentUser().User;
+            string ParentId = "", ParentName = "";
+            if (!string.IsNullOrWhiteSpace(obj.Descriptio))
+            {
+                var parent =  UnitWork.Find<Solution>(c => c.Code == obj.Descriptio).Select(c => new { c.Id, c.Subject }).FirstOrDefault();
+                ParentId = parent.Id;
+                ParentName = parent.Subject;
+            }
             UnitWork.Update<Solution>(u => u.Id == obj.Id, u => new Solution
             {
-                SltCode = obj.SltCode,
+                Code = obj.Code,
+                //SltCode = obj.SltCode,
                 Subject = obj.Subject,
-                Cause = obj.Cause,
-                Symptom = obj.Symptom,
+                ParentId = ParentId,
+                ParentName = ParentName,
+                //Cause = obj.Cause,
+                //Symptom = obj.Symptom,
                 Descriptio = obj.Descriptio,
-                Status = obj.Status,
+                //Status = obj.Status,
                 UpdateTime = DateTime.Now,
                 UpdateUserId = user.Id,
                 UpdateUserName = user.Name
