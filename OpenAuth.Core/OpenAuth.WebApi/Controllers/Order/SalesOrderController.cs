@@ -367,6 +367,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         [Route("GridDataBindDetails")]
         public TableData GridDataBindDetails(SalesOrderListReq model)
         {
+            int rowCount = 0;
             var result = new TableData();
             string type = "ORDR";
             var UserID = _serviceBaseApp.GetUserNaspId();
@@ -374,7 +375,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             var DepID = _serviceBaseApp.GetSalesDepID(UserID);
             DataTable dt = _serviceSaleOrderApp.GetSboNamePwd(SboID);
             bool ViewFull = false;
-            bool ViewSelf= true;
+            bool ViewSelf = true;
             bool ViewSelfDepartment = false;
             bool ViewSales = true;
             bool ViewCustom = true;
@@ -398,7 +399,8 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 //if (isOpen == "0")
                 //{
-                result.Data = _serviceSaleOrderApp.SelectBillView(model.limit, model.page, model.query, model.sortname, model.sortorder, type, ViewFull,ViewSelf, UserID, SboID, ViewSelfDepartment, DepID, ViewCustom, ViewSales);
+                result.Data = _serviceSaleOrderApp.SelectBillView(model.limit, model.page, model.query, model.sortname, model.sortorder, type, ViewFull, ViewSelf, UserID, SboID, ViewSelfDepartment, DepID, ViewCustom, ViewSales, out rowCount);
+                result.Count = rowCount;
                 //}
                 //else
                 //{
