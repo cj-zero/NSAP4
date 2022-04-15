@@ -55,9 +55,9 @@ namespace OpenAuth.App.Order.ModelDto
         public string DocNum { get; set; }
         public string DocType { get; set; }
         public string DocTotal { get; set; }
-        public string DocDate { get; set; }
-        public string DocDueDate { get; set; }
-        public string TaxDate { get; set; }
+        public DateTime DocDate { get; set; }
+        public DateTime DocDueDate { get; set; }
+        public DateTime TaxDate { get; set; }
         public string SupplCode { get; set; }
         public string ShipToCode { get; set; }
         public string PayToCode { get; set; }

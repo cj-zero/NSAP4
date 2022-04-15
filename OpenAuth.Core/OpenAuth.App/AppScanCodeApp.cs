@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Infrastructure.Extensions;
+using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
@@ -112,14 +113,50 @@ namespace OpenAuth.App
         public async Task<TableData> GetSalesDeliveryDetail(string sn,string customer_code)
         {
             var result = new TableData();
-            List<string> list = new List<string>();
-            result.Data = await (from a in UnitWork.Find<OSRIModel>(null)
-                                 join b in UnitWork.Find<OITL>(null) on a.ItemCode equals b.ItemCode
-                                 join c in UnitWork.Find<ITL1>(null) on new { b.LogEntry, SysNumber = a.SysSerial } equals new { c.LogEntry, c.SysNumber }
-                                 join d in UnitWork.Find<ODLN>(null) on b.DocEntry equals d.DocEntry
-                                 join e in UnitWork.Find<DLN1>(null) on new { d.DocEntry,a.ItemCode } equals new { e.DocEntry,e.ItemCode }
-                                 where b.DocType == 15 && a.SuppSerial == sn && d.CardCode== customer_code
-                                 select new { a.SuppSerial, d.CardCode, d.CardName, d.DocEntry,e.ItemCode, e.Quantity }).ToListAsync();
+            var isHasSql = @$"SELECT o.ItemCode,ISNULL(o.SuppSerial, '') as SuppSerial,o.SysSerial from OSRI o
+                                where o.SuppSerial='{sn}'";
+            var query = UnitWork.Query<OSRIModel>(isHasSql).Select(c => new OSRIModel
+            {
+                SuppSerial = c.SuppSerial,
+                ItemCode = c.ItemCode,
+                SysSerial=c.SysSerial
+            }).FirstOrDefault();
+            if (query!=null)
+            {
+                result.Data = await (from b in UnitWork.Find<OITL>(null)
+                                     join c in UnitWork.Find<ITL1>(null) on b.LogEntry equals c.LogEntry
+                                     join d in UnitWork.Find<ODLN>(null) on b.DocEntry equals d.DocEntry
+                                     join e in UnitWork.Find<DLN1>(null) on d.DocEntry equals e.DocEntry
+                                     where b.DocType == 15  && c.SysNumber == query.SysSerial && e.ItemCode == query.ItemCode && b.ItemCode == query.ItemCode
+                                     select new { e.ItemCode, e.Quantity,e.DocEntry,d.CardCode })
+                                     .WhereIf(!string.IsNullOrWhiteSpace(customer_code),c=>c.CardCode==customer_code)
+                                     .ToListAsync();
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// 判断客户代码是否为直销客户
+        /// </summary>
+        /// <param name="customer_code"></param>
+        /// <returns></returns>
+        public async Task<TableData> IsDirectCustomer(string customer_code)
+        {
+            var result = new TableData();
+            result.Data = false;
+            var query= await UnitWork.Find<OCRD>(c => c.CardCode == customer_code).FirstOrDefaultAsync();
+            if (query==null)
+            {
+                result.Data = false;
+            }
+            else
+            {
+                if (query.CardType.ToUpper().Equals("C"))
+                {
+                    result.Data = true;
+                }
+            }
             return result;
         }
 

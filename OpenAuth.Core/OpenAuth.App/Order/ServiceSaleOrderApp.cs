@@ -10271,9 +10271,9 @@ namespace OpenAuth.App.Order
         /// 查看视图【行明细 - 帐套关闭】
         /// </summary>
         /// <returns></returns>
-        public  DataTable SelectBillView(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, string type, bool ViewFull, bool ViewSelf, int UserID, int SboID, bool ViewSelfDepartment, int DepID, bool ViewCustom, bool ViewSales)
+        public  DataTable SelectBillView(int pageSize, int pageIndex, string filterQuery, string sortname, string sortorder, string type, bool ViewFull, bool ViewSelf, int UserID, int SboID, bool ViewSelfDepartment, int DepID, bool ViewCustom, bool ViewSales, out int rowCount)
         {
-            int rowCount = 0;
+          
             string sortString = string.Empty;
             string filterString = string.Empty;
             string line = string.Empty;
