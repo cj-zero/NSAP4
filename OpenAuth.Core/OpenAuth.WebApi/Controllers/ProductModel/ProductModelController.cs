@@ -14,7 +14,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace OpenAuth.WebApi.Controllers.ProductModel
 {
@@ -645,7 +647,8 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
                 {
                     var productModelCategory = UnitWork.Find<ProductModelCategory>(u => !u.IsDelete && u.Id == productModelSelection.ProductModelCategoryId).FirstOrDefault();
                     var productModelSelectionInfo = UnitWork.Find<ProductModelSelectionInfo>(u => !u.IsDelete && u.ProductModelSelectionId == productModelSelection.Id).FirstOrDefault();
-                    var productModelDetails = _productModelApp.GetSpecifications(Id, null, Language);
+                    //var productModelDetails = _productModelApp.GetSpecifications(Id, null, Language);
+                    var productModelDetails = _productModelApp.GetSpecificationsCT4000(Id, null, Language);
                     string templatePath = "";
 
                     if (Language == "CN")
@@ -658,41 +661,39 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
 
                     }
                     string filePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Templates\\files\\" + DateTime.Now.ToString("yyyyMMdd") + "\\");
-                    ProductParamTemplate productParamTemplate = new ProductParamTemplate()
-                    {
-                        Title = productModelSelection.DeviceCoding,
-                        DeviceCoding = productModelSelection.DeviceCoding,
-                        ChannelNumber = productModelSelection.ChannelNumber.ToString(),
-                        InputPowerType = productModelDetails.InputPowerType,
-                        InputActivePower = productModelDetails.InputActivePower,
-                        InputCurrent = productModelDetails.InputCurrent,
-                        Efficiency = productModelDetails.Efficiency,
-                        Noise = productModelDetails.Noise,
-                        DeviceType = productModelDetails.DeviceType,
-                        PowerControlModuleType = productModelDetails.PowerControlModuleType,
-                        PowerConnection = productModelDetails.PowerConnection,
-                        ChargeVoltageRange = productModelDetails.ChargeVoltageRange,
-                        DischargeVoltageRange = productModelDetails.DischargeVoltageRange,
-                        MinimumDischargeVoltage = productModelDetails.MinimumDischargeVoltage,
-                        CurrentRange = productModelDetails.CurrentRange,
-                        CurrentAccurack = productModelDetails.CurrentAccurack,
-                        CutOffCurrent = productModelDetails.CutOffCurrent,
-                        SinglePower = productModelDetails.SinglePower,
-                        CurrentResponseTime = productModelDetails.CurrentResponseTime,
-                        CurrentConversionTime = productModelDetails.CurrentConversionTime,
-                        RecordFreq = productModelDetails.RecordFreq,
-                        MinimumVoltageInterval = productModelDetails.MinimumVoltageInterval,
-                        MinimumCurrentInterval = productModelDetails.MinimumCurrentInterval,
-                        TotalPower = productModelDetails.TotalPower,
-                        Size = productModelDetails.Size,
-                        Weights = productModelDetails.Weight,
-                        VoltageAccuracy = productModelSelectionInfo.VoltAccurack
-
-
-                    };
+                    //ProductParamTemplate productParamTemplate = new ProductParamTemplate()
+                    //{
+                    //    Title = productModelSelection.DeviceCoding,
+                    //    DeviceCoding = productModelSelection.DeviceCoding,
+                    //    ChannelNumber = productModelSelection.ChannelNumber.ToString(),
+                    //    InputPowerType = productModelDetails.InputPowerType,
+                    //    InputActivePower = productModelDetails.InputActivePower,
+                    //    InputCurrent = productModelDetails.InputCurrent,
+                    //    Efficiency = productModelDetails.Efficiency,
+                    //    Noise = productModelDetails.Noise,
+                    //    DeviceType = productModelDetails.DeviceType,
+                    //    PowerControlModuleType = productModelDetails.PowerControlModuleType,
+                    //    PowerConnection = productModelDetails.PowerConnection,
+                    //    ChargeVoltageRange = productModelDetails.ChargeVoltageRange,
+                    //    DischargeVoltageRange = productModelDetails.DischargeVoltageRange,
+                    //    MinimumDischargeVoltage = productModelDetails.MinimumDischargeVoltage,
+                    //    CurrentRange = productModelDetails.CurrentRange,
+                    //    CurrentAccurack = productModelDetails.CurrentAccurack,
+                    //    CutOffCurrent = productModelDetails.CutOffCurrent,
+                    //    SinglePower = productModelDetails.SinglePower,
+                    //    CurrentResponseTime = productModelDetails.CurrentResponseTime,
+                    //    CurrentConversionTime = productModelDetails.CurrentConversionTime,
+                    //    RecordFreq = productModelDetails.RecordFreq,
+                    //    MinimumVoltageInterval = productModelDetails.MinimumVoltageInterval,
+                    //    MinimumCurrentInterval = productModelDetails.MinimumCurrentInterval,
+                    //    TotalPower = productModelDetails.TotalPower,
+                    //    Size = productModelDetails.Size,
+                    //    Weights = productModelDetails.Weight,
+                    //    VoltageAccuracy = productModelSelectionInfo.VoltAccurack
+                    //};
                     SpireDocWord.GetDocument(templatePath);
-                    SpireDocWord.ReplaseTemplateWord(productParamTemplate);
-                    SpireDocWord.AddImage(Path.Combine(Directory.GetCurrentDirectory() + type.Image));
+                    SpireDocWord.ReplaseTemplateWord(productModelDetails);
+                    //SpireDocWord.AddImage(Path.Combine(Directory.GetCurrentDirectory() + type.Image));
                     SpireDocWord.CreateNewWord(filePath + productModelSelection.DeviceCoding + "-技术规格书" + ".docx");
                 }
                 result.Result = host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + productModelSelection.DeviceCoding + "-技术规格书.docx";
@@ -703,6 +704,35 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
                 result.Message = ex.Message;
             }
             return result;
+        }
+
+        [HttpGet]
+        [Route("DownloadCT4000Template")]
+        public HttpResponseMessage DownloadCT4000Template()
+        {
+            var response = new HttpResponseMessage();
+            string filePath = Path.Combine(Directory.GetCurrentDirectory() + @"\Templates\CT-4000导入模板.xls");
+            try
+            {
+                var fileName = new FileInfo(filePath).Name;
+                using var stream = new FileStream(filePath, FileMode.Open);
+                response.Content = new StreamContent(stream);
+                response.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+                response.Content.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("attachment")
+                {
+                    FileName = HttpUtility.UrlEncode(fileName)
+                };
+                response.Headers.Add("Access-Control-Expose-Headers", "FileName");
+                response.Headers.Add("FileName", HttpUtility.UrlEncode(fileName));
+
+                response.StatusCode = System.Net.HttpStatusCode.OK;
+                return response;
+            }
+            catch(Exception ex)
+            {
+                response.StatusCode = System.Net.HttpStatusCode.InternalServerError;
+                return response;
+            }
         }
         #endregion
     }

@@ -803,44 +803,58 @@ namespace OpenAuth.App
         /// <param name="Id"></param>
         /// <returns></returns>
         public ProductModelDetailsCT4000 GetSpecificationsCT4000(int Id, string? host, string Language)
-
         {
             var result = new ProductModelDetailsCT4000();
             var productmodelselection = UnitWork.FindSingle<ProductModelSelection>(q => q.Id == Id);
             var productmodeltype = UnitWork.FindSingle<ProductModelType>(q => q.Id == productmodelselection.ProductModelTypeId);
             var productmodelselectioninfo = UnitWork.FindSingle<ProductModelSelectionInfo>(q => q.ProductModelSelectionId == productmodelselection.Id);
+            result.EquipmentModel = (productmodelselection.Voltage + "V" + productmodelselection.Current + "A").ToString();
             result.DeviceCoding = productmodelselection.DeviceCoding;
             result.ChannelNumber = productmodelselection.ChannelNumber;
-            result.InputPowerType = productmodelselectioninfo.InputPowerType;
-            result.InputActivePower = productmodelselectioninfo.InputActivePower;
+            result.InputPowerType = "AC " + productmodelselectioninfo.InputPowerType + "V" + " ±10% / 50Hz";
+            result.InputActivePower = productmodelselectioninfo.InputActivePower + "W";
             result.voltageRangeControl = double.Parse(productmodelselection.Voltage) * 0.005 + "V~" + productmodelselection.Voltage + "V";
-            result.MinimumDischargeVoltage = productmodelselectioninfo.MinimumDischargeVoltage;
-            result.VoltageAccuracy = productmodelselectioninfo.VoltAccurack;
-            result.VoltageStability = productmodelselectioninfo.VoltageStability;
+            result.MinimumDischargeVoltage = productmodelselectioninfo.MinimumDischargeVoltage + "V";
+            result.VoltageAccuracy = "± " + productmodelselectioninfo.VoltAccurack + "%" + " of FS";
+            result.VoltageStability = "± " + productmodelselectioninfo.VoltageStability + "%" + " of FS";
             result.CurrentOutputRange = double.Parse(productmodelselection.Current) * 0.005 + "A~" + productmodelselection.Current + "A";
-            result.CurrentAccurack = productmodelselection.CurrentAccurack;
+            result.CurrentAccurack = "± " + productmodelselection.CurrentAccurack + "%" + " of FS";
             result.CutOffCurrent = double.Parse(productmodelselection.Current) * 0.002 + "A";
-            result.CurrentStability = productmodelselectioninfo.CurrentStability;
+            result.CurrentStability = "± " + productmodelselectioninfo.CurrentStability + "%" + " of FS";
             result.SinglePowerMax = double.Parse(productmodelselection.Current) * double.Parse(productmodelselection.Voltage) + "W";
-            result.MinimumTimeInterval = productmodelselectioninfo.MinimumTimeInterval;
-            result.MinimumVoltageInterval = double.Parse(productmodelselection.Current) * 2 + "mV";
+            result.PowerStability = (double.Parse(productmodelselection.Current) * double.Parse(productmodelselection.Voltage)) <= 30 ? "±0.1% of FS" : "±0.2% of FS";
+            result.MinimumTimeInterval = productmodelselectioninfo.MinimumTimeInterval ?? "";
+            result.MinimumVoltageInterval = double.Parse(productmodelselection.Voltage) * 2 + "mV";
             result.MinimumCurrentInterval = double.Parse(productmodelselection.Current) * 0.002 + "A";
             result.IsPulseMode= productmodelselectioninfo.IsPulseMode;
-            result.RecordFrequency = productmodelselectioninfo.RecordFrequency;
+            if (result.IsPulseMode == "有")
+            {
+                result.Charge = "横流模式、恒功率模式";
+                result.Discharge = "横流模式、恒功率模式";
+                result.MinimumPulseWidth = "500ms";
+                result.NumberOfPulses = "单个脉冲工步支持32个不同的脉冲";
+                result.ChargeAndDischarge = "一个脉冲工步可以实现从充电到放电的连续切换";
+                result.CutOffCondition = "电压、相对时间";
+            }
+            else if (result.IsPulseMode == "无")
+            {
+                result.Charge = "";
+                result.Discharge = "";
+                result.MinimumPulseWidth = "";
+                result.NumberOfPulses = "";
+                result.ChargeAndDischarge = "";
+                result.CutOffCondition = "";
+            }
+
+            result.RecordFrequency = productmodelselectioninfo.RecordFrequency ?? "";
+            /*
             if (Language == "CN")
             {
-
-
             }
             else if (Language == "EN")
             {
-
-
-
-
-
-
             }
+            */
 
             return result;
         }

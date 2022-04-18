@@ -7,6 +7,10 @@ namespace OpenAuth.App.ProductModel
     public class ProductModelDetailsCT4000 : ExportBase
     {
         /// <summary>
+        /// 设备型号
+        /// </summary>
+        public string EquipmentModel { get; set; }
+        /// <summary>
         /// 设备编码
         /// </summary>
         public string DeviceCoding { get; set; }
@@ -60,6 +64,12 @@ namespace OpenAuth.App.ProductModel
         /// 单通道输出最大功率
         /// </summary>
         public string SinglePowerMax { get; set; }
+
+        /// <summary>
+        /// 功率稳定度
+        /// </summary>
+        public string PowerStability { get; set; }
+
         /// <summary>
         /// 最小时间间隔
         /// </summary>
