@@ -46,7 +46,7 @@ namespace OpenAuth.App
                         .Include(c => c.Beforesaledemandoperationhistories)
                         .WhereIf(!string.IsNullOrWhiteSpace(req.ApplyUserName), c => c.ApplyUserName.Contains(req.ApplyUserName))
                         //.WhereIf(!string.IsNullOrWhiteSpace(req.ApplyUserId), c => c.ApplyUserName.Contains(req.ApplyUserId))
-                        .WhereIf(!string.IsNullOrWhiteSpace(req.KeyWord), k => k.BeforeDemandCode.Contains(req.KeyWord) || k.BeforeSaleDemandProjectName.Contains(req.KeyWord) || k.ApplyUserName.Contains(req.KeyWord))
+                        .WhereIf(!string.IsNullOrWhiteSpace(req.KeyWord), k => k.BeforeDemandCode.Contains(req.KeyWord) || k.BeforeSaleDemandProjectName.Contains(req.KeyWord) || k.ApplyUserName.Contains(req.KeyWord) || k.DemandContents.Contains(req.KeyWord) || k.FirstConnects.Contains(req.KeyWord))
                         .WhereIf(!string.IsNullOrWhiteSpace(req.ApplyDateStart.ToString()), q => q.ApplyDate > req.ApplyDateStart)
                         .WhereIf(!string.IsNullOrWhiteSpace(req.ApplyDateEnd.ToString()), q => q.ApplyDate < Convert.ToDateTime(req.ApplyDateEnd).AddDays(1))
                         .WhereIf(!string.IsNullOrWhiteSpace(req.UpdateDateStart.ToString()), q => q.UpdateTime > req.UpdateDateStart)
@@ -176,7 +176,12 @@ namespace OpenAuth.App
             }
             //判断当前用户是否有页面的审核权限 默认否false
             result.IsHandle = false;
-            if (result.Status > 0 && result.FlowInstanceId != null)
+            if (result.IsDraft && result.ApplyUserId.Equals(loginContext.User.Id))
+            {
+                //如果是草稿状态，并且是申请人登录则有操作权限
+                result.IsHandle = true;
+            }
+            if (result.FlowInstanceId != null)
             {
                 //查询流程实例 获取当前审核节点信息
                 //判断当前用户是否有审核权限
@@ -484,10 +489,69 @@ namespace OpenAuth.App
                     {
                         beforeSaleDemand.Status = nodeArray.ToList().IndexOf(nodeName);
                     }
+                    //项目状态 1-立项 2-需求 3-开发 4-测试5-实施 6-验收 7-结束
+                    String[] projectNodeArray = new String[] {"占位符不管", "立项", "需求提交", "研发提交", "测试提交", "实施提交", "客户验收" };
+                    if (projectNodeArray.Contains(nodeName))
+                    {
+                        beforeSaleDemand.ProjectStatus = projectNodeArray.ToList().IndexOf(nodeName);
+                    }
                     if (beforeSaleDemand.Status<=3)
                     {
                         //表示驳回到研发总助审批之前的节点，删除掉确认部门信息，重新分配
                         await UnitWork.BatchDeleteAsync<BeforeSaleDemandDeptInfo>(beforeSaleDemand.BeforeSaleDemandDeptInfos.ToArray());
+                    }
+
+                    if (beforeSaleDemand.Status ==4)
+                    {
+                        //表示驳回到【研发确认】节点，需要重置确认状态为【未确认】
+                        beforeSaleDemand.BeforeSaleDemandDeptInfos.ForEach(c =>
+                        {
+                            c.IsConfirm = 0;
+                        });
+                         await UnitWork.BatchUpdateAsync<BeforeSaleDemandDeptInfo>(beforeSaleDemand.BeforeSaleDemandDeptInfos.ToArray());
+                    }
+
+                    if (beforeSaleDemand.Status == 6)
+                    {
+                        //表示驳回到【立项】节点，重置排期确认信息
+                        beforeSaleDemand.BeforeSaleProSchedulings.ForEach(c =>
+                        {
+                            c.IsConfirm = 0;
+                        });
+                        await UnitWork.BatchUpdateAsync<BeforeSaleProScheduling>(beforeSaleDemand.BeforeSaleProSchedulings.ToArray());
+                        //删除项目信息
+                        await UnitWork.DeleteAsync<BeforeSaleDemandProject>(beforeSaleDemand.Beforesaledemandprojects[0]);
+                        //重置流程关联项目ID和项目名称
+                        beforeSaleDemand.BeforeSaleDemandProjectId = 0;
+                        beforeSaleDemand.BeforeSaleDemandProjectName = "";
+                    }
+
+                    if (beforeSaleDemand.Status==7)
+                    {
+                        //表示驳回到【需求提交】节点，重置排期确认信息
+                        beforeSaleDemand.BeforeSaleProSchedulings.Where(x=>x.Stage==0).ForEach(c =>
+                        {
+                            c.IsConfirm = 0;
+                        });
+                        await UnitWork.BatchUpdateAsync<BeforeSaleProScheduling>(beforeSaleDemand.BeforeSaleProSchedulings.ToArray());
+                    }
+                    if (beforeSaleDemand.Status == 8)
+                    {
+                        //表示驳回到【研发提交】节点，重置排期确认信息
+                        beforeSaleDemand.BeforeSaleProSchedulings.Where(x => x.Stage == 1).ForEach(c =>
+                        {
+                            c.IsConfirm = 0;
+                        });
+                        await UnitWork.BatchUpdateAsync<BeforeSaleProScheduling>(beforeSaleDemand.BeforeSaleProSchedulings.ToArray());
+                    }
+                    if (beforeSaleDemand.Status == 9)
+                    {
+                        //表示驳回到【测试提交】节点，重置排期确认信息
+                        beforeSaleDemand.BeforeSaleProSchedulings.Where(x => x.Stage == 2).ForEach(c =>
+                        {
+                            c.IsConfirm = 0;
+                        });
+                        await UnitWork.BatchUpdateAsync<BeforeSaleProScheduling>(beforeSaleDemand.BeforeSaleProSchedulings.ToArray());
                     }
                 }
 
@@ -590,7 +654,7 @@ namespace OpenAuth.App
                     //项目立项 指定下一节点：
                     await _flowInstanceApp.Verification(verificationReq);
                     beforeSaleDemand.Status = 7;//项目立项
-
+                    beforeSaleDemand.ProjectStatus = 1;
                     //设置【需求提交】执行人
                     await _flowInstanceApp.ModifyNodeUser(flowinstace.Id, true, verificationReq.NodeDesignates, string.Join(",", req.BeforeSaleProSchedulings.Where(x => x.Stage == 0).Select(x => x.UserName).ToArray()), false);
                     //1、是否关联项目
@@ -688,13 +752,13 @@ namespace OpenAuth.App
                     beforeSaleDemand.ActualStartDate = req.ActualStartDate;
                     beforeSaleDemand.SubmitDate = req.SubmitDate;
 
-                    beforeSaleDemand.Beforesaledemandprojects.First().Status = 2;
-                    beforeSaleDemand.Beforesaledemandprojects.First().UpdateTime = DateTime.Now;
-                    beforeSaleDemand.Beforesaledemandprojects.First().ProjectUrl = req.ProjectUrl;
-                    beforeSaleDemand.Beforesaledemandprojects.First().ProjectDocURL = req.ProjectDocURL;
-                    beforeSaleDemand.Beforesaledemandprojects.First().ActualStartDate = req.ActualStartDate;
-                    beforeSaleDemand.Beforesaledemandprojects.First().SubmitDate = req.SubmitDate;
-                    await UnitWork.UpdateAsync<BeforeSaleDemandProject>(beforeSaleDemand.Beforesaledemandprojects.First());
+                    //beforeSaleDemand.Beforesaledemandprojects.First().Status = 2;
+                    //beforeSaleDemand.Beforesaledemandprojects.First().UpdateTime = DateTime.Now;
+                    //beforeSaleDemand.Beforesaledemandprojects.First().ProjectUrl = req.ProjectUrl;
+                    //beforeSaleDemand.Beforesaledemandprojects.First().ProjectDocURL = req.ProjectDocURL;
+                    //beforeSaleDemand.Beforesaledemandprojects.First().ActualStartDate = req.ActualStartDate;
+                    //beforeSaleDemand.Beforesaledemandprojects.First().SubmitDate = req.SubmitDate;
+                    //await UnitWork.UpdateAsync<BeforeSaleDemandProject>(beforeSaleDemand.Beforesaledemandprojects.First());
                 }
                 else if (loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-研发工程师")) && flowinstace.ActivityName == "研发提交")
                 {
@@ -726,11 +790,11 @@ namespace OpenAuth.App
                         beforeSaleDemand.ActualDevStartDate = req.ActualDevStartDate;
                         beforeSaleDemand.ActualDevEndDate = req.ActualDevEndDate;
                     }
-                    beforeSaleDemand.Beforesaledemandprojects.First().Status = 3;
-                    beforeSaleDemand.Beforesaledemandprojects.First().UpdateTime = DateTime.Now;
-                    beforeSaleDemand.Beforesaledemandprojects.First().ActualDevStartDate = req.ActualDevStartDate;
-                    beforeSaleDemand.Beforesaledemandprojects.First().ActualDevEndDate = req.ActualDevEndDate;
-                    await UnitWork.UpdateAsync<BeforeSaleDemandProject>(beforeSaleDemand.Beforesaledemandprojects.First());
+                    //beforeSaleDemand.Beforesaledemandprojects.First().Status = 3;
+                    //beforeSaleDemand.Beforesaledemandprojects.First().UpdateTime = DateTime.Now;
+                    //beforeSaleDemand.Beforesaledemandprojects.First().ActualDevStartDate = req.ActualDevStartDate;
+                    //beforeSaleDemand.Beforesaledemandprojects.First().ActualDevEndDate = req.ActualDevEndDate;
+                    //await UnitWork.UpdateAsync<BeforeSaleDemandProject>(beforeSaleDemand.Beforesaledemandprojects.First());
                 }
                 else if (loginContext.Roles.Any(c => c.Name.Equal("需求反馈审批-测试工程师")) && flowinstace.ActivityName == "测试提交")
                 {
@@ -781,11 +845,11 @@ namespace OpenAuth.App
                         beforeSaleDemand.ActualTestStartDate = req.ActualTestStartDate;
                         beforeSaleDemand.ActualTestEndDate = req.ActualTestEndDate;
                     }
-                    beforeSaleDemand.Beforesaledemandprojects.First().Status = 4;
-                    beforeSaleDemand.Beforesaledemandprojects.First().UpdateTime = DateTime.Now;
-                    beforeSaleDemand.Beforesaledemandprojects.First().ActualTestStartDate = req.ActualTestStartDate;
-                    beforeSaleDemand.Beforesaledemandprojects.First().ActualTestEndDate = req.ActualTestEndDate;
-                    await UnitWork.UpdateAsync<BeforeSaleDemandProject>(beforeSaleDemand.Beforesaledemandprojects.First());
+                    //beforeSaleDemand.Beforesaledemandprojects.First().Status = 4;
+                    //beforeSaleDemand.Beforesaledemandprojects.First().UpdateTime = DateTime.Now;
+                    //beforeSaleDemand.Beforesaledemandprojects.First().ActualTestStartDate = req.ActualTestStartDate;
+                    //beforeSaleDemand.Beforesaledemandprojects.First().ActualTestEndDate = req.ActualTestEndDate;
+                    //await UnitWork.UpdateAsync<BeforeSaleDemandProject>(beforeSaleDemand.Beforesaledemandprojects.First());
                 }
                 else if (flowinstace.ActivityName == "实施提交" && beforeSaleDemand.Beforesaledemandprojects.Any() && beforeSaleDemand.Beforesaledemandprojects.First().ExecutorUserId == loginContext.User.Id)
                 {
@@ -799,9 +863,9 @@ namespace OpenAuth.App
 
                     beforeSaleDemand.ProjectStatus = 5;
 
-                    beforeSaleDemand.Beforesaledemandprojects.First().Status = 5;
-                    beforeSaleDemand.Beforesaledemandprojects.First().UpdateTime = DateTime.Now;
-                    await UnitWork.UpdateAsync<BeforeSaleDemandProject>(beforeSaleDemand.Beforesaledemandprojects.First());
+                    //beforeSaleDemand.Beforesaledemandprojects.First().Status = 5;
+                    //beforeSaleDemand.Beforesaledemandprojects.First().UpdateTime = DateTime.Now;
+                    //await UnitWork.UpdateAsync<BeforeSaleDemandProject>(beforeSaleDemand.Beforesaledemandprojects.First());
                 }
                 //客户验收是最后一个节点 即：当前用户是流程发起人才能进行客户验收操作 结束流程审核
                 else if (loginContext.User.Id == flowinstace.CreateUserId && flowinstace.ActivityName == "客户验收")
@@ -812,9 +876,9 @@ namespace OpenAuth.App
                     beforeSaleDemand.ProjectStatus = 6;
 
 
-                    beforeSaleDemand.Beforesaledemandprojects.First().Status = 6;
-                    beforeSaleDemand.Beforesaledemandprojects.FirstOrDefault().UpdateTime = DateTime.Now;
-                    await UnitWork.UpdateAsync<BeforeSaleDemandProject>(beforeSaleDemand.Beforesaledemandprojects.First());
+                    //beforeSaleDemand.Beforesaledemandprojects.First().Status = 6;
+                    //beforeSaleDemand.Beforesaledemandprojects.FirstOrDefault().UpdateTime = DateTime.Now;
+                    //await UnitWork.UpdateAsync<BeforeSaleDemandProject>(beforeSaleDemand.Beforesaledemandprojects.First());
                 }
                 else
                 {
