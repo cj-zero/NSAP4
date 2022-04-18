@@ -33,6 +33,21 @@ namespace OpenAuth.App.Request
         /// </summary>
         public DateTime? CalibrationDateTo { get; set; }
 
+        /// <summary>
+        /// 生产订单
+        /// </summary>
         public int? ProductionNo { get; set; }
+        /// <summary>
+        /// 产品编码
+        /// </summary>
+        public string ItemCode { get; set; }
+        /// <summary>
+        /// 销售订单
+        /// </summary>
+        public int? SaleOrderNo { get; set; }
+        /// <summary>
+        /// 销售员
+        /// </summary>
+        public string SlpName { get; set; }
     }
 }
