@@ -14,7 +14,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace OpenAuth.WebApi.Controllers.ProductModel
 {
@@ -34,6 +36,7 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
             this._auth = _auth;
             _productModelApp = productModelApp;
         }
+        #region CE6000
         /// <summary>
         /// 选型列表
         /// </summary>
@@ -473,5 +476,264 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
             }
             return result;
         }
+        #endregion
+
+
+        #region CT4000
+        /// <summary>
+        /// CT4000选型列表
+        /// </summary>
+        /// <param name="QueryModel"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GetProductModelGrid-CT4000")]
+        public async Task<TableData> GetProductModelGridCT4000(ProductModelReq QueryModel)
+        {
+            int rowcount = 0;
+            var result = new TableData();
+            try
+            {
+                result.Data = _productModelApp.GetProductModelGridCT4000(QueryModel, out rowcount);
+                result.Count = rowcount;
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+
+
+            return result;
+        }
+        /// <summary>
+        /// 获取设备编码
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetDeviceCodingList-CT4000")]
+        public async Task<Response<List<string>>> GetDeviceCodingListCT4000()
+        {
+            var result = new Response<List<string>>();
+            try
+            {
+                result.Result = _productModelApp.GetDeviceCodingListCT4000();
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 获取电压等级CT4000
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetCurrentList-CT4000")]
+        public async Task<Response<List<string>>> GetCurrentListCT4000()
+        {
+            var result = new Response<List<string>>();
+            try
+            {
+                result.Result = _productModelApp.GetCurrentListCT4000();
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 获取电流等级CT4000
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetVoltageList-CT4000")]
+        public async Task<Response<List<string>>> GetVoltageListCT4000()
+        {
+            var result = new Response<List<string>>();
+            try
+            {
+                result.Result = _productModelApp.GetVoltageListCT4000();
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 获取通道数CT4000
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetChannelList-CT4000")]
+        public async Task<Response<List<int>>> GetChannelListCT4000()
+        {
+            var result = new Response<List<int>>();
+            try
+            {
+                result.Result = _productModelApp.GetChannelListCT4000();
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        ///批量新增
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GetProductModelAdd-CT4000")]
+        public async Task<Response<string>> GetProductModelAddCT4000(List<AddProductModelCT4000> AddModel)
+        {
+            var result = new Response<string>();
+            try
+            {
+                result.Result =await _productModelApp.GetProductModelAddCT4000(AddModel);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 获取参数规格CT4000
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetSpecifications-CT4000")]
+        public async Task<Response<ProductModelDetailsCT4000>> GetSpecificationsCT4000(int Id, string Language)
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+
+            var result = new Response<ProductModelDetailsCT4000>();
+            try
+            {
+                result.Result = _productModelApp.GetSpecificationsCT4000(Id, host, Language);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 下载规格书CT4000
+        /// </summary>
+        /// <param name="Id"></param>
+        [HttpGet]
+        [Route("ExportProductSpecsDoc-CT4000")]
+        public async Task<Response<string>> ExportProductSpecsDocCT4000(int Id, string Language)
+        {
+            string host = HttpContext.Request.Scheme + "://" + HttpContext.Request.Host;
+            var result = new Response<string>();
+            try
+            {
+
+                var productModelSelection = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.Id == Id).FirstOrDefault();
+                var type = UnitWork.FindSingle<ProductModelType>(q => q.Id == productModelSelection.ProductModelTypeId);
+
+                if (productModelSelection != null)
+                {
+                    var productModelCategory = UnitWork.Find<ProductModelCategory>(u => !u.IsDelete && u.Id == productModelSelection.ProductModelCategoryId).FirstOrDefault();
+                    var productModelSelectionInfo = UnitWork.Find<ProductModelSelectionInfo>(u => !u.IsDelete && u.ProductModelSelectionId == productModelSelection.Id).FirstOrDefault();
+                    //var productModelDetails = _productModelApp.GetSpecifications(Id, null, Language);
+                    var productModelDetails = _productModelApp.GetSpecificationsCT4000(Id, null, Language);
+                    string templatePath = "";
+
+                    if (Language == "CN")
+                    {
+                        templatePath = Path.Combine(Directory.GetCurrentDirectory() + productModelCategory.SpecsDocTemplatePath_CH);
+                    }
+                    if (Language == "EN")
+                    {
+                        templatePath = Path.Combine(Directory.GetCurrentDirectory() + productModelCategory.SpecsDocTemplatePath_EN);
+
+                    }
+                    string filePath = Path.Combine(Directory.GetCurrentDirectory() + "\\Templates\\files\\" + DateTime.Now.ToString("yyyyMMdd") + "\\");
+                    //ProductParamTemplate productParamTemplate = new ProductParamTemplate()
+                    //{
+                    //    Title = productModelSelection.DeviceCoding,
+                    //    DeviceCoding = productModelSelection.DeviceCoding,
+                    //    ChannelNumber = productModelSelection.ChannelNumber.ToString(),
+                    //    InputPowerType = productModelDetails.InputPowerType,
+                    //    InputActivePower = productModelDetails.InputActivePower,
+                    //    InputCurrent = productModelDetails.InputCurrent,
+                    //    Efficiency = productModelDetails.Efficiency,
+                    //    Noise = productModelDetails.Noise,
+                    //    DeviceType = productModelDetails.DeviceType,
+                    //    PowerControlModuleType = productModelDetails.PowerControlModuleType,
+                    //    PowerConnection = productModelDetails.PowerConnection,
+                    //    ChargeVoltageRange = productModelDetails.ChargeVoltageRange,
+                    //    DischargeVoltageRange = productModelDetails.DischargeVoltageRange,
+                    //    MinimumDischargeVoltage = productModelDetails.MinimumDischargeVoltage,
+                    //    CurrentRange = productModelDetails.CurrentRange,
+                    //    CurrentAccurack = productModelDetails.CurrentAccurack,
+                    //    CutOffCurrent = productModelDetails.CutOffCurrent,
+                    //    SinglePower = productModelDetails.SinglePower,
+                    //    CurrentResponseTime = productModelDetails.CurrentResponseTime,
+                    //    CurrentConversionTime = productModelDetails.CurrentConversionTime,
+                    //    RecordFreq = productModelDetails.RecordFreq,
+                    //    MinimumVoltageInterval = productModelDetails.MinimumVoltageInterval,
+                    //    MinimumCurrentInterval = productModelDetails.MinimumCurrentInterval,
+                    //    TotalPower = productModelDetails.TotalPower,
+                    //    Size = productModelDetails.Size,
+                    //    Weights = productModelDetails.Weight,
+                    //    VoltageAccuracy = productModelSelectionInfo.VoltAccurack
+                    //};
+                    SpireDocWord.GetDocument(templatePath);
+                    SpireDocWord.ReplaseTemplateWord(productModelDetails);
+                    //SpireDocWord.AddImage(Path.Combine(Directory.GetCurrentDirectory() + type.Image));
+                    SpireDocWord.CreateNewWord(filePath + productModelSelection.DeviceCoding + "-技术规格书" + ".docx");
+                }
+                result.Result = host + "/Templates/files/" + DateTime.Now.ToString("yyyyMMdd") + "/" + productModelSelection.DeviceCoding + "-技术规格书.docx";
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        [HttpGet]
+        [Route("DownloadCT4000Template")]
+        public HttpResponseMessage DownloadCT4000Template()
+        {
+            var response = new HttpResponseMessage();
+            string filePath = Path.Combine(Directory.GetCurrentDirectory() + @"\Templates\CT-4000导入模板.xls");
+            try
+            {
+                var fileName = new FileInfo(filePath).Name;
+                using var stream = new FileStream(filePath, FileMode.Open);
+                response.Content = new StreamContent(stream);
+                response.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+                response.Content.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("attachment")
+                {
+                    FileName = HttpUtility.UrlEncode(fileName)
+                };
+                response.Headers.Add("Access-Control-Expose-Headers", "FileName");
+                response.Headers.Add("FileName", HttpUtility.UrlEncode(fileName));
+
+                response.StatusCode = System.Net.HttpStatusCode.OK;
+                return response;
+            }
+            catch(Exception ex)
+            {
+                response.StatusCode = System.Net.HttpStatusCode.InternalServerError;
+                return response;
+            }
+        }
+        #endregion
     }
 }

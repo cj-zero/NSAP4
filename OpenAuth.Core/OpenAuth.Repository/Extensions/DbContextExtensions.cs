@@ -178,6 +178,25 @@ namespace OpenAuth.Repository.Extensions
                 throw ex;
             }
         }
-
+        public static int ExecuteNonQuery(this DatabaseFacade facade, CommandType commandType, string sql, params object[] parameters)
+        {
+            var command = CreateCommand(facade, sql, out DbConnection conn, commandType, parameters);
+            try
+            {
+                if (command.Connection.State != ConnectionState.Open)
+                {
+                    command.Connection.Open();
+                }
+                int result = command.ExecuteNonQuery();
+                conn.Close();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                conn.Close();
+                string msg = ex.Message;
+                throw ex;
+            }
+        }
     }
 }

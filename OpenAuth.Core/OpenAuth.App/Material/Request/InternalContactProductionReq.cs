@@ -13,7 +13,7 @@ namespace OpenAuth.App.Material.Request
         public int ProductionId { get; set; }
         public string ItemCode { get; set; }
         public string ItemName { get; set; }
-        public string Dept { get; set; }
+        public string OrgName { get; set; }
         public int? PlannedQty { get; set; }
         public int? CmpltQty { get; set; }
         public int? OpenQty { get; set; }
@@ -21,5 +21,10 @@ namespace OpenAuth.App.Material.Request
         public string FromTheme { get; set; }
         public string FromThemeCode { get; set; }
         public string FromThemeName { get; set; }
+        public string OrderType { get; set; }
+        public string Warehouse { get; set; }
+        public string Code { get; set; }
+        public string Version { get; set; }
+        public List<InternalContactProductionDetailReq> InternalContactProductionDetails { get; set; }
     }
 }

@@ -62,6 +62,8 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<product_owor_wor1>().HasKey(o => new { o.DocEntry });
             modelBuilder.Entity<store_item_type>().HasKey(o => new { o.type_id });
             modelBuilder.Entity<store_itemtype_ufd1>().HasKey(o => new { o.TypeID, o.Fld_nm, o.IndexID });
+            modelBuilder.Entity<store_owhs>().HasKey(o => new { o.sbo_id, o.WhsCode });
+            modelBuilder.Entity<q_owhs_basics>().HasKey(o => new { o.WhsCode });
         }
 
         public virtual DbSet<sale_transport> sale_transports { get; set; }
@@ -79,6 +81,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<store_oitm> store_oitms { get; set; }
 
 
+        public virtual DbSet<store_owhs> store_owhss { get; set; }
         public virtual DbSet<store_oitw> store_oitws { get; set; }
         public virtual DbSet<store_itl1> store_itl1 { get; set; }
         public virtual DbSet<store_oitl> store_oitl { get; set; }
@@ -101,6 +104,10 @@ namespace OpenAuth.Repository
         public virtual DbSet<product_owor> product_owors { get; set; }
         
         public virtual DbSet<product_wor1> product_wor1s { get; set; }
+        /// <summary>
+        /// 仓库关联查询，非数据库表
+        /// </summary>
+        public virtual DbSet<q_owhs_basics> q_owhs_basicss { get; set; }
         /// <summary>
         /// 生产订单关联查询，非数据库表
         /// </summary>

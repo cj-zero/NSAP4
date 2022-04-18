@@ -60,7 +60,7 @@ namespace OpenAuth.App.Client
             {
                 addClientInfoReq.funcId = Convert.ToInt32(_serviceSaleOrderApp.GetJobTypeByAddress("client/supplierAudit.aspx"));
             }
-            if (!string.IsNullOrEmpty(OCRD.CardNameCore.Trim())) { OCRD.U_Name = OCRD.CardNameCore; }
+            if (OCRD.CardNameCore != null && !string.IsNullOrEmpty(OCRD.CardNameCore.Trim())) { OCRD.U_Name = OCRD.CardNameCore; }
             string rJobNm = string.Format("{0}{1}", isEdit ? "修改" : "添加", OCRD.CardType == "S" ? "供应商" : "业务伙伴");
             byte[] job_data = ByteExtension.ToSerialize(OCRD);
             if (addClientInfoReq.submitType == "Temporary")
@@ -895,7 +895,7 @@ namespace OpenAuth.App.Client
         public bool UpdateAuditJob(string jobId, string jobName, string remarks, byte[] wfaJob, bool isEditStatus)
         {
             StringBuilder strSql = new StringBuilder();
-            object rows;
+            int rows;
             if (isEditStatus)
             {
                 strSql.AppendFormat("UPDATE IGNORE {0}.wfa_job SET job_nm='{1}',", "nsap_base", jobName);
@@ -905,20 +905,24 @@ namespace OpenAuth.App.Client
                     new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_data",     wfaJob)
 
                 };
-                rows = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara);
+                rows = UnitWork.ExecuteNonQuery(ContextType.NsapBaseDbContext, CommandType.Text, strSql.ToString(), strPara);
             }
             else
             {
                 strSql.AppendFormat("UPDATE IGNORE {0}.wfa_job SET ", "nsap_base");
-                strSql.AppendFormat("job_nm='{0}',job_data=?job_data,remarks='{1}' WHERE job_id={2}", jobName, remarks, jobId);
+                strSql.Append("job_nm=?job_nm,job_data=?job_data,remarks=?remarks WHERE job_id=?job_id");
                 List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
                 {
-                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_data",     wfaJob)
+                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_nm",     jobName),
+                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_data",     wfaJob),
+                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?remarks",     remarks),
+                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_id",     jobId)
 
                 };
-                rows = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara);
+                rows = UnitWork.ExecuteNonQuery(ContextType.NsapBaseDbContext, CommandType.Text, strSql.ToString(), strPara);
             }
-            return rows != null ? true : false;
+
+            return rows > 0 ? true : false;
         }
         #endregion
 
@@ -1260,7 +1264,7 @@ namespace OpenAuth.App.Client
             var UserId = _serviceBaseApp.GetUserNaspId();
             clientOCRD OCRD = BulidClientJob(updateClientJobReq.clientInfo);
             //根据客户类型生成业务伙伴编码
-            if (!string.IsNullOrEmpty(OCRD.CardNameCore.Trim())) { OCRD.U_Name = OCRD.CardNameCore; }
+            if (!string.IsNullOrWhiteSpace(OCRD.CardNameCore.Trim())) { OCRD.U_Name = OCRD.CardNameCore; }
             string rJobNm = string.Format("{0}{1}", OCRD.ClientOperateType == "edit" ? "修改" : "添加", OCRD.CardType == "S" ? "供应商" : "业务伙伴");
             byte[] job_data = ByteExtension.ToSerialize(OCRD);
             if (updateClientJobReq.submitType == "Temporary")

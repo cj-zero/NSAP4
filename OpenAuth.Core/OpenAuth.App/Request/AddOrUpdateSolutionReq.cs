@@ -55,6 +55,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         public int? Status { get; set; }
         
-         //todo:添加自己的请求字段
+        public string Code { get; set; }
+
+        public int Rank { get; set; }
+        //todo:添加自己的请求字段
+
     }
 }

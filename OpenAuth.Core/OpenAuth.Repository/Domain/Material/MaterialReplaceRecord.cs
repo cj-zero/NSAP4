@@ -66,5 +66,11 @@ namespace OpenAuth.Repository.Domain.Material
         /// </summary>
         [Description("需退的SN号和PN号")]
         public string ReplaceSNandPN { get; set; }
+
+        /// <summary>
+        ///物料状态 1-更换 2-购买 3-赠送
+        /// </summary>
+        [Description("物料状态")]
+        public int? MaterialType { get; set; }
     }
 }

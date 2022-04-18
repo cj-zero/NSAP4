@@ -22,7 +22,7 @@ namespace OpenAuth.App.ProductModel
         /// 产品类型
         /// </summary>
         public string ProductType { get; set; }
-        /// <summary>
+        /// <summary>y
         /// 设备编码
         /// </summary>
         public string DeviceCoding { get; set; }

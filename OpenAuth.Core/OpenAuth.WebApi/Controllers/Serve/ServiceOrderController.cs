@@ -137,6 +137,29 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 统计解决方案类型
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        /// 
+        [HttpGet]
+        public async Task<TableData> GetSolutionInfo([FromQuery] QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetSolutionInfo(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 待确认服务申请信息
         /// </summary>
         /// <param name="serviceOrderId">服务单ID</param>

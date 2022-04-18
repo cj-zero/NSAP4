@@ -45,7 +45,7 @@ namespace OpenAuth.App.Order.ModelDto
         /// <summary>
         /// 联系人
         /// </summary>
-        public string CntactName { get; set; }
+        public string CntctName { get; set; }
         /// <summary>
         /// 电话1
         /// </summary>

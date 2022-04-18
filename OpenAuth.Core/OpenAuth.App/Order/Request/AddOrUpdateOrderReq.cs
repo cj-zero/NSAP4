@@ -342,6 +342,10 @@ namespace OpenAuth.App.Order.Request
     public class OrderItem
     {
         /// <summary>
+        /// 是否是配置主编码
+        /// </summary>
+        public string IsCfgMainCode { get; set; }
+        /// <summary>
         /// 物料号
         /// </summary>
         public string ItemCode { get; set; }
@@ -491,6 +495,11 @@ namespace OpenAuth.App.Order.Request
         public string U_YFTC_3008n { get; set; }//3008n
         public string SumQuantity { get; set; }//出货数量(新增)
         public string U_RelDoc { get; set; }//采购物料对应的订单情况
+        public IList<billSalesDetails> ChildBillSalesDetails
+        {
+            get;
+            set;
+        }
     }
     /// <summary>
     /// 订单操作类型

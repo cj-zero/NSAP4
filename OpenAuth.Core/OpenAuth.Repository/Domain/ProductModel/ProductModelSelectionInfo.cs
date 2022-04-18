@@ -55,6 +55,44 @@ namespace OpenAuth.Repository.Domain
         [MaxLength(10)]
         public string VoltAccurack { get; set; }
         /// <summary>
+        /// 电压稳定度
+        /// </summary>
+        [Description("电压稳定度")]
+        [MaxLength(10)]
+        public string VoltageStability { get; set; }
+        /// <summary>
+        /// 电流稳定度
+        /// </summary>
+        [Description("电流稳定度")]
+        [MaxLength(10)]
+        public string CurrentStability { get; set; }
+        /// <summary>
+        /// 功率稳定度
+        /// </summary>
+        [Description("功率稳定度")]
+        [MaxLength(10)]
+        public string PowerStability { get; set; }
+   
+        /// <summary>
+        /// 最小时间间隔
+        /// </summary>
+        [Description("最小时间间隔")]
+        [MaxLength(10)]
+        public string MinimumTimeInterval { get; set; }
+    
+        /// <summary>
+        /// 脉冲模式有无
+        /// </summary>
+        [Description("脉冲模式有无")]
+        [MaxLength(10)]
+        public string IsPulseMode { get; set; }
+        /// <summary>
+        /// 记录频率
+        /// </summary>
+        [Description("记录频率")]
+        [MaxLength(10)]
+        public string RecordFrequency { get; set; }
+        /// <summary>
         /// 是否删除
         /// </summary>
         [Description("是否删除")]

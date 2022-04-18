@@ -314,6 +314,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public int FinishCount { get; set; }
         /// <summary>
+        /// 未完成的服务单数量
+        /// </summary>
+        [NotMapped]
+        public int UnFinishCount { get; set; }
+        /// <summary>
         /// 处理时间1天内
         /// </summary>
         public int D1 { get; set; }
@@ -367,5 +372,14 @@ namespace OpenAuth.Repository.Domain
         /// 个数
         /// </summary>
         public int Num { get; set; }
+    }
+
+    public class ServiceOrderData
+    {
+        public int Id { get; set; }
+        //public int status { get; set; }
+        //public DateTime starttime { get; set; }
+        //public DateTime? endtime { get; set; }
+        //public string? supervisor { get; set; }
     }
 }

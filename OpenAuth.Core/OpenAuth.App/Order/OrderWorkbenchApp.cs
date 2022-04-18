@@ -343,14 +343,17 @@ namespace OpenAuth.App.Order
                     {
                         scon.realAuditorsName = doin.Name;
                         scon.realAuditorsComment = doin.Comment;
-                        scon.realAuditorsCheckTime = doin.CheckTime;
+                        DateTime checkTime;
+                        DateTime.TryParse(doin.CheckTime, out checkTime);
+                        scon.realAuditorsCheckTime = checkTime.ToString("yyyy.MM.dd hh:mm:ss");
                         scon.realAuditorsResult = doin.Result;
                         var dts = new DateTime();
                         dts = (DateTime)doin.CheckTime.ToDateTime();
                         if (i != 0)
                         {
                             var subTime = dts.Subtract(dt.ToDateTime());
-                            scon.Audittime = $"{subTime.Days}天{subTime.Hours}小时{subTime.Minutes}分钟{subTime.Seconds}秒{subTime.Milliseconds}毫秒";
+                            //scon.Audittime = $"{subTime.Days}天{subTime.Hours}小时{subTime.Minutes}分钟{subTime.Seconds}秒{subTime.Milliseconds}毫秒";
+                            scon.Audittime = $"{subTime.Days}天{subTime.Hours}小时{subTime.Minutes}分钟";
                         }
                         dt = (DateTime)doin.CheckTime.ToDateTime();
                         i++;

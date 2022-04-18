@@ -55,7 +55,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             var DepID = _serviceBaseApp.GetSalesDepID(UserID);
             var result = new TableData();
             bool rata = false;
-            if (loginUser.Name == "韦京生" || loginUser.Name == "郭睿心"||loginUser.Name=="唐琴"|| loginUser.Name=="ErpAdmin")
+            if (loginUser.Name == "韦京生" || loginUser.Name == "郭睿心" || loginUser.Name == "唐琴" || loginUser.Name == "ErpAdmin")
             {
                 rata = true;
             }
@@ -340,14 +340,14 @@ namespace OpenAuth.WebApi.Controllers.Order
         [Route("SalesCloseFlow")]
         public async Task<Response<string>> SalesCloseFlow(string docNum, string sboId)
         {
-            var result=new Response<string>();
+            var result = new Response<string>();
             var UserID = _serviceBaseApp.GetUserNaspId();
             var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
             try
             {
                 string funcId = _serviceSaleOrderApp.GetJobTypeByAddress("sales/SalesOrdrFunId.aspx");
                 string jobname = "关闭销售订单";
-                result.Result= _serviceSaleOrderApp.CloseDocFlow(17, int.Parse(docNum), int.Parse(funcId), jobname, UserID, "NSAP.B1Api.BOneORDRClose", sboId);
+                result.Result = _serviceSaleOrderApp.CloseDocFlow(17, int.Parse(docNum), int.Parse(funcId), jobname, UserID, "NSAP.B1Api.BOneORDRClose", sboId);
             }
             catch (Exception ex)
             {
@@ -358,5 +358,64 @@ namespace OpenAuth.WebApi.Controllers.Order
         }
         #endregion
 
+        #region 销售订单明细列表
+
+        /// <summary>
+        /// 销售订单明细列表
+        /// </summary>
+        [HttpPost]
+        [Route("GridDataBindDetails")]
+        public TableData GridDataBindDetails(SalesOrderListReq model)
+        {
+            int rowCount = 0;
+            var result = new TableData();
+            string type = "ORDR";
+            var UserID = _serviceBaseApp.GetUserNaspId();
+            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+            var DepID = _serviceBaseApp.GetSalesDepID(UserID);
+            DataTable dt = _serviceSaleOrderApp.GetSboNamePwd(SboID);
+            bool ViewFull = false;
+            bool ViewSelf = true;
+            bool ViewSelfDepartment = false;
+            bool ViewSales = true;
+            bool ViewCustom = true;
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            if (loginUser.Name == "韦京生" || loginUser.Name == "郭睿心" || loginUser.Name == "唐琴" || loginUser.Name == "ErpAdmin")
+            {
+                ViewFull = true;
+            }
+            string dRowData = string.Empty; string isOpen = "0"; string sqlcont = string.Empty; string sboname = string.Empty;
+            if (dt.Rows.Count > 0)
+            {
+                isOpen = dt.Rows[0][6].ToString();
+                sqlcont = dt.Rows[0][5].ToString(); sboname = dt.Rows[0][0].ToString();
+            }
+            try
+            {
+                //if (isOpen == "0")
+                //{
+                result.Data = _serviceSaleOrderApp.SelectBillView(model.limit, model.page, model.query, model.sortname, model.sortorder, type, ViewFull, ViewSelf, UserID, SboID, ViewSelfDepartment, DepID, ViewCustom, ViewSales, out rowCount);
+                result.Count = rowCount;
+                //}
+                //else
+                //{
+                //    return NSAP.Biz.Sales.BillDelivery.SelectBillList(int.Parse(rp), int.Parse(page), query, sortname, sortorder, type, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesOrderLine.aspx").ViewFull, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesOrderLine.aspx").ViewSelf, UserID, SboID, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesOrderLine.aspx").ViewSelfDepartment, DepID, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesOrderLine.aspx").ViewCustom, NSAP.Biz.Account.Global.GetPagePowersByUrl("sales/SalesOrderLine.aspx").ViewSales, sqlcont, sboname);
+                //}
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error($"地址：{Request.Path}，参数：{model}， 错误：{ex.Message}");
+                throw new Exception("关闭失败！" + ex.ToString());
+            }
+
+            return result;
+        }
+
+        #endregion
     }
 }

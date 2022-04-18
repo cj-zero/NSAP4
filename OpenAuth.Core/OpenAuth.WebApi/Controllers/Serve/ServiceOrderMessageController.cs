@@ -54,7 +54,7 @@ namespace OpenAuth.WebApi.Controllers.Serve
             var result = new Response();
             try
             {
-                await _serviceOrderMessageApp.RecallMessage(serviceMessage.messageId);
+                result = await _serviceOrderMessageApp.RecallMessage(serviceMessage.messageId);
             }
             catch (Exception ex)
             {

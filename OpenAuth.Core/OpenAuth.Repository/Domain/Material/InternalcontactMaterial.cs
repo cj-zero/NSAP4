@@ -74,6 +74,16 @@ namespace OpenAuth.Repository.Domain
         [Description("")]
         public int? AmpsEnd { get; set; }
         /// <summary>
+        /// 电流单位
+        /// </summary>
+        [Description("")]
+        public string CurrentUnit { get; set; }
+        /// <summary>
+        /// 夹具
+        /// </summary>
+        [Description("")]
+        public string Fixture { get; set; }
+        /// <summary>
         /// 
         /// </summary>
         [Description("")]

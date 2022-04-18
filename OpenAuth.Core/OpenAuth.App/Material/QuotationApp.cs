@@ -298,7 +298,7 @@ namespace OpenAuth.App.Material
                 {
                     if (!loginUserRole.Any(r => r.Name.Equals("物料稽查")))
                     {
-                        if (loginUserRole.Any(r=>r.Name.Equals("售后主管")))//售后主管查看其部门下所以人的数据
+                        if (loginUserRole.Any(r => r.Name.Equals("售后主管")))//售后主管查看其部门下所以人的数据
                         {
                             var orgId = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault()?.Id;
                             var orgUserIds = await UnitWork.Find<OpenAuth.Repository.Domain.Relevance>(c => c.SecondId == orgId && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
@@ -328,7 +328,7 @@ namespace OpenAuth.App.Material
             var userIds = query.Select(q => q.a.CreateUserId).ToList();
             var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
             var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
-            result.Data = query.Select(q => 
+            result.Data = query.Select(q =>
             {
                 var isfinish = flowinstanceObjs.Where(f => f.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.IsFinish;
                 var orgName = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name;
@@ -345,6 +345,7 @@ namespace OpenAuth.App.Material
                     CreateUser = orgName == null ? q.a.CreateUser : orgName + "-" + q.a.CreateUser,
                     q.a.Remark,
                     q.a.SalesOrderId,
+                    q.a.IsMaterialType,
                     CreateTime = Convert.ToDateTime(q.a.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     UpDateTime = q.a.QuotationOperationHistorys.FirstOrDefault() != null ? Convert.ToDateTime(q.a.QuotationOperationHistorys.OrderByDescending(h => h.CreateTime).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(q.a.UpDateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                     q.a.QuotationStatus,
@@ -3097,7 +3098,7 @@ namespace OpenAuth.App.Material
             var text = System.IO.File.ReadAllText(url);
             text = text.Replace("@Model.QuotationId", model.Id.ToString());
             text = text.Replace("@Model.SalesOrderId", model.SalesOrderId.ToString());
-            text = text.Replace("@Model.CreateTime", DateTime.Now.ToString("yyyy.MM.dd hh:mm"));//model.CreateTime.ToString("yyyy.MM.dd hh:mm")
+            text = text.Replace("@Model.CreateTime", DateTime.Now.ToString("yyyy.MM.dd HH:mm"));//model.CreateTime.ToString("yyyy.MM.dd hh:mm")
             text = text.Replace("@Model.SalesUser", model?.CreateUser.ToString());
             text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.Id.ToString()));
             text = text.Replace("@Model.CustomerId", serverOrder?.TerminalCustomerId.ToString());

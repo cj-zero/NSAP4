@@ -21,5 +21,6 @@ namespace OpenAuth.App.Material.Request
         /// 整改量
         /// </summary>
         public int? RectifyQty { get; set; }
+        public string Remark { get; set; }
     }
 }

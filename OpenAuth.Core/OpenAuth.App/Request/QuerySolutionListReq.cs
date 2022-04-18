@@ -4,6 +4,7 @@
     {
         public QuerySolutionListReq()
         {
+            Rank = 2;
         }
         //todo:添加自己的请求字段
 
@@ -11,5 +12,7 @@
         /// 目录等级
         /// </summary>
         public int Rank { get; set; }
+
+        public string Subject { get; set; }
     }
 }

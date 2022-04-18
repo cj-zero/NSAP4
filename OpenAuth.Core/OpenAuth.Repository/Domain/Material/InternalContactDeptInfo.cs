@@ -76,5 +76,6 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         public string Content { get; set; }
+        public int? Count { get; set; }
     }
 }

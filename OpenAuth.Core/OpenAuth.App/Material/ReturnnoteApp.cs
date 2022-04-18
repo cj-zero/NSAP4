@@ -19,6 +19,9 @@ using OpenAuth.App.Material;
 using OpenAuth.Repository.Domain.Workbench;
 using OpenAuth.App.Workbench;
 using OpenAuth.Repository.Domain.Material;
+using System.Text;
+using OpenAuth.App.SignalR;
+using Microsoft.AspNetCore.SignalR;
 
 namespace OpenAuth.App
 {
@@ -34,8 +37,10 @@ namespace OpenAuth.App
         private readonly OrgManagerApp _orgApp;
         private readonly UserManagerApp _userManagerApp;
 
-        public ReturnNoteApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, PendingApp pending, 
-            ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth, ICapPublisher capBus, OrgManagerApp orgApp,UserManagerApp userManagerApp) : base(unitWork, auth)
+        private readonly IHubContext<MessageHub> _hubContext;
+
+        public ReturnNoteApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, PendingApp pending,
+            ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth, ICapPublisher capBus, OrgManagerApp orgApp, UserManagerApp userManagerApp, IHubContext<MessageHub> hubContext) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
@@ -46,6 +51,7 @@ namespace OpenAuth.App
             _pending = pending;
             _orgApp = orgApp;
             _userManagerApp = userManagerApp;
+            _hubContext = hubContext;
         }
 
         #region app和erp通用
@@ -72,16 +78,37 @@ namespace OpenAuth.App
             List<int> serviceOrderIds = new List<int>();
             if (!string.IsNullOrWhiteSpace(req.Customer))
             {
-                var serviceOrderList = await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Contains(req.Customer) && s.TerminalCustomerId.Contains(req.Customer)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.NewestContacter, s.NewestContactTel }).ToListAsync();
+                var serviceOrderList = await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Contains(req.Customer) || s.TerminalCustomerId.Contains(req.Customer)).Select(s => new { s.Id }).Distinct().ToListAsync();
                 serviceOrderIds = serviceOrderList.Select(s => s.Id).ToList();
             }
             var returnNotes = UnitWork.Find<ReturnNote>(null).Include(r => r.ReturnNotePictures).Include(r => r.ReturnNoteProducts).ThenInclude(r => r.ReturnNoteMaterials)
+                                .WhereIf(req.returnNoteId != null, r => r.Id == req.returnNoteId)
+                                .WhereIf(!string.IsNullOrWhiteSpace(req.CreateUserName), r => r.CreateUser.Contains(req.CreateUserName))
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.SapId.ToString()), r => r.ServiceOrderSapId == req.SapId)
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()), r => r.SalesOrderId == req.SalesOrderId)
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.MaterialCode), r => r.ReturnNoteProducts.Any(x => x.ReturnNoteMaterials.Any(m => m.MaterialCode == req.MaterialCode)))
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.StartDate.ToString()), r => r.CreateTime > req.StartDate)
                                 .WhereIf(serviceOrderIds.Count() > 0, r => serviceOrderIds.Contains(r.ServiceOrderId))
                                 .WhereIf(!string.IsNullOrWhiteSpace(req.EndDate.ToString()), r => r.CreateTime < Convert.ToDateTime(req.EndDate).AddDays(1));
+            if (!string.IsNullOrWhiteSpace(req.Status))
+            {
+                if (req.Status == "驳回")
+                {
+                    flowInstanceIds.AddRange(await UnitWork.Find<FlowInstance>(f => f.IsFinish == FlowInstanceStatus.Rejected).Select(s => s.Id).ToListAsync());
+                }
+                else
+                {
+                    flowInstanceIds.AddRange(await UnitWork.Find<FlowInstance>(f => f.ActivityName.Equals(req.Status)).Select(s => s.Id).ToListAsync());
+                }
+                if (req.Status == "开始")
+                {
+                    returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId) || string.IsNullOrEmpty(r.FlowInstanceId));
+                }
+                else
+                {
+                    returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId));
+                }
+            }
             if (loginUser.Account!=Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-派送服务ID")))
             {
                 #region 筛选条件
@@ -155,26 +182,6 @@ namespace OpenAuth.App
                         flowInstanceIds = await UnitWork.Find<FlowInstance>(f => Lines.Contains(f.ActivityId)).Select(s => s.Id).ToListAsync();
                         returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId));
                     }
-                }
-                if (!string.IsNullOrWhiteSpace(req.Status))
-                {
-                    if (req.Status == "驳回")
-                    {
-                        flowInstanceIds.AddRange(await UnitWork.Find<FlowInstance>(f => f.IsFinish == FlowInstanceStatus.Rejected).Select(s => s.Id).ToListAsync());
-                    }
-                    else
-                    {
-                        flowInstanceIds.AddRange(await UnitWork.Find<FlowInstance>(f => f.ActivityName.Equals(req.Status)).Select(s => s.Id).ToListAsync());
-                    }
-                    if (req.Status == "开始")
-                    {
-                        returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId) || string.IsNullOrEmpty(r.FlowInstanceId));
-                    }
-                    else
-                    {
-                        returnNotes = returnNotes.Where(r => flowInstanceIds.Contains(r.FlowInstanceId));
-                    }
-
                 }
                 #endregion
             }
@@ -361,12 +368,12 @@ namespace OpenAuth.App
             //查询应收发票  && s.LineStatus == "O"
             var saleinv1s = await UnitWork.Find<sale_inv1>(s => s.DocEntry == req.InvoiceDocEntry).ToListAsync();
             //是否存在退料记录
-            var returnNoteProducts = await UnitWork.Find<ReturnNoteProduct>(r=>r.ProductCode.Equals(req.ProductCode)).Include(r=>r.ReturnNoteMaterials).Where(r=>r.ReturnNoteMaterials.Any(m=> req.InvoiceDocEntry ==m.InvoiceDocEntry)).ToListAsync();
+            //var returnNoteProducts = await UnitWork.Find<ReturnNoteProduct>(r => r.ProductCode.Equals(req.ProductCode)).Include(r => r.ReturnNoteMaterials).Where(r => r.ReturnNoteMaterials.Any(m => req.InvoiceDocEntry == m.InvoiceDocEntry)).ToListAsync();
             List<ReturnNoteMaterial> materials = new List<ReturnNoteMaterial>();
-            returnNoteProducts.ForEach(r =>
-            {
-                materials.AddRange(r.ReturnNoteMaterials.ToList());
-            });
+            //returnNoteProducts.ForEach(r =>
+            //{
+            //    materials.AddRange(r.ReturnNoteMaterials.ToList());
+            //});
             List<sale_inv1> saleinv1List = new List<sale_inv1>();
             //saleinv1s.ForEach(s =>
             //{
@@ -435,6 +442,7 @@ namespace OpenAuth.App
                 }
             });
             result.Data = listResps;
+            result.Count = listResps.Count();
             //result.Data = saleinv1List.Select(s => new ReturnMaterialListResp
             //{
             //    MaterialCode = replaceRecord.Where(r => r.MaterialCode == s.ItemCode).FirstOrDefault()?.ReplaceMaterialCode,
@@ -484,6 +492,7 @@ namespace OpenAuth.App
                                     .WhereIf(!string.IsNullOrWhiteSpace(req.QuotationId.ToString()), c => c.Id == req.QuotationId)
                                     .WhereIf(!string.IsNullOrWhiteSpace(req.CreateUserName), c => c.CreateUser == req.CreateUserName)
                                     .WhereIf(!string.IsNullOrWhiteSpace(req.SapId.ToString()), c => c.ServiceOrderSapId == req.SapId)
+                                    .WhereIf(req.SalesOrderId != null, c => c.SalesOrderId == req.SalesOrderId)
                                     .WhereIf(ServiceOrderids.Count > 0, c => ServiceOrderids.Contains(c.ServiceOrderId))
                                     .WhereIf(quotationIds.Count > 0, c => quotationIds.Contains(c.Id.ToString()))
                                     ;
@@ -536,11 +545,13 @@ namespace OpenAuth.App
                         join b in serviceOrder on a.ServiceOrderId equals b.Id
                         select new { a, b };
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ShieldingMaterials")).Select(u => u.Name).ToListAsync();
+
             result.Data = query.Select(c => new
             {
                 c.a.Id,
                 c.a.ServiceOrderId,
                 c.a.ServiceOrderSapId,
+                c.a.SalesOrderId,
                 c.b.TerminalCustomerId,
                 c.b.TerminalCustomer,
                 c.a.TotalMoney,
@@ -549,7 +560,8 @@ namespace OpenAuth.App
                 DeviceNum = c.a.QuotationProducts.Count(),
                 c.a.CreateTime,
                 c.a.CreateUser,
-                Status = materialReplaceRecord.Where(m => m.QuotationId == c.a.Id).Count() > 0 ? (materialReplaceRecord.Where(m => m.QuotationId == c.a.Id).Count() == c.a.QuotationMergeMaterials.Where(c => !CategoryList.Contains(c.MaterialCode)).Sum(s => s.Count) ? "已更新" : "部分更新") : "待更新"
+                //modify by yangsiming @2022.04.14 MaterialType=3,即赠送的物料不在填写计划内
+                Status = materialReplaceRecord.Where(m => m.QuotationId == c.a.Id).Count() > 0 ? (materialReplaceRecord.Where(m => m.QuotationId == c.a.Id && m.MaterialType != 3).Count() == c.a.QuotationMergeMaterials.Where(c => c.MaterialType != 3 && !CategoryList.Contains(c.MaterialCode)).Sum(s => s.Count) ? "已更新" : "部分更新") : "待更新"
             });
             return result;
         }
@@ -575,7 +587,9 @@ namespace OpenAuth.App
             }
 
             var materialObj = obj.MaterialReplaceRecordReqs.MapToList<MaterialReplaceRecord>();
-
+            //新增前先删除原有的记录
+            var quotationId = obj.MaterialReplaceRecordReqs.Where(m => m != null).Select(x => x.QuotationId).FirstOrDefault();
+            await UnitWork.DeleteAsync<MaterialReplaceRecord>(m => m.QuotationId == quotationId);
             await UnitWork.BatchAddAsync(materialObj.ToArray());
             await UnitWork.SaveAsync();
         }
@@ -606,7 +620,7 @@ namespace OpenAuth.App
                         ReplaceMaterialDescription = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.ReplaceMaterialDescription,
                         ReplaceSNandPN = replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.ReplaceSNandPN,
                         Count = c.UnitPrice,
-                        Status = !string.IsNullOrWhiteSpace(replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.SNandPN) ? "已更新" : "未提交"
+                        Status = c.MaterialType == 3 ? "赠送" : !string.IsNullOrWhiteSpace(replacedMaterials.Where(r => r.ProductCode == quotationProducts.ProductCode && r.MaterialCode == c.MaterialCode && r.LineNum == (i + 1)).FirstOrDefault()?.SNandPN) ? "已更新" : "未提交"
                     });
                 }
             });
@@ -813,6 +827,14 @@ namespace OpenAuth.App
 
             obj.ReturnNoteProducts.ForEach(c =>
             {
+                //modify by yangsiming @2022/3/23 检查每个产品下有多少个物料,如果查询数量和提交的数量不一致,说明是部分提交,则提示不能部分提交
+                var planCount = GetMaterialList(new ReturnMaterialReq { SalesOrderId = obj.SalesOrderId, InvoiceDocEntry = obj.InvoiceDocEntry, ProductCode = c.ProductCode }).Result.Count;
+                var realCount = c.ReturnNoteMaterials?.Count();
+                if (planCount != realCount)
+                {
+                    throw new Exception($"序列号{c.ProductCode},不能部分退料。");
+                }
+
                 var sort = 0;
                 var hasMaterials = c.ReturnNoteMaterials.OrderBy(c => c.ReplaceMaterialCode).ToList();
                 var groupbyMaterials = hasMaterials.GroupBy(c => c.ReplaceMaterialCode).Select(c => new { c.Key, Item = c.Select(i => i).ToList() }).ToList();
@@ -820,7 +842,7 @@ namespace OpenAuth.App
                 {
                     sort = 0;
                     var first = g.Item.FirstOrDefault()?.MaterialCode;
-                    if (!g.Item.All(c=>c.MaterialCode==first))
+                    if (!g.Item.All(c => c.MaterialCode == first))
                     {
                         throw new Exception($"物料{g.Key}，需退料的物料编码不一致，不同编码需分开退料！");
                     }
@@ -959,6 +981,14 @@ namespace OpenAuth.App
             }
             obj.ReturnNoteProducts.ForEach(c =>
             {
+                //modify by yangsiming @2022/3/23 检查每个产品下有多少个物料,如果查询数量和提交的数量不一致,说明是部分提交,则提示不能部分提交
+                var planCount = GetMaterialList(new ReturnMaterialReq { SalesOrderId = obj.SalesOrderId, InvoiceDocEntry = obj.InvoiceDocEntry, ProductCode = c.ProductCode }).Result.Count;
+                var realCount = c.ReturnNoteMaterials?.Count();
+                if (planCount != realCount)
+                {
+                    throw new Exception($"序列号{c.ProductCode},不能部分退料。");
+                }
+
                 var sort = 0;
                 var hasMaterials = c.ReturnNoteMaterials.OrderBy(c => c.ReplaceMaterialCode).ToList();
                 var groupbyMaterials = hasMaterials.GroupBy(c => c.ReplaceMaterialCode).Select(c => new { c.Key, Item = c.Select(i => i).ToList() }).ToList();
@@ -1318,5 +1348,69 @@ namespace OpenAuth.App
             }
         }
         #endregion
+
+        /// <summary>
+        /// 发送消息给有退料单未提交(包括未提交和驳回)，且时间超过7天的用户
+        /// </summary>
+        /// <returns></returns>
+        public async Task SendUnSubmitMessage()
+        {
+            //查询符合条件的用户和退料信息
+            //查询退料单实例中,状态为开始的流程id
+            var flowInstanceIds = await (from s in UnitWork.Find<FlowScheme>(null)
+                                         join i in UnitWork.Find<FlowInstance>(null)
+                                         on s.Id equals i.SchemeId
+                                         where s.SchemeName == "退料单审批" && i.ActivityName == "开始"
+                                         select i.Id).Distinct().ToListAsync();
+
+            //根据流程id查找退料信息(流程id为空表示未提交,流程id包含的表示被驳回,需要重新提交)
+            var returnNotes = await UnitWork.Find<ReturnNote>(null).Where(r => (flowInstanceIds.Contains(r.FlowInstanceId) || string.IsNullOrWhiteSpace(r.FlowInstanceId))).Select(r => new { r.Id, r.ServiceOrderSapId, r.SalesOrderId, r.CreateUser }).ToListAsync();
+
+            //按提交人进行分组
+            var groupData = returnNotes.GroupBy(r => r.CreateUser);
+            //向每个提交人发送提醒消息
+            foreach(var item in groupData)
+            {
+                var user = item.Key;
+                var message = new StringBuilder();
+                foreach (var d in item)
+                {
+                    var returnNoteId = d.Id;
+                    var serviceSapId = d.ServiceOrderSapId;
+                    var salesOrderId = d.SalesOrderId;
+                    message.AppendLine($"退料单号:{returnNoteId}");
+                }
+                message.AppendLine("已超过7天未提交,请尽快提交.");
+
+                await _hubContext.Clients.User(user).SendAsync("ReceiveMessage", "系统", message.ToString());
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public async Task SendUnSubmitCount()
+        {
+            //查询符合条件的用户和退料信息
+            //查询退料单实例中,状态为开始的流程id
+            var flowInstanceIds = await (from s in UnitWork.Find<FlowScheme>(null)
+                                         join i in UnitWork.Find<FlowInstance>(null)
+                                         on s.Id equals i.SchemeId
+                                         where s.SchemeName == "退料单审批" && i.ActivityName == "开始"
+                                         select i.Id).Distinct().ToListAsync();
+
+            //根据流程id查找退料信息(流程id为空表示未提交,流程id包含的表示被驳回,需要重新提交)
+            var returnNotes = await UnitWork.Find<ReturnNote>(null).Where(r => (flowInstanceIds.Contains(r.FlowInstanceId) || string.IsNullOrWhiteSpace(r.FlowInstanceId))).Select(r => new { r.Id, r.ServiceOrderSapId, r.SalesOrderId, r.CreateUser }).ToListAsync();
+
+            //按提交人进行分组
+            var groupData = returnNotes.GroupBy(r => r.CreateUser);
+            //向每个提交人发送提醒消息
+            foreach (var item in groupData)
+            {
+                var user = item.Key;
+                await _hubContext.Clients.User(user).SendAsync("ReturnNoteUnSubmitCount", "系统", item.Count());
+            }
+        }
     }
 }
