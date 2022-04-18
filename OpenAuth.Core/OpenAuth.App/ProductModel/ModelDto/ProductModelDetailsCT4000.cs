@@ -4,7 +4,7 @@ using System.Text;
 
 namespace OpenAuth.App.ProductModel
 {
-    public class ProductModelDetailsCT4000
+    public class ProductModelDetailsCT4000 : ExportBase
     {
         /// <summary>
         /// 设备编码
@@ -25,7 +25,7 @@ namespace OpenAuth.App.ProductModel
         /// <summary>
         /// 恒压电压范围控制
         /// </summary>
-        public string  voltageRangeControl { get; set; }
+        public string voltageRangeControl { get; set; }
         /// <summary>
         /// 最低放电电压
         /// </summary>
@@ -78,10 +78,35 @@ namespace OpenAuth.App.ProductModel
         public string IsPulseMode { get; set; }
 
 
+        /// <summary>
+        /// 充电
+        /// </summary>
+        public string Charge { get; set; }
 
+        /// <summary>
+        /// 放电
+        /// </summary>
+        public string Discharge { get; set; }
 
+        /// <summary>
+        /// 最小脉冲宽度
+        /// </summary>
+        public string MinimumPulseWidth { get; set; }
 
+        /// <summary>
+        /// 脉冲个数
+        /// </summary>
+        public string NumberOfPulses { get; set; }
 
+        /// <summary>
+        /// 充放电
+        /// </summary>
+        public string ChargeAndDischarge { get; set; }
+
+        /// <summary>
+        /// 截止条件
+        /// </summary>
+        public string CutOffCondition { get; set; }
 
 
 
