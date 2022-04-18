@@ -105,6 +105,10 @@ namespace OpenAuth.App.ProductModel.Request
         /// </summary>
      
         public string IsPulseMode { get; set; }
+        /// <summary>
+        /// 记录频率
+        /// </summary>
+        public string RecordFrequency { get; set; }
     }
 
 
