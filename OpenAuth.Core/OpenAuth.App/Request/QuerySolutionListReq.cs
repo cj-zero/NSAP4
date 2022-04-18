@@ -11,5 +11,7 @@
         /// 目录等级
         /// </summary>
         public int Rank { get; set; }
+
+        public string Subject { get; set; }
     }
 }
