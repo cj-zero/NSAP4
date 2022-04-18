@@ -141,6 +141,8 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
+        /// 
+        [HttpGet]
         public async Task<TableData> GetSolutionInfo([FromQuery] QueryServiceOrderListReq req)
         {
             var result = new TableData();
