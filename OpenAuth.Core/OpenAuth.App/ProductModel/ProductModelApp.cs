@@ -713,7 +713,8 @@ namespace OpenAuth.App
                 modelInfo.CurrentStability = item.Info.CurrentStability;
                 modelInfo.PowerStability = item.Info.PowerStability;
                 modelInfo.MinimumTimeInterval = item.Info.MinimumTimeInterval;
-                modelInfo.IsPulseMode = item.Info.IsPulseMode; ;
+                modelInfo.IsPulseMode = item.Info.IsPulseMode;
+                modelInfo.RecordFrequency = item.Info.RecordFrequency;
                 await UnitWork.AddAsync<ProductModelSelectionInfo, int>(modelInfo);
                 await UnitWork.SaveAsync();
             }
@@ -825,6 +826,7 @@ namespace OpenAuth.App
             result.MinimumVoltageInterval = double.Parse(productmodelselection.Current) * 2 + "mV";
             result.MinimumCurrentInterval = double.Parse(productmodelselection.Current) * 0.002 + "A";
             result.IsPulseMode= productmodelselectioninfo.IsPulseMode;
+            result.RecordFrequency = productmodelselectioninfo.RecordFrequency;
             if (Language == "CN")
             {
 

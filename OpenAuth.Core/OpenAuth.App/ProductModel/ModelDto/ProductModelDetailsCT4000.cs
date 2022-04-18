@@ -76,6 +76,10 @@ namespace OpenAuth.App.ProductModel
         /// 脉冲模式有无
         /// </summary>
         public string IsPulseMode { get; set; }
+        /// <summary>
+        /// 记录频率
+        /// </summary>
+        public string RecordFrequency { get; set; }
 
 
         /// <summary>

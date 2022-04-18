@@ -87,6 +87,12 @@ namespace OpenAuth.Repository.Domain
         [MaxLength(10)]
         public string IsPulseMode { get; set; }
         /// <summary>
+        /// 记录频率
+        /// </summary>
+        [Description("记录频率")]
+        [MaxLength(10)]
+        public string RecordFrequency { get; set; }
+        /// <summary>
         /// 是否删除
         /// </summary>
         [Description("是否删除")]
