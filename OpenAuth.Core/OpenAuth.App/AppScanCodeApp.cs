@@ -128,7 +128,7 @@ namespace OpenAuth.App
                                      join d in UnitWork.Find<ODLN>(null) on b.DocEntry equals d.DocEntry
                                      join e in UnitWork.Find<DLN1>(null) on d.DocEntry equals e.DocEntry
                                      where b.DocType == 15  && c.SysNumber == query.SysSerial && e.ItemCode == query.ItemCode && b.ItemCode == query.ItemCode
-                                     select new { e.ItemCode, e.Quantity,e.DocEntry,d.CardCode })
+                                     select new { e.ItemCode, e.Quantity,e.DocEntry,d.CardCode,e.LineNum })
                                      .WhereIf(!string.IsNullOrWhiteSpace(customer_code),c=>c.CardCode==customer_code)
                                      .ToListAsync();
             }
