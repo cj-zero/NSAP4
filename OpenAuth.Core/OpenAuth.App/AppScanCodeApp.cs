@@ -137,26 +137,18 @@ namespace OpenAuth.App
 
 
         /// <summary>
-        /// 判断客户代码是否为直销客户
+        /// 出厂序列号获取客户信息
         /// </summary>
-        /// <param name="customer_code"></param>
+        /// <param name="manufSN"></param>
         /// <returns></returns>
-        public async Task<TableData> IsDirectCustomer(string customer_code)
+        public async Task<TableData> GetCustomerInfo(string manufSN)
         {
             var result = new TableData();
-            result.Data = false;
-            var query= await UnitWork.Find<OCRD>(c => c.CardCode == customer_code).FirstOrDefaultAsync();
-            if (query==null)
-            {
-                result.Data = false;
-            }
-            else
-            {
-                if (query.CardType.ToUpper().Equals("C"))
-                {
-                    result.Data = true;
-                }
-            }
+            result.Data = await (from a in UnitWork.Find<OINS>(null)
+                                 join b in UnitWork.Find<OCRD>(null) on a.customer equals b.CardCode
+                                 where a.manufSN==manufSN
+                                 select new { b.CardName, b.CardCode, b.CardType, a.manufSN })
+                                 .FirstAsync();
             return result;
         }
 
