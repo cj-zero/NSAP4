@@ -596,15 +596,32 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
             var result = new Response<string>();
             try
             {
-                result.Result =await _productModelApp.GetProductModelAddCT4000(AddModel);
+                result.Result = await _productModelApp.GetProductModelAddCT4000(AddModel);
+                result.Code = result.Result == "true" ? 200 : 500;
+                result.Message = "";
             }
             catch (Exception ex)
             {
-
+                result.Code = 500;
                 result.Message = ex.Message;
             }
             return result;
         }
+
+        /// <summary>
+        /// 删除CT4000接口
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("DeleteCT4000Object")]
+        public async Task<Infrastructure.Response> DeleteCT4000Object(ProductModelSelection model)
+        {
+            var result = new Infrastructure.Response();
+            result = await _productModelApp.DeleteCT4000Object(model.Id);
+            return result;
+        }
+
         /// <summary>
         /// 获取参数规格CT4000
         /// </summary>
