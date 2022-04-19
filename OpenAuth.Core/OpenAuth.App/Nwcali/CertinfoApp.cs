@@ -1392,16 +1392,21 @@ namespace OpenAuth.App
             }
             TableData result = new TableData();
             var loginOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault();
-            var query = from a in UnitWork.Find<product_owor>(c => c.ItemCode.StartsWith("C") && c.CreateDate >= DateTime.Parse("2021-10-01")).WhereIf(!string.IsNullOrWhiteSpace(request.ProductionNo.ToString()), c => EF.Functions.Like(c.DocEntry, $"{request.ProductionNo}"))
+            var query = from a in UnitWork.Find<product_owor>(c => c.ItemCode.StartsWith("C") && c.CreateDate >= DateTime.Parse("2021-10-01"))
+                        .WhereIf(!string.IsNullOrWhiteSpace(request.ProductionNo.ToString()), c => EF.Functions.Like(c.DocEntry, $"%{request.ProductionNo}%"))
+                        .WhereIf(!string.IsNullOrWhiteSpace(request.SaleOrderNo.ToString()), c => EF.Functions.Like(c.OriginAbs, $"%{request.SaleOrderNo}%"))
+                        .WhereIf(!string.IsNullOrWhiteSpace(request.ItemCode), c => c.ItemCode.Contains(request.ItemCode))
                         join b in UnitWork.Find<sale_ordr>(null) on new { a.OriginAbs, a.sbo_id } equals new { OriginAbs = b.DocEntry, b.sbo_id } into ab
                         from b in ab.DefaultIfEmpty()
-                        join c in UnitWork.Find<crm_oslp>(null) on new { b.SlpCode, b.sbo_id } equals new { SlpCode = (short?)c.SlpCode, sbo_id = c.sbo_id.Value } into bc
+                        join c in UnitWork.Find<crm_oslp>(null)
+                        on new { b.SlpCode, b.sbo_id } equals new { SlpCode = (short?)c.SlpCode, sbo_id = c.sbo_id.Value } into bc
                         from c in bc.DefaultIfEmpty()
                         select new { a.DocEntry, a.ItemCode, ItemName = a.txtitemName, a.PlannedQty, OrgName = a.U_WO_LTDW, SaleOrderNo = a.OriginAbs, c.SlpName };
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
                 query = query.Where(c => c.OrgName.Contains(loginOrg.Name));
             }
+            query = query.WhereIf(!string.IsNullOrWhiteSpace(request.SlpName), c => EF.Functions.Like(c.SlpName, $"%{request.SlpName}%"));
             result.Count = await query.CountAsync();
             result.Data = await query.OrderByDescending(c => c.DocEntry).Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
             return result;

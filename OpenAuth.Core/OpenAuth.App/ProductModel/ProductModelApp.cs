@@ -16,7 +16,9 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
-
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+//using Infrastructure.Extensions;
 
 namespace OpenAuth.App
 {
@@ -32,6 +34,7 @@ namespace OpenAuth.App
             _serviceBaseApp = serviceBaseApp;
 
         }
+        #region CE6000
         /// <summary>
         /// 获取设备编码
         /// </summary>
@@ -102,7 +105,7 @@ namespace OpenAuth.App
         {
             Expression<Func<ProductModelSelection, bool>> exps = t => true;
             exps = exps.And(t => !t.IsDelete);
-            exps = exps.And(t =>  !t.DeviceCoding.Contains("CTE"));
+            exps = exps.And(t => !t.DeviceCoding.Contains("CTE"));
             if (!string.IsNullOrWhiteSpace(queryModel.ProductType))
             {
                 exps = exps.And(t => t.ProductType == queryModel.ProductType);
@@ -172,7 +175,7 @@ namespace OpenAuth.App
                     }
 
                 }
-               
+
             }
 
             return imgs;
@@ -199,6 +202,8 @@ namespace OpenAuth.App
             }
             return imgs;
         }
+
+
         /// <summary>
         /// 导出规格说明书
         /// </summary>
@@ -515,7 +520,7 @@ namespace OpenAuth.App
             result.ChannelNumber = productmodelselection.ChannelNumber;
             result.InputPowerType = productmodelselectioninfo.InputPowerType;
             result.InputActivePower = productmodelselectioninfo.InputActivePower + "KW";
-         
+
             if (Language == "CN")
             {
                 result.InputCurrent = productmodelselectioninfo.InputCurrent + "A/每相";
@@ -533,7 +538,7 @@ namespace OpenAuth.App
                 {
                     result.Efficiency = "90%";
                     result.Noise = "≤65dB";
-                 
+
                     result.PowerControlModuleType = "MOSFET";
                     if (productmodelselectioninfo.InputPowerType.Contains("AC220V"))
                     {
@@ -560,7 +565,7 @@ namespace OpenAuth.App
                 result.VoltageAccuracy = productmodelselectioninfo.VoltAccurack;
                 result.ChargeVoltageRange = "充电：0" + "V~" + productmodelselection.Voltage + "V";
                 result.DischargeVoltageRange = "放电：" + productmodelselectioninfo.MinimumDischargeVoltage + "V~" + productmodelselection.Voltage + "V";
-                result.MinimumDischargeVoltage = productmodelselectioninfo.MinimumDischargeVoltage+"V";
+                result.MinimumDischargeVoltage = productmodelselectioninfo.MinimumDischargeVoltage + "V";
                 result.CurrentRange = (float.Parse(productmodelselection.Current) * 0.005).ToString() + "A~" + productmodelselection.Current + "A";
                 result.CurrentAccurack = productmodelselection.CurrentAccurack;
                 float Temp = (float.Parse(productmodelselection.Current) * 1000);
@@ -574,7 +579,7 @@ namespace OpenAuth.App
 
                 }
                 result.CutOffCurrent = Temp.ToString() + "mA";
-                Temp = (float)(float.Parse(productmodelselection.Voltage)* float.Parse(productmodelselection.Current) * 0.001);
+                Temp = (float)(float.Parse(productmodelselection.Voltage) * float.Parse(productmodelselection.Current) * 0.001);
 
                 result.SinglePower = Temp.ToString() + "KW";
                 result.RecordFreq = productmodelselectioninfo.Fre;
@@ -586,7 +591,7 @@ namespace OpenAuth.App
                 Temp = (float)(float.Parse(productmodelselection.Voltage) * 0.002);
                 result.MinimumVoltageInterval = "最小电压间隔: " + Temp + "V";
                 result.MinimumCurrentInterval = "最小电流间隔: " + Temp + "A";//Minimum current interval: 0.1A
-                result.TotalPower = productmodelselection.TotalPower+"KW";
+                result.TotalPower = productmodelselection.TotalPower + "KW";
                 result.Size = productmodelselection.Size;
                 result.Pic = host + productmodeltype.Image;
             }
@@ -654,7 +659,7 @@ namespace OpenAuth.App
                 Temp = (float)(float.Parse(productmodelselection.Voltage) * 0.002);
                 result.MinimumVoltageInterval = "Minimum voltage interval: " + Temp + "V";
                 result.MinimumCurrentInterval = "Minimum current interval: " + Temp + "A";//Minimum current interval: 0.1A
-                result.TotalPower = productmodelselection.TotalPower+"KW";
+                result.TotalPower = productmodelselection.TotalPower + "KW";
                 result.Size = productmodelselection.Size;
                 result.Pic = host + productmodeltype.Image;
             }
@@ -665,13 +670,233 @@ namespace OpenAuth.App
         /// 产品选型视频介绍
         /// </summary>
         /// <returns></returns>
-        public List<TextVauleString> GetVideo( )
+        public List<TextVauleString> GetVideo()
         {
             var data = new List<TextVauleString>();
-            data.Add(new TextVauleString { Id=1,Name= "CE-6000 模块机整机解析视频.mp4", Value= "https://file.neware.com.cn/CE-6000%20%E6%A8%A1%E5%9D%97%E6%9C%BA%E6%95%B4%E6%9C%BA%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%912020.12.10~1_converted.mp4.zip"});//CE-6000 模块机整机解析视频
-            data.Add(new TextVauleString { Id=2,Name= "CE-6000 模块机组装3D.mp4", Value= "https://file.neware.com.cn/CE-6000%20%E6%A8%A1%E5%9D%97%E6%9C%BA%E7%BB%84%E8%A3%853D%20Video%202020.8.24.mp4.zip"});//CE-6000 模块机组装3D
-            data.Add(new TextVauleString { Id=3,Name= "CE-6000n 模块机系列整机生产测试指导.pdf", Value= "https://file.neware.com.cn/CE-6000n%20%E6%A8%A1%E5%9D%97%E6%9C%BA%E7%B3%BB%E5%88%97%E6%95%B4%E6%9C%BA%E7%94%9F%E4%BA%A7%E6%B5%8B%E8%AF%95%E6%8C%87%E5%AF%BC.pdf" });//CE-6000n 模块机系列整机生产测试指导.pdf
+            data.Add(new TextVauleString { Id = 1, Name = "CE-6000 模块机整机解析视频.mp4", Value = "https://file.neware.com.cn/CE-6000%20%E6%A8%A1%E5%9D%97%E6%9C%BA%E6%95%B4%E6%9C%BA%E8%A7%A3%E6%9E%90%E8%A7%86%E9%A2%912020.12.10~1_converted.mp4.zip" });//CE-6000 模块机整机解析视频
+            data.Add(new TextVauleString { Id = 2, Name = "CE-6000 模块机组装3D.mp4", Value = "https://file.neware.com.cn/CE-6000%20%E6%A8%A1%E5%9D%97%E6%9C%BA%E7%BB%84%E8%A3%853D%20Video%202020.8.24.mp4.zip" });//CE-6000 模块机组装3D
+            data.Add(new TextVauleString { Id = 3, Name = "CE-6000n 模块机系列整机生产测试指导.pdf", Value = "https://file.neware.com.cn/CE-6000n%20%E6%A8%A1%E5%9D%97%E6%9C%BA%E7%B3%BB%E5%88%97%E6%95%B4%E6%9C%BA%E7%94%9F%E4%BA%A7%E6%B5%8B%E8%AF%95%E6%8C%87%E5%AF%BC.pdf" });//CE-6000n 模块机系列整机生产测试指导.pdf
             return data;
+        }
+        #endregion
+        #region CT4000
+        /// <summary>
+        /// 新增接口
+        /// </summary>
+        /// <param name="addModel"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<string> GetProductModelAddCT4000(List<AddProductModelCT4000> addModel)
+        {
+            try
+            {
+                foreach (var item in addModel)
+                {
+                    var model = new ProductModelSelection();
+                    model.SerialNumber = item.SerialNumber;
+                    model.ProductModelCategoryId = 2;
+                    model.DeviceCoding = item.DeviceCoding;
+                    model.Voltage = item.Voltage;
+                    model.Current = item.Current;
+                    model.ChannelNumber = item.ChannelNumber;
+                    model.TotalPower = item.TotalPower;
+                    model.CurrentAccurack = item.CurrentAccurack;
+                    var Entity = await UnitWork.AddAsync<ProductModelSelection, int>(model);
+                    await UnitWork.SaveAsync();
+                    var modelInfo = new ProductModelSelectionInfo();
+                    modelInfo.ProductModelSelectionId = Entity.Id;
+                    modelInfo.MinimumDischargeVoltage = item.Info.MinimumDischargeVoltage;
+                    modelInfo.InputPowerType = item.Info.InputPowerType;
+                    modelInfo.InputActivePower = item.Info.InputActivePower;
+                    modelInfo.InputCurrent = item.Info.InputCurrent;
+                    modelInfo.Fre = item.Info.Fre;
+                    modelInfo.VoltAccurack = item.Info.VoltAccurack;
+                    modelInfo.VoltageStability = item.Info.VoltageStability;
+                    modelInfo.CurrentStability = item.Info.CurrentStability;
+                    modelInfo.PowerStability = item.Info.PowerStability;
+                    modelInfo.MinimumTimeInterval = item.Info.MinimumTimeInterval;
+                    modelInfo.IsPulseMode = item.Info.IsPulseMode;
+                    modelInfo.RecordFrequency = item.Info.RecordFrequency;
+                    await UnitWork.AddAsync<ProductModelSelectionInfo, int>(modelInfo);
+                    await UnitWork.SaveAsync();
+                }
+                return "true";
+            }
+            catch(Exception ex)
+            {
+                return ex.InnerException?.Message ?? ex.Message;
+            }
+        }
+
+        /// <summary>
+        /// 删除接口
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> DeleteCT4000Object(int id)
+        {
+            var response = new Infrastructure.Response();
+            try
+            {
+                await UnitWork.DeleteAsync<ProductModelSelection>(p => p.Id == id);
+                await UnitWork.DeleteAsync<ProductModelSelectionInfo>(p => p.ProductModelSelectionId == id);
+                await UnitWork.SaveAsync();
+            }
+            catch(Exception ex)
+            {
+                response.Code = 500;
+                response.Message = ex.InnerException?.Message ?? ex.Message ?? "";
+            }
+
+            return response;
+        }
+
+        public List<ProductModelInfo> GetProductModelGridCT4000(ProductModelReq queryModel, out int rowcount)
+        {
+            #region
+            Expression<Func<ProductModelSelection, bool>> exps = t => true;
+            exps = exps.And(t => !t.IsDelete);
+            exps = exps.And(t => t.DeviceCoding.Contains("CT-4"));
+            if (!string.IsNullOrWhiteSpace(queryModel.ProductType))
+            {
+                exps = exps.And(t => t.ProductType == queryModel.ProductType);
+            }
+            if (!string.IsNullOrWhiteSpace(queryModel.DeviceCoding))
+            {
+                exps = exps.And(t => t.DeviceCoding.Contains(queryModel.DeviceCoding));
+            }
+            if (!string.IsNullOrWhiteSpace(queryModel.Voltage))
+            {
+                exps = exps.And(t => t.Voltage == queryModel.Voltage);
+            }
+            if (!string.IsNullOrWhiteSpace(queryModel.Current))
+            {
+                exps = exps.And(t => t.Current == queryModel.Current);
+            }
+            if (!string.IsNullOrWhiteSpace(queryModel.TotalPower))
+            {
+                exps = exps.And(t => t.TotalPower == queryModel.TotalPower);
+            }
+            if (queryModel.ChannelNumber > 0)
+            {
+                exps = exps.And(t => t.ChannelNumber == queryModel.ChannelNumber);
+            }
+            if (queryModel.ProductModelCategoryId != -1)
+            {
+                exps = exps.And(t => t.ProductModelCategoryId == queryModel.ProductModelCategoryId);
+            }
+            var productModelSelectionList = UnitWork.Find(queryModel.page, queryModel.limit, "Id", exps).OrderBy(x => x.Id);
+            rowcount = UnitWork.GetCount(exps);
+            return productModelSelectionList.MapToList<ProductModelInfo>();
+            #endregion
+
+            //var query = UnitWork.Find<ProductModelSelection>(p=>p.IsDelete==false && p.DeviceCoding.Contains("CT-4"))
+            //    .WhereIf(!string.IsNullOrWhiteSpace(queryModel.ProductType), t => t.ProductType == queryModel.ProductType)
+            //    .WhereIf(!string.IsNullOrWhiteSpace(queryModel.DeviceCoding), t => t.DeviceCoding.Contains(queryModel.DeviceCoding))
+            //    .WhereIf(!string.IsNullOrWhiteSpace(queryModel.Voltage), t => t.Voltage == queryModel.Voltage)
+            //    .WhereIf(!string.IsNullOrWhiteSpace(queryModel.Current), t => t.Current == queryModel.Current)
+            //    .WhereIf(!string.IsNullOrWhiteSpace(queryModel.TotalPower), t => t.TotalPower == queryModel.TotalPower)
+            //    .WhereIf(queryModel.ChannelNumber > 0, t => t.ChannelNumber == queryModel.ChannelNumber)
+            //    .WhereIf(queryModel.ProductModelCategoryId!=null && queryModel.ProductModelCategoryId != -1, t => t.ProductModelCategoryId == queryModel.ProductModelCategoryId);
+        }
+
+        /// <summary>
+        /// 获取设备编码CT4000
+        /// </summary>
+        /// <returns></returns>
+        public List<string> GetDeviceCodingListCT4000()
+        {
+            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.DeviceCoding.Contains("CT-4"));
+            return productModelSelections.Select(zw => zw.DeviceCoding).OrderBy(zw => zw).Distinct().ToList();
+        }
+        /// <summary>
+        /// 获取电流等级CT4000
+        /// </summary>
+        /// <returns></returns>
+        public List<string> GetCurrentListCT4000()
+        {
+            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.DeviceCoding.Contains("CT-4"));
+            return productModelSelections.Select(zw => zw.Current).Distinct().ToList().OrderBy(x => decimal.Parse(x)).ToList();
+        }
+        /// <summary>
+        /// 获取电压等级CT4000
+        /// </summary>
+        /// <returns></returns>
+        public List<string> GetVoltageListCT4000()
+        {
+            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.DeviceCoding.Contains("CT-4"));
+            return productModelSelections.Select(zw => zw.Voltage).Distinct().ToList().OrderBy(x => decimal.Parse(x)).ToList();
+        }
+        /// <summary>
+        /// 获取通道数量CT4000
+        /// </summary>
+        /// <returns></returns>
+        public List<int> GetChannelListCT4000()
+        {
+            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.DeviceCoding.Contains("CT-4"));
+            return productModelSelections.Select(zw => zw.ChannelNumber).Distinct().OrderBy(zw => zw).ToList();
+        }
+        #endregion
+        /// <summary>
+        /// 产品规格CT4000
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        public ProductModelDetailsCT4000 GetSpecificationsCT4000(int Id, string? host, string Language)
+        {
+            var result = new ProductModelDetailsCT4000();
+            var productmodelselection = UnitWork.FindSingle<ProductModelSelection>(q => q.Id == Id);
+            var productmodeltype = UnitWork.FindSingle<ProductModelType>(q => q.Id == productmodelselection.ProductModelTypeId);
+            var productmodelselectioninfo = UnitWork.FindSingle<ProductModelSelectionInfo>(q => q.ProductModelSelectionId == productmodelselection.Id);
+            result.EquipmentModel = (productmodelselection.Voltage + "V" + productmodelselection.Current + "A").ToString();
+            result.DeviceCoding = productmodelselection.DeviceCoding;
+            result.ChannelNumber = productmodelselection.ChannelNumber;
+            result.InputPowerType = "AC " + productmodelselectioninfo?.InputPowerType + "V" + " ±10% / 50Hz";
+            result.InputActivePower = productmodelselectioninfo?.InputActivePower + "W";
+            result.voltageRangeControl = double.Parse(productmodelselection.Voltage) * 0.005 + "V~" + productmodelselection.Voltage + "V";
+            result.MinimumDischargeVoltage = productmodelselectioninfo?.MinimumDischargeVoltage + "V";
+            result.VoltageAccuracy = "± " + productmodelselectioninfo?.VoltAccurack + "%" + " of FS";
+            result.VoltageStability = "± " + productmodelselectioninfo?.VoltageStability + "%" + " of FS";
+            result.CurrentOutputRange = double.Parse(productmodelselection.Current) * 0.005 + "A~" + productmodelselection.Current + "A";
+            result.CurrentAccurack = "± " + productmodelselection.CurrentAccurack + "%" + " of FS";
+            result.CutOffCurrent = double.Parse(productmodelselection.Current) * 0.002 + "A";
+            result.CurrentStability = "± " + productmodelselectioninfo?.CurrentStability + "%" + " of FS";
+            result.SinglePowerMax = double.Parse(productmodelselection.Current) * double.Parse(productmodelselection.Voltage) + "W";
+            result.PowerStability = (double.Parse(productmodelselection.Current) * double.Parse(productmodelselection.Voltage)) <= 30 ? "±0.1% of FS" : "±0.2% of FS";
+            result.MinimumTimeInterval = productmodelselectioninfo?.MinimumTimeInterval ?? "";
+            result.MinimumVoltageInterval = double.Parse(productmodelselection.Voltage) * 2 + "mV";
+            result.MinimumCurrentInterval = double.Parse(productmodelselection.Current) * 0.002 + "A";
+            result.IsPulseMode = productmodelselectioninfo?.IsPulseMode;
+            if (result.IsPulseMode == "有")
+            {
+                result.Charge = "横流模式、恒功率模式";
+                result.Discharge = "横流模式、恒功率模式";
+                result.MinimumPulseWidth = "500ms";
+                result.NumberOfPulses = "单个脉冲工步支持32个不同的脉冲";
+                result.ChargeAndDischarge = "一个脉冲工步可以实现从充电到放电的连续切换";
+                result.CutOffCondition = "电压、相对时间";
+            }
+            else if (result.IsPulseMode == "无")
+            {
+                result.Charge = "";
+                result.Discharge = "";
+                result.MinimumPulseWidth = "";
+                result.NumberOfPulses = "";
+                result.ChargeAndDischarge = "";
+                result.CutOffCondition = "";
+            }
+
+            result.RecordFrequency = productmodelselectioninfo?.RecordFrequency ?? "";
+            /*
+            if (Language == "CN")
+            {
+            }
+            else if (Language == "EN")
+            {
+            }
+            */
+
+            return result;
         }
     }
 }

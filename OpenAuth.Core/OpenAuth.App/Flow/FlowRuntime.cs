@@ -355,7 +355,7 @@ namespace OpenAuth.App.Flow
                     item.Value.setInfo.UserId = tag.UserId;
                     item.Value.setInfo.UserName = tag.UserName;
                     item.Value.setInfo.Description = tag.Description;
-                    item.Value.setInfo.TagedTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+                    item.Value.setInfo.TagedTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                     break;
                 }
             }
