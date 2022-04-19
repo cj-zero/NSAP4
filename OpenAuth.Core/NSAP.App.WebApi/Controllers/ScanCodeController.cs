@@ -107,17 +107,17 @@ namespace NSAP.App.WebApi.Controllers
         }
 
         /// <summary>
-        /// 判断客户代码是否为直销客户
+        /// 出厂序列号获取客户信息
         /// </summary>
-        /// <param name="customer_code"></param>
+        /// <param name="manufSN"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> IsDirectCustomer(string customer_code)
+        public async Task<TableData> GetCustomerInfo(string manufSN)
         {
             var result = new TableData();
             try
             {
-                result = await _appScanCodeApp.IsDirectCustomer(customer_code);
+                result = await _appScanCodeApp.GetCustomerInfo(manufSN);
             }
             catch (Exception e)
             {
