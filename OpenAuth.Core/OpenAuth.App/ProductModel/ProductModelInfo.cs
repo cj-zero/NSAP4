@@ -59,8 +59,10 @@ namespace OpenAuth.App.ProductModel
         /// </summary>
         public decimal UnitPrice { get; set; }
 
-
-
+        /// <summary>
+        /// 分页时连续的排序号
+        /// </summary>
+        public int Index { get; set; }
     }
 
     public class ProductParamTemplate : ExportBase

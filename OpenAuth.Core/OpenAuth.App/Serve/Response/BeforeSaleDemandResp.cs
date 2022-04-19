@@ -162,6 +162,15 @@ namespace OpenAuth.App.Reponse
         /// </summary>
         public System.DateTime? UpdateTime { get; set; }
 
+        /// <summary>
+        /// 关联项目ID
+        /// </summary>
+        public int BeforeSaleDemandProjectId { get; set; }
+        /// <summary>
+        /// 关联项目名称
+        /// </summary>
+        public string BeforeSaleDemandProjectName { get; set; }
+
         //todo:添加自己的请求字段
 
         /// <summary>

@@ -19,7 +19,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace OpenAuth.App
 {
     /// <summary>
@@ -41,7 +40,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public List<string> GetDeviceCodingList()
         {
-            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && !u.DeviceCoding.Contains("CTE"));
+            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.DeviceCoding.Contains("CE-6"));
             return productModelSelections.Select(zw => zw.DeviceCoding).OrderBy(zw => zw).Distinct().ToList();
         }
         /// <summary>
@@ -67,7 +66,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public List<string> GetVoltageList()
         {
-            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete);
+            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.DeviceCoding.Contains("CE-6"));
             return productModelSelections.Select(zw => zw.Voltage).Distinct().OrderBy(int.Parse).ToList();
         }
         /// <summary>
@@ -76,7 +75,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public List<string> GetCurrentList()
         {
-            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete);
+            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.DeviceCoding.Contains("CE-6"));
             return productModelSelections.Select(zw => zw.Current).Distinct().OrderBy(int.Parse).ToList();
         }
         /// <summary>
@@ -85,7 +84,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public List<int> GetChannelList()
         {
-            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete);
+            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.DeviceCoding.Contains("CE-6"));
             return productModelSelections.Select(zw => zw.ChannelNumber).Distinct().OrderBy(zw => zw).ToList();
         }
         /// <summary>
@@ -94,7 +93,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public List<string> GetTotalPowerList()
         {
-            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete);
+            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.DeviceCoding.Contains("CE-6"));
             return productModelSelections.Select(zw => zw.TotalPower).Distinct().OrderBy(float.Parse).ToList();
         }
         /// <summary>
@@ -105,7 +104,7 @@ namespace OpenAuth.App
         {
             Expression<Func<ProductModelSelection, bool>> exps = t => true;
             exps = exps.And(t => !t.IsDelete);
-            exps = exps.And(t => !t.DeviceCoding.Contains("CTE"));
+            exps = exps.And(t => t.DeviceCoding.Contains("CE-6"));
             if (!string.IsNullOrWhiteSpace(queryModel.ProductType))
             {
                 exps = exps.And(t => t.ProductType == queryModel.ProductType);
@@ -688,78 +687,142 @@ namespace OpenAuth.App
         /// <exception cref="NotImplementedException"></exception>
         public async Task<string> GetProductModelAddCT4000(List<AddProductModelCT4000> addModel)
         {
-            foreach (var item in addModel)
+            try
             {
-                var model = new ProductModelSelection();
-                model.SerialNumber = item.SerialNumber;
-                model.ProductModelCategoryId = 2;
-                model.DeviceCoding = item.DeviceCoding;
-                model.Voltage = item.Voltage;
-                model.Current = item.Current;
-                model.ChannelNumber = item.ChannelNumber;
-                model.TotalPower = item.TotalPower;
-                model.CurrentAccurack = item.CurrentAccurack;
-                var Entity = await UnitWork.AddAsync<ProductModelSelection, int>(model);
-                await UnitWork.SaveAsync();
-                var modelInfo = new ProductModelSelectionInfo();
-                modelInfo.ProductModelSelectionId = Entity.Id;
-                modelInfo.MinimumDischargeVoltage = item.Info.MinimumDischargeVoltage;
-                modelInfo.InputPowerType = item.Info.InputPowerType;
-                modelInfo.InputActivePower = item.Info.InputActivePower;
-                modelInfo.InputCurrent = item.Info.InputCurrent;
-                modelInfo.Fre = item.Info.Fre;
-                modelInfo.VoltAccurack = item.Info.VoltAccurack;
-                modelInfo.VoltageStability = item.Info.VoltageStability;
-                modelInfo.CurrentStability = item.Info.CurrentStability;
-                modelInfo.PowerStability = item.Info.PowerStability;
-                modelInfo.MinimumTimeInterval = item.Info.MinimumTimeInterval;
-                modelInfo.IsPulseMode = item.Info.IsPulseMode;
-                modelInfo.RecordFrequency = item.Info.RecordFrequency;
-                await UnitWork.AddAsync<ProductModelSelectionInfo, int>(modelInfo);
-                await UnitWork.SaveAsync();
+                foreach (var item in addModel)
+                {
+                    var model = new ProductModelSelection();
+                    model.SerialNumber = item.SerialNumber;
+                    model.ProductModelCategoryId = 2;
+                    model.DeviceCoding = item.DeviceCoding;
+                    model.Voltage = item.Voltage;
+                    model.Current = item.Current;
+                    model.ChannelNumber = item.ChannelNumber;
+                    model.TotalPower = item.TotalPower;
+                    model.CurrentAccurack = item.CurrentAccurack;
+                    var Entity = await UnitWork.AddAsync<ProductModelSelection, int>(model);
+                    await UnitWork.SaveAsync();
+                    var modelInfo = new ProductModelSelectionInfo();
+                    modelInfo.ProductModelSelectionId = Entity.Id;
+                    modelInfo.MinimumDischargeVoltage = item.Info.MinimumDischargeVoltage;
+                    modelInfo.InputPowerType = item.Info.InputPowerType;
+                    modelInfo.InputActivePower = item.Info.InputActivePower;
+                    modelInfo.InputCurrent = item.Info.InputCurrent;
+                    modelInfo.Fre = item.Info.Fre;
+                    modelInfo.VoltAccurack = item.Info.VoltAccurack;
+                    modelInfo.VoltageStability = item.Info.VoltageStability;
+                    modelInfo.CurrentStability = item.Info.CurrentStability;
+                    modelInfo.PowerStability = item.Info.PowerStability;
+                    modelInfo.MinimumTimeInterval = item.Info.MinimumTimeInterval;
+                    modelInfo.IsPulseMode = item.Info.IsPulseMode;
+                    modelInfo.RecordFrequency = item.Info.RecordFrequency;
+                    await UnitWork.AddAsync<ProductModelSelectionInfo, int>(modelInfo);
+                    await UnitWork.SaveAsync();
+                }
+                return "true";
             }
-            return "true";
+            catch(Exception ex)
+            {
+                return ex.InnerException?.Message ?? ex.Message;
+            }
         }
 
-        public List<ProductModelInfo> GetProductModelGridCT4000(ProductModelReq queryModel, out int rowcount)
+        /// <summary>
+        /// 删除接口
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> DeleteCT4000Object(int id)
         {
-            Expression<Func<ProductModelSelection, bool>> exps = t => true;
-            exps = exps.And(t => !t.IsDelete);
-            exps = exps.And(t => t.DeviceCoding.Contains("CT-4"));
-            if (!string.IsNullOrWhiteSpace(queryModel.ProductType))
+            var response = new Infrastructure.Response();
+            try
             {
-                exps = exps.And(t => t.ProductType == queryModel.ProductType);
+                await UnitWork.DeleteAsync<ProductModelSelection>(p => p.Id == id);
+                await UnitWork.DeleteAsync<ProductModelSelectionInfo>(p => p.ProductModelSelectionId == id);
+                await UnitWork.SaveAsync();
             }
-            if (!string.IsNullOrWhiteSpace(queryModel.DeviceCoding))
+            catch(Exception ex)
             {
-                exps = exps.And(t => t.DeviceCoding.Contains(queryModel.DeviceCoding));
+                response.Code = 500;
+                response.Message = ex.InnerException?.Message ?? ex.Message ?? "";
             }
-            if (!string.IsNullOrWhiteSpace(queryModel.Voltage))
-            {
-                exps = exps.And(t => t.Voltage == queryModel.Voltage);
-            }
-            if (!string.IsNullOrWhiteSpace(queryModel.Current))
-            {
-                exps = exps.And(t => t.Current == queryModel.Current);
-            }
-            if (!string.IsNullOrWhiteSpace(queryModel.TotalPower))
-            {
-                exps = exps.And(t => t.TotalPower == queryModel.TotalPower);
-            }
-            if (queryModel.ChannelNumber > 0)
-            {
-                exps = exps.And(t => t.ChannelNumber == queryModel.ChannelNumber);
-            }
-            if (queryModel.ProductModelCategoryId != -1)
-            {
-                exps = exps.And(t => t.ProductModelCategoryId == queryModel.ProductModelCategoryId);
 
-            }
-            var productModelSelectionList = UnitWork.Find(queryModel.page, queryModel.limit, "Id", exps);
-            rowcount = UnitWork.GetCount(exps);
-            return productModelSelectionList.MapToList<ProductModelInfo>();
-
+            return response;
         }
+
+        public IEnumerable<ProductModelInfo> GetProductModelGridCT4000(ProductModelReq queryModel, out int rowcount)
+        {
+            #region
+            //Expression<Func<ProductModelSelection, bool>> exps = t => true;
+            //exps = exps.And(t => !t.IsDelete);
+            //exps = exps.And(t => t.DeviceCoding.Contains("CT-4"));
+            //if (!string.IsNullOrWhiteSpace(queryModel.ProductType))
+            //{
+            //    exps = exps.And(t => t.ProductType == queryModel.ProductType);
+            //}
+            //if (!string.IsNullOrWhiteSpace(queryModel.DeviceCoding))
+            //{
+            //    exps = exps.And(t => t.DeviceCoding.Contains(queryModel.DeviceCoding));
+            //}
+            //if (!string.IsNullOrWhiteSpace(queryModel.Voltage))
+            //{
+            //    exps = exps.And(t => t.Voltage == queryModel.Voltage);
+            //}
+            //if (!string.IsNullOrWhiteSpace(queryModel.Current))
+            //{
+            //    exps = exps.And(t => t.Current == queryModel.Current);
+            //}
+            //if (!string.IsNullOrWhiteSpace(queryModel.TotalPower))
+            //{
+            //    exps = exps.And(t => t.TotalPower == queryModel.TotalPower);
+            //}
+            //if (queryModel.ChannelNumber > 0)
+            //{
+            //    exps = exps.And(t => t.ChannelNumber == queryModel.ChannelNumber);
+            //}
+            //if (queryModel.ProductModelCategoryId != -1)
+            //{
+            //    exps = exps.And(t => t.ProductModelCategoryId == queryModel.ProductModelCategoryId);
+            //}
+            //var productModelSelectionList = UnitWork.Find(queryModel.page, queryModel.limit, "Id", exps).OrderBy(x => x.Id);
+            //rowcount = UnitWork.GetCount(exps);
+            //return productModelSelectionList.MapToList<ProductModelInfo>();
+            #endregion
+
+            var query = UnitWork.Find<ProductModelSelection>(p => p.IsDelete == false && p.DeviceCoding.Contains("CT-4"))
+            .Where(p => !string.IsNullOrWhiteSpace(queryModel.ProductType) ? p.ProductType == queryModel.ProductType : true)
+            .Where(p => !string.IsNullOrWhiteSpace(queryModel.DeviceCoding) ? p.DeviceCoding.Contains(queryModel.DeviceCoding) : true)
+            .Where(p => !string.IsNullOrWhiteSpace(queryModel.Voltage) ? p.Voltage == queryModel.Voltage : true)
+            .Where(p => !string.IsNullOrWhiteSpace(queryModel.Current) ? p.Current == queryModel.Current : true)
+            .Where(p => !string.IsNullOrWhiteSpace(queryModel.TotalPower) ? p.TotalPower == queryModel.TotalPower : true)
+            .Where(p => queryModel.ChannelNumber > 0 ? p.ChannelNumber == queryModel.ChannelNumber : true)
+            .Where(p => queryModel.ProductModelCategoryId != null && queryModel.ProductModelCategoryId != -1 ? p.ProductModelCategoryId == queryModel.ProductModelCategoryId : true);
+
+            var data = query.OrderBy(q => q.Id)
+                .Skip((queryModel.page - 1) * queryModel.limit)
+                .Take(queryModel.limit)
+                .ToList()
+                .Select((p, index) => new ProductModelInfo { 
+                    Id = p.Id,
+                    ProductModelCategoryId = p.ProductModelCategoryId,
+                    SerialNumber = p.SerialNumber,
+                    ProductType = p.ProductType,
+                    DeviceCoding = p.DeviceCoding,
+                    Voltage = p.Voltage,
+                    Current = p.Current,
+                    ChannelNumber = p.ChannelNumber,
+                    TotalPower = p.TotalPower,
+                    CurrentAccurack = p.CurrentAccurack,
+                    Size = p.Size,
+                    Weight = p.Weight,
+                    UnitPrice = p.UnitPrice,
+                    Index = index + (queryModel.page - 1) * queryModel.limit + 1 }
+                );
+
+            rowcount = data.Count();
+            return data;
+        }
+
         /// <summary>
         /// 获取设备编码CT4000
         /// </summary>
@@ -770,22 +833,22 @@ namespace OpenAuth.App
             return productModelSelections.Select(zw => zw.DeviceCoding).OrderBy(zw => zw).Distinct().ToList();
         }
         /// <summary>
-        /// 获取电压等级CT4000
+        /// 获取电流等级CT4000
         /// </summary>
         /// <returns></returns>
         public List<string> GetCurrentListCT4000()
         {
             var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.DeviceCoding.Contains("CT-4"));
-            return productModelSelections.Select(zw => zw.Current).Distinct().OrderBy(int.Parse).ToList();
+            return productModelSelections.Select(zw => zw.Current).Distinct().ToList().OrderBy(x => decimal.Parse(x)).ToList();
         }
         /// <summary>
-        /// 获取电流等级CT4000
+        /// 获取电压等级CT4000
         /// </summary>
         /// <returns></returns>
         public List<string> GetVoltageListCT4000()
         {
             var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.DeviceCoding.Contains("CT-4"));
-            return productModelSelections.Select(zw => zw.Voltage).Distinct().OrderBy(int.Parse).ToList();
+            return productModelSelections.Select(zw => zw.Voltage).Distinct().ToList().OrderBy(x => decimal.Parse(x)).ToList();
         }
         /// <summary>
         /// 获取通道数量CT4000
@@ -803,44 +866,58 @@ namespace OpenAuth.App
         /// <param name="Id"></param>
         /// <returns></returns>
         public ProductModelDetailsCT4000 GetSpecificationsCT4000(int Id, string? host, string Language)
-
         {
             var result = new ProductModelDetailsCT4000();
             var productmodelselection = UnitWork.FindSingle<ProductModelSelection>(q => q.Id == Id);
             var productmodeltype = UnitWork.FindSingle<ProductModelType>(q => q.Id == productmodelselection.ProductModelTypeId);
             var productmodelselectioninfo = UnitWork.FindSingle<ProductModelSelectionInfo>(q => q.ProductModelSelectionId == productmodelselection.Id);
+            result.EquipmentModel = (productmodelselection.Voltage + "V" + productmodelselection.Current + "A").ToString();
             result.DeviceCoding = productmodelselection.DeviceCoding;
             result.ChannelNumber = productmodelselection.ChannelNumber;
-            result.InputPowerType = productmodelselectioninfo.InputPowerType;
-            result.InputActivePower = productmodelselectioninfo.InputActivePower;
+            result.InputPowerType = "AC " + productmodelselectioninfo?.InputPowerType + "V" + " ±10% / 50Hz";
+            result.InputActivePower = productmodelselectioninfo?.InputActivePower;
             result.voltageRangeControl = double.Parse(productmodelselection.Voltage) * 0.005 + "V~" + productmodelselection.Voltage + "V";
-            result.MinimumDischargeVoltage = productmodelselectioninfo.MinimumDischargeVoltage;
-            result.VoltageAccuracy = productmodelselectioninfo.VoltAccurack;
-            result.VoltageStability = productmodelselectioninfo.VoltageStability;
+            result.MinimumDischargeVoltage = productmodelselectioninfo?.MinimumDischargeVoltage + "V";
+            result.VoltageAccuracy = "± " + productmodelselectioninfo?.VoltAccurack + "%" + " of FS";
+            result.VoltageStability = "± " + productmodelselectioninfo?.VoltageStability + "%" + " of FS";
             result.CurrentOutputRange = double.Parse(productmodelselection.Current) * 0.005 + "A~" + productmodelselection.Current + "A";
-            result.CurrentAccurack = productmodelselection.CurrentAccurack;
+            result.CurrentAccurack = "± " + productmodelselection.CurrentAccurack + "%" + " of FS";
             result.CutOffCurrent = double.Parse(productmodelselection.Current) * 0.002 + "A";
-            result.CurrentStability = productmodelselectioninfo.CurrentStability;
+            result.CurrentStability = "± " + productmodelselectioninfo?.CurrentStability + "%" + " of FS";
             result.SinglePowerMax = double.Parse(productmodelselection.Current) * double.Parse(productmodelselection.Voltage) + "W";
-            result.MinimumTimeInterval = productmodelselectioninfo.MinimumTimeInterval;
-            result.MinimumVoltageInterval = double.Parse(productmodelselection.Current) * 2 + "mV";
+            result.PowerStability = (double.Parse(productmodelselection.Current) * double.Parse(productmodelselection.Voltage)) <= 30 ? "±0.1% of FS" : "±0.2% of FS";
+            result.MinimumTimeInterval = productmodelselectioninfo?.MinimumTimeInterval ?? "";
+            result.MinimumVoltageInterval = double.Parse(productmodelselection.Voltage) * 2 + "mV";
             result.MinimumCurrentInterval = double.Parse(productmodelselection.Current) * 0.002 + "A";
-            result.IsPulseMode= productmodelselectioninfo.IsPulseMode;
-            result.RecordFrequency = productmodelselectioninfo.RecordFrequency;
+            result.IsPulseMode = productmodelselectioninfo?.IsPulseMode;
+            if (result.IsPulseMode == "有")
+            {
+                result.ChargeContent = "横流模式、恒功率模式";
+                result.DischargeContent = "横流模式、恒功率模式";
+                result.MinimumPulseWidthContent = "500ms";
+                result.NumberOfPulsesContent = "单个脉冲工步支持32个不同的脉冲";
+                result.ChargeAndDischargeContent = "一个脉冲工步可以实现从充电到放电的连续切换";
+                result.CutOffConditionContent = "电压、相对时间";
+            }
+            else if (result.IsPulseMode == "无")
+            {
+                result.ChargeContent = "";
+                result.DischargeContent = "";
+                result.MinimumPulseWidthContent = "";
+                result.NumberOfPulsesContent = "";
+                result.ChargeAndDischargeContent = "";
+                result.CutOffConditionContent = "";
+            }
+
+            result.RecordFrequency = productmodelselectioninfo?.RecordFrequency ?? "";
+            /*
             if (Language == "CN")
             {
-
-
             }
             else if (Language == "EN")
             {
-
-
-
-
-
-
             }
+            */
 
             return result;
         }

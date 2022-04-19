@@ -7,6 +7,10 @@ namespace OpenAuth.App.ProductModel
     public class ProductModelDetailsCT4000 : ExportBase
     {
         /// <summary>
+        /// 设备型号
+        /// </summary>
+        public string EquipmentModel { get; set; }
+        /// <summary>
         /// 设备编码
         /// </summary>
         public string DeviceCoding { get; set; }
@@ -60,6 +64,12 @@ namespace OpenAuth.App.ProductModel
         /// 单通道输出最大功率
         /// </summary>
         public string SinglePowerMax { get; set; }
+
+        /// <summary>
+        /// 功率稳定度
+        /// </summary>
+        public string PowerStability { get; set; }
+
         /// <summary>
         /// 最小时间间隔
         /// </summary>
@@ -85,32 +95,32 @@ namespace OpenAuth.App.ProductModel
         /// <summary>
         /// 充电
         /// </summary>
-        public string Charge { get; set; }
+        public string ChargeContent { get; set; }
 
         /// <summary>
         /// 放电
         /// </summary>
-        public string Discharge { get; set; }
+        public string DischargeContent { get; set; }
 
         /// <summary>
         /// 最小脉冲宽度
         /// </summary>
-        public string MinimumPulseWidth { get; set; }
+        public string MinimumPulseWidthContent { get; set; }
 
         /// <summary>
         /// 脉冲个数
         /// </summary>
-        public string NumberOfPulses { get; set; }
+        public string NumberOfPulsesContent { get; set; }
 
         /// <summary>
         /// 充放电
         /// </summary>
-        public string ChargeAndDischarge { get; set; }
+        public string ChargeAndDischargeContent { get; set; }
 
         /// <summary>
         /// 截止条件
         /// </summary>
-        public string CutOffCondition { get; set; }
+        public string CutOffConditionContent { get; set; }
 
 
 
