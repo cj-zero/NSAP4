@@ -702,7 +702,7 @@ namespace OpenAuth.App
                     model.TotalPower = item.TotalPower;
                     model.CurrentAccurack = item.CurrentAccurack;
                     var Entity = await UnitWork.AddAsync<ProductModelSelection, int>(model);
-                    //await UnitWork.SaveAsync();
+                    await UnitWork.SaveAsync();
                     var modelInfo = new ProductModelSelectionInfo();
                     modelInfo.ProductModelSelectionId = Entity.Id;
                     modelInfo.MinimumDischargeVoltage = item.Info.MinimumDischargeVoltage;
@@ -718,8 +718,8 @@ namespace OpenAuth.App
                     modelInfo.IsPulseMode = item.Info.IsPulseMode;
                     modelInfo.RecordFrequency = item.Info.RecordFrequency;
                     await UnitWork.AddAsync<ProductModelSelectionInfo, int>(modelInfo);
+                    await UnitWork.SaveAsync();
                 }
-                await UnitWork.SaveAsync();
                 return "true";
             }
             catch(Exception ex)
@@ -851,8 +851,8 @@ namespace OpenAuth.App
             result.EquipmentModel = (productmodelselection.Voltage + "V" + productmodelselection.Current + "A").ToString();
             result.DeviceCoding = productmodelselection.DeviceCoding;
             result.ChannelNumber = productmodelselection.ChannelNumber;
-            result.InputPowerType = "AC " + productmodelselectioninfo?.InputPowerType ?? "" + "V" + " ±10% / 50Hz";
-            result.InputActivePower = productmodelselectioninfo?.InputActivePower ?? "" + "W";
+            result.InputPowerType = "AC " + productmodelselectioninfo?.InputPowerType + "V" + " ±10% / 50Hz";
+            result.InputActivePower = productmodelselectioninfo?.InputActivePower + "W";
             result.voltageRangeControl = double.Parse(productmodelselection.Voltage) * 0.005 + "V~" + productmodelselection.Voltage + "V";
             result.MinimumDischargeVoltage = productmodelselectioninfo?.MinimumDischargeVoltage + "V";
             result.VoltageAccuracy = "± " + productmodelselectioninfo?.VoltAccurack + "%" + " of FS";
