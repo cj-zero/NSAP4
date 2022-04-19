@@ -18,7 +18,6 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-//using Infrastructure.Extensions;
 
 namespace OpenAuth.App
 {
@@ -41,7 +40,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public List<string> GetDeviceCodingList()
         {
-            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && !u.DeviceCoding.Contains("CTE"));
+            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.DeviceCoding.Contains("CE-6"));
             return productModelSelections.Select(zw => zw.DeviceCoding).OrderBy(zw => zw).Distinct().ToList();
         }
         /// <summary>
@@ -67,7 +66,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public List<string> GetVoltageList()
         {
-            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete);
+            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.DeviceCoding.Contains("CE-6"));
             return productModelSelections.Select(zw => zw.Voltage).Distinct().OrderBy(int.Parse).ToList();
         }
         /// <summary>
@@ -76,7 +75,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public List<string> GetCurrentList()
         {
-            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete);
+            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.DeviceCoding.Contains("CE-6"));
             return productModelSelections.Select(zw => zw.Current).Distinct().OrderBy(int.Parse).ToList();
         }
         /// <summary>
@@ -85,7 +84,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public List<int> GetChannelList()
         {
-            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete);
+            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.DeviceCoding.Contains("CE-6"));
             return productModelSelections.Select(zw => zw.ChannelNumber).Distinct().OrderBy(zw => zw).ToList();
         }
         /// <summary>
@@ -94,7 +93,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public List<string> GetTotalPowerList()
         {
-            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete);
+            var productModelSelections = UnitWork.Find<ProductModelSelection>(u => !u.IsDelete && u.DeviceCoding.Contains("CE-6"));
             return productModelSelections.Select(zw => zw.TotalPower).Distinct().OrderBy(float.Parse).ToList();
         }
         /// <summary>
@@ -105,7 +104,7 @@ namespace OpenAuth.App
         {
             Expression<Func<ProductModelSelection, bool>> exps = t => true;
             exps = exps.And(t => !t.IsDelete);
-            exps = exps.And(t => !t.DeviceCoding.Contains("CTE"));
+            exps = exps.And(t => t.DeviceCoding.Contains("CE-6"));
             if (!string.IsNullOrWhiteSpace(queryModel.ProductType))
             {
                 exps = exps.And(t => t.ProductType == queryModel.ProductType);
@@ -751,53 +750,77 @@ namespace OpenAuth.App
             return response;
         }
 
-        public List<ProductModelInfo> GetProductModelGridCT4000(ProductModelReq queryModel, out int rowcount)
+        public IEnumerable<ProductModelInfo> GetProductModelGridCT4000(ProductModelReq queryModel, out int rowcount)
         {
             #region
-            Expression<Func<ProductModelSelection, bool>> exps = t => true;
-            exps = exps.And(t => !t.IsDelete);
-            exps = exps.And(t => t.DeviceCoding.Contains("CT-4"));
-            if (!string.IsNullOrWhiteSpace(queryModel.ProductType))
-            {
-                exps = exps.And(t => t.ProductType == queryModel.ProductType);
-            }
-            if (!string.IsNullOrWhiteSpace(queryModel.DeviceCoding))
-            {
-                exps = exps.And(t => t.DeviceCoding.Contains(queryModel.DeviceCoding));
-            }
-            if (!string.IsNullOrWhiteSpace(queryModel.Voltage))
-            {
-                exps = exps.And(t => t.Voltage == queryModel.Voltage);
-            }
-            if (!string.IsNullOrWhiteSpace(queryModel.Current))
-            {
-                exps = exps.And(t => t.Current == queryModel.Current);
-            }
-            if (!string.IsNullOrWhiteSpace(queryModel.TotalPower))
-            {
-                exps = exps.And(t => t.TotalPower == queryModel.TotalPower);
-            }
-            if (queryModel.ChannelNumber > 0)
-            {
-                exps = exps.And(t => t.ChannelNumber == queryModel.ChannelNumber);
-            }
-            if (queryModel.ProductModelCategoryId != -1)
-            {
-                exps = exps.And(t => t.ProductModelCategoryId == queryModel.ProductModelCategoryId);
-            }
-            var productModelSelectionList = UnitWork.Find(queryModel.page, queryModel.limit, "Id", exps).OrderBy(x => x.Id);
-            rowcount = UnitWork.GetCount(exps);
-            return productModelSelectionList.MapToList<ProductModelInfo>();
+            //Expression<Func<ProductModelSelection, bool>> exps = t => true;
+            //exps = exps.And(t => !t.IsDelete);
+            //exps = exps.And(t => t.DeviceCoding.Contains("CT-4"));
+            //if (!string.IsNullOrWhiteSpace(queryModel.ProductType))
+            //{
+            //    exps = exps.And(t => t.ProductType == queryModel.ProductType);
+            //}
+            //if (!string.IsNullOrWhiteSpace(queryModel.DeviceCoding))
+            //{
+            //    exps = exps.And(t => t.DeviceCoding.Contains(queryModel.DeviceCoding));
+            //}
+            //if (!string.IsNullOrWhiteSpace(queryModel.Voltage))
+            //{
+            //    exps = exps.And(t => t.Voltage == queryModel.Voltage);
+            //}
+            //if (!string.IsNullOrWhiteSpace(queryModel.Current))
+            //{
+            //    exps = exps.And(t => t.Current == queryModel.Current);
+            //}
+            //if (!string.IsNullOrWhiteSpace(queryModel.TotalPower))
+            //{
+            //    exps = exps.And(t => t.TotalPower == queryModel.TotalPower);
+            //}
+            //if (queryModel.ChannelNumber > 0)
+            //{
+            //    exps = exps.And(t => t.ChannelNumber == queryModel.ChannelNumber);
+            //}
+            //if (queryModel.ProductModelCategoryId != -1)
+            //{
+            //    exps = exps.And(t => t.ProductModelCategoryId == queryModel.ProductModelCategoryId);
+            //}
+            //var productModelSelectionList = UnitWork.Find(queryModel.page, queryModel.limit, "Id", exps).OrderBy(x => x.Id);
+            //rowcount = UnitWork.GetCount(exps);
+            //return productModelSelectionList.MapToList<ProductModelInfo>();
             #endregion
 
-            //var query = UnitWork.Find<ProductModelSelection>(p=>p.IsDelete==false && p.DeviceCoding.Contains("CT-4"))
-            //    .WhereIf(!string.IsNullOrWhiteSpace(queryModel.ProductType), t => t.ProductType == queryModel.ProductType)
-            //    .WhereIf(!string.IsNullOrWhiteSpace(queryModel.DeviceCoding), t => t.DeviceCoding.Contains(queryModel.DeviceCoding))
-            //    .WhereIf(!string.IsNullOrWhiteSpace(queryModel.Voltage), t => t.Voltage == queryModel.Voltage)
-            //    .WhereIf(!string.IsNullOrWhiteSpace(queryModel.Current), t => t.Current == queryModel.Current)
-            //    .WhereIf(!string.IsNullOrWhiteSpace(queryModel.TotalPower), t => t.TotalPower == queryModel.TotalPower)
-            //    .WhereIf(queryModel.ChannelNumber > 0, t => t.ChannelNumber == queryModel.ChannelNumber)
-            //    .WhereIf(queryModel.ProductModelCategoryId!=null && queryModel.ProductModelCategoryId != -1, t => t.ProductModelCategoryId == queryModel.ProductModelCategoryId);
+            var query = UnitWork.Find<ProductModelSelection>(p => p.IsDelete == false && p.DeviceCoding.Contains("CT-4"))
+            .Where(p => !string.IsNullOrWhiteSpace(queryModel.ProductType) ? p.ProductType == queryModel.ProductType : true)
+            .Where(p => !string.IsNullOrWhiteSpace(queryModel.DeviceCoding) ? p.DeviceCoding.Contains(queryModel.DeviceCoding) : true)
+            .Where(p => !string.IsNullOrWhiteSpace(queryModel.Voltage) ? p.Voltage == queryModel.Voltage : true)
+            .Where(p => !string.IsNullOrWhiteSpace(queryModel.Current) ? p.Current == queryModel.Current : true)
+            .Where(p => !string.IsNullOrWhiteSpace(queryModel.TotalPower) ? p.TotalPower == queryModel.TotalPower : true)
+            .Where(p => queryModel.ChannelNumber > 0 ? p.ChannelNumber == queryModel.ChannelNumber : true)
+            .Where(p => queryModel.ProductModelCategoryId != null && queryModel.ProductModelCategoryId != -1 ? p.ProductModelCategoryId == queryModel.ProductModelCategoryId : true);
+
+            var data = query.OrderBy(q => q.Id)
+                .Skip((queryModel.page - 1) * queryModel.limit)
+                .Take(queryModel.limit)
+                .ToList()
+                .Select((p, index) => new ProductModelInfo { 
+                    Id = p.Id,
+                    ProductModelCategoryId = p.ProductModelCategoryId,
+                    SerialNumber = p.SerialNumber,
+                    ProductType = p.ProductType,
+                    DeviceCoding = p.DeviceCoding,
+                    Voltage = p.Voltage,
+                    Current = p.Current,
+                    ChannelNumber = p.ChannelNumber,
+                    TotalPower = p.TotalPower,
+                    CurrentAccurack = p.CurrentAccurack,
+                    Size = p.Size,
+                    Weight = p.Weight,
+                    UnitPrice = p.UnitPrice,
+                    Index = index + (queryModel.page - 1) * queryModel.limit + 1 }
+                );
+
+            rowcount = data.Count();
+            return data;
         }
 
         /// <summary>
@@ -852,7 +875,7 @@ namespace OpenAuth.App
             result.DeviceCoding = productmodelselection.DeviceCoding;
             result.ChannelNumber = productmodelselection.ChannelNumber;
             result.InputPowerType = "AC " + productmodelselectioninfo?.InputPowerType + "V" + " ±10% / 50Hz";
-            result.InputActivePower = productmodelselectioninfo?.InputActivePower + "W";
+            result.InputActivePower = productmodelselectioninfo?.InputActivePower;
             result.voltageRangeControl = double.Parse(productmodelselection.Voltage) * 0.005 + "V~" + productmodelselection.Voltage + "V";
             result.MinimumDischargeVoltage = productmodelselectioninfo?.MinimumDischargeVoltage + "V";
             result.VoltageAccuracy = "± " + productmodelselectioninfo?.VoltAccurack + "%" + " of FS";
@@ -869,21 +892,21 @@ namespace OpenAuth.App
             result.IsPulseMode = productmodelselectioninfo?.IsPulseMode;
             if (result.IsPulseMode == "有")
             {
-                result.Charge = "横流模式、恒功率模式";
-                result.Discharge = "横流模式、恒功率模式";
-                result.MinimumPulseWidth = "500ms";
-                result.NumberOfPulses = "单个脉冲工步支持32个不同的脉冲";
-                result.ChargeAndDischarge = "一个脉冲工步可以实现从充电到放电的连续切换";
-                result.CutOffCondition = "电压、相对时间";
+                result.ChargeContent = "横流模式、恒功率模式";
+                result.DischargeContent = "横流模式、恒功率模式";
+                result.MinimumPulseWidthContent = "500ms";
+                result.NumberOfPulsesContent = "单个脉冲工步支持32个不同的脉冲";
+                result.ChargeAndDischargeContent = "一个脉冲工步可以实现从充电到放电的连续切换";
+                result.CutOffConditionContent = "电压、相对时间";
             }
             else if (result.IsPulseMode == "无")
             {
-                result.Charge = "";
-                result.Discharge = "";
-                result.MinimumPulseWidth = "";
-                result.NumberOfPulses = "";
-                result.ChargeAndDischarge = "";
-                result.CutOffCondition = "";
+                result.ChargeContent = "";
+                result.DischargeContent = "";
+                result.MinimumPulseWidthContent = "";
+                result.NumberOfPulsesContent = "";
+                result.ChargeAndDischargeContent = "";
+                result.CutOffConditionContent = "";
             }
 
             result.RecordFrequency = productmodelselectioninfo?.RecordFrequency ?? "";
