@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
@@ -727,6 +728,7 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
         /// 下载CT4000导入模板
         /// </summary>
         /// <returns></returns>
+        [AllowAnonymous]
         [HttpGet]
         [Route("DownloadCT4000Template")]
         public IActionResult DownloadCT4000Template()
