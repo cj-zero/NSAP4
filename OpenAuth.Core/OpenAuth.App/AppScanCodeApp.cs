@@ -93,48 +93,50 @@ namespace OpenAuth.App
             var result = new TableData();
             List<string> list = new List<string>();
             result.Data = await (from a in UnitWork.Find<store_osrn>(null)
-                                       join b in UnitWork.Find<store_itl1>(null) on new { a.ItemCode, a.SysNumber } equals new { b.ItemCode, b.SysNumber } into ab
-                                       from b in ab.DefaultIfEmpty()
-                                       join c in UnitWork.Find<store_oitl>(null) on new { b.ItemCode, b.LogEntry } equals new { c.ItemCode, c.LogEntry } into bc
-                                       from c in bc.DefaultIfEmpty()
-                                       join d in UnitWork.Find<sale_dln1>(null) on  c.BaseEntry  equals d.DocEntry into cd
-                                       from d in cd.DefaultIfEmpty()
-                                       where c.BaseType == 17 && a.MnfSerial == sn
-                                       select new { a.MnfSerial,a.ItemCode, c.BaseEntry,d.DocDate }).FirstOrDefaultAsync();
+                                 join b in UnitWork.Find<store_itl1>(null) on new { a.ItemCode, a.SysNumber } equals new { b.ItemCode, b.SysNumber } into ab
+                                 from b in ab.DefaultIfEmpty()
+                                 join c in UnitWork.Find<store_oitl>(null) on new { b.ItemCode, b.LogEntry } equals new { c.ItemCode, c.LogEntry } into bc
+                                 from c in bc.DefaultIfEmpty()
+                                 join d in UnitWork.Find<sale_dln1>(null) on c.BaseEntry equals d.DocEntry into cd
+                                 from d in cd.DefaultIfEmpty()
+                                 where c.BaseType == 17 && a.MnfSerial == sn
+                                 select new { a.MnfSerial, a.ItemCode, c.BaseEntry, d.DocDate }).FirstOrDefaultAsync();
             return result;
         }
 
         /// <summary>
         /// 通过序列号查询销售交货明细
         /// </summary>
-        /// <param name="sn"></param>
+        /// <param name="manufSN"></param>
         /// <param name="customer_code"></param>
         /// <returns></returns>
-        public async Task<TableData> GetSalesDeliveryDetail(string sn,string customer_code)
+        public async Task<TableData> GetSalesDeliveryDetail(string manufSN, string customer_code)
         {
             var result = new TableData();
-            var isHasSql = @$"SELECT o.ItemCode,ISNULL(o.SuppSerial, '') as SuppSerial,o.SysSerial from OSRI o
-                                where o.SuppSerial='{sn}'";
-            var query = UnitWork.Query<OSRIModel>(isHasSql).Select(c => new OSRIModel
-            {
-                SuppSerial = c.SuppSerial,
-                ItemCode = c.ItemCode,
-                SysSerial=c.SysSerial
-            }).FirstOrDefault();
-            if (query!=null)
-            {
-                result.Data = await (from b in UnitWork.Find<OITL>(null)
-                                     join c in UnitWork.Find<ITL1>(null) on b.LogEntry equals c.LogEntry
-                                     join d in UnitWork.Find<ODLN>(null) on b.DocEntry equals d.DocEntry
-                                     join e in UnitWork.Find<DLN1>(null) on d.DocEntry equals e.DocEntry
-                                     where b.DocType == 15  && c.SysNumber == query.SysSerial && e.ItemCode == query.ItemCode && b.ItemCode == query.ItemCode
-                                     select new { e.ItemCode, e.Quantity,e.DocEntry,d.CardCode })
-                                     .WhereIf(!string.IsNullOrWhiteSpace(customer_code),c=>c.CardCode==customer_code)
-                                     .ToListAsync();
-            }
+            result.Data = await (from a in UnitWork.Find<OINS>(null)
+                                 join b in UnitWork.Find<DLN1>(null) on new { DocEntry=a.deliveryNo, ItemCode=a.itemCode } equals new { b.DocEntry,b.ItemCode }
+                                 where a.manufSN == manufSN && a.customer==customer_code
+                                 group new { b.ItemCode, b.DocEntry,b.Quantity }
+                                 by new { b.ItemCode, b.DocEntry } into c
+                                 select new {c.Key.ItemCode,c.Key.DocEntry, Quantity=c.Sum(c=>c.Quantity)})
+                                 .ToListAsync();
             return result;
         }
 
+        /// <summary>
+        /// 获取交货单对应物料的序列号列表
+        /// </summary>
+        /// <param name="deliveryNo">销售交货单号</param>
+        /// <param name="itemCode">物料编码</param>
+        /// <param name="customer_code">客户代码</param>
+        /// <returns></returns>
+        public async Task<TableData> GetManufSNList(int deliveryNo,string itemCode,string customer_code)
+        {
+            var result = new TableData();
+            var isExistService = (await UnitWork.Find<OINS>(c => c.deliveryNo == deliveryNo && c.itemCode == itemCode && c.customer == customer_code).ToListAsync());
+            result.Data = isExistService;
+            return result;
+        }
 
         /// <summary>
         /// 出厂序列号获取客户信息
@@ -146,7 +148,7 @@ namespace OpenAuth.App
             var result = new TableData();
             result.Data = await (from a in UnitWork.Find<OINS>(null)
                                  join b in UnitWork.Find<OCRD>(null) on a.customer equals b.CardCode
-                                 where a.manufSN==manufSN
+                                 where a.manufSN == manufSN
                                  select new { b.CardName, b.CardCode, b.CardType, a.manufSN })
                                  .FirstAsync();
             return result;
