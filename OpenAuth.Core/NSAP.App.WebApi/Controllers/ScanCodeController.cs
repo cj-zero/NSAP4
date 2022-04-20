@@ -135,12 +135,33 @@ namespace NSAP.App.WebApi.Controllers
         /// <param name="manufSN"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetCustomerInfo(string manufSN)
+        public async Task<TableData> GetCustomerInfoBySn(string manufSN)
         {
             var result = new TableData();
             try
             {
-                result = await _appScanCodeApp.GetCustomerInfo(manufSN);
+                result = await _appScanCodeApp.GetCustomerInfoBySn(manufSN);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取客户信息
+        /// </summary>
+        /// <param name="customer_code"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetCustomerInfo(string customer_code)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _appScanCodeApp.GetCustomerInfo(customer_code);
             }
             catch (Exception e)
             {
