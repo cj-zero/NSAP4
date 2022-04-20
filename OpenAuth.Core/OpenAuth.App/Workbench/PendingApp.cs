@@ -727,7 +727,7 @@ namespace OpenAuth.App.Workbench
             if (req.PageType == 1)
             {
                 //待处理
-                var query = from a in UnitWork.Find<WorkbenchPending>(null)
+                var query = from a in UnitWork.Find<WorkbenchPending>(c => c.OrderType != 5)
                             join b in UnitWork.Find<FlowInstance>(null) on a.FlowInstanceId equals b.Id into ab
                             from b in ab.DefaultIfEmpty()
                             where (b.MakerList.Contains(loginContext.User.Id) || (b.MakerList == "1" && b.CustomName.Contains("物料报价单"))) && b.ActivityName != "待出库" && b.ActivityName != "开始" && b.ActivityName != "执行中" && b.ActivityName != "提交"
@@ -767,7 +767,7 @@ namespace OpenAuth.App.Workbench
             else if (req.PageType == 2)
             {
                 //已处理
-                var query = from a in UnitWork.Find<WorkbenchPending>(null)
+                var query = from a in UnitWork.Find<WorkbenchPending>(c => c.OrderType != 5)
                             join b in UnitWork.Find<FlowInstance>(null) on a.FlowInstanceId equals b.Id into ab
                             from b in ab.DefaultIfEmpty()
                             join c in UnitWork.Find<FlowInstanceOperationHistory>(null).Select(f => new { f.InstanceId, f.CreateUserId }).Distinct() on b.Id equals c.InstanceId into bc
