@@ -38,7 +38,7 @@ namespace OpenAuth.Repository.Domain.ProductModel
         /// 设备编码
         /// </summary>
         [Description("设备编码")]
-        [MaxLength(20)]
+        [MaxLength(50)]
         public string DeviceCoding { get; set; }
         /// <summary>
         /// 电压

@@ -819,7 +819,7 @@ namespace OpenAuth.App
                     Index = index + (queryModel.page - 1) * queryModel.limit + 1 }
                 );
 
-            rowcount = data.Count();
+            rowcount = query.Count();
             return data;
         }
 
