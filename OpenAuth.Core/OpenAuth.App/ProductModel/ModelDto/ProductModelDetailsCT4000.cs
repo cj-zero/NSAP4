@@ -95,32 +95,32 @@ namespace OpenAuth.App.ProductModel
         /// <summary>
         /// 充电
         /// </summary>
-        public string Charge { get; set; }
+        public string ChargeContent { get; set; }
 
         /// <summary>
         /// 放电
         /// </summary>
-        public string Discharge { get; set; }
+        public string DischargeContent { get; set; }
 
         /// <summary>
         /// 最小脉冲宽度
         /// </summary>
-        public string MinimumPulseWidth { get; set; }
+        public string MinimumPulseWidthContent { get; set; }
 
         /// <summary>
         /// 脉冲个数
         /// </summary>
-        public string NumberOfPulses { get; set; }
+        public string NumberOfPulsesContent { get; set; }
 
         /// <summary>
         /// 充放电
         /// </summary>
-        public string ChargeAndDischarge { get; set; }
+        public string ChargeAndDischargeContent { get; set; }
 
         /// <summary>
         /// 截止条件
         /// </summary>
-        public string CutOffCondition { get; set; }
+        public string CutOffConditionContent { get; set; }
 
 
 

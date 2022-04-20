@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
@@ -723,33 +724,19 @@ namespace OpenAuth.WebApi.Controllers.ProductModel
             return result;
         }
 
+        /// <summary>
+        /// 下载CT4000导入模板
+        /// </summary>
+        /// <returns></returns>
+        [AllowAnonymous]
         [HttpGet]
         [Route("DownloadCT4000Template")]
-        public HttpResponseMessage DownloadCT4000Template()
+        public IActionResult DownloadCT4000Template()
         {
-            var response = new HttpResponseMessage();
             string filePath = Path.Combine(Directory.GetCurrentDirectory() + @"\Templates\CT-4000导入模板.xls");
-            try
-            {
-                var fileName = new FileInfo(filePath).Name;
-                using var stream = new FileStream(filePath, FileMode.Open);
-                response.Content = new StreamContent(stream);
-                response.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
-                response.Content.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("attachment")
-                {
-                    FileName = HttpUtility.UrlEncode(fileName)
-                };
-                response.Headers.Add("Access-Control-Expose-Headers", "FileName");
-                response.Headers.Add("FileName", HttpUtility.UrlEncode(fileName));
-
-                response.StatusCode = System.Net.HttpStatusCode.OK;
-                return response;
-            }
-            catch(Exception ex)
-            {
-                response.StatusCode = System.Net.HttpStatusCode.InternalServerError;
-                return response;
-            }
+            var fileInfo = new FileInfo(filePath);
+            var stream = new FileStream(filePath, FileMode.Open);
+            return File(stream, "application/ms-excel", fileInfo.Name);
         }
         #endregion
     }

@@ -472,6 +472,14 @@ namespace OpenAuth.WebApi.Controllers
                     return File(filestream, "application/pdf");
                 }
                 var model = await BuildModel(baseInfo);
+                foreach (var item in model.MainStandardsUsed)
+                {
+                    if (item.Name.Contains(","))
+                    {
+                        var split = item.Name.Split(",");
+                        item.Name = split[1];
+                    }
+                }
                 var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Header.html");
                 var text = System.IO.File.ReadAllText(url);
                 text = text.Replace("@Model.Data.BarCode", model.BarCode);
@@ -543,7 +551,7 @@ namespace OpenAuth.WebApi.Controllers
                 model.CalibrationCertificate.EntrustedDate = !string.IsNullOrWhiteSpace(entrustment?.EntrustedDate.ToString()) ? entrustment?.EntrustedDate.Value.ToString("yyyy年MM月dd日") : "";
                 model.CalibrationCertificate.CalibrationDate = DateTime.Parse(model.CalibrationCertificate.CalibrationDate).ToString("yyyy年MM月dd日");
                 var temp = Math.Round(Convert.ToDecimal(model.CalibrationCertificate.Temperature), 1);
-                model.CalibrationCertificate.Temperature = temp.ToString();
+                model.CalibrationCertificate.Temperature = temp.ToString("0.0");
                 foreach (var item in model.MainStandardsUsed)
                 {
                     if (!string.IsNullOrWhiteSpace(item.DueDate))
@@ -551,8 +559,8 @@ namespace OpenAuth.WebApi.Controllers
                     if (item.Name.Contains(","))
                     {
                         var split = item.Name.Split(",");
-                        item.EnName = split[0];
-                        item.Name = split[1];
+                        //item.EnName = split[0];
+                        item.Name = split[0];
                     }
                     item.Characterisics = item.Characterisics.Replace("Urel", "<i>U</i><sub>rel</sub>").Replace("k=", "<i>k</i>=");
                 }
