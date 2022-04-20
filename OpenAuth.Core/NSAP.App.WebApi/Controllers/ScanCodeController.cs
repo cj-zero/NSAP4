@@ -87,16 +87,39 @@ namespace NSAP.App.WebApi.Controllers
         /// <summary>
         /// 通过序列号查询销售交货明细
         /// </summary>
-        /// <param name="sn"></param>
-        /// <param name="customer_code"></param>
+        /// <param name="manufSN">序列号</param>
+        /// <param name="customer_code">客户代码</param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetSalesDeliveryDetail(string sn,string customer_code)
+        public async Task<TableData> GetSalesDeliveryDetail(string manufSN, string customer_code)
         {
             var result = new TableData();
             try
             {
-                result = await _appScanCodeApp.GetSalesDeliveryDetail(sn, customer_code);
+                result = await _appScanCodeApp.GetSalesDeliveryDetail(manufSN, customer_code);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取交货单对应物料的序列号列表
+        /// </summary>
+        /// <param name="deliveryNo">销售交货单号</param>
+        /// <param name="itemCode">物料编码</param>
+        /// <param name="customer_code">客户代码</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetManufSNList(int deliveryNo, string itemCode, string customer_code)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _appScanCodeApp.GetManufSNList(deliveryNo, itemCode, customer_code);
             }
             catch (Exception e)
             {
