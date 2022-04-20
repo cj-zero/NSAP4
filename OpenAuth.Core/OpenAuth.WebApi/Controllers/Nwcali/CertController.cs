@@ -472,6 +472,14 @@ namespace OpenAuth.WebApi.Controllers
                     return File(filestream, "application/pdf");
                 }
                 var model = await BuildModel(baseInfo);
+                foreach (var item in model.MainStandardsUsed)
+                {
+                    if (item.Name.Contains(","))
+                    {
+                        var split = item.Name.Split(",");
+                        item.Name = split[1];
+                    }
+                }
                 var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Header.html");
                 var text = System.IO.File.ReadAllText(url);
                 text = text.Replace("@Model.Data.BarCode", model.BarCode);
@@ -551,8 +559,8 @@ namespace OpenAuth.WebApi.Controllers
                     if (item.Name.Contains(","))
                     {
                         var split = item.Name.Split(",");
-                        item.EnName = split[0];
-                        item.Name = split[1];
+                        //item.EnName = split[0];
+                        item.Name = split[0];
                     }
                     item.Characterisics = item.Characterisics.Replace("Urel", "<i>U</i><sub>rel</sub>").Replace("k=", "<i>k</i>=");
                 }
