@@ -133,7 +133,7 @@ namespace OpenAuth.App
         public async Task<TableData> GetManufSNList(int deliveryNo,string itemCode,string customer_code)
         {
             var result = new TableData();
-            var isExistService = await UnitWork.Find<OINS>(c => c.deliveryNo == deliveryNo && c.itemCode == itemCode && c.customer == customer_code).ToListAsync();
+            var isExistService = await UnitWork.Find<OINS>(c => c.deliveryNo == deliveryNo && c.itemCode == itemCode && c.customer == customer_code).Select(c=>c.manufSN).Distinct().ToListAsync();
             result.Data = isExistService;
             return result;
         }
