@@ -37,6 +37,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 创建人
         /// </summary>
+        [Column("Create_User")]
         [Required(ErrorMessage = "创建人不能为空")]
         [MaxLength(20)]
         [Description("创建人")]
@@ -45,12 +46,14 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 创建时间
         /// </summary>
+        [Column("Create_DateTime")]
         [Description("创建时间")]
         public DateTime CreateDatetime { get; set; }
 
         /// <summary>
         /// 更新人
         /// </summary>
+        [Column("Update_User")]
         [MaxLength(20)]
         [Description("更新人")]
         public string UpdateUser { get; set; }
@@ -58,13 +61,14 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 更新时间
         /// </summary>
+        [Column("Update_DateTime")]
         [Description("更新时间")]
-        public DateTime? Update_datetime { get; set; }
+        public DateTime? UpdateDatetime { get; set; }
 
         /// <summary>
         /// 是否删除
         /// </summary>
-        [Description("规则描述")]
+        [Description("是否删除")]
         public bool Isdelete { get; set; }
 
         public override void GenerateDefaultKeyVal()

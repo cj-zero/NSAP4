@@ -1104,5 +1104,10 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         public string U_EndCustomerContact { get; set; }
+
+        /// <summary>
+        /// 所属行业(还有一些字段是数据库有的,实体没有)
+        /// </summary>
+        public string U_CompSector { get; set; }
     }
 }

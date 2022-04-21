@@ -133,7 +133,7 @@ namespace OpenAuth.App
         public async Task<TableData> GetManufSNList(int deliveryNo,string itemCode,string customer_code)
         {
             var result = new TableData();
-            var isExistService = (await UnitWork.Find<OINS>(c => c.deliveryNo == deliveryNo && c.itemCode == itemCode && c.customer == customer_code).ToListAsync());
+            var isExistService = await UnitWork.Find<OINS>(c => c.deliveryNo == deliveryNo && c.itemCode == itemCode && c.customer == customer_code).Select(c=>c.manufSN).Distinct().ToListAsync();
             result.Data = isExistService;
             return result;
         }
@@ -143,14 +143,26 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="manufSN"></param>
         /// <returns></returns>
-        public async Task<TableData> GetCustomerInfo(string manufSN)
+        public async Task<TableData> GetCustomerInfoBySn(string manufSN)
         {
             var result = new TableData();
             result.Data = await (from a in UnitWork.Find<OINS>(null)
                                  join b in UnitWork.Find<OCRD>(null) on a.customer equals b.CardCode
                                  where a.manufSN == manufSN
                                  select new { b.CardName, b.CardCode, b.CardType, a.manufSN })
-                                 .FirstAsync();
+                                 .FirstOrDefaultAsync();
+            return result;
+        }
+
+        /// <summary>
+        /// 获取客户信息
+        /// </summary>
+        /// <param name="customer_code"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetCustomerInfo(string customer_code)
+        {
+            var result = new TableData();
+            result.Data = await UnitWork.Find<OCRD>(c => c.CardCode == customer_code).FirstOrDefaultAsync();
             return result;
         }
 

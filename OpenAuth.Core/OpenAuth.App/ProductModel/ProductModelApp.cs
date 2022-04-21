@@ -100,7 +100,7 @@ namespace OpenAuth.App
         /// 查询
         /// </summary>
         /// <returns></returns>
-        public List<ProductModelInfo> GetProductModelGrid(ProductModelReq queryModel, out int rowcount)
+        public IEnumerable<ProductModelInfo> GetProductModelGrid(ProductModelReq queryModel, out int rowcount)
         {
             Expression<Func<ProductModelSelection, bool>> exps = t => true;
             exps = exps.And(t => !t.IsDelete);
@@ -136,8 +136,27 @@ namespace OpenAuth.App
             }
             var productModelSelectionList = UnitWork.Find(queryModel.page, queryModel.limit, "Id", exps);
             rowcount = UnitWork.GetCount(exps);
-            return productModelSelectionList.MapToList<ProductModelInfo>();
+            //modify by yangis @2022.04.20 新增连续排序号
+            var data = productModelSelectionList.Select((p, index) => new ProductModelInfo
+            {
+                Id = p.Id,
+                ProductModelCategoryId = p.ProductModelCategoryId,
+                SerialNumber = p.SerialNumber,
+                ProductType = p.ProductType,
+                DeviceCoding = p.DeviceCoding,
+                Voltage = p.Voltage,
+                Current = p.Current,
+                ChannelNumber = p.ChannelNumber,
+                TotalPower = p.TotalPower,
+                CurrentAccurack = p.CurrentAccurack,
+                Size = p.Size,
+                Weight = p.Weight,
+                UnitPrice = p.UnitPrice,
+                Index = index + (queryModel.page - 1) * queryModel.limit + 1
+            });
 
+            return data;
+            //return productModelSelectionList.MapToList<ProductModelInfo>();
         }
         /// <summary>
         /// 获取产品手册
