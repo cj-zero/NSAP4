@@ -691,22 +691,22 @@ namespace OpenAuth.App
             {
                 foreach (var item in returnNotes.ReturnNoteProducts)
                 {
-                    List<ReturnMaterialListResp> MaterialList = (await GetMaterialList(new ReturnMaterialReq { InvoiceDocEntry = item.ReturnNoteMaterials.FirstOrDefault()?.InvoiceDocEntry, ProductCode = item.ProductCode, SalesOrderId = returnNotes.SalesOrderId })).Data;
-                    var returnNoteMaterials = MaterialList.Select(m => new ReturnNoteMaterial
-                    {
-                        //Sort = m.Sort,
-                        LineNum = m.LineNum,
-                        MaterialType = m.MaterialType,
-                        ReplaceSNandPN = m.ReplaceSNandPN,
-                        SNandPN = m.SNandPN,
-                        Money = m.Money,
-                        ReplaceMaterialCode = m.ReplaceMaterialCode,
-                        ReplaceMaterialDescription = m.ReplaceMaterialDescription,
-                        MaterialCode = m.MaterialCode,
-                        MaterialDescription = m.MaterialDescription,
-                        QuotationMaterialId = m.QuotationMaterialId
-                    }).ToList();
-                    returnNotes.ReturnNoteProducts.Where(r => r.Id.Equals(item.Id)).FirstOrDefault().ReturnNoteMaterials.AddRange(returnNoteMaterials);
+                    //List<ReturnMaterialListResp> MaterialList = (await GetMaterialList(new ReturnMaterialReq { InvoiceDocEntry = item.ReturnNoteMaterials.FirstOrDefault()?.InvoiceDocEntry, ProductCode = item.ProductCode, SalesOrderId = returnNotes.SalesOrderId })).Data;
+                    //var returnNoteMaterials = MaterialList.Select(m => new ReturnNoteMaterial
+                    //{
+                    //    //Sort = m.Sort,
+                    //    LineNum = m.LineNum,
+                    //    MaterialType = m.MaterialType,
+                    //    ReplaceSNandPN = m.ReplaceSNandPN,
+                    //    SNandPN = m.SNandPN,
+                    //    Money = m.Money,
+                    //    ReplaceMaterialCode = m.ReplaceMaterialCode,
+                    //    ReplaceMaterialDescription = m.ReplaceMaterialDescription,
+                    //    MaterialCode = m.MaterialCode,
+                    //    MaterialDescription = m.MaterialDescription,
+                    //    QuotationMaterialId = m.QuotationMaterialId
+                    //}).ToList();
+                    //returnNotes.ReturnNoteProducts.Where(r => r.Id.Equals(item.Id)).FirstOrDefault().ReturnNoteMaterials.AddRange(returnNoteMaterials);
                     var hasMaterials = returnNotes.ReturnNoteProducts.Where(r => r.Id.Equals(item.Id)).FirstOrDefault().ReturnNoteMaterials;
                     //hasMaterials = hasMaterials.Concat(returnNoteMaterials).OrderBy(c => c.ReplaceMaterialCode).ToList();
                     hasMaterials = hasMaterials.OrderBy(c => c.ReplaceMaterialCode).ToList();
