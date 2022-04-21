@@ -20,12 +20,11 @@ namespace OpenAuth.Repository.Domain
     public class CustomerList : BaseEntity<int>
     {
 
-        /// <summary>
-        /// 客户Id;客户Id
-        /// </summary>
-        [Column("Customer_Id")]
-        [Description("客户Id")]
-        public int CustomerId { get; set; }
+        ///// <summary>
+        ///// 客户Id;客户Id
+        ///// </summary>
+        //[Description("客户Id")]
+        //public int CustomerId { get; set; }
 
         /// <summary>
         /// 客户编码;客户编码
@@ -57,7 +56,7 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Column("Saler_Id")]
         [Description("业务员Id")]
-        public int SalerId { get; set; }
+        public string SalerId { get; set; }
 
         /// <summary>
         /// 业务员名称
@@ -73,7 +72,7 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Column("Department_Id")]
         [Description("部门Id")]
-        public int DepartmentId { get; set; }
+        public string DepartmentId { get; set; }
 
         /// <summary>
         /// 部门
