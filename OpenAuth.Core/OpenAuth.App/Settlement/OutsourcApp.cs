@@ -80,6 +80,28 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), q => q.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1))
                        .Where(o => outsourcIds.Contains(o.Id));
 
+            //主页报表跳转用
+            if (!string.IsNullOrWhiteSpace(request.StatusType))
+            {
+                var scheme = await UnitWork.Find<FlowScheme>(c => c.SchemeName == "个人代理结算").Select(c => c.Id).FirstOrDefaultAsync();
+                List<string> ids = new List<string>();
+                switch (request.StatusType)
+                {
+                    case "1":
+                        ids = await UnitWork.Find<FlowInstance>(c => c.SchemeId == scheme && c.ActivityName != "财务支付" && c.ActivityName != "结束").Select(c => c.Id).ToListAsync();
+                        query = query.Where(r => ids.Contains(r.FlowInstanceId));//待审核
+                        break;
+                    case "2":
+                        ids = await UnitWork.Find<FlowInstance>(c => c.SchemeId == scheme && c.ActivityName == "结束").Select(c => c.Id).ToListAsync();
+                        query = query.Where(r => ids.Contains(r.FlowInstanceId));//已支付
+                        break;
+                    case "3":
+                        ids = await UnitWork.Find<FlowInstance>(c => c.SchemeId == scheme && c.ActivityName == "财务支付").Select(c => c.Id).ToListAsync();
+                        query = query.Where(r => ids.Contains(r.FlowInstanceId));//待支付
+                        break;
+                }
+            }
+
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
                 #region 筛选条件
