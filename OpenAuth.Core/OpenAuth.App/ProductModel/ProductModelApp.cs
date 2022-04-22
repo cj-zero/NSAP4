@@ -137,7 +137,7 @@ namespace OpenAuth.App
             var productModelSelectionList = UnitWork.Find(queryModel.page, queryModel.limit, "Id", exps);
             rowcount = UnitWork.GetCount(exps);
             //modify by yangis @2022.04.20 新增连续排序号
-            var data = productModelSelectionList.Select((p, index) => new ProductModelInfo
+            var data = productModelSelectionList.ToList().Select((p, index) => new ProductModelInfo
             {
                 Id = p.Id,
                 ProductModelCategoryId = p.ProductModelCategoryId,
