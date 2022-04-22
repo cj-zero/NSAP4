@@ -162,7 +162,7 @@ namespace OpenAuth.App
         public async Task<TableData> GetCustomerInfo(string customer_code)
         {
             var result = new TableData();
-            result.Data = await UnitWork.Find<OCRD>(c => c.CardCode == customer_code).FirstOrDefaultAsync();
+            result.Data = await UnitWork.Find<OCRD>(c => c.CardCode == customer_code).Select(c => new { c.U_is_reseller,c.CardType,c.CardName,c.CardCode }).FirstOrDefaultAsync();
             return result;
         }
 
