@@ -27,45 +27,19 @@ namespace OpenAuth.App
 
         }
         /// <summary>
-        /// 根据机序列号获取所有guid
+        /// 根据序列号获取所有guid
         /// </summary>
         /// <param name="serialNumber"></param>
         /// <returns></returns>
         public async Task<TableData> GetGuidBySn(string serialNumber)
         {
             var result = new TableData();
-            //根据物料编码区分下位机还是中位机
-            var devInfo = UnitWork.Find<store_osrn>(p => p.MnfSerial.Equals(serialNumber)).FirstOrDefault();
-            if (devInfo == null)
-                return result;
-            if (devInfo.ItemCode.ToLower().Contains("zwj"))
+            var NwcaliBaseInfoList = await UnitWork.Find<NwcaliBaseInfo>(p => p.TesterSn.Equals(serialNumber)).Select(o => o.Id).ToListAsync();
+            if (NwcaliBaseInfoList.Count > 0)
             {
-                List<string> list = new List<string>();
-                var MnfSerialList = (from a in UnitWork.Find<store_oitl>(null)
-                                     join b in UnitWork.Find<store_itl1>(null) on new { a.LogEntry, a.ItemCode } equals new { b.LogEntry, b.ItemCode } into ab
-                                     from b in ab.DefaultIfEmpty()
-                                     join c in UnitWork.Find<store_osrn>(null) on new { b.ItemCode, b.SysNumber } equals new { c.ItemCode, c.SysNumber } into bc
-                                     from c in bc.DefaultIfEmpty()
-                                     where a.DocType == 17 && c.MnfSerial == serialNumber
-                                     select c.MnfSerial).Distinct().ToList();
-                if (MnfSerialList.Count > 0)
-                {
-                    result.Data = await (from a in UnitWork.Find<PcPlc>(null)
-                                         join b in UnitWork.Find<NwcaliBaseInfo>(null) on a.NwcaliBaseInfoId equals b.Id
-                                         where MnfSerialList.Contains(b.TesterSn) && a.ExpirationDate <= DateTime.Now
-                                         select new { a.Guid, a.ExpirationDate, a.CalibrationDate }).OrderByDescending(c => c.CalibrationDate).Select(c => c.Guid).Distinct().ToListAsync();
-                }
-                return result;
+                result.Data = await UnitWork.Find<PcPlc>(p => NwcaliBaseInfoList.Contains(p.NwcaliBaseInfoId)).OrderByDescending(c => c.CalibrationDate).Select(o => o.Guid).Distinct().ToListAsync();
             }
-            else
-            {
-                var NwcaliBaseInfoList = await UnitWork.Find<NwcaliBaseInfo>(p => p.TesterSn.Equals(serialNumber)).Select(o => o.Id).ToListAsync();
-                if (NwcaliBaseInfoList.Count > 0)
-                {
-                    result.Data = await UnitWork.Find<PcPlc>(p => NwcaliBaseInfoList.Contains(p.NwcaliBaseInfoId)).OrderByDescending(c => c.CalibrationDate).Select(o => o.Guid).Distinct().ToListAsync();
-                }
-                return result;
-            }
+            return result;
         }
 
         /// <summary>
@@ -114,11 +88,11 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             result.Data = await (from a in UnitWork.Find<OINS>(null)
-                                 join b in UnitWork.Find<DLN1>(null) on new { DocEntry=a.deliveryNo, ItemCode=a.itemCode } equals new { b.DocEntry,b.ItemCode }
-                                 where a.manufSN == manufSN && a.customer==customer_code
-                                 group new { b.ItemCode, b.DocEntry,b.Quantity }
+                                 join b in UnitWork.Find<DLN1>(null) on new { DocEntry = a.deliveryNo, ItemCode = a.itemCode } equals new { b.DocEntry, b.ItemCode }
+                                 where a.manufSN == manufSN && a.customer == customer_code
+                                 group new { b.ItemCode, b.DocEntry, b.Quantity }
                                  by new { b.ItemCode, b.DocEntry } into c
-                                 select new {c.Key.ItemCode,c.Key.DocEntry, Quantity=c.Sum(c=>c.Quantity)})
+                                 select new { c.Key.ItemCode, c.Key.DocEntry, Quantity = c.Sum(c => c.Quantity) })
                                  .ToListAsync();
             return result;
         }
@@ -130,10 +104,10 @@ namespace OpenAuth.App
         /// <param name="itemCode">物料编码</param>
         /// <param name="customer_code">客户代码</param>
         /// <returns></returns>
-        public async Task<TableData> GetManufSNList(int deliveryNo,string itemCode,string customer_code)
+        public async Task<TableData> GetManufSNList(int deliveryNo, string itemCode, string customer_code)
         {
             var result = new TableData();
-            var isExistService = await UnitWork.Find<OINS>(c => c.deliveryNo == deliveryNo && c.itemCode == itemCode && c.customer == customer_code).Select(c=>c.manufSN).Distinct().ToListAsync();
+            var isExistService = await UnitWork.Find<OINS>(c => c.deliveryNo == deliveryNo && c.itemCode == itemCode && c.customer == customer_code).Select(c => c.manufSN).Distinct().ToListAsync();
             result.Data = isExistService;
             return result;
         }
@@ -162,7 +136,7 @@ namespace OpenAuth.App
         public async Task<TableData> GetCustomerInfo(string customer_code)
         {
             var result = new TableData();
-            result.Data = await UnitWork.Find<OCRD>(c => c.CardCode == customer_code).Select(c => new { c.U_is_reseller,c.CardType,c.CardName,c.CardCode }).FirstOrDefaultAsync();
+            result.Data = await UnitWork.Find<OCRD>(c => c.CardCode == customer_code).Select(c => new { c.U_is_reseller, c.CardType, c.CardName, c.CardCode }).FirstOrDefaultAsync();
             return result;
         }
 
