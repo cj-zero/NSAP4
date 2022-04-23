@@ -155,6 +155,10 @@ namespace OpenAuth.App.Material.Request
         /// 是否常用物料
         /// </summary>
         public bool? IsCommonUsed { get; set; }
+        /// <summary>
+        /// 首页报表查询条件
+        /// </summary>
+        public int? IsFinlish { get; set; }
 
         /// <summary>
         /// 打印物料id

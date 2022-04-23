@@ -86,6 +86,8 @@ namespace OpenAuth.App.Material
                                 .WhereIf(request.Remark != null, q => q.Remark.Contains(request.Remark))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.CancelRequest), q => q.CancelRequest == int.Parse(request.CancelRequest))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.MaterialCode), q => q.QuotationMergeMaterials.Any(x => x.MaterialCode == request.MaterialCode))
+                                .WhereIf(request.IsFinlish == 1, q => q.DeliveryMethod == "1" && q.Status == 2)//首页报表已完成条件
+                                .WhereIf(request.IsFinlish == 2, q => q.DeliveryMethod != "1")//首页报表 未完成条件
                                 .Select(q => new
                                 {
                                     q.Id,

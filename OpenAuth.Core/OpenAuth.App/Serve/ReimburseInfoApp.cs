@@ -135,6 +135,23 @@ namespace OpenAuth.App
 
                 }
             }
+            //主页报表跳转用
+            if (!string.IsNullOrWhiteSpace(request.StatusType))
+            {
+                switch (request.StatusType)
+                {
+                    case "1":
+                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus != 8 && r.RemburseStatus != 9);//待审核
+                        break;
+                    case "2":
+                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 9);//已支付
+                        break;
+                    case "3":
+                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 8);//待支付
+                        break;
+
+                }
+            }
             if (request.PageType == 7)//费用归属用
             {
                 List<ReimburseTravellingAllowance> reimburseTravellingAllowance = new List<ReimburseTravellingAllowance>();
