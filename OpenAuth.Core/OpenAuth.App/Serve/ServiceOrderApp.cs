@@ -5807,6 +5807,30 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 获取日报最新日期
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetNewestDailyReport(GetTechnicianDailyReportReq req)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.TechnicianId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            var dailyReports = await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId).OrderByDescending(c => c.CreateTime).Select(c => c.CreateTime).FirstOrDefaultAsync();
+            result.Data = dailyReports;
+            return result;
+        }
+
+        /// <summary>
         /// 获取技术员当天是否有日报
         /// </summary>
         /// <param name="req"></param>

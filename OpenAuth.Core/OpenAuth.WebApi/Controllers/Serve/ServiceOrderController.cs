@@ -1817,6 +1817,26 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
         /// <summary>
+        /// 获取日报最新日期
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetNewestDailyReport([FromQuery] GetTechnicianDailyReportReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serviceOrderApp.GetNewestDailyReport(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
         /// 获取技术员当天是否有日报
         /// </summary>
         /// <param name="req"></param>
