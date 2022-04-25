@@ -71,6 +71,10 @@ namespace OpenAuth.Repository.Domain
         [Description("是否删除")]
         public bool Isdelete { get; set; }
 
+        public virtual List<CustomerLimitRule> CustomerLimitRules { get; set; }
+
+        public virtual List<CustomerLimitSaler> CustomerLimitSalers { get; set; }
+
         public override void GenerateDefaultKeyVal()
         {
         }

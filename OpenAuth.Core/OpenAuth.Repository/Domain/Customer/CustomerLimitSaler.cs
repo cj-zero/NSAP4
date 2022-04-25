@@ -23,13 +23,17 @@ namespace OpenAuth.Repository.Domain
         /// 主表Id
         /// </summary>
         [Description("主表Id")]
+        [Column("Customer_limit_Id")]
         public int CustomerLimitId { get; set; }
+
+        public virtual CustomerLimit CustomerLimit { get; set; }
 
         /// <summary>
         /// 业务员Id
         /// </summary>
         [Description("业务员Id")]
-        public int SalerId { get; set; }
+        [Column("Saler_Id")]
+        public string SalerId { get; set; }
 
         /// <summary>
         /// 业务员名称
@@ -37,6 +41,7 @@ namespace OpenAuth.Repository.Domain
         [Required(ErrorMessage = "业务员名称不能为空")]
         [MaxLength(20)]
         [Description("创建人")]
+        [Column("Saler_Name")]
         public string SalerName { get; set; }
 
         /// <summary>

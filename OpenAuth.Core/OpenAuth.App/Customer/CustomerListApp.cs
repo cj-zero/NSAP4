@@ -82,28 +82,32 @@ namespace OpenAuth.App.Customer
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
-        public async Task<Infrastructure.Response> AddCustomer(AddCustomerListReq model)
+        public async Task<Infrastructure.Response> AddCustomer(List< AddCustomerListReq> model)
         {
             var result = new Infrastructure.Response();
 
-            //映射
-            var instance = model.MapTo<CustomerList>();
-            //判断名单中是否已存在该客户
-            var isExists = UnitWork.Find<CustomerList>(null).Any(c => c.CustomerNo == instance.CustomerNo && c.Isdelete == false);
-            if (isExists)
+            foreach (var item in model)
             {
-                result.Message = "客户已存在名单中";
-                result.Code = 500;
-                return result;
+                //映射
+                var instance = item.MapTo<CustomerList>();
+                //判断名单中是否已存在该客户
+                var isExists = UnitWork.Find<CustomerList>(null).Any(c => c.CustomerNo == instance.CustomerNo && c.Isdelete == false);
+                if (isExists)
+                {
+                    result.Message = "客户已存在名单中";
+                    result.Code = 500;
+                    return result;
+                }
+
+                var userInfo = _auth.GetCurrentUser().User;
+                instance.CreateUser = userInfo.Name;
+                instance.CreateDatetime = DateTime.Now;
+                instance.UpdateUser = userInfo.Name;
+                instance.UpdateDatetime = DateTime.Now;
+
+                await UnitWork.AddAsync<CustomerList, int>(instance);
             }
-
-            var userInfo = _auth.GetCurrentUser().User;
-            instance.CreateUser = userInfo.Name;
-            instance.CreateDatetime = DateTime.Now;
-            instance.UpdateUser = userInfo.Name;
-            instance.UpdateDatetime = DateTime.Now;
-
-            await UnitWork.AddAsync<CustomerList, int>(instance);
+            
             await UnitWork.SaveAsync();
 
             return result;
