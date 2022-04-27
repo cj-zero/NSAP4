@@ -52,8 +52,8 @@ namespace OpenAuth.WebApi.Controllers.Customer
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> GetGroupRules([FromQuery] QueryCustomerLimitReq req)
+        [HttpPost]
+        public async Task<TableData> GetGroupRules(QueryCustomerLimitReq req)
         {
             var result = new TableData();
 

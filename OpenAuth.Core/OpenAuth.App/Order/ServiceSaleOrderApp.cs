@@ -36,6 +36,7 @@ using Microsoft.AspNetCore.Http;
 using System.Net.Http.Headers;
 using Infrastructure.Export;
 using DinkToPdf;
+using Microsoft.EntityFrameworkCore;
 
 namespace OpenAuth.App.Order
 {
@@ -4018,6 +4019,11 @@ namespace OpenAuth.App.Order
                 Chapter = Convert.ToBase64String(photo);
                 Console.WriteLine(Chapter);
             }
+            //公司标识
+            var indicator = dtb.Rows[0][24].ToString();
+            //公司地址信息,在字典中维护
+            var companyAddressData = await UnitWork.Find<Category>(c => c.TypeId == "SYS_CompanyAddress" && c.DtValue == indicator).FirstOrDefaultAsync();
+
             var PrintSalesQuotation = new PrintSalesQuotation
             {
                 DocEntry = string.IsNullOrEmpty(dtb.Rows[0][0].ToString()) ? " " : dtb.Rows[0][0].ToString(),
@@ -4027,10 +4033,11 @@ namespace OpenAuth.App.Order
                 Name = string.IsNullOrEmpty(dtb.Rows[0][3].ToString()) ? " " : dtb.Rows[0][3].ToString(),
                 Tel = string.IsNullOrEmpty(dtb.Rows[0][4].ToString()) ? " " : dtb.Rows[0][4].ToString(),
                 Fax = string.IsNullOrEmpty(dtb.Rows[0][17].ToString()) ? " " : dtb.Rows[0][17].ToString(),
-                Cellolar = string.IsNullOrEmpty(dtb.Rows[0][6].ToString()) ? " " : dtb.Rows[0][6].ToString(),
+                //Cellolar = string.IsNullOrEmpty(dtb.Rows[0][6].ToString()) ? " " : dtb.Rows[0][6].ToString(),
+                Memo = string.IsNullOrEmpty(dtb.Rows[0][9].ToString()) ? " " : dtb.Rows[0][9].ToString(),
                 CardName = string.IsNullOrEmpty(dtb.Rows[0][2].ToString()) ? " " : dtb.Rows[0][2].ToString(),
                 Address = string.IsNullOrEmpty(dtb.Rows[0][7].ToString()) ? " " : dtb.Rows[0][7].ToString(),
-                Address2 = string.IsNullOrEmpty(dtb.Rows[0][19].ToString()) ? " " : dtb.Rows[0][19].ToString(),
+                Address2 = companyAddressData == null ? "" : companyAddressData.Description,
                 PymntGroup = string.IsNullOrEmpty(dtb.Rows[0][11].ToString()) ? " " : dtb.Rows[0][11].ToString(),
                 Comments = string.IsNullOrEmpty(dtb.Rows[0][10].ToString()) ? " " : dtb.Rows[0][10].ToString().Replace("<br>", " "),
                 DocTotal = string.IsNullOrEmpty(dtb.Rows[0][13].ToString()) ? " " : dtb.Rows[0][13].ToString(),
@@ -4068,7 +4075,7 @@ namespace OpenAuth.App.Order
             text = text.Replace("@Model.Data.Address", PrintSalesQuotation.Address);
             text = text.Replace("@Model.Data.Addrestwo", PrintSalesQuotation.Address2);
             text = text.Replace("@Model.Data.SalseName", PrintSalesQuotation.SalseName);
-            text = text.Replace("@Model.Data.Cellolar", PrintSalesQuotation.Cellolar);
+            text = text.Replace("@Model.Data.Cellolar", PrintSalesQuotation.Memo);
             text = text.Replace("@Model.Data.DATEFORMAT", PrintSalesQuotation.DATEFORMAT);
             text = text.Replace("@Model.Data.PymntGroup", PrintSalesQuotation.PymntGroup);
             text = text.Replace("@Model.Data.Comments", PrintSalesQuotation.Comments);
@@ -4101,7 +4108,7 @@ namespace OpenAuth.App.Order
         {
             StringBuilder str = new StringBuilder();
             str.Append("SELECT distinct a.DocEntry,a.CardCode,a.CardName,b.Name,b.Tel1,b.Tel2,b.Cellolar,b.Address,c.SlpName,c.Memo,a.Comments,d.PymntGroup,");
-            str.Append(" a.DocTotal,CONCAT(e.Currency,' ',ROUND(a.DocTotal,2)) ,DATE_FORMAT(a.DocDueDate,'%Y.%m.%d'),DATE_FORMAT(a.DocDate,'%Y.%m.%d'),a.U_ShipName,b.Fax,a.U_YGMD,a.Address2,a.U_YSQX,a.BnkAccount,a.U_SL,a.NumAtCard ");
+            str.Append(" a.DocTotal,CONCAT(e.Currency,' ',ROUND(a.DocTotal,2)) ,DATE_FORMAT(a.DocDueDate,'%Y.%m.%d'),DATE_FORMAT(a.DocDate,'%Y.%m.%d'),a.U_ShipName,b.Fax,a.U_YGMD,a.Address2,a.U_YSQX,a.BnkAccount,a.U_SL,a.NumAtCard,a.indicator ");
             str.AppendFormat(" FROM {0}.sale_oqut a ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_ocpr b on a.CntctCode=b.CntctCode and a.sbo_id=b.sbo_id and a.CardCode=b.CardCode ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_oslp c on a.SlpCode=c.SlpCode and a.sbo_id=c.sbo_id ", "nsap_bone");
