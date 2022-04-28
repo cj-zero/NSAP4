@@ -34,7 +34,6 @@ using OpenAuth.Repository;
 using OpenAuth.Repository.Extensions;
 using OpenAuth.WebApi.Model;
 using Swashbuckle.AspNetCore.SwaggerUI;
-using Grpc.Net.Client;
 
 namespace OpenAuth.WebApi
 {
