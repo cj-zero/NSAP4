@@ -1,0 +1,14 @@
+{
+  "RemoteServer": {
+    "IP": "121.37.222.129",
+    "Port": 1883,
+    "UserName": "erp_saas",
+    "Password": "8TA1YxsNrpfYw50S"
+  }
+  //"LocalServer": {
+  //  "IP": "127.0.0.1",
+  //  "Port": 1884,
+  //  "UserName": "admin",
+  //  "Password": "123456"
+  //}
+}

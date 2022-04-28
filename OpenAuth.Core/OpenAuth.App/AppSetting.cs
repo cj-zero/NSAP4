@@ -62,5 +62,22 @@
         /// 票据识别类型 腾讯/华为
         /// </summary>
         public string OcrType { get; set; }
+
+        /// <summary>
+        /// grpc或mqtt登录者
+        /// </summary>
+        public static string GrpcOrMqttUserName { get; set; }
+        /// <summary>
+        /// grpc或mqtt密码
+        /// </summary>
+        public static string GrpcOrMqttPwd { get; set; }
+        /// <summary>
+        /// grpc的远程ip地址
+        /// </summary>
+        public static string GrpcIP { get; set; }
+        /// <summary>
+        /// grpc连接端口
+        /// </summary>
+        public static string GrpcPort { get; set; }
     }
 }
