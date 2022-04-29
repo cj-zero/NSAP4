@@ -130,5 +130,15 @@ namespace OpenAuth.WebApi.Controllers.Customer
 
             return response;
         }
+
+        /// <summary>
+        /// 测试同步数据
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task TestAsync()
+        {
+            await _customerLimitApp.AsyncCustomerStatusService();
+        }
     }
 }

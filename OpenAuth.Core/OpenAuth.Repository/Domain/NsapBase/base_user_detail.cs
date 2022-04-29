@@ -277,7 +277,7 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         [Description("")]
-        public bool status { get; set; }
+        public int status { get; set; }
         /// <summary>
         /// 
         /// </summary>
