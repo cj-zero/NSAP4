@@ -428,9 +428,12 @@ namespace OpenAuth.App.Material
                             .FirstOrDefaultAsync();
 
             var orgIds = obj.InternalContactDeptInfos.Select(c => c.OrgId).ToList();
+            var history = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.InstanceId == obj.FlowInstanceId).Select(c => c.CreateUserId).Distinct().ToListAsync();
             var userIds = await UnitWork.Find<Relevance>(c => orgIds.Contains(c.SecondId) && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
-            userIds.Add(obj.CheckApproveId);
-            userIds.Add(obj.DevelopApproveId);
+            //userIds.Add(obj.CheckApproveId);
+            //userIds.Add(obj.DevelopApproveId);
+            userIds.AddRange(history);
+            userIds = userIds.Distinct().ToList();
             var userInfo = await UnitWork.Find<User>(c => userIds.Contains(c.Id) && c.Status == 0).ToListAsync();
             userInfo.ForEach(async c =>
             {
