@@ -983,7 +983,7 @@ namespace OpenAuth.App.Material
                     };
                     var createResult = await _serviceOrderApp.CISECreateServiceOrder(s);
                     var serviceOrderId = createResult.Result;
-                    addlist.Add(new InternalContactTaskServiceOrder { InternalContactTaskId = item.Id, ServiceOrderId = serviceOrderId, IsFinish = false });
+                    addlist.Add(new InternalContactTaskServiceOrder { InternalContactTaskId = item.Id, ServiceOrderId = serviceOrderId, IsFinish = false, InternalContactId = item.InternalContactId });
                 }
                 await UnitWork.BatchAddAsync(addlist.ToArray());
 

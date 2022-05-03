@@ -15,6 +15,10 @@ namespace OpenAuth.Repository.Domain
             this.InternalContactTaskId = string.Empty;
         }
         /// <summary>
+        /// 
+        /// </summary>
+        public int? InternalContactId { get; set; }
+        /// <summary>
         /// 内联单任务单ID
         /// </summary>
         public string InternalContactTaskId { get; set; }
