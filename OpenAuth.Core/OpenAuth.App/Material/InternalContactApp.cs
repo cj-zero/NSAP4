@@ -25,6 +25,7 @@ using OpenAuth.App.Sap.BusinessPartner;
 using System.Text.RegularExpressions;
 using OpenAuth.App.Serve.Response;
 using OpenAuth.Repository.Domain.NsapBone;
+using System.Threading;
 
 namespace OpenAuth.App.Material
 {
@@ -38,6 +39,8 @@ namespace OpenAuth.App.Material
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
         private readonly BusinessPartnerApp _businessPartnerApp;
         private readonly ServiceOrderApp _serviceOrderApp;
+
+        static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
         public InternalContactApp(IUnitWork unitWork, IAuth auth, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, ModuleFlowSchemeApp moduleFlowSchemeApp, BusinessPartnerApp businessPartnerApp, ServiceOrderApp serviceOrderApp) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
@@ -435,6 +438,9 @@ namespace OpenAuth.App.Material
             userIds.AddRange(history);
             userIds = userIds.Distinct().ToList();
             var userInfo = await UnitWork.Find<User>(c => userIds.Contains(c.Id) && c.Status == 0).ToListAsync();
+            //增加样式
+            var style = "<style>table{border-bottom:1px solid #ccc} td{border:1px solid #ccc;border-bottom:none}</style>";
+            obj.Content = $"{style}{obj.Content}";
             userInfo.ForEach(async c =>
             {
                 if (!string.IsNullOrWhiteSpace(c.Email))
@@ -448,6 +454,12 @@ namespace OpenAuth.App.Material
 
         private async Task SebdEmail(InternalContact obj, string title, List<MailUser> mailUsers = null)
         {
+            InternalContactEmailLog contactEmailLog = new InternalContactEmailLog();
+            contactEmailLog.Receiver = mailUsers.FirstOrDefault().Name;
+            contactEmailLog.InternalContactId = obj.Id;
+            contactEmailLog.CreateTime = DateTime.Now;
+            contactEmailLog.Result = "发送成功";
+            contactEmailLog.Remark = title;
             try
             {
                 MailRequest mailRequest = new MailRequest();
@@ -516,8 +528,12 @@ namespace OpenAuth.App.Material
             }
             catch (Exception e)
             {
-
+                contactEmailLog.Result = $"发送失败，{e.Message}";
             }
+            await semaphoreSlim.WaitAsync();
+            await UnitWork.AddAsync(contactEmailLog);
+            await UnitWork.SaveAsync();
+            semaphoreSlim.Release();
         }
         /// <summary>
         /// 获取详情
