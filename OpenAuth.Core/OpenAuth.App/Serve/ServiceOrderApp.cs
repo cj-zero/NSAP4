@@ -1506,6 +1506,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromTheme), q => q.FromTheme.Contains(req.QryFromTheme))
                 .WhereIf(req.CompleteDate != null, q => q.CompleteDate > req.CompleteDate)
                 .WhereIf(req.EndCompleteDate != null, q => q.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryMaterialCode), q => q.MaterialCode.Contains(req.QryMaterialCode))
                 .OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
 
             var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceWorkOrders)
@@ -3377,6 +3378,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromTheme), q => q.FromTheme.Contains(req.QryFromTheme))
                 .WhereIf(req.CompleteDate != null, q => q.CompleteDate > req.CompleteDate)
                 .WhereIf(req.EndCompleteDate != null, q => q.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryMaterialCode), q => q.MaterialCode.Contains(req.QryMaterialCode))
                 .OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
 
             var query = UnitWork.Find<ServiceOrder>(null)
