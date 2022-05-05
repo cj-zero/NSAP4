@@ -89,7 +89,7 @@ namespace OpenAuth.App
                 //.WhereIf(!string.IsNullOrWhiteSpace(request.Subject), c => c.Subject.Contains(request.Subject));
             if (!string.IsNullOrEmpty(request.key))
             {
-                objs = objs.Where(u => u.Id.Contains(request.key) || u.Subject.Contains(request.key) || u.Symptom.Contains(request.key)).WhereIf(int.TryParse(request.key, out int code), u => u.SltCode == code);
+                objs = objs.Where(u => u.Subject.Contains(request.key) || u.Symptom.Contains(request.key));
             }
 
 
