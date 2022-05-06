@@ -25,6 +25,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sap.Handler", "Sap.Handler\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NSAP.App.WebApi", "NSAP.App.WebApi\NSAP.App.WebApi.csproj", "{46293C08-BAD5-49AE-B2B7-B5DB82595D0F}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neware.LIMS.Mqtt", "Neware.LIMS.Mqtt\Neware.LIMS.Mqtt.csproj", "{511FB2B4-2E67-47D0-9B7C-924CA2C5A5EB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -71,6 +73,10 @@ Global
 		{46293C08-BAD5-49AE-B2B7-B5DB82595D0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{46293C08-BAD5-49AE-B2B7-B5DB82595D0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{46293C08-BAD5-49AE-B2B7-B5DB82595D0F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{511FB2B4-2E67-47D0-9B7C-924CA2C5A5EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{511FB2B4-2E67-47D0-9B7C-924CA2C5A5EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{511FB2B4-2E67-47D0-9B7C-924CA2C5A5EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{511FB2B4-2E67-47D0-9B7C-924CA2C5A5EB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

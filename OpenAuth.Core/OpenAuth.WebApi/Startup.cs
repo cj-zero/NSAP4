@@ -188,8 +188,13 @@ namespace OpenAuth.WebApi
             //SAP
             //services.AddSap();
 
-            ///CAP
+            //CAP
             services.AddNewareCAP(Configuration);
+            // 注册grpc服务
+            services.AddGrpcClient<EdgeAPI.DataService.DataServiceClient>(c =>
+            {
+                c.Address = new Uri($"{ Configuration.GetSection("AppSetting:GrpcURL").Value }");
+            });
 
             services.AddHttpClient("NsapApp", c =>
             {

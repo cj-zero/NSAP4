@@ -1506,6 +1506,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromTheme), q => q.FromTheme.Contains(req.QryFromTheme))
                 .WhereIf(req.CompleteDate != null, q => q.CompleteDate > req.CompleteDate)
                 .WhereIf(req.EndCompleteDate != null, q => q.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryMaterialCode), q => q.MaterialCode.Contains(req.QryMaterialCode))
                 .OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
 
             var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceWorkOrders)
@@ -1805,7 +1806,14 @@ namespace OpenAuth.App
                 d.UnCompletedReason = lastUncompletedReason.FirstOrDefault(l => l.ServiceOrderId == d.ServiceOrderId)?.Content ?? "";
                 return true;
             });
-
+            data.ForEach(c =>
+            {
+                if (c.VestInOrg == 1)
+                {
+                    c.MaterialTypes = c.ServiceWorkOrders.Select(s => s.MaterialCode.IndexOf("-") == -1 ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-"))).Distinct().ToList();
+                    //c.MaterialTypes = c.ServiceWorkOrders.Select(s => s.MaterialCode == "无序列号" ? "无序列号" : (s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == "" ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Distinct().ToList();
+                }
+            });
             result.Data = data;
             result.Count = query.Count();
             return result;
@@ -3370,6 +3378,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromTheme), q => q.FromTheme.Contains(req.QryFromTheme))
                 .WhereIf(req.CompleteDate != null, q => q.CompleteDate > req.CompleteDate)
                 .WhereIf(req.EndCompleteDate != null, q => q.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryMaterialCode), q => q.MaterialCode.Contains(req.QryMaterialCode))
                 .OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
 
             var query = UnitWork.Find<ServiceOrder>(null)
@@ -5799,6 +5808,30 @@ namespace OpenAuth.App
 
             var data = dailyReports.GroupBy(g => g.CreateTime?.Date).Select(s => new ReportResult { DailyDate = s.Key?.Date.ToString("yyyy-MM-dd"), ReportDetails = s.ToList() }).ToList();
             result.Data = new DailyReportResp { DailyDates = dailyReportDates, ReportResults = data };
+            return result;
+        }
+
+        /// <summary>
+        /// 获取日报最新日期
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetNewestDailyReport(GetTechnicianDailyReportReq req)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.TechnicianId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            var dailyReports = await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId).OrderByDescending(c => c.CreateTime).Select(c => c.CreateTime).FirstOrDefaultAsync();
+            result.Data = dailyReports;
             return result;
         }
 

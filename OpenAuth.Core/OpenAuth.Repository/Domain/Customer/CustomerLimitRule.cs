@@ -24,18 +24,22 @@ namespace OpenAuth.Repository.Domain
         /// 规则Id
         /// </summary>
         [Description("规则Id")]
+        [Column("Customer_limit_Id")]
         public int CustomerLimitId { get; set; }
+
+        public virtual CustomerLimit CustomerLimit { get; set; }
 
         /// <summary>
         /// 客户类型
         /// </summary>
-        [Description("规则名称")]
+        [Description("客户类型")]
+        [Column("Customer_Type")]
         public int CustomerType { get; set; }
 
         /// <summary>
         /// 限制数量
         /// </summary>
-        [Description("规则名称")]
+        [Description("限制数量")]
         public int Limit { get; set; }
 
         /// <summary>

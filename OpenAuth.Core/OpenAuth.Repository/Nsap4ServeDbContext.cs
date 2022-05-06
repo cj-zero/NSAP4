@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Debug;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Customer;
 using OpenAuth.Repository.Domain.ProductModel;
 using OpenAuth.Repository.Domain.Serve;
 using System;
@@ -128,6 +129,9 @@ namespace OpenAuth.Repository
         public virtual DbSet<CustomerLimitRule> CustomerLimitRule { get; set; }
         public virtual DbSet<CustomerLimitSaler> CustomerLimitSaler { get; set; }
         public virtual DbSet<CustomerList> CustomerList { get; set; }
+        public virtual DbSet<CustomerSeaConf> CustomerSeaConfs { get; set; }
+        public virtual DbSet<CustomerSeaRule> CustomerSeaRules { get; set; }
+        public virtual DbSet<CustomerSeaRuleItem> CustomerSeaRuleItems { get; set; }
         #endregion
         #region 线索
         public virtual DbSet<Clue> Clue { get; set; }

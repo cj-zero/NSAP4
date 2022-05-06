@@ -331,6 +331,10 @@ namespace OpenAuth.Repository.Domain.Sap
           this.U_EndCustomerContact= string.Empty;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public string CardCode { get; set; } 
         
         /// <summary>
         /// 

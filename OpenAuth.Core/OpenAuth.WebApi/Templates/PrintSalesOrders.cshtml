@@ -1,4 +1,4 @@
-﻿@using OpenAuth.App.Order.ModelDto
+@using OpenAuth.App.Order.ModelDto
 <!doctype html>
 <html>
 
@@ -10,76 +10,74 @@
             padding: 0;
             margin: 0;
         }
-
+        
         body {
             width: 1000px;
             margin: 0 auto;
             margin-top: 10px;
             font-size: 13.5px;
             font-family: "微软雅黑";
-            color: #7F7F7F;
+            color: #000;
         }
-
+        
         table {
             border-collapse: collapse;
         }
-
+        
         #tablebor {
             margin: 0 auto;
             border-collapse: collapse;
         }
-
+        
         .TH td {
             border-style: solid;
             border-width: 1px;
         }
-
+        
         #divtitle {
             margin: 0 auto;
         }
-
+        
         hr {
             margin-top: 80px;
             height: 0px;
-            border-top: 1px solid #808A87;
+            border-top: 1px solid #000;
             border-right: 0px;
             border-bottom: 0px;
             border-left: 0px;
         }
-
+        
         #divcode {
             height: 50px;
             width: 1000px;
             margin: 0 auto;
-            border: 1px solid #808A87;
+            border: 1px solid #000;
         }
     </style>
 </head>
 
 <body>
-        <table style="width:1000px">
-            @{int number = 0;}
-            @foreach (var item in Model.Data.ReimburseCosts)
-            {
-                <tr>
-                    <td style="width: 30px;" align="left">@{++number;} @number </td>
-                    <td style="width: 100px;" align="left">@item.ItemCode</td>
-                    <td style="width: 250px;" align="left">@item.Dscription</td>
-                    <td style="width: 50px;" align="right">@item.Quantity</td>
-                    <td style="width: 50px; " align="left">&nbsp;@item.unitMsr</td>
-                    <td style="width: 80px; " align="right">@item.Price</td>
-                    <td style="width: 80px; " align="right">@item.Money</td>
-                </tr>
-            }
+    <table style="width:1000px">
+        @{int number = 0;} @foreach (var item in Model.Data.ReimburseCosts) {
+        <tr>
+            <td style="width: 30px;" align="left">@{++number;} @number </td>
+            <td style="width: 100px;" align="left">@item.ItemCode</td>
+            <td style="width: 250px;" align="left">@item.Dscription</td>
+            <td style="width: 50px;" align="right">@item.Quantity</td>
+            <td style="width: 50px; " align="left">&nbsp;@item.unitMsr</td>
+            <td style="width: 80px; " align="right">@item.Price</td>
+            <td style="width: 80px; " align="right">@item.Money</td>
+        </tr>
+        }
 
-        </table>
-        <div style="border-top: 1px solid #7F7F7F; float: right; width: 375px;">
-            <span>含税&nbsp;</span>
-            <span>@Model.Data.U_SL</span>
-            <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;总计金额 </span>
+    </table>
+    <div style="border-top: 1px solid #7F7F7F; float: right; width: 375px;">
+        <span>含税&nbsp;</span>
+        <span>@Model.Data.U_SL</span>
+        <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;总计金额 </span>
 
-            <span style="float: right;">@Model.Data.DocTotal</span>
-        </div>
+        <span style="float: right;">@Model.Data.DocTotal</span>
+    </div>
 </body>
 
 </html>

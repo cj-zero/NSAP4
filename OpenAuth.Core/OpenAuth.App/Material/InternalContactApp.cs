@@ -25,6 +25,7 @@ using OpenAuth.App.Sap.BusinessPartner;
 using System.Text.RegularExpressions;
 using OpenAuth.App.Serve.Response;
 using OpenAuth.Repository.Domain.NsapBone;
+using System.Threading;
 
 namespace OpenAuth.App.Material
 {
@@ -38,6 +39,8 @@ namespace OpenAuth.App.Material
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
         private readonly BusinessPartnerApp _businessPartnerApp;
         private readonly ServiceOrderApp _serviceOrderApp;
+
+        static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
         public InternalContactApp(IUnitWork unitWork, IAuth auth, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, ModuleFlowSchemeApp moduleFlowSchemeApp, BusinessPartnerApp businessPartnerApp, ServiceOrderApp serviceOrderApp) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
@@ -428,10 +431,16 @@ namespace OpenAuth.App.Material
                             .FirstOrDefaultAsync();
 
             var orgIds = obj.InternalContactDeptInfos.Select(c => c.OrgId).ToList();
+            var history = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.InstanceId == obj.FlowInstanceId).Select(c => c.CreateUserId).Distinct().ToListAsync();
             var userIds = await UnitWork.Find<Relevance>(c => orgIds.Contains(c.SecondId) && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
-            userIds.Add(obj.CheckApproveId);
-            userIds.Add(obj.DevelopApproveId);
+            //userIds.Add(obj.CheckApproveId);
+            //userIds.Add(obj.DevelopApproveId);
+            userIds.AddRange(history);
+            userIds = userIds.Distinct().ToList();
             var userInfo = await UnitWork.Find<User>(c => userIds.Contains(c.Id) && c.Status == 0).ToListAsync();
+            //增加样式
+            var style = "<style>table{border-bottom:1px solid #ccc} td{border:1px solid #ccc;border-bottom:none}</style>";
+            obj.Content = $"{style}{obj.Content}";
             userInfo.ForEach(async c =>
             {
                 if (!string.IsNullOrWhiteSpace(c.Email))
@@ -445,6 +454,12 @@ namespace OpenAuth.App.Material
 
         private async Task SebdEmail(InternalContact obj, string title, List<MailUser> mailUsers = null)
         {
+            InternalContactEmailLog contactEmailLog = new InternalContactEmailLog();
+            contactEmailLog.Receiver = mailUsers.FirstOrDefault().Name;
+            contactEmailLog.InternalContactId = obj.Id;
+            contactEmailLog.CreateTime = DateTime.Now;
+            contactEmailLog.Result = "发送成功";
+            contactEmailLog.Remark = title;
             try
             {
                 MailRequest mailRequest = new MailRequest();
@@ -513,8 +528,12 @@ namespace OpenAuth.App.Material
             }
             catch (Exception e)
             {
-
+                contactEmailLog.Result = $"发送失败，{e.Message}";
             }
+            await semaphoreSlim.WaitAsync();
+            await UnitWork.AddAsync(contactEmailLog);
+            await UnitWork.SaveAsync();
+            semaphoreSlim.Release();
         }
         /// <summary>
         /// 获取详情
@@ -980,7 +999,7 @@ namespace OpenAuth.App.Material
                     };
                     var createResult = await _serviceOrderApp.CISECreateServiceOrder(s);
                     var serviceOrderId = createResult.Result;
-                    addlist.Add(new InternalContactTaskServiceOrder { InternalContactTaskId = item.Id, ServiceOrderId = serviceOrderId, IsFinish = false });
+                    addlist.Add(new InternalContactTaskServiceOrder { InternalContactTaskId = item.Id, ServiceOrderId = serviceOrderId, IsFinish = false, InternalContactId = item.InternalContactId });
                 }
                 await UnitWork.BatchAddAsync(addlist.ToArray());
 
@@ -1774,7 +1793,7 @@ namespace OpenAuth.App.Material
 
                 //有BOM却未被使用的物料(有无生产单),即没有批量
                 //var exceptLs = finlishedBomOrder.Select(c=>c.ItemCode).ToList().Except(hasOrderItem.Select(c => c.ItemCode).ToList()).ToList();
-                if (!(b01ProductOrder.Count > 0))
+                if (!(b01ProductOrder.Count != 0 && b01ProductOrder.Count > 0))
                 {
                     var mananerName = "";
                     if (mananer.Keys.Contains(orgInfo.Name))
@@ -2122,7 +2141,7 @@ namespace OpenAuth.App.Material
                                      {
                                          MnfSerial = o.SuppSerial,
                                          Quantity = 1,
-                                         WhsCode = o.Status == 0 ? string.Join(",", ign3.Select(i3 => i3.WhsCode).ToList()) : "",
+                                         WhsCode = o.Status == 0 ? string.Join(",", ign3.Select(i3 => i3.WhsCode).Distinct().ToList()) : "",
                                          OrgName = o.Status == 0 ? "E3" : "S19"
                                      };
                                  }).ToList();
@@ -2130,7 +2149,7 @@ namespace OpenAuth.App.Material
                              }
                              else
                              {
-                                 internalContactProductionDetailReq.Add(new InternalContactProductionDetailReq { MnfSerial = "", WhsCode = string.Join(",", ign3.Select(i3 => i3.WhsCode).ToList()), OrgName = "E3", Quantity = (int)ign3.Sum(i3 => i3.Quantity) });
+                                 internalContactProductionDetailReq.Add(new InternalContactProductionDetailReq { MnfSerial = "", WhsCode = string.Join(",", ign3.Select(i3 => i3.WhsCode).Distinct().ToList()), OrgName = "E3", Quantity = (int)ign3.Sum(i3 => i3.Quantity) });
                              }
 
                          }

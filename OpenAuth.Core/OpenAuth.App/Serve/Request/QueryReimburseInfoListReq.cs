@@ -137,5 +137,7 @@ namespace OpenAuth.App.Request
         /// 呼叫主题
         /// </summary>
         public string FromTheme { get; set; }
+
+        public string StatusType { get; set; }
     }
 }

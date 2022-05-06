@@ -17,24 +17,24 @@ namespace OpenAuth.Repository.Domain.Customer
     /// 公海设置
     /// </summary>
     [Table("customer_sea_conf")]
-    public class CustomerSeaConf : BaseEntity<int>
+    public partial class CustomerSeaConf : BaseEntity<int>
     {
         #region 启用自动放入公海
         /// <summary>
         /// 放入时间
         /// </summary>
-        [MaxLength(20)]
+        //[MaxLength(50)]
         [Column("Put_Time")]
         [Description("放入时间")]
-        public string PutTime { get; set; }
+        public TimeSpan PutTime { get; set; }
 
         /// <summary>
         /// 通知时间
         /// </summary>
-        [MaxLength(20)]
+        //[MaxLength(50)]
         [Column("Notify_Time")]
         [Description("通知时间")]
-        public string NotifyTime { get; set; }
+        public TimeSpan NotifyTime { get; set; }
 
         /// <summary>
         /// 提前通知天数
@@ -46,13 +46,13 @@ namespace OpenAuth.Repository.Domain.Customer
         /// <summary>
         /// 规则说明
         /// </summary>
-        [MaxLength(500)]
-        [Column("Notify_Rule_Explain")]
-        [Description("通知规则说明")]
-        public string NotifyRuleExplain { get; set; }
+        //[MaxLength(500)]
+        //[Column("Notify_Rule_Explain")]
+        //[Description("通知规则说明")]
+        //public string NotifyRuleExplain { get; set; }
 
         /// <summary>
-        /// 是否启用
+        /// 是否启用自动放入公海
         /// </summary>
         [Description("是否启用")]
         public bool Enable { get; set; }
@@ -94,6 +94,7 @@ namespace OpenAuth.Repository.Domain.Customer
         /// 是否删除
         /// </summary>
         [Description("是否删除")]
+        [Column("Is_Delete")]
         public bool Isdelete { get; set; }
 
         public override void GenerateDefaultKeyVal()
@@ -105,10 +106,11 @@ namespace OpenAuth.Repository.Domain.Customer
             return Id == 0;
         }
     }
+
     /// <summary>
     /// 公海回收机制
     /// </summary>
-    public class CustomerSeaRecover : CustomerSeaConf
+    public partial class CustomerSeaConf
     {
         #region 公海回收机制
         /// <summary>
@@ -126,7 +128,7 @@ namespace OpenAuth.Repository.Domain.Customer
         public int RecoverNoOrder { get; set; }
 
         /// <summary>
-        /// 是否启用;公海回收机制
+        /// 是否启用公海回收机制
         /// </summary>
         [Column("Recover_Enable")]
         [Description("是否启用")]
@@ -135,17 +137,17 @@ namespace OpenAuth.Repository.Domain.Customer
         /// <summary>
         /// 公海回收机制规则说明
         /// </summary>
-        [MaxLength(500)]
-        [Column("Recover_Rule_Explain")]
-        [Description("公海回收机制规则说明")]
-        public string RecoverRuleExplain { get; set; }
+        //[MaxLength(500)]
+        //[Column("Recover_Rule_Explain")]
+        //[Description("公海回收机制规则说明")]
+        //public string RecoverRuleExplain { get; set; }
         #endregion
     }
 
     /// <summary>
     /// 业务员公海认领分配规则
     /// </summary>
-    public class CustomerSeaReceive : CustomerSeaConf
+    public partial class CustomerSeaConf
     {
         #region  业务员公海认领分配规则
 
@@ -171,7 +173,7 @@ namespace OpenAuth.Repository.Domain.Customer
         public int ReceiveJobMin { get; set; }
 
         /// <summary>
-        /// 是否启用
+        /// 是否启用公海认领分配规则
         /// </summary>
         [Column("Receive_Enable")]
         [Description("是否启用")]
@@ -180,17 +182,17 @@ namespace OpenAuth.Repository.Domain.Customer
         /// <summary>
         /// 认领分配规则规则说明
         /// </summary>
-        [MaxLength(500)]
-        [Column("Receive_Rule_Explain")]
-        [Description("公海回收机制规则说明")]
-        public string ReceiveRuleExplain { get; set; }
+        //[MaxLength(500)]
+        //[Column("Receive_Rule_Explain")]
+        //[Description("公海回收机制规则说明")]
+        //public string ReceiveRuleExplain { get; set; }
         #endregion
     }
 
     /// <summary>
     /// 主动掉入公海限制
     /// </summary>
-    public class CustomerSeaAutomatic : CustomerSeaConf
+    public partial class CustomerSeaConf
     {
         #region 主动掉入公海限制
         /// <summary>
@@ -208,7 +210,7 @@ namespace OpenAuth.Repository.Domain.Customer
         public int AutomaticLimit { get; set; }
 
         /// <summary>
-        /// 是否启用
+        /// 是否启用主动掉入公海限制
         /// </summary>
         [Column("Automatic_Enable")]
         [Description("是否启用主动掉入公海限制")]
@@ -217,17 +219,17 @@ namespace OpenAuth.Repository.Domain.Customer
         /// <summary>
         ///  主动掉入公海规则说明
         /// </summary>
-        [MaxLength(500)]
-        [Column("Automatic_Rule_Explain")]
-        [Description("掉入公海规则说明")]
-        public string AutomaticRuleExplain { get; set; }
+        //[MaxLength(500)]
+        //[Column("Automatic_Rule_Explain")]
+        //[Description("掉入公海规则说明")]
+        //public string AutomaticRuleExplain { get; set; }
         #endregion
     }
 
     /// <summary>
     /// 掉入公海后抢回限制
     /// </summary>
-    public class CustomerSeaBack : CustomerSeaConf
+    public partial class CustomerSeaConf
     {
         #region 掉入公海后抢回限制
         /// <summary>
@@ -237,7 +239,7 @@ namespace OpenAuth.Repository.Domain.Customer
         [Description("掉入公海后抢回限制")]
         public int BackDay { get; set; }
         /// <summary>
-        /// 是否启用
+        /// 是否启用掉入公海后抢回限制
         /// </summary>
         [Column("Back_Enable")]
         [Description("是否启用掉入公海后抢回限制")]
@@ -245,10 +247,10 @@ namespace OpenAuth.Repository.Domain.Customer
         /// <summary>
         ///  抢回限制规则说明
         /// </summary>
-        [MaxLength(500)]
-        [Column("Back_Rule_Explain")]
-        [Description("抢回限制规则说明")]
-        public string BackRuleExplain { get; set; }
+        //[MaxLength(500)]
+        //[Column("Back_Rule_Explain")]
+        //[Description("抢回限制规则说明")]
+        //public string BackRuleExplain { get; set; }
         #endregion
     }
 }
