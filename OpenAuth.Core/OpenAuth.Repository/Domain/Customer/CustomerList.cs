@@ -41,7 +41,7 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Column("Customer_Name")]
         [Required(ErrorMessage = "客户名称不能为空")]
-        [MaxLength(20)]
+        [MaxLength(255)]
         [Description("客户名称")]
         public string CustomerName { get; set; }
 
