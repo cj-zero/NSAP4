@@ -108,6 +108,28 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 证书审批操作
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> BatchCreateNwcailFile(List<string> certNo)
+        {
+            var result = new Response();
+            try
+            {
+                result=await _app.BatchCreateNwcailFile(certNo);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{certNo.ToJson()}， 错误：{ex.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 查询委托单列表
         /// </summary>
         /// <param name="req"></param>

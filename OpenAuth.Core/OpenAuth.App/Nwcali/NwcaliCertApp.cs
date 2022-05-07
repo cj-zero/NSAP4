@@ -80,6 +80,12 @@ namespace OpenAuth.App.Nwcali
             await UnitWork.SaveAsync();
         }
 
+        public async Task UpdateFilePath(string certNo,string path)
+        {
+            await UnitWork.UpdateAsync<NwcaliBaseInfo>(c => c.CertificateNumber == certNo, c => new NwcaliBaseInfo { CertPath = path });
+            await UnitWork.SaveAsync();
+        }
+
         public async Task<NwcaliBaseInfo> GetInfos(string certNo)
         {
             var info = await UnitWork.Find<NwcaliBaseInfo>(null).Include(b => b.NwcaliTurs).Include(b => b.NwcaliPlcDatas).Include(b => b.PcPlcs).Include(b => b.Etalons)

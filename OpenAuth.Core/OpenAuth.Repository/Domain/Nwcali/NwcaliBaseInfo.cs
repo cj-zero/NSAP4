@@ -55,9 +55,17 @@ namespace OpenAuth.Repository.Domain
         [Description("")]
         public DateTime? Time { get; set; }
         /// <summary>
+        /// 源文件路径
+        /// </summary>
+        public string CertPath { get; set; }
+        /// <summary>
         /// PDF路径
         /// </summary>
         public string PdfPath { get; set; }
+        /// <summary>
+        /// CNAS证书PDF路径
+        /// </summary>
+        public string CNASPdfPath { get; set; }
         /// <summary>
         /// 
         /// </summary>
