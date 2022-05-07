@@ -8,6 +8,7 @@ using NSAP.Entity.Client;
 using OpenAuth.App;
 using OpenAuth.App.Client;
 using OpenAuth.App.Client.Request;
+using OpenAuth.App.Client.Response;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Order;
 using OpenAuth.App.Response;
@@ -171,7 +172,7 @@ namespace OpenAuth.WebApi.Controllers.Client
             {
                 result.Data = _clientInfoApp.SelectClientList(clientListReq.limit, clientListReq.page,
                     clientListReq.query, clientListReq.sortname, clientListReq.sortorder, sboid, userId, rIsViewSales,
-                    rIsViewSelf, rIsViewSelfDepartment, rIsViewFull, depID, out rowCount);
+                    rIsViewSelf, rIsViewSelfDepartment, rIsViewFull, depID, clientListReq.Label, out rowCount);
                 result.Count = rowCount;
             }
             catch (Exception ex)
@@ -184,6 +185,27 @@ namespace OpenAuth.WebApi.Controllers.Client
             return result;
         }
 
+        /// <summary>
+        /// 获取各个状态的客户数量
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetCustomerCount")]
+        public async Task<TableData> GetCustomerCount()
+        {
+            var result = new TableData();
+            try
+            {
+                result.Data = await _clientInfoApp.GetCustomerCount();
+            }
+            catch(Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex?.Message ?? "";
+            }
+
+            return result;
+        }
 
         /// <summary>
         /// 根据jobId获取审核任务信息(我的创建/审批)

@@ -1,7 +1,7 @@
 ﻿/*
  * @author : Eaven
  * @date : 2022-4-20
- * @desc : 客户规则
+ * @desc :  客户
  */
 using OpenAuth.Repository.Core;
 using System;
@@ -14,33 +14,67 @@ using System.Text;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-    /// 客户规则
+    /// 黑白名单客户
     /// </summary>
-    [Table("customer_limit_Rule")]
-    public class CustomerLimitRule : BaseEntity<int>
+    [Table("special_customer")]
+    public class SpecialCustomer : BaseEntity<int>
     {
 
         /// <summary>
-        /// 规则Id
+        /// 客户编码;客户编码
         /// </summary>
-        [Description("规则Id")]
-        [Column("Customer_limit_Id")]
-        public int CustomerLimitId { get; set; }
-
-        public virtual CustomerLimit CustomerLimit { get; set; }
-
-        /// <summary>
-        /// 客户类型:1-未报价客户 2-已成交客户
-        /// </summary>
-        [Description("客户类型")]
-        [Column("Customer_Type")]
-        public int CustomerType { get; set; }
+        [Column("Customer_No")]
+        [Required(ErrorMessage = "客户编码不能为空")]
+        [MaxLength(20)]
+        [Description("客户编码")]
+        public string CustomerNo { get; set; }
 
         /// <summary>
-        /// 限制数量
+        /// 客户名称
         /// </summary>
-        [Description("限制数量")]
-        public int Limit { get; set; }
+        [Column("Customer_Name")]
+        [Required(ErrorMessage = "客户名称不能为空")]
+        [MaxLength(20)]
+        [Description("客户名称")]
+        public string CustomerName { get; set; }
+
+        /// <summary>
+        /// 业务员Id
+        /// </summary>
+        [Column("Saler_Id")]
+        [Description("业务员Id")]
+        public string SalerId { get; set; }
+
+        /// <summary>
+        /// 业务员名称
+        /// </summary>
+        [Column("Saler_Name")]
+        [Required(ErrorMessage = "业务员名称不能为空")]
+        [MaxLength(20)]
+        [Description("业务员名称")]
+        public string SalerName { get; set; }
+
+        /// <summary>
+        /// 部门Id
+        /// </summary>
+        [Column("Department_Id")]
+        [Description("部门Id")]
+        public string DepartmentId { get; set; }
+
+        /// <summary>
+        /// 部门
+        /// </summary>
+        [Column("Department_Name")]
+        //[Required(ErrorMessage = "部门不能为空")]
+        [MaxLength(20)]
+        [Description("部门")]
+        public string DepartmentName { get; set; }
+
+        /// <summary>
+        /// 类型：1白名单，0：黑名单
+        /// </summary>
+        [Description("类型")]
+        public int Type { get; set; }
 
         /// <summary>
         /// 创建人

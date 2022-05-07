@@ -2235,6 +2235,7 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
+        [NotMapped]
         public bool HasBillToOder { get; set; }
     }
 }
