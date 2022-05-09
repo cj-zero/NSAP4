@@ -37,6 +37,7 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<OCST>().HasKey(o => new { o.Code, o.Country });
             modelBuilder.Entity<OCPR>().HasKey(o => o.CntctCode);
             modelBuilder.Entity<CRD1>().HasKey(o => new { o.CardCode,o.Address});
+            modelBuilder.Entity<ACRD>().HasKey(o => new { o.CardCode, o.LogInstanc });
             #endregion
             #region 序列号
             modelBuilder.Entity<OINS>().HasKey(o => o.insID);

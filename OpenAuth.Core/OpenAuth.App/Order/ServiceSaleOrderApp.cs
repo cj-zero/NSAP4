@@ -6346,83 +6346,157 @@ namespace OpenAuth.App.Order
             string protypeid = GetJobTypeByUrl("product/ProductionOrder.aspx");
             string protypeid_cp = GetJobTypeByUrl("product/ProductionOrder_CP.aspx");
             string typeidstr = bonustypeid + "," + bonusatypeid + "," + protypeid + "," + protypeid_cp;
-            List<int> lstID = (from d in dt.AsEnumerable() select d.Field<int>("DocEntry")).ToList();
             foreach (DataRow ordrrow in dt.Rows)
             {
-                var dataTable = GetDataTable(ordrrow, nsapsboId.ToString(), typeidstr);
-                //打印信息赋值
-                if (dataTable.Item1.Rows.Count > 0)
-                {
-                    if (!string.IsNullOrEmpty(dataTable.Item1.Rows[0].Field<string>("PrintNo")))
-                    {
-                        ordrrow["PrintNo"] = dataTable.Item1.Rows[0].Field<string>("PrintNo");
-                    }
-                    if (!string.IsNullOrEmpty(dataTable.Item1.Rows[0]["PrintNumIndex"].ToString()))
-                    {
-                        ordrrow["PrintNumIndex"] = dataTable.Item1.Rows[0]["PrintNumIndex"].ToString();
-                    }
-                    if (!string.IsNullOrEmpty(dataTable.Item1.Rows[0]["job_state"].ToString()))
-                    {
-                        ordrrow["bonusStatus"] = dataTable.Item1.Rows[0]["job_state"].ToString();
-                    }
-                }
-                else
-                {
-                    ordrrow["bonusStatus"] = "";
-                    ordrrow["PrintNo"] = "";
-                    ordrrow["PrintNumIndex"] = 0;
-                }
-                //发票、提成、生产状态
-                if (!string.IsNullOrEmpty(dataTable.Item2.Rows[0]["billStatus"].ToString()))
-                {
-                    ordrrow["billStatus"] = dataTable.Item2.Rows[0]["billStatus"].ToString();
-                }
-                else
-                {
-                    ordrrow["billStatus"] = "";
-                }
-                if (!string.IsNullOrEmpty(dataTable.Item2.Rows[0]["Status"].ToString()))
-                {
-                    ordrrow["proStatus"] = dataTable.Item2.Rows[0]["Status"].ToString();
-                }
-                else
-                {
-                    ordrrow["proStatus"] = "";
-                }
-                if (string.IsNullOrEmpty(ordrrow["proStatus"].ToString()))
-                {
-                    DataRow[] prorows = dataTable.Item1.Select("job_type_id=" + protypeid + " or job_type_id=" + protypeid_cp, "upd_dt desc");
-                    if (prorows.Length > 0)
-                    {
-                        ordrrow["proStatus"] = prorows[0]["job_state"].ToString();
-                    }
-                }
-                if (!string.IsNullOrEmpty(dataTable.Item2.Rows[0]["orinentry"].ToString()))
-                {
-                    ordrrow["EmpAcctWarn"] = dataTable.Item2.Rows[0]["orinentry"].ToString();
-                }
-                else
-                {
-                    ordrrow["EmpAcctWarn"] = "";
-                }
-                if (!string.IsNullOrEmpty(dataTable.Item2.Rows[0]["AttachFlag"].ToString()))
-                {
-                    ordrrow["AttachFlag"] = dataTable.Item2.Rows[0]["AttachFlag"].ToString();
-                }
-                else
-                {
-                    ordrrow["AttachFlag"] = "0";
-                }
-                //取运费
-                if (!string.IsNullOrEmpty(dataTable.Item2.Rows[0]["TransFee"].ToString()))
-                {
-                    ordrrow["TransFee"] = dataTable.Item2.Rows[0]["TransFee"].ToString();
-                }
-                else
-                {
-                    ordrrow["TransFee"] = "0.00";
-                }
+                ordrrow["bonusStatus"] = "";
+                ordrrow["PrintNo"] = "";
+                ordrrow["PrintNumIndex"] = 0;
+                ordrrow["billStatus"] = "";
+                ordrrow["proStatus"] = "";
+                ordrrow["EmpAcctWarn"] = "";
+                ordrrow["AttachFlag"] = "0";
+                ordrrow["TransFee"] = "0.00";
+                //string orderid = ordrrow["DocEntry"].ToString();
+                //var dataTable = GetDataTableV2(orderid, nsapsboId.ToString(), typeidstr);
+                //if (dataTable.Rows.Count > 0)
+                //{
 
+                //    if (!string.IsNullOrEmpty(dataTable.Rows[0].Field<string>("PrintNo")))
+                //    {
+                //        ordrrow["PrintNo"] = dataTable.Rows[0].Field<string>("PrintNo");
+                //    }
+                //    if (!string.IsNullOrEmpty(dataTable.Rows[0]["PrintNumIndex"].ToString()))
+                //    {
+                //        ordrrow["PrintNumIndex"] = dataTable.Rows[0]["PrintNumIndex"].ToString();
+                //    }
+                //    if (!string.IsNullOrEmpty(dataTable.Rows[0]["job_state"].ToString()))
+                //    {
+                //        ordrrow["bonusStatus"] = dataTable.Rows[0]["job_state"].ToString();
+                //    }//发票、提成、生产状态
+                //    if (!string.IsNullOrEmpty(dataTable.Rows[0]["billStatus"].ToString()))
+                //    {
+                //        ordrrow["billStatus"] = dataTable.Rows[0]["billStatus"].ToString();
+                //    }
+                //    else
+                //    {
+                //        ordrrow["billStatus"] = "";
+                //    }
+                //    if (!string.IsNullOrEmpty(dataTable.Rows[0]["Status"].ToString()))
+                //    {
+                //        ordrrow["proStatus"] = dataTable.Rows[0]["Status"].ToString();
+                //    }
+                //    else
+                //    {
+                //        ordrrow["proStatus"] = "";
+                //    }
+                //    if (string.IsNullOrEmpty(ordrrow["proStatus"].ToString()))
+                //    {
+                //        DataRow[] prorows = dataTable.Select("job_type_id=" + protypeid + " or job_type_id=" + protypeid_cp, "upd_dt desc");
+                //        if (prorows.Length > 0)
+                //        {
+                //            ordrrow["proStatus"] = prorows[0]["job_state"].ToString();
+                //        }
+                //    }
+                //    if (!string.IsNullOrEmpty(dataTable.Rows[0]["orinentry"].ToString()))
+                //    {
+                //        ordrrow["EmpAcctWarn"] = dataTable.Rows[0]["orinentry"].ToString();
+                //    }
+                //    else
+                //    {
+                //        ordrrow["EmpAcctWarn"] = "";
+                //    }
+                //    if (!string.IsNullOrEmpty(dataTable.Rows[0]["AttachFlag"].ToString()))
+                //    {
+                //        ordrrow["AttachFlag"] = dataTable.Rows[0]["AttachFlag"].ToString();
+                //    }
+                //    else
+                //    {
+                //        ordrrow["AttachFlag"] = "0";
+                //    }
+                //    //取运费
+                //    if (!string.IsNullOrEmpty(dataTable.Rows[0]["TransFee"].ToString()))
+                //    {
+                //        ordrrow["TransFee"] = dataTable.Rows[0]["TransFee"].ToString();
+                //    }
+                //    else
+                //    {
+                //        ordrrow["TransFee"] = "0.00";
+                //    }
+                //}
+                /*************************************************************************************/
+                //var dataTable = GetDataTable(ordrrow, nsapsboId.ToString(), typeidstr);
+                ////打印信息赋值
+                //if (dataTable.Item1.Rows.Count > 0)
+                //{
+                //    if (!string.IsNullOrEmpty(dataTable.Item1.Rows[0].Field<string>("PrintNo")))
+                //    {
+                //        ordrrow["PrintNo"] = dataTable.Item1.Rows[0].Field<string>("PrintNo");
+                //    }
+                //    if (!string.IsNullOrEmpty(dataTable.Item1.Rows[0]["PrintNumIndex"].ToString()))
+                //    {
+                //        ordrrow["PrintNumIndex"] = dataTable.Item1.Rows[0]["PrintNumIndex"].ToString();
+                //    }
+                //    if (!string.IsNullOrEmpty(dataTable.Item1.Rows[0]["job_state"].ToString()))
+                //    {
+                //        ordrrow["bonusStatus"] = dataTable.Item1.Rows[0]["job_state"].ToString();
+                //    }
+                //}
+                //else
+                //{
+                //    ordrrow["bonusStatus"] = "";
+                //    ordrrow["PrintNo"] = "";
+                //    ordrrow["PrintNumIndex"] = 0;
+                //}
+                ////发票、提成、生产状态
+                //if (!string.IsNullOrEmpty(dataTable.Item2.Rows[0]["billStatus"].ToString()))
+                //{
+                //    ordrrow["billStatus"] = dataTable.Item2.Rows[0]["billStatus"].ToString();
+                //}
+                //else
+                //{
+                //    ordrrow["billStatus"] = "";
+                //}
+                //if (!string.IsNullOrEmpty(dataTable.Item2.Rows[0]["Status"].ToString()))
+                //{
+                //    ordrrow["proStatus"] = dataTable.Item2.Rows[0]["Status"].ToString();
+                //}
+                //else
+                //{
+                //    ordrrow["proStatus"] = "";
+                //}
+                //if (string.IsNullOrEmpty(ordrrow["proStatus"].ToString()))
+                //{
+                //    DataRow[] prorows = dataTable.Item1.Select("job_type_id=" + protypeid + " or job_type_id=" + protypeid_cp, "upd_dt desc");
+                //    if (prorows.Length > 0)
+                //    {
+                //        ordrrow["proStatus"] = prorows[0]["job_state"].ToString();
+                //    }
+                //}
+                //if (!string.IsNullOrEmpty(dataTable.Item2.Rows[0]["orinentry"].ToString()))
+                //{
+                //    ordrrow["EmpAcctWarn"] = dataTable.Item2.Rows[0]["orinentry"].ToString();
+                //}
+                //else
+                //{
+                //    ordrrow["EmpAcctWarn"] = "";
+                //}
+                //if (!string.IsNullOrEmpty(dataTable.Item2.Rows[0]["AttachFlag"].ToString()))
+                //{
+                //    ordrrow["AttachFlag"] = dataTable.Item2.Rows[0]["AttachFlag"].ToString();
+                //}
+                //else
+                //{
+                //    ordrrow["AttachFlag"] = "0";
+                //}
+                ////取运费
+                //if (!string.IsNullOrEmpty(dataTable.Item2.Rows[0]["TransFee"].ToString()))
+                //{
+                //    ordrrow["TransFee"] = dataTable.Item2.Rows[0]["TransFee"].ToString();
+                //}
+                //else
+                //{
+                //    ordrrow["TransFee"] = "0.00";
+                //}
                 /*********************************************************************************/
                 //    //打印信息赋值
                 //    DataTable dtPrintnum = PurgetPrintNum("1", ordrrow["DocEntry"].ToString().Trim(), "ordr");//取编号
@@ -6484,7 +6558,7 @@ namespace OpenAuth.App.Order
             string orderNo = dataRow["DocEntry"].ToString();
             //  sql1
             string sql1 = $@"
-                 SELECT  a.PrintNo,a.PrintNumIndex  ,b.job_id,b.job_type_id,b.job_state,upd_dt
+                SELECT  a.PrintNo,a.PrintNumIndex  ,b.job_id,b.job_type_id,b.job_state,upd_dt
                 FROM nsap_bone.sale_ordr a,
                 nsap_base.wfa_job b
                 where a.DocEntry in( {orderNo}) and a.sbo_id ={sboid} AND
@@ -6511,7 +6585,38 @@ namespace OpenAuth.App.Order
                                                             ) v1) TransFee
                 ";
             DataTable dt2 = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql2, CommandType.Text, null);
+
             return (dt1, dt2);
+        }
+
+        public DataTable GetDataTableV2(string orderNo, string sboid, string typeidstr)
+        {
+            string sql = @$"SELECT * FROM (
+                    SELECT
+                    (select a.billstatus from nsap_bone.finance_billapplication_master a where a.DocEntry IN(1) AND a.sbo_id = {sboid} ORDER BY updatetime desc limit 1) billstatus,
+                    (select a.Status from nsap_bone.product_owor a where a.Status != 'C' AND a.originAbs IN(1) AND a.sbo_id = {sboid} limit 1) Status,
+                    (select group_concat(docentry) as orinentry from nsap_bone.sale_orin  where U_New_ORDRID= {orderNo} AND sbo_id = 1) orinentry,
+                    (SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.func_id = b.func_id LEFT JOIN nsap_base.base_page c ON c.page_id = b.page_id WHERE c.page_url = 'sales/SalesOrder.aspx') type_id,
+                    (SELECT 1 as AttachFlag FROM nsap_oa.file_main AS T0 LEFT JOIN nsap_oa.file_type AS T1 ON T0.file_type_id = T1.type_id WHERE T0.file_type_id = 5 AND T0.docEntry= {orderNo} limit 1) AttachFlag,
+                    (select sum(v1.doctotal) as TransFee from(
+                                                                    select DISTINCT t0.Buy_DocEntry, t1.DocTotal from nsap_bone.sale_transport t0
+                                                                     INNER JOIN nsap_bone.buy_opor t1 on t1.DocEntry = t0.Buy_DocEntry and t1.sbo_id = t0.SboId and t1.CANCELED = 'N'
+                                                                    INNER JOIN nsap_bone.sale_dln1 dl on dl.sbo_id = t0.sboid and dl.docentry = t0.base_docentry
+                                                                    WHERE t0.Base_DocType = 24 and  dl.basetype = 17 and t0.SboId =  {sboid} and dl.baseentry= {orderNo}
+                                                                    union all
+                                                                    select DISTINCT t0.Buy_DocEntry, t1.DocTotal from nsap_bone.sale_transport t0
+                                                                        INNER JOIN nsap_bone.buy_opor t1 on t1.DocEntry = t0.Buy_DocEntry and t1.sbo_id = t0.SboId and t1.CANCELED = 'N'
+                                                                    WHERE t0.Base_DocType = 17 and t0.SboId = {sboid} and t0.Base_DocEntry= {orderNo}
+                                                                ) v1) TransFee
+                    ) a
+                    LEFT JOIN(
+                    SELECT  a.PrintNo, a.PrintNumIndex, b.job_id, b.job_type_id, b.job_state, upd_dt
+                    FROM nsap_bone.sale_ordr a,
+                    nsap_base.wfa_job b
+                        where a.DocEntry = {orderNo} and a.sbo_id = 1 AND
+                    b.job_state <> -1 and b.sbo_id = 1 AND b.base_entry = 1  AND(b.job_type_id = 95 or b.job_type_id = 96 or b.job_type_id = 45 or b.job_type_id = 112) order by b.upd_dt desc
+                    ) b ON 1 = 1";
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
         }
         public string GetProdStatusByOrderId(string orderid, string sbo_id)
         {

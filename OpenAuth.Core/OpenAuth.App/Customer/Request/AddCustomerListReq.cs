@@ -7,7 +7,7 @@ using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.App.Customer.Request
 {
-    [AutoMapTo(typeof(CustomerList))]
+    [AutoMapTo(typeof(SpecialCustomer))]
     public class AddCustomerListReq
     {
         /// <summary>

@@ -54,7 +54,7 @@ namespace OpenAuth.App.Customer
             };
 
             //新增操作
-            if (req.Id == null)
+            if (req.Id == null || req.Id <= 0)
             {
                 using var tran = UnitWork.GetDbContext<CustomerLimit>().Database.BeginTransaction();
                 try
@@ -91,6 +91,14 @@ namespace OpenAuth.App.Customer
                 using var tran = UnitWork.GetDbContext<CustomerLimit>().Database.BeginTransaction();
                 try
                 {
+                    var instance = await UnitWork.Find<CustomerLimit>(null).FirstOrDefaultAsync();
+                    instance.Name = req.GroupName;
+                    instance.UpdateUser = userName;
+                    instance.UpdateDatetime = DateTime.Now;
+
+                    await UnitWork.UpdateAsync<CustomerLimit>(instance);
+
+                    //规则先删除,再新增
                     await UnitWork.DeleteAsync<CustomerLimitRule>(c => c.CustomerLimitId == req.Id);
                     rules.All(r =>
                     {
@@ -231,7 +239,7 @@ namespace OpenAuth.App.Customer
         }
 
         /// <summary>
-        /// 同步客户状态
+        /// 拉取符合掉落规则的客户进入公海
         /// </summary>
         /// <returns></returns>
         public async Task AsyncCustomerStatusService()
@@ -240,7 +248,9 @@ namespace OpenAuth.App.Customer
             var query = from c in UnitWork.Find<CustomerSeaRule>(null)
                         join ci in UnitWork.Find<CustomerSeaRuleItem>(null)
                         on c.Id equals ci.CustomerSeaRuleId
-                        where ci.CustomerType == 1 && ci.OrderType == 0
+                        //true 代表启用
+                        //目前的需求是先处理未报价客户未报价的规则
+                        where c.Enable == true && ci.CustomerType == 1 && ci.OrderType == 0 
                         group new { c, ci } by new { ci.DepartmentName, ci.CustomerType } into g
                         select new
                         {
@@ -251,8 +261,11 @@ namespace OpenAuth.App.Customer
                         };
             var ruleData = await query.ToListAsync();
 
-            //符合掉落规则的公海客户
-            List<CustomerList> customerLists = new List<CustomerList>();
+            //提前通知天数
+            var notifyDay = UnitWork.Find<CustomerSeaConf>(null).FirstOrDefault()?.NotifyDay; 
+            //符合掉落公海规则的客户
+            var customerLists = new List<CustomerList>();
+
             foreach (var rule in ruleData)
             {
                 //根据部门查找业务员
@@ -266,29 +279,81 @@ namespace OpenAuth.App.Customer
                                      on u.user_id equals s.user_id
                                      select s.sale_id).Distinct().ToListAsync();
                 //再根据业务员查找客户
-                var cardInfo = from c in UnitWork.Find<OCRD>(null)
-                               join s in UnitWork.Find<OSLP>(null)
-                               on c.SlpCode equals s.SlpCode
-                               where slpInfo.Select(s => s).Contains(s.SlpCode)
-                               select new { c.CardCode, c.CardName, c.CreateDate };
-
+                var query2 = from c in UnitWork.Find<OCRD>(null)
+                             join s in UnitWork.Find<OSLP>(null)
+                             on c.SlpCode equals s.SlpCode
+                             where slpInfo.Select(s => s).Contains(s.SlpCode)
+                             select new { c.CardCode, c.CardName, c.CreateDate, s.SlpCode, s.SlpName };
+                //去掉白名单上的客户 
+                var whiteList = await UnitWork.Find<SpecialCustomer>(s => s.Type == 1).Select(s => s.CustomerNo).ToListAsync();
+                var query3 = query2.Where(c => !whiteList.Contains(c.CardCode));
                 //根据客户类型查找客户
                 if (rule.customerType == 1) //未报价客户
                 {
-                    var cardInfoData = await cardInfo.Where(c => !UnitWork.Find<OQUT>(null).Any(q => q.CardCode == c.CardCode)).ToListAsync();
+                    var cardInfoData = await query3.Where(c => !UnitWork.Find<OQUT>(null).Any(q => q.CardCode == c.CardCode)).ToListAsync();
                     //未报价客户的行为类型只能是未报价
                     if (rule.orderType == 0)
                     {
                         //计算从分配给最新的业务员开始到现在过了多长时间
                         foreach (var c in cardInfoData)
                         {
-                            //判断是客户否存在业务员变更,存在则取最近一次的变更时间,不存在则取客户的创建时间
-                            var lastClientChangeTime = await UnitWork.Find<ACRD>(a => a.CardCode == c.CardCode).OrderByDescending(a => a.UpdateDate).Select(a => a.CreateDate).FirstOrDefaultAsync();
-                            var startTime = lastClientChangeTime ?? c.CreateDate;
-                            //超过规则定义的天数则放入公海
-                            if (startTime != null && (DateTime.Now - startTime).Value.TotalDays > rule.day)
+                            DateTime? startTime = null;
+                            //查找客户最近一次的业务员变更(查找有不同业务员的客户)
+                            var acrdInfos = await UnitWork.Find<ACRD>(a => a.CardCode == c.CardCode).Select(c => new { c.SlpCode, c.UpdateDate }).ToListAsync();
+                            var hasDiffClient = acrdInfos.Select(x => x.SlpCode).Distinct().Count() > 1;
+                            //如果有不同的业务员,则开始时间取最近一次的客户分配给业务员的时间
+                            if (hasDiffClient)
                             {
-                                customerLists.Add(new CustomerList { CustomerNo = c.CardCode, CustomerName = c.CardName, DepartmentId = rule.dept, DepartmentName = rule.dept });
+                                startTime = UnitWork.Find<ACRD>(a => a.CardCode == c.CardCode).Max(c => c.UpdateDate);
+                            }
+                            //否则说明该客户的业务员无变动,取该客户的创建时间
+                            else
+                            {
+                                startTime = UnitWork.Find<OCRD>(a => a.CardCode == c.CardCode).Max(c => c.CreateDate);
+                            }
+                            //var lastClientChangeTime = (await UnitWork.Find<ACRD>(a => a.CardCode == c.CardCode).Select(c => new { c.SlpCode, c.UpdateDate }).ToListAsync()).GroupBy(a => a.SlpCode).Where(g => g.Select(x => x.SlpCode).Distinct().Count() > 1).Select(g => g.Max(x => x.UpdateDate)).FirstOrDefault();
+                            ////判断是客户否存在业务员变更,存在则取最近一次的变更时间,不存在则取客户的创建时间
+                            //var startTime = lastClientChangeTime ?? c.CreateDate;
+                            //超过规则定义的天数则放入公海
+                            if (startTime != null && (DateTime.Now - startTime).Value.Days > rule.day)
+                            {
+                                customerLists.Add(new CustomerList
+                                {
+                                    DepartMent = rule.dept,
+                                
+                                    CustomerNo = c.CardCode,
+                                    CustomerName = c.CardName,
+                                    CustomerSource = "",
+                                    SlpCode = c.SlpCode,
+                                    SalerName = c.SlpName,
+                                    Label = "公海领取",
+                                    LabelIndex = 3,
+                                    CreateUser = "系统",
+                                    CreateDateTime = DateTime.Now,
+                                    UpdateUser = "系统",
+                                    UpdateDateTime = DateTime.Now,
+                                    IsDelete = false
+                                });
+                            }
+                            //超过规则定义的,需提前n天通知
+                            else if (startTime != null && (DateTime.Now - startTime).Value.Days > rule.day - notifyDay)
+                            {
+                                customerLists.Add(new CustomerList
+                                {
+                                    DepartMent = rule.dept,
+                                    CustomerNo = c.CardCode,
+                                    CustomerName = c.CardName,
+                                    CustomerSource = "",
+                                    SlpCode = c.SlpCode,
+                                    SalerName = c.SlpName,
+                                    Label = "即将掉入公海",
+                                    LabelIndex = 4,
+                                    CreateUser = "系统",
+                                    CreateDateTime = DateTime.Now,
+                                    UpdateUser = "系统",
+                                    UpdateDateTime = DateTime.Now,
+                                    IsDelete = false
+                                });
                             }
                         }
                     }
@@ -321,8 +386,32 @@ namespace OpenAuth.App.Customer
                 //}
 
             }
+            //数据库数据
+            var databaseData = await UnitWork.Find<CustomerList>(null).Select(c => new { c.CustomerNo, c.Id }).ToListAsync();
+            //表里面没有的数据要新增
+            var insertData = customerLists.Select(c => c.CustomerNo).Except(databaseData.Select(d => d.CustomerNo));
+            //两边都有的数据要更新
+            var updateData = customerLists.Select(c => c.CustomerNo).Intersect(databaseData.Select(d => d.CustomerNo));
+            //表里面多的要删除
+            var deleteData = databaseData.Select(d => d.CustomerNo).Except(customerLists.Select(c => c.CustomerNo));
 
-            //return customerLists;
+            await UnitWork.BatchAddAsync<CustomerList, int>(customerLists.Where(c => insertData.Contains(c.CustomerNo)).ToArray());
+            await UnitWork.DeleteAsync<CustomerList>(c => deleteData.Contains(c.CustomerNo));
+            foreach (var item in updateData)
+            {
+                var instance = await UnitWork.Find<CustomerList>(null).FirstOrDefaultAsync(c => c.CustomerNo == item);
+                instance.LabelIndex = customerLists.FirstOrDefault(c => c.CustomerNo == item).LabelIndex;
+                instance.Label = customerLists.FirstOrDefault(c => c.CustomerNo == item).Label;
+                instance.SlpCode = customerLists.FirstOrDefault(c => c.CustomerNo == item).SlpCode;
+                instance.SalerName = customerLists.FirstOrDefault(c => c.CustomerNo == item).SalerName;
+                instance.UpdateDateTime = DateTime.Now;
+                instance.UpdateUser = "系统";
+                await UnitWork.UpdateAsync<CustomerList>(instance);
+                //await UnitWork.SaveAsync();
+            }
+
+            await UnitWork.SaveAsync();
         }
+
     }
 }

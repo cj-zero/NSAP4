@@ -124,14 +124,15 @@ namespace OpenAuth.Repository
         public virtual DbSet<ProductModelType> productmodeltype { get; set; }
 
         #region 客户
-
+        public virtual DbSet<CustomerList> CustomerLists { get; set; }
         public virtual DbSet<CustomerLimit> CustomerLimit { get; set; }
         public virtual DbSet<CustomerLimitRule> CustomerLimitRule { get; set; }
         public virtual DbSet<CustomerLimitSaler> CustomerLimitSaler { get; set; }
-        public virtual DbSet<CustomerList> CustomerList { get; set; }
+        public virtual DbSet<SpecialCustomer> SpecialCustomers { get; set; }
         public virtual DbSet<CustomerSeaConf> CustomerSeaConfs { get; set; }
         public virtual DbSet<CustomerSeaRule> CustomerSeaRules { get; set; }
         public virtual DbSet<CustomerSeaRuleItem> CustomerSeaRuleItems { get; set; }
+        public virtual DbSet<CustomerSalerHistory> CustomerSalerHistories { get; set; }
         #endregion
         #region 线索
         public virtual DbSet<Clue> Clue { get; set; }
