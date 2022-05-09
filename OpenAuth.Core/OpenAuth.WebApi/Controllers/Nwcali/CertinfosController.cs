@@ -130,6 +130,28 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 重新生成证书数据
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task ReFillNwcailData(string certNo)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.ReFillNwcailData(certNo);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{certNo.ToJson()}， 错误：{ex.Message}");
+            }
+            //return result;
+        }
+
+        /// <summary>
         /// 查询委托单列表
         /// </summary>
         /// <param name="req"></param>

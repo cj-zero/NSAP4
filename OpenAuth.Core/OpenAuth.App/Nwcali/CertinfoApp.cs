@@ -32,6 +32,7 @@ using NSAP.Entity;
 using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository;
 using System.Text.RegularExpressions;
+using Infrastructure.Excel;
 
 namespace OpenAuth.App
 {
@@ -350,7 +351,7 @@ namespace OpenAuth.App
                 await UnitWork.DeleteAsync<NwcaliBaseInfo>(x => nwInfos.Select(n => n.Id).Contains(x.Id));
                 await UnitWork.DeleteAsync<Etalon>(x => nwInfos.Select(n => n.Id).Contains(x.NwcaliBaseInfoId));
                 await UnitWork.DeleteAsync<NwcaliPlcData>(x => nwInfos.Select(n => n.Id).Contains(x.NwcaliBaseInfoId));
-                await UnitWork.DeleteAsync<NwcaliTur>(x => nwInfos.Select(n => n.Id).Contains(x.NwcaliBaseInfoId));
+                await UnitWork.DeleteAsync<Repository.Domain.NwcaliTur>(x => nwInfos.Select(n => n.Id).Contains(x.NwcaliBaseInfoId));
                 await UnitWork.DeleteAsync<PcPlc>(x => nwInfos.Select(n => n.Id).Contains(x.NwcaliBaseInfoId));
 
                 await UnitWork.DeleteAsync<Certinfo>(x => certInfos.Select(c => c.Id).Contains(x.Id));
@@ -595,102 +596,110 @@ namespace OpenAuth.App
             var baseInfo = await _nwcaliCertApp.GetInfo(certNo);
             if (baseInfo != null)
             {
-                var folderYear = DateTime.Now.ToString("yyyy");
-                var basePath = Path.Combine("D:\\nsap4file", "nwcail", folderYear, baseInfo.CertificateNumber);
-                //if (!string.IsNullOrEmpty(baseInfo.CertPath))
-                //{
-                //    basePath = baseInfo.CertPath.Substring(0, baseInfo.CertPath.LastIndexOf('\\'));
-                //}
-                var model = await BuildModel(baseInfo);
-                #region 生成英文版
-                var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Header.html");
-                var text = System.IO.File.ReadAllText(url);
-                text = text.Replace("@Model.Data.BarCode", model.BarCode);
-                var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"Header{Guid.NewGuid()}.html");
-                System.IO.File.WriteAllText(tempUrl, text);
-                var footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Footer.html");
-                var datas = await ExportAllHandler.Exporterpdf(model, "Calibration Certificate.cshtml", pdf =>
+                try
                 {
-                    pdf.IsWriteHtml = true;
-                    pdf.PaperKind = PaperKind.A4;
-                    pdf.Orientation = Orientation.Portrait;
-                    pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
-                    pdf.FooterSettings = new FooterSettings() { FontSize = 6, Right = "Page [page] of [toPage] ", Line = false, Spacing = 2.812, HtmUrl = footerUrl };
-                });
-                System.IO.File.Delete(tempUrl);
-                //var path = Path.Combine(BaseCertDir, certNo);
-                DirUtil.CheckOrCreateDir(basePath);
-                var fullpath = Path.Combine(basePath, $"{certNo}_EN" + ".pdf");
-                using (FileStream fs = new FileStream(fullpath, FileMode.Create))
-                {
-                    using (BinaryWriter bw = new BinaryWriter(fs))
+                    var folderYear = DateTime.Now.ToString("yyyy");
+                    var basePath = Path.Combine("D:\\nsap4file", "nwcail", folderYear, baseInfo.CertificateNumber);
+                    //if (!string.IsNullOrEmpty(baseInfo.CertPath))
+                    //{
+                    //    basePath = baseInfo.CertPath.Substring(0, baseInfo.CertPath.LastIndexOf('\\'));
+                    //}
+                    var model = await BuildModel(baseInfo);
+                    #region 生成英文版
+                    var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Header.html");
+                    var text = System.IO.File.ReadAllText(url);
+                    text = text.Replace("@Model.Data.BarCode", model.BarCode);
+                    var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"Header{Guid.NewGuid()}.html");
+                    System.IO.File.WriteAllText(tempUrl, text);
+                    var footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Footer.html");
+                    var datas = await ExportAllHandler.Exporterpdf(model, "Calibration Certificate.cshtml", pdf =>
                     {
-                        bw.Write(datas, 0, datas.Length);
-                    }
-                }
-                #endregion
-
-                #region 生成中文版
-                //获取委托单
-                var entrustment = await GetEntrustment(model.CalibrationCertificate.TesterSn);
-                model.CalibrationCertificate.EntrustedUnit = entrustment?.CertUnit;
-                model.CalibrationCertificate.EntrustedUnitAdress = entrustment?.CertCountry + entrustment?.CertProvince + entrustment?.CertCity + entrustment?.CertAddress;
-                //委托日期需小于校准日期
-                if (entrustment != null && !string.IsNullOrWhiteSpace(entrustment.EntrustedDate.ToString()) && entrustment?.EntrustedDate > DateTime.Parse(model.CalibrationCertificate.CalibrationDate))
-                    entrustment.EntrustedDate = entrustment.EntrustedDate.Value.AddDays(-2);
-
-                model.CalibrationCertificate.EntrustedDate = !string.IsNullOrWhiteSpace(entrustment?.EntrustedDate.ToString()) ? entrustment?.EntrustedDate.Value.ToString("yyyy年MM月dd日") : "";
-                model.CalibrationCertificate.CalibrationDate = DateTime.Parse(model.CalibrationCertificate.CalibrationDate).ToString("yyyy年MM月dd日");
-                var temp = Math.Round(Convert.ToDecimal(model.CalibrationCertificate.Temperature), 1);
-                model.CalibrationCertificate.Temperature = temp.ToString("0.0");
-                foreach (var item in model.MainStandardsUsed)
-                {
-                    if (!string.IsNullOrWhiteSpace(item.DueDate))
-                        item.DueDate = DateTime.Parse(item.DueDate).ToString("yyyy-MM-dd");
-                    if (item.Name.Contains(","))
+                        pdf.IsWriteHtml = true;
+                        pdf.PaperKind = PaperKind.A4;
+                        pdf.Orientation = Orientation.Portrait;
+                        pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                        pdf.FooterSettings = new FooterSettings() { FontSize = 6, Right = "Page [page] of [toPage] ", Line = false, Spacing = 2.812, HtmUrl = footerUrl };
+                    });
+                    System.IO.File.Delete(tempUrl);
+                    //var path = Path.Combine(BaseCertDir, certNo);
+                    DirUtil.CheckOrCreateDir(basePath);
+                    var fullpath = Path.Combine(basePath, $"{certNo}_EN" + ".pdf");
+                    using (FileStream fs = new FileStream(fullpath, FileMode.Create))
                     {
-                        var split = item.Name.Split(",");
-                        //item.EnName = split[0];
-                        item.Name = split[0];
+                        using (BinaryWriter bw = new BinaryWriter(fs))
+                        {
+                            bw.Write(datas, 0, datas.Length);
+                        }
                     }
-                    item.Characterisics = item.Characterisics.Replace("Urel", "<i>U</i><sub>rel</sub>").Replace("k=", "<i>k</i>=");
-                }
+                    #endregion
 
-                url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "CNAS Header.html");
-                text = System.IO.File.ReadAllText(url);
-                text = text.Replace("@Model.Data.BarCode", model.BarCode);
-                tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"Header{Guid.NewGuid()}.html");
-                System.IO.File.WriteAllText(tempUrl, text);
-                footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "CNAS Footer.html");
-                datas = await ExportAllHandler.Exporterpdf(model, "Calibration Certificate CNAS.cshtml", pdf =>
-                {
-                    pdf.IsWriteHtml = true;
-                    pdf.PaperKind = PaperKind.A4;
-                    pdf.Orientation = Orientation.Portrait;
-                    pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };//2.812
-                    pdf.FooterSettings = new FooterSettings() { FontSize = 6, Right = "Page [page] of [toPage] ", Line = false, Spacing = 0, HtmUrl = footerUrl };
-                });
-                System.IO.File.Delete(tempUrl);
-                DirUtil.CheckOrCreateDir(basePath);
-                var fullPathCnas = Path.Combine(basePath, $"{certNo}_CNAS" + ".pdf");
-                using (FileStream fs = new FileStream(fullPathCnas, FileMode.Create))
-                {
-                    using (BinaryWriter bw = new BinaryWriter(fs))
+                    #region 生成中文版
+                    //获取委托单
+                    var entrustment = await GetEntrustment(model.CalibrationCertificate.TesterSn);
+                    model.CalibrationCertificate.EntrustedUnit = entrustment?.CertUnit;
+                    model.CalibrationCertificate.EntrustedUnitAdress = entrustment?.CertCountry + entrustment?.CertProvince + entrustment?.CertCity + entrustment?.CertAddress;
+                    //委托日期需小于校准日期
+                    if (entrustment != null && !string.IsNullOrWhiteSpace(entrustment.EntrustedDate.ToString()) && entrustment?.EntrustedDate > DateTime.Parse(model.CalibrationCertificate.CalibrationDate))
+                        entrustment.EntrustedDate = entrustment.EntrustedDate.Value.AddDays(-2);
+
+                    model.CalibrationCertificate.EntrustedDate = !string.IsNullOrWhiteSpace(entrustment?.EntrustedDate.ToString()) ? entrustment?.EntrustedDate.Value.ToString("yyyy年MM月dd日") : "";
+                    model.CalibrationCertificate.CalibrationDate = DateTime.Parse(model.CalibrationCertificate.CalibrationDate).ToString("yyyy年MM月dd日");
+                    var temp = Math.Round(Convert.ToDecimal(model.CalibrationCertificate.Temperature), 1);
+                    model.CalibrationCertificate.Temperature = temp.ToString("0.0");
+                    foreach (var item in model.MainStandardsUsed)
                     {
-                        bw.Write(datas, 0, datas.Length);
+                        if (!string.IsNullOrWhiteSpace(item.DueDate))
+                            item.DueDate = DateTime.Parse(item.DueDate).ToString("yyyy-MM-dd");
+                        if (item.Name.Contains(","))
+                        {
+                            var split = item.Name.Split(",");
+                            //item.EnName = split[0];
+                            item.Name = split[0];
+                        }
+                        item.Characterisics = item.Characterisics.Replace("Urel", "<i>U</i><sub>rel</sub>").Replace("k=", "<i>k</i>=");
                     }
+
+                    url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "CNAS Header.html");
+                    text = System.IO.File.ReadAllText(url);
+                    text = text.Replace("@Model.Data.BarCode", model.BarCode);
+                    tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"Header{Guid.NewGuid()}.html");
+                    System.IO.File.WriteAllText(tempUrl, text);
+                    footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "CNAS Footer.html");
+                    datas = await ExportAllHandler.Exporterpdf(model, "Calibration Certificate CNAS.cshtml", pdf =>
+                    {
+                        pdf.IsWriteHtml = true;
+                        pdf.PaperKind = PaperKind.A4;
+                        pdf.Orientation = Orientation.Portrait;
+                        pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };//2.812
+                        pdf.FooterSettings = new FooterSettings() { FontSize = 6, Right = "Page [page] of [toPage] ", Line = false, Spacing = 0, HtmUrl = footerUrl };
+                    });
+                    System.IO.File.Delete(tempUrl);
+                    DirUtil.CheckOrCreateDir(basePath);
+                    var fullPathCnas = Path.Combine(basePath, $"{certNo}_CNAS" + ".pdf");
+                    using (FileStream fs = new FileStream(fullPathCnas, FileMode.Create))
+                    {
+                        using (BinaryWriter bw = new BinaryWriter(fs))
+                        {
+                            bw.Write(datas, 0, datas.Length);
+                        }
+                    }
+                    #endregion
+
+                    await semaphoreSlim.WaitAsync();
+                    await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { PdfPath = fullpath, CNASPdfPath = fullPathCnas });
+                    //生成证书文件后删除校准数据
+                    await UnitWork.DeleteAsync<Etalon>(x => x.NwcaliBaseInfoId == baseInfo.Id);
+                    await UnitWork.DeleteAsync<NwcaliPlcData>(x => x.NwcaliBaseInfoId == baseInfo.Id);
+                    await UnitWork.DeleteAsync<Repository.Domain.NwcaliTur>(x => x.NwcaliBaseInfoId == baseInfo.Id);
+
+                    await UnitWork.SaveAsync();
+                    semaphoreSlim.Release();
                 }
-                #endregion
+                catch (Exception e)
+                {
 
-                await semaphoreSlim.WaitAsync();
-                await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { PdfPath = fullpath, CNASPdfPath = fullPathCnas });
-                //生成证书文件后删除校准数据
-                await UnitWork.DeleteAsync<Etalon>(x => x.NwcaliBaseInfoId == baseInfo.Id);
-                await UnitWork.DeleteAsync<NwcaliPlcData>(x => x.NwcaliBaseInfoId == baseInfo.Id);
-                await UnitWork.DeleteAsync<NwcaliTur>(x => x.NwcaliBaseInfoId == baseInfo.Id);
-
-                await UnitWork.SaveAsync();
-                semaphoreSlim.Release();
+                    throw e;
+                }
             }
         }
 
@@ -908,6 +917,147 @@ namespace OpenAuth.App
             }
 
             return result;
+        }
+
+
+        public async Task<List<NwcaliBaseInfo>> ReFillNwcailData(string certno = "")
+        {
+            var nwcail = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.CertPath)).WhereIf(!string.IsNullOrWhiteSpace(certno), c => c.CertificateNumber == certno).Include(c => c.Etalons).ToListAsync();
+
+            foreach (var item in nwcail)
+            {
+                //被删除则新增
+                if (item.Etalons.Count == 0)
+                {
+                    var handler = new ExcelHandler(item.CertPath);
+
+                    var baseInfo = handler.GetBaseInfo<NwcaliBaseInfo>(sheet =>
+                    {
+                        var baseInfo = new NwcaliBaseInfo();
+                        var timeRow = sheet.GetRow(1);
+                        baseInfo.Time = DateTime.Parse(timeRow.GetCell(1).StringCellValue);
+                        var testIntervalRow = sheet.GetRow(30);
+                        baseInfo.TestInterval = testIntervalRow.GetCell(1).StringCellValue;
+                        #region 标准器设备信息
+                        var etalonsNameRow = sheet.GetRow(18);
+                        var etalonsCharacteristicsRow = sheet.GetRow(19);
+                        var etalonsAssetNoRow = sheet.GetRow(20);
+                        var etalonsCertificateNoRow = sheet.GetRow(22);
+                        var etalonsCalibrationEntity = sheet.GetRow(21);
+                        var etalonsDueDateRow = sheet.GetRow(23);
+                        for (int i = 1; i < etalonsNameRow.LastCellNum; i++)
+                        {
+                            if (string.IsNullOrWhiteSpace(etalonsNameRow.GetCell(i).StringCellValue))
+                                break;
+                            try
+                            {
+                                baseInfo.Etalons.Add(new Etalon
+                                {
+                                    NwcaliBaseInfoId = item.Id,
+                                    Name = etalonsNameRow.GetCell(i).StringCellValue,
+                                    Characteristics = etalonsCharacteristicsRow.GetCell(i).StringCellValue,
+                                    AssetNo = etalonsAssetNoRow.GetCell(i).StringCellValue,
+                                    CertificateNo = etalonsCertificateNoRow.GetCell(i).StringCellValue,
+                                    DueDate = etalonsDueDateRow.GetCell(i).StringCellValue,
+                                    CalibrationEntity = etalonsCalibrationEntity.GetCell(i).StringCellValue
+                                });
+                            }
+                            catch
+                            {
+                                break;
+                            }
+                        }
+                        #endregion
+
+                        #region 下位机
+                        var pclCommentRow = sheet.GetRow(31);
+                        var pclNoRow = sheet.GetRow(32);
+                        var pclGuidRow = sheet.GetRow(33);
+                        for (int i = 1; i < pclNoRow.LastCellNum; i++)
+                        {
+                            if (string.IsNullOrWhiteSpace(pclGuidRow.GetCell(i)?.StringCellValue))
+                                continue;
+                            try
+                            {
+                                baseInfo.PcPlcs.Add(new PcPlc
+                                {
+                                    Comment = pclCommentRow.GetCell(i).StringCellValue,
+                                    No = Convert.ToInt32(pclNoRow.GetCell(i).StringCellValue),
+                                    Guid = pclGuidRow.GetCell(i).StringCellValue,
+                                    CalibrationDate = baseInfo.Time,
+                                    ExpirationDate = DateTime.Parse(ConvertTestInterval(baseInfo.Time.Value.ToString(), baseInfo.TestInterval))
+                                });
+                            }
+                            catch(Exception ex)
+                            {
+                                break;
+                            }
+                        }
+                        #endregion
+                        return baseInfo;
+                    });
+
+                    var turV = handler.GetNwcaliTur("电压");
+                    var turA = handler.GetNwcaliTur("电流");
+                    var tv = turV.Select(v => new Repository.Domain.NwcaliTur { NwcaliBaseInfoId = item.Id, DataType = 1, Range = v.Range, TestPoint = v.TestPoint, Tur = v.Tur, UncertaintyContributors = v.UncertaintyContributors, SensitivityCoefficient = v.SensitivityCoefficient, Value = v.Value, Unit = v.Unit, Type = v.Type, Distribution = v.Distribution, Divisor = v.Divisor, StdUncertainty = v.StdUncertainty, DegreesOfFreedom = v.DegreesOfFreedom, SignificanceCheck = v.SignificanceCheck }).ToList();
+                    var ta = turA.Select(v => new Repository.Domain.NwcaliTur { NwcaliBaseInfoId = item.Id, DataType = 2, Range = v.Range, TestPoint = v.TestPoint, Tur = v.Tur, UncertaintyContributors = v.UncertaintyContributors, SensitivityCoefficient = v.SensitivityCoefficient, Value = v.Value, Unit = v.Unit, Type = v.Type, Distribution = v.Distribution, Divisor = v.Divisor, StdUncertainty = v.StdUncertainty, DegreesOfFreedom = v.DegreesOfFreedom, SignificanceCheck = v.SignificanceCheck }).ToList();
+                    baseInfo.NwcaliTurs.AddRange(tv);
+                    baseInfo.NwcaliTurs.AddRange(ta);
+
+                    try
+                    {
+                        foreach (var plc in baseInfo.PcPlcs)
+                        {
+                            var list = handler.GetNWCaliPLCData($"下位机{plc.No}");
+                            baseInfo.NwcaliPlcDatas.AddRange(list.Select(l => new NwcaliPlcData
+                            {
+                                NwcaliBaseInfoId = item.Id,
+                                PclNo = plc.No,
+                                DataType = 1,
+                                VerifyType = l.Verify_Type,
+                                VoltsorAmps = l.VoltsorAmps,
+                                Channel = l.Channel,
+                                Mode = l.Mode,
+                                Range = l.Range,
+                                Point = l.Point,
+                                CommandedValue = l.Commanded_Value,
+                                MeasuredValue = l.Measured_Value,
+                                Scale = l.Scale,
+                                StandardTotalU = l.Standard_total_U,
+                                StandardValue = l.Standard_Value
+                            }));
+                            var list2 = handler.GetNWCaliPLCRepetitiveMeasurementData($"下位机{plc.No}重复性测量");
+                            if (list2.Count > 0)
+                                baseInfo.NwcaliPlcDatas.AddRange(list2.Select(l => new NwcaliPlcData
+                                {
+                                    NwcaliBaseInfoId = item.Id,
+                                    PclNo = plc.No,
+                                    DataType = 2,
+                                    VerifyType = l.Verify_Type,
+                                    VoltsorAmps = l.VoltsorAmps,
+                                    Channel = l.Channel,
+                                    Mode = l.Mode,
+                                    Range = l.Range,
+                                    Point = l.Point,
+                                    CommandedValue = l.Commanded_Value,
+                                    MeasuredValue = l.Measured_Value,
+                                    Scale = l.Scale,
+                                    StandardTotalU = l.Standard_total_U,
+                                    StandardValue = l.Standard_Value
+                                }));
+                        }
+                        //await _nwcaliCertApp.AddAsync(baseInfo);
+                        await UnitWork.BatchAddAsync(baseInfo.Etalons.ToArray());
+                        await UnitWork.BatchAddAsync(baseInfo.NwcaliTurs.ToArray());
+                        await UnitWork.BatchAddAsync(baseInfo.NwcaliPlcDatas.ToArray());
+                        await UnitWork.SaveAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                    }
+                }
+            }
+            return nwcail;
         }
 
         /// <summary>
