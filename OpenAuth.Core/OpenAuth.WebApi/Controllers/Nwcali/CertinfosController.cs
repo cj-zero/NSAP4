@@ -108,7 +108,7 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 证书审批操作
+        /// 批量生成证书文件
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
@@ -134,7 +134,7 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpPost]
         public async Task ReFillNwcailData(string certNo)
         {
             var result = new Response();
