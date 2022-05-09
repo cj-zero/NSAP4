@@ -6348,84 +6348,81 @@ namespace OpenAuth.App.Order
             string typeidstr = bonustypeid + "," + bonusatypeid + "," + protypeid + "," + protypeid_cp;
             foreach (DataRow ordrrow in dt.Rows)
             {
-                string orderid = ordrrow["DocEntry"].ToString();
-                var dataTable = GetDataTableV2(orderid, nsapsboId.ToString(), typeidstr);
-                if (dataTable.Rows.Count > 0)
-                {
+                ordrrow["bonusStatus"] = "";
+                ordrrow["PrintNo"] = "";
+                ordrrow["PrintNumIndex"] = 0;
+                ordrrow["billStatus"] = "";
+                ordrrow["proStatus"] = "";
+                ordrrow["EmpAcctWarn"] = "";
+                ordrrow["AttachFlag"] = "0";
+                ordrrow["TransFee"] = "0.00";
+                //string orderid = ordrrow["DocEntry"].ToString();
+                //var dataTable = GetDataTableV2(orderid, nsapsboId.ToString(), typeidstr);
+                //if (dataTable.Rows.Count > 0)
+                //{
 
-                    if (!string.IsNullOrEmpty(dataTable.Rows[0].Field<string>("PrintNo")))
-                    {
-                        ordrrow["PrintNo"] = dataTable.Rows[0].Field<string>("PrintNo");
-                    }
-                    if (!string.IsNullOrEmpty(dataTable.Rows[0]["PrintNumIndex"].ToString()))
-                    {
-                        ordrrow["PrintNumIndex"] = dataTable.Rows[0]["PrintNumIndex"].ToString();
-                    }
-                    if (!string.IsNullOrEmpty(dataTable.Rows[0]["job_state"].ToString()))
-                    {
-                        ordrrow["bonusStatus"] = dataTable.Rows[0]["job_state"].ToString();
-                    }//发票、提成、生产状态
-                    if (!string.IsNullOrEmpty(dataTable.Rows[0]["billStatus"].ToString()))
-                    {
-                        ordrrow["billStatus"] = dataTable.Rows[0]["billStatus"].ToString();
-                    }
-                    else
-                    {
-                        ordrrow["billStatus"] = "";
-                    }
-                    if (!string.IsNullOrEmpty(dataTable.Rows[0]["Status"].ToString()))
-                    {
-                        ordrrow["proStatus"] = dataTable.Rows[0]["Status"].ToString();
-                    }
-                    else
-                    {
-                        ordrrow["proStatus"] = "";
-                    }
-                    if (string.IsNullOrEmpty(ordrrow["proStatus"].ToString()))
-                    {
-                        DataRow[] prorows = dataTable.Select("job_type_id=" + protypeid + " or job_type_id=" + protypeid_cp, "upd_dt desc");
-                        if (prorows.Length > 0)
-                        {
-                            ordrrow["proStatus"] = prorows[0]["job_state"].ToString();
-                        }
-                    }
-                    if (!string.IsNullOrEmpty(dataTable.Rows[0]["orinentry"].ToString()))
-                    {
-                        ordrrow["EmpAcctWarn"] = dataTable.Rows[0]["orinentry"].ToString();
-                    }
-                    else
-                    {
-                        ordrrow["EmpAcctWarn"] = "";
-                    }
-                    if (!string.IsNullOrEmpty(dataTable.Rows[0]["AttachFlag"].ToString()))
-                    {
-                        ordrrow["AttachFlag"] = dataTable.Rows[0]["AttachFlag"].ToString();
-                    }
-                    else
-                    {
-                        ordrrow["AttachFlag"] = "0";
-                    }
-                    //取运费
-                    if (!string.IsNullOrEmpty(dataTable.Rows[0]["TransFee"].ToString()))
-                    {
-                        ordrrow["TransFee"] = dataTable.Rows[0]["TransFee"].ToString();
-                    }
-                    else
-                    {
-                        ordrrow["TransFee"] = "0.00";
-                    }
-                }
-                else
-                {
-                    ordrrow["bonusStatus"] = "";
-                    ordrrow["PrintNo"] = "";
-                    ordrrow["PrintNumIndex"] = 0; 
-                    ordrrow["billStatus"] = "";
-                    ordrrow["proStatus"] = "";
-                    ordrrow["EmpAcctWarn"] = "";
-                    ordrrow["AttachFlag"] = "0";
-                    ordrrow["TransFee"] = "0.00";
-                }
+                //    if (!string.IsNullOrEmpty(dataTable.Rows[0].Field<string>("PrintNo")))
+                //    {
+                //        ordrrow["PrintNo"] = dataTable.Rows[0].Field<string>("PrintNo");
+                //    }
+                //    if (!string.IsNullOrEmpty(dataTable.Rows[0]["PrintNumIndex"].ToString()))
+                //    {
+                //        ordrrow["PrintNumIndex"] = dataTable.Rows[0]["PrintNumIndex"].ToString();
+                //    }
+                //    if (!string.IsNullOrEmpty(dataTable.Rows[0]["job_state"].ToString()))
+                //    {
+                //        ordrrow["bonusStatus"] = dataTable.Rows[0]["job_state"].ToString();
+                //    }//发票、提成、生产状态
+                //    if (!string.IsNullOrEmpty(dataTable.Rows[0]["billStatus"].ToString()))
+                //    {
+                //        ordrrow["billStatus"] = dataTable.Rows[0]["billStatus"].ToString();
+                //    }
+                //    else
+                //    {
+                //        ordrrow["billStatus"] = "";
+                //    }
+                //    if (!string.IsNullOrEmpty(dataTable.Rows[0]["Status"].ToString()))
+                //    {
+                //        ordrrow["proStatus"] = dataTable.Rows[0]["Status"].ToString();
+                //    }
+                //    else
+                //    {
+                //        ordrrow["proStatus"] = "";
+                //    }
+                //    if (string.IsNullOrEmpty(ordrrow["proStatus"].ToString()))
+                //    {
+                //        DataRow[] prorows = dataTable.Select("job_type_id=" + protypeid + " or job_type_id=" + protypeid_cp, "upd_dt desc");
+                //        if (prorows.Length > 0)
+                //        {
+                //            ordrrow["proStatus"] = prorows[0]["job_state"].ToString();
+                //        }
+                //    }
+                //    if (!string.IsNullOrEmpty(dataTable.Rows[0]["orinentry"].ToString()))
+                //    {
+                //        ordrrow["EmpAcctWarn"] = dataTable.Rows[0]["orinentry"].ToString();
+                //    }
+                //    else
+                //    {
+                //        ordrrow["EmpAcctWarn"] = "";
+                //    }
+                //    if (!string.IsNullOrEmpty(dataTable.Rows[0]["AttachFlag"].ToString()))
+                //    {
+                //        ordrrow["AttachFlag"] = dataTable.Rows[0]["AttachFlag"].ToString();
+                //    }
+                //    else
+                //    {
+                //        ordrrow["AttachFlag"] = "0";
+                //    }
+                //    //取运费
+                //    if (!string.IsNullOrEmpty(dataTable.Rows[0]["TransFee"].ToString()))
+                //    {
+                //        ordrrow["TransFee"] = dataTable.Rows[0]["TransFee"].ToString();
+                //    }
+                //    else
+                //    {
+                //        ordrrow["TransFee"] = "0.00";
+                //    }
+                //}
                 /*************************************************************************************/
                 //var dataTable = GetDataTable(ordrrow, nsapsboId.ToString(), typeidstr);
                 ////打印信息赋值
