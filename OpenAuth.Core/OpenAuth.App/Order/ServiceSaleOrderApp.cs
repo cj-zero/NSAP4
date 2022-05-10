@@ -313,7 +313,7 @@ namespace OpenAuth.App.Order
             }
             if (type.ToLower() == "oqut")
             {
-                filedName.Append(",''  as AttachFlag ");
+                filedName.Append(",'0'  as AttachFlag ");
             }
             if (type.ToLower() == "odln")
             {
@@ -346,34 +346,32 @@ namespace OpenAuth.App.Order
             {
                 tableData.Count = Convert.ToInt32(paramOut.Value);
                 rowCounts = Convert.ToInt32(sqlParameters[7].Value);
-
             }
             else
             {
                 tableData.Count = 0;
                 rowCounts = 0;
             }
-
             // dt = Sql.SAPSelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCounts);
-            if (type.ToLower() == "ordr" || type.ToLower() == "opor")
-            {
-                string bonetype = type.ToLower();
-                string sql = "SELECT  a.PrintNo,a.PrintNumIndex  FROM nsap_bone.sale_ordr a  where a.DocEntry=1941 and a.sbo_id=1";
-                if ("opor" == type.ToLower())
-                {
-                    sql = "SELECT  a.PrintNo,a.PrintNumIndex  FROM nsap_bone.buy_opor a  where a.DocEntry=1941 and a.sbo_id=1";
-                }
-                for (int i = 0; i < dt.Rows.Count; i++)
-                {
-                    DataTable dtPrintnum = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);//取编号
-                    if (dtPrintnum.Rows.Count > 0)
-                    {
-                        dt.Rows[i]["PrintNo"] = dtPrintnum.Rows[0][0].ToString();
-                        dt.Rows[i]["PrintNumIndex"] = dtPrintnum.Rows[0][1].ToString();
-                    }
+            //if (type.ToLower() == "ordr" || type.ToLower() == "opor")
+            //{
+            //    string bonetype = type.ToLower();
+            //    string sql = "SELECT  a.PrintNo,a.PrintNumIndex  FROM nsap_bone.sale_ordr a  where a.DocEntry=1941 and a.sbo_id=1";
+            //    if ("opor" == type.ToLower())
+            //    {
+            //        sql = "SELECT  a.PrintNo,a.PrintNumIndex  FROM nsap_bone.buy_opor a  where a.DocEntry=1941 and a.sbo_id=1";
+            //    }
+            //    for (int i = 0; i < dt.Rows.Count; i++)
+            //    {
+            //        DataTable dtPrintnum = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);//取编号
+            //        if (dtPrintnum.Rows.Count > 0)
+            //        {
+            //            dt.Rows[i]["PrintNo"] = dtPrintnum.Rows[0][0].ToString();
+            //            dt.Rows[i]["PrintNumIndex"] = dtPrintnum.Rows[0][1].ToString();
+            //        }
 
-                }
-            }
+            //    }
+            //}
             if (type.ToLower() == "oqut")
             {
                 //获取订单号
@@ -386,7 +384,7 @@ namespace OpenAuth.App.Order
                 strSql2 += string.Format("LEFT JOIN nsap_oa.file_type AS T1 ON T0.file_type_id = T1.type_id ");
                 strSql2 += string.Format("WHERE T0.file_type_id = {0} AND T0.docEntry  in( {1} ) ", int.Parse(fileType), orderNo);
                 List<ResultOrderDto> fileflags = UnitWork.ExcuteSql<List<ResultOrderDto>>(ContextType.NsapBaseDbContext, strSql2, CommandType.Text, null).FirstOrDefault();
-                if (fileflags != null)
+                if (fileflags != null && fileflags.Count > 0)
                 {
                     foreach (DataRow temprow in dt.Rows)
                     {
@@ -399,13 +397,6 @@ namespace OpenAuth.App.Order
                         {
                             temprow["AttachFlag"] = "0";
                         }
-                    }
-                }
-                else
-                {
-                    foreach (DataRow temprow in dt.Rows)
-                    {
-                        temprow["AttachFlag"] = "0";
                     }
                 }
             }
