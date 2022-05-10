@@ -374,34 +374,39 @@ namespace OpenAuth.App.Order
             //}
             if (type.ToLower() == "oqut")
             {
-                //获取订单号
-                List<int> orderNos = (from d in dt.AsEnumerable() select d.Field<int>("DocEntry")).ToList();
-                string orderNo = string.Join(",", orderNos);
-                //取销售合同类型附件
-                var typeObj = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT a.type_id value FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.func_id=b.func_id LEFT JOIN nsap_base.base_page c ON c.page_id=b.page_id WHERE c.page_url='{"sales/SalesQuotation.aspx"}'", CommandType.Text, null).FirstOrDefault();
-                string fileType = typeObj == null ? "-1" : typeObj.Value.ToString();
-                string strSql2 = string.Format("SELECT  1 value,T0.docEntry  FROM nsap_oa.file_main AS T0 ");
-                strSql2 += string.Format("LEFT JOIN nsap_oa.file_type AS T1 ON T0.file_type_id = T1.type_id ");
-                strSql2 += string.Format("WHERE T0.file_type_id = {0} AND T0.docEntry  in( {1} ) ", int.Parse(fileType), orderNo);
-                List<ResultOrderDto> fileflags = UnitWork.ExcuteSql<List<ResultOrderDto>>(ContextType.NsapBaseDbContext, strSql2, CommandType.Text, null).FirstOrDefault();
-                if (fileflags != null && fileflags.Count > 0)
+                if (dt.Rows.Count > 0)
                 {
-                    foreach (DataRow temprow in dt.Rows)
+                    //获取订单号
+                    List<int> orderNos = (from d in dt.AsEnumerable() select d.Field<int>("DocEntry")).ToList();
+                    string orderNo = string.Join(",", orderNos);
+                    if (!string.IsNullOrWhiteSpace(orderNo))
                     {
-                        var fileflag = fileflags.FirstOrDefault(zw => zw.docEntry == temprow["DocEntry"].ToString());
-                        if (fileflag != null)
+                        //取销售合同类型附件
+                        //var typeObj = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT a.type_id value FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.func_id=b.func_id LEFT JOIN nsap_base.base_page c ON c.page_id=b.page_id WHERE c.page_url='{"sales/SalesQuotation.aspx"}'", CommandType.Text, null).FirstOrDefault();
+                        //string fileType = typeObj == null ? "-1" : typeObj.Value.ToString();
+                        string strSql2 = string.Format("SELECT  DISTINCT 1 value,T0.docEntry docEntry  FROM nsap_oa.file_main AS T0 ");
+                        strSql2 += string.Format("LEFT JOIN nsap_oa.file_type AS T1 ON T0.file_type_id = T1.type_id ");
+                        strSql2 += string.Format(@"INNER JOIN (
+SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.func_id = b.func_id LEFT JOIN nsap_base.base_page c ON c.page_id = b.page_id WHERE c.page_url = 'sales/SalesQuotation.aspx'
+) as t ON t.type_id = T0.file_type_id ");
+                        strSql2 += string.Format("WHERE T0.docEntry  in( {0} ) ", orderNo);
+                        List<ResultOrderDto> fileflags = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, strSql2, CommandType.Text, null);
+                        if (fileflags != null && fileflags.Count > 0)
                         {
-                            temprow["AttachFlag"] = fileflag == null ? "0" : fileflag.Value.ToString();
-                        }
-                        else
-                        {
-                            temprow["AttachFlag"] = "0";
+                            DataRow[] dataRowS = dt.Select("DocEntry in (" + orderNo + ")");
+                            foreach (DataRow temprow in dataRowS)
+                            {
+                                var fileflag = fileflags.FirstOrDefault(zw => zw.docEntry.ToString() == temprow["DocEntry"].ToString());
+                                if (fileflag != null)
+                                {
+                                    temprow["AttachFlag"] = fileflag == null ? "0" : fileflag.Value.ToString();
+                                }
+                            }
                         }
                     }
                 }
             }
             tableData.Data = dt.Tolist<SalesDraftDto>();
-
             return tableData;
         }
         /// <summary>

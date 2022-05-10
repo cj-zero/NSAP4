@@ -161,7 +161,7 @@ namespace OpenAuth.App.Order
     }
     public class ResultOrderDto
     {
-        public string docEntry { get; set; }
         public object Value { get; set; }
+        public object docEntry { get; set; }
     }
 }
