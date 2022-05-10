@@ -376,17 +376,37 @@ namespace OpenAuth.App.Order
             }
             if (type.ToLower() == "oqut")
             {
-                foreach (DataRow temprow in dt.Rows)
+                //获取订单号
+                List<int> orderNos = (from d in dt.AsEnumerable() select d.Field<int>("DocEntry")).ToList();
+                string orderNo = string.Join(",", orderNos);
+                //取销售合同类型附件
+                var typeObj = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT a.type_id value FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.func_id=b.func_id LEFT JOIN nsap_base.base_page c ON c.page_id=b.page_id WHERE c.page_url='{"sales/SalesQuotation.aspx"}'", CommandType.Text, null).FirstOrDefault();
+                string fileType = typeObj == null ? "-1" : typeObj.Value.ToString();
+                string strSql2 = string.Format("SELECT  1 value,T0.docEntry  FROM nsap_oa.file_main AS T0 ");
+                strSql2 += string.Format("LEFT JOIN nsap_oa.file_type AS T1 ON T0.file_type_id = T1.type_id ");
+                strSql2 += string.Format("WHERE T0.file_type_id = {0} AND T0.docEntry  in( {1} ) ", int.Parse(fileType), orderNo);
+                List<ResultOrderDto> fileflags = UnitWork.ExcuteSql<List<ResultOrderDto>>(ContextType.NsapBaseDbContext, strSql2, CommandType.Text, null).FirstOrDefault();
+                if (fileflags != null)
                 {
-                    //取销售合同类型附件
-                    var typeObj = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT a.type_id value FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.func_id=b.func_id LEFT JOIN nsap_base.base_page c ON c.page_id=b.page_id WHERE c.page_url='{"sales/SalesQuotation.aspx"}'", CommandType.Text, null).FirstOrDefault();
-                    string fileType = typeObj == null ? "-1" : typeObj.Value.ToString();
-
-                    string strSql2 = string.Format("SELECT 1 value FROM nsap_oa.file_main AS T0 ");
-                    strSql2 += string.Format("LEFT JOIN nsap_oa.file_type AS T1 ON T0.file_type_id = T1.type_id ");
-                    strSql2 += string.Format("WHERE T0.file_type_id = {0} AND T0.docEntry = {1} limit 1", int.Parse(fileType), int.Parse(temprow["DocEntry"].ToString()));
-                    ResultOrderDto fileflag = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, strSql2, CommandType.Text, null).FirstOrDefault();
-                    temprow["AttachFlag"] = fileflag == null ? "0" : fileflag.Value.ToString();
+                    foreach (DataRow temprow in dt.Rows)
+                    {
+                        var fileflag = fileflags.FirstOrDefault(zw => zw.docEntry == temprow["DocEntry"].ToString());
+                        if (fileflag != null)
+                        {
+                            temprow["AttachFlag"] = fileflag == null ? "0" : fileflag.Value.ToString();
+                        }
+                        else
+                        {
+                            temprow["AttachFlag"] = "0";
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (DataRow temprow in dt.Rows)
+                    {
+                        temprow["AttachFlag"] = "0";
+                    }
                 }
             }
             tableData.Data = dt.Tolist<SalesDraftDto>();
