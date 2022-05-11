@@ -313,7 +313,7 @@ namespace OpenAuth.App.Order
             }
             if (type.ToLower() == "oqut")
             {
-                filedName.Append(",''  as AttachFlag ");
+                filedName.Append(",'0'  as AttachFlag ");
             }
             if (type.ToLower() == "odln")
             {
@@ -346,51 +346,67 @@ namespace OpenAuth.App.Order
             {
                 tableData.Count = Convert.ToInt32(paramOut.Value);
                 rowCounts = Convert.ToInt32(sqlParameters[7].Value);
-
             }
             else
             {
                 tableData.Count = 0;
                 rowCounts = 0;
             }
-
             // dt = Sql.SAPSelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCounts);
-            if (type.ToLower() == "ordr" || type.ToLower() == "opor")
-            {
-                string bonetype = type.ToLower();
-                string sql = "SELECT  a.PrintNo,a.PrintNumIndex  FROM nsap_bone.sale_ordr a  where a.DocEntry=1941 and a.sbo_id=1";
-                if ("opor" == type.ToLower())
-                {
-                    sql = "SELECT  a.PrintNo,a.PrintNumIndex  FROM nsap_bone.buy_opor a  where a.DocEntry=1941 and a.sbo_id=1";
-                }
-                for (int i = 0; i < dt.Rows.Count; i++)
-                {
-                    DataTable dtPrintnum = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);//取编号
-                    if (dtPrintnum.Rows.Count > 0)
-                    {
-                        dt.Rows[i]["PrintNo"] = dtPrintnum.Rows[0][0].ToString();
-                        dt.Rows[i]["PrintNumIndex"] = dtPrintnum.Rows[0][1].ToString();
-                    }
+            //if (type.ToLower() == "ordr" || type.ToLower() == "opor")
+            //{
+            //    string bonetype = type.ToLower();
+            //    string sql = "SELECT  a.PrintNo,a.PrintNumIndex  FROM nsap_bone.sale_ordr a  where a.DocEntry=1941 and a.sbo_id=1";
+            //    if ("opor" == type.ToLower())
+            //    {
+            //        sql = "SELECT  a.PrintNo,a.PrintNumIndex  FROM nsap_bone.buy_opor a  where a.DocEntry=1941 and a.sbo_id=1";
+            //    }
+            //    for (int i = 0; i < dt.Rows.Count; i++)
+            //    {
+            //        DataTable dtPrintnum = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);//取编号
+            //        if (dtPrintnum.Rows.Count > 0)
+            //        {
+            //            dt.Rows[i]["PrintNo"] = dtPrintnum.Rows[0][0].ToString();
+            //            dt.Rows[i]["PrintNumIndex"] = dtPrintnum.Rows[0][1].ToString();
+            //        }
 
-                }
-            }
+            //    }
+            //}
             if (type.ToLower() == "oqut")
             {
-                foreach (DataRow temprow in dt.Rows)
+                if (dt.Rows.Count > 0)
                 {
-                    //取销售合同类型附件
-                    var typeObj = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT a.type_id value FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.func_id=b.func_id LEFT JOIN nsap_base.base_page c ON c.page_id=b.page_id WHERE c.page_url='{"sales/SalesQuotation.aspx"}'", CommandType.Text, null).FirstOrDefault();
-                    string fileType = typeObj == null ? "-1" : typeObj.Value.ToString();
-
-                    string strSql2 = string.Format("SELECT 1 value FROM nsap_oa.file_main AS T0 ");
-                    strSql2 += string.Format("LEFT JOIN nsap_oa.file_type AS T1 ON T0.file_type_id = T1.type_id ");
-                    strSql2 += string.Format("WHERE T0.file_type_id = {0} AND T0.docEntry = {1} limit 1", int.Parse(fileType), int.Parse(temprow["DocEntry"].ToString()));
-                    ResultOrderDto fileflag = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, strSql2, CommandType.Text, null).FirstOrDefault();
-                    temprow["AttachFlag"] = fileflag == null ? "0" : fileflag.Value.ToString();
+                    //获取订单号
+                    List<int> orderNos = (from d in dt.AsEnumerable() select d.Field<int>("DocEntry")).ToList();
+                    string orderNo = string.Join(",", orderNos);
+                    if (!string.IsNullOrWhiteSpace(orderNo))
+                    {
+                        //取销售合同类型附件
+                        //var typeObj = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT a.type_id value FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.func_id=b.func_id LEFT JOIN nsap_base.base_page c ON c.page_id=b.page_id WHERE c.page_url='{"sales/SalesQuotation.aspx"}'", CommandType.Text, null).FirstOrDefault();
+                        //string fileType = typeObj == null ? "-1" : typeObj.Value.ToString();
+                        string strSql2 = string.Format("SELECT  DISTINCT 1 value,T0.docEntry docEntry  FROM nsap_oa.file_main AS T0 ");
+                        strSql2 += string.Format("LEFT JOIN nsap_oa.file_type AS T1 ON T0.file_type_id = T1.type_id ");
+                        strSql2 += string.Format(@"INNER JOIN (
+SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.func_id = b.func_id LEFT JOIN nsap_base.base_page c ON c.page_id = b.page_id WHERE c.page_url = 'sales/SalesQuotation.aspx'
+) as t ON t.type_id = T0.file_type_id ");
+                        strSql2 += string.Format("WHERE T0.docEntry  in( {0} ) ", orderNo);
+                        List<ResultOrderDto> fileflags = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, strSql2, CommandType.Text, null);
+                        if (fileflags != null && fileflags.Count > 0)
+                        {
+                            DataRow[] dataRowS = dt.Select("DocEntry in (" + orderNo + ")");
+                            foreach (DataRow temprow in dataRowS)
+                            {
+                                var fileflag = fileflags.FirstOrDefault(zw => zw.docEntry.ToString() == temprow["DocEntry"].ToString());
+                                if (fileflag != null)
+                                {
+                                    temprow["AttachFlag"] = fileflag == null ? "0" : fileflag.Value.ToString();
+                                }
+                            }
+                        }
+                    }
                 }
             }
             tableData.Data = dt.Tolist<SalesDraftDto>();
-
             return tableData;
         }
         /// <summary>
