@@ -919,7 +919,11 @@ namespace OpenAuth.App
             return result;
         }
 
-
+        /// <summary>
+        /// 重新生成证书数据
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
         public async Task<List<NwcaliBaseInfo>> ReFillNwcailData(string certno = "")
         {
             var nwcail = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.CertPath)).WhereIf(!string.IsNullOrWhiteSpace(certno), c => c.CertificateNumber == certno).Include(c => c.Etalons).ToListAsync();
