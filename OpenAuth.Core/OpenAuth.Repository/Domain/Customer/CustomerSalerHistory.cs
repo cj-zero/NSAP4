@@ -64,5 +64,10 @@ namespace OpenAuth.Repository.Domain.Customer
         /// </summary>
         [Column("Is_SaleHistory")]
         public bool IsSaleHistory { get; set; }
+
+        /// <summary>
+        /// 销售员部门
+        /// </summary>
+        public string SlpDepartment { get; set; }
     }
 }

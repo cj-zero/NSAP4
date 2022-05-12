@@ -273,13 +273,16 @@ namespace OpenAuth.App.Customer
         public async Task<TableData> GetCustomerSeaLists(QueryCustomerSeaReq req)
         {
             var result = new TableData();
+            var isAdmin = _auth.GetCurrentUser().Roles.Any(r => r.Name == "管理员");
 
             //查询已经掉入公海的客户
             var query = UnitWork.Find<CustomerList>(c => c.LabelIndex == 3)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.DepartMent), c => c.DepartMent == req.DepartMent)
+                .WhereIf(req.CreateStartTime != null && req.CreateEndTime != null, c => c.CreateDateTime >= req.CreateStartTime && c.CreateDateTime < req.CreateEndTime.Value.AddDays(1))
+                .WhereIf(req.FallIntoStartTime != null && req.FallIntoEndTime != null, c => c.CreateDateTime >= req.FallIntoStartTime &&
+                     c.CreateDateTime < req.FallIntoEndTime.Value.AddDays(1))
                 .Select(c => new
                 {
-                    //Num = (req.page - 1) * req.limit + 1,
                     c.CustomerNo,
                     c.CustomerName,
                     c.DepartMent,
@@ -289,19 +292,91 @@ namespace OpenAuth.App.Customer
                     FallIntoTime = c.CreateDateTime
                 });
 
-            result.Data = (await query.OrderBy(q => q.CustomerNo).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync())
+            var data = (await query.OrderBy(q => q.CustomerNo).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync())
                 .Select((c, index) => new
                 {
                     Num = (req.page - 1) * req.limit + index + 1,
-                    c.CustomerNo,
-                    c.CustomerName,
+                    CustomerNo = isAdmin ? c.CustomerNo : "******",
+                    CustomerName = isAdmin ? c.CustomerName : "******",
                     c.DepartMent,
                     c.CustomerSource,
                     c.CreateUser,
                     c.CreateDateTime,
                     c.FallIntoTime
                 });
+
+            result.Data = data;
             result.Count = await query.CountAsync();
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取客户的详细信息
+        /// </summary>
+        /// <param name="cardCode"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetCustomerDetail(string cardCode)
+        {
+            var result = new TableData();
+            var isAdmin = _auth.GetCurrentUser().Roles.Any(r => r.Name == "管理员");
+
+            var query = from c in UnitWork.Find<OCRD>(null)
+                        join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode into temp1
+                        from t1 in temp1.DefaultIfEmpty()
+                        join h in UnitWork.Find<OHEM>(null) on c.DfTcnician equals h.empID into temp2
+                        from t2 in temp2.DefaultIfEmpty()
+                        where c.CardCode == cardCode
+                        select new QueryCustomerDetailResponse
+                        {
+                            CardCode = c.CardCode, //客户代码
+                            CardName = c.CardName, //客户类型
+                            SlpName = t1 == null ? "" : t1.SlpName, //客户归属
+                            CreateTime = c.CreateDate.Value, //创建时间
+                            DfTcnician = t2 == null ? "" : (t2.lastName + t2.firstName), //售后主管
+                            Is_reseller = c.U_is_reseller, //是否是中间商
+                            EndCustomerName = c.U_EndCustomerName, //终端用户名
+                            EndCustomerContact = c.U_EndCustomerContact, //终端联系人
+                            IntrntSite = c.IntrntSite, //网址
+                            FreeText = c.Free_Text, //备注
+                            Balance = c.Balance, //科目余额
+                            TotalBalance = c.Balance, //总科目余额
+                            OrdersBal = c.OrdersBal, //未清订单金额
+                            DNotesBal = c.DNotesBal, //未清交货单金额
+                        };
+
+            var data = await query.FirstOrDefaultAsync();
+
+            var query2 = await (UnitWork.Find<crm_ocrd>(c => c.CardCode == cardCode).Select(c => new
+            {
+                c.U_TradeType, //贸易类型
+                c.U_ClientSource, //客户来源
+                c.U_StaffScale, //人员规模
+                c.U_CardTypeStr, //客户类型
+                c.U_CompSector, //所属行业
+            })).FirstOrDefaultAsync();
+
+            data.U_CompSector = query2?.U_CompSector ?? "";
+            data.U_TradeType = query2?.U_TradeType ?? "";
+            data.U_ClientSource = query2?.U_ClientSource ?? "";
+            data.U_StaffScale = query2?.U_StaffScale ?? "";
+            data.U_CardTypeStr = query2?.U_CardTypeStr ?? "";
+
+            if (!isAdmin)
+            {
+                data.CardCode = "******";
+                data.CardName = "******";
+                data.EndCustomerName = "******";
+                data.EndCustomerContact = "******";
+                data.IntrntSite = "******";
+                data.FreeText = "******";
+                data.Balance = null;
+                data.TotalBalance = null;
+                data.OrdersBal = null;
+                data.DNotesBal = null;
+            }
+
+            result.Data = data;
 
             return result;
         }
@@ -347,9 +422,10 @@ namespace OpenAuth.App.Customer
             var userInfo = _auth.GetCurrentUser();
             //根据用户姓名查询slpcode
             var slpInfo = await (from u in UnitWork.Find<base_user>(null)
+                                 join d in UnitWork.Find<base_user_detail>(null) on u.user_id equals d.user_id
                                  join s in UnitWork.Find<sbo_user>(null) on u.user_id equals s.user_id
                                  where u.user_nm == userInfo.User.Name
-                                 select new { s.sale_id, u.user_nm }).FirstOrDefaultAsync();
+                                 select new { s.sale_id, u.user_nm, d.try_date }).FirstOrDefaultAsync();
             if (slpInfo == null)
             {
                 response.Code = 500;
@@ -359,7 +435,7 @@ namespace OpenAuth.App.Customer
             }
 
             #region 逻辑判断
-                          //判断是否是公海客户,如果不是或者没有则不能进行领取
+            //判断是否是公海客户,如果不是或者没有则不能进行领取
             if (!UnitWork.Find<CustomerList>(null).Any(c => c.CustomerNo == req.CustomerNo))
             {
                 response.Message = "非公海客户不能进行领取";
@@ -368,13 +444,40 @@ namespace OpenAuth.App.Customer
             }
 
             var customer = await UnitWork.Find<CustomerList>(c => c.CustomerNo == req.CustomerNo).FirstOrDefaultAsync();
-            //如果领取的销售员跟原销售员是同一人
-            if (customer.SlpCode == slpInfo.sale_id)
+            //公海设置
+            var config = await UnitWork.Find<CustomerSeaConf>(null).FirstOrDefaultAsync();
+
+            //认领规则如果开启
+            if(config?.ReceiveEnable == true)
             {
-                //公海设置
-                var config = await UnitWork.Find<CustomerSeaConf>(null).FirstOrDefaultAsync();
-                //抢回限制如果是开启的
-                if (config?.BackEnable == true)
+                var diffDate = (DateTime.Now - slpInfo.try_date).Days;
+                //如果不在这个区间,则不能领取(业务上是入职时间太短或者太长都不能领取)
+                if(!(diffDate>config.ReceiveJobMin && diffDate < config.ReceiveJobMax))
+                {
+                    response.Message = $"抱歉,您的入职时长不满足领取规定";
+                    response.Code = 500;
+                    return response;
+                }
+                //判断每天领取个数是否满足规定
+                var key = $"{slpInfo.sale_id}:{DateTime.Now.Date.ToString("yyyyMMdd")}:";
+                if(await RedisHelper.ExistsAsync(key))
+                {
+                    await RedisHelper.SetAsync(key, 0, 24 * 60 * 60);
+                }
+                var countNum = await RedisHelper.IncrByAsync(key);
+                if (countNum > config?.ReceiveMaxLimit)
+                {
+                    response.Message = "您今天领取的客户数量已达上限";
+                    response.Code = 500;
+                    return response;
+                }
+            }
+
+            //抢回限制如果是开启的
+            if (config?.BackEnable == true)
+            {
+                //如果领取的销售员跟原销售员是同一人
+                if (customer.SlpCode == slpInfo.sale_id)
                 {
                     //判断天数是否符合要求
                     if ((DateTime.Now - customer.CreateDateTime).Days <= config.BackDay)
@@ -402,11 +505,13 @@ namespace OpenAuth.App.Customer
                                                CustomerType = g.Key.CustomerType,
                                                Limit = g.Max(x => x.clr.Limit)
                                            }).FirstOrDefaultAsync();
+            //是否是未成交客户
             var isNoQuotationCustomer = await (from c in UnitWork.Find<OCRD>(null)
                                                join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode into temp
                                                from t in temp.DefaultIfEmpty()
                                                where c.CardCode == req.CustomerNo && t.CardCode == null
                                                select c.CardCode).AnyAsync();
+            //是否是已成交客户
             var isFinishCUstomer = UnitWork.Find<ODLN>(d => d.CardCode == req.CustomerNo).Any();
 
             if (customerLimitRule != null)
@@ -452,6 +557,7 @@ namespace OpenAuth.App.Customer
                 CustomerName = req.CustomerName,
                 SlpCode = slpInfo.sale_id.Value,
                 SlpName = slpInfo.user_nm,
+                SlpDepartment = customer.DepartMent,
                 CreateTime = DateTime.Now,
                 ReceiveTime = DateTime.Now,
                 ReleaseTime = customer.CreateDateTime,
@@ -534,7 +640,7 @@ namespace OpenAuth.App.Customer
                                                where c.CardCode == req.CustomerNo && t.CardCode == null
                                                select c.CardCode).AnyAsync();
             //是否是已成交客户
-            var isFinishCUstomer = UnitWork.Find<ODLN>(d => d.CardCode == req.CustomerNo).Any();
+            var isFinishCUstomer = await UnitWork.Find<ODLN>(d => d.CardCode == req.CustomerNo).AnyAsync();
 
             if (customerLimitRule != null)
             {
@@ -586,6 +692,7 @@ namespace OpenAuth.App.Customer
                 CustomerName = req.CustomerName,
                 SlpCode = req.SlpCode,
                 SlpName = req.SlpName,
+                SlpDepartment = customer.DepartMent,
                 CreateTime = DateTime.Now,
                 ReceiveTime = DateTime.Now,
                 ReleaseTime = customer.CreateDateTime,

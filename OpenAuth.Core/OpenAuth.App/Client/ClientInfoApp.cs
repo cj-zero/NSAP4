@@ -1170,6 +1170,7 @@ namespace OpenAuth.App.Client
                 strSql.Append("FROM OCRD a LEFT JOIN OSLP b ON a.SlpCode=b.SlpCode LEFT JOIN OHEM c ON a.DfTcnician=c.empID ");
                 strSql.AppendFormat("LEFT JOIN (SELECT TOP 1 DocDueDate,CardCode FROM ODLN WHERE CardCode='{0}' AND DocTotal>=2000 ORDER BY DocDueDate DESC) d ON a.CardCode=d.CardCode ", CardCode);
                 strSql.AppendFormat("WHERE a.CardCode='{0}' ", CardCode);
+                var dd = strSql.ToString();
                 dtRet = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
                 dtRet.Columns.Add("U_ClientSource", typeof(string));//客户来源
                 dtRet.Columns.Add("U_CompSector", typeof(string));//所属行业

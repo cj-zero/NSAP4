@@ -17,7 +17,7 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain.Sap
 {
     /// <summary>
-	/// 
+	/// 交货单
 	/// </summary>
     [Table("ODLN")]
     public partial class ODLN 

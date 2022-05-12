@@ -53,7 +53,7 @@ namespace OpenAuth.Repository.Domain.Customer
         /// 销售员名称
         /// </summary>
         [Column("Saler_Name")]
-        public string SalerName { get; set; }
+        public string SlpName { get; set; }
 
         /// <summary>
         /// 标签Id:1-未报价、2-已成交、3-公海领取、4-即将掉入公海

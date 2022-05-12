@@ -164,6 +164,29 @@ namespace OpenAuth.WebApi.Controllers.Customer
         }
 
         /// <summary>
+        /// 获取客户的详细信息
+        /// </summary>
+        /// <param name="cardCode">客户代码</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetCustomerDetail([FromQuery] string cardCode)
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _customerListApp.GetCustomerDetail(cardCode);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex?.Message ?? ex.InnerException?.Message ?? "";
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 获取在职的销售员列表
         /// </summary>
         /// <param name="req"></param>

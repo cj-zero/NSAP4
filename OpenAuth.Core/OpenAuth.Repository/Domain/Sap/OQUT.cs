@@ -17,7 +17,7 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain.Sap
 {
     /// <summary>
-	/// 
+	/// 报价单
 	/// </summary>
     [Table("OQUT")]
     public partial class OQUT : Entity
