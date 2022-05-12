@@ -138,9 +138,9 @@ namespace OpenAuth.WebApi.Controllers.Customer
         [HttpGet]
         public async Task TestAsync()
         {
-            //await _customerLimitApp.AsyncCustomerStatusService();
+            await _customerLimitApp.AsyncCustomerStatusService();
             //await _customerLimitApp.RecoveryCustomer();
-            await _customerLimitApp.PushMessage();
+            //await _customerLimitApp.PushMessage();
         }
     }
 }

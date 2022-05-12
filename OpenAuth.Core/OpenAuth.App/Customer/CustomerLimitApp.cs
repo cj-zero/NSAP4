@@ -260,7 +260,7 @@ namespace OpenAuth.App.Customer
                         on c.Id equals ci.CustomerSeaRuleId
                         //true 代表启用
                         //目前的需求是先处理未报价客户未报价的规则
-                        where c.Enable == true && ci.CustomerType == 1 && ci.OrderType == 0 
+                        where c.Enable == true && ci.CustomerType == 1 && ci.OrderType == 0
                         group new { c, ci } by new { ci.DepartmentName, ci.CustomerType } into g
                         select new
                         {
@@ -272,7 +272,7 @@ namespace OpenAuth.App.Customer
             var ruleData = await query.ToListAsync();
 
             //提前通知天数
-            var notifyDay = seaConfig?.NotifyDay; 
+            var notifyDay = seaConfig?.NotifyDay;
             //符合掉落公海规则的客户
             var customerLists = new List<CustomerList>();
 
@@ -328,17 +328,18 @@ namespace OpenAuth.App.Customer
                                 customerLists.Add(new CustomerList
                                 {
                                     DepartMent = rule.dept,
-                                
+
                                     CustomerNo = c.CardCode,
                                     CustomerName = c.CardName,
                                     CustomerSource = "",
+                                    CustomerCreateDate = c.CreateDate,
                                     SlpCode = c.SlpCode,
                                     SlpName = c.SlpName,
-                                    Label = "公海领取",
+                                    Label = "已经掉入公海",
                                     LabelIndex = 3,
                                     CreateUser = "系统",
                                     CreateDateTime = DateTime.Now,
-                                    UpdateUser = "系统",  
+                                    UpdateUser = "系统",
                                     UpdateDateTime = DateTime.Now,
                                     IsDelete = false
                                 });
@@ -408,6 +409,7 @@ namespace OpenAuth.App.Customer
             foreach (var item in updateData)
             {
                 var instance = await UnitWork.Find<CustomerList>(null).FirstOrDefaultAsync(c => c.CustomerNo == item);
+                if (instance == null) { continue; }
                 instance.LabelIndex = customerLists.FirstOrDefault(c => c.CustomerNo == item).LabelIndex;
                 instance.Label = customerLists.FirstOrDefault(c => c.CustomerNo == item).Label;
                 instance.SlpCode = customerLists.FirstOrDefault(c => c.CustomerNo == item).SlpCode;

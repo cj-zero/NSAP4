@@ -243,7 +243,7 @@ namespace OpenAuth.App.Customer
             var result = new TableData();
 
             var query = UnitWork.Find<Repository.Domain.Org>(o => o.IsLeaf == true && o.Status == 0)
-                .Select(o => new { deptId = o.Id, deptName = o.Name });
+                .Select(o => new { deptId = o.Name, deptName = o.Name }).Distinct();
 
             result.Data = await query.OrderBy(q => q.deptName).ToListAsync();
             result.Count = await query.CountAsync();

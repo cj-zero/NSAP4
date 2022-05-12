@@ -22,11 +22,6 @@ namespace OpenAuth.App.Customer.Response
         public string SlpName { get; set; }
 
         /// <summary>
-        /// 创建时间
-        /// </summary>
-        public DateTime CreateTime { get; set; }
-
-        /// <summary>
         /// 售后主管
         /// </summary>
         public string DfTcnician { get; set; }
@@ -100,5 +95,30 @@ namespace OpenAuth.App.Customer.Response
         /// 未清交货单金额
         /// </summary>
         public decimal? DNotesBal { get; set; }
+
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        public DateTime CreateTime { get; set; }
+
+        /// <summary>
+        /// 创建人
+        /// </summary>
+        public string CreateUser { get; set; }
+
+        /// <summary>
+        /// 最后更新时间
+        /// </summary>
+        public DateTime UpdateTime { get; set; }
+
+        /// <summary>
+        /// 更新人
+        /// </summary>
+        public string UpdateUser { get; set; }
+
+        /// <summary>
+        /// 状态
+        /// </summary>
+        public string Status { get; set; }
     }
 }
