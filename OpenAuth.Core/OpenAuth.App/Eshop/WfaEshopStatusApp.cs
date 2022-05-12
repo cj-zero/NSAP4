@@ -258,6 +258,51 @@ namespace OpenAuth.App
         {
             return "";
         }
+        /// <summary>
+        /// 通过客户电话查找客户信息与对应销售员信息
+        /// </summary>
+        /// <param name="mobile">客户手机号</param>
+        /// <returns></returns>
+        public async Task<SlpInfoOfClientResp> GetClientSlpInfoByClientMobile(string mobile)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //业务员Id
+            var objslpstr = from t in UnitWork.Find<crm_tel> (null)
+                            join a in UnitWork.Find<crm_ocrd>(null) on new { t.sbo_id, t.CardCode } equals new { sbo_id = a.sbo_id, CardCode = a.CardCode }
+                            join b in UnitWork.Find<crm_oslp>(null) on new { a.sbo_id, a.SlpCode } equals new { sbo_id = b.sbo_id, SlpCode = b.SlpCode } 
+                            where a.sbo_id.Equals(1) && t.Phone.Equals(mobile)
+                            select new { t,a, b };
+            var objslp = await objslpstr.Select(o => new { o.a.SlpCode, o.b.SlpName, o.a.sbo_id,o.t.CardCode,o.a.CardName }).FirstOrDefaultAsync();
+            if (objslp != null && objslp.SlpCode > 0)
+            {
+                SlpInfoOfClientResp selResult = new SlpInfoOfClientResp();
+                selResult.CardCode = objslp.CardCode;
+                selResult.CardName = objslp.CardName;
+                var objuser = from a in UnitWork.Find<sbo_user>(null)
+                              join b in UnitWork.Find<base_user>(null) on a.user_id equals b.user_id into ab
+                              from b in ab.DefaultIfEmpty()
+                              join c in UnitWork.Find<base_user_detail>(null) on b.user_id equals c.user_id into bc
+                              from c in bc.DefaultIfEmpty()
+                              select new { a, b, c };
+                var telobj = await objuser.Where(o => o.a.sbo_id == objslp.sbo_id && o.a.sale_id == objslp.SlpCode && o.b.user_nm.Equals(objslp.SlpName))
+                    .Select(q => new
+                    {
+                        UserName = q.b.user_nm,
+                        Mobile = q.b.mobile
+                    }).FirstOrDefaultAsync();
+                selResult.UserName = telobj.UserName;
+                selResult.Mobile = telobj.Mobile.ToString();
+                return selResult;
+            }
+            else
+            {
+                return new SlpInfoOfClientResp();
+            }
+        }
 
     }
 }

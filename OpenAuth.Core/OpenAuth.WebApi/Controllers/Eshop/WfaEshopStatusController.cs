@@ -136,5 +136,26 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+        /// <summary>
+        /// 通过客户电话查找客户信息与对应销售员信息
+        /// </summary>
+        /// <param name="Mobile">客户手机号</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<SlpInfoOfClientResp>> GetClientSlpInfoByClientMobile(string Mobile)
+        {
+            var result = new Response<SlpInfoOfClientResp>();
+            try
+            {
+                result.Result = await _wfastatusapp.GetClientSlpInfoByClientMobile(Mobile);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"错误：{result.Message}");
+            }
+            return result;
+        }
     }
 }
