@@ -69,13 +69,13 @@ namespace OpenAuth.App.Customer
             //修改拉取客户进入公海的时间(定时任务运行时间)
             var job1 = await UnitWork.FindSingleAsync<OpenJob>(o => o.JobCall == "OpenAuth.App.Jobs.CustomerSeaJob");
             job1.Cron = $"{req.PutTime.Second} {req.PutTime.Minute} {req.PutTime.Hour} * * ?";
-            //job1.Status = 0;
+            job1.Status = 0;
             await UnitWork.UpdateAsync<OpenJob>(job1);
 
             //修改向业务员发消息的时间(定时任务运行时间)
             var job2 = await UnitWork.FindSingleAsync<OpenJob>(o => o.JobCall == "OpenAuth.App.Jobs.PushMessage");
             job2.Cron = $"{req.NotifyTime.Second} {req.NotifyTime.Minute} {req.NotifyTime.Hour} * * ?";
-            //job2.Status = 0;
+            job2.Status = 0;
             await UnitWork.UpdateAsync<OpenJob>(job2);
             await UnitWork.SaveAsync();
 
@@ -142,6 +142,13 @@ namespace OpenAuth.App.Customer
             var job1 = await UnitWork.FindSingleAsync<OpenJob>(o => o.JobCall == "OpenAuth.App.Jobs.RecoveryCustomer");
             job1.Status = 0;
             await UnitWork.UpdateAsync<OpenJob>(job1);
+            await UnitWork.SaveAsync();
+
+            _openJobApp.ChangeJobStatus(new App.Request.ChangeJobStatusReq
+            {
+                Id = job1.Id,
+                Status = 0,
+            });
 
             return result;
         }
@@ -299,12 +306,16 @@ namespace OpenAuth.App.Customer
                     //这是否个启用控制着两个定时任务:1.是否启用拉取符合条件的客户进入公海 2.向销售员发送提醒信息
                     objectItem.Enable = req.Enable.Value;
                     await UnitWork.UpdateAsync(objectItem);
-                    await UnitWork.SaveAsync();
 
                     var job = UnitWork.FindSingle<OpenJob>(o => o.JobCall == "OpenAuth.App.Jobs.CustomerSeaJob");
                     var job2 = UnitWork.FindSingle<OpenJob>(o => o.JobCall == "OpenAuth.App.Jobs.PushMessage");
+
                     if (req.Enable == false) //停止
                     {
+                        job.Status = 0;
+                        job2.Status = 0;
+                        await UnitWork.SaveAsync();
+
                         _openJobApp.ChangeJobStatus(new App.Request.ChangeJobStatusReq
                         {
                             Id = job.Id,
@@ -319,6 +330,10 @@ namespace OpenAuth.App.Customer
                     }
                     else //启动
                     {
+                        job.Status = 1;
+                        job2.Status = 1;
+                        await UnitWork.SaveAsync();
+
                         _openJobApp.ChangeJobStatus(new App.Request.ChangeJobStatusReq
                         {
                             Id = job.Id,
@@ -337,11 +352,13 @@ namespace OpenAuth.App.Customer
                 {
                     objectItem.RecoverEnable = req.RecoverEnable.Value;
                     await UnitWork.UpdateAsync(objectItem);
-                    await UnitWork.SaveAsync();
 
                     var job = UnitWork.FindSingle<OpenJob>(o => o.JobCall == "OpenAuth.App.Jobs.RecoveryCustomer");
                     if (req.RecoverEnable == false) //停止
                     {
+                        job.Status = 0;
+                        await UnitWork.SaveAsync();
+
                         _openJobApp.ChangeJobStatus(new App.Request.ChangeJobStatusReq
                         {
                             Id = job.Id,
@@ -350,6 +367,9 @@ namespace OpenAuth.App.Customer
                     }
                     else //启动
                     {
+                        job.Status = 1;
+                        await UnitWork.SaveAsync();
+
                         _openJobApp.ChangeJobStatus(new App.Request.ChangeJobStatusReq
                         {
                             Id = job.Id,

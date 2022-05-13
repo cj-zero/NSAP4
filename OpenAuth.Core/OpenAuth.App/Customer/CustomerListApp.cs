@@ -393,20 +393,29 @@ namespace OpenAuth.App.Customer
         {
             var result = new TableData();
 
+            //var query = (from u in UnitWork.Find<base_user>(null)
+            //             .WhereIf(!string.IsNullOrWhiteSpace(req.SlpName), u => u.user_nm.Contains(req.SlpName))
+            //             join ud in UnitWork.Find<base_user_detail>(d => new int[] { 0, 1 }.Contains(d.status)) //在职的员工,离职状态是2和3
+            //             on u.user_id equals ud.user_id
+            //             join s in UnitWork.Find<sbo_user>(null)
+            //             .WhereIf(req.SlpCode != null && req.SlpCode > 0, u => u.sale_id == req.SlpCode)
+            //             on u.user_id equals s.user_id
+            //             //where  Define.SBO_ID
+            //             group new { u, ud, s } by new { s.user_id } into g
+            //             select new
+            //             {
+            //                 slpcode = g.Min(x => x.s.sale_id),
+            //                 slpname = g.Max(x => x.u.user_nm)
+            //             }).Distinct();
             var query = (from u in UnitWork.Find<base_user>(null)
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.SlpName), u => u.user_nm.Contains(req.SlpName))
-                         join ud in UnitWork.Find<base_user_detail>(d => new int[] { 0, 1 }.Contains(d.status)) //在职的员工,离职状态是2和3
-                         on u.user_id equals ud.user_id
-                         join s in UnitWork.Find<sbo_user>(null)
-                         .WhereIf(req.SlpCode != null && req.SlpCode > 0, u => u.sale_id == req.SlpCode)
-                         on u.user_id equals s.user_id
-                         group new { u, ud, s } by new { s.user_id } into g
+                         join ud in UnitWork.Find<base_user_detail>(null) on u.user_id equals ud.user_id
+                         join s in UnitWork.Find<sbo_user>(null) on u.user_id equals s.user_id
+                         where s.sbo_id == Define.SBO_ID
                          select new
                          {
-                             slpcode = g.Min(x => x.s.sale_id),
-                             slpname = g.Max(x => x.u.user_nm)
+                             slpcode = s.sale_id,
+                             slpname = u.user_nm
                          }).Distinct();
-
             result.Data = await query.ToListAsync();
             result.Count = await query.CountAsync();
 

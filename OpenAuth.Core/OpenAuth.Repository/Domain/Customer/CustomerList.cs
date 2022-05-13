@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace OpenAuth.Repository.Domain.Customer
@@ -12,7 +13,7 @@ namespace OpenAuth.Repository.Domain.Customer
     /// 客户列表
     /// </summary>
     [Table("customer_list")]
-    public class CustomerList: BaseEntity<int>
+    public class CustomerList : BaseEntity<int>, IEquatable<CustomerList>
     {
         /// <summary>
         /// 主键
@@ -99,6 +100,16 @@ namespace OpenAuth.Repository.Domain.Customer
         /// 是否删除
         /// </summary>
         public bool IsDelete { get; set; }
+
+        public bool Equals([AllowNull] CustomerList other)
+        {
+            return this.CustomerNo == other.CustomerNo;
+        }
+
+        public override int GetHashCode()
+        {
+            return this.CustomerNo.GetHashCode();
+        }
 
         public override void GenerateDefaultKeyVal()
         {

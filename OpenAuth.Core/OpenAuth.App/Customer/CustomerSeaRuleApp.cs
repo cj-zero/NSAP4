@@ -120,7 +120,15 @@ namespace OpenAuth.App.Customer
                     Enable = c.Enable
                 });
 
-            result.Data = await query.ToListAsync();
+            var data = await query.ToListAsync();
+            result.Data = data.Select(d => new QueryCustomerSeaRuleResponse
+            {
+                RuleId = d.RuleId,
+                RuleName = d.RuleName,
+                DepartInfos = d.DepartInfos.Distinct(),
+                RuleDetailInfos = d.RuleDetailInfos.Distinct(),
+                Enable = d.Enable
+            });
             result.Count = await query.CountAsync();
 
             return result;
