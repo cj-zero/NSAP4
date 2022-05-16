@@ -254,13 +254,14 @@ namespace OpenAuth.App.Customer
         {
             var seaConfig = UnitWork.Find<CustomerSeaConf>(null).FirstOrDefault();
             if (seaConfig == null || seaConfig.Enable == false) { return; }
+
             //查询规则列表,按部门和客户类型分类,事件优先级:0-未报价>1-未下单>2-未交货
             var query = from c in UnitWork.Find<CustomerSeaRule>(null)
                         join ci in UnitWork.Find<CustomerSeaRuleItem>(null)
                         on c.Id equals ci.CustomerSeaRuleId
                         //true 代表启用
                         //目前的需求是先处理未报价客户未报价的规则
-                        where c.Enable == true && ci.CustomerType == 1 && ci.OrderType == 0 
+                        where c.Enable == true && ci.CustomerType == 1 && ci.OrderType == 0
                         group new { c, ci } by new { ci.DepartmentName, ci.CustomerType } into g
                         select new
                         {
@@ -272,10 +273,10 @@ namespace OpenAuth.App.Customer
             var ruleData = await query.ToListAsync();
 
             //提前通知天数
-            var notifyDay = seaConfig?.NotifyDay; 
+            var notifyDay = seaConfig?.NotifyDay;
+
             //符合掉落公海规则的客户
             var customerLists = new List<CustomerList>();
-
             foreach (var rule in ruleData)
             {
                 //根据部门查找业务员
@@ -328,17 +329,18 @@ namespace OpenAuth.App.Customer
                                 customerLists.Add(new CustomerList
                                 {
                                     DepartMent = rule.dept,
-                                
+
                                     CustomerNo = c.CardCode,
                                     CustomerName = c.CardName,
                                     CustomerSource = "",
+                                    CustomerCreateDate = c.CreateDate,
                                     SlpCode = c.SlpCode,
                                     SlpName = c.SlpName,
-                                    Label = "公海领取",
+                                    Label = "已经掉入公海",
                                     LabelIndex = 3,
                                     CreateUser = "系统",
                                     CreateDateTime = DateTime.Now,
-                                    UpdateUser = "系统",  
+                                    UpdateUser = "系统",
                                     UpdateDateTime = DateTime.Now,
                                     IsDelete = false
                                 });
@@ -394,31 +396,65 @@ namespace OpenAuth.App.Customer
                 //}
 
             }
-            //数据库数据
-            var databaseData = await UnitWork.Find<CustomerList>(null).Select(c => new { c.CustomerNo, c.Id }).ToListAsync();
-            //表里面没有的数据要新增
-            var insertData = customerLists.Select(c => c.CustomerNo).Except(databaseData.Select(d => d.CustomerNo));
-            //两边都有的数据要更新
-            var updateData = customerLists.Select(c => c.CustomerNo).Intersect(databaseData.Select(d => d.CustomerNo));
-            //表里面多的要删除
-            var deleteData = databaseData.Select(d => d.CustomerNo).Except(customerLists.Select(c => c.CustomerNo));
 
-            await UnitWork.BatchAddAsync<CustomerList, int>(customerLists.Where(c => insertData.Contains(c.CustomerNo)).ToArray());
-            await UnitWork.DeleteAsync<CustomerList>(c => deleteData.Contains(c.CustomerNo));
-            foreach (var item in updateData)
+            //数据处理
+            foreach(var item in customerLists)
             {
-                var instance = await UnitWork.Find<CustomerList>(null).FirstOrDefaultAsync(c => c.CustomerNo == item);
-                instance.LabelIndex = customerLists.FirstOrDefault(c => c.CustomerNo == item).LabelIndex;
-                instance.Label = customerLists.FirstOrDefault(c => c.CustomerNo == item).Label;
-                instance.SlpCode = customerLists.FirstOrDefault(c => c.CustomerNo == item).SlpCode;
-                instance.SlpName = customerLists.FirstOrDefault(c => c.CustomerNo == item).SlpName;
-                instance.UpdateDateTime = DateTime.Now;
-                instance.UpdateUser = "系统";
-                await UnitWork.UpdateAsync<CustomerList>(instance);
-                //await UnitWork.SaveAsync();
+                var instance = await UnitWork.Find<CustomerList>(c => c.CustomerNo == item.CustomerNo).FirstOrDefaultAsync();
+                //存在更新
+                if (instance != null)
+                {
+                    instance.LabelIndex = item.LabelIndex;
+                    instance.Label = item.Label;
+                    instance.SlpCode = item.SlpCode;
+                    instance.SlpName = item.SlpName;
+                    instance.UpdateDateTime = DateTime.Now;
+                    instance.UpdateUser = "系统";
+                    await UnitWork.UpdateAsync(instance);
+                }
+                //不存在新增
+                else
+                {
+                    await UnitWork.AddAsync<CustomerList, int>(item);
+                }
+
+                await UnitWork.SaveAsync();
             }
 
+            //根据本次任务扫描的部门,查找已在公海池中的客户(根据部门处理数据,防止误删其他部门在公海的数据)
+            var databaseData = await UnitWork.Find<CustomerList>(c => ruleData.Select(r => r.dept).Contains(c.DepartMent)).Select(c => c.CustomerNo).ToListAsync();
+            //公海池中有,而本次扫描中没有的,说明客户不符合掉落规则(原业务员做了报价单,或者分配给了新的业务员等),这部分数据要从公海中移除
+            var deleteData = databaseData.Except(customerLists.Select(c => c.CustomerNo));
+            await UnitWork.DeleteAsync<CustomerList>(c => deleteData.Contains(c.CustomerNo));
             await UnitWork.SaveAsync();
+
+            #region 旧有处理方式
+            ////数据库数据
+            //var databaseData = await UnitWork.Find<CustomerList>(null).Select(c => new { c.CustomerNo, c.Id }).ToListAsync();
+            ////表里面没有的数据要新增
+            //var insertData = customerLists.Select(c => c.CustomerNo).Except(databaseData.Select(d => d.CustomerNo));
+            ////两边都有的数据要更新
+            //var updateData = customerLists.Select(c => c.CustomerNo).Intersect(databaseData.Select(d => d.CustomerNo));
+            ////表里面多的要删除
+            //var deleteData = databaseData.Select(d => d.CustomerNo).Except(customerLists.Select(c => c.CustomerNo));
+
+            //await UnitWork.BatchAddAsync<CustomerList, int>(customerLists.Where(c => insertData.Contains(c.CustomerNo)).ToArray());
+            //await UnitWork.DeleteAsync<CustomerList>(c => deleteData.Contains(c.CustomerNo));
+            //foreach (var item in updateData)
+            //{
+            //    var instance = await UnitWork.Find<CustomerList>(null).FirstOrDefaultAsync(c => c.CustomerNo == item);
+            //    if (instance == null) { continue; }
+            //    instance.LabelIndex = customerLists.FirstOrDefault(c => c.CustomerNo == item).LabelIndex;
+            //    instance.Label = customerLists.FirstOrDefault(c => c.CustomerNo == item).Label;
+            //    instance.SlpCode = customerLists.FirstOrDefault(c => c.CustomerNo == item).SlpCode;
+            //    instance.SlpName = customerLists.FirstOrDefault(c => c.CustomerNo == item).SlpName;
+            //    instance.UpdateDateTime = DateTime.Now;
+            //    instance.UpdateUser = "系统";
+            //    await UnitWork.UpdateAsync<CustomerList>(instance);
+            //    //await UnitWork.SaveAsync();
+            //}
+            //await UnitWork.SaveAsync();
+            #endregion
         }
 
         /// <summary>
@@ -427,6 +463,10 @@ namespace OpenAuth.App.Customer
         /// <returns></returns>
         public async Task RecoveryCustomer()
         {
+            var seaConfig = await UnitWork.Find<CustomerSeaConf>(null).FirstOrDefaultAsync();
+            //如果规则没设置,或者公海回收机制没启用,则直接返回
+            if (seaConfig == null || seaConfig.RecoverEnable == false) { return; }
+
             //获取从公海领取后，没有在规定时间做单的客户
             //查询每个客户最新的被领取时间
             var query = await UnitWork.Find<CustomerSalerHistory>(null)
@@ -437,11 +477,9 @@ namespace OpenAuth.App.Customer
                     Id = g.Max(x => x.Id),
                     CreateTime = g.Max(x => x.CreateTime)
                 }).ToListAsync();
+
             //符合回收规则的客户
             var customerLists = new List<CustomerList>();
-            var seaConfig = await UnitWork.Find<CustomerSeaConf>(null).FirstOrDefaultAsync();
-            //如果规则没设置,或者公海回收机制没启用,则直接返回
-            if (seaConfig == null || seaConfig.RecoverEnable == false) { return; }
             foreach (var item in query)
             {
                 //是否未报价
@@ -488,7 +526,7 @@ namespace OpenAuth.App.Customer
                     }
                 }
                 //是否未成交
-                if (!UnitWork.Find<ODLN>(null).Any(o => o.CardCode == item.CustomerNo))
+                else if (!UnitWork.Find<ODLN>(null).Any(o => o.CardCode == item.CustomerNo))
                 {
                     var data = await UnitWork.Find<CustomerSalerHistory>(c => c.Id == item.Id).Select(c => new { c.CustomerNo, c.CustomerName, c.SlpCode, c.SlpName, c.SlpDepartment }).FirstOrDefaultAsync();
                     if ((DateTime.Now - item.CreateTime).Value.Days > seaConfig.RecoverNoOrder)
@@ -532,7 +570,8 @@ namespace OpenAuth.App.Customer
                 }
             }
 
-            await UnitWork.BatchAddAsync<CustomerList, int>(customerLists.ToArray());
+            var insertData = customerLists.Distinct().ToArray();
+            await UnitWork.BatchAddAsync<CustomerList, int>(insertData);
             await UnitWork.SaveAsync();
         }
 

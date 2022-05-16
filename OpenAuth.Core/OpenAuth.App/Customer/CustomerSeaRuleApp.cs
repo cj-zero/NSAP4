@@ -120,7 +120,15 @@ namespace OpenAuth.App.Customer
                     Enable = c.Enable
                 });
 
-            result.Data = await query.ToListAsync();
+            var data = await query.ToListAsync();
+            result.Data = data.Select(d => new QueryCustomerSeaRuleResponse
+            {
+                RuleId = d.RuleId,
+                RuleName = d.RuleName,
+                DepartInfos = d.DepartInfos.Distinct(),
+                RuleDetailInfos = d.RuleDetailInfos.Distinct(),
+                Enable = d.Enable
+            });
             result.Count = await query.CountAsync();
 
             return result;
@@ -243,7 +251,7 @@ namespace OpenAuth.App.Customer
             var result = new TableData();
 
             var query = UnitWork.Find<Repository.Domain.Org>(o => o.IsLeaf == true && o.Status == 0)
-                .Select(o => new { deptId = o.Id, deptName = o.Name });
+                .Select(o => new { deptId = o.Name, deptName = o.Name }).Distinct();
 
             result.Data = await query.OrderBy(q => q.deptName).ToListAsync();
             result.Count = await query.CountAsync();

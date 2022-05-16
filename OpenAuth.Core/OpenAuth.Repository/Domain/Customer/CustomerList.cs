@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace OpenAuth.Repository.Domain.Customer
@@ -12,7 +13,7 @@ namespace OpenAuth.Repository.Domain.Customer
     /// 客户列表
     /// </summary>
     [Table("customer_list")]
-    public class CustomerList: BaseEntity<int>
+    public class CustomerList : BaseEntity<int>, IEquatable<CustomerList>
     {
         /// <summary>
         /// 主键
@@ -45,6 +46,11 @@ namespace OpenAuth.Repository.Domain.Customer
         public string CustomerSource { get; set; }
 
         /// <summary>
+        /// 客户创建时间
+        /// </summary>
+        public DateTime? CustomerCreateDate { get; set; }
+
+        /// <summary>
         /// 销售员在3.0的编码
         /// </summary>
         public int SlpCode { get; set; }
@@ -56,13 +62,13 @@ namespace OpenAuth.Repository.Domain.Customer
         public string SlpName { get; set; }
 
         /// <summary>
-        /// 标签Id:1-未报价、2-已成交、3-公海领取、4-即将掉入公海
+        /// 标签Id:3-已经掉入公海、4-即将掉入公海
         /// </summary>
         [Column("Label_Index")]
         public int LabelIndex { get; set; }
 
         /// <summary>
-        /// 标签:1-未报价、2-已成交、3-公海领取、4-即将掉入公海
+        /// 标签:3-已经掉入公海、4-即将掉入公海
         /// </summary>
         public string Label { get; set; }
 
@@ -94,6 +100,16 @@ namespace OpenAuth.Repository.Domain.Customer
         /// 是否删除
         /// </summary>
         public bool IsDelete { get; set; }
+
+        public bool Equals([AllowNull] CustomerList other)
+        {
+            return this.CustomerNo == other.CustomerNo;
+        }
+
+        public override int GetHashCode()
+        {
+            return this.CustomerNo.GetHashCode();
+        }
 
         public override void GenerateDefaultKeyVal()
         {

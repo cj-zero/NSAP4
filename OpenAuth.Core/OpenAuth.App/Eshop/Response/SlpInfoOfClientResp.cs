@@ -23,5 +23,15 @@ namespace OpenAuth.App.Response
         /// 手机号
         /// </summary>
         public string Mobile { get; set; }
+        /// <summary>
+        /// 客户编号
+        /// </summary>
+        public string CardCode { get; set; }
+        /// <summary>
+        /// 客户名称
+        /// </summary>
+        public string CardName { get; set; }
+
     }
+
 }

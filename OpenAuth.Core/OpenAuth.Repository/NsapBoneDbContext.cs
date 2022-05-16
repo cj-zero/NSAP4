@@ -64,6 +64,7 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<store_itemtype_ufd1>().HasKey(o => new { o.TypeID, o.Fld_nm, o.IndexID });
             modelBuilder.Entity<store_owhs>().HasKey(o => new { o.sbo_id, o.WhsCode });
             modelBuilder.Entity<q_owhs_basics>().HasKey(o => new { o.WhsCode });
+            modelBuilder.Entity<crm_tel>().HasKey(o => new { o.sbo_id, o.CardCode });
         }
 
         public virtual DbSet<sale_transport> sale_transports { get; set; }
@@ -126,5 +127,6 @@ namespace OpenAuth.Repository
         public virtual DbSet<store_item_type> store_item_types { get; set; }
         public virtual DbSet<store_itemtype_ufd1> store_itemtype_ufd1s { get; set; }
 
+        public virtual DbSet<crm_tel> crm_tel { get; set; }
     }
 }

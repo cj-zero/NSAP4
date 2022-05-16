@@ -288,7 +288,7 @@ namespace OpenAuth.App.Customer
                     c.DepartMent,
                     CustomerSource = "",
                     c.CreateUser,
-                    c.CreateDateTime,
+                    CreateDateTime = c.CustomerCreateDate,
                     FallIntoTime = c.CreateDateTime
                 });
 
@@ -296,8 +296,10 @@ namespace OpenAuth.App.Customer
                 .Select((c, index) => new
                 {
                     Num = (req.page - 1) * req.limit + index + 1,
-                    CustomerNo = isAdmin ? c.CustomerNo : "******",
-                    CustomerName = isAdmin ? c.CustomerName : "******",
+                    CustomerNo = c.CustomerNo,
+                    CustomerName = c.CustomerName,
+                    DisplayCustomerNo = isAdmin ? c.CustomerNo : "******",
+                    DisplayCustomerName = isAdmin ? c.CustomerName : "******",
                     c.DepartMent,
                     c.CustomerSource,
                     c.CreateUser,
@@ -332,7 +334,6 @@ namespace OpenAuth.App.Customer
                             CardCode = c.CardCode, //客户代码
                             CardName = c.CardName, //客户类型
                             SlpName = t1 == null ? "" : t1.SlpName, //客户归属
-                            CreateTime = c.CreateDate.Value, //创建时间
                             DfTcnician = t2 == null ? "" : (t2.lastName + t2.firstName), //售后主管
                             Is_reseller = c.U_is_reseller, //是否是中间商
                             EndCustomerName = c.U_EndCustomerName, //终端用户名
@@ -343,6 +344,8 @@ namespace OpenAuth.App.Customer
                             TotalBalance = c.Balance, //总科目余额
                             OrdersBal = c.OrdersBal, //未清订单金额
                             DNotesBal = c.DNotesBal, //未清交货单金额
+                            CreateTime = c.CreateDate.Value, //创建时间
+                            UpdateTime = c.UpdateDate.Value, //更新时间
                         };
 
             var data = await query.FirstOrDefaultAsync();
@@ -390,20 +393,29 @@ namespace OpenAuth.App.Customer
         {
             var result = new TableData();
 
+            //var query = (from u in UnitWork.Find<base_user>(null)
+            //             .WhereIf(!string.IsNullOrWhiteSpace(req.SlpName), u => u.user_nm.Contains(req.SlpName))
+            //             join ud in UnitWork.Find<base_user_detail>(d => new int[] { 0, 1 }.Contains(d.status)) //在职的员工,离职状态是2和3
+            //             on u.user_id equals ud.user_id
+            //             join s in UnitWork.Find<sbo_user>(null)
+            //             .WhereIf(req.SlpCode != null && req.SlpCode > 0, u => u.sale_id == req.SlpCode)
+            //             on u.user_id equals s.user_id
+            //             //where  Define.SBO_ID
+            //             group new { u, ud, s } by new { s.user_id } into g
+            //             select new
+            //             {
+            //                 slpcode = g.Min(x => x.s.sale_id),
+            //                 slpname = g.Max(x => x.u.user_nm)
+            //             }).Distinct();
             var query = (from u in UnitWork.Find<base_user>(null)
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.SlpName), u => u.user_nm.Contains(req.SlpName))
-                         join ud in UnitWork.Find<base_user_detail>(d => new int[] { 0, 1 }.Contains(d.status)) //在职的员工,离职状态是2和3
-                         on u.user_id equals ud.user_id
-                         join s in UnitWork.Find<sbo_user>(null)
-                         .WhereIf(req.SlpCode != null && req.SlpCode > 0, u => u.sale_id == req.SlpCode)
-                         on u.user_id equals s.user_id
-                         group new { u, ud, s } by new { s.user_id } into g
+                         join ud in UnitWork.Find<base_user_detail>(null) on u.user_id equals ud.user_id
+                         join s in UnitWork.Find<sbo_user>(null) on u.user_id equals s.user_id
+                         where s.sbo_id == Define.SBO_ID
                          select new
                          {
-                             slpcode = g.Min(x => x.s.sale_id),
-                             slpname = g.Max(x => x.u.user_nm)
+                             slpcode = s.sale_id,
+                             slpname = u.user_nm
                          }).Distinct();
-
             result.Data = await query.ToListAsync();
             result.Count = await query.CountAsync();
 
@@ -447,30 +459,35 @@ namespace OpenAuth.App.Customer
             //公海设置
             var config = await UnitWork.Find<CustomerSeaConf>(null).FirstOrDefaultAsync();
 
+
+            var key = $"{slpInfo.sale_id}:{DateTime.Now.Date.ToString("yyyyMMdd")}:"; //以用户和日期作为key
+            if (!RedisHelper.Exists(key))
+            {
+                RedisHelper.Set(key, 0, 24 * 60 * 60);
+            }
             //认领规则如果开启
-            if(config?.ReceiveEnable == true)
+            if (config?.ReceiveEnable == true)
             {
                 var diffDate = (DateTime.Now - slpInfo.try_date).Days;
                 //如果不在这个区间,则不能领取(业务上是入职时间太短或者太长都不能领取)
-                if(!(diffDate>config.ReceiveJobMin && diffDate < config.ReceiveJobMax))
+                if (!(diffDate > config.ReceiveJobMin && diffDate < config.ReceiveJobMax))
                 {
                     response.Message = $"抱歉,您的入职时长不满足领取规定";
                     response.Code = 500;
                     return response;
                 }
                 //判断每天领取个数是否满足规定
-                var key = $"{slpInfo.sale_id}:{DateTime.Now.Date.ToString("yyyyMMdd")}:";
-                if(await RedisHelper.ExistsAsync(key))
-                {
-                    await RedisHelper.SetAsync(key, 0, 24 * 60 * 60);
-                }
-                var countNum = await RedisHelper.IncrByAsync(key);
-                if (countNum > config?.ReceiveMaxLimit)
+                var dayNum = await RedisHelper.GetAsync<int>(key);
+                if (dayNum >= config?.ReceiveMaxLimit)
                 {
                     response.Message = "您今天领取的客户数量已达上限";
                     response.Code = 500;
                     return response;
                 }
+                //else
+                //{
+                //    await RedisHelper.IncrByAsync(key);
+                //}
             }
 
             //抢回限制如果是开启的
@@ -588,6 +605,7 @@ namespace OpenAuth.App.Customer
                 await UnitWork.SaveAsync();
 
                 await tran.CommitAsync();
+                RedisHelper.IncrBy(key); //领取成功后,用户当天的客户数量加1
             }
             catch (Exception ex)
             {
