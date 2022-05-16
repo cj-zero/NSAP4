@@ -6726,7 +6726,7 @@ namespace OpenAuth.App
             //3.取出nSAP用户与APP用户关联的用户信息（角色为技术员/售后主管）
             var tUsers = await UnitWork.Find<AppUserMap>(u => (u.AppUserRole == 1 || u.AppUserRole == 2) && req.TechnicianId > 0 ? u.AppUserId != req.TechnicianId : true).ToListAsync();
             //4.获取定位信息（登录APP时保存的位置信息）
-            var locations = (await UnitWork.Find<RealTimeLocation>(null).OrderByDescending(o => o.CreateTime).ToListAsync()).GroupBy(g => g.AppUserId).Select(s => s.First());
+            //var locations = (await UnitWork.Find<RealTimeLocation>(null).OrderByDescending(o => o.CreateTime).ToListAsync()).GroupBy(g => g.AppUserId).Select(s => s.First());
             //5.根据组织信息获取组织下的所有用户Id集合
             var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
             //6.取得相关用户信息
@@ -6752,7 +6752,10 @@ namespace OpenAuth.App
                 var ids = userlist.Intersect(tUsers.Select(u => u.UserID));
                 var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).WhereIf(!string.IsNullOrEmpty(req.key), u => u.Name.Contains(req.key)).ToListAsync();
                 var us = users.Select(u => new { u.Name, AppUserId = tUsers.FirstOrDefault(a => a.UserID.Equals(u.Id)).AppUserId, u.Id });
+                var appUser = us.Select(c => c.AppUserId).ToList();
                 var appUserIds = tUsers.Where(u => userIds.Contains(u.UserID)).Select(u => u.AppUserId).ToList();
+
+                var locations = (await UnitWork.Find<RealTimeLocation>(c => appUser.Contains(c.AppUserId) && c.CreateTime >= DateTime.Now.AddDays(-7) && c.CreateTime <= DateTime.Now).ToListAsync()).GroupBy(c => c.AppUserId).Select(c => c.OrderByDescending(o => o.CreateTime).First()).ToList();
 
                 var userCount = await UnitWork.Find<ServiceWorkOrder>(s => appUserIds.Contains(s.CurrentUserId) && s.Status.Value < 7)
                     .Select(s => new { s.CurrentUserId, s.ServiceOrderId }).Distinct().GroupBy(s => s.CurrentUserId)
