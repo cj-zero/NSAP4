@@ -1685,7 +1685,7 @@ namespace OpenAuth.App
         /// <param name="turV">Tur电压数据</param>
         /// <param name="turA">Tur电流数据</param>
         /// <returns></returns>
-        public async Task<CertModel> BuildModel(NwcaliBaseInfo baseInfo)
+        private async Task<CertModel> BuildModel(NwcaliBaseInfo baseInfo, string type = "")
         {
             var list = new List<WordModel>();
             var model = new CertModel();
@@ -1719,7 +1719,8 @@ namespace OpenAuth.App
                     Characterisics = baseInfo.Etalons[i].Characteristics,
                     AssetNo = baseInfo.Etalons[i].AssetNo,
                     CertificateNo = baseInfo.Etalons[i].CertificateNo,
-                    DueDate = DateStringConverter(baseInfo.Etalons[i].DueDate)
+                    DueDate = DateStringConverter(baseInfo.Etalons[i].DueDate),
+                    CalibrationEntity = baseInfo.Etalons[i].CalibrationEntity
                 });
             }
             #endregion
@@ -1739,76 +1740,79 @@ namespace OpenAuth.App
             var cv = c.Select(c => c.CommandedValue).OrderBy(s => s).ToList();
             cv.Sort();
             var cscale = cv[(cv.Count - 1) / 2];
-            #region T.U.R. Table
-            //电压
-            var vPoint = turV.Select(v => v.TestPoint).Distinct().OrderBy(v => v).ToList();
-            var vPointIndex = (vPoint.Count - 1) / 2;
-            var vSpec = v.First().Scale * baseInfo.RatedAccuracyV * 1000;
-            var u95_1 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex - 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            var a = turV.Where(v => v.TestPoint == vPoint[vPointIndex]).ToList();
-            var u95_2 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            var u95_3 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex + 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            var tur_1 = (2 * vSpec / 1000) / (2 * u95_1);
-            var tur_2 = (2 * vSpec / 1000) / (2 * u95_2);
-            var tur_3 = (2 * vSpec / 1000) / (2 * u95_3);
-            model.TurTables.Add(new TurTable { Number = "1", Point = $"{vPoint[vPointIndex - 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_1.ToString("e3") + "V", TUR = tur_1.ToString("f2") });
-            model.TurTables.Add(new TurTable { Number = "2", Point = $"{vPoint[vPointIndex]}V", Spec = $"±{vSpec}mV", U95Standard = u95_2.ToString("e3") + "V", TUR = tur_2.ToString("f2") });
-            model.TurTables.Add(new TurTable { Number = "3", Point = $"{vPoint[vPointIndex + 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_3.ToString("e3") + "V", TUR = tur_3.ToString("f2") });
-            //电流
-            var cPoint = turA.Select(v => v.TestPoint).Distinct().OrderBy(v => v).ToList();
-            var cPointIndex = cPoint.IndexOf(cscale / 1000); //(cPoint.Count - 1) / 2;
-            var cSpec = c.First().Scale * baseInfo.RatedAccuracyC;
-            var U95_4turA = turA;
-            if (turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).ToList().Count > 2)
+            if (type != "cnas")
             {
-                U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
-                if (U95_4turA.Count > 2)
+                #region T.U.R. Table
+                //电压
+                var vPoint = turV.Select(v => v.TestPoint).Distinct().OrderBy(v => v).ToList();
+                var vPointIndex = (vPoint.Count - 1) / 2;
+                var vSpec = v.First().Scale * baseInfo.RatedAccuracyV * 1000;
+                var u95_1 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex - 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                var a = turV.Where(v => v.TestPoint == vPoint[vPointIndex]).ToList();
+                var u95_2 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                var u95_3 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex + 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                var tur_1 = (2 * vSpec / 1000) / (2 * u95_1);
+                var tur_2 = (2 * vSpec / 1000) / (2 * u95_2);
+                var tur_3 = (2 * vSpec / 1000) / (2 * u95_3);
+                model.TurTables.Add(new TurTable { Number = "1", Point = $"{vPoint[vPointIndex - 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_1.ToString("e3") + "V", TUR = tur_1.ToString("f2") });
+                model.TurTables.Add(new TurTable { Number = "2", Point = $"{vPoint[vPointIndex]}V", Spec = $"±{vSpec}mV", U95Standard = u95_2.ToString("e3") + "V", TUR = tur_2.ToString("f2") });
+                model.TurTables.Add(new TurTable { Number = "3", Point = $"{vPoint[vPointIndex + 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_3.ToString("e3") + "V", TUR = tur_3.ToString("f2") });
+                //电流
+                var cPoint = turA.Select(v => v.TestPoint).Distinct().OrderBy(v => v).ToList();
+                var cPointIndex = cPoint.IndexOf(cscale / 1000); //(cPoint.Count - 1) / 2;
+                var cSpec = c.First().Scale * baseInfo.RatedAccuracyC;
+                var U95_4turA = turA;
+                if (turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).ToList().Count > 2)
                 {
-                    U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                    U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
+                    if (U95_4turA.Count > 2)
+                    {
+                        U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                    }
                 }
-            }
-            else
-            {
-                U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).ToList();
-            }
-            var u95_4 = 2 * Math.Sqrt(U95_4turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            var U95_5turA = turA;
-            if (turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).ToList().Count > 2)
-            {
-                U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
-                if (U95_5turA.Count > 2)
+                else
                 {
-                    U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                    U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).ToList();
                 }
-            }
-            else
-            {
-                U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).ToList();
-            }
-            var u95_5 = 2 * Math.Sqrt(U95_5turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            var U95_6turA = turA;
-            if (turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).ToList().Count > 2)
-            {
-                U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
-                if (U95_6turA.Count > 2)
+                var u95_4 = 2 * Math.Sqrt(U95_4turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                var U95_5turA = turA;
+                if (turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).ToList().Count > 2)
                 {
-                    U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                    U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
+                    if (U95_5turA.Count > 2)
+                    {
+                        U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                    }
                 }
-            }
-            else
-            {
-                U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).ToList();
-            }
-            var u95_6 = 2 * Math.Sqrt(U95_6turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            var tur_4 = (2 * cSpec) / (2 * u95_4 * 1000);
-            var tur_5 = (2 * cSpec) / (2 * u95_5 * 1000);
-            var tur_6 = (2 * cSpec) / (2 * u95_6 * 1000);
+                else
+                {
+                    U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).ToList();
+                }
+                var u95_5 = 2 * Math.Sqrt(U95_5turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                var U95_6turA = turA;
+                if (turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).ToList().Count > 2)
+                {
+                    U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
+                    if (U95_6turA.Count > 2)
+                    {
+                        U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                    }
+                }
+                else
+                {
+                    U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).ToList();
+                }
+                var u95_6 = 2 * Math.Sqrt(U95_6turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                var tur_4 = (2 * cSpec) / (2 * u95_4 * 1000);
+                var tur_5 = (2 * cSpec) / (2 * u95_5 * 1000);
+                var tur_6 = (2 * cSpec) / (2 * u95_6 * 1000);
 
-            model.TurTables.Add(new TurTable { Number = "4", Point = $"{cPoint[cPointIndex - 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_4.ToString("e3") + "A", TUR = tur_4.ToString("f2") });
-            model.TurTables.Add(new TurTable { Number = "5", Point = $"{cPoint[cPointIndex]}A", Spec = $"±{cSpec}mA", U95Standard = u95_5.ToString("e3") + "A", TUR = tur_5.ToString("f2") });
-            model.TurTables.Add(new TurTable { Number = "6", Point = $"{cPoint[cPointIndex + 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_6.ToString("e3") + "A", TUR = tur_6.ToString("f2") });
+                model.TurTables.Add(new TurTable { Number = "4", Point = $"{cPoint[cPointIndex - 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_4.ToString("e3") + "A", TUR = tur_4.ToString("f2") });
+                model.TurTables.Add(new TurTable { Number = "5", Point = $"{cPoint[cPointIndex]}A", Spec = $"±{cSpec}mA", U95Standard = u95_5.ToString("e3") + "A", TUR = tur_5.ToString("f2") });
+                model.TurTables.Add(new TurTable { Number = "6", Point = $"{cPoint[cPointIndex + 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_6.ToString("e3") + "A", TUR = tur_6.ToString("f2") });
 
-            #endregion
+                #endregion
+            }
 
             #region Uncertainty Budget Table
             #region Voltage
@@ -1947,13 +1951,14 @@ namespace OpenAuth.App
                 int l = 1;
                 foreach (var item in plcGroupData)
                 {
-                    var data = item.Where(p => p.VoltsorAmps.Equals("Volts") && p.Mode.Equals(mode) && p.VerifyType.Equals("Post-Calibration")).GroupBy(d => d.Channel);
+                    var data = item.Where(p => p.VoltsorAmps.Equals("Volts") && p.Mode.Equals(mode) && p.VerifyType.Equals("Post-Calibration")).GroupBy(d => d.Channel).ToList();
                     foreach (var item2 in data)
                     {
                         var cvDataList = item2.OrderBy(dd => dd.CommandedValue).ToList();
                         foreach (var cvData in cvDataList)
                         {
-                            var cvCHH = $"{l}-{cvData.Channel}";
+                            //var cvCHH = $"{l}-{cvData.Channel}";
+                            var cvCHH = $"{item.Key}-{cvData.Channel}";
                             var cvRange = cvData.Scale;
                             var cvIndication = cvData.MeasuredValue;
                             var cvMeasuredValue = cvData.StandardValue;
@@ -2005,6 +2010,12 @@ namespace OpenAuth.App
                                     var accpetedTolerance = (cvData.Scale * baseInfo.RatedAccuracyV * 1000 - cvUncertainty) * m2;
                                     cvAcceptance = accpetedTolerance;
                                 }
+                            }
+                            else//默认为0的处理方法
+                            {
+
+                                var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyV * 1000;
+                                cvAcceptance = accpetedTolerance;
                             }
                             //约分
                             //var (IndicationReduce, MeasuredValueReduce, ErrorReduce, AcceptanceReduce, UncertaintyReduce) = ReduceVoltage(cvIndication, cvMeasuredValue, cvError, cvAcceptance, cvUncertainty);
@@ -2073,10 +2084,25 @@ namespace OpenAuth.App
                                     }
                                 }
                             }
+                            else//默认为0的处理方法
+                            {
+
+                                if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
+                                {
+                                    cvConclustion = "P";
+                                }
+                                else
+                                {
+                                    cvConclustion = "F";
+                                }
+                            }
+
                             if (mode.Equals("Charge"))
                             {
                                 model.ChargingVoltage.Add(new DataSheet
                                 {
+                                    Sort1 = item.Key,
+                                    Sort2 = cvData.Channel,
                                     Channel = cvCHH,
                                     Range = cvRange.ToString(),
                                     Indication = IndicationReduce,
@@ -2091,6 +2117,8 @@ namespace OpenAuth.App
                             {
                                 model.DischargingVoltage.Add(new DataSheet
                                 {
+                                    Sort1 = item.Key,
+                                    Sort2 = cvData.Channel,
                                     Channel = cvCHH,
                                     Range = cvRange.ToString(),
                                     Indication = IndicationReduce,
@@ -2119,7 +2147,8 @@ namespace OpenAuth.App
                         var cvDataList = item2.OrderBy(dd => dd.Scale).ThenBy(dd => dd.CommandedValue).ToList();
                         foreach (var cvData in cvDataList)
                         {
-                            var CHH = $"{l}-{cvData.Channel}";
+                            //var CHH = $"{l}-{cvData.Channel}";
+                            var CHH = $"{item.Key}-{cvData.Channel}";
                             var Range = cvData.Scale;
                             var Indication = cvData.MeasuredValue;
                             var MeasuredValue = cvData.StandardValue;
@@ -2172,6 +2201,11 @@ namespace OpenAuth.App
                                     var accpetedTolerance = (cvData.Scale * baseInfo.RatedAccuracyC - Uncertainty) * m2;
                                     Acceptance = accpetedTolerance;
                                 }
+                            }
+                            else//默认为0的处理方法
+                            {
+                                var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyC;
+                                Acceptance = accpetedTolerance;
                             }
                             //约分
                             //var (IndicationReduce, MeasuredValueReduce, ErrorReduce, AcceptanceReduce, UncertaintyReduce) = ReduceCurrent(Math.Abs(Indication), Math.Abs(MeasuredValue), Error, Acceptance, Uncertainty);
@@ -2241,11 +2275,24 @@ namespace OpenAuth.App
                                     }
                                 }
                             }
+                            else//默认为0的处理方法
+                            {
+                                if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
+                                {
+                                    Conclustion = "P";
+                                }
+                                else
+                                {
+                                    Conclustion = "F";
+                                }
+                            }
 
                             if (mode.Equals("Charge"))
                             {
                                 model.ChargingCurrent.Add(new DataSheet
                                 {
+                                    Sort1 = item.Key,
+                                    Sort2 = cvData.Channel,
                                     Channel = CHH,
                                     Range = baseInfo.TesterModel.Contains("mA") ? Range.ToString() : ((double)Range / 1000).ToString(),
                                     Indication = IndicationReduce,
@@ -2260,6 +2307,8 @@ namespace OpenAuth.App
                             {
                                 model.DischargingCurrent.Add(new DataSheet
                                 {
+                                    Sort1 = item.Key,
+                                    Sort2 = cvData.Channel,
                                     Channel = CHH,
                                     Range = baseInfo.TesterModel.Contains("mA") ? Range.ToString() : ((double)Range / 1000).ToString(),
                                     Indication = IndicationReduce,
@@ -2281,22 +2330,22 @@ namespace OpenAuth.App
 
             #region Charging Voltage
             CalculateVoltage("Charge", 8, int.Parse(CategoryObj.DtValue));
-            model.ChargingVoltage = model.ChargingVoltage.OrderBy(s => s.Channel).ToList();
+            model.ChargingVoltage = model.ChargingVoltage.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
             #endregion
 
             #region Discharging Voltage
             CalculateVoltage("DisCharge", 9, int.Parse(CategoryObj.DtValue));
-            model.DischargingVoltage = model.DischargingVoltage.OrderBy(s => s.Channel).ToList();
+            model.DischargingVoltage = model.DischargingVoltage.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
             #endregion
 
             #region Charging Current
             CalculateCurrent("Charge", 10, int.Parse(CategoryObj.Description), int.Parse(CategoryObj.DtCode));
-            model.ChargingCurrent = model.ChargingCurrent.OrderBy(s => s.Channel).ToList();
+            model.ChargingCurrent = model.ChargingCurrent.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
             #endregion
 
             #region Discharging Current
             CalculateCurrent("DisCharge", 10, int.Parse(CategoryObj.Description), int.Parse(CategoryObj.DtCode));
-            model.DischargingCurrent = model.DischargingCurrent.OrderBy(s => s.Channel).ToList();
+            model.DischargingCurrent = model.DischargingCurrent.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
             #endregion
 
 
