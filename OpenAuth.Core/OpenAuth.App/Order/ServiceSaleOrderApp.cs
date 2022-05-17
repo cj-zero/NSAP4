@@ -1041,7 +1041,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                     List<string> itemCodeList = (from d in dt.AsEnumerable() select '\'' + d.Field<string>("ItemCode") + '\'').ToList();
                     string itemCodes = string.Join(",", itemCodeList);
                     string tempsql = string.Format(@"select m.ItemCode,w.OnHand,m.OnHand AS SumOnHand,m.IsCommited,m.OnOrder,(w.OnHand-w.IsCommited+w.OnOrder) AS OnAvailable,(m.OnHand-m.IsCommited+m.OnOrder) AS Available 
-                                              from OITM M LEFT OUTER JOIN OITW W ON m.ItemCode = w.ItemCode where m.ItemCode in({0}) and w.WhsCode={1}", itemCodes.Replace('*', '%'), query.WhsCode);
+                                              from OITM M LEFT OUTER JOIN OITW W ON m.ItemCode = w.ItemCode where m.ItemCode in({0}) and w.WhsCode={1}", itemCodes.FilterWildCard(), query.WhsCode);
                     DataTable tempt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, tempsql, CommandType.Text, null);
                     if (tempt != null && tempt.Rows.Count > 0)
                     {
