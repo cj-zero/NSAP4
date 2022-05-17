@@ -315,5 +315,22 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
+
+        [HttpGet]
+        public async Task<Response> MaterialSplit()
+        {
+            Response result = new Response();
+            try
+            {
+                await _app.MaterialSplit();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}, 错误：{result.Message}");
+            }
+            return result;
+        }
     }
 }
