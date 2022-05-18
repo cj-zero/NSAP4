@@ -1717,24 +1717,50 @@ namespace OpenAuth.App.Material
                 });
                 var sql = $"SELECT * from materialrange where ({where}) and (Volt>={e.VoltsStart} and Volt<={e.VoltseEnd}) and (Amp>={e.AmpsStart} and Amp<={e.AmpsEnd} and Unit='{e.CurrentUnit}')";
                 var queryItemCode = UnitWork.Query<MaterialRange>(sql).ToList();
-                queryItemCode = queryItemCode.GroupBy(c => string.Join("-", c.ItemCode.Split("-").Take(3))).Select(c => c.First()).ToList();
-                queryItemCode.ForEach(c =>
+
+                if ((e.Fixture == null || e.Fixture.Count == 0) && (e.Special == null || e.Special.Count == 0))
                 {
-                    //var am = $"{c.Prefix}-{c.Volt}V{c.Amp}{c.Unit}";
-                    var am = string.Join("-", c.ItemCode.Split('-').Take(3));
-                    //夹具
-                    if (e.Fixture != null && e.Fixture.Count > 0)
+                    //没有后缀条件 筛选量程范围内所有物料
+                    itemcode.AddRange(queryItemCode.Select(c => c.ItemCode).ToList());
+                }
+                else
+                {
+                    //有后缀条件 按条件排列组合
+                    queryItemCode = queryItemCode.GroupBy(c => string.Join("-", c.ItemCode.Split("-").Take(3))).Select(c => c.First()).ToList();
+                    queryItemCode.ForEach(c =>
                     {
-                        e.Fixture.ForEach(fi =>
+                        //var am = $"{c.Prefix}-{c.Volt}V{c.Amp}{c.Unit}";
+                        var am = string.Join("-", c.ItemCode.Split('-').Take(3));
+                        //夹具
+                        if (e.Fixture != null && e.Fixture.Count > 0)
                         {
-                            var ft = $"{am}-{fi}";
-                            itemcode.Add(ft);
+                            e.Fixture.ForEach(fi =>
+                            {
+                                var ft = $"{am}-{fi}";
+                                itemcode.Add(ft);
+                                //后缀
+                                if (e.Special != null && e.Special.Count > 0)
+                                {
+                                    e.Special.ForEach(sp =>
+                                    {
+                                        var s = $"{ft}{sp}";
+                                        itemcode.Add(s);
+                                    });
+                                }
+                                else
+                                {
+                                    itemcode.Add(am);
+                                }
+                            });
+                        }
+                        else
+                        {
                             //后缀
                             if (e.Special != null && e.Special.Count > 0)
                             {
                                 e.Special.ForEach(sp =>
                                 {
-                                    var s = $"{ft}{sp}";
+                                    var s = $"{am}{sp}";
                                     itemcode.Add(s);
                                 });
                             }
@@ -1742,25 +1768,9 @@ namespace OpenAuth.App.Material
                             {
                                 itemcode.Add(am);
                             }
-                        });
-                    }
-                    else
-                    {
-                        //后缀
-                        if (e.Special != null && e.Special.Count > 0)
-                        {
-                            e.Special.ForEach(sp =>
-                            {
-                                var s = $"{am}{sp}";
-                                itemcode.Add(s);
-                            });
                         }
-                        else
-                        {
-                            itemcode.Add(am);
-                        }
-                    }
-                });
+                    });
+                }
                 #region MyRegion
 
                 //e.Prefix.ForEach(c =>
@@ -2643,8 +2653,12 @@ namespace OpenAuth.App.Material
                         Unit = unit
                     });
                 }
-                await UnitWork.BatchAddAsync<MaterialRange, int>(sp.ToArray());
-                await UnitWork.SaveAsync();
+                if (oitm.Count == sp.Count)
+                {
+
+                    await UnitWork.BatchAddAsync<MaterialRange, int>(sp.ToArray());
+                    await UnitWork.SaveAsync();
+                }
             }
             catch (Exception e)
             {
