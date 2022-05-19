@@ -48,6 +48,9 @@ namespace OpenAuth.App.Files
 
                 var ext = Path.GetExtension(fileName).ToLower();
                 string newName = $"{folderMonth}/{folderDay}/{GenerateId.GenerateOrderNumber() + ext}";
+                if (!string.IsNullOrWhiteSpace(bucketNames))
+                    newName = $"{folderYear}/{folderMonth}/{folderDay}/{GenerateId.GenerateOrderNumber() + ext}";
+
                 //string thumbnailName = "";
                 //if (ext.Contains(".jpg") || ext.Contains(".jpeg") || ext.Contains(".png") || ext.Contains(".bmp") || ext.Contains(".gif"))
                 //{
