@@ -2625,6 +2625,8 @@ namespace OpenAuth.App.Material
             try
             {
                 var oitm = await UnitWork.Find<store_oitm>(c => c.ItemCode.StartsWith("C") && c.sbo_id == Define.SBO_ID).Select(c => c.ItemCode).Distinct().ToListAsync();
+                var material = await UnitWork.Find<MaterialRange>(null).Select(c => c.ItemCode).ToListAsync();
+                oitm = oitm.Except(material).ToList();
                 List<MaterialRange> sp = new List<MaterialRange>();
                 foreach (var c in oitm)
                 {
@@ -2653,9 +2655,8 @@ namespace OpenAuth.App.Material
                         Unit = unit
                     });
                 }
-                if (oitm.Count == sp.Count)
+                if (sp.Count > 0)
                 {
-
                     await UnitWork.BatchAddAsync<MaterialRange, int>(sp.ToArray());
                     await UnitWork.SaveAsync();
                 }
