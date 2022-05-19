@@ -25,6 +25,7 @@ using OpenAuth.App.Sap.BusinessPartner;
 using System.Text.RegularExpressions;
 using OpenAuth.App.Serve.Response;
 using OpenAuth.Repository.Domain.NsapBone;
+using System.Threading;
 
 namespace OpenAuth.App.Material
 {
@@ -38,6 +39,8 @@ namespace OpenAuth.App.Material
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
         private readonly BusinessPartnerApp _businessPartnerApp;
         private readonly ServiceOrderApp _serviceOrderApp;
+
+        static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
         public InternalContactApp(IUnitWork unitWork, IAuth auth, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, ModuleFlowSchemeApp moduleFlowSchemeApp, BusinessPartnerApp businessPartnerApp, ServiceOrderApp serviceOrderApp) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
@@ -428,10 +431,16 @@ namespace OpenAuth.App.Material
                             .FirstOrDefaultAsync();
 
             var orgIds = obj.InternalContactDeptInfos.Select(c => c.OrgId).ToList();
+            var history = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.InstanceId == obj.FlowInstanceId).Select(c => c.CreateUserId).Distinct().ToListAsync();
             var userIds = await UnitWork.Find<Relevance>(c => orgIds.Contains(c.SecondId) && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
-            userIds.Add(obj.CheckApproveId);
-            userIds.Add(obj.DevelopApproveId);
+            //userIds.Add(obj.CheckApproveId);
+            //userIds.Add(obj.DevelopApproveId);
+            userIds.AddRange(history);
+            userIds = userIds.Distinct().ToList();
             var userInfo = await UnitWork.Find<User>(c => userIds.Contains(c.Id) && c.Status == 0).ToListAsync();
+            //增加样式
+            var style = "<style>table{border-bottom:1px solid #ccc} td{border:1px solid #ccc;border-bottom:none}</style>";
+            obj.Content = $"{style}{obj.Content}";
             userInfo.ForEach(async c =>
             {
                 if (!string.IsNullOrWhiteSpace(c.Email))
@@ -445,6 +454,12 @@ namespace OpenAuth.App.Material
 
         private async Task SebdEmail(InternalContact obj, string title, List<MailUser> mailUsers = null)
         {
+            InternalContactEmailLog contactEmailLog = new InternalContactEmailLog();
+            contactEmailLog.Receiver = mailUsers.FirstOrDefault().Name;
+            contactEmailLog.InternalContactId = obj.Id;
+            contactEmailLog.CreateTime = DateTime.Now;
+            contactEmailLog.Result = "发送成功";
+            contactEmailLog.Remark = title;
             try
             {
                 MailRequest mailRequest = new MailRequest();
@@ -513,8 +528,12 @@ namespace OpenAuth.App.Material
             }
             catch (Exception e)
             {
-
+                contactEmailLog.Result = $"发送失败，{e.Message}";
             }
+            await semaphoreSlim.WaitAsync();
+            await UnitWork.AddAsync(contactEmailLog);
+            await UnitWork.SaveAsync();
+            semaphoreSlim.Release();
         }
         /// <summary>
         /// 获取详情
@@ -980,7 +999,7 @@ namespace OpenAuth.App.Material
                     };
                     var createResult = await _serviceOrderApp.CISECreateServiceOrder(s);
                     var serviceOrderId = createResult.Result;
-                    addlist.Add(new InternalContactTaskServiceOrder { InternalContactTaskId = item.Id, ServiceOrderId = serviceOrderId, IsFinish = false });
+                    addlist.Add(new InternalContactTaskServiceOrder { InternalContactTaskId = item.Id, ServiceOrderId = serviceOrderId, IsFinish = false, InternalContactId = item.InternalContactId });
                 }
                 await UnitWork.BatchAddAsync(addlist.ToArray());
 
@@ -1681,71 +1700,145 @@ namespace OpenAuth.App.Material
                 List<InternalContactProductionReq> resplist = new List<InternalContactProductionReq>();
                 List<string> itemcode = new List<string>();
                 #region 匹配物料编码
+                var regex = new List<string>();
+                string where = "";
+                //
                 e.Prefix.ForEach(c =>
                 {
-                    var refix = c;
-                    e.Series.ForEach(s =>
+                    regex.Add($"^{c}-[{string.Join("|", e.Series)}][0-999].*");
+                });
+                regex.ForEach(c =>
+                {
+                    if (!string.IsNullOrWhiteSpace(where))
                     {
-                        var series = $"{refix}-{s}";
-                        //通道
-                        passageway.ForEach(p =>
+                        where += " or ";
+                    }
+                    where += $"ItemCode REGEXP '{c}'";
+                });
+                var sql = $"SELECT * from materialrange where ({where}) and (Volt>={e.VoltsStart} and Volt<={e.VoltseEnd}) and (Amp>={e.AmpsStart} and Amp<={e.AmpsEnd} and Unit='{e.CurrentUnit}')";
+                var queryItemCode = UnitWork.Query<MaterialRange>(sql).ToList();
+
+                if ((e.Fixture == null || e.Fixture.Count == 0) && (e.Special == null || e.Special.Count == 0))
+                {
+                    //没有后缀条件 筛选量程范围内所有物料
+                    itemcode.AddRange(queryItemCode.Select(c => c.ItemCode).ToList());
+                }
+                else
+                {
+                    //有后缀条件 按条件排列组合
+                    queryItemCode = queryItemCode.GroupBy(c => string.Join("-", c.ItemCode.Split("-").Take(3))).Select(c => c.First()).ToList();
+                    queryItemCode.ForEach(c =>
+                    {
+                        //var am = $"{c.Prefix}-{c.Volt}V{c.Amp}{c.Unit}";
+                        var am = string.Join("-", c.ItemCode.Split('-').Take(3));
+                        //夹具
+                        if (e.Fixture != null && e.Fixture.Count > 0)
                         {
-                            var pg = $"{series}{p}";
-                            //额外通道 Tn n
-                            catetory.ForEach(ct =>
+                            e.Fixture.ForEach(fi =>
                             {
-                                var ca = $"{pg}{ct}";
-                                for (int i = e.VoltsStart.Value; i <= e.VoltseEnd; i++)
+                                var ft = $"{am}-{fi}";
+                                itemcode.Add(ft);
+                                //后缀
+                                if (e.Special != null && e.Special.Count > 0)
                                 {
-                                    var v = $"{ca}-{i}V";
-                                    for (int j = e.AmpsStart.Value; j <= e.AmpsEnd; j++)
+                                    e.Special.ForEach(sp =>
                                     {
-                                        var am = $"{v}{j}{e.CurrentUnit}";
-                                        //夹具
-                                        if (e.Fixture != null && e.Fixture.Count > 0)
-                                        {
-                                            e.Fixture.ForEach(fi =>
-                                            {
-                                                var ft = $"{am}-{fi}";
-                                                itemcode.Add(ft);
-                                                //后缀
-                                                if (e.Special != null && e.Special.Count > 0)
-                                                {
-                                                    e.Special.ForEach(sp =>
-                                                    {
-                                                        var s = $"{ft}{sp}";
-                                                        itemcode.Add(s);
-                                                    });
-                                                }
-                                                else
-                                                {
-                                                    itemcode.Add(am);
-                                                }
-                                            });
-                                        }
-                                        else
-                                        {
-                                            //后缀
-                                            if (e.Special != null && e.Special.Count > 0)
-                                            {
-                                                e.Special.ForEach(sp =>
-                                                {
-                                                    var s = $"{am}{sp}";
-                                                    itemcode.Add(s);
-                                                });
-                                            }
-                                            else
-                                            {
-                                                itemcode.Add(am);
-                                            }
-                                        }
-                                    }
+                                        var s = $"{ft}{sp}";
+                                        itemcode.Add(s);
+                                    });
+                                }
+                                else
+                                {
+                                    itemcode.Add(am);
                                 }
                             });
-                        });
+                        }
+                        else
+                        {
+                            //后缀
+                            if (e.Special != null && e.Special.Count > 0)
+                            {
+                                e.Special.ForEach(sp =>
+                                {
+                                    var s = $"{am}{sp}";
+                                    itemcode.Add(s);
+                                });
+                            }
+                            else
+                            {
+                                itemcode.Add(am);
+                            }
+                        }
                     });
-                });
+                }
+                #region MyRegion
+
+                //e.Prefix.ForEach(c =>
+                //{
+                //    var refix = c;
+                //    e.Series.ForEach(s =>
+                //    {
+                //        var series = $"{refix}-{s}";
+                //        //通道
+                //        passageway.ForEach(p =>
+                //        {
+                //            var pg = $"{series}{p}";
+                //            //额外通道 Tn n
+                //            catetory.ForEach(ct =>
+                //            {
+                //                var ca = $"{pg}{ct}";
+                //                for (int i = e.VoltsStart.Value; i <= e.VoltseEnd; i++)
+                //                {
+                //                    var v = $"{ca}-{i}V";
+                //                    for (int j = e.AmpsStart.Value; j <= e.AmpsEnd; j++)
+                //                    {
+                //                        var am = $"{v}{j}{e.CurrentUnit}";
+                //                        //夹具
+                //                        if (e.Fixture != null && e.Fixture.Count > 0)
+                //                        {
+                //                            e.Fixture.ForEach(fi =>
+                //                            {
+                //                                var ft = $"{am}-{fi}";
+                //                                itemcode.Add(ft);
+                //                                //后缀
+                //                                if (e.Special != null && e.Special.Count > 0)
+                //                                {
+                //                                    e.Special.ForEach(sp =>
+                //                                    {
+                //                                        var s = $"{ft}{sp}";
+                //                                        itemcode.Add(s);
+                //                                    });
+                //                                }
+                //                                else
+                //                                {
+                //                                    itemcode.Add(am);
+                //                                }
+                //                            });
+                //                        }
+                //                        else
+                //                        {
+                //                            //后缀
+                //                            if (e.Special != null && e.Special.Count > 0)
+                //                            {
+                //                                e.Special.ForEach(sp =>
+                //                                {
+                //                                    var s = $"{am}{sp}";
+                //                                    itemcode.Add(s);
+                //                                });
+                //                            }
+                //                            else
+                //                            {
+                //                                itemcode.Add(am);
+                //                            }
+                //                        }
+                //                    }
+                //                }
+                //            });
+                //        });
+                //    });
+                //});
                 //itemcode.Add(m.MaterialCode);
+                #endregion
                 #endregion
 
                 #region 是否批量，BOM有被使用为已批量
@@ -2526,5 +2619,52 @@ namespace OpenAuth.App.Material
 
         //}
         #endregion
+
+        public async Task MaterialSplit()
+        {
+            try
+            {
+                var oitm = await UnitWork.Find<store_oitm>(c => c.ItemCode.StartsWith("C") && c.sbo_id == Define.SBO_ID).Select(c => c.ItemCode).Distinct().ToListAsync();
+                List<MaterialRange> sp = new List<MaterialRange>();
+                foreach (var c in oitm)
+                {
+                    string? v = null, a = null;
+                    var unit = "";
+                    var aa = c.Split('-').Count() >= 3 ? c.Split('-')[2] : "";
+                    if (aa.Contains("V"))
+                    {
+                        v = aa.Substring(0, aa.IndexOf("V"));
+                    }
+                    if (aa.Contains("A"))
+                    {
+                        unit = "A";
+                        if (aa.Contains("mA"))
+                        {
+                            unit = "mA";
+                        }
+                        a = aa.Substring(aa.IndexOf("V") + 1, aa.IndexOf(unit) - aa.IndexOf("V") - 1);
+                    }
+                    sp.Add(new MaterialRange
+                    {
+                        Prefix = c.Split('-')[0],
+                        ItemCode = c,
+                        Volt = v,
+                        Amp = a,
+                        Unit = unit
+                    });
+                }
+                if (oitm.Count == sp.Count)
+                {
+
+                    await UnitWork.BatchAddAsync<MaterialRange, int>(sp.ToArray());
+                    await UnitWork.SaveAsync();
+                }
+            }
+            catch (Exception e)
+            {
+
+                throw e;
+            }
+        }
     }
 }

@@ -32,6 +32,7 @@ using NSAP.Entity;
 using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository;
 using System.Text.RegularExpressions;
+using Infrastructure.Excel;
 
 namespace OpenAuth.App
 {
@@ -46,6 +47,7 @@ namespace OpenAuth.App
         private readonly UserSignApp _userSignApp;
         private readonly ServiceOrderApp _serviceOrderApp;
         private static readonly string BaseCertDir = Path.Combine(Directory.GetCurrentDirectory(), "certs");
+        static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
         private static readonly Dictionary<int, double> PoorCoefficients = new Dictionary<int, double>()
         {
             { 2, 1.13 },
@@ -349,7 +351,7 @@ namespace OpenAuth.App
                 await UnitWork.DeleteAsync<NwcaliBaseInfo>(x => nwInfos.Select(n => n.Id).Contains(x.Id));
                 await UnitWork.DeleteAsync<Etalon>(x => nwInfos.Select(n => n.Id).Contains(x.NwcaliBaseInfoId));
                 await UnitWork.DeleteAsync<NwcaliPlcData>(x => nwInfos.Select(n => n.Id).Contains(x.NwcaliBaseInfoId));
-                await UnitWork.DeleteAsync<NwcaliTur>(x => nwInfos.Select(n => n.Id).Contains(x.NwcaliBaseInfoId));
+                await UnitWork.DeleteAsync<Repository.Domain.NwcaliTur>(x => nwInfos.Select(n => n.Id).Contains(x.NwcaliBaseInfoId));
                 await UnitWork.DeleteAsync<PcPlc>(x => nwInfos.Select(n => n.Id).Contains(x.NwcaliBaseInfoId));
 
                 await UnitWork.DeleteAsync<Certinfo>(x => certInfos.Select(c => c.Id).Contains(x.Id));
@@ -511,7 +513,7 @@ namespace OpenAuth.App
                                 });
                                 await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { ApprovalDirector = loginContext.User.Name, ApprovalDirectorId = loginContext.User.Id});
                                 await UnitWork.SaveAsync();
-                                await CreateNwcailFile(certNo);
+                                //await CreateNwcailFile(certNo);
                             }
                             #endregion
                             break;
@@ -570,6 +572,21 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 批量生成证书文件
+        /// </summary>
+        /// <param name="certNo"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> BatchCreateNwcailFile(List<string> certNo)
+        {
+            foreach (var item in certNo)
+            {
+                await CreateNwcailFile(item);
+            }
+            return new Infrastructure.Response();
+        }
+
+
+        /// <summary>
         /// 保存证书pdf
         /// </summary>
         /// <param name="certNo"></param>
@@ -579,34 +596,110 @@ namespace OpenAuth.App
             var baseInfo = await _nwcaliCertApp.GetInfo(certNo);
             if (baseInfo != null)
             {
-                var model = await BuildModel(baseInfo);
-                var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Header.html");
-                var text = System.IO.File.ReadAllText(url);
-                text = text.Replace("@Model.Data.BarCode", model.BarCode);
-                var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"Header{Guid.NewGuid()}.html");
-                System.IO.File.WriteAllText(tempUrl, text);
-                var footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Footer.html");
-                var datas = await ExportAllHandler.Exporterpdf(model, "Calibration Certificate.cshtml", pdf =>
+                try
                 {
-                    pdf.IsWriteHtml = true;
-                    pdf.PaperKind = PaperKind.A4;
-                    pdf.Orientation = Orientation.Portrait;
-                    pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
-                    pdf.FooterSettings = new FooterSettings() { FontSize = 6, Right = "Page [page] of [toPage] ", Line = false, Spacing = 2.812, HtmUrl = footerUrl };
-                });
-                System.IO.File.Delete(tempUrl);
-                var path= Path.Combine(BaseCertDir, certNo);
-                DirUtil.CheckOrCreateDir(path);
-                var fullpath = Path.Combine(path, certNo + ".pdf");
-                using (FileStream fs=new FileStream(fullpath, FileMode.Create))
-                {
-                    using (BinaryWriter bw = new BinaryWriter(fs))
+                    var folderYear = DateTime.Now.ToString("yyyy");
+                    var basePath = Path.Combine("D:\\nsap4file", "nwcail", folderYear, baseInfo.CertificateNumber);
+                    //if (!string.IsNullOrEmpty(baseInfo.CertPath))
+                    //{
+                    //    basePath = baseInfo.CertPath.Substring(0, baseInfo.CertPath.LastIndexOf('\\'));
+                    //}
+                    var model = await BuildModel(baseInfo);
+                    #region 生成英文版
+                    var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Header.html");
+                    var text = System.IO.File.ReadAllText(url);
+                    text = text.Replace("@Model.Data.BarCode", model.BarCode);
+                    var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"Header{Guid.NewGuid()}.html");
+                    System.IO.File.WriteAllText(tempUrl, text);
+                    var footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Footer.html");
+                    var datas = await ExportAllHandler.Exporterpdf(model, "Calibration Certificate.cshtml", pdf =>
                     {
-                        bw.Write(datas, 0, datas.Length);
+                        pdf.IsWriteHtml = true;
+                        pdf.PaperKind = PaperKind.A4;
+                        pdf.Orientation = Orientation.Portrait;
+                        pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                        pdf.FooterSettings = new FooterSettings() { FontSize = 6, Right = "Page [page] of [toPage] ", Line = false, Spacing = 2.812, HtmUrl = footerUrl };
+                    });
+                    System.IO.File.Delete(tempUrl);
+                    //var path = Path.Combine(BaseCertDir, certNo);
+                    DirUtil.CheckOrCreateDir(basePath);
+                    var fullpath = Path.Combine(basePath, $"{certNo}_EN" + ".pdf");
+                    using (FileStream fs = new FileStream(fullpath, FileMode.Create))
+                    {
+                        using (BinaryWriter bw = new BinaryWriter(fs))
+                        {
+                            bw.Write(datas, 0, datas.Length);
+                        }
                     }
+                    #endregion
+
+                    #region 生成中文版
+                    //获取委托单
+                    var entrustment = await GetEntrustment(model.CalibrationCertificate.TesterSn);
+                    model.CalibrationCertificate.EntrustedUnit = entrustment?.CertUnit;
+                    model.CalibrationCertificate.EntrustedUnitAdress = entrustment?.CertCountry + entrustment?.CertProvince + entrustment?.CertCity + entrustment?.CertAddress;
+                    //委托日期需小于校准日期
+                    if (entrustment != null && !string.IsNullOrWhiteSpace(entrustment.EntrustedDate.ToString()) && entrustment?.EntrustedDate > DateTime.Parse(model.CalibrationCertificate.CalibrationDate))
+                        entrustment.EntrustedDate = entrustment.EntrustedDate.Value.AddDays(-2);
+
+                    model.CalibrationCertificate.EntrustedDate = !string.IsNullOrWhiteSpace(entrustment?.EntrustedDate.ToString()) ? entrustment?.EntrustedDate.Value.ToString("yyyy年MM月dd日") : "";
+                    model.CalibrationCertificate.CalibrationDate = DateTime.Parse(model.CalibrationCertificate.CalibrationDate).ToString("yyyy年MM月dd日");
+                    var temp = Math.Round(Convert.ToDecimal(model.CalibrationCertificate.Temperature), 1);
+                    model.CalibrationCertificate.Temperature = temp.ToString("0.0");
+                    foreach (var item in model.MainStandardsUsed)
+                    {
+                        if (!string.IsNullOrWhiteSpace(item.DueDate))
+                            item.DueDate = DateTime.Parse(item.DueDate).ToString("yyyy-MM-dd");
+                        if (item.Name.Contains(","))
+                        {
+                            var split = item.Name.Split(",");
+                            //item.EnName = split[0];
+                            item.Name = split[0];
+                        }
+                        item.Characterisics = item.Characterisics.Replace("Urel", "<i>U</i><sub>rel</sub>").Replace("k=", "<i>k</i>=");
+                    }
+
+                    url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "CNAS Header.html");
+                    text = System.IO.File.ReadAllText(url);
+                    text = text.Replace("@Model.Data.BarCode", model.BarCode);
+                    tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"Header{Guid.NewGuid()}.html");
+                    System.IO.File.WriteAllText(tempUrl, text);
+                    footerUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "CNAS Footer.html");
+                    datas = await ExportAllHandler.Exporterpdf(model, "Calibration Certificate CNAS.cshtml", pdf =>
+                    {
+                        pdf.IsWriteHtml = true;
+                        pdf.PaperKind = PaperKind.A4;
+                        pdf.Orientation = Orientation.Portrait;
+                        pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };//2.812
+                        pdf.FooterSettings = new FooterSettings() { FontSize = 6, Right = "Page [page] of [toPage] ", Line = false, Spacing = 0, HtmUrl = footerUrl };
+                    });
+                    System.IO.File.Delete(tempUrl);
+                    DirUtil.CheckOrCreateDir(basePath);
+                    var fullPathCnas = Path.Combine(basePath, $"{certNo}_CNAS" + ".pdf");
+                    using (FileStream fs = new FileStream(fullPathCnas, FileMode.Create))
+                    {
+                        using (BinaryWriter bw = new BinaryWriter(fs))
+                        {
+                            bw.Write(datas, 0, datas.Length);
+                        }
+                    }
+                    #endregion
+
+                    await semaphoreSlim.WaitAsync();
+                    await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { PdfPath = fullpath, CNASPdfPath = fullPathCnas });
+                    //生成证书文件后删除校准数据
+                    await UnitWork.DeleteAsync<Etalon>(x => x.NwcaliBaseInfoId == baseInfo.Id);
+                    await UnitWork.DeleteAsync<NwcaliPlcData>(x => x.NwcaliBaseInfoId == baseInfo.Id);
+                    await UnitWork.DeleteAsync<Repository.Domain.NwcaliTur>(x => x.NwcaliBaseInfoId == baseInfo.Id);
+
+                    await UnitWork.SaveAsync();
+                    semaphoreSlim.Release();
                 }
-                await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { PdfPath=fullpath });
-                await UnitWork.SaveAsync();
+                catch (Exception e)
+                {
+
+                    throw e;
+                }
             }
         }
 
@@ -824,6 +917,151 @@ namespace OpenAuth.App
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// 重新生成证书数据
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<List<NwcaliBaseInfo>> ReFillNwcailData(string certno = "")
+        {
+            var nwcail = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.CertPath)).WhereIf(!string.IsNullOrWhiteSpace(certno), c => c.CertificateNumber == certno).Include(c => c.Etalons).ToListAsync();
+
+            foreach (var item in nwcail)
+            {
+                //被删除则新增
+                if (item.Etalons.Count == 0)
+                {
+                    var handler = new ExcelHandler(item.CertPath);
+
+                    var baseInfo = handler.GetBaseInfo<NwcaliBaseInfo>(sheet =>
+                    {
+                        var baseInfo = new NwcaliBaseInfo();
+                        var timeRow = sheet.GetRow(1);
+                        baseInfo.Time = DateTime.Parse(timeRow.GetCell(1).StringCellValue);
+                        var testIntervalRow = sheet.GetRow(30);
+                        baseInfo.TestInterval = testIntervalRow.GetCell(1).StringCellValue;
+                        #region 标准器设备信息
+                        var etalonsNameRow = sheet.GetRow(18);
+                        var etalonsCharacteristicsRow = sheet.GetRow(19);
+                        var etalonsAssetNoRow = sheet.GetRow(20);
+                        var etalonsCertificateNoRow = sheet.GetRow(22);
+                        var etalonsCalibrationEntity = sheet.GetRow(21);
+                        var etalonsDueDateRow = sheet.GetRow(23);
+                        for (int i = 1; i < etalonsNameRow.LastCellNum; i++)
+                        {
+                            if (string.IsNullOrWhiteSpace(etalonsNameRow.GetCell(i).StringCellValue))
+                                break;
+                            try
+                            {
+                                baseInfo.Etalons.Add(new Etalon
+                                {
+                                    NwcaliBaseInfoId = item.Id,
+                                    Name = etalonsNameRow.GetCell(i).StringCellValue,
+                                    Characteristics = etalonsCharacteristicsRow.GetCell(i).StringCellValue,
+                                    AssetNo = etalonsAssetNoRow.GetCell(i).StringCellValue,
+                                    CertificateNo = etalonsCertificateNoRow.GetCell(i).StringCellValue,
+                                    DueDate = etalonsDueDateRow.GetCell(i).StringCellValue,
+                                    CalibrationEntity = etalonsCalibrationEntity.GetCell(i).StringCellValue
+                                });
+                            }
+                            catch
+                            {
+                                break;
+                            }
+                        }
+                        #endregion
+
+                        #region 下位机
+                        var pclCommentRow = sheet.GetRow(31);
+                        var pclNoRow = sheet.GetRow(32);
+                        var pclGuidRow = sheet.GetRow(33);
+                        for (int i = 1; i < pclNoRow.LastCellNum; i++)
+                        {
+                            if (string.IsNullOrWhiteSpace(pclGuidRow.GetCell(i)?.StringCellValue))
+                                continue;
+                            try
+                            {
+                                baseInfo.PcPlcs.Add(new PcPlc
+                                {
+                                    Comment = pclCommentRow.GetCell(i).StringCellValue,
+                                    No = Convert.ToInt32(pclNoRow.GetCell(i).StringCellValue),
+                                    Guid = pclGuidRow.GetCell(i).StringCellValue,
+                                    CalibrationDate = baseInfo.Time,
+                                    ExpirationDate = DateTime.Parse(ConvertTestInterval(baseInfo.Time.Value.ToString(), baseInfo.TestInterval))
+                                });
+                            }
+                            catch(Exception ex)
+                            {
+                                break;
+                            }
+                        }
+                        #endregion
+                        return baseInfo;
+                    });
+
+                    var turV = handler.GetNwcaliTur("电压");
+                    var turA = handler.GetNwcaliTur("电流");
+                    var tv = turV.Select(v => new Repository.Domain.NwcaliTur { NwcaliBaseInfoId = item.Id, DataType = 1, Range = v.Range, TestPoint = v.TestPoint, Tur = v.Tur, UncertaintyContributors = v.UncertaintyContributors, SensitivityCoefficient = v.SensitivityCoefficient, Value = v.Value, Unit = v.Unit, Type = v.Type, Distribution = v.Distribution, Divisor = v.Divisor, StdUncertainty = v.StdUncertainty, DegreesOfFreedom = v.DegreesOfFreedom, SignificanceCheck = v.SignificanceCheck }).ToList();
+                    var ta = turA.Select(v => new Repository.Domain.NwcaliTur { NwcaliBaseInfoId = item.Id, DataType = 2, Range = v.Range, TestPoint = v.TestPoint, Tur = v.Tur, UncertaintyContributors = v.UncertaintyContributors, SensitivityCoefficient = v.SensitivityCoefficient, Value = v.Value, Unit = v.Unit, Type = v.Type, Distribution = v.Distribution, Divisor = v.Divisor, StdUncertainty = v.StdUncertainty, DegreesOfFreedom = v.DegreesOfFreedom, SignificanceCheck = v.SignificanceCheck }).ToList();
+                    baseInfo.NwcaliTurs.AddRange(tv);
+                    baseInfo.NwcaliTurs.AddRange(ta);
+
+                    try
+                    {
+                        foreach (var plc in baseInfo.PcPlcs)
+                        {
+                            var list = handler.GetNWCaliPLCData($"下位机{plc.No}");
+                            baseInfo.NwcaliPlcDatas.AddRange(list.Select(l => new NwcaliPlcData
+                            {
+                                NwcaliBaseInfoId = item.Id,
+                                PclNo = plc.No,
+                                DataType = 1,
+                                VerifyType = l.Verify_Type,
+                                VoltsorAmps = l.VoltsorAmps,
+                                Channel = l.Channel,
+                                Mode = l.Mode,
+                                Range = l.Range,
+                                Point = l.Point,
+                                CommandedValue = l.Commanded_Value,
+                                MeasuredValue = l.Measured_Value,
+                                Scale = l.Scale,
+                                StandardTotalU = l.Standard_total_U,
+                                StandardValue = l.Standard_Value
+                            }));
+                            var list2 = handler.GetNWCaliPLCRepetitiveMeasurementData($"下位机{plc.No}重复性测量");
+                            if (list2.Count > 0)
+                                baseInfo.NwcaliPlcDatas.AddRange(list2.Select(l => new NwcaliPlcData
+                                {
+                                    NwcaliBaseInfoId = item.Id,
+                                    PclNo = plc.No,
+                                    DataType = 2,
+                                    VerifyType = l.Verify_Type,
+                                    VoltsorAmps = l.VoltsorAmps,
+                                    Channel = l.Channel,
+                                    Mode = l.Mode,
+                                    Range = l.Range,
+                                    Point = l.Point,
+                                    CommandedValue = l.Commanded_Value,
+                                    MeasuredValue = l.Measured_Value,
+                                    Scale = l.Scale,
+                                    StandardTotalU = l.Standard_total_U,
+                                    StandardValue = l.Standard_Value
+                                }));
+                        }
+                        //await _nwcaliCertApp.AddAsync(baseInfo);
+                        await UnitWork.BatchAddAsync(baseInfo.Etalons.ToArray());
+                        await UnitWork.BatchAddAsync(baseInfo.NwcaliTurs.ToArray());
+                        await UnitWork.BatchAddAsync(baseInfo.NwcaliPlcDatas.ToArray());
+                        await UnitWork.SaveAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                    }
+                }
+            }
+            return nwcail;
         }
 
         /// <summary>
@@ -1447,7 +1685,7 @@ namespace OpenAuth.App
         /// <param name="turV">Tur电压数据</param>
         /// <param name="turA">Tur电流数据</param>
         /// <returns></returns>
-        public async Task<CertModel> BuildModel(NwcaliBaseInfo baseInfo)
+        private async Task<CertModel> BuildModel(NwcaliBaseInfo baseInfo, string type = "")
         {
             var list = new List<WordModel>();
             var model = new CertModel();
@@ -1481,7 +1719,8 @@ namespace OpenAuth.App
                     Characterisics = baseInfo.Etalons[i].Characteristics,
                     AssetNo = baseInfo.Etalons[i].AssetNo,
                     CertificateNo = baseInfo.Etalons[i].CertificateNo,
-                    DueDate = DateStringConverter(baseInfo.Etalons[i].DueDate)
+                    DueDate = DateStringConverter(baseInfo.Etalons[i].DueDate),
+                    CalibrationEntity = baseInfo.Etalons[i].CalibrationEntity
                 });
             }
             #endregion
@@ -1501,76 +1740,79 @@ namespace OpenAuth.App
             var cv = c.Select(c => c.CommandedValue).OrderBy(s => s).ToList();
             cv.Sort();
             var cscale = cv[(cv.Count - 1) / 2];
-            #region T.U.R. Table
-            //电压
-            var vPoint = turV.Select(v => v.TestPoint).Distinct().OrderBy(v => v).ToList();
-            var vPointIndex = (vPoint.Count - 1) / 2;
-            var vSpec = v.First().Scale * baseInfo.RatedAccuracyV * 1000;
-            var u95_1 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex - 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            var a = turV.Where(v => v.TestPoint == vPoint[vPointIndex]).ToList();
-            var u95_2 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            var u95_3 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex + 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            var tur_1 = (2 * vSpec / 1000) / (2 * u95_1);
-            var tur_2 = (2 * vSpec / 1000) / (2 * u95_2);
-            var tur_3 = (2 * vSpec / 1000) / (2 * u95_3);
-            model.TurTables.Add(new TurTable { Number = "1", Point = $"{vPoint[vPointIndex - 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_1.ToString("e3") + "V", TUR = tur_1.ToString("f2") });
-            model.TurTables.Add(new TurTable { Number = "2", Point = $"{vPoint[vPointIndex]}V", Spec = $"±{vSpec}mV", U95Standard = u95_2.ToString("e3") + "V", TUR = tur_2.ToString("f2") });
-            model.TurTables.Add(new TurTable { Number = "3", Point = $"{vPoint[vPointIndex + 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_3.ToString("e3") + "V", TUR = tur_3.ToString("f2") });
-            //电流
-            var cPoint = turA.Select(v => v.TestPoint).Distinct().OrderBy(v => v).ToList();
-            var cPointIndex = cPoint.IndexOf(cscale / 1000); //(cPoint.Count - 1) / 2;
-            var cSpec = c.First().Scale * baseInfo.RatedAccuracyC;
-            var U95_4turA = turA;
-            if (turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).ToList().Count > 2)
+            if (type != "cnas")
             {
-                U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
-                if (U95_4turA.Count > 2)
+                #region T.U.R. Table
+                //电压
+                var vPoint = turV.Select(v => v.TestPoint).Distinct().OrderBy(v => v).ToList();
+                var vPointIndex = (vPoint.Count - 1) / 2;
+                var vSpec = v.First().Scale * baseInfo.RatedAccuracyV * 1000;
+                var u95_1 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex - 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                var a = turV.Where(v => v.TestPoint == vPoint[vPointIndex]).ToList();
+                var u95_2 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                var u95_3 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex + 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                var tur_1 = (2 * vSpec / 1000) / (2 * u95_1);
+                var tur_2 = (2 * vSpec / 1000) / (2 * u95_2);
+                var tur_3 = (2 * vSpec / 1000) / (2 * u95_3);
+                model.TurTables.Add(new TurTable { Number = "1", Point = $"{vPoint[vPointIndex - 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_1.ToString("e3") + "V", TUR = tur_1.ToString("f2") });
+                model.TurTables.Add(new TurTable { Number = "2", Point = $"{vPoint[vPointIndex]}V", Spec = $"±{vSpec}mV", U95Standard = u95_2.ToString("e3") + "V", TUR = tur_2.ToString("f2") });
+                model.TurTables.Add(new TurTable { Number = "3", Point = $"{vPoint[vPointIndex + 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_3.ToString("e3") + "V", TUR = tur_3.ToString("f2") });
+                //电流
+                var cPoint = turA.Select(v => v.TestPoint).Distinct().OrderBy(v => v).ToList();
+                var cPointIndex = cPoint.IndexOf(cscale / 1000); //(cPoint.Count - 1) / 2;
+                var cSpec = c.First().Scale * baseInfo.RatedAccuracyC;
+                var U95_4turA = turA;
+                if (turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).ToList().Count > 2)
                 {
-                    U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                    U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
+                    if (U95_4turA.Count > 2)
+                    {
+                        U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                    }
                 }
-            }
-            else
-            {
-                U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).ToList();
-            }
-            var u95_4 = 2 * Math.Sqrt(U95_4turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            var U95_5turA = turA;
-            if (turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).ToList().Count > 2)
-            {
-                U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
-                if (U95_5turA.Count > 2)
+                else
                 {
-                    U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                    U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).ToList();
                 }
-            }
-            else
-            {
-                U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).ToList();
-            }
-            var u95_5 = 2 * Math.Sqrt(U95_5turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            var U95_6turA = turA;
-            if (turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).ToList().Count > 2)
-            {
-                U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
-                if (U95_6turA.Count > 2)
+                var u95_4 = 2 * Math.Sqrt(U95_4turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                var U95_5turA = turA;
+                if (turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).ToList().Count > 2)
                 {
-                    U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                    U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
+                    if (U95_5turA.Count > 2)
+                    {
+                        U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                    }
                 }
-            }
-            else
-            {
-                U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).ToList();
-            }
-            var u95_6 = 2 * Math.Sqrt(U95_6turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            var tur_4 = (2 * cSpec) / (2 * u95_4 * 1000);
-            var tur_5 = (2 * cSpec) / (2 * u95_5 * 1000);
-            var tur_6 = (2 * cSpec) / (2 * u95_6 * 1000);
+                else
+                {
+                    U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).ToList();
+                }
+                var u95_5 = 2 * Math.Sqrt(U95_5turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                var U95_6turA = turA;
+                if (turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).ToList().Count > 2)
+                {
+                    U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
+                    if (U95_6turA.Count > 2)
+                    {
+                        U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                    }
+                }
+                else
+                {
+                    U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).ToList();
+                }
+                var u95_6 = 2 * Math.Sqrt(U95_6turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                var tur_4 = (2 * cSpec) / (2 * u95_4 * 1000);
+                var tur_5 = (2 * cSpec) / (2 * u95_5 * 1000);
+                var tur_6 = (2 * cSpec) / (2 * u95_6 * 1000);
 
-            model.TurTables.Add(new TurTable { Number = "4", Point = $"{cPoint[cPointIndex - 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_4.ToString("e3") + "A", TUR = tur_4.ToString("f2") });
-            model.TurTables.Add(new TurTable { Number = "5", Point = $"{cPoint[cPointIndex]}A", Spec = $"±{cSpec}mA", U95Standard = u95_5.ToString("e3") + "A", TUR = tur_5.ToString("f2") });
-            model.TurTables.Add(new TurTable { Number = "6", Point = $"{cPoint[cPointIndex + 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_6.ToString("e3") + "A", TUR = tur_6.ToString("f2") });
+                model.TurTables.Add(new TurTable { Number = "4", Point = $"{cPoint[cPointIndex - 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_4.ToString("e3") + "A", TUR = tur_4.ToString("f2") });
+                model.TurTables.Add(new TurTable { Number = "5", Point = $"{cPoint[cPointIndex]}A", Spec = $"±{cSpec}mA", U95Standard = u95_5.ToString("e3") + "A", TUR = tur_5.ToString("f2") });
+                model.TurTables.Add(new TurTable { Number = "6", Point = $"{cPoint[cPointIndex + 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_6.ToString("e3") + "A", TUR = tur_6.ToString("f2") });
 
-            #endregion
+                #endregion
+            }
 
             #region Uncertainty Budget Table
             #region Voltage
@@ -1709,13 +1951,14 @@ namespace OpenAuth.App
                 int l = 1;
                 foreach (var item in plcGroupData)
                 {
-                    var data = item.Where(p => p.VoltsorAmps.Equals("Volts") && p.Mode.Equals(mode) && p.VerifyType.Equals("Post-Calibration")).GroupBy(d => d.Channel);
+                    var data = item.Where(p => p.VoltsorAmps.Equals("Volts") && p.Mode.Equals(mode) && p.VerifyType.Equals("Post-Calibration")).GroupBy(d => d.Channel).ToList();
                     foreach (var item2 in data)
                     {
                         var cvDataList = item2.OrderBy(dd => dd.CommandedValue).ToList();
                         foreach (var cvData in cvDataList)
                         {
-                            var cvCHH = $"{l}-{cvData.Channel}";
+                            //var cvCHH = $"{l}-{cvData.Channel}";
+                            var cvCHH = $"{item.Key}-{cvData.Channel}";
                             var cvRange = cvData.Scale;
                             var cvIndication = cvData.MeasuredValue;
                             var cvMeasuredValue = cvData.StandardValue;
@@ -1767,6 +2010,12 @@ namespace OpenAuth.App
                                     var accpetedTolerance = (cvData.Scale * baseInfo.RatedAccuracyV * 1000 - cvUncertainty) * m2;
                                     cvAcceptance = accpetedTolerance;
                                 }
+                            }
+                            else//默认为0的处理方法
+                            {
+
+                                var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyV * 1000;
+                                cvAcceptance = accpetedTolerance;
                             }
                             //约分
                             //var (IndicationReduce, MeasuredValueReduce, ErrorReduce, AcceptanceReduce, UncertaintyReduce) = ReduceVoltage(cvIndication, cvMeasuredValue, cvError, cvAcceptance, cvUncertainty);
@@ -1835,10 +2084,25 @@ namespace OpenAuth.App
                                     }
                                 }
                             }
+                            else//默认为0的处理方法
+                            {
+
+                                if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
+                                {
+                                    cvConclustion = "P";
+                                }
+                                else
+                                {
+                                    cvConclustion = "F";
+                                }
+                            }
+
                             if (mode.Equals("Charge"))
                             {
                                 model.ChargingVoltage.Add(new DataSheet
                                 {
+                                    Sort1 = item.Key,
+                                    Sort2 = cvData.Channel,
                                     Channel = cvCHH,
                                     Range = cvRange.ToString(),
                                     Indication = IndicationReduce,
@@ -1853,6 +2117,8 @@ namespace OpenAuth.App
                             {
                                 model.DischargingVoltage.Add(new DataSheet
                                 {
+                                    Sort1 = item.Key,
+                                    Sort2 = cvData.Channel,
                                     Channel = cvCHH,
                                     Range = cvRange.ToString(),
                                     Indication = IndicationReduce,
@@ -1881,7 +2147,8 @@ namespace OpenAuth.App
                         var cvDataList = item2.OrderBy(dd => dd.Scale).ThenBy(dd => dd.CommandedValue).ToList();
                         foreach (var cvData in cvDataList)
                         {
-                            var CHH = $"{l}-{cvData.Channel}";
+                            //var CHH = $"{l}-{cvData.Channel}";
+                            var CHH = $"{item.Key}-{cvData.Channel}";
                             var Range = cvData.Scale;
                             var Indication = cvData.MeasuredValue;
                             var MeasuredValue = cvData.StandardValue;
@@ -1934,6 +2201,11 @@ namespace OpenAuth.App
                                     var accpetedTolerance = (cvData.Scale * baseInfo.RatedAccuracyC - Uncertainty) * m2;
                                     Acceptance = accpetedTolerance;
                                 }
+                            }
+                            else//默认为0的处理方法
+                            {
+                                var accpetedTolerance = cvData.Scale * baseInfo.RatedAccuracyC;
+                                Acceptance = accpetedTolerance;
                             }
                             //约分
                             //var (IndicationReduce, MeasuredValueReduce, ErrorReduce, AcceptanceReduce, UncertaintyReduce) = ReduceCurrent(Math.Abs(Indication), Math.Abs(MeasuredValue), Error, Acceptance, Uncertainty);
@@ -2003,11 +2275,24 @@ namespace OpenAuth.App
                                     }
                                 }
                             }
+                            else//默认为0的处理方法
+                            {
+                                if (Math.Abs(double.Parse(ErrorReduce)) <= Math.Abs(double.Parse(AcceptanceReduce)))
+                                {
+                                    Conclustion = "P";
+                                }
+                                else
+                                {
+                                    Conclustion = "F";
+                                }
+                            }
 
                             if (mode.Equals("Charge"))
                             {
                                 model.ChargingCurrent.Add(new DataSheet
                                 {
+                                    Sort1 = item.Key,
+                                    Sort2 = cvData.Channel,
                                     Channel = CHH,
                                     Range = baseInfo.TesterModel.Contains("mA") ? Range.ToString() : ((double)Range / 1000).ToString(),
                                     Indication = IndicationReduce,
@@ -2022,6 +2307,8 @@ namespace OpenAuth.App
                             {
                                 model.DischargingCurrent.Add(new DataSheet
                                 {
+                                    Sort1 = item.Key,
+                                    Sort2 = cvData.Channel,
                                     Channel = CHH,
                                     Range = baseInfo.TesterModel.Contains("mA") ? Range.ToString() : ((double)Range / 1000).ToString(),
                                     Indication = IndicationReduce,
@@ -2043,22 +2330,22 @@ namespace OpenAuth.App
 
             #region Charging Voltage
             CalculateVoltage("Charge", 8, int.Parse(CategoryObj.DtValue));
-            model.ChargingVoltage = model.ChargingVoltage.OrderBy(s => s.Channel).ToList();
+            model.ChargingVoltage = model.ChargingVoltage.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
             #endregion
 
             #region Discharging Voltage
             CalculateVoltage("DisCharge", 9, int.Parse(CategoryObj.DtValue));
-            model.DischargingVoltage = model.DischargingVoltage.OrderBy(s => s.Channel).ToList();
+            model.DischargingVoltage = model.DischargingVoltage.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
             #endregion
 
             #region Charging Current
             CalculateCurrent("Charge", 10, int.Parse(CategoryObj.Description), int.Parse(CategoryObj.DtCode));
-            model.ChargingCurrent = model.ChargingCurrent.OrderBy(s => s.Channel).ToList();
+            model.ChargingCurrent = model.ChargingCurrent.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
             #endregion
 
             #region Discharging Current
             CalculateCurrent("DisCharge", 10, int.Parse(CategoryObj.Description), int.Parse(CategoryObj.DtCode));
-            model.DischargingCurrent = model.DischargingCurrent.OrderBy(s => s.Channel).ToList();
+            model.DischargingCurrent = model.DischargingCurrent.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
             #endregion
 
 

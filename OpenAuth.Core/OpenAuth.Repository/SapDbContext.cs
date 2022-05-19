@@ -37,6 +37,7 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<OCST>().HasKey(o => new { o.Code, o.Country });
             modelBuilder.Entity<OCPR>().HasKey(o => o.CntctCode);
             modelBuilder.Entity<CRD1>().HasKey(o => new { o.CardCode,o.Address});
+            modelBuilder.Entity<ACRD>().HasKey(o => new { o.CardCode, o.LogInstanc });
             #endregion
             #region 序列号
             modelBuilder.Entity<OINS>().HasKey(o => o.insID);
@@ -136,7 +137,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<ACR7> Acr7s { get; set; }
         //public virtual DbSet<ACRB> Acrbs { get; set; }
         //public virtual DbSet<ACRC> Acrcs { get; set; }
-        //public virtual DbSet<ACRD> Acrds { get; set; }
+        public virtual DbSet<ACRD> Acrds { get; set; }
         //public virtual DbSet<ACS1> Acs1s { get; set; }
         //public virtual DbSet<ACT1> Act1s { get; set; }
         //public virtual DbSet<ACT2> Act2s { get; set; }
@@ -1531,7 +1532,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<OQAG> Oqags { get; set; }
         //public virtual DbSet<OQCN> Oqcns { get; set; }
         //public virtual DbSet<OQUE> Oques { get; set; }
-        //public virtual DbSet<OQUT> Oquts { get; set; }
+        public virtual DbSet<OQUT> Oquts { get; set; }
         //public virtual DbSet<OQWZ> Oqwzs { get; set; }
         //public virtual DbSet<ORCI> Orcis { get; set; }
         //public virtual DbSet<ORCJ> Orcjs { get; set; }

@@ -1506,6 +1506,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromTheme), q => q.FromTheme.Contains(req.QryFromTheme))
                 .WhereIf(req.CompleteDate != null, q => q.CompleteDate > req.CompleteDate)
                 .WhereIf(req.EndCompleteDate != null, q => q.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryMaterialCode), q => q.MaterialCode.Contains(req.QryMaterialCode))
                 .OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
 
             var query = UnitWork.Find<ServiceOrder>(null).Include(s => s.ServiceWorkOrders)
@@ -2700,19 +2701,19 @@ namespace OpenAuth.App
             }).OrderByDescending(s => s.ServiceCnt).Skip(0).Take(20).ToListAsync();
             resultlist.Add(new ServerOrderStatListResp { StatType = "SalesMan", StatList = list2 });
 
-            var problemTypes = await query.Select(s => s.ServiceWorkOrders.Select(s => s.ProblemType).ToList()).ToListAsync();
-            var l3 = new List<ProblemType>();
-            foreach (var problemType in problemTypes)
-            {
-                l3.AddRange(problemType);
-            }
-            var list3 = l3.Where(g => g != null).GroupBy(g => new { g.Id, g.Name }).Select(q => new ServiceOrderReportResp
-            {
-                StatId = q.Key.Id,
-                StatName = q.Key.Name,
-                ServiceCnt = q.Count()
-            }).OrderByDescending(s => s.ServiceCnt).Skip(0).Take(20).ToList();
-            resultlist.Add(new ServerOrderStatListResp { StatType = "ProblemType", StatList = list3 });
+            //var problemTypes = await query.Select(s => s.ServiceWorkOrders.Select(s => s.ProblemType).ToList()).ToListAsync();
+            //var l3 = new List<ProblemType>();
+            //foreach (var problemType in problemTypes)
+            //{
+            //    l3.AddRange(problemType);
+            //}
+            //var list3 = l3.Where(g => g != null).GroupBy(g => new { g.Id, g.Name }).Select(q => new ServiceOrderReportResp
+            //{
+            //    StatId = q.Key.Id,
+            //    StatName = q.Key.Name,
+            //    ServiceCnt = q.Count()
+            //}).OrderByDescending(s => s.ServiceCnt).Skip(0).Take(20).ToList();
+            //resultlist.Add(new ServerOrderStatListResp { StatType = "ProblemType", StatList = list3 });
 
             var list4 = await query.Where(g => !string.IsNullOrWhiteSpace(g.RecepUserName)).GroupBy(g => new { g.RecepUserId, g.RecepUserName }).Select(q => new ServiceOrderReportResp
             {
@@ -3377,6 +3378,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromTheme), q => q.FromTheme.Contains(req.QryFromTheme))
                 .WhereIf(req.CompleteDate != null, q => q.CompleteDate > req.CompleteDate)
                 .WhereIf(req.EndCompleteDate != null, q => q.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.QryMaterialCode), q => q.MaterialCode.Contains(req.QryMaterialCode))
                 .OrderBy(s => s.CreateTime).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
 
             var query = UnitWork.Find<ServiceOrder>(null)
@@ -6724,7 +6726,7 @@ namespace OpenAuth.App
             //3.取出nSAP用户与APP用户关联的用户信息（角色为技术员/售后主管）
             var tUsers = await UnitWork.Find<AppUserMap>(u => (u.AppUserRole == 1 || u.AppUserRole == 2) && req.TechnicianId > 0 ? u.AppUserId != req.TechnicianId : true).ToListAsync();
             //4.获取定位信息（登录APP时保存的位置信息）
-            var locations = (await UnitWork.Find<RealTimeLocation>(null).OrderByDescending(o => o.CreateTime).ToListAsync()).GroupBy(g => g.AppUserId).Select(s => s.First());
+            //var locations = (await UnitWork.Find<RealTimeLocation>(null).OrderByDescending(o => o.CreateTime).ToListAsync()).GroupBy(g => g.AppUserId).Select(s => s.First());
             //5.根据组织信息获取组织下的所有用户Id集合
             var userIds = _revelanceApp.Get(Define.USERORG, false, orgs);
             //6.取得相关用户信息
@@ -6750,7 +6752,10 @@ namespace OpenAuth.App
                 var ids = userlist.Intersect(tUsers.Select(u => u.UserID));
                 var users = await UnitWork.Find<User>(u => ids.Contains(u.Id)).WhereIf(!string.IsNullOrEmpty(req.key), u => u.Name.Contains(req.key)).ToListAsync();
                 var us = users.Select(u => new { u.Name, AppUserId = tUsers.FirstOrDefault(a => a.UserID.Equals(u.Id)).AppUserId, u.Id });
+                var appUser = us.Select(c => c.AppUserId).ToList();
                 var appUserIds = tUsers.Where(u => userIds.Contains(u.UserID)).Select(u => u.AppUserId).ToList();
+
+                var locations = (await UnitWork.Find<RealTimeLocation>(c => appUser.Contains(c.AppUserId) && c.CreateTime >= DateTime.Now.AddDays(-7) && c.CreateTime <= DateTime.Now).ToListAsync()).GroupBy(c => c.AppUserId).Select(c => c.OrderByDescending(o => o.CreateTime).First()).ToList();
 
                 var userCount = await UnitWork.Find<ServiceWorkOrder>(s => appUserIds.Contains(s.CurrentUserId) && s.Status.Value < 7)
                     .Select(s => new { s.CurrentUserId, s.ServiceOrderId }).Distinct().GroupBy(s => s.CurrentUserId)

@@ -30,7 +30,7 @@ namespace OpenAuth.Repository.Domain
         public virtual CustomerLimit CustomerLimit { get; set; }
 
         /// <summary>
-        /// 客户类型
+        /// 客户类型:1-未报价客户 2-已成交客户
         /// </summary>
         [Description("客户类型")]
         [Column("Customer_Type")]

@@ -24,6 +24,7 @@ namespace OpenAuth.Repository
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //当主键为联合主键时，需要把这里的内容拷贝到对应的位置
+            modelBuilder.Entity<MaterialRange>().HasKey(s => s.ItemCode);
         }
         public virtual DbSet<MaterialType> Materialtypes { get; set; }
         public virtual DbSet<ServiceOins> ServiceOins { get; set; }
@@ -74,7 +75,10 @@ namespace OpenAuth.Repository
         public virtual DbSet<InternalContactDeptInfo> InternalContactDeptInfos { get; set; }
         public virtual DbSet<MaterialReplaceRecord> MaterialReplaceRecords { get; set; }
         public virtual DbSet<InternalContactMaterial> InternalContactMaterials { get; set; }
+        public virtual DbSet<InternalContactEmailLog> InternalContactEmailLogs { get; set; }
         public virtual DbSet<CommonUsedMaterial> CommonUsedMaterials { get; set; }
+        public virtual DbSet<MaterialRange> MaterialRanges { get; set; }
+
 
         #region 中位机和下位机
         public virtual DbSet<ZWJSoftwareVersion> ZWJSoftwareVersions { get; set; }

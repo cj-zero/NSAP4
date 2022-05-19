@@ -1109,5 +1109,25 @@ namespace OpenAuth.Repository.Domain
         /// 所属行业(还有一些字段是数据库有的,实体没有)
         /// </summary>
         public string U_CompSector { get; set; }
+
+        /// <summary>
+        /// 贸易类型
+        /// </summary>
+        public string U_TradeType { get; set; }
+
+        /// <summary>
+        /// 客户来源
+        /// </summary>
+        public string U_ClientSource { get; set; }
+
+        /// <summary>
+        /// 客户类型
+        /// </summary>
+        public string U_CardTypeStr { get; set; }
+
+        /// <summary>
+        /// 人员规模
+        /// </summary>
+        public string U_StaffScale { get; set; }
     }
 }

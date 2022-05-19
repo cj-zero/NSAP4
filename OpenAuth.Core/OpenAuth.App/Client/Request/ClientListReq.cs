@@ -11,6 +11,11 @@ namespace OpenAuth.App.Client.Request
         public string query { get; set; }
         public string sortname { get; set; }
         public string sortorder { get; set; }
+
+        /// <summary>
+        /// 标签：0-全部,1-未报价,2-已成交,3-公海领取,4-即将掉入公海
+        /// </summary>
+        public string Label { get; set; }
     }
     /// <summary>
     /// 查询所有技术员model

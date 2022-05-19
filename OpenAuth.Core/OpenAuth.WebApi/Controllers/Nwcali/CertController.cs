@@ -243,6 +243,18 @@ namespace OpenAuth.WebApi.Controllers
                 }
                 baseInfo.FlowInstanceId = await CreateFlow(baseInfo.CertificateNumber);
                 await _nwcaliCertApp.AddAsync(baseInfo);
+                //保存文件
+                var folderYear = DateTime.Now.ToString("yyyy");
+                var fileExtension = Path.GetExtension(file.FileName);
+                var basePath = Path.Combine("D:\\nsap4file", "nwcail", folderYear, baseInfo.CertificateNumber);
+                var savePath = Path.Combine(basePath, $"{baseInfo.CertificateNumber}{fileExtension}");
+                DirUtil.CheckOrCreateDir(basePath);
+                using (var fs = new FileStream(savePath, FileMode.Create))
+                {
+                    file.CopyTo(fs);
+                    fs.Flush();
+                }
+                await _nwcaliCertApp.UpdateFilePath(baseInfo.CertificateNumber, savePath);
                 return new Response<bool>()
                 {
                     Result = true
@@ -534,12 +546,12 @@ namespace OpenAuth.WebApi.Controllers
             var baseInfo = await _nwcaliCertApp.GetInfo(serialNumber);
             if (baseInfo != null)
             {
-                //if (!string.IsNullOrWhiteSpace(baseInfo.PdfPath))
-                //{
-                //    var filestream = new FileStream(baseInfo.PdfPath, FileMode.Open);
-                //    return File(filestream, "application/pdf");
-                //}
-                var model = await BuildModel(baseInfo);
+                if (!string.IsNullOrWhiteSpace(baseInfo.CNASPdfPath))
+                {
+                    var filestream = new FileStream(baseInfo.CNASPdfPath, FileMode.Open);
+                    return File(filestream, "application/pdf");
+                }
+                var model = await BuildModel(baseInfo, "cnas");
                 //获取委托单
                 var entrustment = await _certinfoApp.GetEntrustment(model.CalibrationCertificate.TesterSn);
                 model.CalibrationCertificate.EntrustedUnit = entrustment?.CertUnit;
@@ -669,7 +681,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="turV">Tur电压数据</param>
         /// <param name="turA">Tur电流数据</param>
         /// <returns></returns>
-        private async Task<CertModel> BuildModel(NwcaliBaseInfo baseInfo)
+        private async Task<CertModel> BuildModel(NwcaliBaseInfo baseInfo,string type="")
         {
             var list = new List<WordModel>();
             var model = new CertModel();
@@ -724,76 +736,79 @@ namespace OpenAuth.WebApi.Controllers
             var cv = c.Select(c => c.CommandedValue).OrderBy(s => s).ToList();
             cv.Sort();
             var cscale = cv[(cv.Count - 1) / 2];
-            #region T.U.R. Table
-            //电压
-            var vPoint = turV.Select(v => v.TestPoint).Distinct().OrderBy(v => v).ToList();
-            var vPointIndex = (vPoint.Count - 1) / 2;
-            var vSpec = v.First().Scale * baseInfo.RatedAccuracyV * 1000;
-            var u95_1 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex - 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            var a = turV.Where(v => v.TestPoint == vPoint[vPointIndex]).ToList();
-            var u95_2 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            var u95_3 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex + 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            var tur_1 = (2 * vSpec / 1000) / (2 * u95_1);
-            var tur_2 = (2 * vSpec / 1000) / (2 * u95_2);
-            var tur_3 = (2 * vSpec / 1000) / (2 * u95_3);
-            model.TurTables.Add(new TurTable { Number = "1", Point = $"{vPoint[vPointIndex - 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_1.ToString("e3") + "V", TUR = tur_1.ToString("f2") });
-            model.TurTables.Add(new TurTable { Number = "2", Point = $"{vPoint[vPointIndex]}V", Spec = $"±{vSpec}mV", U95Standard = u95_2.ToString("e3") + "V", TUR = tur_2.ToString("f2") });
-            model.TurTables.Add(new TurTable { Number = "3", Point = $"{vPoint[vPointIndex + 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_3.ToString("e3") + "V", TUR = tur_3.ToString("f2") });
-            //电流
-            var cPoint = turA.Select(v => v.TestPoint).Distinct().OrderBy(v => v).ToList();
-            var cPointIndex = cPoint.IndexOf(cscale / 1000); //(cPoint.Count - 1) / 2;
-            var cSpec = c.First().Scale * baseInfo.RatedAccuracyC;
-            var U95_4turA = turA;
-            if (turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).ToList().Count > 2)
+            if (type != "cnas")
             {
-                U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
-                if (U95_4turA.Count > 2)
+                #region T.U.R. Table
+                //电压
+                var vPoint = turV.Select(v => v.TestPoint).Distinct().OrderBy(v => v).ToList();
+                var vPointIndex = (vPoint.Count - 1) / 2;
+                var vSpec = v.First().Scale * baseInfo.RatedAccuracyV * 1000;
+                var u95_1 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex - 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                var a = turV.Where(v => v.TestPoint == vPoint[vPointIndex]).ToList();
+                var u95_2 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                var u95_3 = 2 * Math.Sqrt(turV.Where(v => v.TestPoint == vPoint[vPointIndex + 1]).Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                var tur_1 = (2 * vSpec / 1000) / (2 * u95_1);
+                var tur_2 = (2 * vSpec / 1000) / (2 * u95_2);
+                var tur_3 = (2 * vSpec / 1000) / (2 * u95_3);
+                model.TurTables.Add(new TurTable { Number = "1", Point = $"{vPoint[vPointIndex - 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_1.ToString("e3") + "V", TUR = tur_1.ToString("f2") });
+                model.TurTables.Add(new TurTable { Number = "2", Point = $"{vPoint[vPointIndex]}V", Spec = $"±{vSpec}mV", U95Standard = u95_2.ToString("e3") + "V", TUR = tur_2.ToString("f2") });
+                model.TurTables.Add(new TurTable { Number = "3", Point = $"{vPoint[vPointIndex + 1]}V", Spec = $"±{vSpec}mV", U95Standard = u95_3.ToString("e3") + "V", TUR = tur_3.ToString("f2") });
+                //电流
+                var cPoint = turA.Select(v => v.TestPoint).Distinct().OrderBy(v => v).ToList();
+                var cPointIndex = cPoint.IndexOf(cscale / 1000); //(cPoint.Count - 1) / 2;
+                var cSpec = c.First().Scale * baseInfo.RatedAccuracyC;
+                var U95_4turA = turA;
+                if (turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).ToList().Count > 2)
                 {
-                    U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                    U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
+                    if (U95_4turA.Count > 2)
+                    {
+                        U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                    }
                 }
-            }
-            else
-            {
-                U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).ToList();
-            }
-            var u95_4 = 2 * Math.Sqrt(U95_4turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            var U95_5turA = turA;
-            if (turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).ToList().Count > 2)
-            {
-                U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
-                if (U95_5turA.Count > 2)
+                else
                 {
-                    U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                    U95_4turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex - 1] && v.Tur != 0).ToList();
                 }
-            }
-            else
-            {
-                U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).ToList();
-            }
-            var u95_5 = 2 * Math.Sqrt(U95_5turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            var U95_6turA = turA;
-            if (turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).ToList().Count > 2)
-            {
-                U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
-                if (U95_6turA.Count > 2)
+                var u95_4 = 2 * Math.Sqrt(U95_4turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                var U95_5turA = turA;
+                if (turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).ToList().Count > 2)
                 {
-                    U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                    U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
+                    if (U95_5turA.Count > 2)
+                    {
+                        U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                    }
                 }
-            }
-            else
-            {
-                U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).ToList();
-            }
-            var u95_6 = 2 * Math.Sqrt(U95_6turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
-            var tur_4 = (2 * cSpec) / (2 * u95_4 * 1000);
-            var tur_5 = (2 * cSpec) / (2 * u95_5 * 1000);
-            var tur_6 = (2 * cSpec) / (2 * u95_6 * 1000);
+                else
+                {
+                    U95_5turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex] && v.Tur != 0).ToList();
+                }
+                var u95_5 = 2 * Math.Sqrt(U95_5turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                var U95_6turA = turA;
+                if (turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).ToList().Count > 2)
+                {
+                    U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).GroupBy(t => t.UncertaintyContributors).Select(t => t.First()).ToList();
+                    if (U95_6turA.Count > 2)
+                    {
+                        U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).OrderBy(t => t.Range).Take(2).ToList();
+                    }
+                }
+                else
+                {
+                    U95_6turA = turA.Where(v => v.TestPoint == cPoint[cPointIndex + 1] && v.Tur != 0).ToList();
+                }
+                var u95_6 = 2 * Math.Sqrt(U95_6turA.Sum(v => Math.Pow(v.StdUncertainty, 2)));
+                var tur_4 = (2 * cSpec) / (2 * u95_4 * 1000);
+                var tur_5 = (2 * cSpec) / (2 * u95_5 * 1000);
+                var tur_6 = (2 * cSpec) / (2 * u95_6 * 1000);
 
-            model.TurTables.Add(new TurTable { Number = "4", Point = $"{cPoint[cPointIndex - 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_4.ToString("e3") + "A", TUR = tur_4.ToString("f2") });
-            model.TurTables.Add(new TurTable { Number = "5", Point = $"{cPoint[cPointIndex]}A", Spec = $"±{cSpec}mA", U95Standard = u95_5.ToString("e3") + "A", TUR = tur_5.ToString("f2") });
-            model.TurTables.Add(new TurTable { Number = "6", Point = $"{cPoint[cPointIndex + 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_6.ToString("e3") + "A", TUR = tur_6.ToString("f2") });
+                model.TurTables.Add(new TurTable { Number = "4", Point = $"{cPoint[cPointIndex - 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_4.ToString("e3") + "A", TUR = tur_4.ToString("f2") });
+                model.TurTables.Add(new TurTable { Number = "5", Point = $"{cPoint[cPointIndex]}A", Spec = $"±{cSpec}mA", U95Standard = u95_5.ToString("e3") + "A", TUR = tur_5.ToString("f2") });
+                model.TurTables.Add(new TurTable { Number = "6", Point = $"{cPoint[cPointIndex + 1]}A", Spec = $"±{cSpec}mA", U95Standard = u95_6.ToString("e3") + "A", TUR = tur_6.ToString("f2") });
 
-            #endregion
+                #endregion
+            }
 
             #region Uncertainty Budget Table
             #region Voltage

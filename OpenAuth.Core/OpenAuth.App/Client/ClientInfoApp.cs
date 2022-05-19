@@ -23,6 +23,11 @@ using clientOCPR = NSAP.Entity.Client.clientOCPR;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Serve;
 using clientAcct1 = NSAP.Entity.Client.clientAcct1;
+using OpenAuth.Repository.Domain.Customer;
+using Microsoft.EntityFrameworkCore;
+using OpenAuth.App.Response;
+using OpenAuth.Repository.Domain.Sap;
+using OpenAuth.App.Client.Response;
 
 namespace OpenAuth.App.Client
 {
@@ -129,7 +134,7 @@ namespace OpenAuth.App.Client
         /// <summary>
         /// 查询列表
         /// </summary>
-        public DataTable SelectClientList(int limit, int page, string query, string sortname, string sortorder, int sboid, int userId, bool rIsViewSales, bool rIsViewSelf, bool rIsViewSelfDepartment, bool rIsViewFull, int depID, out int rowCount)
+        public DataTable SelectClientList(int limit, int page, string query, string sortname, string sortorder, int sboid, int userId, bool rIsViewSales, bool rIsViewSelf, bool rIsViewSelfDepartment, bool rIsViewFull, int depID, string label,out int rowCount)
         {
             bool IsSaler = false, IsPurchase = false, IsTech = false, IsClerk = false;//业务员，采购员，技术员，文员
             string rSalCode = GetUserInfoById(sboid.ToString(), userId.ToString(), "1");
@@ -306,6 +311,64 @@ namespace OpenAuth.App.Client
                 tableName.Append("LEFT JOIN OHEM E ON E.empID=A.DfTcnician ");
                 tableName.Append("LEFT JOIN OCRY F ON F.Code=A.Country ");
                 tableName.Append("LEFT JOIN OCST G ON G.Code=A.State1 ");
+
+                //筛选标签
+                if (!string.IsNullOrWhiteSpace(label))
+                {
+                    //全部客户
+                    if (label == "0") { }
+                    //未报价客户
+                    else if (label == "1") {
+                        //在报价单中不存在的客户
+                        tableName.Append(" LEFT JOIN OQUT AS q on A.CardCode = q.CardCode ");
+                        tableName.Append(" WHERE q.CardCode IS NULL ");
+                    }
+                    //已成交客户
+                    else if (label == "2") {
+                        //在交货单中存在的客户
+                        tableName.Append(@" where exists(select 1 from ODLN as n where n.CardCode = A.CardCode) ");
+                    }
+                    //公海领取(掉入公海的客户被重新分配和领取,但是分配和领取之后没有做过报价单,做过单了就属于正常用户)
+                    else if(label == "3") {
+                        //这些客户还没有做过单
+                        tableName.Append(@" LEFT JOIN OQUT AS q on A.CardCode = q.CardCode ");
+                        tableName.Append(" WHERE q.CardCode IS NULL ");
+                        //并且在历史归属表中存在但是公海中不存在的客户(说明已被领取)
+                        var cardCodes = (from h in UnitWork.Find<CustomerSalerHistory>(null)
+                                         join c in UnitWork.Find<CustomerList>(null) on h.CustomerNo equals c.CustomerNo into temp
+                                         from t in temp.DefaultIfEmpty()
+                                         where t.CustomerNo == null
+                                         select h.CustomerNo).Distinct().ToList();
+                        var selectCardCode = new StringBuilder("");
+                        string codes = "''";
+                        foreach (var item in cardCodes)
+                        {
+                            selectCardCode.Append($",'{item}'");
+                        }
+                        if (!string.IsNullOrWhiteSpace(selectCardCode.ToString()))
+                        {
+                            codes = selectCardCode.ToString().Substring(1);
+                        }
+
+                        tableName.Append($" AND A.CardCode IN ({codes}) ");
+                    }
+                    //即将掉入公海
+                    else if (label == "4") {
+                        var cardCodes = UnitWork.Find<CustomerList>(c => c.LabelIndex == 4).Select(c => c.CustomerNo).ToList();
+                        var selectCardCode = new StringBuilder("");
+                        string codes = "''";
+                        foreach (var item in cardCodes)
+                        {
+                            selectCardCode.Append($",'{item}'");
+                        }
+                        if (!string.IsNullOrWhiteSpace(selectCardCode.ToString()))
+                        {
+                            codes = selectCardCode.ToString().Substring(1);
+                        }
+
+                        tableName.Append($" WHERE A.CardCode IN ({codes}) ");
+                    }
+                }
                 //tableName.Append("LEFT JOIN NSAP.dbo.test_kmye H ON A.CardCode=H.cardcode) T "); //科目余额总账表
                 tableName.Append(") T");
                 //tableName.Append("LEFT JOIN NSAP.dbo.biz_clerk_tech I ON A.CardCode=I.Cardcode "); //文员，技术员对照表
@@ -463,6 +526,46 @@ namespace OpenAuth.App.Client
 
             return clientTable;
 
+        }
+
+        /// <summary>
+        /// 统计各个状态的客户数量
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetCustomerCount()
+        {
+            var result = new TableData();
+            //总数
+            var query0 = await UnitWork.Find<OCRD>(null).CountAsync();
+            //未报价客户
+            var query1 = await (from c in UnitWork.Find<OCRD>(null)
+                                join a in UnitWork.Find<OQUT>(null) on c.CardCode equals a.CardCode into temp
+                                from t in temp.DefaultIfEmpty()
+                                where t.CardCode == null
+                                select c.CardCode).CountAsync();
+            //已成交客户
+            var query2 = await (from c in UnitWork.Find<OCRD>(null)
+                                join d in UnitWork.Find<ODLN>(null) on c.CardCode equals d.CardCode
+                                select c.CardCode).Distinct().CountAsync();
+            //公海领取
+            //在历史归属表中存在但是公海中不存在的客户(说明已被领取)
+            var cardCodes = (from h in UnitWork.Find<CustomerSalerHistory>(null)
+                             join c in UnitWork.Find<CustomerList>(null) on h.CustomerNo equals c.CustomerNo into temp
+                             from t in temp.DefaultIfEmpty()
+                             where t.CustomerNo == null
+                             select h.CustomerNo).Distinct().ToList();
+            //还没做过单的客户
+            var query3 = await (from c in UnitWork.Find<OCRD>(c => cardCodes.Contains(c.CardCode))
+                                join a in UnitWork.Find<OQUT>(null) on c.CardCode equals a.CardCode into temp
+                                from t in temp.DefaultIfEmpty()
+                                where t.CardCode == null
+                                select c.CardCode).CountAsync();
+            //即将掉入公海客户
+            var query4 = await UnitWork.Find<CustomerList>(c => c.Label == "4").CountAsync();
+
+            result.Data = new GetCustomerCount() { Count0 = query0, Count1 = query1, Count2 = query2, Count3 = query3, Count4 = query4 };
+
+            return result;
         }
 
         #region 同步
@@ -1067,6 +1170,7 @@ namespace OpenAuth.App.Client
                 strSql.Append("FROM OCRD a LEFT JOIN OSLP b ON a.SlpCode=b.SlpCode LEFT JOIN OHEM c ON a.DfTcnician=c.empID ");
                 strSql.AppendFormat("LEFT JOIN (SELECT TOP 1 DocDueDate,CardCode FROM ODLN WHERE CardCode='{0}' AND DocTotal>=2000 ORDER BY DocDueDate DESC) d ON a.CardCode=d.CardCode ", CardCode);
                 strSql.AppendFormat("WHERE a.CardCode='{0}' ", CardCode);
+                var dd = strSql.ToString();
                 dtRet = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
                 dtRet.Columns.Add("U_ClientSource", typeof(string));//客户来源
                 dtRet.Columns.Add("U_CompSector", typeof(string));//所属行业

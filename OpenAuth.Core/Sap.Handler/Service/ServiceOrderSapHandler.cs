@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using OpenAuth.Repository.Domain.Sap;
 using System.Reactive;
 using Sap.Handler.Service.Request;
+using System.Threading;
 
 namespace Sap.Handler.Service
 {
@@ -21,6 +22,7 @@ namespace Sap.Handler.Service
     {
         private readonly IUnitWork UnitWork;
         private readonly Company company;
+        static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
 
         public ServiceOrderSapHandler(IUnitWork unitWork, Company company)
         {
@@ -125,17 +127,30 @@ namespace Sap.Handler.Service
 
                 if (!string.IsNullOrEmpty(docNum))
                 {
-                    //如果同步成功则修改serviceOrder
-                    await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(theServiceOrderId), e => new ServiceOrder
+                    //用信号量代替锁
+                    await semaphoreSlim.WaitAsync();
+                    try
                     {
-                        U_SAP_ID = System.Convert.ToInt32(docNum)
-                    });
-                    var ServiceWorkOrders = await UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId.Equals(theServiceOrderId)).AsNoTracking().ToListAsync();
-                    int num = 0;
-                    ServiceWorkOrders.ForEach(u => u.WorkOrderNumber = docNum + "-" + ++num);
-                    UnitWork.BatchUpdate<ServiceWorkOrder>(ServiceWorkOrders.ToArray());
-                    await UnitWork.SaveAsync();
-                    Log.Logger.Warning($"同步成功，SAP_ID：{docNum}", typeof(ServiceOrderSapHandler));
+                        //如果同步成功则修改serviceOrder
+                        await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(theServiceOrderId), e => new ServiceOrder
+                        {
+                            U_SAP_ID = System.Convert.ToInt32(docNum)
+                        });
+                        var ServiceWorkOrders = await UnitWork.Find<ServiceWorkOrder>(u => u.ServiceOrderId.Equals(theServiceOrderId)).AsNoTracking().ToListAsync();
+                        int num = 0;
+                        ServiceWorkOrders.ForEach(u => u.WorkOrderNumber = docNum + "-" + ++num);
+                        UnitWork.BatchUpdate<ServiceWorkOrder>(ServiceWorkOrders.ToArray());
+                        await UnitWork.SaveAsync();
+                        Log.Logger.Warning($"同步成功，SAP_ID：{docNum}", typeof(ServiceOrderSapHandler));
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Logger.Error($"反写4.0失败，SAP_ID：{docNum}失败原因:{ex.Message}", typeof(ServiceOrderSapHandler));
+                    }
+                    finally
+                    {
+                        semaphoreSlim.Release();
+                    }
                 }
                 if (!string.IsNullOrWhiteSpace(allerror.ToString()))
                 {
