@@ -43,6 +43,8 @@ namespace OpenAuth.WebApi.Controllers
         private readonly NwcaliCertApp _nwcaliCertApp;
         private readonly UserSignApp _userSignApp;
         private readonly FileApp _fileApp;
+        private readonly DevInfoApp _devInfoApp;
+        private readonly MachineInfoApp _machineInfoApp;
         private static readonly string BaseCertDir = Path.Combine(Directory.GetCurrentDirectory(), "certs");
         private static readonly Dictionary<int, double> PoorCoefficients = new Dictionary<int, double>()
         {
@@ -63,7 +65,7 @@ namespace OpenAuth.WebApi.Controllers
 
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
 
-        public CertController(CertinfoApp certinfoApp, CertPlcApp certPlcApp, ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp, NwcaliCertApp nwcaliCertApp, UserSignApp userSignApp, FileApp fileApp, IAuth authUtil)
+        public CertController(CertinfoApp certinfoApp, CertPlcApp certPlcApp, ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp, NwcaliCertApp nwcaliCertApp, UserSignApp userSignApp, FileApp fileApp, DevInfoApp devInfoApp, MachineInfoApp machineInfoApp, IAuth authUtil)
         {
             _certinfoApp = certinfoApp;
             _certPlcApp = certPlcApp;
@@ -73,161 +75,149 @@ namespace OpenAuth.WebApi.Controllers
             _userSignApp = userSignApp;
             _fileApp = fileApp;
             _authUtil = authUtil;
+            _devInfoApp = devInfoApp;
+            _machineInfoApp = machineInfoApp;
         }
 
         [HttpPost]
         public async Task<Response<bool>> Generate()
         {
-            var file = Request.Form.Files[0];
-            var handler = new ExcelHandler(file.OpenReadStream());
-            var baseInfo = handler.GetBaseInfo<NwcaliBaseInfo>(sheet =>
+            var loginContext = _authUtil.GetCurrentUser();
+            var loginOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault();
+            if (loginOrg.Name == "T1")//校准部门 上传校准数据 走校准流程生成证书
             {
-                var baseInfo = new NwcaliBaseInfo();
-                var timeRow = sheet.GetRow(1);
-                baseInfo.Time = DateTime.Parse(timeRow.GetCell(1).StringCellValue);
-                var fileVersionRow = sheet.GetRow(3);
-                baseInfo.FileVersion = fileVersionRow.GetCell(1).StringCellValue;
-                var testerMakeRow = sheet.GetRow(4);
-                baseInfo.TesterMake = testerMakeRow.GetCell(1).StringCellValue;
-                var testerModelRow = sheet.GetRow(5);
-                baseInfo.TesterModel = testerModelRow.GetCell(1).StringCellValue;
-                var testerSnRow = sheet.GetRow(6);
-                baseInfo.TesterSn = testerSnRow.GetCell(1).StringCellValue;
-                var assetNoRow = sheet.GetRow(7);
-                baseInfo.AssetNo = assetNoRow.GetCell(1).StringCellValue;
-                var siteCodeRow = sheet.GetRow(8);
-                baseInfo.SiteCode = siteCodeRow.GetCell(1).StringCellValue; //"Electrical Lab";
-                var temperatureRow = sheet.GetRow(9);
-                baseInfo.Temperature = temperatureRow.GetCell(1).StringCellValue;
-                var relativeHumidityRow = sheet.GetRow(10);
-                baseInfo.RelativeHumidity = relativeHumidityRow.GetCell(1).StringCellValue;
-                var ratedAccuracyCRow = sheet.GetRow(11);
-                baseInfo.RatedAccuracyC = ratedAccuracyCRow.GetCell(1).NumericCellValue / 1000;
-                var ratedAccuracyVRow = sheet.GetRow(12);
-                baseInfo.RatedAccuracyV = ratedAccuracyVRow.GetCell(1).NumericCellValue / 1000;
-                var ammeterBitsRow = sheet.GetRow(13);
-                baseInfo.AmmeterBits = Convert.ToInt32(ammeterBitsRow.GetCell(1).NumericCellValue);
-                var VoltmeterBitsRow = sheet.GetRow(14);
-                baseInfo.VoltmeterBits = Convert.ToInt32(VoltmeterBitsRow.GetCell(1).NumericCellValue);
-                var certificateNumberRow = sheet.GetRow(15);
-                baseInfo.CertificateNumber = certificateNumberRow.GetCell(1).StringCellValue;
-                var calibrationEntityRow = sheet.GetRow(16);
-                baseInfo.CallbrationEntity = calibrationEntityRow.GetCell(1).StringCellValue;
-                var operatorRow = sheet.GetRow(17);
-                baseInfo.Operator = operatorRow.GetCell(1).StringCellValue;
-                #region 标准器设备信息
-                var etalonsNameRow = sheet.GetRow(18);
-                var etalonsCharacteristicsRow = sheet.GetRow(19);
-                var etalonsAssetNoRow = sheet.GetRow(20);
-                var etalonsCertificateNoRow = sheet.GetRow(22);
-                var etalonsCalibrationEntity = sheet.GetRow(21);
-                var etalonsDueDateRow = sheet.GetRow(23);
-                for (int i = 1; i < etalonsNameRow.LastCellNum; i++)
+                var file = Request.Form.Files[0];
+                var handler = new ExcelHandler(file.OpenReadStream());
+                var baseInfo = handler.GetBaseInfo<NwcaliBaseInfo>(sheet =>
                 {
-                    if (string.IsNullOrWhiteSpace(etalonsNameRow.GetCell(i).StringCellValue))
-                        break;
-                    try
+                    var baseInfo = new NwcaliBaseInfo();
+                    var timeRow = sheet.GetRow(1);
+                    baseInfo.Time = DateTime.Parse(timeRow.GetCell(1).StringCellValue);
+                    var fileVersionRow = sheet.GetRow(3);
+                    baseInfo.FileVersion = fileVersionRow.GetCell(1).StringCellValue;
+                    var testerMakeRow = sheet.GetRow(4);
+                    baseInfo.TesterMake = testerMakeRow.GetCell(1).StringCellValue;
+                    var testerModelRow = sheet.GetRow(5);
+                    baseInfo.TesterModel = testerModelRow.GetCell(1).StringCellValue;
+                    var testerSnRow = sheet.GetRow(6);
+                    baseInfo.TesterSn = testerSnRow.GetCell(1).StringCellValue;
+                    var assetNoRow = sheet.GetRow(7);
+                    baseInfo.AssetNo = assetNoRow.GetCell(1).StringCellValue;
+                    var siteCodeRow = sheet.GetRow(8);
+                    baseInfo.SiteCode = siteCodeRow.GetCell(1).StringCellValue; //"Electrical Lab";
+                    var temperatureRow = sheet.GetRow(9);
+                    baseInfo.Temperature = temperatureRow.GetCell(1).StringCellValue;
+                    var relativeHumidityRow = sheet.GetRow(10);
+                    baseInfo.RelativeHumidity = relativeHumidityRow.GetCell(1).StringCellValue;
+                    var ratedAccuracyCRow = sheet.GetRow(11);
+                    baseInfo.RatedAccuracyC = ratedAccuracyCRow.GetCell(1).NumericCellValue / 1000;
+                    var ratedAccuracyVRow = sheet.GetRow(12);
+                    baseInfo.RatedAccuracyV = ratedAccuracyVRow.GetCell(1).NumericCellValue / 1000;
+                    var ammeterBitsRow = sheet.GetRow(13);
+                    baseInfo.AmmeterBits = Convert.ToInt32(ammeterBitsRow.GetCell(1).NumericCellValue);
+                    var VoltmeterBitsRow = sheet.GetRow(14);
+                    baseInfo.VoltmeterBits = Convert.ToInt32(VoltmeterBitsRow.GetCell(1).NumericCellValue);
+                    var certificateNumberRow = sheet.GetRow(15);
+                    baseInfo.CertificateNumber = certificateNumberRow.GetCell(1).StringCellValue;
+                    var calibrationEntityRow = sheet.GetRow(16);
+                    baseInfo.CallbrationEntity = calibrationEntityRow.GetCell(1).StringCellValue;
+                    var operatorRow = sheet.GetRow(17);
+                    baseInfo.Operator = operatorRow.GetCell(1).StringCellValue;
+                    #region 标准器设备信息
+                    var etalonsNameRow = sheet.GetRow(18);
+                    var etalonsCharacteristicsRow = sheet.GetRow(19);
+                    var etalonsAssetNoRow = sheet.GetRow(20);
+                    var etalonsCertificateNoRow = sheet.GetRow(22);
+                    var etalonsCalibrationEntity = sheet.GetRow(21);
+                    var etalonsDueDateRow = sheet.GetRow(23);
+                    for (int i = 1; i < etalonsNameRow.LastCellNum; i++)
                     {
-                        baseInfo.Etalons.Add(new Etalon
+                        if (string.IsNullOrWhiteSpace(etalonsNameRow.GetCell(i).StringCellValue))
+                            break;
+                        try
                         {
-                            Name = etalonsNameRow.GetCell(i).StringCellValue,
-                            Characteristics = etalonsCharacteristicsRow.GetCell(i).StringCellValue,
-                            AssetNo = etalonsAssetNoRow.GetCell(i).StringCellValue,
-                            CertificateNo = etalonsCertificateNoRow.GetCell(i).StringCellValue,
-                            DueDate = etalonsDueDateRow.GetCell(i).StringCellValue,
-                            CalibrationEntity = etalonsCalibrationEntity.GetCell(i).StringCellValue
-                        });
-                    }
-                    catch
-                    {
-                        break;
-                    }
-                }
-                #endregion
-                var commentRow = sheet.GetRow(24);
-                baseInfo.Comment = commentRow.GetCell(1).StringCellValue;
-                var calibrationTypeRow = sheet.GetRow(25);
-                baseInfo.CalibrationType = calibrationTypeRow.GetCell(1).StringCellValue;
-                var repetitiveMeasurementsCountRow = sheet.GetRow(26);
-                baseInfo.RepetitiveMeasurementsCount = Convert.ToInt32(repetitiveMeasurementsCountRow.GetCell(1).NumericCellValue);
-                var turRow = sheet.GetRow(27);
-                baseInfo.TUR = turRow.GetCell(1).StringCellValue;
-                var acceptedToleranceRow = sheet.GetRow(28);
-                baseInfo.AcceptedTolerance = acceptedToleranceRow.GetCell(1).StringCellValue;
-                var kRow = sheet.GetRow(29);
-                baseInfo.K = kRow.GetCell(1).NumericCellValue;
-                var testIntervalRow = sheet.GetRow(30);
-                baseInfo.TestInterval = testIntervalRow.GetCell(1).StringCellValue;
-                #region 下位机
-                var pclCommentRow = sheet.GetRow(31);
-                var pclNoRow = sheet.GetRow(32);
-                var pclGuidRow = sheet.GetRow(33);
-                for (int i = 1; i < pclNoRow.LastCellNum; i++)
-                {
-                    if (string.IsNullOrWhiteSpace(pclGuidRow.GetCell(i)?.StringCellValue))
-                        continue;
-                    try
-                    {
-                        baseInfo.PcPlcs.Add(new PcPlc
+                            baseInfo.Etalons.Add(new Etalon
+                            {
+                                Name = etalonsNameRow.GetCell(i).StringCellValue,
+                                Characteristics = etalonsCharacteristicsRow.GetCell(i).StringCellValue,
+                                AssetNo = etalonsAssetNoRow.GetCell(i).StringCellValue,
+                                CertificateNo = etalonsCertificateNoRow.GetCell(i).StringCellValue,
+                                DueDate = etalonsDueDateRow.GetCell(i).StringCellValue,
+                                CalibrationEntity = etalonsCalibrationEntity.GetCell(i).StringCellValue
+                            });
+                        }
+                        catch
                         {
-                            Comment = pclCommentRow.GetCell(i).StringCellValue,
-                            No = Convert.ToInt32(pclNoRow.GetCell(i).StringCellValue),
-                            Guid = pclGuidRow.GetCell(i).StringCellValue,
-                            CalibrationDate = baseInfo.Time,
-                            ExpirationDate = DateTime.Parse(ConvertTestInterval(baseInfo.Time.Value.ToString(), baseInfo.TestInterval))
-                        });
+                            break;
+                        }
                     }
-                    catch
+                    #endregion
+                    var commentRow = sheet.GetRow(24);
+                    baseInfo.Comment = commentRow.GetCell(1).StringCellValue;
+                    var calibrationTypeRow = sheet.GetRow(25);
+                    baseInfo.CalibrationType = calibrationTypeRow.GetCell(1).StringCellValue;
+                    var repetitiveMeasurementsCountRow = sheet.GetRow(26);
+                    baseInfo.RepetitiveMeasurementsCount = Convert.ToInt32(repetitiveMeasurementsCountRow.GetCell(1).NumericCellValue);
+                    var turRow = sheet.GetRow(27);
+                    baseInfo.TUR = turRow.GetCell(1).StringCellValue;
+                    var acceptedToleranceRow = sheet.GetRow(28);
+                    baseInfo.AcceptedTolerance = acceptedToleranceRow.GetCell(1).StringCellValue;
+                    var kRow = sheet.GetRow(29);
+                    baseInfo.K = kRow.GetCell(1).NumericCellValue;
+                    var testIntervalRow = sheet.GetRow(30);
+                    baseInfo.TestInterval = testIntervalRow.GetCell(1).StringCellValue;
+                    #region 下位机
+                    var pclCommentRow = sheet.GetRow(31);
+                    var pclNoRow = sheet.GetRow(32);
+                    var pclGuidRow = sheet.GetRow(33);
+                    for (int i = 1; i < pclNoRow.LastCellNum; i++)
                     {
-                        break;
+                        if (string.IsNullOrWhiteSpace(pclGuidRow.GetCell(i)?.StringCellValue))
+                            continue;
+                        try
+                        {
+                            baseInfo.PcPlcs.Add(new PcPlc
+                            {
+                                Comment = pclCommentRow.GetCell(i).StringCellValue,
+                                No = Convert.ToInt32(pclNoRow.GetCell(i).StringCellValue),
+                                Guid = pclGuidRow.GetCell(i).StringCellValue,
+                                CalibrationDate = baseInfo.Time,
+                                ExpirationDate = DateTime.Parse(ConvertTestInterval(baseInfo.Time.Value.ToString(), baseInfo.TestInterval))
+                            });
+                        }
+                        catch
+                        {
+                            break;
+                        }
                     }
+                    #endregion
+                    return baseInfo;
+                });
+                if (string.IsNullOrWhiteSpace(baseInfo.Operator))
+                {
+                    return new Response<bool>()
+                    {
+                        Code = 400,
+                        Message = "Operator can not be null.",
+                        Result = false
+                    };
                 }
-                #endregion
-                return baseInfo;
-            });
-            if (string.IsNullOrWhiteSpace(baseInfo.Operator))
-            {
-                return new Response<bool>()
+                var turV = handler.GetNwcaliTur("电压");
+                var turA = handler.GetNwcaliTur("电流");
+                var tv = turV.Select(v => new Repository.Domain.NwcaliTur { DataType = 1, Range = v.Range, TestPoint = v.TestPoint, Tur = v.Tur, UncertaintyContributors = v.UncertaintyContributors, SensitivityCoefficient = v.SensitivityCoefficient, Value = v.Value, Unit = v.Unit, Type = v.Type, Distribution = v.Distribution, Divisor = v.Divisor, StdUncertainty = v.StdUncertainty, DegreesOfFreedom = v.DegreesOfFreedom, SignificanceCheck = v.SignificanceCheck }).ToList();
+                var ta = turA.Select(v => new Repository.Domain.NwcaliTur { DataType = 2, Range = v.Range, TestPoint = v.TestPoint, Tur = v.Tur, UncertaintyContributors = v.UncertaintyContributors, SensitivityCoefficient = v.SensitivityCoefficient, Value = v.Value, Unit = v.Unit, Type = v.Type, Distribution = v.Distribution, Divisor = v.Divisor, StdUncertainty = v.StdUncertainty, DegreesOfFreedom = v.DegreesOfFreedom, SignificanceCheck = v.SignificanceCheck }).ToList();
+                baseInfo.NwcaliTurs.AddRange(tv);
+                baseInfo.NwcaliTurs.AddRange(ta);
+                baseInfo.ExpirationDate = DateTime.Parse(ConvertTestInterval(baseInfo.Time.ToString(), baseInfo.TestInterval));
+                try
                 {
-                    Code = 400,
-                    Message = "Operator can not be null.",
-                    Result = false
-                };
-            }
-            var turV = handler.GetNwcaliTur("电压");
-            var turA = handler.GetNwcaliTur("电流");
-            var tv = turV.Select(v => new Repository.Domain.NwcaliTur { DataType = 1, Range = v.Range, TestPoint = v.TestPoint, Tur = v.Tur, UncertaintyContributors = v.UncertaintyContributors, SensitivityCoefficient = v.SensitivityCoefficient, Value = v.Value, Unit = v.Unit, Type = v.Type, Distribution = v.Distribution, Divisor = v.Divisor, StdUncertainty = v.StdUncertainty, DegreesOfFreedom = v.DegreesOfFreedom, SignificanceCheck = v.SignificanceCheck }).ToList();
-            var ta = turA.Select(v => new Repository.Domain.NwcaliTur { DataType = 2, Range = v.Range, TestPoint = v.TestPoint, Tur = v.Tur, UncertaintyContributors = v.UncertaintyContributors, SensitivityCoefficient = v.SensitivityCoefficient, Value = v.Value, Unit = v.Unit, Type = v.Type, Distribution = v.Distribution, Divisor = v.Divisor, StdUncertainty = v.StdUncertainty, DegreesOfFreedom = v.DegreesOfFreedom, SignificanceCheck = v.SignificanceCheck }).ToList();
-            baseInfo.NwcaliTurs.AddRange(tv);
-            baseInfo.NwcaliTurs.AddRange(ta);
-            baseInfo.ExpirationDate = DateTime.Parse(ConvertTestInterval(baseInfo.Time.ToString(), baseInfo.TestInterval));
-            try
-            {
-                foreach (var plc in baseInfo.PcPlcs)
-                {
-                    var list = handler.GetNWCaliPLCData($"下位机{plc.No}");
-                    baseInfo.NwcaliPlcDatas.AddRange(list.Select(l => new NwcaliPlcData
+                    foreach (var plc in baseInfo.PcPlcs)
                     {
-                        PclNo = plc.No,
-                        DataType = 1,
-                        VerifyType = l.Verify_Type,
-                        VoltsorAmps = l.VoltsorAmps,
-                        Channel = l.Channel,
-                        Mode = l.Mode,
-                        Range = l.Range,
-                        Point = l.Point,
-                        CommandedValue = l.Commanded_Value,
-                        MeasuredValue = l.Measured_Value,
-                        Scale = l.Scale,
-                        StandardTotalU = l.Standard_total_U,
-                        StandardValue = l.Standard_Value
-                    }));
-                    var list2 = handler.GetNWCaliPLCRepetitiveMeasurementData($"下位机{plc.No}重复性测量");
-                    if (list2.Count > 0)
-                        baseInfo.NwcaliPlcDatas.AddRange(list2.Select(l => new NwcaliPlcData
+                        var list = handler.GetNWCaliPLCData($"下位机{plc.No}");
+                        baseInfo.NwcaliPlcDatas.AddRange(list.Select(l => new NwcaliPlcData
                         {
                             PclNo = plc.No,
-                            DataType = 2,
+                            DataType = 1,
                             VerifyType = l.Verify_Type,
                             VoltsorAmps = l.VoltsorAmps,
                             Channel = l.Channel,
@@ -240,35 +230,105 @@ namespace OpenAuth.WebApi.Controllers
                             StandardTotalU = l.Standard_total_U,
                             StandardValue = l.Standard_Value
                         }));
+                        var list2 = handler.GetNWCaliPLCRepetitiveMeasurementData($"下位机{plc.No}重复性测量");
+                        if (list2.Count > 0)
+                            baseInfo.NwcaliPlcDatas.AddRange(list2.Select(l => new NwcaliPlcData
+                            {
+                                PclNo = plc.No,
+                                DataType = 2,
+                                VerifyType = l.Verify_Type,
+                                VoltsorAmps = l.VoltsorAmps,
+                                Channel = l.Channel,
+                                Mode = l.Mode,
+                                Range = l.Range,
+                                Point = l.Point,
+                                CommandedValue = l.Commanded_Value,
+                                MeasuredValue = l.Measured_Value,
+                                Scale = l.Scale,
+                                StandardTotalU = l.Standard_total_U,
+                                StandardValue = l.Standard_Value
+                            }));
+                    }
+                    baseInfo.FlowInstanceId = await CreateFlow(baseInfo.CertificateNumber);
+                    await _nwcaliCertApp.AddAsync(baseInfo);
+                    //保存文件
+                    var folderYear = DateTime.Now.ToString("yyyy");
+                    var fileExtension = Path.GetExtension(file.FileName);
+                    var basePath = Path.Combine("D:\\nsap4file", "nwcail", folderYear, baseInfo.CertificateNumber);
+                    var savePath = Path.Combine(basePath, $"{baseInfo.CertificateNumber}{fileExtension}");
+                    DirUtil.CheckOrCreateDir(basePath);
+                    using (var fs = new FileStream(savePath, FileMode.Create))
+                    {
+                        file.CopyTo(fs);
+                        fs.Flush();
+                    }
+                    await _nwcaliCertApp.UpdateFilePath(baseInfo.CertificateNumber, savePath);
+                    return new Response<bool>()
+                    {
+                        Result = true
+                    };
                 }
-                baseInfo.FlowInstanceId = await CreateFlow(baseInfo.CertificateNumber);
-                await _nwcaliCertApp.AddAsync(baseInfo);
-                //保存文件
-                var folderYear = DateTime.Now.ToString("yyyy");
-                var fileExtension = Path.GetExtension(file.FileName);
-                var basePath = Path.Combine("D:\\nsap4file", "nwcail", folderYear, baseInfo.CertificateNumber);
-                var savePath = Path.Combine(basePath, $"{baseInfo.CertificateNumber}{fileExtension}");
-                DirUtil.CheckOrCreateDir(basePath);
-                using (var fs = new FileStream(savePath, FileMode.Create))
+                catch (Exception ex)
                 {
-                    file.CopyTo(fs);
-                    fs.Flush();
+                    await _flowInstanceApp.DeleteAsync(f => f.Id.Equals(baseInfo.FlowInstanceId));
+                    return new Response<bool>()
+                    {
+                        Code = 500,
+                        Message = ex.Message,
+                        Result = false
+                    };
                 }
-                await _nwcaliCertApp.UpdateFilePath(baseInfo.CertificateNumber, savePath);
-                return new Response<bool>()
-                {
-                    Result = true
-                };
             }
-            catch (Exception ex)
+            else //生产部门 上传烤机数据
             {
-                await _flowInstanceApp.DeleteAsync(f => f.Id.Equals(baseInfo.FlowInstanceId));
-                return new Response<bool>()
+                try
                 {
-                    Code = 500,
-                    Message = ex.Message,
-                    Result = false
-                };
+                    var files = Request.Form.Files;
+                    var file = files[0];
+                    //保存文件
+                    var fileResp = await _fileApp.Add(files, "machine");
+                    //读取文件
+                    var handler = new ExcelHandler(file.OpenReadStream());
+                    var sheet = handler.GetSheet();
+                    var pclNoRow = sheet.GetRow(32);
+                    var pclGuidRow = sheet.GetRow(33);
+                    List<MachineInfo> machineInfo = new List<MachineInfo>();
+                    for (int i = 1; i < pclNoRow.LastCellNum; i++)
+                    {
+                        if (string.IsNullOrWhiteSpace(pclGuidRow.GetCell(i)?.StringCellValue))
+                            continue;
+
+                        machineInfo.Add(new MachineInfo
+                        {
+                            Guid = pclGuidRow.GetCell(i).StringCellValue,
+                            OrderNo = "",
+                            Status = 1,
+                            CreateTime = DateTime.Now,
+                            FileId = fileResp.FirstOrDefault()?.Id
+                        });
+                    }
+                    //var guid = machineInfo.Select(c => c.Guid).ToList();
+                    //var orderNo = await _devInfoApp.GetDevInfoByGuid(guid);
+                    //machineInfo.ForEach(c =>
+                    //{
+                    //    var no = orderNo.Where(o => o.low_guid == c.Guid).FirstOrDefault();
+                    //    c.OrderNo = no?.order_no;
+                    //});
+                    await _machineInfoApp.BatchAddAsycn(machineInfo);
+                    return new Response<bool>()
+                    {
+                        Result = true
+                    };
+                }
+                catch (Exception ex)
+                {
+                    return new Response<bool>()
+                    {
+                        Code = 500,
+                        Message = ex.Message,
+                        Result = false
+                    };
+                }
             }
         }
 

@@ -46,5 +46,6 @@ namespace OpenAuth.Repository
         //质量
         public virtual DbSet<StepVersion> StepVersions{ get; set; }
         public virtual DbSet<DevInfo> Devinfos { get; set; }
+        public virtual DbSet<MachineInfo> MachineInfos { get; set; }
     }
 }

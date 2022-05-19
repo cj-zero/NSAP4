@@ -175,6 +175,12 @@ namespace Infrastructure.Excel
             //#endregion
         }
 
+        public ISheet GetSheet()
+        {
+            var sheet = mapper.Workbook.GetSheetAt(0);
+            return sheet;
+        }
+
         public List<NwcaliTur> GetNwcaliTur(string sheetName)
         {
             var data = mapper
