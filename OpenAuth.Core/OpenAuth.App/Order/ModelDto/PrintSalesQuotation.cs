@@ -49,7 +49,11 @@ namespace OpenAuth.App.Order.ModelDto
         /// <summary>
         /// 供方联系人电话
         /// </summary>
+        /// 
+        public string Memo { get; set; }
+
         public string Cellolar { get; set; }
+
         /// <summary>
         /// 供方地址
         /// </summary>
@@ -84,7 +88,7 @@ namespace OpenAuth.App.Order.ModelDto
         /// </summary>
         public List<ReimburseCost> ReimburseCosts { get; set; }
 
-
+        
     }
 
     /// <summary>

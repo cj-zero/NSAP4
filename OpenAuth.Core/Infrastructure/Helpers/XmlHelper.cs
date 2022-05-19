@@ -1,4 +1,7 @@
-﻿using System.Xml;
+﻿using System;
+using System.IO;
+using System.Xml;
+using System.Xml.Linq;
 
 /// 这个是用VS2010写的，如果用VS2005，请去掉System.Linq和System.Xml.Linq的引用
 /// 可以将此文件直接编译成dll，今后程序只需要引用该dll后开头添加using XmlLibrary;即可。
@@ -706,6 +709,27 @@ namespace Infrastructure.Helpers
 				}
 			}
 			xDoc.Save(_xPath);
+		}
+		#endregion
+
+		#region
+
+		public static XDocument GetXDocument(string url)
+		{
+			try
+			{
+				Uri uri = new Uri(url);
+				System.Net.WebClient wb = new System.Net.WebClient();
+				wb.Proxy.Credentials = System.Net.CredentialCache.DefaultCredentials;
+				MemoryStream ms = new MemoryStream(wb.DownloadData(uri));
+				System.Xml.XmlTextReader rdr = new System.Xml.XmlTextReader(ms);
+				XDocument doc = XDocument.Load(rdr);
+				return doc;
+			}
+			catch (Exception ex)
+			{
+				return null;
+			}
 		}
 		#endregion
 	}

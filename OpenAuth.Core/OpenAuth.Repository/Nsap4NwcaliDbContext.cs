@@ -42,5 +42,17 @@ namespace OpenAuth.Repository
         public virtual DbSet<BtsModel> Btsmodels { get; set; }
         public virtual DbSet<Entrustment> Entrustments { get; set; }
         public virtual DbSet<EntrustmentDetail> EntrustmentDetails { get; set; }
+
+        //质量
+        public virtual DbSet<StepVersion> StepVersions { get; set; }
+        public virtual DbSet<DevInfo> Devinfos { get; set; }
+        public virtual DbSet<edge> Edges { get; set; }
+        public virtual DbSet<edge_host> Edge_Hosts { get; set; }
+        public virtual DbSet<edge_mid> Edge_Mids { get; set; }
+        public virtual DbSet<edge_low> Edge_Lows { get; set; }
+        public virtual DbSet<edge_channel> Edge_Channels { get; set; }
+        public virtual DbSet<DeviceBindMap> DeviceBindMaps { get; set; }
+        public virtual DbSet<DeviceTestLog> DeviceTestLogs { get; set; }
+        public virtual DbSet<DeviceTestCode> DeviceTestCodes { get; set; }
     }
 }

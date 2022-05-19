@@ -78,7 +78,7 @@ namespace OpenAuth.Repository.Domain
         /// 部门
         /// </summary>
         [Column("Department_Name")]
-        [Required(ErrorMessage = "部门不能为空")]
+        //[Required(ErrorMessage = "部门不能为空")]
         [MaxLength(20)]
         [Description("部门")]
         public string DepartmentName { get; set; }

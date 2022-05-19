@@ -35,6 +35,12 @@
     <PackageReference Include="Autofac" Version="5.1.2" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="6.0.0" />
     <PackageReference Include="Autofac.Extras.Quartz" Version="5.1.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.20.1" />
+    <PackageReference Include="Grpc.Core" Version="2.45.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.45.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="3.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="3.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="3.1.7" />
@@ -52,7 +58,9 @@
     <ProjectReference Include="..\MQ\Neware.Cap\Neware.Cap.csproj" />
     <ProjectReference Include="..\OpenAuth.Repository\OpenAuth.Repository.csproj" />
   </ItemGroup>
-
+	<ItemGroup>
+		<Protobuf Include="Protos\EdgeCmd.proto" />
+	</ItemGroup>
   <ItemGroup>
     <Reference Include="aliyun-net-sdk-core">
       <HintPath>..\..\..\..\..\迅雷下载\net 2\api_demo\core2.0\aliyun-net-sdk-core.dll</HintPath>
@@ -64,6 +72,7 @@
 
   <ItemGroup>
     <Folder Include="Settlement\Response\" />
+    <Folder Include="Protos\" />
   </ItemGroup>
 
   <ItemGroup>

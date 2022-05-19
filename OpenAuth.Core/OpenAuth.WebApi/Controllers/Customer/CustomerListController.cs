@@ -7,12 +7,16 @@ using System.Threading.Tasks;
 using OpenAuth.App.Customer;
 using OpenAuth.App.Response;
 using OpenAuth.App.Customer.Request;
+using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.WebApi.Controllers.Customer
 {
+    /// <summary>
+    /// 客户白名单相关接口
+    /// </summary>
     [Route("api/customer/[controller]/[action]")]
     [ApiController]
-    [ApiExplorerSettings(GroupName = "customer")]
+    [ApiExplorerSettings(GroupName = "Customer")]
     public class CustomerListController : ControllerBase
     {
         private readonly CustomerListApp _customerListApp;
@@ -26,8 +30,8 @@ namespace OpenAuth.WebApi.Controllers.Customer
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> GetCustomers([FromQuery] QueryCustomerListReq req)
+        [HttpPost]
+        public async Task<TableData> GetCustomers(QueryCustomerListReq req)
         {
             var result = new TableData();
 
@@ -50,7 +54,7 @@ namespace OpenAuth.WebApi.Controllers.Customer
         /// <param name="model"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Infrastructure.Response> AddCustomer(AddCustomerListReq model)
+        public async Task<Infrastructure.Response> AddCustomer(List<AddCustomerListReq> model)
         {
             var result = new Infrastructure.Response();
 
@@ -58,7 +62,7 @@ namespace OpenAuth.WebApi.Controllers.Customer
             {
                 result = await _customerListApp.AddCustomer(model);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 result.Message = ex.InnerException?.Message ?? ex.Message ?? "";
                 result.Code = 500;
@@ -97,13 +101,13 @@ namespace OpenAuth.WebApi.Controllers.Customer
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Infrastructure.Response> DeleteCustomer(int id)
+        public async Task<Infrastructure.Response> DeleteCustomer(DeleteCustomerListReq req)
         {
             var result = new Infrastructure.Response();
 
             try
             {
-                result = await _customerListApp.DeleteCustomer(id);
+                result = await _customerListApp.DeleteCustomer(req.Id);
             }
             catch (Exception ex)
             {

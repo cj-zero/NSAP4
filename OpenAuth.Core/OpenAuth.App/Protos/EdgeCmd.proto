@@ -1,0 +1,1165 @@
+syntax = "proto3";
+
+package EdgeCmd;
+
+service EdgeCmdService {
+  rpc Cmd (stream Request) returns (stream Response) {}
+
+  //边缘计算向服务器推送RT数据
+  rpc RtData (stream Request) returns (Response){}
+  
+  //边缘计算向服务器推送实时DF数据
+  rpc RtDFData (stream Request) returns (Response){}
+  
+  //边缘计算向服务器推送设备信息(全量,触发条件:刚建立连接,设备信息改变)
+  rpc DevInfo (Request) returns (Response){}
+}
+
+message Request {
+  string cmd_type = 1;//命令类型 next_cmd:下一个命令(C->S)
+  bytes arg = 2;
+  string token = 3;
+  bytes custom_data = 4;//自定义数据,将原样返回
+}
+
+message Response {
+  string cmd_type = 1;//命令类型 next_cmd:下一个命令(C->S)
+  bytes arg = 2;
+  string token = 3;
+  bytes custom_data = 4;//自定义数据,将原样返回
+}
+
+message VecRT{
+	message SrvRT{	
+		message MidRT{
+			message rt{				
+				int32 unit_id = 3;
+				int32 chl_id = 4;
+				int32 aux_id = 5;
+				float volt = 6;
+				float curr = 7;
+				double chg_cap = 8;//字段复用,当aux_id不为0并且data_flag为116时,chg_cap存储温箱温度,单位:度(实时的温度)
+				double dchg_cap = 9;
+				double chg_eng = 10;
+				double dchg_eng = 11;
+				uint64 step_time = 12;
+				uint32 work_type = 13;
+				uint32 step_type = 14;
+				uint32 prt_code = 15;
+				uint32 seq_id = 16;
+				uint32 data_flag = 17;
+				uint32 test_id = 18;
+				uint32 cycle_id = 19;
+				uint32 step_id = 20;
+				int32 temp = 21;
+				int32 cur_step_range = 22;
+				bytes barcode = 23;//电池条码2021-6-24新增
+				bytes start_time = 24;//测试启动时间2021-6-24新增
+				bytes creator = 25;//创建者2021-6-24新增
+				int32 pyh_id = 26;//物理通道ID
+				uint64 chl_resources_code_1=27;
+				uint64 chl_resources_code_2=28;
+				message K_V
+				{
+					bytes name = 1;
+					double value = 2; 
+				}
+				repeated K_V aux_data = 29;//辅助通道数据
+				int32 thermostat_id=30;//温箱编号 如果没有则空或0
+				int32 floor_id=31;//温箱层号 如果没有则空或0
+			}
+			bytes mid_guid = 1;
+			int32 dev_uid = 2;
+			repeated rt vec_rt = 3;
+		}	
+		
+		bytes ip = 1;
+		bytes srv_guid = 2;
+		repeated MidRT mid_rt = 3;
+		int32 bts_type = 4;
+	}
+	
+	bytes edge_guid = 1;
+	repeated SrvRT srv_rt = 2;
+	uint64 upd_dt = 3;//RT数据发送时间戳
+}
+
+message VecRTDF{
+	message SrvRTDF{	
+		message MidRTDF{
+			message rt_df{		
+				int32 unit_id = 1;
+				int32 chl_id = 2;
+				int32 aux_id = 3;
+				float volt = 4;
+				float curr = 5;
+				double chg_cap = 6;
+				double dchg_cap = 7;
+				double chg_eng = 8;
+				double dchg_eng = 9;
+				uint64 step_time = 10;
+				uint32 work_type = 11;
+				uint32 step_type = 12;
+				uint32 seq_id = 13;
+				uint32 data_flag = 14;
+				uint32 test_id = 15;
+				uint32 cycle_id = 16;
+				uint32 step_id = 17;
+				uint32 step_chg_count = 18;
+				int32 temp = 19;
+				int32 ir = 20;
+				int32 cur_step_range = 21;
+				bytes abs_time = 22;
+				uint64 total_time = 23;
+			}
+			bytes mid_guid = 1;
+			int32 dev_uid = 2;
+			repeated rt_df vec_rt_df = 3;
+		}	
+		
+		bytes ip = 1;
+		bytes srv_guid = 2;
+		repeated MidRTDF mid_rt_df = 3;
+	}
+	
+	bytes edge_guid = 1;
+	repeated SrvRTDF srv_rt_df = 2;
+	uint64 upd_dt = 3;//RT数据发送时间戳
+}
+
+message ZWJstatus{	
+  bytes edge_guid = 1;
+  message ZWJ_RT
+  {
+	bytes srv_ip = 1;
+    bytes srv_guid = 2;
+    int32 bts_type = 3;
+    bytes mid_guid = 4;
+    int32 dev_uid = 5;	    
+    repeated int32 pan_status=6;//风扇状态
+    repeated int32 draught_fan=7;//风机状态
+    message TemperatureStatus//温箱状态
+    {
+        int32 Type = 1;
+        int32 Status=2;
+        int32 ErrCode=3;
+    }
+    repeated TemperatureStatus vec_temperature_status=8;
+  }
+  repeated ZWJ_RT vec_zwj_rt = 2;
+  uint64 upd_dt = 3;//RT数据发送时间戳
+}
+
+/*
+
+//-----------------------------------------------
+next_cmd命令:
+C->S
+next_cmd
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data":
+	{
+		"guid"="xxx",
+		"tenant_id" = xxxx,
+		"name" = "xxxxx"
+	}
+}
+
+
+//-----------------------------------------------
+获取RT数据:
+S->C
+get_rt
+{
+	"ip":"192.168.0.1",
+	"bts_type":4,//默认值为4
+	"dev_type":24,
+	"dev_id":1,//当dev_id为0表示获取对应设备类型的所以通道的RT数据
+	"unit_id":0,//当unit_id为0表示获取整个设备的RT数据
+	"chl_id":0//当chl_id为0表示获取整个单元的RT数据
+}
+
+C->S
+get_rt_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data":
+	[
+		{
+				ip:"192.168.1.2",//上位机IP
+				srv_guid:"xxxxxx",//上位机GUID
+				bts_type:4,
+				mid_guid:"ASHCKAPJ123",//中位机GUID
+				dev_uid:240001,(int)
+				unit_id: 1,(1-255)
+				chl_id: 1,(1-255)
+				volt: 3.14,//V(double)
+				curr: 2.2,//mA(double)
+				chg_cap: 12.55,//mAh(double)
+				dchg_cap: 0.0,//mAh(double)
+				cap: 12.55,//mAh(double)
+				chg_eng: 15.55,//mWh(double)
+				dchg_eng: 0.0,//mWh(double)
+				eng: 15.55,//mWh(double)
+				step_time: 1.23,//秒(UINT64)
+				work_type: 48,//工作状态通道bit位来标识对应的状态(int)
+							 //Bit5 Bit4:
+							 //0   0  测试完成
+							 //0   1  测试进行中
+							 //1   0  用户停止
+							 //1   1  安全停止
+		
+				step_type: 2,(int)
+							//BTS 工步类型
+							//enum BTS_STEP_TYPE
+							//{
+							//	StepTypeCount = 15,
+							//	StepT_Undefined = 0,	//	未定义
+							//	StepT_ChargeCurrent = 1,	//	恒流充电
+							//	StepT_DischargeCurrent = 2,	//	恒流放电
+							//	StepT_ChargeVoltage = 3,	//	恒压充电
+							//	StepT_Rest = 4,	//	静置
+							//	StepT_Cycle = 5,	//	循环
+							//	StepT_Stop = 6,	//	停止
+							//	StepT_ChargeCurrentVoltage = 7,	//	恒流恒压充电
+							//	StepT_DischargePower = 8,	//	恒功率放电
+							//	StepT_ChargePower = 9,	//	恒功率充电
+							//	StepT_DischargeRes = 10,	//	恒阻放电
+							//	StepT_ChargeRes = 11,	//	恒阻充电
+							//	StepT_MeasureRes = 12,	//	测量内阻
+							//	StepT_Suspend = 13,	//	挂起工步
+							//	StepT_Pulse = 16,	//	脉冲工步
+							//	StepT_Sim = 17,	//	模拟工步
+							//	StepT_PCCCV = 18,	//	电池组 动态恒压放电工步
+							//	StepT_DV = 19,	//	恒压放电
+							//	StepT_DCDV = 20,	//	恒流恒压放电
+							//	stCtrl = 21,//控制工步
+							//};
+				test_id: 2,//测试ID(uint)
+				cycle_id: 2,//循环ID(int)
+				step_id: 2,//工步ID(int)
+				temp: 2,//温度(单位:°C*10)(int)
+				pyh_id:1//物理通道ID
+			},
+			{
+				ip:"192.168.1.2",
+				bts_type:4,
+				dev_uid:240001,
+				unit_id: 1,
+				chl_id: 2,
+				volt: 3.14,
+				curr: 2.2,
+				chg_cap: 12.55,
+				dchg_cap: 0.0,
+				cap: 12.55,
+				chg_eng: 15.55,
+				dchg_eng: 0.0,
+				eng: 15.55,
+				step_time: 1.56,
+				work_type: 16,
+				step_type: 4,
+				test_id: 2,//测试ID
+				cycle_id: 2,//循环ID
+				step_id: 2,//工步ID
+				temp: 2//温度
+			}
+		]
+}
+
+
+//-----------------------------------------------
+获取通道信息
+S->C
+get_chl_info
+{
+	"ip":"192.168.0.1"//如果为空则表示获取全部上位机的信息
+}
+
+C->S
+get_chl_info_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"edge_guid":"xxxxxxxxxxxxxxxx",
+	"data":
+	[
+		{
+			bts_server_ip:"192.168.0.1",//上位机IP
+			srv_guid:"xxxxxx",//上位机GUID
+			bts_server_version:"BTSServer(R3)-7.6.0.301 (2018.07.30)",//服务器版本
+			bts_type:4,//BTS服务器类型,4系设备  5系设备
+			mid_list: [ {				
+					dev_type:24,//设备类型 24:BTS82 23:BTS81 22:BTS80 21:BTS79 ...
+					dev_uid: 240001,//中位机编号
+					mid_guid:"ASHCKAPJ123",//中位机GUID
+					mid_version:"11.1",//中位机版本
+					production_serial: "2010234213",//生产序列号
+					st_production_time:"2020-1-1 1:1:1",//生产时间
+					low_list:[//主通道信息
+						{
+							unit_id: 1,//单元ID
+							low_guid:"KKKKKKK111",//下位机GUID
+							low_no:1,//下位机箱号
+							range_volt: 5,//电压量程(V)
+							range_curr_array:[100, 1000],//电流量程(mA) 存储多量程
+							low_version: "1.1"//下位机版本
+							slave_sft_ver:"1.1"//下位机程序副本
+							first_cali_time:"2020-2-12 14:00:00",//首次校准时间
+							latest_cali_time:"2020-2-12 14:00:00",//最近一次校准时间
+							latest_cali_worker:"xxxxx",//最近一次校准人
+							channel_list: [//channel_list与pyh_chl_list的数量与顺序必须保证一致
+							1,2,3,4...
+							],
+							pyh_chl_list: [//channel_list与pyh_chl_list的数量与顺序必须保证一致
+							1,2,3,4...
+							]
+						},
+						{
+							unit_id: 2,
+							low_guid:"KKKKKKK112",
+							low_no:1,//下位机箱号
+							range_volt: 5,
+							range_curr: 3,
+							low_version: "1.1"
+							slave_sft_ver:"1.1"
+							channel_list: [//channel_list与pyh_chl_list的数量与顺序必须保证一致
+							1,2,3,4...
+							],
+							pyh_chl_list: [//channel_list与pyh_chl_list的数量与顺序必须保证一致
+							1,2,3,4...
+							]
+						}
+				
+					],
+					aux_low_list:[//辅助通道信息 如果没有辅助通道下位机这里为空
+						{
+							low_guid:"KKKKKKK111",//下位机GUID
+							low_no:1,//下位机箱号
+							low_version: "1.1"//下位机版本
+							slave_sft_ver:"1.1"//下位机程序副本
+							first_cali_time:"2020-2-12 14:00:00",//首次校准时间
+							latest_cali_time:"2020-2-12 14:00:00",//最近一次校准时间
+							latest_cali_worker:"xxxxx",//最近一次校准人
+							map_chanel_list: [//映射的主通道信息(如果没有绑定任何主通道,这里为空)
+								{main_unit_id:1,main_chl_id:1,aux_id:1,aux_pyh:40},
+								{main_unit_id:1,main_chl_id:1,aux_id:2,aux_pyh:41},
+								{main_unit_id:1,main_chl_id:2,aux_id:1,aux_pyh:43}
+							]
+						},
+						{
+							low_guid:"KKKKKKK122",//下位机GUID
+							low_no:2,//下位机箱号
+							low_version: "1.1"//下位机版本
+							slave_sft_ver:"1.1"//下位机程序副本
+							first_cali_time:"2020-2-12 14:00:00",//首次校准时间
+							latest_cali_time:"2020-2-12 14:00:00",//最近一次校准时间
+							latest_cali_worker:"xxxxx",//最近一次校准人
+							map_chanel_list: [//映射的主通道信息(如果没有绑定任何主通道,这里为空)
+							]
+						}
+					]
+				}
+			]
+	
+		}
+		,
+		...
+	]
+}
+
+
+
+//-----------------------------------------------
+启动测试
+S->C
+start_test
+{
+	"ip":"192.168.0.1",
+	"is_step_data":0,//默认为0   0:表示路径 1:表示文件
+	"step_data":"xxxx",//工步数据 base64位编码
+    "schedule": "D:\\2\\FC-100-002-er-Q74.xml",//对应的目录必须能访问 
+	"step_file_name":"IC-2600-30.xml",//记录工步文件名(仅名字)
+    "batch_no": "2015-10-29 12-06-49",//最大长度60字节
+    "test_name": "FC-121-170808-1-4",//最大长度60字节
+	"start_step":1,//如果为0则会使用工步文件中的起始工步
+	"creator":"",//创建者,如果为空则会使用工步文件中的信息 //最大长度60字节
+	"scale":10,//当前通道的系数:量程大于1000mA系数为10,量程大于100mA系数为100,量程大于10mA系数为1000,量程小于10mA为10000
+	"battery_mass":3,//质量(整数,单位:微克)
+	"desc":"",//备注,如果为空则会使用工步文件中的信息 //最大长度90字节	
+	"is_dbc":0,//是否为DBC测试 0:否 1:是 如果是者参数中只有ip,schedule,chl的参数有效
+    "chl": [
+        {
+            "dev_uid": 240001,
+            "unit_id": 1,
+            "chl_id": 1,
+            "barcode": "A1234567890",
+			"battery_mass":3,//质量(整数,单位:微克)
+			"desc":""//备注,如果为空则会使用工步文件中的信息 //最大长度90字节
+        },
+        {
+            "dev_uid": 240001,
+            "unit_id": 1,
+            "chl_id": 2,
+            "barcode": "A1234567891",
+			"battery_mass":3,//质量(整数,单位:微克)
+			"desc":""//备注,如果为空则会使用工步文件中的信息 //最大长度90字节
+        },
+        {
+            "dev_uid": 240001,
+            "unit_id": 2,
+            "chl_id": 1,
+            "battery_mass":3,//质量(整数,单位:微克)
+			"desc":""//备注,如果为空则会使用工步文件中的信息 //最大长度90字节
+        }
+    ]
+}
+
+C->S
+start_test_return
+{
+"success":false,//所有通道成功启动测试，此字段才问true
+"chl_info":
+	[{
+	"dev_uid":240001,
+	"unit_id":2,
+	"chl_id":1,
+	"success":true,
+    "error":"",
+	"test_id":14
+	},{
+	"dev_uid":240001,
+	"unit_id":2,
+	"chl_id":2,
+	"success":false,
+    "error":"xxxxxx",
+	"test_id":0
+	}]
+}
+
+
+//-----------------------------------------------
+工步重置（注：一条命令只能包含一个通道）
+S->C
+step_modify
+{
+	"ip":"192.168.0.1",
+	"is_step_data":0,//默认为0   0:表示路径 1:表示文件
+	"step_data":"xxxx",//工步数据 base64位编码
+    "schedule": "D:\\2\\FC-100-002-er-Q74.xml",//对应的目录必须能访问 
+	"batch_no": "2015-10-29 12-06-49",//最大长度60字节
+	"creator":"",//创建者,如果为空则会使用工步文件中的信息 //最大长度60字节
+	"desc":"",//备注,如果为空则会使用工步文件中的信息 //最大长度90字节	
+	"scale":10,//当前通道的系数:量程大于1000mA系数为10,量程大于100mA系数为100,量程大于10mA系数为1000,量程小于10mA为10000
+	"is_dbc":0,//是否为DBC测试 0:否 1:是 如果是者参数中只有ip,schedule,chl的参数有效
+	"step_id":0,//0表示当前工步
+	 "chl":
+	{
+            "dev_uid": 240001,
+            "unit_id": 1,
+            "chl_id": 1,
+            "barcode": "A1234567890"
+	}
+}
+C->S
+step_modify_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data":""
+}
+
+//-----------------------------------------------
+停止测试
+S->C
+stop_test
+{
+    "ip": "192.168.0.1",
+    "chl": [
+        {
+            "dev_uid": 240001,
+            "unit_id": 1,
+            "chl_id": 1
+        },
+        {
+            "dev_uid": 240001,
+            "unit_id": 1,
+            "chl_id": 2
+        },
+        {
+            "dev_uid": 240001,
+            "unit_id": 2,
+            "chl_id": 1
+        }
+    ]
+}
+
+C->S
+stop_test_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data":""
+}
+
+//-----------------------------------------------
+预约暂停
+S->C
+reserve_stop_test
+{
+    "ip": "192.168.0.1",
+    "chl": [
+        {
+            "dev_uid": 240001,
+            "unit_id": 1,
+            "chl_id": 1
+        },
+        {
+            "dev_uid": 240001,
+            "unit_id": 1,
+            "chl_id": 2
+        },
+        {
+            "dev_uid": 240001,
+            "unit_id": 2,
+            "chl_id": 1
+        }
+    ],
+	"reserve_stop_opreate_type":1,//1：设置预约停止 2:取消预约停止
+	"step_cycle_stop":{"step":0,"cycle":4294967295},//预约停止的工步ID与循环ID,如果没有可以为空 step:0xFFFF表示当前的 cycle:0xFFFFFFFF表示当前的
+	"out_time":0//超时时间ms
+}
+
+C->S
+reserve_stop_test_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data":""
+}
+
+//-----------------------------------------------
+接续
+S->C
+continue
+{
+    "ip": "192.168.0.1",
+    "chl": [
+        {
+            "dev_uid": 240001,
+            "unit_id": 1,
+            "chl_id": 1
+        },
+        {
+            "dev_uid": 240001,
+            "unit_id": 1,
+            "chl_id": 2
+        },
+        {
+            "dev_uid": 240001,
+            "unit_id": 2,
+            "chl_id": 1
+        }
+    ]
+}
+
+C->S
+continue_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data":""
+}
+
+//-----------------------------------------------
+跳转
+S->C
+jump
+{
+    "ip": "192.168.0.1",
+	"step_id":3,//跳转到第几工步
+    "chl": [
+        {
+            "dev_uid": 240001,
+            "unit_id": 1,
+            "chl_id": 1
+        },
+        {
+            "dev_uid": 240001,
+            "unit_id": 1,
+            "chl_id": 2
+        },
+        {
+            "dev_uid": 240001,
+            "unit_id": 2,
+            "chl_id": 1
+        }
+    ]
+}
+
+C->S
+jump_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data":""
+}
+
+//-----------------------------------------------
+清除通道标识
+S->C
+reset_chl_status
+{
+    "ip": "192.168.0.1",
+    "chl": [
+        {
+            "dev_uid": 240001,
+            "unit_id": 1,
+            "chl_id": 1
+        },
+        {
+            "dev_uid": 240001,
+            "unit_id": 1,
+            "chl_id": 2
+        },
+        {
+            "dev_uid": 240001,
+            "unit_id": 2,
+            "chl_id": 1
+        }
+    ]
+}
+
+C->S
+reset_chl_status_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data":""
+}
+
+//-----------------------------------------------
+设置声光报警状态
+S->C
+set_sl_alarm
+{
+    "ip": "192.168.0.1",
+    "chl": [
+        {
+            "dev_uid": 240001,
+            "unit_id": 1,
+            "chl_id": 1,
+			"sl_status" : 16//btSLStatus = 1 << 4;表示复位声光报警
+        },
+        {
+            "dev_uid": 240001,
+            "unit_id": 1,
+            "chl_id": 2,
+			"sl_status" : 16//btSLStatus = 1 << 4;表示复位声光报警
+        },
+        {
+            "dev_uid": 240001,
+            "unit_id": 2,
+            "chl_id": 1,
+			"sl_status" : 16//btSLStatus = 1 << 4;表示复位声光报警
+        }
+    ]
+}
+
+C->S
+set_sl_alarm_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data":""
+}
+
+//-----------------------------------------------
+点灯
+S->C
+light
+{
+    "ip": "192.168.0.1",
+	"light_up":0,//是否亮灯 0:不亮 1:亮
+    "chl": [
+        {
+            "dev_uid": 240001,
+            "unit_id": 1,
+            "chl_id": 1
+        },
+        {
+            "dev_uid": 240001,
+            "unit_id": 1,
+            "chl_id": 2
+        },
+        {
+            "dev_uid": 240001,
+            "unit_id": 2,
+            "chl_id": 1
+        }
+    ]
+}
+
+C->S
+light_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data":""
+}
+
+//-----------------------------------------------
+发送工步文件
+S->C
+send_step_file
+arg参数为xml文件的二进制流
+
+C->S
+send_step_file_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data":"D:\xxxxx.xml"//对应的工步在边缘计算器上的名称
+}
+
+//-----------------------------------------------
+获取本地工步文件的路径
+S->C
+get_step_file_path
+
+C->S
+get_step_file_path_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data":[
+	"\\192.168.1.1\xxxxx.xml",
+	"\\192.168.1.1\xxxxx.xml",
+	"\\192.168.1.1\xxxxx.xml"
+	]
+}
+
+//-----------------------------------------------
+获取工步信息
+S->C
+get_step_info
+{
+    "ip": "192.168.0.1",
+	"dev_uid": 240001,
+    "unit_id": 1,
+    "chl_id": 1,
+	"test_id":0//如果为0表示获取当前测试的工步信息
+}
+
+C->S
+get_step_info_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data":"xxxxx(xml字符串)",
+	"battery_mass":1,
+	"beg_time":"2021-03-11 09:36:43",
+	"end_time":"2022-01-28 10:31:49",
+	"creator":"1",
+	"info":"1",
+	"batch_no":"2021-03-11 09-36-43",
+	"barcode":"1"
+}
+
+//-----------------------------------------------
+获取设备日志
+S->C
+get_dev_log//ip和dev_uid为必填值=字段
+{
+    "ip": "192.168.0.1",
+	"dev_uid": 240001,
+    "unit_id": 1,
+    "chl_id": 1,
+	"test_id":0//如果为0表示获取当前测试的工步信息(可选)
+	"beg_time":"2020-01-01 01:01:01",//日志起始时间(可选)
+	"end_time":"2020-02-01 01:01:01"//日志结束时间(可选)
+}
+
+C->S
+get_dev_log_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data":
+	[
+		{
+            "unit_id":1,
+            "chl_id":1,
+            "test_id":2818579751,
+            "seq_id":1,
+            "cycle":0,
+            "step_id":1,
+            "step_type":1,
+            "work_type":95,
+            "step_time":0,
+            "volt":25002,
+            "curr":6000,
+            "log_code":8,
+            "chg_cap":0,
+            "dchg_cap":0,
+            "chg_eng":0,
+            "dchg_eng":0,
+            "a_time":"2020-12-07 22:46:03"
+        },
+		{...}
+	]
+}
+
+//-----------------------------------------------
+获取当前测试信息
+S->C
+get_curr_test_info
+{
+    "ip": "192.168.0.1",
+	"dev_uid": 240001
+}
+
+C->S
+get_curr_test_info_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data":
+	[
+		{
+		"srv_guid":"xxxxxxx",
+		"dev_uid":240045,
+		"unit_id":1,
+		"chl_id":1,
+		"test_id":16,
+		"battery_mass":0,//(整数,单位:微克)
+		"beg_time":"2020-12-16 08:46:11",
+		"end_time":"2020-12-22 11:18:01",
+		"creator":"",
+		"info":"",
+		"batch_no":"2020-12-16 08-46-09",
+		"barcode":""},
+		{
+		"srv_guid":"xxxxxxx",
+		"dev_uid":240045,
+		"unit_id":1,
+		"chl_id":2,
+		"test_id":16,
+		"battery_mass":0,
+		"beg_time":"2020-12-16 08:46:11",
+		"end_time":"2020-12-22 11:18:01",
+		"creator":"",
+		"info":"",
+		"batch_no":"2020-12-16 08-46-09",
+		"barcode":""}
+	]
+}
+
+//-----------------------------------------------
+重连上位机(此命令如果连接不上会重试2分钟)
+S->C
+reconnect_srv
+{
+    "ip": "192.168.0.1"
+}
+
+C->S
+reconnect_srv_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data":""
+}
+
+//-----------------------------------------------
+重启边缘服务(此命令不会有反馈)
+S->C
+reconnect_edge_server
+{
+}
+
+C->S
+reconnect_edge_server_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data":""
+}
+
+//-----------------------------------------------
+加急上传
+S->C
+data_upload_urgent{
+	"ip":"129.16.0.200",
+	"bts_type":4,//BTS类型  4:4系设备、5:5系设备
+	"type":1,/、1:时间区间上传(必填：ip,type,begin_time,end_time), 2：加急上传只上传测试信息(必填:ip,type),
+	//3:加急上传，测试信息和测试数据都上传(必填：ip,type，如果没有通道信息，则上传所有通道的测试数据)
+	beg_time:"2016-10-29 19:32:15",
+	end_time:"2021-05-21 11:15:17",
+	"chl:"[{
+			"dev_uid":240001,
+			"unit_id":1,
+			"chl_id":1
+		},{
+			"dev_uid":240002,
+			"unit_id":1,
+			"chl_id":2
+		}]
+}
+
+C->S
+data_upload_urgent_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data":""
+}
+
+//-----------------------------------------------
+设置温箱绑定关系
+S->C
+set_thermostat_map{
+	"ip":"129.16.0.200",
+	"dev_type": 24,
+	"dev_id": 1,
+	"type":0,//命令类型 0 表示将映射信息保存到数据库 1 表示发送映射信息到中位机 2 表示删除数据库中的映射信息
+	"thermostat_id":1,//温箱号
+	"floor_id":1,//温箱层号
+	"chl" : [
+	{
+		"unit_id" : 1,
+		"chl_id" : 1
+	},
+	{
+		"unit_id" : 1,
+		"chl_id" : 2
+	},
+	{
+		"unit_id" : 2,
+		"chl_id" : 1
+	}
+	]
+}
+
+C->S
+set_thermostat_map_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data" : {
+	"result": "",
+	"type":0,//命令类型 0 表示将映射信息保存到数据库 1 表示发送映射信息到中位机
+	"thermostat_id":0,
+	"floor_id":1,
+	"chl" : [
+	{
+		"unit_id" : 1,
+		"chl_id" : 1
+	},
+	{
+		"unit_id" : 1,
+		"chl_id" : 2
+	},
+	{
+		"unit_id" : 2,
+		"chl_id" : 1
+	}
+	]
+	}
+}
+
+//-----------------------------------------------
+获取温箱绑定关系
+S->C
+get_thermostat_map{
+	"ip":"129.16.0.200",
+	"dev_type": 24,
+	"dev_id": 1
+}
+
+C->S
+get_thermostat_map_return
+{
+	"success":true,
+	"error":"xxxxxx",
+	"data" : {
+	"result": "",	
+	"chl" : [
+	{
+		"thermostat_id":0,
+		"floor_id":1,
+		"unit_id" : 1,
+		"chl_id" : 1
+	},
+	{
+		"thermostat_id":0,
+		"floor_id":1,
+		"unit_id" : 1,
+		"chl_id" : 2
+	},
+	{
+		"thermostat_id":0,
+		"floor_id":1,
+		"unit_id" : 2,
+		"chl_id" : 1
+	}
+	]
+	}
+}
+
+//-----------------------------------------------
+LIMS或者APP推送实验室信息
+S->C
+update_edge{
+	"name":"{"edg_name":"风风火火","person_in_charge":"飞凤","phone":"188 8888 8888","address":"华润","public_ip":"222.182.199.107", "update_time":0}"
+}
+
+C->S
+update_edge_return
+{
+	"success":true,
+	"error":"xxxxxx"
+}
+
+//-----------------------------------------------
+LIMS或者APP推送实验室信息
+S->C
+update_edge{
+	"name":"{"edg_name":"风风火火","person_in_charge":"飞凤","phone":"188 8888 8888","address":"华润","public_ip":"222.182.199.107", "update_time":0}"
+}
+
+C->S
+update_edge_return
+{
+	"success":true,
+	"error":"xxxxxx"
+}
+
+//-----------------------------------------------
+执行自定义数据处理代码
+必须是一个Python函数,函数原型:def data_processing(system_parameter, user_parameter)
+S->C
+data_processing
+{
+	"modules":[//modules中自定义函数的先后顺序要固定,程序将反馈最后一个函数的结果
+		{"key":"hppc","source_code":"def data_processing(system_parameter, user_parameter):...", "user_parameter":{"用户参数1":"xx","用户参数2":"xxx",...}},
+		{"key":"dqdv","source_code":"def data_processing(system_parameter, user_parameter):...", "user_parameter":{"用户参数1":"xx","用户参数2":"xxx",...}}
+	],
+    "test_info": [
+        {
+            "bar_id": 123,//barcode_info表的id
+            "srv_id": 1,//上位机ID
+            "edge_id": 1,//边缘计算ID
+			"lotid":""
+        },
+        {
+            "bar_id": 124,//barcode_info表的id
+            "srv_id": 1,//上位机ID
+            "edge_id": 1,//边缘计算ID
+			"lotid":""
+        },
+        {
+            "bar_id": 125,//barcode_info表的id
+            "srv_id": 1,//上位机ID
+            "edge_id": 1,//边缘计算ID
+			"lotid":""
+        }
+    ]
+}
+
+C->S
+data_processing_return
+{
+	"success":true,//当GRPC反馈的内容包含:ERROR: Exception calling application:就表示出现了异常
+	"error":"xxxxxx",//当有异常时,异常结果会赋值给error
+	"data":""//json格式数据
+}
+
+//-----------------------------------------------
+客户端主动推送的RT数据(RtData)无反馈包
+C->S
+rt_data
+[
+	{
+		edge_guid:"xxxxx",
+		ip:"192.168.1.2",//上位机IP
+		bts_type:4,
+		mid_guid:"ASHCKAPJ123",//中位机GUID
+		dev_uid:240001,
+		unit_id: 1,
+		chl_id: 1,
+		volt: 3.14,//V
+		curr: 2.2,//mA
+		chg_cap: 12.55,//mAh
+		dchg_cap: 0.0,//mAh
+		cap: 12.55,//mAh
+		chg_eng: 15.55,//mWh
+		dchg_eng: 0.0,//mWh
+		eng: 15.55,//mWh
+		step_time: 1.23,//秒
+		work_type: 48,//工作状态通道bit位来标识对应的状态
+						//Bit5 Bit4:
+						//0   0  测试完成
+						//0   1  测试进行中
+						//1   0  用户停止
+						//1   1  安全停止
+		
+		step_type: 2,
+					//BTS 工步类型
+					//enum BTS_STEP_TYPE
+					//{
+					//	StepTypeCount = 15,
+					//	StepT_Undefined = 0,	//	未定义
+					//	StepT_ChargeCurrent = 1,	//	恒流充电
+					//	StepT_DischargeCurrent = 2,	//	恒流放电
+					//	StepT_ChargeVoltage = 3,	//	恒压充电
+					//	StepT_Rest = 4,	//	静置
+					//	StepT_Cycle = 5,	//	循环
+					//	StepT_Stop = 6,	//	停止
+					//	StepT_ChargeCurrentVoltage = 7,	//	恒流恒压充电
+					//	StepT_DischargePower = 8,	//	恒功率放电
+					//	StepT_ChargePower = 9,	//	恒功率充电
+					//	StepT_DischargeRes = 10,	//	恒阻放电
+					//	StepT_ChargeRes = 11,	//	恒阻充电
+					//	StepT_MeasureRes = 12,	//	测量内阻
+					//	StepT_Suspend = 13,	//	挂起工步
+					//	StepT_Pulse = 16,	//	脉冲工步
+					//	StepT_Sim = 17,	//	模拟工步
+					//	StepT_PCCCV = 18,	//	电池组 动态恒压放电工步
+					//	StepT_DV = 19,	//	恒压放电
+					//	StepT_DCDV = 20,	//	恒流恒压放电
+					//};
+		test_id: 2,//测试ID
+		cycle_id: 2,//循环ID
+		step_id: 2,//工步ID
+		temp: 2//温度
+	},
+	{
+		"edge_guid":"xxxxx",
+		ip:"192.168.1.2",
+		bts_type:4,
+		dev_uid:240001,
+		unit_id: 1,
+		chl_id: 2,
+		volt: 3.14,
+		curr: 2.2,
+		chg_cap: 12.55,
+		dchg_cap: 0.0,
+		cap: 12.55,
+		chg_eng: 15.55,
+		dchg_eng: 0.0,
+		eng: 15.55,
+		step_time: 1.56,
+		work_type: 16,
+		step_type: 4,
+		test_id: 2,//测试ID
+		cycle_id: 2,//循环ID
+		step_id: 2,//工步ID
+		temp: 2//温度
+	}
+]
+
+
+*/

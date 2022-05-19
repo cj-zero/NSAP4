@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28822.285
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenAuth.WebApi", "OpenAuth.WebApi\OpenAuth.WebApi.csproj", "{A44BD472-84E3-4D70-9DC5-06210617D6EE}"
 EndProject
@@ -24,6 +24,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sap.Handler", "Sap.Handler\Sap.Handler.csproj", "{E261A52B-CDE2-45FA-8ECB-FF16EED46FB8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NSAP.App.WebApi", "NSAP.App.WebApi\NSAP.App.WebApi.csproj", "{46293C08-BAD5-49AE-B2B7-B5DB82595D0F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Neware.LIMS.Mqtt", "Neware.LIMS.Mqtt\Neware.LIMS.Mqtt.csproj", "{9E67464F-13FC-473D-8893-2AA977EFADB4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -71,6 +73,10 @@ Global
 		{46293C08-BAD5-49AE-B2B7-B5DB82595D0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{46293C08-BAD5-49AE-B2B7-B5DB82595D0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{46293C08-BAD5-49AE-B2B7-B5DB82595D0F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E67464F-13FC-473D-8893-2AA977EFADB4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E67464F-13FC-473D-8893-2AA977EFADB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E67464F-13FC-473D-8893-2AA977EFADB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E67464F-13FC-473D-8893-2AA977EFADB4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

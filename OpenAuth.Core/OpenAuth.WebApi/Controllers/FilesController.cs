@@ -245,5 +245,30 @@ namespace OpenAuth.WebApi.Controllers
             var result = await _app.UploadFileToHuaweiOBS(file);
             return result;
         }
+
+        /// <summary>
+        /// 判断桶中是否已经存在工步文件名
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public bool IsExistsStepFileName(string fileName)
+        {
+            var result = _app.IsExistsFileName("stepFile/" + fileName);
+            return result;
+        }
+
+        /// <summary>
+        /// 上传工步文件到华为云obs
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [DisableRequestSizeLimit]
+        public async Task<UploadFileResp> UploadStepFileToHuaweiOBS(IFormFile file)
+        {
+            var result = await _app.UploadStepFileToHuaweiOBS(file);
+            return result;
+        }
     }
 }

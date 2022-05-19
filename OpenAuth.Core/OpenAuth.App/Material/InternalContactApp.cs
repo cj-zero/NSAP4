@@ -1774,7 +1774,7 @@ namespace OpenAuth.App.Material
 
                 //有BOM却未被使用的物料(有无生产单),即没有批量
                 //var exceptLs = finlishedBomOrder.Select(c=>c.ItemCode).ToList().Except(hasOrderItem.Select(c => c.ItemCode).ToList()).ToList();
-                if (!(b01ProductOrder.Count > 0))
+                if (!(b01ProductOrder.Count != 0 && b01ProductOrder.Count > 0))
                 {
                     var mananerName = "";
                     if (mananer.Keys.Contains(orgInfo.Name))
@@ -2122,7 +2122,7 @@ namespace OpenAuth.App.Material
                                      {
                                          MnfSerial = o.SuppSerial,
                                          Quantity = 1,
-                                         WhsCode = o.Status == 0 ? string.Join(",", ign3.Select(i3 => i3.WhsCode).ToList()) : "",
+                                         WhsCode = o.Status == 0 ? string.Join(",", ign3.Select(i3 => i3.WhsCode).Distinct().ToList()) : "",
                                          OrgName = o.Status == 0 ? "E3" : "S19"
                                      };
                                  }).ToList();
@@ -2130,7 +2130,7 @@ namespace OpenAuth.App.Material
                              }
                              else
                              {
-                                 internalContactProductionDetailReq.Add(new InternalContactProductionDetailReq { MnfSerial = "", WhsCode = string.Join(",", ign3.Select(i3 => i3.WhsCode).ToList()), OrgName = "E3", Quantity = (int)ign3.Sum(i3 => i3.Quantity) });
+                                 internalContactProductionDetailReq.Add(new InternalContactProductionDetailReq { MnfSerial = "", WhsCode = string.Join(",", ign3.Select(i3 => i3.WhsCode).Distinct().ToList()), OrgName = "E3", Quantity = (int)ign3.Sum(i3 => i3.Quantity) });
                              }
 
                          }

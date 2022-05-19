@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UserSecretsId>d4c7c5f7-f900-4400-b96f-efb42b4ec864</UserSecretsId>
+	<PublishWithAspNetCoreTargetManifest>false</PublishWithAspNetCoreTargetManifest>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -29,6 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Protos\a.cmd" />
     <None Remove="Templates\InternalContactHeader.html" />
     <None Remove="Templates\PrintInternalContact.html" />
     <None Remove="Templates\PrintSalesQuotationfooter.html" />
@@ -54,11 +56,21 @@
 
   <ItemGroup>
     <PackageReference Include="Docnet.Core" Version="2.1.3" />
+    <PackageReference Include="Google.Protobuf" Version="3.20.1" />
+    <PackageReference Include="Google.Protobuf.Tools" Version="3.20.1" />
+    <PackageReference Include="Grpc.Core" Version="2.45.0" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.45.0" />
+    <PackageReference Include="Grpc.Net.ClientFactory" Version="2.45.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.45.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="IdentityServer4.AccessTokenValidation" Version="3.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="3.1.2" />
     <PackageReference Include="Microsoft.Extensions.Logging.Log4Net.AspNetCore" Version="3.1.0" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="2.1.0" />
+    <PackageReference Include="MQTTnet.AspNetCore" Version="2.8.5" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
     <PackageReference Include="NUnit" Version="3.12.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.16.0" />
@@ -77,8 +89,17 @@
     <Reference Include="Autofac.Extensions.DependencyInjection">
       <HintPath>..\..\..\Users\Administrator\.nuget\packages\autofac.extensions.dependencyinjection\4.0.0\lib\netstandard1.1\Autofac.Extensions.DependencyInjection.dll</HintPath>
     </Reference>
+    <Reference Include="Common">
+      <HintPath>..\package\Common.dll</HintPath>
+    </Reference>
     <Reference Include="ENTITY">
       <HintPath>..\OpenAuth.App\Nsapdll\ENTITY.dll</HintPath>
+    </Reference>
+    <Reference Include="Log">
+      <HintPath>..\package\Log.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Windows.Forms">
+      <HintPath>..\package\System.Windows.Forms.dll</HintPath>
     </Reference>
   </ItemGroup>
 
@@ -102,6 +123,10 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  
+  <!--<ItemGroup>
+    <Protobuf Include="Protos\EdgeAPI.proto" GrpcServices="Client" />
+  </ItemGroup>-->
 
   <ItemGroup>
     <None Update="Templates\Calibration Certificate%28word%29.docx">

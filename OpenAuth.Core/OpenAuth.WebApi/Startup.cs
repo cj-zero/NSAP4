@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Text;
+using System.Threading.Tasks;
 using Autofac;
 using IdentityServer4.AccessTokenValidation;
 using Infrastructure;
@@ -11,6 +13,7 @@ using Infrastructure.AutoMapper;
 using Infrastructure.Exceptions;
 using Infrastructure.Extensions.AutofacManager;
 using Infrastructure.HuaweiOCR;
+using Infrastructure.MQTT;
 using Infrastructure.TecentOCR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
@@ -25,14 +28,21 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
+using MQTTnet;
+using MQTTnet.AspNetCore;
+using MQTTnet.Protocol;
+using MQTTnet.Server;
 using Neware.Cap.DependencyInjection;
 using Newtonsoft.Json;
 using OpenAuth.App;
 using OpenAuth.App.HostedService;
+using OpenAuth.App.Interface;
+using OpenAuth.App.Nwcali;
 using OpenAuth.App.SignalR;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Extensions;
 using OpenAuth.WebApi.Model;
+using Serilog;
 using Swashbuckle.AspNetCore.SwaggerUI;
 
 namespace OpenAuth.WebApi
@@ -41,11 +51,12 @@ namespace OpenAuth.WebApi
     {
         public IHostEnvironment Environment { get; }
         public IConfiguration Configuration { get; }
-
+        private static MqttNetClient _mqttNetClient;
         public Startup(IConfiguration configuration, IHostEnvironment environment)
         {
             Configuration = configuration;
             Environment = environment;
+
         }
 
         // This method gets called by the runtime. Use this method to add services to the container.
@@ -73,8 +84,6 @@ namespace OpenAuth.WebApi
                         options.Audience = "openauthapi";
                     });
             }
-
-
             services.AddSwaggerGen(option =>
             {
                 foreach (var controller in GetControllers())
@@ -121,21 +130,21 @@ namespace OpenAuth.WebApi
                 }
 
 
-			});
-			services.Configure<AppSetting>(Configuration.GetSection("AppSetting"));
-			services.AddControllers(option =>
-			{
-				option.Filters.Add<OpenAuthFilter>();
-				option.Filters.Add<ExceptionFilter>();
-				//option.Filters.Add<RequestActionFilter>();
-			}).AddNewtonsoftJson(options =>
-			{
-				//忽略循环引用
-				options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-				//不使用驼峰样式的key
-				//options.SerializerSettings.ContractResolver = new DefaultContractResolver();    
-				options.SerializerSettings.DateFormatString = "yyyy-MM-dd HH:mm:ss";
-			});
+            });
+            services.Configure<AppSetting>(Configuration.GetSection("AppSetting"));
+            services.AddControllers(option =>
+            {
+                option.Filters.Add<OpenAuthFilter>();
+                option.Filters.Add<ExceptionFilter>();
+                //option.Filters.Add<RequestActionFilter>();
+            }).AddNewtonsoftJson(options =>
+            {
+                //忽略循环引用
+                options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+                //不使用驼峰样式的key
+                //options.SerializerSettings.ContractResolver = new DefaultContractResolver();    
+                options.SerializerSettings.DateFormatString = "yyyy-MM-dd HH:mm:ss";
+            });
 
             var redisConnectionString = Configuration.GetValue<string>("AppSetting:Cache:Redis");
             if (string.IsNullOrWhiteSpace(redisConnectionString))
@@ -188,8 +197,14 @@ namespace OpenAuth.WebApi
             //SAP
             //services.AddSap();
 
-            ///CAP
+            //CAP
             services.AddNewareCAP(Configuration);
+            // 注册grpc服务
+            services.AddGrpcClient<EdgeAPI.DataService.DataServiceClient>(c =>
+            {
+                AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+                c.Address = new Uri($"{ Configuration.GetSection("GrpcApi:url").Value }");
+            });
 
             services.AddHttpClient("NsapApp", c =>
             {
@@ -206,6 +221,18 @@ namespace OpenAuth.WebApi
             {
                 x.MultipartBodyLengthLimit = 1073741824;
             });
+
+            #region MQTT
+            var mqttConfig = new MqttConfig
+            {
+                Server = Configuration.GetValue<string>("MqttOption:HostIp"),
+                Port = int.Parse(Configuration.GetValue<string>("MqttOption:HostPort")),
+                Username = Configuration.GetValue<string>("MqttOption:UserName"),
+                Password = Configuration.GetValue<string>("MqttOption:Password"),
+            };
+            _mqttNetClient = new MqttNetClient(mqttConfig, MessageReceived);
+            services.AddSingleton(_mqttNetClient);
+            #endregion
         }
         private List<string> GetControllers()
         {
@@ -222,12 +249,15 @@ namespace OpenAuth.WebApi
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostEnvironment env, IServiceProvider serviceProvider)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
+            ServiceLocator.ApplicationBuilder = app;
+            ServiceLocator.serviceProvider = app.ApplicationServices;
+            //.SetServices(serviceProvider);
             // 配置静态autoMapper
             AutoMapperHelper.UseStateAutoMapper(app);
             //配置ServiceProvider
@@ -248,12 +278,12 @@ namespace OpenAuth.WebApi
                     RequestPath = "/Templates"
                 });
 
-			//允许HttpContext.Request.Body被重复读取
-			//app.Use((context, next) =>
-			//{
-			//	context.Request.EnableBuffering();
-			//	return next();
-			//});
+            //允许HttpContext.Request.Body被重复读取
+            //app.Use((context, next) =>
+            //{
+            //	context.Request.EnableBuffering();
+            //	return next();
+            //});
 
             app.UseRouting();
             app.UseAuthentication();
@@ -282,7 +312,19 @@ namespace OpenAuth.WebApi
                 c.OAuthClientId("OpenAuth.WebApi");  //oauth客户端名称
                 c.OAuthAppName("开源版webapi认证"); // 描述
             });
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+        }
 
+        /// <summary>
+        /// 接收消息
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        public void MessageReceived(object sender, MqttApplicationMessageReceivedEventArgs e)
+        {
+            var topic = e.ApplicationMessage.Topic;
+            var _mqttSubscribeApp = ServiceLocator.serviceProvider.GetService(typeof(MqttSubscribeApp)) as MqttSubscribeApp;
+            _mqttSubscribeApp.SubscribeAsyncResult(topic, e.ApplicationMessage.Payload);
         }
     }
 }

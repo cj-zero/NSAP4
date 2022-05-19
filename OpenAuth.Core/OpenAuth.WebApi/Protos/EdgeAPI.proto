@@ -1,0 +1,126 @@
+syntax = "proto3";
+//option csharp_namespace = "OpenAuth.WebApi.Proros";
+package EdgeAPI;
+
+service DataService {
+  //获取设备信息
+  rpc GetDevInfo (Request) returns (Response) {}
+
+  //获取测试信息
+  rpc GetTestInfo (Request) returns (Response){}
+  
+  //获取测试信息记录条数
+  rpc GetTestInfoCount (Request) returns (Response){}
+  
+  //获取原始数据
+  rpc GetRawData (Request) returns (Response){}
+  
+  //获取原始数据记录条数
+  rpc GetRawDataCount (Request) returns (Response){}
+  
+  //获取工步数据
+  rpc GetStepData (Request) returns (Response){}
+  
+  //获取工步数据记录条数
+  rpc GetStepDataCount (Request) returns (Response){}
+  
+  //获取循环数据
+  rpc GetCycleData (Request) returns (Response){}
+  
+  //获取循环数据记录条数
+  rpc GetCycleDataCount (Request) returns (Response){}
+  
+  //获取实时数据
+  rpc GetRT (Request) returns (Response){}
+  
+  //获取日志
+  rpc GetLog (Request) returns (Response){}
+  
+  //获取边缘计算信息
+  rpc GetEdgeInfo (Request) returns (Response){}
+  
+  //通道控制命令
+  rpc ControlCmd (Request) returns (Response){}
+}
+
+message Request
+{
+    bytes json_parameter = 1;//json格式的参数
+}
+
+message Response
+{
+    bool success = 1;//是否成功 true:成功 false:失败
+    bytes msg = 2;//如果失败此存放错误消息
+    DATA data = 3;//返回数据
+}
+
+message DATA{
+    message VecV{
+    bytes type = 1;//类型 根据类型选择使用下面的其中一个变量存储数据(double,float,uint32,uint64,sint32,sint64,bytes)
+    repeated double v_double =2;
+    repeated float v_float =3;
+    repeated uint32 v_uint32 =4;
+    repeated uint64 v_uint64 =5;
+    repeated sint32 v_sint32 =6;
+    repeated sint64 v_sint64 =7;
+    repeated bytes v_bytes =8;
+    }
+    map<string, VecV> map_df = 1;//<变量名,{值类型, [值1,值2...]}>
+}
+
+/*-----------------------------------------------------
+json_parameter格式:
+{
+    "app_id":"xxxxx",
+  "app_secret":"xxxxx",
+  "edge_guid":"xxxxx",
+    "chl_info":
+    {
+    "srv_guid":"67D123E897",
+    "srv_ip":"192.168.0.123",
+    "edge_id":123,
+    "srv_id":5,
+    "dev_uid":240001,
+    "unit_id":2,
+    "chl_id":1
+    },
+    "test_condition":
+    {
+      "test_num":45678,
+    "test_id":123456,
+    "barcode_id":23,
+    "test_begin_time":1635842250,
+    "test_end_time":1635842250,
+    "barcode":"ABC",
+    "creator":"admin",
+    "desc":"#2343#12",
+    "is_fuzzy_matching":0
+    },
+    "data_condition":
+    {
+    "data_begin_time":1635842250,
+    "data_end_time":1635842250,
+    "cd_begin_cycle_id":1,
+    "cd_end_cycle_id":5,
+    "dc_begin_cycle_id":1,
+    "dc_end_cycle_id":8,
+    "begin_step_num":23,
+    "end_step_num":56,
+    "begin_seq_id":2,
+    "end_seq_id":20000,
+    "step_type":[1,2,4,7],
+    "row_limit":55555,
+    "cycle_modle":1,
+    "field":["vol","cur"]
+    }
+}
+//通道控制命令json_parameter格式
+{
+  "app_id":"xxxxx",
+  "app_secret":"xxxxx",
+  "edge_guid":"xxxxx",
+  "cmd":"xxx",//命令
+  "arg":xxxxxxx//命令参数
+}
+-----------------------------------------------------*/

@@ -2,7 +2,9 @@
 using Org.BouncyCastle.Asn1.Ocsp;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -58,10 +60,36 @@ namespace Infrastructure
             {
                 requestUri = ConcatURL(requestUri);
             }
-
             var result = _httpClient.GetStringAsync(requestUri);
             return result.Result;
         }
+
+        public string Get(string url, string token)
+        {
+            string result = string.Empty;
+            HttpWebRequest request;
+            try
+            {
+                request = (HttpWebRequest)WebRequest.Create(url);
+                request.Method = "GET";
+                request.Headers["Authorization"] = $"Bearer {token}";
+                request.AllowAutoRedirect = true;
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    using (StreamReader sr = new StreamReader(response.GetResponseStream(), Encoding.UTF8))
+                    {
+                        result = sr.ReadToEnd();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                result = "";
+            }
+            return result;
+        }
+
 
         /// <summary>
         /// Get请求数据

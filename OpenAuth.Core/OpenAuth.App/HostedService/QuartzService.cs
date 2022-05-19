@@ -49,23 +49,30 @@ namespace OpenAuth.App.HostedService
             var jobs = await _unitWork.Find<OpenJob>(j => j.Status == 1).ToListAsync();
             foreach (var job in jobs)
             {
-                _logger.LogInformation($"启动定时job: {job.Id}");
-                var jobBuilderType = typeof(JobBuilder);
-                var method = jobBuilderType.GetMethods().FirstOrDefault(
-                        x => x.Name.Equals("Create", StringComparison.OrdinalIgnoreCase) &&
-                             x.IsGenericMethod && x.GetParameters().Length == 0)
-                    ?.MakeGenericMethod(Type.GetType(job.JobCall));
+                try
+                {
+                    _logger.LogInformation($"启动定时job: {job.Id}");
+                    var jobBuilderType = typeof(JobBuilder);
+                    var method = jobBuilderType.GetMethods().FirstOrDefault(
+                            x => x.Name.Equals("Create", StringComparison.OrdinalIgnoreCase) &&
+                                 x.IsGenericMethod && x.GetParameters().Length == 0)
+                        ?.MakeGenericMethod(Type.GetType(job.JobCall));
 
-                var jobBuilder = (JobBuilder)method.Invoke(null, null);
+                    var jobBuilder = (JobBuilder)method.Invoke(null, null);
 
-                IJobDetail jobDetail = jobBuilder.WithIdentity(job.Id).Build();
-                jobDetail.JobDataMap[Define.JOBMAPKEY] = job.Id;  //传递job信息
-                ITrigger trigger = TriggerBuilder.Create()
-                    .WithCronSchedule(job.Cron)
-                    .WithIdentity(job.Id)
-                    .StartNow()
-                    .Build();
-                await _scheduler.ScheduleJob(jobDetail, trigger);
+                    IJobDetail jobDetail = jobBuilder.WithIdentity(job.Id).Build();
+                    jobDetail.JobDataMap[Define.JOBMAPKEY] = job.Id;  //传递job信息
+                    ITrigger trigger = TriggerBuilder.Create()
+                        .WithCronSchedule(job.Cron)
+                        .WithIdentity(job.Id)
+                        .StartNow()
+                        .Build();
+                    await _scheduler.ScheduleJob(jobDetail, trigger);
+                }
+                catch (Exception ex)
+                {
+
+                }
             }
         }
     }

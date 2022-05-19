@@ -241,5 +241,24 @@ namespace OpenAuth.App
 
             return result;
         }
+
+        /// <summary>
+        /// 上传烤机工步文件到华为云obs
+        /// </summary>
+        /// <param name="file">工步文件</param>                                                                       
+        /// <returns></returns>
+        public async Task<UploadFileResp> UploadStepFileToHuaweiOBS(IFormFile file)
+        {
+            var obsHelper = new HuaweiOBSHelper();
+            var fileName = "stepFile/" + file.FileName;
+            var stream = file?.OpenReadStream();
+            var response = obsHelper.PutObject(fileName, null, stream, out string objectKey);
+            var result = new UploadFileResp
+            {
+                FileName = objectKey,
+                FilePath = response.ObjectUrl
+            };
+            return result;
+        }
     }
 }
