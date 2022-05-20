@@ -32,10 +32,7 @@ namespace Infrastructure.MQTT
             mqttConfig = _mqttConfig;
             var factory = new MqttFactory();
             mqttClient = factory.CreateMqttClient() as MqttClient;
-            clientId = "MQTTErpClient:" + Guid.NewGuid();
-            RedisHelper.Set("edge_msg/1", clientId);
-            //clientId = "subscribe_mqtt9150220214120";
-            //实例化一个MqttClientOptionsBulider
+            clientId = "mqtterpclient:" + Guid.NewGuid();
             options = new MqttClientOptionsBuilder()
                 .WithTcpServer(_mqttConfig.Server, _mqttConfig.Port)
                 .WithCredentials(_mqttConfig.Username, _mqttConfig.Password)
@@ -60,8 +57,8 @@ namespace Infrastructure.MQTT
         /// <summary>
         /// 断开连接
         /// </summary>
+        /// <param name="sender"></param>
         /// <param name="e"></param>
-        /// <returns></returns>
         private void Disconnected(object sender, MqttClientDisconnectedEventArgs e)
         {
             Console.WriteLine($"Mqtt>>Disconnected【{clientId}】>>已断开连接");
@@ -74,23 +71,29 @@ namespace Infrastructure.MQTT
                 Console.WriteLine($"Mqtt>>Disconnected【{clientId}】>>重连失败");
             }
         }
-
         /// <summary>
         /// 连接成功
         /// </summary>
+        /// <param name="sender"></param>
         /// <param name="e"></param>
-        /// <returns></returns>
         private void Connected(object sender, MqttClientConnectedEventArgs e)
         {
             Console.WriteLine($"Mqtt>>Connected【{clientId}】>>连接成功");
             //连接重新订阅
-            if (mqttConfig.TopicList != null)
+            try
             {
-                foreach (var topic in mqttConfig.TopicList)
-                {
-                    mqttClient.SubscribeAsync(topic);
-                }
+                mqttClient.SubscribeAsync("edge_msg/#");
             }
+            catch (Exception ex)
+            {
+                Serilog.Log.Logger.Error("连接连接成功重新订阅失败 【topic=edge_msg/#】!", ex);
+            }
+            //if (mqttConfig.TopicList != null)
+            //{
+            //    foreach (var topic in mqttConfig.TopicList)
+            //    {
+            //    }
+            //}
         }
 
         /// <summary>        

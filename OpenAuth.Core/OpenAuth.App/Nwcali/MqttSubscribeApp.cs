@@ -55,7 +55,6 @@ namespace OpenAuth.App.Nwcali
                         string token = jo["token"].ToString();
                         string msg_type = jo["msg_type"].ToString();
                         string edge_guids = jo["edge_guid"].ToString();
-                        Log.Logger.Information($"设备数据开始订阅 msg_type={msg_type},topics={topics},token={token}");
                         try
                         {
                             //获取用户信息
@@ -85,6 +84,7 @@ namespace OpenAuth.App.Nwcali
                                 {
                                     var obj = JsonConvert.DeserializeObject<EdgeData>(payloads);
                                     var dbContext = UnitWork.GetDbContext<edge>();
+                                    var flage = false;
                                     using (var transaction = dbContext.Database.BeginTransaction())
                                     {
                                         try
@@ -111,93 +111,105 @@ namespace OpenAuth.App.Nwcali
                                                     UnitWork.Add<edge, int>(edge);
                                                 }
                                             }
-                                            foreach (var item in obj.chl_info.data)
+                                            if (obj.chl_info.data!=null)
                                             {
-                                                var host = new edge_host();
-                                                var host_info = UnitWork.Find<edge_host>(null).Where(c => c.edge_guid == edge_guid && c.srv_guid == item.srv_guid).FirstOrDefault();
-                                                if (host_info != null)
+                                                foreach (var item in obj.chl_info.data)
                                                 {
-                                                    host_info.bts_server_version = item.bts_server_version;
-                                                    host_info.bts_server_ip = item.bts_server_ip;
-                                                    host_info.bts_type = item.bts_type;
-                                                    host_info.status = 1;
-                                                }
-                                                else
-                                                {
-                                                    host.edge_guid = edge_guid;
-                                                    host.srv_guid = item.srv_guid;
-                                                    host.bts_server_version = item.bts_server_version;
-                                                    host.bts_server_ip = item.bts_server_ip;
-                                                    host.bts_type = item.bts_type;
-                                                    host.status = 1;
-                                                    UnitWork.Add<edge_host, int>(host);
-                                                }
-                                                foreach (var mItem in item.mid_list)
-                                                {
-                                                    var mid = new edge_mid();
-                                                    var mid_info = UnitWork.Find<edge_mid>(null).Where(c => c.edge_guid == edge_guid && c.srv_guid == item.srv_guid && c.mid_guid == mItem.mid_guid).FirstOrDefault();
-                                                    if (mid_info != null)
+                                                    var host = new edge_host();
+                                                    var host_info = UnitWork.Find<edge_host>(null).Where(c => c.edge_guid == edge_guid && c.srv_guid == item.srv_guid).FirstOrDefault();
+                                                    if (host_info != null)
                                                     {
-                                                        mid_info.dev_uid = mItem.dev_uid;
-                                                        mid_info.mid_version = mItem.mid_version;
-                                                        mid_info.production_serial = mid_info.production_serial;
-                                                        mid_info.status = 1;
+                                                        host_info.bts_server_version = item.bts_server_version;
+                                                        host_info.bts_server_ip = item.bts_server_ip;
+                                                        host_info.bts_type = item.bts_type;
+                                                        host_info.status = 1;
                                                     }
                                                     else
                                                     {
-                                                        mid.edge_guid = edge_guid;
-                                                        mid.srv_guid = item.srv_guid;
-                                                        mid.mid_guid = mItem.mid_guid;
-                                                        mid.dev_uid = mItem.dev_uid;
-                                                        mid.mid_version = mItem.mid_version;
-                                                        mid.production_serial = mItem.production_serial;//==null?"": mItem.production_serial;
-                                                        mid.status = 1;
-                                                        UnitWork.Add<edge_mid, int>(mid);
+                                                        host.edge_guid = edge_guid;
+                                                        host.srv_guid = item.srv_guid;
+                                                        host.bts_server_version = item.bts_server_version;
+                                                        host.bts_server_ip = item.bts_server_ip;
+                                                        host.bts_type = item.bts_type;
+                                                        host.status = 1;
+                                                        UnitWork.Add<edge_host, int>(host);
                                                     }
-                                                    foreach (var lItem in mItem.low_list)
+                                                    if (item.mid_list!=null)
                                                     {
-                                                        var low = new edge_low();
-                                                        var low_info = UnitWork.Find<edge_low>(null).Where(c => c.edge_guid == edge_guid && c.srv_guid == item.srv_guid && c.mid_guid == mItem.mid_guid && c.low_guid == lItem.low_guid).FirstOrDefault();
-                                                        if (low_info != null)
+                                                        foreach (var mItem in item.mid_list)
                                                         {
-                                                            low_info.low_no = lItem.low_no;
-                                                            low_info.unit_id = lItem.unit_id;
-                                                            low_info.range_volt = lItem.range_volt.ToString();
-                                                            low_info.range_curr_array = string.Join(",", lItem.range_curr_array);
-                                                            low_info.low_version = lItem.low_version;
-                                                            low_info.status = 1;
-                                                        }
-                                                        else
-                                                        {
-                                                            low.edge_guid = edge_guid;
-                                                            low.srv_guid = item.srv_guid;
-                                                            low.mid_guid = mItem.mid_guid;
-                                                            low.low_guid = lItem.low_guid;
-                                                            low.low_no = lItem.low_no;
-                                                            low.unit_id = lItem.unit_id;
-                                                            low.range_volt = lItem.range_volt.ToString();
-                                                            low.range_curr_array = string.Join(",", lItem.range_curr_array);
-                                                            low.low_version = lItem.low_version;
-                                                            low.status = 1;
-                                                            UnitWork.Add<edge_low, int>(low);
-                                                        }
-                                                        foreach (var cItem in lItem.channel_list)
-                                                        {
-                                                            var channel = new edge_channel();
-                                                            var channel_info = UnitWork.Find<edge_channel>(null).Where(c => c.edge_guid == edge_guid && c.srv_guid == item.srv_guid && c.mid_guid == mItem.mid_guid && c.low_guid == lItem.low_guid && c.bts_id == cItem).FirstOrDefault();
-                                                            if (channel_info != null)
+                                                            var mid = new edge_mid();
+                                                            var mid_info = UnitWork.Find<edge_mid>(null).Where(c => c.edge_guid == edge_guid && c.srv_guid == item.srv_guid && c.mid_guid == mItem.mid_guid).FirstOrDefault();
+                                                            if (mid_info != null)
                                                             {
-                                                                channel_info.status = 1;
+                                                                mid_info.dev_uid = mItem.dev_uid;
+                                                                mid_info.mid_version = mItem.mid_version;
+                                                                mid_info.production_serial = mid_info.production_serial;
+                                                                mid_info.status = 1;
                                                             }
                                                             else
                                                             {
-                                                                channel.edge_guid = edge_guid;
-                                                                channel.srv_guid = item.srv_guid;
-                                                                channel.mid_guid = mItem.mid_guid;
-                                                                channel.low_guid = lItem.low_guid;
-                                                                channel.bts_id = cItem.Value;
-                                                                channel.status = 1;
-                                                                UnitWork.Add<edge_channel, int>(channel);
+                                                                mid.edge_guid = edge_guid;
+                                                                mid.srv_guid = item.srv_guid;
+                                                                mid.mid_guid = mItem.mid_guid;
+                                                                mid.dev_uid = mItem.dev_uid;
+                                                                mid.mid_version = mItem.mid_version;
+                                                                mid.production_serial = mItem.production_serial;//==null?"": mItem.production_serial;
+                                                                mid.status = 1;
+                                                                UnitWork.Add<edge_mid, int>(mid);
+                                                            }
+                                                            if (mItem.low_list!=null)
+                                                            {
+                                                                foreach (var lItem in mItem.low_list)
+                                                                {
+                                                                    var low = new edge_low();
+                                                                    var low_info = UnitWork.Find<edge_low>(null).Where(c => c.edge_guid == edge_guid && c.srv_guid == item.srv_guid && c.mid_guid == mItem.mid_guid && c.low_guid == lItem.low_guid).FirstOrDefault();
+                                                                    if (low_info != null)
+                                                                    {
+                                                                        low_info.low_no = lItem.low_no;
+                                                                        low_info.unit_id = lItem.unit_id;
+                                                                        low_info.range_volt = lItem.range_volt.ToString();
+                                                                        low_info.range_curr_array = string.Join(",", lItem.range_curr_array);
+                                                                        low_info.low_version = lItem.low_version;
+                                                                        low_info.status = 1;
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        low.edge_guid = edge_guid;
+                                                                        low.srv_guid = item.srv_guid;
+                                                                        low.mid_guid = mItem.mid_guid;
+                                                                        low.low_guid = lItem.low_guid;
+                                                                        low.low_no = lItem.low_no;
+                                                                        low.unit_id = lItem.unit_id;
+                                                                        low.range_volt = lItem.range_volt.ToString();
+                                                                        low.range_curr_array = string.Join(",", lItem.range_curr_array);
+                                                                        low.low_version = lItem.low_version;
+                                                                        low.status = 1;
+                                                                        UnitWork.Add<edge_low, int>(low);
+                                                                    }
+                                                                    if (lItem.channel_list!=null)
+                                                                    {
+                                                                        foreach (var cItem in lItem.channel_list)
+                                                                        {
+                                                                            var channel = new edge_channel();
+                                                                            var channel_info = UnitWork.Find<edge_channel>(null).Where(c => c.edge_guid == edge_guid && c.srv_guid == item.srv_guid && c.mid_guid == mItem.mid_guid && c.low_guid == lItem.low_guid && c.bts_id == cItem).FirstOrDefault();
+                                                                            if (channel_info != null)
+                                                                            {
+                                                                                channel_info.status = 1;
+                                                                            }
+                                                                            else
+                                                                            {
+                                                                                channel.edge_guid = edge_guid;
+                                                                                channel.srv_guid = item.srv_guid;
+                                                                                channel.mid_guid = mItem.mid_guid;
+                                                                                channel.low_guid = lItem.low_guid;
+                                                                                channel.bts_id = cItem.Value;
+                                                                                channel.status = 1;
+                                                                                UnitWork.Add<edge_channel, int>(channel);
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -205,12 +217,21 @@ namespace OpenAuth.App.Nwcali
                                             }
                                             UnitWork.Save();
                                             transaction.Commit();
+                                            flage = true;
                                         }
                                         catch (Exception ex)
                                         {
-                                            Log.Logger.Error($"边缘计算设备更新报文解析失败:{payload}");
+                                            Log.Logger.Error($"设备数据订阅结果解析失败 msg_type={msg_type},topics={topics},token={token},edge_guids={edge_guids}",ex);
                                             transaction.Rollback();
                                         }
+                                    }
+                                    if (flage)
+                                    {
+                                        UnitWork.Find<edge>(null).Where(c => c.edge_guid == edge_guids && c.status == 0).DeleteFromQuery();
+                                        UnitWork.Find<edge_host>(null).Where(c => c.edge_guid == edge_guids && c.status == 0).DeleteFromQuery();
+                                        UnitWork.Find<edge_mid>(null).Where(c => c.edge_guid == edge_guids && c.status == 0).DeleteFromQuery();
+                                        UnitWork.Find<edge_low>(null).Where(c => c.edge_guid == edge_guids && c.status == 0).DeleteFromQuery();
+                                        UnitWork.Find<edge_channel>(null).Where(c => c.edge_guid == edge_guids && c.status == 0).DeleteFromQuery();
                                     }
                                 }
                                 else if (msg_type == "2")
@@ -243,7 +264,7 @@ namespace OpenAuth.App.Nwcali
                         }
                         catch (Exception ex)
                         {
-                            Log.Logger.Error($"设备数据订阅异常：msg_type={msg_type},edge_guids={edge_guids},topics={topic},payloads={payloads},token={token}", ex);
+                            Log.Logger.Error($"设备数据订阅异常：msg_type={msg_type},edge_guids={edge_guids},topics={topic},token={token}", ex);
                         }
                         break;
                     case "rt_data":
@@ -260,38 +281,41 @@ namespace OpenAuth.App.Nwcali
                         if (vc != null)
                         {
                             var edge_guid = Encoding.UTF8.GetString(vc.EdgeGuid.ToArray());
-                            if (vc.SrvRt != null && !string.IsNullOrWhiteSpace(edge_guid))
+                            try
                             {
-                                int count = 1;
-                                edge edgeInfo = UnitWork.Find<edge>(null).Where(c => c.edge_guid == edge_guid).FirstOrDefault();
-                                if (edgeInfo != null)
+                                if (vc.SrvRt != null && !string.IsNullOrWhiteSpace(edge_guid))
                                 {
-                                    for (int i = 0; i < count; i++)
+                                    int count = 1;
+                                    edge edgeInfo = UnitWork.Find<edge>(null).Where(c => c.edge_guid == edge_guid).FirstOrDefault();
+                                    if (edgeInfo != null)
                                     {
-                                        foreach (var srv_rt in vc.SrvRt)
+                                        for (int i = 0; i < count; i++)
                                         {
-                                            string ip = Encoding.UTF8.GetString(srv_rt.Ip.ToArray());
-                                            string srv_guid = Encoding.UTF8.GetString(srv_rt.SrvGuid.ToArray());
-                                            if (srv_rt.MidRt != null)
+                                            foreach (var srv_rt in vc.SrvRt)
                                             {
-                                                foreach (var mid_rt in srv_rt.MidRt)
+                                                string ip = Encoding.UTF8.GetString(srv_rt.Ip.ToArray());
+                                                string srv_guid = Encoding.UTF8.GetString(srv_rt.SrvGuid.ToArray());
+                                                if (srv_rt.MidRt != null)
                                                 {
-                                                    string mid_guid = Encoding.UTF8.GetString(mid_rt.MidGuid.ToArray());
-                                                    if (mid_rt.VecRt != null)
+                                                    foreach (var mid_rt in srv_rt.MidRt)
                                                     {
-                                                        foreach (var item in mid_rt.VecRt)
+                                                        string mid_guid = Encoding.UTF8.GetString(mid_rt.MidGuid.ToArray());
+                                                        if (mid_rt.VecRt != null)
                                                         {
-                                                            var deviceTestLog = UnitWork.Find<DeviceTestLog>(null).Where(c => c.EdgeGuid == edge_guid && c.SrvGuid == srv_guid && c.DevUid == mid_rt.DevUid && c.UnitId == item.UnitId && c.ChlId == item.ChlId && c.TestId == item.TestId).FirstOrDefault();
-                                                            if (deviceTestLog != null)
+                                                            foreach (var item in mid_rt.VecRt)
                                                             {
-                                                                deviceTestLog.Status = chaeckWorkType(item.WorkType);
-                                                                deviceTestLog.ChangeStatusTime = DateTime.Now;
-                                                                deviceTestLog.StepId = (int)item.StepId;
-                                                                string v = "0x" + item.PrtCode.ToString("X8");
-                                                                deviceTestLog.CodeTxt = UnitWork.Find<DeviceTestCode>(null).Where(c => c.PrtCode == v).Select(c => c.CodeTxt).FirstOrDefault();
-                                                                deviceTestLog.PrtCode = item.PrtCode.ToString();
-                                                                UnitWork.Update(deviceTestLog);
-                                                                UnitWork.Save();
+                                                                var deviceTestLog = UnitWork.Find<DeviceTestLog>(null).Where(c => c.EdgeGuid == edge_guid && c.SrvGuid == srv_guid && c.DevUid == mid_rt.DevUid && c.UnitId == item.UnitId && c.ChlId == item.ChlId && c.TestId == item.TestId).FirstOrDefault();
+                                                                if (deviceTestLog != null)
+                                                                {
+                                                                    deviceTestLog.Status = chaeckWorkType(item.WorkType);
+                                                                    deviceTestLog.ChangeStatusTime = DateTime.Now;
+                                                                    deviceTestLog.StepId = (int)item.StepId;
+                                                                    string v = "0x" + item.PrtCode.ToString("X8");
+                                                                    deviceTestLog.CodeTxt = UnitWork.Find<DeviceTestCode>(null).Where(c => c.PrtCode == v).Select(c => c.CodeTxt).FirstOrDefault();
+                                                                    deviceTestLog.PrtCode = item.PrtCode.ToString();
+                                                                    UnitWork.Update(deviceTestLog);
+                                                                    UnitWork.Save();
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -300,6 +324,10 @@ namespace OpenAuth.App.Nwcali
                                         }
                                     }
                                 }
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Logger.Error($"rt订阅数据解析异常：edge_guids={edge_guid},异常数据 vc="+JsonConvert.SerializeObject(vc) +"", ex);
                             }
                         }
                         break;
