@@ -79,10 +79,11 @@ namespace Infrastructure.MQTT
             try
             {
                 mqttClient.SubscribeAsync("edge_msg/#");
+                Serilog.Log.Logger.Information("连接成功重新订阅生效 【topic=edge_msg/#】!");
             }
             catch (Exception ex)
             {
-                Serilog.Log.Logger.Error("连接连接成功重新订阅失败 【topic=edge_msg/#】!", ex);
+                Serilog.Log.Logger.Error("连接成功重新订阅失败 【topic=edge_msg/#】!", ex);
             }
             //if (mqttConfig.TopicList != null)
             //{
