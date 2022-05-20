@@ -685,7 +685,11 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task SysnERPUser()
         {
-            var user = await UnitWork.Find<User>(null).Select(u => new { u.Account, u.Status, u.Email }).ToListAsync();
+            //var user = await UnitWork.Find<User>(null).Select(u => new { u.Account, u.Status, u.Email }).ToListAsync();
+            var user = await (from a in UnitWork.Find<User>(null)
+                              join b in UnitWork.Find<NsapUserMap>(null) on a.Id equals b.UserID into ab
+                              from b in ab.DefaultIfEmpty()
+                              select new { a.Id, a.Account, a.Status, a.Email, NsapUserId = b == null ? null : b.NsapUserId }).ToListAsync();
             var userAccounts = user.Select(c => c.Account).ToList();
             var query = from a in UnitWork.Find<base_user>(null)
                         join b in UnitWork.Find<base_user_detail>(null) on a.user_id equals b.user_id into ab
@@ -717,7 +721,7 @@ namespace OpenAuth.App
                 UnitWork.Save();
             }
 
-            var onUser = user.Where(c => c.Status == 0).Select(c => new { c.Account, c.Email }).ToList();
+            var onUser = user.Where(c => c.Status == 0).ToList();
             foreach (var item in onUser)
             {
                 var u = erpUsers.Where(c => c.log_nm == item.Account).FirstOrDefault();
@@ -729,6 +733,11 @@ namespace OpenAuth.App
                         {
                             Email = u.email
                         });
+                        UnitWork.Save();
+                    }
+                    if (item.NsapUserId == null)
+                    {
+                        UnitWork.Add(new NsapUserMap { UserID = item.Id, NsapUserId = (int?)u.user_id });
                         UnitWork.Save();
                     }
                 }

@@ -1089,8 +1089,8 @@ namespace OpenAuth.App.Material
             {
                 result = await (from a in UnitWork.Find<InternalContact>(null)
                                 join b in UnitWork.Find<InternalContactTask>(null) on a.Id equals b.InternalContactId
-                                //join c in UnitWork.Find<InternalContactTaskServiceOrder>(null) on b.Id equals c.InternalContactTaskId
-                                where b.ServiceOrderId == serviceOrderId
+                                join c in UnitWork.Find<InternalContactTaskServiceOrder>(null) on b.Id equals c.InternalContactTaskId
+                                where c.ServiceOrderId == serviceOrderId
                                 select a.Content).FirstOrDefaultAsync();
             }
             return result;
