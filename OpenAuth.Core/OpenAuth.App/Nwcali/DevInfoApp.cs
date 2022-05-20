@@ -461,7 +461,8 @@ namespace OpenAuth.App
                 throw new Exception($"{OrderNo}订单不存在!");
             }
             var arry = query.ItemCode.Split('-');
-            if (!arry[0].Equals("C"))
+            string st = arry[0].Substring(0, 1).ToUpper();
+            if (!st.Equal("C"))
             {
                 throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作!");
             }
