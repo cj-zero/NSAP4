@@ -33,6 +33,7 @@ namespace Infrastructure.MQTT
             var factory = new MqttFactory();
             mqttClient = factory.CreateMqttClient() as MqttClient;
             clientId = "MQTTErpClient:" + Guid.NewGuid();
+            RedisHelper.Set("edge_msg/1", clientId);
             //clientId = "subscribe_mqtt9150220214120";
             //实例化一个MqttClientOptionsBulider
             options = new MqttClientOptionsBuilder()

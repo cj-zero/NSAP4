@@ -55,7 +55,7 @@ namespace OpenAuth.App.Nwcali
                         string token = jo["token"].ToString();
                         string msg_type = jo["msg_type"].ToString();
                         string edge_guids = jo["edge_guid"].ToString();
-                        Log.Logger.Information($"设备数据开始订阅 msg_type={msg_type},topics={topics}");
+                        Log.Logger.Information($"设备数据开始订阅 msg_type={msg_type},topics={topics},token={token}");
                         try
                         {
                             //获取用户信息
