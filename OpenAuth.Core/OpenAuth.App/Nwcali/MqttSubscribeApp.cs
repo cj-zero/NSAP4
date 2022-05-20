@@ -80,6 +80,7 @@ namespace OpenAuth.App.Nwcali
                             var enterpriseId = _appConfiguration.Value.EnterpriseIds.Split(',').ToList();
                             if (enterpriseId.Contains(userEnterpriseId))
                             {
+                                Log.Logger.Information($"设备数据订阅开始解析 msg_type={msg_type},topics={topics},token={token},edge_guids={edge_guids}");
                                 if (msg_type == "3")
                                 {
                                     var obj = JsonConvert.DeserializeObject<EdgeData>(payloads);
