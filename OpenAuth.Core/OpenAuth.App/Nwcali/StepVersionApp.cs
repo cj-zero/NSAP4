@@ -112,9 +112,10 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="ids"></param>
         /// <returns></returns>
-        public async Task Delete(List<int> ids)
+        public async Task Delete(int[] ids)
         {
             await UnitWork.DeleteAsync<StepVersion>(u => ids.Contains(u.Id));
+            await UnitWork.SaveAsync();
         }
 
         /// <summary>

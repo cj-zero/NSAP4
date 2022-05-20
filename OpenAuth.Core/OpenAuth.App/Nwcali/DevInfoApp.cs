@@ -456,10 +456,14 @@ namespace OpenAuth.App
             }
             var OrderNo = Convert.ToInt32(GeneratorCode.Split("-")[1]);
             var query = await UnitWork.Find<product_owor>(null).Where(c => c.DocEntry == OrderNo).FirstOrDefaultAsync();
-            var arry = query.ItemCode.Split('-');
-            if (!arry[0].Equals("CT"))
+            if (query==null)
             {
-                throw new Exception("非CT物料无法解析!");
+                throw new Exception($"{OrderNo}订单不存在!");
+            }
+            var arry = query.ItemCode.Split('-');
+            if (!arry[0].Equals("C"))
+            {
+                throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作!");
             }
             result.Data = new
             {

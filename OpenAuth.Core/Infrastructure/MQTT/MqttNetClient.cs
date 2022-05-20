@@ -32,8 +32,8 @@ namespace Infrastructure.MQTT
             mqttConfig = _mqttConfig;
             var factory = new MqttFactory();
             mqttClient = factory.CreateMqttClient() as MqttClient;
-            //clientId = "MQTTErpClient:" + Guid.NewGuid();
-            clientId = "subscribe_mqtt915022021416";
+            clientId = "MQTTErpClient:" + Guid.NewGuid();
+            //clientId = "subscribe_mqtt9150220214120";
             //实例化一个MqttClientOptionsBulider
             options = new MqttClientOptionsBuilder()
                 .WithTcpServer(_mqttConfig.Server, _mqttConfig.Port)

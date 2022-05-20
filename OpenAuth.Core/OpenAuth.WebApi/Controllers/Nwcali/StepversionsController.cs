@@ -179,19 +179,18 @@ namespace OpenAuth.WebApi.Controllers
         /// 批量删除
         /// </summary>
         [HttpPost]
-        public async Task<Response> Delete([FromBody] List<int> ids)
+        public async Task<Response> Delete(StepversionReq model)
         {
             var result = new Response();
             try
             {
-                await _app.Delete(ids);
+                await _app.Delete(model.ids);
 
             }
             catch (Exception ex)
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
-                Log.Logger.Error($"地址：{Request.Path}，参数：{ids.ToJson()}, 错误：{result.Message}");
             }
 
             return result;
