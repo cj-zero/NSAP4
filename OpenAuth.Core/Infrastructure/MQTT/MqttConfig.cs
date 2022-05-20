@@ -12,7 +12,7 @@ namespace Infrastructure.MQTT
 
         public string Password { get; set; }
 
-        public int Port { get; set; } = 1883;
+        public int Port { get; set; }
 
         public int SslPort { get; set; }
 

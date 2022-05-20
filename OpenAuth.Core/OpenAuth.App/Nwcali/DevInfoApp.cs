@@ -339,7 +339,8 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var user = loginContext.User;
-            var bindMap = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode == model.GeneratorCode && c.Guid == model.Guid).AnyAsync();
+            var lowGuidList = model.low_Lists.Select(c => c.LowGuid).Distinct().ToList();
+            var bindMap = await UnitWork.Find<DeviceBindMap>(null).Where(c =>(c.Guid == model.Guid && c.BindType==1) || lowGuidList.Contains(c.LowGuid)).AnyAsync();
             if (bindMap)
             {
                 throw new Exception("设备已被绑定!");
@@ -348,6 +349,7 @@ namespace OpenAuth.App
             var lowGuids = model.low_Lists.Select(c => c.LowGuid).Distinct();
             var lowList = await UnitWork.Find<edge_low>(null).Where(c => lowGuids.Contains(c.low_guid)).Select(c => new { c.low_guid, c.range_curr_array }).ToListAsync();
             List<DeviceBindMap> list = new List<DeviceBindMap>();
+            List<DeviceBindLog> logList = new List<DeviceBindLog>();
             foreach (var item in model.low_Lists)
             {
                 DeviceBindMap deviceBind = new DeviceBindMap();
@@ -367,8 +369,26 @@ namespace OpenAuth.App
                 deviceBind.OrderNo = Convert.ToInt64(model.GeneratorCode.Split('-')[1]);
                 deviceBind.RangeCurrArray = lowList.Where(c => c.low_guid == item.LowGuid).Select(c => c.range_curr_array).FirstOrDefault();
                 list.Add(deviceBind);
+                DeviceBindLog deviceBindLog = new DeviceBindLog();
+                deviceBindLog.GeneratorCode = model.GeneratorCode.ToUpper();
+                deviceBindLog.Guid = model.Guid;
+                deviceBindLog.EdgeGuid = model.EdgeGuid;
+                deviceBindLog.SrvGuid = model.SrvGuid;
+                deviceBindLog.DevUid = model.DevUid;
+                deviceBindLog.UnitId = item.UnitId;
+                deviceBindLog.BtsServerIp = model.BtsServerIp;
+                deviceBindLog.CreateTime = DateTime.Now;
+                deviceBindLog.CreateUserId = user.Id;
+                deviceBindLog.CreateUser = user.Name;
+                deviceBindLog.LowGuid = item.LowGuid;
+                deviceBindLog.BindType = model.BindType;
+                deviceBindLog.Department = department;
+                deviceBindLog.OrderNo = Convert.ToInt64(model.GeneratorCode.Split('-')[1]);
+                deviceBindLog.OperationType = 0;
+                logList.Add(deviceBindLog);
             }
             await UnitWork.BatchAddAsync<DeviceBindMap, int>(list.ToArray());
+            await UnitWork.BatchAddAsync<DeviceBindLog, int>(logList.ToArray());
             await UnitWork.SaveAsync();
             result.Data = true;
             return result;
@@ -388,6 +408,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var user = loginContext.User;
+            List<DeviceBindLog> logList = new List<DeviceBindLog>();
             if (model.UnBindType == 2)
             {
                 var bindMap = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode == model.GeneratorCode && c.Guid == model.Guid && c.LowGuid == model.LowGuid).ToArrayAsync();
@@ -396,6 +417,28 @@ namespace OpenAuth.App
                     throw new Exception("当前生产码暂无绑定数据无法解绑!");
                 }
                 await UnitWork.BatchDeleteAsync(bindMap);
+                await UnitWork.SaveAsync();
+                foreach (var item in bindMap)
+                {
+                    DeviceBindLog deviceBindLog = new DeviceBindLog();
+                    deviceBindLog.GeneratorCode = model.GeneratorCode.ToUpper();
+                    deviceBindLog.Guid = model.Guid;
+                    deviceBindLog.EdgeGuid = item.EdgeGuid;
+                    deviceBindLog.SrvGuid = item.SrvGuid;
+                    deviceBindLog.DevUid = item.DevUid;
+                    deviceBindLog.UnitId = item.UnitId;
+                    deviceBindLog.BtsServerIp = item.BtsServerIp;
+                    deviceBindLog.CreateTime = DateTime.Now;
+                    deviceBindLog.CreateUserId = user.Id;
+                    deviceBindLog.CreateUser = user.Name;
+                    deviceBindLog.LowGuid = item.LowGuid;
+                    deviceBindLog.BindType = item.BindType;
+                    deviceBindLog.Department = item.Department;
+                    deviceBindLog.OrderNo = Convert.ToInt64(model.GeneratorCode.Split('-')[1]);
+                    deviceBindLog.OperationType = 1;
+                    logList.Add(deviceBindLog);
+                }
+                await UnitWork.BatchAddAsync<DeviceBindLog, int>(logList.ToArray());
                 await UnitWork.SaveAsync();
             }
             else
@@ -406,6 +449,28 @@ namespace OpenAuth.App
                     throw new Exception("当前生产码暂无绑定数据无法解绑!");
                 }
                 await UnitWork.BatchDeleteAsync(bindMap);
+                await UnitWork.SaveAsync();
+                foreach (var item in bindMap)
+                {
+                    DeviceBindLog deviceBindLog = new DeviceBindLog();
+                    deviceBindLog.GeneratorCode = model.GeneratorCode.ToUpper();
+                    deviceBindLog.Guid = model.Guid;
+                    deviceBindLog.EdgeGuid = item.EdgeGuid;
+                    deviceBindLog.SrvGuid = item.SrvGuid;
+                    deviceBindLog.DevUid = item.DevUid;
+                    deviceBindLog.UnitId = item.UnitId;
+                    deviceBindLog.BtsServerIp = item.BtsServerIp;
+                    deviceBindLog.CreateTime = DateTime.Now;
+                    deviceBindLog.CreateUserId = user.Id;
+                    deviceBindLog.CreateUser = user.Name;
+                    deviceBindLog.LowGuid = item.LowGuid;
+                    deviceBindLog.BindType = item.BindType;
+                    deviceBindLog.Department = item.Department;
+                    deviceBindLog.OrderNo = Convert.ToInt64(model.GeneratorCode.Split('-')[1]);
+                    deviceBindLog.OperationType = 1;
+                    logList.Add(deviceBindLog);
+                }
+                await UnitWork.BatchAddAsync<DeviceBindLog, int>(logList.ToArray());
                 await UnitWork.SaveAsync();
             }
             result.Data = true;
@@ -456,10 +521,15 @@ namespace OpenAuth.App
             }
             var OrderNo = Convert.ToInt32(GeneratorCode.Split("-")[1]);
             var query = await UnitWork.Find<product_owor>(null).Where(c => c.DocEntry == OrderNo).FirstOrDefaultAsync();
-            var arry = query.ItemCode.Split('-');
-            if (!arry[0].Equals("CT"))
+            if (query==null)
             {
-                throw new Exception("非CT物料无法解析!");
+                throw new Exception($"{OrderNo}订单不存在!");
+            }
+            var arry = query.ItemCode.Split('-');
+            string st = arry[0].Substring(0, 1).ToUpper();
+            if (!st.Equal("C"))
+            {
+                throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作!");
             }
             result.Data = new
             {

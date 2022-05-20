@@ -112,9 +112,10 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="ids"></param>
         /// <returns></returns>
-        public async Task Delete(List<int> ids)
+        public async Task Delete(int[] ids)
         {
             await UnitWork.DeleteAsync<StepVersion>(u => ids.Contains(u.Id));
+            await UnitWork.SaveAsync();
         }
 
         /// <summary>
@@ -267,7 +268,7 @@ namespace OpenAuth.App
                     deviceTest.canTestDeviceResp.control.arg = "";
                     deviceTest.canTestDeviceResp.control.cmd_type = "start_test";
                     deviceTest.Department = item.Department;
-                    int maxRange = Convert.ToInt32(item.RangeCurrArray.Split(',').Max());
+                    int maxRange =Math.Abs(Convert.ToInt32(item.RangeCurrArray.Split(',').Max()));
                     deviceTest.MaxRange = maxRange;
                     deviceTest.stepCount = stepCount;
                     arg arg = new arg();
@@ -279,7 +280,13 @@ namespace OpenAuth.App
                     arg.creator = loginContext.User.Name;
                     arg.step_file_name = "";
                     arg.start_step = 1;
-                    arg.scale = 1000;//待处理
+                    arg.scale = 10;
+                    if (maxRange < 10)
+                        arg.scale = 10000;
+                    else if (maxRange < 100)
+                        arg.scale = 1000;
+                    else if (maxRange < 1000)
+                        arg.scale = 100;
                     arg.battery_mass = 0;
                     arg.desc = "";
                     var xmlCpntent = XMLHelper.GetXDocument(model.xmlpath);
