@@ -50,6 +50,7 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         public ushort status { get; set; }
+        public DateTime CreateTime { get; set; }
         public override void GenerateDefaultKeyVal()
         {
         }

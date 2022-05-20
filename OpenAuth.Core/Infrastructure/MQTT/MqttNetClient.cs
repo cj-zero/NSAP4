@@ -16,16 +16,12 @@ namespace Infrastructure.MQTT
         private IMqttClientOptions options;
         private string clientId = string.Empty;
         private MqttConfig mqttConfig;
-        //缓存自行注入
-        //private readonly ICache _iCache;
 
         /// <summary>
-        /// 实例化 
+        /// 实例化
         /// </summary>
-        /// <param name="server">服务器地址</param>
-        /// <param name="port">端口号</param>
-        /// <param name="topic">订阅主题</param>
-        /// <param name="clientIdPre">客户端id前缀</param>
+        /// <param name="_mqttConfig"></param>
+        /// <param name="receivedMessageHanddler"></param>
         public MqttNetClient(MqttConfig _mqttConfig, EventHandler<MqttApplicationMessageReceivedEventArgs> receivedMessageHanddler
             )
         {

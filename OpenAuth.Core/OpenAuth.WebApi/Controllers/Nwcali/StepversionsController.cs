@@ -341,8 +341,8 @@ namespace OpenAuth.WebApi.Controllers
             {
                 result.Code = 500;
                 result.Message = e.Message;
+                return result;
             }
-            return result;
         }
         #endregion
     }

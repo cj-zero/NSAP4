@@ -37,7 +37,7 @@ namespace Infrastructure.MQTT
     }
     public class edge_info
     {
-        public string edge_name { get; set; }
+        public string edg_name { get; set; }
         public string person_in_charge { get; set; }
         public string phone { get; set; }
         public string address { get; set; }

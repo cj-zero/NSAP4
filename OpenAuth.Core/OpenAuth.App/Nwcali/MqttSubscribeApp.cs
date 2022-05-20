@@ -95,20 +95,22 @@ namespace OpenAuth.App.Nwcali
                                             var edgeInfo = UnitWork.Find<edge>(null).Where(c => c.edge_guid == edge_guid).FirstOrDefault();
                                             if (edgeInfo != null)
                                             {
-                                                edgeInfo.edg_name = obj.chl_info.edge_info.edge_name;
+                                                edgeInfo.edg_name = obj.chl_info.edge_info.edg_name;
                                                 edgeInfo.address = obj.chl_info.edge_info.address;
-                                                edgeInfo.department = obj.chl_info.edge_info.edge_name;
+                                                edgeInfo.department = obj.chl_info.edge_info.edg_name;
                                                 edgeInfo.status = 1;
+                                                edgeInfo.CreateTime = DateTime.Now;
                                             }
                                             else
                                             {
                                                 if (obj.chl_info.edge_info != null)
                                                 {
                                                     edge.edge_guid = obj.chl_info.edge_guid;
-                                                    edge.edg_name = obj.chl_info.edge_info.edge_name == null ? "" : obj.chl_info.edge_info.edge_name;
+                                                    edge.edg_name = obj.chl_info.edge_info.edg_name == null ? "" : obj.chl_info.edge_info.edg_name;
                                                     edge.address = obj.chl_info.edge_info.address == null ? "" : obj.chl_info.edge_info.address;
-                                                    edge.department = obj.chl_info.edge_info.edge_name == null ? "" : obj.chl_info.edge_info.edge_name;
+                                                    edge.department = obj.chl_info.edge_info.edg_name == null ? "" : obj.chl_info.edge_info.edg_name;
                                                     edge.status = 1;
+                                                    edge.CreateTime=DateTime.Now;
                                                     UnitWork.Add<edge, int>(edge);
                                                 }
                                             }
@@ -124,6 +126,7 @@ namespace OpenAuth.App.Nwcali
                                                         host_info.bts_server_ip = item.bts_server_ip;
                                                         host_info.bts_type = item.bts_type;
                                                         host_info.status = 1;
+                                                        host_info.CreateTime=DateTime.Now;
                                                     }
                                                     else
                                                     {
@@ -133,6 +136,7 @@ namespace OpenAuth.App.Nwcali
                                                         host.bts_server_ip = item.bts_server_ip;
                                                         host.bts_type = item.bts_type;
                                                         host.status = 1;
+                                                        host.CreateTime=DateTime.Now;   
                                                         UnitWork.Add<edge_host, int>(host);
                                                     }
                                                     if (item.mid_list!=null)
@@ -147,6 +151,7 @@ namespace OpenAuth.App.Nwcali
                                                                 mid_info.mid_version = mItem.mid_version;
                                                                 mid_info.production_serial = mid_info.production_serial;
                                                                 mid_info.status = 1;
+                                                                mid_info.CreateTime = DateTime.Now; 
                                                             }
                                                             else
                                                             {
@@ -157,6 +162,7 @@ namespace OpenAuth.App.Nwcali
                                                                 mid.mid_version = mItem.mid_version;
                                                                 mid.production_serial = mItem.production_serial;//==null?"": mItem.production_serial;
                                                                 mid.status = 1;
+                                                                mid.CreateTime= DateTime.Now;   
                                                                 UnitWork.Add<edge_mid, int>(mid);
                                                             }
                                                             if (mItem.low_list!=null)
@@ -173,6 +179,7 @@ namespace OpenAuth.App.Nwcali
                                                                         low_info.range_curr_array = string.Join(",", lItem.range_curr_array);
                                                                         low_info.low_version = lItem.low_version;
                                                                         low_info.status = 1;
+                                                                        low_info.CreateTime=DateTime.Now;
                                                                     }
                                                                     else
                                                                     {
@@ -186,6 +193,7 @@ namespace OpenAuth.App.Nwcali
                                                                         low.range_curr_array = string.Join(",", lItem.range_curr_array);
                                                                         low.low_version = lItem.low_version;
                                                                         low.status = 1;
+                                                                        low.CreateTime=DateTime.Now;
                                                                         UnitWork.Add<edge_low, int>(low);
                                                                     }
                                                                     if (lItem.channel_list!=null)
@@ -197,6 +205,7 @@ namespace OpenAuth.App.Nwcali
                                                                             if (channel_info != null)
                                                                             {
                                                                                 channel_info.status = 1;
+                                                                                channel_info.CreateTime = DateTime.Now;
                                                                             }
                                                                             else
                                                                             {
@@ -206,6 +215,7 @@ namespace OpenAuth.App.Nwcali
                                                                                 channel.low_guid = lItem.low_guid;
                                                                                 channel.bts_id = cItem.Value;
                                                                                 channel.status = 1;
+                                                                                channel.CreateTime = DateTime.Now;
                                                                                 UnitWork.Add<edge_channel, int>(channel);
                                                                             }
                                                                         }
