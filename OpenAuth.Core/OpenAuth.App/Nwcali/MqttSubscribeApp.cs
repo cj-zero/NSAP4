@@ -112,6 +112,7 @@ namespace OpenAuth.App.Nwcali
                                                     edge.status = 1;
                                                     edge.CreateTime=DateTime.Now;
                                                     UnitWork.Add<edge, int>(edge);
+                                                    UnitWork.Save();
                                                 }
                                             }
                                             if (obj.chl_info.data!=null)
@@ -138,6 +139,7 @@ namespace OpenAuth.App.Nwcali
                                                         host.status = 1;
                                                         host.CreateTime=DateTime.Now;   
                                                         UnitWork.Add<edge_host, int>(host);
+                                                        UnitWork.Save();
                                                     }
                                                     if (item.mid_list!=null)
                                                     {
@@ -160,10 +162,11 @@ namespace OpenAuth.App.Nwcali
                                                                 mid.mid_guid = mItem.mid_guid;
                                                                 mid.dev_uid = mItem.dev_uid;
                                                                 mid.mid_version = mItem.mid_version;
-                                                                mid.production_serial = mItem.production_serial;//==null?"": mItem.production_serial;
+                                                                mid.production_serial = mItem.production_serial==null?"": mItem.production_serial;
                                                                 mid.status = 1;
                                                                 mid.CreateTime= DateTime.Now;   
                                                                 UnitWork.Add<edge_mid, int>(mid);
+                                                                UnitWork.Save();
                                                             }
                                                             if (mItem.low_list!=null)
                                                             {
@@ -195,6 +198,7 @@ namespace OpenAuth.App.Nwcali
                                                                         low.status = 1;
                                                                         low.CreateTime=DateTime.Now;
                                                                         UnitWork.Add<edge_low, int>(low);
+                                                                        UnitWork.Save();
                                                                     }
                                                                     if (lItem.channel_list!=null)
                                                                     {
@@ -217,6 +221,7 @@ namespace OpenAuth.App.Nwcali
                                                                                 channel.status = 1;
                                                                                 channel.CreateTime = DateTime.Now;
                                                                                 UnitWork.Add<edge_channel, int>(channel);
+                                                                                UnitWork.Save();
                                                                             }
                                                                         }
                                                                     }
@@ -232,7 +237,6 @@ namespace OpenAuth.App.Nwcali
                                         }
                                         catch (Exception ex)
                                         {
-                                            Log.Logger.Error($"设备数据订阅结果解析失败 msg_type={msg_type},topics={topics},token={token},edge_guids={edge_guids}",ex);
                                             transaction.Rollback();
                                         }
                                     }
