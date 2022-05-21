@@ -1464,6 +1464,28 @@ namespace OpenAuth.App
             _capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
             #endregion
         }
+
+        /// <summary>
+        /// 重新同步至SAP，未获取到SAPID时用
+        /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <returns></returns>
+        public async Task RePulish(int? internalContactId, int? serviceOrderId = null)
+        {
+            if (serviceOrderId != null)
+            {
+                _capBus.Publish("Serve.ServcieOrder.Create", serviceOrderId);
+            }
+            else
+            {
+                var ids = await UnitWork.Find<InternalContactTaskServiceOrder>(c => c.InternalContactId == internalContactId).Select(c => c.ServiceOrderId).ToListAsync();
+                var serviceOrder = await UnitWork.Find<ServiceOrder>(c => ids.Contains(c.Id) && string.IsNullOrWhiteSpace(c.U_SAP_ID.ToString())).Select(c => c.Id).ToListAsync();
+                foreach (var item in serviceOrder)
+                {
+                    _capBus.Publish("Serve.ServcieOrder.Create", item);
+                }
+            }
+        }
         /// <summary>
         /// 派单工单列表
         /// </summary>

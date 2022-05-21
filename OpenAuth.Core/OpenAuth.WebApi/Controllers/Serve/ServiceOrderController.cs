@@ -396,6 +396,16 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
         /// <summary>
+        /// 重新同步至SAP，未获取到SAPID时用
+        /// </summary>
+        /// <param name="serviceOrderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task RePulish(int? internalContactId, int? serviceOrderId = null)
+        {
+            await _serviceOrderApp.RePulish(internalContactId, serviceOrderId);
+        }
+        /// <summary>
         /// 获取服务单详情
         /// </summary>
         /// <param name="id"></param>
