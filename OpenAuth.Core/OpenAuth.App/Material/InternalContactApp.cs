@@ -954,7 +954,7 @@ namespace OpenAuth.App.Material
             {
                 var supervisor = "";
                 //生产部门派给对应主管，其他部门派给E3樊静涛
-                if (item.ProductionOrg.Contains("P"))
+                if (!string.IsNullOrWhiteSpace(item.ProductionOrgManager))
                     supervisor = item.ProductionOrgManager;
                 else
                     supervisor = "樊静涛";
@@ -965,6 +965,10 @@ namespace OpenAuth.App.Material
                 if (count > 0)
                     await UnitWork.DeleteAsync<InternalContactTaskServiceOrder>(c => c.InternalContactTaskId == item.Id);
                 List<InternalContactTaskServiceOrder> addlist = new List<InternalContactTaskServiceOrder>();
+                //B01未收货只生生成一条维修单
+                if (item.Remark == "B01未收货")
+                    item.BelongQty = 1;
+
                 //归属量多少生成多少维修单
                 for (int i = 0; i < item.BelongQty; i++)
                 {
