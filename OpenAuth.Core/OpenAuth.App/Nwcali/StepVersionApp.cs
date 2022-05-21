@@ -544,5 +544,8 @@ namespace OpenAuth.App
             result.Count = total;
             return result;
         }
+
+        #region 烤机结果校验
+        #endregion
     }
 }

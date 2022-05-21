@@ -16,16 +16,12 @@ namespace Infrastructure.MQTT
         private IMqttClientOptions options;
         private string clientId = string.Empty;
         private MqttConfig mqttConfig;
-        //缓存自行注入
-        //private readonly ICache _iCache;
 
         /// <summary>
-        /// 实例化 
+        /// 实例化
         /// </summary>
-        /// <param name="server">服务器地址</param>
-        /// <param name="port">端口号</param>
-        /// <param name="topic">订阅主题</param>
-        /// <param name="clientIdPre">客户端id前缀</param>
+        /// <param name="_mqttConfig"></param>
+        /// <param name="receivedMessageHanddler"></param>
         public MqttNetClient(MqttConfig _mqttConfig, EventHandler<MqttApplicationMessageReceivedEventArgs> receivedMessageHanddler
             )
         {
@@ -83,10 +79,11 @@ namespace Infrastructure.MQTT
             try
             {
                 mqttClient.SubscribeAsync("edge_msg/#");
+                Serilog.Log.Logger.Information("连接成功重新订阅生效 【topic=edge_msg/#】!");
             }
             catch (Exception ex)
             {
-                Serilog.Log.Logger.Error("连接连接成功重新订阅失败 【topic=edge_msg/#】!", ex);
+                Serilog.Log.Logger.Error("连接成功重新订阅失败 【topic=edge_msg/#】!", ex);
             }
             //if (mqttConfig.TopicList != null)
             //{
