@@ -26,7 +26,7 @@ namespace OpenAuth.Repository.Domain
         public long TestId { get; set; }
         public DateTime CreateTime { get; set; }
         public int ErrCount { get; set; }
-        public long TaskId { get; set; }
+        public string TaskId { get; set; }
         /// <summary>
         /// 任务状态（0:准备;1:检测中;2:检测完成）
         /// </summary>

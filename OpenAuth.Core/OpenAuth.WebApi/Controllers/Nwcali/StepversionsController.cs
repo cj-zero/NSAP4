@@ -198,7 +198,7 @@ namespace OpenAuth.WebApi.Controllers
 
         #region 钉钉烤机
         /// <summary>
-        /// 
+        /// 主题订阅
         /// </summary>
         /// <param name="topic"></param>
         /// <returns></returns>
@@ -276,22 +276,10 @@ namespace OpenAuth.WebApi.Controllers
                     var request = new Request { JsonParameter = Google.Protobuf.ByteString.CopyFromUtf8(testJson) };
                     var testRes = _dataServiceClient.ControlCmd(request);
                     string testData = Encoding.UTF8.GetString(testRes.Msg.Memory.ToArray());
+                    StartTestResp startTestResp = new StartTestResp();
                     try
                     {
-                        var startTestResp = JsonConvert.DeserializeObject<StartTestResp>(testData);
-                        startTestResp.GeneratorCode = item.GeneratorCode;
-                        startTestResp.EdgeGuid = item.EdgeGuid;
-                        startTestResp.BtsServerIp = item.BtsServerIp;
-                        startTestResp.MidGuid = item.MidGuid;
-                        startTestResp.LowGuid = item.LowGuid;
-                        startTestResp.SrvGuid = item.SrvGuid;
-                        startTestResp.Department=item.Department;
-                        startTestResp.stepCount = item.stepCount;
-                        startTestResp.MaxRange = item.MaxRange;
-                        list.Add(startTestResp);
-                        string key = $"rt_data/subscribe_{ item.EdgeGuid}";
-                        var successList = await _app.SaveTestResult(list);
-                        await _mqttNetClient.SubscribeAsync(key);
+                        startTestResp = JsonConvert.DeserializeObject<StartTestResp>(testData);
                     }
                     catch (Exception ex)
                     {
@@ -300,6 +288,19 @@ namespace OpenAuth.WebApi.Controllers
                         result.Message = testData;
                         return result;
                     }
+                    startTestResp.GeneratorCode = item.GeneratorCode;
+                    startTestResp.EdgeGuid = item.EdgeGuid;
+                    startTestResp.BtsServerIp = item.BtsServerIp;
+                    startTestResp.MidGuid = item.MidGuid;
+                    startTestResp.LowGuid = item.LowGuid;
+                    startTestResp.SrvGuid = item.SrvGuid;
+                    startTestResp.Department = item.Department;
+                    startTestResp.stepCount = item.stepCount;
+                    startTestResp.MaxRange = item.MaxRange;
+                    list.Add(startTestResp);
+                    string key = $"rt_data/subscribe_{ item.EdgeGuid}";
+                    var successList = await _app.SaveTestResult(list);
+                    await _mqttNetClient.SubscribeAsync(key);
                 }
             }
             catch (Exception e)
@@ -309,6 +310,7 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
         /// <summary>
         /// 烤机清单
         /// </summary>
@@ -339,6 +341,16 @@ namespace OpenAuth.WebApi.Controllers
                 result.Message = e.Message;
                 return result;
             }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<object> DeviceTestCheckResult()
+        {
+            return await _app.DeviceTestCheckResult();
         }
         #endregion
     }

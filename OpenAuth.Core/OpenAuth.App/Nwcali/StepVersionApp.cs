@@ -17,7 +17,7 @@ using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
-
+using Serilog;
 
 namespace OpenAuth.App
 {
@@ -380,6 +380,7 @@ namespace OpenAuth.App
                     checkTask.UnitId = citem.unit_id;
                     checkTask.ChlId = citem.chl_id;
                     checkTask.TestId = citem.test_id;
+                    checkTask.CreateTime = DateTime.Now;
                     deviceCheckTasks.Add(checkTask);
                 }
             }
@@ -569,45 +570,57 @@ namespace OpenAuth.App
         public async Task<TableData> DeviceTestCheckResult()
         {
             var result = new TableData();
-            var list = await UnitWork.Find<DeviceCheckTask>(null).Where(c => c.TaskStatus != 2 && c.TaskErrCount <= 3).OrderBy(c => c.Id).ToListAsync();
+            var list = await UnitWork.Find<DeviceCheckTask>(null).Where(c => string.IsNullOrWhiteSpace(c.TaskId) && c.ErrCount<=3).OrderBy(c => c.Id).ToListAsync();
+            var taskList = await UnitWork.Find<DeviceCheckTask>(null).Where(c => !string.IsNullOrWhiteSpace(c.TaskId) && c.TaskStatus!=2).OrderBy(c => c.Id).ToListAsync();
+            string url = $"{_appConfiguration.Value.AnalyticsUrl}api/DataCheck/Task";
+            Infrastructure.HttpHelper helper = new Infrastructure.HttpHelper(url);
             foreach (var item in list)
             {
-                var channelTest = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.EdgeGuid == item.EdgeGuid && c.SrvGuid == item.SrvGuid && c.DevUid == item.DevUid && c.UnitId == item.UnitId && c.TestId == item.TestId && c.ChlId == item.ChlId).FirstOrDefaultAsync();
-                List<object> CheckItemsList = new List<object>();
-                CheckItemsList.Add(new { CheckType = 1, CheckArgs = new { full_scale = 1000, tolerance = 0.002 } });
-                CheckItemsList.Add(new { CheckType = 2, CheckArgs = new { std_thr = 0.02 } });
-                CheckItemsList.Add(new { CheckType = 5, CheckArgs = new { std_thr = 0.02 } });
-                string url = $"{_appConfiguration.Value.AnalyticsUrl}/api/DataCheck/Task";
-                Infrastructure.HttpHelper helper = new Infrastructure.HttpHelper(url);
-                var taskData = helper.Post(new
+                try
                 {
-                    EdgeGuid = item.EdgeGuid,
-                    SrvGuid = item.SrvGuid,
-                    DevUid = item.DevUid,
-                    UnitId = item.UnitId,
-                    ChlId = item.ChlId,
-                    CheckItems = CheckItemsList
-                }, url, "", "");
-                JObject taskObj = JObject.Parse(taskData);
-                if (taskObj["status"] == null || taskObj["status"].ToString() != "200")
+                    List<object> CheckItemsList = new List<object>();
+                    CheckItemsList.Add(new { CheckType = 1, CheckArgs = new { full_scale = 1000, tolerance = 0.002 } });
+                    CheckItemsList.Add(new { CheckType = 2, CheckArgs = new { std_thr = 0.02 } });
+                    CheckItemsList.Add(new { CheckType = 5, CheckArgs = new { std_thr = 0.02 } });
+                    var taskData = helper.Post(new
+                    {
+                        EdgeGuid = item.EdgeGuid,
+                        SrvGuid = item.SrvGuid,
+                        DevUid = item.DevUid,
+                        UnitId = item.UnitId,
+                        ChlId = item.ChlId,
+                        TestId = item.TestId,
+                        CheckItems = CheckItemsList
+                    }, url, "", "");
+                    JObject taskObj = JObject.Parse(taskData);
+                    if (taskObj["status"] == null || taskObj["status"].ToString() != "200")
+                    {
+                        item.ErrCount++;
+                        item.TaskContent = $"烤机检测任务创建失败{taskObj["message"]}";
+                        continue;
+                    }
+                    item.TaskId = taskObj["data"]["TaskId"].ToString();
+                }
+                catch (Exception ex)
                 {
-                    item.TaskStatus = 3;
-                    item.ErrCount++;
-                    item.TaskContent = $"烤机检测任务创建失败{taskObj["message"]}";
+                    Log.Logger.Error($"烤机结果校验失败 EdgeGuid={item.EdgeGuid},topics={item.SrvGuid},DevUid={item.DevUid},UnitId={item.UnitId},ChlId={item.ChlId},TestId={item.TestId}",ex);
                     continue;
                 }
-                long.TryParse(taskObj["data"]["TaskId"].ToString(), out long TaskId);
-                if (TaskId > 0)
+            }           
+            await UnitWork.BatchUpdateAsync(list.ToArray());
+            await UnitWork.SaveAsync();
+
+            foreach (var item in taskList)
+            {
+                try
                 {
-                    string taskurl = $"{_appConfiguration.Value.AnalyticsUrl}api/DataCheck/TaskResult?id={TaskId}";
-                    Dictionary<string, string> dic = new Dictionary<string, string>();
-                    var taskResult = helper.Get(dic, url);
+                    var channelTest = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.EdgeGuid == item.EdgeGuid && c.SrvGuid == item.SrvGuid && c.DevUid == item.DevUid && c.UnitId == item.UnitId && c.TestId == item.TestId && c.ChlId == item.ChlId).FirstOrDefaultAsync();
+                    string taskurl = $"{_appConfiguration.Value.AnalyticsUrl}api/DataCheck/TaskResult?id={item.TaskId}";
+                    Dictionary<string, string> dic = null;
+                    var taskResult = helper.Get(dic, taskurl);
                     JObject res = JObject.Parse(taskResult);
                     if (res["status"] == null || res["status"].ToString() != "200")
                     {
-                        item.TaskStatus = 3;
-                        item.ErrCount++;
-                        item.TaskContent = $"烤机检测任务结果获取失败{res["message"]}";
                         continue;
                     }
                     if (res["data"] != null)
@@ -616,11 +629,9 @@ namespace OpenAuth.App
                         item.TaskStatus = TaskStatus;
                         int.TryParse(res["data"]["ErrCount"].ToString(), out int ErrCount);
                         item.ErrCount = ErrCount;
-                        item.TaskId = TaskId;
-
 
                         channelTest.TaskErrCount = ErrCount;
-                        channelTest.TaskId = TaskId;
+                        channelTest.TaskId = item.TaskId;
                         channelTest.TaskStatus = TaskStatus;
                         channelTest.TaskContent = "";
                         if (res["data"]["CheckItems"] != null)
@@ -664,7 +675,10 @@ namespace OpenAuth.App
                                 {
                                     foreach (var ritem in citem["Records"])
                                     {
-                                        deviceTaskCheck.ErrList.Add(ritem["Err"].ToString());
+                                        if (!string.IsNullOrWhiteSpace(ritem["Err"].ToString()))
+                                        {
+                                            deviceTaskCheck.ErrList.Add(ritem["Err"].ToString());
+                                        }
                                     }
                                 }
                             }
@@ -672,12 +686,17 @@ namespace OpenAuth.App
                             item.TaskContent = JsonConvert.SerializeObject(deviceTaskCheckList);
                         }
                     }
+                    await UnitWork.UpdateAsync(channelTest);
+                    await UnitWork.SaveAsync();
                 }
-                await UnitWork.UpdateAsync(channelTest);
-                await UnitWork.SaveAsync();
+                catch (Exception ex)
+                {
+                    Log.Logger.Error($"烤机任务数据获取失败 TaskId={item.TaskId}", ex);
+                    continue;
+                }
             }
-            var hasCompleteList = list.Where(c => c.TaskStatus == 2).ToList();
-            var noCompleteList= list.Where(c => c.TaskStatus != 2).ToList();
+            var hasCompleteList = taskList.Where(c => c.TaskStatus == 2).ToList();
+            var noCompleteList = taskList.Where(c => c.TaskStatus != 2).ToList();
             await UnitWork.BatchUpdateAsync(noCompleteList.ToArray());
             await UnitWork.BatchDeleteAsync(hasCompleteList.ToArray());
             await UnitWork.SaveAsync();

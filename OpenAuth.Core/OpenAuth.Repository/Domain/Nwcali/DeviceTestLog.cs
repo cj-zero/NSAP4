@@ -32,7 +32,7 @@ namespace OpenAuth.Repository.Domain
         public int StepCount { get; set; }
         public string PrtCode { get; set; }
         public int MaxRange { get; set; }
-        public long TaskId { get; set; }
+        public string TaskId { get; set; }
         public sbyte TaskStatus { get; set; }
         public string TaskContent { get; set; }
         public int TaskErrCount { get; set; }
