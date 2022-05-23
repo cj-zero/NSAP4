@@ -290,16 +290,12 @@ namespace OpenAuth.WebApi.Controllers
                         startTestResp.MaxRange = item.MaxRange;
                         list.Add(startTestResp);
                         string key = $"rt_data/subscribe_{ item.EdgeGuid}";
-                        if (!RedisHelper.Exists(key))
-                        {
-                            RedisHelper.Set(key, key, new TimeSpan(0, 24, 0, 0));
-                        }
                         var successList = await _app.SaveTestResult(list);
                         await _mqttNetClient.SubscribeAsync(key);
                     }
                     catch (Exception ex)
                     {
-                        Log.Logger.Error($"{testData}");
+                        Log.Logger.Error($"{testData}",ex);
                         result.Code = 500;
                         result.Message = testData;
                         return result;

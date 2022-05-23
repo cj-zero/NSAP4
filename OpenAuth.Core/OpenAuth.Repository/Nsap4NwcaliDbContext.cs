@@ -56,5 +56,6 @@ namespace OpenAuth.Repository
         public virtual DbSet<DeviceTestCode> DeviceTestCodes { get; set; }
         public virtual DbSet<MachineInfo> MachineInfos { get; set; }
         public virtual DbSet<DeviceBindLog> DeviceBindLogs { get; set; }
+        public virtual DbSet<DeviceCheckTask> DeviceCheckTasks { get; set; }
     }
 }

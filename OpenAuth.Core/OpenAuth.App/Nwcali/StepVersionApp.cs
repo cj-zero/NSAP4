@@ -7,7 +7,9 @@ using Infrastructure;
 using Infrastructure.Extensions;
 using Infrastructure.Helpers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Nwcali.Request;
 using OpenAuth.App.Nwcali.Response;
@@ -24,13 +26,16 @@ namespace OpenAuth.App
     /// </summary>
     public class StepVersionApp : OnlyUnitWorkBaeApp
     {
+        private readonly IOptions<AppSetting> _appConfiguration;
+
         /// <summary>
         /// 工步模板
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
-        public StepVersionApp(IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
+        public StepVersionApp(IUnitWork unitWork, IAuth auth, IOptions<AppSetting> appConfiguration) : base(unitWork, auth)
         {
+            _appConfiguration = appConfiguration;
         }
 
         /// <summary>
@@ -161,8 +166,8 @@ namespace OpenAuth.App
 
                 var allBindList = await UnitWork.Find<DeviceBindMap>(null).Where(c => departmentList.Contains(c.Department)).ToListAsync();//已绑定
                 var hasTestLow = (from a in allBindList.AsQueryable()
-                                      join b in UnitWork.Find<DeviceTestLog>(null) on new { a.GeneratorCode, a.LowGuid } equals new { b.GeneratorCode, b.LowGuid }
-                                      select new { a.GeneratorCode, a.LowGuid }).ToList();
+                                  join b in UnitWork.Find<DeviceTestLog>(null) on new { a.GeneratorCode, a.LowGuid } equals new { b.GeneratorCode, b.LowGuid }
+                                  select new { a.GeneratorCode, a.LowGuid }).ToList();
                 var hasTestLowGuid = hasTestLow.Select(c => c.LowGuid).ToList();
                 var hasTestCode = hasTestLow.Select(c => c.GeneratorCode).ToList();
                 var canTestList = allBindList.Where(c => !hasTestLowGuid.Contains(c.LowGuid) && !hasTestCode.Contains(c.GeneratorCode)).ToList();
@@ -268,7 +273,7 @@ namespace OpenAuth.App
                     deviceTest.canTestDeviceResp.control.arg = "";
                     deviceTest.canTestDeviceResp.control.cmd_type = "start_test";
                     deviceTest.Department = item.Department;
-                    int maxRange =Math.Abs(Convert.ToInt32(item.RangeCurrArray.Split(',').Max()));
+                    int maxRange = Math.Abs(Convert.ToInt32(item.RangeCurrArray.Split(',').Max()));
                     deviceTest.MaxRange = maxRange;
                     deviceTest.stepCount = stepCount;
                     arg arg = new arg();
@@ -332,6 +337,7 @@ namespace OpenAuth.App
             }
             var user = loginContext.User;
             List<DeviceTestLog> deviceTestLogList = new List<DeviceTestLog>();
+            List<DeviceCheckTask> deviceCheckTasks = new List<DeviceCheckTask>();
             foreach (var item in list)
             {
                 foreach (var citem in item.chl_info)
@@ -366,9 +372,19 @@ namespace OpenAuth.App
                     }
                     deviceTest.TestId = citem.test_id;
                     deviceTestLogList.Add(deviceTest);
+
+                    DeviceCheckTask checkTask = new DeviceCheckTask();
+                    checkTask.EdgeGuid = item.EdgeGuid;
+                    checkTask.SrvGuid = item.SrvGuid;
+                    checkTask.DevUid = citem.dev_uid;
+                    checkTask.UnitId = citem.unit_id;
+                    checkTask.ChlId = citem.chl_id;
+                    checkTask.TestId = citem.test_id;
+                    deviceCheckTasks.Add(checkTask);
                 }
             }
             await UnitWork.BatchAddAsync<DeviceTestLog, int>(deviceTestLogList.ToArray());
+            await UnitWork.BatchAddAsync<DeviceCheckTask, int>(deviceCheckTasks.ToArray());
             await UnitWork.SaveAsync();
             result.Data = true;
             return result;
@@ -421,12 +437,12 @@ namespace OpenAuth.App
                     string code = item;
                     int status = 0;
                     decimal progress = 0;
-                    var statusList = lastTestList.Where(c => c.GeneratorCode == item).Select(c => new { c.Id, c.Status, c.StepCount, c.StepId, c.DevUid, c.UnitId, c.PrtCode, c.CodeTxt,c.ChlId }).ToList();
+                    var statusList = lastTestList.Where(c => c.GeneratorCode == item).Select(c => new { c.Id, c.Status, c.StepCount, c.StepId, c.DevUid, c.UnitId, c.PrtCode, c.CodeTxt, c.ChlId }).ToList();
                     if (!hasBindList.Any(c => c == item))
                     {
                         status = -5;
                     }
-                    else if(statusList.Any())
+                    else if (statusList.Any())
                     {
                         if (statusList.All(c => c.Status == 0))
                         {
@@ -443,7 +459,7 @@ namespace OpenAuth.App
                             int currentStepCount = statusList.Sum(c => c.StepId);
                             progress = Math.Round((decimal)currentStepCount / (decimal)totalStep * 100);
                         }
-                        else if (statusList.Any(c => (c.Status == -4 || c.Status==4)))
+                        else if (statusList.Any(c => (c.Status == -4 || c.Status == 4)))
                         {
                             status = -4;
                             warningList = statusList.Where(c => c.Status == -4 || c.Status == 4).Select(c => new { deviceInfo = c.DevUid + "-" + c.UnitId + "-" + c.ChlId, c.CodeTxt }).ToList<object>();
@@ -483,7 +499,7 @@ namespace OpenAuth.App
                 List<string> itemList = new List<string>();
                 if (!string.IsNullOrWhiteSpace(key))
                 {
-                    var searchaList= deviceList.Where(c => c.Contains(key)).ToList();
+                    var searchaList = deviceList.Where(c => c.Contains(key)).ToList();
                     total = searchaList.Count;
                     itemList = searchaList.Skip((page - 1) * limit).Take(limit).ToList();
                 }
@@ -505,12 +521,12 @@ namespace OpenAuth.App
                     string code = item;
                     int status = 0;
                     decimal progress = 0;
-                    var statusList = lastTestList.Where(c => c.GeneratorCode == item).Select(c => new { c.Id, c.Status, c.StepCount, c.StepId, c.DevUid, c.UnitId, c.PrtCode, c.CodeTxt,c.ChlId }).ToList();
+                    var statusList = lastTestList.Where(c => c.GeneratorCode == item).Select(c => new { c.Id, c.Status, c.StepCount, c.StepId, c.DevUid, c.UnitId, c.PrtCode, c.CodeTxt, c.ChlId }).ToList();
                     if (!hasBindList.Any(c => c == item))
                     {
                         status = -5;
                     }
-                    else if(statusList.Any())
+                    else if (statusList.Any())
                     {
                         if (statusList.All(c => c.Status == 0))
                         {
@@ -525,12 +541,12 @@ namespace OpenAuth.App
                             status = -2;
                             int totalStep = statusList.Sum(c => c.StepCount);
                             int currentStepCount = statusList.Sum(c => c.StepId);
-                            progress = Math.Round((decimal)currentStepCount/(decimal)totalStep* 100);
+                            progress = Math.Round((decimal)currentStepCount / (decimal)totalStep * 100);
                         }
-                        else if (statusList.Any(c => c.Status == -4 || c.Status==4))
+                        else if (statusList.Any(c => c.Status == -4 || c.Status == 4))
                         {
                             status = -4;
-                            warningList = statusList.Where(c => c.Status == -4 || c.Status==4).Select(c => new { deviceInfo = c.DevUid + "-" + c.UnitId+"-"+c.ChlId, c.CodeTxt }).ToList<object>();
+                            warningList = statusList.Where(c => c.Status == -4 || c.Status == 4).Select(c => new { deviceInfo = c.DevUid + "-" + c.UnitId + "-" + c.ChlId, c.CodeTxt }).ToList<object>();
                         }
                     }
                     else
@@ -546,6 +562,128 @@ namespace OpenAuth.App
         }
 
         #region 烤机结果校验
+
+        /// <summary>
+        /// 烤机结果校验
+        /// </summary>
+        public async Task<TableData> DeviceTestCheckResult()
+        {
+            var result = new TableData();
+            var list = await UnitWork.Find<DeviceCheckTask>(null).Where(c => c.TaskStatus != 2 && c.TaskErrCount <= 3).OrderBy(c => c.Id).ToListAsync();
+            foreach (var item in list)
+            {
+                var channelTest = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.EdgeGuid == item.EdgeGuid && c.SrvGuid == item.SrvGuid && c.DevUid == item.DevUid && c.UnitId == item.UnitId && c.TestId == item.TestId && c.ChlId == item.ChlId).FirstOrDefaultAsync();
+                List<object> CheckItemsList = new List<object>();
+                CheckItemsList.Add(new { CheckType = 1, CheckArgs = new { full_scale = 1000, tolerance = 0.002 } });
+                CheckItemsList.Add(new { CheckType = 2, CheckArgs = new { std_thr = 0.02 } });
+                CheckItemsList.Add(new { CheckType = 5, CheckArgs = new { std_thr = 0.02 } });
+                string url = $"{_appConfiguration.Value.AnalyticsUrl}/api/DataCheck/Task";
+                Infrastructure.HttpHelper helper = new Infrastructure.HttpHelper(url);
+                var taskData = helper.Post(new
+                {
+                    EdgeGuid = item.EdgeGuid,
+                    SrvGuid = item.SrvGuid,
+                    DevUid = item.DevUid,
+                    UnitId = item.UnitId,
+                    ChlId = item.ChlId,
+                    CheckItems = CheckItemsList
+                }, url, "", "");
+                JObject taskObj = JObject.Parse(taskData);
+                if (taskObj["status"] == null || taskObj["status"].ToString() != "200")
+                {
+                    item.TaskStatus = 3;
+                    item.ErrCount++;
+                    item.TaskContent = $"烤机检测任务创建失败{taskObj["message"]}";
+                    continue;
+                }
+                long.TryParse(taskObj["data"]["TaskId"].ToString(), out long TaskId);
+                if (TaskId > 0)
+                {
+                    string taskurl = $"{_appConfiguration.Value.AnalyticsUrl}api/DataCheck/TaskResult?id={TaskId}";
+                    Dictionary<string, string> dic = new Dictionary<string, string>();
+                    var taskResult = helper.Get(dic, url);
+                    JObject res = JObject.Parse(taskResult);
+                    if (res["status"] == null || res["status"].ToString() != "200")
+                    {
+                        item.TaskStatus = 3;
+                        item.ErrCount++;
+                        item.TaskContent = $"烤机检测任务结果获取失败{res["message"]}";
+                        continue;
+                    }
+                    if (res["data"] != null)
+                    {
+                        sbyte.TryParse(res["data"]["Status"].ToString(), out sbyte TaskStatus);
+                        item.TaskStatus = TaskStatus;
+                        int.TryParse(res["data"]["ErrCount"].ToString(), out int ErrCount);
+                        item.ErrCount = ErrCount;
+                        item.TaskId = TaskId;
+
+
+                        channelTest.TaskErrCount = ErrCount;
+                        channelTest.TaskId = TaskId;
+                        channelTest.TaskStatus = TaskStatus;
+                        channelTest.TaskContent = "";
+                        if (res["data"]["CheckItems"] != null)
+                        {
+                            List<DeviceTaskCheckResp> deviceTaskCheckList = new List<DeviceTaskCheckResp>();
+                            foreach (var citem in res["data"]["CheckItems"])
+                            {
+                                DeviceTaskCheckResp deviceTaskCheck = new DeviceTaskCheckResp();
+                                long.TryParse(citem["CheckId"].ToString(), out long CheckId);
+                                int.TryParse(citem["ErrCount"].ToString(), out int errcount);
+                                int.TryParse(citem["CheckType"].ToString(), out int CheckType);
+                                deviceTaskCheck.CheckId = CheckId;
+                                deviceTaskCheck.CheckType = CheckType;
+                                switch (CheckType)
+                                {
+                                    case 0:
+                                        deviceTaskCheck.CheckName = "测试是否按流程完成";
+                                        break;
+                                    case 1:
+                                        deviceTaskCheck.CheckName = "搁置工步是否漏电";
+                                        break;
+                                    case 2:
+                                        deviceTaskCheck.CheckName = "恒压工步电压是否稳定";
+                                        break;
+                                    case 3:
+                                        deviceTaskCheck.CheckName = "放电工步电压是否下降";
+                                        break;
+                                    case 4:
+                                        deviceTaskCheck.CheckName = "充电工步电压是否上升";
+                                        break;
+                                    case 5:
+                                        deviceTaskCheck.CheckName = "恒流工步电流稳定";
+                                        break;
+                                }
+                                deviceTaskCheck.ErrList = new List<string>();
+                                if (errcount <= 0)
+                                {
+                                    continue;
+                                }
+                                if (citem["Records"] != null)
+                                {
+                                    foreach (var ritem in citem["Records"])
+                                    {
+                                        deviceTaskCheck.ErrList.Add(ritem["Err"].ToString());
+                                    }
+                                }
+                            }
+                            channelTest.TaskContent = JsonConvert.SerializeObject(deviceTaskCheckList);
+                            item.TaskContent = JsonConvert.SerializeObject(deviceTaskCheckList);
+                        }
+                    }
+                }
+                await UnitWork.UpdateAsync(channelTest);
+                await UnitWork.SaveAsync();
+            }
+            var hasCompleteList = list.Where(c => c.TaskStatus == 2).ToList();
+            var noCompleteList= list.Where(c => c.TaskStatus != 2).ToList();
+            await UnitWork.BatchUpdateAsync(noCompleteList.ToArray());
+            await UnitWork.BatchDeleteAsync(hasCompleteList.ToArray());
+            await UnitWork.SaveAsync();
+            return result;
+        }
+
         #endregion
     }
 }
