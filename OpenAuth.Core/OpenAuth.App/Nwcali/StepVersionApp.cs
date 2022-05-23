@@ -667,23 +667,25 @@ namespace OpenAuth.App
                                         break;
                                 }
                                 deviceTaskCheck.ErrList = new List<string>();
-                                if (errcount <= 0)
+                                if (errcount>0)
                                 {
-                                    continue;
-                                }
-                                if (citem["Records"] != null)
-                                {
-                                    foreach (var ritem in citem["Records"])
+                                    if (citem["Records"] != null)
                                     {
-                                        if (!string.IsNullOrWhiteSpace(ritem["Err"].ToString()))
+                                        foreach (var ritem in citem["Records"])
                                         {
-                                            deviceTaskCheck.ErrList.Add(ritem["Err"].ToString());
+                                            if (!string.IsNullOrWhiteSpace(ritem["Err"].ToString()))
+                                            {
+                                                deviceTaskCheck.ErrList.Add(ritem["Err"].ToString());
+                                            }
                                         }
                                     }
                                 }
                             }
-                            channelTest.TaskContent = JsonConvert.SerializeObject(deviceTaskCheckList);
-                            item.TaskContent = JsonConvert.SerializeObject(deviceTaskCheckList);
+                            if (deviceTaskCheckList.Any())
+                            {
+                                channelTest.TaskContent = JsonConvert.SerializeObject(deviceTaskCheckList);
+                                item.TaskContent = JsonConvert.SerializeObject(deviceTaskCheckList);
+                            }
                         }
                     }
                     await UnitWork.UpdateAsync(channelTest);
