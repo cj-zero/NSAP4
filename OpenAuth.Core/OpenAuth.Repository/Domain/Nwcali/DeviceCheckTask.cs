@@ -6,33 +6,30 @@ using System.Text;
 
 namespace OpenAuth.Repository.Domain
 {
-    [Table("devicetestlog")]
-    public class DeviceTestLog : BaseEntity<long>
+    [Table("devicechecktask")]
+    public class DeviceCheckTask:BaseEntity<long>
     {
-        public string GeneratorCode { get; set; }
-
         public string EdgeGuid { get; set; }
+        /// <summary>
+        /// 上位机guid
+        /// </summary>
         public string SrvGuid { get; set; }
-        public string BtsServerIp { get; set; }
-        public string MidGuid { get; set; }
-        public string LowGuid { get; set; }
+        /// <summary>
+        /// 中位机编号
+        /// </summary>
         public int DevUid { get; set; }
+        /// <summary>
+        /// 下位机单元id
+        /// </summary>
         public int UnitId { get; set; }
-        public int Status { get; set; }
+        public int ChlId { get; set; }
         public long TestId { get; set; }
         public DateTime CreateTime { get; set; }
-        public int ChlId { get; set; }
-        public string CreateUserId { get; set; }
-        public string CreateUser { get; set; }
-        public long OrderNo { get; set; }
-        public string Department { get; set; }
-        public DateTime ChangeStatusTime { get; set; }
-        public int StepId { get; set; }
-        public string CodeTxt { get; set; }
-        public int StepCount { get; set; }
-        public string PrtCode { get; set; }
-        public int MaxRange { get; set; }
+        public int ErrCount { get; set; }
         public string TaskId { get; set; }
+        /// <summary>
+        /// 任务状态（0:准备;1:检测中;2:检测完成）
+        /// </summary>
         public sbyte TaskStatus { get; set; }
         public string TaskContent { get; set; }
         public int TaskErrCount { get; set; }

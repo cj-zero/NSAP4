@@ -42,16 +42,14 @@ namespace OpenAuth.App
                 var m = (date.DayOfWeek == DayOfWeek.Sunday ? (DayOfWeek)7 : date.DayOfWeek) - DayOfWeek.Monday;
                 var s = (date.DayOfWeek == DayOfWeek.Sunday ? (DayOfWeek)7 : date.DayOfWeek) - (DayOfWeek)7;
                 var Mon = date.AddDays((-7 - m)).Date;
-                var Sun = Convert.ToDateTime(date.AddDays((-7 - s)).Date.ToString("yyyy-MM-dd 23:59:59"));
+                var Sun = date.AddDays((-7 - s)).AddDays(1).Date;
                 object obj = new object();
                 List<string> serverIdList = new List<string>();
-                //获取工单列表
                 var allRepaorList = await (from a in UnitWork.Find<ServiceWorkOrder>(null)
                                            join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id
                                            where b.FromId == 6 && b.Status == 2 
-                                           && a.CreateTime >= Mon && a.CreateTime <= Sun && a.ManufacturerSerialNumber != "无序列号" && b.VestInOrg == 1 && b.FromAppUserId != null && b.FromAppUserId != 0 && b.CustomerId != "C00550"
+                                           && a.CreateTime >= Mon && a.CreateTime < Sun && a.ManufacturerSerialNumber != "无序列号" && b.VestInOrg == 1 && b.FromAppUserId != null && b.FromAppUserId != 0 && b.CustomerId != "C00550"
                                            select new { a.ManufacturerSerialNumber, a.FromTheme, a.ServiceOrderId, b.U_SAP_ID, b.FromAppUserId }).ToListAsync();
-                //获取服务Id集合
                 var U_SAP_ID_List = allRepaorList.GroupBy(c => c.U_SAP_ID).Select(c => c.Key).ToList();
                 List<int> r_u_sap_id = new List<int>();
                 List<LuckyServiceOrder> luckyServiceOrdersList = new List<LuckyServiceOrder>();
@@ -63,8 +61,6 @@ namespace OpenAuth.App
                     luckyServiceOrder.ManufacturerSerialNumberList = list.Select(c => c.ManufacturerSerialNumber).ToList();
                     List<LuckyFromTheme> luckyFromThemesList = new List<LuckyFromTheme>();
                     luckyServiceOrder.CodeList = luckyFromThemesList;
-                    //LuckyFromTheme luckyFromThemeList = new LuckyFromTheme();
-                    //序列号对应的呼叫主题
                     foreach (var row in list)
                     {
                         try
@@ -87,18 +83,15 @@ namespace OpenAuth.App
                     }
                     luckyServiceOrdersList.Add(luckyServiceOrder);
                 }
-                //序列号和呼叫主题完全被包含的服务单过滤掉
                 foreach (var item in luckyServiceOrdersList)
                 {
                     var data = luckyServiceOrdersList.Where(c => c.U_SAP_ID == item.U_SAP_ID).FirstOrDefault();
                     var itemList = luckyServiceOrdersList.Where(c => c.U_SAP_ID != item.U_SAP_ID).ToList();
                     foreach (var row in itemList)
                     {
-                        //比较序列号
                         var flag = IsContainsAll(data.ManufacturerSerialNumberList, row.ManufacturerSerialNumberList);
                         if (flag == true)
                         {
-                            //比较每个序列号的呼叫主题
                             var count = 0;
                             foreach (var sn in data.CodeList)
                             {
@@ -184,7 +177,7 @@ namespace OpenAuth.App
             return idList;
         }
         /// <summary>
-        /// 判断集合A是否被集合B全包含啊A，B都无重复值 （true:全包含）
+        /// 
         /// </summary>
         /// <param name="ListA"></param>
         /// <param name="ListB"></param>

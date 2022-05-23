@@ -24,7 +24,6 @@ namespace OpenAuth.App.Nwcali
     public class MqttSubscribeApp : OnlyUnitWorkBaeApp, IMqttSubscribe
     {
         private readonly IOptions<AppSetting> _appConfiguration;
-        //private HttpHelper _helper;
         /// <summary>
         /// 
         /// </summary>
@@ -33,7 +32,6 @@ namespace OpenAuth.App.Nwcali
         /// <param name="appConfiguration"></param>
         public MqttSubscribeApp(IUnitWork unitWork, IAuth auth, IOptions<AppSetting> appConfiguration) : base(unitWork, auth)
         {
-            //_helper = httpHelper;
             _appConfiguration = appConfiguration;
         }
 
@@ -110,12 +108,12 @@ namespace OpenAuth.App.Nwcali
                                                     edge.address = obj.chl_info.edge_info.address == null ? "" : obj.chl_info.edge_info.address;
                                                     edge.department = obj.chl_info.edge_info.edg_name == null ? "" : obj.chl_info.edge_info.edg_name;
                                                     edge.status = 1;
-                                                    edge.CreateTime=DateTime.Now;
+                                                    edge.CreateTime = DateTime.Now;
                                                     UnitWork.Add<edge, int>(edge);
                                                     UnitWork.Save();
                                                 }
                                             }
-                                            if (obj.chl_info.data!=null)
+                                            if (obj.chl_info.data != null)
                                             {
                                                 foreach (var item in obj.chl_info.data)
                                                 {
@@ -127,7 +125,7 @@ namespace OpenAuth.App.Nwcali
                                                         host_info.bts_server_ip = item.bts_server_ip;
                                                         host_info.bts_type = item.bts_type;
                                                         host_info.status = 1;
-                                                        host_info.CreateTime=DateTime.Now;
+                                                        host_info.CreateTime = DateTime.Now;
                                                     }
                                                     else
                                                     {
@@ -137,11 +135,11 @@ namespace OpenAuth.App.Nwcali
                                                         host.bts_server_ip = item.bts_server_ip;
                                                         host.bts_type = item.bts_type;
                                                         host.status = 1;
-                                                        host.CreateTime=DateTime.Now;   
+                                                        host.CreateTime = DateTime.Now;
                                                         UnitWork.Add<edge_host, int>(host);
                                                         UnitWork.Save();
                                                     }
-                                                    if (item.mid_list!=null)
+                                                    if (item.mid_list != null)
                                                     {
                                                         foreach (var mItem in item.mid_list)
                                                         {
@@ -153,7 +151,7 @@ namespace OpenAuth.App.Nwcali
                                                                 mid_info.mid_version = mItem.mid_version;
                                                                 mid_info.production_serial = mid_info.production_serial;
                                                                 mid_info.status = 1;
-                                                                mid_info.CreateTime = DateTime.Now; 
+                                                                mid_info.CreateTime = DateTime.Now;
                                                             }
                                                             else
                                                             {
@@ -162,13 +160,13 @@ namespace OpenAuth.App.Nwcali
                                                                 mid.mid_guid = mItem.mid_guid;
                                                                 mid.dev_uid = mItem.dev_uid;
                                                                 mid.mid_version = mItem.mid_version;
-                                                                mid.production_serial = mItem.production_serial==null?"": mItem.production_serial;
+                                                                mid.production_serial = mItem.production_serial == null ? "" : mItem.production_serial;
                                                                 mid.status = 1;
-                                                                mid.CreateTime= DateTime.Now;   
+                                                                mid.CreateTime = DateTime.Now;
                                                                 UnitWork.Add<edge_mid, int>(mid);
                                                                 UnitWork.Save();
                                                             }
-                                                            if (mItem.low_list!=null)
+                                                            if (mItem.low_list != null)
                                                             {
                                                                 foreach (var lItem in mItem.low_list)
                                                                 {
@@ -182,7 +180,7 @@ namespace OpenAuth.App.Nwcali
                                                                         low_info.range_curr_array = string.Join(",", lItem.range_curr_array);
                                                                         low_info.low_version = lItem.low_version;
                                                                         low_info.status = 1;
-                                                                        low_info.CreateTime=DateTime.Now;
+                                                                        low_info.CreateTime = DateTime.Now;
                                                                     }
                                                                     else
                                                                     {
@@ -196,11 +194,11 @@ namespace OpenAuth.App.Nwcali
                                                                         low.range_curr_array = string.Join(",", lItem.range_curr_array);
                                                                         low.low_version = lItem.low_version;
                                                                         low.status = 1;
-                                                                        low.CreateTime=DateTime.Now;
+                                                                        low.CreateTime = DateTime.Now;
                                                                         UnitWork.Add<edge_low, int>(low);
                                                                         UnitWork.Save();
                                                                     }
-                                                                    if (lItem.channel_list!=null)
+                                                                    if (lItem.channel_list != null)
                                                                     {
                                                                         foreach (var cItem in lItem.channel_list)
                                                                         {
@@ -251,29 +249,37 @@ namespace OpenAuth.App.Nwcali
                                 }
                                 else if (msg_type == "2")
                                 {
-                                    UnitWork.Find<edge>(null).Where(c => c.edge_guid == edge_guids)
-                                        .UpdateFromQuery(c => new edge { status = 0 });
-                                    UnitWork.Find<edge_host>(null).Where(c => c.edge_guid == edge_guids)
-                                        .UpdateFromQuery(c => new edge_host { status = 0 });
-                                    UnitWork.Find<edge_mid>(null).Where(c => c.edge_guid == edge_guids)
-                                        .UpdateFromQuery(c => new edge_mid { status = 0 });
-                                    UnitWork.Find<edge_low>(null).Where(c => c.edge_guid == edge_guids)
-                                        .UpdateFromQuery(c => new edge_low { status = 0 });
-                                    UnitWork.Find<edge_channel>(null).Where(c => c.edge_guid == edge_guids)
-                                        .UpdateFromQuery(c => new edge_channel { status = 0 });
+                                    var edgeinfo = UnitWork.Find<edge>(null).Where(c => c.edge_guid == edge_guids).Any();
+                                    if (edgeinfo)
+                                    {
+                                        UnitWork.Find<edge>(null).Where(c => c.edge_guid == edge_guids)
+                                            .UpdateFromQuery(c => new edge { status = 0 });
+                                        UnitWork.Find<edge_host>(null).Where(c => c.edge_guid == edge_guids)
+                                            .UpdateFromQuery(c => new edge_host { status = 0 });
+                                        UnitWork.Find<edge_mid>(null).Where(c => c.edge_guid == edge_guids)
+                                            .UpdateFromQuery(c => new edge_mid { status = 0 });
+                                        UnitWork.Find<edge_low>(null).Where(c => c.edge_guid == edge_guids)
+                                            .UpdateFromQuery(c => new edge_low { status = 0 });
+                                        UnitWork.Find<edge_channel>(null).Where(c => c.edge_guid == edge_guids)
+                                            .UpdateFromQuery(c => new edge_channel { status = 0 });
+                                    }
                                 }
                                 else if (msg_type == "1")
                                 {
-                                    UnitWork.Find<edge>(null).Where(c => c.edge_guid == edge_guids)
-                                        .UpdateFromQuery(c => new edge { status = 1 });
-                                    UnitWork.Find<edge_host>(null).Where(c => c.edge_guid == edge_guids)
-                                        .UpdateFromQuery(c => new edge_host { status = 1 });
-                                    UnitWork.Find<edge_mid>(null).Where(c => c.edge_guid == edge_guids)
-                                        .UpdateFromQuery(c => new edge_mid { status = 1 });
-                                    UnitWork.Find<edge_low>(null).Where(c => c.edge_guid == edge_guids)
-                                        .UpdateFromQuery(c => new edge_low { status = 1 });
-                                    UnitWork.Find<edge_channel>(null).Where(c => c.edge_guid == edge_guids)
-                                        .UpdateFromQuery(c => new edge_channel { status = 1 });
+                                    var edgeinfo = UnitWork.Find<edge>(null).Where(c => c.edge_guid == edge_guids).Any();
+                                    if (edgeinfo)
+                                    {
+                                        UnitWork.Find<edge>(null).Where(c => c.edge_guid == edge_guids)
+                                            .UpdateFromQuery(c => new edge { status = 1 });
+                                        UnitWork.Find<edge_host>(null).Where(c => c.edge_guid == edge_guids)
+                                            .UpdateFromQuery(c => new edge_host { status = 1 });
+                                        UnitWork.Find<edge_mid>(null).Where(c => c.edge_guid == edge_guids)
+                                            .UpdateFromQuery(c => new edge_mid { status = 1 });
+                                        UnitWork.Find<edge_low>(null).Where(c => c.edge_guid == edge_guids)
+                                            .UpdateFromQuery(c => new edge_low { status = 1 });
+                                        UnitWork.Find<edge_channel>(null).Where(c => c.edge_guid == edge_guids)
+                                            .UpdateFromQuery(c => new edge_channel { status = 1 });
+                                    }
                                 }
                             }
                         }
@@ -342,7 +348,7 @@ namespace OpenAuth.App.Nwcali
                             }
                             catch (Exception ex)
                             {
-                                Log.Logger.Error($"rt订阅数据解析异常：edge_guids={edge_guid},异常数据 vc="+JsonConvert.SerializeObject(vc) +"", ex);
+                                Log.Logger.Error($"rt订阅数据解析异常：edge_guids={edge_guid},异常数据 vc=" + JsonConvert.SerializeObject(vc) + "", ex);
                             }
                         }
                         break;

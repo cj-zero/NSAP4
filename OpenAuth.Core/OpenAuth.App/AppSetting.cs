@@ -99,5 +99,9 @@
         /// 
         /// </summary>
         public string EnterpriseIds { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string AnalyticsUrl { get; set; }
     }
 }
