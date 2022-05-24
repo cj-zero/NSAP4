@@ -35,7 +35,7 @@ namespace Sap.Handler.Service
         {
             var query =await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(theServiceOrderId)).AsNoTracking()
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType).FirstOrDefaultAsync();
-               
+            Log.Logger.Information($"获取服务单信息完成，theServiceOrderId：{theServiceOrderId}，开始同步", typeof(ServiceOrderSapHandler));
             var thisSorder =  query.MapTo<ServiceOrder>();
             if (thisSorder.ServiceWorkOrders.Count > 0) {
                 //同步到SAP
@@ -118,6 +118,7 @@ namespace Sap.Handler.Service
                     else
                     {
                         company.GetNewObjectCode(out docNum);
+                        Log.Logger.Information($"添加服务呼叫到SAP成功！", typeof(ServiceOrderSapHandler));
                     }
                 }
                 catch (Exception e)
@@ -128,11 +129,11 @@ namespace Sap.Handler.Service
                 if (!string.IsNullOrEmpty(docNum))
                 {
                     //用信号量代替锁
-                    await semaphoreSlim.WaitAsync();
+                    semaphoreSlim.Wait();
                     try
                     {
                         //如果同步成功则修改serviceOrder
-                        await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(theServiceOrderId), e => new ServiceOrder
+                        UnitWork.Update<ServiceOrder>(s => s.Id.Equals(theServiceOrderId), e => new ServiceOrder
                         {
                             U_SAP_ID = System.Convert.ToInt32(docNum)
                         });
@@ -140,7 +141,7 @@ namespace Sap.Handler.Service
                         int num = 0;
                         ServiceWorkOrders.ForEach(u => u.WorkOrderNumber = docNum + "-" + ++num);
                         UnitWork.BatchUpdate<ServiceWorkOrder>(ServiceWorkOrders.ToArray());
-                        await UnitWork.SaveAsync();
+                        UnitWork.Save();
                         Log.Logger.Warning($"同步成功，SAP_ID：{docNum}", typeof(ServiceOrderSapHandler));
                     }
                     catch (Exception ex)
