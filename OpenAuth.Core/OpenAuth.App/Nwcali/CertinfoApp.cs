@@ -1677,6 +1677,37 @@ namespace OpenAuth.App
             return result;
         }
 
+        /// <summary>
+        /// 生产唯一码下设备是否校准
+        /// </summary>
+        /// <param name="wo"></param>
+        /// <returns></returns>
+        public async Task<TableData> CheckCalibration(string wo)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            result.Data = false;
+            var lowGuid = await UnitWork.Find<DeviceBindMap>(c => c.GeneratorCode == wo).Select(c => c.LowGuid).ToListAsync();
+            if (lowGuid.Count > 0)
+            {
+                var pcplc = await UnitWork.Find<PcPlc>(c => lowGuid.Contains(c.Guid) && c.ExpirationDate >= DateTime.Now).ToListAsync();
+                pcplc = pcplc.GroupBy(c => c.Guid).Select(c => c.First()).ToList();
+                if (pcplc.Count > 0)
+                {
+                    //下位机数量是否等于下位机校准证书数量
+                    if (lowGuid.Count == pcplc.Count)
+                    {
+                        result.Data = true;
+                    }
+                }
+            }
+            return result;
+        }
+
 
         /// <summary>
         /// 构建证书模板参数
