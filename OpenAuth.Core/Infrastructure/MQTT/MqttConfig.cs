@@ -21,6 +21,7 @@ namespace Infrastructure.MQTT
         public int SslWebSocketPort { get; set; }
         public string ClientIdPre { get; set; }
         public bool CleanSeesion { get; set; } = false;
+        public string ClientIdentify { get; set; }
         public List<string> TopicList { get; set; }
     }
 }

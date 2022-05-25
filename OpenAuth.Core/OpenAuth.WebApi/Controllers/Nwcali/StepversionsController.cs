@@ -344,13 +344,54 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 
+        /// 烤机结果校验
         /// </summary>
         /// <returns></returns>
         [HttpGet]
         public async Task<object> DeviceTestCheckResult()
         {
             return await _app.DeviceTestCheckResult();
+        }
+
+        /// <summary>
+        /// 同步设备数据
+        /// </summary>
+        /// <param name="EdgeGuid"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> SyncDeviceList(string EdgeGuid)
+        {
+
+            var result = new TableData();
+            try
+            {
+                var json_str = JsonConvert.SerializeObject(new { app_id ="", app_secret ="", edge_guid = EdgeGuid });
+                var request = new Request { JsonParameter = Google.Protobuf.ByteString.CopyFromUtf8(json_str) };
+                var res = await _dataServiceClient.GetDevInfoAsync(request);
+                var edge_guid=Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "edge_guid").Select(c => c.Value).FirstOrDefault().VBytes.FirstOrDefault().Memory.ToArray());
+                var bts_server_guid = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "bts_server_guid").Select(c => c.Value).FirstOrDefault().VBytes.FirstOrDefault().Memory.ToArray());
+                var bts_server_ip= Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "bts_server_ip").Select(c => c.Value).FirstOrDefault().VBytes.FirstOrDefault().Memory.ToArray());
+                var channel_list = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "channel_list").Select(c => c.Value).FirstOrDefault().VBytes.FirstOrDefault().Memory.ToArray());
+                var low_no = res.Data.MapDf.Where(c => c.Key == "low_no").Select(c => c.Value).FirstOrDefault().VUint32.ToArray().FirstOrDefault();
+                var low_version= Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "low_version").Select(c => c.Value).FirstOrDefault().VBytes.FirstOrDefault().Memory.ToArray());
+                var mid_version = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "mid_version").Select(c => c.Value).FirstOrDefault().VBytes.FirstOrDefault().Memory.ToArray());
+                var mid_guid= Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "mid_guid").Select(c => c.Value).FirstOrDefault().VBytes.FirstOrDefault().Memory.ToArray());
+                var range_curr_array= Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "range_curr_array").Select(c => c.Value).FirstOrDefault().VBytes.FirstOrDefault().Memory.ToArray());
+                var low_guid= Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "low_guid").Select(c => c.Value).FirstOrDefault().VBytes.FirstOrDefault().Memory.ToArray());
+                if (res==null || !res.Success)
+                {
+                    result.Code = 500;
+                    result.Message = res==null?"设备同步失败!":Encoding.UTF8.GetString(res.Msg.Memory.ToArray());
+                    return result;
+                }
+                return result;
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+                return result;
+            }
         }
         #endregion
     }
