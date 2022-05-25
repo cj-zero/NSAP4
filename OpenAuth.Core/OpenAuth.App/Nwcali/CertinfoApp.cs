@@ -1630,7 +1630,7 @@ namespace OpenAuth.App
             }
             TableData result = new TableData();
             var loginOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault();
-            var query = from a in UnitWork.Find<product_owor>(c => (c.ItemCode.StartsWith("C") || c.ItemCode.StartsWith("BT") || c.ItemCode.StartsWith("BTE") || c.ItemCode.StartsWith("BE")) && c.CreateDate >= DateTime.Parse("2021-10-01"))
+            var query = from a in UnitWork.Find<product_owor>(c => (c.ItemCode.StartsWith("C") || c.ItemCode.StartsWith("BT") || c.ItemCode.StartsWith("BTE") || c.ItemCode.StartsWith("BE")) && c.CreateDate >= DateTime.Parse("2021-01-01"))
                         .WhereIf(!string.IsNullOrWhiteSpace(request.ProductionNo.ToString()), c => EF.Functions.Like(c.DocEntry, $"%{request.ProductionNo}%"))
                         .WhereIf(!string.IsNullOrWhiteSpace(request.SaleOrderNo.ToString()), c => EF.Functions.Like(c.OriginAbs, $"%{request.SaleOrderNo}%"))
                         .WhereIf(!string.IsNullOrWhiteSpace(request.ItemCode), c => c.ItemCode.Contains(request.ItemCode))
