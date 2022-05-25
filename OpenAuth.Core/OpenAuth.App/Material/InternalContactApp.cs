@@ -877,7 +877,7 @@ namespace OpenAuth.App.Material
                 var customer = await GetCardInfo(item.CardCode);
                 var cnt = await UnitWork.Find<OCPR>(c => c.CardCode == item.CardCode).Select(c => new { c.Name, c.Tel1 }).FirstOrDefaultAsync();
                 //var customer = customerRes.Data[0];
-                if (!string.IsNullOrWhiteSpace(customer.Address2))
+                if (customer != null && !string.IsNullOrWhiteSpace(customer.Address2))
                 {
                     var locationResult = AmapUtil.GetLocation(customer.Address2);
                     if (locationResult != null)
