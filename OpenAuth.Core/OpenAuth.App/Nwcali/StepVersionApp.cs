@@ -606,9 +606,12 @@ namespace OpenAuth.App
                     Log.Logger.Error($"烤机结果校验失败 EdgeGuid={item.EdgeGuid},topics={item.SrvGuid},DevUid={item.DevUid},UnitId={item.UnitId},ChlId={item.ChlId},TestId={item.TestId}",ex);
                     continue;
                 }
-            }           
-            await UnitWork.BatchUpdateAsync(list.ToArray());
-            await UnitWork.SaveAsync();
+            }
+            if (list.Any())
+            {
+                await UnitWork.BatchUpdateAsync(list.ToArray());
+                await UnitWork.SaveAsync();
+            }
 
             foreach (var item in taskList)
             {

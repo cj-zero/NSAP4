@@ -67,10 +67,28 @@ namespace OpenAuth.Repository.Extensions
                 reader.Close();
                 conn.Close();
             }
-            catch (Exception ex)
+            catch (System.Data.DataException e)
             {
-                conn.Close();
-                throw ex;
+                System.Data.DataRow[] rowsInError;
+                System.Text.StringBuilder sbError = new System.Text.StringBuilder();
+                // Test if the table has errors. If not, skip it.
+                if (dt.HasErrors)
+                {
+                    // Get an array of all rows with errors.
+                    rowsInError = dt.GetErrors();
+                    // Print the error of each column in each row.
+                    for (int i = 0; i < rowsInError.Length; i++)
+                    {
+                        foreach (System.Data.DataColumn column in dt.Columns)
+                        {
+                            sbError.Append(column.ColumnName + " " + rowsInError[i].GetColumnError(column));
+                        }
+                        // Clear the row errors
+                        rowsInError[i].ClearErrors();
+                    }
+                }
+                string errorLog = sbError.ToString();
+                throw e;
             }
             return dt;
         }

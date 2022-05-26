@@ -229,6 +229,7 @@ namespace OpenAuth.WebApi
                 Port = int.Parse(Configuration.GetValue<string>("MqttOption:HostPort")),
                 Username = Configuration.GetValue<string>("MqttOption:UserName"),
                 Password = Configuration.GetValue<string>("MqttOption:Password"),
+                ClientIdentify = Configuration.GetValue<string>("MqttOption:ClientIdentify")
             };
             _mqttNetClient = new MqttNetClient(mqttConfig, MessageReceived);
             services.AddSingleton(_mqttNetClient);

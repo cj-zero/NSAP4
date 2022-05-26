@@ -149,10 +149,10 @@ namespace OpenAuth.App
                                     join c in UnitWork.Find<edge_mid>(null) on new { b.edge_guid, b.srv_guid } equals new { c.edge_guid, c.srv_guid }
                                     join d in UnitWork.Find<edge_low>(null) on new { c.edge_guid, c.srv_guid, c.mid_guid } equals new { d.edge_guid, d.srv_guid, d.mid_guid }
                                     where departmentList.Contains(a.department)
-                                    //&& a.status==1 && b.status==1 && c.status==1 && d.status==1 && e.status==1
+                                    && a.status==1 && b.status==1 && c.status==1 && d.status==1
                                     select new { d.edge_guid, d.srv_guid, d.mid_guid, d.low_guid, b.bts_server_ip, c.dev_uid, d.unit_id, a.department, edge_status = a.status, host_status = b.status, mid_status = c.status, low_status = d.status }).ToListAsync();
-            var lowGuidList = onlineList.Select(c => c.low_guid).ToList();//在线下位机
-            var midGuidList = onlineList.Select(c => c.mid_guid).ToList();//在线中位机
+            var lowGuidList = onlineList.Select(c => c.low_guid).ToList();
+            var midGuidList = onlineList.Select(c => c.mid_guid).ToList();
             var bindGuidList = await UnitWork.Find<DeviceBindMap>(null).Where(c => lowGuidList.Contains(c.Guid) || midGuidList.Contains(c.Guid)).Select(c => new { c.EdgeGuid, c.SrvGuid, c.Guid, c.GeneratorCode, c.LowGuid, c.BindType,c.UnitId}).ToListAsync();
             var hasTestLowList = await UnitWork.Find<DeviceTestLog>(null).Where(c => lowGuidList.Contains(c.LowGuid)).ToListAsync();
             var hasTestMidList = await UnitWork.Find<DeviceTestLog>(null).Where(c => midGuidList.Contains(c.MidGuid)).ToListAsync();
@@ -340,10 +340,15 @@ namespace OpenAuth.App
             }
             var user = loginContext.User;
             var lowGuidList = model.low_Lists.Select(c => c.LowGuid).Distinct().ToList();
-            var bindMap = await UnitWork.Find<DeviceBindMap>(null).Where(c =>(c.Guid == model.Guid && c.BindType==1) || lowGuidList.Contains(c.LowGuid)).AnyAsync();
+            var bindMap = await UnitWork.Find<DeviceBindMap>(null).Where(c =>lowGuidList.Contains(c.LowGuid)).AnyAsync();
             if (bindMap)
             {
-                throw new Exception("设备已被绑定!");
+                throw new Exception("有设备已被绑定!");
+            }
+            var BindType= await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode==model.GeneratorCode).Select(c=>c.BindType).FirstOrDefaultAsync();
+            if (BindType==2)
+            {
+                throw new Exception("有设备已被绑定!");
             }
             var department = loginContext.Orgs.OrderByDescending(c => c.CascadeId).Select(c => c.Name).FirstOrDefault();
             var lowGuids = model.low_Lists.Select(c => c.LowGuid).Distinct();
@@ -493,7 +498,7 @@ namespace OpenAuth.App
             }
             var OrderNo = Convert.ToInt64(GeneratorCode.Split("-")[1]);
             int count = Convert.ToInt32(GeneratorCode.Split("-")[2]);
-            var list = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo).Select(c => c.GeneratorCode).Distinct().ToListAsync();
+            var list = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo && c.BindType==2).Select(c => c.GeneratorCode).Distinct().ToListAsync();
             List<string> deviceList = new List<string>();
             for (var i = 1; i <= count; i++)
             {

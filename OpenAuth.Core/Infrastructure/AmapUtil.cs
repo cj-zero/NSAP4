@@ -26,11 +26,10 @@ namespace Infrastructure
 
             var locationResult = (JObject)JsonConvert.DeserializeObject(result);
 
-            if (locationResult["status"].ToString() == "1")
+            if (locationResult["status"].ToString() != "0")
             {
                 return null;
             }
-
             string lngStr = locationResult["result"]["location"]["lng"].ToString();
 
             string latStr = locationResult["result"]["location"]["lat"].ToString();
