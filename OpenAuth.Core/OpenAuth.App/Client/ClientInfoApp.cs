@@ -134,7 +134,7 @@ namespace OpenAuth.App.Client
         /// <summary>
         /// 查询列表
         /// </summary>
-        public DataTable SelectClientList(int limit, int page, string query, string sortname, string sortorder, int sboid, int userId, bool rIsViewSales, bool rIsViewSelf, bool rIsViewSelfDepartment, bool rIsViewFull, int depID, string label,out int rowCount)
+        public DataTable SelectClientList(int limit, int page, string query, string sortname, string sortorder, int sboid, int userId, bool rIsViewSales, bool rIsViewSelf, bool rIsViewSelfDepartment, bool rIsViewFull, int depID, string label, out int rowCount)
         {
             bool IsSaler = false, IsPurchase = false, IsTech = false, IsClerk = false;//业务员，采购员，技术员，文员
             string rSalCode = GetUserInfoById(sboid.ToString(), userId.ToString(), "1");
@@ -318,18 +318,21 @@ namespace OpenAuth.App.Client
                     //全部客户
                     if (label == "0") { }
                     //未报价客户
-                    else if (label == "1") {
+                    else if (label == "1")
+                    {
                         //在报价单中不存在的客户
                         tableName.Append(" LEFT JOIN OQUT AS q on A.CardCode = q.CardCode ");
                         tableName.Append(" WHERE q.CardCode IS NULL ");
                     }
                     //已成交客户
-                    else if (label == "2") {
+                    else if (label == "2")
+                    {
                         //在交货单中存在的客户
                         tableName.Append(@" where exists(select 1 from ODLN as n where n.CardCode = A.CardCode) ");
                     }
                     //公海领取(掉入公海的客户被重新分配和领取,但是分配和领取之后没有做过报价单,做过单了就属于正常用户)
-                    else if(label == "3") {
+                    else if (label == "3")
+                    {
                         //这些客户还没有做过单
                         tableName.Append(@" LEFT JOIN OQUT AS q on A.CardCode = q.CardCode ");
                         tableName.Append(" WHERE q.CardCode IS NULL ");
@@ -353,7 +356,8 @@ namespace OpenAuth.App.Client
                         tableName.Append($" AND A.CardCode IN ({codes}) ");
                     }
                     //即将掉入公海
-                    else if (label == "4") {
+                    else if (label == "4")
+                    {
                         var cardCodes = UnitWork.Find<CustomerList>(c => c.LabelIndex == 4).Select(c => c.CustomerNo).ToList();
                         var selectCardCode = new StringBuilder("");
                         string codes = "''";
@@ -379,6 +383,7 @@ namespace OpenAuth.App.Client
                 clientTable.Columns.Add("FollowUpTime", typeof(string));//最后跟进时间
                 clientTable.Columns.Add("FollowUpDay", typeof(string));//未跟进天数
                 clientTable.Columns.Add("U_CardTypeStr", typeof(string));//新版客户类型
+                clientTable.Columns.Add("base_entry", typeof(int));//新版客户类型
 
                 var Array = from DataRow dr in clientTable.Rows select dr[1].ToString();
                 var heet = "";
@@ -390,8 +395,21 @@ namespace OpenAuth.App.Client
                 CardCodes = heet.TrimEnd(',');
                 if (!string.IsNullOrWhiteSpace(CardCodes))
                 {
-                    var sql = string.Format("SELECT U_TradeType,U_ClientSource,U_CompSector,U_CardTypeStr,CardCode FROM crm_ocrd WHERE CardCode IN ({0})", CardCodes);
-                    var ClientSource = UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, sql, CommandType.Text, null);
+                    //var sql = string.Format("SELECT U_TradeType,U_ClientSource,U_CompSector,U_CardTypeStr,CardCode FROM crm_ocrd WHERE CardCode IN ({0})", CardCodes);
+                    //var ClientSource = UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, sql, CommandType.Text, null);
+
+                    //var strsql = string.Format("SELECT A.base_entry,CardCode FROM nsap_base.wfa_job   A LEFT JOIN nsap_bone.crm_ocrd B ON B.CardCode=A.sbo_itf_return WHERE A.job_type_id=72 AND B.CardCode IN ({0})", CardCodes);
+                    //var Baseentry = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strsql, CommandType.Text, null);
+
+                    string sql = string.Format(@"SELECT DISTINCT A.base_entry,U_TradeType,U_ClientSource,U_CompSector,U_CardTypeStr,CardCode FROM nsap_base.wfa_job   A 
+                        LEFT JOIN nsap_bone.crm_ocrd B ON B.CardCode = A.sbo_itf_return  WHERE B.CardCode IN ({0})", CardCodes);
+                    var ClientSource = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
+                    List<ClueFollowUp> clueFollowUpList = new List<ClueFollowUp>();
+                    if (ClientSource.Rows.Count > 0)
+                    {
+                        List<int> baseEntryids = (from d in ClientSource.AsEnumerable() select d.Field<int>("base_entry")).ToList();
+                        clueFollowUpList = UnitWork.Find<ClueFollowUp>(q => baseEntryids.Contains(q.Id)).ToList();
+                    }
                     foreach (DataRow clientrow in clientTable.Rows)
                     {
                         clientrow["FollowUpDay"] = "暂无跟进天数";
@@ -406,22 +424,33 @@ namespace OpenAuth.App.Client
                                     clientrow["U_CompSector"] = clientSource["U_CompSector"];
                                     clientrow["U_TradeType"] = clientSource["U_TradeType"];
                                     clientrow["U_CardTypeStr"] = clientSource["U_CardTypeStr"];
+                                    clientrow["base_entry"] = clientSource["base_entry"].ToInt();
+                                    break;
                                 }
                             }
+                            //foreach (DataRow item in Baseentry.Rows)
+                            //{
+                            //    var ClueId = item["base_entry"].ToInt();
+                            //    var FollowUpTime = UnitWork.FindSingle<ClueFollowUp>(q => q.Id == ClueId);
+                            //    //var strsql4 = string.Format("SELECT FollowUpTime FROM erp4_serve.cluefollowup   WHERE ClueId ={0}   ORDER BY  FollowUpTime  DESC LIMIT 1", item["base_entry"]);
+                            //    //var FollowUpTime = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, strsql4, CommandType.Text, null);
+                            //    if (FollowUpTime != null)
+                            //    {
+                            //        clientrow["FollowUpTime"] = FollowUpTime.FollowUpTime;
+                            //        var subTime = (DateTime.Now.Subtract(FollowUpTime.FollowUpTime));
+                            //        clientrow["FollowUpDay"] = $"{subTime.Days}天";
+                            //    }
+                            //}
                         }
-                        var strsql = string.Format("SELECT A.base_entry FROM nsap_base.wfa_job   A LEFT JOIN nsap_bone.crm_ocrd B ON B.CardCode=A.sbo_itf_return WHERE A.job_type_id=72 AND B.CardCode ='{0}' ", clientrow["CardCode"]);
-                        var Baseentry = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strsql, CommandType.Text, null);
-                        foreach (DataRow item in Baseentry.Rows)
+                        var ClueId = clientrow["base_entry"].ToInt();
+                        foreach (var FollowUpTime in clueFollowUpList)
                         {
-                            var ClueId = item["base_entry"].ToInt();
-                            var FollowUpTime = UnitWork.FindSingle<ClueFollowUp>(q => q.Id == ClueId);
-                            //var strsql4 = string.Format("SELECT FollowUpTime FROM erp4_serve.cluefollowup   WHERE ClueId ={0}   ORDER BY  FollowUpTime  DESC LIMIT 1", item["base_entry"]);
-                            //var FollowUpTime = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, strsql4, CommandType.Text, null);
-                            if (FollowUpTime != null)
+                            if (FollowUpTime.ClueId == ClueId)
                             {
                                 clientrow["FollowUpTime"] = FollowUpTime.FollowUpTime;
                                 var subTime = (DateTime.Now.Subtract(FollowUpTime.FollowUpTime));
                                 clientrow["FollowUpDay"] = $"{subTime.Days}天";
+                                break;
                             }
                         }
                     }
@@ -502,30 +531,37 @@ namespace OpenAuth.App.Client
                     //clientrow["BalanceTotal"] = totalbalance;
                 }
             }
-            foreach (DataRow clientrows in clientTable.Rows)
+            DataTable Balancetb = new DataTable();
+            foreach (DataRow item in sbotable.Rows)
             {
-                decimal totalbalance = 0;
-                foreach (DataRow sborow in sbotable.Rows)
+                bool sapflag = _serviceSaleOrderApp.GetSapSboIsOpen(item["id"].ToString());
+                if (sapflag)
                 {
-
-                    string sbobalancestrs = GetClientSboBalance(clientrows["CardCode"].ToString(), sborow["id"].ToString());
-                    decimal sbobalance = 0;
-                    if (!string.IsNullOrEmpty(sbobalancestrs) && Decimal.TryParse(sbobalancestrs, out sbobalance) && sbobalancestrs != "0.000000")
-                        totalbalance += sbobalance;
-                    //if (clientTable.Columns.Contains("sbo_id") && clientrows["sbo_id"].ToString() == sborow["id"].ToString())
-                    //    clientrows["Balance"] = sbobalance;
-                }
-
-                if (clientrows["BalanceTotal"].ToString() == "0")
-                {
-                    clientrows["BalanceTotal"] = totalbalance;
+                    string strSql = string.Format("SELECT Balance,CardCode FROM OCRD WHERE CardCode in ({0}) and Balance>0", CardCodes);
+                    Balancetb = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql, CommandType.Text, null);
+                    break;
                 }
             }
-
-
-
+            if (Balancetb.Rows.Count>0)
+            {
+                foreach (DataRow clientrows in clientTable.Rows)
+                {
+                    foreach (DataRow sborow in Balancetb.Rows)
+                    {
+                        if (clientrows["CardCode"].ToString() == sborow["CardCode"].ToString())
+                        {
+                            decimal totalbalance = 0;
+                            string sbobalancestrs = sborow["Balance"].ToString();
+                            decimal sbobalance = 0;
+                            if (!string.IsNullOrEmpty(sbobalancestrs) && Decimal.TryParse(sbobalancestrs, out sbobalance) && sbobalancestrs != "0.000000")
+                                totalbalance += sbobalance;
+                            clientrows["BalanceTotal"] = totalbalance;
+                            break;
+                        }
+                    }
+                }
+            }
             return clientTable;
-
         }
 
         /// <summary>
