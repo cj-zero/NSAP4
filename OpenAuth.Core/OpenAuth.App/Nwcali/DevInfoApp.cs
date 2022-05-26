@@ -350,6 +350,10 @@ namespace OpenAuth.App
             {
                 throw new Exception("有设备已被绑定!");
             }
+            if (BindType==1 && model.BindType==2)
+            {
+                throw new Exception("当前生产码已有中位机绑定,无法单独绑定下位机!");
+            }
             var department = loginContext.Orgs.OrderByDescending(c => c.CascadeId).Select(c => c.Name).FirstOrDefault();
             var lowGuids = model.low_Lists.Select(c => c.LowGuid).Distinct();
             var lowList = await UnitWork.Find<edge_low>(null).Where(c => lowGuids.Contains(c.low_guid)).Select(c => new { c.low_guid, c.range_curr_array }).ToListAsync();
