@@ -28,7 +28,7 @@ namespace Infrastructure.MQTT
             mqttConfig = _mqttConfig;
             var factory = new MqttFactory();
             mqttClient = factory.CreateMqttClient() as MqttClient;
-            clientId = "mqtterpclient:" + Guid.NewGuid();
+            clientId = $"MqttErpClient_{mqttConfig.ClientIdentify}";
             options = new MqttClientOptionsBuilder()
                 .WithTcpServer(_mqttConfig.Server, _mqttConfig.Port)
                 .WithCredentials(_mqttConfig.Username, _mqttConfig.Password)

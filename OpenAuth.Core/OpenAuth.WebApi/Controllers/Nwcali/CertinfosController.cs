@@ -241,6 +241,16 @@ namespace OpenAuth.WebApi.Controllers
         {
             return await _app.MaterialDetail(docEntry);
         }
+        /// <summary>
+        /// 生产唯一码下设备是否校准
+        /// </summary>
+        /// <param name="wo"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> CheckCalibration(string wo)
+        {
+            return await _app.CheckCalibration(wo);
+        }
 
         [HttpGet]
         public async Task<Response> SynSalesDelivery()

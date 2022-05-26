@@ -340,10 +340,15 @@ namespace OpenAuth.App
             }
             var user = loginContext.User;
             var lowGuidList = model.low_Lists.Select(c => c.LowGuid).Distinct().ToList();
-            var bindMap = await UnitWork.Find<DeviceBindMap>(null).Where(c =>(c.Guid == model.Guid && c.BindType==1) || lowGuidList.Contains(c.LowGuid)).AnyAsync();
+            var bindMap = await UnitWork.Find<DeviceBindMap>(null).Where(c =>lowGuidList.Contains(c.LowGuid)).AnyAsync();
             if (bindMap)
             {
-                throw new Exception("设备已被绑定!");
+                throw new Exception("有设备已被绑定!");
+            }
+            var BindType= await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode==model.GeneratorCode).Select(c=>c.BindType).FirstOrDefaultAsync();
+            if (BindType==2)
+            {
+                throw new Exception("有设备已被绑定!");
             }
             var department = loginContext.Orgs.OrderByDescending(c => c.CascadeId).Select(c => c.Name).FirstOrDefault();
             var lowGuids = model.low_Lists.Select(c => c.LowGuid).Distinct();
@@ -493,7 +498,7 @@ namespace OpenAuth.App
             }
             var OrderNo = Convert.ToInt64(GeneratorCode.Split("-")[1]);
             int count = Convert.ToInt32(GeneratorCode.Split("-")[2]);
-            var list = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo).Select(c => c.GeneratorCode).Distinct().ToListAsync();
+            var list = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo && c.BindType==2).Select(c => c.GeneratorCode).Distinct().ToListAsync();
             List<string> deviceList = new List<string>();
             for (var i = 1; i <= count; i++)
             {

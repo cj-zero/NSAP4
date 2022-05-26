@@ -288,6 +288,16 @@ namespace OpenAuth.WebApi.Controllers.Material
             await _app.GenerateWorkOrder(id);
         }
         /// <summary>
+        /// 生成服务单
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task GenerateWorkOrderOne(int id)
+        {
+            await _app.GenerateWorkOrderOne(id);
+        }
+        /// <summary>
         /// 获取内联单内容
         /// </summary>
         /// <param name="serviceOrderId"></param>
