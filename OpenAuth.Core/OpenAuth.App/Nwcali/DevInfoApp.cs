@@ -149,10 +149,10 @@ namespace OpenAuth.App
                                     join c in UnitWork.Find<edge_mid>(null) on new { b.edge_guid, b.srv_guid } equals new { c.edge_guid, c.srv_guid }
                                     join d in UnitWork.Find<edge_low>(null) on new { c.edge_guid, c.srv_guid, c.mid_guid } equals new { d.edge_guid, d.srv_guid, d.mid_guid }
                                     where departmentList.Contains(a.department)
-                                    //&& a.status==1 && b.status==1 && c.status==1 && d.status==1 && e.status==1
+                                    && a.status==1 && b.status==1 && c.status==1 && d.status==1
                                     select new { d.edge_guid, d.srv_guid, d.mid_guid, d.low_guid, b.bts_server_ip, c.dev_uid, d.unit_id, a.department, edge_status = a.status, host_status = b.status, mid_status = c.status, low_status = d.status }).ToListAsync();
-            var lowGuidList = onlineList.Select(c => c.low_guid).ToList();//在线下位机
-            var midGuidList = onlineList.Select(c => c.mid_guid).ToList();//在线中位机
+            var lowGuidList = onlineList.Select(c => c.low_guid).ToList();
+            var midGuidList = onlineList.Select(c => c.mid_guid).ToList();
             var bindGuidList = await UnitWork.Find<DeviceBindMap>(null).Where(c => lowGuidList.Contains(c.Guid) || midGuidList.Contains(c.Guid)).Select(c => new { c.EdgeGuid, c.SrvGuid, c.Guid, c.GeneratorCode, c.LowGuid, c.BindType,c.UnitId}).ToListAsync();
             var hasTestLowList = await UnitWork.Find<DeviceTestLog>(null).Where(c => lowGuidList.Contains(c.LowGuid)).ToListAsync();
             var hasTestMidList = await UnitWork.Find<DeviceTestLog>(null).Where(c => midGuidList.Contains(c.MidGuid)).ToListAsync();

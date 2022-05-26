@@ -61,6 +61,7 @@ namespace Infrastructure.MQTT
             try
             {
                 mqttClient.ConnectAsync(options);
+                Console.WriteLine($"Mqtt>>Connected【{clientId}】>>连接成功");
             }
             catch (Exception)
             {
@@ -79,18 +80,12 @@ namespace Infrastructure.MQTT
             try
             {
                 mqttClient.SubscribeAsync("edge_msg/#");
-                Serilog.Log.Logger.Information("连接成功重新订阅生效 【topic=edge_msg/#】!");
+                Serilog.Log.Logger.Information($"{clientId}连接成功重新订阅生效 【topic=edge_msg/#】!");
             }
             catch (Exception ex)
             {
-                Serilog.Log.Logger.Error("连接成功重新订阅失败 【topic=edge_msg/#】!", ex);
+                Serilog.Log.Logger.Error($"{clientId}连接成功重新订阅失败 【topic=edge_msg/#】!", ex);
             }
-            //if (mqttConfig.TopicList != null)
-            //{
-            //    foreach (var topic in mqttConfig.TopicList)
-            //    {
-            //    }
-            //}
         }
 
         /// <summary>        
