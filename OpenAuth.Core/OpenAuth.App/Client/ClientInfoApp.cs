@@ -503,60 +503,52 @@ namespace OpenAuth.App.Client
             var ids = heets.TrimEnd(',');
             if (!string.IsNullOrWhiteSpace(CardCodes))
             {
-                var sbobalancestr = GetClientSboBalanceNew(CardCodes, ids);
-                foreach (DataRow clientrow in clientTable.Rows)
+                string strmySql = string.Format("SELECT sbo_id,CardCode,Balance FROM nsap_bone.crm_ocrd_oldsbo_balance WHERE CardCode IN ({0})", CardCodes);
+                var sbobalancestr = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strmySql, CommandType.Text, null);
+                if (sbobalancestr.Rows.Count > 0)
                 {
-                    decimal totalbalance = 0;
-                    foreach (DataRow item in sbobalancestr.Rows)
+                    foreach (DataRow clientrow in clientTable.Rows)
                     {
-                        decimal sbobalance = 0;
-                        if (!string.IsNullOrEmpty(item["Balance"].ToString()) &&
-                            Decimal.TryParse(item["Balance"].ToString(), out sbobalance) && clientrow["CardCode"].ToString() == item["CardCode"].ToString())
-                            totalbalance += sbobalance;
-                        if (clientTable.Columns.Contains("sbo_id") &&
-                            clientrow["sbo_id"].ToString() == item["id"].ToString() && clientrow["CardCode"].ToString() == item["CardCode"].ToString())
-                            clientrow["Balance"] = sbobalance;
-                    }
-                    clientrow["BalanceTotal"] = totalbalance;
-
-                    //foreach (DataRow sborow in sbotable.Rows)
-                    //{
-                    //    string sbobalancestr = GetClientSboBalance(clientrow["CardCode"].ToString(), sborow["id"].ToString());
-                    //    decimal sbobalance = 0;
-                    //    if (!string.IsNullOrEmpty(sbobalancestr) && Decimal.TryParse(sbobalancestr, out sbobalance))
-                    //        totalbalance += sbobalance;
-                    //    if (clientTable.Columns.Contains("sbo_id") && clientrow["sbo_id"].ToString() == sborow["id"].ToString())
-                    //        clientrow["Balance"] = sbobalance;
-                    //}
-                    //clientrow["BalanceTotal"] = totalbalance;
-                }
-            }
-            DataTable Balancetb = new DataTable();
-            foreach (DataRow item in sbotable.Rows)
-            {
-                bool sapflag = _serviceSaleOrderApp.GetSapSboIsOpen(item["id"].ToString());
-                if (sapflag)
-                {
-                    string strSql = string.Format("SELECT Balance,CardCode FROM OCRD WHERE CardCode in ({0}) and Balance>0", CardCodes);
-                    Balancetb = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql, CommandType.Text, null);
-                    break;
-                }
-            }
-            if (Balancetb.Rows.Count>0)
-            {
-                foreach (DataRow clientrows in clientTable.Rows)
-                {
-                    foreach (DataRow sborow in Balancetb.Rows)
-                    {
-                        if (clientrows["CardCode"].ToString() == sborow["CardCode"].ToString())
+                        decimal totalbalance = 0;
+                        foreach (DataRow item in sbobalancestr.Rows)
                         {
-                            decimal totalbalance = 0;
-                            string sbobalancestrs = sborow["Balance"].ToString();
                             decimal sbobalance = 0;
-                            if (!string.IsNullOrEmpty(sbobalancestrs) && Decimal.TryParse(sbobalancestrs, out sbobalance) && sbobalancestrs != "0.000000")
+                            if (!string.IsNullOrEmpty(item["Balance"].ToString()) && Decimal.TryParse(item["Balance"].ToString(), out sbobalance) && clientrow["CardCode"].ToString() == item["CardCode"].ToString())
                                 totalbalance += sbobalance;
-                            clientrows["BalanceTotal"] = totalbalance;
-                            break;
+                            if (clientTable.Columns.Contains("sbo_id") && clientrow["sbo_id"].ToString() == item["id"].ToString() && clientrow["CardCode"].ToString() == item["CardCode"].ToString())
+                                clientrow["Balance"] = sbobalance;
+                        }
+                        clientrow["BalanceTotal"] = totalbalance;
+                    }
+                }
+
+                DataTable Balancetb = new DataTable();
+                foreach (DataRow item in sbotable.Rows)
+                {
+                    bool sapflag = _serviceSaleOrderApp.GetSapSboIsOpen(item["id"].ToString());
+                    if (sapflag)
+                    {
+                        string strSql = string.Format("SELECT Balance,CardCode FROM OCRD WHERE CardCode in ({0}) and Balance>0", CardCodes);
+                        Balancetb = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql, CommandType.Text, null);
+                        break;
+                    }
+                }
+                if (Balancetb.Rows.Count > 0)
+                {
+                    foreach (DataRow clientrows in clientTable.Rows)
+                    {
+                        foreach (DataRow sborow in Balancetb.Rows)
+                        {
+                            if (clientrows["CardCode"].ToString() == sborow["CardCode"].ToString())
+                            {
+                                decimal totalbalance = 0;
+                                string sbobalancestrs = sborow["Balance"].ToString();
+                                decimal sbobalance = 0;
+                                if (!string.IsNullOrEmpty(sbobalancestrs) && Decimal.TryParse(sbobalancestrs, out sbobalance) && sbobalancestrs != "0.000000")
+                                    totalbalance += sbobalance;
+                                clientrows["BalanceTotal"] = totalbalance;
+                                break;
+                            }
                         }
                     }
                 }
