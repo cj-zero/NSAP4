@@ -140,6 +140,10 @@ namespace OpenAuth.App.Nwcali
                                                                 {
                                                                     foreach (var lItem in mItem.low_list)
                                                                     {
+                                                                        if (string.IsNullOrWhiteSpace(lItem.low_guid))
+                                                                        {
+                                                                            continue;
+                                                                        }
                                                                         var low = new edge_low();
                                                                         low.edge_guid = edge_guid;
                                                                         low.srv_guid = item.srv_guid;
