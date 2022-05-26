@@ -1542,7 +1542,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryAllowOrNot.ToString()), q => q.AllowOrNot == req.QryAllowOrNot)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QrySalesMan), q => q.SalesMan == req.QrySalesMan)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromId), q => q.FromId == Convert.ToInt32(req.QryFromId))
-                .WhereIf(string.IsNullOrWhiteSpace(req.QryFromId), q => q.FromId != 8)//服务呼叫列表排除ECN
+                .WhereIf(string.IsNullOrWhiteSpace(req.QryFromId) && req.QryVestInOrg == "1", q => q.FromId != 8)//服务呼叫列表排除ECN
                 .Where(q => ids.Contains(q.Id) && q.Status == 2);
 
             //根据部门筛选数据
@@ -3420,7 +3420,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryAllowOrNot.ToString()), q => q.AllowOrNot == req.QryAllowOrNot)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QrySalesMan), q => q.SalesMan == req.QrySalesMan)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromId), q => q.FromId == Convert.ToInt32(req.QryFromId))
-                .WhereIf(string.IsNullOrWhiteSpace(req.QryFromId), q => q.FromId != 8)
+                .WhereIf(string.IsNullOrWhiteSpace(req.QryFromId) && req.QryVestInOrg == "1", q => q.FromId != 8)//服务呼叫列表排除ECN
                 //.WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ServiceWorkOrders.Any(a => a.ProblemTypeId.Equals(req.QryProblemType)))
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
