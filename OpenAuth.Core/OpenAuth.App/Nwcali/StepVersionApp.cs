@@ -51,7 +51,7 @@ namespace OpenAuth.App
             var result = new TableData();
             var objs = UnitWork.Find<StepVersion>(null)
                 .WhereIf(!string.IsNullOrWhiteSpace(request.SeriesName), c => c.SeriesName.Contains(request.SeriesName))
-                .WhereIf(!string.IsNullOrWhiteSpace(request.StepVersionName), c => c.StepVersionName.Contains(request.StepVersionName))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.StepVersionName), c => c.StepVersionName.Contains(request.StepVersionName.ToUpper()))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.StepName), c => c.StepName.Contains(request.StepName));
             result.Data = await objs.OrderByDescending(u => u.Sorts)
               .Skip((request.page - 1) * request.limit)
@@ -458,7 +458,7 @@ namespace OpenAuth.App
                             status = -2;
                             int totalStep = statusList.Sum(c => c.StepCount);
                             int currentStepCount = statusList.Sum(c => c.StepId);
-                            progress = Math.Round((decimal)currentStepCount / (decimal)totalStep * 100);
+                            progress = Math.Round(currentStepCount / (decimal)totalStep * 100);
                         }
                         else if (statusList.Any(c => (c.Status == -4 || c.Status == 4)))
                         {
@@ -542,7 +542,7 @@ namespace OpenAuth.App
                             status = -2;
                             int totalStep = statusList.Sum(c => c.StepCount);
                             int currentStepCount = statusList.Sum(c => c.StepId);
-                            progress = Math.Round((decimal)currentStepCount / (decimal)totalStep * 100);
+                            progress = Math.Round(currentStepCount / (decimal)totalStep * 100);
                         }
                         else if (statusList.Any(c => c.Status == -4 || c.Status == 4))
                         {
@@ -570,8 +570,8 @@ namespace OpenAuth.App
         public async Task<TableData> DeviceTestCheckResult()
         {
             var result = new TableData();
-            var list = await UnitWork.Find<DeviceCheckTask>(null).Where(c => string.IsNullOrWhiteSpace(c.TaskId) && c.ErrCount<=3).OrderBy(c => c.Id).ToListAsync();
-            var taskList = await UnitWork.Find<DeviceCheckTask>(null).Where(c => !string.IsNullOrWhiteSpace(c.TaskId) && c.TaskStatus!=2).OrderBy(c => c.Id).ToListAsync();
+            var list = await UnitWork.Find<DeviceCheckTask>(null).Where(c => string.IsNullOrWhiteSpace(c.TaskId) && c.ErrCount <= 3).OrderBy(c => c.Id).ToListAsync();
+            var taskList = await UnitWork.Find<DeviceCheckTask>(null).Where(c => !string.IsNullOrWhiteSpace(c.TaskId) && c.TaskStatus != 2).OrderBy(c => c.Id).ToListAsync();
             string url = $"{_appConfiguration.Value.AnalyticsUrl}api/DataCheck/Task";
             Infrastructure.HttpHelper helper = new Infrastructure.HttpHelper(url);
             foreach (var item in list)
@@ -603,7 +603,7 @@ namespace OpenAuth.App
                 }
                 catch (Exception ex)
                 {
-                    Log.Logger.Error($"烤机结果校验失败 EdgeGuid={item.EdgeGuid},topics={item.SrvGuid},DevUid={item.DevUid},UnitId={item.UnitId},ChlId={item.ChlId},TestId={item.TestId}",ex);
+                    Log.Logger.Error($"烤机结果校验失败 EdgeGuid={item.EdgeGuid},topics={item.SrvGuid},DevUid={item.DevUid},UnitId={item.UnitId},ChlId={item.ChlId},TestId={item.TestId}", ex);
                     continue;
                 }
             }
@@ -670,7 +670,7 @@ namespace OpenAuth.App
                                         break;
                                 }
                                 deviceTaskCheck.ErrList = new List<string>();
-                                if (errcount>0)
+                                if (errcount > 0)
                                 {
                                     if (citem["Records"] != null)
                                     {
@@ -709,5 +709,130 @@ namespace OpenAuth.App
         }
 
         #endregion
+
+        /// <summary>
+        /// 同步设备数据
+        /// </summary>
+        /// <param name="list"></param>
+        /// <param name="EdgeGuid"></param>
+        /// <returns></returns>
+        public async Task<TableData> SyncDeviceList(List<BtsDeviceResp> list, string EdgeGuid)
+        {
+            var result = new TableData();
+            var edgeInfo = await UnitWork.Find<edge>(null).Where(c => c.edge_guid == EdgeGuid).FirstOrDefaultAsync();
+            if (edgeInfo == null)
+            {
+                throw new Exception($"{EdgeGuid}不存在!");
+            }
+            DateTime dt = DateTime.Now;
+            edgeInfo.status = 1;
+            edgeInfo.CreateTime = dt;
+            List<edge_host> hostList = new List<edge_host>();
+            List<edge_mid> midList = new List<edge_mid>();
+            List<edge_low> lowList = new List<edge_low>();
+            List<edge_channel> channelList = new List<edge_channel>();
+            foreach (var item in list)
+            {
+                var host=hostList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid).Any();
+                if (!host)
+                {
+                    edge_host hostModel = new edge_host();
+                    hostModel.edge_guid = EdgeGuid;
+                    hostModel.srv_guid = item.srv_guid;
+                    hostModel.bts_server_version = item.bts_server_version;
+                    hostModel.bts_server_ip = item.bts_server_ip;
+                    hostModel.bts_type = item.bts_type;
+                    hostModel.status = 1;
+                    hostModel.CreateTime = dt;
+                    hostList.Add(hostModel);
+                }
+                var mid = midList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid==item.dev_uid && c.mid_guid==item.mid_guid).Any();
+                if (!mid)
+                {
+                    edge_mid midModel = new edge_mid();
+                    midModel.edge_guid = item.edge_guid;
+                    midModel.srv_guid = item.srv_guid;
+                    midModel.mid_guid = item.mid_guid;
+                    midModel.dev_uid = item.dev_uid;
+                    midModel.mid_version = item.mid_version;
+                    midModel.production_serial = item.production_serial;
+                    midModel.status = 1;
+                    midModel.CreateTime = dt;
+                    midList.Add(midModel);
+                }
+                if (!string.IsNullOrWhiteSpace(item.low_guid))
+                {
+                    var low = lowList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.mid_guid == item.mid_guid && c.low_guid == item.low_guid).Any();
+                    if (!low)
+                    {
+                        edge_low lowModel = new edge_low();
+                        lowModel.edge_guid = item.edge_guid;
+                        lowModel.srv_guid = item.srv_guid;
+                        lowModel.mid_guid = item.mid_guid;
+                        lowModel.low_guid = item.low_guid;
+                        lowModel.low_no = item.low_no;
+                        lowModel.unit_id = item.unit_id;
+                        lowModel.range_volt = item.range_volt;
+                        lowModel.range_curr_array = item.range_curr_array;
+                        lowModel.low_version = item.low_version;
+                        lowModel.status = 1;
+                        lowModel.CreateTime = dt;
+                        lowList.Add(lowModel);
+                    }
+                }
+                foreach (var citem in item.bts_ids)
+                {
+                    if (!string.IsNullOrWhiteSpace(citem))
+                    {
+                        var bts_id = Convert.ToInt32(citem);
+                        var channel = channelList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.mid_guid == item.mid_guid && c.low_guid == item.low_guid && c.bts_id== bts_id).Any();
+                        if (!channel)
+                        {
+                            edge_channel channelModel = new edge_channel();
+                            channelModel.edge_guid = item.edge_guid;
+                            channelModel.srv_guid = item.srv_guid;
+                            channelModel.mid_guid = item.mid_guid;
+                            channelModel.low_guid = item.low_guid;
+                            channelModel.bts_id = bts_id;
+                            channelModel.status = 1;
+                            channelModel.CreateTime = dt;
+                            channelList.Add(channelModel);
+                        }
+                    }
+                }
+            }
+            var dbContext = UnitWork.GetDbContext<edge>();
+            var flag = false;
+            using (var transaction = dbContext.Database.BeginTransaction())
+            {
+                try
+                {
+                    await UnitWork.Find<edge>(null).Where(c => c.edge_guid == EdgeGuid).DeleteFromQueryAsync();
+                    await UnitWork.Find<edge_host>(null).Where(c => c.edge_guid == EdgeGuid).DeleteFromQueryAsync();
+                    await UnitWork.Find<edge_mid>(null).Where(c => c.edge_guid == EdgeGuid).DeleteFromQueryAsync();
+                    await UnitWork.Find<edge_low>(null).Where(c => c.edge_guid == EdgeGuid).DeleteFromQueryAsync();
+                    await UnitWork.Find<edge_channel>(null).Where(c => c.edge_guid == EdgeGuid).DeleteFromQueryAsync();
+
+                    await UnitWork.AddAsync<edge, int>(edgeInfo);
+                    await UnitWork.BatchAddAsync<edge_host, int>(hostList.ToArray());
+                    await UnitWork.BatchAddAsync<edge_mid, int>(midList.ToArray());
+                    await UnitWork.BatchAddAsync<edge_low, int>(lowList.ToArray());
+                    await UnitWork.BatchAddAsync<edge_channel, int>(channelList.ToArray());
+                    await UnitWork.SaveAsync();
+                    transaction.Commit();
+                    flag = true;
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    Log.Logger.Error($"设备数据手动更新异常：edge_guid={EdgeGuid}", ex);
+                }
+            }
+            if (!flag)
+            {
+                throw new Exception($"设备数据手动同步失败!");
+            }
+            return result;
+        }
     }
 }

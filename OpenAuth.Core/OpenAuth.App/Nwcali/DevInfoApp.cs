@@ -21,102 +21,19 @@ namespace OpenAuth.App
     {
         private RevelanceManagerApp _revelanceApp;
         private readonly MqttNetClient _mqttNetClient;
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="unitWork"></param>
+        /// <param name="auth"></param>
+        /// <param name="mqttNetClient"></param>
         public DevInfoApp(IUnitWork unitWork, IAuth auth, MqttNetClient mqttNetClient) : base(unitWork, auth)
         {
             _mqttNetClient = mqttNetClient;
         }
 
-        public async Task<TableData> GetDetails(long id)
-        {
-            var result = new TableData();
-            var query = UnitWork.Find<DevInfo>(null).Where(c => c.Id == id);
-
-            result.Data = await query.ToListAsync();
-            result.Count = await query.CountAsync();
-            return result;
-        }
         /// <summary>
-        /// 加载列表
-        /// </summary>
-        public async Task<TableData> Load(QueryDevInfoListReq request)
-        {
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-
-            var result = new TableData();
-            var objs = UnitWork.Find<DevInfo>(null)
-                .WhereIf(!string.IsNullOrWhiteSpace(request.order_no), c => c.order_no.Contains(request.order_no))
-                .WhereIf(!string.IsNullOrWhiteSpace(request.edge_id), c => c.edge_id.Equals(request.edge_id))
-                .WhereIf(request.test_id > 0, c => c.test_id.Equals(request.test_id));
-            result.Data = await objs.OrderBy(u => u.Id)
-              .Skip((request.page - 1) * request.limit)
-              .Take(request.limit).ToListAsync();
-            result.Count = objs.Count();
-            return result;
-        }
-
-        /// <summary>
-        /// 添加订单与设备关联信息
-        /// </summary>
-        /// <param name="req"></param>
-        /// <returns></returns>
-        public async Task Add(AddOrUpdateDevInfoReq req)
-        {
-            var obj = req.MapTo<DevInfo>();
-            //todo:补充或调整自己需要的字段
-            obj.create_time = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            var user = _auth.GetCurrentUser().User;
-            obj.test_user = user.Name;
-            obj = await UnitWork.AddAsync<DevInfo, int>(obj);
-            await UnitWork.SaveAsync();
-        }
-        /// <summary>
-        /// 更新操作
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public async Task Update(AddOrUpdateDevInfoReq obj)
-        {
-            var user = _auth.GetCurrentUser().User;
-            UnitWork.Update<DevInfo>(u => u.Id == obj.id, u => new DevInfo
-            {
-                edge_id = obj.edge_id,
-                srv_guid = obj.srv_guid,
-                mid_guid = obj.mid_guid,
-                order_no = obj.order_no,
-                bts_server_ip = obj.bts_server_ip,
-                mid_ip = obj.mid_ip,
-                chl_id = obj.chl_id,
-                pyh_id = obj.pyh_id,
-                bts_type = obj.bts_type,
-                dev_uid = obj.dev_uid,
-                low_no = obj.low_no,
-                low_guid = obj.low_guid,
-                unit_id = obj.unit_id,
-                test_id = obj.test_id,
-                test_user = obj.test_user,
-                create_time = obj.create_time,
-                test_status = obj.test_status,
-                update_time = obj.update_time
-                //todo:补充或调整自己需要的字段
-            });
-
-        }
-        /// <summary>
-        /// 删除操作
-        /// </summary>
-        /// <param name="ids"></param>
-        /// <returns></returns>
-        public async Task Delete(List<long> ids)
-        {
-            await UnitWork.DeleteAsync<DevInfo>(u => ids.Contains(u.Id));
-        }
-
-        /// <summary>
-        /// 
+        /// 订阅消息
         /// </summary>
         /// <param name="Topic"></param>
         /// <returns></returns>

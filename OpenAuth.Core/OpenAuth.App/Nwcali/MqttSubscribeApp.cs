@@ -36,7 +36,7 @@ namespace OpenAuth.App.Nwcali
         }
 
         /// <summary>
-        /// 
+        /// 订阅数据处理
         /// </summary>
         /// <param name="topic"></param>
         /// <param name="payload"></param>
@@ -70,7 +70,7 @@ namespace OpenAuth.App.Nwcali
                             var userInfo = helper.Get(url, passToken);
                             if (string.IsNullOrWhiteSpace(userInfo))
                             {
-                                Log.Logger.Error($"MQTT 订阅异常 主题:{topic},报文:{payloads},token:{token}");
+                                //Log.Logger.Error($"MQTT 订阅异常 主题:{topic},报文:{payloads},token:{token}");
                                 break;
                             }
                             JObject userObj = JObject.Parse(userInfo);
@@ -103,8 +103,6 @@ namespace OpenAuth.App.Nwcali
                                                 edge.department = obj.chl_info.edge_info.edg_name == null ? "" : obj.chl_info.edge_info.edg_name;
                                                 edge.status = 1;
                                                 edge.CreateTime = DateTime.Now;
-                                                UnitWork.Add<edge, int>(edge);
-                                                UnitWork.Save();
                                                 List<edge_host> hostList = new List<edge_host>();
                                                 List<edge_mid> midList = new List<edge_mid>();
                                                 List<edge_low> lowList = new List<edge_low>();
@@ -152,7 +150,8 @@ namespace OpenAuth.App.Nwcali
                                                                         low.low_no = lItem.low_no;
                                                                         low.unit_id = lItem.unit_id;
                                                                         low.range_volt = lItem.range_volt.ToString();
-                                                                        low.range_curr_array = string.Join(",", lItem.range_curr_array);
+                                                                        var low_range_curr = lItem.range_curr_array.Select(x => Math.Abs(x)).Distinct().ToList();
+                                                                        low.range_curr_array = string.Join(",", low_range_curr);
                                                                         low.low_version = lItem.low_version;
                                                                         low.status = 1;
                                                                         low.CreateTime = DateTime.Now;
@@ -178,11 +177,11 @@ namespace OpenAuth.App.Nwcali
                                                         }
                                                     }
                                                 }
-                                                UnitWork.BatchAdd<edge_host, int>(hostList.Distinct().ToArray());
-                                                UnitWork.BatchAdd<edge_host, int>(hostList.Distinct().ToArray());
-                                                UnitWork.BatchAdd<edge_mid, int>(midList.Distinct().ToArray());
-                                                UnitWork.BatchAdd<edge_low, int>(lowList.Distinct().ToArray());
-                                                UnitWork.BatchAdd<edge_channel, int>(channelList.Distinct().ToArray());
+                                                UnitWork.Add<edge, int>(edge);
+                                                UnitWork.BatchAdd<edge_host, int>(hostList.ToArray());
+                                                UnitWork.BatchAdd<edge_mid, int>(midList.ToArray());
+                                                UnitWork.BatchAdd<edge_low, int>(lowList.ToArray());
+                                                UnitWork.BatchAdd<edge_channel, int>(channelList.ToArray());
                                                 UnitWork.Save();
                                                 transaction.Commit();
                                             }
