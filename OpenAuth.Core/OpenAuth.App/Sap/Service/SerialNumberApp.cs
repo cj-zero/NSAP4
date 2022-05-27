@@ -595,7 +595,7 @@ namespace OpenAuth.App.Sap.Service
                 var proobj = await UnitWork.Find<product_wor1>(null).Where(o => o.DocEntry.ToString() == thisE.ProductNo && o.sbo_id == sboId).Select(p => new { ItemCode = p.ItemCode }).ToListAsync();
                 if (thisE.ItemType == "ZWJ")
                 {
-                    Regex r = new Regex(@"(B01-)(BTS-|BFGS-)(ZWJ-)(\d+)*");
+                    Regex r = new Regex(@"(B01-)(BTS-|BFGS-)(ZWJ-)(\d+)");
                     proobj = proobj.Where(w => r.IsMatch(w.ItemCode)).ToList();
                     if (proobj.Count > 0)
                     {
@@ -604,7 +604,7 @@ namespace OpenAuth.App.Sap.Service
                 }
                 else
                 {
-                    Regex r = new Regex(@"(B01-)(BTS-|BGS-|BFGS-)?(XWJ-)(M-|SMB-)?(\d+)*");
+                    Regex r = new Regex(@"(B01-)(BTS-|BGS-|BFGS-)?(XWJ-)(M-|SMB-)?(\d+)");
                     var xwjobj = proobj.Where(w => r.IsMatch(w.ItemCode)).ToList();
                     //下位机可能是放在半成品里面
                     if (xwjobj.Count > 0)
