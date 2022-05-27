@@ -560,5 +560,92 @@ namespace OpenAuth.App.Sap.Service
 
             return result;
         }
+
+        /// <summary>
+        /// 根据交货号获取交货设备的序列号与中、下位机版本
+        /// </summary>
+        /// <param name="deliveryNo"></param>
+        /// <param name="sboId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetSerialNoAndXWJVersionByDeliveryNo(string deliveryNo)
+        {
+            int sboId = 1;
+            var result = new TableData();
+            var devs = new List<DeliveryLableInfo>();
+            var query1 = from a in UnitWork.Find<ITL1>(null)
+                         join b in UnitWork.Find<OITL>(null) on a.LogEntry equals b.LogEntry
+                         join r in UnitWork.Find<OSRN>(null) on new { ItemCode = a.ItemCode, SysNumber = a.SysNumber.Value } equals new { r.ItemCode, r.SysNumber }
+                         where b.DocType == 15 && b.DocEntry.ToString() == deliveryNo
+                         select new DeliveryLableInfo
+                         {
+                             LineNum = Convert.ToInt32(b.DocLine),
+                             ItemCode = a.ItemCode,
+                             ItemType = a.ItemCode.StartsWith("CT-ZWJ") ? "ZWJ" : "XWJ",
+                             OrderNo = Convert.ToInt32(b.BaseEntry),
+                             SerialNo = r.MnfSerial,
+                             ProductNo = UnitWork.Find<OWOR>(null).Where(o => o.ItemCode == a.ItemCode && o.OriginAbs.ToString() == b.BaseEntry.ToString()).Select(p => p.DocEntry.ToString()).FirstOrDefault()
+                         };
+            devs.AddRange(query1);
+            //获取生产单与中/下位机版本
+            var query2 = devs.Where(w => !string.IsNullOrEmpty(w.ProductNo)).GroupBy(g => new { g.ProductNo }).Select(g => g.First()).ToList();
+            foreach (DeliveryLableInfo thisE in query2)
+            {
+                #region 获取中、下位机版本
+                var itemVer = "";
+                var proobj = await UnitWork.Find<product_wor1>(null).Where(o => o.DocEntry.ToString() == thisE.ProductNo && o.sbo_id == sboId).Select(p => new { ItemCode = p.ItemCode }).ToListAsync();
+                if (thisE.ItemType == "ZWJ")
+                {
+                    Regex r = new Regex(@"(B01-)(BTS-|BFGS-)(ZWJ-)(\d+)*");
+                    proobj = proobj.Where(w => r.IsMatch(w.ItemCode)).ToList();
+                    if (proobj.Count > 0)
+                    {
+                        itemVer= proobj[0].ItemCode;
+                    }
+                }
+                else
+                {
+                    Regex r = new Regex(@"(B01-)(BTS-|BGS-|BFGS-)?(XWJ-)(M-|SMB-)?(\d+)*");
+                    var xwjobj = proobj.Where(w => r.IsMatch(w.ItemCode)).ToList();
+                    //下位机可能是放在半成品里面
+                    if (xwjobj.Count > 0)
+                    {
+                        itemVer = xwjobj[0].ItemCode;
+                    }
+                    else
+                    {//如果成品设备里面没有下位机，则查找生产单里半成品生产订单明细
+                        var BCPobj = proobj.Where(w => w.ItemCode.StartsWith("BT-") || w.ItemCode.StartsWith("BTE-") || w.ItemCode.StartsWith("BE-")).ToList();
+                        if (BCPobj.Count > 0)
+                        {
+                            proobj = await (from a in UnitWork.Find<product_owor>(null).Where( p=>p.CDocEntry == thisE.ProductNo && p.ItemCode == BCPobj[0].ItemCode)
+                                            join b in UnitWork.Find<product_wor1>(null) on new { DocEntry = a.DocEntry, sbo_id = a.sbo_id } equals new { b.DocEntry, b.sbo_id }
+                                            select new
+                                            {
+                                                ItemCode = b.ItemCode
+                                            }).ToListAsync();
+                            if (proobj.Count > 0)
+                            {
+                                xwjobj = proobj.Where(w => r.IsMatch(w.ItemCode)).ToList();
+                                if (xwjobj.Count > 0)
+                                {
+                                    itemVer = xwjobj[0].ItemCode;
+                                }
+                            }
+                        }
+                    }
+                }
+                #endregion
+                if (!string.IsNullOrEmpty(itemVer))
+                {
+                    var devs1 = devs.Where(w => w.ProductNo == thisE.ProductNo).ToList();
+                    foreach (DeliveryLableInfo resultE in devs1)
+                    {
+                        resultE.SubItemVer = itemVer;
+                    }
+                }
+            }
+            result.Count = devs.Count;
+            result.Data = devs;
+            return result;
+        }
     }
 }
