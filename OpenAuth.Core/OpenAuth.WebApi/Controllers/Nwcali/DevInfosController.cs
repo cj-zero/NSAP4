@@ -232,7 +232,7 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 未绑定设备列表
+        /// 当前生产码关联订单未绑定设备列表
         /// </summary>
         /// <param name="GeneratorCode">生产码</param>
         /// <returns></returns>
