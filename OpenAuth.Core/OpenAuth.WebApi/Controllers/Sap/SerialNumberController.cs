@@ -144,5 +144,21 @@ namespace OpenAuth.WebApi.Controllers.Sap
             }
             return result;
         }
+        [HttpGet]
+        public async Task<TableData> GetSerialNoAndXWJVersionByDeliveryNo(string DeliveryNo)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _serialNumberApp.GetSerialNoAndXWJVersionByDeliveryNo(DeliveryNo);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{DeliveryNo}, 错误：{result.Message}");
+            }
+            return result;
+        }
     }
 }
