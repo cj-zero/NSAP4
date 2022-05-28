@@ -63,9 +63,10 @@ namespace Infrastructure.MQTT
                 mqttClient.ConnectAsync(options);
                 Console.WriteLine($"Mqtt>>Connected【{clientId}】>>连接成功");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 Console.WriteLine($"Mqtt>>Disconnected【{clientId}】>>重连失败");
+                Serilog.Log.Logger.Error($"{clientId}重连失败 【topic=edge_msg/#】!", ex);
             }
         }
         /// <summary>
