@@ -31,5 +31,6 @@ namespace OpenAuth.App.Nwcali.Response
         public bool has_test { get; set; }
         public bool has_bind { get; set; }
         public string GeneratorCode { get; set; }
+        public int? low_no { get; set; }
     }
 }
