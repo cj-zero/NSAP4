@@ -21,102 +21,19 @@ namespace OpenAuth.App
     {
         private RevelanceManagerApp _revelanceApp;
         private readonly MqttNetClient _mqttNetClient;
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="unitWork"></param>
+        /// <param name="auth"></param>
+        /// <param name="mqttNetClient"></param>
         public DevInfoApp(IUnitWork unitWork, IAuth auth, MqttNetClient mqttNetClient) : base(unitWork, auth)
         {
             _mqttNetClient = mqttNetClient;
         }
 
-        public async Task<TableData> GetDetails(long id)
-        {
-            var result = new TableData();
-            var query = UnitWork.Find<DevInfo>(null).Where(c => c.Id == id);
-
-            result.Data = await query.ToListAsync();
-            result.Count = await query.CountAsync();
-            return result;
-        }
         /// <summary>
-        /// 加载列表
-        /// </summary>
-        public async Task<TableData> Load(QueryDevInfoListReq request)
-        {
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-
-            var result = new TableData();
-            var objs = UnitWork.Find<DevInfo>(null)
-                .WhereIf(!string.IsNullOrWhiteSpace(request.order_no), c => c.order_no.Contains(request.order_no))
-                .WhereIf(!string.IsNullOrWhiteSpace(request.edge_id), c => c.edge_id.Equals(request.edge_id))
-                .WhereIf(request.test_id > 0, c => c.test_id.Equals(request.test_id));
-            result.Data = await objs.OrderBy(u => u.Id)
-              .Skip((request.page - 1) * request.limit)
-              .Take(request.limit).ToListAsync();
-            result.Count = objs.Count();
-            return result;
-        }
-
-        /// <summary>
-        /// 添加订单与设备关联信息
-        /// </summary>
-        /// <param name="req"></param>
-        /// <returns></returns>
-        public async Task Add(AddOrUpdateDevInfoReq req)
-        {
-            var obj = req.MapTo<DevInfo>();
-            //todo:补充或调整自己需要的字段
-            obj.create_time = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            var user = _auth.GetCurrentUser().User;
-            obj.test_user = user.Name;
-            obj = await UnitWork.AddAsync<DevInfo, int>(obj);
-            await UnitWork.SaveAsync();
-        }
-        /// <summary>
-        /// 更新操作
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        public async Task Update(AddOrUpdateDevInfoReq obj)
-        {
-            var user = _auth.GetCurrentUser().User;
-            UnitWork.Update<DevInfo>(u => u.Id == obj.id, u => new DevInfo
-            {
-                edge_id = obj.edge_id,
-                srv_guid = obj.srv_guid,
-                mid_guid = obj.mid_guid,
-                order_no = obj.order_no,
-                bts_server_ip = obj.bts_server_ip,
-                mid_ip = obj.mid_ip,
-                chl_id = obj.chl_id,
-                pyh_id = obj.pyh_id,
-                bts_type = obj.bts_type,
-                dev_uid = obj.dev_uid,
-                low_no = obj.low_no,
-                low_guid = obj.low_guid,
-                unit_id = obj.unit_id,
-                test_id = obj.test_id,
-                test_user = obj.test_user,
-                create_time = obj.create_time,
-                test_status = obj.test_status,
-                update_time = obj.update_time
-                //todo:补充或调整自己需要的字段
-            });
-
-        }
-        /// <summary>
-        /// 删除操作
-        /// </summary>
-        /// <param name="ids"></param>
-        /// <returns></returns>
-        public async Task Delete(List<long> ids)
-        {
-            await UnitWork.DeleteAsync<DevInfo>(u => ids.Contains(u.Id));
-        }
-
-        /// <summary>
-        /// 
+        /// 订阅消息
         /// </summary>
         /// <param name="Topic"></param>
         /// <returns></returns>
@@ -149,10 +66,10 @@ namespace OpenAuth.App
                                     join c in UnitWork.Find<edge_mid>(null) on new { b.edge_guid, b.srv_guid } equals new { c.edge_guid, c.srv_guid }
                                     join d in UnitWork.Find<edge_low>(null) on new { c.edge_guid, c.srv_guid, c.mid_guid } equals new { d.edge_guid, d.srv_guid, d.mid_guid }
                                     where departmentList.Contains(a.department)
-                                    //&& a.status==1 && b.status==1 && c.status==1 && d.status==1 && e.status==1
-                                    select new { d.edge_guid, d.srv_guid, d.mid_guid, d.low_guid, b.bts_server_ip, c.dev_uid, d.unit_id, a.department, edge_status = a.status, host_status = b.status, mid_status = c.status, low_status = d.status }).ToListAsync();
-            var lowGuidList = onlineList.Select(c => c.low_guid).ToList();//在线下位机
-            var midGuidList = onlineList.Select(c => c.mid_guid).ToList();//在线中位机
+                                    && a.status==1 && b.status==1 && c.status==1 && d.status==1
+                                    select new { d.edge_guid, d.srv_guid, d.mid_guid, d.low_guid, b.bts_server_ip, c.dev_uid, d.unit_id, a.department, edge_status = a.status, host_status = b.status, mid_status = c.status, low_status = d.status,d.low_no }).ToListAsync();
+            var lowGuidList = onlineList.Select(c => c.low_guid).ToList();
+            var midGuidList = onlineList.Select(c => c.mid_guid).ToList();
             var bindGuidList = await UnitWork.Find<DeviceBindMap>(null).Where(c => lowGuidList.Contains(c.Guid) || midGuidList.Contains(c.Guid)).Select(c => new { c.EdgeGuid, c.SrvGuid, c.Guid, c.GeneratorCode, c.LowGuid, c.BindType,c.UnitId}).ToListAsync();
             var hasTestLowList = await UnitWork.Find<DeviceTestLog>(null).Where(c => lowGuidList.Contains(c.LowGuid)).ToListAsync();
             var hasTestMidList = await UnitWork.Find<DeviceTestLog>(null).Where(c => midGuidList.Contains(c.MidGuid)).ToListAsync();
@@ -188,7 +105,7 @@ namespace OpenAuth.App
                     ml.status = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).FirstOrDefault()?.host_status.Value;
                     ml.GeneratorCode = bindGuidList.Where(c => c.Guid == mitem.mid_guid && c.BindType == 1).Select(c => c.GeneratorCode).Distinct().FirstOrDefault(); ;
                     ml.low_Lists = new List<low_list>();
-                    var low_Lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).OrderBy(c=>c.unit_id).Select(c => new low_list { unit_id = c.unit_id.Value, status = c.low_status.Value, low_guid = c.low_guid }).Distinct().ToList();
+                    var low_Lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).OrderBy(c=>c.low_no).Select(c => new low_list { unit_id = c.unit_id.Value, status = c.low_status.Value, low_guid = c.low_guid,low_no=c.low_no }).Distinct().ToList();
                     foreach (var litem in low_Lists)
                     {
                         low_list low_List = new low_list();
@@ -207,6 +124,7 @@ namespace OpenAuth.App
                             continue;
                         low_List.status = litem.status;
                         low_List.unit_id = litem.unit_id;
+                        low_List.low_no = litem.low_no;
                         low_List.GeneratorCode = bindGuidList.Where(c => c.LowGuid == litem.low_guid).Select(c => c.GeneratorCode).FirstOrDefault();
                         ml.low_Lists.Add(low_List);
                     }
@@ -246,7 +164,7 @@ namespace OpenAuth.App
                                     join d in UnitWork.Find<edge_low>(null) on new { c.edge_guid, c.srv_guid, c.mid_guid } equals new { d.edge_guid, d.srv_guid, d.mid_guid }
                                     where departmentList.Contains(a.department)
                                     //&& a.status==1 && b.status==1 && c.status==1 && d.status==1 && e.status==1
-                                    select new { d.edge_guid, d.srv_guid, d.mid_guid, d.low_guid, b.bts_server_ip, c.dev_uid, d.unit_id, a.department, edge_status = a.status, host_status = b.status, mid_status = c.status, low_status = d.status }).ToListAsync();
+                                    select new { d.edge_guid, d.srv_guid, d.mid_guid, d.low_guid, b.bts_server_ip, c.dev_uid, d.unit_id, a.department, edge_status = a.status, host_status = b.status, mid_status = c.status, low_status = d.status,d.low_no }).ToListAsync();
             var lowGuidList = onlineList.Select(c => c.low_guid).ToList();
             var midGuidList = onlineList.Select(c => c.mid_guid).ToList();
             var bindGuidList = await UnitWork.Find<DeviceBindMap>(null).Where(c => lowGuidList.Contains(c.Guid) || midGuidList.Contains(c.Guid)).Select(c => new { c.EdgeGuid, c.SrvGuid, c.Guid, c.GeneratorCode, c.LowGuid, c.BindType }).ToListAsync();
@@ -287,7 +205,7 @@ namespace OpenAuth.App
                         ml.status = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).FirstOrDefault()?.host_status.Value;
                         ml.GeneratorCode = bindGuidList.Where(c => c.Guid == mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
                         ml.low_Lists = new List<low_list>();
-                        var low_Lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).OrderBy(c=>c.unit_id).Select(c => new low_list { unit_id = c.unit_id.Value, status = c.low_status.Value, low_guid = c.low_guid }).Distinct().ToList();
+                        var low_Lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).OrderBy(c=>c.low_no).Select(c => new low_list { unit_id = c.unit_id.Value, status = c.low_status.Value, low_guid = c.low_guid,low_no=c.low_no }).Distinct().ToList();
                         foreach (var litem in low_Lists)
                         {
                             low_list low_List = new low_list();
@@ -306,6 +224,7 @@ namespace OpenAuth.App
                             {
                                 low_List.status = litem.status;
                                 low_List.unit_id = litem.unit_id;
+                                low_List.low_no = litem.low_no;
                                 low_List.GeneratorCode = bindGuidList.Where(c => c.LowGuid == litem.low_guid).Select(c => c.GeneratorCode).FirstOrDefault();
                                 low_List.low_guid = litem.low_guid;
                                 ml.low_Lists.Add(low_List);
@@ -349,6 +268,10 @@ namespace OpenAuth.App
             if (BindType==2)
             {
                 throw new Exception("有设备已被绑定!");
+            }
+            if (BindType==1 && model.BindType==2)
+            {
+                throw new Exception("当前生产码已有中位机绑定,无法单独绑定下位机!");
             }
             var department = loginContext.Orgs.OrderByDescending(c => c.CascadeId).Select(c => c.Name).FirstOrDefault();
             var lowGuids = model.low_Lists.Select(c => c.LowGuid).Distinct();

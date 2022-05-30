@@ -14,7 +14,7 @@ namespace Infrastructure.MQTT
     {
         public static MqttClient mqttClient;
         private IMqttClientOptions options;
-        private string clientId = string.Empty;
+        public string clientId = string.Empty;
         private MqttConfig mqttConfig;
 
         /// <summary>
@@ -28,7 +28,8 @@ namespace Infrastructure.MQTT
             mqttConfig = _mqttConfig;
             var factory = new MqttFactory();
             mqttClient = factory.CreateMqttClient() as MqttClient;
-            clientId = $"MqttErpClient_{mqttConfig.ClientIdentify}";
+            //clientId = $"MqttErpClient_{mqttConfig.ClientIdentify}";0
+            clientId = "MqttErpClient_" + Guid.NewGuid();
             options = new MqttClientOptionsBuilder()
                 .WithTcpServer(_mqttConfig.Server, _mqttConfig.Port)
                 .WithCredentials(_mqttConfig.Username, _mqttConfig.Password)
@@ -61,10 +62,12 @@ namespace Infrastructure.MQTT
             try
             {
                 mqttClient.ConnectAsync(options);
+                Console.WriteLine($"Mqtt>>Connected【{clientId}】>>连接成功");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 Console.WriteLine($"Mqtt>>Disconnected【{clientId}】>>重连失败");
+                Serilog.Log.Logger.Error($"{clientId}重连失败 【topic=edge_msg/#】!", ex);
             }
         }
         /// <summary>
@@ -79,18 +82,12 @@ namespace Infrastructure.MQTT
             try
             {
                 mqttClient.SubscribeAsync("edge_msg/#");
-                Serilog.Log.Logger.Information("连接成功重新订阅生效 【topic=edge_msg/#】!");
+                Serilog.Log.Logger.Information($"{clientId}连接成功重新订阅生效 【topic=edge_msg/#】!");
             }
             catch (Exception ex)
             {
-                Serilog.Log.Logger.Error("连接成功重新订阅失败 【topic=edge_msg/#】!", ex);
+                Serilog.Log.Logger.Error($"{clientId}连接成功重新订阅失败 【topic=edge_msg/#】!", ex);
             }
-            //if (mqttConfig.TopicList != null)
-            //{
-            //    foreach (var topic in mqttConfig.TopicList)
-            //    {
-            //    }
-            //}
         }
 
         /// <summary>        

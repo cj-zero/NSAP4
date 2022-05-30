@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
-using OpenAuth.App.Nwcali;
 using OpenAuth.App.Nwcali.Request;
-using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 
 namespace OpenAuth.WebApi.Controllers
@@ -30,108 +26,7 @@ namespace OpenAuth.WebApi.Controllers
             _app = app;
         }
 
-        /// <summary>
-        /// 获取详情
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        [HttpGet]
-        public Response<TableData> Get(long id)
-        {
-            var result = new Response<TableData>();
-            try
-            {
-                result.Result = _app.GetDetails(id).Result;
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// 添加设备与订单关联数据
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public Response Add(AddOrUpdateDevInfoReq obj)
-        {
-            var result = new Response();
-            try
-            {
-                _app.Add(obj);
-
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// 修改设备与订单关联数据
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public Response Update(AddOrUpdateDevInfoReq obj)
-        {
-            var result = new Response();
-            try
-            {
-                _app.Update(obj);
-
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// 加载列表
-        /// </summary>
-        [HttpGet]
-        public Task<TableData> Load([FromQuery] QueryDevInfoListReq request)
-        {
-            return _app.Load(request);
-        }
-
-        /// <summary>
-        /// 批量删除
-        /// </summary>
-       [HttpPost]
-        public async Task<Infrastructure.Response> Delete([FromBody] List<long>ids)
-        {
-            var result = new Response();
-            try
-            {
-               await _app.Delete(ids);
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.InnerException?.Message ?? ex.Message;
-            }
-
-            return result;
-        }
-
-
         #region 烤机相关
-        public static string T4 = "edge_msg/#";
-        public static string[] Array = { T4 };// T3,
-
 
         /// <summary>
         /// 订阅消息

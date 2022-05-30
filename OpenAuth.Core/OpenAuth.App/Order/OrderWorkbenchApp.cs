@@ -399,6 +399,7 @@ namespace OpenAuth.App.Order
             itemCodeList.Columns.Add("Advanced2", typeof(int));
             foreach (SrialNumbers i in isActiveNewReq.srialNumbers)
             {
+                if (i.ItemCode.Contains("'")) { i.ItemCode = i.ItemCode.Replace("'", "''"); }
                 IsActive(i.ItemCode, isActiveNewReq.DocDate, isOpen, isActiveNewReq.SboId, sqlconn, sboname, itemCodeList);
             }
             return itemCodeList;
@@ -492,6 +493,7 @@ namespace OpenAuth.App.Order
                     }
                     else
                     {
+                        if (i.ItemCode.Contains("'")) { i.ItemCode = i.ItemCode.Replace("'", "''"); }
                         GetOnhandSql(i.ItemCode, icount, i.WhsCod, itemCodeList, sqlconn, sboname, int.Parse(index));
                     }
                 }

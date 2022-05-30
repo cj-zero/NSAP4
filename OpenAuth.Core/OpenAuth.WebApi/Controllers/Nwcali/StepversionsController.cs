@@ -1,28 +1,21 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using EdgeAPI;
-using Grpc.Core;
-using Grpc.Net.Client;
 using Infrastructure;
 using Infrastructure.Helpers;
 using Infrastructure.MQTT;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using OpenAuth.App;
 using OpenAuth.App.Nwcali.Request;
 using OpenAuth.App.Nwcali.Response;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
-using OpenAuth.Repository.Domain;
-using OpenAuth.WebApi.Model;
 using Serilog;
 using Response = Infrastructure.Response;
 
@@ -37,7 +30,7 @@ namespace OpenAuth.WebApi.Controllers
     public class StepVersionsController : ControllerBase
     {
         private readonly StepVersionApp _app;
-        private readonly EdgeAPI.DataService.DataServiceClient _dataServiceClient;
+        private readonly DataService.DataServiceClient _dataServiceClient;
         private readonly MqttNetClient _mqttNetClient;
 
         /// <summary>
@@ -45,53 +38,12 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="app"></param>
         /// <param name="dataServiceClient"></param>
-        public StepVersionsController(StepVersionApp app, EdgeAPI.DataService.DataServiceClient dataServiceClient, MqttNetClient mqttNetClient)
+        /// <param name="mqttNetClient"></param>
+        public StepVersionsController(StepVersionApp app, DataService.DataServiceClient dataServiceClient, MqttNetClient mqttNetClient)
         {
             _app = app;
             _dataServiceClient = dataServiceClient;
             _mqttNetClient = mqttNetClient;
-        }
-
-        /// <summary>
-        /// 通道控制
-        /// </summary>
-        /// <param name="cmd_type">命令类型</param>
-        /// <param name="edge_guid">边缘计算GUID</param>
-        /// <param name="arg">测试参数</param>
-        /// <returns></returns>
-        [HttpPost]
-        public async Task<TableData> ChannelControlCmdAsync([FromQuery] string cmd_type, string edge_guid, object arg)
-        {
-            var result = new TableData();
-            try
-            {
-                var options = new List<ChannelOption> { new ChannelOption(ChannelOptions.MaxReceiveMessageLength, int.MaxValue) };
-
-                var channel = new Grpc.Core.Channel($"{AppSetting.GrpcIP}:{AppSetting.GrpcPort}", ChannelCredentials.Insecure, options);
-                DataService.DataServiceClient client = new DataService.DataServiceClient(channel);
-
-                ChannelControlInput input = new ChannelControlInput() { edge_guid = edge_guid, control = new ChannelControlInput.ControlInput { arg = JsonConvert.SerializeObject(arg), cmd_type = cmd_type } };
-
-                var json = JsonConvert.SerializeObject(input);
-
-                EdgeAPI.Response res = null;
-
-                res = await client.ControlCmdAsync(new Request { JsonParameter = Google.Protobuf.ByteString.CopyFromUtf8(json) });
-
-                if (res != null && !res.Success)
-                {
-                    result.Code = 500;
-                    result.Message = "调用gRPC发生异常：" + res.Msg.ToStringUtf8();
-                }
-                result.Data = res.Msg.ToStringUtf8();
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.Message;
-                Log.Logger.Error($"地址：{Request.Path}，参数：{""}, 错误：{result.Message}");
-            }
-            return result;
         }
 
         /// <summary>
@@ -130,6 +82,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Infrastructure.Response();
             try
             {
+                obj.StepVersionName = obj.StepVersionName.ToUpper();
                 await _app.Add(obj);
 
             }
@@ -154,6 +107,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Infrastructure.Response();
             try
             {
+                obj.StepVersionName = obj.StepVersionName.ToUpper();
                 _app.Update(obj);
 
             }
@@ -220,6 +174,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
+                StepVersionName = StepVersionName.ToUpper();
                 return await _app.DingTalkStepList(SeriesName, StepVersionName);
             }
             catch (Exception e)
@@ -267,7 +222,7 @@ namespace OpenAuth.WebApi.Controllers
                 System.IO.File.Delete(dir);
                 int stepCount = step.ListStep.Count();
                 string step_data = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent.ToString()));
-                var res = await _app.ChannelControlAsync(model, stepCount,step_data);
+                var res = await _app.ChannelControlAsync(model, stepCount, step_data);
                 var deviceTestList = res.Data;
                 foreach (var item in deviceTestList)
                 {
@@ -283,7 +238,7 @@ namespace OpenAuth.WebApi.Controllers
                     }
                     catch (Exception ex)
                     {
-                        Log.Logger.Error($"{testData}",ex);
+                        Log.Logger.Error($"{testData}", ex);
                         result.Code = 500;
                         result.Message = testData;
                         return result;
@@ -298,9 +253,14 @@ namespace OpenAuth.WebApi.Controllers
                     startTestResp.stepCount = item.stepCount;
                     startTestResp.MaxRange = item.MaxRange;
                     list.Add(startTestResp);
-                    string key = $"rt_data/subscribe_{ item.EdgeGuid}";
+                    string topic = $"rt_data/subscribe_{item.EdgeGuid}";
+                    string key = $"{_mqttNetClient.clientId}{item.EdgeGuid}";
+                    if (!RedisHelper.Exists(key))
+                    {
+                        await RedisHelper.SetAsync(key, topic, 86400);
+                    }
                     var successList = await _app.SaveTestResult(list);
-                    await _mqttNetClient.SubscribeAsync(key);
+                    await _mqttNetClient.SubscribeAsync(topic);
                 }
             }
             catch (Exception e)
@@ -321,13 +281,13 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="key"></param> 
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> BakeMachineList(int page, int limit, string GeneratorCode, int type,string key)
+        public async Task<TableData> BakeMachineList(int page, int limit, string GeneratorCode, int type, string key)
         {
 
             var result = new TableData();
             try
             {
-                if (type==1 && string.IsNullOrWhiteSpace(GeneratorCode))
+                if (type == 1 && string.IsNullOrWhiteSpace(GeneratorCode))
                 {
                     result.Code = 500;
                     result.Message = "当前订单查询缺少生产码!";
@@ -361,30 +321,42 @@ namespace OpenAuth.WebApi.Controllers
         [HttpGet]
         public async Task<TableData> SyncDeviceList(string EdgeGuid)
         {
-
             var result = new TableData();
             try
             {
-                var json_str = JsonConvert.SerializeObject(new { app_id ="", app_secret ="", edge_guid = EdgeGuid });
+                var json_str = JsonConvert.SerializeObject(new { app_id = "", app_secret = "", edge_guid = EdgeGuid });
                 var request = new Request { JsonParameter = Google.Protobuf.ByteString.CopyFromUtf8(json_str) };
                 var res = await _dataServiceClient.GetDevInfoAsync(request);
-                var edge_guid=Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "edge_guid").Select(c => c.Value).FirstOrDefault().VBytes.FirstOrDefault().Memory.ToArray());
-                var bts_server_guid = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "bts_server_guid").Select(c => c.Value).FirstOrDefault().VBytes.FirstOrDefault().Memory.ToArray());
-                var bts_server_ip= Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "bts_server_ip").Select(c => c.Value).FirstOrDefault().VBytes.FirstOrDefault().Memory.ToArray());
-                var channel_list = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "channel_list").Select(c => c.Value).FirstOrDefault().VBytes.FirstOrDefault().Memory.ToArray());
-                var low_no = res.Data.MapDf.Where(c => c.Key == "low_no").Select(c => c.Value).FirstOrDefault().VUint32.ToArray().FirstOrDefault();
-                var low_version= Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "low_version").Select(c => c.Value).FirstOrDefault().VBytes.FirstOrDefault().Memory.ToArray());
-                var mid_version = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "mid_version").Select(c => c.Value).FirstOrDefault().VBytes.FirstOrDefault().Memory.ToArray());
-                var mid_guid= Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "mid_guid").Select(c => c.Value).FirstOrDefault().VBytes.FirstOrDefault().Memory.ToArray());
-                var range_curr_array= Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "range_curr_array").Select(c => c.Value).FirstOrDefault().VBytes.FirstOrDefault().Memory.ToArray());
-                var low_guid= Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "low_guid").Select(c => c.Value).FirstOrDefault().VBytes.FirstOrDefault().Memory.ToArray());
-                if (res==null || !res.Success)
+                if (res == null || !res.Success)
                 {
                     result.Code = 500;
-                    result.Message = res==null?"设备同步失败!":Encoding.UTF8.GetString(res.Msg.Memory.ToArray());
+                    result.Message = res == null ? "设备同步失败!" : Encoding.UTF8.GetString(res.Msg.Memory.ToArray());
                     return result;
                 }
-                return result;
+                var lowCounts= res.Data.MapDf.Where(c => c.Key == "low_guid").Select(c => c.Value).FirstOrDefault().VBytes.ToList().Count;
+                List<BtsDeviceResp> list = new List<BtsDeviceResp>();
+                for (var i=0;i<lowCounts;i++)
+                {
+                    BtsDeviceResp btsDeviceResp=new BtsDeviceResp();
+                    btsDeviceResp.edge_guid = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "edge_guid").Select(c => c.Value).FirstOrDefault().VBytes[i].Memory.ToArray());
+                    btsDeviceResp.srv_guid = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "bts_server_guid").Select(c => c.Value).FirstOrDefault().VBytes[i].Memory.ToArray());
+                    btsDeviceResp.unit_id= Convert.ToInt32(res.Data.MapDf.Where(c => c.Key == "unit_id").Select(c => c.Value).FirstOrDefault().VUint32[i]);
+                    btsDeviceResp.bts_server_ip = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "bts_server_ip").Select(c => c.Value).FirstOrDefault().VBytes[i].Memory.ToArray());
+                    btsDeviceResp.low_guid = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "low_guid").Select(c => c.Value).FirstOrDefault().VBytes[i].Memory.ToArray());
+                    btsDeviceResp.mid_version = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "mid_version").Select(c => c.Value).FirstOrDefault().VBytes[i].Memory.ToArray());
+                    btsDeviceResp.bts_server_version = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "bts_server_version").Select(c => c.Value).FirstOrDefault().VBytes[i].Memory.ToArray());
+                    btsDeviceResp.production_serial = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "production_serial").Select(c => c.Value).FirstOrDefault().VBytes[i].Memory.ToArray());
+                    btsDeviceResp.bts_ids = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "channel_list").Select(c => c.Value).FirstOrDefault().VBytes[i].Memory.ToArray()).Split(',').ToList();
+                    btsDeviceResp.low_no = Convert.ToInt32(res.Data.MapDf.Where(c => c.Key == "low_no").Select(c => c.Value).FirstOrDefault().VUint32[i]);
+                    btsDeviceResp.low_version = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "low_version").Select(c => c.Value).FirstOrDefault().VBytes[i].Memory.ToArray());
+                    btsDeviceResp.mid_guid = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "mid_guid").Select(c => c.Value).FirstOrDefault().VBytes[i].Memory.ToArray());
+                    btsDeviceResp.range_volt = res.Data.MapDf.Where(c => c.Key == "range_volt").Select(c => c.Value).FirstOrDefault().VFloat[i].ToString();
+                    btsDeviceResp.dev_uid = Convert.ToInt32(res.Data.MapDf.Where(c => c.Key == "dev_uid").Select(c => c.Value).FirstOrDefault().VUint32[i]);
+                    btsDeviceResp.bts_type = Convert.ToInt32(res.Data.MapDf.Where(c => c.Key == "bts_type").Select(c => c.Value).FirstOrDefault().VUint32[i]);
+                    btsDeviceResp.range_curr_array = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "range_curr_array").Select(c => c.Value).FirstOrDefault().VBytes[i].Memory.ToArray());
+                    list.Add(btsDeviceResp);
+                }
+                return await _app.SyncDeviceList(list, EdgeGuid);
             }
             catch (Exception e)
             {

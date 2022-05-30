@@ -104,5 +104,38 @@ namespace OpenAuth.App.Response
         /// 延保到期时间
         /// </summary>
         public DateTime WarrantyTime { get; set; }
+
+    }
+
+    public class DeliveryLableInfo
+    {
+        /// <summary>
+        /// 交货设备编号
+        /// </summary>
+        public string ItemCode { get; set; }
+        /// <summary>
+        /// 交货物料所在行号
+        /// </summary>
+        public int LineNum { get; set; }
+        /// <summary>
+        /// 交货对应销售单
+        /// </summary>
+        public int OrderNo { get; set; }
+        /// <summary>
+        /// 交货设备序列号
+        /// </summary>
+        public string SerialNo { get; set; }
+        /// <summary>
+        /// 交货对应的生产单号
+        /// </summary>
+        public string ProductNo { get; set; }
+        /// <summary>
+        /// 交货设备是否是中位机
+        /// </summary>
+        public string ItemType { get; set; }
+        /// <summary>
+        /// 生产单中下/中位机版本
+        /// </summary>
+        public string SubItemVer { get; set; }
     }
 }
