@@ -588,7 +588,7 @@ namespace OpenAuth.App
                 if (!RedisHelper.Exists(key))
                 {
                     string topic = $"rt_data/subscribe_{item}";
-                    await _mqttNetClient.SubscribeAsync("topic");
+                    await _mqttNetClient.SubscribeAsync(topic);
                     await RedisHelper.SetAsync(key, topic);
                 }
             }
