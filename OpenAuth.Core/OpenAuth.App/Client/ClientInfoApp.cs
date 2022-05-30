@@ -563,19 +563,32 @@ namespace OpenAuth.App.Client
         public async Task<TableData> GetCustomerCount()
         {
             var result = new TableData();
+
+            int? slpCode = null; //销售员的销售代码
+            var userInfo = _auth.GetCurrentUser();
+            //管理员查看全部,非管理员只能查看自己的客户
+            if (!userInfo.Roles.Any(r => r.Name == "管理员"))
+            {
+                slpCode = await (from u in UnitWork.Find<base_user>(null)
+                                 join s in UnitWork.Find<sbo_user>(null)
+                                 on u.user_id equals s.user_id
+                                 where s.sbo_id == Define.SBO_ID && u.user_nm == userInfo.User.Name
+                                 select s.sale_id).FirstOrDefaultAsync();
+            }
+
             //总数
-            var query0 = await UnitWork.Find<OCRD>(null).CountAsync();
+            var query0 = await UnitWork.Find<OCRD>(null).WhereIf(slpCode != null, c => c.SlpCode == slpCode).CountAsync();
             //未报价客户
-            var query1 = await (from c in UnitWork.Find<OCRD>(null)
+            var query1 = await (from c in UnitWork.Find<OCRD>(null).WhereIf(slpCode != null, c => c.SlpCode == slpCode)
                                 join a in UnitWork.Find<OQUT>(null) on c.CardCode equals a.CardCode into temp
                                 from t in temp.DefaultIfEmpty()
                                 where t.CardCode == null
                                 select c.CardCode).CountAsync();
             //已成交客户
-            var query2 = await (from c in UnitWork.Find<OCRD>(null)
+            var query2 = await (from c in UnitWork.Find<OCRD>(null).WhereIf(slpCode != null, c => c.SlpCode == slpCode)
                                 join d in UnitWork.Find<ODLN>(null) on c.CardCode equals d.CardCode
                                 select c.CardCode).Distinct().CountAsync();
-            //公海领取
+            //公海领取(被领取后还没做过单的用户)
             //在历史归属表中存在但是公海中不存在的客户(说明已被领取)
             var cardCodes = (from h in UnitWork.Find<CustomerSalerHistory>(null)
                              join c in UnitWork.Find<CustomerList>(null) on h.CustomerNo equals c.CustomerNo into temp
@@ -583,13 +596,13 @@ namespace OpenAuth.App.Client
                              where t.CustomerNo == null
                              select h.CustomerNo).Distinct().ToList();
             //还没做过单的客户
-            var query3 = await (from c in UnitWork.Find<OCRD>(c => cardCodes.Contains(c.CardCode))
+            var query3 = await (from c in UnitWork.Find<OCRD>(c => cardCodes.Contains(c.CardCode)).WhereIf(slpCode != null, c => c.SlpCode == slpCode)
                                 join a in UnitWork.Find<OQUT>(null) on c.CardCode equals a.CardCode into temp
                                 from t in temp.DefaultIfEmpty()
                                 where t.CardCode == null
                                 select c.CardCode).CountAsync();
             //即将掉入公海客户
-            var query4 = await UnitWork.Find<CustomerList>(c => c.Label == "4").CountAsync();
+            var query4 = await UnitWork.Find<CustomerList>(c => c.Label == "4").WhereIf(slpCode != null, c => c.SlpCode == slpCode).CountAsync();
 
             result.Data = new GetCustomerCount() { Count0 = query0, Count1 = query1, Count2 = query2, Count3 = query3, Count4 = query4 };
 
@@ -2274,6 +2287,27 @@ namespace OpenAuth.App.Client
             return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
         }
         #endregion
+
+        /// <summary>
+        /// 判断客户是否存在审核中的报价单
+        /// </summary>
+        /// <param name="cardCode"></param>
+        /// <returns></returns>
+        public async Task<TableData> IsExistsReviewJob(string cardCode)
+        {
+            var tableData = new TableData();
+
+            var query = UnitWork.Find<wfa_job>(j => j.job_state == 1 && j.job_nm == "销售报价单" && j.card_code == cardCode)
+                .Select(j => new
+                {
+                    j.job_id
+                });
+
+            tableData.Data = await query.ToListAsync();
+            tableData.Count = await query.CountAsync();
+
+            return tableData;
+        }
     }
 }
 

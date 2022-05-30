@@ -10,8 +10,11 @@ using OpenAuth.App.Response;
 using OpenAuth.Repository.Interface;
 using Serilog;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace OpenAuth.WebApi.Controllers.Order
 {
@@ -511,6 +514,109 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
 
             return result;
+        }
+        #endregion
+
+        #region 交货打印测试
+        [Route("TestPrintLable")]
+        public async Task TestPrintLable(int deliveryNo)
+        {
+            var printModel = new BillPrintLabelModel();
+
+            //根据交货单号查询型号、序列号、客户代码
+            var oinsInfo = await _salesDeliveryApp.GetOinsInfo(deliveryNo);
+            //根据交货单号查找订单号和出货日期
+            var saleOrderNoInfo = await _salesDeliveryApp.GetSalesOrderInfo(deliveryNo);
+            if (oinsInfo != null)
+            {
+                printModel.ItemCode = oinsInfo.ItemCode;
+                printModel.SerialNumber = oinsInfo.ManufSn;
+                printModel.CardCode = oinsInfo.CustomerNo;
+            }
+            if (saleOrderNoInfo != null)
+            {
+                printModel.OrderNum = saleOrderNoInfo.BaseEntry;
+                printModel.ShippingDate = saleOrderNoInfo.DocDueDate;
+            }
+
+            //根据销售单号在生产订单中查找下位机版本、中位机版本
+            var versionInfo = await _salesDeliveryApp.GetXwjOrZwjVersion(printModel.OrderNum);
+            if (versionInfo != null && versionInfo.Count() > 0)
+            {
+                //判断是否有下位机
+                if (versionInfo.Any(v => v.Version.Contains("XWJ")))
+                {
+                    var xwjInfo = versionInfo.Where(v => v.Version.Contains("XWJ"));
+                    foreach(var item in xwjInfo)
+                    {
+                        for(int i = 0; i < item.PlannedQty; i++)
+                        {
+                            printModel.XwjVersion.Add(item.Version);
+                        }
+                    }
+                }
+
+                //判断是否有中位机
+                if (versionInfo.Any(v => v.Version.Contains("ZWJ")))
+                {
+                    var zwjInfo = versionInfo.Where(v => v.Version.Contains("ZWJ"));
+                    foreach(var item in zwjInfo)
+                    {
+                        for(int i = 0; i < item.PlannedQty; i++)
+                        {
+                            printModel.ZwjVersion.Add(item.Version);
+                        }
+                    }
+                }
+            }
+        }
+
+        public class BillPrintLabelModel
+        {
+            /// <summary>
+            /// 型号
+            /// </summary>
+            public string ItemCode { get; set; }
+
+            /// <summary>
+            /// 序列号
+            /// </summary>
+            public string SerialNumber { get; set; }
+
+            /// <summary>
+            /// 下位机版本
+            /// </summary>
+            public List<string> XwjVersion { get; set; }
+
+            /// <summary>
+            /// 中位机版本
+            /// </summary>
+            public List<string> ZwjVersion { get; set; }
+
+            /// <summary>
+            /// 订单号
+            /// </summary>
+            public int OrderNum { get; set; }
+
+            /// <summary>
+            /// 出货日期
+            /// </summary>
+            public DateTime ShippingDate { get; set; }
+
+            /// <summary>
+            /// 输入电源
+            /// </summary>
+            public string InputPower { get; set; }
+
+            /// <summary>
+            /// 功率
+            /// </summary>
+            public string Capacity { get; set; }
+
+            /// <summary>
+            /// 客户代码
+            /// </summary>
+            public string CardCode { get; set; }
         }
         #endregion
 

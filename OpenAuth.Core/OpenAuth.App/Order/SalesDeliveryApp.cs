@@ -18,6 +18,10 @@ using Microsoft.AspNetCore.Mvc;
 using System.IO;
 using DinkToPdf;
 using Infrastructure.Export;
+using OpenAuth.App.Response;
+using OpenAuth.Repository.Domain.Sap;
+using Microsoft.EntityFrameworkCore;
+using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.App.Order
 {
@@ -397,7 +401,7 @@ namespace OpenAuth.App.Order
         /// </summary>
         public async Task<CntctCode> DropPopupCntctPrsnNew(string Code, int SboId, string id)
         {
-            string sql = string.Format("SELECT b.CntctCode AS id,b.Name AS name FROM  " + "nsap_bone" + ".crm_ocrd a LEFT JOIN  " + "nsap_bone" + ".crm_ocpr b ON a.CardCode=b.CardCode WHERE a.CardCode='{0}'", Code);
+            string sql = string.Format("SELECT distinct b.CntctCode AS id,b.Name AS name FROM  " + "nsap_bone" + ".crm_ocrd a LEFT JOIN  " + "nsap_bone" + ".crm_ocpr b ON a.CardCode=b.CardCode WHERE a.CardCode='{0}'", Code);
             if (id != "0")
             {
                 sql += string.Format(" AND b.CntctCode='{0}' LIMIT 1", id);
@@ -1265,5 +1269,118 @@ namespace OpenAuth.App.Order
             object noobj = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, selsql, CommandType.Text, null);
             return noobj == null ? "" : noobj.ToString();
         }
+
+        #region 出货标签打印
+        /// <summary>
+        /// 根据交货单号查询型号、序列号、客户代码
+        /// </summary>
+        /// <param name="deliveryNo"></param>
+        /// <returns></returns>
+        public async Task<QueryOinsReponse> GetOinsInfo(int deliveryNo)
+        {
+            var query = UnitWork.Find<OINS>(o => o.deliveryNo == deliveryNo).Select(o => new QueryOinsReponse
+            {
+                ItemCode = o.itemCode,
+                ManufSn = o.manufSN,
+                CustomerNo = o.customer
+            });
+
+            var data = await query.FirstOrDefaultAsync();
+            return data;
+        }
+
+        /// <summary>
+        /// 根据交货单号查询订单号、出货日期
+        /// </summary>
+        /// <param name="deliveryNo">交货单号</param>
+        /// <returns></returns>
+        public async Task<QueryDeliveryResponse> GetSalesOrderInfo(int deliveryNo)
+        {
+            var query = from o in UnitWork.Find<ODLN>(null)
+                        join d in UnitWork.Find<DLN1>(null)
+                        on o.DocEntry equals d.DocEntry
+                        where o.DocEntry == deliveryNo
+                        select new QueryDeliveryResponse
+                        {
+                            BaseEntry = d.BaseEntry.Value,
+                            DocDueDate = o.DocDueDate.Value
+                        };
+
+            var data = await query.FirstOrDefaultAsync();
+            return data;
+        }
+
+        /// <summary>
+        /// 根据销售单号查询下位机or中位机版本号
+        /// </summary>
+        /// <param name="saleOrderNo"></param>
+        /// <returns></returns>
+        public async Task<List<QueryXwjOrZwjVersion>> GetXwjOrZwjVersion(int saleOrderNo)
+        {
+            var query = from o in UnitWork.Find<OWOR>(null)
+                        join w in UnitWork.Find<WOR1>(null)
+                        on o.DocEntry equals w.DocEntry
+                        where o.OriginNum == saleOrderNo
+                        && (w.ItemCode.Contains("XWJ") || w.ItemCode.Contains("ZWJ"))
+                        select new QueryXwjOrZwjVersion
+                        {
+                            ItemCode = o.ItemCode,
+                            Version = w.ItemCode,
+                            PlannedQty = (int)w.PlannedQty.Value
+                        };
+
+            var data = await query.ToListAsync();
+            return data;
+        }
+
+        public class QueryOinsReponse
+        {
+            /// <summary>
+            /// 型号
+            /// </summary>
+            public string ItemCode { get; set; }
+
+            /// <summary>
+            /// 序列号
+            /// </summary>
+            public string ManufSn { get; set; }
+
+            /// <summary>
+            /// 客户代码
+            /// </summary>
+            public string CustomerNo { get; set; }
+        }
+
+        public class QueryDeliveryResponse
+        {
+            /// <summary>
+            /// 出货日期
+            /// </summary>
+            public DateTime DocDueDate { get; set; }
+
+            /// <summary>
+            /// 销售单号
+            /// </summary>
+            public int BaseEntry { get; set; }
+        }
+
+        public class QueryXwjOrZwjVersion
+        {
+            /// <summary>
+            /// 物料型号
+            /// </summary>
+            public string ItemCode { get; set; }
+
+            /// <summary>
+            /// 版本号
+            /// </summary>
+            public string Version { get; set; }
+
+            /// <summary>
+            /// 计划数量
+            /// </summary>
+            public int PlannedQty { get; set; }
+        }
+        #endregion
     }
 }

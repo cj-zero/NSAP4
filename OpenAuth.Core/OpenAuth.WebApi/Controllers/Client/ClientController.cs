@@ -722,6 +722,30 @@ namespace OpenAuth.WebApi.Controllers.Client
             return result;
         }
 
+        /// <summary>
+        /// 判断客户是否存在审核中的报价单
+        /// </summary>
+        /// <param name="cardCode">客户代码</param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("IsExistsReviewJob")]
+        public async Task<TableData> IsExistsReviewJob(string cardCode)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _clientInfoApp.IsExistsReviewJob(cardCode);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message ?? "";
+                Log.Logger.Error($"地址：{Request.Path}，参数：{cardCode.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
     }
 }
 
