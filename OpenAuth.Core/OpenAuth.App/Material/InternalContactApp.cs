@@ -948,6 +948,7 @@ namespace OpenAuth.App.Material
                 //foreach (var child in item.List)
                 //{
                 //}
+                await Task.Delay(1000);
             }
             ////维修单
             foreach (var item in taskOrder)
@@ -1004,6 +1005,8 @@ namespace OpenAuth.App.Material
                     var createResult = await _serviceOrderApp.CISECreateServiceOrder(s);
                     var serviceOrderId = createResult.Result;
                     addlist.Add(new InternalContactTaskServiceOrder { InternalContactTaskId = item.Id, ServiceOrderId = serviceOrderId, IsFinish = false, InternalContactId = item.InternalContactId });
+
+                    await Task.Delay(1000);
                 }
                 await UnitWork.BatchAddAsync(addlist.ToArray());
 
@@ -2001,6 +2004,15 @@ namespace OpenAuth.App.Material
                     }
                     //筛选条件内的成品生产订单
                     productList = productList.Where(c => storeoitm.Contains(c.ItemCode)).ToList();
+                    //if (!string.IsNullOrWhiteSpace(e.CardCodes) || !string.IsNullOrWhiteSpace(e.SaleOrderNo))
+                    //{
+                    //    //有填客户或者销售单号 则进一步筛选成品 缩小范围
+                    //    var finlishorder = GetFinlishOrderBySaleNo(e.CardCodes, e.SaleOrderNo);
+                    //    //筛出符合物料规则的 生产单
+                    //    var orderno = finlishorder.Where(c => storeoitm.Contains(c.ItemCode)).Select(c => c.DocEntry).ToList();
+                    //    //
+                    //    productList = productList.Where(c => orderno.Contains(c.DocEntry)).ToList();
+                    //}
 
                     var onlyitem = productList.Select(c => c.ItemCode).Distinct().ToList();
                     finilishedItems.AddRange(onlyitem.Select(c => new FinilishedItem
@@ -2217,12 +2229,13 @@ namespace OpenAuth.App.Material
                     var sysSerial = otherEn.Select(c => c.SysSerial).ToList();
 
                     var qq = (from a in UnitWork.Find<OITL>(null)
-                                           join b in UnitWork.Find<ITL1>(null) on a.LogEntry equals b.LogEntry
-                                           join c in UnitWork.Find<ODLN>(null) on a.DocEntry equals c.DocEntry
-                                           join d in UnitWork.Find<OCRD>(null) on c.CardCode equals d.CardCode
-                                           join ee in UnitWork.Find<OHEM>(null) on d.DfTcnician equals ee.empID
-                                           where itemcodes.Contains(a.ItemCode) && a.DocType == 15 && sysSerial.Contains(b.SysNumber)
-                                           select new { a.ItemCode, a.ItemName, b.SysNumber, c.CardCode, c.CardName, Technician = ee.lastName + ee.firstName }).ToList();
+                              join b in UnitWork.Find<ITL1>(null) on a.LogEntry equals b.LogEntry
+                              join c in UnitWork.Find<ODLN>(null) on a.DocEntry equals c.DocEntry
+                              join d in UnitWork.Find<OCRD>(null) on c.CardCode equals d.CardCode
+                              join ee in UnitWork.Find<OHEM>(null) on d.DfTcnician equals ee.empID
+                              where itemcodes.Contains(a.ItemCode) && a.DocType == 15 && sysSerial.Contains(b.SysNumber)
+                              select new { a.ItemCode, a.DocDate, a.ItemName, b.SysNumber, c.CardCode, c.CardName, Technician = ee.lastName + ee.firstName }).ToList();
+                    qq = qq.GroupBy(c => c.SysNumber).Select(c => c.OrderByDescending(o => o.DocDate).First()).ToList();
 
                     var querySuppSerial = (from a in otherEn
                               join b in qq on new { a.ItemCode, SysNumber = a.SysSerial } equals new { b.ItemCode, b.SysNumber }
@@ -2463,6 +2476,33 @@ namespace OpenAuth.App.Material
                                     OpenQty = a.PlannedQty - a.CmpltQty//承诺数量 }
                                 };
             return productOrder3.ToList();
+        }
+
+        /// <summary>
+        /// 销售单下所有成品生产单
+        /// </summary>
+        /// <param name="cardCode"></param>
+        /// <param name="saleNo"></param>
+        /// <returns></returns>
+        public List<FinilishedItem> GetFinlishOrderBySaleNo(string cardCode,string saleNo)
+        {
+            if (!string.IsNullOrWhiteSpace(saleNo))//销售单下生产单
+            {
+                var saleno = saleNo.Split(",").ToList();
+                var productOrder3 = UnitWork.Find<product_owor>(c => saleno.Contains(c.OriginAbs.ToString())).Select(c => new FinilishedItem { ItemCode = c.ItemCode, DocEntry = c.DocEntry }).ToList();
+                return productOrder3;
+            }
+            else if (!string.IsNullOrWhiteSpace(cardCode))//客户下所有销售单的生产单
+            {
+                var cardcode = cardCode.Split(",").ToList();
+                var query = UnitWork.Find<ORDR>(c => cardcode.Contains(c.CardCode)).Select(c => c.DocEntry).ToList();
+                var productOrder3 = UnitWork.Find<product_owor>(a => query.Contains(a.OriginAbs.Value)).Select(c => new FinilishedItem { ItemCode = c.ItemCode, DocEntry = c.DocEntry }).ToList();
+                return productOrder3;
+            }
+            else
+            {
+                return new List<FinilishedItem>();
+            }
         }
 
         /// <summary>

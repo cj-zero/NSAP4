@@ -72,6 +72,9 @@ namespace OpenAuth.App.Request
         public string FromTheme { get; set; }
         public string FromThemeList { get; set; }
         public string SelectList { get; set; }
+
+        public string CardCodes { get; set; }
+        public string SaleOrderNo { get; set; }
     }
 
     //public class MaterialInfo
