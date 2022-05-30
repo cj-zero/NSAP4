@@ -277,8 +277,10 @@ namespace OpenAuth.App.Customer
 
             //查询已经掉入公海的客户
             var query = UnitWork.Find<CustomerList>(c => c.LabelIndex == 3)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), c => c.CustomerNo == req.CardCode)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), c => c.CustomerName.Contains(req.CardName))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.DepartMent), c => c.DepartMent == req.DepartMent)
-                .WhereIf(req.CreateStartTime != null && req.CreateEndTime != null, c => c.CreateDateTime >= req.CreateStartTime && c.CreateDateTime < req.CreateEndTime.Value.AddDays(1))
+                .WhereIf(req.CreateStartTime != null && req.CreateEndTime != null, c => c.CustomerCreateDate >= req.CreateStartTime && c.CustomerCreateDate < req.CreateEndTime.Value.AddDays(1))
                 .WhereIf(req.FallIntoStartTime != null && req.FallIntoEndTime != null, c => c.CreateDateTime >= req.FallIntoStartTime &&
                      c.CreateDateTime < req.FallIntoEndTime.Value.AddDays(1))
                 .Select(c => new
