@@ -497,6 +497,7 @@ namespace OpenAuth.WebApi.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
+        [HttpGet]
         public async Task WarehousePutMaterialsIn(int? id)
         {
             await _returnnoteApp.WarehousePutMaterialsIn(new AccraditationReturnNoteReq { Id = id });
