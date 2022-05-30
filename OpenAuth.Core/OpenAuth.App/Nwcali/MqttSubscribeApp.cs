@@ -235,7 +235,6 @@ namespace OpenAuth.App.Nwcali
                         }
                         break;
                     case "rt_data":
-                        Log.Logger.Information($"rt订阅数据接受正常!");
                         EdgeCmd.VecRT vc = null;
                         MemoryStream stream = new MemoryStream(payload);
                         using (GZipStream gZipStream = new GZipStream(stream, CompressionMode.Decompress))
