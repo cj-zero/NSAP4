@@ -589,7 +589,7 @@ namespace OpenAuth.App
                 {
                     string topic = $"rt_data/subscribe_{item}";
                     await _mqttNetClient.SubscribeAsync(topic);
-                    await RedisHelper.SetAsync(key, topic);
+                    await RedisHelper.SetAsync(key, topic, 86400);
                 }
             }
             var list = await UnitWork.Find<DeviceCheckTask>(null).Where(c => string.IsNullOrWhiteSpace(c.TaskId) && c.ErrCount <= 3).OrderBy(c => c.Id).ToListAsync();

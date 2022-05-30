@@ -235,6 +235,7 @@ namespace OpenAuth.App.Nwcali
                         }
                         break;
                     case "rt_data":
+                        Log.Logger.Information($"rt订阅数据接受正常!");
                         EdgeCmd.VecRT vc = null;
                         MemoryStream stream = new MemoryStream(payload);
                         using (GZipStream gZipStream = new GZipStream(stream, CompressionMode.Decompress))
@@ -294,7 +295,7 @@ namespace OpenAuth.App.Nwcali
                             }
                             catch (Exception ex)
                             {
-                                Log.Logger.Error($"rt订阅数据解析异常：edge_guids={edge_guid},异常数据 vc=" + JsonConvert.SerializeObject(vc) + "", ex);
+                                Log.Logger.Error($"rt订阅数据解析异常：edge_guids={edge_guid}", ex);
                             }
                         }
                         break;

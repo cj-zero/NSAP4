@@ -257,7 +257,7 @@ namespace OpenAuth.WebApi.Controllers
                     string key = $"{_mqttNetClient.clientId}{item.EdgeGuid}";
                     if (!RedisHelper.Exists(key))
                     {
-                        await RedisHelper.SetAsync(key, topic);
+                        await RedisHelper.SetAsync(key, topic, 86400);
                     }
                     var successList = await _app.SaveTestResult(list);
                     await _mqttNetClient.SubscribeAsync(topic);
