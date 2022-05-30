@@ -381,6 +381,7 @@ namespace OpenAuth.App
                         deviceTest.CodeTxt = citem.error;
                     }
                     deviceTest.TestId = citem.test_id;
+                    deviceTest.ChangeStatusTime = DateTime.Now;
                     deviceTestLogList.Add(deviceTest);
 
                     DeviceCheckTask checkTask = new DeviceCheckTask();
@@ -580,6 +581,17 @@ namespace OpenAuth.App
         public async Task<TableData> DeviceTestCheckResult()
         {
             var result = new TableData();
+            var edgeList=await UnitWork.Find<edge>(null).Select(c => c.edge_guid).ToListAsync();
+            foreach (var item in edgeList)
+            {
+                string key = $"{_mqttNetClient.clientId}{item}";
+                if (!RedisHelper.Exists(key))
+                {
+                    string topic = $"rt_data/subscribe_{item}";
+                    await _mqttNetClient.SubscribeAsync("topic");
+                    await RedisHelper.SetAsync(key, topic);
+                }
+            }
             var list = await UnitWork.Find<DeviceCheckTask>(null).Where(c => string.IsNullOrWhiteSpace(c.TaskId) && c.ErrCount <= 3).OrderBy(c => c.Id).ToListAsync();
             var taskList = await UnitWork.Find<DeviceCheckTask>(null).Where(c => !string.IsNullOrWhiteSpace(c.TaskId) && c.TaskStatus != 2).OrderBy(c => c.Id).ToListAsync();
             string url = $"{_appConfiguration.Value.AnalyticsUrl}api/DataCheck/Task";
