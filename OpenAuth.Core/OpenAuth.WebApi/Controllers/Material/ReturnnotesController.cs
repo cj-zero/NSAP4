@@ -492,6 +492,16 @@ namespace OpenAuth.WebApi.Controllers
             return new Response();
         }
 
+        /// <summary>
+        /// 同步应收贷项凭证
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task WarehousePutMaterialsIn(int? id)
+        {
+            await _returnnoteApp.WarehousePutMaterialsIn(new AccraditationReturnNoteReq { Id = id });
+        }
+
         public ReturnNotesController(ReturnNoteApp app)
         {
             _returnnoteApp = app;
