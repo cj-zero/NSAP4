@@ -14,7 +14,7 @@ namespace Infrastructure.MQTT
     {
         public static MqttClient mqttClient;
         private IMqttClientOptions options;
-        private string clientId = string.Empty;
+        public string clientId = string.Empty;
         private MqttConfig mqttConfig;
 
         /// <summary>

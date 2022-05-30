@@ -253,9 +253,10 @@ namespace OpenAuth.WebApi.Controllers
                     startTestResp.stepCount = item.stepCount;
                     startTestResp.MaxRange = item.MaxRange;
                     list.Add(startTestResp);
-                    string key = $"rt_data/subscribe_{item.EdgeGuid}";
+                    string topic = $"rt_data/subscribe_{item.EdgeGuid}";
+                    await RedisHelper.SetAsync($"{_mqttNetClient.clientId}_{item.EdgeGuid}", topic);
                     var successList = await _app.SaveTestResult(list);
-                    await _mqttNetClient.SubscribeAsync(key);
+                    await _mqttNetClient.SubscribeAsync(topic);
                 }
             }
             catch (Exception e)

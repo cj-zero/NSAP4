@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Infrastructure;
 using Infrastructure.Extensions;
 using Infrastructure.Helpers;
+using Infrastructure.MQTT;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -27,15 +28,18 @@ namespace OpenAuth.App
     public class StepVersionApp : OnlyUnitWorkBaeApp
     {
         private readonly IOptions<AppSetting> _appConfiguration;
-
+        private readonly MqttNetClient _mqttNetClient;
         /// <summary>
         /// 工步模板
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
-        public StepVersionApp(IUnitWork unitWork, IAuth auth, IOptions<AppSetting> appConfiguration) : base(unitWork, auth)
+        /// <param name="appConfiguration"></param>
+        /// <param name="mqttNetClient"></param>
+        public StepVersionApp(IUnitWork unitWork, IAuth auth, IOptions<AppSetting> appConfiguration, MqttNetClient mqttNetClient) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
+            _mqttNetClient= mqttNetClient;
         }
 
         /// <summary>
@@ -219,7 +223,13 @@ namespace OpenAuth.App
                     arg.creator = loginContext.User.Name;
                     arg.step_file_name = "";
                     arg.start_step = 1;
-                    arg.scale = 1000;//待处理
+                    arg.scale = 10;
+                    if (maxRange < 10)
+                        arg.scale = 10000;
+                    else if (maxRange < 100)
+                        arg.scale = 1000;
+                    else if (maxRange < 1000)
+                        arg.scale = 100;
                     arg.battery_mass = 0;
                     arg.desc = "";
                     arg.step_data = step_data;
