@@ -204,7 +204,6 @@ namespace OpenAuth.WebApi.Controllers
                 Directory.CreateDirectory(work_path);
                 string filename = DateTime.Now.ToString("yyyyMMddHHmmssffff");
                 string dir = $"{work_path}{filename}.xml";
-                Log.Logger.Information($"工步文件路径：{dir}");
                 xmlDoc.Save(dir);
                 if (!System.IO.File.Exists(dir))
                 {
