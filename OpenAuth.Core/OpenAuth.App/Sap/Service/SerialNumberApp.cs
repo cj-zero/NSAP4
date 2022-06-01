@@ -565,11 +565,9 @@ namespace OpenAuth.App.Sap.Service
         /// 根据交货号获取交货设备的序列号与中、下位机版本
         /// </summary>
         /// <param name="deliveryNo"></param>
-        /// <param name="sboId"></param>
         /// <returns></returns>
         public async Task<TableData> GetSerialNoAndXWJVersionByDeliveryNo(string deliveryNo)
         {
-            int sboId = 1;
             var result = new TableData();
             var devs = new List<DeliveryLableInfo>();
             var query1 = from a in UnitWork.Find<ITL1>(null)
@@ -592,7 +590,7 @@ namespace OpenAuth.App.Sap.Service
             {
                 #region 获取中、下位机版本
                 var itemVer = "";
-                var proobj = await UnitWork.Find<product_wor1>(null).Where(o => o.DocEntry.ToString() == thisE.ProductNo && o.sbo_id == sboId).Select(p => new { ItemCode = p.ItemCode }).ToListAsync();
+                var proobj = await UnitWork.Find<product_wor1>(null).Where(o => o.DocEntry.ToString() == thisE.ProductNo && o.sbo_id == Define.SBO_ID).Select(p => new { ItemCode = p.ItemCode }).ToListAsync();
                 if (thisE.ItemType == "ZWJ")
                 {
                     Regex r = new Regex(@"(B01-)(BTS-|BFGS-)(ZWJ-)(\d+)");
