@@ -80,6 +80,11 @@ namespace OpenAuth.Repository
                     modelBuilder.Entity(type).Property(p.Name).HasColumnType("decimal(19,6)"); //这个精度范围参考Sap的sql server里面的numeric类型精度
                 }
             }
+
+            //生产收货
+            modelBuilder.Entity<OIGN>().HasKey(o => o.DocEntry);
+            modelBuilder.Entity<IGN1>().HasKey(o => new { o.DocEntry, o.LineNum });
+            //库存转储
         }
         //非数据库表格
         public virtual DbSet<SysEquipmentColumn> SysEquipmentColumns { get; set; }
