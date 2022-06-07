@@ -10364,7 +10364,29 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 logostr = Convert.ToBase64String(photo);
                 Console.WriteLine(logostr);
             }
-            var Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", "新威尔.png");
+            var indicator = await UnitWork.Find<ORDR>(r => r.DocEntry == int.Parse(DocEntry)).Select(r => r.Indicator).FirstOrDefaultAsync(); //标识:01-新威尔,02-新能源,05-东莞新威,07-纽威
+            string Chapterpath = "";
+            if (indicator == null)
+            {
+                Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", "新威尔.png");
+            }
+            else if (indicator == "01")
+            {
+                Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", "新威尔.png");
+            }
+            else if (indicator == "02")
+            {
+                Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", "新能源.png");
+            }
+            else if (indicator == "05")
+            {
+                Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", "东莞新威.png");
+            }
+            else
+            {
+                Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", "新威尔.png");
+            }
+            
             var Chapter = "";
             using (var fs = new FileStream(Chapterpath, FileMode.Open))
             {
