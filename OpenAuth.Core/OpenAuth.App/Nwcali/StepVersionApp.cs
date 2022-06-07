@@ -39,7 +39,7 @@ namespace OpenAuth.App
         public StepVersionApp(IUnitWork unitWork, IAuth auth, IOptions<AppSetting> appConfiguration, MqttNetClient mqttNetClient) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
-            _mqttNetClient= mqttNetClient;
+            _mqttNetClient = mqttNetClient;
         }
 
         /// <summary>
@@ -581,7 +581,7 @@ namespace OpenAuth.App
         public async Task<TableData> DeviceTestCheckResult()
         {
             var result = new TableData();
-            var edgeList=await UnitWork.Find<edge>(null).Select(c => c.edge_guid).ToListAsync();
+            var edgeList = await UnitWork.Find<edge>(null).Select(c => c.edge_guid).ToListAsync();
             foreach (var item in edgeList)
             {
                 string key = $"{_mqttNetClient.clientId}{item}";
@@ -592,8 +592,8 @@ namespace OpenAuth.App
                     await RedisHelper.SetAsync(key, topic, 86400);
                 }
             }
-            var list = await UnitWork.Find<DeviceCheckTask>(null).Where(c => string.IsNullOrWhiteSpace(c.TaskId) && c.ErrCount <= 3).OrderBy(c => c.Id).ToListAsync();
-            var taskList = await UnitWork.Find<DeviceCheckTask>(null).Where(c => !string.IsNullOrWhiteSpace(c.TaskId) && c.TaskStatus != 2).OrderBy(c => c.Id).ToListAsync();
+            var list = await UnitWork.Find<DeviceCheckTask>(null).Where(c => string.IsNullOrWhiteSpace(c.TaskId) && c.ErrCount <= 3).OrderBy(c => c.Id).Take(50).ToListAsync();
+            var taskList = await UnitWork.Find<DeviceCheckTask>(null).Where(c => !string.IsNullOrWhiteSpace(c.TaskId) && c.TaskStatus != 2).OrderBy(c => c.Id).Take(50).ToListAsync();
             string url = $"{_appConfiguration.Value.AnalyticsUrl}api/DataCheck/Task";
             Infrastructure.HttpHelper helper = new Infrastructure.HttpHelper(url);
             foreach (var item in list)
@@ -639,7 +639,6 @@ namespace OpenAuth.App
             {
                 try
                 {
-                    var channelTest = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.EdgeGuid == item.EdgeGuid && c.SrvGuid == item.SrvGuid && c.DevUid == item.DevUid && c.UnitId == item.UnitId && c.TestId == item.TestId && c.ChlId == item.ChlId).FirstOrDefaultAsync();
                     string taskurl = $"{_appConfiguration.Value.AnalyticsUrl}api/DataCheck/TaskResult?id={item.TaskId}";
                     Dictionary<string, string> dic = null;
                     var taskResult = helper.Get(dic, taskurl);
@@ -654,67 +653,17 @@ namespace OpenAuth.App
                         item.TaskStatus = TaskStatus;
                         int.TryParse(res["data"]["ErrCount"].ToString(), out int ErrCount);
                         item.ErrCount = ErrCount;
-
-                        channelTest.TaskErrCount = ErrCount;
-                        channelTest.TaskId = item.TaskId;
-                        channelTest.TaskStatus = TaskStatus;
-                        channelTest.TaskContent = "";
-                        if (res["data"]["CheckItems"] != null)
+                        item.TaskContent = res["data"]["CheckItems"] != null ? JsonConvert.SerializeObject(res["data"]["CheckItems"]) : "";
+                        var channelTest = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.TaskId == item.TaskId).FirstOrDefaultAsync();
+                        if (channelTest != null)
                         {
-                            List<DeviceTaskCheckResp> deviceTaskCheckList = new List<DeviceTaskCheckResp>();
-                            foreach (var citem in res["data"]["CheckItems"])
-                            {
-                                DeviceTaskCheckResp deviceTaskCheck = new DeviceTaskCheckResp();
-                                long.TryParse(citem["CheckId"].ToString(), out long CheckId);
-                                int.TryParse(citem["ErrCount"].ToString(), out int errcount);
-                                int.TryParse(citem["CheckType"].ToString(), out int CheckType);
-                                deviceTaskCheck.CheckId = CheckId;
-                                deviceTaskCheck.CheckType = CheckType;
-                                switch (CheckType)
-                                {
-                                    case 0:
-                                        deviceTaskCheck.CheckName = "测试是否按流程完成";
-                                        break;
-                                    case 1:
-                                        deviceTaskCheck.CheckName = "搁置工步是否漏电";
-                                        break;
-                                    case 2:
-                                        deviceTaskCheck.CheckName = "恒压工步电压是否稳定";
-                                        break;
-                                    case 3:
-                                        deviceTaskCheck.CheckName = "放电工步电压是否下降";
-                                        break;
-                                    case 4:
-                                        deviceTaskCheck.CheckName = "充电工步电压是否上升";
-                                        break;
-                                    case 5:
-                                        deviceTaskCheck.CheckName = "恒流工步电流稳定";
-                                        break;
-                                }
-                                deviceTaskCheck.ErrList = new List<string>();
-                                if (errcount > 0)
-                                {
-                                    if (citem["Records"] != null)
-                                    {
-                                        foreach (var ritem in citem["Records"])
-                                        {
-                                            if (!string.IsNullOrWhiteSpace(ritem["Err"].ToString()))
-                                            {
-                                                deviceTaskCheck.ErrList.Add(ritem["Err"].ToString());
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            if (deviceTaskCheckList.Any())
-                            {
-                                channelTest.TaskContent = JsonConvert.SerializeObject(deviceTaskCheckList);
-                                item.TaskContent = JsonConvert.SerializeObject(deviceTaskCheckList);
-                            }
+                            channelTest.TaskErrCount = ErrCount;
+                            channelTest.TaskStatus = TaskStatus;
+                            channelTest.TaskContent = res["data"]["CheckItems"] != null ? JsonConvert.SerializeObject(res["data"]["CheckItems"]) : "";
+                            await UnitWork.UpdateAsync(channelTest);
+                            await UnitWork.SaveAsync();
                         }
                     }
-                    await UnitWork.UpdateAsync(channelTest);
-                    await UnitWork.SaveAsync();
                 }
                 catch (Exception ex)
                 {
@@ -755,7 +704,7 @@ namespace OpenAuth.App
             List<edge_channel> channelList = new List<edge_channel>();
             foreach (var item in list)
             {
-                var host=hostList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid).Any();
+                var host = hostList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid).Any();
                 if (!host)
                 {
                     edge_host hostModel = new edge_host();
@@ -768,7 +717,7 @@ namespace OpenAuth.App
                     hostModel.CreateTime = dt;
                     hostList.Add(hostModel);
                 }
-                var mid = midList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid==item.dev_uid && c.mid_guid==item.mid_guid).Any();
+                var mid = midList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == item.dev_uid && c.mid_guid == item.mid_guid).Any();
                 if (!mid)
                 {
                     edge_mid midModel = new edge_mid();
@@ -807,7 +756,7 @@ namespace OpenAuth.App
                     if (!string.IsNullOrWhiteSpace(citem))
                     {
                         var bts_id = Convert.ToInt32(citem);
-                        var channel = channelList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.mid_guid == item.mid_guid && c.low_guid == item.low_guid && c.bts_id== bts_id).Any();
+                        var channel = channelList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.mid_guid == item.mid_guid && c.low_guid == item.low_guid && c.bts_id == bts_id).Any();
                         if (!channel)
                         {
                             edge_channel channelModel = new edge_channel();
@@ -818,6 +767,12 @@ namespace OpenAuth.App
                             channelModel.bts_id = bts_id;
                             channelModel.status = 1;
                             channelModel.CreateTime = dt;
+                            channelModel.low_no = item.low_no;
+                            channelModel.unit_id = item.unit_id;
+                            channelModel.dev_uid = item.dev_uid;
+                            channelModel.TestId = 0;
+                            channelModel.rt_status = -1;
+                            channelModel.bts_server_ip = item.bts_server_ip;
                             channelList.Add(channelModel);
                         }
                     }
@@ -856,5 +811,203 @@ namespace OpenAuth.App
             }
             return result;
         }
+
+        /// <summary>
+        /// 当前扫码对应订单在线已启动测试需要重启
+        /// </summary>
+        /// <param name="GeneratorCode"></param>
+        /// <param name="ItemCode"></param>
+        /// <param name="page"></param>
+        /// <param name="limit"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public async Task<TableData> NeedRestartList(string GeneratorCode, string ItemCode, int page, int limit)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            int totalCount = 0;
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var department = loginContext.Orgs.Select(c => c.Name).FirstOrDefault();
+            //当前部门在线设备
+            List<object> list = new List<object>();
+            var onlineList = await (from a in UnitWork.Find<edge>(null)
+                                    join b in UnitWork.Find<edge_host>(null) on a.edge_guid equals b.edge_guid
+                                    join c in UnitWork.Find<edge_mid>(null) on new { b.edge_guid, b.srv_guid } equals new { c.edge_guid, c.srv_guid }
+                                    join d in UnitWork.Find<edge_low>(null) on new { c.edge_guid, c.srv_guid, c.mid_guid } equals new { d.edge_guid, d.srv_guid, d.mid_guid }
+                                    where department == a.department
+                                    && a.status == 1 && b.status == 1 && c.status == 1 && d.status == 1
+                                    select new { d.edge_guid, d.srv_guid, b.bts_server_ip, d.mid_guid, d.low_guid, c.dev_uid, d.unit_id, d.low_no }).ToListAsync();
+            var onlineLowGuidList = onlineList.Select(c => c.low_guid).ToList();
+            if (!onlineLowGuidList.Any())
+            {
+                result.Data = list;
+                result.Count = totalCount;
+                return result;
+            }
+            //在线已测试
+            var hasTestLowList = await UnitWork.Find<DeviceTestLog>(null).Where(c => onlineLowGuidList.Contains(c.LowGuid)).Select(c => c.LowGuid).Distinct().ToListAsync();
+            if (!hasTestLowList.Any())
+            {
+                result.Data = list;
+                result.Count = totalCount;
+                return result;
+            }
+            //当前部门当前扫码订单已绑定已测试设备列表
+            var orderNo = Convert.ToInt32(GeneratorCode.Split('-')[1]);
+            var bindList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == orderNo && c.Department == department && hasTestLowList.Contains(c.LowGuid))
+                .OrderBy(c => c.GeneratorCode).Skip((page - 1) * limit).Take(limit).ToListAsync();
+            if (!bindList.Any())
+            {
+                result.Data = list;
+                result.Count = totalCount;
+                return result;
+            }
+            totalCount = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == orderNo && c.Department == department && hasTestLowList.Contains(c.LowGuid)).CountAsync();
+            var onlineBindTestLowGuidList = bindList.Select(c => c.LowGuid).Distinct().ToList();
+            //在线通道
+            var onlineChannelList = await UnitWork.Find<edge_channel>(null).Where(c => onlineBindTestLowGuidList.Contains(c.low_guid)).Distinct().ToListAsync();
+            foreach (var item in bindList)
+            {
+                var channelList = onlineChannelList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.mid_guid == item.Guid && c.low_guid == item.LowGuid).Select(c => new { c.rt_status, c.low_no }).ToList();
+                int lowStatus = -1;
+                if (channelList.Any(c => c.rt_status == 4 || c.rt_status == -4))
+                {
+                    lowStatus = -4;
+                }
+                else if (channelList.Any(c => c.rt_status != 4 && c.rt_status != -4 && (c.rt_status == -3 || c.rt_status == 1)))
+                {
+                    lowStatus = -3;
+                }
+                else
+                {
+                    continue;
+                }
+                int low_no = channelList.Select(c => c.low_no).FirstOrDefault();
+                list.Add(new { item.GeneratorCode, ItemCode, lowStatus,item.UnitId ,item.DevUid, item.BindType, low_no, item.EdgeGuid, item.SrvGuid, item.Guid, item.LowGuid, item.BtsServerIp });
+            }
+            result.Data = list;
+            result.Count = totalCount;
+            return result;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData<List<StopReq>>> CanStopTestList(List<StopTest> list)
+        {
+            var result = new TableData<List<StopReq>>();
+            var hostList = list.GroupBy(c => new { c.EdgeGuid, c.SrvGuid, c.BtsServerIp }).Select(c => new { c.Key.EdgeGuid, c.Key.SrvGuid, c.Key.BtsServerIp }).ToList();
+            List<StopReq> stopReqs = new List<StopReq>();
+            foreach (var item in hostList)
+            {
+                StopReq model = new StopReq();
+                model.edge_guid = item.EdgeGuid;
+                model.control =new StopControl();
+                model.control.cmd_type = "stop_test";
+                StopArg stopArg = new StopArg();
+                stopArg.ip = item.BtsServerIp;
+                stopArg.chl = new List<ChlInfo>();
+                var lowList = list.Where(c => c.EdgeGuid == item.EdgeGuid && c.SrvGuid == item.SrvGuid && c.BtsServerIp == item.BtsServerIp).ToList();
+                foreach (var litem in lowList)
+                {
+                    var channelList = await UnitWork.Find<edge_channel>(null).Where(c => c.edge_guid == litem.EdgeGuid && c.srv_guid == litem.SrvGuid && c.bts_server_ip == litem.BtsServerIp && c.low_guid == litem.LowGuid).ToListAsync();
+                    foreach (var citem in channelList)
+                    {
+                        ChlInfo chlInfo=new ChlInfo();
+                        chlInfo.dev_uid = citem.dev_uid;
+                        chlInfo.unit_id = citem.unit_id;
+                        chlInfo.chl_id = citem.bts_id;
+                        stopArg.chl.Add(chlInfo);
+                    }
+                }
+                model.control.arg = JsonConvert.SerializeObject(stopArg);
+                stopReqs.Add(model);
+            }
+            result.Data = stopReqs;
+            return result;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="restartlist"></param>
+        /// <param name="stepCount"></param>
+        /// <param name="step_data"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public async Task<TableData<List<DeviceTestResponse>>> RestartTest(List<StopTest> restartlist, int stepCount, string step_data)
+        {
+            var result = new TableData<List<DeviceTestResponse>>();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var departmentList = loginContext.Orgs.Select(c => c.Name).FirstOrDefault();
+            List<DeviceTestResponse> list = new List<DeviceTestResponse>();
+            var canTestLowGuid = restartlist.Select(c => c.LowGuid).ToList();
+            var channelList = await UnitWork.Find<edge_channel>(null).Where(c => canTestLowGuid.Contains(c.low_guid)).ToListAsync();
+            foreach (var item in restartlist)
+            {
+                var lowInfo = await UnitWork.Find<edge_low>(null).Where(c => c.low_guid == item.LowGuid).FirstOrDefaultAsync();
+                DeviceTestResponse deviceTest = new DeviceTestResponse();
+                deviceTest.GeneratorCode = item.GeneratorCode;
+                deviceTest.EdgeGuid = item.EdgeGuid;
+                deviceTest.SrvGuid = item.SrvGuid;
+                deviceTest.BtsServerIp = item.BtsServerIp;
+                deviceTest.MidGuid = item.MidGuid;
+                deviceTest.LowGuid = item.LowGuid;
+                deviceTest.canTestDeviceResp = new CanTestDeviceResp();
+                deviceTest.canTestDeviceResp.edge_guid = item.EdgeGuid;
+                deviceTest.canTestDeviceResp.control = new control();
+                deviceTest.canTestDeviceResp.control.arg = "";
+                deviceTest.canTestDeviceResp.control.cmd_type = "start_test";
+                deviceTest.Department = departmentList;
+                deviceTest.stepCount = stepCount;
+                int maxRange = Convert.ToInt32(lowInfo.range_curr_array.Split(',').Max());
+                deviceTest.MaxRange = maxRange;
+                arg arg = new arg();
+                arg.srv_guid = item.SrvGuid;
+                arg.ip = item.BtsServerIp;
+                arg.dev_uid = item.DevUid;
+                arg.batch_no = DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss");
+                arg.test_name = "";
+                arg.creator = loginContext.User.Name;
+                arg.step_file_name = "";
+                arg.start_step = 1;
+                arg.scale = 10;
+                if (maxRange < 10)
+                    arg.scale = 10000;
+                else if (maxRange < 100)
+                    arg.scale = 1000;
+                else if (maxRange < 1000)
+                    arg.scale = 100;
+                arg.battery_mass = 0;
+                arg.desc = "";
+                arg.step_data = step_data;
+                var chlList = channelList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.mid_guid == item.MidGuid && c.low_guid == item.LowGuid).ToList();
+                arg.chl = new List<chl>();
+                foreach (var citem in chlList)
+                {
+                    chl chl = new chl();
+                    chl.chl_id = citem.bts_id;
+                    chl.dev_uid = item.DevUid;
+                    chl.unit_id = item.UnitId;
+                    chl.barcode = "";
+                    chl.battery_mass = 0;
+                    chl.desc = "";
+                    arg.chl.Add(chl);
+                }
+                deviceTest.canTestDeviceResp.control.arg = JsonConvert.SerializeObject(arg);
+                list.Add(deviceTest);
+            }
+            result.Data = list;
+            return result;
+        }
+
     }
 }
