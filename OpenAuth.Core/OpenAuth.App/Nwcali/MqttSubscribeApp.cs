@@ -289,14 +289,12 @@ namespace OpenAuth.App.Nwcali
                                                                     UnitWork.Update(deviceTestLog);
                                                                     UnitWork.Save();
                                                                 }
-                                                                var channelInfo = UnitWork.Find<edge_channel>(null).Where(c => c.edge_guid == edge_guid && c.srv_guid == srv_guid && c.mid_guid == mid_guid && c.dev_uid == mid_rt.DevUid && c.unit_id == item.UnitId && c.bts_id == item.ChlId).FirstOrDefault();
-                                                                if (channelInfo != null)
+                                                                UnitWork.Update<edge_channel>(c => c.edge_guid == edge_guid && c.srv_guid == srv_guid && c.mid_guid == mid_guid && c.dev_uid == mid_rt.DevUid && c.unit_id == item.UnitId && c.bts_id == item.ChlId, m => new edge_channel
                                                                 {
-                                                                    channelInfo.TestId = item.TestId;
-                                                                    channelInfo.rt_status= CheckWorkType(item.WorkType);
-                                                                    UnitWork.Update(channelInfo);
-                                                                    UnitWork.Save();
-                                                                }
+                                                                    TestId = item.TestId,
+                                                                    rt_status = CheckWorkType(item.WorkType)
+                                                                });
+                                                                UnitWork.Save();
                                                             }
                                                         }
                                                     }
