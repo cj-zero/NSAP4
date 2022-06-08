@@ -84,6 +84,8 @@ namespace OpenAuth.Repository
             //生产收货
             modelBuilder.Entity<OIGN>().HasKey(o => o.DocEntry);
             modelBuilder.Entity<IGN1>().HasKey(o => new { o.DocEntry, o.LineNum });
+            modelBuilder.Entity<OWOR>().HasKey(o => o.DocEntry);
+            modelBuilder.Entity<WOR1>().HasKey(o => new { o.DocEntry, o.LineNum });
             //库存转储
         }
         //非数据库表格
@@ -905,7 +907,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<IGE7> Ige7s { get; set; }
         //public virtual DbSet<IGE8> Ige8s { get; set; }
         //public virtual DbSet<IGE9> Ige9s { get; set; }
-        //public virtual DbSet<IGN1> Ign1s { get; set; }
+        public virtual DbSet<IGN1> Ign1s { get; set; }
         //public virtual DbSet<IGN10> Ign10s { get; set; }
         //public virtual DbSet<IGN11> Ign11s { get; set; }
         //public virtual DbSet<IGN12> Ign12s { get; set; }
@@ -1377,7 +1379,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<OIDX> Oidxes { get; set; }
         //public virtual DbSet<OIEI> Oieis { get; set; }
         //public virtual DbSet<OIGE> Oiges { get; set; }
-        //public virtual DbSet<OIGN> Oigns { get; set; }
+        public virtual DbSet<OIGN> Oigns { get; set; }
         //public virtual DbSet<OIGW> Oigws { get; set; }
         //public virtual DbSet<OILM> Oilms { get; set; }
         //public virtual DbSet<OIMT> Oimts { get; set; }

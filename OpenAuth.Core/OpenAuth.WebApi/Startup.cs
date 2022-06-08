@@ -44,6 +44,7 @@ using OpenAuth.Repository.Extensions;
 using OpenAuth.WebApi.Model;
 using Serilog;
 using Swashbuckle.AspNetCore.SwaggerUI;
+using OpenAuth.App.WMS;
 
 namespace OpenAuth.WebApi
 {
@@ -195,7 +196,7 @@ namespace OpenAuth.WebApi
             services.AddNsapSignalR(Configuration);
 
             //SAP
-            //services.AddSap();
+            services.AddSap(Configuration);
 
             //CAP
             services.AddNewareCAP(Configuration);

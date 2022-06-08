@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("IGN1")]
-    public partial class IGN1 : Entity
+    public partial class IGN1
     {
         public IGN1()
         {
