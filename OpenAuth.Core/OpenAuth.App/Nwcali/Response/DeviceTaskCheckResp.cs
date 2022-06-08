@@ -17,6 +17,8 @@ namespace OpenAuth.App.Nwcali.Response
         /// </summary>
         public int CheckType { get; set; }
         public string CheckName { get; set; }
+        public int ErrCount { get; set; }
+        public int CheckStatus { get; set; }
         public List<string> ErrList { get; set; }
     }
 }

@@ -168,6 +168,12 @@ namespace OpenAuth.App.Nwcali
                                                                                 channel.bts_id = cItem.Value;
                                                                                 channel.status = 1;
                                                                                 channel.CreateTime = DateTime.Now;
+                                                                                channel.low_no = lItem.low_no;
+                                                                                channel.unit_id = lItem.unit_id;
+                                                                                channel.dev_uid = mItem.dev_uid;
+                                                                                channel.TestId = 0;
+                                                                                channel.rt_status = -1;
+                                                                                channel.bts_server_ip = item.bts_server_ip;
                                                                                 channelList.Add(channel);
                                                                             }
                                                                         }
@@ -274,13 +280,21 @@ namespace OpenAuth.App.Nwcali
                                                                 var deviceTestLog = UnitWork.Find<DeviceTestLog>(null).Where(c => c.EdgeGuid == edge_guid && c.SrvGuid == srv_guid && c.DevUid == mid_rt.DevUid && c.UnitId == item.UnitId && c.ChlId == item.ChlId && c.TestId == item.TestId).FirstOrDefault();
                                                                 if (deviceTestLog != null)
                                                                 {
-                                                                    deviceTestLog.Status = chaeckWorkType(item.WorkType);
+                                                                    deviceTestLog.Status = CheckWorkType(item.WorkType);
                                                                     deviceTestLog.ChangeStatusTime = DateTime.Now;
                                                                     deviceTestLog.StepId = (int)item.StepId;
                                                                     string v = "0x" + item.PrtCode.ToString("X8");
                                                                     deviceTestLog.CodeTxt = UnitWork.Find<DeviceTestCode>(null).Where(c => c.PrtCode == v).Select(c => c.CodeTxt).FirstOrDefault();
                                                                     deviceTestLog.PrtCode = item.PrtCode.ToString();
                                                                     UnitWork.Update(deviceTestLog);
+                                                                    UnitWork.Save();
+                                                                }
+                                                                var channelInfo = UnitWork.Find<edge_channel>(null).Where(c => c.edge_guid == edge_guid && c.srv_guid == srv_guid && c.mid_guid == mid_guid && c.dev_uid == mid_rt.DevUid && c.unit_id == item.UnitId && c.bts_id == item.ChlId).FirstOrDefault();
+                                                                if (channelInfo != null)
+                                                                {
+                                                                    channelInfo.TestId = item.TestId;
+                                                                    channelInfo.rt_status= CheckWorkType(item.WorkType);
+                                                                    UnitWork.Update(channelInfo);
                                                                     UnitWork.Save();
                                                                 }
                                                             }
@@ -294,7 +308,7 @@ namespace OpenAuth.App.Nwcali
                             }
                             catch (Exception ex)
                             {
-                                Log.Logger.Error($"rt订阅数据解析异常：edge_guids={edge_guid}", ex);
+                                Log.Logger.Error($"rt订阅数据解析异常：edge_guids={edge_guid},{ex.Message}", ex);
                             }
                         }
                         break;
@@ -324,7 +338,7 @@ namespace OpenAuth.App.Nwcali
         /// </summary>
         /// <param name="WorkType"></param>
         /// <returns></returns>
-        public int chaeckWorkType(uint WorkType)
+        public int CheckWorkType(uint WorkType)
         {
             string res = Convert.ToString(WorkType, 2).PadLeft(16, '0');
             char[] arr = res.ToCharArray();

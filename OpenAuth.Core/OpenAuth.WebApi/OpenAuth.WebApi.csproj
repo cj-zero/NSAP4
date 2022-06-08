@@ -238,6 +238,15 @@
     <None Update="Templates\PrintSalesOrdersheader.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Templates\seal\东莞新威.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Templates\seal\新威尔.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Templates\seal\新能源.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Templates\tan.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

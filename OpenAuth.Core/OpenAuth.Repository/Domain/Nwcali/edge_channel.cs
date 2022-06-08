@@ -60,11 +60,42 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         public ushort? status { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
         public DateTime? CreateTime { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public int low_no { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public int unit_id { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public int dev_uid { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public long TestId { get; set; }
+        /// <summary>
+        /// 指令执行状态（-1:测试完成  -2:测试进行中 -3:用户停止 -4:保护 0:测试已启动 1:暂停测试 2:离线,3:离线暂停 4:蜂鸣器报警 
+        /// 5:同步控制 6:占用下位机 7:点灯 8:抽真空 9:泄真空 10:测漏率,11:启动失败）
+        /// </summary>
+        public int rt_status { get; set; }
+        public string bts_server_ip { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
         public override void GenerateDefaultKeyVal()
         {
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public override bool KeyIsNull()
         {
             return Id == 0;
