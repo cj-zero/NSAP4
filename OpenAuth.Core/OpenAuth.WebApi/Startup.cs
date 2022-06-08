@@ -196,7 +196,7 @@ namespace OpenAuth.WebApi
             services.AddNsapSignalR(Configuration);
 
             //SAP
-            services.AddSap(Configuration);
+            //services.AddSap(Configuration);
 
             //CAP
             services.AddNewareCAP(Configuration);
