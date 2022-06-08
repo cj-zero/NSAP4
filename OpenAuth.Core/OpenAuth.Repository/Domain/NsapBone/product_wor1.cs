@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain
 	/// 
 	/// </summary>
     [Table("product_wor1")]
-    public partial class product_wor1 
+    public partial class product_wor1 : Entity
     {
         public product_wor1()
         {

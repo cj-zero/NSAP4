@@ -76,7 +76,6 @@
   <ItemGroup>
     <Folder Include="Settlement\Response\" />
     <Folder Include="Protos\" />
-    <Folder Include="WMS\Response\" />
   </ItemGroup>
 
   <ItemGroup>
