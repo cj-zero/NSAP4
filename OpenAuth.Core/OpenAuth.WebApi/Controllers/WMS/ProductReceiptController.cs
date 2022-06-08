@@ -8,6 +8,7 @@ using OpenAuth.App.WMS.Request;
 using OpenAuth.App.WMS;
 using Infrastructure;
 using Serilog;
+using OpenAuth.App.Response;
 
 namespace OpenAuth.WebApi.Controllers.WMS
 {
@@ -17,6 +18,10 @@ namespace OpenAuth.WebApi.Controllers.WMS
     public class ProductReceiptController : ControllerBase
     {
         private readonly ProductReceiptApp _productReceiptApp;
+        /// <summary>
+        /// 构造函数
+        /// </summary>
+        /// <param name="app"></param>
         public ProductReceiptController(ProductReceiptApp app)
         {
             _productReceiptApp = app;
@@ -27,18 +32,16 @@ namespace OpenAuth.WebApi.Controllers.WMS
         /// <param name="obj"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Response> AddProductReceipt(AddOrUpdProductReceiptReq obj)
+        public async Task<TableData> AddProductReceipt(AddOrUpdProductReceiptReq obj)
         {
-            var result = new Response();
+            var result = new TableData();
             try
             {
-                await _productReceiptApp.AddProductReceipt(obj);
-                result.Code = 200;
-                result.Message = "已入同步队列";
+                result=await _productReceiptApp.ProductReceiptHandle(obj);
+
             }
             catch (Exception ex)
             {
-
                 result.Code = 500;
                 result.Message = ex.Message;
                 Log.Logger.Error($"地址：{Request.Path}，参数：{obj.ToJson()}, 错误：{result.Message}");

@@ -17,7 +17,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Sap.Handler.Service
 {
-    public class ProductReceiptSapHandler:ICapSubscribe
+    public class ProductReceiptSapHandler
     {
         private readonly IUnitWork UnitWork;
         private readonly Company company;
@@ -27,7 +27,7 @@ namespace Sap.Handler.Service
             UnitWork = unitWork;
             this.company = company;
         }
-        [CapSubscribe("WMS.ProductReceipt.Create")]
+
         public async Task ProductReceiptHandle(AddOrUpdProductReceiptReq obj)
         {
             int eCode;
@@ -134,7 +134,6 @@ namespace Sap.Handler.Service
             }
         }
 
-        [CapSubscribe("WMS.ProductReceipt.ERPCreate")]
         public async Task ProductReceiptHandleERP3(int? docNum,AddOrUpdProductReceiptReq obj)
         {
            string eMsg = string.Empty;
