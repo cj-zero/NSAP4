@@ -447,5 +447,93 @@ namespace OpenAuth.App.Customer
             return result;
             //return await UnitWork.Find<CustomerSeaConf>(null).FirstOrDefaultAsync();
         }
+
+        /// <summary>
+        /// 修改公海通用设置
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> UpdateObject(UpdateCustomerSeaConfigReq req)
+        {
+            var response = new Infrastructure.Response();
+
+            var userInfo = _auth.GetCurrentUser();
+            //判断设置是否存在
+            var objectItem = await UnitWork.Find<CustomerSeaConf>(null).FirstOrDefaultAsync();
+            if (objectItem != null)
+            {
+                //自动放入公海
+                objectItem.PutTime = req.PutTime.TimeOfDay;
+                objectItem.NotifyTime = req.NotifyTime.TimeOfDay;
+                objectItem.NotifyDay = req.NotifyDay;
+                objectItem.Enable = req.Enable;
+
+                //公海认领分配
+                objectItem.ReceiveMaxLimit = req.ReceiveMaxLimit;
+                objectItem.ReceiveJobMax = req.ReceiveJobMax;
+                objectItem.ReceiveJobMin = req.ReceiveJobMin;
+                objectItem.ReceiveEnable = req.ReceiveEnable;
+
+                //掉入公海抢回限制
+                objectItem.BackDay = req.BackDay;
+                objectItem.BackEnable = req.BackEnable;
+
+                objectItem.UpdateDatetime = DateTime.Now;
+                objectItem.UpdateUser = userInfo.User.Name;
+
+                await UnitWork.UpdateAsync<CustomerSeaConf>(objectItem);
+                await UnitWork.SaveAsync();
+            }
+            else
+            {
+
+            }
+
+            //这是否个启用控制着两个定时任务:1.是否启用拉取符合条件的客户进入公海 2.向销售员发送提醒信息
+            objectItem.Enable = req.Enable;
+            await UnitWork.UpdateAsync(objectItem);
+
+            var job = UnitWork.FindSingle<OpenJob>(o => o.JobCall == "OpenAuth.App.Jobs.CustomerSeaJob");
+            var job2 = UnitWork.FindSingle<OpenJob>(o => o.JobCall == "OpenAuth.App.Jobs.PushMessage");
+
+            if (req.Enable == false) //停止
+            {
+                job.Status = 0;
+                job2.Status = 0;
+                await UnitWork.SaveAsync();
+
+                _openJobApp.ChangeJobStatus(new App.Request.ChangeJobStatusReq
+                {
+                    Id = job.Id,
+                    Status = 0
+                });
+
+                _openJobApp.ChangeJobStatus(new App.Request.ChangeJobStatusReq
+                {
+                    Id = job2.Id,
+                    Status = 0
+                });
+            }
+            else //启动
+            {
+                job.Status = 1;
+                job2.Status = 1;
+                await UnitWork.SaveAsync();
+
+                _openJobApp.ChangeJobStatus(new App.Request.ChangeJobStatusReq
+                {
+                    Id = job.Id,
+                    Status = 1
+                });
+
+                _openJobApp.ChangeJobStatus(new App.Request.ChangeJobStatusReq
+                {
+                    Id = job2.Id,
+                    Status = 1
+                });
+            }
+
+            return response;
+        }
     }
 }

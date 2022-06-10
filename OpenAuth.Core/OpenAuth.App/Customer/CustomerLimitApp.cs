@@ -27,12 +27,7 @@ namespace OpenAuth.App.Customer
             _hubContext = hubContext;
         }
 
-        /// <summary>
-        /// 新增or修改组规则
-        /// </summary>
-        /// <param name="req"></param>
-        /// <returns></returns>
-        public async Task<Infrastructure.Response> AddOrUpdateGroupRule(AddOrUpdateGroupRulesReq req)
+        public async Task<Infrastructure.Response> AddGroupRule(AddOrUpdateGroupRulesReq req)
         {
             var response = new Infrastructure.Response();
 
@@ -59,69 +54,99 @@ namespace OpenAuth.App.Customer
                 UpdateDatetime = DateTime.Now,
             };
 
-            //新增操作
-            if (req.Id == null || req.Id <= 0)
+            if (UnitWork.Find<CustomerLimit>(c => c.Name == req.GroupName).Any())
             {
-                using var tran = UnitWork.GetDbContext<CustomerLimit>().Database.BeginTransaction();
-                try
-                {
-                    if (UnitWork.Find<CustomerLimit>(c => c.Name == req.GroupName).Any())
-                    {
-                        response.Message = "分组名称已存在";
-                        response.Code = 500;
-                        return response;
-                    }
-
-                    await UnitWork.AddAsync<CustomerLimit, int>(customerLimit);
-                    await UnitWork.SaveAsync();
-                    //把子类的规则id补上
-                    rules.All(r =>
-                    {
-                        r.CustomerLimitId = customerLimit.Id;
-                        return true;
-                    });
-                    await UnitWork.BatchAddAsync<CustomerLimitRule, int>(rules.ToArray());
-                    await UnitWork.SaveAsync();
-                    await tran.CommitAsync();
-                }
-                catch (Exception ex)
-                {
-                    await tran.RollbackAsync();
-                    response.Code = 500;
-                    response.Message = ex.InnerException?.Message ?? ex.Message ?? "";
-                }
+                response.Message = "分组名称已存在";
+                response.Code = 500;
+                return response;
             }
-            //修改操作
-            else
+
+            using var tran = UnitWork.GetDbContext<CustomerLimit>().Database.BeginTransaction();
+            try
             {
-                using var tran = UnitWork.GetDbContext<CustomerLimit>().Database.BeginTransaction();
-                try
+                await UnitWork.AddAsync<CustomerLimit, int>(customerLimit);
+                await UnitWork.SaveAsync();
+                //把子类的规则id补上
+                rules.All(r =>
                 {
-                    var instance = await UnitWork.Find<CustomerLimit>(null).FirstOrDefaultAsync();
-                    instance.Name = req.GroupName;
-                    instance.UpdateUser = userName;
-                    instance.UpdateDatetime = DateTime.Now;
+                    r.CustomerLimitId = customerLimit.Id;
+                    return true;
+                });
+                await UnitWork.BatchAddAsync<CustomerLimitRule, int>(rules.ToArray());
+                await UnitWork.SaveAsync();
+                await tran.CommitAsync();
 
-                    await UnitWork.UpdateAsync<CustomerLimit>(instance);
+                response.Message = customerLimit.Id.ToString();
+            }
+            catch (Exception ex)
+            {
+                await tran.RollbackAsync();
+                response.Message = ex.InnerException?.Message ?? ex.Message ?? "";
+                response.Code = 500;
+            }
 
-                    //规则先删除,再新增
-                    await UnitWork.DeleteAsync<CustomerLimitRule>(c => c.CustomerLimitId == req.Id);
-                    rules.All(r =>
-                    {
-                        r.CustomerLimitId = req.Id.Value;
-                        return true;
-                    });
-                    await UnitWork.BatchAddAsync<CustomerLimitRule, int>(rules.ToArray());
+            return response;
+        }
 
-                    await UnitWork.SaveAsync();
-                    await tran.CommitAsync();
-                }
-                catch (Exception ex)
+        /// <summary>
+        /// 修改组规则
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> UpdateGroupRule(AddOrUpdateGroupRulesReq req)
+        {
+            var response = new Infrastructure.Response();
+
+            var userInfo = _auth.GetCurrentUser();
+            var userName = userInfo.User.Name;
+
+            var rules = req.Rules.Select(r => new CustomerLimitRule
+            {
+                CustomerType = int.Parse(r.CustomerTypeId),
+                Limit = r.Limit,
+                CreateUser = userName,
+                CreateDatetime = DateTime.Now,
+                UpdateUser = userName,
+                UpdateDatetime = DateTime.Now,
+            }).ToList();
+
+            var customerLimit = new CustomerLimit
+            {
+                Name = req.GroupName,
+                Describe = "",
+                CreateUser = userName,
+                CreateDatetime = DateTime.Now,
+                UpdateUser = userName,
+                UpdateDatetime = DateTime.Now,
+            };
+
+            using var tran = UnitWork.GetDbContext<CustomerLimit>().Database.BeginTransaction();
+            try
+            {
+                var instance = await UnitWork.Find<CustomerLimit>(null).FirstOrDefaultAsync();
+                instance.Name = req.GroupName;
+                instance.UpdateUser = userName;
+                instance.UpdateDatetime = DateTime.Now;
+
+                await UnitWork.UpdateAsync<CustomerLimit>(instance);
+
+                //规则先删除,再新增
+                await UnitWork.DeleteAsync<CustomerLimitRule>(c => c.CustomerLimitId == req.Id);
+                rules.All(r =>
                 {
-                    await tran.RollbackAsync();
-                    response.Code = 500;
-                    response.Message = ex.InnerException?.Message ?? ex.Message ?? "";
-                }
+                    r.CustomerLimitId = req.Id.Value;
+                    return true;
+                });
+                await UnitWork.BatchAddAsync<CustomerLimitRule, int>(rules.ToArray());
+
+                await UnitWork.SaveAsync();
+                await tran.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                await tran.RollbackAsync();
+                response.Code = 500;
+                response.Message = ex.InnerException?.Message ?? ex.Message ?? "";
             }
 
             return response;
@@ -139,7 +164,7 @@ namespace OpenAuth.App.Customer
                 .WhereIf(req.Id != null && req.Id > 0, c => c.Id == req.Id)
                 .Include(x => x.CustomerLimitRules)
                 .Include(x => x.CustomerLimitSalers)
-                .OrderByDescending(x => x.UpdateDatetime)
+                .OrderByDescending(x => x.CreateDatetime)
                 .Select(x => new QueryCustomerLimitResponse
                 {
                     GroupId = x.Id,
@@ -209,9 +234,36 @@ namespace OpenAuth.App.Customer
         public async Task<Infrastructure.Response> UpdateGroupUser(AddOrUpdateGroupUsersReq req)
         {
             var response = new Infrastructure.Response();
+            response.Message = "";
 
             var userInfo = _auth.GetCurrentUser();
             var userName = userInfo.User.Name;
+
+            foreach(var item in req.Users)
+            {
+                var ruleName = await (from l in UnitWork.Find<CustomerLimit>(null)
+                                      join s in UnitWork.Find<CustomerLimitSaler>(null) on l.Id equals s.CustomerLimitId
+                                      where s.SalerId == item.UserId
+                                      select l.Name).FirstOrDefaultAsync();
+                if (ruleName != null)
+                {
+                    response.Message += $"{item.UserName}已存在规则组:{ruleName} \n";
+                }
+            }
+
+            //var limits = from c in UnitWork.Find<CustomerLimit>(null)
+            //             join l in UnitWork.Find<>
+            foreach (var item in req.Users)
+            {
+
+
+            }
+
+            if (!string.IsNullOrWhiteSpace(response.Message))
+            {
+                response.Code = 500;
+                return response;
+            }
 
             var users = req.Users.Select(u => new CustomerLimitSaler
             {

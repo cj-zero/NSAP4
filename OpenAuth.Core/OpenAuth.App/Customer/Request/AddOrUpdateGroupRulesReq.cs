@@ -17,6 +17,11 @@ namespace OpenAuth.App.Customer.Request
         public string GroupName { get; set; }
 
         /// <summary>
+        /// 批注内容
+        /// </summary>
+        public string Remark { get; set; }
+
+        /// <summary>
         /// 规则列表
         /// </summary>
         public List<Rule> Rules { get; set; }

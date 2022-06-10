@@ -25,18 +25,39 @@ namespace OpenAuth.WebApi.Controllers.Customer
         }
 
         /// <summary>
-        /// 新增or修改组规则
+        /// 新增组规则
         /// </summary>
-        /// <param name="req"></param>
         /// <returns></returns>
-        [HttpPost]
         public async Task<Infrastructure.Response> AddGroupRules(AddOrUpdateGroupRulesReq req)
         {
             var response = new Infrastructure.Response();
 
             try
             {
-                response = await _customerLimitApp.AddOrUpdateGroupRule(req);
+                response = await _customerLimitApp.AddGroupRule(req);
+            }
+            catch (Exception ex)
+            {
+                response.Message = ex.InnerException?.Message ?? ex.Message ?? "";
+                response.Code = 500;
+            }
+
+            return response;
+        }
+
+        /// <summary>
+        /// 修改组规则
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Infrastructure.Response> UpdateGroupRules(AddOrUpdateGroupRulesReq req)
+        {
+            var response = new Infrastructure.Response();
+
+            try
+            {
+                response = await _customerLimitApp.UpdateGroupRule(req);
             }
             catch (Exception ex)
             {

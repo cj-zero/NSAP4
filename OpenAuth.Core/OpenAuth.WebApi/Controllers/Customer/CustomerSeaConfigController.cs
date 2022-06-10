@@ -185,5 +185,28 @@ namespace OpenAuth.WebApi.Controllers.Customer
             return result;
             //return await _customerSeaConfApp.GetCustomerSeaConfig();
         }
+
+        /// <summary>
+        /// 修改公海通用设置
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Infrastructure.Response> UpdateObject(UpdateCustomerSeaConfigReq req)
+        {
+            var response = new Infrastructure.Response();
+
+            try
+            {
+                response = await _customerSeaConfApp.UpdateObject(req);
+            }
+            catch (Exception ex)
+            {
+                response.Message = ex.InnerException?.Message ?? ex.Message ?? "";
+                response.Code = 500;
+            }
+
+            return response;
+        }
     }
 }
