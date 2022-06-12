@@ -31,6 +31,14 @@ namespace OpenAuth.App.Customer
         {
             var response = new Infrastructure.Response();
 
+            //全部客户规则与其他规则不共存
+            if (req.Rules.Any(r => r.CustomerTypeId == "0") && req.Rules.Any(r => r.CustomerTypeId != "0"))
+            {
+                response.Message = "全部客户规则与其他规则不能一起出现";
+                response.Code = 500;
+                return response;
+            }
+
             var userInfo = _auth.GetCurrentUser();
             var userName = userInfo.User.Name;
 
@@ -47,7 +55,7 @@ namespace OpenAuth.App.Customer
             var customerLimit = new CustomerLimit
             {
                 Name = req.GroupName,
-                Describe = "",
+                Describe = req.Remark,
                 CreateUser = userName,
                 CreateDatetime = DateTime.Now,
                 UpdateUser = userName,
@@ -96,6 +104,16 @@ namespace OpenAuth.App.Customer
         public async Task<Infrastructure.Response> UpdateGroupRule(AddOrUpdateGroupRulesReq req)
         {
             var response = new Infrastructure.Response();
+
+            if (req.Rules.Any(r => r.CustomerTypeId == "0"))
+            {
+                if (await UnitWork.Find<CustomerLimitRule>(c => c.CustomerLimitId == req.Id && c.CustomerType != 0).AnyAsync())
+                {
+                    response.Message = "全部客户规则与其他规则不能一起出现";
+                    response.Code = 500;
+                    return response;
+                }
+            }
 
             var userInfo = _auth.GetCurrentUser();
             var userName = userInfo.User.Name;
@@ -169,6 +187,7 @@ namespace OpenAuth.App.Customer
                 {
                     GroupId = x.Id,
                     GroupName = x.Name,
+                    Description = x.Describe,
                     IsDelete = x.Isdelete,
                     RuleResponses = x.CustomerLimitRules.Select(r => new RuleResponse { CustomerType = r.CustomerType, Limit = r.Limit }),
                     SalerResponses = x.CustomerLimitSalers.Select(s => new SalerResponse { SalerId = s.SalerId, SalerName = s.SalerName })
@@ -231,7 +250,7 @@ namespace OpenAuth.App.Customer
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task<Infrastructure.Response> UpdateGroupUser(AddOrUpdateGroupUsersReq req)
+        public async Task<Infrastructure.Response> UpdateGroupUser(AddOrDeleteGroupUsersReq req)
         {
             var response = new Infrastructure.Response();
             response.Message = "";
@@ -294,6 +313,204 @@ namespace OpenAuth.App.Customer
             }
 
             return response;
+        }
+
+        /// <summary>
+        /// 新增规则组用户
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> AddGroupUser(AddOrDeleteGroupUsersReq req)
+        {
+            var response = new Infrastructure.Response();
+            response.Message = "";
+            //判断用户是否已存在规则组中
+            foreach (var user in req.Users)
+            {
+                var ruleName = await (from l in UnitWork.Find<CustomerLimit>(null)
+                                      join s in UnitWork.Find<CustomerLimitSaler>(null) on l.Id equals s.CustomerLimitId
+                                      where s.SalerId == user.UserId
+                                      select l.Name).FirstOrDefaultAsync();
+                if (ruleName != null)
+                {
+                    response.Message += $"{user.UserName}已存在规则组:{ruleName} \n";
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(response.Message))
+            {
+                response.Code = 500;
+                return response;
+            }
+
+            //判断用户的客户数是否已超过规则的限制
+            var rules = from c in UnitWork.Find<CustomerLimit>(null)
+                        join r in UnitWork.Find<CustomerLimitRule>(null) on c.Id equals r.CustomerLimitId
+                        where c.Id == req.Id
+                        select new
+                        {
+                            r.CustomerType,
+                            r.Limit,
+                        };
+            foreach (var user in req.Users)
+            {
+                //如果有全部客户数量限制
+                if (rules.Any(r => r.CustomerType == 0))
+                {
+                    var rule = rules.First(r => r.CustomerType == 0);
+                    var count = await UnitWork.Find<OCRD>(c => c.SlpCode == user.SlpCode).CountAsync();
+                    if (count >= rule.Limit)
+                    {
+                        response.Message += $"{user.UserName}的全部客户数量限制为{rule.Limit}个 \n";
+                        continue;
+                    }
+                }
+                //如果有未报价客户数量限制
+                if (rules.Any(r => r.CustomerType == 1))
+                {
+                    var rule = rules.First(r => r.CustomerType == 1);
+                    var count = await (from c in UnitWork.Find<OCRD>(null)
+                                       join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode into temp
+                                       from t in temp.DefaultIfEmpty()
+                                       where c.SlpCode == user.SlpCode && t.CardCode == null
+                                       select c.CardCode).CountAsync();
+                    if (count >= rule.Limit)
+                    {
+                        response.Message += $"{user.UserName}的未报价客户数量限制为{rule.Limit}个 \n";
+                        continue;
+                    }
+                }
+                //如果有已报价未转订单客户数限制
+                if (rules.Any(r => r.CustomerType == 2))
+                {
+                    var rule = rules.First(r => r.CustomerType == 2);
+                    //已报价未转销售单
+                    var count = await (from c in UnitWork.Find<OCRD>(null)
+                                       join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode
+                                       join r in UnitWork.Find<ORDR>(null) on c.CardCode equals r.CardCode into temp
+                                       from t in temp.DefaultIfEmpty()
+                                       where c.SlpCode == user.SlpCode && t.CardCode == null
+                                       select c.CardCode).CountAsync();
+                    if (count >= rule.Limit)
+                    {
+                        response.Message += $"{user.UserName}的已成交客户数限制为{rule.Limit}个 \n";
+                        continue;
+                    }
+                }
+                //如果有已有订单未有交货单客户数限制
+                if (rules.Any(r => r.CustomerType == 3))
+                {
+                    var rule = rules.First(r => r.CustomerType == 3);
+                    //已销售未转交货
+                    var count = await (from c in UnitWork.Find<OCRD>(null)
+                                       join r in UnitWork.Find<ORDR>(null) on c.CardCode equals r.CardCode
+                                       join d in UnitWork.Find<ODLN>(null) on c.CardCode equals d.CardCode into temp
+                                       from t in temp.DefaultIfEmpty()
+                                       where c.SlpCode == user.SlpCode && t.CardCode == null
+                                       select c.CardCode).CountAsync();
+                    if (count >= rule.Limit)
+                    {
+                        response.Message += $"{user.UserName}的未转销售订单(已报价)客户数限制为{rule.Limit}个 \n";
+                        continue;
+                    }
+                }
+                //如果有已成交客户数限制
+                if (rules.Any(r => r.CustomerType == 4))
+                {
+                    var rule = rules.First(r => r.CustomerType == 4);
+                    var count = await (from c in UnitWork.Find<OCRD>(null)
+                                       join d in UnitWork.Find<ODLN>(null) on c.CardCode equals d.CardCode
+                                       where c.SlpCode == user.SlpCode
+                                       select c.CardCode).Distinct().CountAsync();
+                    if (count >= rule.Limit)
+                    {
+                        response.Message += $"{user.UserName}的未交货(已转销售订单)客户数限制为{rule.Limit}个 \n";
+                        continue;
+                    }
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(response.Message))
+            {
+                response.Code = 500;
+                return response;
+            }
+
+            var userInfo = _auth.GetCurrentUser();
+            var userName = userInfo.User.Name;
+            var users = req.Users.Select(u => new CustomerLimitSaler
+            {
+                CustomerLimitId = req.Id,
+                SalerId = u.UserId,
+                SalerName = u.UserName,
+                CreateUser = userName,
+                CreateDatetime = DateTime.Now,
+                UpdateUser = userName,
+                UpdateDatetime = DateTime.Now,
+            });
+
+            using var tran = UnitWork.GetDbContext<CustomerLimit>().Database.BeginTransaction();
+            try
+            {
+                await UnitWork.DeleteAsync<CustomerLimitSaler>(c => c.CustomerLimitId == req.Id);
+                await UnitWork.BatchAddAsync<CustomerLimitSaler, int>(users.ToArray());
+
+                await UnitWork.SaveAsync();
+                await tran.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                await tran.RollbackAsync();
+
+                response.Code = 500;
+                response.Message = ex.InnerException?.Message ?? ex.Message ?? "";
+            }
+            return response;
+        }
+
+        /// <summary>
+        /// 删除规则组用户
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> DeleteGroupUser(AddOrDeleteGroupUsersReq req)
+        {
+            var response = new Infrastructure.Response();
+
+            await UnitWork.DeleteAsync<CustomerLimitSaler>(c => c.CustomerLimitId == req.Id && req.Users.Select(u => u.UserId).Contains(c.SalerId));
+            await UnitWork.SaveAsync();
+
+            return response;
+        }
+
+        /// <summary>
+        /// 获取销售员信息
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetSlpInfos(QuerySlpReq req)
+        {
+            var result = new TableData();
+
+            var query = from u in UnitWork.Find<base_user>(null)
+                        .WhereIf(!string.IsNullOrWhiteSpace(req.Account), u => u.log_nm == req.Account)
+                        .WhereIf(!string.IsNullOrWhiteSpace(req.Name), u => u.user_nm == req.Name)
+                        join ud in UnitWork.Find<base_user_detail>(null) on u.user_id equals ud.user_id
+                        join s in UnitWork.Find<sbo_user>(null) on u.user_id equals s.user_id
+                        join d in UnitWork.Find<base_dep>(null)
+                        .WhereIf(!string.IsNullOrWhiteSpace(req.Dept), d => d.dep_alias == req.Dept)
+                        on ud.dep_id equals d.dep_id
+                        where s.sbo_id == Define.SBO_ID && new int[] { 0, 1 }.Contains(ud.status)
+                        select new
+                        {
+                            u.log_nm,
+                            u.user_nm,
+                            d.dep_alias,
+                            d.dep_nm,
+                            s.sale_id
+                        };
+
+            result.Data = await query.ToListAsync();
+            result.Count = await query.CountAsync();
+
+            return result;
         }
 
 

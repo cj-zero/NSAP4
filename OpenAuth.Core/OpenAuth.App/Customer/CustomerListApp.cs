@@ -655,9 +655,9 @@ namespace OpenAuth.App.Customer
                 }
 
                 customers.Add(customer);
-                #endregion
             }
 
+            #endregion
             //判断有问题
             if (!string.IsNullOrWhiteSpace(response.Message))
             {

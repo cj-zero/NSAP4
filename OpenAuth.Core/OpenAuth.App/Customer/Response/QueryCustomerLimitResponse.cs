@@ -17,6 +17,11 @@ namespace OpenAuth.App.Customer.Response
         public string GroupName { get; set; }
 
         /// <summary>
+        /// 规则描述
+        /// </summary>
+        public string Description { get; set; }
+
+        /// <summary>
         /// 是否启用
         /// </summary>
         public bool IsDelete { get; set; }

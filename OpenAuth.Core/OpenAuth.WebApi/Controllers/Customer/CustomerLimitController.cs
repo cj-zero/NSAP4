@@ -130,18 +130,18 @@ namespace OpenAuth.WebApi.Controllers.Customer
         }
 
         /// <summary>
-        /// 新增or修改用户组用户
+        /// 向规则组添加用户
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Infrastructure.Response> UpdateGroupUser(AddOrUpdateGroupUsersReq req)
+        public async Task<Infrastructure.Response> AddGroupUser(AddOrDeleteGroupUsersReq req)
         {
             var response = new Infrastructure.Response();
 
             try
             {
-                response = await _customerLimitApp.UpdateGroupUser(req);
+                response = await _customerLimitApp.AddGroupUser(req);
             }
             catch (Exception ex)
             {
@@ -151,6 +151,75 @@ namespace OpenAuth.WebApi.Controllers.Customer
 
             return response;
         }
+
+        /// <summary>
+        /// 删除规则组用户
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Infrastructure.Response> DeleteGroupUser(AddOrDeleteGroupUsersReq req)
+        {
+            var response = new Infrastructure.Response();
+
+            try
+            {
+                response = await _customerLimitApp.DeleteGroupUser(req);
+            }
+            catch (Exception ex)
+            {
+                response.Message = ex.InnerException?.Message ?? ex.Message ?? "";
+                response.Code = 500;
+            }
+
+            return response;
+        }
+
+        /// <summary>
+        /// 获取销售员信息
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> GetSlpInfos(QuerySlpReq req)
+        {
+            var response = new TableData();
+
+            try
+            {
+                response = await _customerLimitApp.GetSlpInfos(req);
+            }
+            catch (Exception ex)
+            {
+                response.Message = ex.InnerException?.Message ?? ex.Message ?? "";
+                response.Code = 500;
+            }
+
+            return response;
+        }
+
+        /// <summary>
+        /// 新增or修改用户组用户
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        //[HttpPost]
+        //public async Task<Infrastructure.Response> UpdateGroupUser(AddOrUpdateGroupUsersReq req)
+        //{
+        //    var response = new Infrastructure.Response();
+
+        //    try
+        //    {
+        //        response = await _customerLimitApp.UpdateGroupUser(req);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        response.Message = ex.InnerException?.Message ?? ex.Message ?? "";
+        //        response.Code = 500;
+        //    }
+
+        //    return response;
+        //}
 
         /// <summary>
         /// 测试同步数据

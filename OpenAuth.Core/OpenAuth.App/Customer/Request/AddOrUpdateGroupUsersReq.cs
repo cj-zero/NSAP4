@@ -4,7 +4,7 @@ using System.Text;
 
 namespace OpenAuth.App.Customer.Request
 {
-    public class AddOrUpdateGroupUsersReq
+    public class AddOrDeleteGroupUsersReq
     {
         /// <summary>
         /// 规则id
@@ -25,5 +25,10 @@ namespace OpenAuth.App.Customer.Request
         /// 用户姓名
         /// </summary>
         public string UserName { get; set; }
+
+        /// <summary>
+        /// 用户销售编号
+        /// </summary>
+        public int SlpCode { get; set; }
     }
 }
