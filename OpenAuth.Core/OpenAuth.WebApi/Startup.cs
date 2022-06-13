@@ -51,7 +51,6 @@ namespace OpenAuth.WebApi
     {
         public IHostEnvironment Environment { get; }
         public IConfiguration Configuration { get; }
-        private static MqttNetClient _mqttNetClient;
         public Startup(IConfiguration configuration, IHostEnvironment environment)
         {
             Configuration = configuration;
@@ -222,18 +221,6 @@ namespace OpenAuth.WebApi
                 x.MultipartBodyLengthLimit = 1073741824;
             });
 
-            #region MQTT
-            var mqttConfig = new MqttConfig
-            {
-                Server = Configuration.GetValue<string>("MqttOption:HostIp"),
-                Port = int.Parse(Configuration.GetValue<string>("MqttOption:HostPort")),
-                Username = Configuration.GetValue<string>("MqttOption:UserName"),
-                Password = Configuration.GetValue<string>("MqttOption:Password"),
-                ClientIdentify = Configuration.GetValue<string>("MqttOption:ClientIdentify")
-            };
-            _mqttNetClient = new MqttNetClient(mqttConfig, MessageReceived);
-            services.AddSingleton(_mqttNetClient);
-            #endregion
         }
         private List<string> GetControllers()
         {
@@ -256,8 +243,6 @@ namespace OpenAuth.WebApi
             {
                 app.UseDeveloperExceptionPage();
             }
-            ServiceLocator.ApplicationBuilder = app;
-            ServiceLocator.serviceProvider = app.ApplicationServices;
             //.SetServices(serviceProvider);
             // 配置静态autoMapper
             AutoMapperHelper.UseStateAutoMapper(app);
@@ -314,18 +299,6 @@ namespace OpenAuth.WebApi
                 c.OAuthAppName("开源版webapi认证"); // 描述
             });
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
-        }
-
-        /// <summary>
-        /// 接收消息
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        public void MessageReceived(object sender, MqttApplicationMessageReceivedEventArgs e)
-        {
-            var topic = e.ApplicationMessage.Topic;
-            var _mqttSubscribeApp = ServiceLocator.serviceProvider.GetService(typeof(MqttSubscribeApp)) as MqttSubscribeApp;
-            _mqttSubscribeApp.SubscribeAsyncResult(topic, e.ApplicationMessage.Payload);
         }
     }
 }

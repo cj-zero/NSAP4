@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -28,18 +29,15 @@ namespace OpenAuth.App
     public class StepVersionApp : OnlyUnitWorkBaeApp
     {
         private readonly IOptions<AppSetting> _appConfiguration;
-        private readonly MqttNetClient _mqttNetClient;
         /// <summary>
         /// 工步模板
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
         /// <param name="appConfiguration"></param>
-        /// <param name="mqttNetClient"></param>
-        public StepVersionApp(IUnitWork unitWork, IAuth auth, IOptions<AppSetting> appConfiguration, MqttNetClient mqttNetClient) : base(unitWork, auth)
+        public StepVersionApp(IUnitWork unitWork, IAuth auth, IOptions<AppSetting> appConfiguration) : base(unitWork, auth)
         {
             _appConfiguration = appConfiguration;
-            _mqttNetClient = mqttNetClient;
         }
 
         /// <summary>
@@ -581,19 +579,8 @@ namespace OpenAuth.App
         public async Task<TableData> DeviceTestCheckResult()
         {
             var result = new TableData();
-            var edgeList = await UnitWork.Find<edge>(null).Select(c => c.edge_guid).ToListAsync();
-            foreach (var item in edgeList)
-            {
-                string key = $"{_mqttNetClient.clientId}{item}";
-                if (!RedisHelper.Exists(key))
-                {
-                    string topic = $"rt_data/subscribe_{item}";
-                    await _mqttNetClient.SubscribeAsync(topic);
-                    await RedisHelper.SetAsync(key, topic, 86400);
-                }
-            }
-            var list = await UnitWork.Find<DeviceCheckTask>(null).Where(c => string.IsNullOrWhiteSpace(c.TaskId) && c.ErrCount <= 3).OrderBy(c => c.Id).Take(50).ToListAsync();
-            var taskList = await UnitWork.Find<DeviceCheckTask>(null).Where(c => !string.IsNullOrWhiteSpace(c.TaskId) && c.TaskStatus != 2).OrderBy(c => c.Id).Take(50).ToListAsync();
+            var list = await UnitWork.Find<DeviceCheckTask>(null).Where(c => string.IsNullOrWhiteSpace(c.TaskId) && c.ErrCount <= 3).OrderBy(c => c.Id).ToListAsync();
+            var taskList = await UnitWork.Find<DeviceCheckTask>(null).Where(c => !string.IsNullOrWhiteSpace(c.TaskId) && c.TaskStatus != 2).OrderBy(c => c.Id).ToListAsync();
             string url = $"{_appConfiguration.Value.AnalyticsUrl}api/DataCheck/Task";
             Infrastructure.HttpHelper helper = new Infrastructure.HttpHelper(url);
             foreach (var item in list)
@@ -634,48 +621,50 @@ namespace OpenAuth.App
                 await UnitWork.BatchUpdateAsync(list.ToArray());
                 await UnitWork.SaveAsync();
             }
-
-            foreach (var item in taskList)
+            if (taskList.Any())
             {
-                try
+                foreach (var item in taskList)
                 {
-                    string taskurl = $"{_appConfiguration.Value.AnalyticsUrl}api/DataCheck/TaskResult?id={item.TaskId}";
-                    Dictionary<string, string> dic = null;
-                    var taskResult = helper.Get(dic, taskurl);
-                    JObject res = JObject.Parse(taskResult);
-                    if (res["status"] == null || res["status"].ToString() != "200")
+                    try
                     {
-                        continue;
-                    }
-                    if (res["data"] != null)
-                    {
-                        sbyte.TryParse(res["data"]["Status"].ToString(), out sbyte TaskStatus);
-                        item.TaskStatus = TaskStatus;
-                        int.TryParse(res["data"]["ErrCount"].ToString(), out int ErrCount);
-                        item.ErrCount = ErrCount;
-                        item.TaskContent = res["data"]["CheckItems"] != null ? JsonConvert.SerializeObject(res["data"]["CheckItems"]) : "";
-                        var channelTest = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.TaskId == item.TaskId).FirstOrDefaultAsync();
-                        if (channelTest != null)
+                        string taskurl = $"{_appConfiguration.Value.AnalyticsUrl}api/DataCheck/TaskResult?id={item.TaskId}";
+                        Dictionary<string, string> dic = null;
+                        var taskResult = helper.Get(dic, taskurl);
+                        JObject res = JObject.Parse(taskResult);
+                        if (res["status"] == null || res["status"].ToString() != "200")
                         {
-                            channelTest.TaskErrCount = ErrCount;
-                            channelTest.TaskStatus = TaskStatus;
-                            channelTest.TaskContent = res["data"]["CheckItems"] != null ? JsonConvert.SerializeObject(res["data"]["CheckItems"]) : "";
-                            await UnitWork.UpdateAsync(channelTest);
-                            await UnitWork.SaveAsync();
+                            continue;
+                        }
+                        if (res["data"] != null)
+                        {
+                            sbyte.TryParse(res["data"]["Status"].ToString(), out sbyte TaskStatus);
+                            item.TaskStatus = TaskStatus;
+                            int.TryParse(res["data"]["ErrCount"].ToString(), out int ErrCount);
+                            item.ErrCount = ErrCount;
+                            item.TaskContent = res["data"]["CheckItems"] != null ? JsonConvert.SerializeObject(res["data"]["CheckItems"]) : "";
+                            var channelTest = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.TaskId == item.TaskId).FirstOrDefaultAsync();
+                            if (channelTest != null)
+                            {
+                                channelTest.TaskErrCount = ErrCount;
+                                channelTest.TaskStatus = TaskStatus;
+                                channelTest.TaskContent = res["data"]["CheckItems"] != null ? JsonConvert.SerializeObject(res["data"]["CheckItems"]) : "";
+                                await UnitWork.UpdateAsync(channelTest);
+                                await UnitWork.SaveAsync();
+                            }
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        Log.Logger.Error($"烤机任务数据获取失败 TaskId={item.TaskId}", ex);
+                        continue;
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Log.Logger.Error($"烤机任务数据获取失败 TaskId={item.TaskId}", ex);
-                    continue;
-                }
+                var hasCompleteList = taskList.Where(c => c.TaskStatus == 2).ToList();
+                var noCompleteList = taskList.Where(c => c.TaskStatus != 2).ToList();
+                await UnitWork.BatchUpdateAsync(noCompleteList.ToArray());
+                await UnitWork.BatchDeleteAsync(hasCompleteList.ToArray());
+                await UnitWork.SaveAsync();
             }
-            var hasCompleteList = taskList.Where(c => c.TaskStatus == 2).ToList();
-            var noCompleteList = taskList.Where(c => c.TaskStatus != 2).ToList();
-            await UnitWork.BatchUpdateAsync(noCompleteList.ToArray());
-            await UnitWork.BatchDeleteAsync(hasCompleteList.ToArray());
-            await UnitWork.SaveAsync();
             return result;
         }
 
@@ -789,7 +778,6 @@ namespace OpenAuth.App
                     await UnitWork.Find<edge_mid>(null).Where(c => c.edge_guid == EdgeGuid).DeleteFromQueryAsync();
                     await UnitWork.Find<edge_low>(null).Where(c => c.edge_guid == EdgeGuid).DeleteFromQueryAsync();
                     await UnitWork.Find<edge_channel>(null).Where(c => c.edge_guid == EdgeGuid).DeleteFromQueryAsync();
-
                     await UnitWork.AddAsync<edge, int>(edgeInfo);
                     await UnitWork.BatchAddAsync<edge_host, int>(hostList.ToArray());
                     await UnitWork.BatchAddAsync<edge_mid, int>(midList.ToArray());

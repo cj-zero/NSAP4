@@ -10,6 +10,7 @@ using OpenAuth.Repository.Interface;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -21,18 +22,22 @@ namespace OpenAuth.App.Nwcali
     /// <summary>
     /// 
     /// </summary>
-    public class MqttSubscribeApp : OnlyUnitWorkBaeApp, IMqttSubscribe
+    public class MqttSubscribeApp :IMqttSubscribe
     {
         private readonly IOptions<AppSetting> _appConfiguration;
+        private readonly MqttNetClient _mqttClient;
+        private readonly IUnitWork UnitWork;
         /// <summary>
         /// 
         /// </summary>
         /// <param name="unitWork"></param>
-        /// <param name="auth"></param>
         /// <param name="appConfiguration"></param>
-        public MqttSubscribeApp(IUnitWork unitWork, IAuth auth, IOptions<AppSetting> appConfiguration) : base(unitWork, auth)
+        /// <param name="mqttClient"></param>
+        public MqttSubscribeApp(IUnitWork unitWork, IOptions<AppSetting> appConfiguration, MqttNetClient mqttClient)
         {
             _appConfiguration = appConfiguration;
+            _mqttClient = mqttClient;
+            UnitWork = unitWork;
         }
 
         /// <summary>
@@ -70,7 +75,7 @@ namespace OpenAuth.App.Nwcali
                             var userInfo = helper.Get(url, passToken);
                             if (string.IsNullOrWhiteSpace(userInfo))
                             {
-                                //Log.Logger.Error($"MQTT 订阅异常 主题:{topic},报文:{payloads},token:{token}");
+                                Log.Logger.Error($"边缘计算登录账号无效 edge_guids:{edge_guids},token:{token}");
                                 break;
                             }
                             JObject userObj = JObject.Parse(userInfo);
@@ -78,123 +83,143 @@ namespace OpenAuth.App.Nwcali
                             var enterpriseId = _appConfiguration.Value.EnterpriseIds.Split(',').ToList();
                             if (enterpriseId.Contains(userEnterpriseId))
                             {
-                                Log.Logger.Information($"设备数据订阅开始解析 msg_type={msg_type},topics={topics},token={token},edge_guids={edge_guids}");
+                                var edgeCache = RedisHelper.Get(_mqttClient.clientId);
+                                if (!string.IsNullOrWhiteSpace(edgeCache))
+                                {
+                                    var edgeList = edgeCache.Split(',').Distinct().ToList();
+                                    if (!edgeList.Any(c=>c.Contains(edge_guids)))
+                                    {
+                                        edgeList.Add(edge_guids);
+                                    }
+                                    string key = string.Join(",", edgeList);
+                                    RedisHelper.SetAsync(_mqttClient.clientId, key);
+                                }
+                                else
+                                {
+                                    RedisHelper.SetAsync(_mqttClient.clientId, edge_guids);
+                                }
+                                Log.Logger.Information($"设备数据开始解析 msg_type={msg_type},topics={topics},token={token},edge_guids={edge_guids}");
                                 if (msg_type == "3")
                                 {
                                     var obj = JsonConvert.DeserializeObject<EdgeData>(payloads);
                                     if (obj.chl_info.edge_info != null)
                                     {
-                                        var dbContext = UnitWork.GetDbContext<edge>();
-                                        using (var transaction = dbContext.Database.BeginTransaction())
+                                        var edge_guid = obj.edge_guid;
+                                        edge edge = new edge();
+                                        edge.edge_guid = obj.chl_info.edge_guid;
+                                        edge.edg_name = obj.chl_info.edge_info.edg_name == null ? "" : obj.chl_info.edge_info.edg_name;
+                                        edge.address = obj.chl_info.edge_info.address == null ? "" : obj.chl_info.edge_info.address;
+                                        edge.department = obj.chl_info.edge_info.edg_name == null ? "" : obj.chl_info.edge_info.edg_name;
+                                        edge.status = 1;
+                                        edge.CreateTime = DateTime.Now;
+                                        List<edge_host> hostList = new List<edge_host>();
+                                        List<edge_mid> midList = new List<edge_mid>();
+                                        List<edge_low> lowList = new List<edge_low>();
+                                        List<edge_channel> channelList = new List<edge_channel>();
+                                        if (obj.chl_info.data != null)
                                         {
-                                            try
+                                            foreach (var item in obj.chl_info.data)
                                             {
-                                                UnitWork.Find<edge>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
-                                                UnitWork.Find<edge_host>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
-                                                UnitWork.Find<edge_mid>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
-                                                UnitWork.Find<edge_low>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
-                                                UnitWork.Find<edge_channel>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
-                                                UnitWork.Save();
-                                                var edge_guid = obj.edge_guid;
-                                                edge edge = new edge();
-                                                edge.edge_guid = obj.chl_info.edge_guid;
-                                                edge.edg_name = obj.chl_info.edge_info.edg_name == null ? "" : obj.chl_info.edge_info.edg_name;
-                                                edge.address = obj.chl_info.edge_info.address == null ? "" : obj.chl_info.edge_info.address;
-                                                edge.department = obj.chl_info.edge_info.edg_name == null ? "" : obj.chl_info.edge_info.edg_name;
-                                                edge.status = 1;
-                                                edge.CreateTime = DateTime.Now;
-                                                List<edge_host> hostList = new List<edge_host>();
-                                                List<edge_mid> midList = new List<edge_mid>();
-                                                List<edge_low> lowList = new List<edge_low>();
-                                                List<edge_channel> channelList = new List<edge_channel>();
-                                                if (obj.chl_info.data != null)
+                                                var host = new edge_host();
+                                                host.edge_guid = edge_guid;
+                                                host.srv_guid = item.srv_guid;
+                                                host.bts_server_version = item.bts_server_version;
+                                                host.bts_server_ip = item.bts_server_ip;
+                                                host.bts_type = item.bts_type;
+                                                host.status = 1;
+                                                host.CreateTime = DateTime.Now;
+                                                hostList.Add(host);
+                                                if (item.mid_list != null)
                                                 {
-                                                    foreach (var item in obj.chl_info.data)
+                                                    foreach (var mItem in item.mid_list)
                                                     {
-                                                        var host = new edge_host();
-                                                        host.edge_guid = edge_guid;
-                                                        host.srv_guid = item.srv_guid;
-                                                        host.bts_server_version = item.bts_server_version;
-                                                        host.bts_server_ip = item.bts_server_ip;
-                                                        host.bts_type = item.bts_type;
-                                                        host.status = 1;
-                                                        host.CreateTime = DateTime.Now;
-                                                        hostList.Add(host);
-                                                        if (item.mid_list != null)
+                                                        var mid = new edge_mid();
+                                                        mid.edge_guid = edge_guid;
+                                                        mid.srv_guid = item.srv_guid;
+                                                        mid.mid_guid = mItem.mid_guid;
+                                                        mid.dev_uid = mItem.dev_uid;
+                                                        mid.mid_version = mItem.mid_version;
+                                                        mid.production_serial = mItem.production_serial == null ? "" : mItem.production_serial;
+                                                        mid.status = 1;
+                                                        mid.CreateTime = DateTime.Now;
+                                                        midList.Add(mid);
+                                                        if (mItem.low_list != null)
                                                         {
-                                                            foreach (var mItem in item.mid_list)
+                                                            foreach (var lItem in mItem.low_list)
                                                             {
-                                                                var mid = new edge_mid();
-                                                                mid.edge_guid = edge_guid;
-                                                                mid.srv_guid = item.srv_guid;
-                                                                mid.mid_guid = mItem.mid_guid;
-                                                                mid.dev_uid = mItem.dev_uid;
-                                                                mid.mid_version = mItem.mid_version;
-                                                                mid.production_serial = mItem.production_serial == null ? "" : mItem.production_serial;
-                                                                mid.status = 1;
-                                                                mid.CreateTime = DateTime.Now;
-                                                                midList.Add(mid);
-                                                                if (mItem.low_list != null)
+                                                                if (string.IsNullOrWhiteSpace(lItem.low_guid))
                                                                 {
-                                                                    foreach (var lItem in mItem.low_list)
+                                                                    continue;
+                                                                }
+                                                                var low = new edge_low();
+                                                                low.edge_guid = edge_guid;
+                                                                low.srv_guid = item.srv_guid;
+                                                                low.mid_guid = mItem.mid_guid;
+                                                                low.low_guid = lItem.low_guid;
+                                                                low.low_no = lItem.low_no;
+                                                                low.unit_id = lItem.unit_id;
+                                                                low.range_volt = lItem.range_volt.ToString();
+                                                                var low_range_curr = lItem.range_curr_array.Select(x => Math.Abs(x)).Distinct().ToList();
+                                                                low.range_curr_array = string.Join(",", low_range_curr);
+                                                                low.low_version = lItem.low_version;
+                                                                low.status = 1;
+                                                                low.CreateTime = DateTime.Now;
+                                                                lowList.Add(low);
+                                                                if (lItem.channel_list != null)
+                                                                {
+                                                                    foreach (var cItem in lItem.channel_list)
                                                                     {
-                                                                        if (string.IsNullOrWhiteSpace(lItem.low_guid))
-                                                                        {
-                                                                            continue;
-                                                                        }
-                                                                        var low = new edge_low();
-                                                                        low.edge_guid = edge_guid;
-                                                                        low.srv_guid = item.srv_guid;
-                                                                        low.mid_guid = mItem.mid_guid;
-                                                                        low.low_guid = lItem.low_guid;
-                                                                        low.low_no = lItem.low_no;
-                                                                        low.unit_id = lItem.unit_id;
-                                                                        low.range_volt = lItem.range_volt.ToString();
-                                                                        var low_range_curr = lItem.range_curr_array.Select(x => Math.Abs(x)).Distinct().ToList();
-                                                                        low.range_curr_array = string.Join(",", low_range_curr);
-                                                                        low.low_version = lItem.low_version;
-                                                                        low.status = 1;
-                                                                        low.CreateTime = DateTime.Now;
-                                                                        lowList.Add(low);
-                                                                        if (lItem.channel_list != null)
-                                                                        {
-                                                                            foreach (var cItem in lItem.channel_list)
-                                                                            {
-                                                                                var channel = new edge_channel();
-                                                                                channel.edge_guid = edge_guid;
-                                                                                channel.srv_guid = item.srv_guid;
-                                                                                channel.mid_guid = mItem.mid_guid;
-                                                                                channel.low_guid = lItem.low_guid;
-                                                                                channel.bts_id = cItem.Value;
-                                                                                channel.status = 1;
-                                                                                channel.CreateTime = DateTime.Now;
-                                                                                channel.low_no = lItem.low_no;
-                                                                                channel.unit_id = lItem.unit_id;
-                                                                                channel.dev_uid = mItem.dev_uid;
-                                                                                channel.TestId = 0;
-                                                                                channel.rt_status = -1;
-                                                                                channel.bts_server_ip = item.bts_server_ip;
-                                                                                channelList.Add(channel);
-                                                                            }
-                                                                        }
+                                                                        var channel = new edge_channel();
+                                                                        channel.edge_guid = edge_guid;
+                                                                        channel.srv_guid = item.srv_guid;
+                                                                        channel.mid_guid = mItem.mid_guid;
+                                                                        channel.low_guid = lItem.low_guid;
+                                                                        channel.bts_id = cItem.Value;
+                                                                        channel.status = 1;
+                                                                        channel.CreateTime = DateTime.Now;
+                                                                        channel.low_no = lItem.low_no;
+                                                                        channel.unit_id = lItem.unit_id;
+                                                                        channel.dev_uid = mItem.dev_uid;
+                                                                        channel.TestId = 0;
+                                                                        channel.rt_status = -1;
+                                                                        channel.bts_server_ip = item.bts_server_ip;
+                                                                        channelList.Add(channel);
                                                                     }
                                                                 }
                                                             }
                                                         }
                                                     }
                                                 }
-                                                UnitWork.Add<edge, int>(edge);
-                                                UnitWork.BatchAdd<edge_host, int>(hostList.ToArray());
-                                                UnitWork.BatchAdd<edge_mid, int>(midList.ToArray());
-                                                UnitWork.BatchAdd<edge_low, int>(lowList.ToArray());
-                                                UnitWork.BatchAdd<edge_channel, int>(channelList.ToArray());
-                                                UnitWork.Save();
-                                                transaction.Commit();
                                             }
-                                            catch (Exception ex)
+                                        }
+                                        using (var dbContext = UnitWork.GetDbContext<edge>())
+                                        {
+                                            using (var transaction = dbContext.Database.BeginTransaction())
                                             {
-                                                transaction.Rollback();
-                                                Log.Logger.Error($"设备数据更新异常：msg_type={msg_type},edge_guids={edge_guids},topics={topic},token={token}", ex);
+                                                try
+                                                {
+                                                    Stopwatch st = new Stopwatch();
+                                                    st.Start();
+                                                    UnitWork.Find<edge>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
+                                                    UnitWork.Find<edge_host>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
+                                                    UnitWork.Find<edge_mid>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
+                                                    UnitWork.Find<edge_low>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
+                                                    UnitWork.Find<edge_channel>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
+                                                    UnitWork.Add<edge, int>(edge);
+                                                    UnitWork.BatchAdd<edge_host, int>(hostList.ToArray());
+                                                    UnitWork.BatchAdd<edge_mid, int>(midList.ToArray());
+                                                    UnitWork.BatchAdd<edge_low, int>(lowList.ToArray());
+                                                    UnitWork.BatchAdd<edge_channel, int>(channelList.ToArray());
+                                                    UnitWork.Save();
+                                                    transaction.Commit();
+                                                    st.Stop();
+                                                    Log.Logger.Information($"在线设备更新成功 耗时:{st.ElapsedMilliseconds}ms");
+                                                }
+                                                catch (Exception ex)
+                                                {
+                                                    transaction.Rollback();
+                                                    Log.Logger.Error($"设备数据更新异常：msg_type={msg_type},edge_guids={edge_guids},topics={topic},token={token}", ex);
+                                                }
                                             }
                                         }
                                     }
@@ -232,12 +257,14 @@ namespace OpenAuth.App.Nwcali
                                         UnitWork.Find<edge_channel>(null).Where(c => c.edge_guid == edge_guids)
                                             .UpdateFromQuery(c => new edge_channel { status = 1 });
                                     }
+                                    _ = _mqttClient.SubscribeAsync($"rt_data/subscribe_{edge_guids}");
+                                    Log.Logger.Information($"边缘计算{edge_guids}上线 rt订阅成功!");
                                 }
                             }
                         }
                         catch (Exception ex)
                         {
-                            Log.Logger.Error($"设备订阅原始数据异常：msg_type={msg_type},edge_guids={edge_guids},topics={topic},token={token}", ex);
+                            Log.Logger.Error($"设备订阅原始数据异常：msg_type={msg_type},edge_guids={edge_guids},topics={topic},token={token},message={ ex.Message}");
                         }
                         break;
                     case "rt_data":
@@ -289,12 +316,20 @@ namespace OpenAuth.App.Nwcali
                                                                     UnitWork.Update(deviceTestLog);
                                                                     UnitWork.Save();
                                                                 }
-                                                                UnitWork.Update<edge_channel>(c => c.edge_guid == edge_guid && c.srv_guid == srv_guid && c.mid_guid == mid_guid && c.dev_uid == mid_rt.DevUid && c.unit_id == item.UnitId && c.bts_id == item.ChlId, m => new edge_channel
+                                                                try
                                                                 {
-                                                                    TestId = item.TestId,
-                                                                    rt_status = CheckWorkType(item.WorkType)
-                                                                });
-                                                                UnitWork.Save();
+                                                                    UnitWork.Update<edge_channel>(c => c.edge_guid == edge_guid && c.srv_guid == srv_guid && c.mid_guid == mid_guid && c.dev_uid == mid_rt.DevUid && c.unit_id == item.UnitId && c.bts_id == item.ChlId, m => new edge_channel
+                                                                    {
+                                                                        TestId = item.TestId,
+                                                                        rt_status = CheckWorkType(item.WorkType)
+                                                                    });
+                                                                    UnitWork.Save();
+                                                                }
+                                                                catch (Exception ex)
+                                                                {
+                                                                    Log.Logger.Error($"通道状态更新异常：edge_guids={edge_guid},{ex.Message}");
+                                                                    continue;
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -306,7 +341,7 @@ namespace OpenAuth.App.Nwcali
                             }
                             catch (Exception ex)
                             {
-                                Log.Logger.Error($"rt订阅数据解析异常：edge_guids={edge_guid},{ex.Message}", ex);
+                                Log.Logger.Error($"rt订阅数据解析异常：edge_guids={edge_guid},{ex.Message}");
                             }
                         }
                         break;
@@ -365,16 +400,10 @@ namespace OpenAuth.App.Nwcali
             }
             else
             {
-
                 string m = res.Substring(0, 8);
                 int k = Convert.ToInt32(m, 2);
                 return k;
             }
-        }
-
-        public async Task<string> GetCodeText(string code)
-        {
-            return await UnitWork.Find<DeviceTestCode>(null).Where(c => c.PrtCode == code).Select(c => c.CodeTxt).FirstOrDefaultAsync();
         }
     }
 }

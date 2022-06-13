@@ -10,6 +10,7 @@ using Infrastructure;
 using Infrastructure.Helpers;
 using Infrastructure.MQTT;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using OpenAuth.App;
 using OpenAuth.App.Nwcali.Request;
@@ -31,19 +32,16 @@ namespace OpenAuth.WebApi.Controllers
     {
         private readonly StepVersionApp _app;
         private readonly DataService.DataServiceClient _dataServiceClient;
-        private readonly MqttNetClient _mqttNetClient;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="app"></param>
         /// <param name="dataServiceClient"></param>
-        /// <param name="mqttNetClient"></param>
-        public StepVersionsController(StepVersionApp app, DataService.DataServiceClient dataServiceClient, MqttNetClient mqttNetClient)
+        public StepVersionsController(StepVersionApp app, DataService.DataServiceClient dataServiceClient)
         {
             _app = app;
             _dataServiceClient = dataServiceClient;
-            _mqttNetClient = mqttNetClient;
         }
 
         /// <summary>
@@ -152,17 +150,6 @@ namespace OpenAuth.WebApi.Controllers
 
         #region 钉钉烤机
         /// <summary>
-        /// 主题订阅
-        /// </summary>
-        /// <param name="topic"></param>
-        /// <returns></returns>
-        [HttpGet]
-        public async Task<object> SubscribeAsync(string topic)
-        {
-            return await _mqttNetClient.SubscribeAsync(topic);
-        }
-
-        /// <summary>
         /// 工步模板列表
         /// </summary>
         /// <param name="SeriesName">系列名称</param>
@@ -252,14 +239,7 @@ namespace OpenAuth.WebApi.Controllers
                     startTestResp.stepCount = item.stepCount;
                     startTestResp.MaxRange = item.MaxRange;
                     list.Add(startTestResp);
-                    string topic = $"rt_data/subscribe_{item.EdgeGuid}";
-                    string key = $"{_mqttNetClient.clientId}{item.EdgeGuid}";
-                    if (!RedisHelper.Exists(key))
-                    {
-                        await RedisHelper.SetAsync(key, topic, 86400);
-                    }
                     var successList = await _app.SaveTestResult(list);
-                    await _mqttNetClient.SubscribeAsync(topic);
                 }
             }
             catch (Exception e)
@@ -474,14 +454,7 @@ namespace OpenAuth.WebApi.Controllers
                     startTestResp.stepCount = item.stepCount;
                     startTestResp.MaxRange = item.MaxRange;
                     list.Add(startTestResp);
-                    string topic = $"rt_data/subscribe_{item.EdgeGuid}";
-                    string key = $"{_mqttNetClient.clientId}{item.EdgeGuid}";
-                    if (!RedisHelper.Exists(key))
-                    {
-                        await RedisHelper.SetAsync(key, topic, 86400);
-                    }
                     var successList = await _app.SaveTestResult(list);
-                    await _mqttNetClient.SubscribeAsync(topic);
                 }
                 return result;
             }

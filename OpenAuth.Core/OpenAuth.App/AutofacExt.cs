@@ -31,6 +31,7 @@ using Microsoft.Extensions.DependencyModel;
 using Minio;
 using OpenAuth.App.Files;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Nwcali;
 using OpenAuth.App.SSO;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Interface;

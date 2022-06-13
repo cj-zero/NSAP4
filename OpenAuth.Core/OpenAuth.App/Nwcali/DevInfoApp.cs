@@ -20,28 +20,14 @@ namespace OpenAuth.App
     public class DevInfoApp : OnlyUnitWorkBaeApp
     {
         private RevelanceManagerApp _revelanceApp;
-        private readonly MqttNetClient _mqttNetClient;
         /// <summary>
         /// 
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
         /// <param name="mqttNetClient"></param>
-        public DevInfoApp(IUnitWork unitWork, IAuth auth, MqttNetClient mqttNetClient) : base(unitWork, auth)
+        public DevInfoApp(IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
         {
-            _mqttNetClient = mqttNetClient;
-        }
-
-        /// <summary>
-        /// 订阅消息
-        /// </summary>
-        /// <param name="Topic"></param>
-        /// <returns></returns>
-        public async Task<TableData> ReceiveMessage(string Topic)
-        {
-            var result = new TableData();
-            result.Data = await _mqttNetClient.SubscribeAsync(Topic);
-            return result;
         }
 
 

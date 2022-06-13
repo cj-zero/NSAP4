@@ -27,18 +27,6 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         #region 烤机相关
-
-        /// <summary>
-        /// 订阅消息
-        /// </summary>
-        /// <param name="Topic">订阅的主题</param>
-        /// <returns></returns>
-        [HttpGet]
-        public async Task<object> ReceiveMessage(string Topic)
-        {
-            return await _app.ReceiveMessage(Topic);
-        }
-
         /// <summary>
         /// 边缘计算在线未绑定设备列表
         /// </summary>

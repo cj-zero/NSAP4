@@ -1,5 +1,7 @@
-﻿using MQTTnet;
+﻿using Microsoft.Extensions.Configuration;
+using MQTTnet;
 using MQTTnet.Client;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -15,25 +17,27 @@ namespace Infrastructure.MQTT
         public static MqttClient mqttClient;
         private IMqttClientOptions options;
         public string clientId = string.Empty;
-        private MqttConfig mqttConfig;
-
+        private  MqttConfig mqttConfig;
+        public IConfiguration Configuration { get; }
         /// <summary>
-        /// 实例化
+        /// 
         /// </summary>
         /// <param name="_mqttConfig"></param>
         /// <param name="receivedMessageHanddler"></param>
-        public MqttNetClient(MqttConfig _mqttConfig, EventHandler<MqttApplicationMessageReceivedEventArgs> receivedMessageHanddler
-            )
+        /// <param name="configuration"></param>
+        public  MqttNetClient(MqttConfig _mqttConfig, EventHandler<MqttApplicationMessageReceivedEventArgs> receivedMessageHanddler, IConfiguration configuration)
         {
             mqttConfig = _mqttConfig;
+            Configuration = configuration;
             var factory = new MqttFactory();
             mqttClient = factory.CreateMqttClient() as MqttClient;
-            //clientId = $"MqttErpClient_{mqttConfig.ClientIdentify}";0
-            clientId = "MqttErpClient_" + Guid.NewGuid();
+            clientId = $"{mqttConfig.ClientIdentify}";
+            //clientId = "MqttErpClient_" + Guid.NewGuid();
             options = new MqttClientOptionsBuilder()
                 .WithTcpServer(_mqttConfig.Server, _mqttConfig.Port)
                 .WithCredentials(_mqttConfig.Username, _mqttConfig.Password)
                 .WithClientId(clientId)
+                .WithCleanSession(false)
                 .Build();
 
             if (receivedMessageHanddler != null)
@@ -58,16 +62,15 @@ namespace Infrastructure.MQTT
         /// <param name="e"></param>
         private void Disconnected(object sender, MqttClientDisconnectedEventArgs e)
         {
-            Console.WriteLine($"Mqtt>>Disconnected【{clientId}】>>已断开连接");
+            Serilog.Log.Logger.Error($"Mqtt>>Disconnected【{clientId}】>>已断开连接");
             try
             {
                 mqttClient.ConnectAsync(options);
-                Console.WriteLine($"Mqtt>>Connected【{clientId}】>>连接成功");
+                Serilog.Log.Logger.Information($"{clientId}重连成功!");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Mqtt>>Disconnected【{clientId}】>>重连失败");
-                Serilog.Log.Logger.Error($"{clientId}重连失败 【topic=edge_msg/#】!", ex);
+                Serilog.Log.Logger.Error($"{clientId}重连失败! message={ex.Message}");
             }
         }
         /// <summary>
@@ -77,16 +80,30 @@ namespace Infrastructure.MQTT
         /// <param name="e"></param>
         private void Connected(object sender, MqttClientConnectedEventArgs e)
         {
-            Console.WriteLine($"Mqtt>>Connected【{clientId}】>>连接成功");
+            Serilog.Log.Logger.Information($"Mqtt>>Connected【{clientId}】>>连接成功");
             //连接重新订阅
             try
             {
+                var redisConnectionString = Configuration.GetValue<string>("AppSetting:Cache:Redis");
+
+                RedisHelper.Initialization(new CSRedis.CSRedisClient(redisConnectionString));
+
                 mqttClient.SubscribeAsync("edge_msg/#");
-                Serilog.Log.Logger.Information($"{clientId}连接成功重新订阅生效 【topic=edge_msg/#】!");
+                Log.Logger.Information($"{clientId}连接成功重新订阅生效 【topic=edge_msg/#】!");
+                var edges = RedisHelper.Get(clientId);
+                if (!string.IsNullOrWhiteSpace(edges))
+                {
+                    var edge_list = edges.Split(',');
+                    foreach (var item in edge_list)
+                    {
+                        mqttClient.SubscribeAsync($"rt_data/subscribe_{item}");
+                        Log.Logger.Information($"{clientId}连接成功重新订阅生效 rt_data/subscribe_{item}!");
+                    }
+                }
             }
             catch (Exception ex)
             {
-                Serilog.Log.Logger.Error($"{clientId}连接成功重新订阅失败 【topic=edge_msg/#】!", ex);
+                Log.Logger.Error($"{clientId}连接成功重新订阅失败! message={ex.Message}");
             }
         }
 
