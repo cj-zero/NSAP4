@@ -38,6 +38,7 @@ namespace Infrastructure.MQTT
                 .WithCredentials(_mqttConfig.Username, _mqttConfig.Password)
                 .WithClientId(clientId)
                 .WithCleanSession(false)
+                .WithCommunicationTimeout(new TimeSpan(0,5,0))
                 .Build();
 
             if (receivedMessageHanddler != null)
@@ -62,15 +63,15 @@ namespace Infrastructure.MQTT
         /// <param name="e"></param>
         private void Disconnected(object sender, MqttClientDisconnectedEventArgs e)
         {
-            Serilog.Log.Logger.Error($"Mqtt>>Disconnected【{clientId}】>>已断开连接");
+            Log.Logger.Error($"Mqtt>>Disconnected【{clientId}】>>已断开连接");
             try
             {
                 mqttClient.ConnectAsync(options);
-                Serilog.Log.Logger.Information($"{clientId}重连成功!");
+                Log.Logger.Information($"{clientId}重连成功!");
             }
             catch (Exception ex)
             {
-                Serilog.Log.Logger.Error($"{clientId}重连失败! message={ex.Message}");
+                Log.Logger.Error($"{clientId}重连失败! message={ex.Message}");
             }
         }
         /// <summary>
@@ -80,7 +81,7 @@ namespace Infrastructure.MQTT
         /// <param name="e"></param>
         private void Connected(object sender, MqttClientConnectedEventArgs e)
         {
-            Serilog.Log.Logger.Information($"Mqtt>>Connected【{clientId}】>>连接成功");
+            Log.Logger.Information($"Mqtt>>Connected【{clientId}】>>连接成功");
             //连接重新订阅
             try
             {
