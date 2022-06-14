@@ -79,7 +79,17 @@ namespace OpenAuth.App.Nwcali
                                 break;
                             }
                             JObject userObj = JObject.Parse(userInfo);
-                            string userEnterpriseId = userObj["data"]["userProfile"]["enterpriseId"].ToString();
+                            if (userObj["resultCode"].ToString()!="200")
+                            {
+                                //Log.Logger.Error($"边缘计算{userObj["errorMessage"]},edge_guids={edge_guids},token={token}");
+                                break;
+                            }
+                            string userEnterpriseId = userObj["data"]["userProfile"]["enterpriseId"]==null?"" : userObj["data"]["userProfile"]["enterpriseId"].ToString();
+                            if (string.IsNullOrWhiteSpace(userEnterpriseId))
+                            {
+                                //Log.Logger.Error($"边缘计算登录用户没有企业id,edge_guids={edge_guids},token={token}");
+                                break;
+                            }
                             var enterpriseId = _appConfiguration.Value.EnterpriseIds.Split(',').ToList();
                             if (enterpriseId.Contains(userEnterpriseId))
                             {

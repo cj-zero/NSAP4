@@ -181,6 +181,7 @@ namespace OpenAuth.WebApi.Controllers
         public async Task<TableData> ChannelControlAsync(ChannelControlReq model)
         {
             var result = new TableData();
+            string message = string.Empty;
             try
             {
                 var xmlCpntent = XMLHelper.GetXDocument(model.xmlpath).ToString();
@@ -209,6 +210,10 @@ namespace OpenAuth.WebApi.Controllers
                 int stepCount = step.ListStep.Count();
                 string step_data = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent.ToString()));
                 var res = await _app.ChannelControlAsync(model, stepCount, step_data);
+                //if (!string.IsNullOrWhiteSpace(res.Message))
+                //{
+                //    message = res.Message;
+                //}
                 var deviceTestList = res.Data;
                 foreach (var item in deviceTestList)
                 {
@@ -246,6 +251,11 @@ namespace OpenAuth.WebApi.Controllers
             {
                 result.Code = 500;
                 result.Message = e.Message;
+                return result;
+            }
+            if (!string.IsNullOrWhiteSpace(message))
+            {
+                result.Message = message;
             }
             return result;
         }
