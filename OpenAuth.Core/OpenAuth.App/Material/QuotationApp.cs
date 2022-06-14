@@ -715,7 +715,7 @@ namespace OpenAuth.App.Material
 						join OITM c on a.itemcode = c.itemcode
 						join OITW d on a.itemcode=d.itemcode 
 						where d.WhsCode= @WhsCode", parameter).WhereIf(!string.IsNullOrWhiteSpace(request.PartCode), s => s.ItemCode.Contains(request.PartCode))
-                        .WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), s => request.PartDescribe.Contains(s.ItemName))
+                        .WhereIf(!string.IsNullOrWhiteSpace(request.PartDescribe), s => s.ItemName.Contains(request.PartDescribe))
                         .WhereIf(!string.IsNullOrWhiteSpace(request.AppPartCode),s=> s.ItemName.Contains(request.AppPartCode) || s.ItemCode.Contains(request.AppPartCode))
                         .Where(s=> baseEntryList.Contains(s.DocEntry.ToString())).Select(s => new SysEquipmentColumn { ItemCode = s.ItemCode, MnfSerial = request.ManufacturerSerialNumbers, ItemName = s.ItemName, BuyUnitMsr = s.BuyUnitMsr, OnHand = s.OnHand, WhsCode = s.WhsCode, Quantity = s.Quantity, lastPurPrc = s.lastPurPrc }).ToListAsync();
 
@@ -3186,7 +3186,74 @@ namespace OpenAuth.App.Material
         /// <returns></returns>
         public async Task SyncSalesOfDelivery(QueryQuotationListReq request)
         {
-            _capBus.Publish("Serve.SalesOfDelivery.ERPCreate", int.Parse(request.SalesOfDeliveryId));
+            //_capBus.Publish("Serve.SalesOfDelivery.ERPCreate", int.Parse(request.SalesOfDeliveryId));
+
+            var docNum = int.Parse(request.SalesOfDeliveryId);
+            string Message = "";
+            try
+            {
+                var ODLNmodel = await UnitWork.Find<ODLN>(o => o.DocEntry == docNum).ToListAsync();
+                var DLN1model = await UnitWork.Find<DLN1>(o => o.DocEntry == docNum).ToListAsync();
+                foreach (var item in ODLNmodel)
+                {
+                    if (item.PartSupply == "true") { item.PartSupply = "Y"; } else { item.PartSupply = "N"; }
+
+                    if (item.DocCur == "") { item.DocCur = "RMB"; }
+
+                    //if (dtRowODLN.Rows[0][3].ToString() == "") { model.DocRate = 1; }
+
+                    if (item.DocTotal == null) { item.DocTotal = 0; }
+
+                    if (item.OwnerCode == null) { item.OwnerCode = -1; }
+
+                    if (item.SlpCode == null) { item.SlpCode = -1; }
+                }
+
+
+                List<sale_odln> sale_Odln = ODLNmodel.MapToList<sale_odln>();
+                List<sale_dln1> sale_Dln1 = DLN1model.MapToList<sale_dln1>();
+                sale_Odln.ForEach(s => s.sbo_id = Define.SBO_ID);
+                sale_Dln1.ForEach(s => s.sbo_id = Define.SBO_ID);
+                await UnitWork.BatchAddAsync<sale_odln, int>(sale_Odln.ToArray());
+                await UnitWork.BatchAddAsync<sale_dln1, int>(sale_Dln1.ToArray());
+
+                List<string> itemcodes = sale_Dln1.Select(s => s.ItemCode).ToList();
+                List<string> WhsCodes = sale_Dln1.Select(s => s.WhsCode).ToList();
+                var oitwList = await UnitWork.Find<OITW>(o => itemcodes.Contains(o.ItemCode) && WhsCodes.Contains(o.WhsCode)).Select(o => new { o.ItemCode, o.IsCommited, o.OnHand, o.OnOrder }).ToListAsync();
+                foreach (var item in oitwList)
+                {
+                    var WhsCode = sale_Dln1.Where(q => q.ItemCode.Equals(item.ItemCode)).FirstOrDefault().WhsCode;
+                    await UnitWork.UpdateAsync<store_oitw>(o => o.sbo_id == Define.SBO_ID && o.ItemCode == item.ItemCode && o.WhsCode == WhsCode, o => new store_oitw
+                    {
+                        OnHand = item.OnHand,
+                        IsCommited = item.IsCommited,
+                        OnOrder = item.OnOrder
+                    });
+                }
+                var oitmList = await UnitWork.Find<OITM>(o => itemcodes.Contains(o.ItemCode)).Select(o => new { o.ItemCode, o.IsCommited, o.OnHand, o.OnOrder, o.LastPurCur, o.LastPurPrc, o.LastPurDat, o.UpdateDate }).ToListAsync();
+                foreach (var item in oitmList)
+                {
+                    await UnitWork.UpdateAsync<store_oitm>(o => o.sbo_id == Define.SBO_ID && o.ItemCode == item.ItemCode, o => new store_oitm
+                    {
+                        OnHand = item.OnHand,
+                        IsCommited = item.IsCommited,
+                        OnOrder = item.OnOrder,
+                        LastPurDat = item.LastPurDat,
+                        LastPurPrc = item.LastPurPrc,
+                        LastPurCur = item.LastPurCur,
+                        UpdateDate = item.UpdateDate
+                    });
+                }
+                await UnitWork.SaveAsync();
+            }
+            catch (Exception e)
+            {
+                //Message = $"添加销售交货:{docNum}到erp3.0时异常！错误信息：" + e.Message;
+            }
+            if (Message != "")
+            {
+                throw new Exception(Message.ToString());
+            }
         }
 
         /// <summary>
