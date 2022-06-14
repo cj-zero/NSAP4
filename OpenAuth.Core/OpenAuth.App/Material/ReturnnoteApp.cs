@@ -441,6 +441,7 @@ namespace OpenAuth.App
                     }
                 }
             });
+            listResps = listResps.Where(c => c.MaterialType != 3).ToList();//过滤掉物料类型为赠送的
             result.Data = listResps;
             result.Count = listResps.Count();
             //result.Data = saleinv1List.Select(s => new ReturnMaterialListResp
