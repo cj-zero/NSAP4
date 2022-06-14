@@ -9,15 +9,7 @@ namespace OpenAuth.App.Customer.Request
     /// </summary>
     public class DistributeCustomerReq
     {
-        /// <summary>
-        /// 客户代码
-        /// </summary>
-        public string CustomerNo { get; set; }
-
-        /// <summary>
-        /// 客户名称
-        /// </summary>
-        public string CustomerName { get; set; }
+        public List<Customer> Customers { get; set; }
 
         /// <summary>
         /// 销售员在ERP3.0的销售代码

@@ -30,7 +30,7 @@ namespace OpenAuth.Repository.Domain
         public virtual CustomerLimit CustomerLimit { get; set; }
 
         /// <summary>
-        /// 客户类型:1-未报价客户 2-已成交客户
+        /// 客户类型:0-全部客户,1-未报价客户,2-已成交客户,3-未转销售订单(已报价)客户,4-未交货(已转销售订单)客户
         /// </summary>
         [Description("客户类型")]
         [Column("Customer_Type")]

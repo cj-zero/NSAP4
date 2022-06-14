@@ -17,6 +17,11 @@ namespace OpenAuth.App.Customer.Response
         public string GroupName { get; set; }
 
         /// <summary>
+        /// 规则描述
+        /// </summary>
+        public string Description { get; set; }
+
+        /// <summary>
         /// 是否启用
         /// </summary>
         public bool IsDelete { get; set; }
@@ -42,13 +47,23 @@ namespace OpenAuth.App.Customer.Response
     public class SalerResponse
     {
         /// <summary>
-        /// 销售员用户id
+        /// 销售员销售编号
         /// </summary>
-        public string SalerId { get; set; }
+        public int SalerId { get; set; }
 
         /// <summary>
         /// 销售员用户名称
         /// </summary>
         public string SalerName { get; set; }
+
+        /// <summary>
+        /// 账号
+        /// </summary>
+        public string Account { get; set; }
+
+        /// <summary>
+        /// 部门
+        /// </summary>
+        public string Dept { get; set; }
     }
 }

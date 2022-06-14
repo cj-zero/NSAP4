@@ -1,5 +1,7 @@
 ﻿using Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Debug;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.NsapBase;
 using System;
@@ -13,6 +15,12 @@ namespace OpenAuth.Repository
     {
         public NsapBaseDbContext(DbContextOptions<NsapBaseDbContext> options) : base(options)
         {
+        }
+        public static readonly LoggerFactory loggerFactory = new LoggerFactory(new[] { new DebugLoggerProvider() });
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            base.OnConfiguring(optionsBuilder);
+            optionsBuilder.UseLoggerFactory(loggerFactory);
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

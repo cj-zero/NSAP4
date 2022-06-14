@@ -557,6 +557,14 @@ namespace OpenAuth.WebApi.Controllers.Order
             var result = new Response<string>();
             try
             {
+                if (orderReq.Order.Comments.Contains("'"))
+                {
+                    orderReq.Order.Comments = orderReq.Order.Comments.Replace("'", "''");
+                }
+                if (orderReq.Order.Remark.Contains("'"))
+                {
+                    orderReq.Order.Remark = orderReq.Order.Remark.Replace("'", "''");
+                }
                 result.Result = _serviceSaleOrderApp.Save(orderReq);
             }
             catch (Exception ex)
