@@ -162,7 +162,7 @@ namespace OpenAuth.App
             }
             var departmentList = loginContext.Orgs.Select(c => c.Name).ToList();
             List<DeviceTestResponse> list = new List<DeviceTestResponse>();
-            string offLineGeneratorCode = "";
+            string offLineLowGuid = "";
             if (model.type == 1)
             {
 
@@ -189,12 +189,16 @@ namespace OpenAuth.App
                 }
                 var hasTestLowList = await UnitWork.Find<DeviceTestLog>(null).Where(c => allBindlowList.Contains(c.GeneratorCode)).Select(c => c.GeneratorCode).Distinct().ToListAsync();
                 var needTestList = hasBindList.Where(c => !hasTestLowList.Contains(c.GeneratorCode)).ToList();
-                var offLineList = needTestList.Where(c => !allOnlineLowListGuid.Contains(c.LowGuid)).Select(c => new { c.GeneratorCode, c.LowGuid }).Distinct().ToList();
-                offLineGeneratorCode = offLineList.Select(c => c.GeneratorCode).Distinct().FirstOrDefault();
-                //var canTestList = needTestList.Where(c => allOnlineLowListGuid.Contains(c.LowGuid)).Distinct().ToList();
-                var canTestLowGuid = canTestList.Select(c => c.LowGuid).ToList();
+                var offLineList = needTestList.Where(c => !allOnlineLowListGuid.Contains(c.LowGuid)).Select(c => c.LowGuid).Distinct().ToList();
+                offLineLowGuid = string.Join(",", offLineList);
+                var testList = canTestList.Where(c => allOnlineLowListGuid.Contains(c.LowGuid)).Distinct().ToList();
+                if (!testList.Any())
+                {
+                    throw new Exception("暂无可启动在线设备!");
+                }
+                var canTestLowGuid = testList.Select(c => c.LowGuid).ToList();
                 var channelList = await UnitWork.Find<edge_channel>(null).Where(c => canTestLowGuid.Contains(c.low_guid)).ToListAsync();
-                foreach (var item in canTestList)
+                foreach (var item in testList)
                 {
                     DeviceTestResponse deviceTest = new DeviceTestResponse();
                     deviceTest.GeneratorCode = item.GeneratorCode;
@@ -264,6 +268,10 @@ namespace OpenAuth.App
                     throw new Exception("暂未绑定数据无法启动测试");
                 }
                 var canTestList = hasBindList.Where(c => allOnlineLowListGuid.Contains(c.LowGuid)).Distinct().ToList();
+                if (!canTestList.Any())
+                {
+                    throw new Exception("暂无可启动在线设备!");
+                }
                 var canTestLowGuid = canTestList.Select(c => c.LowGuid).ToList();
                 var channelList = await UnitWork.Find<edge_channel>(null).Where(c => canTestLowGuid.Contains(c.low_guid)).ToListAsync();
                 foreach (var item in canTestList)
@@ -321,9 +329,9 @@ namespace OpenAuth.App
                     list.Add(deviceTest);
                 }
             }
-            if (!string.IsNullOrWhiteSpace(offLineGeneratorCode))
+            if (!string.IsNullOrWhiteSpace(offLineLowGuid))
             {
-                result.Message = $"{offLineGeneratorCode}已离线,请检查设备连接状况!";
+                result.Message = $"下位机【{offLineLowGuid}】已离线,请检查设备连接状况!";
             }
             result.Data = list;
             return result;
