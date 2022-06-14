@@ -28,6 +28,7 @@ namespace OpenAuth.WebApi.Controllers.Customer
         /// 新增组规则
         /// </summary>
         /// <returns></returns>
+        [HttpPost]
         public async Task<Infrastructure.Response> AddGroupRules(AddOrUpdateGroupRulesReq req)
         {
             var response = new Infrastructure.Response();
@@ -228,9 +229,9 @@ namespace OpenAuth.WebApi.Controllers.Customer
         [HttpGet]
         public async Task TestAsync()
         {
-            await _customerLimitApp.AsyncCustomerStatusService();
+            //await _customerLimitApp.AsyncCustomerStatusService2();
             //await _customerLimitApp.RecoveryCustomer();
-            //await _customerLimitApp.PushMessage();
+            await _customerLimitApp.PushMessage();
         }
     }
 }

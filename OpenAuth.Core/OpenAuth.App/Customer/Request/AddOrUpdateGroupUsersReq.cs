@@ -17,11 +17,6 @@ namespace OpenAuth.App.Customer.Request
     public class User
     {
         /// <summary>
-        /// 用户id
-        /// </summary>
-        public string UserId { get; set; }
-
-        /// <summary>
         /// 用户姓名
         /// </summary>
         public string UserName { get; set; }
@@ -30,5 +25,15 @@ namespace OpenAuth.App.Customer.Request
         /// 用户销售编号
         /// </summary>
         public int SlpCode { get; set; }
+
+        /// <summary>
+        /// 部门
+        /// </summary>
+        public string Dept { get; set; }
+
+        /// <summary>
+        /// 账号
+        /// </summary>
+        public string Account { get; set; }
     }
 }

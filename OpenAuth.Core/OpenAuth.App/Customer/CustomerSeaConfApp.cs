@@ -303,7 +303,8 @@ namespace OpenAuth.App.Customer
                 //是否启用自动放入公海
                 if (req.Enable != null)
                 {
-                    //这是否个启用控制着两个定时任务:1.是否启用拉取符合条件的客户进入公海 2.向销售员发送提醒信息
+                    //这是否个启用控制着两个定时任务:1.是否启用拉取符合条件的客户进入公海
+                    ////2.向销售员发送提醒信息
                     objectItem.Enable = req.Enable.Value;
                     await UnitWork.UpdateAsync(objectItem);
 
@@ -313,7 +314,7 @@ namespace OpenAuth.App.Customer
                     if (req.Enable == false) //停止
                     {
                         job.Status = 0;
-                        job2.Status = 0;
+                        //job2.Status = 0;
                         await UnitWork.SaveAsync();
 
                         _openJobApp.ChangeJobStatus(new App.Request.ChangeJobStatusReq
@@ -489,12 +490,19 @@ namespace OpenAuth.App.Customer
 
             }
 
-            //这是否个启用控制着两个定时任务:1.是否启用拉取符合条件的客户进入公海 2.向销售员发送提醒信息
+            //这是否个启用控制着两个定时任务:1.是否启用拉取符合条件的客户进入公海
+            // //2.向销售员发送提醒信息
             objectItem.Enable = req.Enable;
             await UnitWork.UpdateAsync(objectItem);
 
             var job = UnitWork.FindSingle<OpenJob>(o => o.JobCall == "OpenAuth.App.Jobs.CustomerSeaJob");
+            job.Cron = $"{req.PutTime.Second} {req.PutTime.Minute} {req.PutTime.Hour} * * ?";
+            await UnitWork.UpdateAsync<OpenJob>(job);
+
             var job2 = UnitWork.FindSingle<OpenJob>(o => o.JobCall == "OpenAuth.App.Jobs.PushMessage");
+            job2.Cron = $"{req.NotifyTime.Second} {req.NotifyTime.Minute} {req.NotifyTime.Hour} * * ?";
+            await UnitWork.UpdateAsync<OpenJob>(job2);
+            await UnitWork.SaveAsync();
 
             if (req.Enable == false) //停止
             {

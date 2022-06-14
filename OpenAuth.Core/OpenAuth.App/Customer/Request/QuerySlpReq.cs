@@ -1,10 +1,11 @@
-﻿using System;
+﻿using OpenAuth.App.Request;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace OpenAuth.App.Customer.Request
 {
-    public class QuerySlpReq
+    public class QuerySlpReq : PageReq
     {
         /// <summary>
         /// 部门

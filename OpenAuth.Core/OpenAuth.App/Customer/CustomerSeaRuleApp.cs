@@ -62,7 +62,8 @@ namespace OpenAuth.App.Customer
                     var isExists = UnitWork.Find<CustomerSeaRuleItem>(c => c.DepartmentName == dept.DepartmentName && c.CustomerType == rule.CustomerType && c.OrderType == rule.OrderType).Any();
                     if (isExists)
                     {
-                        response.Message += $"{dept.DepartmentName}已存在规则,{customerTypeData.FirstOrDefault(t => t.Key == rule.CustomerType).Value},{orderTypeData.FirstOrDefault(o => o.Key == rule.OrderType).Value} \n";
+                        //response.Message += $"{dept.DepartmentName}已存在规则,{customerTypeData.FirstOrDefault(t => t.Key == rule.CustomerType).Value},{orderTypeData.FirstOrDefault(o => o.Key == rule.OrderType).Value} \n";
+                        response.Message += $"{dept.DepartmentName}已存在规则,一个部门只能存在一个规则 \n";
                     }
                 }
             }
