@@ -6847,19 +6847,19 @@ namespace OpenAuth.App
             }
             //获取设备信息
             var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
-            //获取当前业务员关联的服务单集合
-            var serviceOrderIds = await UnitWork.Find<ServiceOrder>(s => s.SalesManId == userInfo.UserID)
+            //获取当前业务员关联的服务单集合 及业务员创建的
+            var serviceOrderIds = await UnitWork.Find<ServiceOrder>(s => (s.SalesManId == userInfo.UserID || s.CreateUserId == userInfo.UserID) && s.Status == 2 && s.VestInOrg == 1 && s.AllowOrNot == 0)
                 .Select(s => s.Id).Distinct().ToListAsync();
             //获取该服务单的评价
             var serviceEvaluates = await UnitWork.Find<ServiceEvaluate>(w => serviceOrderIds.Contains((int)w.ServiceOrderId)).ToListAsync();
-            var query = UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id)&& w.Status==2)
+            var query = UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id))
                 .Include(s => s.ServiceWorkOrders).ThenInclude(s => s.ProblemType)
                 .Include(s => s.ServiceFlows)
                 .WhereIf(req.Type == 1, s => s.ServiceWorkOrders.All(a => a.Status ==1))//待处理
                 .WhereIf(req.Type == 2, s => s.ServiceWorkOrders.All(a => a.Status < 7 && a.Status>=2))//进行中 
                 .WhereIf(req.Type == 3, s => s.ServiceWorkOrders.All(a => a.Status >= 7))//已完成 服务单中所有工单均已完成
                 .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => s.U_SAP_ID == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key)))
-                .Where(s=>s.VestInOrg==1 && s.AllowOrNot==0)
+                //.Where(s=>s.VestInOrg==1 && s.AllowOrNot==0)
                 .Select(s => new
                 {
                     s.Id,
@@ -7065,7 +7065,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
             }
-            var serviceOrderIds = await UnitWork.Find<ServiceOrder>(s => s.SalesManId == userInfo.UserID && s.VestInOrg==1 && s.AllowOrNot==0 && s.Status==2)
+            var serviceOrderIds = await UnitWork.Find<ServiceOrder>(s => (s.SalesManId == userInfo.UserID || s.CreateUserId == userInfo.UserID) && s.VestInOrg == 1 && s.AllowOrNot == 0 && s.Status == 2)
                .Select(s => s.Id).ToListAsync();
             result.Data = serviceOrderIds.Count;
             return result;
