@@ -990,7 +990,7 @@ namespace OpenAuth.App.Customer
                                        where slpInfo.Select(s => s).Contains(s.SlpCode)
                                        && !whiteList.Contains(c.CardCode)
                                        && t.CardCode == null
-                                       select new { c.CardCode, c.CardName, c.CreateDate, s.SlpCode, s.SlpName }).ToListAsync();
+                                       select new { c.CardCode, c.CardName, c.CreateDate, s.SlpCode, s.SlpName }).Take(50).ToListAsync();
                 foreach (var customer in customers)
                 {
                     DateTime? startTime = null;
@@ -1014,7 +1014,12 @@ namespace OpenAuth.App.Customer
                         customerLists.Add(new CustomerList { DepartMent = dept, CustomerNo = customer.CardCode });
 
                         var score = decimal.Parse(DateTime.Now.AddDays((double)notifyDay).ToString("yyyyMMdd"));
-                        var result = RedisHelper.ZAdd(key, (score, customer.CardCode));
+                        //如果有序集合中不存在成员,则新增
+                        var memberScore = RedisHelper.ZScore(key, customer.CardCode);
+                        if (memberScore == null)
+                        {
+                            var result = RedisHelper.ZAdd(key, (score, customer.CardCode));
+                        }
 
                         RedisHelper.HSet($"customer:{customer.CardCode}", "Department", dept);
                         RedisHelper.HSet($"customer:{customer.CardCode}", "CustomerName", customer.CardName);
@@ -1308,9 +1313,6 @@ namespace OpenAuth.App.Customer
                             UpdateDateTime = DateTime.Now,
                             IsDelete = false
                         });
-
-                        RedisHelper.HDel($"customer:{customer.member}");
-                        RedisHelper.ZRem($"dept:{dept}", customerCode);
                     }
                     //否则也加入公海,但是状态是即将掉入
                     else
@@ -1345,8 +1347,8 @@ namespace OpenAuth.App.Customer
                 {
                     instance.LabelIndex = item.LabelIndex;
                     instance.Label = item.Label;
-                    //instance.SlpCode = item.SlpCode;
-                    //instance.SlpName = item.SlpName;
+                    instance.SlpCode = item.SlpCode;
+                    instance.SlpName = item.SlpName;
                     //instance.UpdateDateTime = DateTime.Now;
                     //instance.UpdateUser = "系统";
                     await UnitWork.UpdateAsync(instance);
@@ -1361,11 +1363,29 @@ namespace OpenAuth.App.Customer
             }
 
             //根据本次任务扫描的部门,查找已在公海池中的客户(根据部门处理数据,防止误删其他部门在公海的数据)
-            var databaseData = await UnitWork.Find<CustomerList>(c => depts.Contains(c.DepartMent)).Select(c => c.CustomerNo).ToListAsync();
+            var databaseData = await UnitWork.Find<CustomerList>(c => c.LabelIndex == 4 && customerLists.Select(x => x.DepartMent).Contains(c.DepartMent)).Select(c => c.CustomerNo).ToListAsync();
             //公海池中有,而本次扫描中没有的,说明客户不符合掉落规则(原业务员做了报价单,或者分配给了新的业务员等),这部分数据要从公海中移除
             var deleteData = databaseData.Except(customerLists.Select(c => c.CustomerNo));
-            await UnitWork.DeleteAsync<CustomerList>(c => deleteData.Contains(c.CustomerNo));
+            if (deleteData.Count() > 0)
+            {
+                await UnitWork.DeleteAsync<CustomerList>(c => deleteData.Contains(c.CustomerNo));
+                await UnitWork.SaveAsync();
+            }
+
+            //已经掉入公海的客户,原来所属的销售员清空
+            var customers = customerLists.Where(c => c.LabelIndex == 3);
+            await UnitWork.UpdateAsync<OCRD>(c => customers.Select(x => x.CustomerNo).Contains(c.CardCode), x => new OCRD
+            {
+                SlpCode = null
+            });
             await UnitWork.SaveAsync();
+
+            //数据库数据更新之后,删除已经掉入公海的客户缓存
+            foreach (var customer in customers)
+            {
+                RedisHelper.Del($"customer:{customer.CustomerNo}");
+                RedisHelper.ZRem($"dept:{customer.DepartMent}", customer.CustomerNo);
+            }
         }
 
         /// <summary>

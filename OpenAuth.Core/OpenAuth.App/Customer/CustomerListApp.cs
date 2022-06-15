@@ -300,8 +300,8 @@ namespace OpenAuth.App.Customer
                 .Select((c, index) => new
                 {
                     Num = (req.page - 1) * req.limit + index + 1,
-                    CustomerNo = isAdmin ? c.CustomerNo : "******",
-                    CustomerName = isAdmin ? c.CustomerName : "******",
+                    CustomerNo = c.CustomerNo,
+                    CustomerName = c.CustomerName,
                     DisplayCustomerNo = isAdmin ? c.CustomerNo : "******",
                     DisplayCustomerName = isAdmin ? c.CustomerName : "******",
                     DepartMent = isAdmin ? c.DepartMent : "******",
