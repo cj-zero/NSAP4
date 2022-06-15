@@ -29,11 +29,11 @@ namespace OpenAuth.Repository.Domain
         public virtual CustomerLimit CustomerLimit { get; set; }
 
         /// <summary>
-        /// 业务员Id
+        /// 业务员销售Id
         /// </summary>
         [Description("业务员Id")]
         [Column("Saler_Id")]
-        public string SalerId { get; set; }
+        public int SalerId { get; set; }
 
         /// <summary>
         /// 业务员名称
@@ -80,6 +80,16 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("是否删除")]
         public bool Isdelete { get; set; }
+
+        /// <summary>
+        /// 部门
+        /// </summary>
+        public string Dept { get; set; }
+
+        /// <summary>
+        /// 账户
+        /// </summary>
+        public string Account { get; set; }
 
         public override void GenerateDefaultKeyVal()
         {

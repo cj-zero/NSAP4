@@ -27,10 +27,49 @@ namespace OpenAuth.App.Customer
         public async Task<Infrastructure.Response> AddCustomerSeaRule(AddOrUpdateCustomerSeaRuleReq req)
         {
             var response = new Infrastructure.Response();
+            response.Message = "";
 
+            if (req.RuleDetails.Count <= 0)
+            {
+                response.Code = 500;
+                response.Message = "掉入规则没填写";
+                return response;
+            }
+
+            //判断规则名是否存在
             if(UnitWork.Find<CustomerSeaRule>(null).Any(c=>c.RuleName == req.RuleName))
             {
+                response.Code = 500;
                 response.Message = "规则名已存在";
+                return response;
+            }
+
+            var customerTypeData = new Dictionary<int, string>();
+            customerTypeData.Add(0, "全部客户");
+            customerTypeData.Add(1, "未报价客户");
+            customerTypeData.Add(2, "已成交客户");
+
+            var orderTypeData = new Dictionary<int, string>();
+            orderTypeData.Add(0, "未报价");
+            orderTypeData.Add(1, "未成交");
+            orderTypeData.Add(2, "未交货");
+
+            //判断部门、客户类型、事件类型3者组合是否已存在
+            foreach(var dept in req.Departments)
+            {
+                foreach(var rule in req.RuleDetails)
+                {
+                    var isExists = UnitWork.Find<CustomerSeaRuleItem>(c => c.DepartmentName == dept.DepartmentName && c.CustomerType == rule.CustomerType && c.OrderType == rule.OrderType).Any();
+                    if (isExists)
+                    {
+                        //response.Message += $"{dept.DepartmentName}已存在规则,{customerTypeData.FirstOrDefault(t => t.Key == rule.CustomerType).Value},{orderTypeData.FirstOrDefault(o => o.Key == rule.OrderType).Value} \n";
+                        response.Message += $"{dept.DepartmentName}已存在规则,一个部门只能存在一个规则 \n";
+                    }
+                }
+            }
+            if(!string.IsNullOrWhiteSpace(response.Message))
+            {
+                response.Code = 500;
                 return response;
             }
 
@@ -76,6 +115,7 @@ namespace OpenAuth.App.Customer
 
                 await UnitWork.SaveAsync();
                 await tran.CommitAsync();
+                response.Message = "操作成功";
             }
             catch(Exception ex)
             {
@@ -99,7 +139,7 @@ namespace OpenAuth.App.Customer
             var query = UnitWork.Find<CustomerSeaRule>(null)
                 .WhereIf(req.Id != null && req.Id > 0, c => c.Id == req.Id)
                 .Include(c => c.CustomerSeaRuleItems)
-                .OrderByDescending(c => c.UpdateDatetime)
+                .OrderByDescending(c => c.CreateDatetime)
                 .Skip((req.page - 1) * req.limit)
                 .Take(req.limit)
                 .Select(c => new QueryCustomerSeaRuleResponse
@@ -249,8 +289,8 @@ namespace OpenAuth.App.Customer
         public async Task<TableData> GetLeafOrgList()
         {
             var result = new TableData();
-
-            var query = UnitWork.Find<Repository.Domain.Org>(o => o.IsLeaf == true && o.Status == 0)
+            //只查询S开头的部门(销售or售后)
+            var query = UnitWork.Find<Repository.Domain.Org>(o => o.IsLeaf == true && o.Status == 0 && o.Name.StartsWith("S"))
                 .Select(o => new { deptId = o.Name, deptName = o.Name }).Distinct();
 
             result.Data = await query.OrderBy(q => q.deptName).ToListAsync();

@@ -20,6 +20,7 @@ namespace OpenAuth.App.Customer
     public class CustomerListApp : OnlyUnitWorkBaeApp
     {
         private readonly UserManagerApp _userManagerApp;
+
         public CustomerListApp(IUnitWork unitWork, IAuth auth,
             UserManagerApp userManagerApp) : base(unitWork, auth)
         {
@@ -274,9 +275,10 @@ namespace OpenAuth.App.Customer
         {
             var result = new TableData();
             var isAdmin = _auth.GetCurrentUser().Roles.Any(r => r.Name == "管理员");
-
+            var dept = _userManagerApp.GetUserOrgInfo(_auth.GetCurrentUser().User.Id)?.Result?.OrgName;
             //查询已经掉入公海的客户
             var query = UnitWork.Find<CustomerList>(c => c.LabelIndex == 3)
+                .WhereIf(isAdmin == false, c => c.DepartMent == dept)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), c => c.CustomerNo == req.CardCode)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), c => c.CustomerName.Contains(req.CardName))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.DepartMent), c => c.DepartMent == req.DepartMent)
@@ -291,22 +293,29 @@ namespace OpenAuth.App.Customer
                     CustomerSource = "",
                     c.CreateUser,
                     CreateDateTime = c.CustomerCreateDate,
-                    FallIntoTime = c.CreateDateTime
+                    FallIntoTime = c.CreateDateTime,
                 });
 
             var data = (await query.OrderBy(q => q.CustomerNo).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync())
                 .Select((c, index) => new
                 {
                     Num = (req.page - 1) * req.limit + index + 1,
-                    CustomerNo = c.CustomerNo,
-                    CustomerName = c.CustomerName,
+                    CustomerNo = isAdmin ? c.CustomerNo : "******",
+                    CustomerName = isAdmin ? c.CustomerName : "******",
                     DisplayCustomerNo = isAdmin ? c.CustomerNo : "******",
                     DisplayCustomerName = isAdmin ? c.CustomerName : "******",
-                    c.DepartMent,
-                    c.CustomerSource,
+                    DepartMent = isAdmin ? c.DepartMent : "******",
+                    CustomerSource = isAdmin ? c.CustomerSource : "******",
                     c.CreateUser,
                     c.CreateDateTime,
-                    c.FallIntoTime
+                    c.FallIntoTime,
+
+                    LastOrderTime = isAdmin ? UnitWork.Find<ODLN>(d => d.CardCode == c.CustomerNo).OrderByDescending(d => d.CreateDate).Take(1).FirstOrDefault()?.CreateDate?.ToString("yyyyMMdd") : "******",
+                    TotalMoney = isAdmin ? (from o in UnitWork.Find<ODLN>(null)
+                                            join d in UnitWork.Find<DLN1>(null) on o.DocEntry equals d.DocEntry
+                                            where o.CardCode == c.CustomerNo
+                                            select d.LineTotal).DefaultIfEmpty().Sum() : 0,
+                    receiveTime = isAdmin ? UnitWork.Find<CustomerSalerHistory>(x => x.CustomerNo == c.CustomerNo).DefaultIfEmpty().Count() : 0
                 });
 
             result.Data = data;
@@ -324,6 +333,10 @@ namespace OpenAuth.App.Customer
         {
             var result = new TableData();
             var isAdmin = _auth.GetCurrentUser().Roles.Any(r => r.Name == "管理员");
+            if (!isAdmin)
+            {
+                return result;
+            }
 
             var query = from c in UnitWork.Find<OCRD>(null)
                         join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode into temp1
@@ -410,9 +423,12 @@ namespace OpenAuth.App.Customer
             //                 slpname = g.Max(x => x.u.user_nm)
             //             }).Distinct();
             var query = (from u in UnitWork.Find<base_user>(null)
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.SlpName), u => u.user_nm.Contains(req.SlpName))
                          join ud in UnitWork.Find<base_user_detail>(null) on u.user_id equals ud.user_id
-                         join s in UnitWork.Find<sbo_user>(null) on u.user_id equals s.user_id
-                         where s.sbo_id == Define.SBO_ID
+                         join s in UnitWork.Find<sbo_user>(null)
+                         .WhereIf(req.SlpCode != null && req.SlpCode > 0, u => u.sale_id == req.SlpCode)
+                         on u.user_id equals s.user_id
+                         where s.sbo_id == Define.SBO_ID && new int[] { 0, 1 }.Contains(ud.status)
                          select new
                          {
                              slpcode = s.sale_id,
@@ -432,6 +448,7 @@ namespace OpenAuth.App.Customer
         public async Task<Infrastructure.Response> ReceiveCustomerTest(ReceiveCustomerReq req)
         {
             var response = new Infrastructure.Response();
+            response.Message = "";
 
             var userInfo = _auth.GetCurrentUser();
             //根据用户姓名查询slpcode
@@ -443,171 +460,256 @@ namespace OpenAuth.App.Customer
             if (slpInfo == null)
             {
                 response.Code = 500;
-                response.Message = "销售员信息不存在";
+                response.Message = "业务员信息不存在";
 
                 return response;
             }
 
-            #region 逻辑判断
-            //判断是否是公海客户,如果不是或者没有则不能进行领取
-            if (!UnitWork.Find<CustomerList>(null).Any(c => c.CustomerNo == req.CustomerNo))
+            var customers = new List<CustomerList>();
+            //公海设置
+            var config = await UnitWork.Find<CustomerSeaConf>(null).FirstOrDefaultAsync();
+            //以用户和日期作为key,限制用户每天领取的数量
+            var key = $"{slpInfo.sale_id}:{DateTime.Now.Date.ToString("yyyyMMdd")}:";
+            if (!RedisHelper.Exists(key))
             {
-                response.Message = "非公海客户不能进行领取";
+                //有效时间设为1天,单位为秒
+                RedisHelper.Set(key, 0, 24 * 60 * 60);
+            }
+
+            if (req.Customers.Count() > config.ReceiveMaxLimit)
+            {
+                response.Message = $"每个业务员每天只能领取{config?.ReceiveMaxLimit}个公海客户";
                 response.Code = 500;
                 return response;
             }
 
-            var customer = await UnitWork.Find<CustomerList>(c => c.CustomerNo == req.CustomerNo).FirstOrDefaultAsync();
-            //公海设置
-            var config = await UnitWork.Find<CustomerSeaConf>(null).FirstOrDefaultAsync();
-
-
-            var key = $"{slpInfo.sale_id}:{DateTime.Now.Date.ToString("yyyyMMdd")}:"; //以用户和日期作为key
-            if (!RedisHelper.Exists(key))
+            #region 逻辑判断
+            foreach (var item in req.Customers)
             {
-                RedisHelper.Set(key, 0, 24 * 60 * 60);
-            }
-            //认领规则如果开启
-            if (config?.ReceiveEnable == true)
-            {
-                var diffDate = (DateTime.Now - slpInfo.try_date).Days;
-                //如果不在这个区间,则不能领取(业务上是入职时间太短或者太长都不能领取)
-                if (!(diffDate > config.ReceiveJobMin && diffDate < config.ReceiveJobMax))
+                //判断是否是公海客户,如果不是或者没有则不能进行领取
+                if (!UnitWork.Find<CustomerList>(null).Any(c => c.CustomerNo == item.CustomerNo))
                 {
-                    response.Message = $"抱歉,您的入职时长不满足领取规定";
-                    response.Code = 500;
-                    return response;
+                    response.Message += $"客户{item.CustomerName}不是公海客户,不能进行领取 \n";
+                    continue;
                 }
-                //判断每天领取个数是否满足规定
-                var dayNum = await RedisHelper.GetAsync<int>(key);
-                if (dayNum >= config?.ReceiveMaxLimit)
+                var customer = await UnitWork.Find<CustomerList>(c => c.CustomerNo == item.CustomerNo).FirstOrDefaultAsync();
+                
+                //认领规则如果开启
+                if (config?.ReceiveEnable == true)
                 {
-                    response.Message = "您今天领取的客户数量已达上限";
-                    response.Code = 500;
-                    return response;
-                }
-                //else
-                //{
-                //    await RedisHelper.IncrByAsync(key);
-                //}
-            }
-
-            //抢回限制如果是开启的
-            if (config?.BackEnable == true)
-            {
-                //如果领取的销售员跟原销售员是同一人
-                if (customer.SlpCode == slpInfo.sale_id)
-                {
-                    //判断天数是否符合要求
-                    if ((DateTime.Now - customer.CreateDateTime).Days <= config.BackDay)
+                    var diffDate = (DateTime.Now - slpInfo.try_date).Days;
+                    //如果不在这个区间,则不能领取(业务上是入职时间太短或者太长都不能领取)
+                    if (!(diffDate > config.ReceiveJobMin && diffDate < config.ReceiveJobMax))
                     {
-                        response.Message = $"原业务员在{config.BackDay}天内不能抢回公海客户";
+                        response.Message = $"抱歉,您的入职时长不满足领取规定";
+                        response.Code = 500;
+                        return response;
+                    }
+                    //判断每天领取个数是否满足规定
+                    var dayNum = await RedisHelper.GetAsync<int>(key);
+                    if (dayNum + req.Customers.Count() > config?.ReceiveMaxLimit)
+                    {
+                        response.Message = $"每个业务员每天只能领取{config?.ReceiveMaxLimit}个公海客户";
                         response.Code = 500;
                         return response;
                     }
                 }
-            }
 
-            //判断是否有最大客户数限制
-            var customerLimitRule = await (from cl in UnitWork.Find<CustomerLimit>(null)
-                                           join clr in UnitWork.Find<CustomerLimitRule>(null)
-                                           on cl.Id equals clr.CustomerLimitId
-                                           join clu in UnitWork.Find<CustomerLimitSaler>(null)
-                                           on cl.Id equals clu.CustomerLimitId
-                                           //这个字段用的有点奇怪,是否启用的意思,true代表已启用
-                                           where cl.Isdelete == true && clu.SalerName == slpInfo.user_nm
-                                           //按照销售员、客户类型分组，数量取最大的限制数量
-                                           group new { cl, clr, clu } by new { clu.SalerName, clr.CustomerType } into g
-                                           select new
-                                           {
-                                               SalerName = g.Key.SalerName,
-                                               CustomerType = g.Key.CustomerType,
-                                               Limit = g.Max(x => x.clr.Limit)
-                                           }).FirstOrDefaultAsync();
-            //是否是未成交客户
-            var isNoQuotationCustomer = await (from c in UnitWork.Find<OCRD>(null)
-                                               join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode into temp
-                                               from t in temp.DefaultIfEmpty()
-                                               where c.CardCode == req.CustomerNo && t.CardCode == null
-                                               select c.CardCode).AnyAsync();
-            //是否是已成交客户
-            var isFinishCUstomer = UnitWork.Find<ODLN>(d => d.CardCode == req.CustomerNo).Any();
-
-            if (customerLimitRule != null)
-            {
-                //如果客户是未报价客户,并且有未报价客户数量规则限制
-                if (isNoQuotationCustomer && customerLimitRule.CustomerType == 1)
+                //抢回限制如果是开启的
+                if (config?.BackEnable == true)
                 {
-                    var NoQuotationCount = await (from c in UnitWork.Find<OCRD>(null)
-                                                  join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
-                                                  join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode into temp
-                                                  from t in temp.DefaultIfEmpty()
-                                                  where s.SlpName == slpInfo.user_nm && t.CardCode == null
-                                                  select c.CardCode).Distinct().CountAsync();
-                    if (NoQuotationCount >= customerLimitRule.Limit)
+                    //如果领取的销售员跟原销售员是同一人
+                    if (customer.SlpCode == slpInfo.sale_id)
                     {
-                        response.Code = 500;
-                        response.Message = "超过该用户的最大客户数限制";
-                        return response;
+                        //判断天数是否符合要求
+                        if ((DateTime.Now - customer.CreateDateTime).Days <= config.BackDay)
+                        {
+                            response.Message += $"原业务员在{config.BackDay}天内不能抢回公海客户{item.CustomerNo} \n";
+                            continue;
+                        }
                     }
                 }
-                //如果客户是已成交客户,并且有已成交客户数量规则限制
-                else if (isFinishCUstomer && customerLimitRule.CustomerType == 2)
+
+                //判断是否有客户数限制
+                var customerLimitRule = await (from cl in UnitWork.Find<CustomerLimit>(null)
+                                               join clr in UnitWork.Find<CustomerLimitRule>(null)
+                                               on cl.Id equals clr.CustomerLimitId
+                                               join clu in UnitWork.Find<CustomerLimitSaler>(null)
+                                               on cl.Id equals clu.CustomerLimitId
+                                               //这个字段用的有点奇怪,是否启用的意思,true代表已启用
+                                               where cl.Isdelete == true && clu.SalerName == slpInfo.user_nm
+                                               //按照销售员、客户类型分组，数量取最大的限制数量
+                                               group new { cl, clr, clu } by new { clu.SalerName, clr.CustomerType } into g
+                                               select new
+                                               {
+                                                   SalerName = g.Key.SalerName,
+                                                   CustomerType = g.Key.CustomerType,
+                                                   Limit = g.Max(x => x.clr.Limit)
+                                               }).FirstOrDefaultAsync();
+                //是否是未成交客户
+                var isNoQuotationCustomer = await (from c in UnitWork.Find<OCRD>(null)
+                                                   join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode into temp
+                                                   from t in temp.DefaultIfEmpty()
+                                                   where c.CardCode == item.CustomerNo && t.CardCode == null
+                                                   select c.CardCode).AnyAsync();
+                //已报价未转销售单
+                var isHasQuotationCustomer = await (from c in UnitWork.Find<OCRD>(null)
+                                                    join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode
+                                                    join r in UnitWork.Find<ORDR>(null) on c.CardCode equals r.CardCode into temp
+                                                    from t in temp.DefaultIfEmpty()
+                                                    where c.CardCode == item.CustomerNo && t.CardCode == null
+                                                    select c.CardCode).AnyAsync();
+
+                //已销售未转交货
+                var isHasOrderCustomer = await (from c in UnitWork.Find<OCRD>(null)
+                                                join r in UnitWork.Find<ORDR>(null) on c.CardCode equals r.CardCode
+                                                join d in UnitWork.Find<ODLN>(null) on c.CardCode equals d.CardCode into temp
+                                                from t in temp.DefaultIfEmpty()
+                                                where c.CardCode == item.CustomerNo && t.CardCode == null
+                                                select c.CardCode).AnyAsync();
+
+                //是否是已成交客户
+                var isFinishCUstomer = UnitWork.Find<ODLN>(d => d.CardCode == item.CustomerNo).Any();
+
+                if (customerLimitRule != null)
                 {
-                    var finishCount = await (from c in UnitWork.Find<OCRD>(null)
-                                             join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
-                                             join d in UnitWork.Find<ODLN>(null) on c.CardCode equals d.CardCode
-                                             where s.SlpName == slpInfo.user_nm
-                                             select c.CardCode).Distinct().CountAsync();
-                    if (finishCount >= customerLimitRule.Limit)
+                    //如果客户是未报价客户,并且有未报价客户数量规则限制
+                    if (isNoQuotationCustomer && customerLimitRule.CustomerType == 1)
                     {
-                        response.Code = 500;
-                        response.Message = "超过该客户的最大客户数限制";
-                        return response;
+                        var NoQuotationCount = await (from c in UnitWork.Find<OCRD>(null)
+                                                      join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
+                                                      join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode into temp
+                                                      from t in temp.DefaultIfEmpty()
+                                                      where s.SlpName == slpInfo.user_nm && t.CardCode == null
+                                                      select c.CardCode).Distinct().CountAsync();
+                        if (NoQuotationCount >= customerLimitRule.Limit)
+                        {
+                            response.Message += "超过该用户的未报价客户数限制";
+                            response.Code = 500;
+                            return response;
+                        }
+                    }
+                    //如果客户是已成交客户,并且有已成交客户数量规则限制
+                    else if (isFinishCUstomer && customerLimitRule.CustomerType == 2)
+                    {
+                        var finishCount = await (from c in UnitWork.Find<OCRD>(null)
+                                                 join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
+                                                 join d in UnitWork.Find<ODLN>(null) on c.CardCode equals d.CardCode
+                                                 where s.SlpName == slpInfo.user_nm
+                                                 select c.CardCode).Distinct().CountAsync();
+                        if (finishCount >= customerLimitRule.Limit)
+                        {
+                            response.Message += "超过该用户的已成交客户数限制";
+                            response.Code = 500;
+                            return response;
+                        }
+                    }
+                    //如果客户是报价单未转订单
+                    else if(isHasQuotationCustomer && customerLimitRule.CustomerType == 3)
+                    {
+                        var count = await (from c in UnitWork.Find<OCRD>(null)
+                                           join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
+                                           join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode
+                                           join r in UnitWork.Find<ORDR>(null) on c.CardCode equals r.CardCode into temp
+                                           from t in temp.DefaultIfEmpty()
+                                           where s.SlpName == slpInfo.user_nm
+                                           select c.CardCode).Distinct().CountAsync();
+                        if (count > customerLimitRule.Limit)
+                        {
+                            response.Message += "超过该客户的已报价未转销售客户数限制";
+                            response.Code = 500;
+                            return response;
+                        }
+                    }
+                    //如果是订单未转交货单
+                    else if(isHasOrderCustomer && customerLimitRule.CustomerType == 4)
+                    {
+                        var count = await (from c in UnitWork.Find<OCRD>(null)
+                                           join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
+                                           join r in UnitWork.Find<ORDR>(null) on c.CardCode equals r.CardCode
+                                           join d in UnitWork.Find<ODLN>(null) on c.CardCode equals d.CardCode into temp
+                                           from t in temp.DefaultIfEmpty()
+                                           where s.SlpName == slpInfo.user_nm
+                                           select c.CardCode).Distinct().CountAsync();
+                        if (count > customerLimitRule.Limit)
+                        {
+                            response.Message += "超过该客户的已销售未转交货客户数限制";
+                            response.Code = 500;
+                            return response;
+                        }
+                    }
+                    //都不是的话看是否有全部客户数限制
+                    else if (customerLimitRule.CustomerType == 0)
+                    {
+                        var totalCount = await (from c in UnitWork.Find<OCRD>(null)
+                                                join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
+                                                where s.SlpName == slpInfo.user_nm
+                                                select c.CardCode).Distinct().CountAsync();
+                        if (totalCount >= customerLimitRule.Limit)
+                        {
+                            response.Message += "超过该用户的最大客户数限制";
+                            response.Code = 500;
+                            return response;
+                        }
                     }
                 }
+
+                customers.Add(customer);
             }
 
             #endregion
-
-            var history = new CustomerSalerHistory()
+            //判断有问题
+            if (!string.IsNullOrWhiteSpace(response.Message))
             {
-                CustomerNo = req.CustomerNo,
-                CustomerName = req.CustomerName,
-                SlpCode = slpInfo.sale_id.Value,
-                SlpName = slpInfo.user_nm,
-                SlpDepartment = customer.DepartMent,
-                CreateTime = DateTime.Now,
-                ReceiveTime = DateTime.Now,
-                ReleaseTime = customer.CreateDateTime,
-                FallIntoTime = customer.CreateDateTime,
-                IsSaleHistory = req.IsSaleHistory
-            };
+                response.Code = 500;
+                return response;
+            }
 
             using var tran = UnitWork.GetDbContext<CustomerLimit>().Database.BeginTransaction();
             try
             {
-                int lastInstance = 0;
-                var isExists = UnitWork.Find<ACRD>(c => c.CardCode == req.CustomerNo).Any();
-                if (isExists) { lastInstance = UnitWork.Find<ACRD>(c => c.CardCode == req.CustomerNo).Max(x => x.LogInstanc) + 1; }
-                else { lastInstance = 1; }
+                foreach (var item in req.Customers)
+                {
+                    var history = new CustomerSalerHistory()
+                    {
+                        CustomerNo = item.CustomerNo,
+                        CustomerName = item.CustomerName,
+                        SlpCode = slpInfo.sale_id.Value,
+                        SlpName = slpInfo.user_nm,
+                        SlpDepartment = customers.Find(c => c.CustomerNo == item.CustomerNo).DepartMent,
+                        CreateTime = DateTime.Now,
+                        ReceiveTime = DateTime.Now,
+                        ReleaseTime = customers.Find(c => c.CustomerNo == item.CustomerNo).CreateDateTime,
+                        FallIntoTime = customers.Find(c => c.CustomerNo == item.CustomerNo).CreateDateTime,
+                        IsSaleHistory = req.IsSaleHistory
+                    };
+                    int lastInstance = 0;
+                    var isExists = UnitWork.Find<ACRD>(c => c.CardCode == item.CustomerNo).Any();
+                    if (isExists)
+                    {
+                        lastInstance = UnitWork.Find<ACRD>(c => c.CardCode == item.CustomerNo).Max(x => x.LogInstanc) + 1;
+                    }
+                    else
+                    {
+                        lastInstance = 1;
+                    }
 
-                //加入历史归属表
-                history.LogInstance = lastInstance;
-                await UnitWork.AddAsync<CustomerSalerHistory>(history);
-                //领取后,将客户从公海中移出
-                await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == req.CustomerNo);
+                    //加入历史归属表
+                    history.LogInstance = lastInstance;
+                    await UnitWork.AddAsync<CustomerSalerHistory>(history);
+                    //领取后,将客户从公海中移出
+                    await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == item.CustomerNo);
 
-                //修改客户的销售员
-                var instance = await UnitWork.Find<OCRD>(c => c.CardCode == req.CustomerNo).FirstOrDefaultAsync();
-                instance.SlpCode = slpInfo.sale_id;
-                await UnitWork.UpdateAsync<OCRD>(instance);
-                //3.0的客户归属表中新增一条记录
-                await UnitWork.AddAsync<ACRD>(new ACRD { DocEntry = instance.DocEntry, CardCode = req.CustomerNo, LogInstanc = lastInstance, CardName = req.CustomerName, SlpCode = slpInfo.sale_id, CreateDate = DateTime.Now, UpdateDate = DateTime.Now });
-                await UnitWork.SaveAsync();
-
+                    //修改客户的销售员
+                    var instance = await UnitWork.Find<OCRD>(c => c.CardCode == item.CustomerNo).FirstOrDefaultAsync();
+                    instance.SlpCode = slpInfo.sale_id;
+                    await UnitWork.UpdateAsync<OCRD>(instance);
+                    //3.0的客户归属表中新增一条记录
+                    await UnitWork.AddAsync<ACRD>(new ACRD { DocEntry = instance.DocEntry, CardCode = item.CustomerNo, LogInstanc = lastInstance, CardName = item.CustomerName, SlpCode = slpInfo.sale_id, CreateDate = DateTime.Now, UpdateDate = DateTime.Now });
+                    await UnitWork.SaveAsync();
+                }
                 await tran.CommitAsync();
-                RedisHelper.IncrBy(key); //领取成功后,用户当天的客户数量加1
+                RedisHelper.IncrBy(key, req.Customers.Count); //领取成功后,用户当天的客户数量加1
             }
             catch (Exception ex)
             {
@@ -626,6 +728,7 @@ namespace OpenAuth.App.Customer
         public async Task<Infrastructure.Response> DistributeCustomer(DistributeCustomerReq req)
         {
             var response = new Infrastructure.Response();
+            response.Message = "";
 
             var userInfo = _auth.GetCurrentUser();
             if (!userInfo.Roles.Any(r => r.Name == "管理员"))
@@ -636,111 +739,186 @@ namespace OpenAuth.App.Customer
                 return response;
             }
 
-            #region 判断逻辑
-            //判断是否有最大客户数限制
-            var customerLimitRule = await (from cl in UnitWork.Find<CustomerLimit>(null)
-                                           join clr in UnitWork.Find<CustomerLimitRule>(null)
-                                           on cl.Id equals clr.CustomerLimitId
-                                           join clu in UnitWork.Find<CustomerLimitSaler>(null)
-                                           on cl.Id equals clu.CustomerLimitId
-                                           //这个字段用的有点奇怪,是否启用的意思,true代表已启用
-                                           where cl.Isdelete == true && clu.SalerName == req.SlpName
-                                           //按照销售员、客户类型分组，数量取最大的限制数量
-                                           group new { cl, clr, clu } by new { clu.SalerName, clr.CustomerType } into g
-                                           select new
-                                           {
-                                               SalerName = g.Key.SalerName,
-                                               CustomerType = g.Key.CustomerType,
-                                               Limit = g.Max(x => x.clr.Limit)
-                                           }).FirstOrDefaultAsync();
-            //是否是未报价客户
-            var isNoQuotationCustomer = await (from c in UnitWork.Find<OCRD>(null)
-                                               join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode into temp
-                                               from t in temp.DefaultIfEmpty()
-                                               where c.CardCode == req.CustomerNo && t.CardCode == null
-                                               select c.CardCode).AnyAsync();
-            //是否是已成交客户
-            var isFinishCUstomer = await UnitWork.Find<ODLN>(d => d.CardCode == req.CustomerNo).AnyAsync();
-
-            if (customerLimitRule != null)
+            var customers = new List<CustomerList>();
+            foreach (var item in req.Customers)
             {
-                //如果客户是未报价客户,并且有未报价客户数量规则限制
-                if (isNoQuotationCustomer && customerLimitRule.CustomerType == 1)
+                var customer = await UnitWork.Find<CustomerList>(c => c.CustomerNo == item.CustomerNo).FirstOrDefaultAsync();
+                if (customer == null)
                 {
-                    var NoQuotationCount = await (from c in UnitWork.Find<OCRD>(null)
-                                                  join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
-                                                  join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode into temp
-                                                  from t in temp.DefaultIfEmpty()
-                                                  where s.SlpName == req.SlpName && t.CardCode == null
-                                                  select c.CardCode).Distinct().CountAsync();
-                    if (NoQuotationCount >= customerLimitRule.Limit)
+                    response.Message += $"客户{item.CustomerNo}不存在或已被领取 \n";
+                    continue;
+                }
+
+                #region 判断逻辑
+                //判断是否有最大客户数限制
+                var customerLimitRule = await (from cl in UnitWork.Find<CustomerLimit>(null)
+                                               join clr in UnitWork.Find<CustomerLimitRule>(null)
+                                               on cl.Id equals clr.CustomerLimitId
+                                               join clu in UnitWork.Find<CustomerLimitSaler>(null)
+                                               on cl.Id equals clu.CustomerLimitId
+                                               //这个字段用的有点奇怪,是否启用的意思,true代表已启用
+                                               where cl.Isdelete == true && clu.SalerName == req.SlpName
+                                               //按照销售员、客户类型分组，数量取最大的限制数量
+                                               group new { cl, clr, clu } by new { clu.SalerName, clr.CustomerType } into g
+                                               select new
+                                               {
+                                                   SalerName = g.Key.SalerName,
+                                                   CustomerType = g.Key.CustomerType,
+                                                   Limit = g.Max(x => x.clr.Limit)
+                                               }).FirstOrDefaultAsync();
+                //是否是未报价客户
+                var isNoQuotationCustomer = await (from c in UnitWork.Find<OCRD>(null)
+                                                   join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode into temp
+                                                   from t in temp.DefaultIfEmpty()
+                                                   where c.CardCode == item.CustomerNo && t.CardCode == null
+                                                   select c.CardCode).AnyAsync();
+                //已报价未转销售单
+                var isHasQuotationCustomer = await (from c in UnitWork.Find<OCRD>(null)
+                                                    join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode
+                                                    join r in UnitWork.Find<ORDR>(null) on c.CardCode equals r.CardCode into temp
+                                                    from t in temp.DefaultIfEmpty()
+                                                    where c.CardCode == item.CustomerNo && t.CardCode == null
+                                                    select c.CardCode).AnyAsync();
+                //已销售未转交货
+                var isHasOrderCustomer = await (from c in UnitWork.Find<OCRD>(null)
+                                                join r in UnitWork.Find<ORDR>(null) on c.CardCode equals r.CardCode
+                                                join d in UnitWork.Find<ODLN>(null) on c.CardCode equals d.CardCode into temp
+                                                from t in temp.DefaultIfEmpty()
+                                                where c.CardCode == item.CustomerNo && t.CardCode == null
+                                                select c.CardCode).AnyAsync();
+                //是否是已成交客户
+                var isFinishCUstomer = await UnitWork.Find<ODLN>(d => d.CardCode == item.CustomerNo).AnyAsync();
+
+                if (customerLimitRule != null)
+                {
+                    //如果客户是未报价客户,并且有未报价客户数量规则限制
+                    if (isNoQuotationCustomer && customerLimitRule.CustomerType == 1)
                     {
-                        response.Code = 500;
-                        response.Message = "超过该用户的最大客户数限制";
-                        return response;
+                        var NoQuotationCount = await (from c in UnitWork.Find<OCRD>(null)
+                                                      join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
+                                                      join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode into temp
+                                                      from t in temp.DefaultIfEmpty()
+                                                      where s.SlpName == req.SlpName && t.CardCode == null
+                                                      select c.CardCode).Distinct().CountAsync();
+                        if (NoQuotationCount >= customerLimitRule.Limit)
+                        {
+                            response.Code = 500;
+                            response.Message = "超过该用户的最大客户数限制";
+                            return response;
+                        }
+                    }
+                    //如果客户是已成交客户,并且有已成交客户数量规则限制
+                    else if (isFinishCUstomer && customerLimitRule.CustomerType == 2)
+                    {
+                        var finishCount = await (from c in UnitWork.Find<OCRD>(null)
+                                                 join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
+                                                 join d in UnitWork.Find<ODLN>(null) on c.CardCode equals d.CardCode
+                                                 where s.SlpName == req.SlpName
+                                                 select c.CardCode).Distinct().CountAsync();
+                        if (finishCount >= customerLimitRule.Limit)
+                        {
+                            response.Code = 500;
+                            response.Message = "超过该客户的最大客户数限制";
+                            return response;
+                        }
+                    }
+                    //如果客户是报价单未转订单
+                    else if (isHasQuotationCustomer && customerLimitRule.CustomerType == 3)
+                    {
+                        var count = await (from c in UnitWork.Find<OCRD>(null)
+                                           join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
+                                           join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode
+                                           join r in UnitWork.Find<ORDR>(null) on c.CardCode equals r.CardCode into temp
+                                           from t in temp.DefaultIfEmpty()
+                                           where s.SlpName == req.SlpName
+                                           select c.CardCode).Distinct().CountAsync();
+                        if (count > customerLimitRule.Limit)
+                        {
+                            response.Message += "超过该客户的已报价未转销售客户数限制";
+                            response.Code = 500;
+                            return response;
+                        }
+                    }
+                    //如果是订单未转交货单
+                    else if (isHasOrderCustomer && customerLimitRule.CustomerType == 4)
+                    {
+                        var count = await (from c in UnitWork.Find<OCRD>(null)
+                                           join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
+                                           join r in UnitWork.Find<ORDR>(null) on c.CardCode equals r.CardCode
+                                           join d in UnitWork.Find<ODLN>(null) on c.CardCode equals d.CardCode into temp
+                                           from t in temp.DefaultIfEmpty()
+                                           where s.SlpName == req.SlpName
+                                           select c.CardCode).Distinct().CountAsync();
+                        if (count > customerLimitRule.Limit)
+                        {
+                            response.Message += "超过该客户的已销售未转交货客户数限制";
+                            response.Code = 500;
+                            return response;
+                        }
+                    }
+                    //都不是的话看是否有全部客户数限制
+                    else if (customerLimitRule.CustomerType == 0)
+                    {
+                        var totalCount = await (from c in UnitWork.Find<OCRD>(null)
+                                                join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
+                                                where s.SlpName == req.SlpName
+                                                select c.CardCode).Distinct().CountAsync();
+                        if (totalCount >= customerLimitRule.Limit)
+                        {
+                            response.Code = 500;
+                            response.Message = "超过该客户的最大客户数限制";
+                            return response;
+                        }
                     }
                 }
-                //如果客户是已成交客户,并且有已成交客户数量规则限制
-                else if (isFinishCUstomer && customerLimitRule.CustomerType == 2)
-                {
-                    var finishCount = await (from c in UnitWork.Find<OCRD>(null)
-                                             join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
-                                             join d in UnitWork.Find<ODLN>(null) on c.CardCode equals d.CardCode
-                                             where s.SlpName == req.SlpName
-                                             select c.CardCode).Distinct().CountAsync();
-                    if (finishCount >= customerLimitRule.Limit)
-                    {
-                        response.Code = 500;
-                        response.Message = "超过该客户的最大客户数限制";
-                        return response;
-                    }
-                }
+
+                customers.Add(customer);
             }
             #endregion
-
-            var customer = await UnitWork.Find<CustomerList>(c => c.CustomerNo == req.CustomerNo).FirstOrDefaultAsync();
-            if (customer == null)
+            if (!string.IsNullOrWhiteSpace(response.Message))
             {
                 response.Code = 500;
-                response.Message = "客户不存在或已被领取";
                 return response;
             }
-
-            var history = new CustomerSalerHistory()
-            {
-                CustomerNo = req.CustomerNo,
-                CustomerName = req.CustomerName,
-                SlpCode = req.SlpCode,
-                SlpName = req.SlpName,
-                SlpDepartment = customer.DepartMent,
-                CreateTime = DateTime.Now,
-                ReceiveTime = DateTime.Now,
-                ReleaseTime = customer.CreateDateTime,
-                FallIntoTime = customer.CreateDateTime,
-                IsSaleHistory = req.IsSaleHistory
-            };
 
             using var tran = UnitWork.GetDbContext<CustomerLimit>().Database.BeginTransaction();
             try
             {
-                int lastInstance = 0;
-                var isExists = UnitWork.Find<ACRD>(c => c.CardCode == req.CustomerNo).Any();
-                if (isExists) { lastInstance = UnitWork.Find<ACRD>(c => c.CardCode == req.CustomerNo).Max(x => x.LogInstanc) + 1; }
-                else { lastInstance = 1; }
+                foreach (var item in req.Customers)
+                {
+                    var history = new CustomerSalerHistory()
+                    {
+                        CustomerNo = item.CustomerNo,
+                        CustomerName = item.CustomerName,
+                        SlpCode = req.SlpCode,
+                        SlpName = req.SlpName,
+                        SlpDepartment = customers.Find(c => c.CustomerNo == item.CustomerNo).DepartMent,
+                        CreateTime = DateTime.Now,
+                        ReceiveTime = DateTime.Now,
+                        ReleaseTime = customers.Find(c => c.CustomerNo == item.CustomerNo).CreateDateTime,
+                        FallIntoTime = customers.Find(c => c.CustomerNo == item.CustomerNo).CreateDateTime,
+                        IsSaleHistory = req.IsSaleHistory
+                    };
 
-                //加入历史归属表
-                history.LogInstance = lastInstance;
-                await UnitWork.AddAsync<CustomerSalerHistory>(history);
-                //领取后,将客户从公海中移出
-                await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == req.CustomerNo);
+                    int lastInstance = 0;
+                    var isExists = UnitWork.Find<ACRD>(c => c.CardCode == item.CustomerNo).Any();
+                    if (isExists) { lastInstance = UnitWork.Find<ACRD>(c => c.CardCode == item.CustomerNo).Max(x => x.LogInstanc) + 1; }
+                    else { lastInstance = 1; }
 
-                //修改客户的销售员
-                var instance = await UnitWork.Find<OCRD>(c => c.CardCode == req.CustomerNo).FirstOrDefaultAsync();
-                instance.SlpCode = req.SlpCode;
-                await UnitWork.UpdateAsync<OCRD>(instance);
-                //3.0的客户归属表中新增一条记录
-                await UnitWork.AddAsync<ACRD>(new ACRD { DocEntry = instance.DocEntry, CardCode = req.CustomerNo, LogInstanc = lastInstance, CardName = req.CustomerName, SlpCode = req.SlpCode, CreateDate = DateTime.Now, UpdateDate = DateTime.Now });
-                await UnitWork.SaveAsync();
+                    //加入历史归属表
+                    history.LogInstance = lastInstance;
+                    await UnitWork.AddAsync<CustomerSalerHistory>(history);
+                    //领取后,将客户从公海中移出
+                    await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == item.CustomerNo);
+
+                    //修改客户的销售员
+                    var instance = await UnitWork.Find<OCRD>(c => c.CardCode == item.CustomerNo).FirstOrDefaultAsync();
+                    instance.SlpCode = req.SlpCode;
+                    await UnitWork.UpdateAsync<OCRD>(instance);
+                    //3.0的客户归属表中新增一条记录
+                    await UnitWork.AddAsync<ACRD>(new ACRD { DocEntry = instance.DocEntry, CardCode = item.CustomerNo, LogInstanc = lastInstance, CardName = item.CustomerName, SlpCode = req.SlpCode, CreateDate = DateTime.Now, UpdateDate = DateTime.Now });
+                    await UnitWork.SaveAsync();
+                }
 
                 await tran.CommitAsync();
             }
