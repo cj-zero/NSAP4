@@ -574,7 +574,7 @@ namespace OpenAuth.App.Client
             var userInfo = _auth.GetCurrentUser().User;
 
             //这3个人可以查看全部,其他只能查看自己的客户
-            if (!new string[] { "", "", "" }.Contains(userInfo.Name))
+            if (!new string[] { "韦京生", "郭睿心", "骆灵芝" }.Contains(userInfo.Name))
             {
                 slpCode = await (from u in UnitWork.Find<base_user>(null)
                                  join s in UnitWork.Find<sbo_user>(null)

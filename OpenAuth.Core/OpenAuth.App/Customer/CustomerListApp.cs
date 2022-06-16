@@ -274,7 +274,7 @@ namespace OpenAuth.App.Customer
         public async Task<TableData> GetCustomerSeaLists(QueryCustomerSeaReq req)
         {
             var result = new TableData();
-            var isAdmin = _auth.GetCurrentUser().Roles.Any(r => r.Name == "管理员");
+            var isAdmin = _auth.GetCurrentUser().Roles.Any(r => r.Name == "公海管理员");
             var dept = _userManagerApp.GetUserOrgInfo(_auth.GetCurrentUser().User.Id)?.Result?.OrgName;
             //查询已经掉入公海的客户
             var query = UnitWork.Find<CustomerList>(c => c.LabelIndex == 3)
@@ -332,7 +332,7 @@ namespace OpenAuth.App.Customer
         public async Task<TableData> GetCustomerDetail(string cardCode)
         {
             var result = new TableData();
-            var isAdmin = _auth.GetCurrentUser().Roles.Any(r => r.Name == "管理员");
+            var isAdmin = _auth.GetCurrentUser().Roles.Any(r => r.Name == "公海管理员");
             if (!isAdmin)
             {
                 return result;
