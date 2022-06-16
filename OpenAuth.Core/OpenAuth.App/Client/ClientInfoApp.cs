@@ -571,14 +571,15 @@ namespace OpenAuth.App.Client
             var result = new TableData();
 
             int? slpCode = null; //销售员的销售代码
-            var userInfo = _auth.GetCurrentUser();
-            //管理员查看全部,非管理员只能查看自己的客户
-            if (!userInfo.Roles.Any(r => r.Name == "管理员"))
+            var userInfo = _auth.GetCurrentUser().User;
+
+            //这3个人可以查看全部,其他只能查看自己的客户
+            if (!new string[] { "", "", "" }.Contains(userInfo.Name))
             {
                 slpCode = await (from u in UnitWork.Find<base_user>(null)
                                  join s in UnitWork.Find<sbo_user>(null)
                                  on u.user_id equals s.user_id
-                                 where s.sbo_id == Define.SBO_ID && u.user_nm == userInfo.User.Name
+                                 where s.sbo_id == Define.SBO_ID && u.user_nm == userInfo.Name
                                  select s.sale_id).FirstOrDefaultAsync();
             }
 
