@@ -186,7 +186,7 @@ namespace OpenAuth.App.Customer
             try
             {
                 await UnitWork.DeleteAsync<CustomerSeaRule>(c => c.Id == req.Id);
-                await UnitWork.DeleteAsync<CustomerSeaRuleItem>(c => c.Id == req.Id);
+                await UnitWork.DeleteAsync<CustomerSeaRuleItem>(c => c.CustomerSeaRuleId == req.Id);
 
                 await UnitWork.SaveAsync();
                 await tran.CommitAsync();

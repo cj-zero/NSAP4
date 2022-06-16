@@ -5119,21 +5119,21 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             string _main = JsonHelper.ParseModel(bill);
             DateTime docDate;
             DateTime.TryParse(bill.DocDate, out docDate);
-            bill.DocDate = docDate.ToString("yyyy.MM.dd");
+            bill.DocDate = docDate.ToString("yyyy/MM/dd");
             DateTime docDueDate;
             DateTime.TryParse(bill.DocDueDate, out docDueDate);
-            bill.DocDueDate = docDueDate.ToString("yyyy.MM.dd");
+            bill.DocDueDate = docDueDate.ToString("yyyy/MM/dd");
             DateTime prepaData;
             DateTime.TryParse(bill.PrepaData, out prepaData);
-            bill.PrepaData = prepaData.ToString("yyyy.MM.dd");
+            bill.PrepaData = prepaData.ToString("yyyy/MM/dd");
             DateTime goodsToDate;
             DateTime.TryParse(bill.GoodsToDate, out goodsToDate);
-            bill.GoodsToDate = goodsToDate.ToString("yyyy.MM.dd");
+            bill.GoodsToDate = goodsToDate.ToString("yyyy/MM/dd");
             foreach (var files in bill.attachmentData)
             {
                 DateTime filetime;
                 DateTime.TryParse(files.filetime, out filetime);
-                files.filetime = filetime.ToString("yyyy.MM.dd hh:mm:ss");
+                files.filetime = filetime.ToString("yyyy/MM/dd hh:mm:ss");
             }
             //if (bill.CustomFields.ToString().Contains("≯"))
             //{

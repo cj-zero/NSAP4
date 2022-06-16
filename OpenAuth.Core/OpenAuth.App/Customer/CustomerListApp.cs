@@ -475,14 +475,51 @@ namespace OpenAuth.App.Customer
                 //有效时间设为1天,单位为秒
                 RedisHelper.Set(key, 0, 24 * 60 * 60);
             }
-
+            //判断业务员当天领取的次数是否符合规范
             if (req.Customers.Count() > config.ReceiveMaxLimit)
             {
-                response.Message = $"每个业务员每天只能领取{config?.ReceiveMaxLimit}个公海客户";
+                response.Message = $"每个业务员每天只能领取{config?.ReceiveMaxLimit}次公海客户";
                 response.Code = 500;
                 return response;
             }
 
+            //认领规则如果开启
+            if (config?.ReceiveEnable == true)
+            {
+                var diffDate = (DateTime.Now - slpInfo.try_date).Days;
+                //如果不在这个区间,则不能领取(业务上是入职时间太短或者太长都不能领取)
+                if (!(diffDate > config.ReceiveJobMin && diffDate < config.ReceiveJobMax))
+                {
+                    response.Message = $"抱歉,您的入职时长不满足领取规定";
+                    response.Code = 500;
+                    return response;
+                }
+                //判断每天领取个数是否满足规定
+                var dayNum = await RedisHelper.GetAsync<int>(key);
+                if (dayNum + req.Customers.Count() > config?.ReceiveMaxLimit)
+                {
+                    response.Message = $"每个业务员每天只能领取{config?.ReceiveMaxLimit}个公海客户";
+                    response.Code = 500;
+                    return response;
+                }
+            }
+
+            //查询业务员的客户数限制
+            var customerLimitRule = await (from cl in UnitWork.Find<CustomerLimit>(null)
+                                           join clr in UnitWork.Find<CustomerLimitRule>(null)
+                                           on cl.Id equals clr.CustomerLimitId
+                                           join clu in UnitWork.Find<CustomerLimitSaler>(null)
+                                           on cl.Id equals clu.CustomerLimitId
+                                           //这个字段用的有点奇怪,是否启用的意思,true代表已启用
+                                           where cl.Isdelete == true && clu.SalerName == slpInfo.user_nm
+                                           //按照销售员、客户类型分组，数量取最大的限制数量
+                                           group new { cl, clr, clu } by new { clu.SalerName, clr.CustomerType } into g
+                                           select new
+                                           {
+                                               SalerName = g.Key.SalerName,
+                                               CustomerType = g.Key.CustomerType,
+                                               Limit = g.Max(x => x.clr.Limit)
+                                           }).FirstOrDefaultAsync();
             #region 逻辑判断
             foreach (var item in req.Customers)
             {
@@ -493,28 +530,6 @@ namespace OpenAuth.App.Customer
                     continue;
                 }
                 var customer = await UnitWork.Find<CustomerList>(c => c.CustomerNo == item.CustomerNo).FirstOrDefaultAsync();
-                
-                //认领规则如果开启
-                if (config?.ReceiveEnable == true)
-                {
-                    var diffDate = (DateTime.Now - slpInfo.try_date).Days;
-                    //如果不在这个区间,则不能领取(业务上是入职时间太短或者太长都不能领取)
-                    if (!(diffDate > config.ReceiveJobMin && diffDate < config.ReceiveJobMax))
-                    {
-                        response.Message = $"抱歉,您的入职时长不满足领取规定";
-                        response.Code = 500;
-                        return response;
-                    }
-                    //判断每天领取个数是否满足规定
-                    var dayNum = await RedisHelper.GetAsync<int>(key);
-                    if (dayNum + req.Customers.Count() > config?.ReceiveMaxLimit)
-                    {
-                        response.Message = $"每个业务员每天只能领取{config?.ReceiveMaxLimit}个公海客户";
-                        response.Code = 500;
-                        return response;
-                    }
-                }
-
                 //抢回限制如果是开启的
                 if (config?.BackEnable == true)
                 {
@@ -530,22 +545,7 @@ namespace OpenAuth.App.Customer
                     }
                 }
 
-                //判断是否有客户数限制
-                var customerLimitRule = await (from cl in UnitWork.Find<CustomerLimit>(null)
-                                               join clr in UnitWork.Find<CustomerLimitRule>(null)
-                                               on cl.Id equals clr.CustomerLimitId
-                                               join clu in UnitWork.Find<CustomerLimitSaler>(null)
-                                               on cl.Id equals clu.CustomerLimitId
-                                               //这个字段用的有点奇怪,是否启用的意思,true代表已启用
-                                               where cl.Isdelete == true && clu.SalerName == slpInfo.user_nm
-                                               //按照销售员、客户类型分组，数量取最大的限制数量
-                                               group new { cl, clr, clu } by new { clu.SalerName, clr.CustomerType } into g
-                                               select new
-                                               {
-                                                   SalerName = g.Key.SalerName,
-                                                   CustomerType = g.Key.CustomerType,
-                                                   Limit = g.Max(x => x.clr.Limit)
-                                               }).FirstOrDefaultAsync();
+                
                 //是否是未成交客户
                 var isNoQuotationCustomer = await (from c in UnitWork.Find<OCRD>(null)
                                                    join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode into temp
@@ -731,15 +731,32 @@ namespace OpenAuth.App.Customer
             response.Message = "";
 
             var userInfo = _auth.GetCurrentUser();
-            if (!userInfo.Roles.Any(r => r.Name == "管理员"))
+            if (!userInfo.Roles.Any(r => r.Name == "公海管理员"))
             {
                 response.Code = 500;
-                response.Message = "非管理员不能进行分配操作";
+                response.Message = "非公海管理员不能进行分配操作";
 
                 return response;
             }
 
             var customers = new List<CustomerList>();
+            //查询业务员的客户数限制
+            var customerLimitRule = await (from cl in UnitWork.Find<CustomerLimit>(null)
+                                           join clr in UnitWork.Find<CustomerLimitRule>(null)
+                                           on cl.Id equals clr.CustomerLimitId
+                                           join clu in UnitWork.Find<CustomerLimitSaler>(null)
+                                           on cl.Id equals clu.CustomerLimitId
+                                           //这个字段用的有点奇怪,是否启用的意思,true代表已启用
+                                           where cl.Isdelete == true && clu.SalerName == req.SlpName
+                                           //按照销售员、客户类型分组，数量取最大的限制数量
+                                           group new { cl, clr, clu } by new { clu.SalerName, clr.CustomerType } into g
+                                           select new
+                                           {
+                                               SalerName = g.Key.SalerName,
+                                               CustomerType = g.Key.CustomerType,
+                                               Limit = g.Max(x => x.clr.Limit)
+                                           }).FirstOrDefaultAsync();
+            #region 逻辑判断
             foreach (var item in req.Customers)
             {
                 var customer = await UnitWork.Find<CustomerList>(c => c.CustomerNo == item.CustomerNo).FirstOrDefaultAsync();
@@ -748,24 +765,7 @@ namespace OpenAuth.App.Customer
                     response.Message += $"客户{item.CustomerNo}不存在或已被领取 \n";
                     continue;
                 }
-
-                #region 判断逻辑
-                //判断是否有最大客户数限制
-                var customerLimitRule = await (from cl in UnitWork.Find<CustomerLimit>(null)
-                                               join clr in UnitWork.Find<CustomerLimitRule>(null)
-                                               on cl.Id equals clr.CustomerLimitId
-                                               join clu in UnitWork.Find<CustomerLimitSaler>(null)
-                                               on cl.Id equals clu.CustomerLimitId
-                                               //这个字段用的有点奇怪,是否启用的意思,true代表已启用
-                                               where cl.Isdelete == true && clu.SalerName == req.SlpName
-                                               //按照销售员、客户类型分组，数量取最大的限制数量
-                                               group new { cl, clr, clu } by new { clu.SalerName, clr.CustomerType } into g
-                                               select new
-                                               {
-                                                   SalerName = g.Key.SalerName,
-                                                   CustomerType = g.Key.CustomerType,
-                                                   Limit = g.Max(x => x.clr.Limit)
-                                               }).FirstOrDefaultAsync();
+                
                 //是否是未报价客户
                 var isNoQuotationCustomer = await (from c in UnitWork.Find<OCRD>(null)
                                                    join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode into temp
