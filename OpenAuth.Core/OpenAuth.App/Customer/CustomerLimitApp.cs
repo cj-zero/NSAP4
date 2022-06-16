@@ -977,7 +977,7 @@ namespace OpenAuth.App.Customer
                                      where s.sbo_id == Define.SBO_ID
                                      && d.dep_alias == dept
                                      //&& new int[] { 0, 1 }.Contains(ud.status) //在职的员工,离职状态是2和3
-                                     //&& u.user_nm == "薛琼" //(先拿薛姐的客户试一试)
+                                     && u.user_nm == "薛琼" //(先拿薛姐的客户试一试)
                                      select s.sale_id).Distinct().ToListAsync();
 
                 //再根据销售编号查找客户
@@ -990,7 +990,8 @@ namespace OpenAuth.App.Customer
                                        where slpInfo.Select(s => s).Contains(s.SlpCode)
                                        && !whiteList.Contains(c.CardCode)
                                        && t.CardCode == null
-                                       select new { c.CardCode, c.CardName, c.CreateDate, s.SlpCode, s.SlpName }).ToListAsync();
+                                       orderby c.CreateDate
+                                       select new { c.CardCode, c.CardName, c.CreateDate, s.SlpCode, s.SlpName }).Take(50).ToListAsync();
                 foreach (var customer in customers)
                 {
                     DateTime? startTime = null;
