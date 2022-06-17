@@ -588,7 +588,7 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var list = await UnitWork.Find<DeviceCheckTask>(null).Where(c => string.IsNullOrWhiteSpace(c.TaskId) && c.ErrCount <= 3).OrderBy(c => c.Id).ToListAsync();
-            var taskList = await UnitWork.Find<DeviceCheckTask>(null).Where(c => !string.IsNullOrWhiteSpace(c.TaskId) && c.TaskStatus != 2).OrderBy(c => c.Id).ToListAsync();
+            //var taskList = await UnitWork.Find<DeviceCheckTask>(null).Where(c => !string.IsNullOrWhiteSpace(c.TaskId) && c.TaskStatus != 2).OrderBy(c => c.Id).ToListAsync();
             string url = $"{_appConfiguration.Value.AnalyticsUrl}api/DataCheck/Task";
             Infrastructure.HttpHelper helper = new Infrastructure.HttpHelper(url);
             foreach (var item in list)
@@ -614,13 +614,12 @@ namespace OpenAuth.App
                     {
                         item.ErrCount++;
                         item.TaskContent = $"烤机检测任务创建失败{taskObj["message"]}";
-                        continue;
                     }
-                    item.TaskId = taskObj["data"]["TaskId"].ToString();
+                    item.TaskId = taskObj["data"]==null?"": taskObj["data"]["TaskId"].ToString();
                 }
                 catch (Exception ex)
                 {
-                    Log.Logger.Error($"烤机结果校验失败 EdgeGuid={item.EdgeGuid},topics={item.SrvGuid},DevUid={item.DevUid},UnitId={item.UnitId},ChlId={item.ChlId},TestId={item.TestId}", ex);
+                    Log.Logger.Error($"烤机结果校验失败 EdgeGuid={item.EdgeGuid},topics={item.SrvGuid},DevUid={item.DevUid},UnitId={item.UnitId},ChlId={item.ChlId},TestId={item.TestId},message={ex.Message}");
                     continue;
                 }
             }
@@ -629,50 +628,50 @@ namespace OpenAuth.App
                 await UnitWork.BatchUpdateAsync(list.ToArray());
                 await UnitWork.SaveAsync();
             }
-            if (taskList.Any())
-            {
-                foreach (var item in taskList)
-                {
-                    try
-                    {
-                        string taskurl = $"{_appConfiguration.Value.AnalyticsUrl}api/DataCheck/TaskResult?id={item.TaskId}";
-                        Dictionary<string, string> dic = null;
-                        var taskResult = helper.Get(dic, taskurl);
-                        JObject res = JObject.Parse(taskResult);
-                        if (res["status"] == null || res["status"].ToString() != "200")
-                        {
-                            continue;
-                        }
-                        if (res["data"] != null)
-                        {
-                            sbyte.TryParse(res["data"]["Status"].ToString(), out sbyte TaskStatus);
-                            item.TaskStatus = TaskStatus;
-                            int.TryParse(res["data"]["ErrCount"].ToString(), out int ErrCount);
-                            item.ErrCount = ErrCount;
-                            item.TaskContent = res["data"]["CheckItems"] != null ? JsonConvert.SerializeObject(res["data"]["CheckItems"]) : "";
-                            var channelTest = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.TaskId == item.TaskId).FirstOrDefaultAsync();
-                            if (channelTest != null)
-                            {
-                                channelTest.TaskErrCount = ErrCount;
-                                channelTest.TaskStatus = TaskStatus;
-                                channelTest.TaskContent = res["data"]["CheckItems"] != null ? JsonConvert.SerializeObject(res["data"]["CheckItems"]) : "";
-                                await UnitWork.UpdateAsync(channelTest);
-                                await UnitWork.SaveAsync();
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Logger.Error($"烤机任务数据获取失败 TaskId={item.TaskId}", ex);
-                        continue;
-                    }
-                }
-                var hasCompleteList = taskList.Where(c => c.TaskStatus == 2).ToList();
-                var noCompleteList = taskList.Where(c => c.TaskStatus != 2).ToList();
-                await UnitWork.BatchUpdateAsync(noCompleteList.ToArray());
-                await UnitWork.BatchDeleteAsync(hasCompleteList.ToArray());
-                await UnitWork.SaveAsync();
-            }
+            //if (taskList.Any())
+            //{
+            //    foreach (var item in taskList)
+            //    {
+            //        try
+            //        {
+            //            string taskurl = $"{_appConfiguration.Value.AnalyticsUrl}api/DataCheck/TaskResult?id={item.TaskId}";
+            //            Dictionary<string, string> dic = null;
+            //            var taskResult = helper.Get(dic, taskurl);
+            //            JObject res = JObject.Parse(taskResult);
+            //            if (res["status"] == null || res["status"].ToString() != "200")
+            //            {
+            //                continue;
+            //            }
+            //            if (res["data"] != null)
+            //            {
+            //                sbyte.TryParse(res["data"]["Status"].ToString(), out sbyte TaskStatus);
+            //                item.TaskStatus = TaskStatus;
+            //                int.TryParse(res["data"]["ErrCount"].ToString(), out int ErrCount);
+            //                item.ErrCount = ErrCount;
+            //                item.TaskContent = res["data"]["CheckItems"] != null ? JsonConvert.SerializeObject(res["data"]["CheckItems"]) : "";
+            //                var channelTest = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.TaskId == item.TaskId).FirstOrDefaultAsync();
+            //                if (channelTest != null)
+            //                {
+            //                    channelTest.TaskErrCount = ErrCount;
+            //                    channelTest.TaskStatus = TaskStatus;
+            //                    channelTest.TaskContent = res["data"]["CheckItems"] != null ? JsonConvert.SerializeObject(res["data"]["CheckItems"]) : "";
+            //                    await UnitWork.UpdateAsync(channelTest);
+            //                    await UnitWork.SaveAsync();
+            //                }
+            //            }
+            //        }
+            //        catch (Exception ex)
+            //        {
+            //            Log.Logger.Error($"烤机任务数据获取失败 TaskId={item.TaskId}", ex);
+            //            continue;
+            //        }
+            //    }
+            //    var hasCompleteList = taskList.Where(c => c.TaskStatus == 2).ToList();
+            //    var noCompleteList = taskList.Where(c => c.TaskStatus != 2).ToList();
+            //    await UnitWork.BatchUpdateAsync(noCompleteList.ToArray());
+            //    await UnitWork.BatchDeleteAsync(hasCompleteList.ToArray());
+            //    await UnitWork.SaveAsync();
+            //}
             return result;
         }
 
