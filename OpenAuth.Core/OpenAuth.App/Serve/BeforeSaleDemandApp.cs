@@ -46,7 +46,7 @@ namespace OpenAuth.App
                         .Include(c => c.Beforesaledemandoperationhistories)
                         .WhereIf(!string.IsNullOrWhiteSpace(req.ApplyUserName), c => c.ApplyUserName.Contains(req.ApplyUserName))
                         //.WhereIf(!string.IsNullOrWhiteSpace(req.ApplyUserId), c => c.ApplyUserName.Contains(req.ApplyUserId))
-                        .WhereIf(!string.IsNullOrWhiteSpace(req.KeyWord), k => k.BeforeDemandCode.Contains(req.KeyWord) || k.BeforeSaleDemandProjectName.Contains(req.KeyWord) || k.ApplyUserName.Contains(req.KeyWord) || k.DemandContents.Contains(req.KeyWord) || k.FirstConnects.Contains(req.KeyWord))
+                        .WhereIf(!string.IsNullOrWhiteSpace(req.KeyWord), k => k.BeforeDemandCode.Contains(req.KeyWord) || k.BeforeSaleDemandProjectName.Contains(req.KeyWord) || k.ApplyUserName.Contains(req.KeyWord) || k.DemandContents.Contains(req.KeyWord) || k.FirstConnects.Contains(req.KeyWord) || k.CustomerName.Contains(req.KeyWord))
                         .WhereIf(!string.IsNullOrWhiteSpace(req.ApplyDateStart.ToString()), q => q.ApplyDate > req.ApplyDateStart)
                         .WhereIf(!string.IsNullOrWhiteSpace(req.ApplyDateEnd.ToString()), q => q.ApplyDate < Convert.ToDateTime(req.ApplyDateEnd).AddDays(1))
                         .WhereIf(!string.IsNullOrWhiteSpace(req.UpdateDateStart.ToString()), q => q.UpdateTime > req.UpdateDateStart)
