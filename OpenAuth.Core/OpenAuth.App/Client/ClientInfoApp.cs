@@ -376,7 +376,13 @@ namespace OpenAuth.App.Client
                 //tableName.Append("LEFT JOIN NSAP.dbo.test_kmye H ON A.CardCode=H.cardcode) T "); //科目余额总账表
                 tableName.Append(") T");
                 //tableName.Append("LEFT JOIN NSAP.dbo.biz_clerk_tech I ON A.CardCode=I.Cardcode "); //文员，技术员对照表
-                clientTable = _serviceSaleOrderApp.SAPSelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), limit, page, sortString, filterString.ToString(), out rowCount);
+
+                //modify by yangsiming @2022.06.16 调用存储过程,当sql语句太长,超过4000个字符,后面的会被截掉,造成报错
+                //clientTable = _serviceSaleOrderApp.SAPSelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), limit, page, sortString, filterString.ToString(), out rowCount);
+                var sql2 = $" select {filedName.ToString()} from {tableName.ToString()} where {filterString.ToString()} order by {sortString} offset {(page - 1) * limit} rows fetch next {limit} rows only ";
+                clientTable = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, sql2, CommandType.Text);
+                var sql3 = $" select count(*) from {tableName.ToString()} where {filterString.ToString()}; ";
+                rowCount = int.Parse(UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, sql3, CommandType.Text).Rows[0][0].ToString());
                 clientTable.Columns.Add("U_ClientSource", typeof(string));//客户来源
                 clientTable.Columns.Add("U_CompSector", typeof(string));//所属行业
                 clientTable.Columns.Add("U_TradeType", typeof(string));//贸易类型
@@ -565,14 +571,15 @@ namespace OpenAuth.App.Client
             var result = new TableData();
 
             int? slpCode = null; //销售员的销售代码
-            var userInfo = _auth.GetCurrentUser();
-            //管理员查看全部,非管理员只能查看自己的客户
-            if (!userInfo.Roles.Any(r => r.Name == "管理员"))
+            var userInfo = _auth.GetCurrentUser().User;
+
+            //这3个人可以查看全部,其他只能查看自己的客户
+            if (!new string[] { "韦京生", "郭睿心", "骆灵芝" }.Contains(userInfo.Name))
             {
                 slpCode = await (from u in UnitWork.Find<base_user>(null)
                                  join s in UnitWork.Find<sbo_user>(null)
                                  on u.user_id equals s.user_id
-                                 where s.sbo_id == Define.SBO_ID && u.user_nm == userInfo.User.Name
+                                 where s.sbo_id == Define.SBO_ID && u.user_nm == userInfo.Name
                                  select s.sale_id).FirstOrDefaultAsync();
             }
 
@@ -602,7 +609,7 @@ namespace OpenAuth.App.Client
                                 where t.CardCode == null
                                 select c.CardCode).CountAsync();
             //即将掉入公海客户
-            var query4 = await UnitWork.Find<CustomerList>(c => c.Label == "4").WhereIf(slpCode != null, c => c.SlpCode == slpCode).CountAsync();
+            var query4 = await UnitWork.Find<CustomerList>(c => c.LabelIndex == 4).WhereIf(slpCode != null, c => c.SlpCode == slpCode).CountAsync();
 
             result.Data = new GetCustomerCount() { Count0 = query0, Count1 = query1, Count2 = query2, Count3 = query3, Count4 = query4 };
 

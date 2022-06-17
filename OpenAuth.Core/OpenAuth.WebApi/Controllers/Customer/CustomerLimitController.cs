@@ -227,11 +227,20 @@ namespace OpenAuth.WebApi.Controllers.Customer
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task TestAsync()
+        public async Task TestAsync(string index)
         {
-            //await _customerLimitApp.AsyncCustomerStatusService2();
-            //await _customerLimitApp.RecoveryCustomer();
-            await _customerLimitApp.PushMessage();
+            if (index == "1")
+            {
+                await _customerLimitApp.AsyncCustomerStatusService();
+            }
+            else if (index == "2")
+            {
+                await _customerLimitApp.RecoveryCustomer();
+            }
+            else if (index == "3")
+            {
+                await _customerLimitApp.PushMessage();
+            }
         }
     }
 }
