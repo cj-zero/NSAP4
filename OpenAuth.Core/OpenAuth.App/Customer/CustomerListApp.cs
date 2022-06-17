@@ -700,9 +700,10 @@ namespace OpenAuth.App.Customer
                     //领取后,将客户从公海中移出
                     await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == item.CustomerNo);
 
-                    //修改客户的销售员
+                    //修改客户的销售员和更新修改时间
                     var instance = await UnitWork.Find<OCRD>(c => c.CardCode == item.CustomerNo).FirstOrDefaultAsync();
                     instance.SlpCode = slpInfo.sale_id;
+                    instance.UpdateDate = DateTime.Now;
                     await UnitWork.UpdateAsync<OCRD>(instance);
                     //3.0的客户归属表中新增一条记录
                     await UnitWork.AddAsync<ACRD>(new ACRD { DocEntry = instance.DocEntry, CardCode = item.CustomerNo, LogInstanc = lastInstance, CardName = item.CustomerName, SlpCode = slpInfo.sale_id, CreateDate = DateTime.Now, UpdateDate = DateTime.Now });
