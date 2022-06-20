@@ -726,6 +726,28 @@ namespace OpenAuth.WebApi.Controllers.Material
         }
 
         /// <summary>
+        /// 同步销售订单
+        /// </summary>
+        /// <param name="QuotationId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> SyncSalesOrderToSap(SyncSalesOrder request)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.SyncSalesOrderToSap(request.QuotationId);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.QuotationId}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 同步销售交货
         /// </summary>
         /// <param name="request"></param>

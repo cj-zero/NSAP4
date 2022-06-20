@@ -3178,6 +3178,11 @@ namespace OpenAuth.App.Material
         {
             _capBus.Publish("Serve.SellOrder.ERPCreate", int.Parse(QuotationId));
         }
+        public async Task SyncSalesOrderToSap(string QuotationId)
+        {
+            _capBus.Publish("Serve.SellOrder.Create", int.Parse(QuotationId));
+        }
+
 
         /// <summary>
         /// 同步销售交货
