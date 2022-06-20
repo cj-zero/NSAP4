@@ -269,5 +269,120 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        #region 菜单字段
+        /// <summary>
+        /// 添加菜单字段
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public Response<ModuleField> AddMenuField(ModuleField obj)
+        {
+            var result = new Response<ModuleField>();
+            try
+            {
+                _app.AddMenuField(obj);
+                result.Result = obj;
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{obj.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+        /// <summary>
+        /// 修改菜单字段
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public Response UpdateMenuField(ModuleField obj)
+        {
+            var result = new Response();
+            try
+            {
+                _app.UpdateMenuField(obj);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{obj.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        [HttpGet]
+        public Response DeleteMenuField(string id)
+        {
+            var result = new Response();
+            try
+            {
+                _app.DelMenuField(id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{id}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// 获取模块下字段（列表）
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public Response<List<ModuleField>> LoadModuleField(string moduleId, string key, string description)
+        {
+            var result = new Response<List<ModuleField>>();
+            try
+            {
+                result.Result = _app.LoadModuleField(moduleId, key, description);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{moduleId},{key},{description}， 错误：{result.Message}");
+            }
+
+            return result;
+
+        }
+
+        /// <summary>
+        /// 获取模块下字段（授权）
+        /// </summary>
+        /// <param name="moduleCode">模块code</param>
+        /// <param name="roleId">角色名</param>
+        /// <returns></returns>
+        [HttpGet]
+        public Response<List<KeyDescription>> GetProperties(string moduleCode, string roleId)
+        {
+            var result = new Response<List<KeyDescription>>();
+            try
+            {
+                result.Result = _app.GetProperties(moduleCode, roleId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{moduleCode}， 错误：{result.Message}");
+            }
+
+            return result;
+
+        }
+        #endregion
+
     }
 }

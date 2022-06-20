@@ -163,15 +163,16 @@ namespace OpenAuth.App
         public void AssignData(AssignDataReq request)
         {
             var relevances = new List<Relevance>();
-            foreach (var requestProperty in request.Properties)
+            foreach (var requestProperty in request.Field)
             {
                 relevances.Add(new Relevance
                 {
                     Key = Define.ROLEDATAPROPERTY,
                     FirstId = request.RoleId,
                     SecondId = request.ModuleCode,
-                    ThirdId = requestProperty,
-                    OperateTime = DateTime.Now
+                    ThirdId = requestProperty.Key,
+                    OperateTime = DateTime.Now,
+                    ExtendInfo = requestProperty.Permission
                 });
             }
             UnitWork.BatchAdd(relevances.ToArray());
@@ -206,6 +207,29 @@ namespace OpenAuth.App
                 }
             }
         }
+
+        /// <summary>
+        /// 复制角色
+        /// </summary>
+        /// <param name="roleId">复制角色ID</param>
+        /// <param name="copyId">被复制角色Id</param>
+        public void CopyAssignRoleUsers(string roleId,string copyId)
+        {
+            //获取被复制角色权限
+            var roleRelevance = UnitWork.Find<Relevance>(c => c.FirstId == copyId && c.Key != Define.USERROLE).ToList();
+            //复制角色资源
+            var secIds = roleRelevance.Where(c => c.Key == Define.ROLERESOURCE).Select(c => c.SecondId).ToArray();
+            Assign(new AssignReq { firstId = roleId, secIds = secIds, type = Define.ROLERESOURCE });
+            //复制角色菜单权限
+            secIds = roleRelevance.Where(c => c.Key == Define.ROLEMODULE).Select(c => c.SecondId).ToArray();
+            Assign(new AssignReq { firstId = roleId, secIds = secIds, type = Define.ROLEMODULE });
+            //复制角色按钮元素
+            secIds = roleRelevance.Where(c => c.Key == Define.ROLEELEMENT).Select(c => c.SecondId).ToArray();
+            Assign(new AssignReq { firstId = roleId, secIds = secIds, type = Define.ROLEELEMENT });
+            //字段权限
+
+        }
+
 
         /// <summary>
         /// 为角色分配用户，需要统一提交，会删除以前该角色的所有用户

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Infrastructure;
+using Infrastructure.Extensions;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.Repository.Domain;
@@ -125,6 +126,78 @@ namespace OpenAuth.App
             UnitWork.Update<ModuleElement>(model);
             UnitWork.Save();
         }
+
+        #region 菜单字段
+        public List<ModuleField> LoadModuleField(string moduleId, string key, string description)
+        {
+            var query = UnitWork.Find<ModuleField>(c => c.ModuleId == moduleId)
+                .WhereIf(!string.IsNullOrWhiteSpace(key), c => c.Key.Contains(key) || c.Description.Contains(key))
+                .ToList();
+            return query;
+        }
+
+        /// <summary>
+        /// 添加菜单字段
+        /// </summary>
+        public void AddMenuField(ModuleField model)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            UnitWork.Add(model);
+            UnitWork.Save();
+        }
+
+        /// <summary>
+        /// 修改菜单字段
+        /// </summary>
+        public void UpdateMenuField(ModuleField model)
+        {
+            UnitWork.Update<ModuleField>(model);
+            UnitWork.Save();
+        }
+
+        /// <summary>
+        /// 删除菜单字段
+        /// </summary>
+        /// <param name="ids"></param>
+        public void DelMenuField(string id)
+        {
+            UnitWork.Delete<ModuleField>(u => u.Id == id);
+            UnitWork.Save();
+        }
+
+        /// <summary>
+        /// 获取模块下字段
+        /// </summary>
+        /// <param name="moduleCode"></param>
+        /// <returns></returns>
+        public List<KeyDescription> GetProperties(string moduleCode,string roleId)
+        {
+            var allprops = UnitWork.Find<ModuleField>(c => c.ModuleCode == moduleCode).Select(c => new KeyDescription { Key = c.Key, Description = c.Description, SortNo = c.SortNo }).ToList();
+            var props = UnitWork.Find<Relevance>(c => c.FirstId == roleId && c.SecondId == moduleCode && c.Key == Define.ROLEDATAPROPERTY).ToList();
+            allprops.ForEach(c =>
+            {
+                c.Permission = props.Where(p => p.ThirdId == c.Key).FirstOrDefault()?.ExtendInfo;
+            });
+            //var allprops = from a in UnitWork.Find<ModuleField>(null)
+            //               join b in UnitWork.Find<Relevance>(null) on new { a.ModuleCode, Feild = a.Key } equals new { ModuleCode = b.SecondId, Feild = b.ThirdId } into ab
+            //               from b in ab.DefaultIfEmpty()
+            //               where a.ModuleCode == moduleCode && b.SecondId == moduleCode && b.FirstId == roleId
+            //               select new KeyDescription
+            //               {
+            //                   Key = a.Key,
+            //                   Description = a.Description,
+            //                   SortNo = a.SortNo,
+            //                   Permission = b == null ? null : b.ExtendInfo
+            //               };
+
+            return allprops;
+        }
+
+        #endregion
 
         public ModuleManagerApp(IUnitWork unitWork, IRepository<Module> repository
         ,RevelanceManagerApp app,IAuth auth) : base(unitWork, repository, auth)
