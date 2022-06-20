@@ -16,6 +16,8 @@ using OpenAuth.Repository.Domain.Customer;
 using OpenAuth.Repository.Domain.Sap;
 using Microsoft.AspNetCore.SignalR;
 using OpenAuth.App.SignalR;
+using OpenAuth.Repository;
+using System.Data;
 
 namespace OpenAuth.App.Customer
 {
@@ -1268,6 +1270,28 @@ namespace OpenAuth.App.Customer
                 SlpCode = null
             });
             await UnitWork.SaveAsync();
+
+            //正式环境下发现有重复的数据,把重复的数据删除,只保留最小的那一个
+            var sql = @"select c.Id
+                        from customer_list as c
+                        where c.Customer_No in(
+	                        select Customer_No
+	                        from customer_list
+	                        group by Customer_No
+	                        having count(*) > 1
+                        )
+                        and c.Id not in(
+	                        select min(Id)
+	                        from customer_list
+	                        group by Customer_No
+	                        having count(*) > 1
+                        );";
+            var duplicateData = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, System.Data.CommandType.Text);
+            if (duplicateData != null && duplicateData.Rows.Count > 0)
+            {
+                var duplicateId = duplicateData.AsEnumerable().Select(d => d.Field<int>("Id")).ToList();
+                await UnitWork.DeleteAsync<CustomerList>(c => duplicateId.Contains(c.Id));
+            }
 
             //数据库数据更新之后,删除已经掉入公海的客户缓存
             foreach (var customer in customers)
