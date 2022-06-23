@@ -51,6 +51,18 @@ namespace OpenAuth.App.Customer.Request
 
 
         /// <summary>
+        /// 主动放入规则天数
+        /// </summary>
+        public int AutomaticDayLimit { get; set; }
+
+        /// <summary>
+        /// 是否启用主动放入规则
+        /// </summary>
+        public bool AutomaticEnable { get; set; }
+
+
+
+        /// <summary>
         /// 掉入公海后抢回限制
         /// </summary>
         public int BackDay { get; set; }

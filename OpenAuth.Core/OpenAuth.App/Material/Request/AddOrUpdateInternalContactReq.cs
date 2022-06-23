@@ -62,6 +62,14 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public List<string> AdaptiveRanges { get; set; }
         /// <summary>
+        /// 其他
+        /// </summary>
+        public string Others { get; set; }
+        /// <summary>
+        /// 处理意见
+        /// </summary>
+        public List<string> Opinions { get; set; }
+        /// <summary>
         /// 变更原因
         /// </summary>
         public List<string> Reasons { get; set; }

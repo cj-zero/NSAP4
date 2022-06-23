@@ -39,15 +39,17 @@ namespace OpenAuth.App.Material
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
         private readonly BusinessPartnerApp _businessPartnerApp;
         private readonly ServiceOrderApp _serviceOrderApp;
+        private readonly UserManagerApp _userManagerApp;
 
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
-        public InternalContactApp(IUnitWork unitWork, IAuth auth, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, ModuleFlowSchemeApp moduleFlowSchemeApp, BusinessPartnerApp businessPartnerApp, ServiceOrderApp serviceOrderApp) : base(unitWork, auth)
+        public InternalContactApp(IUnitWork unitWork, IAuth auth, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, ModuleFlowSchemeApp moduleFlowSchemeApp, BusinessPartnerApp businessPartnerApp, ServiceOrderApp serviceOrderApp, UserManagerApp userManagerApp) : base(unitWork, auth)
         {
             _flowInstanceApp = flowInstanceApp;
             _workbenchApp = workbenchApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _businessPartnerApp = businessPartnerApp;
             _serviceOrderApp = serviceOrderApp;
+            _userManagerApp = userManagerApp;
         }
 
         /// <summary>
@@ -155,10 +157,13 @@ namespace OpenAuth.App.Material
 
             var obj = req.MapTo<InternalContact>();
             var dbContext = UnitWork.GetDbContext<InternalContact>();
+            var catetoryOrg = await UnitWork.Find<Category>(c => c.TypeId == "SYS_InternalContactOrg").ToListAsync();
+            var userId = catetoryOrg.Select(c => c.DtValue).ToList();
             var orgRole = await (from a in UnitWork.Find<Relevance>(c => c.Key == Define.ORGROLE)
                                  join b in UnitWork.Find<User>(null) on a.FirstId equals b.Id into ab
                                  from b in ab.DefaultIfEmpty()
                                  select new { a.SecondId, b }).ToListAsync();
+            var user = await UnitWork.Find<User>(c => userId.Contains(c.Account)).Select(c => new { c.Id, c.Account, c.Name }).ToListAsync();
 
             using (var transaction = await dbContext.Database.BeginTransactionAsync())
             {
@@ -189,7 +194,8 @@ namespace OpenAuth.App.Material
                     obj.Reason = string.Join(",", req.Reasons);
                     //obj.SaleOrderNo = string.Join(",", req.SaleOrderNo);
                     //obj.MaterialOrder = string.Join(",", req.MaterialOrder);
-                    //obj.AdaptiveRange = string.Join(",", req.AdaptiveRanges);
+                    obj.AdaptiveRange = string.Join(",", req.AdaptiveRanges);
+                    obj.Opinions = string.Join(",", req.Opinions);
 
                     #region 添加子表数据
                     obj.InternalContactAttchments = new List<InternalContactAttchment>();
@@ -214,17 +220,40 @@ namespace OpenAuth.App.Material
                     //接收部门
                     req.InternalContactReceiveDepts.ForEach(c =>
                     {
-                        var user = orgRole.Where(o => o.SecondId == c.OrgId).FirstOrDefault();
-                        obj.InternalContactDeptInfos.Add(new InternalContactDeptInfo
+                        //固定查收部门
+                        if (c.Flag)
                         {
-                            OrgId = c.OrgId,
-                            OrgName = c.OrgName,
-                            UserId = user?.b?.Id,
-                            UserName = user?.b?.Name,
-                            Type = 1,
-                            InternalContactId = (single != null && single.Id > 0) ? single.Id : 0
-                        });
+                            var org = catetoryOrg.Where(w => w.Name == c.OrgName).ToList();
+                            //一个部门多个人
+                            org.ForEach(o =>
+                            {
+                                var useri = user.Where(w => w.Account == o.DtValue).FirstOrDefault();
+                                obj.InternalContactDeptInfos.Add(new InternalContactDeptInfo
+                                {
+                                    OrgId = c.OrgId,
+                                    OrgName = c.OrgName,
+                                    UserId = useri?.Id,
+                                    UserName = useri?.Name,
+                                    Type = 1,
+                                    InternalContactId = (single != null && single.Id > 0) ? single.Id : 0
+                                });
+                            });
+                        }
+                        else
+                        {
+                            var user = orgRole.Where(o => o.SecondId == c.OrgId).FirstOrDefault();
+                            obj.InternalContactDeptInfos.Add(new InternalContactDeptInfo
+                            {
+                                OrgId = c.OrgId,
+                                OrgName = c.OrgName,
+                                UserId = user?.b?.Id,
+                                UserName = user?.b?.Name,
+                                Type = 1,
+                                InternalContactId = (single != null && single.Id > 0) ? single.Id : 0
+                            });
+                        }
                     });
+                    obj.InternalContactDeptInfos = obj.InternalContactDeptInfos.GroupBy(c => c.UserId).Select(c => c.First()).ToList();
                     //执行部门
                     req.InternalContactExecDepts.ForEach(c =>
                     {
@@ -429,18 +458,76 @@ namespace OpenAuth.App.Material
                             .Include(c => c.InternalContactAttchments)
                             .Include(c => c.InternalContactBatchNumbers)
                             .FirstOrDefaultAsync();
-
             var orgIds = obj.InternalContactDeptInfos.Select(c => c.OrgId).ToList();
             var history = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.InstanceId == obj.FlowInstanceId).Select(c => c.CreateUserId).Distinct().ToListAsync();
             var userIds = await UnitWork.Find<Relevance>(c => orgIds.Contains(c.SecondId) && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync();
+            var catetory = await UnitWork.Find<Category>(c => c.TypeId == "SYS_InernalContactScheme").ToListAsync();
             //userIds.Add(obj.CheckApproveId);
             //userIds.Add(obj.DevelopApproveId);
             userIds.AddRange(history);
             userIds = userIds.Distinct().ToList();
             var userInfo = await UnitWork.Find<User>(c => userIds.Contains(c.Id) && c.Status == 0).ToListAsync();
             //增加样式
-            var style = "<style>table{border-bottom:1px solid #ccc} td{border:1px solid #ccc;border-bottom:none}</style>";
-            obj.Content = $"{style}{obj.Content}";
+            var style = "<style>boddy{border-left: 1px solid #ebeef518;border-top: 1px solid #ebeef518;} thead{background-color:#dedede} table{border-left: 1px solid #ebeef518;border-top: 1px solid #ebeef518;} td{border-right: 1px solid #ebeef518;border-bottom: 1px solid #ebeef518;}</style>";
+            //obj.Content = $"{style}{obj.Content}";
+            var json = JsonHelper.Instance.Deserialize<List<ContentJson>>(obj.Content);
+            #region HTML
+            var head = @"<table>
+                            <thead>
+                                <td style=""width: 170px; "">物料编码</td>
+                                <td style=""width: 100px; "">修改方案</td>
+                                <td style=""width: 500px; "">修改内容</td>
+                                <td style=""width: 170px; "">变更前物料</td>
+                                <td style=""width: 170px; "">变更后物料</td>
+                                <td style=""width: 80px; "">变更前数量</td>
+                                <td style=""width: 80px; "">变更后数量</td>
+                                <td style=""width: 80px; "">单位</td>
+                            </thead>
+                            <tbody>";
+            var bottom = @"</tbody>
+                    ";
+            var tablend = @"</table>";
+            obj.Others = string.IsNullOrWhiteSpace(obj.Others) ? "" : $",{obj.Others}";
+            var tfoot = $@"
+                            <tr>
+                                <td>适用范围：</td>
+                                <td colspan=""3"">{obj.AdaptiveRange}{obj.Others}</td>
+                                <td> 处理意见：</td>
+                                <td colspan = ""3"">{obj.Opinions}</td>
+                                </tr>
+                             ";
+            #endregion
+            StringBuilder bodys = new StringBuilder();
+            foreach (var item in json)
+            {
+                var modification = catetory.Where(c => c.DtValue == item.modification).FirstOrDefault();
+                var changeContent = "";
+                var img = "";
+                foreach (var item2 in item.changeContent)
+                    changeContent += $"{item2.title}{item2.value} ";
+                foreach (var item3 in item.fileList)
+                    img += $@"<img src = ""{item3.url}"" contenteditable = ""false"" style = ""font-size: 12px; max-width: 100%;"" />";
+                item.preNums = item.preNums == "0" ? "" : item.preNums;
+                item.postNums = item.postNums == "0" ? "" : item.postNums;
+                var body = @$"<tr>
+                            <td>{item.materialCode}</td>
+                            <td>{modification?.Name}</td>
+                            <td>{changeContent}</td>
+                            <td>{item.preMaterial}</td>
+                            <td>{item.postMaterial}</td>
+                            <td>{item.preNums}</td>
+                            <td>{item.postNums}</td>
+                            <td>{item.unit}</td>
+                        </tr>
+                        <tr>
+                            <td colspan='8'>
+                                {img}
+                            </td>
+                        </tr> ";
+                bodys.AppendLine(body);
+            }
+            var content = $"{style}{head}{bodys.ToString()}{bottom}{tfoot}{tablend}";
+            obj.Content = $"{style}{content}";
             userInfo.ForEach(async c =>
             {
                 if (!string.IsNullOrWhiteSpace(c.Email))
@@ -463,7 +550,7 @@ namespace OpenAuth.App.Material
             try
             {
                 MailRequest mailRequest = new MailRequest();
-                mailRequest.Subject = obj.Theme;
+                mailRequest.Subject = $"IW-{obj.IW} {obj.Theme}";
                 mailRequest.Priority = 1;
                 mailRequest.FromUser = new MailUser { Name = "ERP4.0通知", Address = Define.MailAccount, Password = Define.MailPassword };
                 mailRequest.ToUsers = mailUsers;
@@ -599,6 +686,7 @@ namespace OpenAuth.App.Material
                 //CardNames = !string.IsNullOrWhiteSpace(detail.CardCode) ? detail.CardName.Split(",") : new string[] { },
                 CardCodes = detail.CardCode,
                 CardNames = detail.CardCode,
+                detail.Others,
                 detail.Status,
                 detail.RdmsNo,
                 //SaleOrderNo = !string.IsNullOrWhiteSpace(detail.SaleOrderNo) ? detail.SaleOrderNo.Split(",") : new string[] { },
@@ -606,6 +694,7 @@ namespace OpenAuth.App.Material
                 detail.AdaptiveModel,
                 detail.ProductionNo,
                 AdaptiveRanges = detail.AdaptiveRange.Split(","),
+                Opinions = !string.IsNullOrWhiteSpace(detail.Opinions) ? detail.Opinions.Split(",") : new string[] { },
                 Reasons = detail.Reason.Split(","),
                 MaterialOrder = !string.IsNullOrWhiteSpace(detail.MaterialOrder) ? detail.MaterialOrder.Split(",") : new string[] { },
                 //BatchNumbers = detail.InternalContactBatchNumbers,
@@ -1761,7 +1850,7 @@ namespace OpenAuth.App.Material
             };
             var passageway = await UnitWork.Find<store_itemtype_ufd1>(c => c.TypeID == 20 && c.Fld_nm == "U_TDS").OrderBy(c => c.IndexID).Select(c => c.FldValue).ToListAsync();
             var catetory = await UnitWork.Find<Category>(c => c.TypeId == "SYS_ExtraPassageWay").Select(c => c.DtValue).ToListAsync();
-            var catetoryOrg = await UnitWork.Find<Category>(c => c.TypeId == "SYS_InternalContactOrg").Select(c => c.Name).ToListAsync();
+            var catetoryOrg = await UnitWork.Find<Category>(c => c.TypeId == "SYS_InternalContactOrg").Select(c => c.Name).Distinct().ToListAsync();
             catetory.Add("");
             var knowledgebases = await UnitWork.Find<KnowledgeBase>(k => k.Rank == 1 && k.IsNew == true && !string.IsNullOrWhiteSpace(k.Content)).ToListAsync();
             var tsyq = await UnitWork.Find<store_itemtype_ufd1>(c => c.TypeID == 20 && c.Fld_nm == "U_TSYQ").Select(c => c.FldValue).ToListAsync();
