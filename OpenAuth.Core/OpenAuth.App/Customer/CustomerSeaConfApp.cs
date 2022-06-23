@@ -18,9 +18,12 @@ namespace OpenAuth.App.Customer
     public class CustomerSeaConfApp : OnlyUnitWorkBaeApp
     {
         private readonly OpenJobApp _openJobApp;
-        public CustomerSeaConfApp(IUnitWork unitWork, IAuth auth, OpenJobApp openJobApp) : base(unitWork, auth)
+        private IScheduler _scheduler;
+
+        public CustomerSeaConfApp(IUnitWork unitWork, IAuth auth, OpenJobApp openJobApp, IScheduler scheduler) : base(unitWork, auth)
         {
             _openJobApp = openJobApp;
+            _scheduler = scheduler;
         }
 
         /// <summary>
@@ -460,7 +463,7 @@ namespace OpenAuth.App.Customer
 
             var userInfo = _auth.GetCurrentUser();
             //判断设置是否存在
-            var objectItem = await UnitWork.Find<CustomerSeaConf>(null).FirstOrDefaultAsync();
+            var objectItem = await UnitWork.Find<CustomerSeaConf>(null).AsNoTracking().FirstOrDefaultAsync();
             if (objectItem != null)
             {
                 //自动放入公海
@@ -474,6 +477,10 @@ namespace OpenAuth.App.Customer
                 objectItem.ReceiveJobMax = req.ReceiveJobMax;
                 objectItem.ReceiveJobMin = req.ReceiveJobMin;
                 objectItem.ReceiveEnable = req.ReceiveEnable;
+
+                //主动掉入规则
+                objectItem.AutomaticDayLimit = req.AutomaticDayLimit;
+                objectItem.AutomaticEnable = req.AutomaticEnable;
 
                 //掉入公海抢回限制
                 objectItem.BackDay = req.BackDay;
@@ -505,6 +512,10 @@ namespace OpenAuth.App.Customer
                     BackDay = req.BackDay,
                     BackEnable = req.BackEnable,
 
+                    //主动掉入规则
+                    AutomaticDayLimit = req.AutomaticDayLimit,
+                    AutomaticEnable = req.AutomaticEnable,
+
                     //创建人信息
                     CreateDatetime = DateTime.Now,
                     CreateUser = userInfo.User.Name,
@@ -517,49 +528,65 @@ namespace OpenAuth.App.Customer
 
             //都先设为停止,再启动,否则规则不会立刻生效
             //拉取缓存中的客户进入表
-            var job1 = await UnitWork.FindSingleAsync<OpenJob>(o => o.JobCall == "OpenAuth.App.Jobs.RecoveryCustomer");
+            var job1 = await UnitWork.Find<OpenJob>(o => o.JobCall == "OpenAuth.App.Jobs.RecoveryCustomer").AsNoTracking().FirstOrDefaultAsync();
             //var job1 = await UnitWork.FindSingleAsync<OpenJob>(o => o.JobCall == "OpenAuth.App.Jobs.CustomerSeaJob");
-            job1.Cron = $"{req.PutTime.Second} {req.PutTime.Minute} {req.PutTime.Hour} * * ?";
+            job1.Cron = $"{req.PutTime.Second} {req.PutTime.Minute} {req.PutTime.Hour},1 * * ?";
             job1.Status = 0;
-            await UnitWork.UpdateAsync<OpenJob>(job1);
 
             //向业务员发送所属客户即将掉入公海的提醒
-            var job2 = await UnitWork.FindSingleAsync<OpenJob>(o => o.JobCall == "OpenAuth.App.Jobs.PushMessage");
+            var job2 = await UnitWork.Find<OpenJob>(o => o.JobCall == "OpenAuth.App.Jobs.PushMessage").AsNoTracking().FirstOrDefaultAsync();
             job2.Cron = $"{req.NotifyTime.Second} {req.NotifyTime.Minute} {req.NotifyTime.Hour} * * ?";
             job2.Status = 0;
-            await UnitWork.UpdateAsync<OpenJob>(job2);
-            await UnitWork.SaveAsync();
 
-            _openJobApp.ChangeJobStatus(new App.Request.ChangeJobStatusReq
+            //停止定时任务
+            Action<OpenJob> deleteTriggerKey = (j) =>
             {
-                Id = job1.Id,
-                Status = 0,
-            });
-            _openJobApp.ChangeJobStatus(new App.Request.ChangeJobStatusReq
+                TriggerKey triggerKey = new TriggerKey(j.Id);
+                // 停止触发器
+                _scheduler.PauseTrigger(triggerKey);
+                // 移除触发器
+                _scheduler.UnscheduleJob(triggerKey);
+                // 删除任务
+                _scheduler.DeleteJob(new JobKey(j.Id));
+            };
+
+            //启动定时任务
+            Action<OpenJob> buildTriggerKey = (j) =>
             {
-                Id = job2.Id,
-                Status = 0,
-            });
+                var jobBuilderType = typeof(JobBuilder);
+                var method = jobBuilderType.GetMethods().FirstOrDefault(
+                        x => x.Name.Equals("Create", StringComparison.OrdinalIgnoreCase) &&
+                             x.IsGenericMethod && x.GetParameters().Length == 0)
+                    ?.MakeGenericMethod(Type.GetType(j.JobCall));
+
+                var jobBuilder = (JobBuilder)method.Invoke(null, null);
+
+                IJobDetail jobDetail = jobBuilder.WithIdentity(j.Id).Build();
+                jobDetail.JobDataMap[Define.JOBMAPKEY] = j.Id;  //传递job信息
+                ITrigger trigger = TriggerBuilder.Create()
+                    .WithCronSchedule(j.Cron)
+                    .WithIdentity(j.Id)
+                    .StartNow()
+                    .Build();
+                _scheduler.ScheduleJob(jobDetail, trigger);
+            };
+
+            deleteTriggerKey(job1);
+            deleteTriggerKey(job2);
 
             //启动
             if (req.Enable == true)
             {
                 job1.Status = 1;
                 job2.Status = 1;
-                await UnitWork.SaveAsync();
 
-                _openJobApp.ChangeJobStatus(new App.Request.ChangeJobStatusReq
-                {
-                    Id = job1.Id,
-                    Status = 1
-                });
-
-                _openJobApp.ChangeJobStatus(new App.Request.ChangeJobStatusReq
-                {
-                    Id = job2.Id,
-                    Status = 1
-                });
+                buildTriggerKey(job1);
+                buildTriggerKey(job2);
             }
+
+            await UnitWork.UpdateAsync(job1);
+            await UnitWork.UpdateAsync(job2);
+            await UnitWork.SaveAsync();
 
             return response;
         }

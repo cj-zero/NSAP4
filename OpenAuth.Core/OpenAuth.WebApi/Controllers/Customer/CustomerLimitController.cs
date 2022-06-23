@@ -241,6 +241,10 @@ namespace OpenAuth.WebApi.Controllers.Customer
             {
                 await _customerLimitApp.PushMessage();
             }
+            else if(index == "4")
+            {
+                await _customerLimitApp.Test();
+            }
         }
     }
 }

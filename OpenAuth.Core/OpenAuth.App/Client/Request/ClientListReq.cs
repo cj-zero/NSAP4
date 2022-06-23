@@ -16,6 +16,16 @@ namespace OpenAuth.App.Client.Request
         /// 标签：0-全部,1-未报价,2-已成交,3-公海领取,4-即将掉入公海
         /// </summary>
         public string Label { get; set; }
+
+        /// <summary>
+        /// 联系电话
+        /// </summary>
+        public string ContectTel { get; set; }
+
+        /// <summary>
+        /// 归属业务员
+        /// </summary>
+        public string SlpName { get; set; }
     }
     /// <summary>
     /// 查询所有技术员model

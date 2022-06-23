@@ -85,6 +85,28 @@ namespace OpenAuth.WebApi.Controllers.Clue
         }
 
         /// <summary>
+        /// 改变线索的状态
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("ChangeClueStatus")]
+        public async Task<Response> ChangeClueStatus(Repository.Domain.Serve.Clue req)
+        {
+            var result = new Response();
+            try
+            {
+                result = await _clueApp.ChangeClueStatus(req.SerialNumber);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 线索详情
         /// </summary>
         /// <param name="ClueId"></param>
