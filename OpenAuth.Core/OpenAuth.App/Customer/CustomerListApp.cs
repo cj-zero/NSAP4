@@ -408,20 +408,6 @@ namespace OpenAuth.App.Customer
         {
             var result = new TableData();
 
-            //var query = (from u in UnitWork.Find<base_user>(null)
-            //             .WhereIf(!string.IsNullOrWhiteSpace(req.SlpName), u => u.user_nm.Contains(req.SlpName))
-            //             join ud in UnitWork.Find<base_user_detail>(d => new int[] { 0, 1 }.Contains(d.status)) //在职的员工,离职状态是2和3
-            //             on u.user_id equals ud.user_id
-            //             join s in UnitWork.Find<sbo_user>(null)
-            //             .WhereIf(req.SlpCode != null && req.SlpCode > 0, u => u.sale_id == req.SlpCode)
-            //             on u.user_id equals s.user_id
-            //             //where  Define.SBO_ID
-            //             group new { u, ud, s } by new { s.user_id } into g
-            //             select new
-            //             {
-            //                 slpcode = g.Min(x => x.s.sale_id),
-            //                 slpname = g.Max(x => x.u.user_nm)
-            //             }).Distinct();
             var query = (from u in UnitWork.Find<base_user>(null)
                          .WhereIf(!string.IsNullOrWhiteSpace(req.SlpName), u => u.user_nm.Contains(req.SlpName))
                          join ud in UnitWork.Find<base_user_detail>(null) on u.user_id equals ud.user_id
@@ -524,9 +510,9 @@ namespace OpenAuth.App.Customer
             foreach (var item in req.Customers)
             {
                 //判断是否是公海客户,如果不是或者没有则不能进行领取
-                if (!UnitWork.Find<CustomerList>(null).Any(c => c.CustomerNo == item.CustomerNo))
+                if (!UnitWork.Find<CustomerList>(null).Any(c => c.CustomerNo == item.CustomerNo && c.LabelIndex == 3))
                 {
-                    response.Message += $"客户{item.CustomerName}不是公海客户,不能进行领取 \n";
+                    response.Message += $"客户已被领取,请重新查询或刷新页面 \n";
                     continue;
                 }
                 var customer = await UnitWork.Find<CustomerList>(c => c.CustomerNo == item.CustomerNo).FirstOrDefaultAsync();

@@ -172,7 +172,7 @@ namespace OpenAuth.WebApi.Controllers.Client
             {
                 result.Data = _clientInfoApp.SelectClientList(clientListReq.limit, clientListReq.page,
                     clientListReq.query, clientListReq.sortname, clientListReq.sortorder, sboid, userId, rIsViewSales,
-                    rIsViewSelf, rIsViewSelfDepartment, rIsViewFull, depID, clientListReq.Label, out rowCount);
+                    rIsViewSelf, rIsViewSelfDepartment, rIsViewFull, depID, clientListReq.Label, clientListReq.ContectTel, clientListReq.SlpName, out rowCount);
                 result.Count = rowCount;
             }
             catch (Exception ex)
@@ -741,6 +741,30 @@ namespace OpenAuth.WebApi.Controllers.Client
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message ?? "";
                 Log.Logger.Error($"地址：{Request.Path}，参数：{cardCode.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 业务员将客户主动移入公海
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("MoveInCustomerSea")]
+        public async Task<Infrastructure.Response> MoveInCustomerSea(MoveInCustomerSeaReq req)
+        {
+            var result = new Response();
+            try
+            {
+                result = await _clientInfoApp.MoveInCustomerSea(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
             }
 
             return result;
