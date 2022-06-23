@@ -17,7 +17,7 @@ namespace Infrastructure.MQTT
         public static MqttClient mqttClient;
         private IMqttClientOptions options;
         public string clientId = string.Empty;
-        private  MqttConfig mqttConfig;
+        private MqttConfig mqttConfig;
         public IConfiguration Configuration { get; }
         /// <summary>
         /// 
@@ -25,20 +25,20 @@ namespace Infrastructure.MQTT
         /// <param name="_mqttConfig"></param>
         /// <param name="receivedMessageHanddler"></param>
         /// <param name="configuration"></param>
-        public  MqttNetClient(MqttConfig _mqttConfig, EventHandler<MqttApplicationMessageReceivedEventArgs> receivedMessageHanddler, IConfiguration configuration)
+        public MqttNetClient(MqttConfig _mqttConfig, EventHandler<MqttApplicationMessageReceivedEventArgs> receivedMessageHanddler, IConfiguration configuration)
         {
             mqttConfig = _mqttConfig;
             Configuration = configuration;
             var factory = new MqttFactory();
             mqttClient = factory.CreateMqttClient() as MqttClient;
-            clientId = $"{mqttConfig.ClientIdentify}";
-            //clientId = "MqttErpClient_" + Guid.NewGuid();
+            //clientId = $"{mqttConfig.ClientIdentify}";
+            clientId = "MqttErpClient_" + Guid.NewGuid();
             options = new MqttClientOptionsBuilder()
                 .WithTcpServer(_mqttConfig.Server, _mqttConfig.Port)
                 .WithCredentials(_mqttConfig.Username, _mqttConfig.Password)
                 .WithClientId(clientId)
                 .WithCleanSession(false)
-                .WithCommunicationTimeout(new TimeSpan(0,5,0))
+                .WithCommunicationTimeout(new TimeSpan(0, 5, 0))
                 .Build();
 
             if (receivedMessageHanddler != null)
@@ -46,7 +46,6 @@ namespace Infrastructure.MQTT
                 //是服务器接收到消息时触发的事件，可用来响应特定消息
                 mqttClient.ApplicationMessageReceived += receivedMessageHanddler;
             }
-
             //是客户端连接成功时触发的事件
             mqttClient.Connected += Connected;
 
@@ -63,7 +62,7 @@ namespace Infrastructure.MQTT
         /// <param name="e"></param>
         private void Disconnected(object sender, MqttClientDisconnectedEventArgs e)
         {
-            Log.Logger.Error($"Mqtt>>Disconnected【{clientId}】>>已断开连接");
+            Log.Logger.Error(e.Exception,$"Mqtt>>Disconnected【{clientId}】>>已断开连接,断开连接原因:{e.Exception.Message}");
             try
             {
                 mqttClient.ConnectAsync(options);
@@ -81,17 +80,16 @@ namespace Infrastructure.MQTT
         /// <param name="e"></param>
         private void Connected(object sender, MqttClientConnectedEventArgs e)
         {
-            Log.Logger.Information($"Mqtt>>Connected【{clientId}】>>连接成功");
+            Log.Logger.Information($"Mqtt>>Connected【{clientId}】>>连接成功!");
             //连接重新订阅
             try
             {
+                string edgeKey = "EdgeGuidKeys";
                 var redisConnectionString = Configuration.GetValue<string>("AppSetting:Cache:Redis");
-
                 RedisHelper.Initialization(new CSRedis.CSRedisClient(redisConnectionString));
-
                 mqttClient.SubscribeAsync("edge_msg/#");
                 Log.Logger.Information($"{clientId}连接成功重新订阅生效 【topic=edge_msg/#】!");
-                var edges = RedisHelper.Get(clientId);
+                var edges = RedisHelper.Get(edgeKey);
                 if (!string.IsNullOrWhiteSpace(edges))
                 {
                     var edge_list = edges.Split(',');

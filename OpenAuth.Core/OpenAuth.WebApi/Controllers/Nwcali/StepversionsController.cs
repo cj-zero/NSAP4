@@ -50,17 +50,15 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="id">工步文件id</param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetStepVersionDetails([FromQuery] int id)
+        public async Task<TableData> GetStepVersionDetails(int id)
         {
             var result = new TableData();
-
             try
             {
                 return await _app.GetDetails(id);
             }
             catch (Exception ex)
             {
-
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
                 Log.Logger.Error($"地址：{Request.Path}，参数：{id}, 错误：{result.Message}");
@@ -75,14 +73,34 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="obj"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<Infrastructure.Response> Add(AddOrUpdateStepVersionReq obj)
+        public async Task<Response> Add(AddOrUpdateStepVersionReq obj)
         {
-            var result = new Infrastructure.Response();
+            var result = new Response();
             try
             {
                 obj.StepVersionName = obj.StepVersionName.ToUpper();
+                if (obj.SeriesName == "6" || obj.SeriesName == "7")
+                {
+                    if (string.IsNullOrWhiteSpace(obj.FilePath2) || string.IsNullOrWhiteSpace(obj.FilePath))
+                    {
+                        result.Code = 500;
+                        result.Message = $"{obj.SeriesName}系列必须上传两个工步文件!";
+                        return result;
+                    }
+                    if (string.IsNullOrWhiteSpace(obj.FileName) || string.IsNullOrWhiteSpace(obj.FileName))
+                    {
+                        result.Code = 500;
+                        result.Message = $"未填写工步名称!";
+                        return result;
+                    }
+                    if (obj.FirstStart != 1 && obj.FirstStart != 2)
+                    {
+                        result.Code = 500;
+                        result.Message = $"优先启动工步设置异常!";
+                        return result;
+                    }
+                }
                 await _app.Add(obj);
-
             }
             catch (Exception ex)
             {
@@ -90,7 +108,6 @@ namespace OpenAuth.WebApi.Controllers
                 result.Message = ex.Message;
                 Log.Logger.Error($"地址：{Request.Path}，参数：{obj.ToJson()}, 错误：{result.Message}");
             }
-
             return result;
         }
 
@@ -100,21 +117,40 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="obj"></param>
         /// <returns></returns>
         [HttpPost]
-        public Response Update(AddOrUpdateStepVersionReq obj)
+        public async Task<Response> Update(AddOrUpdateStepVersionReq obj)
         {
-            var result = new Infrastructure.Response();
+            var result = new Response();
             try
             {
                 obj.StepVersionName = obj.StepVersionName.ToUpper();
-                _app.Update(obj);
-
+                if (obj.SeriesName == "6" || obj.SeriesName == "7")
+                {
+                    if (string.IsNullOrWhiteSpace(obj.FilePath2) || string.IsNullOrWhiteSpace(obj.FilePath))
+                    {
+                        result.Code = 500;
+                        result.Message = $"{obj.SeriesName}系列必须上传两个工步文件!";
+                        return result;
+                    }
+                    if (string.IsNullOrWhiteSpace(obj.FileName) || string.IsNullOrWhiteSpace(obj.FileName))
+                    {
+                        result.Code = 500;
+                        result.Message = $"未填写工步名称!";
+                        return result;
+                    }
+                    if (obj.FirstStart != 1 && obj.FirstStart != 2)
+                    {
+                        result.Code = 500;
+                        result.Message = $"优先启动工步设置异常!";
+                        return result;
+                    }
+                }
+                await _app.Update(obj);
             }
             catch (Exception ex)
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
             }
-
             return result;
         }
 
@@ -137,14 +173,12 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 await _app.Delete(model.ids);
-
             }
             catch (Exception ex)
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
             }
-
             return result;
         }
 
@@ -152,17 +186,17 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 工步模板列表
         /// </summary>
-        /// <param name="SeriesName">系列名称</param>
-        /// <param name="StepVersionName">工步型号名称</param>
+        /// <param name="SeriesName"></param>
+        /// <param name="Current"></param>
+        /// <param name="Voltage"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> DingTalkStepList(string SeriesName, string StepVersionName)
+        public async Task<TableData> DingTalkStepList(string SeriesName, decimal Current,decimal Voltage)
         {
             var result = new TableData();
             try
             {
-                StepVersionName = StepVersionName.ToUpper();
-                return await _app.DingTalkStepList(SeriesName, StepVersionName);
+                return await _app.DingTalkStepList(SeriesName, Current, Voltage);
             }
             catch (Exception e)
             {
@@ -181,10 +215,33 @@ namespace OpenAuth.WebApi.Controllers
         public async Task<TableData> ChannelControlAsync(ChannelControlReq model)
         {
             var result = new TableData();
+            int stepCount = 0;
+            string step_data = string.Empty;
+            int stepCount2 = 0;
+            string step_data2 = string.Empty;
             string message = string.Empty;
-            try
+            List<DeviceTestResponse> deviceTestResponses = new List<DeviceTestResponse>();
+            if (string.IsNullOrWhiteSpace(model.GeneratorCode))
             {
-                var xmlCpntent = XMLHelper.GetXDocument(model.xmlpath).ToString();
+                result.Code = 500;
+                result.Message = $"生产码缺失启动失败!";
+                return result;
+            }
+            if (model.SeriesName == "6" || model.SeriesName == "7")
+            {
+                if (string.IsNullOrWhiteSpace(model.FilePath2) || string.IsNullOrWhiteSpace(model.FilePath))
+                {
+                    result.Code = 500;
+                    result.Message = $"{model.SeriesName}系列必须有两个工步文件!";
+                    return result;
+                }
+                if (model.FirstStart != 1 && model.FirstStart != 2)
+                {
+                    result.Code = 500;
+                    result.Message = $"{model.SeriesName}系列工步未设置优先启动!";
+                    return result;
+                }
+                var xmlCpntent = XMLHelper.GetXDocument(model.FilePath).ToString();
                 StringReader Reader = new StringReader(xmlCpntent);
                 XmlDocument xmlDoc = new XmlDocument();
                 xmlDoc.Load(Reader);
@@ -207,15 +264,71 @@ namespace OpenAuth.WebApi.Controllers
                     return result;
                 }
                 System.IO.File.Delete(dir);
-                int stepCount = step.ListStep.Count();
-                string step_data = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent.ToString()));
+                stepCount = step.ListStep.Count();
+                step_data = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent.ToString()));
+
+
+                var xmlCpntent1 = XMLHelper.GetXDocument(model.FilePath2).ToString();
+                StringReader Reader1 = new StringReader(xmlCpntent1);
+                XmlDocument xmlDoc1 = new XmlDocument();
+                xmlDoc1.Load(Reader1);
+                string work_path1 = $"{AppDomain.CurrentDomain.BaseDirectory}step\\";
+                Directory.CreateDirectory(work_path1);
+                string filename1 = DateTime.Now.ToString("yyyyMMddHHmmssffff");
+                string dir1 = $"{work_path1}{filename1}.xml";
+                xmlDoc1.Save(dir1);
+                if (!System.IO.File.Exists(dir1))
+                {
+                    result.Code = 500;
+                    result.Message = "工步文件读取失败!";
+                    return result;
+                }
+                var step1 = Common.XmlStep.LoadStepFile(dir1);
+                if (step1 == null)
+                {
+                    result.Code = 500;
+                    result.Message = "工步文件异常,无法解析!";
+                    return result;
+                }
+                System.IO.File.Delete(dir1);
+                stepCount2 = step1.ListStep.Count();
+                step_data2 = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent1.ToString()));
+                var res = await _app.DockChannelControl(model, stepCount, step_data, stepCount2, step_data2);
+                deviceTestResponses = res.Data;
+            }
+            else
+            {
+                var xmlCpntent = XMLHelper.GetXDocument(model.FilePath).ToString();
+                StringReader Reader = new StringReader(xmlCpntent);
+                XmlDocument xmlDoc = new XmlDocument();
+                xmlDoc.Load(Reader);
+                string work_path = $"{AppDomain.CurrentDomain.BaseDirectory}step\\";
+                Directory.CreateDirectory(work_path);
+                string filename = DateTime.Now.ToString("yyyyMMddHHmmssffff");
+                string dir = $"{work_path}{filename}.xml";
+                xmlDoc.Save(dir);
+                if (!System.IO.File.Exists(dir))
+                {
+                    result.Code = 500;
+                    result.Message = "工步文件读取失败!";
+                    return result;
+                }
+                var step = Common.XmlStep.LoadStepFile(dir);
+                if (step == null)
+                {
+                    result.Code = 500;
+                    result.Message = "工步文件异常,无法解析!";
+                    return result;
+                }
+                System.IO.File.Delete(dir);
+                stepCount = step.ListStep.Count();
+                step_data = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent.ToString()));
                 var res = await _app.ChannelControlAsync(model, stepCount, step_data);
-                //if (!string.IsNullOrWhiteSpace(res.Message))
-                //{
-                //    message = res.Message;
-                //}
-                var deviceTestList = res.Data;
-                foreach (var item in deviceTestList)
+                deviceTestResponses = res.Data;
+            }
+            try
+            {
+                foreach (var item in deviceTestResponses)
                 {
                     List<StartTestResp> list = new List<StartTestResp>();
                     var testJson = JsonConvert.SerializeObject(item.canTestDeviceResp);
@@ -321,14 +434,14 @@ namespace OpenAuth.WebApi.Controllers
                     result.Message = res == null ? "设备同步失败!" : Encoding.UTF8.GetString(res.Msg.Memory.ToArray());
                     return result;
                 }
-                var lowCounts= res.Data.MapDf.Where(c => c.Key == "low_guid").Select(c => c.Value).FirstOrDefault().VBytes.ToList().Count;
+                var lowCounts = res.Data.MapDf.Where(c => c.Key == "low_guid").Select(c => c.Value).FirstOrDefault().VBytes.ToList().Count;
                 List<BtsDeviceResp> list = new List<BtsDeviceResp>();
-                for (var i=0;i<lowCounts;i++)
+                for (var i = 0; i < lowCounts; i++)
                 {
-                    BtsDeviceResp btsDeviceResp=new BtsDeviceResp();
+                    BtsDeviceResp btsDeviceResp = new BtsDeviceResp();
                     btsDeviceResp.edge_guid = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "edge_guid").Select(c => c.Value).FirstOrDefault().VBytes[i].Memory.ToArray());
                     btsDeviceResp.srv_guid = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "bts_server_guid").Select(c => c.Value).FirstOrDefault().VBytes[i].Memory.ToArray());
-                    btsDeviceResp.unit_id= Convert.ToInt32(res.Data.MapDf.Where(c => c.Key == "unit_id").Select(c => c.Value).FirstOrDefault().VUint32[i]);
+                    btsDeviceResp.unit_id = Convert.ToInt32(res.Data.MapDf.Where(c => c.Key == "unit_id").Select(c => c.Value).FirstOrDefault().VUint32[i]);
                     btsDeviceResp.bts_server_ip = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "bts_server_ip").Select(c => c.Value).FirstOrDefault().VBytes[i].Memory.ToArray());
                     btsDeviceResp.low_guid = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "low_guid").Select(c => c.Value).FirstOrDefault().VBytes[i].Memory.ToArray());
                     btsDeviceResp.mid_version = Encoding.UTF8.GetString(res.Data.MapDf.Where(c => c.Key == "mid_version").Select(c => c.Value).FirstOrDefault().VBytes[i].Memory.ToArray());
@@ -363,13 +476,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="limit"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> NeedRestartList(string GeneratorCode,string ItemCode, int page, int limit)
+        public async Task<TableData> NeedRestartList(string GeneratorCode, string ItemCode, int page, int limit)
         {
-
             var result = new TableData();
             try
             {
-                return await _app.NeedRestartList(GeneratorCode, ItemCode,page, limit);
+                return await _app.NeedRestartList(GeneratorCode, ItemCode, page, limit);
             }
             catch (Exception e)
             {
@@ -386,29 +498,47 @@ namespace OpenAuth.WebApi.Controllers
         public async Task<TableData> RestartTest(CanStopTestReq model)
         {
             var result = new TableData();
-            try
+            string message = string.Empty;
+            var canStopList = await _app.CanStopTestList(model.stopTests);
+            if (canStopList.Data != null)
             {
-                //停止
-                var canStopList= await _app.CanStopTestList(model.stopTests);
-                if (canStopList.Data!=null)
+                foreach (var item in canStopList.Data)
                 {
-                    foreach (var item in canStopList.Data)
+                    var testJson = JsonConvert.SerializeObject(item);
+                    var request = new Request { JsonParameter = Google.Protobuf.ByteString.CopyFromUtf8(testJson) };
+                    var testRes = _dataServiceClient.ControlCmd(request);
+                    string testData = Encoding.UTF8.GetString(testRes.Msg.Memory.ToArray());
+                    if (!testRes.Success)
                     {
-                        var testJson = JsonConvert.SerializeObject(item);
-                        var request = new Request { JsonParameter = Google.Protobuf.ByteString.CopyFromUtf8(testJson) };
-                        var testRes = _dataServiceClient.ControlCmd(request);
-                        string testData = Encoding.UTF8.GetString(testRes.Msg.Memory.ToArray());
-                        if (!testRes.Success)
-                        {
-                            Log.Logger.Error($"停止测试异常{testData}");
-                            result.Code = 500;
-                            result.Message = testData;
-                            return result;
-                        }
+                        Log.Logger.Error($"停止测试异常{testData}");
+                        result.Code = 500;
+                        result.Message = testData;
+                        return result;
                     }
                 }
-                //启动
-                var xmlCpntent = XMLHelper.GetXDocument(model.xmlpath).ToString();
+            }
+            List<DeviceTestResponse> deviceTestResponses = new List<DeviceTestResponse>();
+            if (string.IsNullOrWhiteSpace(model.GeneratorCode))
+            {
+                result.Code = 500;
+                result.Message = $"生产码缺失启动失败!";
+                return result;
+            }
+            if (model.SeriesName == "6" || model.SeriesName == "7")
+            {
+                if (string.IsNullOrWhiteSpace(model.FilePath2) || string.IsNullOrWhiteSpace(model.FilePath))
+                {
+                    result.Code = 500;
+                    result.Message = $"{model.SeriesName}系列必须有两个工步文件!";
+                    return result;
+                }
+                if (model.FirstStart != 1 && model.FirstStart != 2)
+                {
+                    result.Code = 500;
+                    result.Message = $"{model.SeriesName}系列工步未设置优先启动!";
+                    return result;
+                }
+                var xmlCpntent = XMLHelper.GetXDocument(model.FilePath).ToString();
                 StringReader Reader = new StringReader(xmlCpntent);
                 XmlDocument xmlDoc = new XmlDocument();
                 xmlDoc.Load(Reader);
@@ -431,11 +561,71 @@ namespace OpenAuth.WebApi.Controllers
                     return result;
                 }
                 System.IO.File.Delete(dir);
-                int stepCount = step.ListStep.Count();
-                string step_data = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent.ToString()));
+                var stepCount = step.ListStep.Count();
+                var step_data = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent.ToString()));
+
+
+                var xmlCpntent1 = XMLHelper.GetXDocument(model.FilePath2).ToString();
+                StringReader Reader1 = new StringReader(xmlCpntent1);
+                XmlDocument xmlDoc1 = new XmlDocument();
+                xmlDoc1.Load(Reader1);
+                string work_path1 = $"{AppDomain.CurrentDomain.BaseDirectory}step\\";
+                Directory.CreateDirectory(work_path1);
+                string filename1 = DateTime.Now.ToString("yyyyMMddHHmmssffff");
+                string dir1 = $"{work_path1}{filename1}.xml";
+                xmlDoc1.Save(dir1);
+                if (!System.IO.File.Exists(dir1))
+                {
+                    result.Code = 500;
+                    result.Message = "工步文件读取失败!";
+                    return result;
+                }
+                var step1 = Common.XmlStep.LoadStepFile(dir1);
+                if (step1 == null)
+                {
+                    result.Code = 500;
+                    result.Message = "工步文件异常,无法解析!";
+                    return result;
+                }
+                System.IO.File.Delete(dir1);
+                var stepCount2 = step1.ListStep.Count();
+                var step_data2 = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent1.ToString()));
+                var res = await _app.RestartDockChannelControl(model.stopTests,model.FirstStart, stepCount, step_data, stepCount2, step_data2);
+                deviceTestResponses = res.Data;
+            }
+            else
+            {
+                var xmlCpntent = XMLHelper.GetXDocument(model.FilePath).ToString();
+                StringReader Reader = new StringReader(xmlCpntent);
+                XmlDocument xmlDoc = new XmlDocument();
+                xmlDoc.Load(Reader);
+                string work_path = $"{AppDomain.CurrentDomain.BaseDirectory}step\\";
+                Directory.CreateDirectory(work_path);
+                string filename = DateTime.Now.ToString("yyyyMMddHHmmssffff");
+                string dir = $"{work_path}{filename}.xml";
+                xmlDoc.Save(dir);
+                if (!System.IO.File.Exists(dir))
+                {
+                    result.Code = 500;
+                    result.Message = "工步文件读取失败!";
+                    return result;
+                }
+                var step = Common.XmlStep.LoadStepFile(dir);
+                if (step == null)
+                {
+                    result.Code = 500;
+                    result.Message = "工步文件异常,无法解析!";
+                    return result;
+                }
+                System.IO.File.Delete(dir);
+                var stepCount = step.ListStep.Count();
+                var step_data = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent.ToString()));
                 var res = await _app.RestartTest(model.stopTests, stepCount, step_data);
-                var deviceTestList = res.Data;
-                foreach (var item in deviceTestList)
+                deviceTestResponses = res.Data;
+            }
+            try
+            {
+                foreach (var item in deviceTestResponses)
                 {
                     List<StartTestResp> list = new List<StartTestResp>();
                     var testJson = JsonConvert.SerializeObject(item.canTestDeviceResp);
@@ -466,7 +656,6 @@ namespace OpenAuth.WebApi.Controllers
                     list.Add(startTestResp);
                     var successList = await _app.SaveTestResult(list);
                 }
-                return result;
             }
             catch (Exception e)
             {
@@ -474,6 +663,11 @@ namespace OpenAuth.WebApi.Controllers
                 result.Message = e.Message;
                 return result;
             }
+            if (!string.IsNullOrWhiteSpace(message))
+            {
+                result.Message = message;
+            }
+            return result;
         }
         #endregion
     }

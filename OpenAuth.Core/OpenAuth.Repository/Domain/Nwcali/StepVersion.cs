@@ -14,6 +14,9 @@ namespace OpenAuth.Repository.Domain
     [Table("stepversion")]
     public partial class StepVersion : BaseEntity<int>
     {
+        /// <summary>
+        /// 
+        /// </summary>
         public StepVersion()
         {
             this.StepName = string.Empty;
@@ -22,6 +25,9 @@ namespace OpenAuth.Repository.Domain
             this.FilePath = string.Empty;
             this.FileName = string.Empty;
             this.Remark = string.Empty;
+            this.FilePath2 = string.Empty;
+            this.FileName2 = string.Empty;
+            this.Remark2 = string.Empty;
         }
 
         /// <summary>
@@ -82,10 +88,40 @@ namespace OpenAuth.Repository.Domain
         /// 是否启用
         /// </summary>
         public bool Status { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string FilePath2 { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string FileName2 { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Remark2 { get; set; }
+        /// <summary>
+        /// 优先启动（1：工步1  2:工步2）
+        /// </summary>
+        public int FirstStart { get; set; }
+        /// <summary>
+        /// 电压
+        /// </summary>
+        public decimal Voltage { get; set; }
+        /// <summary>
+        /// 电流
+        /// </summary>
+        public decimal Current { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
         public override void GenerateDefaultKeyVal()
         {
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public override bool KeyIsNull()
         {
             return Id == 0;

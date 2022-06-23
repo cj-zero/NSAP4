@@ -5,14 +5,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Controllers\**" />
     <Compile Remove="Logs\**" />
+    <Content Remove="Controllers\**" />
     <Content Remove="Logs\**" />
+    <EmbeddedResource Remove="Controllers\**" />
     <EmbeddedResource Remove="Logs\**" />
+    <None Remove="Controllers\**" />
     <None Remove="Logs\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controllers\" />
   </ItemGroup>
 
   <ItemGroup>

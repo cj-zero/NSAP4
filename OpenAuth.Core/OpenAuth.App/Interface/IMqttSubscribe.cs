@@ -15,5 +15,19 @@ namespace OpenAuth.App.Interface
         /// <param name="topic"></param>
         /// <param name="payload"></param>
         void SubscribeAsyncResult(string topic, byte[] payload);
+
+        /// <summary>
+        /// 设备变更订阅
+        /// </summary>
+        /// <param name="payload"></param>
+        /// <returns></returns>
+        bool SubscribeEdgeMsg(byte[] payload);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="payload"></param>
+        /// <returns></returns>
+        bool SubscribeRtData(byte[] payload);
     }
 }

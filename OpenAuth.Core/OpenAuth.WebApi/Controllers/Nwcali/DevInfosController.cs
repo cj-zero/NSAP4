@@ -28,7 +28,7 @@ namespace OpenAuth.WebApi.Controllers
 
         #region 烤机相关
         /// <summary>
-        /// 边缘计算在线未绑定设备列表
+        /// 边缘计算在线未绑定/已绑定未测试设备列表
         /// </summary>
         /// <param name="page"></param>
         /// <param name="limit"></param>
@@ -117,15 +117,20 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 当前生产码关联订单未绑定设备列表
         /// </summary>
-        /// <param name="GeneratorCode">生产码</param>
+        /// <param name="GeneratorCode"></param>
+        /// <param name="key"></param>
+        /// <param name="page"></param>
+        /// <param name="limit"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> NoBindDeviceList(string GeneratorCode)
+        public async Task<TableData> NoBindDeviceList(string GeneratorCode,string key="",int page=1,int limit=10)
         {
             var result = new TableData();
             try
             {
-                return await _app.NoBindDeviceList(GeneratorCode);
+                page = page <= 0 ? 1 : page;
+                limit = limit <= 0 ? 10 : limit;
+                return await _app.NoBindDeviceList(GeneratorCode, key, page, limit);
             }
             catch (Exception e)
             {
