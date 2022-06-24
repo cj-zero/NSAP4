@@ -80,7 +80,16 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task Add(AddOrUpdateStepVersionReq req)
         {
-            req.StepVersionName = $"{req.Voltage}V{req.Current}A";
+            string str = string.Empty;
+            if (req.Voltage != 0)
+            {
+                str = $"{req.Voltage}V";
+            }
+            if (req.Current != 0)
+            {
+                str += $"{req.Current}A";
+            }
+            req.StepVersionName = str;
             var obj = req.MapTo<StepVersion>();
             //todo:补充或调整自己需要的字段
             obj.CreateTime = DateTime.Now;
@@ -97,7 +106,16 @@ namespace OpenAuth.App
         public async Task Update(AddOrUpdateStepVersionReq obj)
         {
             var user = _auth.GetCurrentUser().User;
-            obj.StepVersionName = $"{obj.Voltage}V{obj.Current}A";
+            string str = string.Empty;
+            if (obj.Voltage!=0)
+            {
+                str = $"{obj.Voltage}V";
+            }
+            if (obj.Current != 0)
+            {
+                str += $"{obj.Current}A";
+            }
+            obj.StepVersionName = str;
             await UnitWork.UpdateAsync<StepVersion>(u => u.Id == obj.Id, u => new StepVersion
             {
                 StepName = obj.StepName,
