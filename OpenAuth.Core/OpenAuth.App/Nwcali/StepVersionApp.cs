@@ -621,10 +621,10 @@ namespace OpenAuth.App
                 }
                 total = deviceList.Count;
                 var itemList = deviceList.Skip((page - 1) * limit).Take(limit).ToList();
-                var hasTestList = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.Department == department && deviceList.Contains(c.GeneratorCode)).GroupBy(c => new { c.LowGuid, c.ChlId })
-                    .Select(c => c.Max(c => c.Id))
+                var hasTestList = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.Department == department && deviceList.Contains(c.GeneratorCode) && c.TestId!=0).GroupBy(c => new { c.EdgeGuid, c.SrvGuid, c.DevUid, c.UnitId, c.ChlId })
+                    .Select(c => new { c.Key.EdgeGuid, c.Key.SrvGuid, c.Key.DevUid, c.Key.UnitId, c.Key.ChlId,Id=c.Max(c=>c.Id) }).Select(c=>c.Id)
                     .ToListAsync();//当前订单最新测试数据对应的id
-                var hasBindList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo).Select(c => c.GeneratorCode).ToListAsync();
+                var hasBindList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo).Select(c => c.GeneratorCode).Distinct().ToListAsync();
                 var lastTestList = await UnitWork.Find<DeviceTestLog>(null).Where(c => hasTestList.Contains(c.Id)).ToListAsync();
                 foreach (var item in itemList)
                 {
@@ -655,6 +655,18 @@ namespace OpenAuth.App
                             int totalStep = statusList.Sum(c => c.StepCount);
                             int currentStepCount = statusList.Sum(c => c.StepId);
                             progress = Math.Round(currentStepCount / (decimal)totalStep * 100);
+                        }
+                        else if (statusList.Any(c=>c.Status==-3))
+                        {
+                            var dockStatus = new List<int> { -1, -3 };
+                            var flage = statusList.Select(c => c.Status).Distinct().Except(dockStatus).ToList().Any();
+                            if (!flage)
+                            {
+                                status = -2;
+                                int totalStep = statusList.Sum(c => c.StepCount);
+                                int currentStepCount = statusList.Sum(c => c.StepId);
+                                progress = Math.Round(currentStepCount / (decimal)totalStep * 100);
+                            }
                         }
                         else if (statusList.Any(c => (c.Status == -4 || c.Status == 4)))
                         {

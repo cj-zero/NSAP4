@@ -62,7 +62,7 @@ namespace Infrastructure.MQTT
         /// <param name="e"></param>
         private void Disconnected(object sender, MqttClientDisconnectedEventArgs e)
         {
-            Log.Logger.Error(e.Exception,$"Mqtt>>Disconnected【{clientId}】>>已断开连接,断开连接原因:{e.Exception.Message}");
+            Log.Logger.Error($"Mqtt>>Disconnected【{clientId}】>>已断开连接,断开连接原因:{e.Exception.Message}");
             try
             {
                 mqttClient.ConnectAsync(options);
