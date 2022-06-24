@@ -197,9 +197,16 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-                if (CurrentUnit.Equals("MA"))
+                CurrentUnit = string.IsNullOrWhiteSpace(CurrentUnit) ? "" : CurrentUnit;
+                if (CurrentUnit.ToUpper().Equals("MA"))
                 {
-                    Current = Current / 1000;
+                    Current /=1000;
+                }
+                if (string.IsNullOrWhiteSpace(SeriesName))
+                {
+                    result.Code = 500;
+                    result.Message = $"工步获取缺少工步系列参数!";
+                    return result;
                 }
                 return await _app.DingTalkStepList(SeriesName, Current, Voltage);
             }

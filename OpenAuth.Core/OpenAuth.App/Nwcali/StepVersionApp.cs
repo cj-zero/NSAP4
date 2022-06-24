@@ -167,8 +167,8 @@ namespace OpenAuth.App
             }
             result.Data = await UnitWork.Find<StepVersion>(null)
                 .Where(c => c.SeriesName == SeriesName && c.Status == true)
-                .WhereIf((SeriesName=="6" || SeriesName=="7") && Current!=0 && Voltage!=0,c=>c.Voltage==Voltage || c.Current==Current)
-                .WhereIf((SeriesName != "6" && SeriesName != "7"),c=>c.Current==Current)
+                .WhereIf(SeriesName=="6" || SeriesName=="7",c=>c.Voltage==Voltage || c.Current==Current)
+                .WhereIf(SeriesName != "6" && SeriesName != "7",c=>c.Current==Current)
                 .OrderByDescending(c => c.Sorts).Select(c => new { c.Id, c.FileName, c.FilePath, c.Remark, c.FilePath2, c.FileName2, c.Remark2, c.FirstStart }).ToListAsync();
             return result;
         }
