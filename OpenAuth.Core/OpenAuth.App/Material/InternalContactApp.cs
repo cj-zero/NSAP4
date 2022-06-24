@@ -2093,15 +2093,15 @@ namespace OpenAuth.App.Material
                     }
                     //筛选条件内的成品生产订单
                     productList = productList.Where(c => storeoitm.Contains(c.ItemCode)).ToList();
-                    //if (!string.IsNullOrWhiteSpace(e.CardCodes) || !string.IsNullOrWhiteSpace(e.SaleOrderNo))
-                    //{
-                    //    //有填客户或者销售单号 则进一步筛选成品 缩小范围
-                    //    var finlishorder = GetFinlishOrderBySaleNo(e.CardCodes, e.SaleOrderNo);
-                    //    //筛出符合物料规则的 生产单
-                    //    var orderno = finlishorder.Where(c => storeoitm.Contains(c.ItemCode)).Select(c => c.DocEntry).ToList();
-                    //    //
-                    //    productList = productList.Where(c => orderno.Contains(c.DocEntry)).ToList();
-                    //}
+                    if (!string.IsNullOrWhiteSpace(e.CardCodes) || !string.IsNullOrWhiteSpace(e.SaleOrderNo))
+                    {
+                        //有填客户或者销售单号 则进一步筛选成品 缩小范围
+                        var finlishorder = GetFinlishOrderBySaleNo(e.CardCodes, e.SaleOrderNo);
+                        //筛出符合物料规则的 生产单
+                        var orderno = finlishorder.Where(c => storeoitm.Contains(c.ItemCode)).Select(c => c.DocEntry).ToList();
+                        //
+                        productList = productList.Where(c => orderno.Contains(c.DocEntry)).ToList();
+                    }
 
                     var onlyitem = productList.Select(c => c.ItemCode).Distinct().ToList();
                     finilishedItems.AddRange(onlyitem.Select(c => new FinilishedItem
