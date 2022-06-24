@@ -184,18 +184,23 @@ namespace OpenAuth.WebApi.Controllers
 
         #region 钉钉烤机
         /// <summary>
-        /// 工步模板列表
+        /// 
         /// </summary>
         /// <param name="SeriesName"></param>
         /// <param name="Current"></param>
         /// <param name="Voltage"></param>
+        /// <param name="CurrentUnit"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> DingTalkStepList(string SeriesName, decimal Current,decimal Voltage)
+        public async Task<TableData> DingTalkStepList(string SeriesName, decimal Current, decimal Voltage, string CurrentUnit)
         {
             var result = new TableData();
             try
             {
+                if (CurrentUnit.Equals("MA"))
+                {
+                    Current = Current / 1000;
+                }
                 return await _app.DingTalkStepList(SeriesName, Current, Voltage);
             }
             catch (Exception e)
@@ -590,7 +595,7 @@ namespace OpenAuth.WebApi.Controllers
                 System.IO.File.Delete(dir1);
                 var stepCount2 = step1.ListStep.Count();
                 var step_data2 = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent1.ToString()));
-                var res = await _app.RestartDockChannelControl(model.stopTests,model.FirstStart, stepCount, step_data, stepCount2, step_data2);
+                var res = await _app.RestartDockChannelControl(model.stopTests, model.FirstStart, stepCount, step_data, stepCount2, step_data2);
                 deviceTestResponses = res.Data;
             }
             else
