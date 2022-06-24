@@ -76,8 +76,8 @@ namespace OpenAuth.WebApi.Controllers.Customer
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> GetWhiteOrBlackList([FromQuery] QueryWhiteOrBlackListReq req)
+        [HttpPost]
+        public async Task<TableData> GetWhiteOrBlackList(QueryWhiteOrBlackListReq req)
         {
             var result = new TableData();
 

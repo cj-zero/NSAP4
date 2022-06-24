@@ -80,7 +80,16 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task Add(AddOrUpdateStepVersionReq req)
         {
-            req.StepVersionName = $"{req.Voltage}V{req.Current}A";
+            string str = string.Empty;
+            if (req.Voltage != 0)
+            {
+                str = $"{req.Voltage}V";
+            }
+            if (req.Current != 0)
+            {
+                str += $"{req.Current}A";
+            }
+            req.StepVersionName = str;
             var obj = req.MapTo<StepVersion>();
             //todo:补充或调整自己需要的字段
             obj.CreateTime = DateTime.Now;
@@ -97,7 +106,16 @@ namespace OpenAuth.App
         public async Task Update(AddOrUpdateStepVersionReq obj)
         {
             var user = _auth.GetCurrentUser().User;
-            obj.StepVersionName = $"{obj.Voltage}V{obj.Current}A";
+            string str = string.Empty;
+            if (obj.Voltage!=0)
+            {
+                str = $"{obj.Voltage}V";
+            }
+            if (obj.Current != 0)
+            {
+                str += $"{obj.Current}A";
+            }
+            obj.StepVersionName = str;
             await UnitWork.UpdateAsync<StepVersion>(u => u.Id == obj.Id, u => new StepVersion
             {
                 StepName = obj.StepName,
@@ -149,8 +167,8 @@ namespace OpenAuth.App
             }
             result.Data = await UnitWork.Find<StepVersion>(null)
                 .Where(c => c.SeriesName == SeriesName && c.Status == true)
-                .WhereIf((SeriesName=="6" || SeriesName=="7") && Current!=0 && Voltage!=0,c=>c.Voltage==Voltage || c.Current==Current)
-                .WhereIf((SeriesName != "6" && SeriesName != "7"),c=>c.Current==Current)
+                .WhereIf(SeriesName=="6" || SeriesName=="7",c=>c.Voltage==Voltage || c.Current==Current)
+                .WhereIf(SeriesName != "6" && SeriesName != "7",c=>c.Current==Current)
                 .OrderByDescending(c => c.Sorts).Select(c => new { c.Id, c.FileName, c.FilePath, c.Remark, c.FilePath2, c.FileName2, c.Remark2, c.FirstStart }).ToListAsync();
             return result;
         }
@@ -603,10 +621,10 @@ namespace OpenAuth.App
                 }
                 total = deviceList.Count;
                 var itemList = deviceList.Skip((page - 1) * limit).Take(limit).ToList();
-                var hasTestList = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.Department == department && deviceList.Contains(c.GeneratorCode)).GroupBy(c => new { c.LowGuid, c.ChlId })
-                    .Select(c => c.Max(c => c.Id))
+                var hasTestList = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.Department == department && deviceList.Contains(c.GeneratorCode) && c.TestId!=0).GroupBy(c => new { c.EdgeGuid, c.SrvGuid, c.DevUid, c.UnitId, c.ChlId })
+                    .Select(c => new { c.Key.EdgeGuid, c.Key.SrvGuid, c.Key.DevUid, c.Key.UnitId, c.Key.ChlId,Id=c.Max(c=>c.Id) }).Select(c=>c.Id)
                     .ToListAsync();//当前订单最新测试数据对应的id
-                var hasBindList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo).Select(c => c.GeneratorCode).ToListAsync();
+                var hasBindList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo).Select(c => c.GeneratorCode).Distinct().ToListAsync();
                 var lastTestList = await UnitWork.Find<DeviceTestLog>(null).Where(c => hasTestList.Contains(c.Id)).ToListAsync();
                 foreach (var item in itemList)
                 {
@@ -637,6 +655,18 @@ namespace OpenAuth.App
                             int totalStep = statusList.Sum(c => c.StepCount);
                             int currentStepCount = statusList.Sum(c => c.StepId);
                             progress = Math.Round(currentStepCount / (decimal)totalStep * 100);
+                        }
+                        else if (statusList.Any(c=>c.Status==-3))
+                        {
+                            var dockStatus = new List<int> { -1, -3 };
+                            var flage = statusList.Select(c => c.Status).Distinct().Except(dockStatus).ToList().Any();
+                            if (!flage)
+                            {
+                                status = -2;
+                                int totalStep = statusList.Sum(c => c.StepCount);
+                                int currentStepCount = statusList.Sum(c => c.StepId);
+                                progress = Math.Round(currentStepCount / (decimal)totalStep * 100);
+                            }
                         }
                         else if (statusList.Any(c => (c.Status == -4 || c.Status == 4)))
                         {

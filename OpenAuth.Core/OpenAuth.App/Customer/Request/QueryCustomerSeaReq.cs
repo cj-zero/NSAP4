@@ -41,5 +41,15 @@ namespace OpenAuth.App.Customer.Request
         /// 部门名称
         /// </summary>
         public string DepartMent { get; set; }
+
+        /// <summary>
+        /// 掉入次数区间
+        /// </summary>
+        public int? StartCount { get; set; }
+
+        /// <summary>
+        /// 掉入次数区间
+        /// </summary>
+        public int? EndCount { get; set; }
     }
 }
