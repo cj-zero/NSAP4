@@ -159,6 +159,7 @@ namespace OpenAuth.App.Client
             string sortString = string.Empty;
             StringBuilder filterString = new StringBuilder();
             filterString.Append(IsOpenSap ? " 1=1 " : string.Format(" sbo_id={0} ", sboid.ToString()));
+            //modify by yangis @2022.06.24
             if(!string.IsNullOrWhiteSpace(slpName))
             {
                 filterString.Append($" and slpname like '%{slpName}%' ");
@@ -167,6 +168,24 @@ namespace OpenAuth.App.Client
             {
                 filterString.Append($" and phone1 like '%{contectTel}%' ");
             }
+            //黑名单客户也不在客户列表上显示
+            var blacklist = UnitWork.Find<SpecialCustomer>(c => c.Type == 0).Select(c => c.CustomerNo).ToList();
+            if (blacklist.Count() > 0)
+            {
+                var selectCardCode = new StringBuilder("");
+                string codes = "''";
+                foreach (var item in blacklist)
+                {
+                    selectCardCode.Append($",'{item}'");
+                    if (!string.IsNullOrWhiteSpace(selectCardCode.ToString()))
+                    {
+                        codes = selectCardCode.ToString().Substring(1);
+                    }
+                }
+
+                filterString.Append($" and CardCode not in ({codes}) ");
+            }
+
             if (!rIsViewFull)
             {
                 #region 查看本部门
@@ -592,18 +611,30 @@ namespace OpenAuth.App.Client
                                  select s.sale_id).FirstOrDefaultAsync();
             }
 
+            //黑名单客户也不在客户列表上显示
+            var blacklist = UnitWork.Find<SpecialCustomer>(c => c.Type == 0).Select(c => c.CustomerNo).ToList();
+
             //总数
-            var query0 = await UnitWork.Find<OCRD>(null).WhereIf(slpCode != null, c => c.SlpCode == slpCode).CountAsync();
+            var query0 = await UnitWork.Find<OCRD>(null)
+                .WhereIf(slpCode != null, c => c.SlpCode == slpCode)
+                .WhereIf(blacklist.Count() > 0, c => !blacklist.Contains(c.CardCode))
+                .CountAsync();
+
             //未报价客户
-            var query1 = await (from c in UnitWork.Find<OCRD>(null).WhereIf(slpCode != null, c => c.SlpCode == slpCode)
+            var query1 = await (from c in UnitWork.Find<OCRD>(null)
+                                .WhereIf(slpCode != null, c => c.SlpCode == slpCode)
+                                .WhereIf(blacklist.Count() > 0, c => !blacklist.Contains(c.CardCode))
                                 join a in UnitWork.Find<OQUT>(null) on c.CardCode equals a.CardCode into temp
                                 from t in temp.DefaultIfEmpty()
                                 where t.CardCode == null
                                 select c.CardCode).CountAsync();
             //已成交客户
-            var query2 = await (from c in UnitWork.Find<OCRD>(null).WhereIf(slpCode != null, c => c.SlpCode == slpCode)
+            var query2 = await (from c in UnitWork.Find<OCRD>(null)
+                                .WhereIf(slpCode != null, c => c.SlpCode == slpCode)
+                                .WhereIf(blacklist.Count() > 0, c => !blacklist.Contains(c.CardCode))
                                 join d in UnitWork.Find<ODLN>(null) on c.CardCode equals d.CardCode
                                 select c.CardCode).Distinct().CountAsync();
+
             //公海领取(被领取后还没做过单的用户)
             //在历史归属表中存在但是公海中不存在的客户(说明已被领取)
             var cardCodes = (from h in UnitWork.Find<CustomerSalerHistory>(null)
@@ -612,13 +643,18 @@ namespace OpenAuth.App.Client
                              where t.CustomerNo == null
                              select h.CustomerNo).Distinct().ToList();
             //还没做过单的客户
-            var query3 = await (from c in UnitWork.Find<OCRD>(c => cardCodes.Contains(c.CardCode)).WhereIf(slpCode != null, c => c.SlpCode == slpCode)
+            var query3 = await (from c in UnitWork.Find<OCRD>(c => cardCodes.Contains(c.CardCode))
+                                .WhereIf(slpCode != null, c => c.SlpCode == slpCode)
+                                .WhereIf(blacklist.Count() > 0, c => !blacklist.Contains(c.CardCode))
                                 join a in UnitWork.Find<OQUT>(null) on c.CardCode equals a.CardCode into temp
                                 from t in temp.DefaultIfEmpty()
                                 where t.CardCode == null
                                 select c.CardCode).CountAsync();
             //即将掉入公海客户
-            var query4 = await UnitWork.Find<CustomerList>(c => c.LabelIndex == 4).WhereIf(slpCode != null, c => c.SlpCode == slpCode).CountAsync();
+            var query4 = await UnitWork.Find<CustomerList>(c => c.LabelIndex == 4)
+                .WhereIf(slpCode != null, c => c.SlpCode == slpCode)
+                .WhereIf(blacklist.Count() > 0, c => !blacklist.Contains(c.CustomerNo))
+                .CountAsync();
 
             result.Data = new GetCustomerCount() { Count0 = query0, Count1 = query1, Count2 = query2, Count3 = query3, Count4 = query4 };
 
@@ -2401,20 +2437,21 @@ namespace OpenAuth.App.Client
                         CreateUser = userName,
                         CreateDatetime = DateTime.Now,
                         UpdateUser = userName,
-                        UpdateDatetime = DateTime.Now
+                        UpdateDatetime = DateTime.Now,
+                        Remark = req.Remark
                     });
-                    await UnitWork.AddAsync<CustomerMoveHistory, int>(new CustomerMoveHistory
-                    {
-                        CardCode = req.CardCode,
-                        CardName = req.CardName,
-                        SlpName = slpInfo.SlpName,
-                        MoveInType = "主动移入",
-                        Remark = req.Remark,
-                        CreateTime = DateTime.Now,
-                        CreateUser = userName,
-                        UpdateTime = DateTime.Now,
-                        UpdateUser = userName
-                    });
+                    //await UnitWork.AddAsync<CustomerMoveHistory, int>(new CustomerMoveHistory
+                    //{
+                    //    CardCode = req.CardCode,
+                    //    CardName = req.CardName,
+                    //    SlpName = slpInfo.SlpName,
+                    //    MoveInType = "主动移入",
+                    //    Remark = req.Remark,
+                    //    CreateTime = DateTime.Now,
+                    //    CreateUser = userName,
+                    //    UpdateTime = DateTime.Now,
+                    //    UpdateUser = userName
+                    //});
                     await UnitWork.SaveAsync();
                     await tran.CommitAsync();
                 }
