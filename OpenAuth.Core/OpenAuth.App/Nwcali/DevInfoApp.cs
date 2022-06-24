@@ -461,49 +461,103 @@ namespace OpenAuth.App
             string StepVersionName = string.Empty;
             string Voltage = string.Empty;
             string Current = string.Empty;
+            string CurrentUnit =string.Empty;
+            string SeriesName = string.Empty;
             if (arry[0].Contains("C") || arry[0].Contains("BE") || arry[0].Contains("BTE") || arry[0].Contains("BT"))
             {
                 foreach (var item in arry)
                 {
-                    var length=Regex.Matches(item, @"[AV]");
-                    if (length.Count==2)
+                    if (item.ToUpper().Contains("V"))
                     {
-                        StepVersionName = item;
-                        try
+                        if (item.ToUpper().Contains("MA"))
                         {
-                            int index1 = 0;
-                            for (var i = 0; i < length.Count; i++)
+                            CurrentUnit = "MA";
+                            var length = Regex.Matches(item, @"[MV]");
+                            if (length.Count == 2)
                             {
-                                int index = length[i].Index;
-                                if (i == 0)
+                                StepVersionName = item;
+                                try
                                 {
-                                    index1 = index;
-                                    if (length[i].Value.Equal("V"))
+                                    int index1 = 0;
+                                    for (var i = 0; i < length.Count; i++)
                                     {
-                                        Voltage = StepVersionName.Substring(0, index1);
+                                        int index = length[i].Index;
+                                        if (i == 0)
+                                        {
+                                            index1 = index;
+                                            if (length[i].Value.Equal("V"))
+                                            {
+                                                Voltage = StepVersionName.Substring(0, index1);
+                                            }
+                                            else
+                                            {
+                                                Current = StepVersionName.Substring(0, index1);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (length[i].Value.Equal("V"))
+                                            {
+                                                Voltage = StepVersionName.Substring(index1 + 1, index - (index1 + 1));
+                                            }
+                                            else
+                                            {
+                                                Current = StepVersionName.Substring(index1 + 1, index - (index1 + 1));
+                                            }
+                                        }
                                     }
-                                    else
-                                    {
-                                        Current = StepVersionName.Substring(0, index1);
-                                    }
+                                    break;
                                 }
-                                else
+                                catch (Exception ex)
                                 {
-                                    if (length[i].Value.Equal("V"))
-                                    {
-                                        Voltage = StepVersionName.Substring(index1 + 1, index - (index1 + 1));
-                                    }
-                                    else
-                                    {
-                                        Current = StepVersionName.Substring(index1 + 1, index - (index1 + 1));
-                                    }
+                                    throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作,量程解析异常!");
                                 }
                             }
-                            break;
                         }
-                        catch (Exception ex)
+                        else if (item.ToUpper().Contains("A"))
                         {
-                            throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作,量程解析异常!");
+                            CurrentUnit = "A";
+                            var length = Regex.Matches(item, @"[AV]");
+                            if (length.Count == 2)
+                            {
+                                StepVersionName = item;
+                                try
+                                {
+                                    int index1 = 0;
+                                    for (var i = 0; i < length.Count; i++)
+                                    {
+                                        int index = length[i].Index;
+                                        if (i == 0)
+                                        {
+                                            index1 = index;
+                                            if (length[i].Value.Equal("V"))
+                                            {
+                                                Voltage = StepVersionName.Substring(0, index1);
+                                            }
+                                            else
+                                            {
+                                                Current = StepVersionName.Substring(0, index1);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (length[i].Value.Equal("V"))
+                                            {
+                                                Voltage = StepVersionName.Substring(index1 + 1, index - (index1 + 1));
+                                            }
+                                            else
+                                            {
+                                                Current = StepVersionName.Substring(index1 + 1, index - (index1 + 1));
+                                            }
+                                        }
+                                    }
+                                    break;
+                                }
+                                catch (Exception ex)
+                                {
+                                    throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作,量程解析异常!");
+                                }
+                            }
                         }
                     }
                 }
@@ -516,16 +570,23 @@ namespace OpenAuth.App
             {
                 throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作,量程缺失!");
             }
-            string SeriesName = arry[1][0].ToString();
+            if (query.ItemCode.Contains("CJ-Cali-"))
+            {
+                SeriesName = arry[2][0].ToString();
+            }
+            else
+            {
+                SeriesName = arry[1][0].ToString();
+            }
             if (Regex.Matches(arry[1].ToString(), @"[AV]").Count==2)
             {
                 throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作,系数解析异常!");
             }
-            if (!int.TryParse(SeriesName, out int a))
+            if (!int.TryParse(SeriesName, out int s))
             {
                 throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作,系数解析异常!");
             }
-            if (!int.TryParse(Voltage, out int v) || !int.TryParse(Current, out int A))
+            if (!int.TryParse(Voltage, out int v) || !int.TryParse(Current, out int a))
             {
                 throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作,量程解析异常!");
             }
@@ -536,7 +597,8 @@ namespace OpenAuth.App
                 SeriesName,
                 StepVersionName,
                 Voltage,
-                Current
+                Current,
+                CurrentUnit
             };
             return result;
         }

@@ -677,7 +677,7 @@ namespace OpenAuth.App.Nwcali
                 }
                 catch (Exception ex)
                 {
-                    Log.Logger.Error($"rt订阅数据解析异常：edge_guids={edge_guid},{ex.Message}");
+                    Log.Logger.Error($"rt订阅数据解析异常：edge_guids={edge_guid},{ex.StackTrace}");
                     return false;
                 }
             }

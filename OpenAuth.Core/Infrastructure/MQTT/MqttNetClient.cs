@@ -31,14 +31,14 @@ namespace Infrastructure.MQTT
             Configuration = configuration;
             var factory = new MqttFactory();
             mqttClient = factory.CreateMqttClient() as MqttClient;
-            //clientId = $"{mqttConfig.ClientIdentify}";
-            clientId = "MqttErpClient_" + Guid.NewGuid();
+            clientId = $"{mqttConfig.ClientIdentify}";
+            //clientId = $"{mqttConfig.ClientIdentify}-{Md5.Encrypt(Guid.NewGuid().ToString())}" ;
             options = new MqttClientOptionsBuilder()
                 .WithTcpServer(_mqttConfig.Server, _mqttConfig.Port)
                 .WithCredentials(_mqttConfig.Username, _mqttConfig.Password)
                 .WithClientId(clientId)
                 .WithCleanSession(false)
-                .WithCommunicationTimeout(new TimeSpan(0, 5, 0))
+                .WithCommunicationTimeout(TimeSpan.FromMinutes(10))
                 .Build();
 
             if (receivedMessageHanddler != null)
@@ -62,7 +62,7 @@ namespace Infrastructure.MQTT
         /// <param name="e"></param>
         private void Disconnected(object sender, MqttClientDisconnectedEventArgs e)
         {
-            Log.Logger.Error(e.Exception,$"Mqtt>>Disconnected【{clientId}】>>已断开连接,断开连接原因:{e.Exception.Message}");
+            Log.Logger.Error($"Mqtt>>Disconnected【{clientId}】>>已断开连接,断开连接原因:{e.Exception.Message}");
             try
             {
                 mqttClient.ConnectAsync(options);
