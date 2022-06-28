@@ -76,11 +76,25 @@ namespace OpenAuth.MqttClient
             var subscribe = ServiceLocator.serviceProvider?.GetService<IMqttSubscribe>();
             if (topics.Equals("edge_msg"))
             {
-                subscribe?.SubscribeEdgeMsg(e.ApplicationMessage.Payload);
+                try
+                {
+                    subscribe?.SubscribeEdgeMsg(e.ApplicationMessage.Payload);
+                }
+                catch (Exception ex)
+                {
+                    Log.Logger.Error($"SubscribeEdgeMsg  {ex.Message}");
+                }
             }
             else if (topics.Equals("rt_data"))
             {
-                subscribe?.SubscribeRtData(e.ApplicationMessage.Payload);
+                try
+                {
+                    subscribe?.SubscribeRtData(e.ApplicationMessage.Payload);
+                }
+                catch(Exception ex)
+                {
+                    Log.Logger.Error($"SubscribeRtData  {ex.Message}");
+                }
             }
         }
     }

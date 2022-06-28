@@ -451,6 +451,10 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            if (!GeneratorCode.Split("-")[0].ToUpper().Equal("WO"))
+            {
+                throw new Exception($"{GeneratorCode}当前二维码非生产码,请重新扫码!");
+            }
             var OrderNo = Convert.ToInt32(GeneratorCode.Split("-")[1]);
             var query = await UnitWork.Find<product_owor>(null).Where(c => c.DocEntry == OrderNo).FirstOrDefaultAsync();
             if (query == null)

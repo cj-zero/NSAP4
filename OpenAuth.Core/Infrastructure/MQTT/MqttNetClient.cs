@@ -1,10 +1,12 @@
 ﻿using Microsoft.Extensions.Configuration;
 using MQTTnet;
 using MQTTnet.Client;
+using MQTTnet.Serializer;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Infrastructure.MQTT
@@ -31,14 +33,16 @@ namespace Infrastructure.MQTT
             Configuration = configuration;
             var factory = new MqttFactory();
             mqttClient = factory.CreateMqttClient() as MqttClient;
-            clientId = $"{mqttConfig.ClientIdentify}";
-            //clientId = $"{mqttConfig.ClientIdentify}-{Md5.Encrypt(Guid.NewGuid().ToString())}" ;
+            //clientId = $"{mqttConfig.ClientIdentify}";
+            clientId = Guid.NewGuid().ToString();
             options = new MqttClientOptionsBuilder()
                 .WithTcpServer(_mqttConfig.Server, _mqttConfig.Port)
                 .WithCredentials(_mqttConfig.Username, _mqttConfig.Password)
                 .WithClientId(clientId)
-                .WithCleanSession(false)
+                .WithCleanSession(true)
+                .WithKeepAlivePeriod(TimeSpan.FromDays(2))
                 .WithCommunicationTimeout(TimeSpan.FromMinutes(10))
+                .WithProtocolVersion(MqttProtocolVersion.V311)
                 .Build();
 
             if (receivedMessageHanddler != null)
@@ -63,14 +67,15 @@ namespace Infrastructure.MQTT
         private void Disconnected(object sender, MqttClientDisconnectedEventArgs e)
         {
             Log.Logger.Error($"Mqtt>>Disconnected【{clientId}】>>已断开连接,断开连接原因:{e.Exception.Message}");
-            try
+            Task.Delay(TimeSpan.FromSeconds(5));
+            mqttClient.ConnectAsync(options);
+            if (mqttClient.IsConnected)
             {
-                mqttClient.ConnectAsync(options);
                 Log.Logger.Information($"{clientId}重连成功!");
             }
-            catch (Exception ex)
+            else
             {
-                Log.Logger.Error($"{clientId}重连失败! message={ex.Message}");
+                Log.Logger.Error($"{clientId}重连失败!{e.Exception.Message}");
             }
         }
         /// <summary>
@@ -81,9 +86,9 @@ namespace Infrastructure.MQTT
         private void Connected(object sender, MqttClientConnectedEventArgs e)
         {
             Log.Logger.Information($"Mqtt>>Connected【{clientId}】>>连接成功!");
-            //连接重新订阅
-            try
+            if (mqttClient.IsConnected)
             {
+                //连接重新订阅
                 string edgeKey = "EdgeGuidKeys";
                 var redisConnectionString = Configuration.GetValue<string>("AppSetting:Cache:Redis");
                 RedisHelper.Initialization(new CSRedis.CSRedisClient(redisConnectionString));
@@ -100,9 +105,9 @@ namespace Infrastructure.MQTT
                     }
                 }
             }
-            catch (Exception ex)
+            else
             {
-                Log.Logger.Error($"{clientId}连接成功重新订阅失败! message={ex.Message}");
+                Log.Logger.Error($"Connected {clientId}重连失败!");
             }
         }
 
