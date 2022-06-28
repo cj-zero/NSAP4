@@ -900,10 +900,12 @@ namespace OpenAuth.App.Customer
             foreach (var dept in depts)
             {
                 //返回缓存中这个部门下所有的客户
-                var deptData = RedisHelper.ZRange($"dept:{dept}", 0, -1);
+                var deptData = RedisHelper.ZRange($"dept:{dept}", 0, -1).ToList();
                 //缓存中有,而本次扫描中没有的,说明客户不符合掉落规则(原业务员做了报价单,或者分配给了新的业务员等),这部分数据要从缓存中移除
-                var deleData = deptData.Except(customerLists.Where(c => c.DepartMent == dept).Select(c => c.CustomerNo));
-                RedisHelper.ZRem($"dept:{dept}", deleData);
+                var deleData = deptData.Except(customerLists.Where(c => c.DepartMent == dept).Select(c => c.CustomerNo)).ToList();
+                RedisHelper.ZRem($"dept:{dept}", deleData.ToArray());
+                var customers = deleData.Select(d => $"customer:{d}");
+                RedisHelper.Del(customers.ToArray()); 
             }
             //部门清除旧有的,加入本次符合规则的
             var deptsData = RedisHelper.SMembers("dept:");
@@ -943,12 +945,14 @@ namespace OpenAuth.App.Customer
             var customerLists = new List<CustomerList>();
             //查询有哪些部门
             var depts = RedisHelper.SMembers("dept:");
-            foreach(var dept in depts)
+
+            foreach (var dept in depts)
             {
                 //查询这个部门有哪些客户
                 var customersWithScore = RedisHelper.ZRangeWithScores($"dept:{dept}", 0, -1);
                 foreach (var customer in customersWithScore)
                 {
+                        
                     //掉入日期
                     var date = DateTime.ParseExact(customer.score.ToString(), "yyyyMMdd", null).Date;
                     var customerCode = customer.member;
@@ -956,7 +960,7 @@ namespace OpenAuth.App.Customer
                     var slpCode = RedisHelper.HGet($"customer:{customer.member}", "SlpCode");
                     var slpName = RedisHelper.HGet($"customer:{customer.member}", "SlpName");
                     var createDate = RedisHelper.HGet($"customer:{customer.member}", "CreateDate");
-                    var remark = RedisHelper.HGet($"customer:{customer.member}", "Remark");
+                    var remark = RedisHelper.HGet($"customer:{customer.member}", "Remark") ?? "";
                     //如果大于等于掉入日期,则掉入公海,并且删除缓存
                     if (DateTime.Now.Date >= date)
                     {
@@ -1002,7 +1006,7 @@ namespace OpenAuth.App.Customer
                     }
                 }
             }
-
+            
             //数据处理
             foreach (var item in customerLists)
             {
