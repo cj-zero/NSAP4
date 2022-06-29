@@ -198,45 +198,35 @@ namespace OpenAuth.App.Nwcali
                                     }
                                 }
                             }
-                            var changeFlage = false;
-                            //using (var dbContext = UnitWork.GetDbContext<edge>())
-                            //{
-                            //    using (var transaction = dbContext.Database.BeginTransaction())
-                            //    {
-                            try
+                            using (var dbContext = UnitWork.GetDbContext<edge>())
                             {
-                                Stopwatch st1 = new Stopwatch();
-                                st1.Start();
-                                UnitWork.Find<edge>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
-                                UnitWork.Find<edge_host>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
-                                UnitWork.Find<edge_mid>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
-                                UnitWork.Find<edge_low>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
-                                UnitWork.Find<edge_channel>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
-                                changeFlage = true;
-                                //transaction.Commit();
-                                st1.Stop();
-                                Log.Logger.Information($"{edge_guids}在线设备重置成功 耗时:{st1.ElapsedMilliseconds}ms");
-                            }
-                            catch (Exception ex)
-                            {
-                                changeFlage = false;
-                                //transaction.Rollback();
-                                Log.Logger.Error($"设备数据重置异常：msg_type={msg_type},edge_guids={edge_guids},token={token},message={ex.Message}");
-                            }
-                            //    }
-                            //}
-                            if (changeFlage)
-                            {
-                                Stopwatch st = new Stopwatch();
-                                st.Start();
-                                UnitWork.Add<edge, int>(edge);
-                                UnitWork.BatchAdd<edge_host, int>(hostList.ToArray());
-                                UnitWork.BatchAdd<edge_mid, int>(midList.ToArray());
-                                UnitWork.BatchAdd<edge_low, int>(lowList.ToArray());
-                                UnitWork.BatchAdd<edge_channel, int>(channelList.ToArray());
-                                UnitWork.Save();
-                                st.Stop();
-                                Log.Logger.Information($"{edge_guids}在线设备更新成功 耗时:{st.ElapsedMilliseconds}ms");
+                                using (var transaction = dbContext.Database.BeginTransaction())
+                                {
+                                    try
+                                    {
+                                        Stopwatch st = new Stopwatch();
+                                        st.Start();
+                                        UnitWork.Find<edge>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
+                                        UnitWork.Find<edge_host>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
+                                        UnitWork.Find<edge_mid>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
+                                        UnitWork.Find<edge_low>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
+                                        UnitWork.Find<edge_channel>(null).Where(c => c.edge_guid == edge_guids).DeleteFromQuery();
+                                        UnitWork.Add<edge, int>(edge);
+                                        UnitWork.BatchAdd<edge_host, int>(hostList.ToArray());
+                                        UnitWork.BatchAdd<edge_mid, int>(midList.ToArray());
+                                        UnitWork.BatchAdd<edge_low, int>(lowList.ToArray());
+                                        UnitWork.BatchAdd<edge_channel, int>(channelList.ToArray());
+                                        UnitWork.Save();
+                                        transaction.Commit();
+                                        st.Stop();
+                                        Log.Logger.Information($"{edge_guids}在线设备更新成功 耗时:{st.ElapsedMilliseconds}ms");
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        transaction.Rollback();
+                                        Log.Logger.Information($"{edge_guids}在线设备更新失败 message:{ex.Message}");
+                                    }
+                                }
                             }
                         }
                     }
@@ -273,7 +263,7 @@ namespace OpenAuth.App.Nwcali
                             UnitWork.Find<edge_channel>(null).Where(c => c.edge_guid == edge_guids)
                                 .UpdateFromQuery(c => new edge_channel { status = 1 });
                         }
-                        _ = _mqttClient.SubscribeAsync($"rt_data/subscribe_{edge_guids}");
+                        _ =_mqttClient.SubscribeAsync($"rt_data/subscribe_{edge_guids}");
                         Log.Logger.Information($"边缘计算{edge_guids}上线 rt订阅成功!");
                     }
                 }
