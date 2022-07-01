@@ -88,7 +88,8 @@ namespace OpenAuth.App.Nwcali
                 var enterpriseId = _appConfiguration.Value.EnterpriseIds.Split(',').ToList();
                 if (enterpriseId.Contains(userEnterpriseId))
                 {
-                    var edgeCache = RedisHelper.Get(_mqttClient.clientId);
+                    string EdgeGuidKeys = "EdgeGuidKeys";
+                    var edgeCache = RedisHelper.Get(EdgeGuidKeys);
                     if (!string.IsNullOrWhiteSpace(edgeCache))
                     {
                         var edgeList = edgeCache.Split(',').Distinct().ToList();
@@ -101,7 +102,7 @@ namespace OpenAuth.App.Nwcali
                     }
                     else
                     {
-                        RedisHelper.SetAsync(_mqttClient.clientId, edge_guids);
+                        RedisHelper.SetAsync(EdgeGuidKeys, edge_guids);
                     }
                     Log.Logger.Information($"设备数据开始解析 msg_type={msg_type},token={token},edge_guids={edge_guids}");
                     if (msg_type == "3")
