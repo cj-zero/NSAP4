@@ -260,5 +260,40 @@ namespace OpenAuth.App
             };
             return result;
         }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="fileName">上传路径</param>
+        /// <param name="file">以文件形式上传</param>
+        /// <param name="stream">以流形式上传</param>
+        /// <returns></returns>
+        public async Task<UploadFileResp> UploadFileToHuaweiOBS(string fileName, IFormFile file = null, Stream stream = null)
+        {
+            var obsHelper = new HuaweiOBSHelper();
+            //var fileName = "stepFile/" + file.FileName;
+            if (stream == null)
+            {
+                stream = file?.OpenReadStream();
+            }
+            var response = obsHelper.PutObject(fileName, null, stream, out string objectKey);
+            var result = new UploadFileResp
+            {
+                FileName = objectKey,
+                FilePath = response.ObjectUrl
+            };
+            return result;
+        }
+
+        /// <summary>
+        /// 下载对象
+        /// </summary>
+        /// <param name="bucketName">桶容器名称</param>
+        /// <param name="objectKey">文件对象关键字</param>
+        /// <param name="filePath"></param>
+        public void GetFileFromHuaweiOBS(string objectKey, string? bucketName, string filePath)
+        {
+            var obsHelper = new HuaweiOBSHelper();
+            obsHelper.GetObject(objectKey, bucketName, filePath);
+        }
     }
 }

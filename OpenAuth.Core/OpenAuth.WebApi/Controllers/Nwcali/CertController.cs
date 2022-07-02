@@ -252,16 +252,18 @@ namespace OpenAuth.WebApi.Controllers
                     baseInfo.FlowInstanceId = await CreateFlow(baseInfo.CertificateNumber);
                     await _nwcaliCertApp.AddAsync(baseInfo);
                     //保存文件
-                    var folderYear = DateTime.Now.ToString("yyyy");
+                    //var folderYear = DateTime.Now.ToString("yyyy");
                     var fileExtension = Path.GetExtension(file.FileName);
-                    var basePath = Path.Combine("D:\\nsap4file", "nwcail", folderYear, baseInfo.CertificateNumber);
-                    var savePath = Path.Combine(basePath, $"{baseInfo.CertificateNumber}{fileExtension}");
-                    DirUtil.CheckOrCreateDir(basePath);
-                    using (var fs = new FileStream(savePath, FileMode.Create))
-                    {
-                        file.CopyTo(fs);
-                        fs.Flush();
-                    }
+                    //var basePath = Path.Combine("D:\\nsap4file", "nwcail", folderYear, baseInfo.CertificateNumber);
+                    //var savePath = Path.Combine(basePath, $"{baseInfo.CertificateNumber}{fileExtension}");
+                    //DirUtil.CheckOrCreateDir(basePath);
+                    //using (var fs = new FileStream(savePath, FileMode.Create))
+                    //{
+                    //    file.CopyTo(fs);
+                    //    fs.Flush();
+                    //}
+                    var fileResp = await _fileApp.UploadFileToHuaweiOBS($"nwcail/{baseInfo.CertificateNumber}/{baseInfo.CertificateNumber}{fileExtension}", file);
+                    var savePath = $"{fileResp.FileName},{fileResp.FilePath}";
                     await _nwcaliCertApp.UpdateFilePath(baseInfo.CertificateNumber, savePath);
                     return new Response<bool>()
                     {
@@ -286,7 +288,8 @@ namespace OpenAuth.WebApi.Controllers
                     var files = Request.Form.Files;
                     var file = files[0];
                     //保存文件
-                    var fileResp = await _fileApp.Add(files, "machine");
+                    var fileResp = await _fileApp.UploadFileToHuaweiOBS($"machine/{file.FileName}", file);
+                    //var fileResp = await _fileApp.Add(files, "machine");
                     //读取文件
                     var handler = new ExcelHandler(file.OpenReadStream());
                     var sheet = handler.GetSheet();
@@ -304,7 +307,7 @@ namespace OpenAuth.WebApi.Controllers
                             OrderNo = "",
                             Status = 1,
                             CreateTime = DateTime.Now,
-                            FileId = fileResp.FirstOrDefault()?.Id
+                            FileId = fileResp.FilePath
                         });
                     }
                     //var guid = machineInfo.Select(c => c.Guid).ToList();
@@ -540,8 +543,11 @@ namespace OpenAuth.WebApi.Controllers
             {
                 if (!string.IsNullOrWhiteSpace(baseInfo.PdfPath))
                 {
-                    var filestream = new FileStream(baseInfo.PdfPath, FileMode.Open);
-                    return File(filestream, "application/pdf");
+                    System.Net.HttpWebRequest request = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(baseInfo.PdfPath);
+                    System.Net.HttpWebResponse response = (System.Net.HttpWebResponse)request.GetResponse();
+                    Stream responseStream = response.GetResponseStream();
+                    //var filestream = new FileStream(baseInfo.CNASPdfPath, FileMode.Open);
+                    return File(responseStream, "application/pdf");
                 }
                 var model = await BuildModel(baseInfo);
                 foreach (var item in model.MainStandardsUsed)
@@ -608,8 +614,11 @@ namespace OpenAuth.WebApi.Controllers
             {
                 if (!string.IsNullOrWhiteSpace(baseInfo.CNASPdfPath))
                 {
-                    var filestream = new FileStream(baseInfo.CNASPdfPath, FileMode.Open);
-                    return File(filestream, "application/pdf");
+                    System.Net.HttpWebRequest request = (System.Net.HttpWebRequest)System.Net.WebRequest.Create(baseInfo.CNASPdfPath);
+                    System.Net.HttpWebResponse response = (System.Net.HttpWebResponse)request.GetResponse();
+                    Stream responseStream = response.GetResponseStream();
+                    //var filestream = new FileStream(baseInfo.CNASPdfPath, FileMode.Open);
+                    return File(responseStream, "application/pdf");
                 }
                 var model = await BuildModel(baseInfo, "cnas");
                 //获取委托单
