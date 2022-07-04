@@ -1722,7 +1722,7 @@ namespace OpenAuth.App
         /// <param name="turV">Tur电压数据</param>
         /// <param name="turA">Tur电流数据</param>
         /// <returns></returns>
-        private async Task<CertModel> BuildModel(NwcaliBaseInfo baseInfo, string type = "")
+        public async Task<CertModel> BuildModel(NwcaliBaseInfo baseInfo, string type = "")
         {
             var list = new List<WordModel>();
             var model = new CertModel();
