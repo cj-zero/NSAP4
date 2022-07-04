@@ -864,7 +864,7 @@ namespace OpenAuth.App
                 return result;
             }
             var department = loginContext.Orgs.OrderByDescending(c => c.CascadeId).Select(c => c.Name).FirstOrDefault();
-            result.Data = await UnitWork.Find<edge>(null).Where(c => c.department.Equal(department)).Select(c=>c.edge_guid).ToListAsync();
+            result.Data = await UnitWork.Find<edge>(null).Where(c => c.department==department).Select(c=>c.edge_guid).ToListAsync();
             return result;
         }
 
