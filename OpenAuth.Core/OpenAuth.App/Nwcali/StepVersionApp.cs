@@ -849,6 +849,24 @@ namespace OpenAuth.App
         }
 
         #endregion
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData<List<string>>> EdgeGuidList()
+        {
+            var result = new TableData<List<string>>();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                result.Code = Define.INVALID_TOKEN;
+                result.Message = "登录已过期";
+                return result;
+            }
+            var department = loginContext.Orgs.OrderByDescending(c => c.CascadeId).Select(c => c.Name).FirstOrDefault();
+            result.Data = await UnitWork.Find<edge>(null).Where(c => c.department.Equal(department)).Select(c=>c.edge_guid).ToListAsync();
+            return result;
+        }
 
         /// <summary>
         /// 同步设备数据
