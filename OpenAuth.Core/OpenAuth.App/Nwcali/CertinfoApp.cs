@@ -621,16 +621,16 @@ namespace OpenAuth.App
                         pdf.FooterSettings = new FooterSettings() { FontSize = 6, Right = "Page [page] of [toPage] ", Line = false, Spacing = 2.812, HtmUrl = footerUrl };
                     });
                     System.IO.File.Delete(tempUrl);
-                    //var path = Path.Combine(BaseCertDir, certNo);
-                    DirUtil.CheckOrCreateDir(basePath);
-                    var fullpath = Path.Combine(basePath, $"{certNo}_EN" + ".pdf");
-                    using (FileStream fs = new FileStream(fullpath, FileMode.Create))
-                    {
-                        using (BinaryWriter bw = new BinaryWriter(fs))
-                        {
-                            bw.Write(datas, 0, datas.Length);
-                        }
-                    }
+                    //DirUtil.CheckOrCreateDir(basePath);
+                    //var fullpath = Path.Combine(basePath, $"{certNo}_EN" + ".pdf");
+                    //using (FileStream fs = new FileStream(fullpath, FileMode.Create))
+                    //{
+                    //    using (BinaryWriter bw = new BinaryWriter(fs))
+                    //    {
+                    //        bw.Write(datas, 0, datas.Length);
+                    //    }
+                    //}
+                    Stream stream1 = new MemoryStream(datas);
                     #endregion
 
                     #region 生成中文版
@@ -674,19 +674,25 @@ namespace OpenAuth.App
                         pdf.FooterSettings = new FooterSettings() { FontSize = 6, Right = "Page [page] of [toPage] ", Line = false, Spacing = 0, HtmUrl = footerUrl };
                     });
                     System.IO.File.Delete(tempUrl);
-                    DirUtil.CheckOrCreateDir(basePath);
+                    //DirUtil.CheckOrCreateDir(basePath);
                     var fullPathCnas = Path.Combine(basePath, $"{certNo}_CNAS" + ".pdf");
-                    using (FileStream fs = new FileStream(fullPathCnas, FileMode.Create))
-                    {
-                        using (BinaryWriter bw = new BinaryWriter(fs))
-                        {
-                            bw.Write(datas, 0, datas.Length);
-                        }
-                    }
+                    //using (FileStream fs = new FileStream(fullPathCnas, FileMode.Create))
+                    //{
+                    //    using (BinaryWriter bw = new BinaryWriter(fs))
+                    //    {
+                    //        bw.Write(datas, 0, datas.Length);
+                    //    }
+                    //}
+                    Stream stream2 = new MemoryStream(datas);
                     #endregion
 
                     await semaphoreSlim.WaitAsync();
-                    await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { PdfPath = fullpath, CNASPdfPath = fullPathCnas });
+                    //上传华为云
+                    var fileResp = await _fileApp.UploadFileToHuaweiOBS($"nwcail/{baseInfo.CertificateNumber}/{baseInfo.CertificateNumber}_EN.pdf", null, stream1);
+                    var fileRespCn = await _fileApp.UploadFileToHuaweiOBS($"nwcail/{baseInfo.CertificateNumber}/{baseInfo.CertificateNumber}_CNAS.pdf", null, stream2);
+
+                    await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { PdfPath = fileResp.FilePath, CNASPdfPath = fileRespCn.FilePath });
+
                     //生成证书文件后删除校准数据
                     await UnitWork.DeleteAsync<Etalon>(x => x.NwcaliBaseInfoId == baseInfo.Id);
                     await UnitWork.DeleteAsync<NwcaliPlcData>(x => x.NwcaliBaseInfoId == baseInfo.Id);
