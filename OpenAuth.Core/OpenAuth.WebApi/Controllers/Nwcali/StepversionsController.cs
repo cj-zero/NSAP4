@@ -429,14 +429,21 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 同步设备数据
         /// </summary>
-        /// <param name="EdgeGuid"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> SyncDeviceList(string EdgeGuid)
+        public async Task<TableData> SyncDeviceList()
         {
             var result = new TableData();
             try
             {
+                var edge_list=await _app.EdgeGuidList();
+                if (!edge_list.Data.Any())
+                {
+                    result.Code = 500;
+                    result.Message = "当前部门还未上传过任何边缘计算数据!";
+                    return result;
+                }
+                string EdgeGuid = edge_list.Data.FirstOrDefault();
                 var json_str = JsonConvert.SerializeObject(new { app_id = "", app_secret = "", edge_guid = EdgeGuid });
                 var request = new Request { JsonParameter = Google.Protobuf.ByteString.CopyFromUtf8(json_str) };
                 var res = await _dataServiceClient.GetDevInfoAsync(request);
