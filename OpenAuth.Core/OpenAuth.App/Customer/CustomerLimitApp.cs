@@ -798,6 +798,16 @@ namespace OpenAuth.App.Customer
             orderTypeData.Add(1, "未成交");
             orderTypeData.Add(2, "未交货");
 
+            var deptLeader = new Dictionary<string, string>();
+            //deptLeader.Add("S1", "吴红娟");
+            deptLeader.Add("S2", "边群丽");
+            deptLeader.Add("S3", "陈洪波");
+            deptLeader.Add("S6", "薛琼");
+            //deptLeader.Add("S9", "胥晓飞");
+            //deptLeader.Add("S11", "万晓永");
+            //deptLeader.Add("S25", "陈勇");
+
+
             //查询规则列表,按部门和客户类型分类,事件优先级:0-未报价>1-未下单>2-未交货
             var ruleData = await (from c in UnitWork.Find<CustomerSeaRule>(null)
                                   join ci in UnitWork.Find<CustomerSeaRuleItem>(null)
@@ -828,6 +838,7 @@ namespace OpenAuth.App.Customer
                 var key = $"dept:{dept}";
                 RedisHelper.SAdd("dept:", dept);
 
+                string uname = deptLeader.FirstOrDefault(d => d.Key == rule.dept).Value;
                 //根据部门查找该部门下的业务员销售编号
                 var slpInfo = await (from u in UnitWork.Find<base_user>(null)
                                      join ud in UnitWork.Find<base_user_detail>(null) 
@@ -839,7 +850,7 @@ namespace OpenAuth.App.Customer
                                      where s.sbo_id == Define.SBO_ID
                                      && d.dep_alias == dept
                                      //&& new int[] { 0, 1 }.Contains(ud.status) //在职的员工,离职状态是2和3
-                                     && u.user_nm == "薛琼" //(先拿薛姐的客户试一试)
+                                     && u.user_nm == uname //取各个部门的leader的客户
                                      select s.sale_id).Distinct().ToListAsync();
 
                 //再根据销售编号查找客户
@@ -905,7 +916,7 @@ namespace OpenAuth.App.Customer
                 var deleData = deptData.Except(customerLists.Where(c => c.DepartMent == dept).Select(c => c.CustomerNo)).ToList();
                 RedisHelper.ZRem($"dept:{dept}", deleData.ToArray());
                 var customers = deleData.Select(d => $"customer:{d}");
-                RedisHelper.Del(customers.ToArray()); 
+                RedisHelper.Del(customers.ToArray());
             }
             //部门清除旧有的,加入本次符合规则的
             var deptsData = RedisHelper.SMembers("dept:");
@@ -952,7 +963,7 @@ namespace OpenAuth.App.Customer
                 var customersWithScore = RedisHelper.ZRangeWithScores($"dept:{dept}", 0, -1);
                 foreach (var customer in customersWithScore)
                 {
-                        
+
                     //掉入日期
                     var date = DateTime.ParseExact(customer.score.ToString(), "yyyyMMdd", null).Date;
                     var customerCode = customer.member;
@@ -1006,7 +1017,7 @@ namespace OpenAuth.App.Customer
                     }
                 }
             }
-            
+
             //数据处理
             foreach (var item in customerLists)
             {
@@ -1109,7 +1120,7 @@ namespace OpenAuth.App.Customer
                 count = g.Count()
             })).ToListAsync();
             //查看有哪些业务员要发送提醒
-            foreach(var slp in query)
+            foreach (var slp in query)
             {
                 //向原销售员发送提醒
                 //var customers = new StringBuilder("");

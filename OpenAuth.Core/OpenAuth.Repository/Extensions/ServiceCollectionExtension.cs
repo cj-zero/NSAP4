@@ -26,6 +26,7 @@ namespace OpenAuth.Repository.Extensions
             AddDbContext<Nsap4MaterialDbContext>(services);
             AddDbContext<SapDbContext>(services);
             AddDbContext<NsapOaDbContext>(services);
+            AddDbContext<ManagerDbContext>(services);
             services.AddSingleton<DBContextFactory>();   
             return services;
         }
