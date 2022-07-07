@@ -306,6 +306,12 @@ namespace OpenAuth.WebApi.Controllers
                 stepCount2 = step1.ListStep.Count();
                 step_data2 = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent1.ToString()));
                 var res = await _app.DockChannelControl(model, stepCount, step_data, stepCount2, step_data2);
+                if (res.Code != 200)
+                {
+                    result.Code = res.Code;
+                    result.Message = res.Message;
+                    return result;
+                }
                 deviceTestResponses = res.Data;
             }
             else
@@ -336,6 +342,12 @@ namespace OpenAuth.WebApi.Controllers
                 stepCount = step.ListStep.Count();
                 step_data = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent.ToString()));
                 var res = await _app.ChannelControlAsync(model, stepCount, step_data);
+                if (res.Code != 200)
+                {
+                    result.Code = res.Code;
+                    result.Message = res.Message;
+                    return result;
+                }
                 deviceTestResponses = res.Data;
             }
             try
