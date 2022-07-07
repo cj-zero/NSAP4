@@ -19,6 +19,7 @@ namespace OpenAuth.Repository.Domain
     [Table("customer_limit_saler")]
     public class CustomerLimitSaler : BaseEntity<int>
     {
+        public int Id { get; set; }
         /// <summary>
         /// 主表Id
         /// </summary>

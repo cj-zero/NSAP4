@@ -10726,7 +10726,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             }
             if (line.ToLower() == "sale_rdr1")
             {
-                filedName.Append(",b.LineNum,b.U_RelDoc");
+                filedName.Append(",b.LineNum,b.U_RelDoc,IFNULL(b.IsSync,0) as IsSync,IFNULL(b.Advance,0) Advance,b.RecordGuid,b.SubmitTime ");
             }
             tableName.AppendFormat("{0}." + type + " a LEFT JOIN  {0}." + line + " b ON a.DocEntry=b.DocEntry AND a.sbo_id=b.sbo_id ", "nsap_bone");
             tableName.AppendFormat(" LEFT JOIN {0}.crm_oslp c ON a.SlpCode = c.SlpCode AND a.sbo_id=c.sbo_id", "nsap_bone");

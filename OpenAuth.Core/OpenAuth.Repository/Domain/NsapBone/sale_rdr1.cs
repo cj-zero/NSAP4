@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain
 	/// 
 	/// </summary>
     [Table("sale_rdr1")]
-    public partial class sale_rdr1 
+    public partial class sale_rdr1
     {
         /// <summary>
         /// 
@@ -168,5 +168,28 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         public string unitMsr { get; set; }
+        /// <summary>
+        /// 合约评审单号（物料设计用）
+        /// </summary>
+        [Description("")]
+        public string ContractReviewCode { get; set; }
+
+        /// <summary>
+        /// 合约评审提交时间（物料设计用）
+        /// </summary>
+        [Description("")]
+        public DateTime? ReviewSubmitTime { get; set; }
+        /// <summary>
+        /// 是否提交到manager系统（1 是）
+        /// </summary>
+        [Description("")]
+        public int? IsSync { get; set; }
+
+        //关联manager系统的id
+        public string RecordGuid { get; set; }
+        //物料设计进度
+        public int? Advance { get; set; }
+
+        public DateTime? SubmitTime { get; set; }
     }
 }

@@ -281,7 +281,7 @@ namespace OpenAuth.WebApi.Controllers
                     };
                 }
             }
-            else //生产部门 上传烤机数据
+            else //生产阶段的校准数据
             {
                 try
                 {
@@ -443,7 +443,7 @@ namespace OpenAuth.WebApi.Controllers
                         continue;
                     }
 
-                    var model = await BuildModel(baseInfo);
+                    var model = await _certinfoApp.BuildModel(baseInfo);
                     var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "Header.html");
                     var text = System.IO.File.ReadAllText(url);
                     text = text.Replace("@Model.Data.BarCode", model.BarCode);
@@ -549,7 +549,7 @@ namespace OpenAuth.WebApi.Controllers
                     //var filestream = new FileStream(baseInfo.CNASPdfPath, FileMode.Open);
                     return File(responseStream, "application/pdf");
                 }
-                var model = await BuildModel(baseInfo);
+                var model = await _certinfoApp.BuildModel(baseInfo);
                 foreach (var item in model.MainStandardsUsed)
                 {
                     if (item.Name.Contains(","))
@@ -620,7 +620,7 @@ namespace OpenAuth.WebApi.Controllers
                     //var filestream = new FileStream(baseInfo.CNASPdfPath, FileMode.Open);
                     return File(responseStream, "application/pdf");
                 }
-                var model = await BuildModel(baseInfo, "cnas");
+                var model = await _certinfoApp.BuildModel(baseInfo, "cnas");
                 //获取委托单
                 var entrustment = await _certinfoApp.GetEntrustment(model.CalibrationCertificate.TesterSn);
                 model.CalibrationCertificate.EntrustedUnit = entrustment?.CertUnit;
