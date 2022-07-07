@@ -799,12 +799,12 @@ namespace OpenAuth.App.Customer
             orderTypeData.Add(2, "未交货");
 
             var deptLeader = new Dictionary<string, string>();
-            //deptLeader.Add("S1", "吴红娟");
+            deptLeader.Add("S1", "吴红娟");
             deptLeader.Add("S2", "边群丽");
             deptLeader.Add("S3", "陈洪波");
             deptLeader.Add("S6", "薛琼");
             //deptLeader.Add("S9", "胥晓飞");
-            //deptLeader.Add("S11", "万晓永");
+            deptLeader.Add("S11", "万晓永");
             //deptLeader.Add("S25", "陈勇");
 
 
