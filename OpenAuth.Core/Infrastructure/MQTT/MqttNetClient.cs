@@ -34,7 +34,8 @@ namespace Infrastructure.MQTT
             var factory = new MqttFactory();
             mqttClient = factory.CreateMqttClient() as MqttClient;
             //clientId = $"{mqttConfig.ClientIdentify}";
-            clientId = Guid.NewGuid().ToString();
+            var ts=(DateTime.Now.ToUniversalTime().Ticks - 621355968000000000)/10000000;
+            clientId = $"erp_{ts}_ac_mb_dd";   
             options = new MqttClientOptionsBuilder()
                 .WithTcpServer(_mqttConfig.Server, _mqttConfig.Port)
                 .WithCredentials(_mqttConfig.Username, _mqttConfig.Password)
@@ -42,7 +43,7 @@ namespace Infrastructure.MQTT
                 .WithCleanSession(true)
                 .WithKeepAlivePeriod(TimeSpan.FromDays(2))
                 .WithCommunicationTimeout(TimeSpan.FromMinutes(10))
-                .WithProtocolVersion(MqttProtocolVersion.V311)
+                //.WithProtocolVersion(MqttProtocolVersion.V311)
                 .Build();
 
             if (receivedMessageHanddler != null)
@@ -50,13 +51,12 @@ namespace Infrastructure.MQTT
                 //是服务器接收到消息时触发的事件，可用来响应特定消息
                 mqttClient.ApplicationMessageReceived += receivedMessageHanddler;
             }
+            mqttClient.ConnectAsync(options);
             //是客户端连接成功时触发的事件
             mqttClient.Connected += Connected;
 
             //是客户端断开连接时触发的事件
             mqttClient.Disconnected += Disconnected;
-
-            mqttClient.ConnectAsync(options);
         }
 
         /// <summary>
@@ -67,7 +67,6 @@ namespace Infrastructure.MQTT
         private void Disconnected(object sender, MqttClientDisconnectedEventArgs e)
         {
             Log.Logger.Error($"Mqtt>>Disconnected【{clientId}】>>已断开连接,断开连接原因:{e.Exception.Message}");
-            Task.Delay(TimeSpan.FromSeconds(5));
             mqttClient.ConnectAsync(options);
             if (mqttClient.IsConnected)
             {
@@ -88,7 +87,6 @@ namespace Infrastructure.MQTT
             Log.Logger.Information($"Mqtt>>Connected【{clientId}】>>连接成功!");
             if (mqttClient.IsConnected)
             {
-                //连接重新订阅
                 string edgeKey = "EdgeGuidKeys";
                 var redisConnectionString = Configuration.GetValue<string>("AppSetting:Cache:Redis");
                 RedisHelper.Initialization(new CSRedis.CSRedisClient(redisConnectionString));

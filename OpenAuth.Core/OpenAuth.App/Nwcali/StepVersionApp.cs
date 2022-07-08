@@ -199,6 +199,15 @@ namespace OpenAuth.App
                 throw new Exception($"生产码{model.GeneratorCode}暂未绑定任何设备!");
             }
             var allBindLowList = allBindList.Select(c => c.LowGuid).ToList();
+            var lowguidList = allBindLowList.GroupBy(c => c).Select(c => new { guid = c.Key, counts = c.Count() }).Where(c=>c.counts>1).Select(c=>c.guid).ToList();
+            if (lowguidList.Any())
+            {
+                var same_lowguid=allBindList.Where(c => lowguidList.Contains(c.LowGuid)).Select(c => c.DevUid).Distinct().ToList();
+                var DevUids = string.Join(';', same_lowguid.Select(c => c).ToList());
+                result.Code = 500;
+                result.Message = $"以下中位机【{DevUids}】的下位机guid重复出现,启动失败!";
+                return result;
+            }
             var hasTestLow = await UnitWork.Find<DeviceTestLog>(null)
                             .Where(c => c.GeneratorCode == model.GeneratorCode && allBindLowList.Contains(c.LowGuid))
                             .Select(c =>c.LowGuid).ToListAsync();
@@ -211,7 +220,7 @@ namespace OpenAuth.App
                                           join d in UnitWork.Find<edge_mid>(null) on new { b.edge_guid, b.srv_guid } equals new { d.edge_guid, d.srv_guid }
                                           join c in UnitWork.Find<edge_low>(null) on new { d.edge_guid, d.srv_guid, d.mid_guid } equals new { c.edge_guid, c.srv_guid, c.mid_guid }
                                           where department==a.department && a.status == 1 && b.status == 1 && c.status == 1 && d.status == 1
-                                          select new { c.low_guid, c.range_curr_array }).ToListAsync();
+                                          select new { c.low_guid, c.range_curr_array,c.edge_guid,c.srv_guid,c.dev_uid,c.unit_id }).ToListAsync();
             var allOnlineLowListGuid = allOnlineLowList.Select(c => c.low_guid).Distinct().ToList();
             var testList = allBindLowList.Where(c => allOnlineLowListGuid.Contains(c)).Distinct().ToList();
             if (!testList.Any())
@@ -221,7 +230,8 @@ namespace OpenAuth.App
             var channelList = await UnitWork.Find<edge_channel>(null).Where(c => allBindLowList.Contains(c.low_guid)).ToListAsync();
             foreach (var item in allBindList)
             {
-                if (!allOnlineLowListGuid.Contains(item.LowGuid))
+                var _lowList = allOnlineLowList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.dev_uid == item.DevUid && c.unit_id == item.UnitId).FirstOrDefault();
+                if (_lowList==null)
                 {
                     offLineLowGuid += $"{item.DevUid}-{item.UnitId},";
                     continue;
@@ -314,6 +324,15 @@ namespace OpenAuth.App
                 throw new Exception($"生产码{model.GeneratorCode}暂未绑定任何设备!");
             }
             var allBindLowList = allBindList.Select(c => c.LowGuid).ToList();
+            var lowguidList = allBindLowList.GroupBy(c => c).Select(c => new { guid = c.Key, counts = c.Count() }).Where(c => c.counts > 1).Select(c=>c.guid).ToList();
+            if (lowguidList.Any())
+            {
+                var same_lowguid = allBindList.Where(c => lowguidList.Contains(c.LowGuid)).Select(c => c.DevUid).Distinct().ToList();
+                var DevUids = string.Join(';', same_lowguid.Select(c => c).ToList());
+                result.Code = 500;
+                result.Message = $"以下中位机【{DevUids}】的下位机guid重复出现,启动失败!";
+                return result;
+            }
             var hasTestLow = await UnitWork.Find<DeviceTestLog>(null)
                             .Where(c => c.GeneratorCode == model.GeneratorCode && allBindLowList.Contains(c.LowGuid))
                             .Select(c => c.LowGuid).ToListAsync();
@@ -326,7 +345,7 @@ namespace OpenAuth.App
                                           join d in UnitWork.Find<edge_mid>(null) on new { b.edge_guid, b.srv_guid } equals new { d.edge_guid, d.srv_guid }
                                           join c in UnitWork.Find<edge_low>(null) on new { d.edge_guid, d.srv_guid, d.mid_guid } equals new { c.edge_guid, c.srv_guid, c.mid_guid }
                                           where department == a.department && a.status == 1 && b.status == 1 && c.status == 1 && d.status == 1
-                                          select new { c.low_guid, c.range_curr_array }).ToListAsync();
+                                          select new { c.low_guid, c.range_curr_array, c.edge_guid, c.srv_guid, c.dev_uid, c.unit_id }).ToListAsync();
             var allOnlineLowListGuid = allOnlineLowList.Select(c => c.low_guid).Distinct().ToList();
             var testList = allBindLowList.Where(c => allOnlineLowListGuid.Contains(c)).Distinct().ToList();
             if (!testList.Any())
@@ -337,7 +356,9 @@ namespace OpenAuth.App
             int scale = 10;
             foreach (var item in allBindList)
             {
-                if (!allOnlineLowListGuid.Contains(item.LowGuid))
+                var _lowList = allOnlineLowList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.dev_uid == item.DevUid && c.unit_id == item.UnitId).FirstOrDefault();
+
+                if (_lowList==null)
                 {
                     offLineLowGuid += $"{item.DevUid}-{item.UnitId};";
                     continue;

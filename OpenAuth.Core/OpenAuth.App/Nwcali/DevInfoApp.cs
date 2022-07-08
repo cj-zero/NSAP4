@@ -112,7 +112,7 @@ namespace OpenAuth.App
                         low_List.status = litem.status;
                         low_List.unit_id = litem.unit_id;
                         low_List.low_no = litem.low_no;
-                        low_List.GeneratorCode = bindGuidList.Where(c => c.LowGuid == litem.low_guid).Select(c => c.GeneratorCode).FirstOrDefault();
+                        low_List.GeneratorCode = bindGuidList.Where(c => c.LowGuid == litem.low_guid && c.Guid== mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
                         ml.low_Lists.Add(low_List);
                     }
                     onlineDeviceResp.mid_Lists.Add(ml);
@@ -212,7 +212,7 @@ namespace OpenAuth.App
                                 low_List.status = litem.status;
                                 low_List.unit_id = litem.unit_id;
                                 low_List.low_no = litem.low_no;
-                                low_List.GeneratorCode = bindGuidList.Where(c => c.LowGuid == litem.low_guid).Select(c => c.GeneratorCode).FirstOrDefault();
+                                low_List.GeneratorCode = bindGuidList.Where(c => c.LowGuid == litem.low_guid && c.Guid == mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
                                 low_List.low_guid = litem.low_guid;
                                 ml.low_Lists.Add(low_List);
                             }
