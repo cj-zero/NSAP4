@@ -803,9 +803,9 @@ namespace OpenAuth.App.Customer
             deptLeader.Add("S2", "边群丽");
             deptLeader.Add("S3", "陈洪波");
             deptLeader.Add("S6", "薛琼");
-            //deptLeader.Add("S9", "胥晓飞");
+            deptLeader.Add("S9", "胥晓飞");
             deptLeader.Add("S11", "万晓永");
-            //deptLeader.Add("S25", "陈勇");
+            deptLeader.Add("S25", "陈勇");
 
 
             //查询规则列表,按部门和客户类型分类,事件优先级:0-未报价>1-未下单>2-未交货
