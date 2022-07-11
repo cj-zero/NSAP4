@@ -43,6 +43,8 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<OINS>().HasKey(o => o.insID);
             modelBuilder.Entity<CTR1>().HasKey(o => new { o.ContractID, o.Line });
             modelBuilder.Entity<OSRIModel>().HasKey(o => o.SuppSerial);
+            modelBuilder.Entity<ORCTModel>().HasKey(o => o.DocEntry);
+            modelBuilder.Entity<BalanceModel>().HasKey(o => o.Balance);
             #endregion
             #region 物料编码
             modelBuilder.Entity<OITM>().HasKey(o => o.ItemCode);
@@ -85,10 +87,16 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<OIGN>().HasKey(o => o.DocEntry);
             modelBuilder.Entity<IGN1>().HasKey(o => new { o.DocEntry, o.LineNum });
             //库存转储
+
+
+
+            modelBuilder.Entity<OSCL>().HasKey(o => o.callID);
         }
         //非数据库表格
         public virtual DbSet<SysEquipmentColumn> SysEquipmentColumns { get; set; }
         public virtual DbSet<OSRIModel> Osris { get; set; }
+        public virtual DbSet<ORCTModel> Orcts { get; set; }
+        public virtual DbSet<BalanceModel> BalanceModels { get; set; }
 
         public virtual DbQuery<SysTableColumn> SysTableColumns { get; set; }
         //public virtual DbSet<AAC1> Aac1s { get; set; }
@@ -1580,7 +1588,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<OSBQ> Osbqs { get; set; }
         //public virtual DbSet<OSCD> Oscds { get; set; }
         //public virtual DbSet<OSCG> Oscgs { get; set; }
-        //public virtual DbSet<OSCL> Oscls { get; set; }
+        public virtual DbSet<OSCL> Oscls { get; set; }
         //public virtual DbSet<OSCM> Oscms { get; set; }
         //public virtual DbSet<OSCN> Oscns { get; set; }
         //public virtual DbSet<OSCO> Oscos { get; set; }

@@ -104,6 +104,11 @@ namespace OpenAuth.App.Material.Request
         public string MaterialType { get; set; }
 
         /// <summary>
+        ///预估提成
+        /// </summary>
+        public decimal? Commission { get; set; }
+
+        /// <summary>
         /// 物料附件
         /// </summary>
         public virtual List<QuotationMaterialPictureReq> QuotationMaterialPictures { get; set; }

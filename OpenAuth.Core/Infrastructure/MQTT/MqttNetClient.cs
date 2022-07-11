@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using MQTTnet;
 using MQTTnet.Client;
+using MQTTnet.Protocol;
 using MQTTnet.Serializer;
 using Serilog;
 using System;
@@ -33,17 +34,14 @@ namespace Infrastructure.MQTT
             Configuration = configuration;
             var factory = new MqttFactory();
             mqttClient = factory.CreateMqttClient() as MqttClient;
-            //clientId = $"{mqttConfig.ClientIdentify}";
             var ts=(DateTime.Now.ToUniversalTime().Ticks - 621355968000000000)/10000000;
-            clientId = $"erp_{ts}_ac_mb_dd";   
+            clientId = $"erp_{ts}";   
             options = new MqttClientOptionsBuilder()
                 .WithTcpServer(_mqttConfig.Server, _mqttConfig.Port)
                 .WithCredentials(_mqttConfig.Username, _mqttConfig.Password)
                 .WithClientId(clientId)
                 .WithCleanSession(true)
-                .WithKeepAlivePeriod(TimeSpan.FromDays(2))
                 .WithCommunicationTimeout(TimeSpan.FromMinutes(10))
-                //.WithProtocolVersion(MqttProtocolVersion.V311)
                 .Build();
 
             if (receivedMessageHanddler != null)
@@ -90,7 +88,7 @@ namespace Infrastructure.MQTT
                 string edgeKey = "EdgeGuidKeys";
                 var redisConnectionString = Configuration.GetValue<string>("AppSetting:Cache:Redis");
                 RedisHelper.Initialization(new CSRedis.CSRedisClient(redisConnectionString));
-                mqttClient.SubscribeAsync("edge_msg/#");
+                mqttClient.SubscribeAsync("edge_msg/#", MqttQualityOfServiceLevel.ExactlyOnce);
                 Log.Logger.Information($"{clientId}连接成功重新订阅生效 【topic=edge_msg/#】!");
                 var edges = RedisHelper.Get(edgeKey);
                 if (!string.IsNullOrWhiteSpace(edges))
@@ -98,7 +96,7 @@ namespace Infrastructure.MQTT
                     var edge_list = edges.Split(',');
                     foreach (var item in edge_list)
                     {
-                        mqttClient.SubscribeAsync($"rt_data/subscribe_{item}");
+                        mqttClient.SubscribeAsync($"rt_data/subscribe_{item}", MqttQualityOfServiceLevel.ExactlyOnce);
                         Log.Logger.Information($"{clientId}连接成功重新订阅生效 rt_data/subscribe_{item}!");
                     }
                 }
@@ -132,7 +130,7 @@ namespace Infrastructure.MQTT
         /// <returns></returns>
         public async Task<object> SubscribeAsync(string topic)
         {
-            return await mqttClient.SubscribeAsync(topic);
+            return await mqttClient.SubscribeAsync(topic, MqttQualityOfServiceLevel.ExactlyOnce);
         }
     }
 }

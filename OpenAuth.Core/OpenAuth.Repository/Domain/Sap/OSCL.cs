@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("OSCL")]
-    public partial class OSCL : Entity
+    public partial class OSCL 
     {
         public OSCL()
         {
@@ -93,7 +93,7 @@ namespace OpenAuth.Repository.Domain.Sap
           this.U_job_id= string.Empty;
         }
 
-        
+        public int? callID { get; set; }
         /// <summary>
         /// 
         /// </summary>

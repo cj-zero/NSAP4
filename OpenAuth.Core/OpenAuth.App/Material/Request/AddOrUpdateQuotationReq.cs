@@ -47,6 +47,18 @@ namespace OpenAuth.App.Material.Request
         ///总金额
         /// </summary>
         public decimal? TotalMoney { get; set; }
+        /// <summary>
+        ///总预估提成
+        /// </summary>
+        public decimal? TotalCommission { get; set; }
+        /// <summary>
+        ///物料提成合计
+        /// </summary>
+        public decimal? CommissionAmount1 { get; set; }
+        /// <summary>
+        ///虚拟物料提成合计
+        /// </summary>
+        public decimal? CommissionAmount2 { get; set; }
 
         /// <summary>
         ///工作流程Id
@@ -148,6 +160,19 @@ namespace OpenAuth.App.Material.Request
         ///上门维修费
         /// </summary>
         public decimal? ServiceChargeSM { get; set; }
+
+        /// <summary>
+        ///上门维修费提成
+        /// </summary>
+        public decimal? ServiceChargeSMTC { get; set; }
+        /// <summary>
+        ///寄回维修费提成
+        /// </summary>
+        public decimal? ServiceChargeJHTC { get; set; }
+        /// <summary>
+        ///差旅费提成
+        /// </summary>
+        public decimal? TravelExpenseTC { get; set; }
 
         /// <summary>
         ///删除报价单

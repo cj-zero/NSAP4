@@ -64,7 +64,11 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<store_itemtype_ufd1>().HasKey(o => new { o.TypeID, o.Fld_nm, o.IndexID });
             modelBuilder.Entity<store_owhs>().HasKey(o => new { o.sbo_id, o.WhsCode });
             modelBuilder.Entity<q_owhs_basics>().HasKey(o => new { o.WhsCode });
-            modelBuilder.Entity<crm_tel>().HasKey(o => new { o.sbo_id, o.CardCode });
+            modelBuilder.Entity<crm_tel>().HasKey(o => new { o.sbo_id, o.CardCode }); 
+            modelBuilder.Entity<finance_billapplication_master>().HasKey(o => new { o.sbo_id, o.billID });
+            modelBuilder.Entity<finance_aftersalesbonus_batch>().HasKey(o => new { o.ExportBatchId });
+            modelBuilder.Entity<crm_octg>().HasKey(o => new { o.sbo_id, o.GroupNum });
+            modelBuilder.Entity<crm_ocrn>().HasKey(o => new { o.sbo_id, o.CurrCode });
         }
 
         public virtual DbSet<sale_transport> sale_transports { get; set; }
@@ -128,5 +132,9 @@ namespace OpenAuth.Repository
         public virtual DbSet<store_itemtype_ufd1> store_itemtype_ufd1s { get; set; }
 
         public virtual DbSet<crm_tel> crm_tel { get; set; }
+        public virtual DbSet<finance_billapplication_master> finance_billapplication_masters { get; set; }
+        public virtual DbSet<finance_aftersalesbonus_batch> finance_aftersalesbonus_batchs { get; set; }
+        public virtual DbSet<crm_octg> crm_octgs { get; set; }
+        public virtual DbSet<crm_ocrn> crm_ocrns { get; set; }
     }
 }

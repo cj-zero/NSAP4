@@ -22,11 +22,12 @@ namespace OpenAuth.Repository.Domain
     {
         public Quotation()
         {
-            this.Status =0;
+            this.Status = 0;
             this.InvoiceCompany = "";
             this.ServiceOrderSapId = 0;
             this.SalesOrderId = 0;
             this.TotalMoney = 0;
+            this.TotalCommission = 0;
             this.FlowInstanceId = "";
             this.PayTime = DateTime.Now; ;
             this.CreateUser = "";
@@ -75,6 +76,19 @@ namespace OpenAuth.Repository.Domain
         [Description("总金额")]
         public decimal? TotalMoney { get; set; }
 
+        /// <summary>
+        ///总预估提成
+        /// </summary>
+        [Description("总预估提成")]
+        public decimal? TotalCommission { get; set; }
+        /// <summary>
+        ///物料提成合计
+        /// </summary>
+        public decimal? CommissionAmount1 { get; set; }
+        /// <summary>
+        ///虚拟物料提成合计
+        /// </summary>
+        public decimal? CommissionAmount2 { get; set; }
         /// <summary>
         ///工作流程Id
         /// </summary>
@@ -211,6 +225,22 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("上门维修费")]
         public decimal? ServiceChargeSM { get; set; }
+
+        /// <summary>
+        ///上门维修费提成
+        /// </summary>
+        [Description("上门维修费提成")]
+        public decimal? ServiceChargeSMTC { get; set; }
+        /// <summary>
+        ///寄回维修费提成
+        /// </summary>
+        [Description("寄回维修费提成")]
+        public decimal? ServiceChargeJHTC { get; set; }
+        /// <summary>
+        ///差旅费提成
+        /// </summary>
+        [Description("差旅费提成")]
+        public decimal? TravelExpenseTC { get; set; }
 
         /// <summary>
         ///是否暂定
