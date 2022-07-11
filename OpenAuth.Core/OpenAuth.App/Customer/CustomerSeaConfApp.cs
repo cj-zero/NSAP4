@@ -530,7 +530,7 @@ namespace OpenAuth.App.Customer
             //拉取缓存中的客户进入表
             var job1 = await UnitWork.Find<OpenJob>(o => o.JobCall == "OpenAuth.App.Jobs.RecoveryCustomer").AsNoTracking().FirstOrDefaultAsync();
             //var job1 = await UnitWork.FindSingleAsync<OpenJob>(o => o.JobCall == "OpenAuth.App.Jobs.CustomerSeaJob");
-            job1.Cron = $"{req.PutTime.Second} {req.PutTime.Minute} {req.PutTime.Hour},1 * * ?";
+            job1.Cron = $"{req.PutTime.Second} {req.PutTime.Minute} {req.PutTime.Hour} * * ?";
             job1.Status = 0;
 
             //向业务员发送所属客户即将掉入公海的提醒
