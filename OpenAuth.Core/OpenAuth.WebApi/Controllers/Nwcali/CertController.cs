@@ -288,7 +288,7 @@ namespace OpenAuth.WebApi.Controllers
                     var files = Request.Form.Files;
                     var file = files[0];
                     //保存文件
-                    var fileResp = await _fileApp.UploadFileToHuaweiOBS($"machine/{file.FileName}", file);
+                    var fileResp = await _fileApp.UploadFileToHuaweiOBS($"nwcail/machine/{file.FileName}", file);
                     //var fileResp = await _fileApp.Add(files, "machine");
                     //读取文件
                     var handler = new ExcelHandler(file.OpenReadStream());
@@ -534,7 +534,7 @@ namespace OpenAuth.WebApi.Controllers
             fs.Close();
         }
 
-        [ServiceFilter(typeof(CertAuthFilter))]
+        //[ServiceFilter(typeof(CertAuthFilter))]
         [HttpGet]
         public async Task<IActionResult> DownloadCertPdf(string serialNumber, string sign, string timespan)
         {
