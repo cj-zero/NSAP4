@@ -355,7 +355,7 @@ namespace OpenAuth.App.Customer
                             c.SlpName,
                             c.CreateUser,
                             CreateDateTime = c.CustomerCreateDate,
-                            FallIntoTime = c.CreateDateTime,
+                            FallIntoTime = c.UpdateDateTime,
                         };
 
             //先把要查询的数据加载到内存
