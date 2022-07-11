@@ -534,7 +534,7 @@ namespace OpenAuth.WebApi.Controllers
             fs.Close();
         }
 
-        //[ServiceFilter(typeof(CertAuthFilter))]
+        [ServiceFilter(typeof(CertAuthFilter))]
         [HttpGet]
         public async Task<IActionResult> DownloadCertPdf(string serialNumber, string sign, string timespan)
         {
