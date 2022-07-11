@@ -48,15 +48,20 @@ namespace OpenAuth.App.Nwcali
         /// <returns></returns>
         public bool SubscribeEdgeMsg(byte[] payload)
         {
-
             Stopwatch st1 = new Stopwatch();
             st1.Start();
             var payloads = Encoding.UTF8.GetString(payload);
             var obj = JsonConvert.DeserializeObject<EdgeData>(payloads);
-            string token = obj == null?"": obj.token;
+            st1.Stop();
+            Log.Logger.Information($"边缘计算{obj.edge_guid} upd_dt={obj.upd_dt}反序列化耗时:{st1.ElapsedMilliseconds}ms");
             int msg_type = obj == null ? 0: obj.msg_type;
             string edge_guids = obj == null ? "":obj.edge_guid;
-            Log.Logger.Information($"{edge_guids},msg_type={msg_type}成功接收设备变更消息!");
+            long upd_dt = obj.upd_dt;
+            Log.Logger.Information($"{edge_guids},msg_type={msg_type}成功接收设备变更消息 upd_dt={upd_dt}!");
+            string blackEdgeKey = "black_edge_list";
+            var black_edge_guids = RedisHelper.Get(blackEdgeKey) ==null?new List<string> { } : RedisHelper.Get(blackEdgeKey).Split(',').Distinct().ToList();
+            if (black_edge_guids.Contains(edge_guids))
+                return true;
             if (msg_type != 1 && msg_type != 2 && msg_type != 3)
             {
                 return true;
@@ -69,6 +74,7 @@ namespace OpenAuth.App.Nwcali
                 //边缘计算用户校验
                 if (!edgeList.Any() || !edgeList.Contains(edge_guids))
                 {
+                    string token = obj == null ? "" : obj.token;
                     var passPortUrl = _appConfiguration.Value.PassPortUrl;
                     HttpHelper helper = new HttpHelper(passPortUrl);
                     var passTokenStr = helper.Post(new
@@ -105,11 +111,14 @@ namespace OpenAuth.App.Nwcali
                         {
                             edgeList.Add(edge_guids);
                         }
-                        string key = string.Join(",", edgeList);
-                        RedisHelper.SetAsync(EdgeGuidKeys, key);
+                        string values = string.Join(",", edgeList);
+                        RedisHelper.SetAsync(EdgeGuidKeys, values);
                     }
                     else
                     {
+                        black_edge_guids.Add(edge_guids);
+                        string values = string.Join(",", black_edge_guids);
+                        RedisHelper.SetAsync(blackEdgeKey, values);
                         return false;
                     }
                 }
@@ -230,13 +239,13 @@ namespace OpenAuth.App.Nwcali
                                 catch (Exception ex)
                                 {
                                     transaction.Rollback();
-                                    Log.Logger.Information($"{edge_guids}在线设备更新失败 message:{ex.Message}");
+                                    Log.Logger.Information($"{edge_guids}在线设备更新失败 message:{ex.Message} upd_dt={upd_dt}");
                                 }
                             }
                         }
                     }
                     st.Stop();
-                    Log.Logger.Information($"{edge_guids}在线设备更新写入数据库成功 耗时:{st.ElapsedMilliseconds}ms");
+                    Log.Logger.Information($"{edge_guids}在线设备更新写入数据库成功 upd_dt={upd_dt} 耗时:{st.ElapsedMilliseconds}ms");
                 }
                 else if (msg_type == 2)
                 {
@@ -272,15 +281,13 @@ namespace OpenAuth.App.Nwcali
                             .UpdateFromQuery(c => new edge_channel { status = 1 });
                     }
                     _ = _mqttClient.SubscribeAsync($"rt_data/subscribe_{edge_guids}");
-                    Log.Logger.Information($"边缘计算{edge_guids},msg_type={msg_type}上线 rt订阅成功!");
+                    Log.Logger.Information($"边缘计算{edge_guids},msg_type={msg_type} upd_dt={upd_dt} 上线 rt订阅成功!");
                 }
-                st1.Stop();
-                Log.Logger.Information($"边缘计算解析{edge_guids},msg_type={msg_type} 总耗时:{st1.ElapsedMilliseconds}ms");
                 return true;
             }
             catch (Exception ex)
             {
-                Log.Logger.Error($"设备订阅原始数据异常：msg_type={msg_type},edge_guids={edge_guids},message={ ex.Message}");
+                Log.Logger.Error($"设备订阅原始数据异常：msg_type={msg_type},edge_guids={edge_guids} upd_dt={upd_dt},message={ ex.Message}");
                 return false;
             }
         }
