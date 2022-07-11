@@ -159,6 +159,7 @@ namespace OpenAuth.App.Material.Request
         /// 首页报表查询条件
         /// </summary>
         public int? IsFinlish { get; set; }
+        public int? PageType { get; set; }
 
         /// <summary>
         /// 打印物料id

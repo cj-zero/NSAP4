@@ -101,11 +101,16 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("折后价格")]
         public decimal? DiscountPrices { get; set; }
-
+        
         /// <summary>
         ///仓库号
         /// </summary>
         [Description("仓库号")]
         public string WhsCode { get; set; }
+        /// <summary>
+        ///预估提成
+        /// </summary>
+        [Description("预估提成")]
+        public decimal? Commission { get; set; }
     }
 }

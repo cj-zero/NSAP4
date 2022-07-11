@@ -27,5 +27,9 @@ namespace OpenAuth.App.Response
         /// 附件类型（1.发票2.普通附件）
         /// </summary>
         public string AttachmentType { get; set; }
+        /// <summary>
+        /// 路径
+        /// </summary>
+        public string FilePath { get; set; }
     }
 }

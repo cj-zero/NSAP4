@@ -15,6 +15,10 @@ namespace OpenAuth.App.Material.Request
         /// AppId
         /// </summary>
         public int? AppId { get; set; }
+        /// <summary>
+        /// AppId
+        /// </summary>
+        public int? AppUserId { get; set; }
 
         /// <summary>
         /// 开票单位

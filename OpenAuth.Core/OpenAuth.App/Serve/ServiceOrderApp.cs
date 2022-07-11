@@ -5690,7 +5690,20 @@ namespace OpenAuth.App
                 serviceOrderIds = serviceOrderIds.Distinct().ToList();
             }
             var finishQty = await UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id) && w.AllowOrNot == 0 && w.VestInOrg == orderType && w.ServiceWorkOrders.All(s => s.Status >= 7)).CountAsync();
-            result.Data = new { pendingQty, goingQty, finishQty};
+
+            int orderQty = 0, reportQty = 0;
+            if (orderType==1)
+            {
+                //获取当前用户nsap用户信息
+                var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == TechnicianId).Include(i => i.User).FirstOrDefaultAsync();
+                if (userInfo == null)
+                {
+                    throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+                }
+                orderQty = await UnitWork.Find<CommissionOrder>(c => c.Status == 4 && c.CreateUserId == userInfo.UserID).CountAsync();
+                reportQty = await UnitWork.Find<CommissionReport>(c => c.CreateUserId == userInfo.UserID).CountAsync();
+            }
+            result.Data = new { pendingQty, goingQty, finishQty, orderQty, reportQty };
             return result;
         }
 
@@ -7675,5 +7688,58 @@ namespace OpenAuth.App
 
         }
         #endregion
+
+        public async Task TongBu()
+        {
+            var sql = $@"SELECT  * FROM OSCL where createDate>='2022-06-05 00:00:00' and createDate<='2022-06-27 00:00:00'";//and callid=124477
+            var OSCLs = await UnitWork.Query<OSCL>(sql).Select(c => new { c.callID, c.createDate, c.custmrName, c.customer, c.descrption, c.priority, c.subject, c.itemCode, c.itemName, c.Telephone }).ToListAsync();
+            //var OSCL = await UnitWork.Find<OSCL>(c => c.createDate >= DateTime.Parse("2022-06-05 00:00:000") && c.createDate <= DateTime.Parse("2022-06-27 00:00:000") && c.callID == 124477).Select(c => new { c.callID, c.createDate, c.custmrName, c.customer, c.descrption, c.priority, c.subject, c.itemCode, c.itemName }).FirstOrDefaultAsync();
+            List<ServiceOrder> serviceOrders = new List<ServiceOrder>();
+            foreach (var OSCL in OSCLs)
+            {
+                ServiceOrder serviceOrder = new ServiceOrder
+                {
+                    U_SAP_ID = OSCL.callID,
+                    CreateTime = OSCL.createDate,
+                    CustomerId = OSCL.customer,
+                    CustomerName = OSCL.custmrName,
+                    Remark = OSCL.descrption,
+                    NewestContactTel= OSCL.Telephone,
+                    AllowOrNot = 0,
+                    VestInOrg = 1,
+                    IsClose = false,
+                    IsModified = false,
+                    Status = 2,
+                    ServiceWorkOrders = new List<ServiceWorkOrder>
+                    {
+                        new ServiceWorkOrder
+                        {
+                            Priority=OSCL.priority=="H"?3:OSCL.priority=="M"?2:1,
+                            FeeType=1,
+                            SubmitDate=OSCL.createDate,
+                            Status=1,
+                            FromTheme="[{}]",
+                            FromType=1,
+                            MaterialCode=!string.IsNullOrWhiteSpace(OSCL.itemCode) ?OSCL.itemCode:"",
+                            MaterialDescription=OSCL.itemName,
+                            CreateTime = OSCL.createDate,
+                            //ServiceMode=1,
+                            OrderTakeType=0,
+                            IsCheck=0,
+                            WorkOrderNumber=$"{OSCL.callID}-1",
+                            BookingDate = null,
+                            VisitTime = null,
+                            LiquidationDate=null,
+                            WarrantyEndDate=null,
+                            Remark=OSCL.descrption
+                        }
+                    }
+                };
+                serviceOrders.Add(serviceOrder);
+                await UnitWork.AddAsync<ServiceOrder, int>(serviceOrder);
+            }
+            //await UnitWork.BatchAddAsync<ServiceWorkOrder, int>(serviceOrders.ToArray());
+            await UnitWork.SaveAsync();
+        }
     }
 }

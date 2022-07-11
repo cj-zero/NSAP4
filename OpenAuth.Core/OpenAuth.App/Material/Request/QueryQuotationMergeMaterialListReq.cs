@@ -71,5 +71,10 @@
         /// </summary>
         public string WhsCode { get; set; }
         //todo:添加自己的请求字段
+
+        /// <summary>
+        ///预估提成
+        /// </summary>
+        public decimal? Commission { get; set; }
     }
 }
