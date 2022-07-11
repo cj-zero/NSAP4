@@ -16,7 +16,7 @@ namespace Infrastructure.MQTT
         public string edge_guid { get; set; }
         public string token { get; set; }
         public Chl_Info chl_info { get; set; }
-        public int upd_dt { get; set; }
+        public long upd_dt { get; set; }
     }
     public class Chl_Info
     {
