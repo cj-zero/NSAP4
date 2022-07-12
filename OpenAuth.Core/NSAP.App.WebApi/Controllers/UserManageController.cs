@@ -94,5 +94,30 @@ namespace NSAP.App.WebApi.Controllers
 
             return result;
         }
+
+        /// <summary>
+        /// 获取App用户列表
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <param name="key"></param>
+        /// <param name="page_index"></param>
+        /// <param name="page_size"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> AppUserList(string ids = "", string key = "", int page_index = 1, int page_size = 10)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.AppUserList(ids, key, page_index, page_size);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
     }
 }

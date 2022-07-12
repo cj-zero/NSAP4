@@ -1,4 +1,5 @@
 ﻿using Infrastructure;
+using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
@@ -6,6 +7,7 @@ using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -118,6 +120,40 @@ namespace OpenAuth.App
             var bindInfo = await UnitWork.Find<AppUserBind>(a => a.AppUserId == appUserId).OrderByDescending(o => o.CreateTime)
                 .Select(s => new { s.CustomerCode, s.CustomerName, s.Linkman, s.LinkmanTel, s.RealName, s.AuditState, s.RefuseReason }).FirstOrDefaultAsync();
             result.Data = bindInfo;
+            return result;
+        }
+
+        /// <summary>
+        /// 获取App用户列表
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <param name="key"></param>
+        /// <param name="page_index"></param>
+        /// <param name="page_size"></param>
+        /// <returns></returns>
+        public async Task<TableData> AppUserList(string ids,string key, int? page_index, int? page_size)
+        {
+            var result = new TableData();
+            List<string> user_ids = new List<string>();
+            if (!string.IsNullOrWhiteSpace(ids))
+            {
+                user_ids = ids.Split(',').ToList();
+            }
+            var query = await (from a in UnitWork.Find<AppUserMap>(null)
+                                  join b in UnitWork.Find<User>(null) on a.UserID equals b.Id
+                                  where b.Status==0
+                                  select new { user_id = a.AppUserId, real_name=b.Name })
+                                  .WhereIf(user_ids.Count>0, c=> user_ids.Contains(c.user_id.ToString()))
+                                  .WhereIf(!string.IsNullOrWhiteSpace(key),c=>c.real_name.Contains(key)).ToListAsync();
+            result.Count = query.Count;
+            if (page_index != null && page_size != null && page_index > 0 && page_size > 0)
+            {
+                result.Data = query.Skip((page_index.Value- 1) * page_size.Value).Take(page_size.Value);
+            }
+            else
+            {
+                result.Data = query;
+            }
             return result;
         }
     }
