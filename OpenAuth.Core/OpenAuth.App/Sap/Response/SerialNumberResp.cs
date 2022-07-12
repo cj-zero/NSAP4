@@ -137,5 +137,13 @@ namespace OpenAuth.App.Response
         /// 生产单中下/中位机版本
         /// </summary>
         public string SubItemVer { get; set; }
+        /// <summary>
+        /// 客户编号
+        /// </summary>
+        public string CardCode { get; set; }
+        /// <summary>
+        /// 输入电源
+        /// </summary>
+        public string InputPower { get; set; }
     }
 }

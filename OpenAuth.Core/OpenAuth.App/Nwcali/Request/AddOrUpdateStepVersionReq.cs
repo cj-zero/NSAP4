@@ -37,7 +37,7 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string SeriesName { get; set; }
         /// <summary>
-        /// 工步型号名称
+        /// 工步量程
         /// </summary>
         public string StepVersionName { get; set; }
         /// <summary>
@@ -76,5 +76,29 @@ namespace OpenAuth.App.Request
         /// 是否启用
         /// </summary>
         public bool Status { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string FilePath2 { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string FileName2 { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public string Remark2 { get; set; }
+        /// <summary>
+        /// 优先启动（1：工步1  2:工步2）
+        /// </summary>
+        public int FirstStart { get; set; }
+        /// <summary>
+        /// 电压
+        /// </summary>
+        public decimal Voltage { get; set; }
+        /// <summary>
+        /// 电流
+        /// </summary>
+        public decimal Current { get; set; }
     }
 }

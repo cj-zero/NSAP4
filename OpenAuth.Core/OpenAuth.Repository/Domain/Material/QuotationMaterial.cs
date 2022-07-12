@@ -31,6 +31,7 @@ namespace OpenAuth.Repository.Domain
             this.Remark = "";
             this.Count = 0;
             this.MaxQuantity = 0;
+            this.Commission = 0;
         }
 
         /// <summary>
@@ -133,6 +134,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("仓库号")]
         public string WhsCode { get; set; }
+
+        /// <summary>
+        ///预估提成
+        /// </summary>
+        public decimal? Commission { get; set; }
 
         /// <summary>
         /// 物料附件

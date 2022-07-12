@@ -152,6 +152,23 @@ namespace OpenAuth.App
             return list;
         }
 
+        /// <summary>
+        /// 修改线索的状态
+        /// </summary>
+        /// <param name="serialNumber"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> ChangeClueStatus(string serialNumber)
+        {
+            var result = new Infrastructure.Response();
+
+            await UnitWork.UpdateAsync<Repository.Domain.Serve.Clue>(c => c.SerialNumber == serialNumber, x => new Repository.Domain.Serve.Clue
+            {
+                Status = 1
+            });
+            await UnitWork.SaveAsync();
+
+            return result;
+        }
 
 
         /// <summary>

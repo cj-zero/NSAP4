@@ -14,5 +14,9 @@ namespace OpenAuth.App.Material.Request
         /// 部门名称
         /// </summary>
         public string OrgName { get; set; }
+        /// <summary>
+        /// true.固定查收 flase.审批查收
+        /// </summary>
+        public bool Flag { get; set; }
     }
 }

@@ -14,5 +14,9 @@
         /// 工步型号名称
         /// </summary>
         public string StepVersionName { get; set; }
+        /// <summary>
+        /// 电流
+        /// </summary>
+        public int Current { get; set; }
     }
 }

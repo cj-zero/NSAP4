@@ -94,6 +94,7 @@ namespace OpenAuth.App.Material
                                     q.ServiceOrderSapId,
                                     q.ServiceOrderId,
                                     q.TotalMoney,
+                                    q.TotalCommission,
                                     q.FlowInstanceId,
                                     q.UpDateTime,
                                     q.CreateUserId,
@@ -322,6 +323,10 @@ namespace OpenAuth.App.Material
             var file = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
             ServiceOrderids = QuotationDate.Select(q => q.ServiceOrderId).ToList();
             var ServiceOrders = await UnitWork.Find<ServiceOrder>(null).Where(q => ServiceOrderids.Contains(q.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.CustomerId, s.SalesMan }).ToListAsync();
+            //提成状态
+            var saleOrderId = QuotationDate.Select(c => c.SalesOrderId).ToList();
+            var commsion = await UnitWork.Find<CommissionOrder>(c => saleOrderId.Contains(c.SalesOrderId)).Select(c => new { c.SalesOrderId, c.Status }).ToListAsync();
+
             var query = from a in QuotationDate
                         join b in ServiceOrders on a.ServiceOrderId equals b.Id
                         select new { a, b };
@@ -334,6 +339,8 @@ namespace OpenAuth.App.Material
             {
                 var isfinish = flowinstanceObjs.Where(f => f.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.IsFinish;
                 var orgName = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name;
+                //提成状态
+                var status = commsion.Where(c => c.SalesOrderId == q.a.SalesOrderId).FirstOrDefault()?.Status;
                 return new
                 {
                     q.a.Id,
@@ -343,6 +350,8 @@ namespace OpenAuth.App.Material
                     q.b.CustomerId,
                     q.b.TerminalCustomerId,
                     q.a.TotalMoney,
+                    TotalCommission = q.a.TotalCommission == null ? 0 : q.a.TotalCommission,
+                    CommissionStatus = status,
                     //CreateUser = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name == null ? q.a.CreateUser : SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + q.a.CreateUser,
                     CreateUser = orgName == null ? q.a.CreateUser : orgName + "-" + q.a.CreateUser,
                     q.a.Remark,
@@ -898,15 +907,44 @@ namespace OpenAuth.App.Material
                         m.a.WhsCode
                     }).ToList()
                 }).ToList();
-                result.Data = new
+                if (request.PageType == 1)//提成单详情
                 {
-                    Balance = CustomerInformation?.Balance,
-                    Expressages,
-                    Quotations = Quotations,
-                    QuotationMergeMaterials,
-                    ServiceOrders,
-                    CustomerInformation
-                };
+                    var obj = await UnitWork.Find<CommissionOrder>(c => c.SalesOrderId == Quotations.SalesOrderId).FirstOrDefaultAsync();
+                    //操作历史
+                    var operationHistories = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.InstanceId == obj.FlowInstanceId)
+                        .OrderBy(c => c.CreateDate).Select(h => new
+                        {
+                            CreateTime = Convert.ToDateTime(h.CreateDate).ToString("yyyy.MM.dd HH:mm:ss"),
+                            h.Remark,
+                            IntervalTime = h.IntervalTime != null && h.IntervalTime > 0 ? h.IntervalTime / 60 : null,
+                            h.CreateUserName,
+                            h.Content,
+                            h.ApprovalResult,
+                        }).ToListAsync();
+                    var CommissionOrder = new { obj.DocStatus, obj.BillStatus, obj.Receivables, operationHistories };
+                    result.Data = new
+                    {
+                        Balance = CustomerInformation?.Balance,
+                        Expressages,
+                        Quotations = Quotations,
+                        QuotationMergeMaterials,
+                        ServiceOrders,
+                        CustomerInformation,
+                        CommissionOrder
+                    };
+                }
+                else
+                {
+                    result.Data = new
+                    {
+                        Balance = CustomerInformation?.Balance,
+                        Expressages,
+                        Quotations = Quotations,
+                        QuotationMergeMaterials,
+                        ServiceOrders,
+                        CustomerInformation
+                    };
+                }
             }
             else
             {
@@ -1020,7 +1058,8 @@ namespace OpenAuth.App.Material
                         Discount = 100,
                         DiscountPrices = quotationsMap.ServiceChargeJH,
                         QuotationMaterialPictures = new List<QuotationMaterialPictureReq>(),
-                        MaterialType = quotationsMap.IsMaterialType == "3" ? "4" : "2"
+                        MaterialType = quotationsMap.IsMaterialType == "3" ? "4" : "2",
+                        Commission = quotationsMap.ServiceChargeJHTC
                     });
                 }
                 if ((quotationsMap.ServiceChargeSM != null && quotationsMap.ServiceChargeSM > 0) || (quotationsMap.ServiceChargeSMCost != null && quotationsMap.ServiceChargeSMCost > 0))
@@ -1038,7 +1077,8 @@ namespace OpenAuth.App.Material
                         Discount = 100,
                         QuotationMaterialPictures = new List<QuotationMaterialPictureReq>(),
                         DiscountPrices = quotationsMap.ServiceChargeSM,
-                        MaterialType = quotationsMap.IsMaterialType == "3" ? "4" : "2"
+                        MaterialType = quotationsMap.IsMaterialType == "3" ? "4" : "2",
+                        Commission = quotationsMap.ServiceChargeSMTC
                     });
                 }
                 if ((quotationsMap.TravelExpense != null && quotationsMap.TravelExpense > 0) || (quotationsMap.TravelExpenseCost != null && quotationsMap.TravelExpenseCost > 0))
@@ -1056,7 +1096,8 @@ namespace OpenAuth.App.Material
                         Discount = 100,
                         QuotationMaterialPictures = new List<QuotationMaterialPictureReq>(),
                         DiscountPrices = quotationsMap.TravelExpense,
-                        MaterialType = quotationsMap.IsMaterialType == "3" ? "4" : "2"
+                        MaterialType = quotationsMap.IsMaterialType == "3" ? "4" : "2",
+                        Commission = quotationsMap.TravelExpenseTC
                     });
 
                 }
@@ -1511,6 +1552,9 @@ namespace OpenAuth.App.Material
                             DeliveryMethod = QuotationObj.DeliveryMethod,
                             InvoiceCompany = QuotationObj.InvoiceCompany,
                             TotalMoney = QuotationObj.TotalMoney,
+                            TotalCommission = QuotationObj.TotalCommission,
+                            CommissionAmount1 = QuotationObj.CommissionAmount1,
+                            CommissionAmount2 = QuotationObj.CommissionAmount2,
                             TotalCostPrice = QuotationObj.TotalCostPrice,
                             Remark = QuotationObj.Remark,
                             IsDraft = QuotationObj.IsDraft,
@@ -1532,6 +1576,9 @@ namespace OpenAuth.App.Material
                             IsMaterialType = QuotationObj.IsMaterialType,
                             ServiceChargeManHourJH = QuotationObj.ServiceChargeManHourJH,
                             ServiceChargeManHourSM = QuotationObj.ServiceChargeManHourSM,
+                            ServiceChargeSMTC = QuotationObj.ServiceChargeSMTC,
+                            TravelExpenseTC = QuotationObj.TravelExpenseTC,
+                            ServiceChargeJHTC = QuotationObj.ServiceChargeJHTC,
                             TravelExpenseManHour = QuotationObj.TravelExpenseManHour,
                             ServiceChargeJHCost = QuotationObj.ServiceChargeJHCost,
                             ServiceChargeSMCost = QuotationObj.ServiceChargeSMCost,
@@ -1585,6 +1632,9 @@ namespace OpenAuth.App.Material
                             DeliveryMethod = QuotationObj.DeliveryMethod,
                             InvoiceCompany = QuotationObj.InvoiceCompany,
                             TotalMoney = QuotationObj.TotalMoney,
+                            TotalCommission = QuotationObj.TotalCommission,
+                            CommissionAmount1 = QuotationObj.CommissionAmount1,
+                            CommissionAmount2 = QuotationObj.CommissionAmount2,
                             TotalCostPrice = QuotationObj.TotalCostPrice,
                             Remark = QuotationObj.Remark,
                             IsDraft = QuotationObj.IsDraft,
@@ -1606,6 +1656,9 @@ namespace OpenAuth.App.Material
                             IsMaterialType = QuotationObj.IsMaterialType,
                             ServiceChargeManHourJH = QuotationObj.ServiceChargeManHourJH,
                             ServiceChargeManHourSM = QuotationObj.ServiceChargeManHourSM,
+                            ServiceChargeSMTC = QuotationObj.ServiceChargeSMTC,
+                            TravelExpenseTC = QuotationObj.TravelExpenseTC,
+                            ServiceChargeJHTC = QuotationObj.ServiceChargeJHTC,
                             TravelExpenseManHour = QuotationObj.TravelExpenseManHour,
                             ServiceChargeJHCost = QuotationObj.ServiceChargeJHCost,
                             ServiceChargeSMCost = QuotationObj.ServiceChargeSMCost,
@@ -1706,7 +1759,8 @@ namespace OpenAuth.App.Material
                 SentQuantity = 0,
                 MaterialType = (int)q.mergeMaterial.MaterialType,
                 DiscountPrices = q.mergeMaterial.DiscountPrices,
-                WhsCode = q.mergeMaterial.WhsCode
+                WhsCode = q.mergeMaterial.WhsCode,
+                Commission = q.mergeMaterial.Commission
             });
             var QuotationMergeMaterialList = MaterialsT.ToList();
 
@@ -1728,7 +1782,8 @@ namespace OpenAuth.App.Material
                     SentQuantity = 0,
                     MaterialType = QuotationObj.IsMaterialType == 3 ? 4 : 2,
                     DiscountPrices = QuotationObj.ServiceChargeJH,
-                    WhsCode = "37"
+                    WhsCode = "37",
+                    Commission = QuotationObj.IsMaterialType == 2 ? QuotationObj.ServiceChargeJHTC : 0
                 });
             }
             if ((QuotationObj.ServiceChargeSM != null && QuotationObj.ServiceChargeSM > 0) || (QuotationObj.ServiceChargeSMCost != null && QuotationObj.ServiceChargeSMCost > 0))
@@ -1749,7 +1804,8 @@ namespace OpenAuth.App.Material
                     SentQuantity = 0,
                     MaterialType = QuotationObj.IsMaterialType==3?4:2,
                     DiscountPrices = QuotationObj.ServiceChargeSM,
-                    WhsCode = "37"
+                    WhsCode = "37",
+                    Commission = QuotationObj.IsMaterialType == 2 ? QuotationObj.ServiceChargeSMTC : 0
                 });
             }
             if ((QuotationObj.TravelExpense != null && QuotationObj.TravelExpense > 0) || (QuotationObj.TravelExpenseCost != null && QuotationObj.TravelExpenseCost > 0))
@@ -1770,7 +1826,8 @@ namespace OpenAuth.App.Material
                     SentQuantity = 0,
                     MaterialType = QuotationObj.IsMaterialType == 3 ? 4 : 2,
                     DiscountPrices = QuotationObj.TravelExpense,
-                    WhsCode = "37"
+                    WhsCode = "37",
+                    Commission = QuotationObj.IsMaterialType == 2 ? QuotationObj.TravelExpenseTC : 0
                 });
             }
             var QuotationMergeMaterialListMap = QuotationMergeMaterialList.MapToList<QuotationMergeMaterial>();
@@ -2667,6 +2724,7 @@ namespace OpenAuth.App.Material
                 QuotationObj.ErpOrApp = 2;
             }
             QuotationObj.TotalMoney = 0;
+            QuotationObj.TotalCommission = 0;
             QuotationObj.TotalCostPrice = 0;
             QuotationObj.Tentative = false;
             QuotationObj.PrintNo = Guid.NewGuid().ToString();
@@ -2680,18 +2738,22 @@ namespace OpenAuth.App.Material
                     {
                         throw new Exception($"【{q.ProductCode}】序列号下【{m.MaterialCode}】物料金额有误请重新输入");
                     }
+                    m.Commission = (QuotationObj.IsMaterialType == 2 && m.MaterialType == 2) ? m.Commission : 0;
                     m.SalesPrice = m.MaterialType != 3 ? m.SalesPrice : 0;
                     m.DiscountPrices = m.MaterialType != 3 && m.MaterialType != 4 ? m.DiscountPrices : 0;
                     m.Discount = m.MaterialType != 3 && m.MaterialType != 4 ? m.SalesPrice != 0 ? (m.DiscountPrices / m.SalesPrice) * 100 : 100 : 100;
                     m.TotalPrice = m.MaterialType != 3 ? Convert.ToDecimal(Convert.ToDecimal(m.DiscountPrices * m.Count).ToString("#0.00")) : 0;
                     QuotationObj.TotalCostPrice += m.MaterialType != 3 ? Convert.ToDecimal(Convert.ToDecimal(m.DiscountPrices * m.Count).ToString("#0.00")) : 0;
                     QuotationObj.TotalMoney += m.MaterialType != 3 ? Convert.ToDecimal(Convert.ToDecimal(m.DiscountPrices * m.Count).ToString("#0.00")) : 0;
+                    //销售类型下销售物料才有佣金
+                    QuotationObj.TotalCommission += (QuotationObj.IsMaterialType == 2 && m.MaterialType == 2) ? Convert.ToDecimal(Convert.ToDecimal(m.Commission).ToString("#0.00")) : 0;
                 });
             });
             #region 判定通用物料
             if (QuotationObj.ServiceChargeJH != null && QuotationObj.ServiceChargeJH > 0 && QuotationObj.ServiceChargeManHourJH != null && QuotationObj.ServiceChargeManHourJH > 0 && QuotationObj.IsMaterialType == 2)
             {
                 QuotationObj.TotalMoney += Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeJH * QuotationObj.ServiceChargeManHourJH).ToString("#0.00"));
+                QuotationObj.TotalCommission += Convert.ToDecimal(QuotationObj.ServiceChargeJHTC.ToString("#0.00"));
                 QuotationObj.ServiceChargeJHCost = 0;
             }
             else if (QuotationObj.ServiceChargeJHCost != null && QuotationObj.ServiceChargeJHCost > 0 && QuotationObj.IsMaterialType == 3)
@@ -2707,6 +2769,7 @@ namespace OpenAuth.App.Material
             if (QuotationObj.ServiceChargeSM != null && QuotationObj.ServiceChargeSM > 0 && QuotationObj.ServiceChargeManHourSM != null && QuotationObj.ServiceChargeManHourSM > 0 && QuotationObj.IsMaterialType == 2)
             {
                 QuotationObj.TotalMoney += Convert.ToDecimal(Convert.ToDecimal(QuotationObj.ServiceChargeSM * QuotationObj.ServiceChargeManHourSM).ToString("#0.00"));
+                QuotationObj.TotalCommission += Convert.ToDecimal(QuotationObj.ServiceChargeSMTC.ToString("#0.00"));
                 QuotationObj.ServiceChargeSMCost = 0;
             }
             else if (QuotationObj.ServiceChargeSMCost != null && QuotationObj.ServiceChargeSMCost > 0 && QuotationObj.IsMaterialType == 3)
@@ -2722,6 +2785,7 @@ namespace OpenAuth.App.Material
             if (QuotationObj.TravelExpense != null && QuotationObj.TravelExpense > 0 && QuotationObj.TravelExpenseManHour != null && QuotationObj.TravelExpenseManHour > 0 && QuotationObj.IsMaterialType == 2)
             {
                 QuotationObj.TotalMoney += Convert.ToDecimal(Convert.ToDecimal(QuotationObj.TravelExpense * QuotationObj.TravelExpenseManHour).ToString("#0.00"));
+                QuotationObj.TotalCommission += Convert.ToDecimal(QuotationObj.TravelExpenseTC.ToString("#0.00"));
                 QuotationObj.TravelExpenseCost = 0;
             }
             else if (QuotationObj.TravelExpenseCost != null && QuotationObj.TravelExpenseCost > 0 && QuotationObj.IsMaterialType == 3)
@@ -2770,6 +2834,28 @@ namespace OpenAuth.App.Material
                 q.Id
             }).OrderBy(q => q.MaterialCode).ToList();
             return result;
+        }
+
+        public async Task<string> PrintSalesOrder(int saleOrderId)
+        {
+            var quaotion = await UnitWork.Find<Quotation>(c => c.SalesOrderId == saleOrderId).FirstOrDefaultAsync();
+            var category = await UnitWork.Find<Category>(c => c.TypeId == "SYS_InvoiceCompany" && c.DtValue == quaotion.InvoiceCompany).FirstOrDefaultAsync();
+            var contractFile = "";
+            if (category != null)
+            {
+                HttpHelper httpHelper = new HttpHelper(_appConfiguration.Value.ERP3Url);
+                var resultApi = httpHelper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "DocEntry", saleOrderId.ToString() }, { "Indicator", category.DtCode } }, "/spv/exportsaleorder.ashx");
+                if (resultApi["msg"] == "success")
+                {
+                    contractFile = resultApi["url"].Replace("192.168.0.208", "218.17.149.195").ToString();
+                    return contractFile;
+                }
+                else
+                {
+                    return contractFile;
+                }
+            }
+            return contractFile;
         }
 
         /// <summary>
@@ -3372,6 +3458,771 @@ namespace OpenAuth.App.Material
             await UnitWork.UpdateAsync<Quotation>(q=>q.Id == request.QuotationId, q=>new Quotation { CancelRequest=1});
             await UnitWork.SaveAsync();
         }
+
+        #region 售后提成
+        /// <summary>
+        /// 生成售后提成单
+        /// </summary>
+        /// <returns></returns>
+        public async Task GenerateCommissionSettlement()
+        {
+            var commissionOrder = await UnitWork.Find<CommissionOrder>(c => c.Status == 3).ToListAsync();
+            var saleOrderId = commissionOrder.Select(c => c.SalesOrderId).ToList();
+            //已出库 物料类型为销售 未生成售后提成
+            var query = await (from a in UnitWork.Find<Quotation>(c => !string.IsNullOrWhiteSpace(c.SalesOrderId.ToString()) && c.IsMaterialType == 2 && c.QuotationStatus == 11 && c.CreateTime >= DateTime.Parse("2022-07-11 00:00:00")).Include(c => c.QuotationMergeMaterials).Where(c => c.QuotationMergeMaterials.Any(q => q.MaterialType == 2))
+                               join b in UnitWork.Find<CommissionOrder>(null) on a.SalesOrderId equals b.SalesOrderId into ab
+                               from b in ab.DefaultIfEmpty()
+                               where b == null
+                               select new { a.SalesOrderId, a.ServiceOrderId, a.ServiceOrderSapId, a.CreateUser, a.CreateUserId, a.TotalCommission, a.TotalMoney }).ToListAsync();
+            List<CommissionOrder> orders = new List<CommissionOrder>();
+            query.ForEach(c =>
+            {
+                orders.Add(new CommissionOrder { SalesOrderId = c.SalesOrderId, Amount = c.TotalCommission, SaleAmout = c.TotalMoney, ServiceOrderId = c.ServiceOrderId, ServiceOrderSapId = c.ServiceOrderSapId, CreateUserId = c.CreateUserId, CreateUser = c.CreateUser, CreateTime = DateTime.Now, UpdateTime = DateTime.Now, Status = 3 });
+            });
+            await UnitWork.BatchAddAsync<CommissionOrder, int>(orders.ToArray());
+
+            if (saleOrderId.Count > 0)
+            {
+                //增值税发票
+                var billapplication = await UnitWork.Find<finance_billapplication_master>(c => saleOrderId.Contains(c.DocEntry)).Select(c => new { c.DocEntry, c.billStatus }).ToListAsync();
+                //收款
+                var orderNo = string.Join(",", saleOrderId);
+                var orctSql = $@"SELECT * from (
+                                    SELECT 
+	                                    (
+	                                    SELECT TOP
+		                                    1 T2.BaseEntry 
+	                                    FROM
+		                                    dbo.RCT2 AS T4
+		                                    LEFT JOIN dbo.INV1 AS T1 ON T4.DocEntry = T1.DocEntry
+		                                    LEFT JOIN dbo.DLN1 AS T2 ON T1.BaseEntry = T2.DocEntry 
+		                                    AND T1.BaseLine = T2.LineNum 
+		                                    AND T1.BaseType = 15 
+	                                    WHERE
+		                                    T4.DocNum= T0.DocEntry 
+		                                    AND T2.BaseType= 17 
+	                                    ) AS OrderNo,
+	                                    T0.DocTotal,
+	                                    SE.DocStatus,
+	                                    SE.DocTotal AS SEDocTotal,
+	                                    T0.DocEntry
+                                    FROM
+	                                    dbo.ORCT AS T0
+	                                    LEFT OUTER JOIN dbo.ORDR AS SE ON T0.U_XSDD= SE.DocEntry
+	                                    ) a where OrderNo in ({orderNo})";
+                var orct = await UnitWork.Query<ORCTModel>(orctSql).ToListAsync();
+                orct = orct.GroupBy(c => c.OrderNo).Select(c => new ORCTModel
+                {
+                    DocEntry = c.First().DocEntry,
+                    DocStatus = c.First().DocStatus,
+                    DocTotal = c.Sum(s => s.DocTotal),
+                    SEDocTotal = c.First().SEDocTotal
+                }).ToList();
+
+                var union = (from a in commissionOrder
+                             join b in billapplication on a.SalesOrderId equals b.DocEntry into ab
+                             from b in ab.DefaultIfEmpty()
+                             join c in orct on a.SalesOrderId equals c.OrderNo into ac
+                             from c in ac.DefaultIfEmpty()
+                             select new
+                             {
+                                 a.SalesOrderId,
+                                 a.CreateUserId,
+                                 a.Status,
+                                 BillStatus = b == null ? 0 : b.billStatus == 1 ? 1 : 0,
+                                 DocStatus = c == null ? "N" : c.DocStatus == "C" ? "C" : "N",
+                                 DocTotal = c == null ? null : c.DocTotal,
+                                 SEDocTotal = c == null ? null : c.SEDocTotal
+                             }).ToList();
+                foreach (var item in union)
+                {
+                    var receivables = 0;
+                    var status = item.Status;
+                    if (item.DocTotal != null && item.SEDocTotal != null)
+                    {
+                        //单据总金额=已收款金额 即为已收齐
+                        if (item.SEDocTotal - item.DocTotal == 0 && item.SEDocTotal == item.DocTotal)
+                            receivables = 1;
+                    }
+                    //满足三个条件后转为待处理
+                    if (item.DocStatus == "C" && item.BillStatus == 1 && receivables == 1)
+                        status = 4;
+
+                    ////创建流程
+                    //var mf = _moduleFlowSchemeApp.Get(c => c.Module.Name == "售后提成");
+                    //var flow = new AddFlowInstanceReq();
+                    //flow.SchemeId = mf.FlowSchemeId;
+                    //flow.FrmType = 2;
+                    //flow.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
+                    //flow.CustomName = $"售后提成单";
+                    //flow.FrmData = "";
+                    //var flowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(flow);
+
+                    await UnitWork.UpdateAsync<CommissionOrder>(c => c.SalesOrderId == item.SalesOrderId, c => new CommissionOrder
+                    {
+                        DocStatus = item.DocStatus,
+                        BillStatus = item.BillStatus,
+                        Receivables = receivables,
+                        Status = status
+                    });
+                }
+            }
+            await UnitWork.SaveAsync();
+
+
+        }
+
+        /// <summary>
+        /// 我的提成 erp app 通用
+        /// CommissionReportId= ，PageType == 2 报表下有哪些提成单
+        /// PageType == 1 erp 我的提成页面
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> CommissionOrderList(QueryCommissionOrderReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            //var loginUserRole = loginContext.Roles;
+            if (loginUser.Account == Define.USERAPP && request.AppUserId > 0)
+            {
+                loginUser = await GetUserId(Convert.ToInt32(request.AppUserId));
+                //loginUserRole = await GetRoleByUserId(loginUser.Id);
+            }
+            TableData result = new TableData();
+            List<int> ServiceOrderIds = new List<int>();
+            if (!string.IsNullOrWhiteSpace(request.TerminalCustomer))
+            {
+                ServiceOrderIds.AddRange(await UnitWork.Find<ServiceOrder>(s => s.TerminalCustomer.Contains(request.TerminalCustomer) || s.TerminalCustomerId.Contains(request.TerminalCustomer)).Select(s => s.Id).ToListAsync());
+            }
+
+            var query = UnitWork.Find<CommissionOrder>(null)
+                        .WhereIf(!string.IsNullOrWhiteSpace(request.SalesOrderId.ToString()), c => c.SalesOrderId.ToString().Contains(request.SalesOrderId.ToString()))
+                        .WhereIf(request.ServiceOrderSapId != null, q => q.ServiceOrderSapId.ToString().Contains(request.ServiceOrderSapId.ToString()))
+                        .WhereIf(request.Id != null, q => q.Id==request.Id)
+                        .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUser), q => q.CreateUser.Contains(request.CreateUser))
+                        .WhereIf(request.StartCreateTime != null, q => q.CreateTime >= request.StartCreateTime)
+                        .WhereIf(request.EndCreateTime != null, q => q.CreateTime <= request.EndCreateTime)
+                        .WhereIf(request.Status != null, q => q.Status == request.Status)
+                        .WhereIf(request.CommissionReportId != null, q => q.CommissionReportId == request.CommissionReportId)
+                        .WhereIf(ServiceOrderIds.Count > 0, c => ServiceOrderIds.Contains(c.ServiceOrderId));
+            //request.PageType == 1我的提成界面，request.PageType == 2审批中报表下提成单
+            if (!loginContext.Roles.Any(r => r.Name.Equals("呼叫中心-查看")) && !loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && !loginUser.Account.Equals(Define.SYSTEM_USERNAME) && request.PageType == 1)
+            {
+                query = query.Where(q => q.CreateUserId.Equals(loginUser.Id));
+            }
+            if (request.PageType == 2)
+            {
+                if (loginContext.Roles.Any(r => r.Name.Equals("财务")))
+                {
+                    query = query.Where(q => q.ApprovalStatus == 1 || q.ApprovalStatus == 2);
+                }
+                else if (loginContext.Roles.Any(r => r.Name.Equals("出纳")))
+                {
+                    query = query.Where(q => q.ApprovalStatus == 3 || q.ApprovalStatus == 4);
+                }
+            }
+            result.Count = await query.CountAsync();
+            var queryObj = await query.OrderByDescending(c => c.CreateTime).Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+            var serviceOrderIds = queryObj.Select(c => c.ServiceOrderId).ToList();
+            var saleOrderId = queryObj.Select(c => c.SalesOrderId).ToList();
+            var quoation = await UnitWork.Find<Quotation>(c => saleOrderId.Contains(c.SalesOrderId)).Select(c => new { c.Id, c.SalesOrderId }).ToListAsync();
+            var completionReports = await UnitWork.Find<CompletionReport>(c => serviceOrderIds.Contains(c.ServiceOrderId.Value)).ToListAsync();
+            var userIds = queryObj.Select(c => c.CreateUserId).ToList();
+            var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
+            var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
+
+            var commissionOrder = (from a in queryObj
+                                   join b in completionReports on a.ServiceOrderId equals b.ServiceOrderId
+                                   join c in quoation on a.SalesOrderId equals c.SalesOrderId
+                                   orderby a.CreateTime descending
+                                   select new
+                                   {
+                                       a.Id,
+                                       QuotationId = c.Id,
+                                       a.SalesOrderId,
+                                       a.ServiceOrderSapId,
+                                       a.Amount,
+                                       a.SaleAmout,
+                                       a.Remark,
+                                       a.CreateTime,
+                                       a.PayTime,
+                                       a.Status,
+                                       a.ApprovalStatus,
+                                       b.TerminalCustomerId,
+                                       b.TerminalCustomer,
+                                       b.ManufacturerSerialNumber,
+                                       b.FromTheme,
+                                       b.MaterialCode,
+                                       CreateUser = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name == null ? a.CreateUser : SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + a.CreateUser
+                                   }).ToList();
+            result.Data = commissionOrder;
+            return result;
+        }
+
+        /// <summary>
+        /// 待/已处理结算
+        /// PageType == 2 app报表单页面及erp已处理
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> CommissionReportList(QueryCommissionOrderReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            //var loginUserRole = loginContext.Roles;
+            if (loginUser.Account == Define.USERAPP && request.AppUserId > 0)
+            {
+                loginUser = await GetUserId(Convert.ToInt32(request.AppUserId));
+                //loginUserRole = await GetRoleByUserId(loginUser.Id);
+            }
+            var query = UnitWork.Find<CommissionReport>(null)
+                        .WhereIf(!string.IsNullOrWhiteSpace(request.BatchNo), c => c.BatchNo.Contains(request.BatchNo))
+                        .WhereIf(!string.IsNullOrWhiteSpace(request.Org), c => c.OrgName.Contains(request.Org))
+                        .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUser), c => c.CreateUser.Contains(request.CreateUser))
+                        .WhereIf(request.Status != null, q => q.Status == request.Status)
+                        .WhereIf(request.StartCreateTime != null, q => q.CreateTime >= request.StartCreateTime)
+                        .WhereIf(request.EndCreateTime != null, q => q.CreateTime <= request.EndCreateTime);
+
+            if (request.PageType == 1)//待处理
+            {
+                var SchemeContent = await UnitWork.Find<FlowScheme>(f => f.SchemeName.Equals("售后提成单")).Select(f => f.Id).FirstOrDefaultAsync();
+                var flowinstace = await UnitWork.Find<FlowInstance>(c => c.SchemeId == SchemeContent && c.MakerList.Contains(loginUser.Id)).Select(c => c.Id).ToListAsync();
+                var reportId = await UnitWork.Find<CommissionOrder>(c => flowinstace.Contains(c.FlowInstanceId)).Select(c => c.CommissionReportId).ToListAsync();
+                query = query.Where(c => reportId.Contains(c.Id));
+            }
+            else if (request.PageType == 2)//已处理
+            {
+                //新建一个报表处理记录表 用于查询已处理数据 *
+                //var instances = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.CreateUserId == loginContext.User.Id).Select(c => c.InstanceId).Distinct().ToListAsync();
+                var history = await UnitWork.Find<CommissionReportOperationHistory>(c => c.UserId == loginUser.Id).Select(c => c.CommissionReportId).ToListAsync();
+                query = query.Where(c => history.Contains(c.Id));
+            }
+
+            TableData result = new TableData();
+
+            result.Count = await query.CountAsync();
+            var queryObj = await query.OrderByDescending(c => c.CreateTime).Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+            result.Data = queryObj;
+            return result;
+        }
+
+        /// <summary>
+        /// 可提交的提成单
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetAvailableCommissionOrder(QueryCommissionOrderReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            if (loginUser.Account == Define.USERAPP && request.AppUserId > 0)
+            {
+                loginUser = await GetUserId(Convert.ToInt32(request.AppUserId));
+            }
+            TableData result = new TableData();
+            var obj = UnitWork.Find<CommissionOrder>(c => c.CreateUserId == loginUser.Id && c.Status == 4);
+                           
+            var query = await obj.OrderByDescending(c => c.CreateTime)
+                            .Skip((request.page - 1) * request.limit)
+                            .Take(request.limit)
+                            .ToListAsync();
+            result.Count = await obj.CountAsync();
+            var serviceOrderId = query.Select(c => c.ServiceOrderId).ToList();
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => serviceOrderId.Contains(c.Id)).Select(c => new { c.Id, c.TerminalCustomer, c.TerminalCustomerId }).ToListAsync();
+            var userIds = query.Select(c => c.CreateUserId).ToList();
+            var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
+            var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
+            result.Data = query.Select(c => new
+            {
+                TerminalCustomerId = serviceOrder.Where(s => s.Id == c.ServiceOrderId).FirstOrDefault()?.TerminalCustomerId,
+                TerminalCustomer = serviceOrder.Where(s => s.Id == c.ServiceOrderId).FirstOrDefault()?.TerminalCustomer,
+                //c.CreateUser,
+                c.UpdateTime,
+                c.CreateTime,
+                c.SalesOrderId,
+                c.Amount,
+                c.SaleAmout,
+                c.Remark,
+                c.Id,
+                CreateUser = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(c.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name == null ? c.CreateUser : SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(c.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + c.CreateUser
+            }).ToList();
+            return result;
+        }
+
+        /// <summary>
+        /// 新建报表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> AddReport(AddReportReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            if (loginUser.Account == Define.USERAPP && req.AppUserId > 0)
+            {
+                loginUser = await GetUserId(Convert.ToInt32(req.AppUserId));
+            }
+            var loginOrg = await _userManagerApp.GetUserOrgInfo(loginUser.Id);
+            Infrastructure.Response response = new Infrastructure.Response();
+
+            var order = await UnitWork.Find<CommissionOrder>(c => req.Ids.Contains(c.Id)).ToListAsync();
+            var Message = "";
+            order.ForEach(c =>
+            {
+                if (!string.IsNullOrWhiteSpace(c.CommissionReportId.ToString()))
+                {
+                    Message += $"单号{c.Id}已提交过报表，请勿重复提交。";
+                }
+            });
+            if (!string.IsNullOrWhiteSpace(Message))
+            {
+                response.Code = 500;
+                response.Message = Message;
+                return response;
+            }
+
+            var dbContext = UnitWork.GetDbContext<CommissionReport>();
+            using (var transaction = await dbContext.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    var report = await UnitWork.Find<CommissionReport>(null).OrderByDescending(c => c.BatchNo).FirstOrDefaultAsync(); 
+                    var year = DateTime.Now.Year.ToString();
+                    var num = "01";
+                    int temp = 1;
+                    if (report == null)
+                    {
+                        //取3.0批号
+                        var fab = await UnitWork.Find<finance_aftersalesbonus_batch>(null).OrderByDescending(c => c.ExportBatchNo).FirstOrDefaultAsync();
+                        temp = Convert.ToInt32(fab.ExportBatchNo?.Split(year)[1]);
+                        temp++;
+                        //num = batchNo.ToString().PadLeft(2, '0');
+                    }
+                    else
+                    {
+                        temp = Convert.ToInt32(report.BatchNo?.Split(year)[1]);
+                        temp++;
+                    }
+
+                    if (temp < 10)
+                        num = $"0{temp}";
+                    else
+                        num = temp.ToString();
+                    //批次单号
+                    var batchNo = $"SHTC{year}{num}";
+
+                    var orderAmout = order.Sum(c => c.Amount);
+                    CommissionReport commissionReport = new CommissionReport();
+                    commissionReport.BatchNo = batchNo;
+                    commissionReport.OrgId = loginOrg.OrgId;
+                    commissionReport.OrgName = loginOrg.OrgName;
+                    commissionReport.CreateUserId = loginUser.Id;
+                    commissionReport.CreateUser = loginUser.Name;
+                    commissionReport.CreateTime = DateTime.Now;
+                    commissionReport.UpdateTime = DateTime.Now;
+                    commissionReport.Status = 5;
+                    commissionReport.Amount = orderAmout;
+                    commissionReport = await UnitWork.AddAsync<CommissionReport, int>(commissionReport);
+                    await UnitWork.SaveAsync();
+
+
+                    //await UnitWork.UpdateAsync<CommissionReport>(r => r.Id == commissionReport.Id, r => new CommissionReport { FlowInstanceId = commissionReport.FlowInstanceId });
+                    var flowScheme = await UnitWork.Find<FlowScheme>(c => c.SchemeName == "售后提成单").FirstOrDefaultAsync();
+                    foreach (var item in order)
+                    {
+                        //创建流程
+                        //var mf = _moduleFlowSchemeApp.Get(c => c.Module.Name == "售后提成");
+                        var flow = new AddFlowInstanceReq();
+                        flow.SchemeId = flowScheme.Id;
+                        flow.FrmType = 2;
+                        flow.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
+                        flow.CustomName = $"售后提成单";
+                        flow.FrmData = "";
+                        var flowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(flow);
+
+                        await UnitWork.UpdateAsync<CommissionOrder>(r => r.Id == item.Id, r => new CommissionOrder { FlowInstanceId = flowInstanceId, Status = 5, UpdateTime = DateTime.Now, CommissionReportId = commissionReport.Id, ApprovalStatus = 1 });
+                    }
+                    //报表处理历史
+                    await UnitWork.AddAsync<CommissionReportOperationHistory>(new CommissionReportOperationHistory { CommissionReportId = commissionReport.Id, UserId = loginUser.Id, StepName = "待处理" });
+                    await UnitWork.SaveAsync();
+                    await transaction.CommitAsync();
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    throw new Exception("添加报表失败。" + ex.Message);
+                }
+            }
+            return response;
+        }
+
+        /// <summary>
+        /// 审核提成单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task AccraditationCommissionOrder(AccraditationQuotationReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            if (loginUser.Account == Define.USERAPP && req.AppUserId > 0)
+            {
+                loginUser = await GetUserId(Convert.ToInt32(req.AppUserId));
+            }
+            var obj = await UnitWork.Find<CommissionOrder>(c => c.Id == req.Id).FirstOrDefaultAsync();
+            var orderList = await UnitWork.Find<CommissionOrder>(c => c.CommissionReportId == obj.CommissionReportId).Select(c => new { c.FlowInstanceId, c.Id, c.ApprovalStatus }).ToListAsync();
+            var activityName = await UnitWork.Find<FlowInstance>(c => c.Id == obj.FlowInstanceId).Select(c => c.ActivityName).FirstOrDefaultAsync();
+            VerificationReq verificationReq = new VerificationReq
+            {
+                NodeRejectStep = "",
+                NodeRejectType = "0",
+                FlowInstanceId = obj.FlowInstanceId,
+                VerificationFinally = "1",
+                VerificationOpinion = req.Remark
+            };
+
+            if (req.IsReject)
+            {
+                verificationReq.VerificationFinally = "3";
+                verificationReq.NodeRejectType = "1";
+
+                foreach (var item in orderList)
+                {
+                    //驳回同一报表下所有提成单
+                    verificationReq.FlowInstanceId = item.FlowInstanceId;
+                    await _flowInstanceApp.Verification(verificationReq);
+                    await UnitWork.UpdateAsync<CommissionOrder>(r => r.Id == item.Id, r => new CommissionOrder { Status = 1, UpdateTime = DateTime.Now, ApprovalStatus = null });
+                }
+                await UnitWork.UpdateAsync<CommissionReport>(r => r.Id == obj.CommissionReportId, r => new CommissionReport { Status = 1, UpdateTime = DateTime.Now });
+                await UnitWork.AddAsync(new CommissionReportOperationHistory { CommissionReportId = obj.CommissionReportId, UserId = loginUser.Id, StepName = "驳回" });
+            }
+            else
+            {
+                //var approvalStatus = 99;//审批环节 标识审核人有无审核的状态
+                //var status = 5;//单据的整个流程状态
+
+                if (activityName == "财务审批")
+                {
+                    await UnitWork.UpdateAsync<CommissionOrder>(r => r.Id == obj.Id, r => new CommissionOrder { ApprovalStatus = 2, UpdateTime = DateTime.Now });
+                    var approvalCount = orderList.Where(c => c.ApprovalStatus == 2).Count();
+                    //报表中其他单都已审批 进入下一审批环节
+                    if (orderList.Count - 1 == approvalCount)
+                    {
+                        foreach (var item in orderList)
+                        {
+                            verificationReq.FlowInstanceId = item.FlowInstanceId;
+                            //都审批通过后才进行真正的审核流程
+                            await _flowInstanceApp.Verification(verificationReq);
+                        }
+                        await UnitWork.UpdateAsync<CommissionOrder>(r => r.CommissionReportId == obj.CommissionReportId, r => new CommissionOrder { Status = 6, ApprovalStatus = 3, UpdateTime = DateTime.Now });
+                        await UnitWork.UpdateAsync<CommissionReport>(r => r.Id == obj.CommissionReportId, r => new CommissionReport { Status = 6, UpdateTime = DateTime.Now });
+                        await UnitWork.AddAsync(new CommissionReportOperationHistory { CommissionReportId = obj.CommissionReportId, UserId = loginUser.Id, StepName = activityName });
+                    }
+                }
+                else if (activityName == "待结算")
+                {
+                    await UnitWork.UpdateAsync<CommissionOrder>(r => r.Id == obj.Id, r => new CommissionOrder { ApprovalStatus = 4, UpdateTime = DateTime.Now });
+                    var approvalCount = orderList.Where(c => c.ApprovalStatus == 4).Count();
+                    //报表中其他单都已审批 进入下一审批环节
+                    if (orderList.Count - 1 == approvalCount)
+                    {
+                        foreach (var item in orderList)
+                        {
+                            verificationReq.FlowInstanceId = item.FlowInstanceId;
+                            //都审批通过后才进行真正的审核流程
+                            await _flowInstanceApp.Verification(verificationReq);
+                        }
+                        await UnitWork.UpdateAsync<CommissionOrder>(r => r.CommissionReportId == obj.CommissionReportId, r => new CommissionOrder { Status = 7, PayTime = DateTime.Now });
+                        await UnitWork.UpdateAsync<CommissionReport>(r => r.Id == obj.CommissionReportId, r => new CommissionReport { Status = 7, UpdateTime = DateTime.Now });
+                        await UnitWork.AddAsync(new CommissionReportOperationHistory { CommissionReportId = obj.CommissionReportId, UserId = loginUser.Id, StepName = activityName });
+                    }
+                }
+
+            }
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 批量结算
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
+        public async Task BatchAccraditation(BatchAccraditationReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            foreach (var item in req.Ids)
+            {
+                var commissionOrder = await UnitWork.Find<CommissionOrder>(c => c.CommissionReportId == item).ToListAsync();
+                foreach (var order in commissionOrder)
+                {
+                    VerificationReq verificationReq = new VerificationReq
+                    {
+                        NodeRejectStep = "",
+                        NodeRejectType = "0",
+                        FlowInstanceId = order.FlowInstanceId,
+                        VerificationFinally = "1",
+                        VerificationOpinion = ""
+                    };
+                    await _flowInstanceApp.Verification(verificationReq);
+                    await UnitWork.UpdateAsync<CommissionOrder>(r => r.Id == order.Id, r => new CommissionOrder { Status = 7, PayTime = req.PayTime, ApprovalStatus = 4 });
+                }
+                await UnitWork.UpdateAsync<CommissionReport>(r => r.Id == item, r => new CommissionReport { Status = 7, UpdateTime = DateTime.Now, PayTime = req.PayTime });
+                await UnitWork.AddAsync(new CommissionReportOperationHistory { CommissionReportId = item, UserId = loginContext.User.Id, StepName = "待结算" });
+                await UnitWork.SaveAsync();
+            }
+        }
+
+        /// <summary>
+        /// 撤回报表
+        /// </summary>
+        /// <returns></returns>
+        public async Task RecallReport(AccraditationQuotationReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            if (loginUser.Account == Define.USERAPP && req.AppUserId > 0)
+            {
+                loginUser = await GetUserId(Convert.ToInt32(req.AppUserId));
+            }
+
+            var orderList = await UnitWork.Find<CommissionOrder>(c => c.CommissionReportId == req.Id && c.CreateUserId == loginUser.Id).Select(c => new { c.FlowInstanceId, c.Id }).ToListAsync();
+            if (orderList.Count > 0)
+            {
+                var flowIds = orderList.Select(c => c.FlowInstanceId).ToList();
+                var ids = orderList.Select(c => c.Id).ToList();
+                await UnitWork.UpdateAsync<CommissionOrder>(r => ids.Contains(r.Id), r => new CommissionOrder { Status = 4, UpdateTime = DateTime.Now, ApprovalStatus = null, FlowInstanceId = "", CommissionReportId = null });
+                await UnitWork.DeleteAsync<CommissionReport>(c => c.Id == req.Id);
+                await UnitWork.DeleteAsync<CommissionReportOperationHistory>(c => c.CommissionReportId == req.Id);
+                await UnitWork.SaveAsync();
+
+                await UnitWork.DeleteAsync<FlowInstance>(c => flowIds.Contains(c.Id));
+                await UnitWork.DeleteAsync<FlowInstanceOperationHistory>(c => flowIds.Contains(c.InstanceId));
+                await UnitWork.DeleteAsync<FlowInstanceTransitionHistory>(c => flowIds.Contains(c.InstanceId));
+                await UnitWork.SaveAsync();
+            }
+        }
+
+        /// <summary>
+        /// 审批详情
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetApproveDetail(int id)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            var commissionOrder = await UnitWork.Find<CommissionOrder>(c => c.Id == id).FirstOrDefaultAsync();
+            var quaotion = await UnitWork.Find<Quotation>(c => c.SalesOrderId == commissionOrder.SalesOrderId).Select(c => new { c.Id, c.InvoiceCompany, c.SalesOrderId }).FirstOrDefaultAsync();
+            //操作历史
+            var operationHistories = await UnitWork.Find<FlowInstanceOperationHistory>(c => c.InstanceId == commissionOrder.FlowInstanceId)
+                .OrderBy(c => c.CreateDate).Select(h => new
+                {
+                    CreateTime = Convert.ToDateTime(h.CreateDate).ToString("yyyy.MM.dd HH:mm:ss"),
+                    h.Remark,
+                    IntervalTime = h.IntervalTime != null && h.IntervalTime > 0 ? h.IntervalTime / 60 : null,
+                    h.CreateUserName,
+                    h.Content,
+                    h.ApprovalResult,
+                }).ToListAsync();
+            //销售单
+            var ordr = await UnitWork.Find<ORDR>(c => c.DocEntry == commissionOrder.SalesOrderId).Select(c => new { c.CardCode, c.CardName, c.CntctCode, c.Indicator, c.U_FPLB, c.U_SL, c.ShipToCode, c.Address, c.DocDate, c.DocDueDate, c.Comments, c.GroupNum, c.DocCur, c.DocRate, c.TotalExpns, c.DocType, WhsCode = "01", c.PartSupply }).FirstOrDefaultAsync();
+            //科目余额和比率
+            var balance = await AccountBalance(ordr.CardCode);
+            var margeMatrials = await UnitWork.Find<QuotationMergeMaterial>(c => c.QuotationId == quaotion.Id).ToListAsync();
+            //增值税发票Id
+            var finance_billapplication_master = await UnitWork.Find<finance_billapplication_master>(c => c.DocEntry == commissionOrder.SalesOrderId).Select(c => c.billID).ToListAsync();
+            //测试 需注释
+            //finance_billapplication_master = await UnitWork.Find<finance_billapplication_master>(c => c.DocEntry == 55859).Select(c => c.billID).ToListAsync();
+            //发票附件
+            var invoiceFile = await (from a in UnitWork.Find<file_main>(null)
+                                     join b in UnitWork.Find<file_type>(null) on a.file_type_id equals b.type_id
+                                     where finance_billapplication_master.Contains(a.docEntry) && a.file_type_id == 35 && a.sbo_id == 0
+                                     select new { a.file_id, b.type_nm, a.file_nm, a.file_path }).ToListAsync();
+            //var category = await UnitWork.Find<Category>(c => c.TypeId == "SYS_InvoiceCompany" && c.DtValue == quaotion.InvoiceCompany).FirstOrDefaultAsync();
+            var contractFile = await PrintSalesOrder(quaotion.SalesOrderId.Value);//合同附件
+
+            List<FileResp> files = new List<FileResp>();
+            invoiceFile.ForEach(c =>
+            {
+                files.Add(new FileResp { FileName = c.file_nm, FileType = c.type_nm, FilePath = $"{_appConfiguration.Value.ERP3Url}{c.file_path}".Replace("192.168.0.208", "218.17.149.195") });
+            });
+            files.Add(new FileResp { FileName = "销售合同.pdf", FileType = "销售合同", FilePath = contractFile });
+            files.Add(new FileResp { FileName = "装箱发货清单.pdf", FileType = "装箱发货清单", FilePath = quaotion.Id.ToString() });
+            result.Data = new
+            {
+                commissionOrder.Id,
+                TotalCommission = commissionOrder.Amount,
+                TotalMoney = commissionOrder.SaleAmout,
+                Balance = balance.Balance,
+                Rate = balance.Rate,
+                SaleOrder = ordr,
+                MergeMaterial = margeMatrials.Select(c => new
+                {
+                    c.MaterialType,
+                    c.MaterialCode,
+                    c.MaterialDescription,
+                    c.SentQuantity,
+                    c.CostPrice,
+                    c.DiscountPrices,
+                    c.TotalPrice,
+                    HLC = 0,
+                    c.Commission
+                }),
+                Files = files,
+                OperationHistory = operationHistories
+            };
+            return result;
+        }
+
+        public async Task<TableData> DropDownOptions()
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            //标识
+            var crm_oidc = await UnitWork.Find<crm_oidc>(c => c.sbo_id == Define.SBO_ID).Select(c => new { Id = c.Code, c.Name }).ToListAsync();
+            //付款条件
+            var crm_octg = await UnitWork.Find<crm_octg>(c => c.sbo_id == Define.SBO_ID).Select(c => new { Id = c.GroupNum, Name = c.PymntGroup }).ToListAsync();
+            //币种
+            var crm_ocrn =await UnitWork.Find<crm_ocrn>(c => c.sbo_id == Define.SBO_ID).Select(c => new { Id = c.CurrCode, Name = c.CurrName }).ToListAsync();
+
+            result.Data = new
+            {
+                crm_oidc,
+                crm_octg,
+                crm_ocrn
+            };
+            return result;
+        }
+
+        /// <summary>
+        /// 科目余额和比率
+        /// </summary>
+        /// <param name="cardcode"></param>
+        /// <returns></returns>
+        public async Task<(decimal Balance, string Rate)> AccountBalance(string cardcode)
+        {
+            var sql = @$"SELECT (Select sum(Balance) from OCRD where CardCode='{cardcode}') as Balance
+                    ,(select sum(DocTotal) from OINV WHERE CANCELED ='N' and CardCode='{cardcode}') as INVtotal
+                    ,(select SUM(DocTOTal) from ORIN where CANCELED<>'Y' and CardCode='{cardcode}') as RINtotal
+                    --90天内未清收款
+                    ,(select SUM(openBal) from ORCT WHERE CANCELED='N' AND openBal<>0 AND CardCode='{cardcode}' and datediff(DAY,docdate,getdate())<=90) as RCTBal90
+                    --90天内未清发票金额
+                    ,(select SUM(DocTotal-PaidToDate) from OINV WHERE CANCELED ='N' and CardCode='{cardcode}' and DocTotal-PaidToDate>0 and datediff(DAY,docdate,getdate())<=90) as INVBal90
+                    --90天内未清贷项金额
+                    ,(select SUM(DocTotal-PaidToDate) from ORIN where CANCELED ='N' and CardCode='{cardcode}' and DocTotal-PaidToDate>0 and datediff(DAY,docdate,getdate())<=90) as RINBal90
+                    --90天前未清发票的发票总额
+                    ,(select SUM(DocTotal) from OINV WHERE CANCELED ='N' and CardCode = '{cardcode}' and DocTotal-PaidToDate > 0 and datediff(DAY, docdate, getdate())> 90) as INVTotal90P";
+            var query = await UnitWork.Query<BalanceModel>(sql).FirstOrDefaultAsync();
+            query.INVTotal90P = query.INVTotal90P ?? 0;
+            var rate = "0.00%";
+            if (query.INVTotal90P > 0)
+            {
+                //=（科目余额+90天内未清收款-90天内未清发票+90天内未清贷项凭证) / 90天以前未清发票的发票总额
+                decimal cal = (((query.Balance ?? 0 + query.RCTBal90 ?? 0 - query.INVBal90 ?? 0 + query.RINBal90 ?? 0) / query.INVTotal90P)*100).Value;
+                rate =Math.Round(cal,2).ToString() + "%";
+            }
+            return (query.Balance.Value, rate);
+        }
+
+        /// <summary>
+        /// 查看附件
+        /// </summary>
+        /// <param name="saleOrderId"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public async Task<TableData> ViewAttachment(int saleOrderId, int type)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            result.Data = "";
+            if (type == 1)//销售合同
+            {
+                result.Data = PrintSalesOrder(saleOrderId);//合同附件
+            }
+            else if (type == 2)//发票
+            {
+                //增值税发票Id
+                var finance_billapplication_master = await UnitWork.Find<finance_billapplication_master>(c => c.DocEntry == saleOrderId).Select(c => c.billID).ToListAsync();
+                //发票附件
+                var invoiceFile = await (from a in UnitWork.Find<file_main>(null)
+                                         join b in UnitWork.Find<file_type>(null) on a.file_type_id equals b.type_id
+                                         where finance_billapplication_master.Contains(a.docEntry) && a.file_type_id == 35 && a.sbo_id == 0
+                                         select new { a.file_id, b.type_nm, a.file_nm, a.file_path }).FirstOrDefaultAsync();
+                if (invoiceFile != null && !string.IsNullOrWhiteSpace(invoiceFile.file_path))
+                {
+                    result.Data = $"{_appConfiguration.Value.ERP3Url}{invoiceFile.file_path}".Replace("192.168.0.208", "218.17.149.195");
+                }
+            }
+            return result;
+
+        }
+
+        /// <summary>
+        /// 提成单详情 app用
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> CommissionOrderDetail(QueryCommissionOrderReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            //var loginUserRole = loginContext.Roles;
+            if (loginUser.Account == Define.USERAPP && request.AppUserId > 0)
+            {
+                loginUser = await GetUserId(Convert.ToInt32(request.AppUserId));
+                //loginUserRole = await GetRoleByUserId(loginUser.Id);
+            }
+            TableData result = new TableData();
+            var quaotion = await UnitWork.Find<Quotation>(c => c.SalesOrderId == request.SalesOrderId).FirstOrDefaultAsync();
+            var margeMatrials = await UnitWork.Find<QuotationMergeMaterial>(c => c.QuotationId == quaotion.Id).ToListAsync();
+            result.Data = margeMatrials;
+            return result;
+        }
+
+        #endregion
 
 
         public QuotationApp(IUnitWork unitWork, ICapPublisher capBus, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, 

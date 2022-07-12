@@ -621,16 +621,16 @@ namespace OpenAuth.App
                         pdf.FooterSettings = new FooterSettings() { FontSize = 6, Right = "Page [page] of [toPage] ", Line = false, Spacing = 2.812, HtmUrl = footerUrl };
                     });
                     System.IO.File.Delete(tempUrl);
-                    //var path = Path.Combine(BaseCertDir, certNo);
-                    DirUtil.CheckOrCreateDir(basePath);
-                    var fullpath = Path.Combine(basePath, $"{certNo}_EN" + ".pdf");
-                    using (FileStream fs = new FileStream(fullpath, FileMode.Create))
-                    {
-                        using (BinaryWriter bw = new BinaryWriter(fs))
-                        {
-                            bw.Write(datas, 0, datas.Length);
-                        }
-                    }
+                    //DirUtil.CheckOrCreateDir(basePath);
+                    //var fullpath = Path.Combine(basePath, $"{certNo}_EN" + ".pdf");
+                    //using (FileStream fs = new FileStream(fullpath, FileMode.Create))
+                    //{
+                    //    using (BinaryWriter bw = new BinaryWriter(fs))
+                    //    {
+                    //        bw.Write(datas, 0, datas.Length);
+                    //    }
+                    //}
+                    Stream stream1 = new MemoryStream(datas);
                     #endregion
 
                     #region 生成中文版
@@ -674,19 +674,25 @@ namespace OpenAuth.App
                         pdf.FooterSettings = new FooterSettings() { FontSize = 6, Right = "Page [page] of [toPage] ", Line = false, Spacing = 0, HtmUrl = footerUrl };
                     });
                     System.IO.File.Delete(tempUrl);
-                    DirUtil.CheckOrCreateDir(basePath);
+                    //DirUtil.CheckOrCreateDir(basePath);
                     var fullPathCnas = Path.Combine(basePath, $"{certNo}_CNAS" + ".pdf");
-                    using (FileStream fs = new FileStream(fullPathCnas, FileMode.Create))
-                    {
-                        using (BinaryWriter bw = new BinaryWriter(fs))
-                        {
-                            bw.Write(datas, 0, datas.Length);
-                        }
-                    }
+                    //using (FileStream fs = new FileStream(fullPathCnas, FileMode.Create))
+                    //{
+                    //    using (BinaryWriter bw = new BinaryWriter(fs))
+                    //    {
+                    //        bw.Write(datas, 0, datas.Length);
+                    //    }
+                    //}
+                    Stream stream2 = new MemoryStream(datas);
                     #endregion
 
                     await semaphoreSlim.WaitAsync();
-                    await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { PdfPath = fullpath, CNASPdfPath = fullPathCnas });
+                    //上传华为云
+                    var fileResp = await _fileApp.UploadFileToHuaweiOBS($"nwcail/{baseInfo.CertificateNumber}/{baseInfo.CertificateNumber}_EN.pdf", null, stream1);
+                    var fileRespCn = await _fileApp.UploadFileToHuaweiOBS($"nwcail/{baseInfo.CertificateNumber}/{baseInfo.CertificateNumber}_CNAS.pdf", null, stream2);
+
+                    await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { PdfPath = fileResp.FilePath, CNASPdfPath = fileRespCn.FilePath });
+
                     //生成证书文件后删除校准数据
                     await UnitWork.DeleteAsync<Etalon>(x => x.NwcaliBaseInfoId == baseInfo.Id);
                     await UnitWork.DeleteAsync<NwcaliPlcData>(x => x.NwcaliBaseInfoId == baseInfo.Id);
@@ -1716,7 +1722,7 @@ namespace OpenAuth.App
         /// <param name="turV">Tur电压数据</param>
         /// <param name="turA">Tur电流数据</param>
         /// <returns></returns>
-        private async Task<CertModel> BuildModel(NwcaliBaseInfo baseInfo, string type = "")
+        public async Task<CertModel> BuildModel(NwcaliBaseInfo baseInfo, string type = "")
         {
             var list = new List<WordModel>();
             var model = new CertModel();
@@ -2385,6 +2391,11 @@ namespace OpenAuth.App
 
             #region 签名
             var us = await _userSignApp.GetUserSignList(new QueryUserSignListReq { });
+            if (baseInfo.Operator == "肖淑惠" || baseInfo.Operator == "阙勤勤")
+            {
+                var name = await UnitWork.Find<Category>(c => c.TypeId == "SYS_CalibrationCertificateSign").Select(c => c.Name).FirstOrDefaultAsync();
+                baseInfo.Operator = name;
+            }
             var calibrationTechnician = us.Data.FirstOrDefault(u => u.UserName.Equals(baseInfo.Operator));
             if (calibrationTechnician != null)
             {

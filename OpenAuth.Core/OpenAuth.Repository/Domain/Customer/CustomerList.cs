@@ -101,6 +101,12 @@ namespace OpenAuth.Repository.Domain.Customer
         /// </summary>
         public bool IsDelete { get; set; }
 
+        /// <summary>
+        /// 备注
+        /// </summary>
+        [NotMapped]
+        public string Remark { get; set; }
+
         public bool Equals([AllowNull] CustomerList other)
         {
             return this.CustomerNo == other.CustomerNo;

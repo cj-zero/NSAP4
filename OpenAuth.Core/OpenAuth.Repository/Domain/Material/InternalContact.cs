@@ -106,6 +106,16 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         [Description("")]
+        public string Others { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string Opinions { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
         public string Reason { get; set; }
         /// <summary>
         /// 

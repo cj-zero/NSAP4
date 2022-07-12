@@ -14,6 +14,9 @@ using OpenAuth.App.Response;
 using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.Repository.Domain.Customer;
+using OpenAuth.Repository;
+using System.Collections;
+using System.Data;
 
 namespace OpenAuth.App.Customer
 {
@@ -36,10 +39,10 @@ namespace OpenAuth.App.Customer
             var result = new TableData();
 
             var query = from c in UnitWork.Find<OCRD>(null)
-                        .WhereIf(!string.IsNullOrWhiteSpace( req.CardCode),c=>c.CardCode == req.CardCode)
-                        .WhereIf(!string.IsNullOrWhiteSpace(req.CardName),c=>c.CardName.Contains(req.CardName))
-                        join s in UnitWork.Find<OSLP>(null) 
-                        .WhereIf(!string.IsNullOrWhiteSpace(req.SlpName),s=>s.SlpName.Contains(req.SlpName))
+                        .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), c => c.CardCode == req.CardCode)
+                        .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), c => c.CardName.Contains(req.CardName))
+                        join s in UnitWork.Find<OSLP>(null)
+                        .WhereIf(!string.IsNullOrWhiteSpace(req.SlpName), s => s.SlpName.Contains(req.SlpName))
                         on c.SlpCode equals s.SlpCode
                         join g in UnitWork.Find<OCRG>(null) on (int)c.GroupCode equals g.GroupCode
                         select new
@@ -54,24 +57,49 @@ namespace OpenAuth.App.Customer
             var data = await query.OrderBy(q => q.CardCode).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
             //跨库查询,把要查询的数据一次查完,优化查询速度
             //客户所属行业数据
-            var compSectorData = await UnitWork.Find<crm_ocrd>(x => data.Select(d => d.CardCode).Contains(x.CardCode)).Select(x => new { x.U_CompSector, x.CardCode }).ToListAsync();
-
-            var response = new List<QueryCustomerListResponse>();
-            data.ForEach(d =>
-            {
-                var userInfo = _userManagerApp.GetUserOrgInfo(null, d.SlpName).Result;
-                response.Add(new QueryCustomerListResponse
-                {
-                    CardCode = d.CardCode,
-                    CardName = d.CardName,
-                    SlpCode = d.SlpCode,
-                    SlpName = d.SlpName,
-                    DeptCode = userInfo?.OrgId,
-                    DeptName = userInfo?.OrgName,
-                    GroupName = d.GroupName,
-                    CompSector = compSectorData.FirstOrDefault(c => c.CardCode == d.CardCode)?.U_CompSector
-                });
-            });
+            var compSectorData = await UnitWork.Find<crm_ocrd>(x => data.Select(d => d.CardCode).Contains(x.CardCode)&&x.sbo_id==Define.SBO_ID).Select(x => new { x.U_CompSector, x.CardCode }).ToListAsync();
+            //销售员部门数据
+            var deptData = await (from s in UnitWork.Find<sbo_user>(null)
+                                  join ud in UnitWork.Find<base_user_detail>(null) on s.user_id equals ud.user_id
+                                  join d in UnitWork.Find<base_dep>(null) on ud.dep_id equals d.dep_id
+                                  where s.sbo_id == Define.SBO_ID
+                                  && data.Select(x => x.SlpCode).Contains(s.sale_id.Value)
+                                  select new
+                                  {
+                                      slpCode = s.sale_id,
+                                      dept = d.dep_alias,
+                                  }).ToListAsync();
+            //var response = new List<QueryCustomerListResponse>();
+            //data.ForEach(d =>
+            //{
+            //    response.Add(new QueryCustomerListResponse
+            //    {
+            //        CardCode = d.CardCode,
+            //        CardName = d.CardName,
+            //        SlpCode = d.SlpCode,
+            //        SlpName = d.SlpName,
+            //        DeptCode = userInfo?.OrgId,
+            //        DeptName = userInfo?.OrgName,
+            //        GroupName = d.GroupName,
+            //        CompSector = compSectorData.FirstOrDefault(c => c.CardCode == d.CardCode)?.U_CompSector
+            //    });
+            //});
+            var response = from q in data
+                           join c in compSectorData on q.CardCode equals c.CardCode into temp1
+                           join d in deptData on q.SlpCode equals d.slpCode into temp2
+                           from t1 in temp1.DefaultIfEmpty()
+                           from t2 in temp2.DefaultIfEmpty()
+                           select new QueryCustomerListResponse
+                           {
+                               CardCode = q.CardCode,
+                               CardName = q.CardName,
+                               SlpCode = q.SlpCode,
+                               SlpName = q.SlpName,
+                               DeptCode = t2 == null ? null : t2.dept,
+                               DeptName = t2 == null ? null : t2.dept,
+                               GroupName = q.GroupName,
+                               CompSector = t1 == null ? null : t1.U_CompSector
+                           };
 
             result.Data = response;
             result.Count = await query.CountAsync();
@@ -274,10 +302,40 @@ namespace OpenAuth.App.Customer
         public async Task<TableData> GetCustomerSeaLists(QueryCustomerSeaReq req)
         {
             var result = new TableData();
+
+            //判断是否是公海管理员(普通业务员只能看到盲盒类型的数据)
             var isAdmin = _auth.GetCurrentUser().Roles.Any(r => r.Name == "公海管理员");
+
+            //登陆人部门
             var dept = _userManagerApp.GetUserOrgInfo(_auth.GetCurrentUser().User.Id)?.Result?.OrgName;
-            //查询已经掉入公海的客户
-            var query = UnitWork.Find<CustomerList>(c => c.LabelIndex == 3)
+
+            var customers = new List<string>();
+            if (req.StartCount != null && req.EndCount != null)
+            {
+                string sql = $@"select t1.cardcode
+                                from(
+	                                select cardcode
+	                                from customer_move_history
+	                                group by cardcode
+	                                having count(*) >= {req.StartCount}
+                                ) as t1
+                                join(
+	                                select cardcode
+	                                from customer_move_history
+	                                group by cardcode
+	                                having count(*) <= {req.EndCount}
+                                ) as t2
+                                on t1.cardcode = t2.cardcode;";
+                var table = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, System.Data.CommandType.Text);
+                if (table != null && table.Rows.Count > 0)
+                {
+                    customers = table.AsEnumerable().Select(t => t.Field<string>("cardcode")).ToList();
+                }
+            }
+
+            //查询已经掉入公海的客户(去掉黑名单上的客户)
+            var query = from c in UnitWork.Find<CustomerList>(c => c.LabelIndex == 3)
+                .WhereIf(customers.Count > 0, c => customers.Contains(c.CustomerNo))
                 .WhereIf(isAdmin == false, c => c.DepartMent == dept)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), c => c.CustomerNo == req.CardCode)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), c => c.CustomerName.Contains(req.CardName))
@@ -285,38 +343,71 @@ namespace OpenAuth.App.Customer
                 .WhereIf(req.CreateStartTime != null && req.CreateEndTime != null, c => c.CustomerCreateDate >= req.CreateStartTime && c.CustomerCreateDate < req.CreateEndTime.Value.AddDays(1))
                 .WhereIf(req.FallIntoStartTime != null && req.FallIntoEndTime != null, c => c.CreateDateTime >= req.FallIntoStartTime &&
                      c.CreateDateTime < req.FallIntoEndTime.Value.AddDays(1))
-                .Select(c => new
-                {
-                    c.CustomerNo,
-                    c.CustomerName,
-                    c.DepartMent,
-                    CustomerSource = "",
-                    c.CreateUser,
-                    CreateDateTime = c.CustomerCreateDate,
-                    FallIntoTime = c.CreateDateTime,
-                });
+                        join s in UnitWork.Find<SpecialCustomer>(s => s.Type == 0) on c.CustomerNo equals s.CustomerNo into temp
+                        from t in temp.DefaultIfEmpty()
+                        where t.CustomerNo == null
+                        select new
+                        {
+                            c.CustomerNo,
+                            c.CustomerName,
+                            c.DepartMent,
+                            c.SlpCode,
+                            c.SlpName,
+                            c.CreateUser,
+                            CreateDateTime = c.CustomerCreateDate,
+                            FallIntoTime = c.UpdateDateTime,
+                        };
 
-            var data = (await query.OrderBy(q => q.CustomerNo).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync())
-                .Select((c, index) => new
+            //先把要查询的数据加载到内存
+            var queryData = await query.OrderBy(q => q.CustomerNo).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+            //上一次交易时间(取交货时间)
+            var lastOrderTimeData = await UnitWork.Find<ODLN>(d => queryData.Select(x => x.CustomerNo).Contains(d.CardCode))
+                .GroupBy(d => d.CardCode).Select(g => new
                 {
-                    Num = (req.page - 1) * req.limit + index + 1,
-                    CustomerNo = c.CustomerNo,
-                    CustomerName = c.CustomerName,
-                    DisplayCustomerNo = isAdmin ? c.CustomerNo : "******",
-                    DisplayCustomerName = isAdmin ? c.CustomerName : "******",
-                    DepartMent = isAdmin ? c.DepartMent : "******",
-                    CustomerSource = isAdmin ? c.CustomerSource : "******",
-                    c.CreateUser,
-                    c.CreateDateTime,
-                    c.FallIntoTime,
+                    CardCode = g.Key,
+                    LastOrderTime = g.Max(x => x.CreateDate)
+                }).ToListAsync();
+            //总交易金额
+            var totalMoneydata = (await (from o in UnitWork.Find<ODLN>(null)
+                                         join d in UnitWork.Find<DLN1>(null) on o.DocEntry equals d.DocEntry
+                                         where queryData.Select(x => x.CustomerNo).Contains(o.CardCode)
+                                         select new
+                                         {
+                                             CardCode = o.CardCode,
+                                             LineTotal = d.LineTotal
+                                         }).ToListAsync())
+                               .GroupBy(x => x.CardCode).Select(g => new { CardCode = g.Key, TotalMoney = g.Sum(x => x.LineTotal) }).ToList();
+            //领取次数
+            var receiveTimedata = await UnitWork.Find<CustomerSalerHistory>(c => queryData.Select(x => x.CustomerNo).Contains(c.CustomerNo))
+                .GroupBy(c => c.CustomerNo)
+                .Select(g => new
+                {
+                    CardCode = g.Key,
+                    ReceiveTime = g.Count()
+                }).ToListAsync();
+            var data = from q in queryData
+                       join l in lastOrderTimeData on q.CustomerNo equals l.CardCode into temp1
+                       join t in totalMoneydata on q.CustomerNo equals t.CardCode into temp2
+                       join r in receiveTimedata on q.CustomerNo equals r.CardCode into temp3
+                       from t1 in temp1.DefaultIfEmpty()
+                       from t2 in temp2.DefaultIfEmpty()
+                       from t3 in temp3.DefaultIfEmpty()
+                       select new QueryCustomerSeaListResponse
+                       {
+                           CustomerNo = q.CustomerNo,
+                           CustomerName = q.CustomerName,
+                           DisplayCustomerNo = isAdmin ? q.CustomerNo : "******",
+                           DisplayCustomerName = isAdmin ? q.CustomerName : "******",
+                           DepartMent = isAdmin ? q.DepartMent : "******",
+                           SlpCode = q.SlpCode,
+                           SlpName = isAdmin ? q.SlpName : "******",
+                           CreateDateTime = q.CreateDateTime.Value,
+                           FallIntoTime = q.FallIntoTime,
+                           LastOrderTime = isAdmin ? (t1 == null ? "" : t1.LastOrderTime.ToString("yyyyMMdd")) : null,
+                           TotalMoney = isAdmin ? (t2 == null ? 0 : t2.TotalMoney) : null,
+                           ReceiveTime = isAdmin ? (t3 == null ? 0 : t3.ReceiveTime) : 0
+                       };
 
-                    LastOrderTime = isAdmin ? UnitWork.Find<ODLN>(d => d.CardCode == c.CustomerNo).OrderByDescending(d => d.CreateDate).Take(1).FirstOrDefault()?.CreateDate?.ToString("yyyyMMdd") : "******",
-                    TotalMoney = isAdmin ? (from o in UnitWork.Find<ODLN>(null)
-                                            join d in UnitWork.Find<DLN1>(null) on o.DocEntry equals d.DocEntry
-                                            where o.CardCode == c.CustomerNo
-                                            select d.LineTotal).DefaultIfEmpty().Sum() : 0,
-                    receiveTime = isAdmin ? UnitWork.Find<CustomerSalerHistory>(x => x.CustomerNo == c.CustomerNo).DefaultIfEmpty().Count() : 0
-                });
 
             result.Data = data;
             result.Count = await query.CountAsync();
@@ -408,20 +499,6 @@ namespace OpenAuth.App.Customer
         {
             var result = new TableData();
 
-            //var query = (from u in UnitWork.Find<base_user>(null)
-            //             .WhereIf(!string.IsNullOrWhiteSpace(req.SlpName), u => u.user_nm.Contains(req.SlpName))
-            //             join ud in UnitWork.Find<base_user_detail>(d => new int[] { 0, 1 }.Contains(d.status)) //在职的员工,离职状态是2和3
-            //             on u.user_id equals ud.user_id
-            //             join s in UnitWork.Find<sbo_user>(null)
-            //             .WhereIf(req.SlpCode != null && req.SlpCode > 0, u => u.sale_id == req.SlpCode)
-            //             on u.user_id equals s.user_id
-            //             //where  Define.SBO_ID
-            //             group new { u, ud, s } by new { s.user_id } into g
-            //             select new
-            //             {
-            //                 slpcode = g.Min(x => x.s.sale_id),
-            //                 slpname = g.Max(x => x.u.user_nm)
-            //             }).Distinct();
             var query = (from u in UnitWork.Find<base_user>(null)
                          .WhereIf(!string.IsNullOrWhiteSpace(req.SlpName), u => u.user_nm.Contains(req.SlpName))
                          join ud in UnitWork.Find<base_user_detail>(null) on u.user_id equals ud.user_id
@@ -524,9 +601,9 @@ namespace OpenAuth.App.Customer
             foreach (var item in req.Customers)
             {
                 //判断是否是公海客户,如果不是或者没有则不能进行领取
-                if (!UnitWork.Find<CustomerList>(null).Any(c => c.CustomerNo == item.CustomerNo))
+                if (!UnitWork.Find<CustomerList>(null).Any(c => c.CustomerNo == item.CustomerNo && c.LabelIndex == 3))
                 {
-                    response.Message += $"客户{item.CustomerName}不是公海客户,不能进行领取 \n";
+                    response.Message += $"客户已被领取,请重新查询或刷新页面 \n";
                     continue;
                 }
                 var customer = await UnitWork.Find<CustomerList>(c => c.CustomerNo == item.CustomerNo).FirstOrDefaultAsync();

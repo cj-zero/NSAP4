@@ -18,5 +18,6 @@ namespace OpenAuth.Repository
         public static Type NsapBaseDbContext => typeof(NsapBaseDbContext);
 
         public static Type NsapOaDbContextType => typeof(NsapOaDbContext);
+        public static Type ManagerDbContext => typeof(ManagerDbContext);
     }
 }

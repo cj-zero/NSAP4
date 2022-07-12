@@ -12,6 +12,8 @@ using Microsoft.EntityFrameworkCore;
 using Infrastructure.Extensions;
 using OpenAuth.Repository.Domain;
 using System.Text.RegularExpressions;
+using System.Data;
+using OpenAuth.Repository;
 
 namespace OpenAuth.App.Sap.Service
 {
@@ -578,10 +580,12 @@ namespace OpenAuth.App.Sap.Service
                          {
                              LineNum = Convert.ToInt32(b.DocLine),
                              ItemCode = a.ItemCode,
+                             CardCode = b.CardCode,
                              ItemType = a.ItemCode.StartsWith("CT-ZWJ") ? "ZWJ" : "XWJ",
                              OrderNo = Convert.ToInt32(b.BaseEntry),
                              SerialNo = r.MnfSerial,
-                             ProductNo = UnitWork.Find<OWOR>(null).Where(o => o.ItemCode == a.ItemCode && o.OriginAbs.ToString() == b.BaseEntry.ToString()).Select(p => p.DocEntry.ToString()).FirstOrDefault()
+                             ProductNo = UnitWork.Find<OWOR>(null).Where(o => o.ItemCode == a.ItemCode && o.OriginAbs.ToString() == b.BaseEntry.ToString()).Select(p => p.DocEntry.ToString()).FirstOrDefault(),
+                             InputPower = ""
                          };
             devs.AddRange(query1);
             //获取生产单与中/下位机版本
@@ -597,7 +601,7 @@ namespace OpenAuth.App.Sap.Service
                     proobj = proobj.Where(w => r.IsMatch(w.ItemCode)).ToList();
                     if (proobj.Count > 0)
                     {
-                        itemVer= proobj[0].ItemCode;
+                        itemVer = proobj[0].ItemCode;
                     }
                 }
                 else
@@ -614,7 +618,7 @@ namespace OpenAuth.App.Sap.Service
                         var BCPobj = proobj.Where(w => w.ItemCode.StartsWith("BT-") || w.ItemCode.StartsWith("BTE-") || w.ItemCode.StartsWith("BE-")).ToList();
                         if (BCPobj.Count > 0)
                         {
-                            proobj = await (from a in UnitWork.Find<product_owor>(null).Where( p=>p.CDocEntry == thisE.ProductNo && p.ItemCode == BCPobj[0].ItemCode)
+                            proobj = await (from a in UnitWork.Find<product_owor>(null).Where(p => p.CDocEntry == thisE.ProductNo && p.ItemCode == BCPobj[0].ItemCode)
                                             join b in UnitWork.Find<product_wor1>(null) on new { DocEntry = a.DocEntry, sbo_id = a.sbo_id } equals new { b.DocEntry, b.sbo_id }
                                             select new
                                             {
@@ -640,6 +644,41 @@ namespace OpenAuth.App.Sap.Service
                         resultE.SubItemVer = itemVer;
                     }
                 }
+            }
+            //根据合约评审获取输入电源参数
+            var query3 = devs.Where(w => !string.IsNullOrEmpty(w.CardCode) && !string.IsNullOrEmpty(w.ItemCode)).GroupBy(g => new { g.CardCode, g.ItemCode }).Select(g => g.First()).ToList();
+            foreach (DeliveryLableInfo thisE in query3)
+            {
+                string contractsql = string.Format(@"SELECT power_option from {0}.sale_contract_review where sbo_id={1} and CardCode='{2}' and ItemCode='{3}' order by upd_dt desc limit 1 ", "nsap_bone", Define.SBO_ID, thisE.CardCode, thisE.ItemCode.Replace("\"", "\\\"").Replace("\'", "\\\'"));
+                DataTable dt = UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, contractsql, CommandType.Text, null);
+                string DisOptions = "";
+                if (dt.Rows.Count > 0)
+                {
+                    switch (dt.Rows[0][0].ToString().Trim())
+                    {
+                        case "-":
+                            break;
+                        case "AC110":
+                            DisOptions = "单相110V";
+                            break;
+                        case "AC220":
+                            DisOptions = "单相220V";
+                            break;
+                        case "TC220":
+                            DisOptions = "三相220V";
+                            break;
+                        case "AC380":
+                            DisOptions = "三相380V";
+                            break;
+                        case "AC420":
+                            DisOptions = "三相420V";
+                            break;
+                        default:
+                            DisOptions = string.IsNullOrEmpty(dt.Rows[0][0].ToString().Trim()) ? "" : (dt.Rows[0][0].ToString() + "V");
+                            break;
+                    }
+                }
+                thisE.InputPower = DisOptions;
             }
             result.Count = devs.Count;
             result.Data = devs;

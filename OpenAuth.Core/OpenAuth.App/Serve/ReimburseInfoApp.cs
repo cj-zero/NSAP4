@@ -2788,7 +2788,14 @@ namespace OpenAuth.App
             #region 必须存在附件并排序
             int racount = 0;
             int SerialNumber = 0;
-            req.ReimburseOtherCharges.ForEach(r => { racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0; r.SerialNumber = ++SerialNumber; });
+            req.ReimburseOtherCharges.ToList().ForEach(r => 
+            {
+                if (r.ExpenseCategory != "28")
+                {
+                    racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0;
+                }
+                r.SerialNumber = ++SerialNumber; 
+            });
             SerialNumber = 0;
             req.ReimburseFares.ForEach(r => { racount += r.ReimburseAttachments.Count() <= 0 ? 1 : 0; r.SerialNumber = ++SerialNumber; });
             SerialNumber = 0;

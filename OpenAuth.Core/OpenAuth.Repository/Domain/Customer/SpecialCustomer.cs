@@ -113,6 +113,11 @@ namespace OpenAuth.Repository.Domain
         [Description("是否删除")]
         public bool Isdelete { get; set; }
 
+        /// <summary>
+        /// 备注
+        /// </summary>
+        public string Remark { get; set; }
+
         public override void GenerateDefaultKeyVal()
         {
         }

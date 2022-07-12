@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Infrastructure;
 using Infrastructure.Extensions;
@@ -52,11 +53,11 @@ namespace OpenAuth.App
                                     join c in UnitWork.Find<edge_mid>(null) on new { b.edge_guid, b.srv_guid } equals new { c.edge_guid, c.srv_guid }
                                     join d in UnitWork.Find<edge_low>(null) on new { c.edge_guid, c.srv_guid, c.mid_guid } equals new { d.edge_guid, d.srv_guid, d.mid_guid }
                                     where departmentList.Contains(a.department)
-                                    && a.status==1 && b.status==1 && c.status==1 && d.status==1
-                                    select new { d.edge_guid, d.srv_guid, d.mid_guid, d.low_guid, b.bts_server_ip, c.dev_uid, d.unit_id, a.department, edge_status = a.status, host_status = b.status, mid_status = c.status, low_status = d.status,d.low_no }).ToListAsync();
+                                    && a.status == 1 && b.status == 1 && c.status == 1 && d.status == 1
+                                    select new { d.edge_guid, d.srv_guid, d.mid_guid, d.low_guid, b.bts_server_ip, c.dev_uid, d.unit_id, a.department, edge_status = a.status, host_status = b.status, mid_status = c.status, low_status = d.status, d.low_no }).ToListAsync();
             var lowGuidList = onlineList.Select(c => c.low_guid).ToList();
             var midGuidList = onlineList.Select(c => c.mid_guid).ToList();
-            var bindGuidList = await UnitWork.Find<DeviceBindMap>(null).Where(c => lowGuidList.Contains(c.Guid) || midGuidList.Contains(c.Guid)).Select(c => new { c.EdgeGuid, c.SrvGuid, c.Guid, c.GeneratorCode, c.LowGuid, c.BindType,c.UnitId}).ToListAsync();
+            var bindGuidList = await UnitWork.Find<DeviceBindMap>(null).Where(c => lowGuidList.Contains(c.Guid) || midGuidList.Contains(c.Guid)).Select(c => new { c.EdgeGuid, c.SrvGuid, c.Guid, c.GeneratorCode, c.LowGuid, c.BindType, c.UnitId }).ToListAsync();
             var hasTestLowList = await UnitWork.Find<DeviceTestLog>(null).Where(c => lowGuidList.Contains(c.LowGuid)).ToListAsync();
             var hasTestMidList = await UnitWork.Find<DeviceTestLog>(null).Where(c => midGuidList.Contains(c.MidGuid)).ToListAsync();
             var host_list = onlineList.Select(c => new { c.edge_guid, c.srv_guid, c.bts_server_ip }).Distinct().Skip((page - 1) * limit).Take(limit).ToList();
@@ -70,7 +71,7 @@ namespace OpenAuth.App
                 onlineDeviceResp.bts_server_ip = item.bts_server_ip;
                 onlineDeviceResp.status = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid).FirstOrDefault()?.host_status;
                 onlineDeviceResp.mid_Lists = new List<mid_list>();
-                var mid_lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid).OrderBy(c=>c.dev_uid).Select(c => new { c.mid_guid, c.dev_uid }).Distinct().ToList();
+                var mid_lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid).OrderBy(c => c.dev_uid).Select(c => new { c.mid_guid, c.dev_uid }).Distinct().ToList();
                 foreach (var mitem in mid_lists)
                 {
                     mid_list ml = new mid_list();
@@ -78,7 +79,7 @@ namespace OpenAuth.App
                     if (ml.has_bind)
                     {
                         string code = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
-                        ml.has_test = hasTestMidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.MidGuid == mitem.mid_guid && c.GeneratorCode== code).Any();
+                        ml.has_test = hasTestMidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.MidGuid == mitem.mid_guid && c.GeneratorCode == code).Any();
                     }
                     else
                     {
@@ -91,7 +92,7 @@ namespace OpenAuth.App
                     ml.status = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).FirstOrDefault()?.host_status.Value;
                     ml.GeneratorCode = bindGuidList.Where(c => c.Guid == mitem.mid_guid && c.BindType == 1).Select(c => c.GeneratorCode).Distinct().FirstOrDefault(); ;
                     ml.low_Lists = new List<low_list>();
-                    var low_Lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).OrderBy(c=>c.low_no).Select(c => new low_list { unit_id = c.unit_id.Value, status = c.low_status.Value, low_guid = c.low_guid,low_no=c.low_no }).Distinct().ToList();
+                    var low_Lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).OrderBy(c => c.low_no).Select(c => new low_list { unit_id = c.unit_id.Value, status = c.low_status.Value, low_guid = c.low_guid, low_no = c.low_no }).Distinct().ToList();
                     foreach (var litem in low_Lists)
                     {
                         low_list low_List = new low_list();
@@ -100,7 +101,7 @@ namespace OpenAuth.App
                         if (low_List.has_bind)
                         {
                             string code = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
-                            low_List.has_test = hasTestLowList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.MidGuid == mitem.mid_guid && c.LowGuid == litem.low_guid && c.GeneratorCode==code).Any();
+                            low_List.has_test = hasTestLowList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.MidGuid == mitem.mid_guid && c.LowGuid == litem.low_guid && c.GeneratorCode == code).Any();
                         }
                         else
                         {
@@ -111,7 +112,7 @@ namespace OpenAuth.App
                         low_List.status = litem.status;
                         low_List.unit_id = litem.unit_id;
                         low_List.low_no = litem.low_no;
-                        low_List.GeneratorCode = bindGuidList.Where(c => c.LowGuid == litem.low_guid).Select(c => c.GeneratorCode).FirstOrDefault();
+                        low_List.GeneratorCode = bindGuidList.Where(c => c.LowGuid == litem.low_guid && c.Guid== mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
                         ml.low_Lists.Add(low_List);
                     }
                     onlineDeviceResp.mid_Lists.Add(ml);
@@ -150,7 +151,7 @@ namespace OpenAuth.App
                                     join d in UnitWork.Find<edge_low>(null) on new { c.edge_guid, c.srv_guid, c.mid_guid } equals new { d.edge_guid, d.srv_guid, d.mid_guid }
                                     where departmentList.Contains(a.department)
                                     //&& a.status==1 && b.status==1 && c.status==1 && d.status==1 && e.status==1
-                                    select new { d.edge_guid, d.srv_guid, d.mid_guid, d.low_guid, b.bts_server_ip, c.dev_uid, d.unit_id, a.department, edge_status = a.status, host_status = b.status, mid_status = c.status, low_status = d.status,d.low_no }).ToListAsync();
+                                    select new { d.edge_guid, d.srv_guid, d.mid_guid, d.low_guid, b.bts_server_ip, c.dev_uid, d.unit_id, a.department, edge_status = a.status, host_status = b.status, mid_status = c.status, low_status = d.status, d.low_no }).ToListAsync();
             var lowGuidList = onlineList.Select(c => c.low_guid).ToList();
             var midGuidList = onlineList.Select(c => c.mid_guid).ToList();
             var bindGuidList = await UnitWork.Find<DeviceBindMap>(null).Where(c => lowGuidList.Contains(c.Guid) || midGuidList.Contains(c.Guid)).Select(c => new { c.EdgeGuid, c.SrvGuid, c.Guid, c.GeneratorCode, c.LowGuid, c.BindType }).ToListAsync();
@@ -167,7 +168,7 @@ namespace OpenAuth.App
                 onlineDeviceResp.bts_server_ip = item.bts_server_ip;
                 onlineDeviceResp.status = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid).FirstOrDefault()?.host_status;
                 onlineDeviceResp.mid_Lists = new List<mid_list>();
-                var mid_lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid).OrderBy(c=>c.dev_uid).Select(c => new { c.mid_guid, c.dev_uid }).Distinct().ToList();
+                var mid_lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid).OrderBy(c => c.dev_uid).Select(c => new { c.mid_guid, c.dev_uid }).Distinct().ToList();
                 foreach (var mitem in mid_lists)
                 {
                     var has_test = false;
@@ -175,7 +176,7 @@ namespace OpenAuth.App
                     if (has_bind)
                     {
                         string code = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
-                        has_test = hasTestMidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.MidGuid == mitem.mid_guid && c.GeneratorCode==code).Any();
+                        has_test = hasTestMidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.MidGuid == mitem.mid_guid && c.GeneratorCode == code).Any();
                     }
                     else
                     {
@@ -191,7 +192,7 @@ namespace OpenAuth.App
                         ml.status = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).FirstOrDefault()?.host_status.Value;
                         ml.GeneratorCode = bindGuidList.Where(c => c.Guid == mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
                         ml.low_Lists = new List<low_list>();
-                        var low_Lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).OrderBy(c=>c.low_no).Select(c => new low_list { unit_id = c.unit_id.Value, status = c.low_status.Value, low_guid = c.low_guid,low_no=c.low_no }).Distinct().ToList();
+                        var low_Lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).OrderBy(c => c.low_no).Select(c => new low_list { unit_id = c.unit_id.Value, status = c.low_status.Value, low_guid = c.low_guid, low_no = c.low_no }).Distinct().ToList();
                         foreach (var litem in low_Lists)
                         {
                             low_list low_List = new low_list();
@@ -199,7 +200,7 @@ namespace OpenAuth.App
                             if (low_List.has_bind)
                             {
                                 string code = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
-                                low_List.has_test = hasTestLowList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.MidGuid == mitem.mid_guid && c.LowGuid == litem.low_guid && c.GeneratorCode==code).Any();
+                                low_List.has_test = hasTestLowList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.MidGuid == mitem.mid_guid && c.LowGuid == litem.low_guid && c.GeneratorCode == code).Any();
                             }
                             else
                             {
@@ -211,7 +212,7 @@ namespace OpenAuth.App
                                 low_List.status = litem.status;
                                 low_List.unit_id = litem.unit_id;
                                 low_List.low_no = litem.low_no;
-                                low_List.GeneratorCode = bindGuidList.Where(c => c.LowGuid == litem.low_guid).Select(c => c.GeneratorCode).FirstOrDefault();
+                                low_List.GeneratorCode = bindGuidList.Where(c => c.LowGuid == litem.low_guid && c.Guid == mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
                                 low_List.low_guid = litem.low_guid;
                                 ml.low_Lists.Add(low_List);
                             }
@@ -245,17 +246,17 @@ namespace OpenAuth.App
             }
             var user = loginContext.User;
             var lowGuidList = model.low_Lists.Select(c => c.LowGuid).Distinct().ToList();
-            var bindMap = await UnitWork.Find<DeviceBindMap>(null).Where(c =>lowGuidList.Contains(c.LowGuid)).AnyAsync();
+            var bindMap = await UnitWork.Find<DeviceBindMap>(null).Where(c => lowGuidList.Contains(c.LowGuid)).AnyAsync();
             if (bindMap)
             {
                 throw new Exception("有设备已被绑定!");
             }
-            var BindType= await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode==model.GeneratorCode).Select(c=>c.BindType).FirstOrDefaultAsync();
-            if (BindType==2)
+            var BindType = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode == model.GeneratorCode).Select(c => c.BindType).FirstOrDefaultAsync();
+            if (BindType == 2)
             {
                 throw new Exception("有设备已被绑定!");
             }
-            if (BindType==1 && model.BindType==2)
+            if (BindType == 1 && model.BindType == 2)
             {
                 throw new Exception("当前生产码已有中位机绑定,无法单独绑定下位机!");
             }
@@ -395,9 +396,12 @@ namespace OpenAuth.App
         /// 未绑定设备列表
         /// </summary>
         /// <param name="GeneratorCode"></param>
+        /// <param name="key"></param>
+        /// <param name="page"></param>
+        /// <param name="limit"></param>
         /// <returns></returns>
         /// <exception cref="CommonException"></exception>
-        public async Task<TableData> NoBindDeviceList(string GeneratorCode)
+        public async Task<TableData> NoBindDeviceList(string GeneratorCode,string key, int page = 1, int limit = 10)
         {
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
@@ -407,17 +411,31 @@ namespace OpenAuth.App
             }
             var OrderNo = Convert.ToInt64(GeneratorCode.Split("-")[1]);
             int count = Convert.ToInt32(GeneratorCode.Split("-")[2]);
-            var list = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo && c.BindType==2).Select(c => c.GeneratorCode).Distinct().ToListAsync();
+            var list = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo && c.BindType == 2).Select(c => c.GeneratorCode).Distinct().ToListAsync();
             List<string> deviceList = new List<string>();
+            List<string> noBindDeviceList = new List<string>();
             for (var i = 1; i <= count; i++)
             {
                 string code = $"WO-{OrderNo}-{count}-{i}";
                 deviceList.Add(code);
             }
-            var noBindDeviceList = deviceList.Except(list);
-            result.Data = noBindDeviceList;
+            if (list.Any())
+            {
+                noBindDeviceList = deviceList.Except(list).ToList();
+            }
+            else
+            {
+                noBindDeviceList = deviceList;
+            }
+            if (!string.IsNullOrWhiteSpace(key))
+            {
+                noBindDeviceList = noBindDeviceList.Where(c => c.Contains(key)).ToList();
+            }
+            result.Data = noBindDeviceList.Skip((page - 1) * limit).Take(limit).ToList();
+            result.Count = noBindDeviceList.Count;
             return result;
         }
+
         /// <summary>
         /// 烤机扫码
         /// </summary>
@@ -433,22 +451,158 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+            if (!GeneratorCode.Split("-")[0].ToUpper().Equal("WO"))
+            {
+                throw new Exception($"{GeneratorCode}当前二维码非生产码,请重新扫码!");
+            }
             var OrderNo = Convert.ToInt32(GeneratorCode.Split("-")[1]);
             var query = await UnitWork.Find<product_owor>(null).Where(c => c.DocEntry == OrderNo).FirstOrDefaultAsync();
-            if (query==null)
+            if (query == null)
             {
                 throw new Exception($"{OrderNo}订单不存在!");
             }
-            var arry = query.ItemCode.Split('-');
-            string st = arry[0].Substring(0, 1).ToUpper();
-            if (!st.Equal("C"))
+            var arry = query.ItemCode.ToUpper().Split('-');
+            string StepVersionName = string.Empty;
+            string Voltage = string.Empty;
+            string Current = string.Empty;
+            string CurrentUnit =string.Empty;
+            string SeriesName = string.Empty;
+            if (arry[0].Contains("C") || arry[0].Contains("BE") || arry[0].Contains("BTE") || arry[0].Contains("BT"))
             {
-                throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作!");
+                foreach (var item in arry)
+                {
+                    if (item.ToUpper().Contains("V"))
+                    {
+                        if (item.ToUpper().Contains("MA"))
+                        {
+                            CurrentUnit = "MA";
+                            var length = Regex.Matches(item, @"[MV]");
+                            if (length.Count == 2)
+                            {
+                                StepVersionName = item;
+                                try
+                                {
+                                    int index1 = 0;
+                                    for (var i = 0; i < length.Count; i++)
+                                    {
+                                        int index = length[i].Index;
+                                        if (i == 0)
+                                        {
+                                            index1 = index;
+                                            if (length[i].Value.Equal("V"))
+                                            {
+                                                Voltage = StepVersionName.Substring(0, index1);
+                                            }
+                                            else
+                                            {
+                                                Current = StepVersionName.Substring(0, index1);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (length[i].Value.Equal("V"))
+                                            {
+                                                Voltage = StepVersionName.Substring(index1 + 1, index - (index1 + 1));
+                                            }
+                                            else
+                                            {
+                                                Current = StepVersionName.Substring(index1 + 1, index - (index1 + 1));
+                                            }
+                                        }
+                                    }
+                                    break;
+                                }
+                                catch (Exception ex)
+                                {
+                                    throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作,量程解析异常!");
+                                }
+                            }
+                        }
+                        else if (item.ToUpper().Contains("A"))
+                        {
+                            CurrentUnit = "A";
+                            var length = Regex.Matches(item, @"[AV]");
+                            if (length.Count == 2)
+                            {
+                                StepVersionName = item;
+                                try
+                                {
+                                    int index1 = 0;
+                                    for (var i = 0; i < length.Count; i++)
+                                    {
+                                        int index = length[i].Index;
+                                        if (i == 0)
+                                        {
+                                            index1 = index;
+                                            if (length[i].Value.Equal("V"))
+                                            {
+                                                Voltage = StepVersionName.Substring(0, index1);
+                                            }
+                                            else
+                                            {
+                                                Current = StepVersionName.Substring(0, index1);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (length[i].Value.Equal("V"))
+                                            {
+                                                Voltage = StepVersionName.Substring(index1 + 1, index - (index1 + 1));
+                                            }
+                                            else
+                                            {
+                                                Current = StepVersionName.Substring(index1 + 1, index - (index1 + 1));
+                                            }
+                                        }
+                                    }
+                                    break;
+                                }
+                                catch (Exception ex)
+                                {
+                                    throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作,量程解析异常!");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作,物料无法解析!");
+            }
+            if (string.IsNullOrWhiteSpace(StepVersionName))
+            {
+                throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作,量程缺失!");
+            }
+            if (query.ItemCode.Contains("CJ-Cali-"))
+            {
+                SeriesName = arry[2][0].ToString();
+            }
+            else
+            {
+                SeriesName = arry[1][0].ToString();
+            }
+            if (Regex.Matches(arry[1].ToString(), @"[AV]").Count==2)
+            {
+                throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作,系数解析异常!");
+            }
+            if (!int.TryParse(SeriesName, out int s))
+            {
+                throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作,系数解析异常!");
+            }
+            if (!int.TryParse(Voltage, out int v) || !int.TryParse(Current, out int a))
+            {
+                throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作,量程解析异常!");
             }
             result.Data = new
             {
                 query.ItemCode,
-                GeneratorCode
+                GeneratorCode,
+                SeriesName,
+                StepVersionName,
+                Voltage,
+                Current,
+                CurrentUnit
             };
             return result;
         }

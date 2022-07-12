@@ -134,7 +134,9 @@ namespace OpenAuth.App.Client
         /// <summary>
         /// 查询列表
         /// </summary>
-        public DataTable SelectClientList(int limit, int page, string query, string sortname, string sortorder, int sboid, int userId, bool rIsViewSales, bool rIsViewSelf, bool rIsViewSelfDepartment, bool rIsViewFull, int depID, string label, out int rowCount)
+        public DataTable SelectClientList(int limit, int page, string query, string sortname, string sortorder,
+            int sboid, int userId, bool rIsViewSales, bool rIsViewSelf, bool rIsViewSelfDepartment, bool rIsViewFull,
+            int depID, string label, string contectTel, string slpName, out int rowCount)
         {
             bool IsSaler = false, IsPurchase = false, IsTech = false, IsClerk = false;//业务员，采购员，技术员，文员
             string rSalCode = GetUserInfoById(sboid.ToString(), userId.ToString(), "1");
@@ -153,11 +155,37 @@ namespace OpenAuth.App.Client
                 IsTech = true;
             }
 
-
             bool IsOpenSap = _serviceSaleOrderApp.GetSapSboIsOpen(sboid.ToString());
             string sortString = string.Empty;
             StringBuilder filterString = new StringBuilder();
             filterString.Append(IsOpenSap ? " 1=1 " : string.Format(" sbo_id={0} ", sboid.ToString()));
+            //modify by yangis @2022.06.24
+            if(!string.IsNullOrWhiteSpace(slpName))
+            {
+                filterString.Append($" and slpname like '%{slpName}%' ");
+            }
+            if (!string.IsNullOrWhiteSpace(contectTel))
+            {
+                filterString.Append($" and phone1 like '%{contectTel}%' ");
+            }
+            //黑名单客户也不在客户列表上显示
+            var blacklist = UnitWork.Find<SpecialCustomer>(c => c.Type == 0).Select(c => c.CustomerNo).ToList();
+            if (blacklist.Count() > 0)
+            {
+                var selectCardCode = new StringBuilder("");
+                string codes = "''";
+                foreach (var item in blacklist)
+                {
+                    selectCardCode.Append($",'{item}'");
+                    if (!string.IsNullOrWhiteSpace(selectCardCode.ToString()))
+                    {
+                        codes = selectCardCode.ToString().Substring(1);
+                    }
+                }
+
+                filterString.Append($" and CardCode not in ({codes}) ");
+            }
+
             if (!rIsViewFull)
             {
                 #region 查看本部门
@@ -583,18 +611,30 @@ namespace OpenAuth.App.Client
                                  select s.sale_id).FirstOrDefaultAsync();
             }
 
+            //黑名单客户也不在客户列表上显示
+            var blacklist = UnitWork.Find<SpecialCustomer>(c => c.Type == 0).Select(c => c.CustomerNo).ToList();
+
             //总数
-            var query0 = await UnitWork.Find<OCRD>(null).WhereIf(slpCode != null, c => c.SlpCode == slpCode).CountAsync();
+            var query0 = await UnitWork.Find<OCRD>(null)
+                .WhereIf(slpCode != null, c => c.SlpCode == slpCode)
+                .WhereIf(blacklist.Count() > 0, c => !blacklist.Contains(c.CardCode))
+                .CountAsync();
+
             //未报价客户
-            var query1 = await (from c in UnitWork.Find<OCRD>(null).WhereIf(slpCode != null, c => c.SlpCode == slpCode)
+            var query1 = await (from c in UnitWork.Find<OCRD>(null)
+                                .WhereIf(slpCode != null, c => c.SlpCode == slpCode)
+                                .WhereIf(blacklist.Count() > 0, c => !blacklist.Contains(c.CardCode))
                                 join a in UnitWork.Find<OQUT>(null) on c.CardCode equals a.CardCode into temp
                                 from t in temp.DefaultIfEmpty()
                                 where t.CardCode == null
                                 select c.CardCode).CountAsync();
             //已成交客户
-            var query2 = await (from c in UnitWork.Find<OCRD>(null).WhereIf(slpCode != null, c => c.SlpCode == slpCode)
+            var query2 = await (from c in UnitWork.Find<OCRD>(null)
+                                .WhereIf(slpCode != null, c => c.SlpCode == slpCode)
+                                .WhereIf(blacklist.Count() > 0, c => !blacklist.Contains(c.CardCode))
                                 join d in UnitWork.Find<ODLN>(null) on c.CardCode equals d.CardCode
                                 select c.CardCode).Distinct().CountAsync();
+
             //公海领取(被领取后还没做过单的用户)
             //在历史归属表中存在但是公海中不存在的客户(说明已被领取)
             var cardCodes = (from h in UnitWork.Find<CustomerSalerHistory>(null)
@@ -603,13 +643,18 @@ namespace OpenAuth.App.Client
                              where t.CustomerNo == null
                              select h.CustomerNo).Distinct().ToList();
             //还没做过单的客户
-            var query3 = await (from c in UnitWork.Find<OCRD>(c => cardCodes.Contains(c.CardCode)).WhereIf(slpCode != null, c => c.SlpCode == slpCode)
+            var query3 = await (from c in UnitWork.Find<OCRD>(c => cardCodes.Contains(c.CardCode))
+                                .WhereIf(slpCode != null, c => c.SlpCode == slpCode)
+                                .WhereIf(blacklist.Count() > 0, c => !blacklist.Contains(c.CardCode))
                                 join a in UnitWork.Find<OQUT>(null) on c.CardCode equals a.CardCode into temp
                                 from t in temp.DefaultIfEmpty()
                                 where t.CardCode == null
                                 select c.CardCode).CountAsync();
             //即将掉入公海客户
-            var query4 = await UnitWork.Find<CustomerList>(c => c.LabelIndex == 4).WhereIf(slpCode != null, c => c.SlpCode == slpCode).CountAsync();
+            var query4 = await UnitWork.Find<CustomerList>(c => c.LabelIndex == 4)
+                .WhereIf(slpCode != null, c => c.SlpCode == slpCode)
+                .WhereIf(blacklist.Count() > 0, c => !blacklist.Contains(c.CustomerNo))
+                .CountAsync();
 
             result.Data = new GetCustomerCount() { Count0 = query0, Count1 = query1, Count2 = query2, Count3 = query3, Count4 = query4 };
 
@@ -2314,6 +2359,165 @@ namespace OpenAuth.App.Client
             tableData.Count = await query.CountAsync();
 
             return tableData;
+        }
+
+        /// <summary>
+        /// 业务员将客户主动移入公海
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> MoveInCustomerSea(MoveInCustomerSeaReq req)
+        {
+            var result = new Infrastructure.Response();
+
+            //判断是否是公海管理员
+            var isCustomerSeaAdmin = _auth.GetCurrentUser().Roles.Any(r => r.Name == "公海管理员");
+            //操作人名称
+            var userName = _auth.GetCurrentUser()?.User?.Name;
+
+            //根据客户代码查询所属销售员信息
+            var slpInfo = await (from c in UnitWork.Find<OCRD>(null)
+                                 join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
+                                 where c.CardCode == req.CardCode
+                                 select new
+                                 {
+                                     s.SlpCode,
+                                     s.SlpName,
+                                     c.CreateDate
+                                 }).FirstOrDefaultAsync();
+
+            //销售员所属部门
+            var dept = await (from u in UnitWork.Find<base_user>(null)
+                              join ud in UnitWork.Find<base_user_detail>(null) on u.user_id equals ud.user_id
+                              join d in UnitWork.Find<base_dep>(null) on ud.dep_id equals d.dep_id
+                              where u.user_nm == slpInfo.SlpName
+                              select d.dep_alias).FirstOrDefaultAsync();
+
+            //如果是非管理员,则判断该客户是否属于此销售员(防止销售员把其他销售员的客户移入,现实中不太可能,这里做一次校验)
+            if (!isCustomerSeaAdmin && slpInfo.SlpName != userName)
+            {
+                result.Code = 500;
+                result.Message = "此客户不属于此销售员";
+                return result;
+            }
+
+            //判断客户是否是从公海领取的客户
+            var isFromCustomerSea = await UnitWork.Find<CustomerSalerHistory>(c => c.CustomerNo == req.CardCode && c.SlpCode == slpInfo.SlpCode).FirstOrDefaultAsync();
+            if (isFromCustomerSea != null)
+            {
+                var customerSeaConfig = await UnitWork.Find<CustomerSeaConf>(null).FirstOrDefaultAsync();
+                //如果是则判断是否符合领取后多少天才能重新放入的规则
+                if (customerSeaConfig.AutomaticEnable)
+                {
+                    var startDate = isFromCustomerSea.CreateTime;
+                    var diff = (DateTime.Now - startDate).Value.TotalDays;
+                    if (diff <= customerSeaConfig.BackDay)
+                    {
+                        result.Code = 500;
+                        result.Message = $"从公海领取的客户,{customerSeaConfig.AutomaticDayLimit}天内不能放回公海";
+                        return result;
+                    }
+                }
+            }
+            //如果是这个原因,则加入黑名单
+            if (req.Remark == "公司已注销")
+            {
+                using var tran = UnitWork.GetDbContext<CustomerList>().Database.BeginTransaction();
+                try
+                {
+                    await UnitWork.AddAsync<SpecialCustomer, int>(new SpecialCustomer
+                    {
+                        CustomerNo = req.CardCode,
+                        CustomerName = req.CardName,
+                        SalerId = slpInfo.SlpCode.ToString(),
+                        SalerName = slpInfo.SlpName,
+                        DepartmentId = dept,
+                        DepartmentName = dept,
+                        Type = 0,
+                        CreateUser = userName,
+                        CreateDatetime = DateTime.Now,
+                        UpdateUser = userName,
+                        UpdateDatetime = DateTime.Now,
+                        Remark = req.Remark
+                    });
+                    //await UnitWork.AddAsync<CustomerMoveHistory, int>(new CustomerMoveHistory
+                    //{
+                    //    CardCode = req.CardCode,
+                    //    CardName = req.CardName,
+                    //    SlpName = slpInfo.SlpName,
+                    //    MoveInType = "主动移入",
+                    //    Remark = req.Remark,
+                    //    CreateTime = DateTime.Now,
+                    //    CreateUser = userName,
+                    //    UpdateTime = DateTime.Now,
+                    //    UpdateUser = userName
+                    //});
+                    await UnitWork.SaveAsync();
+                    await tran.CommitAsync();
+                }
+                catch(Exception ex)
+                {
+                    result.Code = 500;
+                    result.Message = ex.Message ?? ex.InnerException?.Message ?? "";
+                    await tran.RollbackAsync();
+                }
+            }
+            //其他原因则加入公海
+            else
+            {
+                var customerLists = new List<CustomerList>();
+                customerLists.Add(new CustomerList
+                {
+                    DepartMent = dept,
+                    CustomerNo = req.CardCode,
+                    CustomerName = req.CardName,
+                    CustomerSource = "",
+                    CustomerCreateDate = slpInfo.CreateDate,
+                    SlpCode = slpInfo.SlpCode,
+                    SlpName = slpInfo.SlpName,
+                    Label = "已经掉入公海",
+                    LabelIndex = 3,
+                    CreateUser = userName,
+                    CreateDateTime = DateTime.Now,
+                    UpdateUser = userName,
+                    UpdateDateTime = DateTime.Now,
+                    IsDelete = false
+                });
+
+                using var tran = UnitWork.GetDbContext<CustomerList>().Database.BeginTransaction();
+                try
+                {
+                    await UnitWork.BatchAddAsync<CustomerList, int>(customerLists.ToArray());
+                    await UnitWork.UpdateAsync<OCRD>(c => customerLists.Select(x => x.CustomerNo).Contains(c.CardCode), x => new OCRD
+                    {
+                        SlpCode = null
+                    });
+                    await UnitWork.AddAsync<CustomerMoveHistory, int>(new CustomerMoveHistory
+                    {
+                        CardCode = req.CardCode,
+                        CardName = req.CardName,
+                        SlpCode = slpInfo.SlpCode,
+                        SlpName = slpInfo.SlpName,
+                        MoveInType = "主动移入",
+                        Remark = req.Remark,
+                        CreateTime = DateTime.Now,
+                        CreateUser = userName,
+                        UpdateTime = DateTime.Now,
+                        UpdateUser = userName
+                    });
+                    await UnitWork.SaveAsync();
+                    await tran.CommitAsync();
+                }
+                catch (Exception ex)
+                {
+                    result.Code = 500;
+                    result.Message = ex.Message ?? ex.InnerException?.Message ?? "";
+                    await tran.RollbackAsync();
+                }
+            }
+
+
+            return result;
         }
     }
 }

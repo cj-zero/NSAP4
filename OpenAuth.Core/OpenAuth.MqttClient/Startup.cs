@@ -11,6 +11,7 @@ using OpenAuth.App.Interface;
 using OpenAuth.Repository.Extensions;
 using Serilog;
 using System;
+using System.Linq;
 
 namespace OpenAuth.MqttClient
 {
@@ -71,8 +72,30 @@ namespace OpenAuth.MqttClient
         /// <param name="e"></param>
         public void MessageReceived(object sender, MqttApplicationMessageReceivedEventArgs e)
         {
+            string topics = e.ApplicationMessage.Topic.Split('/').FirstOrDefault();
             var subscribe = ServiceLocator.serviceProvider?.GetService<IMqttSubscribe>();
-            subscribe?.SubscribeAsyncResult(e.ApplicationMessage.Topic, e.ApplicationMessage.Payload);
+            if (topics.Equals("edge_msg"))
+            {
+                try
+                {
+                    subscribe?.SubscribeEdgeMsg(e.ApplicationMessage.Payload);
+                }
+                catch (Exception ex)
+                {
+                    Log.Logger.Error($"SubscribeEdgeMsg  {ex.Message}");
+                }
+            }
+            else if (topics.Equals("rt_data"))
+            {
+                try
+                {
+                    subscribe?.SubscribeRtData(e.ApplicationMessage.Payload);
+                }
+                catch(Exception ex)
+                {
+                    Log.Logger.Error($"SubscribeRtData  {ex.Message}");
+                }
+            }
         }
     }
 }
