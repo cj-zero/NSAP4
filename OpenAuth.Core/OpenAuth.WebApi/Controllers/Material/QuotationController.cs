@@ -831,5 +831,247 @@ namespace OpenAuth.WebApi.Controllers.Material
         {
             return await _app.HistorySaleOrde(request);
         }
+
+        [HttpGet]
+        public async Task GenerateCommissionSettlement()
+        {
+            await _app.GenerateCommissionSettlement();
+        }
+
+        /// <summary>
+        /// 我的提成
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> CommissionOrderList([FromQuery] QueryCommissionOrderReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.CommissionOrderList(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 待/已处理结算
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> CommissionReportList([FromQuery] QueryCommissionOrderReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.CommissionReportList(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 可提交的提成单
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetAvailableCommissionOrder([FromQuery] QueryCommissionOrderReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetAvailableCommissionOrder(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 新建报表
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> AddReport(AddReportReq req)
+        {
+            var result = new Response();
+            try
+            {
+                return await _app.AddReport(req);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 审核提成单
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> AccraditationCommissionOrder(AccraditationQuotationReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.AccraditationCommissionOrder(req);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+        /// <summary>
+        /// 批量结算
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> BatchAccraditation(BatchAccraditationReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.BatchAccraditation(req);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 撤回报表
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> RecallReport(AccraditationQuotationReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _app.RecallReport(req);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        [HttpGet]
+        public async Task<TableData> DropDownOptions()
+        {
+            return await _app.DropDownOptions();
+        }
+
+        /// <summary>
+        /// 审批详情
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetApproveDetail(int id)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetApproveDetail(id);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{id}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 查看附件
+        /// </summary>
+        /// <param name="saleOrderId"></param>
+        /// <param name="type">1.销售合同 2.发票</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> ViewAttachment(int saleOrderId, int type)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.ViewAttachment(saleOrderId, type);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{saleOrderId}，{type}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 提成单详情 app用
+        /// </summary>
+        /// <param name="saleOrderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> CommissionOrderDetail([FromQuery] QueryCommissionOrderReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.CommissionOrderDetail(req);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.SalesOrderId}, 错误：{result.Message}");
+            }
+            return result;
+        }
     }
 }

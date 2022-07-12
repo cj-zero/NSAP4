@@ -94,6 +94,9 @@ namespace OpenAuth.Repository.Domain
         [Description("成本价")]
         public decimal? UnitPrice { get; set; }
 
-
+        /// <summary>
+        /// 预估提成
+        /// </summary>
+        public decimal? Commission { get; set; }
     }
 }
