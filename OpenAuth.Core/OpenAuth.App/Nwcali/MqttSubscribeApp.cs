@@ -48,12 +48,8 @@ namespace OpenAuth.App.Nwcali
         /// <returns></returns>
         public bool SubscribeEdgeMsg(byte[] payload)
         {
-            Stopwatch st1 = new Stopwatch();
-            st1.Start();
             var payloads = Encoding.UTF8.GetString(payload);
             var obj = JsonConvert.DeserializeObject<EdgeData>(payloads);
-            st1.Stop();
-            Log.Logger.Information($"边缘计算{obj.edge_guid} upd_dt={obj.upd_dt}反序列化耗时:{st1.ElapsedMilliseconds}ms");
             int msg_type = obj == null ? 0: obj.msg_type;
             string edge_guids = obj == null ? "":obj.edge_guid;
             long upd_dt = obj.upd_dt;

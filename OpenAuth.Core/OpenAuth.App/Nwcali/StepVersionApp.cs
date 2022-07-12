@@ -956,6 +956,7 @@ namespace OpenAuth.App
                         lowModel.low_version = item.low_version;
                         lowModel.status = 1;
                         lowModel.CreateTime = dt;
+                        lowModel.dev_uid = item.dev_uid;
                         lowList.Add(lowModel);
                     }
                 }
