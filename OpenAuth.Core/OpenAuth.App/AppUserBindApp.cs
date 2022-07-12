@@ -128,10 +128,11 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="ids"></param>
         /// <param name="key"></param>
+        /// <param name="honor_id"></param>
         /// <param name="page_index"></param>
         /// <param name="page_size"></param>
         /// <returns></returns>
-        public async Task<TableData> AppUserList(string ids,string key, int? page_index, int? page_size)
+        public async Task<TableData> AppUserList(string ids,string key,int honor_id, int? page_index, int? page_size)
         {
             var result = new TableData();
             List<string> user_ids = new List<string>();
@@ -143,8 +144,9 @@ namespace OpenAuth.App
                                   join b in UnitWork.Find<User>(null) on a.UserID equals b.Id
                                   where b.Status==0
                                   select new { user_id = a.AppUserId, real_name=b.Name })
-                                  .WhereIf(user_ids.Count>0, c=> user_ids.Contains(c.user_id.ToString()))
-                                  .WhereIf(!string.IsNullOrWhiteSpace(key),c=>c.real_name.Contains(key)).ToListAsync();
+                                  .WhereIf(honor_id> 0, c=> user_ids.Contains(c.user_id.ToString()))
+                                  .WhereIf(!string.IsNullOrWhiteSpace(key),c=>c.real_name.Contains(key))
+                                  .ToListAsync();
             result.Count = query.Count;
             if (page_index != null && page_size != null && page_index > 0 && page_size > 0)
             {

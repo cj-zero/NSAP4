@@ -100,16 +100,17 @@ namespace NSAP.App.WebApi.Controllers
         /// </summary>
         /// <param name="ids"></param>
         /// <param name="key"></param>
+        /// <param name="honor_id"></param>
         /// <param name="page_index"></param>
         /// <param name="page_size"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> AppUserList(string ids = "", string key = "", int page_index = 1, int page_size = 10)
+        public async Task<TableData> AppUserList(string ids = "", string key = "", int honor_id=0, int page_index = 1, int page_size = 10)
         {
             var result = new TableData();
             try
             {
-                result = await _app.AppUserList(ids, key, page_index, page_size);
+                result = await _app.AppUserList(ids, key, honor_id, page_index, page_size);
             }
             catch (Exception ex)
             {
