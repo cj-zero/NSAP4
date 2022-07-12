@@ -230,7 +230,7 @@ namespace OpenAuth.App
             var channelList = await UnitWork.Find<edge_channel>(null).Where(c => allBindLowList.Contains(c.low_guid)).ToListAsync();
             foreach (var item in allBindList)
             {
-                var _lowList = allOnlineLowList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.dev_uid == item.DevUid && c.unit_id == item.UnitId).FirstOrDefault();
+                var _lowList = allOnlineLowList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.dev_uid == item.DevUid && c.unit_id == item.UnitId && c.low_guid==item.LowGuid).FirstOrDefault();
                 if (_lowList==null)
                 {
                     offLineLowGuid += $"{item.DevUid}-{item.UnitId},";
@@ -356,8 +356,7 @@ namespace OpenAuth.App
             int scale = 10;
             foreach (var item in allBindList)
             {
-                var _lowList = allOnlineLowList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.dev_uid == item.DevUid && c.unit_id == item.UnitId).FirstOrDefault();
-
+                var _lowList = allOnlineLowList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.dev_uid == item.DevUid && c.unit_id == item.UnitId && c.low_guid == item.LowGuid).FirstOrDefault();
                 if (_lowList==null)
                 {
                     offLineLowGuid += $"{item.DevUid}-{item.UnitId};";
