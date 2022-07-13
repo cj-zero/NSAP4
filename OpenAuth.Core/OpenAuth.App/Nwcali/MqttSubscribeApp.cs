@@ -179,8 +179,7 @@ namespace OpenAuth.App.Nwcali
                                                 low.low_no = lItem.low_no;
                                                 low.unit_id = lItem.unit_id;
                                                 low.range_volt = lItem.range_volt.ToString();
-                                                var low_range_curr = lItem.range_curr_array.Select(x => Math.Abs(x)).Distinct().ToList();
-                                                low.range_curr_array = string.Join(",", low_range_curr);
+                                                low.range_curr_array = string.Join(",", lItem.range_curr_array);
                                                 low.low_version = lItem.low_version;
                                                 low.status = 1;
                                                 low.CreateTime = DateTime.Now;

@@ -262,7 +262,7 @@ namespace OpenAuth.App
             }
             var department = loginContext.Orgs.OrderByDescending(c => c.CascadeId).Select(c => c.Name).FirstOrDefault();
             var lowGuids = model.low_Lists.Select(c => c.LowGuid).Distinct();
-            var lowList = await UnitWork.Find<edge_low>(null).Where(c => lowGuids.Contains(c.low_guid)).Select(c => new { c.low_guid, c.range_curr_array }).ToListAsync();
+            var lowList = await UnitWork.Find<edge_low>(null).Where(c => lowGuids.Contains(c.low_guid)).Select(c => new { c.low_guid, c.range_curr_array,c.dev_uid,c.edge_guid,c.srv_guid }).ToListAsync();
             List<DeviceBindMap> list = new List<DeviceBindMap>();
             List<DeviceBindLog> logList = new List<DeviceBindLog>();
             foreach (var item in model.low_Lists)
@@ -282,7 +282,7 @@ namespace OpenAuth.App
                 deviceBind.BindType = model.BindType;
                 deviceBind.Department = department;
                 deviceBind.OrderNo = Convert.ToInt64(model.GeneratorCode.Split('-')[1]);
-                deviceBind.RangeCurrArray = lowList.Where(c => c.low_guid == item.LowGuid).Select(c => c.range_curr_array).FirstOrDefault();
+                deviceBind.RangeCurrArray = lowList.Where(c =>c.edge_guid==model.EdgeGuid && c.srv_guid==model.SrvGuid && c.dev_uid == model.DevUid && c.low_guid == item.LowGuid).Select(c => c.range_curr_array).FirstOrDefault();
                 list.Add(deviceBind);
                 DeviceBindLog deviceBindLog = new DeviceBindLog();
                 deviceBindLog.GeneratorCode = model.GeneratorCode.ToUpper();

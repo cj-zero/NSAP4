@@ -55,7 +55,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(request.SeriesName), c => c.SeriesName.Contains(request.SeriesName))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.StepVersionName), c => c.StepVersionName.Contains(request.StepVersionName.ToUpper()))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.StepName), c => c.StepName.Contains(request.StepName))
-                .WhereIf(request.Current != 0,c=>c.Current== request.Current);
+                .WhereIf(request.Current != 0, c => c.Current == request.Current);
             result.Data = await objs.OrderByDescending(u => u.Id)
               .Skip((request.page - 1) * request.limit)
               .Take(request.limit).ToListAsync();
@@ -107,7 +107,7 @@ namespace OpenAuth.App
         {
             var user = _auth.GetCurrentUser().User;
             string str = string.Empty;
-            if (obj.Voltage!=0)
+            if (obj.Voltage != 0)
             {
                 str = $"{obj.Voltage}V";
             }
@@ -157,7 +157,7 @@ namespace OpenAuth.App
         /// <param name="Voltage"></param>
         /// <returns></returns>
         /// <exception cref="CommonException"></exception>
-        public async Task<TableData> DingTalkStepList(string SeriesName, decimal Current,decimal Voltage)
+        public async Task<TableData> DingTalkStepList(string SeriesName, decimal Current, decimal Voltage)
         {
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
@@ -167,8 +167,8 @@ namespace OpenAuth.App
             }
             result.Data = await UnitWork.Find<StepVersion>(null)
                 .Where(c => c.SeriesName == SeriesName && c.Status == true)
-                .WhereIf(SeriesName=="6" || SeriesName=="7",c=>c.Voltage==Voltage || c.Current==Current)
-                .WhereIf(SeriesName != "6" && SeriesName != "7",c=>c.Current==Current)
+                .WhereIf(SeriesName == "6" || SeriesName == "7", c => c.Voltage == Voltage || c.Current == Current)
+                .WhereIf(SeriesName != "6" && SeriesName != "7", c => c.Current == Current)
                 .OrderByDescending(c => c.Sorts).Select(c => new { c.Id, c.FileName, c.FilePath, c.Remark, c.FilePath2, c.FileName2, c.Remark2, c.FirstStart }).ToListAsync();
             return result;
         }
@@ -190,19 +190,19 @@ namespace OpenAuth.App
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var department= loginContext.Orgs.Select(c => c.Name).FirstOrDefault();
+            var department = loginContext.Orgs.Select(c => c.Name).FirstOrDefault();
             string offLineLowGuid = "";
             List<DeviceTestResponse> list = new List<DeviceTestResponse>();
-            var allBindList = await UnitWork.Find<DeviceBindMap>(null).Where(c => department==c.Department && c.GeneratorCode==model.GeneratorCode).ToListAsync();
+            var allBindList = await UnitWork.Find<DeviceBindMap>(null).Where(c => department == c.Department && c.GeneratorCode == model.GeneratorCode).ToListAsync();
             if (!allBindList.Any())
             {
                 throw new Exception($"生产码{model.GeneratorCode}暂未绑定任何设备!");
             }
             var allBindLowList = allBindList.Select(c => c.LowGuid).ToList();
-            var lowguidList = allBindLowList.GroupBy(c => c).Select(c => new { guid = c.Key, counts = c.Count() }).Where(c=>c.counts>1).Select(c=>c.guid).ToList();
+            var lowguidList = allBindLowList.GroupBy(c => c).Select(c => new { guid = c.Key, counts = c.Count() }).Where(c => c.counts > 1).Select(c => c.guid).ToList();
             if (lowguidList.Any())
             {
-                var same_lowguid=allBindList.Where(c => lowguidList.Contains(c.LowGuid)).Select(c => c.DevUid).Distinct().ToList();
+                var same_lowguid = allBindList.Where(c => lowguidList.Contains(c.LowGuid)).Select(c => c.DevUid).Distinct().ToList();
                 var DevUids = string.Join(';', same_lowguid.Select(c => c).ToList());
                 result.Code = 500;
                 result.Message = $"以下中位机【{DevUids}】的下位机guid重复出现,启动失败!";
@@ -210,7 +210,7 @@ namespace OpenAuth.App
             }
             var hasTestLow = await UnitWork.Find<DeviceTestLog>(null)
                             .Where(c => c.GeneratorCode == model.GeneratorCode && allBindLowList.Contains(c.LowGuid))
-                            .Select(c =>c.LowGuid).ToListAsync();
+                            .Select(c => c.LowGuid).ToListAsync();
             if (hasTestLow.Any())
             {
                 throw new Exception($"生产码{model.GeneratorCode}已存在测试记录,请进入重启界面启动!");
@@ -219,8 +219,8 @@ namespace OpenAuth.App
                                           join b in UnitWork.Find<edge_host>(null) on a.edge_guid equals b.edge_guid
                                           join d in UnitWork.Find<edge_mid>(null) on new { b.edge_guid, b.srv_guid } equals new { d.edge_guid, d.srv_guid }
                                           join c in UnitWork.Find<edge_low>(null) on new { d.edge_guid, d.srv_guid, d.mid_guid } equals new { c.edge_guid, c.srv_guid, c.mid_guid }
-                                          where department==a.department && a.status == 1 && b.status == 1 && c.status == 1 && d.status == 1
-                                          select new { c.low_guid, c.range_curr_array,c.edge_guid,c.srv_guid,c.dev_uid,c.unit_id }).ToListAsync();
+                                          where department == a.department && a.status == 1 && b.status == 1 && c.status == 1 && d.status == 1
+                                          select new { c.low_guid, c.range_curr_array, c.edge_guid, c.srv_guid, c.dev_uid, c.unit_id }).ToListAsync();
             var allOnlineLowListGuid = allOnlineLowList.Select(c => c.low_guid).Distinct().ToList();
             var testList = allBindLowList.Where(c => allOnlineLowListGuid.Contains(c)).Distinct().ToList();
             if (!testList.Any())
@@ -230,8 +230,8 @@ namespace OpenAuth.App
             var channelList = await UnitWork.Find<edge_channel>(null).Where(c => allBindLowList.Contains(c.low_guid)).ToListAsync();
             foreach (var item in allBindList)
             {
-                var _lowList = allOnlineLowList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.dev_uid == item.DevUid && c.unit_id == item.UnitId && c.low_guid==item.LowGuid).FirstOrDefault();
-                if (_lowList==null)
+                var _lowList = allOnlineLowList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.dev_uid == item.DevUid && c.unit_id == item.UnitId && c.low_guid == item.LowGuid).FirstOrDefault();
+                if (_lowList == null)
                 {
                     offLineLowGuid += $"{item.DevUid}-{item.UnitId},";
                     continue;
@@ -261,13 +261,13 @@ namespace OpenAuth.App
                 arg.creator = loginContext.User.Name;
                 arg.step_file_name = "";
                 arg.start_step = 1;
-                arg.scale = 10;
-                if (maxRange < 10)
-                    arg.scale = 10000;
-                else if (maxRange < 100)
-                    arg.scale = 1000;
-                else if (maxRange < 1000)
-                    arg.scale = 100;
+                arg.scale = GetCurFactor(maxRange);
+                //if (maxRange < 10)
+                //    arg.scale = 10000;
+                //else if (maxRange < 100)
+                //    arg.scale = 1000;
+                //else if (maxRange < 1000)
+                //    arg.scale = 100;
                 arg.battery_mass = 0;
                 arg.desc = "";
                 arg.step_data = step_data;
@@ -324,7 +324,7 @@ namespace OpenAuth.App
                 throw new Exception($"生产码{model.GeneratorCode}暂未绑定任何设备!");
             }
             var allBindLowList = allBindList.Select(c => c.LowGuid).ToList();
-            var lowguidList = allBindLowList.GroupBy(c => c).Select(c => new { guid = c.Key, counts = c.Count() }).Where(c => c.counts > 1).Select(c=>c.guid).ToList();
+            var lowguidList = allBindLowList.GroupBy(c => c).Select(c => new { guid = c.Key, counts = c.Count() }).Where(c => c.counts > 1).Select(c => c.guid).ToList();
             if (lowguidList.Any())
             {
                 var same_lowguid = allBindList.Where(c => lowguidList.Contains(c.LowGuid)).Select(c => c.DevUid).Distinct().ToList();
@@ -353,22 +353,23 @@ namespace OpenAuth.App
                 throw new Exception($"生产码{model.GeneratorCode}暂无可启动已绑定的在线设备!");
             }
             var channelList = await UnitWork.Find<edge_channel>(null).Where(c => allBindLowList.Contains(c.low_guid)).ToListAsync();
-            int scale = 10;
+            double scale = 10;
             foreach (var item in allBindList)
             {
                 var _lowList = allOnlineLowList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.dev_uid == item.DevUid && c.unit_id == item.UnitId && c.low_guid == item.LowGuid).FirstOrDefault();
-                if (_lowList==null)
+                if (_lowList == null)
                 {
                     offLineLowGuid += $"{item.DevUid}-{item.UnitId};";
                     continue;
                 }
                 int maxRange = Convert.ToInt32(item.RangeCurrArray.Split(',').Max());
-                if (maxRange < 10)
-                    scale = 10000;
-                else if (maxRange < 100)
-                    scale = 1000;
-                else if (maxRange < 1000)
-                    scale = 100;
+                scale = GetCurFactor(maxRange);
+                //if (maxRange < 10)
+                //    scale = 10000;
+                //else if (maxRange < 100)
+                //    scale = 1000;
+                //else if (maxRange < 1000)
+                //    scale = 100;
                 var chlList = channelList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.mid_guid == item.Guid && c.low_guid == item.LowGuid).OrderBy(c => c.bts_id).ToList();
                 if (chlList.Count == 1)
                 {
@@ -500,7 +501,7 @@ namespace OpenAuth.App
                     var channelLimit = chlList.Count / 2;
                     foreach (var row in chlList)
                     {
-                        if (row.bts_id<= channelLimit)
+                        if (row.bts_id <= channelLimit)
                         {
                             chl chl = new chl();
                             chl.chl_id = row.bts_id;
@@ -641,8 +642,8 @@ namespace OpenAuth.App
                 }
                 total = deviceList.Count;
                 var itemList = deviceList.Skip((page - 1) * limit).Take(limit).ToList();
-                var hasTestList = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.Department == department && deviceList.Contains(c.GeneratorCode) && c.TestId!=0).GroupBy(c => new { c.EdgeGuid, c.SrvGuid, c.DevUid, c.UnitId, c.ChlId })
-                    .Select(c => new { c.Key.EdgeGuid, c.Key.SrvGuid, c.Key.DevUid, c.Key.UnitId, c.Key.ChlId,Id=c.Max(c=>c.Id) }).Select(c=>c.Id)
+                var hasTestList = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.Department == department && deviceList.Contains(c.GeneratorCode) && c.TestId != 0).GroupBy(c => new { c.EdgeGuid, c.SrvGuid, c.DevUid, c.UnitId, c.ChlId })
+                    .Select(c => new { c.Key.EdgeGuid, c.Key.SrvGuid, c.Key.DevUid, c.Key.UnitId, c.Key.ChlId, Id = c.Max(c => c.Id) }).Select(c => c.Id)
                     .ToListAsync();//当前订单最新测试数据对应的id
                 var hasBindList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo).Select(c => c.GeneratorCode).Distinct().ToListAsync();
                 var lastTestList = await UnitWork.Find<DeviceTestLog>(null).Where(c => hasTestList.Contains(c.Id)).ToListAsync();
@@ -676,7 +677,7 @@ namespace OpenAuth.App
                             int currentStepCount = statusList.Sum(c => c.StepId);
                             progress = Math.Round(currentStepCount / (decimal)totalStep * 100);
                         }
-                        else if (statusList.Any(c=>c.Status==-3))
+                        else if (statusList.Any(c => c.Status == -3))
                         {
                             var dockStatus = new List<int> { -1, -3 };
                             var flage = statusList.Select(c => c.Status).Distinct().Except(dockStatus).ToList().Any();
@@ -695,8 +696,8 @@ namespace OpenAuth.App
                         }
                         else
                         {
-                            var dockStatus= new List<int> { -1, -2 };
-                            var flage=statusList.Select(c => c.Status).Distinct().Except(dockStatus).ToList().Any();
+                            var dockStatus = new List<int> { -1, -2 };
+                            var flage = statusList.Select(c => c.Status).Distinct().Except(dockStatus).ToList().Any();
                             if (!flage)
                             {
                                 status = -2;
@@ -884,7 +885,7 @@ namespace OpenAuth.App
                 return result;
             }
             var department = loginContext.Orgs.OrderByDescending(c => c.CascadeId).Select(c => c.Name).FirstOrDefault();
-            result.Data = await UnitWork.Find<edge>(null).Where(c => c.department==department).Select(c=>c.edge_guid).ToListAsync();
+            result.Data = await UnitWork.Find<edge>(null).Where(c => c.department == department).Select(c => c.edge_guid).ToListAsync();
             return result;
         }
 
@@ -1009,7 +1010,7 @@ namespace OpenAuth.App
                 catch (Exception ex)
                 {
                     transaction.Rollback();
-                    Log.Logger.Error($"设备数据手动更新异常：edge_guid={EdgeGuid}", ex);
+                    Log.Logger.Error($"设备数据手动更新异常：edge_guid={EdgeGuid},ex={ex.Message}");
                 }
             }
             if (!flag)
@@ -1060,14 +1061,14 @@ namespace OpenAuth.App
                 result.Count = totalCount;
                 return result;
             }
-            var hasTestLowList = await UnitWork.Find<DeviceTestLog>(null).Where(c =>c.GeneratorCode== GeneratorCode).AnyAsync();
+            var hasTestLowList = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.GeneratorCode == GeneratorCode).AnyAsync();
             if (!hasTestLowList)
             {
                 result.Data = list;
                 result.Count = totalCount;
                 return result;
             }
-            var onlineBindList =allBindList.Where(c => onlineLowGuidList.Contains(c.LowGuid)).ToList();
+            var onlineBindList = allBindList.Where(c => onlineLowGuidList.Contains(c.LowGuid)).ToList();
             if (!onlineBindList.Any())
             {
                 result.Data = list;
@@ -1185,13 +1186,7 @@ namespace OpenAuth.App
                 arg.creator = loginContext.User.Name;
                 arg.step_file_name = "";
                 arg.start_step = 1;
-                arg.scale = 10;
-                if (maxRange < 10)
-                    arg.scale = 10000;
-                else if (maxRange < 100)
-                    arg.scale = 1000;
-                else if (maxRange < 1000)
-                    arg.scale = 100;
+                arg.scale = GetCurFactor(maxRange);
                 arg.battery_mass = 0;
                 arg.desc = "";
                 arg.step_data = step_data;
@@ -1219,13 +1214,14 @@ namespace OpenAuth.App
         /// 重启对接烤机
         /// </summary>
         /// <param name="restartlist"></param>
+        /// <param name="FirstStart"></param>
         /// <param name="stepCount"></param>
         /// <param name="step_data"></param>
         /// <param name="stepCount2"></param>
         /// <param name="step_data2"></param>
         /// <returns></returns>
         /// <exception cref="CommonException"></exception>
-        public async Task<TableData<List<DeviceTestResponse>>> RestartDockChannelControl(List<StopTest> restartlist,int FirstStart, int stepCount, string step_data, int stepCount2, string step_data2)
+        public async Task<TableData<List<DeviceTestResponse>>> RestartDockChannelControl(List<StopTest> restartlist, int FirstStart, int stepCount, string step_data, int stepCount2, string step_data2)
         {
             var result = new TableData<List<DeviceTestResponse>>();
             var loginContext = _auth.GetCurrentUser();
@@ -1237,17 +1233,12 @@ namespace OpenAuth.App
             List<DeviceTestResponse> list = new List<DeviceTestResponse>();
             var canTestLowGuid = restartlist.Select(c => c.LowGuid).ToList();
             var channelList = await UnitWork.Find<edge_channel>(null).Where(c => canTestLowGuid.Contains(c.low_guid)).ToListAsync();
-            int scale = 10;
+            double scale = 10;
             foreach (var item in restartlist)
             {
                 var lowInfo = await UnitWork.Find<edge_low>(null).Where(c => c.low_guid == item.LowGuid).FirstOrDefaultAsync();
                 int maxRange = Convert.ToInt32(lowInfo.range_curr_array.Split(',').Max());
-                if (maxRange < 10)
-                    scale = 10000;
-                else if (maxRange < 100)
-                    scale = 1000;
-                else if (maxRange < 1000)
-                    scale = 100;
+                scale = GetCurFactor(maxRange);
                 var chlList = channelList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.mid_guid == item.MidGuid && c.low_guid == item.LowGuid).OrderBy(c => c.bts_id).ToList();
                 if (chlList.Count == 1)
                 {
@@ -1409,6 +1400,93 @@ namespace OpenAuth.App
             }
             result.Data = list;
             return result;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rng_cur"></param>
+        /// <returns></returns>
+        public double GetCurFactor(int rng_cur)
+        {
+            //电流量程范围mA
+            long CUR_SCALE_10 = 10;
+            long CUR_SCALE_100 = 100;
+            long CUR_SCALE_1000 = 1000;
+
+            //	电流单位
+            double CUR_SCALE_FACTOR_10 = 10000.0;
+            double CUR_SCALE_FACTOR_100 = 1000.0;
+            double CUR_SCALE_FACTOR_1000 = 100.0;
+            double CUR_SCALE_FACTOR_MAX = 10.0;
+            double factor = CUR_SCALE_FACTOR_MAX;
+            if (rng_cur >= 0)
+            {
+                if (rng_cur < CUR_SCALE_10)
+                {
+                    factor = CUR_SCALE_FACTOR_10;
+                }
+                else if (rng_cur < CUR_SCALE_100)
+                {
+                    factor = CUR_SCALE_FACTOR_100;
+                }
+                else if (rng_cur < CUR_SCALE_1000)
+                {
+                    factor = CUR_SCALE_FACTOR_1000;
+                }
+                else
+                {
+                    factor = CUR_SCALE_FACTOR_MAX;
+                }
+
+                return factor;
+            }
+            else
+            {
+                double d_rng_cur = 0;//单位:mA
+                rng_cur = Math.Abs(rng_cur);
+                if (rng_cur > 0&& rng_cur < 999)
+                {//为负数,并且是值范围在1-999时单位为mA
+                    d_rng_cur = rng_cur;
+                }
+                else if (rng_cur >= 1000&& rng_cur <= 999999)
+                {//为负数,并且是值范围在1000-999999时单位为mA
+                    d_rng_cur = rng_cur;
+                }
+                else if (rng_cur >= 1000000&& rng_cur <= 999999999)
+                {//为负数,并且是值范围在1000000-999999999时为1到999.999999uA
+                    d_rng_cur = rng_cur / 1000000000.0;
+                }
+                if (d_rng_cur < 0.01)
+                {//10uA
+                    factor = 100000000.0;
+                }
+                else if (d_rng_cur < 0.1)
+                {//100uA
+                    factor = 10000000.0;
+                }
+                else if (d_rng_cur < 1)
+                {//1000uA
+                    factor = 1000000.0;
+                }
+                else if (d_rng_cur < 10)
+                {//10mA
+                    factor = 100000.0;
+                }
+                else if (d_rng_cur < 100)
+                {//100mA
+                    factor = 10000.0;
+                }
+                else if (d_rng_cur < 1000)
+                {//1000mA
+                    factor = 1000.0;
+                }
+                else
+                {
+                    factor = 100.0;
+                }
+                return factor;
+            }
         }
 
     }

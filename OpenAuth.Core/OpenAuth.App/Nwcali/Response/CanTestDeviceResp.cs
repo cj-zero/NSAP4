@@ -41,7 +41,7 @@ namespace OpenAuth.App.Nwcali.Response
         public string test_name { get; set; }
         public string creator { get; set; }
         public int start_step { get; set; }
-        public int scale { get; set; }
+        public double scale { get; set; }
         public int battery_mass { get; set; }
         public string desc { get; set; }
         public string barcode { get; set; }
