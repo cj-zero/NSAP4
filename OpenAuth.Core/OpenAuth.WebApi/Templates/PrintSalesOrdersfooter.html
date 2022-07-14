@@ -79,11 +79,11 @@
         <hr>
         <section>
             <div>
-                <span class="companyName">深圳市新威尔电子有限公司</span>
-                <span class="bankName"> 交通银行股份有限公司深圳梅林支行</span>
-                <div class="bankNum">443066388018001726113</div>
-                <span class="address">深圳市福田区梅林街道梅都社区中康路 128 号卓越梅林中心广场(北区)3 号楼 1206</span>
-                <span class="number">电话：0755-83108866</span> <span style="float: right;margin-top: 10px;">免费服务专线：800-830-8866</span><br>
+                <span class="companyName">@Model.Data.Company</span>
+                <span class="bankName"> @Model.Data.BankName</span>
+                <div class="bankNum">@Model.Data.BankNum</div>
+                <span class="address">@Model.Data.Address</span>
+                <span class="number">@Model.Data.TelPhone</span> <span style="float: right;margin-top: 10px;">免费服务专线：800-830-8866</span><br>
                 <span>www.neware.com.cn</span>
                 <span style="margin-top: 10px; margin-left: 80px;display: inline-block"> 打印次数: @Model.Data.PrintNumIndex</span>
                 <span style="margin-top: 10px; float: right;font-weight: 700;"> @Model.Data.PrintNo</span>

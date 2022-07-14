@@ -1470,26 +1470,30 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
         #endregion
+
         #region PDF打印（新）
         /// <summary>
         /// PDF打印（新）
         /// </summary>
-        /// <param name="val"></param>
-        /// <param name="Indicator"></param>
-        /// <param name="sboid"></param>
-        /// <param name="DocEntry"></param>
-        /// <returns></returns>
+        /// <param name="sboid">账套Id</param>
+        /// <param name="DocEntry">单据编号</param>
+        /// <returns>成功返回pdf文件，失败抛出异常</returns>
         [HttpGet]
         [Route("ExportShowNew")]
-        public async Task<FileResult> ExportShow(string sboid, string DocEntry)
+        public async Task<FileResult> ExportShowNew(string sboid, string DocEntry)
         {
-
-
-            return File(await _serviceSaleOrderApp.ExportShow(sboid, DocEntry), "application/pdf");
-
-
+            try
+            {
+                return File(await _serviceSaleOrderApp.ExportShowNew(sboid, DocEntry), "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error($"地址：{Request.Path}，参数：{DocEntry}， 错误：{ex.Message}");
+                throw new Exception("导出失败！" + ex.ToString());
+            }
         }
         #endregion
+
         #region 根据页面地址获取FunId.
         /// <summary>
         /// 根据页面地址获取FunId

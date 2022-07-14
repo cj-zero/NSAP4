@@ -518,6 +518,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         #endregion
 
         #region 交货打印测试
+        [HttpGet]
         [Route("TestPrintLable")]
         public async Task TestPrintLable(int deliveryNo)
         {

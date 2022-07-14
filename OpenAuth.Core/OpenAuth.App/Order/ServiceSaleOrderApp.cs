@@ -55,6 +55,10 @@ namespace OpenAuth.App.Order
         private readonly ServiceFlowApp _serviceFlowApp;
         ServiceBaseApp _serviceBaseApp;
         private ILogger<ServiceSaleOrderApp> _logger;
+        private const string NewareName = "新威尔";
+        private const string NewllName = "新能源";
+        private const string DGNewareName = "东莞新威";
+        private const string WBName = "外币";
 
         public ServiceSaleOrderApp(IUnitWork unitWork, ILogger<ServiceSaleOrderApp> logger, RevelanceManagerApp app, ServiceBaseApp serviceBaseApp, ServiceOrderLogApp serviceOrderLogApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
         {
@@ -4032,7 +4036,14 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 return "0";
             }
         }
-        public async Task<byte[]> ExportShow(string sboid, string DocEntry)
+
+        /// <summary>
+        /// 导出报价单（新）
+        /// </summary>
+        /// <param name="sboid">帐套Id</param>
+        /// <param name="DocEntry">单据编号</param>
+        /// <returns>成功返回字节流，失败抛出异常</returns>
+        public async Task<byte[]> ExportShowNew(string sboid, string DocEntry)
         {
             DataTable dtb = ExportViewNos(sboid, DocEntry);
             DataTable dtbs = ExportViews(sboid, DocEntry);
@@ -4046,8 +4057,48 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 logostr = Convert.ToBase64String(photo);
                 Console.WriteLine(logostr);
             }
-            var Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", "新威尔.png");
-            var Chapter = "";
+           
+            //公司标识
+            var indicator = dtb.Rows[0][24].ToString();
+            var companyAddressData = new Category();
+            string companyName = "";
+            string Chapter = "";
+            string Chapterpath = "";
+            string cssWeight = "";
+            string cssSize = "";
+            if (!string.IsNullOrEmpty(indicator))
+            {
+                //公司地址信息,在字典中维护
+                companyAddressData = await UnitWork.Find<Category>(c => c.TypeId == "SYS_CompanyAddress" && c.DtValue == indicator).FirstOrDefaultAsync();
+                companyName = companyAddressData == null ? "" : companyAddressData.Name;
+                cssWeight = "normal";
+                cssSize = "13px";
+            }
+
+            if (indicator == "01")
+            {
+                Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", NewareName + ".png");
+            }
+            else if (indicator == "02")
+            {
+                Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", NewllName + ".png");
+            }
+            else if (indicator == "05")
+            {
+                Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", DGNewareName + ".png");
+            }
+            else if (string.IsNullOrEmpty(indicator) && dtb.Rows[0][25].ToString() != "RMB")
+            {
+                Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", WBName + ".png");
+                companyName = "NEWARE";
+                cssWeight = "bold";
+                cssSize = "39px";
+            }
+            else
+            {
+                throw new Exception("报价单/订单所选择标识无打印模板，无法进行打印操作");
+            }
+
             using (var fs = new FileStream(Chapterpath, FileMode.Open))
             {
                 var photo = new byte[fs.Length];
@@ -4056,21 +4107,16 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 Chapter = Convert.ToBase64String(photo);
                 Console.WriteLine(Chapter);
             }
-            //公司标识
-            var indicator = dtb.Rows[0][24].ToString();
-            //公司地址信息,在字典中维护
-            var companyAddressData = await UnitWork.Find<Category>(c => c.TypeId == "SYS_CompanyAddress" && c.DtValue == indicator).FirstOrDefaultAsync();
 
             var PrintSalesQuotation = new PrintSalesQuotation
             {
                 DocEntry = string.IsNullOrEmpty(dtb.Rows[0][0].ToString()) ? " " : dtb.Rows[0][0].ToString(),
-                DateTime = string.IsNullOrEmpty(dtb.Rows[0][15].ToString()) ? " " : dtb.Rows[0][15].ToString(),
+                DateTime = string.IsNullOrEmpty(dtb.Rows[0][25].ToString()) ? " " : dtb.Rows[0][25].ToString(),
                 SalseName = string.IsNullOrEmpty(dtb.Rows[0][8].ToString()) ? " " : dtb.Rows[0][8].ToString(),
                 CardCode = string.IsNullOrEmpty(dtb.Rows[0][1].ToString()) ? " " : dtb.Rows[0][1].ToString(),
                 Name = string.IsNullOrEmpty(dtb.Rows[0][3].ToString()) ? " " : dtb.Rows[0][3].ToString(),
                 Tel = string.IsNullOrEmpty(dtb.Rows[0][4].ToString()) ? " " : dtb.Rows[0][4].ToString(),
                 Fax = string.IsNullOrEmpty(dtb.Rows[0][17].ToString()) ? " " : dtb.Rows[0][17].ToString(),
-                //Cellolar = string.IsNullOrEmpty(dtb.Rows[0][6].ToString()) ? " " : dtb.Rows[0][6].ToString(),
                 Memo = string.IsNullOrEmpty(dtb.Rows[0][9].ToString()) ? " " : dtb.Rows[0][9].ToString(),
                 CardName = string.IsNullOrEmpty(dtb.Rows[0][2].ToString()) ? " " : dtb.Rows[0][2].ToString(),
                 Address = string.IsNullOrEmpty(dtb.Rows[0][7].ToString()) ? " " : dtb.Rows[0][7].ToString(),
@@ -4083,6 +4129,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 QRcode = QRCoderHelper.CreateQRCodeToBase64(DocEntry),
                 ReimburseCosts = new List<ReimburseCost>()
             };
+
             for (int i = 0; i < dtbs.Rows.Count; i++)
             {
                 ReimburseCost scon = new ReimburseCost
@@ -4093,10 +4140,11 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                     unitMsr = string.IsNullOrEmpty(dtbs.Rows[i][5].ToString()) ? " " : dtbs.Rows[i][5].ToString(),
                     Price = string.IsNullOrEmpty(dtbs.Rows[i][6].ToString()) ? " " : dtbs.Rows[i][6].ToString(),
                     Money = string.IsNullOrEmpty(dtbs.Rows[i][7].ToString()) ? " " : dtbs.Rows[i][7].ToString()
-
                 };
+
                 PrintSalesQuotation.ReimburseCosts.Add(scon);
             }
+
             var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesQuotationheader.html");
             var text = System.IO.File.ReadAllText(url);
             text = text.Replace("@Model.Data.logo", PrintSalesQuotation.logo);
@@ -4122,6 +4170,10 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             var foottext = System.IO.File.ReadAllText(footUrl);
             foottext = foottext.Replace("@Model.Data.Chapter", Chapter);
             foottext = foottext.Replace("@Model.Data.DocTotal", PrintSalesQuotation.DocTotal);
+            foottext = foottext.Replace("@Model.Data.Company", companyName);
+            foottext = foottext.Replace("@Model.Data.Address", companyAddressData == null ? "" : companyAddressData.Description);
+            foottext = foottext.Replace("@Model.Data.Weight", cssWeight);
+            foottext = foottext.Replace("@Model.Data.Size", cssSize);
             var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesQuotationfooter{PrintSalesQuotation.DocEntry}.html");
             System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
             byte[] basecode = await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesQuotation.cshtml", pdf =>
@@ -4133,11 +4185,12 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                  pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
                  pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
              });
+
             System.IO.File.Delete(tempUrl);
             System.IO.File.Delete(foottempUrl);
             return basecode;
-
         }
+
         /// <summary>
         /// 销售报价单主数据导出
         /// </summary>
@@ -4145,13 +4198,17 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
         {
             StringBuilder str = new StringBuilder();
             str.Append("SELECT distinct a.DocEntry,a.CardCode,a.CardName,b.Name,b.Tel1,b.Tel2,b.Cellolar,b.Address,c.SlpName,c.Memo,a.Comments,d.PymntGroup,");
-            str.Append(" a.DocTotal,CONCAT(e.Currency,' ',ROUND(a.DocTotal,2)) ,DATE_FORMAT(a.DocDueDate,'%Y.%m.%d'),DATE_FORMAT(a.DocDate,'%Y.%m.%d'),a.U_ShipName,b.Fax,a.U_YGMD,a.Address2,a.U_YSQX,a.BnkAccount,a.U_SL,a.NumAtCard,a.indicator ");
+            str.Append(" a.DocTotal,CONCAT(e.Currency,' ',ROUND(a.DocTotal,2)) ,DATE_FORMAT(a.DocDueDate,'%Y.%m.%d'),DATE_FORMAT(a.DocDate,'%Y.%m.%d'),a.U_ShipName,b.Fax,a.U_YGMD,a.Address2");
+            str.Append(" ,a.U_YSQX,a.BnkAccount,a.U_SL,a.NumAtCard,a.indicator, DATE_FORMAT(g.log_dt,'%Y.%m.%d'), a.DocCur");
             str.AppendFormat(" FROM {0}.sale_oqut a ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_ocpr b on a.CntctCode=b.CntctCode and a.sbo_id=b.sbo_id and a.CardCode=b.CardCode ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_oslp c on a.SlpCode=c.SlpCode and a.sbo_id=c.sbo_id ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_octg d on a.GroupNum=d.GroupNum AND a.sbo_id=d.sbo_id ", "nsap_bone");
             str.AppendFormat(" left join {0}.sale_qut1 e on a.DocEntry=e.DocEntry and a.sbo_id=e.sbo_id ", "nsap_bone");
-            str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1}", DocEntry, sboid);
+            str.AppendFormat(" left join {0}.wfa_job f on a.sbo_id= f.sbo_id and a.DocEntry=f.sbo_itf_return ", "nsap_base");
+            str.AppendFormat(" left join {0}.wfa_log g on f.job_id= g.job_id ", "nsap_base");
+            str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1} and f.sbo_itf_return = '{2}' and f.job_nm = '销售报价单'", DocEntry, sboid, DocEntry);
+            str.AppendFormat(" order by g.log_dt desc limit 1");
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, str.ToString(), CommandType.Text, null);
         }
         /// <summary>
@@ -10045,14 +10102,18 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             StringBuilder str = new StringBuilder();
             str.Append("SELECT distinct a.DocEntry,a.CardCode,a.CardName,b.Name,b.Tel1,b.Tel2,b.Cellolar,b.Address,c.SlpName,c.Memo,a.Comments,d.PymntGroup,");
             str.Append(" a.DocTotal,CONCAT(e.Currency,' ',ROUND(a.DocTotal,2)) as curtotal ,DATE_FORMAT(a.DocDueDate,'%Y.%m.%d %H:%i') as DocDueDate,DATE_FORMAT(a.DocDate,'%Y.%m.%d') as DocDate,a.U_ShipName,b.Fax,a.U_YGMD,a.Address2,a.U_YSQX,a.BnkAccount,f.HouseBank,CONCAT(ROUND(a.U_SL,0),'%')U_SL,a.NumAtCard ");
-            str.Append(" ,a.DiscSum,a.DiscSumFC,a.DocTotalFC,a.DocCur");
+            str.Append(" ,a.DiscSum,a.DiscSumFC,a.DocTotalFC,a.DocCur, DATE_FORMAT(g.log_dt,'%Y.%m.%d') as logdt, a.Indicator ");
             str.AppendFormat(" FROM {0}.sale_ordr a ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_ocpr b on a.CntctCode=b.CntctCode and a.sbo_id=b.sbo_id and a.CardCode=b.CardCode ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_oslp c on a.SlpCode=c.SlpCode and a.sbo_id=c.sbo_id ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_octg d on a.GroupNum=d.GroupNum AND a.sbo_id=d.sbo_id ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_ocrd f on a.DocEntry=f.CardCode and a.sbo_id=f.sbo_id ", "nsap_bone");
             str.AppendFormat(" left join {0}.sale_rdr1 e on a.DocEntry=e.DocEntry and a.sbo_id=e.sbo_id ", "nsap_bone");
-            str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1}", DocEntry, sboid);
+            str.AppendFormat(" left join {0}.wfa_job h on a.sbo_id= h.sbo_id and a.DocEntry=h.sbo_itf_return ", "nsap_base");
+            str.AppendFormat(" left join {0}.wfa_log g on h.job_id= g.job_id ", "nsap_base");
+            str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1} and h.sbo_itf_return = '{2}' and h.job_nm = '销售订单'", DocEntry, sboid, DocEntry);
+            str.AppendFormat(" order by g.log_dt desc limit 1");
+            //str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1}", DocEntry, sboid);
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, str.ToString(), CommandType.Text, null);
         }
         /// <summary>
@@ -10317,13 +10378,14 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             object resultentry = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sqlstr, CommandType.Text, null);
             return resultentry == null ? "" : resultentry.ToString();
         }
+
         /// <summary>
-        /// 订单打印
+        /// 销售订单打印（新）
         /// </summary>
-        /// <param name="sboid"></param>
-        /// <param name="DocEntry"></param>
-        /// <returns></returns>
-        public async Task<byte[]> OrderExportShow(string sboid, string DocEntry)
+        /// <param name="sboid">账套Id</param>
+        /// <param name="DocEntry">单据编号</param>
+        /// <returns>成功返回字节流，失败抛出异常</returns>
+        public async Task<byte[]> OrderExportShowNew(string sboid, string DocEntry)
         {
             DataTable dtb = OrderExportView(sboid, DocEntry);
             DataTable dtbs = OrderExportViews(sboid, DocEntry);
@@ -10354,6 +10416,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             {
                 return null;
             }
+
             var logopath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
             var logostr = "";
             using (var fs = new FileStream(logopath, FileMode.Open))
@@ -10364,30 +10427,49 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 logostr = Convert.ToBase64String(photo);
                 Console.WriteLine(logostr);
             }
-            var indicator = await UnitWork.Find<ORDR>(r => r.DocEntry == int.Parse(DocEntry)).Select(r => r.Indicator).FirstOrDefaultAsync(); //标识:01-新威尔,02-新能源,05-东莞新威,07-纽威
+        
+            var indicator = dtb.Rows[0][30].ToString();
+            var companyAddressData = new Category();
+            var companyBankData = new Category();
+            string companyName = "";
+            string Chapter = "";
             string Chapterpath = "";
-            if (indicator == null)
+            string bankName = "";
+            string bankNum = "";
+            string telPhone = "";
+            if (!string.IsNullOrEmpty(indicator))
             {
-                Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", "新威尔.png");
+                //公司地址信息,在字典中维护
+                companyAddressData = await UnitWork.Find<Category>(c => c.TypeId == "SYS_CompanyAddress" && c.DtValue == indicator).FirstOrDefaultAsync();
+                companyBankData = await UnitWork.Find<Category>(c => c.TypeId == "SYS_BankMsg" && c.DtValue == indicator).FirstOrDefaultAsync();
+                companyName = companyAddressData == null ? "" : companyAddressData.Name;
+                bankName = companyBankData == null ? "" : companyBankData.Name;
+                bankNum = companyBankData == null ? "" : companyBankData.Description;
+                telPhone = companyBankData == null ? "" : companyBankData.DtCode;
             }
-            else if (indicator == "01")
+
+            if (indicator == "01")
             {
-                Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", "新威尔.png");
+                Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", NewareName + ".png");
             }
             else if (indicator == "02")
             {
-                Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", "新能源.png");
+                Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", NewllName + ".png");
             }
             else if (indicator == "05")
             {
-                Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", "东莞新威.png");
+                Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", DGNewareName + ".png");
+            }
+            else if (string.IsNullOrEmpty(indicator) && dtb.Rows[0][25].ToString() != "RMB")
+            {
+                Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", WBName + ".png");
+                companyName = "NEWARE";
             }
             else
             {
-                Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", "新威尔.png");
+                throw new Exception("报价单/订单所选择标识无打印模板，无法进行打印操作");
             }
-            
-            var Chapter = "";
+
             using (var fs = new FileStream(Chapterpath, FileMode.Open))
             {
                 var photo = new byte[fs.Length];
@@ -10396,10 +10478,11 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 Chapter = Convert.ToBase64String(photo);
                 Console.WriteLine(Chapter);
             }
+
             var PrintSalesOrder = new PrintSalesOrder
             {
                 DocEntry = string.IsNullOrEmpty(dtb.Rows[0][0].ToString()) ? " " : dtb.Rows[0][0].ToString(),
-                DateTime = string.IsNullOrEmpty(dtb.Rows[0][15].ToString()) ? " " : dtb.Rows[0][15].ToString(),
+                DateTime = string.IsNullOrEmpty(dtb.Rows[0][29].ToString()) ? " " : dtb.Rows[0][29].ToString(),
                 SalseName = string.IsNullOrEmpty(dtb.Rows[0][8].ToString()) ? " " : dtb.Rows[0][8].ToString(),
                 CardCode = string.IsNullOrEmpty(dtb.Rows[0][1].ToString()) ? " " : dtb.Rows[0][1].ToString(),
                 Name = string.IsNullOrEmpty(dtb.Rows[0][3].ToString()) ? " " : dtb.Rows[0][3].ToString(),
@@ -10422,6 +10505,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 PrintNo = PrintNo,
                 ReimburseCosts = new List<ReimburseCost>()
             };
+
             for (int i = 0; i < dtbs.Rows.Count; i++)
             {
                 ReimburseCost scon = new ReimburseCost
@@ -10434,8 +10518,10 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                     Money = string.IsNullOrEmpty(dtbs.Rows[i][7].ToString()) ? " " : dtbs.Rows[i][7].ToString()
 
                 };
+
                 PrintSalesOrder.ReimburseCosts.Add(scon);
             }
+
             var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesOrdersheader.html");
             var text = System.IO.File.ReadAllText(url);
             text = text.Replace("@Model.Data.logo", PrintSalesOrder.logo);
@@ -10465,6 +10551,11 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             foottext = foottext.Replace("@Model.Data.Chapter", Chapter);
             foottext = foottext.Replace("@Model.Data.PrintNumIndex", PrintSalesOrder.PrintNumIndex);
             foottext = foottext.Replace("@Model.Data.PrintNo", PrintSalesOrder.PrintNo);
+            foottext = foottext.Replace("@Model.Data.Company", companyName);
+            foottext = foottext.Replace("@Model.Data.Address", companyAddressData == null ? "" : companyAddressData.Description);
+            foottext = foottext.Replace("@Model.Data.BankName", bankName);
+            foottext = foottext.Replace("@Model.Data.BankNum", bankNum);
+            foottext = foottext.Replace("@Model.Data.TelPhone", telPhone);
             var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesOrdersfooter{PrintSalesOrder.DocEntry}.html");
             System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
             byte[] basecode = await ExportAllHandler.Exporterpdf(PrintSalesOrder, "PrintSalesOrders.cshtml", pdf =>
@@ -10476,10 +10567,10 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
                 pdf.FooterSettings = new FooterSettings() { HtmUrl = foottempUrl };
             });
+
             System.IO.File.Delete(tempUrl);
             System.IO.File.Delete(foottempUrl);
             return basecode;
-            //return await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesOrders.cshtml");
         }
 
         #region 修改单据打印状态
