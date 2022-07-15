@@ -149,7 +149,8 @@
         
         footer .footer-info div p {
             flex: 1;
-            padding-right: 8px
+            padding-right: 8px;
+
         }
         
         footer .footer-info div p.footer-datetime {
@@ -363,6 +364,11 @@
             margin-top: 10px;
             margin-left: 150px;
         }
+        #txtCompany{
+          --font-weight:@Model.Data.Weight;
+          --font-size:@Model.Data.Size;
+
+        }
     </style>
 
 </head>
@@ -377,7 +383,7 @@
 
         <hr>
 
-        <img style="height: 300px; width: 300px; position: fixed; left: 600px; top: -50px;" src="data:image/png;base64,@Model.Data.Chapter" />
+        <img style="height: 300px; width: 300px; position: fixed; left: 600px; top: 0px;" src="data:image/png;base64,@Model.Data.Chapter" />
 
         <section class="footer-title">
 
@@ -399,7 +405,7 @@
 
             <div>
 
-                <p style="text-align:left">深圳市新威尔电子有限公司</p>
+                <p style="text-align:left;" id="txtCompany">@Model.Data.Company</p>
 
                 <p style="text-align:right">订购咨询专线：0755-83108866</p>
 
@@ -407,7 +413,7 @@
 
             <div>
 
-                <p>深圳市福田区梅林街道梅都社区中康路128号卓越梅林中心广场(北区)3号楼1206</p>
+                <p>@Model.Data.Address</p>
 
                 <p style="text-align:right">免费专线：800-830-8866</p>
 

@@ -251,21 +251,20 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             return result;
         }
+
         /// <summary>
         /// PDF打印（新）
         /// </summary>
-        /// <param name="val"></param>
-        /// <param name="Indicator"></param>
-        /// <param name="sboid"></param>
-        /// <param name="DocEntry"></param>
-        /// <returns></returns>
+        /// <param name="sboid">账套Id</param>
+        /// <param name="DocEntry">单据编号</param>
+        /// <returns>成功返回文件，失败抛出异常</returns>
         [HttpGet]
         [Route("OrderExportShowNew")]
-        public async Task<FileResult> OrderExportShow(string sboid, string DocEntry)
+        public async Task<FileResult> OrderExportShowNew(string sboid, string DocEntry)
         {
             try
             {
-                return File(await _serviceSaleOrderApp.OrderExportShow(sboid, DocEntry), "application/pdf");
+                return File(await _serviceSaleOrderApp.OrderExportShowNew(sboid, DocEntry), "application/pdf");
             }
             catch (Exception ex)
             {
@@ -274,6 +273,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
         }
         #endregion
+
         #region 确认是否取消
         /// <summary>
         /// 确认是否取消
