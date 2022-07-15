@@ -35,7 +35,7 @@ namespace Infrastructure.MQTT
             var factory = new MqttFactory();
             mqttClient = factory.CreateMqttClient() as MqttClient;
             var ts=(DateTime.Now.ToUniversalTime().Ticks - 621355968000000000)/10000000;
-            clientId = $"erp_{ts}";   
+            clientId = $"erp_{ts}_abs";   
             options = new MqttClientOptionsBuilder()
                 .WithTcpServer(_mqttConfig.Server, _mqttConfig.Port)
                 .WithCredentials(_mqttConfig.Username, _mqttConfig.Password)

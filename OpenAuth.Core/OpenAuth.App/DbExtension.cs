@@ -21,7 +21,7 @@ namespace OpenAuth.App
         public DbExtension(IServiceProvider serviceProvider, IOptions<AppSetting> appConfiguration)
         {
             _dbContexts = new List<DbContext>();
-            var types = Common.ContextDir.Select(d => d.Value).Distinct().ToList();
+            var types = Infrastructure.Common.ContextDir.Select(d => d.Value).Distinct().ToList();
             foreach (var type in types)
             {
                 _dbContexts.Add((DbContext)serviceProvider.CreateScope().ServiceProvider.GetRequiredService(type));

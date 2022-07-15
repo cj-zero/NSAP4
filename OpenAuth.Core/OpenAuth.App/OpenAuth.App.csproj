@@ -65,11 +65,20 @@
     <Reference Include="aliyun-net-sdk-core">
       <HintPath>..\..\..\..\..\迅雷下载\net 2\api_demo\core2.0\aliyun-net-sdk-core.dll</HintPath>
     </Reference>
+    <Reference Include="Common">
+      <HintPath>..\package\Common.dll</HintPath>
+    </Reference>
     <Reference Include="ENTITY">
       <HintPath>Nsapdll\ENTITY.dll</HintPath>
     </Reference>
     <Reference Include="Interop.SAPbobsCOM">
       <HintPath>..\package\Interop.SAPbobsCOM.dll</HintPath>
+    </Reference>
+    <Reference Include="Log">
+      <HintPath>..\package\Log.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Windows.Forms">
+      <HintPath>..\package\System.Windows.Forms.dll</HintPath>
     </Reference>
   </ItemGroup>
 

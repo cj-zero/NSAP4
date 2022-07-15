@@ -75,7 +75,7 @@ namespace OpenAuth.App
                 foreach (var mitem in mid_lists)
                 {
                     mid_list ml = new mid_list();
-                    ml.has_bind = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid).Any();
+                    ml.has_bind = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid && c.BindType==1).Any();
                     if (ml.has_bind)
                     {
                         string code = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
@@ -100,7 +100,7 @@ namespace OpenAuth.App
                         low_List.has_bind = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid && c.LowGuid == litem.low_guid).Any();
                         if (low_List.has_bind)
                         {
-                            string code = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
+                            string code = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid && c.LowGuid == litem.low_guid).Select(c => c.GeneratorCode).FirstOrDefault();
                             low_List.has_test = hasTestLowList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.MidGuid == mitem.mid_guid && c.LowGuid == litem.low_guid && c.GeneratorCode == code).Any();
                         }
                         else
@@ -114,6 +114,10 @@ namespace OpenAuth.App
                         low_List.low_no = litem.low_no;
                         low_List.GeneratorCode = bindGuidList.Where(c => c.LowGuid == litem.low_guid && c.Guid== mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
                         ml.low_Lists.Add(low_List);
+                    }
+                    if (!ml.low_Lists.Any())
+                    {
+                        continue;
                     }
                     onlineDeviceResp.mid_Lists.Add(ml);
                 }
@@ -150,7 +154,7 @@ namespace OpenAuth.App
                                     join c in UnitWork.Find<edge_mid>(null) on new { b.edge_guid, b.srv_guid } equals new { c.edge_guid, c.srv_guid }
                                     join d in UnitWork.Find<edge_low>(null) on new { c.edge_guid, c.srv_guid, c.mid_guid } equals new { d.edge_guid, d.srv_guid, d.mid_guid }
                                     where departmentList.Contains(a.department)
-                                    //&& a.status==1 && b.status==1 && c.status==1 && d.status==1 && e.status==1
+                                    && a.status==1 
                                     select new { d.edge_guid, d.srv_guid, d.mid_guid, d.low_guid, b.bts_server_ip, c.dev_uid, d.unit_id, a.department, edge_status = a.status, host_status = b.status, mid_status = c.status, low_status = d.status, d.low_no }).ToListAsync();
             var lowGuidList = onlineList.Select(c => c.low_guid).ToList();
             var midGuidList = onlineList.Select(c => c.mid_guid).ToList();
@@ -190,7 +194,7 @@ namespace OpenAuth.App
                         ml.dev_uid = mitem.dev_uid.Value;
                         ml.mid_guid = mitem.mid_guid;
                         ml.status = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).FirstOrDefault()?.host_status.Value;
-                        ml.GeneratorCode = bindGuidList.Where(c => c.Guid == mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
+                        ml.GeneratorCode = bindGuidList.Where(c => c.Guid == mitem.mid_guid && c.BindType==1).Select(c => c.GeneratorCode).FirstOrDefault();
                         ml.low_Lists = new List<low_list>();
                         var low_Lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).OrderBy(c => c.low_no).Select(c => new low_list { unit_id = c.unit_id.Value, status = c.low_status.Value, low_guid = c.low_guid, low_no = c.low_no }).Distinct().ToList();
                         foreach (var litem in low_Lists)
@@ -199,7 +203,7 @@ namespace OpenAuth.App
                             low_List.has_bind = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid && c.LowGuid == litem.low_guid).Any();
                             if (low_List.has_bind)
                             {
-                                string code = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
+                                string code = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid && c.LowGuid == litem.low_guid).Select(c => c.GeneratorCode).FirstOrDefault();
                                 low_List.has_test = hasTestLowList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.MidGuid == mitem.mid_guid && c.LowGuid == litem.low_guid && c.GeneratorCode == code).Any();
                             }
                             else
@@ -216,6 +220,10 @@ namespace OpenAuth.App
                                 low_List.low_guid = litem.low_guid;
                                 ml.low_Lists.Add(low_List);
                             }
+                        }
+                        if (!ml.low_Lists.Any())
+                        {
+                            continue;
                         }
                         onlineDeviceResp.mid_Lists.Add(ml);
                     }

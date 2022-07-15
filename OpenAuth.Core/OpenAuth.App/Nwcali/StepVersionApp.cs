@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using Infrastructure;
 using Infrastructure.Extensions;
 using Infrastructure.Helpers;
@@ -193,7 +195,8 @@ namespace OpenAuth.App
             var department = loginContext.Orgs.Select(c => c.Name).FirstOrDefault();
             string offLineLowGuid = "";
             List<DeviceTestResponse> list = new List<DeviceTestResponse>();
-            var allBindList = await UnitWork.Find<DeviceBindMap>(null).Where(c => department == c.Department && c.GeneratorCode == model.GeneratorCode).ToListAsync();
+            var codeList = model.GeneratorCode.Split(',');
+            var allBindList = await UnitWork.Find<DeviceBindMap>(null).Where(c => department == c.Department && codeList.Contains(c.GeneratorCode)).ToListAsync();
             if (!allBindList.Any())
             {
                 throw new Exception($"生产码{model.GeneratorCode}暂未绑定任何设备!");
@@ -262,12 +265,6 @@ namespace OpenAuth.App
                 arg.step_file_name = "";
                 arg.start_step = 1;
                 arg.scale = GetCurFactor(maxRange);
-                //if (maxRange < 10)
-                //    arg.scale = 10000;
-                //else if (maxRange < 100)
-                //    arg.scale = 1000;
-                //else if (maxRange < 1000)
-                //    arg.scale = 100;
                 arg.battery_mass = 0;
                 arg.desc = "";
                 arg.step_data = step_data;
@@ -317,8 +314,9 @@ namespace OpenAuth.App
             }
             var department = loginContext.Orgs.Select(c => c.Name).FirstOrDefault();
             string offLineLowGuid = "";
+            var codeList = model.GeneratorCode.Split(',');
             List<DeviceTestResponse> list = new List<DeviceTestResponse>();
-            var allBindList = await UnitWork.Find<DeviceBindMap>(null).Where(c => department == c.Department && c.GeneratorCode == model.GeneratorCode).ToListAsync();
+            var allBindList = await UnitWork.Find<DeviceBindMap>(null).Where(c => department == c.Department && codeList.Contains(c.GeneratorCode)).ToListAsync();
             if (!allBindList.Any())
             {
                 throw new Exception($"生产码{model.GeneratorCode}暂未绑定任何设备!");
@@ -364,12 +362,6 @@ namespace OpenAuth.App
                 }
                 int maxRange = Convert.ToInt32(item.RangeCurrArray.Split(',').Max());
                 scale = GetCurFactor(maxRange);
-                //if (maxRange < 10)
-                //    scale = 10000;
-                //else if (maxRange < 100)
-                //    scale = 1000;
-                //else if (maxRange < 1000)
-                //    scale = 100;
                 var chlList = channelList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.mid_guid == item.Guid && c.low_guid == item.LowGuid).OrderBy(c => c.bts_id).ToList();
                 if (chlList.Count == 1)
                 {
@@ -1403,7 +1395,7 @@ namespace OpenAuth.App
         }
 
         /// <summary>
-        /// 
+        /// 量程系数计算
         /// </summary>
         /// <param name="rng_cur"></param>
         /// <returns></returns>
@@ -1445,15 +1437,15 @@ namespace OpenAuth.App
             {
                 double d_rng_cur = 0;//单位:mA
                 rng_cur = Math.Abs(rng_cur);
-                if (rng_cur > 0&& rng_cur < 999)
+                if (rng_cur > 0 && rng_cur < 999)
                 {//为负数,并且是值范围在1-999时单位为mA
                     d_rng_cur = rng_cur;
                 }
-                else if (rng_cur >= 1000&& rng_cur <= 999999)
+                else if (rng_cur >= 1000 && rng_cur <= 999999)
                 {//为负数,并且是值范围在1000-999999时单位为mA
                     d_rng_cur = rng_cur;
                 }
-                else if (rng_cur >= 1000000&& rng_cur <= 999999999)
+                else if (rng_cur >= 1000000 && rng_cur <= 999999999)
                 {//为负数,并且是值范围在1000000-999999999时为1到999.999999uA
                     d_rng_cur = rng_cur / 1000000000.0;
                 }
@@ -1488,6 +1480,84 @@ namespace OpenAuth.App
                 return factor;
             }
         }
+
+        #region 启动相关
+        /// <summary>
+        /// 获取启动列表
+        /// </summary>
+        /// <param name="GeneratorCode">生产码</param>
+        /// <param name="key">生产码关键词查询</param>
+        /// <param name="page"></param>
+        /// <param name="limit"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public async Task<TableData> CanStartTestList(string GeneratorCode, string key, int page, int limit)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var departmen = loginContext.Orgs.Select(c => c.Name).FirstOrDefault();
+            long.TryParse(GeneratorCode.Split('-')[1], out long OrderNo);
+            var bindDevList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo).WhereIf(!string.IsNullOrWhiteSpace(key), c => c.GeneratorCode.Contains(key)).ToListAsync();
+            var testCodeList = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.OrderNo == OrderNo).Select(c => c.GeneratorCode).Distinct().ToListAsync();
+            var canTestCodeList = bindDevList.Where(c => !testCodeList.Contains(c.GeneratorCode)).ToList();
+            if (!canTestCodeList.Any())
+            {
+                result.Data = new List<string> { };
+                return result;
+            }
+            var onlineDevList = await (from a in UnitWork.Find<edge>(null)
+                                       join b in UnitWork.Find<edge_low>(null) on a.edge_guid equals b.edge_guid
+                                       where a.department == departmen && a.status == 1
+                                       select new { b.edge_guid, b.srv_guid, b.dev_uid, b.mid_guid, b.unit_id, b.low_guid })
+                                 .ToListAsync();
+            result.Data = (from a in canTestCodeList.AsEnumerable()
+                           join b in onlineDevList.AsEnumerable() on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, DevUid = b.dev_uid, LowGuid = b.low_guid }
+                           select a.GeneratorCode).Distinct().Skip((page - 1) * limit).Take(limit).ToList();
+            return result;
+        }
+
+        /// <summary>
+        /// 工步文件解析
+        /// </summary>
+        /// <param name="FilePath"></param>
+        /// <returns></returns>
+        public TableData<StepContentResp> StepContent(string FilePath)
+        {
+            var result = new TableData<StepContentResp>();
+            StepContentResp model = new StepContentResp();
+            var xmlCpntent = XMLHelper.GetXDocument(FilePath).ToString();
+            StringReader Reader = new StringReader(xmlCpntent);
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.Load(Reader);
+            string work_path = $"{AppDomain.CurrentDomain.BaseDirectory}step\\";
+            Directory.CreateDirectory(work_path);
+            string filename = DateTime.Now.ToString("yyyyMMddHHmmssffff");
+            string dir = $"{work_path}{filename}.xml";
+            xmlDoc.Save(dir);
+            if (!File.Exists(dir))
+            {
+                result.Code = 500;
+                result.Message = "工步文件读取失败!";
+                return result;
+            }
+            var step = Common.XmlStep.LoadStepFile(dir);
+            if (step == null)
+            {
+                result.Code = 500;
+                result.Message = "工步文件异常,无法解析!";
+                return result;
+            }
+            File.Delete(dir);
+            model.stepCount = step.ListStep.Count();
+            model.stepData = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent.ToString()));
+            result.Data = model;
+            return result;
+        }
+        #endregion
 
     }
 }
