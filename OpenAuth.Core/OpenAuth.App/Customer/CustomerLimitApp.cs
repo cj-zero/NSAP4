@@ -841,7 +841,7 @@ namespace OpenAuth.App.Customer
                 string uname = deptLeader.FirstOrDefault(d => d.Key == rule.dept).Value;
                 //根据部门查找该部门下的业务员销售编号
                 var slpInfo = await (from u in UnitWork.Find<base_user>(null)
-                                     join ud in UnitWork.Find<base_user_detail>(null) 
+                                     join ud in UnitWork.Find<base_user_detail>(null)
                                      on u.user_id equals ud.user_id
                                      join d in UnitWork.Find<base_dep>(null)
                                      on ud.dep_id equals d.dep_id
@@ -991,7 +991,8 @@ namespace OpenAuth.App.Customer
                             UpdateUser = "系统",
                             UpdateDateTime = DateTime.Now,
                             IsDelete = false,
-                            Remark = remark
+                            Remark = remark,
+                            Score = date.ToString()
                         });
                     }
                     //否则也加入公海,但是状态是即将掉入
@@ -1012,7 +1013,8 @@ namespace OpenAuth.App.Customer
                             CreateDateTime = DateTime.Now,
                             UpdateUser = "系统",
                             UpdateDateTime = DateTime.Now,
-                            IsDelete = false
+                            IsDelete = false,
+                            Score = date.ToString()
                         });
                     }
                 }
@@ -1075,6 +1077,24 @@ namespace OpenAuth.App.Customer
             await UnitWork.BatchAddAsync<CustomerMoveHistory, int>(moveinHistorys.ToArray());
             await UnitWork.SaveAsync();
 
+            #region
+            //记录表
+            var test = customerLists.Select(c => new CustomerOperationRecord
+            {
+                CustomerNo = c.CustomerNo,
+                CustomerName = c.CustomerName,
+                SlpCode = c.SlpCode,
+                SlpName = c.SlpName,
+                CreateDateTime = DateTime.Now,
+                CreateUser = "系统",
+                Label = c.Label,
+                LabelIndex = c.LabelIndex,
+                DepartMent = c.DepartMent,
+                Score = c.Score
+            });
+            await UnitWork.BatchAddAsync<CustomerOperationRecord, int>(test.ToArray());
+            await UnitWork.SaveAsync();
+            #endregion
             //正式环境下发现有重复的数据,把重复的数据删除,只保留最小的那一个
             var sql = @"select c.Id
                         from customer_list as c

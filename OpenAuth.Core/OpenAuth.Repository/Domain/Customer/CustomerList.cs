@@ -106,6 +106,8 @@ namespace OpenAuth.Repository.Domain.Customer
         /// </summary>
         [NotMapped]
         public string Remark { get; set; }
+        [NotMapped]
+        public string Score { get; set; }
 
         public bool Equals([AllowNull] CustomerList other)
         {

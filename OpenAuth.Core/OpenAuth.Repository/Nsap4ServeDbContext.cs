@@ -134,6 +134,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<CustomerSeaRuleItem> CustomerSeaRuleItems { get; set; }
         public virtual DbSet<CustomerSalerHistory> CustomerSalerHistories { get; set; }
         public virtual DbSet<CustomerMoveHistory> CustomerMoveHistories { get; set; }
+        public virtual DbSet<CustomerOperationRecord> CustomerOperationRecord { get; set; }
         #endregion
         #region 线索
         public virtual DbSet<Clue> Clue { get; set; }
