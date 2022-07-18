@@ -94,7 +94,7 @@ namespace OpenAuth.Repository.Domain.Customer
         /// 修改时间
         /// </summary>
         [Column("Update_DateTime")]
-        public DateTime UpdateDateTime { get; set; }
+        public DateTime? UpdateDateTime { get; set; }
 
         /// <summary>
         /// 是否删除
