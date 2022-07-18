@@ -118,6 +118,9 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public string Remark { get; set; }
 
+        [NotMapped]
+        public int Count { get; set; }
+
         public override void GenerateDefaultKeyVal()
         {
         }

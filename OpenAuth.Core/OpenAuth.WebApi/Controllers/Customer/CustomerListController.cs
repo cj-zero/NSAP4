@@ -251,5 +251,28 @@ namespace OpenAuth.WebApi.Controllers.Customer
 
             return response;
         }
+
+
+
+        #region
+        [HttpPost]
+        public async Task<TableData> GetCustomerHistoryLists(QueryCustomerSalerListReq req)
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _customerListApp.GetCustomerHistoryLists(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex?.Message ?? ex.InnerException?.Message ?? "";
+            }
+
+            return result;
+        }
+
+        #endregion
     }
 }
