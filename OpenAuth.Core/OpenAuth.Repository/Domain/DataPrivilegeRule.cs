@@ -98,5 +98,14 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("最后更新人")]
         public string UpdateUserName { get; set; }
+        /// <summary>
+        /// 资源名
+        /// </summary>
+        public string SourceName { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool? IsNew { get; set; }
+        public int? No { get; set; }
     }
 }

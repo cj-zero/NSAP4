@@ -1,4 +1,6 @@
-﻿namespace OpenAuth.App.Request
+﻿using System.Collections.Generic;
+
+namespace OpenAuth.App.Request
 {
     /// <summary>
     /// 为角色分配数据字段权限
@@ -17,5 +19,13 @@
         /// 字段名称列表
         /// </summary>
         public string[] Properties { get; set; }
+
+        public List<Properties> Field { get; set; }
+    }
+
+    public class Properties
+    {
+        public string Key { get; set; }
+        public string Permission { get; set; }
     }
 }

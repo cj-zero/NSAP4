@@ -302,5 +302,78 @@ namespace Infrastructure
 
             return result;
         }
+
+        public static (string Condition, bool Tof) ConvertCondition(Filter filters)
+        {
+            string filter = ""; bool tof = false;
+            var alias = !string.IsNullOrWhiteSpace(filters.Alias) ? $"{filters.Alias}." : "";
+            switch (filters.Contrast)
+            {
+                case "<=":
+                    filters.Value = $"'{filters.Value}'";
+                    break;
+                case "<":
+                    filters.Value = $"'{filters.Value}'";
+                    break;
+
+                case ">":
+                    filters.Value = $"'{filters.Value}'";
+                    break;
+
+                case ">=":
+                    filters.Value = $"'{filters.Value}'";
+                    break;
+                case "!=":
+                    tof = filters.Key != filters.Value;
+                    filters.Value = $"'{filters.Value}'";
+                    break;
+                case "=":
+                    tof = filters.Key == filters.Value;
+                    filters.Value = $"'{filters.Value}'";
+                    break;
+                //case "contains":
+                //    var lExp = filters.Value.Split(',').ToList()
+                //    filter = Expression.Call(left, typeof(string).GetMethod("Contains", new Type[] { typeof(string) }),
+                //        Expression.Constant(filterObj.Value));
+                //    break;
+                case "in":
+                    var lExp = filters.Value.Replace(",", "','");
+                    var Exp2 = filters.Value.Split(',').ToList();
+                    var keyExp = filters.Key.Split(',').ToList();
+                    filters.Value = $"('{lExp}')";
+                    tof = Exp2.Intersect(keyExp).ToList().Count > 0;
+                    break;
+                case "not in":
+                    var lExp2 = filters.Value.Replace(",", "','");
+                    var Exp3 = filters.Value.Split(',').ToList();
+                    var keyExp2 = filters.Key.Split(',').ToList();
+                    filters.Value = $"('{lExp2}')";
+                    tof = !(Exp3.Intersect(keyExp2).ToList().Count > 0);
+                    break;
+                case "startWith":
+                    filters.Contrast = "like";
+                    filters.Value = filters.Value + "%";
+                    break;
+                case "endWith":
+                    filters.Contrast = "like";
+                    filters.Value = "%" + filters.Value;
+                    break;
+                    //交集，使用交集时左值必须时固定的值
+                    //case "intersect": //交集
+                    //    if (property != null)
+                    //    {
+                    //        throw new Exception("交集模式下，表达式左边不能为变量，请调整数据规则，如:c=>\"A,B,C\" intersect \"B,D\"");
+                    //    }
+
+                    //    var rightval = filterObj.Value.Split(',').ToList();
+                    //    var leftval = filterObj.Key.Split(',').ToList();
+                    //    var val = rightval.Intersect(leftval);
+
+                    //    filter = Expression.Constant(val.Count() > 0);
+                    //    break;
+            }
+            filter += $@" {filters.BracketLeft}{alias}{filters.Key} {filters.Contrast} {filters.Value} {filters.BracketRight} {filters.Operation} ";
+            return (filter, tof);
+        }
     }
 }

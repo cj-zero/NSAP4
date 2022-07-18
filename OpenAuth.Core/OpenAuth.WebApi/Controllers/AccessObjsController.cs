@@ -113,8 +113,28 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
-        
-        
+
+        /// <summary>
+        /// 复制角色 角色分配用户，整体提交，会覆盖之前的配置
+        /// </summary>
+        [HttpGet]
+        public Response CopyAssignRoleUsers(string roleId, string copyId)
+        {
+            var result = new Response();
+            try
+            {
+                _app.CopyAssignRoleUsers(roleId, copyId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{roleId},{copyId}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
         /// <summary>
         /// 角色分配用户，整体提交，会覆盖之前的配置
         /// </summary>

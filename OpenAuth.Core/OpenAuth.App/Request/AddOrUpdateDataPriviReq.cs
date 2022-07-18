@@ -22,6 +22,7 @@ namespace OpenAuth.App.Request
         /// 资源标识（模块编号）
         /// </summary>
         public string SourceCode { get; set; }
+        public string SourceName { get; set; }
         /// <summary>
         /// 二级资源标识
         /// </summary>
