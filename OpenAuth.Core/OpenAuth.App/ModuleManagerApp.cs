@@ -4,6 +4,7 @@ using Infrastructure;
 using Infrastructure.Extensions;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
+using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 
@@ -40,6 +41,51 @@ namespace OpenAuth.App
             UpdateTreeObj(obj);
         }
 
+        public List<ModuleView> LoadModuleAll()
+        {
+            var modules = (from module in UnitWork.Find<Module>(null)
+                           select new ModuleView
+                           {
+                               SortNo = module.SortNo,
+                               Name = module.Name,
+                               Id = module.Id,
+                               CascadeId = module.CascadeId,
+                               Code = module.Code,
+                               IconName = module.IconName,
+                               Url = module.Url,
+                               ParentId = module.ParentId,
+                               ParentName = module.ParentName,
+                               IsSys = module.IsSys,
+                               Status = module.Status
+                           }).ToList();
+            return modules;
+        }
+
+        public TableData LoadModuleForTree()
+        {
+            TableData res = new TableData();
+            var modules = LoadModuleAll();
+            var tree = modules.GenerateTree(u => u.Id, u => u.ParentId);
+            List<ModuleTree> moduleTree = new List<ModuleTree>();
+            lllls(tree, moduleTree);
+            void lllls(IEnumerable<TreeItem<ModuleView>> items, List<ModuleTree> list2)
+            {
+                foreach (var item in items)
+                {
+                    ModuleTree moduleTree = new ModuleTree();
+                    if (item.Item != null)
+                    {
+                        moduleTree.Code = item.Item.Code;
+                        moduleTree.Name = item.Item.Name;
+                        moduleTree.Children = new List<ModuleTree>();
+                        list2.Add(moduleTree);
+                        lllls(item.Children, moduleTree.Children);
+                    }
+                }
+            }
+            res.Data = moduleTree;
+            return res;
+        }
         #region 用户/角色分配模块
 
 
@@ -130,7 +176,7 @@ namespace OpenAuth.App
         #region 菜单字段
         public List<ModuleField> LoadModuleField(string moduleId, string key, string description)
         {
-            var query = UnitWork.Find<ModuleField>(c => c.ModuleId == moduleId)
+            var query = UnitWork.Find<ModuleField>(c => c.ModuleId == moduleId || c.ModuleCode == moduleId)
                 .WhereIf(!string.IsNullOrWhiteSpace(key), c => c.Key.Contains(key) || c.Description.Contains(key))
                 .ToList();
             return query;

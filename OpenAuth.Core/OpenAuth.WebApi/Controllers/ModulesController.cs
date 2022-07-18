@@ -5,6 +5,7 @@ using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using Serilog;
 
@@ -26,6 +27,48 @@ namespace OpenAuth.WebApi.Controllers
             _authUtil = authUtil;
         }
 
+        /// <summary>
+        /// 获取所有菜单
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public Response<List<ModuleView>> LoadModuleAll()
+        {
+            var result = new Response<List<ModuleView>>();
+            try
+            {
+                result.Result = _app.LoadModuleAll();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+        /// <summary>
+        /// 获取菜单树
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public TableData LoadModuleForTree()
+        {
+            var result = new TableData();
+            try
+            {
+                result = _app.LoadModuleForTree();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：， 错误：{result.Message}");
+            }
+
+            return result;
+        }
 
         /// <summary>
         /// 加载角色模块

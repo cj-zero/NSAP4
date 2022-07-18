@@ -55,5 +55,9 @@ namespace OpenAuth.Repository.Domain
         /// 表别名
         /// </summary>
         public string Alias { get; set; }
+        /// <summary>
+        /// 字段属性 user-选人 org-选部门 amount-金额 date-时间 空-文本框
+        /// </summary>
+        public string Prop { get; set; }
     }
 }
