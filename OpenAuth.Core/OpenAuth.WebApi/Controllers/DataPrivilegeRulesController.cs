@@ -63,18 +63,62 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
+        /// <summary>
+        /// 添加数据权限 新
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public Response AddNew(AddOrUpdateDataPriviReq obj)
+        {
+            var result = new Response();
+            try
+            {
+                _app.AddNew(obj);
+
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{obj.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
 
         /// <summary>
         /// 修改数据权限
         /// </summary>
         /// <returns></returns>
-       [HttpPost]
+        [HttpPost]
         public Response Update(AddOrUpdateDataPriviReq obj)
         {
             var result = new Response();
             try
             {
                 _app.Update(obj);
+
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{obj.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+        /// <summary>
+        /// 修改状态
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public Response UpdateEnable(AddOrUpdateDataPriviReq obj)
+        {
+            var result = new Response();
+            try
+            {
+                _app.UpdateEnable(obj);
 
             }
             catch (Exception ex)
@@ -97,9 +141,18 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 加载列表
+        /// </summary>
+        [HttpGet]
+        public TableData LoadNew([FromQuery] QueryDataPrivilegeRuleListReq request)
+        {
+            return _app.LoadNew(request);
+        }
+
+        /// <summary>
         /// 批量删除
         /// </summary>
-       [HttpPost]
+        [HttpPost]
         public Response Delete([FromBody]string[] ids)
         {
             var result = new Response();
@@ -121,6 +174,12 @@ namespace OpenAuth.WebApi.Controllers
         public DataPrivilegeRulesController(DataPrivilegeRuleApp app) 
         {
             _app = app;
+        }
+
+        [HttpGet]
+        public void Test()
+        {
+            _app.Test();
         }
     }
 }
