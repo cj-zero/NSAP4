@@ -57,7 +57,7 @@ namespace OpenAuth.App.Customer
             var data = await query.OrderBy(q => q.CardCode).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
             //跨库查询,把要查询的数据一次查完,优化查询速度
             //客户所属行业数据
-            var compSectorData = await UnitWork.Find<crm_ocrd>(x => data.Select(d => d.CardCode).Contains(x.CardCode)&&x.sbo_id==Define.SBO_ID).Select(x => new { x.U_CompSector, x.CardCode }).ToListAsync();
+            var compSectorData = await UnitWork.Find<crm_ocrd>(x => data.Select(d => d.CardCode).Contains(x.CardCode) && x.sbo_id == Define.SBO_ID).Select(x => new { x.U_CompSector, x.CardCode }).ToListAsync();
             //销售员部门数据
             var deptData = await (from s in UnitWork.Find<sbo_user>(null)
                                   join ud in UnitWork.Find<base_user_detail>(null) on s.user_id equals ud.user_id
@@ -68,7 +68,7 @@ namespace OpenAuth.App.Customer
                                   {
                                       slpCode = s.sale_id,
                                       dept = d.dep_alias,
-                                  }).ToListAsync();
+                                  }).Distinct().ToListAsync();
             //var response = new List<QueryCustomerListResponse>();
             //data.ForEach(d =>
             //{
@@ -152,17 +152,59 @@ namespace OpenAuth.App.Customer
         {
             var result = new TableData();
 
-            var query = UnitWork.Find<SpecialCustomer>(c => c.Type == req.Type && c.Isdelete == false).Select(x => new
-            {
-                x.Id,
-                x.CustomerNo,
-                x.CustomerName,
-                x.SalerName,
-                x.DepartmentName,
-                x.Type
-            });
+            //判断是否是公海管理员(普通业务员只能看到盲盒类型的数据)
+            var isAdmin = _auth.GetCurrentUser().Roles.Any(r => r.Name == "公海管理员");
+            //查出黑名单用户
+            var query = from x in UnitWork.Find<SpecialCustomer>(c => c.Type == req.Type && c.Isdelete == false)
+                        select new
+                        {
+                            x.Id,
+                            x.CustomerNo,
+                            x.CustomerName,
+                            x.SalerName,
+                            x.DepartmentName,
+                            x.Type,
+                            x.Remark,
+                            x.UpdateUser,
+                            x.UpdateDatetime
+                        };
+            var dataquery = await query.OrderBy(q => q.CustomerNo).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+            //查询历史领取记录获取次数
+            var receivedata = await UnitWork.Find<CustomerSalerHistory>(c => query.Select(x => x.CustomerNo).Contains(c.CustomerNo))
+                .GroupBy(c => c.CustomerNo)
+                .Select(g => new
+                {
+                    CardCode = g.Key,
+                    ReceiveTime = g.Count()
+                }).ToListAsync();
 
-            result.Data = await query.OrderBy(q => q.CustomerNo).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+            var fallinquery = await UnitWork.Find<Repository.Domain.Serve.CustomerMoveHistory>(c => query.Select(x => x.CustomerNo).Contains(c.CardCode)).ToListAsync();
+            var fallindata = fallinquery
+                .GroupBy(c => c.CardCode)
+                .Select(s => s.OrderByDescending(x => x.CreateTime).FirstOrDefault());
+
+
+            var data = from s in dataquery
+                       join q in receivedata on s.CustomerNo equals q.CardCode into temp1
+                       join f in fallindata on s.CustomerNo equals f.CardCode into temp2
+                       from t1 in temp1.DefaultIfEmpty()
+                       from t2 in temp2.DefaultIfEmpty()
+                       select new
+                       {
+                           Id = s.Id,
+                           CustomerNo = s.CustomerNo,
+                           CustomerName = s.CustomerName,
+                           SalerName = s.SalerName,
+                           DepartmentName = s.DepartmentName,
+                           Type = s.Type,
+                           Count = isAdmin ? (t1 == null ? 0 : t1.ReceiveTime) : 0,
+                           fallResult = t2 == null ? "" : t2.Remark,
+                           Remark = s.Remark,
+                           UpdateUser = s.UpdateUser,
+                           UpdateDatetime = s.UpdateDatetime
+                       };
+
+            result.Data = data;
             result.Count = await query.CountAsync();
 
             return result;
@@ -402,7 +444,7 @@ namespace OpenAuth.App.Customer
                            SlpCode = q.SlpCode,
                            SlpName = isAdmin ? q.SlpName : "******",
                            CreateDateTime = q.CreateDateTime.Value,
-                           FallIntoTime = q.FallIntoTime,
+                           FallIntoTime = q.FallIntoTime.Value,
                            LastOrderTime = isAdmin ? (t1 == null ? "" : t1.LastOrderTime.ToString("yyyyMMdd")) : null,
                            TotalMoney = isAdmin ? (t2 == null ? 0 : t2.TotalMoney) : null,
                            ReceiveTime = isAdmin ? (t3 == null ? 0 : t3.ReceiveTime) : 0
@@ -622,7 +664,7 @@ namespace OpenAuth.App.Customer
                     }
                 }
 
-                
+
                 //是否是未成交客户
                 var isNoQuotationCustomer = await (from c in UnitWork.Find<OCRD>(null)
                                                    join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode into temp
@@ -843,7 +885,7 @@ namespace OpenAuth.App.Customer
                     response.Message += $"客户{item.CustomerNo}不存在或已被领取 \n";
                     continue;
                 }
-                
+
                 //是否是未报价客户
                 var isNoQuotationCustomer = await (from c in UnitWork.Find<OCRD>(null)
                                                    join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode into temp
@@ -1009,5 +1051,66 @@ namespace OpenAuth.App.Customer
 
             return response;
         }
+
+
+        #region
+        /// <summary>
+        /// 根据客户代码查询历史归属记录(黑名单)
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetCustomerHistoryLists(QueryCustomerSalerListReq req)
+        {
+            var result = new TableData();
+
+            var queryCustomerSalers = new List<QueryCustomerSalerListResponse>();
+            //查询客户领取掉落记录表
+            string sql = $@"select a.* FROM (select SlpCode,SlpName,movein_type,remark,CreateTime from customer_move_history where CardCode = '{req.CardCode}'
+                            UNION select SlpCode,SlpName,'领取','',CreateTime from Customer_Saler_History where customerNo = '{req.CardCode}') as a order by a.CreateTime";
+            var table = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, System.Data.CommandType.Text);
+
+            if (table != null && table.Rows.Count > 0)
+            {
+                for (int i = 0; i < table.Rows.Count; i++)
+                {
+                    queryCustomerSalers.Add(new QueryCustomerSalerListResponse
+                    {
+                        SlpCode = Convert.ToInt32(table.Rows[i]["SlpCode"]),
+                        SalerName = table.Rows[i]["SlpName"].ToString(),
+                        movein_type = table.Rows[i]["movein_type"].ToString(),
+                        remark = table.Rows[i]["remark"].ToString(),
+                        CreateTime = Convert.ToDateTime(table.Rows[i]["CreateTime"])
+                    });
+                }
+            }
+            //如果记录表不存在客户记录,则直接查询OCRD表
+            else
+            {
+                var slpcode = await (from o in UnitWork.Find<OCRD>(null)
+                                     join s in UnitWork.Find<OSLP>(null) on o.SlpCode equals s.SlpCode
+                                     where o.CardCode == req.CardCode
+                                     orderby o.CreateDate
+                                     select new
+                                     {
+                                         o.CardCode,
+                                         s.SlpName,
+                                         o.CreateDate,
+                                     }).FirstOrDefaultAsync();
+                queryCustomerSalers.Add(new QueryCustomerSalerListResponse
+                {
+                    SlpCode = Convert.ToInt32(slpcode.CardCode),
+                    SalerName = slpcode.SlpName,
+                    movein_type = "创建",
+                    remark = "",
+                    CreateTime = slpcode.CreateDate
+                });
+
+            }
+            result.Data = queryCustomerSalers;
+            result.Count = queryCustomerSalers.Count();
+
+            return result;
+        }
+
+        #endregion
     }
 }

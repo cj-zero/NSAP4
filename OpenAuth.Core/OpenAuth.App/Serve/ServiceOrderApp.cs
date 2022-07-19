@@ -3386,6 +3386,29 @@ namespace OpenAuth.App
                 var num = req.QryStateList.Split(",");
                 status = Array.ConvertAll(num, int.Parse).ToList();
             }
+            #region MyRegion
+            //var query1 = await (from a in UnitWork.Find<ServiceOrder>(c => c.CreateTime >= DateTime.Parse("2022-05-01 00:00:00") && c.CreateTime < DateTime.Parse("2022-08-01 00:00:00") && c.VestInOrg == 1)
+            //                    join b in UnitWork.Find<ServiceDailyReport>(null) on a.Id equals b.ServiceOrderId
+            //                    select new { a.U_SAP_ID, a.TerminalCustomerId, a.TerminalCustomer, a.CreateTime, b.MaterialCode, b.ManufacturerSerialNumber, b.CreaterName, b.TroubleDescription, b.ProcessDescription }).ToListAsync();
+            //var list = new List<ServiceOrderExcelDto>();
+            //foreach (var serviceOrder in query1)
+            //{
+            //    list.Add(new ServiceOrderExcelDto
+            //    {
+            //        U_SAP_ID = serviceOrder.U_SAP_ID,
+            //        TerminalCustomer = serviceOrder.TerminalCustomer,
+            //        TerminalCustomerId = serviceOrder.TerminalCustomerId,
+            //        MaterialCode = serviceOrder.MaterialCode,
+            //        ManufacturerSerialNumber = serviceOrder.ManufacturerSerialNumber,
+            //        CurrentUser = serviceOrder.CreaterName,
+            //        SubmitDate = serviceOrder.CreateTime,
+            //        TroubleDescription =string.Join(",", GetServiceTroubleAndSolution(serviceOrder.TroubleDescription, "description")) ,
+            //        ProcessDescription = string.Join(",", GetServiceTroubleAndSolution(serviceOrder.ProcessDescription, "description")),
+            //    });
+            //}
+            //IExporter exporter = new ExcelExporter();
+            //var bytes = await exporter.ExportAsByteArray(list);
+            #endregion
 
             var ids = await UnitWork.Find<ServiceWorkOrder>(null)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryServiceWorkOrderId), q => q.Id.Equals(Convert.ToInt32(req.QryServiceWorkOrderId)))
@@ -3421,7 +3444,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QrySalesMan), q => q.SalesMan == req.QrySalesMan)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromId), q => q.FromId == Convert.ToInt32(req.QryFromId))
                 .WhereIf(string.IsNullOrWhiteSpace(req.QryFromId) && req.QryVestInOrg == "1", q => q.FromId != 8)//服务呼叫列表排除ECN
-                //.WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ServiceWorkOrders.Any(a => a.ProblemTypeId.Equals(req.QryProblemType)))
+                                                                                                                 //.WhereIf(!string.IsNullOrWhiteSpace(req.QryProblemType), q => q.ServiceWorkOrders.Any(a => a.ProblemTypeId.Equals(req.QryProblemType)))
                 .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.ContactTel), q => q.ContactTel.Contains(req.ContactTel) || q.NewestContactTel.Contains(req.ContactTel))
                 //.WhereIf(!string.IsNullOrWhiteSpace(req.QryFromType), q => q.ServiceWorkOrders.Any(a => a.FromType.Equals(Convert.ToInt32(req.QryFromType))))

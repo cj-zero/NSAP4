@@ -132,6 +132,28 @@ namespace OpenAuth.App
             return allprops.Where(u => props.Contains(u.Key)).ToList();
         }
 
+        /// <summary>
+        /// 获取用户可访问的字段列表(新)
+        /// </summary>
+        /// <param name="moduleCode">模块的code</param>
+        /// <returns></returns>
+        public List<KeyDescription> GetPropertiesNew(string moduleCode)
+        {
+            var props = (from a in UnitWork.Find<Relevance>(u => u.Key == Define.ROLEDATAPROPERTY && _userRoleIds.Contains(u.FirstId) && u.SecondId == moduleCode)
+                         join b in UnitWork.Find<ModuleField>(null) on new { ModuleCode = a.SecondId, Feild = a.ThirdId } equals new { b.ModuleCode, Feild = b.Key }
+                         select new { a.ThirdId, a.ExtendInfo, b.SortNo, b.Description }).ToList();
+            //多个角色拥有相同字段权限，则按权限最大的字段返回
+            props = props.GroupBy(c => c.ThirdId).Select(c => c.OrderByDescending(o => o.ExtendInfo).First()).ToList();
+            var result = props.Select(c => new KeyDescription
+            {
+                Key = c.ThirdId,
+                Description = c.Description,
+                SortNo = c.SortNo,
+                Permission = c.ExtendInfo
+            }).ToList();
+            return result;
+        }
+
         //用户角色
 
         public NormalAuthStrategy(IUnitWork unitWork, IRepository<User> repository, DbExtension dbExtension) : base(unitWork, repository,null)

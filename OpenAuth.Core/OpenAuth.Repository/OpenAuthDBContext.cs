@@ -32,6 +32,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<Form> Forms { get; set; }
         public virtual DbSet<Module> Modules { get; set; }
         public virtual DbSet<ModuleElement> ModuleElements { get; set; }
+        public virtual DbSet<ModuleField> ModuleFields { get; set; }
         public virtual DbSet<OpenAuth.Repository.Domain.Org> Orgs { get; set; }
         public virtual DbSet<Relevance> Relevances { get; set; }
         public virtual DbSet<Resource> Resources { get; set; }

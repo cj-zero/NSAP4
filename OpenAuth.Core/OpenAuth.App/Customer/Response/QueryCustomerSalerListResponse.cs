@@ -40,5 +40,14 @@ namespace OpenAuth.App.Customer.Response
         /// 掉入公海时间
         /// </summary>
         public DateTime? FallIntoDate { get; set; }
+
+
+        #region 黑名单历史归属
+
+        public string movein_type { get; set; }
+
+        public string remark { get; set; }
+
+        #endregion
     }
 }

@@ -96,6 +96,11 @@ namespace OpenAuth.App
             return _dbExtension.GetProperties(moduleCode);
         }
 
+        public List<KeyDescription> GetPropertiesNew(string moduleCode)
+        {
+            return UnitWork.Find<ModuleField>(c => c.ModuleCode == moduleCode).Select(c => new KeyDescription { Key = c.Key, Description = c.Description, SortNo = c.SortNo, Permission = "3" }).ToList();
+        }
+
 
         public SystemAuthStrategy(IUnitWork unitWork, IRepository<User> repository, DbExtension dbExtension) : base(unitWork, repository, null)
         {

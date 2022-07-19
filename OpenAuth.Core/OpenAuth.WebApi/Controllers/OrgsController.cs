@@ -123,6 +123,32 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 获取用户树
+        /// </summary>
+        /// <param name="corpId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async System.Threading.Tasks.Task<App.Response.TableData> GetUserTree()
+        {
+            App.Response.TableData result = new App.Response.TableData();
+            result = await _app.GetUserTree();
+            return result;
+        }
+
+        /// <summary>
+        /// 获取部门树
+        /// </summary>
+        /// <param name="corpId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async System.Threading.Tasks.Task<App.Response.TableData> GetOrgTree()
+        {
+            App.Response.TableData result = new App.Response.TableData();
+            result = await _app.GetOrgTree();
+            return result;
+        }
+
+        /// <summary>
         /// 获取部门信息
         /// </summary>
         /// <param name="id"></param>

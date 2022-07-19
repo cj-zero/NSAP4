@@ -20,5 +20,16 @@
         /// 字段类型
         /// </summary>
         public string Type { get; set; }
+
+        /// <summary>
+        /// 排序号
+        /// </summary>
+        public int? SortNo { get; set; }
+
+        /// <summary>
+        /// 字段权限 
+        /// </summary>
+        public string Permission { get; set; }
+
     }
 }
