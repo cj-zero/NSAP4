@@ -569,89 +569,33 @@ namespace OpenAuth.WebApi.Controllers
                     result.Message = $"{model.SeriesName}系列工步未设置优先启动!";
                     return result;
                 }
-                var xmlCpntent = XMLHelper.GetXDocument(model.FilePath).ToString();
-                StringReader Reader = new StringReader(xmlCpntent);
-                XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.Load(Reader);
-                string work_path = $"{AppDomain.CurrentDomain.BaseDirectory}step\\";
-                Directory.CreateDirectory(work_path);
-                string filename = DateTime.Now.ToString("yyyyMMddHHmmssffff");
-                string dir = $"{work_path}{filename}.xml";
-                xmlDoc.Save(dir);
-                if (!System.IO.File.Exists(dir))
+                var FilePathContent = _app.StepContent(model.FilePath);
+                if (FilePathContent.Code != 200)
                 {
-                    result.Code = 500;
-                    result.Message = "工步文件读取失败!";
+                    result.Code = FilePathContent.Code;
+                    result.Message = $"{model.FilePath}{FilePathContent.Message}";
                     return result;
                 }
-                var step = Common.XmlStep.LoadStepFile(dir);
-                if (step == null)
+                var FilePath2Content = _app.StepContent(model.FilePath2);
+                if (FilePath2Content.Code != 200)
                 {
-                    result.Code = 500;
-                    result.Message = "工步文件异常,无法解析!";
+                    result.Code = FilePath2Content.Code;
+                    result.Message = $"{model.FilePath2}{FilePath2Content.Message}";
                     return result;
                 }
-                System.IO.File.Delete(dir);
-                var stepCount = step.ListStep.Count();
-                var step_data = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent.ToString()));
-
-
-                var xmlCpntent1 = XMLHelper.GetXDocument(model.FilePath2).ToString();
-                StringReader Reader1 = new StringReader(xmlCpntent1);
-                XmlDocument xmlDoc1 = new XmlDocument();
-                xmlDoc1.Load(Reader1);
-                string work_path1 = $"{AppDomain.CurrentDomain.BaseDirectory}step\\";
-                Directory.CreateDirectory(work_path1);
-                string filename1 = DateTime.Now.ToString("yyyyMMddHHmmssffff");
-                string dir1 = $"{work_path1}{filename1}.xml";
-                xmlDoc1.Save(dir1);
-                if (!System.IO.File.Exists(dir1))
-                {
-                    result.Code = 500;
-                    result.Message = "工步文件读取失败!";
-                    return result;
-                }
-                var step1 = Common.XmlStep.LoadStepFile(dir1);
-                if (step1 == null)
-                {
-                    result.Code = 500;
-                    result.Message = "工步文件异常,无法解析!";
-                    return result;
-                }
-                System.IO.File.Delete(dir1);
-                var stepCount2 = step1.ListStep.Count();
-                var step_data2 = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent1.ToString()));
-                var res = await _app.RestartDockChannelControl(model.stopTests, model.FirstStart, stepCount, step_data, stepCount2, step_data2);
+                var res = await _app.RestartDockChannelControl(model.stopTests, model.FirstStart, FilePathContent.Data.stepCount, FilePathContent.Data.stepData, FilePath2Content.Data.stepCount, FilePath2Content.Data.stepData);
                 deviceTestResponses = res.Data;
             }
             else
             {
-                var xmlCpntent = XMLHelper.GetXDocument(model.FilePath).ToString();
-                StringReader Reader = new StringReader(xmlCpntent);
-                XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.Load(Reader);
-                string work_path = $"{AppDomain.CurrentDomain.BaseDirectory}step\\";
-                Directory.CreateDirectory(work_path);
-                string filename = DateTime.Now.ToString("yyyyMMddHHmmssffff");
-                string dir = $"{work_path}{filename}.xml";
-                xmlDoc.Save(dir);
-                if (!System.IO.File.Exists(dir))
+                var FilePathContent = _app.StepContent(model.FilePath);
+                if (FilePathContent.Code != 200)
                 {
-                    result.Code = 500;
-                    result.Message = "工步文件读取失败!";
+                    result.Code = FilePathContent.Code;
+                    result.Message = $"{model.FilePath}{FilePathContent.Message}";
                     return result;
                 }
-                var step = Common.XmlStep.LoadStepFile(dir);
-                if (step == null)
-                {
-                    result.Code = 500;
-                    result.Message = "工步文件异常,无法解析!";
-                    return result;
-                }
-                System.IO.File.Delete(dir);
-                var stepCount = step.ListStep.Count();
-                var step_data = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent.ToString()));
-                var res = await _app.RestartTest(model.stopTests, stepCount, step_data);
+                var res = await _app.RestartTest(model.stopTests, FilePathContent.Data.stepCount, FilePathContent.Data.stepData);
                 deviceTestResponses = res.Data;
             }
             try
@@ -776,6 +720,12 @@ namespace OpenAuth.WebApi.Controllers
                         result.Message = $"{model.FilePath2}{FilePath2Content.Message}";
                         return result;
                     }
+                    if (model.TestType==null || model.TestType<=0)
+                    {
+                        result.Code = 500;
+                        result.Message = $"请选择启动模式!";
+                        return result;
+                    }
                     var res = await _app.DockChannelControl(model, FilePathContent.Data.stepCount, FilePathContent.Data.stepData, FilePath2Content.Data.stepCount, FilePath2Content.Data.stepData);
                     if (res.Code != 200)
                     {
@@ -853,6 +803,40 @@ namespace OpenAuth.WebApi.Controllers
             }
         }
 
+        /// <summary>
+        /// 工步提取
+        /// </summary>
+        /// <param name="FilePath"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public TableData GetStepContent(string FilePath)
+        {
+            var result = new TableData();
+            var xmlCpntent = XMLHelper.GetXDocument(FilePath).ToString();
+            StringReader Reader = new StringReader(xmlCpntent);
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.Load(Reader);
+            string work_path = $"{AppDomain.CurrentDomain.BaseDirectory}step\\";
+            Directory.CreateDirectory(work_path);
+            string filename = DateTime.Now.ToString("yyyyMMddHHmmssffff");
+            string dir = $"{work_path}{filename}.xml";
+            xmlDoc.Save(dir);
+            if (!System.IO.File.Exists(dir))
+            {
+                result.Code = 500;
+                result.Message = "工步文件读取失败!";
+                return result;
+            }
+            var step = Common.XmlStep.LoadStepFile(dir);
+            if (step == null)
+            {
+                result.Code = 500;
+                result.Message = "工步文件异常,无法解析!";
+                return result;
+            }
+            result.Data = step;
+            return result;
+        }
         #endregion
     }
 }

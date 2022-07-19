@@ -29,6 +29,10 @@ namespace OpenAuth.App.Nwcali.Request
         /// 系列
         /// </summary>
         public string SeriesName { get; set; }
+        /// <summary>
+        /// 启动类型（6，7系列特有） 1：相邻对接启动  2：对称对接启动
+        /// </summary>
+        public int? TestType { get; set; }
 
     }
 }
