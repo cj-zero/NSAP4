@@ -3501,6 +3501,7 @@ namespace OpenAuth.App
                 { 7, "已解决"},
                 { 8, "已回访"},
             };
+            var catetory = await UnitWork.Find<Category>(c => c.TypeId == "SYS_CallTheSource").Select(c => new { c.DtValue, c.Name }).ToListAsync();
             List<ServiceWorkOrder> serviceWorkOrders = new List<ServiceWorkOrder>();
             dataList.ForEach(d => serviceWorkOrders.AddRange(d.ServiceWorkOrders));
             var completionReportIds = serviceWorkOrders.Select(s => s.CompletionReportId).ToList();
@@ -3535,7 +3536,7 @@ namespace OpenAuth.App
                         SalesMan = serviceOrder.SalesMan,
                         RecepUserName = serviceOrder.RecepUserName,
                         Service = serviceOrder.Services,
-                        FromId = serviceOrder.FromId.Value == 1 ? "电话" : "App",
+                        FromId = catetory.Where(w => w.DtValue == serviceOrder.FromId.Value.ToString()).FirstOrDefault()?.Name,// serviceOrder.FromId.Value == 1 ? "电话" : "App",
                         Status = serviceOrder.ServiceStatus == 1 ? "待确认" : serviceOrder.ServiceStatus == 2 ? "已确认" : "已取消",
                         AddressDesignator = serviceOrder.AddressDesignator,
                         Address = serviceOrder.Address,
