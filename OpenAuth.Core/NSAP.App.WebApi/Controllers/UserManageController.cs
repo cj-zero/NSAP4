@@ -9,6 +9,7 @@ using OpenAuth.App;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.App.Sap.BusinessPartner;
+using OpenAuth.App.Serve.Request;
 
 namespace NSAP.App.WebApi.Controllers
 {
@@ -98,26 +99,21 @@ namespace NSAP.App.WebApi.Controllers
         /// <summary>
         /// 获取App用户列表
         /// </summary>
-        /// <param name="ids"></param>
-        /// <param name="key"></param>
-        /// <param name="honor_id"></param>
-        /// <param name="page_index"></param>
-        /// <param name="page_size"></param>
+        /// <param name="model"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> AppUserList(string ids = "", string key = "", int honor_id=0, int page_index = 1, int page_size = 10)
+        [HttpPost]
+        public async Task<TableData> AppUserList(AppUserReq model)
         {
             var result = new TableData();
             try
             {
-                result = await _app.AppUserList(ids, key, honor_id, page_index, page_size);
+                result = await _app.AppUserList(model);
             }
             catch (Exception ex)
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
             }
-
             return result;
         }
     }
