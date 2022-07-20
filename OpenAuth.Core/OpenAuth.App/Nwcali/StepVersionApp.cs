@@ -1503,7 +1503,8 @@ namespace OpenAuth.App
             long.TryParse(GeneratorCode.Split('-')[1], out long OrderNo);
             var bindDevList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo).WhereIf(!string.IsNullOrWhiteSpace(key), c => c.GeneratorCode.Contains(key)).ToListAsync();
             var testCodeList = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.OrderNo == OrderNo).Select(c => c.GeneratorCode).Distinct().ToListAsync();
-            var canTestCodeList = bindDevList.Where(c => !testCodeList.Contains(c.GeneratorCode)).ToList();
+            var canTestCodeList = bindDevList.Where(c => !testCodeList.Contains(c.GeneratorCode)).Distinct().Skip((page - 1) * limit).Take(limit).ToList();
+            result.Count = bindDevList.Where(c => !testCodeList.Contains(c.GeneratorCode)).OrderBy(c=>c.GeneratorCode).Distinct().Count();
             if (!canTestCodeList.Any())
             {
                 result.Data = new List<string> { };
@@ -1515,7 +1516,7 @@ namespace OpenAuth.App
                                        select new { b.edge_guid, b.srv_guid, b.dev_uid, b.mid_guid, b.unit_id, b.low_guid }).ToListAsync();
             result.Data = (from a in canTestCodeList.AsEnumerable()
                            join b in onlineDevList.AsEnumerable() on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, DevUid = b.dev_uid, LowGuid = b.low_guid }
-                           select a.GeneratorCode).Distinct().Skip((page - 1) * limit).Take(limit).ToList();
+                           select a.GeneratorCode).ToList();
             return result;
         }
 
