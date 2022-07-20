@@ -1512,13 +1512,283 @@ namespace OpenAuth.App
             var onlineDevList = await (from a in UnitWork.Find<edge>(null)
                                        join b in UnitWork.Find<edge_low>(null) on a.edge_guid equals b.edge_guid
                                        where a.department == departmen && a.status == 1
-                                       select new { b.edge_guid, b.srv_guid, b.dev_uid, b.mid_guid, b.unit_id, b.low_guid })
-                                 .ToListAsync();
+                                       select new { b.edge_guid, b.srv_guid, b.dev_uid, b.mid_guid, b.unit_id, b.low_guid }).ToListAsync();
             result.Data = (from a in canTestCodeList.AsEnumerable()
                            join b in onlineDevList.AsEnumerable() on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, DevUid = b.dev_uid, LowGuid = b.low_guid }
                            select a.GeneratorCode).Distinct().Skip((page - 1) * limit).Take(limit).ToList();
             return result;
         }
+
+        /// <summary>
+        /// 短接启动(6,7系列)
+        /// </summary>
+        /// <param name="model"></param>
+        /// <param name="stepCount"></param>
+        /// <param name="step_data"></param>
+        /// <param name="stepCount2"></param>
+        /// <param name="step_data2"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        /// <exception cref="Exception"></exception>
+        public async Task<TableData<List<DeviceTestResponse>>> ShortCircuitStart(ChannelControlReq model, int stepCount, string step_data, int stepCount2, string step_data2)
+        {
+            var result = new TableData<List<DeviceTestResponse>>();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                result.Code = Define.INVALID_TOKEN;
+                result.Message = $"登录已过期!";
+                return result;
+            }
+            var department = loginContext.Orgs.Select(c => c.Name).FirstOrDefault();
+            string offLineLowGuid = "";
+            var codeList = model.GeneratorCode.Split(',');
+            List<DeviceTestResponse> list = new List<DeviceTestResponse>();
+            var allBindList = await UnitWork.Find<DeviceBindMap>(null).Where(c => department == c.Department && codeList.Contains(c.GeneratorCode)).ToListAsync();
+            if (!allBindList.Any())
+            {
+                throw new Exception($"生产码{model.GeneratorCode}暂未绑定任何设备!");
+            }
+            var allBindLowList = allBindList.Select(c => c.LowGuid).ToList();
+            var lowguidList = allBindLowList.GroupBy(c => c).Select(c => new { guid = c.Key, counts = c.Count() }).Where(c => c.counts > 1).Select(c => c.guid).ToList();
+            if (lowguidList.Any())
+            {
+                var same_lowguid = allBindList.Where(c => lowguidList.Contains(c.LowGuid)).Select(c => c.DevUid).Distinct().ToList();
+                var DevUids = string.Join(';', same_lowguid.Select(c => c).ToList());
+                result.Code = 500;
+                result.Message = $"以下中位机【{DevUids}】的下位机guid重复出现,启动失败!";
+                return result;
+            }
+            var hasTestLow = await UnitWork.Find<DeviceTestLog>(null)
+                            .Where(c => c.GeneratorCode == model.GeneratorCode && allBindLowList.Contains(c.LowGuid))
+                            .Select(c => c.LowGuid).ToListAsync();
+            if (hasTestLow.Any())
+            {
+                throw new Exception($"生产码{model.GeneratorCode}已存在测试记录,请进入重启界面启动!");
+            }
+
+            var allOnlineLowList = await (from a in UnitWork.Find<edge>(null)
+                                       join b in UnitWork.Find<edge_low>(null) on a.edge_guid equals b.edge_guid
+                                       where a.department == department && a.status == 1
+                                       select new { b.edge_guid, b.srv_guid, b.dev_uid, b.mid_guid, b.unit_id, b.low_guid }).ToListAsync();
+            var allOnlineLowListGuid = allOnlineLowList.Select(c => c.low_guid).Distinct().ToList();
+            var testList = allBindLowList.Where(c => allOnlineLowListGuid.Contains(c)).Distinct().ToList();
+            if (!testList.Any())
+            {
+                throw new Exception($"生产码{model.GeneratorCode}暂无可启动已绑定的在线设备!");
+            }
+            var channelList = await UnitWork.Find<edge_channel>(null).Where(c => allBindLowList.Contains(c.low_guid)).ToListAsync();
+            double scale = 10;
+            foreach (var item in allBindList)
+            {
+                var _lowList = allOnlineLowList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.dev_uid == item.DevUid && c.unit_id == item.UnitId && c.low_guid == item.LowGuid).FirstOrDefault();
+                if (_lowList == null)
+                {
+                    offLineLowGuid += $"{item.DevUid}-{item.UnitId};";
+                    continue;
+                }
+                int maxRange = Convert.ToInt32(item.RangeCurrArray.Split(',').Max());
+                scale = GetCurFactor(maxRange);
+                var chlList = channelList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.mid_guid == item.Guid && c.low_guid == item.LowGuid).OrderBy(c => c.bts_id).ToList();
+                if (chlList.Count == 1)
+                {
+                    //单通道短接使用后续工步
+                    DeviceTestResponse deviceTest = new DeviceTestResponse();
+                    deviceTest.GeneratorCode = item.GeneratorCode;
+                    deviceTest.EdgeGuid = item.EdgeGuid;
+                    deviceTest.SrvGuid = item.SrvGuid;
+                    deviceTest.BtsServerIp = item.BtsServerIp;
+                    deviceTest.MidGuid = item.Guid;
+                    deviceTest.LowGuid = item.LowGuid;
+                    deviceTest.canTestDeviceResp = new CanTestDeviceResp();
+                    deviceTest.canTestDeviceResp.edge_guid = item.EdgeGuid;
+                    deviceTest.canTestDeviceResp.control = new control();
+                    deviceTest.canTestDeviceResp.control.arg = "";
+                    deviceTest.canTestDeviceResp.control.cmd_type = "start_test";
+                    deviceTest.Department = item.Department;
+                    deviceTest.MaxRange = maxRange;
+                    arg arg = new arg();
+                    arg.srv_guid = item.SrvGuid;
+                    arg.ip = item.BtsServerIp;
+                    arg.dev_uid = item.DevUid;
+                    arg.batch_no = DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss");
+                    arg.test_name = "";
+                    arg.creator = loginContext.User.Name;
+                    arg.step_file_name = "";
+                    arg.start_step = 1;
+                    arg.scale = scale;
+                    arg.battery_mass = 0;
+                    arg.desc = "";
+                    arg.chl = new List<chl>();
+                    if (model.FirstStart == 1)
+                    {
+                        deviceTest.stepCount = stepCount2;
+                        arg.step_data = step_data2;
+                    }
+                    else
+                    {
+                        deviceTest.stepCount = stepCount;
+                        arg.step_data = step_data;
+                    }
+                    foreach (var citem in chlList)
+                    {
+                        chl chl = new chl();
+                        chl.chl_id = citem.bts_id;
+                        chl.dev_uid = item.DevUid;
+                        chl.unit_id = item.UnitId;
+                        chl.barcode = "";
+                        chl.battery_mass = 0;
+                        chl.desc = "";
+                        arg.chl.Add(chl);
+                    }
+                    deviceTest.canTestDeviceResp.control.arg = JsonConvert.SerializeObject(arg);
+                    list.Add(deviceTest);
+                }
+                else
+                {
+                    DeviceTestResponse deviceTest1 = new DeviceTestResponse();
+                    deviceTest1.GeneratorCode = item.GeneratorCode;
+                    deviceTest1.EdgeGuid = item.EdgeGuid;
+                    deviceTest1.SrvGuid = item.SrvGuid;
+                    deviceTest1.BtsServerIp = item.BtsServerIp;
+                    deviceTest1.MidGuid = item.Guid;
+                    deviceTest1.LowGuid = item.LowGuid;
+                    deviceTest1.canTestDeviceResp = new CanTestDeviceResp();
+                    deviceTest1.canTestDeviceResp.edge_guid = item.EdgeGuid;
+                    deviceTest1.canTestDeviceResp.control = new control();
+                    deviceTest1.canTestDeviceResp.control.arg = "";
+                    deviceTest1.canTestDeviceResp.control.cmd_type = "start_test";
+                    deviceTest1.Department = item.Department;
+                    deviceTest1.MaxRange = maxRange;
+                    arg arg1 = new arg();
+                    arg1.srv_guid = item.SrvGuid;
+                    arg1.ip = item.BtsServerIp;
+                    arg1.dev_uid = item.DevUid;
+                    arg1.batch_no = DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss");
+                    arg1.test_name = "";
+                    arg1.creator = loginContext.User.Name;
+                    arg1.step_file_name = "";
+                    arg1.start_step = 1;
+                    arg1.scale = scale;
+                    arg1.battery_mass = 0;
+                    arg1.desc = "";
+                    arg1.chl = new List<chl>();
+
+                    DeviceTestResponse deviceTest2 = new DeviceTestResponse();
+                    deviceTest2.GeneratorCode = item.GeneratorCode;
+                    deviceTest2.EdgeGuid = item.EdgeGuid;
+                    deviceTest2.SrvGuid = item.SrvGuid;
+                    deviceTest2.BtsServerIp = item.BtsServerIp;
+                    deviceTest2.MidGuid = item.Guid;
+                    deviceTest2.LowGuid = item.LowGuid;
+                    deviceTest2.canTestDeviceResp = new CanTestDeviceResp();
+                    deviceTest2.canTestDeviceResp.edge_guid = item.EdgeGuid;
+                    deviceTest2.canTestDeviceResp.control = new control();
+                    deviceTest2.canTestDeviceResp.control.arg = "";
+                    deviceTest2.canTestDeviceResp.control.cmd_type = "start_test";
+                    deviceTest2.Department = item.Department;
+                    deviceTest2.MaxRange = maxRange;
+                    arg arg2 = new arg();
+                    arg2.srv_guid = item.SrvGuid;
+                    arg2.ip = item.BtsServerIp;
+                    arg2.dev_uid = item.DevUid;
+                    arg2.batch_no = DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss");
+                    arg2.test_name = "";
+                    arg2.creator = loginContext.User.Name;
+                    arg2.step_file_name = "";
+                    arg2.start_step = 1;
+                    arg2.scale = scale;
+                    arg2.battery_mass = 0;
+                    arg2.desc = "";
+                    arg2.chl = new List<chl>();
+
+                    if (model.FirstStart == 1)
+                    {
+                        deviceTest1.stepCount = stepCount;
+                        arg1.step_data = step_data;
+                        deviceTest2.stepCount = stepCount2;
+                        arg2.step_data = step_data2;
+                    }
+                    else
+                    {
+                        deviceTest1.stepCount = stepCount2;
+                        arg1.step_data = step_data2;
+                        deviceTest2.stepCount = stepCount;
+                        arg2.step_data = step_data;
+                    }
+                    if (model.TestType==2)
+                    {
+                        //对称短接
+                        var channelLimit = chlList.Count / 2;
+                        foreach (var row in chlList)
+                        {
+                            if (row.bts_id <= channelLimit)
+                            {
+                                chl chl = new chl();
+                                chl.chl_id = row.bts_id;
+                                chl.dev_uid = item.DevUid;
+                                chl.unit_id = item.UnitId;
+                                chl.barcode = "";
+                                chl.battery_mass = 0;
+                                chl.desc = "";
+                                arg1.chl.Add(chl);
+                            }
+                            else
+                            {
+                                chl chl = new chl();
+                                chl.chl_id = row.bts_id;
+                                chl.dev_uid = item.DevUid;
+                                chl.unit_id = item.UnitId;
+                                chl.barcode = "";
+                                chl.battery_mass = 0;
+                                chl.desc = "";
+                                arg2.chl.Add(chl);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        //相邻短接
+                        foreach (var row in chlList)
+                        {
+                            if (row.bts_id%2>0)
+                            {
+                                chl chl = new chl();
+                                chl.chl_id = row.bts_id;
+                                chl.dev_uid = item.DevUid;
+                                chl.unit_id = item.UnitId;
+                                chl.barcode = "";
+                                chl.battery_mass = 0;
+                                chl.desc = "";
+                                arg1.chl.Add(chl);
+                            }
+                            else
+                            {
+                                chl chl = new chl();
+                                chl.chl_id = row.bts_id;
+                                chl.dev_uid = item.DevUid;
+                                chl.unit_id = item.UnitId;
+                                chl.barcode = "";
+                                chl.battery_mass = 0;
+                                chl.desc = "";
+                                arg2.chl.Add(chl);
+                            }
+                        }
+                    }
+                    deviceTest1.canTestDeviceResp.control.arg = JsonConvert.SerializeObject(arg1);
+                    list.Add(deviceTest1);
+                    deviceTest2.canTestDeviceResp.control.arg = JsonConvert.SerializeObject(arg2);
+                    list.Add(deviceTest2);
+                }
+            }
+            if (!string.IsNullOrWhiteSpace(offLineLowGuid))
+            {
+                throw new Exception($"【{offLineLowGuid}】已离线,请检查设备连接状况!");
+            }
+            result.Data = list;
+            return result;
+        }
+
 
         /// <summary>
         /// 工步文件解析

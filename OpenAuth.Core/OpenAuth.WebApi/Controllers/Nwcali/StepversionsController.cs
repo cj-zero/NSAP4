@@ -689,7 +689,7 @@ namespace OpenAuth.WebApi.Controllers
                 if (string.IsNullOrWhiteSpace(model.GeneratorCode))
                 {
                     result.Code = 500;
-                    result.Message = $"生产码缺失启动失败!";
+                    result.Message = $"没有可以启动的生产码!";
                     return result;
                 }
                 if (model.SeriesName == "6" || model.SeriesName == "7")
@@ -726,7 +726,7 @@ namespace OpenAuth.WebApi.Controllers
                         result.Message = $"请选择启动模式!";
                         return result;
                     }
-                    var res = await _app.DockChannelControl(model, FilePathContent.Data.stepCount, FilePathContent.Data.stepData, FilePath2Content.Data.stepCount, FilePath2Content.Data.stepData);
+                    var res = await _app.ShortCircuitStart(model, FilePathContent.Data.stepCount, FilePathContent.Data.stepData, FilePath2Content.Data.stepCount, FilePath2Content.Data.stepData);
                     if (res.Code != 200)
                     {
                         result.Code = res.Code;
