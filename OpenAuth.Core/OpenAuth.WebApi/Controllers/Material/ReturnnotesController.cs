@@ -9,6 +9,7 @@ using OpenAuth.App.Material.Response;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
+using OpenAuth.WebApi.Model;
 using Serilog;
 
 namespace OpenAuth.WebApi.Controllers
@@ -501,6 +502,46 @@ namespace OpenAuth.WebApi.Controllers
         public async Task WarehousePutMaterialsIn(int? id)
         {
             await _returnnoteApp.WarehousePutMaterialsIn(new AccraditationReturnNoteReq { Id = id });
+        }
+
+        /// <summary>
+        /// 打印退料单
+        /// </summary>
+        /// <param name="serialNumber"></param>
+        /// <param name="IsTrue"></param>
+        /// <param name="sign"></param>
+        /// <param name="timespan"></param>
+        /// <returns></returns>
+        [HttpGet]
+        //[ServiceFilter(typeof(CertAuthFilter))]
+        public async Task<IActionResult> PrintReturnnote(string serialNumber, string sign, string timespan)
+        {
+            try
+            {
+                return File(await _returnnoteApp.PrintReturnnote(serialNumber), "application/pdf");
+            }
+            catch (Exception e)
+            {
+                Log.Logger.Error($"地址：{Request.Path}，参数：{serialNumber},{sign},{timespan}, 错误：{e.Message}");
+                throw new Exception(e.Message);
+            }
+        }
+        /// <summary>
+        /// 退料物料汇总
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetReturnNoteList(int ReturnnoteId)
+        {
+            try
+            {
+                return await _returnnoteApp.GetReturnNoteList(ReturnnoteId);
+            }
+            catch (Exception e)
+            {
+                Log.Logger.Error($"地址：{Request.Path}，参数：{ReturnnoteId}, 错误：{e.Message}");
+                throw new Exception(e.Message);
+            }
         }
 
         public ReturnNotesController(ReturnNoteApp app)
