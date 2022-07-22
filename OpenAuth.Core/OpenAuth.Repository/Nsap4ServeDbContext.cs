@@ -147,5 +147,15 @@ namespace OpenAuth.Repository
         public virtual DbSet<ClueClassification> ClueClassification { get; set; }
         #endregion
 
+        #region 合同管理
+        public virtual DbSet<ContractApply> contractapply { get; set; }
+        public virtual DbSet<ContractFile> contractfile { get; set; }
+        public virtual DbSet<ContractSign> contractsign { get; set; }
+        public virtual DbSet<ContractOperationHistory> contractoperationhistory { get; set; }
+        public virtual DbSet<ContractSeal> contractseal { get; set; }
+        public virtual DbSet<ContractSealOperationHistory> contractsealoperationhistory { get; set; }
+        public virtual DbSet<ContractTemplate> contracttemplate { get; set; }
+        public virtual DbSet<ContractFileType> contractfiletype { get; set; }
+        #endregion
     }
 }

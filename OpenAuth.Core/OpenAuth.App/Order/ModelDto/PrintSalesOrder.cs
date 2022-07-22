@@ -100,6 +100,18 @@ namespace OpenAuth.App.Order.ModelDto
         /// </summary>
         public string U_SL { get; set; }
         /// <summary>
+        /// 总计金额
+        /// </summary>
+        public string TAmount { get; set; }
+        /// <summary>
+        /// 折扣金额
+        /// </summary>
+        public string DiscSum { get; set; }
+        /// <summary>
+        /// 折扣税
+        /// </summary>
+        public string DiscPrcnt { get; set; }
+        /// <summary>
         /// 物料信息
         /// </summary>
         public List<ReimburseCost> ReimburseCosts { get; set; }

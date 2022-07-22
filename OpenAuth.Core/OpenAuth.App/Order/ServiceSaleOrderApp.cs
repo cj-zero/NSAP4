@@ -4047,6 +4047,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
         {
             DataTable dtb = ExportViewNos(sboid, DocEntry);
             DataTable dtbs = ExportViews(sboid, DocEntry);
+            DataTable dtbTotal = ExportTotalAmount(sboid, DocEntry);
             var logopath = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "logo.png");
             var logostr = "";
             using (var fs = new FileStream(logopath, FileMode.Open))
@@ -4066,6 +4067,9 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             string Chapterpath = "";
             string cssWeight = "";
             string cssSize = "";
+            string DiscTotal = "";
+            string DiscSum = "";
+            string DiscPrcnt = "";
             if (!string.IsNullOrEmpty(indicator))
             {
                 //公司地址信息,在字典中维护
@@ -4073,6 +4077,9 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 companyName = companyAddressData == null ? "" : companyAddressData.Name;
                 cssWeight = "normal";
                 cssSize = "13px";
+                DiscPrcnt = "含税： " + (string.IsNullOrEmpty(dtb.Rows[0][22].ToString()) ? " " : dtb.Rows[0][22].ToString()) + "%";
+                DiscSum = string.IsNullOrEmpty(dtb.Rows[0][28].ToString()) ? " " : dtb.Rows[0][28].ToString();
+                DiscTotal = string.IsNullOrEmpty(dtbTotal.Rows[0][0].ToString()) ? " " : dtbTotal.Rows[0][0].ToString();
             }
 
             if (indicator == "01")
@@ -4087,7 +4094,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             {
                 Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", DGNewareName + ".png");
             }
-            else if (string.IsNullOrEmpty(indicator) && dtb.Rows[0][25].ToString() != "RMB")
+            else if (string.IsNullOrEmpty(indicator) && dtb.Rows[0][26].ToString() != "RMB")
             {
                 Chapterpath = Path.Combine(Directory.GetCurrentDirectory(), "Templates\\seal", WBName + ".png");
                 companyName = "NEWARE";
@@ -4174,6 +4181,9 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             foottext = foottext.Replace("@Model.Data.Address", companyAddressData == null ? "" : companyAddressData.Description);
             foottext = foottext.Replace("@Model.Data.Weight", cssWeight);
             foottext = foottext.Replace("@Model.Data.Size", cssSize);
+            foottext = foottext.Replace("@Model.Data.DiscTotal", DiscTotal);
+            foottext = foottext.Replace("@Model.Data.DiscSum", DiscSum);
+            foottext = foottext.Replace("@Model.Data.DiscPrcnt", DiscPrcnt);
             var foottempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"PrintSalesQuotationfooter{PrintSalesQuotation.DocEntry}.html");
             System.IO.File.WriteAllText(foottempUrl, foottext, Encoding.Unicode);
             byte[] basecode = await ExportAllHandler.Exporterpdf(PrintSalesQuotation, "PrintSalesQuotation.cshtml", pdf =>
@@ -4199,7 +4209,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             StringBuilder str = new StringBuilder();
             str.Append("SELECT distinct a.DocEntry,a.CardCode,a.CardName,b.Name,b.Tel1,b.Tel2,b.Cellolar,b.Address,c.SlpName,c.Memo,a.Comments,d.PymntGroup,");
             str.Append(" a.DocTotal,CONCAT(e.Currency,' ',ROUND(a.DocTotal,2)) ,DATE_FORMAT(a.DocDueDate,'%Y.%m.%d'),DATE_FORMAT(a.DocDate,'%Y.%m.%d'),a.U_ShipName,b.Fax,a.U_YGMD,a.Address2");
-            str.Append(" ,a.U_YSQX,a.BnkAccount,a.U_SL,a.NumAtCard,a.indicator, DATE_FORMAT(h.log_dt,'%Y.%m.%d'), a.DocCur");
+            str.Append(" ,a.U_YSQX,a.BnkAccount,a.U_SL,a.NumAtCard,a.indicator, DATE_FORMAT(h.log_dt,'%Y.%m.%d'), a.DocCur,ROUND(a.DiscPrcnt,2) as DiscPrcnt,ROUND(a.DiscSum,2) as DiscSum");
             str.AppendFormat(" FROM {0}.sale_oqut a ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_ocpr b on a.CntctCode=b.CntctCode and a.sbo_id=b.sbo_id and a.CardCode=b.CardCode ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_oslp c on a.SlpCode=c.SlpCode and a.sbo_id=c.sbo_id ", "nsap_bone");
@@ -4232,6 +4242,21 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             str.AppendFormat(" from {0}.sale_qut1  b ", "nsap_bone");
             str.AppendFormat(" LEFT JOIN {0}.sale_oqut a on b.DocEntry=a.DocEntry and b.sbo_id=a.sbo_id ", "nsap_bone");
             str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1} ", DocEntry, sboid);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, str.ToString(), CommandType.Text, null);
+
+        }
+
+        /// <summary>
+        /// 销售报价单行折扣前总金额计算
+        /// </summary>
+        public DataTable ExportTotalAmount(string sboid, string DocEntry)
+        {
+            StringBuilder str = new StringBuilder();
+            str.Append(" SELECT ROUND(SUM(c.Quantity * c.Price),2) AS TotalAmount FROM (");
+            str.Append(" SELECT ROW_NUMBER() OVER (ORDER BY b.sbo_id) RowNum, b.sbo_id,b.ItemCode,b.Dscription,ROUND(b.Quantity,2) AS Quantity,b.unitMsr,ROUND(b.Price,6) AS Price,CONCAT(b.Currency,' ',ROUND(b.Quantity*b.Price,2))");
+            str.AppendFormat(" from {0}.sale_qut1  b ", "nsap_bone");
+            str.AppendFormat(" LEFT JOIN {0}.sale_oqut a on b.DocEntry=a.DocEntry and b.sbo_id=a.sbo_id ", "nsap_bone");
+            str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1} ) c", DocEntry, sboid);
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, str.ToString(), CommandType.Text, null);
 
         }
@@ -10103,7 +10128,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             StringBuilder str = new StringBuilder();
             str.Append("SELECT distinct a.DocEntry,a.CardCode,a.CardName,b.Name,b.Tel1,b.Tel2,b.Cellolar,b.Address,c.SlpName,c.Memo,a.Comments,d.PymntGroup,");
             str.Append(" a.DocTotal,CONCAT(e.Currency,' ',ROUND(a.DocTotal,2)) as curtotal ,DATE_FORMAT(a.DocDueDate,'%Y.%m.%d %H:%i') as DocDueDate,DATE_FORMAT(a.DocDate,'%Y.%m.%d') as DocDate,a.U_ShipName,b.Fax,a.U_YGMD,a.Address2,a.U_YSQX,a.BnkAccount,f.HouseBank,CONCAT(ROUND(a.U_SL,0),'%')U_SL,a.NumAtCard ");
-            str.Append(" ,a.DiscSum,a.DiscSumFC,a.DocTotalFC,a.DocCur, DATE_FORMAT(k.log_dt,'%Y.%m.%d') as logdt, a.Indicator ");
+            str.Append(" ,a.DiscSum,a.DiscSumFC,a.DocTotalFC,a.DocCur, DATE_FORMAT(k.log_dt,'%Y.%m.%d') as logdt, a.Indicator,ROUND(a.DiscSum,2) as DiscSumT,ROUND(a.DiscPrcnt,2) as DiscPrcnt ");
             str.AppendFormat(" FROM {0}.sale_ordr a ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_ocpr b on a.CntctCode=b.CntctCode and a.sbo_id=b.sbo_id and a.CardCode=b.CardCode ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_oslp c on a.SlpCode=c.SlpCode and a.sbo_id=c.sbo_id ", "nsap_bone");
@@ -10156,6 +10181,20 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             str.AppendFormat(" from {0}.sale_rdr1  b ", "nsap_bone");
             str.AppendFormat(" LEFT JOIN {0}.sale_ordr a on b.DocEntry=a.DocEntry and b.sbo_id=a.sbo_id ", "nsap_bone");
             str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1} ", DocEntry, sboid);
+            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, str.ToString(), CommandType.Text, null);
+        }
+
+        /// <summary>
+        /// 销售订单总价
+        /// </summary>
+        public DataTable OrderExportTotalAmount(string sboid, string DocEntry)
+        {
+            StringBuilder str = new StringBuilder();
+            str.Append(" SELECT ROUND(SUM(c.Quantity * c.Price),2) AS TotalAmount FROM (");
+            str.Append(" SELECT  ROW_NUMBER() OVER (ORDER BY b.sbo_id) RowNum, b.sbo_id,b.ItemCode,b.Dscription,ROUND(b.Quantity,2) AS Quantity,b.unitMsr,ROUND(b.Price,6) AS Price,ROUND(b.Quantity*b.Price,2),b.Currency ");
+            str.AppendFormat(" from {0}.sale_rdr1  b ", "nsap_bone");
+            str.AppendFormat(" LEFT JOIN {0}.sale_ordr a on b.DocEntry=a.DocEntry and b.sbo_id=a.sbo_id ", "nsap_bone");
+            str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1} ) c", DocEntry, sboid);
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, str.ToString(), CommandType.Text, null);
         }
         #endregion
@@ -10391,6 +10430,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             DataTable dtb = OrderExportView(sboid, DocEntry);
             DataTable dtbs = OrderExportViews(sboid, DocEntry);
             DataTable dtprint = GetPrintNo(sboid, DocEntry);
+            DataTable dtTotal = OrderExportTotalAmount(sboid, DocEntry);
             string PrintNo = Guid.NewGuid().ToString();
             int PrintNumIndex = 0;
             if (dtprint.Rows.Count > 0)
@@ -10438,6 +10478,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             string bankName = "";
             string bankNum = "";
             string telPhone = "";
+            string DiscPrcnt = "";
             if (!string.IsNullOrEmpty(indicator))
             {
                 //公司地址信息,在字典中维护
@@ -10447,6 +10488,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 bankName = companyBankData == null ? "" : companyBankData.Name;
                 bankNum = companyBankData == null ? "" : companyBankData.Description;
                 telPhone = companyBankData == null ? "" : companyBankData.DtCode;
+                DiscPrcnt = "含税：" + (string.IsNullOrEmpty(dtb.Rows[0][23].ToString()) ? " " : dtb.Rows[0][23].ToString());
             }
 
             if (indicator == "01")
@@ -10500,6 +10542,9 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 NumAtCard = string.IsNullOrEmpty(dtb.Rows[0][14].ToString()) ? " " : dtb.Rows[0][24].ToString(),
                 AcceptanceDates = string.IsNullOrEmpty(dtb.Rows[0][20].ToString()) ? " " : dtb.Rows[0][20].ToString(),
                 U_SL = string.IsNullOrEmpty(dtb.Rows[0][23].ToString()) ? " " : dtb.Rows[0][23].ToString(),
+                TAmount = string.IsNullOrEmpty(dtTotal.Rows[0][0].ToString()) ? " " : dtTotal.Rows[0][0].ToString(),
+                DiscSum = string.IsNullOrEmpty(dtb.Rows[0][31].ToString()) ? " " : dtb.Rows[0][31].ToString(),
+                DiscPrcnt = DiscPrcnt,
                 logo = logostr,
                 QRcode = QRCoderHelper.CreateQRCodeToBase64(DocEntry),
                 PrintNumIndex = PrintNumIndex.ToString(),
