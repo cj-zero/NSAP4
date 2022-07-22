@@ -27,6 +27,10 @@ namespace OpenAuth.App.Response
 	    /// </summary>
         public string FileType { get; set; }
         /// <summary>
+        /// 扩展名
+        /// </summary>
+        public string Extension { get; set; }
+        /// <summary>
 	    /// 文件大小
 	    /// </summary>
         public long FileSize { get; set; }
