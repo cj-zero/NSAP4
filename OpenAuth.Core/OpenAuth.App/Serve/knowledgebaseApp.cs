@@ -175,26 +175,28 @@ namespace OpenAuth.App
             obj.CreateUserName = user.Name;
             obj.Org = org;
             obj.IsNew = true;
-            if (!string.IsNullOrWhiteSpace(obj.ParentId))
+            //if (!string.IsNullOrWhiteSpace(obj.ParentId))
+            //{
+            //    var parent = await UnitWork.Find<KnowledgeBase>(k => k.Code == obj.ParentId).Select(k => new { k.Id, k.Name }).FirstOrDefaultAsync();
+            //    if (parent == null)
+            //    {
+            //        throw new Exception("无父级目录，请检查。");
+            //    }
+            //    obj.ParentId = parent.Id;
+            //    obj.ParentName = parent.Name;
+            //}
+            if (obj.Rank == 3)
             {
-                var parent = await UnitWork.Find<KnowledgeBase>(k => k.Code == obj.ParentId).Select(k => new { k.Id, k.Name }).FirstOrDefaultAsync();
-                if (parent == null)
-                {
-                    throw new Exception("无父级目录，请检查。");
-                }
-                obj.ParentId = parent.Id;
-                obj.ParentName = parent.Name;
-            }
-            else if (obj.Rank == 3)
-            {
-                var ParentId = obj.Code.Substring(0, 2);
-                var parent = await UnitWork.Find<KnowledgeBase>(k => k.Code == ParentId && k.Rank == 2).Select(k => new { k.Id, k.Name }).FirstOrDefaultAsync();
-                if (parent == null)
-                {
-                    throw new Exception("无父级目录，请检查。");
-                }
-                obj.ParentId = parent.Id;
-                obj.ParentName = parent.Name;
+                var parent = await UnitWork.Find<KnowledgeBase>(k => k.ParentId == obj.ParentId && k.Rank == 3).OrderByDescending(c => c.Code).FirstOrDefaultAsync();
+                var ParentCode = parent.Code.Substring(0, 2);
+                var childCode = Convert.ToInt32(parent.Code.Substring(2, 3)) + 1;
+                obj.Code = ParentCode + childCode;
+                //if (parent == null)
+                //{
+                //    throw new Exception("无父级目录，请检查。");
+                //}
+                //obj.ParentId = parent.Id;
+                //obj.ParentName = parent.Name;
             }
             await Repository.AddAsync(obj);
             await Repository.SaveAsync();
@@ -212,26 +214,22 @@ namespace OpenAuth.App
             {
                 throw new Exception("已存在该编码，请检查。");
             }
-            if (!string.IsNullOrWhiteSpace(obj.ParentId))
+            //if (!string.IsNullOrWhiteSpace(obj.ParentId))
+            //{
+            //    var parent = await UnitWork.Find<KnowledgeBase>(k => k.Code == obj.ParentId).Select(k => new { k.Id, k.Name }).FirstOrDefaultAsync();
+            //    if (parent == null) 
+            //    {
+            //        throw new Exception("无父级目录，请检查。");
+            //    }
+            //    obj.ParentId = parent.Id;
+            //    obj.ParentName = parent.Name;
+            //}
+            if (obj.Rank == 3)
             {
-                var parent = await UnitWork.Find<KnowledgeBase>(k => k.Code == obj.ParentId).Select(k => new { k.Id, k.Name }).FirstOrDefaultAsync();
-                if (parent == null) 
-                {
-                    throw new Exception("无父级目录，请检查。");
-                }
-                obj.ParentId = parent.Id;
-                obj.ParentName = parent.Name;
-            }
-            else if (obj.Rank == 3)
-            {
-                var ParentId = obj.Code.Substring(0, 2);
-                var parent = await UnitWork.Find<KnowledgeBase>(k => k.Code == ParentId && k.Rank == 2).Select(k => new { k.Id, k.Name }).FirstOrDefaultAsync();
-                if (parent == null)
-                {
-                    throw new Exception("无父级目录，请检查。");
-                }
-                obj.ParentId = parent.Id;
-                obj.ParentName = parent.Name;
+                var parent = await UnitWork.Find<KnowledgeBase>(k => k.ParentId == obj.ParentId && k.Rank == 3).OrderByDescending(c => c.Code).FirstOrDefaultAsync();
+                var ParentCode = parent.Code.Substring(0, 2);
+                var childCode = Convert.ToInt32(parent.Code.Substring(2, 3)) + 1;
+                obj.Code = ParentCode + childCode;
             }
             else
             {
