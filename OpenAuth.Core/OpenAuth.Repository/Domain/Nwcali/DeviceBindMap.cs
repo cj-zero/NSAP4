@@ -66,6 +66,7 @@ namespace OpenAuth.Repository.Domain
         public string Department { get; set; }
         public long OrderNo { get; set; }
         public string RangeCurrArray { get; set; }
+        public int LowNo { get; set; }
         /// <summary>
         /// 
         /// </summary>
