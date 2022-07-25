@@ -901,6 +901,21 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 修改终端客户
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task ModifyCustomer(ModifyServiceOrderReq request)
+        {
+            await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id.Equals(request.Id), e => new ServiceOrder
+            {
+                TerminalCustomerId = request.TerminalCustomerId,
+                TerminalCustomer = request.TerminalCustomer
+            });
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
         /// 派单页面左侧树
         /// </summary>
         /// <param name="req"></param>

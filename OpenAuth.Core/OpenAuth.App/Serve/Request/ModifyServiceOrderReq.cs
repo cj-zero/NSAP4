@@ -20,6 +20,10 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string TerminalCustomer { get; set; }
         /// <summary>
+        /// 终端客户ID
+        /// </summary>
+        public string TerminalCustomerId { get; set; }
+        /// <summary>
         /// 省
         /// </summary>
         public string Province { get; set; }
