@@ -22,6 +22,9 @@ using OpenAuth.Repository.Domain.Material;
 using System.Text;
 using OpenAuth.App.SignalR;
 using Microsoft.AspNetCore.SignalR;
+using System.IO;
+using Infrastructure.Export;
+using DinkToPdf;
 
 namespace OpenAuth.App
 {
@@ -205,7 +208,8 @@ namespace OpenAuth.App
                 ServiceOrderId = r.ServiceOrderId,
                 SalesOrderId = r.SalesOrderId,
                 ServiceOrderSapId = r.ServiceOrderSapId,
-                CreateUser = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(r.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name == null ? r.CreateUser: SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(r.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name+"-"+r.CreateUser,
+                Reason = r.Reason,
+                CreateUser = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(r.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name == null ? r.CreateUser : SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(r.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + r.CreateUser,
                 CreateTime = Convert.ToDateTime(r.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 UpdateTime = Convert.ToDateTime(r.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 TotalMoney = r.TotalMoney,
@@ -1412,6 +1416,86 @@ namespace OpenAuth.App
                 var user = item.Key;
                 await _hubContext.Clients.User(user).SendAsync("ReturnNoteUnSubmitCount", "系统", item.Count());
             }
+        }
+
+        public async Task<byte[]> PrintReturnnote(string ReturnnoteId)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var model = await UnitWork.Find<ReturnNote>(c => c.Id == int.Parse(ReturnnoteId)).FirstOrDefaultAsync();
+            var serverOrder = await UnitWork.Find<ServiceOrder>(q => q.Id.Equals(model.ServiceOrderId)).FirstOrDefaultAsync();
+            var returnNoteMaterials = await UnitWork.Find<ReturnNoteMaterial>(c => c.ReturnNoteId == model.Id).ToListAsync();
+
+            var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "ReturnnoteHeader.html");
+            var text = System.IO.File.ReadAllText(url);
+            text = text.Replace("@Model.Id", model.Id.ToString());
+            text = text.Replace("@Model.SalesOrderId", model.SalesOrderId.ToString());
+            text = text.Replace("@Model.CreateTime", DateTime.Now.ToString("yyyy.MM.dd HH:mm"));//model.CreateTime.ToString("yyyy.MM.dd hh:mm")
+            text = text.Replace("@Model.CreateUser", model?.CreateUser.ToString());
+            text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.Id.ToString()));
+            text = text.Replace("@Model.CustomerId", serverOrder?.TerminalCustomerId.ToString());
+            text = text.Replace("@Model.CustomerName", serverOrder?.TerminalCustomer.ToString());
+            text = text.Replace("@Model.NewestContacter", serverOrder?.NewestContacter.ToString());
+            text = text.Replace("@Model.NewestContactTel", serverOrder?.NewestContactTel.ToString());
+            text = text.Replace("@Model.TotalMoney", model.TotalMoney.ToString("0.00"));
+            text = text.Replace("@Model.InvoiceDocEntry", returnNoteMaterials.FirstOrDefault()?.InvoiceDocEntry.ToString());
+            var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"ReturnnoteHeader{model.Id}.html");
+            System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
+            var materials = returnNoteMaterials.GroupBy(c => c.MaterialCode).Select(c => new
+            {
+                MaterialCode = c.First().MaterialCode,
+                MaterialDescription = c.First().MaterialDescription,
+                Count = c.Count(),
+                Unit = "PCS",
+                //WhsCode = c.First().WhsCode
+                Good = c.Where(w => w.IsGood == true).Count(),
+                Second = c.Where(w => w.IsGood == false).Count()
+            });
+            var datas = await ExportAllHandler.Exporterpdf(materials, "ReturnnoteList.cshtml", pdf =>
+            {
+                pdf.IsWriteHtml = true;
+                pdf.PaperKind = PaperKind.A4;
+                pdf.Orientation = Orientation.Portrait;
+                pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                //pdf.FooterSettings = new FooterSettings() { HtmUrl = footerUrl };
+            });
+            System.IO.File.Delete(tempUrl);
+            //System.IO.File.Delete(footerUrl);
+            return datas;
+        }
+
+        /// <summary>
+        /// 退料物料汇总
+        /// </summary>
+        /// <param name="ReturnnoteId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetReturnNoteList(int ReturnnoteId)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            var model = await UnitWork.Find<ReturnNote>(c => c.Id == ReturnnoteId).FirstOrDefaultAsync();
+            var returnNoteMaterials = await UnitWork.Find<ReturnNoteMaterial>(c => c.ReturnNoteId == model.Id).ToListAsync();
+
+            var materials = returnNoteMaterials.GroupBy(c => c.MaterialCode).Select(c => new
+            {
+                MaterialCode = c.First().MaterialCode,
+                MaterialDescription = c.First().MaterialDescription,
+                Count = c.Count(),
+                Unit = "PCS",
+                //WhsCode = c.First().WhsCode
+                Good = c.Where(w => w.IsGood == true).Count(),
+                Second = c.Where(w => w.IsGood == false).Count()
+            });
+            result.Data = materials;
+            return result;
         }
     }
 }

@@ -49,7 +49,7 @@
         
         hr {
             height: 0px;
-            border-top: 1px solid #808A87;
+            border-top: 1px solid #000;
             border-right: 0px;
             border-bottom: 0px;
             border-left: 0px;
@@ -58,7 +58,7 @@
         #divcode {
             border-style: solid;
             border-width: 1px;
-            border-color: #808A87;
+            border-color: #000;
             height: 50px;
             width: 1000px;
             margin: 0 auto;
@@ -379,10 +379,14 @@
 
     <footer>
 
-        <div style="font-weight: 800;padding-top:100px;" align="right">合计金额 &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp; @Model.Data.DocTotal </div>
+        <div style="font-weight: 800;padding-top:100px;" align="right"> 
+            <div align="right">总计金额：&nbsp; @Model.Data.DiscTotal</div>
+            <div style="padding-top: 5px;" align="right">折扣金额：&nbsp; @Model.Data.DiscSum</div>
+            <div style="padding-top: 5px;">@Model.Data.DiscPrcnt &nbsp; &nbsp; &nbsp; &nbsp;折扣后金额：&nbsp; @Model.Data.DocTotal </div>
+        </div>
 
         <hr>
-
+        
         <img style="height: 300px; width: 300px; position: fixed; left: 600px; top: 0px;" src="data:image/png;base64,@Model.Data.Chapter" />
 
         <section class="footer-title">

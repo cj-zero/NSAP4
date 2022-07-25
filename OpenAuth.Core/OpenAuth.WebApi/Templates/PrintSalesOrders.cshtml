@@ -71,12 +71,18 @@
         }
 
     </table>
-    <div style="border-top: 1px solid #7F7F7F; float: right; width: 375px;">
-        <span>含税&nbsp;</span>
-        <span>@Model.Data.U_SL</span>
-        <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;总计金额 </span>
-
-        <span style="float: right;">@Model.Data.DocTotal</span>
+    <div style="border-top: 1px solid #7F7F7F; float: right;">
+        <div align="right">
+            <span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;总计金额： @Model.Data.TAmount</span>
+        </div>
+        <div style="padding-top: 5px;" align="right">
+            <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 折扣金额： @Model.Data.DiscSum</span>
+        </div>
+        
+        <div style="padding-top:5px" align="right"> 
+            <span > @Model.Data.DiscPrcnt</span>
+            <span >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 折扣后金额： @Model.Data.DocTotal</span>
+        </div>     
     </div>
 </body>
 

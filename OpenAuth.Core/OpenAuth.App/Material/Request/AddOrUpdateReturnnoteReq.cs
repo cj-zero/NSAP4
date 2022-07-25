@@ -96,6 +96,10 @@ namespace OpenAuth.App.Material.Request
         /// 退货方式  1自带 2快递
         /// </summary>
         public string DeliveryMethod { get; set; }
+        /// <summary>
+        /// 退料原因 1.维修更换 2.退货退款
+        /// </summary>
+        public string Reason { get; set; }
 
         /// <summary>
         /// 总金额

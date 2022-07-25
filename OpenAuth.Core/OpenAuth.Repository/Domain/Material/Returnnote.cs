@@ -112,6 +112,10 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("退货方式")]
         public int? DeliveryMethod { get; set; }
+        /// <summary>
+        /// 退料原因 1.维修更换 2.退货退款
+        /// </summary>
+        public int? Reason { get; set; }
 
         /// <summary>
         ///运费

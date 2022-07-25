@@ -133,6 +133,9 @@ namespace OpenAuth.App
             if (!string.IsNullOrWhiteSpace(obj.Descriptio))
             {
                 var parent = await UnitWork.Find<Solution>(c => c.Code == obj.Descriptio).Select(c => new { c.Id, c.Subject }).FirstOrDefaultAsync();
+                var last = await UnitWork.Find<Solution>(c => c.Descriptio == obj.Descriptio && c.Rank == 2).OrderByDescending(c => c.Code).FirstOrDefaultAsync();
+
+                obj.Code = (Convert.ToInt32(last.Code) + 1).ToString().PadLeft(4, '0');
                 obj.ParentId = parent.Id;
                 obj.ParentName = parent.Subject;
             }
@@ -153,6 +156,8 @@ namespace OpenAuth.App
             if (!string.IsNullOrWhiteSpace(obj.Descriptio))
             {
                 var parent =  UnitWork.Find<Solution>(c => c.Code == obj.Descriptio).Select(c => new { c.Id, c.Subject }).FirstOrDefault();
+                var last = UnitWork.Find<Solution>(c => c.Descriptio == obj.Descriptio && c.Rank == 2).OrderByDescending(c => c.Code).FirstOrDefault();
+                obj.Code = (Convert.ToInt32(last.Code) + 1).ToString().PadLeft(4, '0');
                 ParentId = parent.Id;
                 ParentName = parent.Subject;
             }
