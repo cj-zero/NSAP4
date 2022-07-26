@@ -69,5 +69,9 @@ namespace OpenAuth.Repository.Domain.Customer
         /// 销售员部门
         /// </summary>
         public string SlpDepartment { get; set; }
+        /// <summary>
+        /// 操作人
+        /// </summary>
+        public string CreateUserId { get; set; }
     }
 }

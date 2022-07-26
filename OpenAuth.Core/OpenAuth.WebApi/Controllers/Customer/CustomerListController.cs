@@ -255,6 +255,11 @@ namespace OpenAuth.WebApi.Controllers.Customer
 
 
         #region
+        /// <summary>
+        /// 查看客户历史归属（黑名单）
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<TableData> GetCustomerHistoryLists(QueryCustomerSalerListReq req)
         {
