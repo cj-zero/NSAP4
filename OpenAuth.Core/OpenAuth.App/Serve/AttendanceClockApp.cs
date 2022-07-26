@@ -60,7 +60,7 @@ namespace OpenAuth.App
                 .WhereIf(request.DateFrom != null && request.DateTo != null, u => u.ClockDate >= request.DateFrom && u.ClockDate < Convert.ToDateTime(request.DateTo).AddMinutes(1440))
                 ;
             // 主管只能看到本部门的技术员的打卡记录
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")) && !loginContext.Roles.Any(r => r.Name.Equals("考勤人员")))
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")) && !loginContext.Roles.Any(r => r.Name.Equals("考勤人员")) && !loginContext.Roles.Any(r => r.Name.Equals("总经理")))
             {
                 var userIds = _revelanceApp.Get(Define.USERORG, false, loginContext.Orgs.Select(o => o.Id).ToArray());
                 ClockModels = ClockModels.Where(q => userIds.Contains(q.UserId));
