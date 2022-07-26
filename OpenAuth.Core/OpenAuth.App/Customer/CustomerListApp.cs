@@ -571,11 +571,14 @@ namespace OpenAuth.App.Customer
 
             var userInfo = _auth.GetCurrentUser();
             //根据用户姓名查询slpcode
-            var slpInfo = await (from u in UnitWork.Find<base_user>(null)
-                                 join d in UnitWork.Find<base_user_detail>(null) on u.user_id equals d.user_id
-                                 join s in UnitWork.Find<sbo_user>(null) on u.user_id equals s.user_id
-                                 where u.user_nm == userInfo.User.Name
-                                 select new { s.sale_id, u.user_nm, d.try_date }).FirstOrDefaultAsync();
+            var data = await (from u in UnitWork.Find<base_user>(null)
+                              join d in UnitWork.Find<base_user_detail>(null) on u.user_id equals d.user_id
+                              join s in UnitWork.Find<sbo_user>(null) on u.user_id equals s.user_id
+                              select new { s.sale_id, u.user_nm, d.try_date }).ToListAsync();
+            var slpInfo = (from n in data
+                           join o in UnitWork.Find<OSLP>(null) on n.sale_id equals o.SlpCode
+                           where n.user_nm == userInfo.User.Name
+                           select new { n.sale_id, n.user_nm, n.try_date, o.SlpName }).FirstOrDefault();
             if (slpInfo == null)
             {
                 response.Code = 500;
@@ -699,7 +702,7 @@ namespace OpenAuth.App.Customer
                                                       join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
                                                       join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode into temp
                                                       from t in temp.DefaultIfEmpty()
-                                                      where s.SlpName == slpInfo.user_nm && t.CardCode == null
+                                                      where s.SlpName == slpInfo.SlpName && t.CardCode == null
                                                       select c.CardCode).Distinct().CountAsync();
                         if (NoQuotationCount >= customerLimitRule.Limit)
                         {
@@ -714,7 +717,7 @@ namespace OpenAuth.App.Customer
                         var finishCount = await (from c in UnitWork.Find<OCRD>(null)
                                                  join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
                                                  join d in UnitWork.Find<ODLN>(null) on c.CardCode equals d.CardCode
-                                                 where s.SlpName == slpInfo.user_nm
+                                                 where s.SlpName == slpInfo.SlpName
                                                  select c.CardCode).Distinct().CountAsync();
                         if (finishCount >= customerLimitRule.Limit)
                         {
@@ -724,14 +727,14 @@ namespace OpenAuth.App.Customer
                         }
                     }
                     //如果客户是报价单未转订单
-                    else if(isHasQuotationCustomer && customerLimitRule.CustomerType == 3)
+                    else if (isHasQuotationCustomer && customerLimitRule.CustomerType == 3)
                     {
                         var count = await (from c in UnitWork.Find<OCRD>(null)
                                            join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
                                            join u in UnitWork.Find<OQUT>(null) on c.CardCode equals u.CardCode
                                            join r in UnitWork.Find<ORDR>(null) on c.CardCode equals r.CardCode into temp
                                            from t in temp.DefaultIfEmpty()
-                                           where s.SlpName == slpInfo.user_nm
+                                           where s.SlpName == slpInfo.SlpName
                                            select c.CardCode).Distinct().CountAsync();
                         if (count > customerLimitRule.Limit)
                         {
@@ -741,14 +744,14 @@ namespace OpenAuth.App.Customer
                         }
                     }
                     //如果是订单未转交货单
-                    else if(isHasOrderCustomer && customerLimitRule.CustomerType == 4)
+                    else if (isHasOrderCustomer && customerLimitRule.CustomerType == 4)
                     {
                         var count = await (from c in UnitWork.Find<OCRD>(null)
                                            join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
                                            join r in UnitWork.Find<ORDR>(null) on c.CardCode equals r.CardCode
                                            join d in UnitWork.Find<ODLN>(null) on c.CardCode equals d.CardCode into temp
                                            from t in temp.DefaultIfEmpty()
-                                           where s.SlpName == slpInfo.user_nm
+                                           where s.SlpName == slpInfo.SlpName
                                            select c.CardCode).Distinct().CountAsync();
                         if (count > customerLimitRule.Limit)
                         {
@@ -762,7 +765,7 @@ namespace OpenAuth.App.Customer
                     {
                         var totalCount = await (from c in UnitWork.Find<OCRD>(null)
                                                 join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
-                                                where s.SlpName == slpInfo.user_nm
+                                                where s.SlpName == slpInfo.SlpName
                                                 select c.CardCode).Distinct().CountAsync();
                         if (totalCount >= customerLimitRule.Limit)
                         {
@@ -794,13 +797,14 @@ namespace OpenAuth.App.Customer
                         CustomerNo = item.CustomerNo,
                         CustomerName = item.CustomerName,
                         SlpCode = slpInfo.sale_id.Value,
-                        SlpName = slpInfo.user_nm,
+                        SlpName = slpInfo.SlpName,
                         SlpDepartment = customers.Find(c => c.CustomerNo == item.CustomerNo).DepartMent,
                         CreateTime = DateTime.Now,
                         ReceiveTime = DateTime.Now,
                         ReleaseTime = customers.Find(c => c.CustomerNo == item.CustomerNo).CreateDateTime,
                         FallIntoTime = customers.Find(c => c.CustomerNo == item.CustomerNo).CreateDateTime,
-                        IsSaleHistory = req.IsSaleHistory
+                        IsSaleHistory = req.IsSaleHistory,
+                        CreateUserId = userInfo.User.Id
                     };
                     int lastInstance = 0;
                     var isExists = UnitWork.Find<ACRD>(c => c.CardCode == item.CustomerNo).Any();
@@ -1091,13 +1095,13 @@ namespace OpenAuth.App.Customer
                                      orderby o.CreateDate
                                      select new
                                      {
-                                         o.CardCode,
+                                         o.SlpCode,
                                          s.SlpName,
                                          o.CreateDate,
                                      }).FirstOrDefaultAsync();
                 queryCustomerSalers.Add(new QueryCustomerSalerListResponse
                 {
-                    SlpCode = Convert.ToInt32(slpcode.CardCode),
+                    SlpCode = Convert.ToInt32(slpcode.SlpCode),
                     SalerName = slpcode.SlpName,
                     movein_type = "创建",
                     remark = "",

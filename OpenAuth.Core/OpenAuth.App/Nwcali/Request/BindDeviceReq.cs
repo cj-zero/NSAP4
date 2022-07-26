@@ -52,5 +52,6 @@ namespace OpenAuth.App.Nwcali.Request
         /// 下位机guid
         /// </summary>
         public string LowGuid { get; set; }
+        public int low_no { get; set; }
     }
 }

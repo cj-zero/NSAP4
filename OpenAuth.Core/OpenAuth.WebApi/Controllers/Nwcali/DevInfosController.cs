@@ -28,18 +28,19 @@ namespace OpenAuth.WebApi.Controllers
 
         #region 烤机相关
         /// <summary>
-        /// 边缘计算在线未绑定/已绑定未测试设备列表
+        /// 边缘计算在线未绑定
         /// </summary>
+        /// <param name="GeneratorCode"></param>
         /// <param name="page"></param>
         /// <param name="limit"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> OnlineDeviceList(int page,int limit)
+        public async Task<TableData> OnlineDeviceList(string GeneratorCode, int page,int limit)
         {
             var result = new TableData();
             try
             {
-                return await _app.OnlineDeviceList(page,limit);
+                return await _app.OnlineDeviceList(GeneratorCode,page, limit);
             }
             catch (Exception e)
             {
@@ -51,18 +52,19 @@ namespace OpenAuth.WebApi.Controllers
 
 
         /// <summary>
-        /// 边缘计算在线已绑定设备列表
+        /// 边缘计算已绑定设备列表
         /// </summary>
+        /// <param name="GeneratorCode"></param>
         /// <param name="page"></param>
         /// <param name="limit"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> OnlineDeviceBindList(int page, int limit)
+        public async Task<TableData> OnlineDeviceBindList(string GeneratorCode,int page, int limit)
         {
             var result = new TableData();
             try
             {
-                return await _app.OnlineDeviceBindList(page, limit);
+                return await _app.OnlineDeviceBindList(GeneratorCode,page, limit);
             }
             catch (Exception e)
             {

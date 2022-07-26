@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using OpenAuth.App;
+using OpenAuth.App.Nwcali;
 using OpenAuth.App.Nwcali.Request;
 using OpenAuth.App.Nwcali.Response;
 using OpenAuth.App.Request;
@@ -233,7 +234,7 @@ namespace OpenAuth.WebApi.Controllers
             string step_data2 = string.Empty;
             string message = string.Empty;
             List<DeviceTestResponse> deviceTestResponses = new List<DeviceTestResponse>();
-            if (string.IsNullOrWhiteSpace(model.GeneratorCode))
+            if (model.GeneratorCode.Count <= 0)
             {
                 result.Code = 500;
                 result.Message = $"生产码缺失启动失败!";
@@ -521,46 +522,196 @@ namespace OpenAuth.WebApi.Controllers
                 return result;
             }
         }
+        ///// <summary>
+        ///// 重新启动测试
+        ///// </summary>
+        ///// <returns></returns>
+        //[HttpPost]
+        //public async Task<TableData> RestartTest(CanStopTestReq model)
+        //{
+        //    var result = new TableData();
+        //    string message = string.Empty;
+        //    var canStopList = await _app.CanStopTestList(model.stopTests);
+        //    if (canStopList.Data != null)
+        //    {
+        //        foreach (var item in canStopList.Data)
+        //        {
+        //            var testJson = JsonConvert.SerializeObject(item);
+        //            var request = new Request { JsonParameter = Google.Protobuf.ByteString.CopyFromUtf8(testJson) };
+        //            var testRes = _dataServiceClient.ControlCmd(request);
+        //            string testData = Encoding.UTF8.GetString(testRes.Msg.Memory.ToArray());
+        //            if (!testRes.Success)
+        //            {
+        //                Log.Logger.Error($"停止测试异常{testData}");
+        //                result.Code = 500;
+        //                result.Message = testData;
+        //                return result;
+        //            }
+        //        }
+        //    }
+        //    List<DeviceTestResponse> deviceTestResponses = new List<DeviceTestResponse>();
+        //    if (string.IsNullOrWhiteSpace(model.GeneratorCode))
+        //    {
+        //        result.Code = 500;
+        //        result.Message = $"生产码缺失启动失败!";
+        //        return result;
+        //    }
+        //    if (model.SeriesName == "6" || model.SeriesName == "7")
+        //    {
+        //        if (string.IsNullOrWhiteSpace(model.FilePath2) || string.IsNullOrWhiteSpace(model.FilePath))
+        //        {
+        //            result.Code = 500;
+        //            result.Message = $"{model.SeriesName}系列必须有两个工步文件!";
+        //            return result;
+        //        }
+        //        if (model.FirstStart != 1 && model.FirstStart != 2)
+        //        {
+        //            result.Code = 500;
+        //            result.Message = $"{model.SeriesName}系列工步未设置优先启动!";
+        //            return result;
+        //        }
+        //        var FilePathContent = _app.StepContent(model.FilePath);
+        //        if (FilePathContent.Code != 200)
+        //        {
+        //            result.Code = FilePathContent.Code;
+        //            result.Message = $"{model.FilePath}{FilePathContent.Message}";
+        //            return result;
+        //        }
+        //        var FilePath2Content = _app.StepContent(model.FilePath2);
+        //        if (FilePath2Content.Code != 200)
+        //        {
+        //            result.Code = FilePath2Content.Code;
+        //            result.Message = $"{model.FilePath2}{FilePath2Content.Message}";
+        //            return result;
+        //        }
+        //        var res = await _app.RestartDockChannelControl(model.stopTests, model.FirstStart, FilePathContent.Data.stepCount, FilePathContent.Data.stepData, FilePath2Content.Data.stepCount, FilePath2Content.Data.stepData);
+        //        deviceTestResponses = res.Data;
+        //    }
+        //    else
+        //    {
+        //        var FilePathContent = _app.StepContent(model.FilePath);
+        //        if (FilePathContent.Code != 200)
+        //        {
+        //            result.Code = FilePathContent.Code;
+        //            result.Message = $"{model.FilePath}{FilePathContent.Message}";
+        //            return result;
+        //        }
+        //        var res = await _app.RestartTest(model.stopTests, FilePathContent.Data.stepCount, FilePathContent.Data.stepData);
+        //        deviceTestResponses = res.Data;
+        //    }
+        //    try
+        //    {
+        //        foreach (var item in deviceTestResponses)
+        //        {
+        //            List<StartTestResp> list = new List<StartTestResp>();
+        //            var testJson = JsonConvert.SerializeObject(item.canTestDeviceResp);
+        //            var request = new Request { JsonParameter = Google.Protobuf.ByteString.CopyFromUtf8(testJson) };
+        //            var testRes = _dataServiceClient.ControlCmd(request);
+        //            string testData = Encoding.UTF8.GetString(testRes.Msg.Memory.ToArray());
+        //            StartTestResp startTestResp = new StartTestResp();
+        //            try
+        //            {
+        //                startTestResp = JsonConvert.DeserializeObject<StartTestResp>(testData);
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                Log.Logger.Error($"{testData}", ex);
+        //                result.Code = 500;
+        //                result.Message = testData;
+        //                return result;
+        //            }
+        //            startTestResp.GeneratorCode = item.GeneratorCode;
+        //            startTestResp.EdgeGuid = item.EdgeGuid;
+        //            startTestResp.BtsServerIp = item.BtsServerIp;
+        //            startTestResp.MidGuid = item.MidGuid;
+        //            startTestResp.LowGuid = item.LowGuid;
+        //            startTestResp.SrvGuid = item.SrvGuid;
+        //            startTestResp.Department = item.Department;
+        //            startTestResp.stepCount = item.stepCount;
+        //            startTestResp.MaxRange = item.MaxRange;
+        //            list.Add(startTestResp);
+        //            var successList = await _app.SaveTestResult(list);
+        //        }
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        result.Code = 500;
+        //        result.Message = e.Message;
+        //        return result;
+        //    }
+        //    if (!string.IsNullOrWhiteSpace(message))
+        //    {
+        //        result.Message = message;
+        //    }
+        //    return result;
+        //}
+        #endregion
+
+
+        #region 工步启动相关
         /// <summary>
-        /// 重新启动测试
+        /// 获取启动列表
         /// </summary>
+        /// <param name="GeneratorCode"></param>
+        /// <param name="FilterType">过滤类型 1:生产码  2:下位机</param>
         /// <returns></returns>
-        [HttpPost]
-        public async Task<TableData> RestartTest(CanStopTestReq model)
+        [HttpGet]
+        public async Task<TableData> CanStartTestList(string GeneratorCode, int FilterType)
         {
             var result = new TableData();
-            string message = string.Empty;
-            var canStopList = await _app.CanStopTestList(model.stopTests);
-            if (canStopList.Data != null)
+            try
             {
-                foreach (var item in canStopList.Data)
-                {
-                    var testJson = JsonConvert.SerializeObject(item);
-                    var request = new Request { JsonParameter = Google.Protobuf.ByteString.CopyFromUtf8(testJson) };
-                    var testRes = _dataServiceClient.ControlCmd(request);
-                    string testData = Encoding.UTF8.GetString(testRes.Msg.Memory.ToArray());
-                    if (!testRes.Success)
-                    {
-                        Log.Logger.Error($"停止测试异常{testData}");
-                        result.Code = 500;
-                        result.Message = testData;
-                        return result;
-                    }
-                }
+                return await _app.CanStartTestList(GeneratorCode, FilterType);
             }
-            List<DeviceTestResponse> deviceTestResponses = new List<DeviceTestResponse>();
-            if (string.IsNullOrWhiteSpace(model.GeneratorCode))
+            catch (Exception e)
             {
                 result.Code = 500;
-                result.Message = $"生产码缺失启动失败!";
+                result.Message = e.Message;
                 return result;
+            }
+        }
+
+        /// <summary>
+        /// 启动测试
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> StartTest(ChannelControlReq model)
+        {
+            var result = new TableData();
+            List<DeviceTestResponse> deviceTestResponses = new List<DeviceTestResponse>();
+            #region 参数判断
+            if (model.FilterType == 1)
+            {
+                if (model.GeneratorCode.Count <= 0)
+                {
+                    result.Code = 500;
+                    result.Message = $"请选择需要启动的生产码!";
+                    return result;
+                }
+            }
+            else
+            {
+                if (model.lowDeviceLists.Count <= 0)
+                {
+                    result.Code = 500;
+                    result.Message = $"请选择需要启动的下位机!";
+                    return result;
+                }
             }
             if (model.SeriesName == "6" || model.SeriesName == "7")
             {
                 if (string.IsNullOrWhiteSpace(model.FilePath2) || string.IsNullOrWhiteSpace(model.FilePath))
                 {
                     result.Code = 500;
-                    result.Message = $"{model.SeriesName}系列必须有两个工步文件!";
+                    result.Message = $"{model.SeriesName}系列缺少工步文件启动失败!";
+                    return result;
+                }
+                if (model.TestType == null || model.TestType <= 0)
+                {
+                    result.Code = 500;
+                    result.Message = $"请选择启动模式!";
                     return result;
                 }
                 if (model.FirstStart != 1 && model.FirstStart != 2)
@@ -569,13 +720,41 @@ namespace OpenAuth.WebApi.Controllers
                     result.Message = $"{model.SeriesName}系列工步未设置优先启动!";
                     return result;
                 }
-                var FilePathContent = _app.StepContent(model.FilePath);
-                if (FilePathContent.Code != 200)
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(model.FilePath))
                 {
-                    result.Code = FilePathContent.Code;
-                    result.Message = $"{model.FilePath}{FilePathContent.Message}";
+                    result.Code = 500;
+                    result.Message = $"缺少工步文件启动失败!";
                     return result;
                 }
+            }
+            #endregion
+
+            #region 设备数据
+            List<StartDeviceListResp> deviceList = new List<StartDeviceListResp>();
+            if (model.FilterType == 1)
+            {
+                deviceList = _app.DeviceListByCode(model.GeneratorCode).Result;
+            }
+            else
+            {
+                deviceList = _app.DeviceListByLow(model.lowDeviceLists).Result;
+            }
+            #endregion
+
+            #region 工步数据
+            var FilePathContent = _app.StepContent(model.FilePath);
+            if (FilePathContent.Code != 200)
+            {
+                result.Code = FilePathContent.Code;
+                result.Message = $"{model.FilePath}{FilePathContent.Message}";
+                return result;
+            }
+            var FilePathContent2 = new StepContentResp();
+            if (model.SeriesName == "6" || model.SeriesName == "7")
+            {
                 var FilePath2Content = _app.StepContent(model.FilePath2);
                 if (FilePath2Content.Code != 200)
                 {
@@ -583,21 +762,35 @@ namespace OpenAuth.WebApi.Controllers
                     result.Message = $"{model.FilePath2}{FilePath2Content.Message}";
                     return result;
                 }
-                var res = await _app.RestartDockChannelControl(model.stopTests, model.FirstStart, FilePathContent.Data.stepCount, FilePathContent.Data.stepData, FilePath2Content.Data.stepCount, FilePath2Content.Data.stepData);
+                FilePathContent2 = FilePath2Content.Data;
+            }
+            #endregion
+
+            #region 启动数据
+            if (model.SeriesName == "6" || model.SeriesName == "7")
+            {
+                var res = _app.ShortCircuitStart(deviceList, FilePathContent.Data.stepCount, FilePathContent.Data.stepData, FilePathContent2.stepCount, FilePathContent2.stepData, model.FirstStart, model.TestType);
+                if (res.Code != 200)
+                {
+                    result.Code = res.Code;
+                    result.Message = res.Message;
+                    return result;
+                }
                 deviceTestResponses = res.Data;
             }
             else
             {
-                var FilePathContent = _app.StepContent(model.FilePath);
-                if (FilePathContent.Code != 200)
+                var res = _app.NormalStart(deviceList, FilePathContent.Data.stepCount, FilePathContent.Data.stepData);
+                if (res.Code != 200)
                 {
-                    result.Code = FilePathContent.Code;
-                    result.Message = $"{model.FilePath}{FilePathContent.Message}";
+                    result.Code = res.Code;
+                    result.Message = res.Message;
                     return result;
                 }
-                var res = await _app.RestartTest(model.stopTests, FilePathContent.Data.stepCount, FilePathContent.Data.stepData);
                 deviceTestResponses = res.Data;
             }
+            #endregion
+
             try
             {
                 foreach (var item in deviceTestResponses)
@@ -638,162 +831,185 @@ namespace OpenAuth.WebApi.Controllers
                 result.Message = e.Message;
                 return result;
             }
-            if (!string.IsNullOrWhiteSpace(message))
-            {
-                result.Message = message;
-            }
             return result;
         }
-        #endregion
 
 
-        #region 工步启动相关
-        /// <summary>
-        /// 获取启动列表
-        /// </summary>
-        /// <param name="GeneratorCode">当前扫描的生产码（必填）</param>
-        /// <param name="key">生产码关键词查询（非必填）</param>
-        /// <param name="page">分页索引默认1</param>
-        /// <param name="limit">分大小默认10</param>
-        /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> CanStartTestList(string GeneratorCode, string key = "", int page = 1, int limit = 10)
-        {
-            var result = new TableData();
-            try
-            {
-                page = page <= 0 ? 1 : page;
-                limit = limit <= 0 ? 10 : limit;
-                return await _app.CanStartTestList(GeneratorCode, key, page, limit);
-            }
-            catch (Exception e)
-            {
-                result.Code = 500;
-                result.Message = e.Message;
-                return result;
-            }
-        }
 
         /// <summary>
         /// 启动测试
         /// </summary>
-        /// <param name="model">多个生产码逗号隔开</param>
+        /// <param name="model"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<TableData> StartTest(ChannelControlReq model)
+        public async Task<TableData> RestartTest(ChannelControlReq model)
         {
             var result = new TableData();
+            List<DeviceTestResponse> deviceTestResponses = new List<DeviceTestResponse>();
+            #region 参数判断
+            if (model.FilterType == 1)
+            {
+                if (model.GeneratorCode.Count <= 0)
+                {
+                    result.Code = 500;
+                    result.Message = $"请选择需要重启动的生产码!";
+                    return result;
+                }
+            }
+            else
+            {
+                if (model.lowDeviceLists.Count <= 0)
+                {
+                    result.Code = 500;
+                    result.Message = $"请选择需要重启动的下位机!";
+                    return result;
+                }
+            }
+            if (model.SeriesName == "6" || model.SeriesName == "7")
+            {
+                if (string.IsNullOrWhiteSpace(model.FilePath2) || string.IsNullOrWhiteSpace(model.FilePath))
+                {
+                    result.Code = 500;
+                    result.Message = $"{model.SeriesName}系列缺少工步文件重启动失败!";
+                    return result;
+                }
+                if (model.TestType == null || model.TestType <= 0)
+                {
+                    result.Code = 500;
+                    result.Message = $"请选择启动模式!";
+                    return result;
+                }
+                if (model.FirstStart != 1 && model.FirstStart != 2)
+                {
+                    result.Code = 500;
+                    result.Message = $"{model.SeriesName}系列工步未设置优先启动!";
+                    return result;
+                }
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(model.FilePath))
+                {
+                    result.Code = 500;
+                    result.Message = $"缺少工步文件启动失败!";
+                    return result;
+                }
+            }
+            #endregion
+
+            #region 设备数据
+            List<StartDeviceListResp> deviceList = new List<StartDeviceListResp>();
+            if (model.FilterType == 1)
+            {
+                deviceList = _app.DeviceListByCode(model.GeneratorCode).Result;
+            }
+            else
+            {
+                deviceList = _app.DeviceListByLow(model.lowDeviceLists).Result;
+            }
+            #endregion
+
+            #region 工步数据
+            var FilePathContent = _app.StepContent(model.FilePath);
+            if (FilePathContent.Code != 200)
+            {
+                result.Code = FilePathContent.Code;
+                result.Message = $"{model.FilePath}{FilePathContent.Message}";
+                return result;
+            }
+            var FilePathContent2 = new StepContentResp();
+            if (model.SeriesName == "6" || model.SeriesName == "7")
+            {
+                var FilePath2Content = _app.StepContent(model.FilePath2);
+                if (FilePath2Content.Code != 200)
+                {
+                    result.Code = FilePath2Content.Code;
+                    result.Message = $"{model.FilePath2}{FilePath2Content.Message}";
+                    return result;
+                }
+                FilePathContent2 = FilePath2Content.Data;
+            }
+            #endregion
+
+            #region 停止测试
+            var canStopList = _app.CanStopTestList(deviceList);
+            if (canStopList.Data != null)
+            {
+                foreach (var item in canStopList.Data)
+                {
+                    var testJson = JsonConvert.SerializeObject(item);
+                    var request = new Request { JsonParameter = Google.Protobuf.ByteString.CopyFromUtf8(testJson) };
+                    var testRes = _dataServiceClient.ControlCmd(request);
+                    string testData = Encoding.UTF8.GetString(testRes.Msg.Memory.ToArray());
+                    if (!testRes.Success)
+                    {
+                        Log.Logger.Error($"停止测试异常{testData}");
+                        result.Code = 500;
+                        result.Message = testData;
+                        return result;
+                    }
+                }
+            }
+            #endregion
+
+            #region 启动数据
+            if (model.SeriesName == "6" || model.SeriesName == "7")
+            {
+                var res = _app.ShortCircuitStart(deviceList, FilePathContent.Data.stepCount, FilePathContent.Data.stepData, FilePathContent2.stepCount, FilePathContent2.stepData, model.FirstStart, model.TestType);
+                if (res.Code != 200)
+                {
+                    result.Code = res.Code;
+                    result.Message = res.Message;
+                    return result;
+                }
+                deviceTestResponses = res.Data;
+            }
+            else
+            {
+                var res = _app.NormalStart(deviceList, FilePathContent.Data.stepCount, FilePathContent.Data.stepData);
+                if (res.Code != 200)
+                {
+                    result.Code = res.Code;
+                    result.Message = res.Message;
+                    return result;
+                }
+                deviceTestResponses = res.Data;
+            }
+            #endregion
+
             try
             {
-                List<DeviceTestResponse> deviceTestResponses = new List<DeviceTestResponse>();
-                if (string.IsNullOrWhiteSpace(model.GeneratorCode))
+                foreach (var item in deviceTestResponses)
                 {
-                    result.Code = 500;
-                    result.Message = $"没有可以启动的生产码!";
-                    return result;
-                }
-                if (model.SeriesName == "6" || model.SeriesName == "7")
-                {
-                    if (string.IsNullOrWhiteSpace(model.FilePath2) || string.IsNullOrWhiteSpace(model.FilePath))
+                    List<StartTestResp> list = new List<StartTestResp>();
+                    var testJson = JsonConvert.SerializeObject(item.canTestDeviceResp);
+                    var request = new Request { JsonParameter = Google.Protobuf.ByteString.CopyFromUtf8(testJson) };
+                    var testRes = _dataServiceClient.ControlCmd(request);
+                    string testData = Encoding.UTF8.GetString(testRes.Msg.Memory.ToArray());
+                    StartTestResp startTestResp = new StartTestResp();
+                    try
                     {
+                        startTestResp = JsonConvert.DeserializeObject<StartTestResp>(testData);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Logger.Error($"{testData}", ex);
                         result.Code = 500;
-                        result.Message = $"{model.SeriesName}系列必须有两个工步文件!";
+                        result.Message = testData;
                         return result;
                     }
-                    if (model.FirstStart != 1 && model.FirstStart != 2)
-                    {
-                        result.Code = 500;
-                        result.Message = $"{model.SeriesName}系列工步未设置优先启动!";
-                        return result;
-                    }
-                    var FilePathContent = _app.StepContent(model.FilePath);
-                    if (FilePathContent.Code != 200)
-                    {
-                        result.Code = FilePathContent.Code;
-                        result.Message = $"{model.FilePath}{FilePathContent.Message}";
-                        return result;
-                    }
-                    var FilePath2Content = _app.StepContent(model.FilePath2);
-                    if (FilePath2Content.Code != 200)
-                    {
-                        result.Code = FilePath2Content.Code;
-                        result.Message = $"{model.FilePath2}{FilePath2Content.Message}";
-                        return result;
-                    }
-                    if (model.TestType==null || model.TestType<=0)
-                    {
-                        result.Code = 500;
-                        result.Message = $"请选择启动模式!";
-                        return result;
-                    }
-                    var res = await _app.ShortCircuitStart(model, FilePathContent.Data.stepCount, FilePathContent.Data.stepData, FilePath2Content.Data.stepCount, FilePath2Content.Data.stepData);
-                    if (res.Code != 200)
-                    {
-                        result.Code = res.Code;
-                        result.Message = res.Message;
-                        return result;
-                    }
-                    deviceTestResponses = res.Data;
+                    startTestResp.GeneratorCode = item.GeneratorCode;
+                    startTestResp.EdgeGuid = item.EdgeGuid;
+                    startTestResp.BtsServerIp = item.BtsServerIp;
+                    startTestResp.MidGuid = item.MidGuid;
+                    startTestResp.LowGuid = item.LowGuid;
+                    startTestResp.SrvGuid = item.SrvGuid;
+                    startTestResp.Department = item.Department;
+                    startTestResp.stepCount = item.stepCount;
+                    startTestResp.MaxRange = item.MaxRange;
+                    list.Add(startTestResp);
+                    var successList = await _app.SaveTestResult(list);
                 }
-                else
-                {
-                    var FilePathContent = _app.StepContent(model.FilePath);
-                    if (FilePathContent.Code != 200)
-                    {
-                        result.Code = FilePathContent.Code;
-                        result.Message = $"{model.FilePath}{FilePathContent.Message}";
-                        return result;
-                    }
-                    var res = await _app.ChannelControlAsync(model, FilePathContent.Data.stepCount, FilePathContent.Data.stepData);
-                    if (res.Code != 200)
-                    {
-                        result.Code = res.Code;
-                        result.Message = res.Message;
-                        return result;
-                    }
-                    deviceTestResponses = res.Data;
-                }
-                try
-                {
-                    foreach (var item in deviceTestResponses)
-                    {
-                        List<StartTestResp> list = new List<StartTestResp>();
-                        var testJson = JsonConvert.SerializeObject(item.canTestDeviceResp);
-                        var request = new Request { JsonParameter = Google.Protobuf.ByteString.CopyFromUtf8(testJson) };
-                        var testRes = _dataServiceClient.ControlCmd(request);
-                        string testData = Encoding.UTF8.GetString(testRes.Msg.Memory.ToArray());
-                        StartTestResp startTestResp = new StartTestResp();
-                        try
-                        {
-                            startTestResp = JsonConvert.DeserializeObject<StartTestResp>(testData);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Logger.Error($"{testData}", ex);
-                            result.Code = 500;
-                            result.Message = testData;
-                            return result;
-                        }
-                        startTestResp.GeneratorCode = item.GeneratorCode;
-                        startTestResp.EdgeGuid = item.EdgeGuid;
-                        startTestResp.BtsServerIp = item.BtsServerIp;
-                        startTestResp.MidGuid = item.MidGuid;
-                        startTestResp.LowGuid = item.LowGuid;
-                        startTestResp.SrvGuid = item.SrvGuid;
-                        startTestResp.Department = item.Department;
-                        startTestResp.stepCount = item.stepCount;
-                        startTestResp.MaxRange = item.MaxRange;
-                        list.Add(startTestResp);
-                        var successList = await _app.SaveTestResult(list);
-                    }
-                }
-                catch (Exception e)
-                {
-                    result.Code = 500;
-                    result.Message = e.Message;
-                    return result;
-                }
-                return result;
             }
             catch (Exception e)
             {
@@ -801,6 +1017,7 @@ namespace OpenAuth.WebApi.Controllers
                 result.Message = e.Message;
                 return result;
             }
+            return result;
         }
 
         /// <summary>
