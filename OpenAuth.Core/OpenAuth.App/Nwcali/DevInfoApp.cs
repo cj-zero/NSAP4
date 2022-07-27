@@ -759,7 +759,7 @@ namespace OpenAuth.App
             {
                 throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作,系数解析异常!");
             }
-            if (!int.TryParse(Voltage, out int v) || !int.TryParse(Current, out int a))
+            if (!decimal.TryParse(Voltage, out decimal v) || !decimal.TryParse(Current, out decimal a))
             {
                 throw new Exception($"{query.ItemCode}物料编码无法进行烤机操作,量程解析异常!");
             }
