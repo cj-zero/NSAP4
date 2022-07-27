@@ -360,13 +360,15 @@ namespace OpenAuth.App
                 return result;
             }
             //按指定时间过滤（筛选轨迹）
+            //去掉省份为空的条件 有海外客户 2022-07-26
+            //.Where(c =>(c.CreateTime >= start && c.CreateTime <= end) && c.AppUserId==pppUserMap.AppUserId && !string.IsNullOrWhiteSpace(c.Province))
             var realTimeLocation = await UnitWork.Find<RealTimeLocation>(null)
-                                            .Where(c =>(c.CreateTime >= start && c.CreateTime <= end) && c.AppUserId==pppUserMap.AppUserId && !string.IsNullOrWhiteSpace(c.Province))
+                                            .Where(c =>(c.CreateTime >= start && c.CreateTime <= end) && c.AppUserId==pppUserMap.AppUserId)
                                             .OrderByDescending(c => c.CreateTime)
                                             .ToListAsync();
             //当天定位数据
-            var currentDate = await UnitWork.Find<RealTimeLocation>(c => c.AppUserId == pppUserMap.AppUserId && !string.IsNullOrWhiteSpace(c.Province) && c.CreateTime>=DateTime.Now.Date && c.CreateTime< DateTime.Now.AddDays(1).Date).ToListAsync();
-            //var currentDate = await UnitWork.FromSql<RealTimeLocation>(@$"SELECT * from realtimelocation where AppUserId={pppUserMap.AppUserId} AND TO_DAYS(CreateTime)=TO_DAYS(NOW())").ToListAsync();
+            //&& !string.IsNullOrWhiteSpace(c.Province)
+            var currentDate = await UnitWork.Find<RealTimeLocation>(c => c.AppUserId == pppUserMap.AppUserId && c.CreateTime>=DateTime.Now.Date && c.CreateTime< DateTime.Now.AddDays(1).Date).ToListAsync();
 
             var data = realTimeLocation?.GroupBy(c=>c.CreateTime.ToString("yyyy-MM-dd")).Select(c=>new Trajectory
             {

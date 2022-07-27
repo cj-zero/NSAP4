@@ -293,7 +293,27 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
-
+        /// <summary>
+        /// 修改终端客户
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> ModifyCustomer(ModifyServiceOrderReq request)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.ModifyCustomer(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
+        }
         /// <summary>
         /// 呼叫服务未派单页面左侧树数据源
         /// </summary>
