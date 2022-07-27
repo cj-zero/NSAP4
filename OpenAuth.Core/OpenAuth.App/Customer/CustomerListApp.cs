@@ -1065,11 +1065,33 @@ namespace OpenAuth.App.Customer
         public async Task<TableData> GetCustomerHistoryLists(QueryCustomerSalerListReq req)
         {
             var result = new TableData();
-
             var queryCustomerSalers = new List<QueryCustomerSalerListResponse>();
+
+            string addsql = $@"select sale_id,j.sync_dt from wfa_job j left join sbo_user u on j.user_id = u.user_id where job_nm ='添加业务伙伴:" + req.CardName + "' or card_name = '" + req.CardName + "'";
+            var addtable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, addsql, System.Data.CommandType.Text);
+            int saleid = (addtable != null && addtable.Rows.Count > 0) ? Convert.ToInt32(addtable.Rows[0]["sale_id"]) : 0;
+            var slpinfo = (from o in UnitWork.Find<OSLP>(null)
+                           where o.SlpCode == saleid
+                           select new
+                           {
+                               o.SlpCode,
+                               o.SlpName
+                           }).FirstOrDefault();
+            if (addtable != null && addtable.Rows.Count > 0)
+            {
+                queryCustomerSalers.Add(new QueryCustomerSalerListResponse
+                {
+                    SlpCode = saleid,
+                    SalerName = slpinfo.SlpName,
+                    movein_type = "创建",
+                    remark = "",
+                    CreateTime = Convert.ToDateTime(addtable.Rows[0]["sync_dt"])
+                });
+            }
+
             //查询客户领取掉落记录表
             string sql = $@"select a.* FROM (select SlpCode,SlpName,movein_type,remark,CreateTime from customer_move_history where CardCode = '{req.CardCode}'
-                            UNION select SlpCode,SlpName,'领取','',CreateTime from Customer_Saler_History where customerNo = '{req.CardCode}') as a order by a.CreateTime";
+                            UNION select SlpCode,SlpName,case when Is_SaleHistory = 1 then'领取' else '分配' end ,'',CreateTime from Customer_Saler_History where customerNo = '{req.CardCode}') as a order by a.CreateTime";
             var table = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, System.Data.CommandType.Text);
 
             if (table != null && table.Rows.Count > 0)
@@ -1086,29 +1108,7 @@ namespace OpenAuth.App.Customer
                     });
                 }
             }
-            //如果记录表不存在客户记录,则直接查询OCRD表
-            else
-            {
-                var slpcode = await (from o in UnitWork.Find<OCRD>(null)
-                                     join s in UnitWork.Find<OSLP>(null) on o.SlpCode equals s.SlpCode
-                                     where o.CardCode == req.CardCode
-                                     orderby o.CreateDate
-                                     select new
-                                     {
-                                         o.SlpCode,
-                                         s.SlpName,
-                                         o.CreateDate,
-                                     }).FirstOrDefaultAsync();
-                queryCustomerSalers.Add(new QueryCustomerSalerListResponse
-                {
-                    SlpCode = Convert.ToInt32(slpcode.SlpCode),
-                    SalerName = slpcode.SlpName,
-                    movein_type = "创建",
-                    remark = "",
-                    CreateTime = slpcode.CreateDate
-                });
 
-            }
             result.Data = queryCustomerSalers;
             result.Count = queryCustomerSalers.Count();
 
