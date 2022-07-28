@@ -41,6 +41,6 @@ namespace OpenAuth.App
 
         public const string MailAccount = "nsap@neware.com.cn";
 
-        public const string MailPassword = "HRw857951";//ERP3.0当前账套
+        public const string MailPassword = "Neware.2022.15";//ERP3.0当前账套
     }
 }

@@ -304,7 +304,7 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <param name="vestInOrg"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<string> GetInternalContactContent(int serviceOrderId, int vestInOrg)
+        public async Task<TableData> GetInternalContactContent(int serviceOrderId, int vestInOrg)
         {
             return await _app.GetInternalContactContent(serviceOrderId, vestInOrg);
         }

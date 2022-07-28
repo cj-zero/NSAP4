@@ -202,7 +202,8 @@ namespace OpenAuth.WebApi.Controllers
                         if (!await _reimburseInfoApp.IsSole(InvoiceNo) || !await _myExpendsApp.IsSole(request.AppUserId, item.InvoiceNo))
                         {
                             invoiceresponse.IsUsed = 1;
-                            invoiceresponse.NotPassReason = "发票已被使用";
+                            //invoiceresponse.NotPassReason = "发票已被使用";
+                            invoiceresponse.NotPassReason = $"添加报销单失败：发票（{invoiceresponse.InvoiceNo}）已被使用，不可二次报销";
                         }
                         else
                         {
