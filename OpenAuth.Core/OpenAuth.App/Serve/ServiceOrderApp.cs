@@ -927,7 +927,7 @@ namespace OpenAuth.App
             var query = from a in UnitWork.Find<ServiceWorkOrder>(null)
                         join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
-                        where b.VestInOrg == 1 && b.AllowOrNot==0 
+                        where b.VestInOrg == 1 && b.AllowOrNot==0 && b.FromId!=8
                         select new { a, b };
 
             query = query.WhereIf(!string.IsNullOrWhiteSpace(req.QryU_SAP_ID), q => q.b.U_SAP_ID.Equals(Convert.ToInt32(req.QryU_SAP_ID)))
@@ -1557,7 +1557,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryAllowOrNot.ToString()), q => q.AllowOrNot == req.QryAllowOrNot)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QrySalesMan), q => q.SalesMan == req.QrySalesMan)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromId), q => q.FromId == Convert.ToInt32(req.QryFromId))
-                .WhereIf(string.IsNullOrWhiteSpace(req.QryFromId) && req.QryVestInOrg == "1", q => q.FromId != 8)//服务呼叫列表排除ECN
+                .WhereIf(string.IsNullOrWhiteSpace(req.QryFromId) && (req.QryVestInOrg == "1"|| req.QryVestInOrg == "2"), q => q.FromId != 8)//服务呼叫列表排除ECN
                 .Where(q => ids.Contains(q.Id) && q.Status == 2);
 
             //根据部门筛选数据

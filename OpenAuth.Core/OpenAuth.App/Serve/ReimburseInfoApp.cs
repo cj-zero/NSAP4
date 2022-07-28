@@ -2244,6 +2244,30 @@ namespace OpenAuth.App
             }
             return true;
         }
+        /// <summary>
+        /// 发票号全库唯一_返回重复发票号
+        /// </summary>
+        /// <param name="InvoiceNumber"></param>
+        /// <returns></returns>
+        public async Task<string> GetRepeatInvoiceNumber(List<string> InvoiceNumber)
+        {
+            var rta = await UnitWork.Find<ReimburseFare>(r => InvoiceNumber.Contains(r.InvoiceNumber)).ToListAsync();
+            if (rta.Count() > 0)
+            {
+                return string.Join(",", rta.Select(o => o.InvoiceNumber));
+            }
+            var ras = await UnitWork.Find<ReimburseAccommodationSubsidy>(r => InvoiceNumber.Contains(r.InvoiceNumber)).ToListAsync();
+            if (ras.Count() > 0)
+            {
+                return string.Join(",", ras.Select(o => o.InvoiceNumber));
+            }
+            var roc = await UnitWork.Find<ReimburseOtherCharges>(r => InvoiceNumber.Contains(r.InvoiceNumber)).ToListAsync();
+            if (roc.Count() > 0)
+            {
+                return string.Join(",", roc.Select(o => o.InvoiceNumber));
+            }
+            return "";
+        }
 
         /// <summary>
         /// 删除报销单 
@@ -2778,9 +2802,14 @@ namespace OpenAuth.App
             }
             else if (InvoiceNumbers.Count() > 0)
             {
-                if (!IsSole(InvoiceNumbers).ConfigureAwait(false).GetAwaiter().GetResult())
+                //if (!IsSole(InvoiceNumbers).ConfigureAwait(false).GetAwaiter().GetResult())
+                //{
+                //    throw new CommonException("添加报销单失败。发票已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                //}
+                string Repeat = GetRepeatInvoiceNumber(InvoiceNumbers).ConfigureAwait(false).GetAwaiter().GetResult();
+                if (!string.IsNullOrEmpty(Repeat))
                 {
-                    throw new CommonException("添加报销单失败。发票已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
+                    throw new CommonException($"添加报销单失败。({Repeat})发票已使用，不可二次使用！", Define.INVALID_InvoiceNumber);
                 }
             }
             #endregion
