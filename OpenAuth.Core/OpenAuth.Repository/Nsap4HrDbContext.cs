@@ -32,6 +32,7 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<MaterialRange>().HasKey(s => s.ItemCode);
         }
 
-        public virtual DbSet<classroom_teacher> Classroom_Teachers { get; set; }
+        public virtual DbSet<classroom_apply_teacher_log> Classroom_Apply_Teacher_Logs { get; set; }
+        public virtual DbSet<classroom_course_package> Classroom_Course_Packages { get; set; }
     }
 }

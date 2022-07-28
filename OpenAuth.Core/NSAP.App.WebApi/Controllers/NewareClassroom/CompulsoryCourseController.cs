@@ -21,24 +21,5 @@ namespace NSAP.App.WebApi.Controllers
         {
             _app = app;
         }
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> TeacherList()
-        {
-            var result = new TableData();
-            try
-            {
-                result = await _app.TeacherList();
-            }
-            catch (Exception e)
-            {
-                result.Code = 500;
-                result.Message = e.Message;
-            }
-            return result;
-        }
     }
 }

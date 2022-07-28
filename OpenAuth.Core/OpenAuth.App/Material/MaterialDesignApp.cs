@@ -289,5 +289,18 @@ namespace OpenAuth.App.Material
             }
             await UnitWork.SaveAsync();
         }
+
+
+
+
+        #region 获取进度
+        public DataTable GetProgressAll()
+        {
+            string strSql = string.Format("select * from ( select RecordGuid, fld005508 DocEntry, max(_System_Progress) progress,fld005506 itemCode from OBJ162 group by RecordGuid, fld005508,_System_objNBS,fld005506) a");
+            return UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null);
+        }
+
+
+        #endregion
     }
 }

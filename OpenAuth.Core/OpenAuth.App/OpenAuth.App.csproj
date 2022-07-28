@@ -83,7 +83,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Hr\Request\" />
     <Folder Include="Hr\Response\" />
     <Folder Include="Settlement\Response\" />
     <Folder Include="Protos\" />

@@ -216,7 +216,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 呼叫来源  呼叫来源  1-电话 2-钉钉 3-QQ 4-微信 5-邮件 6-APP 7-Web
         /// </summary>
-        [Description("呼叫来源 1-电话 2-钉钉 3-QQ 4-微信 5-邮件 6-APP 7-Web")]
+        [Description("呼叫来源 1-电话 2-钉钉 3-QQ 4-微信 5-邮件 6-APP 7-Web 8-ECN")]
         //[Browsable(false)]
         public int? FromId { get; set; }
 
