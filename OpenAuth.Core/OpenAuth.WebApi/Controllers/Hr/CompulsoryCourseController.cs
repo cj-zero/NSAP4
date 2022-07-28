@@ -25,32 +25,6 @@ namespace OpenAuth.WebApi.Controllers
             _app = app;
         }
 
-        /// <summary>
-        /// 讲师申请记录
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="startTime"></param>
-        /// <param name="endTime"></param>
-        /// <param name="auditState"></param>
-        /// <param name="pageIndex"></param>
-        /// <param name="pageSize"></param>
-        /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> TeacherApplyHistory(string name, DateTime? startTime, DateTime? endTime, int? auditState, int pageIndex, int pageSize)
-        {
-            var result = new TableData();
-            try
-            {
-                result = await _app.TeacherApplyHistory(name, startTime, endTime, auditState, pageIndex, pageSize);
-            }
-            catch (Exception e)
-            {
-                result.Code = 500;
-                result.Message = e.Message;
-            }
-            return result;
-        }
-
         #region 课程包相关
         /// <summary>
         /// 课程包列表
@@ -134,7 +108,7 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 编辑课程包
+        /// 修改课程包状态
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
@@ -145,6 +119,133 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 result = await _app.ChangeCoursePackageState(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 删除课包
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> DeleteCoursePackage(CoursePpackageReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.DeleteCoursePackage(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        #endregion
+
+        #region 课程相关
+        /// <summary>
+        /// 课程列表
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="createUser"></param>
+        /// <param name="learningCycle"></param>
+        /// <param name="startTime"></param>
+        /// <param name="endTime"></param>
+        /// <param name="state"></param>
+        /// <param name="source">课程来源(1:主管推课  2:职前  3:入职  4:晋升  5:转正 6:变动)</param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> CourseList(string name,string createUser, int? learningCycle, DateTime? startTime, DateTime? endTime, bool? state,int? source, int pageIndex, int pageSize)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.CourseList(name,createUser,learningCycle,startTime,endTime,state, source,pageIndex, pageSize);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 创建课程
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> CreateCourse(AddOrEditCourseReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(req.name))
+                {
+                    result.Code = 500;
+                    result.Message = "请填写课程称!";
+                    return result;
+                }
+                result = await _app.CreateCourse(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 编辑课程
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> EditCourse(AddOrEditCourseReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(req.name))
+                {
+                    result.Code = 500;
+                    result.Message = "请填写课程名称!";
+                    return result;
+                }
+                result = await _app.EditCourse(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 修改课程状态
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> ChangeCourseState(AddOrEditCourseReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.ChangeCourseState(req);
             }
             catch (Exception e)
             {

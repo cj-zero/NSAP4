@@ -77,7 +77,8 @@ namespace Infrastructure.Mail
             using (var smtp = new SmtpClient())
             {
                 smtp.ServerCertificateValidationCallback = (s, c, h, e) => true;
-                await smtp.ConnectAsync("mail.neware.com.cn", 25, SecureSocketOptions.Auto);
+                //await smtp.ConnectAsync("mail.neware.com.cn", 25, SecureSocketOptions.Auto);
+                await smtp.ConnectAsync("smtphz.qiye.163.com", 25, SecureSocketOptions.Auto);
                 await smtp.AuthenticateAsync(request.FromUser.Address, request.FromUser.Password);
                 await smtp.SendAsync(messageToSend);
                 await smtp.DisconnectAsync(true);
