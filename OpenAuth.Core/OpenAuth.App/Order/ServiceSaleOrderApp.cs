@@ -10843,7 +10843,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
         {
             StringBuilder tableName = new StringBuilder();
             StringBuilder filedName = new StringBuilder();
-            filedName.Append(" '',a.UpdateDate,a.DocEntry,a.CardCode,IF(" + ViewCustom + ",a.CardName,'******'),b.ItemCode,b.Dscription,b.Quantity,IF(" + ViewSales + ",b.Price,'******') Price,IF(" + ViewSales + ",b.LineTotal,'******') LineTotal,IF(" + ViewSales + ",a.DocTotal,'******') DocTotal,IF(" + ViewSales + ",(a.DocTotal-a.PaidToDate),'******') OpenDocTotal,a.CreateDate,a.SlpCode,a.Comments,a.DocStatus,a.Printed,c.SlpName,a.CANCELED,a.Indicator,a.DocDueDate,e.Quantity eQuantity");
+            filedName.Append(" '',a.UpdateDate,a.DocEntry,a.CardCode,IF(" + ViewCustom + ",a.CardName,'******') CardName,b.ItemCode,b.Dscription,b.Quantity,IF(" + ViewSales + ",b.Price,'******') Price,IF(" + ViewSales + ",b.LineTotal,'******') LineTotal,IF(" + ViewSales + ",a.DocTotal,'******') DocTotal,IF(" + ViewSales + ",(a.DocTotal-a.PaidToDate),'******') OpenDocTotal,a.CreateDate,a.SlpCode,a.Comments,a.DocStatus,a.Printed,c.SlpName,a.CANCELED,a.Indicator,a.DocDueDate,e.Quantity eQuantity");
             if (line.ToLower() == "buy_por1")
             {
                 filedName.Append(",b.ActualDocDueDate,b.LineNum,b.U_RelDoc");
@@ -10863,7 +10863,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             }
             if (line.ToLower() == "sale_rdr1")
             {
-                filedName.Append(",b.LineNum,b.U_RelDoc,IFNULL(b.IsSync,0) as IsSync,IFNULL(b.Advance,0) Advance,b.RecordGuid,b.SubmitTime ");
+                filedName.Append(",b.LineNum,b.U_RelDoc,IFNULL(b.IsSync,0) as IsSync,IFNULL(b.Advance,0) Advance,b.RecordGuid,b.SubmitTime,CONCAT('SE-',b.DocEntry) DocEntry ");
             }
             tableName.AppendFormat("{0}." + type + " a LEFT JOIN  {0}." + line + " b ON a.DocEntry=b.DocEntry AND a.sbo_id=b.sbo_id ", "nsap_bone");
             tableName.AppendFormat(" LEFT JOIN {0}.crm_oslp c ON a.SlpCode = c.SlpCode AND a.sbo_id=c.sbo_id", "nsap_bone");

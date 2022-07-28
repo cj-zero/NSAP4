@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Material;
 using OpenAuth.App.Order;
 using OpenAuth.App.Order.ModelDto;
 using OpenAuth.App.Order.Request;
@@ -28,12 +29,14 @@ namespace OpenAuth.WebApi.Controllers.Order
         IAuth _auth;
         IUnitWork UnitWork;
         ServiceBaseApp _serviceBaseApp;
-        public SalesOrderController(IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
+        MaterialDesignApp _materialdesignapp;
+        public SalesOrderController(IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp, MaterialDesignApp materialdesignapp)
         {
             this.UnitWork = UnitWork;
             this._serviceBaseApp = _serviceBaseApp;
             this._auth = _auth;
             _serviceSaleOrderApp = serviceSaleOrderApp;
+            _materialdesignapp = materialdesignapp;
         }
         #region 销售订单列表视图
         /// <summary>
@@ -399,7 +402,44 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 //if (isOpen == "0")
                 //{
-                result.Data = _serviceSaleOrderApp.SelectBillView(model.limit, model.page, model.query, model.sortname, model.sortorder, type, ViewFull, ViewSelf, UserID, SboID, ViewSelfDepartment, DepID, ViewCustom, ViewSales, out rowCount);
+
+                var data = _serviceSaleOrderApp.SelectBillView(model.limit, model.page, model.query, model.sortname, model.sortorder, type, ViewFull, ViewSelf, UserID, SboID, ViewSelfDepartment, DepID, ViewCustom, ViewSales, out rowCount).AsEnumerable();
+                var progressAll = _materialdesignapp.GetProgressAll().AsEnumerable();
+                var obj = from n in data
+                          join p in progressAll
+                          on new { DocEntry = n.Field<string>("docEntry1"), itemCode = n.Field<string>("itemCode") } equals new { DocEntry = p.Field<string>("DocEntry"), itemCode = p.Field<string>("itemCode") } into temp
+                          from t in temp.DefaultIfEmpty()
+                          select new
+                          {
+
+                              updateDate = n.Field<DateTime>("updateDate"),
+                              docEntry = n.Field<uint>("docEntry"),
+                              cardCode = n.Field<string>("cardCode"),
+                              cardName = n.Field<string>("CardName"),
+                              itemCode = n.Field<string>("itemCode"),
+                              dscription = n.Field<string>("dscription"),
+                              quantity = n.Field<decimal>("quantity"),
+                              price = n.Field<string>("price"),
+                              lineTotal = n.Field<string>("lineTotal"),
+                              docTotal = n.Field<string>("docTotal"),
+                              openDocTotal = n.Field<string>("openDocTotal"),
+                              createDate = n.Field<DateTime>("createDate"),
+                              slpCode = n.Field<Int16>("slpCode"),
+                              comments = n.Field<string>("comments"),
+                              docStatus = n.Field<string>("docStatus"),
+                              printed = n.Field<string>("printed"),
+                              slpName = n.Field<string>("slpName"),
+                              docDueDate = n.Field<DateTime>("docDueDate"),
+                              lineNum = n.Field<uint>("lineNum"),
+                              u_RelDoc = n.Field<string>("u_RelDoc"),
+                              RecordGuid = t == null ? null : t.Field<string>("RecordGuid"),
+                              progress = t == null ? 0 : t.Field<double>("progress"),
+                              DocEntry1 = n.Field<string>("docEntry1"),
+                          };
+
+
+                result.Data = obj;
+
                 result.Count = rowCount;
                 //}
                 //else
