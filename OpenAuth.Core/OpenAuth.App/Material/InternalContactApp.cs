@@ -1250,29 +1250,32 @@ namespace OpenAuth.App.Material
         /// <param name="serviceOrderId"></param>
         /// <param name="vestInOrg"></param>
         /// <returns></returns>
-        public async Task<string> GetInternalContactContent(int serviceOrderId, int vestInOrg)
+        public async Task<TableData> GetInternalContactContent(int serviceOrderId, int vestInOrg)
         {
+            TableData result = new TableData();
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
 
-            string result = "";
+            //string result = "";
             if (vestInOrg == 1)
             {
-                result = await (from a in UnitWork.Find<InternalContact>(null)
-                                join b in UnitWork.Find<InternalContactServiceOrder>(null) on a.Id equals b.InternalContactId
-                                where b.ServiceOrderId == serviceOrderId
-                                select a.Content).FirstOrDefaultAsync();
+                var query = await (from a in UnitWork.Find<InternalContact>(null)
+                                     join b in UnitWork.Find<InternalContactServiceOrder>(null) on a.Id equals b.InternalContactId
+                                     where b.ServiceOrderId == serviceOrderId
+                                     select new { a.Content, a.AdaptiveRange, a.Opinions, a.Others }).FirstOrDefaultAsync();
+                result.Data = new { Content = query?.Content, AdaptiveRanges = query?.AdaptiveRange.Split(","), Opinions = !string.IsNullOrWhiteSpace(query?.Opinions) ? query?.Opinions.Split(",") : new string[] { }, Others = query?.Others };
             }
             else
             {
-                result = await (from a in UnitWork.Find<InternalContact>(null)
-                                join b in UnitWork.Find<InternalContactTask>(null) on a.Id equals b.InternalContactId
-                                join c in UnitWork.Find<InternalContactTaskServiceOrder>(null) on b.Id equals c.InternalContactTaskId
-                                where c.ServiceOrderId == serviceOrderId
-                                select a.Content).FirstOrDefaultAsync();
+                var query = await (from a in UnitWork.Find<InternalContact>(null)
+                                     join b in UnitWork.Find<InternalContactTask>(null) on a.Id equals b.InternalContactId
+                                     join c in UnitWork.Find<InternalContactTaskServiceOrder>(null) on b.Id equals c.InternalContactTaskId
+                                     where c.ServiceOrderId == serviceOrderId
+                                     select new { a.Content, a.AdaptiveRange, a.Opinions, a.Others }).FirstOrDefaultAsync();
+                result.Data = new { Content = query?.Content, AdaptiveRanges = query?.AdaptiveRange.Split(","), Opinions = !string.IsNullOrWhiteSpace(query?.Opinions) ? query?.Opinions.Split(",") : new string[] { }, Others = query?.Others };
             }
             return result;
         }
