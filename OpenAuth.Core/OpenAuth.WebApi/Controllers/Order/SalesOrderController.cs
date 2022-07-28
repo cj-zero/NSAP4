@@ -404,7 +404,16 @@ namespace OpenAuth.WebApi.Controllers.Order
                 //{
 
                 var data = _serviceSaleOrderApp.SelectBillView(model.limit, model.page, model.query, model.sortname, model.sortorder, type, ViewFull, ViewSelf, UserID, SboID, ViewSelfDepartment, DepID, ViewCustom, ViewSales, out rowCount).AsEnumerable();
-                var progressAll = _materialdesignapp.GetProgressAll().AsEnumerable();
+                var progressAll = new DataTable().AsEnumerable();
+                try
+                {
+                    progressAll = _materialdesignapp.GetProgressAll().AsEnumerable();
+                }
+                catch (Exception)
+                {
+                    progressAll = new DataTable().AsEnumerable();
+                }
+
                 var obj = from n in data
                           join p in progressAll
                           on new { DocEntry = n.Field<string>("docEntry1"), itemCode = n.Field<string>("itemCode") } equals new { DocEntry = p.Field<string>("DocEntry"), itemCode = p.Field<string>("itemCode") } into temp
