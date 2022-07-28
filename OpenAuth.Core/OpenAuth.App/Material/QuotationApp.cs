@@ -3488,35 +3488,24 @@ namespace OpenAuth.App.Material
                 //收款
                 var orderNo = string.Join(",", saleOrderId);
                 var orctSql = $@"SELECT * from (
-                                    SELECT 
-	                                    (
-	                                    SELECT TOP
-		                                    1 T2.BaseEntry 
-	                                    FROM
-		                                    dbo.RCT2 AS T4
-		                                    LEFT JOIN dbo.INV1 AS T1 ON T4.DocEntry = T1.DocEntry
-		                                    LEFT JOIN dbo.DLN1 AS T2 ON T1.BaseEntry = T2.DocEntry 
-		                                    AND T1.BaseLine = T2.LineNum 
-		                                    AND T1.BaseType = 15 
-	                                    WHERE
-		                                    T4.DocNum= T0.DocEntry 
-		                                    AND T2.BaseType= 17 
-	                                    ) AS OrderNo,
-	                                    T0.DocTotal,
-	                                    SE.DocStatus,
-	                                    SE.DocTotal AS SEDocTotal,
-	                                    T0.DocEntry
-                                    FROM
-	                                    dbo.ORCT AS T0
-	                                    LEFT OUTER JOIN dbo.ORDR AS SE ON T0.U_XSDD= SE.DocEntry
-	                                    ) a where OrderNo in ({orderNo})";
+	                                SELECT 
+		                                T0.DocTotal,
+		                                SE.DocStatus,
+		                                SE.DocTotal AS SEDocTotal,
+		                                T0.DocEntry,
+		                                T0.U_XSDD as OrderNo
+	                                FROM
+		                                dbo.ORCT AS T0
+		                                LEFT OUTER JOIN dbo.ORDR AS SE ON T0.U_XSDD= SE.DocEntry
+		                                ) a where OrderNo in ({orderNo})";
                 var orct = await UnitWork.Query<ORCTModel>(orctSql).ToListAsync();
                 orct = orct.GroupBy(c => c.OrderNo).Select(c => new ORCTModel
                 {
                     DocEntry = c.First().DocEntry,
                     DocStatus = c.First().DocStatus,
                     DocTotal = c.Sum(s => s.DocTotal),
-                    SEDocTotal = c.First().SEDocTotal
+                    SEDocTotal = c.First().SEDocTotal,
+                    OrderNo = c.Key
                 }).ToList();
 
                 var union = (from a in commissionOrder
@@ -3529,7 +3518,7 @@ namespace OpenAuth.App.Material
                                  a.SalesOrderId,
                                  a.CreateUserId,
                                  a.Status,
-                                 BillStatus = b == null ? 0 : b.billStatus == 1 ? 1 : 0,
+                                 BillStatus = b == null ? 0 : b.billStatus == 1 || b.billStatus == 3 || b.billStatus == 4 ? 1 : 0,
                                  DocStatus = c == null ? "N" : c.DocStatus == "C" ? "C" : "N",
                                  DocTotal = c == null ? null : c.DocTotal,
                                  SEDocTotal = c == null ? null : c.SEDocTotal
