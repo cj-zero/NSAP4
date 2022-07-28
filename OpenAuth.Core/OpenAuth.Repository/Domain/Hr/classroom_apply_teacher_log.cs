@@ -9,8 +9,8 @@ namespace OpenAuth.Repository.Domain
     /// <summary>
     /// 新威课堂讲师申请表
     /// </summary>
-    [Table("classroom_teacher")]
-    public partial class classroom_teacher : BaseEntity<int>
+    [Table("classroom_apply_teacher_log")]
+    public partial class classroom_apply_teacher_log : BaseEntity<int>
     {
         /// <summary>
         /// 名字
@@ -42,14 +42,6 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public string BeGoodATTerritory { get; set; }
         /// <summary>
-        /// 等级（1:新星 2:助理 3:中级 4:高级 5:明星 6:王牌 7:特邀)
-        /// </summary>
-        public int Grade { get; set; }
-        /// <summary>
-        /// 经验  新星（0-300）、助理（301-800）、中级（801-1500）、高级（1501-2000）、明星（2001-2500）、王牌（2501+）
-        /// </summary>
-        public int Experience { get; set; }
-        /// <summary>
         /// 创建时间
         /// </summary>
         public DateTime CreateTime { get; set; }
@@ -65,6 +57,14 @@ namespace OpenAuth.Repository.Domain
         /// App用户id
         /// </summary>
         public int AppUserId { get; set; }
+        /// <summary>
+        /// 等级
+        /// </summary>
+        public int Grade { get; set; }
+        /// <summary>
+        /// 经验
+        /// </summary>
+        public int Experience { get; set; }
         /// <summary>
         /// 
         /// </summary>
