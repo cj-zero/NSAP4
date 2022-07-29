@@ -43,6 +43,7 @@ namespace OpenAuth.App.Customer.Response
 
 
         #region 黑名单历史归属
+        public int type { get; set; }
 
         public string movein_type { get; set; }
 

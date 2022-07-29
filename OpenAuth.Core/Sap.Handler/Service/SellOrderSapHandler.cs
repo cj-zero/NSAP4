@@ -56,6 +56,7 @@ namespace Sap.Handler.Service
                     SAPbobsCOM.Documents dts = (SAPbobsCOM.Documents)company.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oOrders);
 
                     //#region [添加主表信息]
+                    Log.Logger.Error($"添加主表信息", typeof(SellOrderSapHandler));
 
                     dts.CardCode = serviceOrder.TerminalCustomerId; //客户id
 
@@ -165,6 +166,7 @@ namespace Sap.Handler.Service
 
                     //#endregion
 
+                    Log.Logger.Error($"添加行明细", typeof(SellOrderSapHandler));
                     #region [添加行明细]
                     foreach (QuotationMergeMaterial dln1 in quotation.QuotationMergeMaterials)
 
@@ -220,6 +222,7 @@ namespace Sap.Handler.Service
 
                     #endregion
 
+                    Log.Logger.Error($"准备调用Add方法", typeof(SellOrderSapHandler));
                     var res = dts.Add();
                     if (res != 0)
                     {
@@ -239,6 +242,7 @@ namespace Sap.Handler.Service
 
             if (!string.IsNullOrEmpty(docNum))
             {
+                Log.Logger.Error($"添加销售订单到SAP成功，SalesOrderId：{docNum}", typeof(SellOrderSapHandler));
                 //用信号量代替锁
                 await semaphoreSlim.WaitAsync();
                 try

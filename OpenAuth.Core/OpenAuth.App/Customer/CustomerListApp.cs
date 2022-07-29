@@ -1083,6 +1083,7 @@ namespace OpenAuth.App.Customer
                 {
                     SlpCode = saleid,
                     SalerName = slpinfo.SlpName,
+                    type = 0,
                     movein_type = "创建",
                     remark = "",
                     CreateTime = Convert.ToDateTime(addtable.Rows[0]["sync_dt"])
@@ -1090,8 +1091,8 @@ namespace OpenAuth.App.Customer
             }
 
             //查询客户领取掉落记录表
-            string sql = $@"select a.* FROM (select SlpCode,SlpName,movein_type,remark,CreateTime from customer_move_history where CardCode = '{req.CardCode}'
-                            UNION select SlpCode,SlpName,case when Is_SaleHistory = 1 then'领取' else '分配' end ,'',CreateTime from Customer_Saler_History where customerNo = '{req.CardCode}') as a order by a.CreateTime";
+            string sql = $@"select a.* FROM (select SlpCode,SlpName,movein_type,remark,CreateTime,3 type from customer_move_history where CardCode = '{req.CardCode}'
+                            UNION select SlpCode,SlpName,case when Is_SaleHistory = 1 then'领取' else '分配' end ,'',CreateTime,case when Is_SaleHistory = 1 then 1 else 2 end type from Customer_Saler_History where customerNo = '{req.CardCode}') as a order by a.CreateTime";
             var table = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, System.Data.CommandType.Text);
 
             if (table != null && table.Rows.Count > 0)
@@ -1102,6 +1103,7 @@ namespace OpenAuth.App.Customer
                     {
                         SlpCode = Convert.ToInt32(table.Rows[i]["SlpCode"]),
                         SalerName = table.Rows[i]["SlpName"].ToString(),
+                        type = table.Rows[i]["type"].ToInt(),
                         movein_type = table.Rows[i]["movein_type"].ToString(),
                         remark = table.Rows[i]["remark"].ToString(),
                         CreateTime = Convert.ToDateTime(table.Rows[i]["CreateTime"])
