@@ -404,7 +404,16 @@ namespace OpenAuth.WebApi.Controllers.Order
                 //{
 
                 var data = _serviceSaleOrderApp.SelectBillView(model.limit, model.page, model.query, model.sortname, model.sortorder, type, ViewFull, ViewSelf, UserID, SboID, ViewSelfDepartment, DepID, ViewCustom, ViewSales, out rowCount).AsEnumerable();
-                var progressAll = _materialdesignapp.GetProgressAll().AsEnumerable();
+                var progressAll = new DataTable().AsEnumerable();
+                try
+                {
+                    progressAll = _materialdesignapp.GetProgressAll().AsEnumerable();
+                }
+                catch (Exception)
+                {
+                    progressAll = new DataTable().AsEnumerable();
+                }
+
                 var obj = from n in data
                           join p in progressAll
                           on new { DocEntry = n.Field<string>("docEntry1"), itemCode = n.Field<string>("itemCode") } equals new { DocEntry = p.Field<string>("DocEntry"), itemCode = p.Field<string>("itemCode") } into temp
@@ -412,7 +421,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                           select new
                           {
 
-                              updateDate = n.Field<DateTime>("updateDate"),
+                              updateDate = n.Field<DateTime?>("updateDate"),
                               docEntry = n.Field<uint>("docEntry"),
                               cardCode = n.Field<string>("cardCode"),
                               cardName = n.Field<string>("CardName"),
@@ -423,13 +432,13 @@ namespace OpenAuth.WebApi.Controllers.Order
                               lineTotal = n.Field<string>("lineTotal"),
                               docTotal = n.Field<string>("docTotal"),
                               openDocTotal = n.Field<string>("openDocTotal"),
-                              createDate = n.Field<DateTime>("createDate"),
+                              createDate = n.Field<DateTime?>("createDate"),
                               slpCode = n.Field<Int16>("slpCode"),
                               comments = n.Field<string>("comments"),
                               docStatus = n.Field<string>("docStatus"),
                               printed = n.Field<string>("printed"),
                               slpName = n.Field<string>("slpName"),
-                              docDueDate = n.Field<DateTime>("docDueDate"),
+                              docDueDate = n.Field<DateTime?>("docDueDate"),
                               lineNum = n.Field<uint>("lineNum"),
                               u_RelDoc = n.Field<string>("u_RelDoc"),
                               RecordGuid = t == null ? null : t.Field<string>("RecordGuid"),
