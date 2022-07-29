@@ -3,6 +3,7 @@ using OpenAuth.App;
 using OpenAuth.App.Hr;
 using OpenAuth.App.Response;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace OpenAuth.WebApi.Controllers
@@ -13,7 +14,7 @@ namespace OpenAuth.WebApi.Controllers
     [Route("api/[controller]/[action]")]
     [ApiController]
     [ApiExplorerSettings(GroupName = "Hr")]
-    public class CompulsoryCourseController: ControllerBase
+    public class CompulsoryCourseController : ControllerBase
     {
         private CompulsoryCourseApp _app;
         /// <summary>
@@ -24,6 +25,8 @@ namespace OpenAuth.WebApi.Controllers
         {
             _app = app;
         }
+
+        #region 课程包
 
         #region 课程包相关
         /// <summary>
@@ -38,7 +41,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="pageSize"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> CoursePackageList(string name,string createUser, DateTime? startTime, DateTime? endTime,bool state, int pageIndex, int pageSize)
+        public async Task<TableData> CoursePackageList(string name, string createUser, DateTime? startTime, DateTime? endTime, bool state, int pageIndex, int pageSize)
         {
             var result = new TableData();
             try
@@ -59,7 +62,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<TableData> CreateCoursePackage(CoursePpackageReq req)
+        public async Task<TableData> CreateCoursePackage(CoursePackageReq req)
         {
             var result = new TableData();
             try
@@ -86,7 +89,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<TableData> EditCoursePackage(CoursePpackageReq req)
+        public async Task<TableData> EditCoursePackage(CoursePackageReq req)
         {
             var result = new TableData();
             try
@@ -113,7 +116,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<TableData> ChangeCoursePackageState(CoursePpackageReq req)
+        public async Task<TableData> ChangeCoursePackageState(CoursePackageReq req)
         {
             var result = new TableData();
             try
@@ -134,7 +137,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<TableData> DeleteCoursePackage(CoursePpackageReq req)
+        public async Task<TableData> DeleteCoursePackage(CoursePackageReq req)
         {
             var result = new TableData();
             try
@@ -150,7 +153,171 @@ namespace OpenAuth.WebApi.Controllers
         }
         #endregion
 
-        #region 课程相关
+        #region  课程包课程相关
+        /// <summary>
+        /// 课包课程列表
+        /// </summary>
+        /// <param name="coursePackageId"></param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> CoursePackageCourseList(int coursePackageId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.CoursePackageCourseList(coursePackageId);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 课程包添加课程
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> AddCourseIntoCoursePackage(CourseForCoursePackageReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.AddCourseIntoCoursePackage(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 删除课程包课程
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> DeleteCourseIntoCoursePackage(CourseForCoursePackageReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.DeleteCourseIntoCoursePackage(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 修改课程包课程排序
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> ChangeCourseSort(List<CourseSortResp> req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.ChangeCourseSort(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        #endregion
+
+        #region 课程包人员相关
+
+        /// <summary>
+        /// 课程包添加人员
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> AddCoursePackageUser(CoursePackageUserReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.AddCoursePackageUser(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 课程包人员列表
+        /// </summary>
+        /// <param name="coursePackageId"></param>
+        /// <param name="name"></param>
+        /// <param name="schedule"></param>
+        /// <param name="startTime"></param>
+        /// <param name="endTime"></param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> CoursePackageUserList(int coursePackageId, string name, decimal? schedule, DateTime? startTime, DateTime? endTime, int pageIndex, int pageSize)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.CoursePackageUserList(coursePackageId,name,schedule,startTime,endTime,pageIndex,pageSize);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 删除课程包人员
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> DeleteCoursePackageUser(CoursePackageUserReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.DeleteCoursePackageUser(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        #endregion
+
+        #endregion
+
+        #region 课程
+
+        #region  课程相关
         /// <summary>
         /// 课程列表
         /// </summary>
@@ -165,12 +332,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="pageSize"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> CourseList(string name,string createUser, int? learningCycle, DateTime? startTime, DateTime? endTime, bool? state,int? source, int pageIndex, int pageSize)
+        public async Task<TableData> CourseList(string name, string createUser, int? learningCycle, DateTime? startTime, DateTime? endTime, bool? state, int? source, int pageIndex, int pageSize)
         {
             var result = new TableData();
             try
             {
-                result = await _app.CourseList(name,createUser,learningCycle,startTime,endTime,state, source,pageIndex, pageSize);
+                result = await _app.CourseList(name, createUser, learningCycle, startTime, endTime, state, source, pageIndex, pageSize);
             }
             catch (Exception e)
             {
@@ -254,6 +421,15 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+        #endregion
+
+        #region 课程视频
+        #endregion
+
+        #region 课程视频习题
+
+        #endregion
+
         #endregion
     }
 }

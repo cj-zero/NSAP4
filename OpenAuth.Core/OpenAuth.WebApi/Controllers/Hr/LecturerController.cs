@@ -2,6 +2,7 @@
 using OpenAuth.App;
 using OpenAuth.App.Hr;
 using OpenAuth.App.Response;
+using OpenAuth.Repository.Domain;
 using System;
 using System.Threading.Tasks;
 
@@ -56,6 +57,7 @@ namespace OpenAuth.WebApi.Controllers.Hr
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
+        [HttpPost]
         public async Task<TableData> TeacherApplyAudit(TeacherApplyAuditReq req)
         {
             var result = new TableData();
@@ -79,12 +81,101 @@ namespace OpenAuth.WebApi.Controllers.Hr
         /// <param name="endTime"></param>
         /// <param name="grade"></param>
         /// <returns></returns>
+        [HttpGet]
         public async Task<TableData> TeacherList(string name, DateTime? startTime, DateTime? endTime,int? grade, int pageIndex, int pageSize)
         {
             var result = new TableData();
             try
             {
-                result = await _app.TeacherList(name,startTime,endTime,grade,pageIndex,pageSize);
+                result = await _app.TeacherList(name, startTime, endTime, grade, pageIndex, pageSize);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 讲师等级修改
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> ChangeTeacherGrade(EditTeacherReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.ChangeTeacherGrade(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 讲师开课记录
+        /// </summary>
+        /// <param name="userName"></param>
+        /// <param name="title"></param>
+        /// <param name="startTime"></param>
+        /// <param name="endTime"></param>
+        /// <param name="auditState"></param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> TeacherCourseList(string userName,string title, DateTime? startTime, DateTime? endTime,int? auditState, int pageIndex, int pageSize)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.TeacherCourseList(userName, title, startTime, endTime, auditState, pageIndex, pageSize);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 讲师开课审核
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> TeacherCourseAudit(TeacherCourseAuditReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.TeacherCourseAudit(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 讲师课程修改
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> EditTeacherCourse(classroom_teacher_course req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.EditTeacherCourse(req);
             }
             catch (Exception e)
             {

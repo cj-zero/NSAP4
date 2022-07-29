@@ -7,32 +7,27 @@ using System.Text;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-    /// 
+    /// 课程包课程关系表
     /// </summary>
-    [Table("classroom_course_package_user")]
-    public class classroom_course_package_user : BaseEntity<int>
+    [Table("classroom_course_package_map")]
+    public class classroom_course_package_map : BaseEntity<int>
     {
-        /// <summary>
-        /// App用户id
-        /// </summary>
-        public int AppUserId { get; set; }
         /// <summary>
         /// 课程包Id
         /// </summary>
         public int CoursePackageId { get; set; }
-
+        /// <summary>
+        /// 课程Id
+        /// </summary>
+        public int CourseId { get; set; }
+        /// <summary>
+        /// 排序
+        /// </summary>
+        public int Sort { get; set; }
         /// <summary>
         /// 添加时间
         /// </summary>
         public DateTime CreateTime { get; set; }
-        /// <summary>
-        /// 课程包学习进度
-        /// </summary>
-        public decimal Schedule { get; set; }
-        /// <summary>
-        /// 课程包学习结束时间
-        /// </summary>
-        public DateTime EndTime { get; set; }
         /// <summary>
         /// 
         /// </summary>

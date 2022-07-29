@@ -7,7 +7,7 @@ namespace OpenAuth.App.Hr
     /// <summary>
     /// 课程包
     /// </summary>
-    public class CoursePpackageReq
+    public class CoursePackageReq
     {
         public int id { get; set; }
         /// <summary>

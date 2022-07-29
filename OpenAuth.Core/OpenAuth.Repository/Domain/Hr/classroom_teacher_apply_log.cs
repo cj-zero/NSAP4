@@ -9,8 +9,8 @@ namespace OpenAuth.Repository.Domain
     /// <summary>
     /// 新威课堂讲师申请表
     /// </summary>
-    [Table("classroom_apply_teacher_log")]
-    public partial class classroom_apply_teacher_log : BaseEntity<int>
+    [Table("classroom_teacher_apply_log")]
+    public partial class classroom_teacher_apply_log : BaseEntity<int>
     {
         /// <summary>
         /// 名字
@@ -29,6 +29,10 @@ namespace OpenAuth.Repository.Domain
         /// 审核状态(1:未审核 2:审核已通过 3:已驳回)
         /// </summary>
         public int AuditState { get; set; }
+        /// <summary>
+        /// 头像
+        /// </summary>
+        public string HeaderImg { get; set; }
         /// <summary>
         /// 部门
         /// </summary>
