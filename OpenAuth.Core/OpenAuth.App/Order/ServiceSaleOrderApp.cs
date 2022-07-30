@@ -10138,7 +10138,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             str.AppendFormat(" left join (select h.job_type_id,h.user_id,h.sync_stat,h.job_state,h.sbo_id,h.sbo_itf_return,DATE_FORMAT(g.log_dt,'%Y.%m.%d') as log_dt ");
             str.AppendFormat(" from {0}.wfa_job h ", "nsap_base");
             str.AppendFormat(" left join {0}.wfa_log g on h.job_id= g.job_id ", "nsap_base");
-            str.AppendFormat(" where h.sbo_itf_return = {0} and h.job_nm = '销售定单' order by g.log_dt desc limit 1) k on a.sbo_id = k.sbo_id and a.DocEntry = k.sbo_itf_return", DocEntry);
+            str.AppendFormat(" where h.sbo_itf_return = {0} and h.job_nm = '销售订单' order by g.log_dt desc limit 1) k on a.sbo_id = k.sbo_id and a.DocEntry = k.sbo_itf_return", DocEntry);
             str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1} ", DocEntry, sboid);
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, str.ToString(), CommandType.Text, null);
         }
