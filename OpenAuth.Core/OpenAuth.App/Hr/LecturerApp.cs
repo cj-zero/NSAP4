@@ -87,6 +87,8 @@ namespace OpenAuth.App
         /// <param name="startTime"></param>
         /// <param name="endTime"></param>
         /// <param name="grade"></param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
         /// <returns></returns>
         public async Task<TableData> TeacherList(string name, DateTime? startTime, DateTime? endTime, int? grade, int pageIndex, int pageSize)
         {
