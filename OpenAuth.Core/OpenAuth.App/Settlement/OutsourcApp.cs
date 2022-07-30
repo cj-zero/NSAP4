@@ -186,6 +186,9 @@ namespace OpenAuth.App
             var serviceWorkOrder = await UnitWork.Find<ServiceWorkOrder>(s => serviceOrderIds.Contains(s.ServiceOrderId)).ToListAsync();
             var flowInstanceList = await UnitWork.Find<FlowInstance>(f => outsourcList.Select(o => o.FlowInstanceId).ToList().Contains(f.Id)).ToListAsync();
             result.Count = await query.CountAsync();
+
+            var sumMoney = await query.Where(a => a.TotalMoney > 0).SumAsync(a => a.TotalMoney);
+
             var userIds = outsourcList.Select(o => o.CreateUserId).ToList();
             var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
             var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
@@ -216,7 +219,11 @@ namespace OpenAuth.App
                     IsRejected = o.IsRejected ? "是" : null
                 });
             });
-            result.Data = outsourcs;
+            result.Data = new
+            {
+                data = outsourcs,
+                sumMoney = sumMoney
+            };
             return result;
         }
 
