@@ -10843,42 +10843,42 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
         {
             StringBuilder tableName = new StringBuilder();
             StringBuilder filedName = new StringBuilder();
-            filedName.Append(" '',a.UpdateDate,a.DocEntry,a.CardCode,IF(" + ViewCustom + ",a.CardName,'******') CardName,a.ItemCode,a.Dscription,a.Quantity,IF(" + ViewSales + ",a.Price,'******') Price,IF(" + ViewSales + ",a.LineTotal,'******') LineTotal,IF(" + ViewSales + ",a.DocTotal,'******') DocTotal,IF(" + ViewSales + ",(a.DocTotal-a.PaidToDate),'******') OpenDocTotal,a.CreateDate,a.SlpCode,a.Comments,a.DocStatus,a.Printed,c.SlpName,a.CANCELED,a.Indicator,a.DocDueDate,e.Quantity eQuantity");
+            filedName.Append(" '',a.UpdateDate,a.DocEntry,a.CardCode,IF(" + ViewCustom + ",a.CardName,'******') CardName,b.ItemCode,b.Dscription,b.Quantity,IF(" + ViewSales + ",b.Price,'******') Price,IF(" + ViewSales + ",b.LineTotal,'******') LineTotal,IF(" + ViewSales + ",a.DocTotal,'******') DocTotal,IF(" + ViewSales + ",(a.DocTotal-a.PaidToDate),'******') OpenDocTotal,a.CreateDate,a.SlpCode,a.Comments,a.DocStatus,a.Printed,c.SlpName,a.CANCELED,a.Indicator,a.DocDueDate,e.Quantity eQuantity");
             if (line.ToLower() == "buy_por1")
             {
-                filedName.Append(",a.ActualDocDueDate,a.LineNum,a.U_RelDoc");
+                filedName.Append(",b.ActualDocDueDate,b.LineNum,b.U_RelDoc");
             }
             if (line.ToLower() == "buy_pdn1")
             {
-                filedName.Append(",case when a.BaseType=22 then a.BaseEntry else '' end as BaseEntry,'' as LineNum");
+                filedName.Append(",case when b.BaseType=22 then b.BaseEntry else '' end as BaseEntry,'' as LineNum");
             }
             filedName.Append(",a.U_YGMD");
             if (line.ToLower() == "buy_pdn1")
             {
-                filedName.Append(",f.CreateDate as por_CreateDate,f.DocDueDate as por_DocDueDate,'' as ActualDocDueDate,a.BaseLine,f1.U_RelDoc");
+                filedName.Append(",f.CreateDate as por_CreateDate,f.DocDueDate as por_DocDueDate,'' as ActualDocDueDate,b.BaseLine,f1.U_RelDoc");
             }
             if (line.ToLower() == "sale_dln1")
             {
-                filedName.Append(",f.CreateDate as rdr_CreateDate,f.DocDueDate as rdr_DocDueDate,a.u_reldoc,a.docdate");
+                filedName.Append(",f.CreateDate as rdr_CreateDate,f.DocDueDate as rdr_DocDueDate,b.u_reldoc,a.docdate");
             }
             if (line.ToLower() == "sale_rdr1")
             {
-                filedName.Append(",a.LineNum,a.U_RelDoc,IFNULL(a.IsSync,0) as IsSync,IFNULL(a.Advance,0) Advance,a.RecordGuid,a.SubmitTime,CONCAT('SE-',a.DocEntry) DocEntry ");
+                filedName.Append(",b.LineNum,b.U_RelDoc,IFNULL(b.IsSync,0) as IsSync,IFNULL(b.Advance,0) Advance,b.RecordGuid,b.SubmitTime,CONCAT('SE-',b.DocEntry) DocEntry ");
             }
-            tableName.AppendFormat("(select a.UpdateDate,a.DocEntry,a.CardCode,a.CardName,b.ItemCode,b.Dscription,b.Quantity,b.Price,b.LineTotal,a.DocTotal,a.PaidToDate,a.CreateDate,a.SlpCode,a.Comments,a.DocStatus,a.Printed,a.CANCELED,a.Indicator,a.DocDueDate,a.U_YGMD,b.LineNum,b.U_RelDoc,b.IsSync,b.Advance,b.RecordGuid,b.SubmitTime,a.sbo_id from {0}." + type + " a LEFT JOIN  {0}." + line + " b ON a.DocEntry=b.DocEntry AND a.sbo_id=b.sbo_id order by  a.DocEntry DESC limit {1},{2}) a ", "nsap_bone", (pageIndex - 1) * pageSize, pageIndex * pageSize);
+            tableName.AppendFormat("{0}." + type + " a LEFT JOIN  {0}." + line + " b ON a.DocEntry=b.DocEntry AND a.sbo_id=b.sbo_id ", "nsap_bone");
             tableName.AppendFormat(" LEFT JOIN {0}.crm_oslp c ON a.SlpCode = c.SlpCode AND a.sbo_id=c.sbo_id", "nsap_bone");
             tableName.AppendFormat(" LEFT JOIN {0}.crm_ocrd d ON a.CardCode = d.CardCode AND a.sbo_id=d.sbo_id", "nsap_bone");
-            tableName.AppendFormat(" LEFT JOIN {0}.buy_pdn1 e ON a.DocEntry = e.BaseEntry AND e.ItemCode = a.ItemCode AND a.sbo_id=e.sbo_id", "nsap_bone");//查询订单物料交货数
+            tableName.AppendFormat(" LEFT JOIN {0}.buy_pdn1 e ON a.DocEntry = e.BaseEntry AND e.ItemCode = b.ItemCode AND e.BaseType = 22 AND a.sbo_id=e.sbo_id", "nsap_bone");//查询订单物料交货数
             if (line.ToLower() == "buy_pdn1")
             {
-                tableName.AppendFormat(" LEFT JOIN {0}.buy_opor f ON a.BaseEntry = f.DocEntry", "nsap_bone");
-                tableName.AppendFormat(" LEFT JOIN {0}.buy_POR1 f1 on a.BaseEntry=f1.docentry and a.BaseLine=f1.LineNum", "nsap_bone");
+                tableName.AppendFormat(" LEFT JOIN {0}.buy_opor f ON b.BaseEntry = f.DocEntry", "nsap_bone");
+                tableName.AppendFormat(" LEFT JOIN {0}.buy_POR1 f1 on b.BaseEntry=f1.docentry and b.BaseLine=f1.LineNum", "nsap_bone");
             }
             if (line.ToLower() == "sale_dln1")
             {
-                tableName.AppendFormat(" LEFT JOIN {0}.sale_ordr f ON a.BaseEntry = f.DocEntry", "nsap_bone");
+                tableName.AppendFormat(" LEFT JOIN {0}.sale_ordr f ON b.BaseEntry = f.DocEntry", "nsap_bone");
             }
-            return SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, 1, orderName, filterQuery, out rowCounts);
+            return SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCounts);
         }
     }
 }
