@@ -26,9 +26,8 @@ namespace OpenAuth.WebApi.Controllers
             _app = app;
         }
 
-        #region 课程包
 
-        #region 课程包相关
+        #region 课程包
         /// <summary>
         /// 课程包列表
         /// </summary>
@@ -313,11 +312,7 @@ namespace OpenAuth.WebApi.Controllers
         }
         #endregion
 
-        #endregion
-
-        #region 课程
-
-        #region  课程相关
+        #region  课程
         /// <summary>
         /// 课程列表
         /// </summary>
@@ -424,12 +419,134 @@ namespace OpenAuth.WebApi.Controllers
         #endregion
 
         #region 课程视频
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> AddCourseVideo(AddOrEditCourseVideoReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.AddCourseVideo(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 课程视频列表
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="createUser"></param>
+        /// <param name="startTime"></param>
+        /// <param name="endTime"></param>
+        /// <param name="state"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> CourseVideoList(string name, string createUser, DateTime? startTime, DateTime? endTime, bool? state)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.CourseVideoList(name, createUser,startTime,endTime,state);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+
+        }
+        /// <summary>
+        /// 删除课程视频
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> DeleteCourseVideo(DeleteCourseVideoReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.DeleteCourseVideo(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
         #endregion
 
         #region 课程视频习题
+        /// <summary>
+        /// 课程视频题目列表
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> CourseVideoSubjectList(int id)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.CourseVideoSubjectList(id);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
 
-        #endregion
-
+        /// <summary>
+        /// 课程视频添加题目
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> CourseVideoAddSubject(CourseVideoAddSubjectReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.CourseVideoAddSubject(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 删除课程视频题目
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> DeleteCourseVideoSubject(CourseVideoAddSubjectReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.DeleteCourseVideoSubject(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
         #endregion
     }
 }
