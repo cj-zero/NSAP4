@@ -62,7 +62,8 @@ namespace OpenAuth.App
                                r.Key,
                                r.SecondId,
                                OrgId = o.Id,
-                               OrgName = o.Name
+                               OrgName = o.Name,
+                               user.EntryTime 
                            };
 
             //如果请求的orgId不为空
@@ -106,7 +107,8 @@ namespace OpenAuth.App
                 ServiceRelations=u.First()?.ServiceRelations,
                 CardNo=u.First()?.CardNo,
                 OrganizationIds = string.Join(",", u.Select(x => x.OrgId)),
-                Organizations = string.Join(",", u.Select(x => x.OrgName))
+                Organizations = string.Join(",", u.Select(x => x.OrgName)),
+                EntryTime = u.First().EntryTime
 
             });
 
@@ -689,7 +691,7 @@ namespace OpenAuth.App
             var user = await (from a in UnitWork.Find<User>(null)
                               join b in UnitWork.Find<NsapUserMap>(null) on a.Id equals b.UserID into ab
                               from b in ab.DefaultIfEmpty()
-                              select new { a.Id, a.Account, a.Status, a.Email, NsapUserId = b == null ? null : b.NsapUserId }).ToListAsync();
+                              select new { a.Id, a.Account, a.Status, a.Email, NsapUserId = b == null ? null : b.NsapUserId, a.EntryTime }).ToListAsync();
             var userAccounts = user.Select(c => c.Account).ToList();
             var query = from a in UnitWork.Find<base_user>(null)
                         join b in UnitWork.Find<base_user_detail>(null) on a.user_id equals b.user_id into ab
@@ -697,7 +699,7 @@ namespace OpenAuth.App
                         join c in UnitWork.Find<base_dep>(null) on b.dep_id equals c.dep_id into bc
                         from c in bc.DefaultIfEmpty()
                             //where !userAccounts.Contains(a.log_nm) && b.out_date.ToString()== "0000-00-00"
-                        select new { a.log_nm, a.user_nm, a.user_id, b.office_addr, c.dep_alias, out_date = b.out_date.ToString(), a.email };
+                        select new { a.log_nm, a.user_nm, a.user_id, b.office_addr, c.dep_alias, out_date = b.out_date.ToString(), a.email, b.try_date };
             var erpUsers = await query.ToListAsync();
             var newUsers = erpUsers.Where(c => !userAccounts.Contains(c.log_nm) && c.out_date.ToString() == "0000-00-00").ToList();
             var orgs = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).ToListAsync();
@@ -738,6 +740,14 @@ namespace OpenAuth.App
                     if (item.NsapUserId == null)
                     {
                         UnitWork.Add(new NsapUserMap { UserID = item.Id, NsapUserId = (int?)u.user_id });
+                        UnitWork.Save();
+                    }
+                    if (item.EntryTime == null)
+                    {
+                        UnitWork.Update<User>(c => c.Account == item.Account, c => new User
+                        {
+                            EntryTime = u.try_date
+                        }) ;
                         UnitWork.Save();
                     }
                 }

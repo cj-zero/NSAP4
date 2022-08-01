@@ -79,6 +79,10 @@ namespace OpenAuth.App.Response
         public string Organizations { get; set; }
 
         public string OrganizationIds { get; set; }
+        /// <summary>
+        /// 入职时间
+        /// </summary>
+        public DateTime? EntryTime { get; set; }
 
         public static implicit operator UserView(User user)
         {
