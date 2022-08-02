@@ -926,9 +926,35 @@ namespace OpenAuth.App.Customer
 
         public async Task Test()
         {
-            var cardCodes = new string[] { "C01072" };
-            var customers = await UnitWork.Find<OCRD>(null).Where(c => cardCodes.Contains(c.CardCode)).Select(c => new { c.CardCode, c.CreateDate }).ToListAsync();
-            foreach(var customer in customers)
+            //符合掉落公海规则的客户
+            var customerLists = new List<CustomerList>();
+
+            //根据部门查找该部门下的业务员销售编号
+            var slpInfo = await (from u in UnitWork.Find<base_user>(null)
+                                 join ud in UnitWork.Find<base_user_detail>(null)
+                                 on u.user_id equals ud.user_id
+                                 join d in UnitWork.Find<base_dep>(null)
+                                 on ud.dep_id equals d.dep_id
+                                 join s in UnitWork.Find<sbo_user>(null)
+                                 on u.user_id equals s.user_id
+                                 where s.sbo_id == Define.SBO_ID
+                                 //&& new int[] { 0, 1 }.Contains(ud.status) //在职的员工,离职状态是2和3
+                                 && u.user_nm == "向琴琴" //取各个部门的leader的客户
+                                 select s.sale_id).Distinct().ToListAsync();
+
+            //再根据销售编号查找客户
+            var whiteList = await UnitWork.Find<SpecialCustomer>(null).Select(s => s.CustomerNo).ToListAsync(); //黑/白名单客户不会掉入公海池
+                                                                                                                //查询客户(条件：是属于该部门的业务员，不在黑/白名单中，并且没有报价单)
+            var customers = await (from c in UnitWork.Find<OCRD>(null)
+                                   join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
+                                   join q in UnitWork.Find<OQUT>(null) on c.CardCode equals q.CardCode into temp
+                                   from t in temp.DefaultIfEmpty()
+                                   where slpInfo.Select(s => s).Contains(s.SlpCode)
+                                   && !whiteList.Contains(c.CardCode)
+                                   && t.CardCode == null
+                                   orderby c.CreateDate
+                                   select new { c.CardCode, c.CardName, c.CreateDate, s.SlpCode, s.SlpName }).ToListAsync();
+            foreach (var customer in customers)
             {
                 DateTime? startTime = null;
                 //查找客户最近一次的业务员变更(查找有不同业务员的客户)
@@ -943,6 +969,11 @@ namespace OpenAuth.App.Customer
                 else
                 {
                     startTime = customer.CreateDate;
+                }
+                //超过规则定义的天数则放入redis中,这部分的数据是即将掉入公海,放入日期加上通知天数就是掉入公海的时间
+                if (startTime != null && (DateTime.Now - startTime).Value.Days > 731)
+                {
+                    customerLists.Add(new CustomerList { DepartMent = "", CustomerNo = customer.CardCode });
                 }
             }
         }

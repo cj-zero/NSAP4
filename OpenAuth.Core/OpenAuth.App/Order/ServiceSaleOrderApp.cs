@@ -4058,7 +4058,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 logostr = Convert.ToBase64String(photo);
                 Console.WriteLine(logostr);
             }
-           
+
             //公司标识
             var indicator = dtb.Rows[0][24].ToString();
             var companyAddressData = new Category();
@@ -10468,7 +10468,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 logostr = Convert.ToBase64String(photo);
                 Console.WriteLine(logostr);
             }
-        
+
             var indicator = dtb.Rows[0][30].ToString();
             var companyAddressData = new Category();
             var companyBankData = new Category();
