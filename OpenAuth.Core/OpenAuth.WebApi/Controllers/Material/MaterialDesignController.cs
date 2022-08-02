@@ -229,26 +229,28 @@ namespace OpenAuth.WebApi.Controllers.Material
 
         #region 数据回写显示
         /// <summary>
-        /// 
+        /// 获取总进度
         /// </summary>
-        /// <param name="RecordGuid"></param>
+        /// <param name="docentry"></param>
+        /// <param name="itemcode"></param>
         /// <returns></returns>
         [HttpGet]
-        public TableData GetAdvanceDetail(string RecordGuid)
+        public List<DataTable> GetAdvanceDetail(string docentry, string itemcode)
         {
-
-            TableData tableData = new TableData();
-            string sql = "SELECt t.isFinished,T.Subject, T.Complete, t.CaseRecGuid  FROM Tasks  as t where t.isDeleted = 0  and t.CaseRecGuid = '" + RecordGuid + "' ";
+            List<DataTable> list = new List<DataTable>();
+            string sql = "  select * from ( select RecordGuid, fld005508 DocEntry, max(_System_Progress) progress,fld005506 itemCode from OBJ162 group by RecordGuid, fld005508,_System_objNBS,fld005506) a ";
+            sql += "where a.DocEntry = 'SE-" + docentry + "' and itemCode = '" + itemcode + "'";
             DataTable dts = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, sql.ToString(), CommandType.Text, null);
-            tableData.Data = dts.Tolist<ReVdance>();
-            return tableData;
+            list.Add(dts);
+            if (dts != null && dts.Rows.Count > 0)
+            {
+                string guid = dts.Rows[0]["RecordGuid"].ToString();
+                string sql1 = "SELECt t.isFinished,T.Subject, T.Complete, t.CaseRecGuid  FROM Tasks  as t where t.isDeleted = 0  and t.CaseRecGuid = '" + guid + "' ";
+                DataTable dts1 = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, sql1.ToString(), CommandType.Text, null);
+                list.Add(dts1);
+            }
+            return list;
 
-        }
-
-        public class ReVdance
-        {
-            public string Subject { get; set; }
-            public int Complete { get; set; }
         }
         #endregion
     }
