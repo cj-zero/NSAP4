@@ -18,7 +18,7 @@ namespace OpenAuth.WebApi.Controllers
     {
         private CompulsoryCourseApp _app;
         /// <summary>
-        /// 
+        /// 必修课
         /// </summary>
         /// <param name="app"></param>
         public CompulsoryCourseController(CompulsoryCourseApp app)

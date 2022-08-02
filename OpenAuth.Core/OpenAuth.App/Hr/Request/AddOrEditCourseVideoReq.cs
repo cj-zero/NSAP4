@@ -25,6 +25,9 @@ namespace OpenAuth.App.Hr
         /// 时长
         /// </summary>
         public int Duration { get; set; }
-
+        /// <summary>
+        /// 视频地址
+        /// </summary>
+        public string VideoUrl { get; set; }
     }
 }
