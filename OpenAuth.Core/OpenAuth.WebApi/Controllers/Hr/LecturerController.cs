@@ -80,6 +80,8 @@ namespace OpenAuth.WebApi.Controllers.Hr
         /// <param name="startTime"></param>
         /// <param name="endTime"></param>
         /// <param name="grade"></param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
         /// <returns></returns>
         [HttpGet]
         public async Task<TableData> TeacherList(string name, DateTime? startTime, DateTime? endTime,int? grade, int pageIndex, int pageSize)
@@ -150,6 +152,7 @@ namespace OpenAuth.WebApi.Controllers.Hr
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
+        [HttpPost]
         public async Task<TableData> TeacherCourseAudit(TeacherCourseAuditReq req)
         {
             var result = new TableData();
@@ -170,6 +173,7 @@ namespace OpenAuth.WebApi.Controllers.Hr
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
+        [HttpPost]
         public async Task<TableData> EditTeacherCourse(classroom_teacher_course req)
         {
             var result = new TableData();

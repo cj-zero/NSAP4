@@ -9,26 +9,21 @@ namespace OpenAuth.Repository.Domain
     /// <summary>
     /// 
     /// </summary>
-    [Table("classroom_course_package_user")]
-    public class classroom_course_package_user : BaseEntity<int>
+    [Table("classroom_course_video_subject")]
+    public class classroom_course_video_subject : BaseEntity<int>
     {
         /// <summary>
-        /// App用户id
+        /// 课程视频id
         /// </summary>
-        public int AppUserId { get; set; }
+        public int CourseVideoId { get; set; }
         /// <summary>
-        /// 课程包Id
+        /// 题目id
         /// </summary>
-        public int CoursePackageId { get; set; }
-
+        public int SubjectId { get; set; }
         /// <summary>
         /// 添加时间
         /// </summary>
         public DateTime CreateTime { get; set; }
-        /// <summary>
-        /// 课程包学习进度
-        /// </summary>
-        public decimal Schedule { get; set; }
         /// <summary>
         /// 
         /// </summary>

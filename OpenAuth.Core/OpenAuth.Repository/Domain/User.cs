@@ -116,5 +116,9 @@ namespace OpenAuth.Repository.Domain
         /// 邮箱
         /// </summary>
         public string Email { get; set; }
+        /// <summary>
+        /// 入职时间
+        /// </summary>
+        public DateTime? EntryTime { get; set; }
     }
 }

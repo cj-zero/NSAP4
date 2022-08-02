@@ -25,6 +25,10 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public int Duration { get; set; }
         /// <summary>
+        /// 视频地址
+        /// </summary>
+        public string VideoUrl { get; set; }
+        /// <summary>
         /// 视频浏览量
         /// </summary>
         public int ViewedCount { get; set; }
