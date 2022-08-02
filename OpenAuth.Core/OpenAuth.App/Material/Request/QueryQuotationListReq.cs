@@ -160,6 +160,10 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
         public int? IsFinlish { get; set; }
         public int? PageType { get; set; }
+        /// <summary>
+        /// 查询类型 1.领料
+        /// </summary>
+        public int? QueryType { get; set; }
 
         /// <summary>
         /// 打印物料id
