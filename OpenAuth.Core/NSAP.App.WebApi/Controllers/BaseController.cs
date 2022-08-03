@@ -5,7 +5,7 @@ namespace NSAP.App.WebApi.Controllers
     /// <summary>
     /// 
     /// </summary>
-    [Route("api/[controller]/[action]")]
+    [Route("ErpAppApi/[controller]/[action]")]
     public class BaseController: Controller
     {
     }

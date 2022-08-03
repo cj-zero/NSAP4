@@ -26,7 +26,7 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public string Mobile { get; set; }
         /// <summary>
-        /// 审核状态(1:未审核 2:审核已通过 3:已驳回)
+        /// 审核状态(1:未审核 2:审核已通过 3:已驳回 4.封禁)
         /// </summary>
         public int AuditState { get; set; }
         /// <summary>
@@ -44,7 +44,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 擅长领域
         /// </summary>
-        public string BeGoodATTerritory { get; set; }
+        public string BeGoodAtTerritory { get; set; }
         /// <summary>
         /// 创建时间
         /// </summary>
@@ -64,11 +64,11 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 等级
         /// </summary>
-        public int Grade { get; set; }
+        public int? Grade { get; set; }
         /// <summary>
         /// 经验
         /// </summary>
-        public int Experience { get; set; }
+        public int? Experience { get; set; }
         /// <summary>
         /// 
         /// </summary>

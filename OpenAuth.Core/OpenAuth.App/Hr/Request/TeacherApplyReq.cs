@@ -10,6 +10,10 @@ namespace OpenAuth.App.Hr
     public class TeacherApplyReq
     {
         /// <summary>
+        /// 申请id
+        /// </summary>
+        public int Id { get; set; }
+        /// <summary>
         /// 名字
         /// </summary>
         public string Name { get; set; }
@@ -36,7 +40,7 @@ namespace OpenAuth.App.Hr
         /// <summary>
         /// 擅长领域
         /// </summary>
-        public string BeGoodATTerritory { get; set; }
+        public string BeGoodAtTerritory { get; set; }
         /// <summary>
         /// 用户Id
         /// </summary>

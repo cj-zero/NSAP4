@@ -56,6 +56,10 @@ namespace OpenAuth.App.Hr
         /// <summary>
         /// 本题分数
         /// </summary>
-        public decimal score { get; set; }
+        public int score { get; set; }
+        /// <summary>
+        /// 题目
+        /// </summary>
+        public string content { get; set; }
     }
 }

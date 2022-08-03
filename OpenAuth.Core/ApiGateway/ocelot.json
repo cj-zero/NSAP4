@@ -8,7 +8,7 @@
       "DownstreamScheme": "http", //下游服务配置
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
+          "Host": "192.168.0.222",
           "Port": 52789
         }
       ],
@@ -42,6 +42,37 @@
           "Port": 5001
         }
       ]
+    },
+    {
+      "UpstreamPathTemplate": "/ErpAppApi/{everything}", //上游Api请求路由规则
+      "DownstreamPathTemplate": "/ErpAppApi/{everything}", //网关转发到下游路由规则
+      "UpstreamHttpMethod": [ "GET", "POST", "DELETE", "PUT" ], //上下游支持请求方法
+      "DownstreamScheme": "http", //下游服务配置
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "192.168.0.222",
+          "Port": 36987
+        }
+      ],
+      "LoadBalancerOptions": {
+        "Type": "RoundRobin" //轮询     
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [ "admin" ], // 白名单
+        "EnableRateLimiting": true, // 是否启用限流
+        "Period": "1m", // 统计时间段：1s, 5m, 1h, 1d
+        "PeriodTimespan": 15, // 多少秒之后客户端可以重试
+        "Limit": 500 // 在统计时间段内允许的最大请求数量
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 10, // 允许多少个异常请求
+        "DurationOfBreak": 15000, // 熔断的时间，单位为毫秒
+        "TimeoutValue": 15000 // 如果下游请求的处理时间超过多少则视如该请求超时
+      },
+      "FileCacheOptions": { // cache response data - ttl: 10s   10秒内相同url请求直接返回缓存数据
+        "TtlSeconds": 5,
+        "Region": ""
+      }
     }
   ],
   // 全局配置，此节点的配置会覆盖ReRoutes，可以在这里设置一些通用的配置
