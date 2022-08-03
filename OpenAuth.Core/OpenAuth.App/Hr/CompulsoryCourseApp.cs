@@ -942,7 +942,7 @@ namespace OpenAuth.App
                     image_url = c.ImageUrl,
                     id = c.Id
                 }).OrderBy(c => c.id).ToListAsync();
-            result.Data = new { ExaminationId=exam.Id , list };
+            result.Data = new { ExaminationId=exam.Id, CourseVideoId=id, list };
             return result;
         }
 
@@ -954,7 +954,6 @@ namespace OpenAuth.App
         public async Task<TableData> SubmitExamPaper(SubmitExamReq req)
         {
             var result = new TableData();
-
             var ids = req.subjectList.Select(c => c.Id).ToList();
             var list = await UnitWork.Find<classroom_course_exam_subject>(null).Where(c => ids.Contains(c.Id) && c.ExaminationId == req.ExaminationId).ToListAsync();
             var examInfo = await UnitWork.Find<classroom_course_exam>(null).FirstOrDefaultAsync(c => c.Id == req.ExaminationId);
@@ -1021,6 +1020,21 @@ namespace OpenAuth.App
             await UnitWork.BatchUpdateAsync(list.ToArray());
             await UnitWork.SaveAsync();
             result.Data = new { req.ExaminationId, examInfo.IsPass, examInfo.TestScores, examInfo.TotalScore, examInfo.SubmitTime };
+            return result;
+        }
+        /// <summary>
+        /// 考试结果
+        /// </summary>
+        /// <param name="examinationId"></param>
+        /// <param name="courseVideoId"></param>
+        /// <returns></returns>
+        public async Task<TableData> ExamPaperResult(int examinationId, int courseVideoId)
+        {
+            var result = new TableData();
+            var videoInfo = await UnitWork.Find<classroom_course_video>(null).FirstOrDefaultAsync(c => c.Id == courseVideoId);
+            var examResult= await UnitWork.Find<classroom_course_exam>(null).FirstOrDefaultAsync(c => c.Id == examinationId);
+            var subjectList= await UnitWork.Find<classroom_course_exam_subject>(null).Where(c => c.ExaminationId == examinationId).Select(c => new { c.Id,c.AnswerStatus }).ToListAsync();
+            result.Data = new { name=videoInfo==null?"": videoInfo.Name+"练习", examResult.TotalScore, examResult.TestScores, subjectList,subjectCount= subjectList.Count };
             return result;
         }
         #endregion

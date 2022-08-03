@@ -161,5 +161,25 @@ namespace NSAP.App.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 查看考试结果
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> ExamPaperResult(int examinationId,int courseVideoId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.ExamPaperResult(examinationId, courseVideoId);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
     }
 }
