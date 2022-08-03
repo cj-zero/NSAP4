@@ -1177,6 +1177,11 @@ namespace OpenAuth.App.Material
                 var code = request.ItemCode.Substring(0, request.ItemCode.IndexOf("-") + 1);
                 query = query.Where(q => q.ItemCode.Substring(0, q.ItemCode.IndexOf("-") + 1).Equals(code));
             }
+            if (request.QueryType == 1)
+            {
+                var filterCode = await UnitWork.Find<OITM>(c => c.ItemCode.StartsWith("A6") && (c.ItemName.Contains("机柜") || c.ItemName.Contains("机箱"))).Select(c => c.ItemCode).ToListAsync();
+                query = query.Where(c => !filterCode.Contains(c.ItemCode));
+            }
 
             //是否延保
             if (request.IsWarranty != null && (bool)request.IsWarranty)
@@ -3620,13 +3625,22 @@ namespace OpenAuth.App.Material
             var serviceOrderIds = queryObj.Select(c => c.ServiceOrderId).ToList();
             var saleOrderId = queryObj.Select(c => c.SalesOrderId).ToList();
             var quoation = await UnitWork.Find<Quotation>(c => saleOrderId.Contains(c.SalesOrderId)).Select(c => new { c.Id, c.SalesOrderId }).ToListAsync();
-            var completionReports = await UnitWork.Find<CompletionReport>(c => serviceOrderIds.Contains(c.ServiceOrderId.Value)).ToListAsync();
+            //var completionReports = await UnitWork.Find<CompletionReport>(c => serviceOrderIds.Contains(c.ServiceOrderId.Value)).ToListAsync();
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => serviceOrderIds.Contains(c.Id)).Include(c => c.ServiceWorkOrders).Select(c => new
+            {
+                c.Id,
+                c.TerminalCustomerId,
+                c.TerminalCustomer,
+                c.ServiceWorkOrders.FirstOrDefault().FromTheme,
+                c.ServiceWorkOrders.FirstOrDefault().MaterialCode,
+                c.ServiceWorkOrders.FirstOrDefault().ManufacturerSerialNumber
+            }).ToListAsync();
             var userIds = queryObj.Select(c => c.CreateUserId).ToList();
             var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
             var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
 
             var commissionOrder = (from a in queryObj
-                                   join b in completionReports on a.ServiceOrderId equals b.ServiceOrderId
+                                   join b in serviceOrder on a.ServiceOrderId equals b.Id
                                    join c in quoation on a.SalesOrderId equals c.SalesOrderId
                                    orderby a.CreateTime descending
                                    select new
