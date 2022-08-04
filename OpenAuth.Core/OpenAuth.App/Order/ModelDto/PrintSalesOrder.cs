@@ -111,6 +111,11 @@ namespace OpenAuth.App.Order.ModelDto
         /// 折扣税
         /// </summary>
         public string DiscPrcnt { get; set; }
+
+        /// <summary>
+        /// 显示样式
+        /// </summary>
+        public string DisPlayStyle { get; set; }
         /// <summary>
         /// 物料信息
         /// </summary>

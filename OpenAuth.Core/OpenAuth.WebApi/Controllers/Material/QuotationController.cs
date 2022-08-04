@@ -1073,5 +1073,27 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
+
+        /// <summary>
+        /// 打印报表
+        /// </summary>
+        /// <param name="serialNumber"></param>
+        /// <param name="sign"></param>
+        /// <param name="timespan"></param>
+        /// <returns></returns>
+        [HttpGet]
+        //[ServiceFilter(typeof(CertAuthFilter))]
+        public async Task<IActionResult> PrintCommissionReport(string serialNumber, string sign, string timespan)
+        {
+            try
+            {
+                return File(await _app.PrintCommissionReport(serialNumber), "application/pdf");
+            }
+            catch (Exception e)
+            {
+                Log.Logger.Error($"地址：{Request.Path}，参数：{serialNumber},{sign},{timespan}, 错误：{e.Message}");
+                throw new Exception(e.Message);
+            }
+        }
     }
 }

@@ -4225,6 +4225,55 @@ namespace OpenAuth.App.Material
             return result;
         }
 
+        /// <summary>
+        /// 打印提成报表
+        /// </summary>
+        /// <param name="CommissionReportId"></param>
+        /// <returns></returns>
+        public async Task<byte[]> PrintCommissionReport(string CommissionReportId)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var commissionReport = await UnitWork.Find<CommissionReport>(c => c.Id == int.Parse(CommissionReportId)).FirstOrDefaultAsync();
+            var commissionOrder = await UnitWork.Find<CommissionOrder>(c => c.CommissionReportId == int.Parse(CommissionReportId)).ToListAsync();
+            var userinfo =await _userManagerApp.GetUserOrgInfo(commissionReport.CreateUserId);
+            var saleOrderIds = commissionOrder.Select(c => c.SalesOrderId).ToList();
+            var serviceOrderIds= commissionOrder.Select(c => c.ServiceOrderId).ToList();
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => serviceOrderIds.Contains(c.Id)).Select(c => new { c.Id, c.TerminalCustomerId }).ToListAsync();
+            var quotation = await UnitWork.Find<Quotation>(c => saleOrderIds.Contains(c.SalesOrderId)).Include(c => c.QuotationMergeMaterials).ToListAsync();
+            var cost = quotation.Select(c => new
+            {
+                c.SalesOrderId,
+                CostPrice = c.QuotationMergeMaterials.Sum(q => q.CostPrice * q.Count)
+            });
+            var model = from a in commissionOrder
+                        join b in cost on a.SalesOrderId equals b.SalesOrderId
+                        join c in serviceOrder on a.ServiceOrderId equals c.Id
+                        select new { a.Id, a.CreateUser, c.TerminalCustomerId, a.SalesOrderId, a.SaleAmout, b.CostPrice, a.Amount, Rate = a.Amount / a.SaleAmout * 100 };
+
+            var url = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "CommissionReportHeader.html");
+            var text = System.IO.File.ReadAllText(url);
+            text = text.Replace("@Model.Name", $"{userinfo.OrgName}{userinfo.Name}");
+            text = text.Replace("@Model.BatchNo", commissionReport.BatchNo);
+            var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"CommissionReportHeader{commissionReport.Id}.html");
+            System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
+
+            var datas = await ExportAllHandler.Exporterpdf(model, "CommissionReport.cshtml", pdf =>
+            {
+                pdf.IsWriteHtml = true;
+                pdf.PaperKind = PaperKind.A4;
+                pdf.Orientation = Orientation.Portrait;
+                pdf.HeaderSettings = new HeaderSettings() { HtmUrl = tempUrl };
+                //pdf.FooterSettings = new FooterSettings() { HtmUrl = footerUrl };
+            });
+            System.IO.File.Delete(tempUrl);
+            //System.IO.File.Delete(footerUrl);
+            return datas;
+        }
+
         #endregion
 
 

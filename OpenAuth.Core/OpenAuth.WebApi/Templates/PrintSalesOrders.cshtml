@@ -72,18 +72,24 @@
 
     </table>
     <div style="border-top: 1px solid #7F7F7F; float: right;">
-        <div align="right">
-            <span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;总计金额： @Model.Data.TAmount</span>
+         <div align="right" id="txtDisplay">
+            <span> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; @Model.Data.TAmount</span>
         </div>
-        <div style="padding-top: 5px;" align="right">
-            <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 折扣金额： @Model.Data.DiscSum</span>
+        <div style="padding-top: 5px; " align="right" id = "txtDisplay1">
+            <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  @Model.Data.DiscSum</span>
         </div>
         
         <div style="padding-top:5px" align="right"> 
             <span > @Model.Data.DiscPrcnt</span>
-            <span >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 折扣后金额： @Model.Data.DocTotal</span>
+            <span >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; @Model.Data.DocTotal</span>
         </div>     
+        <div id="txtDisplay2" style="display:none">@Model.Data.DisPlayStyle</div>
     </div>
+     
+<script type="text/javascript">
+   document.getElementById("txtDisplay").style.display =  document.getElementById("txtDisplay2").innerText;
+    document.getElementById("txtDisplay1").style.display = document.getElementById("txtDisplay2").innerText;
+</script>
 </body>
 
 </html>
