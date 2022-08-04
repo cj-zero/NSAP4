@@ -271,6 +271,7 @@ namespace OpenAuth.App.Hr
             var userProgress = await (from a in UnitWork.Find<classroom_subject_course_user>(null)
                                       .Where(a => a.AppUserId == appUserId)
                                       select a).ToListAsync();
+
             foreach (var item in subjectList)
             {
                 var courseCount = courseList.Where(a => a.SubjectId == item.Id).Count();
@@ -301,6 +302,15 @@ namespace OpenAuth.App.Hr
                 obj.Add(info);
             }
 
+            List<classroom_subject_dto> subList1 = obj.Where(a => a.IsComplete == true).OrderBy(a => a.Sort).ToList();
+            List<classroom_subject_dto> subList2 = obj.Where(a => a.IsComplete == false && a.Schedule > 0).OrderByDescending(a => a.Schedule).ToList();
+            List<classroom_subject_dto> subList3 = obj.Where(a => a.IsComplete == false && a.Schedule == 0).OrderBy(a => a.Sort).ToList();
+            obj.Clear();
+            obj.AddRange(subList1);
+            obj.AddRange(subList3);
+            obj.AddRange(subList2);
+
+
             result.Data = obj;
             result.Count = obj.Count();
             return result;
@@ -315,7 +325,6 @@ namespace OpenAuth.App.Hr
         public async Task<TableData> ClassroomSubjectCourseList(int appUserId,int subjectId)
         {
             var result = new TableData();
-            List<object> obj = new List<object>();
 
             var courseList = await (from a in UnitWork.Find<classroom_subject_course>(null)
                                      .Where(a => a.SubjectId == subjectId)
@@ -339,7 +348,7 @@ namespace OpenAuth.App.Hr
                               CreateUser = c.CreateUser,
                               IsComplete = sc?.IsComplete,
                           };
-            result.Data = results.ToList();
+            result.Data = results.OrderBy(a => a.Sort).ToList();
             result.Count = results.Count();
             return result;
         }
