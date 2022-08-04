@@ -350,7 +350,6 @@ namespace OpenAuth.App
                 throw new Exception($"生产码{model.GeneratorCode}暂无可启动已绑定的在线设备!");
             }
             var channelList = await UnitWork.Find<edge_channel>(null).Where(c => allBindLowList.Contains(c.low_guid)).ToListAsync();
-            double scale = 10;
             foreach (var item in allBindList)
             {
                 var _lowList = allOnlineLowList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.dev_uid == item.DevUid && c.unit_id == item.UnitId && c.low_guid == item.LowGuid).FirstOrDefault();
@@ -360,7 +359,7 @@ namespace OpenAuth.App
                     continue;
                 }
                 int maxRange = Convert.ToInt32(item.RangeCurrArray.Split(',').Max());
-                scale = GetCurFactor(maxRange);
+                int scale = GetCurFactor(maxRange);
                 var chlList = channelList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.mid_guid == item.Guid && c.low_guid == item.LowGuid).OrderBy(c => c.bts_id).ToList();
                 if (chlList.Count == 1)
                 {
@@ -1134,7 +1133,7 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="rng_cur"></param>
         /// <returns></returns>
-        public double GetCurFactor(int rng_cur)
+        public int GetCurFactor(int rng_cur)
         {
             //电流量程范围mA
             long CUR_SCALE_10 = 10;
@@ -1166,7 +1165,7 @@ namespace OpenAuth.App
                     factor = CUR_SCALE_FACTOR_MAX;
                 }
 
-                return factor;
+                return Convert.ToInt32(factor);
             }
             else
             {
@@ -1212,7 +1211,7 @@ namespace OpenAuth.App
                 {
                     factor = 100.0;
                 }
-                return factor;
+                return Convert.ToInt32(factor);
             }
         }
 
@@ -1269,9 +1268,10 @@ namespace OpenAuth.App
         public async Task<List<StartDeviceListResp>> DeviceListByCode(List<string> list)
         {
             return await (from a in UnitWork.Find<DeviceBindMap>(null)
-                          join b in UnitWork.Find<edge_channel>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, DevUid = b.dev_uid, LowGuid = b.low_guid }
+                          join c in UnitWork.Find<edge_low>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = c.edge_guid, SrvGuid = c.srv_guid, DevUid = c.dev_uid, LowGuid = c.low_guid }
+                          join b in UnitWork.Find<edge_channel>(null) on new { c.edge_guid, c.srv_guid, c.dev_uid, c.low_guid } equals new { b.edge_guid, b.srv_guid, b.dev_uid, b.low_guid }
                           where list.Contains(a.GeneratorCode)
-                          select new StartDeviceListResp { EdgeGuid = b.edge_guid, GeneratorCode = a.GeneratorCode, BtsServerIp = a.BtsServerIp, SrvGuid = a.SrvGuid, MidGuid = a.Guid, RangeCurrArray = a.RangeCurrArray, dev_uid = b.dev_uid, unit_id = b.unit_id, bts_id = b.bts_id, LowGuid = b.low_guid }).ToListAsync();
+                          select new StartDeviceListResp { EdgeGuid = b.edge_guid, GeneratorCode = a.GeneratorCode, BtsServerIp = a.BtsServerIp, SrvGuid = a.SrvGuid, MidGuid = a.Guid, RangeCurrArray = c.range_curr_array, dev_uid = b.dev_uid, unit_id = b.unit_id, bts_id = b.bts_id, LowGuid = b.low_guid }).ToListAsync();
         }
 
         /// <summary>
@@ -1286,9 +1286,10 @@ namespace OpenAuth.App
             var devuidList = list.Select(c => c.DevUid).ToList();
             var lowList = list.Select(c => c.LowGuid).ToList();
             return await (from a in UnitWork.Find<DeviceBindMap>(null)
-                          join b in UnitWork.Find<edge_channel>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, DevUid = b.dev_uid, LowGuid = b.low_guid }
+                          join c in UnitWork.Find<edge_low>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = c.edge_guid, SrvGuid = c.srv_guid, DevUid = c.dev_uid, LowGuid = c.low_guid }
+                          join b in UnitWork.Find<edge_channel>(null) on new { c.edge_guid,c.srv_guid, c.dev_uid, c.low_guid } equals new { b.edge_guid, b.srv_guid,  b.dev_uid, b.low_guid }
                           where edgeList.Contains(b.edge_guid) && srvGuidList.Contains(b.srv_guid) && devuidList.Contains(b.dev_uid) && lowList.Contains(b.low_guid)
-                          select new StartDeviceListResp { EdgeGuid = b.edge_guid, GeneratorCode = a.GeneratorCode, BtsServerIp = a.BtsServerIp, SrvGuid = a.SrvGuid, MidGuid = a.Guid, RangeCurrArray = a.RangeCurrArray, dev_uid = b.dev_uid, unit_id = b.unit_id, bts_id = b.bts_id, LowGuid = b.low_guid }).ToListAsync();
+                          select new StartDeviceListResp { EdgeGuid = b.edge_guid, GeneratorCode = a.GeneratorCode, BtsServerIp = a.BtsServerIp, SrvGuid = a.SrvGuid, MidGuid = a.Guid, RangeCurrArray = c.range_curr_array, dev_uid = b.dev_uid, unit_id = b.unit_id, bts_id = b.bts_id, LowGuid = b.low_guid }).ToListAsync();
         }
 
         /// <summary>
@@ -1354,11 +1355,10 @@ namespace OpenAuth.App
             var department = loginContext.Orgs.Select(c => c.Name).FirstOrDefault();
             List<DeviceTestResponse> list = new List<DeviceTestResponse>();
             var lowList = startlist.Select(c => new { c.GeneratorCode, c.EdgeGuid, c.SrvGuid, c.BtsServerIp, c.MidGuid, c.dev_uid, c.LowGuid, c.RangeCurrArray, c.unit_id }).Distinct().ToList();
-            double scale = 10;
             foreach (var item in lowList)
             {
                 int maxRange = MaxCurrent(item.RangeCurrArray);
-                scale = GetCurFactor(maxRange);
+                int scale = GetCurFactor(maxRange);
                 var chlList = startlist.Where(c => c.EdgeGuid == item.EdgeGuid && c.dev_uid == item.dev_uid && c.LowGuid == item.LowGuid).OrderBy(c => c.bts_id).ToList();
                 if (chlList.Count == 1)
                 {
