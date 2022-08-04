@@ -306,6 +306,7 @@ namespace OpenAuth.App
         public async Task<TableData> CoursePackageUserList(int coursePackageId, string name, decimal? schedule, DateTime? startTime, DateTime? endTime, int pageIndex, int pageSize)
         {
             var result = new TableData();
+            List<object> list = new List<object>();
             var query = await (from a in UnitWork.Find<classroom_course_package_user>(null)
                                join b in UnitWork.Find<AppUserMap>(null) on a.AppUserId equals b.AppUserId
                                join c in UnitWork.Find<User>(null) on b.UserID equals c.Id
@@ -328,23 +329,44 @@ namespace OpenAuth.App
                 .Select(c => new { c.CourseVideoId, c.IsPass, c.CourseId, c.CoursePackageId, c.AppUserId }).ToListAsync();
             var videoPlayList = await UnitWork.Find<classroom_video_play_log>(null)
                 .Where(c => c.CoursePackageId == coursePackageId)
-                .Select(c => new { c.PlayDuration, c.CourseVideoId, c.CoursePackageId, c.CourseId, c.AppUserId })
+                .Select(c => new { c.PlayDuration, c.CourseVideoId, c.CoursePackageId, c.CourseId, c.AppUserId,c.TotalDuration })
                 .ToListAsync();
             foreach (var item in query)
             {
                 int i = 0;
+                int totalDay = courseList.Sum(c => c.LearningCycle);
+                DateTime endTimes = item.CreateTime.AddDays(totalDay);
                 foreach (var ctem in courseList)
                 {
                     var courseVideoList = videoList.Where(c => c.CourseId == ctem.Id).ToList();
                     int j = 0;
                     foreach (var vitem in videoPlayList)
                     {
-                       var isPass=examList.Where(c => c.CourseId == ctem.Id && c.CourseVideoId == vitem.CourseVideoId && c.AppUserId == item.AppUserId && c.IsPass == true).Any();
-                       //var playResult= videoPlayList.Where(c=>c.CourseId)
+                        var isPass = examList.Where(c => c.CourseId == ctem.Id && c.CourseVideoId == vitem.CourseVideoId && c.AppUserId == item.AppUserId && c.IsPass == true).Any();
+                        var playResult = videoPlayList.Where(c => c.CourseId == ctem.Id && c.CourseVideoId == vitem.CourseVideoId && c.AppUserId == item.AppUserId).OrderByDescending(c => c.PlayDuration).FirstOrDefault();
+                        var isFinish = playResult == null ? false : (playResult.PlayDuration/(double)playResult.TotalDuration>0.8);
+                        if (isFinish && isPass)
+                        {
+                            j++;
+                        }
+                    }
+                    if (j== courseVideoList.Count)
+                    {
+                        i++;
                     }
                 }
+                var schedules = i / courseList.Count;
+                if (schedule!=null && schedule== schedules)
+                {
+                    list.Add(new { item.Name, item.CreateTime, endTimes, item.Id, item.AppUserId });
+                }
+                else
+                {
+                    list.Add(new { item.Name, item.CreateTime, endTimes, item.Id, item.AppUserId });
+                }
             }
-
+            result.Data = list.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+            result.Count = list.Count;
             return result;
         }
 
@@ -356,9 +378,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> DeleteCoursePackageUser(CoursePackageUserReq req)
         {
-            var result = new TableData();
-            var userList = await UnitWork.Find<classroom_course_package_user>(null).Where(c => req.Ids.Contains(c.AppUserId) && c.CoursePackageId == req.CoursePackageId).ToListAsync();
-            await UnitWork.BatchDeleteAsync(userList.ToArray());
+            var result = new TableData(); ;
             await UnitWork.SaveAsync();
             return result;
         }
