@@ -18,6 +18,7 @@ namespace OpenAuth.App.Nwcali.Response
         public string Department { get; set; }
         public int stepCount { get; set; }
         public int MaxRange { get; set; }
+        public string FileIds { get; set; }
         public List<chl_info> chl_info { get; set; }
     }
 
