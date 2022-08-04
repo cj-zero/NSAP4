@@ -275,12 +275,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="pageSize"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> CoursePackageUserList(int coursePackageId, string name, decimal? schedule, DateTime? startTime, DateTime? endTime, int pageIndex, int pageSize)
+        public async Task<TableData> CoursePackageUserList(int coursePackageId, string name, decimal? schedule, DateTime? startTime, DateTime? endTime)
         {
             var result = new TableData();
             try
             {
-                result = await _app.CoursePackageUserList(coursePackageId,name,schedule,startTime,endTime,pageIndex,pageSize);
+                result = await _app.CoursePackageUserList(coursePackageId,name,schedule,startTime,endTime);
             }
             catch (Exception e)
             {

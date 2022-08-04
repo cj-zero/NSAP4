@@ -42,6 +42,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<classroom_course_video_subject> Classroom_Course_Video_Subjects { get; set; }
         public virtual DbSet<classroom_video_play_log> Classroom_Video_Play_Logs { get; set; }
         public virtual DbSet<classroom_course_exam> Classroom_Course_Exams { get; set; }
+        public virtual DbSet<classroom_course_exam_subject> Classroom_Course_Exam_Subjects { get; set; }
         public virtual DbSet<classroom_subject> Classroom_Subject { get; set; }
         public virtual DbSet<classroom_subject_course> Classroom_Subject_Course { get; set; }
         public virtual DbSet<classroom_subject_course_user> Classroom_Subject_Course_User { get; set; }

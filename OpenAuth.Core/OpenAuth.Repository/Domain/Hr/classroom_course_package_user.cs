@@ -26,10 +26,6 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public DateTime CreateTime { get; set; }
         /// <summary>
-        /// 课程包学习进度
-        /// </summary>
-        public decimal Schedule { get; set; }
-        /// <summary>
         /// 
         /// </summary>
         public override void GenerateDefaultKeyVal()

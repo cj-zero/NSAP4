@@ -56,6 +56,10 @@ namespace OpenAuth.Repository.Domain
         /// 申请时间
         /// </summary>
         public DateTime CreateTime { get; set; }
+        /// <summary>
+        /// 观看次数
+        /// </summary>
+        public int ViewedCount { get; set; }
 
         /// <summary>
         /// 

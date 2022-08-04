@@ -3,6 +3,7 @@ using OpenAuth.App;
 using OpenAuth.App.Hr;
 using OpenAuth.App.Response;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace NSAP.App.WebApi.Controllers
@@ -28,15 +29,19 @@ namespace NSAP.App.WebApi.Controllers
         /// </summary>
         /// <param name="appUserId"></param>
         /// <param name="state">课程状态 0:全部 1:已逾期 2:已完成 3:未开始 4:进行中</param>
-        /// <param name="source"></param>
+        /// <param name="source">课程来源(1:主管推课  2:职前  3:入职  4:晋升  5:转正 6:变动)</param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> CompulsoryCourseList(int appUserId, int? state, int source)
+        public async Task<TableData> CompulsoryCourseList(int appUserId, int? state, int? source,int pageIndex=1,int pageSize=10)
         {
             var result = new TableData();
             try
             {
-                result = await _app.CompulsoryCourseList(appUserId, state, source);
+                pageIndex = pageIndex <= 0 ? 1 : pageIndex;
+                pageSize = pageSize <= 0 ? 10 : pageSize;
+                result = await _app.CompulsoryCourseList(appUserId, state, source, pageIndex, pageSize);
             }
             catch (Exception e)
             {
@@ -127,6 +132,47 @@ namespace NSAP.App.WebApi.Controllers
             try
             {
                 result = await _app.CreateExamPaper(id, appUserId,coursePackageId,courseId);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 提交试题
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> SubmitExamPaper(SubmitExamReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.SubmitExamPaper(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 查看考试结果
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> ExamPaperResult(int examinationId,int courseVideoId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.ExamPaperResult(examinationId, courseVideoId);
             }
             catch (Exception e)
             {
