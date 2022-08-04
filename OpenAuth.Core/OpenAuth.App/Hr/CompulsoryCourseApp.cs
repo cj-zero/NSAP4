@@ -648,12 +648,11 @@ namespace OpenAuth.App
                 .ToListAsync();
             var examList = await UnitWork.Find<classroom_course_exam>(null)
                .Where(c => coursePackageId.Contains(c.CoursePackageId) && c.AppUserId == appUserId)
-               .Select(c => new { c.CourseVideoId, c.IsPass, c.CourseId }).ToListAsync();
+               .Select(c => new { c.CourseVideoId, c.IsPass, c.CourseId,c.CoursePackageId }).ToListAsync();
             var playList = await UnitWork.Find<classroom_video_play_log>(null).Where(c => coursePackageId.Contains(c.CoursePackageId) && c.AppUserId == appUserId).ToListAsync();
-
             foreach (var item in coursePackageId)
             {
-                var list = query.Where(c => c.CoursePackageId == item).OrderBy(c => c.Sort).ToList();//课程列表
+                var list = query.Where(c => c.CoursePackageId == item).OrderBy(c => c.Sort).ToList();
                 foreach (var row in list)
                 {
                     int courseState = 0;
@@ -679,11 +678,12 @@ namespace OpenAuth.App
                         }
                         Schedule = Math.Round((decimal)i / courseVideoList.Count, 2);
                     }
-                    int playCount = playList.Where(c => c.CoursePackageId == item && c.CourseId == row.CourseId && c.AppUserId == appUserId).Count();
+                    int playCount = playList.Where(c => c.CoursePackageId == item && c.CourseId == row.CourseId).Count();
+                    int examCount= examList.Where(c => c.CoursePackageId == item && c.CourseId == row.CourseId).Count();
                     switch (state)
                     {
                         case 0:
-                            if (playCount <= 0)
+                            if (playCount <= 0 && examCount<=0)
                             {
                                 courseState = 3;
                             }
@@ -720,13 +720,13 @@ namespace OpenAuth.App
                             }
                             break;
                         case 3:
-                            if (Schedule == 0 && playCount <= 0)
+                            if (Schedule == 0 && playCount <= 0 && examCount <= 0)
                             {
                                 obj.Add(new { row.Name, row.CreateTime, EndTime, Schedule, row.CoursePackageId, row.CourseId, courseState = 3 });
                             }
                             break;
                         case 4:
-                            if (playCount > 0)
+                            if (playCount >= 0 || examCount >= 0)
                             {
                                 obj.Add(new { row.Name, row.CreateTime, EndTime, Schedule, row.CoursePackageId, row.CourseId, courseState = 4 });
                             }
@@ -762,7 +762,7 @@ namespace OpenAuth.App
                         .ToListAsync();
                     var examList = await UnitWork.Find<classroom_course_exam>(null)
                         .Where(c => c.CoursePackageId == coursePackageId && c.CourseId == courseId && c.AppUserId == appUserId)
-                       .Select(c => new { c.CourseVideoId, c.IsPass }).ToListAsync();
+                       .Select(c => new { c.CourseVideoId, c.IsPass, c.CourseId, c.CoursePackageId }).ToListAsync();
                     var courseList = await UnitWork.Find<classroom_course_package_map>(null)
                         .Where(c => c.CoursePackageId == coursePackageId)
                         .OrderBy(c => c.Sort)
@@ -776,15 +776,16 @@ namespace OpenAuth.App
                     foreach (var item in query)
                     {
                         var courseVideoState = 1;
-                        var playLog = videoPlayList.Where(c => c.CourseVideoId == item.Id).OrderByDescending(c => c.PlayDuration).Select(c => new { c.PlayDuration }).FirstOrDefault();
-                        var isPlayFinish = (playLog == null ? (double)0 : (double)playLog.PlayDuration) / item.Duration > 0.8;
-                        var isPass = examList.Where(c => c.CourseVideoId == item.Id && c.IsPass == true).Any();
-                        if (playLog == null)
+                        var playLog = videoPlayList.Where(c => c.CourseVideoId == item.Id).OrderByDescending(c => c.PlayDuration).Select(c => new { c.PlayDuration }).ToList();
+                        int examCount = examList.Where(c => c.CourseVideoId == item.Id).Count();
+                        if (playLog.Count<=0 && examCount<=0)
                         {
                             courseVideoState = 1;//待完成
                         }
                         else
                         {
+                            var isPlayFinish =(playLog.FirstOrDefault() == null ? 0 :playLog.FirstOrDefault().PlayDuration) /(double)item.Duration > 0.8;
+                            var isPass = examList.Where(c => c.CourseVideoId == item.Id && c.IsPass == true).Any();
                             if (isPlayFinish == true && isPass == true)
                             {
                                 courseVideoState = 2;//已完成
