@@ -7,12 +7,18 @@ using System.Threading.Tasks;
 
 namespace OpenAuth.WebApi.Controllers.Hr
 {
+
+    /// <summary>
+    /// 专题课程相关
+    /// </summary>
     [Route("api/[controller]/[action]")]
     [ApiController]
     [ApiExplorerSettings(GroupName = "Hr")]
     public class SubjectCourseController : ControllerBase
     {
         private SubjectCourseApp _app;
+
+        #region 专题
         /// <summary>
         /// 专题
         /// </summary>
@@ -68,13 +74,13 @@ namespace OpenAuth.WebApi.Controllers.Hr
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> DelSubjectByErp(int subjectId)
+        [HttpPost]
+        public async Task<TableData> DelSubjectByErp(DeleteModelReq<int> req)
         {
             var result = new TableData();
             try
             {
-                result = await _app.DelSubjectByErp(subjectId);
+                result = await _app.DelSubjectByErp(req.Id);
             }
             catch (Exception e)
             {
@@ -88,13 +94,13 @@ namespace OpenAuth.WebApi.Controllers.Hr
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> AdjustSubjectByErp(int oldId, int newId)
+        [HttpPost]
+        public async Task<TableData> AdjustSubjectByErp(SortExchange<int> req)
         {
             var result = new TableData();
             try
             {
-                result = await _app.AdjustSubjectByErp(oldId, newId);
+                result = await _app.AdjustSubjectByErp(req.OldId, req.NewId);
             }
             catch (Exception e)
             {
@@ -103,6 +109,11 @@ namespace OpenAuth.WebApi.Controllers.Hr
             }
             return result;
         }
+
+        #endregion
+
+
+        #region 专题课程
         /// <summary>
         /// 专题课程列表
         /// </summary>
@@ -122,9 +133,9 @@ namespace OpenAuth.WebApi.Controllers.Hr
                 result.Message = e.Message;
             }
             return result;
-        }        [HttpPost]
+        }        
         /// <summary>
-        /// 新增/修改专题课程列表
+        /// 新增/修改专题课程
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
@@ -149,13 +160,13 @@ namespace OpenAuth.WebApi.Controllers.Hr
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> DelSubjectCourseByErp(int subjectId)
+        [HttpPost]
+        public async Task<TableData> DelSubjectCourseByErp(DeleteModelReq<int> req)
         {
             var result = new TableData();
             try
             {
-                result = await _app.DelSubjectCourseByErp(subjectId);
+                result = await _app.DelSubjectCourseByErp(req.Id);
             }
             catch (Exception e)
             {
@@ -169,13 +180,13 @@ namespace OpenAuth.WebApi.Controllers.Hr
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> AdjustSubjectCourseByErp(int oldId, int newId)
+        [HttpPost]
+        public async Task<TableData> AdjustSubjectCourseByErp(SortExchange<int> req)
         {
             var result = new TableData();
             try
             {
-                result = await _app.AdjustSubjectCourseByErp(oldId, newId);
+                result = await _app.AdjustSubjectCourseByErp(req.OldId, req.NewId);
             }
             catch (Exception e)
             {
@@ -185,7 +196,6 @@ namespace OpenAuth.WebApi.Controllers.Hr
             return result;
         }
 
-
-
+        #endregion
     }
 }

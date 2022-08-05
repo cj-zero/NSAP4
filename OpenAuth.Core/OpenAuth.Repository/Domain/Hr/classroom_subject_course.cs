@@ -24,7 +24,7 @@ namespace OpenAuth.Repository.Domain.Hr
         /// <summary>
         /// 上架时间
         /// </summary>
-        public DateTime ShelfTime { get; set; }
+        public DateTime? ShelfTime { get; set; }
  
         /// <summary>
         /// 类型 1=文本  2=视频
@@ -40,6 +40,18 @@ namespace OpenAuth.Repository.Domain.Hr
         /// 内容
         /// </summary>
         public string Content { get; set; }
+
+        /// <summary>
+        /// 浏览次数
+        /// </summary>
+        public int ViewNumbers { get; set; }
+
+        /// <summary>
+        /// 专题状态     0=下架  1=上架
+        /// </summary>
+        public int State { get; set; }
+
+
         /// <summary>
         /// 创建人
         /// </summary>

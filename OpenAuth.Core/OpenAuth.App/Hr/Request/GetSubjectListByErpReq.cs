@@ -4,6 +4,9 @@ using System.Text;
 
 namespace OpenAuth.App.Hr.Request
 {
+    /// <summary>
+    /// 专题列表请求
+    /// </summary>
     public class GetSubjectListByErpReq
     {
         /// <summary>
