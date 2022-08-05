@@ -381,6 +381,7 @@ namespace OpenAuth.WebApi.Controllers
                     startTestResp.Department = item.Department;
                     startTestResp.stepCount = item.stepCount;
                     startTestResp.MaxRange = item.MaxRange;
+                    startTestResp.FileIds = model.FileIds;
                     list.Add(startTestResp);
                     var successList = await _app.SaveTestResult(list);
                 }
@@ -696,6 +697,7 @@ namespace OpenAuth.WebApi.Controllers
                     startTestResp.Department = item.Department;
                     startTestResp.stepCount = item.stepCount;
                     startTestResp.MaxRange = item.MaxRange;
+                    startTestResp.FileIds = model.FileIds;
                     list.Add(startTestResp);
                     var successList = await _app.SaveTestResult(list);
                 }
@@ -882,6 +884,7 @@ namespace OpenAuth.WebApi.Controllers
                     startTestResp.Department = item.Department;
                     startTestResp.stepCount = item.stepCount;
                     startTestResp.MaxRange = item.MaxRange;
+                    startTestResp.FileIds = model.FileIds;
                     list.Add(startTestResp);
                     var successList = await _app.SaveTestResult(list);
                 }

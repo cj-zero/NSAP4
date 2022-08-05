@@ -32,6 +32,7 @@ namespace OpenAuth.Repository.Domain
         public int StepCount { get; set; }
         public string PrtCode { get; set; }
         public int MaxRange { get; set; }
+        public string FileIds { get; set; }
         /// <summary>
         /// 
         /// </summary>

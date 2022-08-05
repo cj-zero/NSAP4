@@ -42,6 +42,10 @@ namespace OpenAuth.App.Nwcali.Request
         /// 下位机列表
         /// </summary>
         public List<LowDeviceList> lowDeviceLists { get; set; }
+        /// <summary>
+        /// 工步文件id
+        /// </summary>
+        public string FileIds { get; set; }
 
     }
 

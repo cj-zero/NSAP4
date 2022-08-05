@@ -236,7 +236,7 @@ namespace OpenAuth.App
                 }
                 AuditState = query.AuditState;
             }
-            result.Data = new { AuditState, appUserId, Id= query==null?0:query.Id, list };
+            result.Data = new { AuditState, appUserId, Id=query==null?0:query.Id, list };
             return result;
         }
 
@@ -393,6 +393,7 @@ namespace OpenAuth.App
                     query.BeGoodAtTerritory,
                     query.CanTeachCourse,
                     query.HeaderImg,
+                    query.Grade,
                     popularityValue,
                     list
                 };
@@ -412,14 +413,14 @@ namespace OpenAuth.App
             var result = new TableData();
             var query = await UnitWork.Find<classroom_teacher_apply_log>(null)
                 .Where(c => c.AuditState == 2)
-                .Select(c => new { c.Name, c.BeGoodAtTerritory, c.CanTeachCourse, c.Grade, c.Experience, c.AppUserId }).OrderByDescending(c=>c.Experience)
+                .Select(c => new { c.Name, c.BeGoodAtTerritory, c.CanTeachCourse, c.Grade, c.Experience, c.AppUserId,c.HeaderImg }).OrderByDescending(c=>c.Experience)
                 .ToListAsync();
             object myHonor = null;
             var myHonorInfo = query.Where(c => c.AppUserId == appUserId).FirstOrDefault();
             if (myHonorInfo!= null)
             {
                 int index = query.FindIndex(c => c.AppUserId == appUserId) + 1;
-                myHonor = new { myHonorInfo.Name, myHonorInfo.BeGoodAtTerritory, myHonorInfo.CanTeachCourse, myHonorInfo.Grade, myHonorInfo.Experience, myHonorInfo.AppUserId, index };
+                myHonor = new { myHonorInfo.Name, myHonorInfo.BeGoodAtTerritory, myHonorInfo.CanTeachCourse, myHonorInfo.Grade, myHonorInfo.Experience, myHonorInfo.AppUserId, index, myHonorInfo.HeaderImg };
             }
             var list = query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
             result.Data = new { myHonor,list };
