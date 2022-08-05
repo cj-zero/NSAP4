@@ -26,6 +26,18 @@ namespace OpenAuth.App.Client.Request
         /// 归属业务员
         /// </summary>
         public string SlpName { get; set; }
+        /// <summary>
+        /// 是否中间商
+        /// </summary>
+        public string isReseller { get; set; }
+        /// <summary>
+        /// 多少天未报价
+        /// </summary>
+        public int? Day { get; set; }
+        /// <summary>
+        /// 联系人
+        /// </summary>
+        public string CntctPrsn { get; set; }
     }
     /// <summary>
     /// 查询所有技术员model
