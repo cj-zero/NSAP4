@@ -87,6 +87,27 @@ namespace NSAP.App.WebApi.Controllers.NewareClassroom
         }
 
         /// <summary>
+        /// 讲师详情
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> TeacherDetail(int id)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.TeacherDetail(id);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 编辑讲师信息
         /// </summary>
         /// <param name="req"></param>

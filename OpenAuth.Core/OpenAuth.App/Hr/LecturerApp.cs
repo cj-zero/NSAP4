@@ -1,5 +1,9 @@
-﻿using Infrastructure.Extensions;
+﻿using Common;
+using Infrastructure;
+using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using OpenAuth.App.Hr;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Response;
@@ -18,13 +22,21 @@ namespace OpenAuth.App
     /// </summary>
     public class LecturerApp : OnlyUnitWorkBaeApp
     {
+        private IOptions<AppSetting> _appConfiguration;
+        private HttpHelper _helper;
+        private ILogger<LecturerApp> _logger;
         /// <summary>
         /// 讲师相关
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
-        public LecturerApp(IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
+        /// <param name="appConfiguration"></param>
+        /// <param name="logger"></param>
+        public LecturerApp(IUnitWork unitWork, IAuth auth, IOptions<AppSetting> appConfiguration, ILogger<LecturerApp> logger) : base(unitWork, auth)
         {
+            _appConfiguration = appConfiguration;
+            _helper = new HttpHelper(_appConfiguration.Value.AppPushMsgUrl);
+            _logger= logger;
         }
 
         #region erp
@@ -77,6 +89,26 @@ namespace OpenAuth.App
             }
             await UnitWork.UpdateAsync(query);
             await UnitWork.SaveAsync();
+            if (req.auditState == 3)
+            {
+                try
+                {
+                    string title = "讲师申请";
+                    string content = "讲师申请失败!";
+                    string payload = "{\"urlType\":1,\"url\":\"/pages/afterSale/course/publishCenter\"}";
+                    var str = _helper.Post(new
+                    {
+                        userIds = new List<int> { query.AppUserId },
+                        title = title,
+                        content = content,
+                        payload = payload
+                    }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Message/AppExternalMessagePush", "", "");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"讲师申请推送失败,AppUserId={query.AppUserId }! message={ex.Message}");
+                }
+            }
             return result;
         }
 
@@ -190,6 +222,26 @@ namespace OpenAuth.App
             }
             await UnitWork.UpdateAsync(query);
             await UnitWork.SaveAsync();
+            if (req.auditState == 3)
+            {
+                try
+                {
+                    string title = "讲师开课申请";
+                    string content = $"讲师【{query.Title}】课程开课申请失败!";
+                    string payload = "{\"urlType\":1,\"url\":\"/pages/afterSale/course/publishCenter\"}";
+                    var str = _helper.Post(new
+                    {
+                        userIds = new List<int> { query.AppUserId },
+                        title = title,
+                        content = content,
+                        payload = payload
+                    }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Message/AppExternalMessagePush", "", "");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"讲师开课申请推送失败,AppUserId={query.AppUserId }! message={ex.Message}");
+                }
+            }
             return result;
         }
         /// <summary>
@@ -236,7 +288,7 @@ namespace OpenAuth.App
                 }
                 AuditState = query.AuditState;
             }
-            result.Data = new { AuditState, appUserId, Id= query==null?0:query.Id, list };
+            result.Data = new { AuditState, appUserId, Id = query == null ? 0 : query.Id, list };
             return result;
         }
 
@@ -282,7 +334,7 @@ namespace OpenAuth.App
                     model.CreateTime = DateTime.Now;
                     model.ModifyTime = DateTime.Now;
                     model.AppUserId = req.AppUserId;
-                    model.AuditState =1;
+                    model.AuditState = 1;
                     await UnitWork.AddAsync<classroom_teacher_apply_log, int>(query);
                     await UnitWork.SaveAsync();
                 }
@@ -315,13 +367,13 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var query = await UnitWork.Find<classroom_teacher_apply_log>(null).Where(c => c.AppUserId == req.AppUserId).OrderByDescending(c => c.Id).FirstOrDefaultAsync();
-            if (query==null || query.AuditState!=2)
+            if (query == null || query.AuditState != 2)
             {
                 result.Code = 500;
                 result.Message = "您当前已不是讲师,无法提交开课申请!";
                 return result;
             }
-            var isExit = await UnitWork.Find<classroom_teacher_course>(null).Where(c => c.Title==req.Title).CountAsync()>0;
+            var isExit = await UnitWork.Find<classroom_teacher_course>(null).Where(c => c.Title == req.Title).CountAsync() > 0;
             if (isExit)
             {
                 result.Code = 500;
@@ -342,6 +394,18 @@ namespace OpenAuth.App
             model.CreateTime = DateTime.Now;
             await UnitWork.AddAsync<classroom_teacher_course, int>(model);
             await UnitWork.SaveAsync();
+            return result;
+        }
+
+        /// <summary>
+        /// 讲师详情
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<TableData> TeacherDetail(int id)
+        {
+            var result = new TableData();
+            result.Data = await UnitWork.Find<classroom_teacher_apply_log>(null).Where(c => c.Id == id).FirstOrDefaultAsync();
             return result;
         }
 
@@ -393,6 +457,7 @@ namespace OpenAuth.App
                     query.BeGoodAtTerritory,
                     query.CanTeachCourse,
                     query.HeaderImg,
+                    query.Grade,
                     popularityValue,
                     list
                 };
@@ -412,17 +477,17 @@ namespace OpenAuth.App
             var result = new TableData();
             var query = await UnitWork.Find<classroom_teacher_apply_log>(null)
                 .Where(c => c.AuditState == 2)
-                .Select(c => new { c.Name, c.BeGoodAtTerritory, c.CanTeachCourse, c.Grade, c.Experience, c.AppUserId }).OrderByDescending(c=>c.Experience)
+                .Select(c => new { c.Name, c.BeGoodAtTerritory, c.CanTeachCourse, c.Grade, c.Experience, c.AppUserId, c.HeaderImg }).OrderByDescending(c => c.Experience)
                 .ToListAsync();
             object myHonor = null;
             var myHonorInfo = query.Where(c => c.AppUserId == appUserId).FirstOrDefault();
-            if (myHonorInfo!= null)
+            if (myHonorInfo != null)
             {
                 int index = query.FindIndex(c => c.AppUserId == appUserId) + 1;
-                myHonor = new { myHonorInfo.Name, myHonorInfo.BeGoodAtTerritory, myHonorInfo.CanTeachCourse, myHonorInfo.Grade, myHonorInfo.Experience, myHonorInfo.AppUserId, index };
+                myHonor = new { myHonorInfo.Name, myHonorInfo.BeGoodAtTerritory, myHonorInfo.CanTeachCourse, myHonorInfo.Grade, myHonorInfo.Experience, myHonorInfo.AppUserId, index, myHonorInfo.HeaderImg };
             }
             var list = query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
-            result.Data = new { myHonor,list };
+            result.Data = new { myHonor, list };
             return result;
         }
         #endregion

@@ -303,19 +303,70 @@ namespace OpenAuth.App
         /// <param name="pageIndex"></param>
         /// <param name="pageSize"></param>
         /// <returns></returns>
-        public async Task<TableData> CoursePackageUserList(int coursePackageId, string name, decimal? schedule, DateTime? startTime, DateTime? endTime)
+        public async Task<TableData> CoursePackageUserList(int coursePackageId, string name, decimal? schedule, DateTime? startTime, DateTime? endTime, int pageIndex, int pageSize)
         {
             var result = new TableData();
-            result.Data = await (from a in UnitWork.Find<classroom_course_package_user>(null)
-                                 join b in UnitWork.Find<AppUserMap>(null) on a.AppUserId equals b.AppUserId
-                                 join c in UnitWork.Find<User>(null) on b.UserID equals c.Id
-                                 where c.Status == 0 && a.CoursePackageId == coursePackageId
-                                 select new { c.Name, a.CreateTime, c.Id })
-                .WhereIf(!string.IsNullOrWhiteSpace(name), c => c.Name.Contains(name))
-                .WhereIf(startTime != null, c => c.CreateTime >= startTime)
-                .WhereIf(endTime != null, c => c.CreateTime <= endTime)
-                .OrderByDescending(c => c.Id)
+            List<object> list = new List<object>();
+            var query = await (from a in UnitWork.Find<classroom_course_package_user>(null)
+                               join b in UnitWork.Find<AppUserMap>(null) on a.AppUserId equals b.AppUserId
+                               join c in UnitWork.Find<User>(null) on b.UserID equals c.Id
+                               where c.Status == 0 && a.CoursePackageId == coursePackageId
+                               select new { c.Name, a.CreateTime, c.Id, b.AppUserId })
+                               .WhereIf(!string.IsNullOrWhiteSpace(name), c => c.Name.Contains(name))
+                               .WhereIf(startTime != null, c => c.CreateTime >= startTime)
+                               .WhereIf(endTime != null, c => c.CreateTime < endTime)
+                               .OrderByDescending(c => c.Id)
+                               .ToListAsync();
+            var courseList = await (from a in UnitWork.Find<classroom_course_package_map>(null)
+                                    join b in UnitWork.Find<classroom_course>(null) on a.CourseId equals b.Id
+                                    where a.CoursePackageId == coursePackageId && b.State == true
+                                    select new { b.Id, b.LearningCycle })
+                                    .ToListAsync();
+            var courseIds = courseList.Select(c => c.Id).ToList();
+            var videoList = await UnitWork.Find<classroom_course_video>(null).Where(c => courseIds.Contains(c.CourseId)).Select(c => new { c.Id, c.CourseId }).ToListAsync();
+            var examList = await UnitWork.Find<classroom_course_exam>(null)
+                .Where(c => c.CoursePackageId == coursePackageId)
+                .Select(c => new { c.CourseVideoId, c.IsPass, c.CourseId, c.CoursePackageId, c.AppUserId }).ToListAsync();
+            var videoPlayList = await UnitWork.Find<classroom_video_play_log>(null)
+                .Where(c => c.CoursePackageId == coursePackageId)
+                .Select(c => new { c.PlayDuration, c.CourseVideoId, c.CoursePackageId, c.CourseId, c.AppUserId, c.TotalDuration })
                 .ToListAsync();
+            foreach (var item in query)
+            {
+                int i = 0;
+                int totalDay = courseList.Sum(c => c.LearningCycle);
+                DateTime endTimes = item.CreateTime.AddDays(totalDay);
+                foreach (var ctem in courseList)
+                {
+                    var courseVideoList = videoList.Where(c => c.CourseId == ctem.Id).ToList();
+                    int j = 0;
+                    foreach (var vitem in videoPlayList)
+                    {
+                        var isPass = examList.Where(c => c.CourseId == ctem.Id && c.CourseVideoId == vitem.CourseVideoId && c.AppUserId == item.AppUserId && c.IsPass == true).Any();
+                        var playResult = videoPlayList.Where(c => c.CourseId == ctem.Id && c.CourseVideoId == vitem.CourseVideoId && c.AppUserId == item.AppUserId).OrderByDescending(c => c.PlayDuration).FirstOrDefault();
+                        var isFinish = playResult == null ? false : (playResult.PlayDuration / (double)playResult.TotalDuration > 0.8);
+                        if (isFinish && isPass)
+                        {
+                            j++;
+                        }
+                    }
+                    if (j == courseVideoList.Count)
+                    {
+                        i++;
+                    }
+                }
+                var schedules = i / courseList.Count;
+                if (schedule != null && schedule == schedules)
+                {
+                    list.Add(new { item.Name, item.CreateTime, endTimes, item.Id, item.AppUserId });
+                }
+                else
+                {
+                    list.Add(new { item.Name, item.CreateTime, endTimes, item.Id, item.AppUserId });
+                }
+            }
+            result.Data = list.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+            result.Count = list.Count;
             return result;
         }
 
@@ -327,9 +378,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> DeleteCoursePackageUser(CoursePackageUserReq req)
         {
-            var result = new TableData();
-            var userList = await UnitWork.Find<classroom_course_package_user>(null).Where(c => req.Ids.Contains(c.AppUserId) && c.CoursePackageId == req.CoursePackageId).ToListAsync();
-            await UnitWork.BatchDeleteAsync(userList.ToArray());
+            var result = new TableData(); ;
             await UnitWork.SaveAsync();
             return result;
         }
@@ -431,6 +480,26 @@ namespace OpenAuth.App
             }
             return result;
         }
+        /// <summary>
+        /// 删除课程
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> DeleteCourse(AddOrEditCourseReq req)
+        {
+            var result = new TableData();
+            var isExist = await UnitWork.Find<classroom_course_package_map>(null).AnyAsync(c => c.CourseId == req.id);
+            if (isExist)
+            {
+                result.Code = 500;
+                result.Message = "课程正在使用无法删除!";
+                return result;
+            }
+            var model = await UnitWork.Find<classroom_course>(null).FirstOrDefaultAsync(c => c.Id == req.id);
+            await UnitWork.DeleteAsync(model);
+            await UnitWork.SaveAsync();
+            return result;
+        }
 
         /// <summary>
         /// 修改课程状态
@@ -493,16 +562,18 @@ namespace OpenAuth.App
         /// <summary>
         /// 课程视频列表
         /// </summary>
+        /// <param name="courseId"></param>
         /// <param name="name"></param>
         /// <param name="createUser"></param>
         /// <param name="startTime"></param>
         /// <param name="endTime"></param>
         /// <param name="state"></param>
         /// <returns></returns>
-        public async Task<TableData> CourseVideoList(string name, string createUser, DateTime? startTime, DateTime? endTime, bool? state)
+        public async Task<TableData> CourseVideoList(int courseId, string name, string createUser, DateTime? startTime, DateTime? endTime, bool? state)
         {
             var result = new TableData();
             result.Data = await UnitWork.Find<classroom_course_video>(null)
+                  .Where(c => c.CourseId == courseId)
                   .WhereIf(!string.IsNullOrWhiteSpace(name), c => c.Name.Contains(name))
                   .WhereIf(!string.IsNullOrWhiteSpace(createUser), c => c.CreateUser.Contains(createUser))
                   .WhereIf(startTime != null, c => c.CreateTime >= startTime)
@@ -595,19 +666,58 @@ namespace OpenAuth.App
 
         #region 课程答题情况
         /// <summary>
-        /// 
+        /// 用户课程视频列表
         /// </summary>
         /// <param name="appUserId"></param>
         /// <param name="coursePackageId"></param>
         /// <returns></returns>
-        public async Task<TableData> UserVideoExamResult(int appUserId, int coursePackageId)
+        public async Task<TableData> UserCourseVideoList(int appUserId, int coursePackageId)
         {
             var result = new TableData();
-            var ids = await (from a in UnitWork.Find<classroom_course_package_map>(null)
-                             join b in UnitWork.Find<classroom_course>(null) on a.CourseId equals b.Id
-                             where a.CoursePackageId == coursePackageId && b.State == true
-                             select b.Id).ToListAsync();
-            var videoList = await UnitWork.Find<classroom_course_video>(null).Where(c => ids.Contains(c.CourseId)).ToListAsync();
+            List<object> list = new List<object>();
+            var courseList = await (from a in UnitWork.Find<classroom_course_package_map>(null)
+                                    join b in UnitWork.Find<classroom_course>(null) on a.CourseId equals b.Id
+                                    where a.CoursePackageId == coursePackageId && b.State == true
+                                    select new { b.Id, b.Name }).ToListAsync();
+            var courseIds = courseList.Select(c => c.Id).ToList();
+            var videoList = await UnitWork.Find<classroom_course_video>(null).Where(c => courseIds.Contains(c.CourseId)).ToListAsync();
+            var examList = await UnitWork.Find<classroom_course_exam>(null)
+                .Where(c => c.CoursePackageId == coursePackageId && c.AppUserId == appUserId)
+                .Select(c => new { c.Id, c.CourseVideoId, c.IsPass, c.CourseId, c.CoursePackageId, c.SubmitTime, c.IsSubmit }).ToListAsync();
+            var videoPlayList = await UnitWork.Find<classroom_video_play_log>(null)
+                .Where(c => c.CoursePackageId == coursePackageId && c.AppUserId == appUserId)
+                .Select(c => new { c.PlayDuration, c.CourseVideoId, c.CoursePackageId, c.CourseId })
+                .ToListAsync();
+            foreach (var item in videoList)
+            {
+                string videoName = item.Name;
+                string courserName = courseList.Where(c => c.Id == item.CourseId).FirstOrDefault()?.Name;
+                string submitTime = string.Empty;
+                var playDurationInfo = videoPlayList.Where(c => c.CourseVideoId == item.Id && c.CourseId == item.Id).OrderByDescending(c => c.PlayDuration).Select(c => new { c.PlayDuration }).FirstOrDefault();
+                var isPlayFinish = playDurationInfo == null ? false : (playDurationInfo.PlayDuration / (double)item.Duration > 0.8);
+                var isPass = examList.Where(c => c.CourseId == item.CourseId && c.CourseVideoId == item.Id && c.IsPass == true).Any();
+                var lastExam = examList.Where(c => c.CourseId == item.CourseId && c.CourseVideoId == item.Id && c.IsSubmit == true).OrderByDescending(c => c.Id).FirstOrDefault();
+                list.Add(new { item.Id, isPass, isPlayFinish, courserName, videoName, examId = lastExam == null ? 0 : lastExam.Id, submitTime = lastExam == null ? "" : lastExam.SubmitTime.ToString("yyyy-MM-dd HH:mm:ss") });
+            }
+            result.Data = list;
+            return result;
+        }
+        /// <summary>
+        /// 考试试卷结果详情
+        /// </summary>
+        /// <param name="examId"></param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
+        public async Task<TableData> UserVideoExamResult(int examId, int pageIndex, int pageSize)
+        {
+            var result = new TableData();
+            result.Data = await UnitWork.Find<classroom_course_exam_subject>(null)
+                .Where(c => c.ExaminationId == examId)
+                .OrderBy(c => c.Id)
+                .Skip((pageIndex - 1) * pageSize).Take(pageSize)
+                .ToListAsync();
+            result.Count = await UnitWork.Find<classroom_course_exam_subject>(null).Where(c => c.ExaminationId == examId).CountAsync();
             return result;
         }
 
@@ -648,7 +758,7 @@ namespace OpenAuth.App
                 .ToListAsync();
             var examList = await UnitWork.Find<classroom_course_exam>(null)
                .Where(c => coursePackageId.Contains(c.CoursePackageId) && c.AppUserId == appUserId)
-               .Select(c => new { c.CourseVideoId, c.IsPass, c.CourseId,c.CoursePackageId }).ToListAsync();
+               .Select(c => new { c.CourseVideoId, c.IsPass, c.CourseId, c.CoursePackageId }).ToListAsync();
             var playList = await UnitWork.Find<classroom_video_play_log>(null).Where(c => coursePackageId.Contains(c.CoursePackageId) && c.AppUserId == appUserId).ToListAsync();
             foreach (var item in coursePackageId)
             {
@@ -679,11 +789,11 @@ namespace OpenAuth.App
                         Schedule = Math.Round((decimal)i / courseVideoList.Count, 2);
                     }
                     int playCount = playList.Where(c => c.CoursePackageId == item && c.CourseId == row.CourseId).Count();
-                    int examCount= examList.Where(c => c.CoursePackageId == item && c.CourseId == row.CourseId).Count();
+                    int examCount = examList.Where(c => c.CoursePackageId == item && c.CourseId == row.CourseId).Count();
                     switch (state)
                     {
                         case 0:
-                            if (playCount <= 0 && examCount<=0)
+                            if (playCount <= 0 && examCount <= 0)
                             {
                                 courseState = 3;
                             }
@@ -778,13 +888,13 @@ namespace OpenAuth.App
                         var courseVideoState = 1;
                         var playLog = videoPlayList.Where(c => c.CourseVideoId == item.Id).OrderByDescending(c => c.PlayDuration).Select(c => new { c.PlayDuration }).ToList();
                         int examCount = examList.Where(c => c.CourseVideoId == item.Id).Count();
-                        if (playLog.Count<=0 && examCount<=0)
+                        if (playLog.Count <= 0 && examCount <= 0)
                         {
                             courseVideoState = 1;//待完成
                         }
                         else
                         {
-                            var isPlayFinish =(playLog.FirstOrDefault() == null ? 0 :playLog.FirstOrDefault().PlayDuration) /(double)item.Duration > 0.8;
+                            var isPlayFinish = (playLog.FirstOrDefault() == null ? 0 : playLog.FirstOrDefault().PlayDuration) / (double)item.Duration > 0.8;
                             var isPass = examList.Where(c => c.CourseVideoId == item.Id && c.IsPass == true).Any();
                             if (isPlayFinish == true && isPass == true)
                             {
@@ -943,7 +1053,7 @@ namespace OpenAuth.App
                     image_url = c.ImageUrl,
                     id = c.Id
                 }).OrderBy(c => c.id).ToListAsync();
-            result.Data = new { ExaminationId=exam.Id, CourseVideoId=id, list };
+            result.Data = new { ExaminationId = exam.Id, CourseVideoId = id, list };
             return result;
         }
 
@@ -1033,9 +1143,9 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var videoInfo = await UnitWork.Find<classroom_course_video>(null).FirstOrDefaultAsync(c => c.Id == courseVideoId);
-            var examResult= await UnitWork.Find<classroom_course_exam>(null).FirstOrDefaultAsync(c => c.Id == examinationId);
-            var subjectList= await UnitWork.Find<classroom_course_exam_subject>(null).Where(c => c.ExaminationId == examinationId).Select(c => new { c.Id,c.AnswerStatus }).ToListAsync();
-            result.Data = new { name=videoInfo==null?"": videoInfo.Name+"练习", examResult.TotalScore, examResult.TestScores, subjectList,subjectCount= subjectList.Count };
+            var examResult = await UnitWork.Find<classroom_course_exam>(null).FirstOrDefaultAsync(c => c.Id == examinationId);
+            var subjectList = await UnitWork.Find<classroom_course_exam_subject>(null).Where(c => c.ExaminationId == examinationId).Select(c => new { c.Id, c.AnswerStatus }).ToListAsync();
+            result.Data = new { name = videoInfo == null ? "" : videoInfo.Name + "练习", examResult.TotalScore, examResult.TestScores, subjectList, subjectCount = subjectList.Count };
             return result;
         }
         #endregion
