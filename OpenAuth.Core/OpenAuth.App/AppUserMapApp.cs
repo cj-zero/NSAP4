@@ -59,7 +59,7 @@ namespace OpenAuth.App
             Repository.Add(obj);
         }
 
-         public void Update(AddOrUpdateAppUserMapReq obj)
+        public void Update(AddOrUpdateAppUserMapReq obj)
         {
             var user = _auth.GetCurrentUser().User;
             UnitWork.Update<AppUserMap>(u => u.Id == obj.Id, u => new AppUserMap
@@ -71,10 +71,10 @@ namespace OpenAuth.App
             });
 
         }
-            
+
 
         public AppUserMapApp(IUnitWork unitWork, IRepository<AppUserMap> repository,
-            RevelanceManagerApp app, IAuth auth) : base(unitWork, repository,auth)
+            RevelanceManagerApp app, IAuth auth) : base(unitWork, repository, auth)
         {
             _revelanceApp = app;
         }
@@ -98,11 +98,10 @@ namespace OpenAuth.App
 
         public AppUserMap GetByAppUserId(int appUserId)
         {
-            var obj = (from c in UnitWork.Find<AppUserMap>(null)
-                      join d in UnitWork.Find<User>(null) on c.UserID equals d.Id 
-                      select c).ToList();
-            var result = obj.Where(o => o.AppUserId.Equals(appUserId)).FirstOrDefault();
-            return result;
+            return  (from c in UnitWork.Find<AppUserMap>(null)
+                       join d in UnitWork.Find<User>(null) on c.UserID equals d.Id
+                       where c.AppUserId == appUserId
+                       select c).FirstOrDefault();
         }
 
 

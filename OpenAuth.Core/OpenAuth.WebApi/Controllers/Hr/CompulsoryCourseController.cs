@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace OpenAuth.WebApi.Controllers
 {
     /// <summary>
-    /// 
+    /// 必修课相关
     /// </summary>
     [Route("api/[controller]/[action]")]
     [ApiController]
@@ -275,12 +275,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="pageSize"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> CoursePackageUserList(int coursePackageId, string name, decimal? schedule, DateTime? startTime, DateTime? endTime,int pageIndex=1,int pageSize=10)
+        public async Task<TableData> CoursePackageUserList(int coursePackageId, string name, decimal? schedule, DateTime? startTime, DateTime? endTime, int pageIndex = 1, int pageSize = 10)
         {
             var result = new TableData();
             try
             {
-                result = await _app.CoursePackageUserList(coursePackageId,name,schedule,startTime,endTime, pageIndex, pageSize);
+                result = await _app.CoursePackageUserList(coursePackageId, name, schedule, startTime, endTime, pageIndex, pageSize);
             }
             catch (Exception e)
             {
@@ -395,7 +395,26 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
-
+        /// <summary>
+        /// 删除课程
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> DeleteCourse(AddOrEditCourseReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.DeleteCourse(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
         /// <summary>
         /// 修改课程状态
         /// </summary>
@@ -420,7 +439,7 @@ namespace OpenAuth.WebApi.Controllers
 
         #region 课程视频
         /// <summary>
-        /// 
+        /// 课程添加视频
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
@@ -439,9 +458,11 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
         /// <summary>
         /// 课程视频列表
         /// </summary>
+        /// <param name="courseId"></param>
         /// <param name="name"></param>
         /// <param name="createUser"></param>
         /// <param name="startTime"></param>
@@ -449,12 +470,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="state"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> CourseVideoList(string name, string createUser, DateTime? startTime, DateTime? endTime, bool? state)
+        public async Task<TableData> CourseVideoList(int courseId, string name, string createUser, DateTime? startTime, DateTime? endTime, bool? state)
         {
             var result = new TableData();
             try
             {
-                result = await _app.CourseVideoList(name, createUser,startTime,endTime,state);
+                result = await _app.CourseVideoList(courseId,name, createUser, startTime, endTime, state);
             }
             catch (Exception e)
             {
@@ -539,6 +560,57 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 result = await _app.DeleteCourseVideoSubject(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        #endregion
+
+
+        #region  课程答题情况
+        /// <summary>
+        /// 用户课程视频列表
+        /// </summary>
+        /// <param name="appUserId"></param>
+        /// <param name="coursePackageId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> UserCourseVideoList(int appUserId, int coursePackageId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.UserCourseVideoList(appUserId, coursePackageId);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 考试试卷结果详情
+        /// </summary>
+        /// <param name="examId"></param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> UserVideoExamResult(int examId, int pageIndex = 1, int pageSize = 10)
+        {
+            var result = new TableData();
+            try
+            {
+                pageIndex = pageIndex <= 0 ? 1 : pageIndex;
+                pageSize = pageSize <= 0 ? 10 : pageSize;
+                result = await _app.UserVideoExamResult(examId, pageIndex, pageSize);
             }
             catch (Exception e)
             {
