@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace OpenAuth.WebApi.Controllers
 {
     /// <summary>
-    /// 
+    /// 必修课相关
     /// </summary>
     [Route("api/[controller]/[action]")]
     [ApiController]
