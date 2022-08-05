@@ -50,10 +50,9 @@ namespace OpenAuth.App.Hr
                                      .WhereIf(req.StartTime != null, c => c.CreateTime >= req.StartTime)
                                      .WhereIf(req.EndTime != null, c => c.CreateTime <= req.EndTime)
                                      .WhereIf(req.State != null, c => c.State == req.State)
-                                     .Where(a => a.State != -1)
                                      select a;
             result.Count = await query.CountAsync();
-            result.Data = await query.Skip((req.pageIndex - 1) * req.pageSize).Take(req.pageSize).ToListAsync();
+            result.Data = await query.OrderBy(a=> a.Sort).Skip((req.pageIndex - 1) * req.pageSize).Take(req.pageSize).ToListAsync();
             return result;
         }
 
@@ -65,17 +64,20 @@ namespace OpenAuth.App.Hr
         public async Task<TableData> AddOrModifySubjectByErp(AddOrEditSubjectReq req)
         {
             var result = new TableData();
-            var subjectPack = await UnitWork.Find<classroom_subject>(null).Where(c =>  c.Name == req.Name).AnyAsync();
-            if (subjectPack)
-            {
-                result.Code = 500;
-                result.Message = "专题名称已存在!";
-                return result;
-            }
+            var subjectPack = await UnitWork.Find<classroom_subject>(null).Where(c => c.Name == req.Name).FirstOrDefaultAsync();
+         
             var user = _auth.GetCurrentUser().User;
             if (req.Id > 0)
             {
-                var subject = await UnitWork.Find<classroom_subject>(null).Where(c => c.Id == req.Id).FirstAsync();
+                if (subjectPack != null && subjectPack.Id != req.Id )
+                {
+                    result.Code = 500;
+                    result.Message = "专题名称已存在!";
+                    return result;
+                }
+
+
+                var subject = await UnitWork.Find<classroom_subject>(null).Where(c => c.Id == req.Id).FirstOrDefaultAsync();
                 if (subject != null)
                 {
                     subject.Name = req.Name;
@@ -89,6 +91,14 @@ namespace OpenAuth.App.Hr
             }
             else
             {
+                if (subjectPack != null)
+                {
+                    result.Code = 500;
+                    result.Message = "专题名称已存在!";
+                    return result;
+                }
+
+
                 int? sort = await UnitWork.Find<classroom_subject>(null).MaxAsync(a => (int?)a.Sort);
                 if (sort == null)
                     sort = 0;
@@ -146,7 +156,7 @@ namespace OpenAuth.App.Hr
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task<TableData> GetSubjectCourseListByErp(GetSubjectListByErpReq req)
+        public async Task<TableData> GetSubjectCourseListByErp(GetSubjectCourseListByErpReq req)
         {
             var result = new TableData();
             var query =  (from a in UnitWork.Find<classroom_subject_course>(null)
@@ -154,9 +164,10 @@ namespace OpenAuth.App.Hr
                                      .WhereIf(!string.IsNullOrWhiteSpace(req.CreateUser), a => a.Name.Contains(req.CreateUser))
                                      .WhereIf(req.StartTime != null, c => c.CreateTime >= req.StartTime)
                                      .WhereIf(req.EndTime != null, c => c.CreateTime <= req.EndTime)
+                                     .Where(a => a.SubjectId == req.subjectId)
                                      select a);
             result.Count = await query.CountAsync();
-            result.Data = query.Skip((req.pageIndex - 1) * req.pageSize).Take(req.pageSize).ToListAsync();
+            result.Data = query.OrderBy(a => a.Sort).Skip((req.pageIndex - 1) * req.pageSize).Take(req.pageSize).ToListAsync();
             return result;
         }
 
@@ -168,17 +179,19 @@ namespace OpenAuth.App.Hr
         public async Task<TableData> AddOrModifySubjectCourseByErp(AddOrEditSubjectCourseReq req)
         {
             var result = new TableData();
-            var subjectPack = await UnitWork.Find<classroom_subject_course>(null).Where(c => c.Name == req.Name).AnyAsync();
-            if (subjectPack)
-            {
-                result.Code = 500;
-                result.Message = "专题课程名称已存在!";
-                return result;
-            }
+            var subjectPack = await UnitWork.Find<classroom_subject_course>(null).Where(c => c.Name == req.Name).FirstOrDefaultAsync();
+        
             var user = _auth.GetCurrentUser().User;
             if (req.Id > 0)
             {
-                var subject = await UnitWork.Find<classroom_subject_course>(null).Where(c => c.Id == req.Id).FirstAsync();
+                if (subjectPack != null && subjectPack.Id != req.Id)
+                {
+                    result.Code = 500;
+                    result.Message = "专题名称已存在!";
+                    return result;
+                }
+
+                var subject = await UnitWork.Find<classroom_subject_course>(null).Where(c => c.Id == req.Id).FirstOrDefaultAsync();
                 if (subject != null)
                 {
                     subject.Name = req.Name;
@@ -190,6 +203,13 @@ namespace OpenAuth.App.Hr
             }
             else
             {
+                if (subjectPack != null)
+                {
+                    result.Code = 500;
+                    result.Message = "专题名称已存在!";
+                    return result;
+                }
+
                 int? sort = await UnitWork.Find<classroom_subject_course>(null).MaxAsync(a => (int?)a.Sort);
                 if (sort == null)
                     sort = 0;
