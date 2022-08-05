@@ -17,7 +17,7 @@ namespace OpenAuth.App.Hr.Request
         public string CreateUser { get; set; }
 
         /// <summary>
-        /// 课程状态 -1=删除  0=关闭  1=开放
+        /// 课程状态  0=关闭  1=开放
         /// </summary>
         public int? State { get; set; }
 
@@ -31,10 +31,15 @@ namespace OpenAuth.App.Hr.Request
         /// </summary>
         public DateTime? EndTime { get; set; }
 
-
         public int pageIndex { get; set; }
         public int pageSize { get; set; }
-
-
     }
+    public class GetSubjectCourseListByErpReq : GetSubjectListByErpReq
+    {
+        public int subjectId { get; set; }
+    }
+
 }
+
+
+

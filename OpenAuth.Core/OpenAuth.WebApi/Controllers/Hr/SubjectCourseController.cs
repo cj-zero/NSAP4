@@ -109,7 +109,7 @@ namespace OpenAuth.WebApi.Controllers.Hr
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<TableData> GetSubjectCourseListByErp(GetSubjectListByErpReq req)
+        public async Task<TableData> GetSubjectCourseListByErp(GetSubjectCourseListByErpReq req)
         {
             var result = new TableData();
             try
