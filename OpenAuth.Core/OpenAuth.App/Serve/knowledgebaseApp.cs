@@ -190,7 +190,7 @@ namespace OpenAuth.App
                 var parent = await UnitWork.Find<KnowledgeBase>(k => k.ParentId == obj.ParentId && k.Rank == 3).OrderByDescending(c => c.Code).FirstOrDefaultAsync();
                 var ParentCode = parent.Code.Substring(0, 2);
                 var childCode = Convert.ToInt32(parent.Code.Substring(2, 3)) + 1;
-                obj.Code = ParentCode + childCode;
+                obj.Code = ParentCode + childCode.ToString().PadLeft(3, '0');
                 //if (parent == null)
                 //{
                 //    throw new Exception("无父级目录，请检查。");
@@ -229,7 +229,7 @@ namespace OpenAuth.App
                 var parent = await UnitWork.Find<KnowledgeBase>(k => k.ParentId == obj.ParentId && k.Rank == 3).OrderByDescending(c => c.Code).FirstOrDefaultAsync();
                 var ParentCode = parent.Code.Substring(0, 2);
                 var childCode = Convert.ToInt32(parent.Code.Substring(2, 3)) + 1;
-                obj.Code = ParentCode + childCode;
+                obj.Code = ParentCode + childCode.ToString().PadLeft(3, '0');
             }
             else
             {
