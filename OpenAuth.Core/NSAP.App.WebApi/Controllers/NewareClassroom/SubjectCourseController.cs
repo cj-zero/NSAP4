@@ -7,6 +7,10 @@ using System.Threading.Tasks;
 
 namespace NSAP.App.WebApi.Controllers.NewareClassroom
 {
+    /// <summary>
+    /// 专题系列课程相关
+    /// </summary>
+    [ApiController]
     public class SubjectCourseController : BaseController
     {
         private readonly SubjectCourseApp _app;
