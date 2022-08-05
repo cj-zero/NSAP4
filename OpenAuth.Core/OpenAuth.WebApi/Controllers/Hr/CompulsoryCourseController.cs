@@ -547,6 +547,57 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        #endregion
+
+
+        #region  课程答题情况
+        /// <summary>
+        /// 用户课程视频列表
+        /// </summary>
+        /// <param name="appUserId"></param>
+        /// <param name="coursePackageId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> UserCourseVideoList(int appUserId, int coursePackageId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.UserCourseVideoList(appUserId,coursePackageId);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 考试试卷结果详情
+        /// </summary>
+        /// <param name="examId"></param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> UserVideoExamResult(int examId, int pageIndex=1, int pageSize=10)
+        {
+            var result = new TableData();
+            try
+            {
+                pageIndex = pageIndex <= 0 ? 1 : pageIndex;
+                pageSize = pageSize <= 0 ? 10 : pageSize;
+                result = await _app.UserVideoExamResult(examId, pageIndex, pageSize);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
         #endregion
     }
 }
