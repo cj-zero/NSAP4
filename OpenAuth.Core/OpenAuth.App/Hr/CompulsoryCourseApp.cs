@@ -562,16 +562,18 @@ namespace OpenAuth.App
         /// <summary>
         /// 课程视频列表
         /// </summary>
+        /// <param name="courseId"></param>
         /// <param name="name"></param>
         /// <param name="createUser"></param>
         /// <param name="startTime"></param>
         /// <param name="endTime"></param>
         /// <param name="state"></param>
         /// <returns></returns>
-        public async Task<TableData> CourseVideoList(string name, string createUser, DateTime? startTime, DateTime? endTime, bool? state)
+        public async Task<TableData> CourseVideoList(int courseId, string name, string createUser, DateTime? startTime, DateTime? endTime, bool? state)
         {
             var result = new TableData();
             result.Data = await UnitWork.Find<classroom_course_video>(null)
+                  .Where(c => c.CourseId == courseId)
                   .WhereIf(!string.IsNullOrWhiteSpace(name), c => c.Name.Contains(name))
                   .WhereIf(!string.IsNullOrWhiteSpace(createUser), c => c.CreateUser.Contains(createUser))
                   .WhereIf(startTime != null, c => c.CreateTime >= startTime)
@@ -707,13 +709,13 @@ namespace OpenAuth.App
         /// <param name="pageIndex"></param>
         /// <param name="pageSize"></param>
         /// <returns></returns>
-        public async Task<TableData> UserVideoExamResult(int examId, int pageIndex,int pageSize)
+        public async Task<TableData> UserVideoExamResult(int examId, int pageIndex, int pageSize)
         {
             var result = new TableData();
             result.Data = await UnitWork.Find<classroom_course_exam_subject>(null)
                 .Where(c => c.ExaminationId == examId)
                 .OrderBy(c => c.Id)
-                .Skip((pageIndex-1)*pageSize).Take(pageSize)
+                .Skip((pageIndex - 1) * pageSize).Take(pageSize)
                 .ToListAsync();
             result.Count = await UnitWork.Find<classroom_course_exam_subject>(null).Where(c => c.ExaminationId == examId).CountAsync();
             return result;

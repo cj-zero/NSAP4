@@ -458,9 +458,11 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
         /// <summary>
         /// 课程视频列表
         /// </summary>
+        /// <param name="courseId"></param>
         /// <param name="name"></param>
         /// <param name="createUser"></param>
         /// <param name="startTime"></param>
@@ -468,12 +470,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="state"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> CourseVideoList(string name, string createUser, DateTime? startTime, DateTime? endTime, bool? state)
+        public async Task<TableData> CourseVideoList(int courseId, string name, string createUser, DateTime? startTime, DateTime? endTime, bool? state)
         {
             var result = new TableData();
             try
             {
-                result = await _app.CourseVideoList(name, createUser, startTime, endTime, state);
+                result = await _app.CourseVideoList(courseId,name, createUser, startTime, endTime, state);
             }
             catch (Exception e)
             {
