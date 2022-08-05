@@ -4208,8 +4208,8 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
         {
             StringBuilder str = new StringBuilder();
             str.Append("SELECT distinct a.DocEntry,a.CardCode,a.CardName,b.Name,b.Tel1,b.Tel2,b.Cellolar,b.Address,c.SlpName,c.Memo,a.Comments,d.PymntGroup,");
-            str.Append(" a.DocTotal,CONCAT('RMB',' ',ROUND(a.DocTotal,2)) ,DATE_FORMAT(a.DocDueDate,'%Y.%m.%d'),DATE_FORMAT(a.DocDate,'%Y.%m.%d'),a.U_ShipName,b.Fax,a.U_YGMD,a.Address2");
-            str.Append(" ,a.U_YSQX,a.BnkAccount,a.U_SL,a.NumAtCard,a.indicator, DATE_FORMAT(h.log_dt,'%Y.%m.%d'), a.DocCur,ROUND(a.DiscPrcnt,2) as DiscPrcnt,ROUND(a.DiscSum,2) as DiscSum");
+            str.Append(" a.DocTotal,CONCAT(e.Currency,' ',ROUND(IF(e.Currency = 'RMB',a.DocTotal,IFNUll(a.DocTotalFC,0.000000)),2))  ,DATE_FORMAT(a.DocDueDate,'%Y.%m.%d'),DATE_FORMAT(a.DocDate,'%Y.%m.%d'),a.U_ShipName,b.Fax,a.U_YGMD,a.Address2");
+            str.Append(" ,a.U_YSQX,a.BnkAccount,a.U_SL,a.NumAtCard,a.indicator, DATE_FORMAT(h.log_dt,'%Y.%m.%d'), a.DocCur,ROUND(a.DiscPrcnt,2) as DiscPrcnt,ROUND(IF(e.currency = 'RMB',a.DiscSum,(a.DiscSum/a.DocRate)),2) as DiscSum,a.DocRate ");
             str.AppendFormat(" FROM {0}.sale_oqut a ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_ocpr b on a.CntctCode=b.CntctCode and a.sbo_id=b.sbo_id and a.CardCode=b.CardCode ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_oslp c on a.SlpCode=c.SlpCode and a.sbo_id=c.sbo_id ", "nsap_bone");
@@ -4238,7 +4238,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
         public DataTable ExportViews(string sboid, string DocEntry)
         {
             StringBuilder str = new StringBuilder();
-            str.Append(" SELECT ROW_NUMBER() OVER (ORDER BY b.sbo_id) RowNum, b.sbo_id,b.ItemCode,b.Dscription,ROUND(b.Quantity,2),b.unitMsr,ROUND(b.Price,6),CONCAT(b.Currency,' ',ROUND(b.Quantity*b.Price,2))");
+            str.Append(" SELECT ROW_NUMBER() OVER (ORDER BY b.sbo_id) RowNum, b.sbo_id,b.ItemCode,b.Dscription,ROUND(b.Quantity,2),b.unitMsr,ROUND(b.Price,6),ROUND(b.Quantity*b.Price,2)");
             str.AppendFormat(" from {0}.sale_qut1  b ", "nsap_bone");
             str.AppendFormat(" LEFT JOIN {0}.sale_oqut a on b.DocEntry=a.DocEntry and b.sbo_id=a.sbo_id ", "nsap_bone");
             str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1} ", DocEntry, sboid);
@@ -4252,13 +4252,12 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
         public DataTable ExportTotalAmount(string sboid, string DocEntry)
         {
             StringBuilder str = new StringBuilder();
-            str.Append(" SELECT ROUND(SUM(c.Quantity * c.Price),2) AS TotalAmount FROM (");
-            str.Append(" SELECT ROW_NUMBER() OVER (ORDER BY b.sbo_id) RowNum, b.sbo_id,b.ItemCode,b.Dscription,ROUND(b.Quantity,2) AS Quantity,b.unitMsr,ROUND(b.Price,6) AS Price,CONCAT(b.Currency,' ',ROUND(b.Quantity*b.Price,2))");
+            str.Append(" SELECT CONCAT(c.Currency,' ', ROUND( SUM( c.Quantity * c.Price ), 2 )) AS TotalAmount  FROM (");
+            str.Append(" SELECT ROW_NUMBER() OVER (ORDER BY b.sbo_id) RowNum, b.sbo_id,b.ItemCode,b.Currency,b.Dscription,ROUND(b.Quantity,2) AS Quantity,b.unitMsr,ROUND(b.Price,6) AS Price,CONCAT(b.Currency,' ',ROUND(b.Quantity*b.Price,2))");
             str.AppendFormat(" from {0}.sale_qut1  b ", "nsap_bone");
             str.AppendFormat(" LEFT JOIN {0}.sale_oqut a on b.DocEntry=a.DocEntry and b.sbo_id=a.sbo_id ", "nsap_bone");
             str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1} ) c", DocEntry, sboid);
             return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, str.ToString(), CommandType.Text, null);
-
         }
         #endregion
         #region 判断审核里是否已经提交该单据
@@ -10127,8 +10126,8 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
         {
             StringBuilder str = new StringBuilder();
             str.Append("SELECT distinct a.DocEntry,a.CardCode,a.CardName,b.Name,b.Tel1,b.Tel2,b.Cellolar,b.Address,c.SlpName,c.Memo,a.Comments,d.PymntGroup,");
-            str.Append(" a.DocTotal,CONCAT('RMB',' ',ROUND(a.DocTotal,2)) as curtotal ,DATE_FORMAT(a.DocDueDate,'%Y.%m.%d %H:%i') as DocDueDate,DATE_FORMAT(a.DocDate,'%Y.%m.%d') as DocDate,a.U_ShipName,b.Fax,a.U_YGMD,a.Address2,a.U_YSQX,a.BnkAccount,f.HouseBank,CONCAT(ROUND(a.U_SL,0),'%')U_SL,a.NumAtCard ");
-            str.Append(" ,a.DiscSum,a.DiscSumFC,a.DocTotalFC,a.DocCur, DATE_FORMAT(k.log_dt,'%Y.%m.%d') as logdt, a.Indicator,ROUND(a.DiscSum,2) as DiscSumT,ROUND(a.DiscPrcnt,2) as DiscPrcnt ");
+            str.Append(" a.DocTotal,CONCAT(e.Currency,' ',ROUND(IF(e.Currency = 'RMB',a.DocTotal,IFNUll(a.DocTotalFC,0.000000)),2)) as curtotal ,DATE_FORMAT(a.DocDueDate,'%Y.%m.%d %H:%i') as DocDueDate,DATE_FORMAT(a.DocDate,'%Y.%m.%d') as DocDate,a.U_ShipName,b.Fax,a.U_YGMD,a.Address2,a.U_YSQX,a.BnkAccount,f.HouseBank,CONCAT(ROUND(a.U_SL,0),'%')U_SL,a.NumAtCard ");
+            str.Append(" ,a.DiscSum,a.DiscSumFC,a.DocTotalFC,a.DocCur, DATE_FORMAT(k.log_dt,'%Y.%m.%d') as logdt, a.Indicator,ROUND(IF(e.Currency = 'RMB',a.DiscSum,(a.DiscSum/a.DocRate)),2) as DiscSumT,ROUND(a.DiscPrcnt,2) as DiscPrcnt ");
             str.AppendFormat(" FROM {0}.sale_ordr a ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_ocpr b on a.CntctCode=b.CntctCode and a.sbo_id=b.sbo_id and a.CardCode=b.CardCode ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_oslp c on a.SlpCode=c.SlpCode and a.sbo_id=c.sbo_id ", "nsap_bone");
@@ -10190,8 +10189,8 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
         public DataTable OrderExportTotalAmount(string sboid, string DocEntry)
         {
             StringBuilder str = new StringBuilder();
-            str.Append(" SELECT ROUND(SUM(c.Quantity * c.Price),2) AS TotalAmount FROM (");
-            str.Append(" SELECT  ROW_NUMBER() OVER (ORDER BY b.sbo_id) RowNum, b.sbo_id,b.ItemCode,b.Dscription,ROUND(b.Quantity,2) AS Quantity,b.unitMsr,ROUND(b.Price,6) AS Price,ROUND(b.Quantity*b.Price,2),b.Currency ");
+            str.Append(" SELECT  CONCAT(c.Currency,' ', ROUND( SUM( c.Quantity * c.Price ), 2 )) AS TotalAmount FROM (");
+            str.Append(" SELECT  ROW_NUMBER() OVER (ORDER BY b.sbo_id) RowNum, b.sbo_id,b.ItemCode,b.Currency,b.Dscription,ROUND(b.Quantity,2) AS Quantity,b.unitMsr,ROUND(b.Price,6) AS Price,ROUND(b.Quantity*b.Price,2) ");
             str.AppendFormat(" from {0}.sale_rdr1  b ", "nsap_bone");
             str.AppendFormat(" LEFT JOIN {0}.sale_ordr a on b.DocEntry=a.DocEntry and b.sbo_id=a.sbo_id ", "nsap_bone");
             str.AppendFormat(" where a.DocEntry={0} and a.sbo_id={1} ) c", DocEntry, sboid);
