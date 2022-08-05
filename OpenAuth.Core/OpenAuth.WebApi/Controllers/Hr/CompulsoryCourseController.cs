@@ -275,12 +275,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="pageSize"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> CoursePackageUserList(int coursePackageId, string name, decimal? schedule, DateTime? startTime, DateTime? endTime,int pageIndex=1,int pageSize=10)
+        public async Task<TableData> CoursePackageUserList(int coursePackageId, string name, decimal? schedule, DateTime? startTime, DateTime? endTime, int pageIndex = 1, int pageSize = 10)
         {
             var result = new TableData();
             try
             {
-                result = await _app.CoursePackageUserList(coursePackageId,name,schedule,startTime,endTime, pageIndex, pageSize);
+                result = await _app.CoursePackageUserList(coursePackageId, name, schedule, startTime, endTime, pageIndex, pageSize);
             }
             catch (Exception e)
             {
@@ -395,7 +395,26 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
-
+        /// <summary>
+        /// 删除课程
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> DeleteCourse(AddOrEditCourseReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.DeleteCourse(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
         /// <summary>
         /// 修改课程状态
         /// </summary>
@@ -454,7 +473,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result = await _app.CourseVideoList(name, createUser,startTime,endTime,state);
+                result = await _app.CourseVideoList(name, createUser, startTime, endTime, state);
             }
             catch (Exception e)
             {
@@ -564,7 +583,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-                result = await _app.UserCourseVideoList(appUserId,coursePackageId);
+                result = await _app.UserCourseVideoList(appUserId, coursePackageId);
             }
             catch (Exception e)
             {
@@ -582,7 +601,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="pageSize"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> UserVideoExamResult(int examId, int pageIndex=1, int pageSize=10)
+        public async Task<TableData> UserVideoExamResult(int examId, int pageIndex = 1, int pageSize = 10)
         {
             var result = new TableData();
             try

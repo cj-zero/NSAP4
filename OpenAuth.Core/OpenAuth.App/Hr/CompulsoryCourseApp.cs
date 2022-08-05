@@ -480,6 +480,26 @@ namespace OpenAuth.App
             }
             return result;
         }
+        /// <summary>
+        /// 删除课程
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> DeleteCourse(AddOrEditCourseReq req)
+        {
+            var result = new TableData();
+            var isExist = await UnitWork.Find<classroom_course_package_map>(null).AnyAsync(c => c.CourseId == req.id);
+            if (isExist)
+            {
+                result.Code = 500;
+                result.Message = "课程正在使用无法删除!";
+                return result;
+            }
+            var model = await UnitWork.Find<classroom_course>(null).FirstOrDefaultAsync(c => c.Id == req.id);
+            await UnitWork.DeleteAsync(model);
+            await UnitWork.SaveAsync();
+            return result;
+        }
 
         /// <summary>
         /// 修改课程状态
