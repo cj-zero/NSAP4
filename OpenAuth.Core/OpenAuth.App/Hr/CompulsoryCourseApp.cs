@@ -695,6 +695,7 @@ namespace OpenAuth.App
                 .OrderBy(c => c.Id)
                 .Skip((pageIndex-1)*pageSize).Take(pageSize)
                 .ToListAsync();
+            result.Count = await UnitWork.Find<classroom_course_exam_subject>(null).Where(c => c.ExaminationId == examId).CountAsync();
             return result;
         }
 

@@ -420,7 +420,7 @@ namespace OpenAuth.WebApi.Controllers
 
         #region 课程视频
         /// <summary>
-        /// 
+        /// 课程添加视频
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>

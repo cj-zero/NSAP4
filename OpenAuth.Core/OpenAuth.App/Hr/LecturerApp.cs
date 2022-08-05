@@ -346,6 +346,18 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 讲师详情
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<TableData> TeacherDetail(int id)
+        {
+            var result = new TableData();
+            result.Data = await UnitWork.Find<classroom_teacher_apply_log>(null).Where(c => c.Id == id).FirstOrDefaultAsync();
+            return result;
+        }
+
+        /// <summary>
         /// 编辑讲师信息
         /// </summary>
         /// <param name="req"></param>
