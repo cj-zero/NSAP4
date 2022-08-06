@@ -4,14 +4,14 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace OpenAuth.Repository.Domain.Hr
+namespace OpenAuth.Repository.Domain
 {
 
     /// <summary>
     /// 职工加入申请记录
     /// </summary>
-    [Table("employee_apply_log")]
-    public class employee_apply_log : BaseEntity<int>
+    [Table("classroom_employee_apply_log")]
+    public class classroom_employee_apply_log : BaseEntity<int>
     {
         /// <summary>
         /// 姓名
@@ -29,9 +29,14 @@ namespace OpenAuth.Repository.Domain.Hr
          public int Sex { get; set; }
 
         /// <summary>
+        /// 年龄
+        /// </summary>
+        public int Age { get; set; }
+
+        /// <summary>
         /// 生日
         /// </summary>
-        public DateTime? Birthday { get; set; }
+        public DateTime Birthdate { get; set; }
 
         /// <summary>
         /// App用户id
@@ -43,10 +48,16 @@ namespace OpenAuth.Repository.Domain.Hr
         /// </summary>
         public string GraduationSchool { get; set; }
 
+
         /// <summary>
-        /// 简历地址
+        /// 简历文件名
         /// </summary>
-        public string ResumeUrl { get; set; }
+        public string ResumeFileName { get; set; }
+
+        /// <summary>
+        /// 简历文件地址
+        /// </summary>
+        public string ResumeFilePath { get; set; }
 
         /// <summary>
         /// 审核状态(1:未审核 2:审核已通过 3:已驳回 4.封禁)
