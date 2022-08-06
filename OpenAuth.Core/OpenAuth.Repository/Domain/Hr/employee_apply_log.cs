@@ -4,62 +4,68 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace OpenAuth.Repository.Domain
+namespace OpenAuth.Repository.Domain.Hr
 {
+
     /// <summary>
-    /// 讲师开课课程表
+    /// 职工加入申请记录
     /// </summary>
-    [Table("classroom_teacher_course")]
-    public class classroom_teacher_course : BaseEntity<int>
+    [Table("employee_apply_log")]
+    public class employee_apply_log : BaseEntity<int>
     {
         /// <summary>
-        /// 标题
+        /// 姓名
         /// </summary>
-        public string Title { get; set; }
+        public string Name { get; set; }
+
         /// <summary>
-        /// 开始时间
+        /// 手机号码
         /// </summary>
-        public DateTime StartTime { get; set; }
+        public string Mobile { get; set; }
+
         /// <summary>
-        /// 结束时间
+        /// 性别 1:男 2:女
         /// </summary>
-        public DateTime EndTime { get; set; }
+         public int Sex { get; set; }
+
         /// <summary>
-        /// 使用人群
+        /// 生日
         /// </summary>
-        public string ForTheCrowd { get; set; }
+        public DateTime? Birthday { get; set; }
+
         /// <summary>
-        /// 教学方式 1:线下 2:线上
-        /// </summary>
-        public int TeachingMethod { get; set; }
-        /// <summary>
-        /// 教学地址
-        /// </summary>
-        public string TeachingAddres { get; set; }
-        /// <summary>
-        /// 开播用户
+        /// App用户id
         /// </summary>
         public int AppUserId { get; set; }
+
         /// <summary>
-        /// 背景图
+        /// 毕业学校
         /// </summary>
-        public string BackgroundImage { get; set; }
+        public string GraduationSchool { get; set; }
+
         /// <summary>
-        /// 视频地址
+        /// 简历地址
         /// </summary>
-        public string VideoUrl { get; set; }
+        public string ResumeUrl { get; set; }
+
         /// <summary>
-        /// 审核状态 1:未审核 2:审核已通过 3:已驳回 4:封禁
+        /// 审核状态(1:未审核 2:审核已通过 3:已驳回 4.封禁)
         /// </summary>
         public int AuditState { get; set; }
+
         /// <summary>
-        /// 申请时间
+        /// 创建时间
         /// </summary>
         public DateTime CreateTime { get; set; }
         /// <summary>
-        /// 观看次数
+        /// 修改时间
         /// </summary>
-        public int ViewedCount { get; set; }
+        public DateTime? UpdateTime { get; set; }
+
+        /// <summary>
+        /// 修改人
+        /// </summary>
+        public string UpdateUser { get; set; }
 
         /// <summary>
         /// 
@@ -75,5 +81,6 @@ namespace OpenAuth.Repository.Domain
         {
             return Id == 0;
         }
+
     }
 }
