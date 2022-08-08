@@ -193,7 +193,7 @@ namespace OpenAuth.App
                                  join b in UnitWork.Find<classroom_course_package_map>(null) on a.Id equals b.CoursePackageId
                                  join c in UnitWork.Find<classroom_course>(null) on b.CourseId equals c.Id
                                  where a.Id == coursePackageId
-                                 select new { c.Name, c.Source, c.LearningCycle, c.State, b.Sort, b.Id })
+                                 select new { c.Name, c.Source, c.LearningCycle, c.State, b.Sort, b.Id})
                                .OrderBy(c => c.Sort)
                                .ToListAsync();
             return result;
@@ -209,7 +209,7 @@ namespace OpenAuth.App
             var result = new TableData();
             List<classroom_course_package_map> list = new List<classroom_course_package_map>();
             var courseIds = await UnitWork.Find<classroom_course_package_map>(null).Where(c => req.CourseIds.Contains(c.CourseId) && c.CoursePackageId == req.CoursePackageId).Select(c => c.CourseId).ToListAsync();
-            int sort = await UnitWork.Find<classroom_course_package_map>(null).Where(c => c.CoursePackageId == req.CoursePackageId).Select(c => c.Sort).MaxAsync();
+            int sort = await UnitWork.Find<classroom_course_package_map>(null).Where(c => c.CoursePackageId == req.CoursePackageId).OrderByDescending(c => c.Sort).Select(c => c.Sort).FirstOrDefaultAsync();
             foreach (var item in req.CourseIds)
             {
                 if (courseIds.Contains(item))
@@ -237,7 +237,7 @@ namespace OpenAuth.App
         public async Task<TableData> DeleteCourseIntoCoursePackage(CourseForCoursePackageReq req)
         {
             var result = new TableData();
-            var courseList = await UnitWork.Find<classroom_course_package_map>(null).Where(c => req.CourseIds.Contains(c.CourseId) && c.CoursePackageId == req.CoursePackageId).ToListAsync();
+            var courseList = await UnitWork.Find<classroom_course_package_map>(null).Where(c => req.CourseIds.Contains(c.Id) && c.CoursePackageId == req.CoursePackageId).ToListAsync();
             await UnitWork.BatchDeleteAsync(courseList.ToArray());
             await UnitWork.SaveAsync();
             return result;
