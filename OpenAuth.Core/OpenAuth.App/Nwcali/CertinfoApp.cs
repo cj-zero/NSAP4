@@ -511,9 +511,19 @@ namespace OpenAuth.App
                                     CertInfoId = id,
                                     Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}批准证书。"
                                 });
-                                await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { ApprovalDirector = loginContext.User.Name, ApprovalDirectorId = loginContext.User.Id});
+                                await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { ApprovalDirector = loginContext.User.Name, ApprovalDirectorId = loginContext.User.Id });
                                 await UnitWork.SaveAsync();
                                 //await CreateNwcailFile(certNo);
+                            }
+                            else if (flowInstance.ActivityName.Equals("开始") && flowInstance.IsFinish == -1)
+                            {
+                                await _flowInstanceApp.Verification(req.Verification);
+                                await _flowInstanceApp.Verification(req.Verification);
+                                await _certOperationHistoryApp.AddAsync(new AddOrUpdateCertOperationHistoryReq
+                                {
+                                    CertInfoId = id,
+                                    Action = $"{DateTime.Now:yyyy.MM.dd HH:mm} {loginContext.User.Name}送审证书。"
+                                });
                             }
                             #endregion
                             break;
@@ -1622,6 +1632,7 @@ namespace OpenAuth.App
             return result;
         }
 
+        #region 品质
         /// <summary>
         /// 查询生产订单
         /// </summary>
@@ -1645,7 +1656,7 @@ namespace OpenAuth.App
                         join c in UnitWork.Find<crm_oslp>(null)
                         on new { b.SlpCode, b.sbo_id } equals new { SlpCode = (short?)c.SlpCode, sbo_id = c.sbo_id.Value } into bc
                         from c in bc.DefaultIfEmpty()
-                        select new { a.DocEntry, a.ItemCode, ItemName = a.txtitemName, a.PlannedQty, OrgName = a.U_WO_LTDW, SaleOrderNo = a.OriginAbs, c.SlpName };
+                        select new { a.DocEntry, a.ItemCode, ItemName = a.txtitemName, a.PlannedQty, a.CmpltQty, Status = "", OrgName = a.U_WO_LTDW, SaleOrderNo = a.OriginAbs, c.SlpName };
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
                 query = query.Where(c => c.OrgName.Contains(loginOrg.Name));
@@ -1682,6 +1693,16 @@ namespace OpenAuth.App
             result.Data = data;
             return result;
         }
+
+        public async Task GenerateWO(int docEntry)
+        {
+            var owor = await UnitWork.Find<product_owor>(c => c.DocEntry == docEntry).Select(c => new { c.DocEntry, c.PlannedQty }).FirstOrDefaultAsync();
+            for (int i = 0; i < owor.PlannedQty; i++)
+            {
+
+            }
+        }
+        #endregion
 
         /// <summary>
         /// 生产唯一码下设备是否校准
@@ -2331,7 +2352,7 @@ namespace OpenAuth.App
                                     Sort1 = item.Key,
                                     Sort2 = cvData.Channel,
                                     Channel = CHH,
-                                    Range = baseInfo.TesterModel.Contains("mA") ? Range.ToString() : ((double)Range / 1000).ToString(),
+                                    Range = baseInfo.TesterModel.Contains("mA") ? Range.ToString() : ((decimal)Range / 1000).ToString(),
                                     Indication = IndicationReduce,
                                     MeasuredValue = MeasuredValueReduce,
                                     Error = ErrorReduce,
@@ -2347,7 +2368,7 @@ namespace OpenAuth.App
                                     Sort1 = item.Key,
                                     Sort2 = cvData.Channel,
                                     Channel = CHH,
-                                    Range = baseInfo.TesterModel.Contains("mA") ? Range.ToString() : ((double)Range / 1000).ToString(),
+                                    Range = baseInfo.TesterModel.Contains("mA") ? Range.ToString() : ((decimal)Range / 1000).ToString(),
                                     Indication = IndicationReduce,
                                     MeasuredValue = MeasuredValueReduce,
                                     Error = ErrorReduce,
