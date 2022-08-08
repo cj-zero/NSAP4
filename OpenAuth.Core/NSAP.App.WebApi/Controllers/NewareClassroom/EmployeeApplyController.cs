@@ -49,11 +49,11 @@ namespace NSAP.App.WebApi.Controllers.NewareClassroom
             return result;
         }
 
-       
+
         /// <summary>
         /// 个人简历上传
         /// </summary>
-        /// <param name="files"></param>
+        /// <param name="file"></param>
         /// <returns></returns>
         [HttpPost]
         public async Task<TableData> UploadResume(IFormFile file)
@@ -78,11 +78,11 @@ namespace NSAP.App.WebApi.Controllers.NewareClassroom
                     result.Message = "上传的文件没有后缀";
                     return result;
                 }
-                const string fileFilt = ".pdf";
+                const string fileFilt = ".pdf|.gif|.jpg|.jpeg|.png|.heic";
                 if (fileFilt.IndexOf(fileExtension.ToLower(), StringComparison.Ordinal) <= -1)
                 {
                     result.Code = 500;
-                    result.Message = "请上传pdf格式的文档";
+                    result.Message = "请上传pdf格式的文档或jpg、png、gif格式的简历图片";
                     return result;
                 }
                 //判断文件大小    
@@ -102,16 +102,6 @@ namespace NSAP.App.WebApi.Controllers.NewareClassroom
             }
             return result;
         }
-
-
-
-
-
-
-
-
-
-
 
     }
 }

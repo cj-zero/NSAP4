@@ -807,7 +807,7 @@ namespace OpenAuth.App
                                 {
                                     if (dt >= EndTime)
                                     {
-                                        courseState = 3;
+                                        courseState = 1;
                                     }
                                     else
                                     {
