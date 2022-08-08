@@ -35,7 +35,11 @@ namespace OpenAuth.Repository.Domain.Hr
         /// 排序
         /// </summary>
         public int Sort { get; set; }
-        
+
+        /// <summary>
+        /// 浏览次数
+        /// </summary>
+        public int ViewNumbers { get; set; }
         /// <summary>
         /// 内容
         /// </summary>

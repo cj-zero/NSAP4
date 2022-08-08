@@ -48,12 +48,12 @@ namespace NSAP.App.WebApi.Controllers.NewareClassroom
         /// <param name="subjectId">专题Id</param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> ClassroomSubjectCourseList(int appUserId, int subjectId)
+        public async Task<TableData> ClassroomSubjectCourseList(int appUserId, int subjectId,string name)
         {
             var result = new TableData();
             try
             {
-                result = await _app.ClassroomSubjectCourseList(appUserId, subjectId);
+                result = await _app.ClassroomSubjectCourseList(appUserId, subjectId, name);
             }
             catch (Exception e)
             {
@@ -76,6 +76,48 @@ namespace NSAP.App.WebApi.Controllers.NewareClassroom
                 result = await _app.UpdateCourseRecord(req);
             }
             
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 修改专题观看次数
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> UpdateSubjectViewNumber(int subjectId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.UpdateSubjectViewNumber(subjectId);
+            }
+
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 修改课程观看次数
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> UpdateCourseViewNumber(int courseId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.UpdateCourseViewNumber(courseId);
+            }
+
             catch (Exception e)
             {
                 result.Code = 500;
