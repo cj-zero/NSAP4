@@ -46,11 +46,6 @@ namespace OpenAuth.Repository.Domain.Hr
         public string Content { get; set; }
 
         /// <summary>
-        /// 浏览次数
-        /// </summary>
-        public int ViewNumbers { get; set; }
-
-        /// <summary>
         /// 专题状态     0=下架  1=上架
         /// </summary>
         public int State { get; set; }
