@@ -1,35 +1,41 @@
-﻿using OpenAuth.Repository.Core;
+﻿using OpenAuth.Repository.Domain;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace OpenAuth.Repository.Domain
+namespace OpenAuth.App.Hr
 {
     /// <summary>
-    /// 讲师开课课程表
+    /// 直播/回放 视频
     /// </summary>
-    [Table("classroom_teacher_course")]
-    public class classroom_teacher_course : BaseEntity<int>
+    public  class TeacherCourseResp
     {
         /// <summary>
-        /// 标题
+        /// Id
+        /// </summary>
+        public int Id { get; set; }
+
+        /// <summary>
+        /// 视频标题
         /// </summary>
         public string Title { get; set; }
+
         /// <summary>
-        /// 开始时间
+        /// 讲师名字
         /// </summary>
-        public DateTime StartTime { get; set; }
+        public string Name { get; set; }
+
         /// <summary>
-        /// 结束时间
+        /// 部门
         /// </summary>
-        public DateTime EndTime { get; set; }
+        public string Department { get; set; }
+
         /// <summary>
         /// 使用人群
         /// </summary>
         public string ForTheCrowd { get; set; }
         /// <summary>
-        /// 教学方式 1:线下 2:线上
+        /// 教学方式 1: 线下, 2：线上
         /// </summary>
         public int TeachingMethod { get; set; }
         /// <summary>
@@ -48,32 +54,43 @@ namespace OpenAuth.Repository.Domain
         /// 视频地址
         /// </summary>
         public string VideoUrl { get; set; }
-        /// <summary>
-        /// 审核状态 1:未审核 2:审核已通过 3:已驳回 4:封禁
-        /// </summary>
-        public int AuditState { get; set; }
-        /// <summary>
-        /// 申请时间
-        /// </summary>
-        public DateTime CreateTime { get; set; }
+
         /// <summary>
         /// 观看次数
         /// </summary>
         public int ViewedCount { get; set; }
 
         /// <summary>
-        /// 
+        /// 开始时间
         /// </summary>
-        public override void GenerateDefaultKeyVal()
-        {
-        }
+        public string StartTime { get; set; }
+
         /// <summary>
-        /// 
+        /// 结束时间
         /// </summary>
-        /// <returns></returns>
-        public override bool KeyIsNull()
-        {
-            return Id == 0;
-        }
+        public string EndTime { get; set; }
+
+        /// <summary>
+        /// 开始时分
+        /// </summary>
+        public string StartHourMinute { get; set; }
+
+        /// <summary>
+        /// 结束时分
+        /// </summary>
+        public string EndHourMinute { get; set; }
+
     }
+
+    /// <summary>
+    /// 讲师开课状态标记
+    /// </summary>
+    public class teacher_course_sign : classroom_teacher_course
+    {
+        /// <summary>
+        /// 排序值
+        /// </summary>
+        public int Sign { get; set; }
+    }
+
 }

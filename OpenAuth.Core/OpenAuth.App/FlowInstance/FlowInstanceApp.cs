@@ -799,7 +799,7 @@ namespace OpenAuth.App
                 FromNodeName = wfruntime.currentNode.name,
                 FromNodeType = wfruntime.currentNodeType,
                 ToNodeId = wfruntime.nextNodeId,
-                ToNodeName = wfruntime.nextNode.name,
+                ToNodeName = wfruntime.nextNode == null ? "" : wfruntime.nextNode.name,
                 ToNodeType = wfruntime.nextNodeType,
                 IsFinish = wfruntime.nextNodeType == 4 ? 1 : 0,
                 TransitionSate = 0

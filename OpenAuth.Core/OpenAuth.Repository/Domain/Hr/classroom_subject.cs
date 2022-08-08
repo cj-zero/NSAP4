@@ -8,7 +8,7 @@ namespace OpenAuth.Repository.Domain.Hr
 {
 
     /// <summary>
-    /// 专题表
+    /// 专题系列表
     /// </summary>
     [Table("classroom_subject")]
     public class classroom_subject : BaseEntity<int>
@@ -22,7 +22,7 @@ namespace OpenAuth.Repository.Domain.Hr
         /// </summary>
         public int ViewNumbers { get; set; }
         /// <summary>
-        /// 专题状态     0=关闭  1=开放
+        /// 专题状态     0=下架  1=上架
         /// </summary>
         public int State { get; set; }
         /// <summary>

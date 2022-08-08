@@ -579,7 +579,7 @@ namespace OpenAuth.App
                   .WhereIf(startTime != null, c => c.CreateTime >= startTime)
                   .WhereIf(endTime != null, c => c.CreateTime <= endTime)
                   .WhereIf(state != null, c => c.State == state)
-                  .Select(c => new { c.Id, c.Name, c.CreateTime, c.Duration, c.ViewedCount, c.State, c.VideoUrl })
+                  .Select(c => new { c.Id, c.Name, c.CreateTime, c.Duration, c.ViewedCount, c.State, c.VideoUrl,c.CreateUser })
                   .OrderByDescending(c => c.Id)
                   .ToListAsync();
             return result;

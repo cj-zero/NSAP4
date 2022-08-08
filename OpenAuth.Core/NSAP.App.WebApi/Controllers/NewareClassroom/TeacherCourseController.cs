@@ -1,41 +1,44 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using OpenAuth.App;
 using OpenAuth.App.Hr;
-using OpenAuth.App.Hr.Request;
 using OpenAuth.App.Response;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace NSAP.App.WebApi.Controllers.NewareClassroom
 {
+
     /// <summary>
-    /// 专题系列课程相关
+    /// 直播视频相关
     /// </summary>
     [ApiController]
-    public class SubjectCourseController : BaseController
+    public class TeacherCourseController : BaseController
     {
-        private readonly SubjectCourseApp _app;
+
+        private TeacherCourseApp _app;
+
         /// <summary>
         /// 
         /// </summary>
         /// <param name="app"></param>
-        public SubjectCourseController(SubjectCourseApp app)
+        public TeacherCourseController(TeacherCourseApp app)
         {
-            _app = app;
+            this._app = app;
         }
 
         /// <summary>
-        /// 专题列表
+        ///  推荐老师
         /// </summary>
-        /// <param name="appUserId"></param>
-        /// <param name="name">专题名</param>
+        /// <param name="limit"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> ClassroomSubjectList(int appUserId, string name)
+        public async Task<TableData> RecommendTeachers( int limit = 6)
         {
             var result = new TableData();
             try
             {
-                result = await _app.ClassroomSubjectList(appUserId, name);
+                result = await _app.RecommendTeachers(limit);
             }
             catch (Exception e)
             {
@@ -46,18 +49,19 @@ namespace NSAP.App.WebApi.Controllers.NewareClassroom
         }
 
         /// <summary>
-        /// 专题课程列表
+        ///  直播预告
         /// </summary>
         /// <param name="appUserId"></param>
-        /// <param name="subjectId">专题Id</param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> ClassroomSubjectCourseList(int appUserId, int subjectId,string name)
+        public async Task<TableData> TeacherCourseAdvanceNotice(int appUserId,int pageIndex = 1, int pageSize = 10)
         {
             var result = new TableData();
             try
             {
-                result = await _app.ClassroomSubjectCourseList(appUserId, subjectId, name);
+                result = await _app.TeacherCourseAdvanceNotice(appUserId,pageIndex, pageSize);
             }
             catch (Exception e)
             {
@@ -66,20 +70,40 @@ namespace NSAP.App.WebApi.Controllers.NewareClassroom
             }
             return result;
         }
+
         /// <summary>
-        /// 修改课程观看记录
+        ///  直播回放
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> TeacherCoursePlayBack(int pageIndex = 1, int pageSize = 10)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.TeacherCoursePlayBack(pageIndex, pageSize);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 保存观看记录
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<TableData> UpdateCourseRecord(SubjectCourseRecordReq req)
+        public async Task<TableData> SavePlayLog(TeacherCoursePlayLogReq req)
         {
             var result = new TableData();
             try
             {
-                result = await _app.UpdateCourseRecord(req);
+                result = await _app.SavePlayLog(req);
             }
-            
             catch (Exception e)
             {
                 result.Code = 500;
@@ -87,41 +111,21 @@ namespace NSAP.App.WebApi.Controllers.NewareClassroom
             }
             return result;
         }
+
         /// <summary>
-        /// 修改专题观看次数
+        /// 讲师视频点击埋点
         /// </summary>
-        /// <param name="req"></param>
+        /// <param name="id">讲师视频id</param>
         /// <returns></returns>
+
         [HttpGet]
-        public async Task<TableData> UpdateSubjectViewNumber(int subjectId)
+        public async Task<TableData> TeacherCourseBuriedPoint(int id)
         {
             var result = new TableData();
             try
             {
-                result = await _app.UpdateSubjectViewNumber(subjectId);
+                result = await _app.TeacherCourseBuriedPoint(id);
             }
-
-            catch (Exception e)
-            {
-                result.Code = 500;
-                result.Message = e.Message;
-            }
-            return result;
-        }
-        /// <summary>
-        /// 修改课程观看次数
-        /// </summary>
-        /// <param name="req"></param>
-        /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> UpdateCourseViewNumber(int courseId)
-        {
-            var result = new TableData();
-            try
-            {
-                result = await _app.UpdateCourseViewNumber(courseId);
-            }
-
             catch (Exception e)
             {
                 result.Code = 500;
