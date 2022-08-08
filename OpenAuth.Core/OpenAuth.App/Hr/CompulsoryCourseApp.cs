@@ -360,11 +360,11 @@ namespace OpenAuth.App
                 var schedules = i / courseList.Count;
                 if (schedule != null && schedule == schedules)
                 {
-                    list.Add(new { userInfo.Name, item.CreateTime, endTimes, item.Id, item.AppUserId });
+                    list.Add(new { userInfo.Name, item.CreateTime, endTimes, schedules, item.Id, item.AppUserId });
                 }
                 else
                 {
-                    list.Add(new { userInfo.Name, item.CreateTime, endTimes, item.Id, item.AppUserId });
+                    list.Add(new { userInfo.Name, item.CreateTime, endTimes, schedules, item.Id, item.AppUserId });
                 }
             }
             result.Data = list.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
