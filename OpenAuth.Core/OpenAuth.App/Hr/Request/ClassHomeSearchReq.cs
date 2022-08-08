@@ -20,6 +20,9 @@ namespace OpenAuth.App.Hr
         /// </summary>
         public int type { get; set; }
 
+        /// <summary>
+        /// 关键词
+        /// </summary>
         public string  key { get; set; }
 
         /// <summary>
