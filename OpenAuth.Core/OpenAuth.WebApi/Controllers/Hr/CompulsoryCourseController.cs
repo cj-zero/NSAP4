@@ -40,7 +40,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="pageSize"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> CoursePackageList(string name, string createUser, DateTime? startTime, DateTime? endTime, bool state, int pageIndex, int pageSize)
+        public async Task<TableData> CoursePackageList(string name, string createUser, DateTime? startTime, DateTime? endTime, int? state, int pageIndex, int pageSize)
         {
             var result = new TableData();
             try
@@ -325,7 +325,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="pageSize"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> CourseList(string name, string createUser, int? learningCycle, DateTime? startTime, DateTime? endTime, bool? state, int? source, int pageIndex, int pageSize)
+        public async Task<TableData> CourseList(string name, string createUser, int? learningCycle, DateTime? startTime, DateTime? endTime, int? state, int? source, int pageIndex, int pageSize)
         {
             var result = new TableData();
             try
@@ -468,7 +468,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="state"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> CourseVideoList(int courseId, string name, string createUser, DateTime? startTime, DateTime? endTime, bool? state)
+        public async Task<TableData> CourseVideoList(int courseId, string name, string createUser, DateTime? startTime, DateTime? endTime, int? state)
         {
             var result = new TableData();
             try
