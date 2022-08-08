@@ -139,7 +139,7 @@ namespace OpenAuth.App.Hr
                 }
             }
             result.Count = obj.Count;
-            result.Data = obj.Skip((pageIndex - 1) * pageSize).Take(pageSize);
+            result.Data = obj.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList(); 
             return result;
         }
 
@@ -207,7 +207,7 @@ namespace OpenAuth.App.Hr
             obj.AddRange(subList3);
             obj.AddRange(subList1);
             result.Count = obj.Count();
-            result.Data = obj.Skip((pageIndex - 1) * pageSize).Take(pageSize);
+            result.Data = obj.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
 
             return result;
         }
