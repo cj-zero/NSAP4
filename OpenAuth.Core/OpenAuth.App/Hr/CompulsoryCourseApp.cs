@@ -193,7 +193,7 @@ namespace OpenAuth.App
                                  join b in UnitWork.Find<classroom_course_package_map>(null) on a.Id equals b.CoursePackageId
                                  join c in UnitWork.Find<classroom_course>(null) on b.CourseId equals c.Id
                                  where a.Id == coursePackageId
-                                 select new { c.Name, c.Source, c.LearningCycle, c.State, b.Sort, b.Id})
+                                 select new { c.Name, c.Source, c.LearningCycle, c.State, b.Sort, b.Id,b.CourseId})
                                .OrderBy(c => c.Sort)
                                .ToListAsync();
             return result;
