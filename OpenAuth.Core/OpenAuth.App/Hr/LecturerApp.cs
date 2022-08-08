@@ -252,7 +252,6 @@ namespace OpenAuth.App
         public async Task<TableData> EditTeacherCourse(classroom_teacher_course req)
         {
             var result = new TableData();
-            var user = _auth.GetCurrentUser().User;
             var query = await UnitWork.Find<classroom_teacher_course>(null).FirstOrDefaultAsync(c => c.Id == req.Id);
             if (query != null)
             {
@@ -301,7 +300,24 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var query = await UnitWork.Find<classroom_teacher_apply_log>(null).Where(c => c.AppUserId == req.AppUserId).OrderByDescending(c => c.Id).FirstOrDefaultAsync();
-            if (query != null)
+            if (query == null || query.AuditState == 3)
+            {
+                    classroom_teacher_apply_log model = new classroom_teacher_apply_log();
+                    model.Name = req.Name;
+                    model.Age = req.Age;
+                    model.Mobile = req.Mobile;
+                    model.HeaderImg = req.HeaderImg;
+                    model.Department = req.Department;
+                    model.CanTeachCourse = req.CanTeachCourse;
+                    model.BeGoodAtTerritory = req.BeGoodAtTerritory;
+                    model.CreateTime = DateTime.Now;
+                    model.ModifyTime = DateTime.Now;
+                    model.AppUserId = req.AppUserId;
+                    model.AuditState = 1;
+                    await UnitWork.AddAsync<classroom_teacher_apply_log, int>(query);
+                    await UnitWork.SaveAsync();
+            }
+            else
             {
                 if (query.AuditState == 4)
                 {
@@ -321,40 +337,6 @@ namespace OpenAuth.App
                     result.Message = "已是讲师无需申请!";
                     return result;
                 }
-                else if (query.AuditState == 3)
-                {
-                    classroom_teacher_apply_log model = new classroom_teacher_apply_log();
-                    model.Name = req.Name;
-                    model.Age = req.Age;
-                    model.Mobile = req.Mobile;
-                    model.HeaderImg = req.HeaderImg;
-                    model.Department = req.Department;
-                    model.CanTeachCourse = req.CanTeachCourse;
-                    model.BeGoodAtTerritory = req.BeGoodAtTerritory;
-                    model.CreateTime = DateTime.Now;
-                    model.ModifyTime = DateTime.Now;
-                    model.AppUserId = req.AppUserId;
-                    model.AuditState = 1;
-                    await UnitWork.AddAsync<classroom_teacher_apply_log, int>(query);
-                    await UnitWork.SaveAsync();
-                }
-            }
-            else
-            {
-                classroom_teacher_apply_log model = new classroom_teacher_apply_log();
-                model.Name = req.Name;
-                model.Age = req.Age;
-                model.Mobile = req.Mobile;
-                model.HeaderImg = req.HeaderImg;
-                model.Department = req.Department;
-                model.CanTeachCourse = req.CanTeachCourse;
-                model.BeGoodAtTerritory = req.BeGoodAtTerritory;
-                model.CreateTime = DateTime.Now;
-                model.ModifyTime = DateTime.Now;
-                model.AppUserId = req.AppUserId;
-                model.AuditState = 1;
-                await UnitWork.AddAsync<classroom_teacher_apply_log, int>(model);
-                await UnitWork.SaveAsync();
             }
             return result;
         }
