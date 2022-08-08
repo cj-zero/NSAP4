@@ -229,7 +229,7 @@ namespace OpenAuth.App.ContractManager
 
                     #region 审批步骤
                     var contract = contractApply.FirstOrDefault();
-                    var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("订单合同管理"));
+                    var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("订单合同申请"));
                     string flowId = mf.FlowSchemeId;
                     FlowScheme scheme = null;
                     if (!string.IsNullOrEmpty(flowId))
@@ -647,7 +647,7 @@ namespace OpenAuth.App.ContractManager
                     if (!obj.IsDraft)
                     {
                         //创建合同管理审批流程
-                        var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("订单合同管理"));
+                        var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("订单合同申请"));
                         var afir = new AddFlowInstanceReq();
                         afir.SchemeId = mf.FlowSchemeId;
                         afir.FrmType = 2;
@@ -807,7 +807,7 @@ namespace OpenAuth.App.ContractManager
                         if (string.IsNullOrWhiteSpace(obj.FlowInstanceId))
                         {
                             //添加流程
-                            var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("订单合同管理"));
+                            var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("订单合同申请"));
                             var afir = new AddFlowInstanceReq();
                             afir.SchemeId = mf.FlowSchemeId;
                             afir.FrmType = 2;
