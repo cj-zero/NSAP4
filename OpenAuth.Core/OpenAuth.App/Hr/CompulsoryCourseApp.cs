@@ -252,7 +252,7 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var ids = req.Select(c => c.id).Distinct().ToList();
-            var courseList = await UnitWork.Find<classroom_course_package_map>(null).Where(c => ids.Contains(c.CourseId)).ToListAsync();
+            var courseList = await UnitWork.Find<classroom_course_package_map>(null).Where(c => ids.Contains(c.Id)).ToListAsync();
             foreach (var item in courseList)
             {
                 item.Sort = req.Where(c => c.id == item.Id).Select(c => c.sort).FirstOrDefault();
