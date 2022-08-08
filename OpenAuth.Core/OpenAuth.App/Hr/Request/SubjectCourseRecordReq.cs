@@ -22,12 +22,9 @@ namespace OpenAuth.App.Hr.Request
         public int AppUserId { get; set; }
 
         /// <summary>
-        /// 观看进度
-        /// </summary>
-        public int Schedule { get; set; }
-        /// <summary>
         /// 是否完成
         /// </summary>
         public bool IsComplete { get; set; }
+
     }
 }

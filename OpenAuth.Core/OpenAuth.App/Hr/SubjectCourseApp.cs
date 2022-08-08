@@ -46,7 +46,7 @@ namespace OpenAuth.App.Hr
             var result = new TableData();
             var query = from a in UnitWork.Find<classroom_subject>(null)
                                      .WhereIf(!string.IsNullOrWhiteSpace(req.Name), a => a.Name.Contains(req.Name))
-                                     .WhereIf(!string.IsNullOrWhiteSpace(req.CreateUser), a => a.Name.Contains(req.CreateUser))
+                                     .WhereIf(!string.IsNullOrWhiteSpace(req.CreateUser), a => a.CreateUser.Contains(req.CreateUser))
                                      .WhereIf(req.StartTime != null, c => c.CreateTime >= req.StartTime)
                                      .WhereIf(req.EndTime != null, c => c.CreateTime <= req.EndTime)
                                      .WhereIf(req.State != null, c => c.State == req.State)
@@ -76,17 +76,13 @@ namespace OpenAuth.App.Hr
                     return result;
                 }
 
-
                 var subject = await UnitWork.Find<classroom_subject>(null).Where(c => c.Id == req.Id).FirstOrDefaultAsync();
                 if (subject != null)
                 {
                     subject.Name = req.Name;
-                    if (req.State != null )
-                    {
-                        subject.State = (int)req.State;
-                    }
+                    subject.State = req.State;
+                    await UnitWork.UpdateAsync(subject);
                 }
-                await UnitWork.UpdateAsync(subject);
                 await UnitWork.SaveAsync();
             }
             else
@@ -120,11 +116,19 @@ namespace OpenAuth.App.Hr
         /// <summary>
         /// 删除专题
         /// </summary>
-        /// <param name="req"></param>
+        /// <param name="subjectId">主题id</param>
         /// <returns></returns>
         public async Task<TableData> DelSubjectByErp(int subjectId)
         {
             var result = new TableData();
+
+            var courseCount = await UnitWork.Find<classroom_subject_course>(null).CountAsync(zw => zw.SubjectId == subjectId);
+            if(courseCount > 0)
+            {
+                result.Code = 500;
+                result.Message = "专题下已存在课程，不允许删除!";
+                return result;
+            }
 
             var model = await UnitWork.Find<classroom_subject>(null).FirstOrDefaultAsync(c => c.Id == subjectId);
             await UnitWork.DeleteAsync(model);
@@ -161,18 +165,18 @@ namespace OpenAuth.App.Hr
             var result = new TableData();
             var query =  (from a in UnitWork.Find<classroom_subject_course>(null)
                                      .WhereIf(!string.IsNullOrWhiteSpace(req.Name), a => a.Name.Contains(req.Name))
-                                     .WhereIf(!string.IsNullOrWhiteSpace(req.CreateUser), a => a.Name.Contains(req.CreateUser))
+                                     .WhereIf(!string.IsNullOrWhiteSpace(req.CreateUser), a => a.CreateUser.Contains(req.CreateUser))
                                      .WhereIf(req.StartTime != null, c => c.CreateTime >= req.StartTime)
                                      .WhereIf(req.EndTime != null, c => c.CreateTime <= req.EndTime)
                                      .Where(a => a.SubjectId == req.subjectId)
                                      select a);
             result.Count = await query.CountAsync();
-            result.Data = query.OrderBy(a => a.Sort).Skip((req.pageIndex - 1) * req.pageSize).Take(req.pageSize).ToListAsync();
+            result.Data = await query.OrderBy(a => a.Sort).Skip((req.pageIndex - 1) * req.pageSize).Take(req.pageSize).ToListAsync();
             return result;
         }
 
         /// <summary>
-        /// 新增/修改专题课程列表
+        /// 新增/修改专题课程
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
@@ -187,43 +191,59 @@ namespace OpenAuth.App.Hr
                 if (subjectPack != null && subjectPack.Id != req.Id)
                 {
                     result.Code = 500;
-                    result.Message = "专题名称已存在!";
+                    result.Message = "专题课程名称已存在!";
                     return result;
                 }
 
                 var subject = await UnitWork.Find<classroom_subject_course>(null).Where(c => c.Id == req.Id).FirstOrDefaultAsync();
                 if (subject != null)
                 {
+                    subject.State = req.State;
                     subject.Name = req.Name;
                     subject.Type = req.Type;
                     subject.Content = req.Content;
+                    subject.ViewNumbers = 0;
+                    if(req.State == 1 && !subject.ShelfTime.HasValue)
+                    {
+                        subject.ShelfTime = DateTime.Now;
+                    }
+                    await UnitWork.UpdateAsync(subject);
+                    await UnitWork.SaveAsync();
                 }
-                await UnitWork.UpdateAsync(subject);
-                await UnitWork.SaveAsync();
+              
             }
             else
             {
                 if (subjectPack != null)
                 {
                     result.Code = 500;
-                    result.Message = "专题名称已存在!";
+                    result.Message = "专题课程名称已存在!";
                     return result;
                 }
 
                 int? sort = await UnitWork.Find<classroom_subject_course>(null).MaxAsync(a => (int?)a.Sort);
                 if (sort == null)
                     sort = 0;
-               classroom_subject_course info = new classroom_subject_course()
+                classroom_subject_course info = new classroom_subject_course()
                 {
                     SubjectId = req.SubjectId,
                     Name = req.Name,
-                    ShelfTime =DateTime.Now,
                     Type = req.Type,
-                    Sort = (int)sort +1,
-                    Content =req.Content,
+                    Sort = (int)sort + 1,
+                    Content = req.Content,
+                    State = req.State,
+                    ViewNumbers = 0, 
                     CreateTime = DateTime.Now,
                     CreateUser = user.Name,
                 };
+                if(req.State == 1)
+                {
+                    info.ShelfTime = DateTime.Now;
+                }
+                else
+                {
+                    info.ShelfTime = null;
+                }
                 await UnitWork.AddAsync<classroom_subject_course, int>(info);
                 await UnitWork.SaveAsync();
             }
@@ -233,13 +253,13 @@ namespace OpenAuth.App.Hr
         /// <summary>
         /// 删除专题课程
         /// </summary>
-        /// <param name="req"></param>
+        /// <param name="Id">Id</param>
         /// <returns></returns>
-        public async Task<TableData> DelSubjectCourseByErp(int subjectId)
+        public async Task<TableData> DelSubjectCourseByErp(int Id)
         {
             var result = new TableData();
 
-            var model = await UnitWork.Find<classroom_subject_course>(null).FirstOrDefaultAsync(c => c.Id == subjectId);
+            var model = await UnitWork.Find<classroom_subject_course>(null).FirstOrDefaultAsync(c => c.Id == Id);
             await UnitWork.DeleteAsync(model);
             await UnitWork.SaveAsync();
             return result;
@@ -337,16 +357,17 @@ namespace OpenAuth.App.Hr
         }
 
         /// <summary>
-        /// 必修课程列表
+        /// 专题课程列表
         /// </summary>
         /// <param name="appUserId"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public async Task<TableData> ClassroomSubjectCourseList(int appUserId,int subjectId)
+        public async Task<TableData> ClassroomSubjectCourseList(int appUserId,int subjectId,string name )
         {
             var result = new TableData();
 
             var courseList = await (from a in UnitWork.Find<classroom_subject_course>(null)
+                                      .WhereIf(!string.IsNullOrWhiteSpace(name), a => a.Name.Contains(name))
                                      .Where(a => a.SubjectId == subjectId)
                                     select a).ToListAsync();
 
@@ -361,12 +382,14 @@ namespace OpenAuth.App.Hr
                           {
                               Id =c.Id,
                               Name = c.Name,
+                              SubjectId = c.SubjectId,
                               ShelfTime = c.ShelfTime,
                               Type = c.Type,
                               Content = c.Content,
                               CreateTime = c.CreateTime,
                               CreateUser = c.CreateUser,
                               IsComplete = sc?.IsComplete,
+                              ViewNumbers =c.ViewNumbers,
                           };
             result.Data = results.OrderBy(a => a.Sort).ToList();
             result.Count = results.Count();
@@ -393,15 +416,71 @@ namespace OpenAuth.App.Hr
                     info.SubjectCourseId = req.SubjectCourseId;
                     info.SubjectId = req.SubjectId;
                     info.CreateTime = DateTime.Now;
-                    info.Schedule = req.Schedule;
                     info.IsComplete = req.IsComplete;
                     var exam = await UnitWork.AddAsync<classroom_subject_course_user, int>(info);
                     await UnitWork.SaveAsync();
                 }
                 else
                 {
-                    query.Schedule = req.Schedule;
                     query.IsComplete = req.IsComplete;
+                    await UnitWork.UpdateAsync(query);
+                    await UnitWork.SaveAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                throw;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 修改专题观看记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> UpdateSubjectViewNumber(int subjectId)
+        {
+            var result = new TableData();
+            try
+            {
+                var query = await (from a in UnitWork.Find<classroom_subject>(null)
+                                    .Where(a => a.Id == subjectId)
+                                   select a).FirstOrDefaultAsync();
+                if (query != null)
+                {
+                    query.ViewNumbers++;
+                    await UnitWork.UpdateAsync(query);
+                    await UnitWork.SaveAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                throw;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 修改课程观看次数
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> UpdateCourseViewNumber(int courseId)
+        {
+            var result = new TableData();
+            try
+            {
+                var query = await (from a in UnitWork.Find<classroom_subject_course>(null)
+                                    .Where(a => a.Id == courseId)
+                                   select a).FirstOrDefaultAsync();
+                if (query != null)
+                {
+                    query.ViewNumbers++;
                     await UnitWork.UpdateAsync(query);
                     await UnitWork.SaveAsync();
                 }

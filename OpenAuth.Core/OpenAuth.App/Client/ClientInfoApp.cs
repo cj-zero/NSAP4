@@ -28,6 +28,8 @@ using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.App.Client.Response;
+using Microsoft.AspNetCore.SignalR;
+using OpenAuth.App.SignalR;
 
 namespace OpenAuth.App.Client
 {
@@ -35,10 +37,12 @@ namespace OpenAuth.App.Client
     {
         ServiceBaseApp _serviceBaseApp;
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
-        public ClientInfoApp(ServiceSaleOrderApp serviceSaleOrderApp, ServiceBaseApp serviceBaseApp, IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
+        private readonly IHubContext<MessageHub> _hubContext;
+        public ClientInfoApp(ServiceSaleOrderApp serviceSaleOrderApp, ServiceBaseApp serviceBaseApp, IUnitWork unitWork, IAuth auth, IHubContext<MessageHub> hubContext) : base(unitWork, auth)
         {
             _serviceBaseApp = serviceBaseApp;
             _serviceSaleOrderApp = serviceSaleOrderApp;
+            _hubContext = hubContext;
         }
         #region 客户新增草稿 修改草稿
         /// <summary>
@@ -136,7 +140,7 @@ namespace OpenAuth.App.Client
         /// </summary>
         public DataTable SelectClientList(int limit, int page, string query, string sortname, string sortorder,
             int sboid, int userId, bool rIsViewSales, bool rIsViewSelf, bool rIsViewSelfDepartment, bool rIsViewFull,
-            int depID, string label, string contectTel, string slpName, out int rowCount)
+            int depID, string label, string contectTel, string slpName, string isReseller, int? Day, string CntctPrsn, out int rowCount)
         {
             bool IsSaler = false, IsPurchase = false, IsTech = false, IsClerk = false;//业务员，采购员，技术员，文员
             string rSalCode = GetUserInfoById(sboid.ToString(), userId.ToString(), "1");
@@ -164,9 +168,17 @@ namespace OpenAuth.App.Client
             {
                 filterString.Append($" and slpname like '%{slpName}%' ");
             }
+            if (!string.IsNullOrWhiteSpace(isReseller))
+            {
+                filterString.Append($" and U_is_reseller = '{isReseller}' ");
+            }
             if (!string.IsNullOrWhiteSpace(contectTel))
             {
                 filterString.Append($" and phone1 like '%{contectTel}%' ");
+            }
+            if (!string.IsNullOrWhiteSpace(CntctPrsn))
+            {
+                filterString.Append($" and cardcode in ( select cardcode from OCPR where name like '%{CntctPrsn}%') ");
             }
             //黑名单客户也不在客户列表上显示
             var blacklist = UnitWork.Find<SpecialCustomer>(c => c.Type == 0).Select(c => c.CustomerNo).ToList();
@@ -346,11 +358,17 @@ namespace OpenAuth.App.Client
                     //全部客户
                     if (label == "0") { }
                     //未报价客户
-                    else if (label == "1")
+                    if (label == "1" || Day.Value != 0)
                     {
                         //在报价单中不存在的客户
                         tableName.Append(" LEFT JOIN OQUT AS q on A.CardCode = q.CardCode ");
                         tableName.Append(" WHERE q.CardCode IS NULL ");
+                        if (Day.Value != 0)
+                        {
+                            tableName.Append(" and A.CardCode in(SELECT CardCode from (SELECT CardCode, max(UpdateDate) UpdateDate from( select CardCode, SlpCode, min(UpdateDate) UpdateDate from ");
+                            tableName.Append("(select CardCode, SlpCode, ISNULL(UpdateDate,CreateDate) UpdateDate from OCRD UNION select CardCode, SlpCode, UpdateDate from ACRD ) a GROUP BY CardCode, SlpCode) b ");
+                            tableName.Append(" where DATEDIFF(day, b.UpdateDate, GETDATE()) > " + Day + " GROUP BY CardCode) c) ");
+                        }
                     }
                     //已成交客户
                     else if (label == "2")
@@ -2519,6 +2537,167 @@ namespace OpenAuth.App.Client
 
             return result;
         }
+
+        #region 客户详情页
+
+        #region 客户跟进记录
+        /// <summary>
+        /// 新增跟进
+        /// </summary>
+        /// <param name="addClueFollowUpReq"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> AddClientFollowAsync(ClientFollowUp clientFollowUp)
+        {
+            var response = new Infrastructure.Response();
+            response.Message = "";
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            var userId = loginUser.User_Id.Value;
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            int SlpCode = Convert.ToInt16(GetUserInfoById(sboid.ToString(), userId.ToString(), "1"));
+            ClientFollowUp info = new ClientFollowUp
+            {
+                CardCode = clientFollowUp.CardCode,
+                CardName = clientFollowUp.CardName,
+                SlpCode = clientFollowUp.SlpCode,
+                SlpName = clientFollowUp.SlpName,
+                Contacts = clientFollowUp.Contacts,
+                FollowType = clientFollowUp.FollowType,
+                NextTime = clientFollowUp.NextTime,
+                Remark = clientFollowUp.Remark,
+                File = clientFollowUp.File,
+                CreateUser = loginUser.User_Id.Value,
+                CreateDate = DateTime.Now,
+                IsDelete = false
+            };
+            if (!string.IsNullOrWhiteSpace(clientFollowUp.Id.ToString()))
+            {
+                await UnitWork.AddAsync<ClientFollowUp, int>(info);
+            }
+            else
+            {
+                await UnitWork.UpdateAsync<ClientFollowUp>(info);
+            }
+            await UnitWork.SaveAsync();
+            response.Message = "操作成功";
+            return response;
+        }
+
+
+        /// <summary>
+        /// 跟进列表
+        /// </summary>
+        /// <param name="CardCode"></param>
+        /// <returns></returns>
+        public async Task<List<ClientFollowUp>> ClientFollowUpByIdAsync(string CardCode)
+        {
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            int SlpCode = Convert.ToInt16(GetUserInfoById(sboid.ToString(), userId.ToString(), "1"));
+            var result = new List<ClientFollowUp>();
+            var ClientFollowUp = UnitWork.Find<ClientFollowUp>(q => q.CardCode == CardCode && q.SlpCode == SlpCode && !q.IsDelete).MapToList<ClientFollowUp>();
+            return ClientFollowUp;
+        }
+
+        /// <summary>
+        /// 删除跟进
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public async Task<bool> DeleteFollowByCodeAsync(List<int> Ids)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            foreach (var item in Ids)
+            {
+                var clientFollowUp = await UnitWork.FindSingleAsync<ClientFollowUp>(q => q.Id == item);
+                clientFollowUp.IsDelete = true;
+                await UnitWork.UpdateAsync(clientFollowUp);
+                await UnitWork.SaveAsync();
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// 常用语列表
+        /// </summary>
+        /// <param name="CardCode"></param>
+        /// <returns></returns>
+        public async Task<List<ClientFollowUpPhrase>> ClientFollowUpPhraseAsync()
+        {
+            var userId = _serviceBaseApp.GetUserNaspId();
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            int SlpCode = Convert.ToInt16(GetUserInfoById(sboid.ToString(), userId.ToString(), "1"));
+            var result = new List<ClientFollowUpPhrase>();
+            var ClientFollowUpPhrase = UnitWork.Find<ClientFollowUpPhrase>(q => q.SlpCode == SlpCode).MapToList<ClientFollowUpPhrase>();
+            return ClientFollowUpPhrase;
+        }
+
+        /// <summary>
+        /// 添加常用语
+        /// </summary>
+        /// <param name="addClueFollowUpReq"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> AddClientFollowPhraseAsync(List<ClientFollowUpPhrase> list)
+        {
+            var response = new Infrastructure.Response();
+            response.Message = "";
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            var userId = loginUser.User_Id.Value;
+            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+            int SlpCode = Convert.ToInt16(GetUserInfoById(sboid.ToString(), userId.ToString(), "1"));
+            foreach (var item in list)
+            {
+                await UnitWork.AddAsync<ClientFollowUpPhrase, int>(new ClientFollowUpPhrase
+                {
+                    SlpCode = SlpCode,
+                    Remark = item.Remark,
+                    CreateUser = loginUser.Name,
+                    CreateDate = DateTime.Now
+                });
+            }
+            await UnitWork.SaveAsync();
+            response.Message = "操作成功";
+            return response;
+        }
+
+        /// <summary>
+        /// 向即将有跟进任务的业务员发送提醒信息
+        /// </summary>
+        /// <returns></returns>
+        public async Task PushMessageToSlp()
+        {
+            DateTime startTime = DateTime.Now;
+            DateTime endTime = startTime.AddMinutes(1);
+            //查询所有时间段内待跟进的任务
+            var query = await (UnitWork.Find<ClientFollowUp>(c => c.NextTime >= startTime && c.NextTime <= endTime).Select(g => new
+            {
+                SlpName = g.SlpName,
+                CardName = g.CardName
+            })).ToListAsync();
+            //查看有哪些业务员要发送提醒
+            foreach (var slp in query)
+            {
+                await _hubContext.Clients.User(slp.SlpName).SendAsync("ReceiveMessage", "系统", $"您有1个客户待跟进，客户名称：" + slp.CardName);
+            }
+
+        }
+        #endregion
+        #endregion
     }
 }
 

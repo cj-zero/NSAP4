@@ -89,7 +89,11 @@ namespace OpenAuth.App
                 var mf = _moduleFlowSchemeApp.Get(c => c.Module.Name == "售前需求");
                 var flowinstace = await UnitWork.Find<FlowInstance>(c => c.SchemeId == mf.FlowSchemeId && c.MakerList.Contains(loginContext.User.Id)).Select(c => c.Id).ToListAsync();
                 //排除掉 已经处理过的
+              //  var instances = await UnitWork.Find<BeforeSaleDemandDeptInfo>(c =>  c.UserId == loginContext.User.Id && c.IsConfirm == 1).Select(c => c.BeforeSaleDemandId).Distinct().ToListAsync();
                 var instances = await UnitWork.Find<BeforeSaleDemandDeptInfo>(c => c.UserId == loginContext.User.Id && c.IsConfirm == 1).Select(c => c.BeforeSaleDemandId).Distinct().ToListAsync();
+                var instances2 = await UnitWork.Find<BeforeSaleDemandDeptInfo>(c => c.UserId == loginContext.User.Id && c.IsConfirm == 0).Select(c => c.BeforeSaleDemandId).Distinct().ToListAsync();
+                instances = instances.Where(a => !instances2.Contains(a)).ToList();
+
                 var scheduingIds = await UnitWork.Find<BeforeSaleProScheduling>(c => c.UserId == loginContext.User.Id && c.IsConfirm == 1).Select(c => c.BeforeSaleDemandId).Distinct().ToListAsync();
                 instances.AddRange(scheduingIds);
                 query = query.Where(c => flowinstace.Contains(c.FlowInstanceId));

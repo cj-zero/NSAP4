@@ -7,7 +7,7 @@ using System.Text;
 namespace OpenAuth.Repository.Domain.Hr
 {
     /// <summary>
-    /// 专题表
+    /// 专题课程包开放用户表
     /// </summary>
     [Table("classroom_subject_course_user")]
     public class classroom_subject_course_user : BaseEntity<int>
@@ -31,11 +31,6 @@ namespace OpenAuth.Repository.Domain.Hr
         /// 创建时间
         /// </summary>
         public DateTime CreateTime { get; set; }
-
-        /// <summary>
-        /// 课程学习进度(秒s)
-        /// </summary>
-        public int Schedule { get; set; }
 
         /// <summary>
         /// 是否完成  

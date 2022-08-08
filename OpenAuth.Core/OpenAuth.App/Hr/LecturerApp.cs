@@ -447,8 +447,26 @@ namespace OpenAuth.App
             {
                 var list = await UnitWork.Find<classroom_teacher_course>(null)
                     .Where(c => c.AppUserId == appUserId && c.AuditState == 2)
-                    .Select(c => new { c.Title, c.StartTime, c.EndTime, c.TeachingMethod, c.TeachingAddres, c.ForTheCrowd, c.ViewedCount, c.VideoUrl })
+                    .Select(c => new TeacherCourseResp
+                    {
+                        Id = c.Id,
+                        Title = c.Title,
+                        Name = query.Name,
+                        AppUserId = query.AppUserId,
+                        Department = query.Department,
+                        ForTheCrowd = c.ForTheCrowd,
+                        TeachingMethod = c.TeachingMethod,
+                        TeachingAddres = c.TeachingAddres,
+                        BackgroundImage = c.BackgroundImage,
+                        VideoUrl = c.VideoUrl,
+                        ViewedCount = c.ViewedCount,
+                        StartTime = c.StartTime.ToString(Defaults.DateTimeFormat),
+                        EndTime = c.EndTime.ToString(Defaults.DateTimeFormat),
+                        StartHourMinute = c.StartTime.ToString(Defaults.DateHourFormat),
+                        EndHourMinute = c.EndTime.ToString(Defaults.DateHourFormat),
+                    })
                     .ToListAsync();
+
                 int popularityValue = list.Sum(c => c.ViewedCount);
                 result.Data = new
                 {
@@ -490,6 +508,8 @@ namespace OpenAuth.App
             result.Data = new { myHonor, list };
             return result;
         }
+
+     
         #endregion
     }
 }
