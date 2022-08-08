@@ -17,17 +17,22 @@ using OpenAuth.Repository.Domain.Customer;
 using OpenAuth.Repository;
 using System.Collections;
 using System.Data;
+using OpenAuth.App.Order;
+using NSAP.Entity.Client;
 
 namespace OpenAuth.App.Customer
 {
     public class CustomerListApp : OnlyUnitWorkBaeApp
     {
         private readonly UserManagerApp _userManagerApp;
-
+        private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
+        private readonly ServiceBaseApp _serviceBaseApp;
         public CustomerListApp(IUnitWork unitWork, IAuth auth,
-            UserManagerApp userManagerApp) : base(unitWork, auth)
+            UserManagerApp userManagerApp, ServiceSaleOrderApp serviceSaleOrderApp, ServiceBaseApp serviceBaseApp) : base(unitWork, auth)
         {
             _userManagerApp = userManagerApp;
+            _serviceSaleOrderApp = serviceSaleOrderApp;
+            _serviceBaseApp = serviceBaseApp;
         }
 
         /// <summary>
@@ -180,8 +185,14 @@ namespace OpenAuth.App.Customer
 
             var fallinquery = await UnitWork.Find<Repository.Domain.Serve.CustomerMoveHistory>(c => query.Select(x => x.CustomerNo).Contains(c.CardCode)).ToListAsync();
             var fallindata = fallinquery
+                .OrderByDescending(x => x.CreateTime)
                 .GroupBy(c => c.CardCode)
-                .Select(s => s.OrderByDescending(x => x.CreateTime).FirstOrDefault());
+                .Select(g => new
+                {
+                    CardCode = g.Key,
+                    fallinCount = g.Count(),
+                    Remark = g.FirstOrDefault().Remark
+                });
 
 
             var data = from s in dataquery
@@ -198,6 +209,7 @@ namespace OpenAuth.App.Customer
                            DepartmentName = s.DepartmentName,
                            Type = s.Type,
                            Count = isAdmin ? (t1 == null ? 0 : t1.ReceiveTime) : 0,
+                           fallinCount = isAdmin ? (t2 == null ? 0 : t2.fallinCount) : 0,
                            fallResult = t2 == null ? "" : t2.Remark,
                            Remark = s.Remark,
                            UpdateUser = s.UpdateUser,
@@ -568,8 +580,11 @@ namespace OpenAuth.App.Customer
         {
             var response = new Infrastructure.Response();
             response.Message = "";
-
             var userInfo = _auth.GetCurrentUser();
+            if (userInfo == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
             //根据用户姓名查询slpcode
             var data = await (from u in UnitWork.Find<base_user>(null)
                               join d in UnitWork.Find<base_user_detail>(null) on u.user_id equals d.user_id
@@ -817,20 +832,42 @@ namespace OpenAuth.App.Customer
                         lastInstance = 1;
                     }
 
-                    //加入历史归属表
-                    history.LogInstance = lastInstance;
-                    await UnitWork.AddAsync<CustomerSalerHistory>(history);
-                    //领取后,将客户从公海中移出
-                    await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == item.CustomerNo);
-
                     //修改客户的销售员和更新修改时间
-                    var instance = await UnitWork.Find<OCRD>(c => c.CardCode == item.CustomerNo).FirstOrDefaultAsync();
-                    instance.SlpCode = slpInfo.sale_id;
-                    instance.UpdateDate = DateTime.Now;
-                    await UnitWork.UpdateAsync<OCRD>(instance);
-                    //3.0的客户归属表中新增一条记录
-                    await UnitWork.AddAsync<ACRD>(new ACRD { DocEntry = instance.DocEntry, CardCode = item.CustomerNo, LogInstanc = lastInstance, CardName = item.CustomerName, SlpCode = slpInfo.sale_id, CreateDate = DateTime.Now, UpdateDate = DateTime.Now });
-                    await UnitWork.SaveAsync();
+
+                    string FuncID = _serviceSaleOrderApp.GetJobTypeByAddress("client/clientAssignSeller.aspx");
+
+                    var loginUser = userInfo.User;
+                    var userId = loginUser.User_Id.Value;
+                    var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+
+
+                    clientOCRD client = new clientOCRD();
+                    client.CardCode = item.CustomerNo;
+                    client.SlpCode = slpInfo.sale_id.ToString();
+                    client.SboId = "1";         //帐套
+                    byte[] job_data = ByteExtension.ToSerialize(client);
+                    string job_id = _serviceSaleOrderApp.WorkflowBuild("业务伙伴分配销售员", Convert.ToInt32(FuncID), userId, job_data, "业务伙伴分配销售员", 1, "", "", 0, 0, 0, "BOneAPI", "NSAP.B1Api.BOneOCRDAssign");
+                    if (int.Parse(job_id) > 0)
+                    {
+                        string result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(job_id), userId, "业务伙伴分配销售员", "", 0);
+                        //如果成功,则将客户从公海中移出(如果有的话)
+                        if (result == "2")
+                        {
+                            //加入历史归属表
+                            history.LogInstance = lastInstance;
+                            await UnitWork.AddAsync<CustomerSalerHistory>(history);
+                            //领取后,将客户从公海中移出
+                            await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == item.CustomerNo);
+                            await UnitWork.SaveAsync();
+                        }
+                    }
+                    //var instance = await UnitWork.Find<OCRD>(c => c.CardCode == item.CustomerNo).FirstOrDefaultAsync();
+                    //instance.SlpCode = slpInfo.sale_id;
+                    //instance.UpdateDate = DateTime.Now;
+                    //await UnitWork.UpdateAsync<OCRD>(instance);
+                    ////3.0的客户归属表中新增一条记录
+                    //await UnitWork.AddAsync<ACRD>(new ACRD { DocEntry = instance.DocEntry, CardCode = item.CustomerNo, LogInstanc = lastInstance, CardName = item.CustomerName, SlpCode = slpInfo.sale_id, CreateDate = DateTime.Now, UpdateDate = DateTime.Now });
+
                 }
                 await tran.CommitAsync();
                 RedisHelper.IncrBy(key, req.Customers.Count); //领取成功后,用户当天的客户数量加1
@@ -1029,19 +1066,44 @@ namespace OpenAuth.App.Customer
                     if (isExists) { lastInstance = UnitWork.Find<ACRD>(c => c.CardCode == item.CustomerNo).Max(x => x.LogInstanc) + 1; }
                     else { lastInstance = 1; }
 
-                    //加入历史归属表
-                    history.LogInstance = lastInstance;
-                    await UnitWork.AddAsync<CustomerSalerHistory>(history);
-                    //领取后,将客户从公海中移出
-                    await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == item.CustomerNo);
+
 
                     //修改客户的销售员
-                    var instance = await UnitWork.Find<OCRD>(c => c.CardCode == item.CustomerNo).FirstOrDefaultAsync();
-                    instance.SlpCode = req.SlpCode;
-                    await UnitWork.UpdateAsync<OCRD>(instance);
-                    //3.0的客户归属表中新增一条记录
-                    await UnitWork.AddAsync<ACRD>(new ACRD { DocEntry = instance.DocEntry, CardCode = item.CustomerNo, LogInstanc = lastInstance, CardName = item.CustomerName, SlpCode = req.SlpCode, CreateDate = DateTime.Now, UpdateDate = DateTime.Now });
-                    await UnitWork.SaveAsync();
+
+                    string FuncID = _serviceSaleOrderApp.GetJobTypeByAddress("client/clientAssignSeller.aspx");
+
+                    var loginUser = userInfo.User;
+                    var userId = loginUser.User_Id.Value;
+                    var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+
+
+                    clientOCRD client = new clientOCRD();
+                    client.CardCode = item.CustomerNo;
+                    client.SlpCode = req.SlpCode.ToString();
+                    client.SboId = "1";         //帐套
+                    byte[] job_data = ByteExtension.ToSerialize(client);
+                    string job_id = _serviceSaleOrderApp.WorkflowBuild("业务伙伴分配销售员", Convert.ToInt32(FuncID), userId, job_data, "业务伙伴分配销售员", 1, "", "", 0, 0, 0, "BOneAPI", "NSAP.B1Api.BOneOCRDAssign");
+                    if (int.Parse(job_id) > 0)
+                    {
+                        string result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(job_id), userId, "业务伙伴分配销售员", "", 0);
+                        //如果成功,则将客户从公海中移出(如果有的话)
+                        if (result == "2")
+                        {
+                            //加入历史归属表
+                            history.LogInstance = lastInstance;
+                            await UnitWork.AddAsync<CustomerSalerHistory>(history);
+                            //领取后,将客户从公海中移出
+                            await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == item.CustomerNo);
+                            await UnitWork.SaveAsync();
+                        }
+                    }
+
+                    //var instance = await UnitWork.Find<OCRD>(c => c.CardCode == item.CustomerNo).FirstOrDefaultAsync();
+                    //instance.SlpCode = req.SlpCode;
+                    //await UnitWork.UpdateAsync<OCRD>(instance);
+                    ////3.0的客户归属表中新增一条记录
+                    //await UnitWork.AddAsync<ACRD>(new ACRD { DocEntry = instance.DocEntry, CardCode = item.CustomerNo, LogInstanc = lastInstance, CardName = item.CustomerName, SlpCode = req.SlpCode, CreateDate = DateTime.Now, UpdateDate = DateTime.Now });
+                    //await UnitWork.SaveAsync();
                 }
 
                 await tran.CommitAsync();
