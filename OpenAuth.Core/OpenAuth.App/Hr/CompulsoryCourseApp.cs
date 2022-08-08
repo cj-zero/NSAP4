@@ -381,6 +381,31 @@ namespace OpenAuth.App
             await UnitWork.SaveAsync();
             return result;
         }
+        /// <summary>
+        /// App用户列表
+        /// </summary>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetAppUserInfo(int pageIndex,int pageSize)
+        {
+            TableData result = new TableData();
+            var query = (from a in UnitWork.Find<AppUserMap>(null)
+                         join u in UnitWork.Find<User>(null) on a.UserID equals u.Id
+                         select new
+                         {
+                             erpId = u.Id,
+                             erpAccount = u.Account,
+                             erpName = u.Name,
+                             appUserId = a.AppUserId,
+                             u.EntryTime
+                         });
+
+            result.Count = await query.CountAsync();
+            result.Data = await query.OrderBy(c=>c.appUserId).Skip((pageIndex-1)*pageSize).Take(pageSize).ToListAsync();
+
+            return result;
+        }
         #endregion
 
         #region 课程

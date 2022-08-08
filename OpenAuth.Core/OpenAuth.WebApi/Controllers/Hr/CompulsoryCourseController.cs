@@ -308,6 +308,28 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// App用户列表
+        /// </summary>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetAppUserInfo(int pageIndex, int pageSize)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.GetAppUserInfo(pageIndex,pageSize);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
         #endregion
 
         #region  课程
