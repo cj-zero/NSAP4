@@ -80,6 +80,11 @@ namespace OpenAuth.App.Hr
         /// </summary>
         public string EndHourMinute { get; set; }
 
+        /// <summary>
+        /// 已观看时长
+        /// </summary>
+        public int PlayDuration { get; set; }
+
     }
 
     /// <summary>

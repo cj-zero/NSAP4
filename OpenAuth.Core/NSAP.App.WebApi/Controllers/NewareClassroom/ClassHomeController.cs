@@ -46,8 +46,10 @@ namespace NSAP.App.WebApi.Controllers.NewareClassroom
                         result = await _app.CompulsoryCourseList(req.appUserId, req.key ,req.pageIndex, req.pageSize);
                         break;
                     case 2:
+                        result = await _app.ClassroomSubjectList(req.appUserId, req.key, req.pageIndex, req.pageSize);
                         break;
                     case 3:
+                        result = await _app.TeacherCoursePlayBack(req.appUserId, req.key, req.pageIndex, req.pageSize);
                         break;
                     default:
                         break;

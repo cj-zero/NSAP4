@@ -346,9 +346,9 @@ namespace OpenAuth.App.Hr
             List<classroom_subject_dto> subList2 = obj.Where(a => a.IsComplete == false && a.Schedule > 0).OrderByDescending(a => a.Schedule).ToList();
             List<classroom_subject_dto> subList3 = obj.Where(a => a.IsComplete == false && a.Schedule == 0).OrderBy(a => a.Sort).ToList();
             obj.Clear();
-            obj.AddRange(subList1);
-            obj.AddRange(subList3);
             obj.AddRange(subList2);
+            obj.AddRange(subList3);
+            obj.AddRange(subList1);
 
 
             result.Data = obj;
