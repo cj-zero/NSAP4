@@ -35,7 +35,7 @@ namespace NSAP.App.WebApi.Controllers.NewareClassroom
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<TableData> GetEmployeeApplyList(ClassHomeSearchReq req)
+        public async Task<TableData> GetClassRoomSearch(ClassHomeSearchReq req)
         {
             var result = new TableData();
             try
