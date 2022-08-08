@@ -381,7 +381,7 @@ namespace OpenAuth.App
         public async Task<TableData> DeleteCoursePackageUser(CoursePackageUserReq req)
         {
             var result = new TableData();
-            var list = await UnitWork.Find<classroom_course_package_user>(null).Where(c => c.CoursePackageId == req.CoursePackageId && req.Ids.Contains(c.AppUserId)).ToListAsync();
+            var list = await UnitWork.Find<classroom_course_package_user>(null).Where(c => req.Ids.Contains(c.Id)).ToListAsync();
             await UnitWork.BatchDeleteAsync(list.ToArray());
             await UnitWork.SaveAsync();
             return result;
