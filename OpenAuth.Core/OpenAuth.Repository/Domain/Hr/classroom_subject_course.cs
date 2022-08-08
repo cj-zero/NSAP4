@@ -35,16 +35,15 @@ namespace OpenAuth.Repository.Domain.Hr
         /// 排序
         /// </summary>
         public int Sort { get; set; }
-        
-        /// <summary>
-        /// 内容
-        /// </summary>
-        public string Content { get; set; }
 
         /// <summary>
         /// 浏览次数
         /// </summary>
         public int ViewNumbers { get; set; }
+        /// <summary>
+        /// 内容
+        /// </summary>
+        public string Content { get; set; }
 
         /// <summary>
         /// 专题状态     0=下架  1=上架

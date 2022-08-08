@@ -157,8 +157,6 @@ namespace OpenAuth.WebApi.Controllers
         /// 课包课程列表
         /// </summary>
         /// <param name="coursePackageId"></param>
-        /// <param name="pageIndex"></param>
-        /// <param name="pageSize"></param>
         /// <returns></returns>
         [HttpGet]
         public async Task<TableData> CoursePackageCourseList(int coursePackageId)

@@ -362,11 +362,12 @@ namespace OpenAuth.App.Hr
         /// <param name="appUserId"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        public async Task<TableData> ClassroomSubjectCourseList(int appUserId,int subjectId)
+        public async Task<TableData> ClassroomSubjectCourseList(int appUserId,int subjectId,string name )
         {
             var result = new TableData();
 
             var courseList = await (from a in UnitWork.Find<classroom_subject_course>(null)
+                                      .WhereIf(!string.IsNullOrWhiteSpace(name), a => a.Name.Contains(name))
                                      .Where(a => a.SubjectId == subjectId)
                                     select a).ToListAsync();
 
@@ -381,12 +382,14 @@ namespace OpenAuth.App.Hr
                           {
                               Id =c.Id,
                               Name = c.Name,
+                              SubjectId = c.SubjectId,
                               ShelfTime = c.ShelfTime,
                               Type = c.Type,
                               Content = c.Content,
                               CreateTime = c.CreateTime,
                               CreateUser = c.CreateUser,
                               IsComplete = sc?.IsComplete,
+                              ViewNumbers =c.ViewNumbers,
                           };
             result.Data = results.OrderBy(a => a.Sort).ToList();
             result.Count = results.Count();
@@ -413,15 +416,71 @@ namespace OpenAuth.App.Hr
                     info.SubjectCourseId = req.SubjectCourseId;
                     info.SubjectId = req.SubjectId;
                     info.CreateTime = DateTime.Now;
-                    info.Schedule = req.Schedule;
                     info.IsComplete = req.IsComplete;
                     var exam = await UnitWork.AddAsync<classroom_subject_course_user, int>(info);
                     await UnitWork.SaveAsync();
                 }
                 else
                 {
-                    query.Schedule = req.Schedule;
                     query.IsComplete = req.IsComplete;
+                    await UnitWork.UpdateAsync(query);
+                    await UnitWork.SaveAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                throw;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 修改专题观看记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> UpdateSubjectViewNumber(int subjectId)
+        {
+            var result = new TableData();
+            try
+            {
+                var query = await (from a in UnitWork.Find<classroom_subject>(null)
+                                    .Where(a => a.Id == subjectId)
+                                   select a).FirstOrDefaultAsync();
+                if (query != null)
+                {
+                    query.ViewNumbers++;
+                    await UnitWork.UpdateAsync(query);
+                    await UnitWork.SaveAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                throw;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 修改课程观看次数
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> UpdateCourseViewNumber(int courseId)
+        {
+            var result = new TableData();
+            try
+            {
+                var query = await (from a in UnitWork.Find<classroom_subject_course>(null)
+                                    .Where(a => a.Id == courseId)
+                                   select a).FirstOrDefaultAsync();
+                if (query != null)
+                {
+                    query.ViewNumbers++;
                     await UnitWork.UpdateAsync(query);
                     await UnitWork.SaveAsync();
                 }

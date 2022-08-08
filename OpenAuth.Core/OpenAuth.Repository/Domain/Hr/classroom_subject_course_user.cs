@@ -33,11 +33,6 @@ namespace OpenAuth.Repository.Domain.Hr
         public DateTime CreateTime { get; set; }
 
         /// <summary>
-        /// 课程学习进度(秒s)
-        /// </summary>
-        public int Schedule { get; set; }
-
-        /// <summary>
         /// 是否完成  
         /// </summary>
         public bool IsComplete { get; set; }
