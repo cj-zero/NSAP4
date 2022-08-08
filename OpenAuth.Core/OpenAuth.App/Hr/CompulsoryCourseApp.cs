@@ -615,7 +615,7 @@ namespace OpenAuth.App
                 ids = subjectIds
             }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Exam/SubjectListByIds");
             JObject data = (JObject)JsonConvert.DeserializeObject(str);
-            if (data["ErrorCode"] != null || data["ErrorCode"].ToString() != "200")
+            if (data["ErrorCode"] == null || data["ErrorCode"].ToString() != "200")
             {
                 result.Code = 500;
                 result.Message = "视频题目获取失败!";
