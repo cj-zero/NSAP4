@@ -1005,18 +1005,21 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var videoInfo = await UnitWork.Find<classroom_course_video>(null).Where(c => c.Id == req.CourseVideoId).FirstOrDefaultAsync();
-            videoInfo.ViewedCount++;
-            classroom_video_play_log log = new classroom_video_play_log();
-            log.CoursePackageId = req.CoursePackageId;
-            log.CourseId = req.CourseId;
-            log.CourseVideoId = req.CourseVideoId;
-            log.AppUserId = req.AppUserId;
-            log.PlayDuration = req.PlayDuration;
-            log.TotalDuration = req.TotalDuration;
-            log.CreateTime = DateTime.Now;
-            await UnitWork.AddAsync<classroom_video_play_log, int>(log);
-            await UnitWork.UpdateAsync(videoInfo);
-            await UnitWork.SaveAsync();
+            if (videoInfo!=null)
+            {
+                videoInfo.ViewedCount++;
+                classroom_video_play_log log = new classroom_video_play_log();
+                log.CoursePackageId = req.CoursePackageId;
+                log.CourseId = req.CourseId;
+                log.CourseVideoId = req.CourseVideoId;
+                log.AppUserId = req.AppUserId;
+                log.PlayDuration = req.PlayDuration;
+                log.TotalDuration = req.TotalDuration;
+                log.CreateTime = DateTime.Now;
+                await UnitWork.AddAsync<classroom_video_play_log, int>(log);
+                await UnitWork.UpdateAsync(videoInfo);
+                await UnitWork.SaveAsync();
+            }
             return result;
         }
 
