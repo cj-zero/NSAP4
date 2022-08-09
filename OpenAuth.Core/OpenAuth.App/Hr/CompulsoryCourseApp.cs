@@ -389,14 +389,16 @@ namespace OpenAuth.App
         /// <summary>
         /// App用户列表
         /// </summary>
+        /// <param name="key"></param>
         /// <param name="pageIndex"></param>
         /// <param name="pageSize"></param>
         /// <returns></returns>
-        public async Task<TableData> GetAppUserInfo(int pageIndex, int pageSize)
+        public async Task<TableData> GetAppUserInfo(string key,int pageIndex, int pageSize)
         {
             TableData result = new TableData();
             var query = (from a in UnitWork.Find<AppUserMap>(null)
                          join u in UnitWork.Find<User>(null) on a.UserID equals u.Id
+                         where u.Status==0
                          select new
                          {
                              erpId = u.Id,
@@ -404,7 +406,7 @@ namespace OpenAuth.App
                              erpName = u.Name,
                              appUserId = a.AppUserId,
                              u.EntryTime
-                         });
+                         }).WhereIf(!string.IsNullOrWhiteSpace(key),c=>c.erpName.Contains(key));
 
             result.Count = await query.CountAsync();
             result.Data = await query.OrderBy(c => c.appUserId).Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
