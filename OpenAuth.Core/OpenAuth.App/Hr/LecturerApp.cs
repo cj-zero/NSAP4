@@ -280,6 +280,30 @@ namespace OpenAuth.App
                 var minutesList = teacherCourseList.Where(c => c.AppUserId == item.AppUserId).Select(c => new { totalMinutes = (c.EndTime - c.StartTime).TotalMinutes }).ToList();
                 var totalminutes = minutesList.Count <= 0 ? 0 : minutesList.Sum(c => c.totalMinutes);
                 item.Experience += (int)totalminutes;
+                if (item.Experience<=300)
+                {
+                    item.Grade = 1;
+                }
+                else if (item.Experience <= 800 && item.Experience>=301)
+                {
+                    item.Grade = 2;
+                }
+                else if (item.Experience <= 1500 && item.Experience >= 801)
+                {
+                    item.Grade = 3;
+                }
+                else if (item.Experience <= 2000 && item.Experience >= 1501)
+                {
+                    item.Grade = 4;
+                }
+                else if (item.Experience <= 2500 && item.Experience >= 2001)
+                {
+                    item.Grade = 5;
+                }
+                else
+                {
+                    item.Grade = 6;
+                }
             }
             teacherCourseList.ForEach(c =>c.IsConversion = true);
             await UnitWork.BatchUpdateAsync(teacherList.ToArray());
@@ -402,6 +426,7 @@ namespace OpenAuth.App
             model.VideoUrl = "";
             model.AuditState = 1;
             model.CreateTime = DateTime.Now;
+            model.IsConversion = false;
             await UnitWork.AddAsync<classroom_teacher_course, int>(model);
             await UnitWork.SaveAsync();
             return result;
