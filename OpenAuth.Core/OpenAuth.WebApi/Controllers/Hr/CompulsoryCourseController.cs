@@ -40,7 +40,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="pageSize"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> CoursePackageList(string name, string createUser, DateTime? startTime, DateTime? endTime, bool state, int pageIndex, int pageSize)
+        public async Task<TableData> CoursePackageList(string name, string createUser, DateTime? startTime, DateTime? endTime, int? state, int pageIndex, int pageSize)
         {
             var result = new TableData();
             try
@@ -308,6 +308,29 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// App用户列表
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetAppUserInfo(string key,int pageIndex, int pageSize)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.GetAppUserInfo(key,pageIndex, pageSize);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
         #endregion
 
         #region  课程
@@ -325,7 +348,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="pageSize"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> CourseList(string name, string createUser, int? learningCycle, DateTime? startTime, DateTime? endTime, bool? state, int? source, int pageIndex, int pageSize)
+        public async Task<TableData> CourseList(string name, string createUser, int? learningCycle, DateTime? startTime, DateTime? endTime, int? state, int? source, int pageIndex, int pageSize)
         {
             var result = new TableData();
             try
@@ -468,7 +491,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="state"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> CourseVideoList(int courseId, string name, string createUser, DateTime? startTime, DateTime? endTime, bool? state)
+        public async Task<TableData> CourseVideoList(int courseId, string name, string createUser, DateTime? startTime, DateTime? endTime, int? state)
         {
             var result = new TableData();
             try

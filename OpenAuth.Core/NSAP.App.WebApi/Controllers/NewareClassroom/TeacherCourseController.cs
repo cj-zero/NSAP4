@@ -76,12 +76,12 @@ namespace NSAP.App.WebApi.Controllers.NewareClassroom
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> TeacherCoursePlayBack(int pageIndex = 1, int pageSize = 10)
+        public async Task<TableData> TeacherCoursePlayBack(int appUserId, int pageIndex = 1, int pageSize = 10)
         {
             var result = new TableData();
             try
             {
-                result = await _app.TeacherCoursePlayBack(pageIndex, pageSize);
+                result = await _app.TeacherCoursePlayBack(appUserId,pageIndex, pageSize);
             }
             catch (Exception e)
             {

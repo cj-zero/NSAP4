@@ -761,31 +761,15 @@ namespace OpenAuth.App
         public async Task<TableData> GetAppUserInfo(string keyword)
         {
             TableData result = new TableData();
-            //IQueryable<User> query = UnitWork.Find<User>(null);
-            //query = UnitWork.Find<User>(u => u.Name.Contains(keyword) || u.Account.Contains(keyword));
-
-            //var userInfos = from user in query
-            //               join map in UnitWork.Find<AppUserMap>(null)
-            //                   on user.Id equals map.UserID into temp
-            //               from r in temp.DefaultIfEmpty()
-            //               select new
-            //               {
-            //                   erpId = user.Id,
-            //                   erpAccount = user.Account,
-            //                   erpName = user.Name,
-            //                   appUserId = r == null ? 0 : r.AppUserId
-            //               };
-            //var userInfoList = userInfos.ToList();
-            var query = from a in UnitWork.Find<AppUserMap>(null)
+            var query = (from a in UnitWork.Find<AppUserMap>(null)
                         join u in UnitWork.Find<User>(null) on a.UserID equals u.Id
-                        where u.Name.Contains(keyword) || u.Account.Contains(keyword)
                         select new
                         {
                             erpId = u.Id,
                             erpAccount = u.Account,
                             erpName = u.Name,
                             appUserId = a.AppUserId
-                        };
+                        }).WhereIf(!string.IsNullOrWhiteSpace(keyword),u=> u.erpName.Contains(keyword) || u.erpAccount.Contains(keyword));
 
             result.Count = await query.CountAsync();
             result.Data = await query.ToListAsync();
