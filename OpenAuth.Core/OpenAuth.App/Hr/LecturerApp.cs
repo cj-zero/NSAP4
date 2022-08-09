@@ -261,6 +261,18 @@ namespace OpenAuth.App
             await UnitWork.SaveAsync();
             return result;
         }
+
+
+        /// <summary>
+        /// 讲师经验值计算
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> CalculateTeacherExperience()
+        {
+            var result = new TableData();
+
+            return result;
+        }
         #endregion
 
 
