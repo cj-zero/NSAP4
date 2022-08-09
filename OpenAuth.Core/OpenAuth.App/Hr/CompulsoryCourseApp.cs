@@ -778,9 +778,10 @@ namespace OpenAuth.App
             List<object> obj = new List<object>();
             DateTime dt = DateTime.Now;
             var query = await (from a in UnitWork.Find<classroom_course_package_user>(null)
-                               join c in UnitWork.Find<classroom_course_package_map>(null) on a.CoursePackageId equals c.CoursePackageId
+                               join e in UnitWork.Find<classroom_course_package>(null) on a.CoursePackageId equals e.Id
+                               join c in UnitWork.Find<classroom_course_package_map>(null) on e.Id equals c.CoursePackageId
                                join d in UnitWork.Find<classroom_course>(null) on c.CourseId equals d.Id
-                               where a.AppUserId == appUserId && d.State == true
+                               where a.AppUserId == appUserId && d.State == true && e.State==true
                                select new { a.Id, d.Name, d.Source, d.State, d.LearningCycle, a.CreateTime, a.CoursePackageId, c.Sort, c.CourseId })
                                .WhereIf(source != null && source > 0, c => c.Source == source)
                                .OrderByDescending(c => c.Id)
