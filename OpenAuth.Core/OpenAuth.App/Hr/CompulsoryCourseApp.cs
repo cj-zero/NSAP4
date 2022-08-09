@@ -338,14 +338,15 @@ namespace OpenAuth.App
                 int i = 0;
                 int totalDay = courseList.Sum(c => c.LearningCycle);
                 DateTime endTimes = item.CreateTime.AddDays(totalDay);
+                decimal schedules = 0;
                 foreach (var ctem in courseList)
                 {
                     var courseVideoList = videoList.Where(c => c.CourseId == ctem.Id).ToList();
                     int j = 0;
-                    foreach (var vitem in videoPlayList)
+                    foreach (var vitem in videoList)
                     {
-                        var isPass = examList.Where(c => c.CourseId == ctem.Id && c.CourseVideoId == vitem.CourseVideoId && c.AppUserId == item.AppUserId && c.IsPass == true).Any();
-                        var playResult = videoPlayList.Where(c => c.CourseId == ctem.Id && c.CourseVideoId == vitem.CourseVideoId && c.AppUserId == item.AppUserId).OrderByDescending(c => c.PlayDuration).FirstOrDefault();
+                        var isPass = examList.Where(c => c.CourseId == ctem.Id && c.CourseVideoId == vitem.Id && c.AppUserId == item.AppUserId && c.IsPass == true).Any();
+                        var playResult = videoPlayList.Where(c => c.CourseId == ctem.Id && c.CourseVideoId == vitem.Id && c.AppUserId == item.AppUserId).OrderByDescending(c => c.PlayDuration).FirstOrDefault();
                         var isFinish = playResult == null ? false : (playResult.PlayDuration / (double)playResult.TotalDuration > 0.8);
                         if (isFinish && isPass)
                         {
@@ -357,7 +358,10 @@ namespace OpenAuth.App
                         i++;
                     }
                 }
-                var schedules = i / courseList.Count;
+                if (courseList.Count>0)
+                {
+                    schedules = Math.Round((decimal)i / courseList.Count, 2);
+                }
                 if (schedule != null && schedule == schedules)
                 {
                     list.Add(new { userInfo.Name, item.CreateTime, endTimes, schedules, item.Id, item.AppUserId });
