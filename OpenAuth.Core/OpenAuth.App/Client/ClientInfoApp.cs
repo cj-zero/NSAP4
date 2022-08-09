@@ -2595,12 +2595,21 @@ namespace OpenAuth.App.Client
         /// <returns></returns>
         public async Task<List<ClientFollowUp>> ClientFollowUpByIdAsync(string CardCode)
         {
-            var userId = _serviceBaseApp.GetUserNaspId();
-            var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
-            int SlpCode = Convert.ToInt16(GetUserInfoById(sboid.ToString(), userId.ToString(), "1"));
             var result = new List<ClientFollowUp>();
-            var ClientFollowUp = UnitWork.Find<ClientFollowUp>(q => q.CardCode == CardCode && q.SlpCode == SlpCode && !q.IsDelete).MapToList<ClientFollowUp>();
-            return ClientFollowUp;
+
+            var loginUser = _auth.GetCurrentUser().User;
+            if (loginUser.Name == "韦京生" || loginUser.Name == "郭睿心" || loginUser.Name == "骆灵芝")
+            {
+                result = UnitWork.Find<ClientFollowUp>(q => q.CardCode == CardCode && !q.IsDelete).MapToList<ClientFollowUp>();
+            }
+            else
+            {
+                var userId = _serviceBaseApp.GetUserNaspId();
+                var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+                int SlpCode = Convert.ToInt16(GetUserInfoById(sboid.ToString(), userId.ToString(), "1"));
+                result = UnitWork.Find<ClientFollowUp>(q => q.CardCode == CardCode && q.SlpCode == SlpCode && !q.IsDelete).MapToList<ClientFollowUp>();
+            }
+            return result;
         }
 
         /// <summary>
@@ -2616,7 +2625,6 @@ namespace OpenAuth.App.Client
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            var loginUser = loginContext.User;
             foreach (var item in Ids)
             {
                 var clientFollowUp = await UnitWork.FindSingleAsync<ClientFollowUp>(q => q.Id == item);

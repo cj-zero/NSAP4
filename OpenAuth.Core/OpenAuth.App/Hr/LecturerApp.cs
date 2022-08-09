@@ -36,7 +36,7 @@ namespace OpenAuth.App
         {
             _appConfiguration = appConfiguration;
             _helper = new HttpHelper(_appConfiguration.Value.AppPushMsgUrl);
-            _logger= logger;
+            _logger = logger;
         }
 
         #region erp
@@ -302,20 +302,22 @@ namespace OpenAuth.App
             var query = await UnitWork.Find<classroom_teacher_apply_log>(null).Where(c => c.AppUserId == req.AppUserId).OrderByDescending(c => c.Id).FirstOrDefaultAsync();
             if (query == null || query.AuditState == 3)
             {
-                    classroom_teacher_apply_log model = new classroom_teacher_apply_log();
-                    model.Name = req.Name;
-                    model.Age = req.Age;
-                    model.Mobile = req.Mobile;
-                    model.HeaderImg = req.HeaderImg;
-                    model.Department = req.Department;
-                    model.CanTeachCourse = req.CanTeachCourse;
-                    model.BeGoodAtTerritory = req.BeGoodAtTerritory;
-                    model.CreateTime = DateTime.Now;
-                    model.ModifyTime = DateTime.Now;
-                    model.AppUserId = req.AppUserId;
-                    model.AuditState = 1;
-                    await UnitWork.AddAsync<classroom_teacher_apply_log, int>(query);
-                    await UnitWork.SaveAsync();
+                classroom_teacher_apply_log model = new classroom_teacher_apply_log();
+                model.Name = req.Name;
+                model.Age = req.Age;
+                model.Mobile = req.Mobile;
+                model.HeaderImg = req.HeaderImg;
+                model.Department = req.Department;
+                model.CanTeachCourse = req.CanTeachCourse;
+                model.BeGoodAtTerritory = req.BeGoodAtTerritory;
+                model.CreateTime = DateTime.Now;
+                model.ModifyTime = DateTime.Now;
+                model.AppUserId = req.AppUserId;
+                model.Experience = 0;
+                model.Grade = 1;
+                model.AuditState = 1;
+                await UnitWork.AddAsync<classroom_teacher_apply_log, int>(query);
+                await UnitWork.SaveAsync();
             }
             else
             {
@@ -491,7 +493,7 @@ namespace OpenAuth.App
             return result;
         }
 
-     
+
         #endregion
     }
 }
