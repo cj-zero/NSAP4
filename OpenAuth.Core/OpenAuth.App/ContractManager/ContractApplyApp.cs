@@ -1015,7 +1015,11 @@ namespace OpenAuth.App.ContractManager
             }
 
             //审批时判断文件类型
-            result = ApprovalNodeJudge(req.Id);
+            if (!req.IsReject)
+            {
+                result = ApprovalNodeJudge(req.Id);
+            }
+           
             if (result.Code == 500)
             {
                 return result;
