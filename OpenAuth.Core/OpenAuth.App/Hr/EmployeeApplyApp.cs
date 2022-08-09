@@ -198,12 +198,12 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var obsHelper = new HuaweiOBSHelper();
-            var fileName = "bts-rom/resume/"+ DateTime.Now.ToString("yyyyMMddHHmmss") + file.FileName;
+            var fileName = "erp4-rom/resume/"+ DateTime.Now.ToString("yyyyMMddHHmmss") + file.FileName;
             var stream = file?.OpenReadStream();
             var response = obsHelper.PutObject(fileName, null, stream, out string objectKey);
             dynamic obj = new
             {
-                FileName = objectKey,
+                FileName = objectKey.Replace("erp4-rom/resume/",""),
                 FilePath = response.ObjectUrl
             };
             result.Data = obj;

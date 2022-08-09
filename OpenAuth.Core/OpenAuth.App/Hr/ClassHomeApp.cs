@@ -188,12 +188,12 @@ namespace OpenAuth.App.Hr
                 info.CreateUser = item.CreateUser;
                 if (courseCount == userProgressCount)
                 {
-                    info.Schedule = 100;
+                    info.Schedule = 1;
                     info.IsComplete = true;
                 }
                 else
                 {
-                    info.Schedule = userProgressCount * 100 / courseCount;
+                    info.Schedule = Math.Round((decimal)userProgressCount / courseCount, 2);
                     info.IsComplete = false;
                 }
                 obj.Add(info);
