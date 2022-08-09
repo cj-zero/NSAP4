@@ -188,5 +188,24 @@ namespace OpenAuth.WebApi.Controllers.Hr
             }
             return result;
         }
+        /// <summary>
+        /// 讲师经验值计算
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> CalculateTeacherExperience()
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.CalculateTeacherExperience();
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
     }
 }

@@ -270,7 +270,21 @@ namespace OpenAuth.App
         public async Task<TableData> CalculateTeacherExperience()
         {
             var result = new TableData();
-
+            DateTime dt=DateTime.Now;
+            var ids = await UnitWork.Find<classroom_teacher_apply_log>(null).GroupBy(c => c.AppUserId).Select(c => c.Max(c => c.Id)).ToListAsync();
+            var teacherList = await UnitWork.Find<classroom_teacher_apply_log>(null).Where(c => ids.Contains(c.Id) && c.AuditState == 2).ToListAsync();
+            var teacherIds = teacherList.Select(c => c.AppUserId).ToList();
+            var teacherCourseList = await UnitWork.Find<classroom_teacher_course>(null).Where(c => teacherIds.Contains(c.AppUserId) && c.IsConversion == false && c.AuditState == 2 && c.EndTime <= dt).ToListAsync();
+            foreach (var item in teacherList)
+            {
+                var minutesList = teacherCourseList.Where(c => c.AppUserId == item.AppUserId).Select(c => new { totalMinutes = (c.EndTime - c.StartTime).TotalMinutes }).ToList();
+                var totalminutes = minutesList.Count <= 0 ? 0 : minutesList.Sum(c => c.totalMinutes);
+                item.Experience += (int)totalminutes;
+            }
+            teacherCourseList.ForEach(c =>c.IsConversion = true);
+            await UnitWork.BatchUpdateAsync(teacherList.ToArray());
+            await UnitWork.BatchUpdateAsync(teacherCourseList.ToArray());
+            await UnitWork.SaveAsync();
             return result;
         }
         #endregion

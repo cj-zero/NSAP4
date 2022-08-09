@@ -873,7 +873,7 @@ namespace OpenAuth.App
                             }
                             break;
                         case 4:
-                            if (playCount >= 0 || examCount >= 0)
+                            if ((playCount >= 0 || examCount >= 0) && Schedule<1)
                             {
                                 obj.Add(new { row.Name, row.CreateTime, EndTime, Schedule, row.CoursePackageId, row.CourseId, courseState = 4 });
                             }
