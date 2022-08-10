@@ -57,5 +57,23 @@ namespace OpenAuth.Repository.Domain
         [Description("")]
         [Browsable(false)]
         public string FileId { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        [Browsable(false)]
+        public DateTime? CalibrationTime { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        [Browsable(false)]
+        public string CreateUser { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        [Browsable(false)]
+        public string CreateUserId { get; set; }
     }
 }

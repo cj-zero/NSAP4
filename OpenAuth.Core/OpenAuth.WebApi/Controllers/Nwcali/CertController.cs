@@ -293,6 +293,11 @@ namespace OpenAuth.WebApi.Controllers
                     //读取文件
                     var handler = new ExcelHandler(file.OpenReadStream());
                     var sheet = handler.GetSheet();
+                    var timeRow = sheet.GetRow(1);
+                    var time1 = timeRow.GetCell(1).StringCellValue;
+                    var timeRow2 = sheet.GetRow(2);
+                    var time2 = timeRow2.GetCell(1).StringCellValue;
+                    var timecomb = DateTime.Parse($"{time1} {time2}");
                     var pclNoRow = sheet.GetRow(32);
                     var pclGuidRow = sheet.GetRow(33);
                     List<MachineInfo> machineInfo = new List<MachineInfo>();
@@ -307,7 +312,10 @@ namespace OpenAuth.WebApi.Controllers
                             OrderNo = "",
                             Status = 1,
                             CreateTime = DateTime.Now,
-                            FileId = fileResp.FilePath
+                            FileId = fileResp.FilePath,
+                            CalibrationTime = timecomb,
+                            CreateUser = loginContext.User.Name,
+                            CreateUserId = loginContext.User.Id
                         });
                     }
                     //var guid = machineInfo.Select(c => c.Guid).ToList();
