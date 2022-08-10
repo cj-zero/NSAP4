@@ -316,10 +316,6 @@ namespace OpenAuth.App.Hr
             foreach (var item in subjectList)
             {
                 var courseCount = courseList.Where(a => a.SubjectId == item.Id).Count();
-                if (courseCount == 0)
-                {
-                    continue;
-                }
                 var userProgressCount = userProgress.Where(a => a.SubjectId == item.Id && a.IsComplete == true).Count();
 
                 classroom_subject_dto info = new classroom_subject_dto();
@@ -330,15 +326,23 @@ namespace OpenAuth.App.Hr
                 info.CreateTime = item.CreateTime;
                 info.Sort = item.Sort;
                 info.CreateUser = item.CreateUser;
-                if (courseCount == userProgressCount)
+                if (courseCount == 0)
                 {
-                    info.Schedule = 100;
-                    info.IsComplete = true;
+                    info.Schedule =0;
+                    info.IsComplete = false;
                 }
                 else
                 {
-                    info.Schedule = userProgressCount * 100 / courseCount;
-                    info.IsComplete = false;
+                    if (courseCount == userProgressCount)
+                    {
+                        info.Schedule = 100;
+                        info.IsComplete = true;
+                    }
+                    else
+                    {
+                        info.Schedule = userProgressCount * 100 / courseCount;
+                        info.IsComplete = false;
+                    }
                 }
                 obj.Add(info);
             }
@@ -369,7 +373,7 @@ namespace OpenAuth.App.Hr
 
             var courseList = await (from a in UnitWork.Find<classroom_subject_course>(null)
                                       .WhereIf(!string.IsNullOrWhiteSpace(name), a => a.Name.Contains(name))
-                                     .Where(a => a.SubjectId == subjectId)
+                                     .Where(a => a.SubjectId == subjectId && a.State ==1)
                                     select a).ToListAsync();
 
             var userProgress = await (from a in UnitWork.Find<classroom_subject_course_user>(null)
