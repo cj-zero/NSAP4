@@ -366,9 +366,12 @@ namespace OpenAuth.App
                 {
                     schedules = Math.Round((decimal)i / courseList.Count, 2);
                 }
-                if (schedule != null && schedule/100 == schedules)
+                if (schedule != null)
                 {
-                    list.Add(new { userInfo.Name, item.CreateTime, endTimes, schedules, item.Id, item.AppUserId });
+                    if (schedule/100 == schedules)
+                    {
+                        list.Add(new { userInfo.Name, item.CreateTime, endTimes, schedules, item.Id, item.AppUserId });
+                    }
                 }
                 else
                 {
