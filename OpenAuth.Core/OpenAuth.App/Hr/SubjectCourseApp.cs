@@ -164,6 +164,7 @@ namespace OpenAuth.App.Hr
         {
             var result = new TableData();
             var query =  (from a in UnitWork.Find<classroom_subject_course>(null)
+                                     .WhereIf(req.State != null, c => c.State == req.State)
                                      .WhereIf(!string.IsNullOrWhiteSpace(req.Name), a => a.Name.Contains(req.Name))
                                      .WhereIf(!string.IsNullOrWhiteSpace(req.CreateUser), a => a.CreateUser.Contains(req.CreateUser))
                                      .WhereIf(req.StartTime != null, c => c.CreateTime >= req.StartTime)
