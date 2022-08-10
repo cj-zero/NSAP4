@@ -199,6 +199,7 @@ namespace OpenAuth.App
                 .WhereIf(request.FlowStatus == 2, o => (o.ActivityName == "待审核" || o.ActivityName == "待批准") && o.IsFinish==0) //证书审核只显示进行中待核审和待批准
                 .WhereIf(!string.IsNullOrWhiteSpace(activeName),o=>o.ActivityName==activeName)
                 .ToListAsync();
+
             var fsid = fs.Select(f => f.Id).ToList();
             var certObjs = UnitWork.Find<NwcaliBaseInfo>(null);
             certObjs = certObjs
@@ -255,74 +256,71 @@ namespace OpenAuth.App
                 };
             });
             var certCount1 = await certObjs.CountAsync();
-            var objs = UnitWork.Find<Certinfo>(null);
-            
-            objs = objs
-                .Where(o => fsid.Contains(o.FlowInstanceId))
-                .WhereIf(request.FlowStatus == 1, u => u.Operator.Equals(user.User.Name))
-                .WhereIf(!string.IsNullOrEmpty(request.CertNo), u => u.CertNo.Contains(request.CertNo))
-                .WhereIf(!string.IsNullOrWhiteSpace(request.AssetNo), u => u.AssetNo.Contains(request.AssetNo))
-                .WhereIf(!string.IsNullOrWhiteSpace(request.Model), u => u.Model.Contains(request.Model))
-                .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.Sn.Contains(request.Sn))
-                .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), u => u.Operator.Contains(request.Operator))
-                .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.CalibrationDate >= request.CalibrationDateFrom && u.CalibrationDate <= request.CalibrationDateTo)
-                ;
-            if (request.FlowStatus == 1)
-            {
-                objs = objs.Where(u => u.Operator.Equals(user.User.Name));
-            }
-            var take = certList.Count == 0 ? request.limit : request.limit - certList.Count;
-            var page = certCount1 / request.limit;
-            var skip = certList.Count == 0 ? (request.page - page) * request.limit : 0;
-            var certCount2 = await objs.CountAsync();
-            if (certList.Count == 0 || certList.Count < request.limit)
-            {
+            #region Certinfo已废弃
 
-                var list = await objs.OrderByDescending(u => u.CreateTime)
-                        .Skip(skip)
-                        .Take(take).ToListAsync();
-                list.ForEach(c =>
-                {
-                    c.FlowInstance = fs.Find(f => f.Id.Equals(c.FlowInstanceId));
+            //var objs = UnitWork.Find<Certinfo>(null);
 
-                    //驳回/撤回状态
-                    if (c.FlowInstance.IsFinish == 4) c.FlowInstance.ActivityName = "驳回";
-                    else if (c.FlowInstance.IsFinish == -1) c.FlowInstance.ActivityName = "撤回";
-                    //c.FlowInstance.ActivityName = c.FlowInstance.IsFinish == 4 ? "驳回" : c.FlowInstance.ActivityName;
-                });
-                var view2 = list.Select(c =>
-                {
-                    //增加驳回原因
-                    var rejectcontent = "";
-                    var his = UnitWork.Find<FlowInstanceOperationHistory>(h => h.InstanceId.Equals(c.FlowInstanceId) && h.Content.Contains("驳回")).OrderByDescending(h => h.CreateDate).FirstOrDefault();
-                    rejectcontent = his != null ? his.Content.Split("：")[1] : "";
-                    //if (request.FlowStatus == 2 || (request.FlowStatus == 1 && c.FlowInstance.IsFinish != 0))
-                    //{
-                    //    var his = UnitWork.Find<FlowInstanceOperationHistory>(h => h.InstanceId.Equals(c.FlowInstanceId) && h.Content.Contains("驳回")).OrderByDescending(h => h.CreateDate).FirstOrDefault();
-                    //    rejectcontent = his != null ? his.Content.Split("：")[1] : "";
-                    //}
+            //objs = objs
+            //    .Where(o => fsid.Contains(o.FlowInstanceId))
+            //    .WhereIf(request.FlowStatus == 1, u => u.Operator.Equals(user.User.Name))
+            //    .WhereIf(!string.IsNullOrEmpty(request.CertNo), u => u.CertNo.Contains(request.CertNo))
+            //    .WhereIf(!string.IsNullOrWhiteSpace(request.AssetNo), u => u.AssetNo.Contains(request.AssetNo))
+            //    .WhereIf(!string.IsNullOrWhiteSpace(request.Model), u => u.Model.Contains(request.Model))
+            //    .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.Sn.Contains(request.Sn))
+            //    .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), u => u.Operator.Contains(request.Operator))
+            //    .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.CalibrationDate >= request.CalibrationDateFrom && u.CalibrationDate <= request.CalibrationDateTo);
 
-                    return new CertinfoView
-                    {
-                        Id = c.Id,
-                        CertNo = c.CertNo,
-                        ActivityName = c.FlowInstance?.ActivityName,
-                        IsFinish = c.FlowInstance?.IsFinish,
-                        CreateTime = c.CreateTime,
-                        AssetNo = c.AssetNo,
-                        CalibrationDate = c.CalibrationDate,
-                        ExpirationDate = c.ExpirationDate,
-                        Model = c.Model,
-                        Operator = c.Operator,
-                        Sn = c.Sn,
-                        FlowInstanceId = c.FlowInstanceId,
-                        RejectContent= rejectcontent
-                    };
-                }).ToList(); 
-                view = view.Concat(view2);
-            }
+            //if (request.FlowStatus == 1)
+            //{
+            //    objs = objs.Where(u => u.Operator.Equals(user.User.Name));
+            //}
+            //var take = certList.Count == 0 ? request.limit : request.limit - certList.Count;
+            //var page = certCount1 / request.limit;
+            //var skip = certList.Count == 0 ? (request.page - page) * request.limit : 0;
+            //var certCount2 = await objs.CountAsync();
+            //if (certList.Count == 0 || certList.Count < request.limit)
+            //{
+
+            //    var list = await objs.OrderByDescending(u => u.CreateTime)
+            //            .Skip(skip)
+            //            .Take(take).ToListAsync();
+            //    list.ForEach(c =>
+            //    {
+            //        c.FlowInstance = fs.Find(f => f.Id.Equals(c.FlowInstanceId));
+
+            //    //驳回/撤回状态
+            //        if (c.FlowInstance.IsFinish == 4) c.FlowInstance.ActivityName = "驳回";
+            //        else if (c.FlowInstance.IsFinish == -1) c.FlowInstance.ActivityName = "撤回";
+            //    });
+            //    var view2 = list.Select(c =>
+            //    {
+            //    //增加驳回原因
+            //        var rejectcontent = "";
+            //        var his = UnitWork.Find<FlowInstanceOperationHistory>(h => h.InstanceId.Equals(c.FlowInstanceId) && h.Content.Contains("驳回")).OrderByDescending(h => h.CreateDate).FirstOrDefault();
+            //        rejectcontent = his != null ? his.Content.Split("：")[1] : "";
+            //        return new CertinfoView
+            //        {
+            //            Id = c.Id,
+            //            CertNo = c.CertNo,
+            //            ActivityName = c.FlowInstance?.ActivityName,
+            //            IsFinish = c.FlowInstance?.IsFinish,
+            //            CreateTime = c.CreateTime,
+            //            AssetNo = c.AssetNo,
+            //            CalibrationDate = c.CalibrationDate,
+            //            ExpirationDate = c.ExpirationDate,
+            //            Model = c.Model,
+            //            Operator = c.Operator,
+            //            Sn = c.Sn,
+            //            FlowInstanceId = c.FlowInstanceId,
+            //            RejectContent = rejectcontent
+            //        };
+            //    }).ToList();
+            //    view = view.Concat(view2);
+            //}
+            #endregion
+
             result.Data = view.OrderByDescending(d=>d.CreateTime).ToList();
-            result.Count = certCount2 + certCount1;
+            result.Count = certCount1;
             return result;
         }
 
@@ -337,12 +335,10 @@ namespace OpenAuth.App
 
             //信息存储在两个表中(新：NwcaliBaseInfo，旧：Certinfo,页面显示的结果是两个表的并集,因此前端传过来的id两个表都有可能)
             var query1 = UnitWork.Find<NwcaliBaseInfo>(null).Where(x => ids.Contains(x.Id));
-            var query2 = UnitWork.Find<Certinfo>(null).Where(x => ids.Contains(x.Id));
 
             var nwInfos = await query1.Select(x => new { x.Id, x.FlowInstanceId }).ToListAsync();
-            var certInfos = await query2.Select(x => new { x.Id, x.FlowInstanceId }).ToListAsync();
             //流程实例id
-            var flowInstanceIds = nwInfos.Select(n => n.FlowInstanceId).Union(certInfos.Select(c => c.FlowInstanceId));
+            var flowInstanceIds = nwInfos.Select(n => n.FlowInstanceId).ToList();
 
             using var tran = UnitWork.GetDbContext<NwcaliBaseInfo>().Database.BeginTransaction();
             //删除记录及删除字表和流程实例
@@ -353,10 +349,6 @@ namespace OpenAuth.App
                 await UnitWork.DeleteAsync<NwcaliPlcData>(x => nwInfos.Select(n => n.Id).Contains(x.NwcaliBaseInfoId));
                 await UnitWork.DeleteAsync<Repository.Domain.NwcaliTur>(x => nwInfos.Select(n => n.Id).Contains(x.NwcaliBaseInfoId));
                 await UnitWork.DeleteAsync<PcPlc>(x => nwInfos.Select(n => n.Id).Contains(x.NwcaliBaseInfoId));
-
-                await UnitWork.DeleteAsync<Certinfo>(x => certInfos.Select(c => c.Id).Contains(x.Id));
-                await UnitWork.DeleteAsync<CertOperationHistory>(x => certInfos.Select(c => c.Id).Contains(x.Id));
-                await UnitWork.DeleteAsync<Certplc>(x => certInfos.Select(c => c.Id).Contains(x.Id));
 
                 await UnitWork.SaveAsync();
 
