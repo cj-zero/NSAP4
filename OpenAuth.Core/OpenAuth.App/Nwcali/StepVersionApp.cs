@@ -730,13 +730,21 @@ namespace OpenAuth.App
             {
                 result.Data = (from a in bindDevList.AsEnumerable()
                                join b in onlineDevList.AsEnumerable() on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, DevUid = b.dev_uid, LowGuid = b.low_guid }
-                               select new { a.GeneratorCode }).OrderBy(c => c.GeneratorCode).Distinct().ToList();
+                               select new { a.GeneratorCode })
+                               .OrderBy(c => c.GeneratorCode)
+                               .Distinct()
+                               .ToList();
             }
             else
             {
                 result.Data = (from a in bindDevList.AsEnumerable()
                                join b in onlineDevList.AsEnumerable() on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, DevUid = b.dev_uid, LowGuid = b.low_guid }
-                               select new { a.GeneratorCode, a.DevUid, b.low_no, a.EdgeGuid, a.SrvGuid, a.BtsServerIp, a.Guid, a.LowGuid, a.UnitId }).OrderBy(c => c.GeneratorCode).ThenBy(c => c.DevUid).ThenBy(c => c.low_no).Distinct().ToList();
+                               select new { a.GeneratorCode, a.DevUid, b.low_no, a.EdgeGuid, a.SrvGuid, a.BtsServerIp, a.Guid, a.LowGuid, a.UnitId })
+                               .OrderBy(c => c.GeneratorCode)
+                               .ThenBy(c => c.DevUid)
+                               .ThenBy(c => c.low_no)
+                               .Distinct()
+                               .ToList();
 
             }
             return result;

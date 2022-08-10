@@ -363,10 +363,11 @@ namespace OpenAuth.App
                 model.CreateTime = DateTime.Now;
                 model.ModifyTime = DateTime.Now;
                 model.AppUserId = req.AppUserId;
+                model.OperationUser = "";
                 model.Experience = 0;
                 model.Grade = 1;
                 model.AuditState = 1;
-                await UnitWork.AddAsync<classroom_teacher_apply_log, int>(query);
+                await UnitWork.AddAsync<classroom_teacher_apply_log, int>(model);
                 await UnitWork.SaveAsync();
             }
             else

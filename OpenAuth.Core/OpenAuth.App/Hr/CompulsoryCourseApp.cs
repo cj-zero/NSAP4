@@ -335,6 +335,10 @@ namespace OpenAuth.App
             foreach (var item in packageUserLlist)
             {
                 var userInfo = query.Where(c => c.AppUserId == item.AppUserId).FirstOrDefault();
+                if (userInfo==null)
+                {
+                    continue;
+                }
                 int i = 0;
                 int totalDay = courseList.Sum(c => c.LearningCycle);
                 DateTime endTimes = item.CreateTime.AddDays(totalDay);
@@ -362,7 +366,7 @@ namespace OpenAuth.App
                 {
                     schedules = Math.Round((decimal)i / courseList.Count, 2);
                 }
-                if (schedule != null && schedule == schedules)
+                if (schedule != null && schedule/100 == schedules)
                 {
                     list.Add(new { userInfo.Name, item.CreateTime, endTimes, schedules, item.Id, item.AppUserId });
                 }
