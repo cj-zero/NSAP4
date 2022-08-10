@@ -836,13 +836,13 @@ namespace OpenAuth.App
                             }
                             else
                             {
-                                if (Schedule == 1)
+                                if (Schedule >= 1)
                                 {
                                     courseState = 2;
                                 }
-                                else if (Schedule != 1)
+                                else if (Schedule < 1)
                                 {
-                                    if (dt >= EndTime)
+                                    if (dt > EndTime)
                                     {
                                         courseState = 1;
                                     }
@@ -855,25 +855,25 @@ namespace OpenAuth.App
                             obj.Add(new { row.Name, row.CreateTime, EndTime, Schedule, row.CoursePackageId, row.CourseId, courseState });
                             break;
                         case 1:
-                            if (Schedule != 1 && dt >= EndTime)
+                            if (Schedule <1 && dt > EndTime && (playCount>0 || examCount>0))
                             {
                                 obj.Add(new { row.Name, row.CreateTime, EndTime, Schedule, row.CoursePackageId, row.CourseId, courseState = 1 });
                             }
                             break;
                         case 2:
-                            if (Schedule == 1)
+                            if (Schedule >=1)
                             {
                                 obj.Add(new { row.Name, row.CreateTime, EndTime, Schedule, row.CoursePackageId, row.CourseId, courseState = 2 });
                             }
                             break;
                         case 3:
-                            if (Schedule == 0 && playCount <= 0 && examCount <= 0)
+                            if (playCount <= 0 && examCount <= 0)
                             {
                                 obj.Add(new { row.Name, row.CreateTime, EndTime, Schedule, row.CoursePackageId, row.CourseId, courseState = 3 });
                             }
                             break;
                         case 4:
-                            if ((playCount >= 0 || examCount >= 0) && Schedule<1)
+                            if ((playCount >0 || examCount >0) && Schedule<1 && dt <= EndTime)
                             {
                                 obj.Add(new { row.Name, row.CreateTime, EndTime, Schedule, row.CoursePackageId, row.CourseId, courseState = 4 });
                             }
