@@ -102,7 +102,7 @@ namespace OpenAuth.App.Hr
                 {
                     Name = req.Name,
                     ViewNumbers = 0,
-                    State = 1,
+                    State = req.State,
                     CreateTime = DateTime.Now,
                     Sort = (int)sort + 1,
                     CreateUser = user.Name,
