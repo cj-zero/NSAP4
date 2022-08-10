@@ -79,9 +79,10 @@ namespace OpenAuth.App
 
             if(query.Count < limt)
             {
+                var filterTeacherIds = query.Select(zw => zw.AppUserId).Distinct().ToList();
                 var supplementCount = limt - query.Count;
                 var supplementTeacher = await UnitWork.Find<classroom_teacher_apply_log>(null)
-                        .Where(c => c.AuditState == 2 && !teacherUserId.Contains(c.AppUserId))
+                        .Where(c => c.AuditState == 2 && !filterTeacherIds.Contains(c.AppUserId))
                         .Select(c => new { c.Name, c.AppUserId, c.HeaderImg, c.Experience }).OrderByDescending(c => c.Experience)
                         .Take(supplementCount)
                         .ToListAsync();
@@ -97,6 +98,7 @@ namespace OpenAuth.App
         /// <summary>
         ///  直播预告
         /// </summary>
+        /// <param name="appUserId"></param>
         /// <param name="pageIndex"></param>
         /// <param name="pageSize"></param>
         public async Task<TableData> TeacherCourseAdvanceNotice(int appUserId,int pageIndex, int pageSize)
@@ -109,26 +111,28 @@ namespace OpenAuth.App
             var query = (from a in UnitWork.Find<classroom_teacher_course>(null)
                         .Where(zw => zw.AuditState == 2
                         && (zw.EndTime > midNight))
-                         select new teacher_course_sign
-                         {
-                             Id = a.Id,
-                             Title = a.Title,
-                             StartTime = a.StartTime,
-                             EndTime = a.EndTime,
-                             ForTheCrowd = a.ForTheCrowd,
-                             TeachingMethod = a.TeachingMethod,
-                             TeachingAddres = a.TeachingAddres,
-                             AppUserId = a.AppUserId,
-                             BackgroundImage = a.BackgroundImage,
-                             VideoUrl = a.VideoUrl,
-                             AuditState = a.AuditState,
-                             CreateTime = a.CreateTime,
-                             ViewedCount = a.ViewedCount,
-                             Sign = getTeacherCourseSign(a.StartTime, a.EndTime, a.TeachingMethod, midNight, dt)
-                         }); ;
+                        select a); 
 
             result.Count = await query.CountAsync();
-            var pageData = await query.OrderByDescending(zw => zw.Sign).Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
+            var totalList = await query.ToListAsync();
+
+            var pageData = totalList.Select( a=> new  teacher_course_sign
+                {
+                    Id = a.Id,
+                    Title = a.Title,
+                    StartTime = a.StartTime,
+                    EndTime = a.EndTime,
+                    ForTheCrowd = a.ForTheCrowd,
+                    TeachingMethod = a.TeachingMethod,
+                    TeachingAddres = a.TeachingAddres,
+                    AppUserId = a.AppUserId,
+                    BackgroundImage = a.BackgroundImage,
+                    VideoUrl = a.VideoUrl,
+                    AuditState = a.AuditState,
+                    CreateTime = a.CreateTime,
+                    ViewedCount = a.ViewedCount,
+                    Sign = getTeacherCourseSign(a.StartTime, a.EndTime, a.TeachingMethod, midNight, dt)
+            }).OrderByDescending(zw => zw.Sign).Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList(); ;
 
             // 二次排序
             var livingList = pageData.Where(zw => zw.Sign == (int)TeacherCourseSignEnum.Living).OrderByDescending(zw => zw.ViewedCount).ToList();
@@ -136,25 +140,25 @@ namespace OpenAuth.App
             var advanceNoticeList = pageData.Where(zw => zw.Sign == (int)TeacherCourseSignEnum.AdvanceNotice).OrderBy(zw => zw.StartTime).ToList();
             var endOfflineList = pageData.Where(zw => zw.Sign == (int)TeacherCourseSignEnum.EndOffline).OrderBy(zw => zw.StartTime).ToList();
             var endOnLineList = pageData.Where(zw => zw.Sign == (int)TeacherCourseSignEnum.EndOnLine).OrderBy(zw => zw.StartTime).ToList();
-            if(endOnLineList.Count >0)
-            {
-                var teacherCourseIds = endOnLineList.Select(zw => zw.Id);
-                var viewStatistics = await UnitWork.Find<classroom_teacher_course_play_log>(null)
-                    .Where(c => c.AppUserId == appUserId  && teacherCourseIds.Contains(c.TeacherCourseId))
-                    .GroupBy(t=>t.TeacherCourseId).Select(zw => new { TeacherCourseId = zw.Key, TotalPalyDuration =  zw.Sum(s=>s.PlayDuration) }).ToListAsync();
+            //if(endOnLineList.Count >0)
+            //{
+            //    var teacherCourseIds = endOnLineList.Select(zw => zw.Id);
+            //    var viewStatistics = await UnitWork.Find<classroom_teacher_course_play_log>(null)
+            //        .Where(c => c.AppUserId == appUserId  && teacherCourseIds.Contains(c.TeacherCourseId))
+            //        .GroupBy(t=>t.TeacherCourseId).Select(zw => new { TeacherCourseId = zw.Key, TotalPalyDuration =  zw.Sum(s=>s.PlayDuration) }).ToListAsync();
 
-                var results = (from e in endOnLineList
-                               join v in viewStatistics on e.Id equals v.TeacherCourseId into vtem
-                               from ev in vtem.DefaultIfEmpty()
-                               select new
-                               {
-                                   e,
-                                   TotalPalyDuration = ev == null ? 0 : ev.TotalPalyDuration
-                               }).ToList().OrderByDescending(zw=>zw.TotalPalyDuration).ToList();
+            //    var results = (from e in endOnLineList
+            //                   join v in viewStatistics on e.Id equals v.TeacherCourseId into vtem
+            //                   from ev in vtem.DefaultIfEmpty()
+            //                   select new
+            //                   {
+            //                       e,
+            //                       TotalPalyDuration = ev == null ? 0 : ev.TotalPalyDuration
+            //                   }).ToList().OrderByDescending(zw=>zw.TotalPalyDuration).ToList();
 
-                endOnLineList.Clear();
-                endOnLineList = results.Select(zw => zw.e).ToList();
-            }
+            //    endOnLineList.Clear();
+            //    endOnLineList = results.Select(zw => zw.e).ToList();
+            //}
             var totalCourseList = new List<teacher_course_sign>();
             totalCourseList.AddRange(livingList);
             totalCourseList.AddRange(inClassList);
@@ -200,7 +204,7 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="pageIndex"></param>
         /// <param name="pageSize"></param>
-        public async Task<TableData> TeacherCoursePlayBack( int pageIndex, int pageSize)
+        public async Task<TableData> TeacherCoursePlayBack(int appUserId, int pageIndex, int pageSize)
         {
             var result = new TableData();
             DateTime dt = DateTime.Now;  //当前时间
@@ -219,10 +223,16 @@ namespace OpenAuth.App
                         .Where(c => c.AuditState == 2 && teacherUserIds.Contains(c.AppUserId))
                         .ToListAsync();
 
+            var teacherCourseIds = teacherList.Select(c => c.Id).ToList();
+            // 观看记录
+            var viewLogs = await UnitWork.Find<classroom_teacher_course_play_log>(null)
+                    .Where(c => c.AppUserId == appUserId  && teacherCourseIds.Contains(c.TeacherCourseId)).ToListAsync();
+
             List<TeacherCourseResp> obj = new List<TeacherCourseResp>();
             foreach(var item in pageData)
             {
                 var teacher = teacherList.FirstOrDefault(zw => zw.AppUserId == item.AppUserId);
+                var log = viewLogs.FirstOrDefault(zw => zw.TeacherCourseId == item.Id);
                 var newCourseResp = new TeacherCourseResp
                 {
                     Id = item.Id,
@@ -240,6 +250,7 @@ namespace OpenAuth.App
                     EndTime = item.EndTime.ToString(Defaults.DateTimeFormat),
                     StartHourMinute = item.StartTime.ToString(Defaults.DateHourFormat),
                     EndHourMinute = item.EndTime.ToString(Defaults.DateHourFormat),
+                    PlayDuration = log == null ? 0 : log.PlayDuration,
                 };
                 obj.Add(newCourseResp);
             }
@@ -255,14 +266,41 @@ namespace OpenAuth.App
         public async Task<TableData> SavePlayLog(TeacherCoursePlayLogReq req)
         {
             var result = new TableData();
-            classroom_teacher_course_play_log log = new classroom_teacher_course_play_log();
-            log.TeacherCourseId = req.TeacherCourseId;
-            log.AppUserId = req.AppUserId;
-            log.PlayDuration = req.PlayDuration;
-            log.TotalDuration = req.TotalDuration;
-            log.CreateTime = DateTime.Now;
-            await UnitWork.AddAsync<classroom_teacher_course_play_log, int>(log);
-            await UnitWork.SaveAsync();
+            try
+            {
+                var query = await (from a in UnitWork.Find<classroom_teacher_course_play_log>(null)
+                                    .Where(a => a.AppUserId == req.AppUserId && a.TeacherCourseId == req.TeacherCourseId)
+                                   select a).FirstOrDefaultAsync();
+                if (query == null)
+                {
+                    classroom_teacher_course_play_log log = new classroom_teacher_course_play_log();
+                    log.TeacherCourseId = req.TeacherCourseId;
+                    log.AppUserId = req.AppUserId;
+                    log.PlayDuration = req.PlayDuration;
+                    log.TotalDuration = req.TotalDuration;
+                    log.CreateTime = DateTime.Now;
+                    log.UpdateUser = null;
+                    log.UpdateTime = null;
+                    await UnitWork.AddAsync<classroom_teacher_course_play_log, int>(log);
+                    await UnitWork.SaveAsync();
+
+                }
+                else
+                {
+                    query.PlayDuration = req.PlayDuration;
+                    query.TotalDuration = req.TotalDuration;
+                    query.UpdateTime = DateTime.Now;
+                    query.UpdateUser = req.AppUserId;
+                    await UnitWork.UpdateAsync(query);
+                    await UnitWork.SaveAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                throw;
+            }
             return result;
         }
 

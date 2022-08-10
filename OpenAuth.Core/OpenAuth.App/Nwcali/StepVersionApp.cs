@@ -177,357 +177,6 @@ namespace OpenAuth.App
         }
 
         /// <summary>
-        /// 烤机启动测试
-        /// </summary>
-        /// <param name="model"></param>
-        /// <param name="stepCount"></param>
-        /// <param name="step_data"></param>
-        /// <returns></returns>
-        /// <exception cref="CommonException"></exception>
-        /// <exception cref="Exception"></exception>
-        public async Task<TableData<List<DeviceTestResponse>>> ChannelControlAsync(ChannelControlReq model, int stepCount, string step_data)
-        {
-            var result = new TableData<List<DeviceTestResponse>>();
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-            var department = loginContext.Orgs.Select(c => c.Name).FirstOrDefault();
-            string offLineLowGuid = "";
-            List<DeviceTestResponse> list = new List<DeviceTestResponse>();
-            var allBindList = await UnitWork.Find<DeviceBindMap>(null).Where(c => department == c.Department && model.GeneratorCode.Contains(c.GeneratorCode)).ToListAsync();
-            if (!allBindList.Any())
-            {
-                throw new Exception($"生产码{model.GeneratorCode}暂未绑定任何设备!");
-            }
-            var allBindLowList = allBindList.Select(c => c.LowGuid).ToList();
-            var lowguidList = allBindLowList.GroupBy(c => c).Select(c => new { guid = c.Key, counts = c.Count() }).Where(c => c.counts > 1).Select(c => c.guid).ToList();
-            if (lowguidList.Any())
-            {
-                var same_lowguid = allBindList.Where(c => lowguidList.Contains(c.LowGuid)).Select(c => c.DevUid).Distinct().ToList();
-                var DevUids = string.Join(';', same_lowguid.Select(c => c).ToList());
-                result.Code = 500;
-                result.Message = $"以下中位机【{DevUids}】的下位机guid重复出现,启动失败!";
-                return result;
-            }
-            var hasTestLow = await UnitWork.Find<DeviceTestLog>(null)
-                            .Where(c => model.GeneratorCode.Contains(c.GeneratorCode) && allBindLowList.Contains(c.LowGuid))
-                            .Select(c => c.LowGuid).ToListAsync();
-            if (hasTestLow.Any())
-            {
-                throw new Exception($"生产码{model.GeneratorCode}已存在测试记录,请进入重启界面启动!");
-            }
-            var allOnlineLowList = await (from a in UnitWork.Find<edge>(null)
-                                          join b in UnitWork.Find<edge_host>(null) on a.edge_guid equals b.edge_guid
-                                          join d in UnitWork.Find<edge_mid>(null) on new { b.edge_guid, b.srv_guid } equals new { d.edge_guid, d.srv_guid }
-                                          join c in UnitWork.Find<edge_low>(null) on new { d.edge_guid, d.srv_guid, d.mid_guid } equals new { c.edge_guid, c.srv_guid, c.mid_guid }
-                                          where department == a.department && a.status == 1 && b.status == 1 && c.status == 1 && d.status == 1
-                                          select new { c.low_guid, c.range_curr_array, c.edge_guid, c.srv_guid, c.dev_uid, c.unit_id }).ToListAsync();
-            var allOnlineLowListGuid = allOnlineLowList.Select(c => c.low_guid).Distinct().ToList();
-            var testList = allBindLowList.Where(c => allOnlineLowListGuid.Contains(c)).Distinct().ToList();
-            if (!testList.Any())
-            {
-                throw new Exception($"生产码{model.GeneratorCode}暂无可启动已绑定的在线设备!");
-            }
-            var channelList = await UnitWork.Find<edge_channel>(null).Where(c => allBindLowList.Contains(c.low_guid)).ToListAsync();
-            foreach (var item in allBindList)
-            {
-                var _lowList = allOnlineLowList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.dev_uid == item.DevUid && c.unit_id == item.UnitId && c.low_guid == item.LowGuid).FirstOrDefault();
-                if (_lowList == null)
-                {
-                    offLineLowGuid += $"{item.DevUid}-{item.UnitId},";
-                    continue;
-                }
-                DeviceTestResponse deviceTest = new DeviceTestResponse();
-                deviceTest.GeneratorCode = item.GeneratorCode;
-                deviceTest.EdgeGuid = item.EdgeGuid;
-                deviceTest.SrvGuid = item.SrvGuid;
-                deviceTest.BtsServerIp = item.BtsServerIp;
-                deviceTest.MidGuid = item.Guid;
-                deviceTest.LowGuid = item.LowGuid;
-                deviceTest.canTestDeviceResp = new CanTestDeviceResp();
-                deviceTest.canTestDeviceResp.edge_guid = item.EdgeGuid;
-                deviceTest.canTestDeviceResp.control = new control();
-                deviceTest.canTestDeviceResp.control.arg = "";
-                deviceTest.canTestDeviceResp.control.cmd_type = "start_test";
-                deviceTest.Department = item.Department;
-                deviceTest.stepCount = stepCount;
-                int maxRange = Convert.ToInt32(item.RangeCurrArray.Split(',').Max());
-                deviceTest.MaxRange = maxRange;
-                arg arg = new arg();
-                arg.srv_guid = item.SrvGuid;
-                arg.ip = item.BtsServerIp;
-                arg.dev_uid = item.DevUid;
-                arg.batch_no = DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss");
-                arg.test_name = "";
-                arg.creator = loginContext.User.Name;
-                arg.step_file_name = "";
-                arg.start_step = 1;
-                arg.scale = GetCurFactor(maxRange);
-                arg.battery_mass = 0;
-                arg.desc = "";
-                arg.step_data = step_data;
-                var chlList = channelList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.mid_guid == item.Guid && c.low_guid == item.LowGuid).ToList();
-                arg.chl = new List<chl>();
-                foreach (var citem in chlList)
-                {
-                    chl chl = new chl();
-                    chl.chl_id = citem.bts_id;
-                    chl.dev_uid = item.DevUid;
-                    chl.unit_id = item.UnitId;
-                    chl.barcode = "";
-                    chl.battery_mass = 0;
-                    chl.desc = "";
-                    arg.chl.Add(chl);
-                }
-                deviceTest.canTestDeviceResp.control.arg = JsonConvert.SerializeObject(arg);
-                list.Add(deviceTest);
-            }
-            if (!string.IsNullOrWhiteSpace(offLineLowGuid))
-            {
-                throw new Exception($"【{offLineLowGuid}】已离线,请检查设备连接状况!");
-            }
-            result.Data = list;
-            return result;
-        }
-
-
-        /// <summary>
-        /// 对接烤机启动测试
-        /// </summary>
-        /// <param name="model"></param>
-        /// <param name="stepCount"></param>
-        /// <param name="step_data"></param>
-        /// <param name="stepCount2"></param>
-        /// <param name="step_data2"></param>
-        /// <returns></returns>
-        /// <exception cref="CommonException"></exception>
-        /// <exception cref="Exception"></exception>
-        public async Task<TableData<List<DeviceTestResponse>>> DockChannelControl(ChannelControlReq model, int stepCount, string step_data, int stepCount2, string step_data2)
-        {
-            var result = new TableData<List<DeviceTestResponse>>();
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-            var department = loginContext.Orgs.Select(c => c.Name).FirstOrDefault();
-            string offLineLowGuid = "";
-            List<DeviceTestResponse> list = new List<DeviceTestResponse>();
-            var allBindList = await UnitWork.Find<DeviceBindMap>(null).Where(c => department == c.Department && model.GeneratorCode.Contains(c.GeneratorCode)).ToListAsync();
-            if (!allBindList.Any())
-            {
-                throw new Exception($"生产码{model.GeneratorCode}暂未绑定任何设备!");
-            }
-            var allBindLowList = allBindList.Select(c => c.LowGuid).ToList();
-            var lowguidList = allBindLowList.GroupBy(c => c).Select(c => new { guid = c.Key, counts = c.Count() }).Where(c => c.counts > 1).Select(c => c.guid).ToList();
-            if (lowguidList.Any())
-            {
-                var same_lowguid = allBindList.Where(c => lowguidList.Contains(c.LowGuid)).Select(c => c.DevUid).Distinct().ToList();
-                var DevUids = string.Join(';', same_lowguid.Select(c => c).ToList());
-                result.Code = 500;
-                result.Message = $"以下中位机【{DevUids}】的下位机guid重复出现,启动失败!";
-                return result;
-            }
-            var hasTestLow = await UnitWork.Find<DeviceTestLog>(null)
-                            .Where(c => model.GeneratorCode.Contains(c.GeneratorCode) && allBindLowList.Contains(c.LowGuid))
-                            .Select(c => c.LowGuid).ToListAsync();
-            if (hasTestLow.Any())
-            {
-                throw new Exception($"生产码{model.GeneratorCode}已存在测试记录,请进入重启界面启动!");
-            }
-            var allOnlineLowList = await (from a in UnitWork.Find<edge>(null)
-                                          join b in UnitWork.Find<edge_host>(null) on a.edge_guid equals b.edge_guid
-                                          join d in UnitWork.Find<edge_mid>(null) on new { b.edge_guid, b.srv_guid } equals new { d.edge_guid, d.srv_guid }
-                                          join c in UnitWork.Find<edge_low>(null) on new { d.edge_guid, d.srv_guid, d.mid_guid } equals new { c.edge_guid, c.srv_guid, c.mid_guid }
-                                          where department == a.department && a.status == 1 && b.status == 1 && c.status == 1 && d.status == 1
-                                          select new { c.low_guid, c.range_curr_array, c.edge_guid, c.srv_guid, c.dev_uid, c.unit_id }).ToListAsync();
-            var allOnlineLowListGuid = allOnlineLowList.Select(c => c.low_guid).Distinct().ToList();
-            var testList = allBindLowList.Where(c => allOnlineLowListGuid.Contains(c)).Distinct().ToList();
-            if (!testList.Any())
-            {
-                throw new Exception($"生产码{model.GeneratorCode}暂无可启动已绑定的在线设备!");
-            }
-            var channelList = await UnitWork.Find<edge_channel>(null).Where(c => allBindLowList.Contains(c.low_guid)).ToListAsync();
-            foreach (var item in allBindList)
-            {
-                var _lowList = allOnlineLowList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.dev_uid == item.DevUid && c.unit_id == item.UnitId && c.low_guid == item.LowGuid).FirstOrDefault();
-                if (_lowList == null)
-                {
-                    offLineLowGuid += $"{item.DevUid}-{item.UnitId};";
-                    continue;
-                }
-                int maxRange = Convert.ToInt32(item.RangeCurrArray.Split(',').Max());
-                int scale = GetCurFactor(maxRange);
-                var chlList = channelList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.mid_guid == item.Guid && c.low_guid == item.LowGuid).OrderBy(c => c.bts_id).ToList();
-                if (chlList.Count == 1)
-                {
-                    //单通道短接使用后续工步
-                    DeviceTestResponse deviceTest = new DeviceTestResponse();
-                    deviceTest.GeneratorCode = item.GeneratorCode;
-                    deviceTest.EdgeGuid = item.EdgeGuid;
-                    deviceTest.SrvGuid = item.SrvGuid;
-                    deviceTest.BtsServerIp = item.BtsServerIp;
-                    deviceTest.MidGuid = item.Guid;
-                    deviceTest.LowGuid = item.LowGuid;
-                    deviceTest.canTestDeviceResp = new CanTestDeviceResp();
-                    deviceTest.canTestDeviceResp.edge_guid = item.EdgeGuid;
-                    deviceTest.canTestDeviceResp.control = new control();
-                    deviceTest.canTestDeviceResp.control.arg = "";
-                    deviceTest.canTestDeviceResp.control.cmd_type = "start_test";
-                    deviceTest.Department = item.Department;
-                    deviceTest.MaxRange = maxRange;
-                    arg arg = new arg();
-                    arg.srv_guid = item.SrvGuid;
-                    arg.ip = item.BtsServerIp;
-                    arg.dev_uid = item.DevUid;
-                    arg.batch_no = DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss");
-                    arg.test_name = "";
-                    arg.creator = loginContext.User.Name;
-                    arg.step_file_name = "";
-                    arg.start_step = 1;
-                    arg.scale = scale;
-                    arg.battery_mass = 0;
-                    arg.desc = "";
-                    arg.chl = new List<chl>();
-                    if (model.FirstStart == 1)
-                    {
-                        deviceTest.stepCount = stepCount2;
-                        arg.step_data = step_data2;
-                    }
-                    else
-                    {
-                        deviceTest.stepCount = stepCount;
-                        arg.step_data = step_data;
-                    }
-                    foreach (var citem in chlList)
-                    {
-                        chl chl = new chl();
-                        chl.chl_id = citem.bts_id;
-                        chl.dev_uid = item.DevUid;
-                        chl.unit_id = item.UnitId;
-                        chl.barcode = "";
-                        chl.battery_mass = 0;
-                        chl.desc = "";
-                        arg.chl.Add(chl);
-                    }
-                    deviceTest.canTestDeviceResp.control.arg = JsonConvert.SerializeObject(arg);
-                    list.Add(deviceTest);
-                }
-                else
-                {
-                    DeviceTestResponse deviceTest1 = new DeviceTestResponse();
-                    deviceTest1.GeneratorCode = item.GeneratorCode;
-                    deviceTest1.EdgeGuid = item.EdgeGuid;
-                    deviceTest1.SrvGuid = item.SrvGuid;
-                    deviceTest1.BtsServerIp = item.BtsServerIp;
-                    deviceTest1.MidGuid = item.Guid;
-                    deviceTest1.LowGuid = item.LowGuid;
-                    deviceTest1.canTestDeviceResp = new CanTestDeviceResp();
-                    deviceTest1.canTestDeviceResp.edge_guid = item.EdgeGuid;
-                    deviceTest1.canTestDeviceResp.control = new control();
-                    deviceTest1.canTestDeviceResp.control.arg = "";
-                    deviceTest1.canTestDeviceResp.control.cmd_type = "start_test";
-                    deviceTest1.Department = item.Department;
-                    deviceTest1.MaxRange = maxRange;
-                    arg arg1 = new arg();
-                    arg1.srv_guid = item.SrvGuid;
-                    arg1.ip = item.BtsServerIp;
-                    arg1.dev_uid = item.DevUid;
-                    arg1.batch_no = DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss");
-                    arg1.test_name = "";
-                    arg1.creator = loginContext.User.Name;
-                    arg1.step_file_name = "";
-                    arg1.start_step = 1;
-                    arg1.scale = scale;
-                    arg1.battery_mass = 0;
-                    arg1.desc = "";
-                    arg1.chl = new List<chl>();
-
-                    DeviceTestResponse deviceTest2 = new DeviceTestResponse();
-                    deviceTest2.GeneratorCode = item.GeneratorCode;
-                    deviceTest2.EdgeGuid = item.EdgeGuid;
-                    deviceTest2.SrvGuid = item.SrvGuid;
-                    deviceTest2.BtsServerIp = item.BtsServerIp;
-                    deviceTest2.MidGuid = item.Guid;
-                    deviceTest2.LowGuid = item.LowGuid;
-                    deviceTest2.canTestDeviceResp = new CanTestDeviceResp();
-                    deviceTest2.canTestDeviceResp.edge_guid = item.EdgeGuid;
-                    deviceTest2.canTestDeviceResp.control = new control();
-                    deviceTest2.canTestDeviceResp.control.arg = "";
-                    deviceTest2.canTestDeviceResp.control.cmd_type = "start_test";
-                    deviceTest2.Department = item.Department;
-                    deviceTest2.MaxRange = maxRange;
-                    arg arg2 = new arg();
-                    arg2.srv_guid = item.SrvGuid;
-                    arg2.ip = item.BtsServerIp;
-                    arg2.dev_uid = item.DevUid;
-                    arg2.batch_no = DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss");
-                    arg2.test_name = "";
-                    arg2.creator = loginContext.User.Name;
-                    arg2.step_file_name = "";
-                    arg2.start_step = 1;
-                    arg2.scale = scale;
-                    arg2.battery_mass = 0;
-                    arg2.desc = "";
-                    arg2.chl = new List<chl>();
-
-                    if (model.FirstStart == 1)
-                    {
-                        deviceTest1.stepCount = stepCount;
-                        arg1.step_data = step_data;
-                        deviceTest2.stepCount = stepCount2;
-                        arg2.step_data = step_data2;
-                    }
-                    else
-                    {
-                        deviceTest1.stepCount = stepCount2;
-                        arg1.step_data = step_data2;
-                        deviceTest2.stepCount = stepCount;
-                        arg2.step_data = step_data;
-                    }
-                    //多通道对接烤机,前半通道执行优先启动工步，后半通道执行后续工步
-                    var channelLimit = chlList.Count / 2;
-                    foreach (var row in chlList)
-                    {
-                        if (row.bts_id <= channelLimit)
-                        {
-                            chl chl = new chl();
-                            chl.chl_id = row.bts_id;
-                            chl.dev_uid = item.DevUid;
-                            chl.unit_id = item.UnitId;
-                            chl.barcode = "";
-                            chl.battery_mass = 0;
-                            chl.desc = "";
-                            arg1.chl.Add(chl);
-                        }
-                        else
-                        {
-                            chl chl = new chl();
-                            chl.chl_id = row.bts_id;
-                            chl.dev_uid = item.DevUid;
-                            chl.unit_id = item.UnitId;
-                            chl.barcode = "";
-                            chl.battery_mass = 0;
-                            chl.desc = "";
-                            arg2.chl.Add(chl);
-                        }
-                    }
-                    deviceTest1.canTestDeviceResp.control.arg = JsonConvert.SerializeObject(arg1);
-                    list.Add(deviceTest1);
-                    deviceTest2.canTestDeviceResp.control.arg = JsonConvert.SerializeObject(arg2);
-                    list.Add(deviceTest2);
-                }
-            }
-            if (!string.IsNullOrWhiteSpace(offLineLowGuid))
-            {
-                throw new Exception($"【{offLineLowGuid}】已离线,请检查设备连接状况!");
-            }
-            result.Data = list;
-            return result;
-        }
-        /// <summary>
         /// 保存测试结果
         /// </summary>
         /// <param name="list"></param>
@@ -1012,84 +661,6 @@ namespace OpenAuth.App
         }
 
         /// <summary>
-        /// 当前扫码对应订单在线已启动测试需要重启
-        /// </summary>
-        /// <param name="GeneratorCode"></param>
-        /// <param name="ItemCode"></param>
-        /// <param name="page"></param>
-        /// <param name="limit"></param>
-        /// <returns></returns>
-        /// <exception cref="CommonException"></exception>
-        public async Task<TableData> NeedRestartList(string GeneratorCode, string ItemCode, int page, int limit)
-        {
-            var result = new TableData();
-            var loginContext = _auth.GetCurrentUser();
-            int totalCount = 0;
-            List<object> list = new List<object>();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-            var department = loginContext.Orgs.Select(c => c.Name).FirstOrDefault();
-            var allBindList = await UnitWork.Find<DeviceBindMap>(null).Where(c => department == c.Department && c.GeneratorCode == GeneratorCode).ToListAsync();
-            if (!allBindList.Any())
-            {
-                result.Data = list;
-                result.Count = totalCount;
-                return result;
-            }
-            var onlineList = await (from a in UnitWork.Find<edge>(null)
-                                    join b in UnitWork.Find<edge_host>(null) on a.edge_guid equals b.edge_guid
-                                    join c in UnitWork.Find<edge_mid>(null) on new { b.edge_guid, b.srv_guid } equals new { c.edge_guid, c.srv_guid }
-                                    join d in UnitWork.Find<edge_low>(null) on new { c.edge_guid, c.srv_guid, c.mid_guid } equals new { d.edge_guid, d.srv_guid, d.mid_guid }
-                                    where department == a.department
-                                    && a.status == 1 && b.status == 1 && c.status == 1 && d.status == 1
-                                    select new { d.edge_guid, d.srv_guid, b.bts_server_ip, d.mid_guid, d.low_guid, c.dev_uid, d.unit_id, d.low_no }).ToListAsync();
-            var onlineLowGuidList = onlineList.Select(c => c.low_guid).ToList();
-            if (!onlineLowGuidList.Any())
-            {
-                result.Data = list;
-                result.Count = totalCount;
-                return result;
-            }
-            var hasTestLowList = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.GeneratorCode == GeneratorCode).AnyAsync();
-            if (!hasTestLowList)
-            {
-                result.Data = list;
-                result.Count = totalCount;
-                return result;
-            }
-            var onlineBindList = allBindList.Where(c => onlineLowGuidList.Contains(c.LowGuid)).ToList();
-            if (!onlineBindList.Any())
-            {
-                result.Data = list;
-                result.Count = totalCount;
-                return result;
-            }
-            totalCount = onlineBindList.Count;
-            var onlineBindLowGuidList = onlineBindList.Select(c => c.LowGuid).Distinct().ToList();
-            var onlineChannelList = await UnitWork.Find<edge_channel>(null).Where(c => onlineBindLowGuidList.Contains(c.low_guid)).Distinct().ToListAsync();
-            foreach (var item in onlineBindList)
-            {
-                var channelList = onlineChannelList.Where(c => c.edge_guid == item.EdgeGuid && c.srv_guid == item.SrvGuid && c.mid_guid == item.Guid && c.low_guid == item.LowGuid).Select(c => new { c.rt_status, c.low_no }).ToList();
-                int lowStatus = -1;
-                if (channelList.Any(c => c.rt_status == 4 || c.rt_status == -4))
-                {
-                    lowStatus = -4;
-                }
-                else if (channelList.Any(c => c.rt_status != 4 && c.rt_status != -4 && (c.rt_status == -3 || c.rt_status == 1)))
-                {
-                    lowStatus = -3;
-                }
-                int low_no = channelList.Select(c => c.low_no).FirstOrDefault();
-                list.Add(new { item.GeneratorCode, ItemCode, lowStatus, item.UnitId, item.DevUid, item.BindType, low_no, item.EdgeGuid, item.SrvGuid, item.Guid, item.LowGuid, item.BtsServerIp });
-            }
-            result.Data = list;
-            result.Count = totalCount;
-            return result;
-        }
-
-        /// <summary>
         /// 停止测试通道列表
         /// </summary>
         /// <returns></returns>
@@ -1127,94 +698,6 @@ namespace OpenAuth.App
             return result;
         }
 
-
-        /// <summary>
-        /// 量程系数计算
-        /// </summary>
-        /// <param name="rng_cur"></param>
-        /// <returns></returns>
-        public int GetCurFactor(int rng_cur)
-        {
-            //电流量程范围mA
-            long CUR_SCALE_10 = 10;
-            long CUR_SCALE_100 = 100;
-            long CUR_SCALE_1000 = 1000;
-
-            //	电流单位
-            double CUR_SCALE_FACTOR_10 = 10000.0;
-            double CUR_SCALE_FACTOR_100 = 1000.0;
-            double CUR_SCALE_FACTOR_1000 = 100.0;
-            double CUR_SCALE_FACTOR_MAX = 10.0;
-            double factor = CUR_SCALE_FACTOR_MAX;
-            if (rng_cur >= 0)
-            {
-                if (rng_cur < CUR_SCALE_10)
-                {
-                    factor = CUR_SCALE_FACTOR_10;
-                }
-                else if (rng_cur < CUR_SCALE_100)
-                {
-                    factor = CUR_SCALE_FACTOR_100;
-                }
-                else if (rng_cur < CUR_SCALE_1000)
-                {
-                    factor = CUR_SCALE_FACTOR_1000;
-                }
-                else
-                {
-                    factor = CUR_SCALE_FACTOR_MAX;
-                }
-
-                return Convert.ToInt32(factor);
-            }
-            else
-            {
-                double d_rng_cur = 0;//单位:mA
-                rng_cur = Math.Abs(rng_cur);
-                if (rng_cur > 0 && rng_cur < 999)
-                {//为负数,并且是值范围在1-999时单位为mA
-                    d_rng_cur = rng_cur;
-                }
-                else if (rng_cur >= 1000 && rng_cur <= 999999)
-                {//为负数,并且是值范围在1000-999999时单位为mA
-                    d_rng_cur = rng_cur;
-                }
-                else if (rng_cur >= 1000000 && rng_cur <= 999999999)
-                {//为负数,并且是值范围在1000000-999999999时为1到999.999999uA
-                    d_rng_cur = rng_cur / 1000000000.0;
-                }
-                if (d_rng_cur < 0.01)
-                {//10uA
-                    factor = 100000000.0;
-                }
-                else if (d_rng_cur < 0.1)
-                {//100uA
-                    factor = 10000000.0;
-                }
-                else if (d_rng_cur < 1)
-                {//1000uA
-                    factor = 1000000.0;
-                }
-                else if (d_rng_cur < 10)
-                {//10mA
-                    factor = 100000.0;
-                }
-                else if (d_rng_cur < 100)
-                {//100mA
-                    factor = 10000.0;
-                }
-                else if (d_rng_cur < 1000)
-                {//1000mA
-                    factor = 1000.0;
-                }
-                else
-                {
-                    factor = 100.0;
-                }
-                return Convert.ToInt32(factor);
-            }
-        }
-
         #region 启动相关
         /// <summary>
         /// 获取启动列表
@@ -1247,13 +730,21 @@ namespace OpenAuth.App
             {
                 result.Data = (from a in bindDevList.AsEnumerable()
                                join b in onlineDevList.AsEnumerable() on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, DevUid = b.dev_uid, LowGuid = b.low_guid }
-                               select new { a.GeneratorCode }).OrderBy(c => c.GeneratorCode).Distinct().ToList();
+                               select new { a.GeneratorCode })
+                               .OrderBy(c => c.GeneratorCode)
+                               .Distinct()
+                               .ToList();
             }
             else
             {
                 result.Data = (from a in bindDevList.AsEnumerable()
                                join b in onlineDevList.AsEnumerable() on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, DevUid = b.dev_uid, LowGuid = b.low_guid }
-                               select new { a.GeneratorCode, a.DevUid, b.low_no, a.EdgeGuid, a.SrvGuid, a.BtsServerIp, a.Guid, a.LowGuid, a.UnitId }).OrderBy(c => c.GeneratorCode).ThenBy(c => c.DevUid).ThenBy(c => c.low_no).Distinct().ToList();
+                               select new { a.GeneratorCode, a.DevUid, b.low_no, a.EdgeGuid, a.SrvGuid, a.BtsServerIp, a.Guid, a.LowGuid, a.UnitId })
+                               .OrderBy(c => c.GeneratorCode)
+                               .ThenBy(c => c.DevUid)
+                               .ThenBy(c => c.low_no)
+                               .Distinct()
+                               .ToList();
 
             }
             return result;
@@ -1609,6 +1100,94 @@ namespace OpenAuth.App
             result.Data = list;
             return result;
         }
+
+        /// <summary>
+        /// 量程系数计算
+        /// </summary>
+        /// <param name="rng_cur"></param>
+        /// <returns></returns>
+        public int GetCurFactor(int rng_cur)
+        {
+            //电流量程范围mA
+            long CUR_SCALE_10 = 10;
+            long CUR_SCALE_100 = 100;
+            long CUR_SCALE_1000 = 1000;
+
+            //	电流单位
+            double CUR_SCALE_FACTOR_10 = 10000.0;
+            double CUR_SCALE_FACTOR_100 = 1000.0;
+            double CUR_SCALE_FACTOR_1000 = 100.0;
+            double CUR_SCALE_FACTOR_MAX = 10.0;
+            double factor = CUR_SCALE_FACTOR_MAX;
+            if (rng_cur >= 0)
+            {
+                if (rng_cur < CUR_SCALE_10)
+                {
+                    factor = CUR_SCALE_FACTOR_10;
+                }
+                else if (rng_cur < CUR_SCALE_100)
+                {
+                    factor = CUR_SCALE_FACTOR_100;
+                }
+                else if (rng_cur < CUR_SCALE_1000)
+                {
+                    factor = CUR_SCALE_FACTOR_1000;
+                }
+                else
+                {
+                    factor = CUR_SCALE_FACTOR_MAX;
+                }
+
+                return Convert.ToInt32(factor);
+            }
+            else
+            {
+                double d_rng_cur = 0;//单位:mA
+                rng_cur = Math.Abs(rng_cur);
+                if (rng_cur > 0 && rng_cur < 999)
+                {//为负数,并且是值范围在1-999时单位为mA
+                    d_rng_cur = rng_cur;
+                }
+                else if (rng_cur >= 1000 && rng_cur <= 999999)
+                {//为负数,并且是值范围在1000-999999时单位为mA
+                    d_rng_cur = rng_cur;
+                }
+                else if (rng_cur >= 1000000 && rng_cur <= 999999999)
+                {//为负数,并且是值范围在1000000-999999999时为1到999.999999uA
+                    d_rng_cur = rng_cur / 1000000000.0;
+                }
+                if (d_rng_cur < 0.01)
+                {//10uA
+                    factor = 100000000.0;
+                }
+                else if (d_rng_cur < 0.1)
+                {//100uA
+                    factor = 10000000.0;
+                }
+                else if (d_rng_cur < 1)
+                {//1000uA
+                    factor = 1000000.0;
+                }
+                else if (d_rng_cur < 10)
+                {//10mA
+                    factor = 100000.0;
+                }
+                else if (d_rng_cur < 100)
+                {//100mA
+                    factor = 10000.0;
+                }
+                else if (d_rng_cur < 1000)
+                {//1000mA
+                    factor = 1000.0;
+                }
+                else
+                {
+                    factor = 100.0;
+                }
+                return Convert.ToInt32(factor);
+            }
+        }
+
         /// <summary>
         /// 提取最大量程
         /// </summary>

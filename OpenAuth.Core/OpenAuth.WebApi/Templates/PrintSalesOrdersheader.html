@@ -16,7 +16,7 @@
             margin-top: 10px;
             font-size: 13.5px;
             color: #000;
-            font-weight: 700;
+            font-weight: 900;
         }
         
         table {
@@ -65,72 +65,72 @@
             <div style="float:left;width: 300px;  margin-left:20px">
                 <span style="font-size: 42px;">销售合同</span>
             </div>
-            <div style="float:left;width: 180px;  ">
+            <div style="float:left;width: 200px;font-weight: 900  ">
                 <p>单号：SE-<span style="font-size: 30px; font-weight: 900;">@Model.Data.DocEntry</span></p>
                 <p style="margin-top: 5px; ">日期：@Model.Data.DateTime</p>
-                <p style="margin-top: 7px; ">销售：@Model.Data.Cellolar&nbsp;&nbsp;@Model.Data.SalseName</p>
+                <p style="margin-top: 7px; ">销售：@Model.Data.Cellolar&nbsp;@Model.Data.SalseName</p>
             </div>
             <div style="float:right; width: 240px; ">
                 <img color="#6F6F6F" style="width: 90px;height:90px; float: right; margin-top: -10px;" src="@Model.Data.QRcode" />
             </div>
         </div>
 
-        <table style="margin-top: 30px;" id="divcode">
+        <table style="margin-top: 30px;height: 100px;" id="divcode">
             <tr>
-                <td align="left" style="width: 55pt; ">&nbsp;客户代码：</td>
-                <td align="left" style="width: 40pt; ">@Model.Data.CardCode</td>
-                <td align="left" style="width: 55pt; ">客户名称：</td>
-                <td align="left" style="width: 200pt;">@Model.Data.CardName</td>
-                <td align="left" style="width: 35pt;">&nbsp;联系人：</td>
-                <td align="left" style="width: 40pt; ">@Model.Data.Name</td>
-                <td align="left" style="width: 30pt; ">&nbsp;电话：</td>
-                <td align="left" style="width: 55pt; ">@Model.Data.Tel</td>
+                <td align="left" style="width: 55pt;font-weight: 900; font-size:16px">&nbsp;客户编号：</td>
+                <td align="left" style="width: 40pt; color: #444444; ">@Model.Data.CardCode</td>
+                <td align="left" style="width: 55pt;font-weight: 900;font-size:16px">客户名称：</td>
+                <td align="left" style="width: 200pt; color:  #444444;">@Model.Data.CardName</td>
+                <td align="left" style="width: 40pt;font-weight: 900;font-size:16px">&nbsp;联系人：</td>
+                <td align="left" style="width: 40pt; color:  #444444; ">@Model.Data.Name</td>
+                <td align="left" style="width: 30pt;font-weight: 900;font-size:16px ">&nbsp;电话：</td>
+                <td align="left" style="width: 55pt; color:  #444444; ">@Model.Data.Tel</td>
             </tr>
             <tr>
-                <td>&nbsp;客户地址：</td>
-                <td colspan="5">
+                <td style="font-weight: 900;font-size:16px">&nbsp;客户地址：</td>
+                <td colspan="5" style=" color:  #444444;">
                     @Model.Data.Address
                 </td>
-                <td>&nbsp;手机：</td>
+                <td style="font-weight: 900;font-size:16px">&nbsp;手机：</td>
                 <td>
 
                 </td>
             </tr>
-            <tr>
-                <td>&nbsp;交货地址：</td>
-                <td style="width: 550pt;" colspan="7">
+            <tr >
+                <td style="font-weight: 900;font-size:16px;">&nbsp;交货地址：</td>
+                <td style="width: 550pt; color:  #444444;" colspan="7">
                     @Model.Data.Addrestwo
                 </td>
             </tr>
         </table>
-        <table style="margin-top: 2px;" id="divcode">
+        <table style="margin-top: 2px;height: 100px;border-collapse:separate; border-spacing:0px 2px;" id="divcode">
             <tr>
-                <td align="left" style="width: 75pt; ">&nbsp;付款条件：</td>
-                <td align="left" style="width: 55pt; ">@Model.Data.PymntGroup</td>
-                <td align="left" style="width: 55pt; "></td>
+                <td align="left" style="width: 75pt;font-weight: 900;font-size:16px ">&nbsp;付款条件：</td>
+                <td align="left" style="width: 65pt; color:  #444444; ">@Model.Data.PymntGroup</td>
+                <td align="left" style="width: 45pt; "></td>
                 <td align="left" style="width: 375pt;"></td>
-                <td align="left" style="width: 70pt;">&nbsp;交货日期：</td>
-                <td align="left" style="width: 55pt; ">@Model.Data.DATEFORMAT</td>
+                <td align="left" style="width: 70pt;font-weight: 900;font-size:16px">&nbsp;交货日期：</td>
+                <td align="left" style="width: 55pt;  color:  #444444;">@Model.Data.DATEFORMAT</td>
                 <td align="left" style="width: 30pt; "></td>
                 <td align="left" style="width: 55pt; "></td>
             </tr>
             <tr>
-                <td align="left">&nbsp;交货方式：</td>
+                <td align="left" style="font-weight: 900;font-size:16px">&nbsp;交货方式：</td>
                 <td align="left"></td>
                 <td align="left"></td>
                 <td align="left"></td>
-                <td align="left">&nbsp;验收日期：</td>
-                <td align="left">@Model.Data.AcceptanceDates</td>
+                <td align="left" style="font-weight: 900;font-size:16px">&nbsp;验收日期：</td>
+                <td align="left" style=" color:  #444444;">@Model.Data.AcceptanceDates</td>
                 <td align="left"></td>
                 <td align="left"></td>
             </tr>
             <tr>
-                <td>&nbsp;备注：</td>
-                <td style="width: 500pt;" colspan="3">
+                <td style="font-weight: 900;font-size:16px">&nbsp;备注：</td>
+                <td style="width: 500pt; color:  #444444;" colspan="3">
                     @Model.Data.Comments
                 </td>
-                <td align="left" style="width: 55pt;">&nbsp;&nbsp;&nbsp;客户PO：</td>
-                <td>
+                <td align="left" style="width: 55pt;font-weight: 900;font-size:16px">&nbsp;&nbsp;&nbsp;客户PO：</td>
+                <td style=" color:  #444444;">
                     @Model.Data.NumAtCard
                 </td>
                 <td align="left"></td>
@@ -139,13 +139,13 @@
         </table>
         <table style="margin-top:2px; width:1000px;">
             <tr class="TH">
-                <td style="width: 30px;" align="left"># </td>
-                <td style="width: 100px;" align="left">&nbsp; 物料编码</td>
-                <td style="width: 250px;" align="left">&nbsp; 物料描述</td>
-                <td style="width: 50px;" align="right">&nbsp; 数量</td>
-                <td style="width: 50px; " align="left">&nbsp;单位</td>
-                <td style="width: 80px; " align="right">单价 &nbsp;</td>
-                <td style="width: 80px; " align="right">金额 &nbsp;</td>
+                <td style="width: 30px;font-weight: 900;font-size:16px" align="left"># </td>
+                <td style="width: 100px;font-weight: 900;font-size:16px" align="left">&nbsp; 物料编码</td>
+                <td style="width: 250px;font-weight: 900;font-size:16px" align="left">&nbsp; 物料描述</td>
+                <td style="width: 50px;font-weight: 900;font-size:16px" align="right">&nbsp; 数量</td>
+                <td style="width: 50px;font-weight: 900;font-size:16px " align="left">&nbsp;单位</td>
+                <td style="width: 80px;font-weight: 900;font-size:16px " align="right">单价 &nbsp;</td>
+                <td style="width: 80px;font-weight: 900;font-size:16px " align="right">金额 &nbsp;</td>
             </tr>
         </table>
     </div>

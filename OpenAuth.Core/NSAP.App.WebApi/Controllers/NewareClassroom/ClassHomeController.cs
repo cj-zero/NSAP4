@@ -35,7 +35,7 @@ namespace NSAP.App.WebApi.Controllers.NewareClassroom
         /// <param name="req"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<TableData> GetEmployeeApplyList(ClassHomeSearchReq req)
+        public async Task<TableData> GetClassRoomSearch(ClassHomeSearchReq req)
         {
             var result = new TableData();
             try
@@ -46,8 +46,10 @@ namespace NSAP.App.WebApi.Controllers.NewareClassroom
                         result = await _app.CompulsoryCourseList(req.appUserId, req.key ,req.pageIndex, req.pageSize);
                         break;
                     case 2:
+                        result = await _app.ClassroomSubjectList(req.appUserId, req.key, req.pageIndex, req.pageSize);
                         break;
                     case 3:
+                        result = await _app.TeacherCoursePlayBack(req.appUserId, req.key, req.pageIndex, req.pageSize);
                         break;
                     default:
                         break;

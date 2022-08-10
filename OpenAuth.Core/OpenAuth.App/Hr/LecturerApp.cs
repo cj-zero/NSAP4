@@ -36,7 +36,7 @@ namespace OpenAuth.App
         {
             _appConfiguration = appConfiguration;
             _helper = new HttpHelper(_appConfiguration.Value.AppPushMsgUrl);
-            _logger= logger;
+            _logger = logger;
         }
 
         #region erp
@@ -252,13 +252,62 @@ namespace OpenAuth.App
         public async Task<TableData> EditTeacherCourse(classroom_teacher_course req)
         {
             var result = new TableData();
-            var user = _auth.GetCurrentUser().User;
             var query = await UnitWork.Find<classroom_teacher_course>(null).FirstOrDefaultAsync(c => c.Id == req.Id);
             if (query != null)
             {
                 query.VideoUrl = req.VideoUrl;
             }
             await UnitWork.UpdateAsync(query);
+            await UnitWork.SaveAsync();
+            return result;
+        }
+
+
+        /// <summary>
+        /// 讲师经验值计算
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> CalculateTeacherExperience()
+        {
+            var result = new TableData();
+            DateTime dt=DateTime.Now;
+            var ids = await UnitWork.Find<classroom_teacher_apply_log>(null).GroupBy(c => c.AppUserId).Select(c => c.Max(c => c.Id)).ToListAsync();
+            var teacherList = await UnitWork.Find<classroom_teacher_apply_log>(null).Where(c => ids.Contains(c.Id) && c.AuditState == 2).ToListAsync();
+            var teacherIds = teacherList.Select(c => c.AppUserId).ToList();
+            var teacherCourseList = await UnitWork.Find<classroom_teacher_course>(null).Where(c => teacherIds.Contains(c.AppUserId) && c.IsConversion == false && c.AuditState == 2 && c.EndTime <= dt).ToListAsync();
+            foreach (var item in teacherList)
+            {
+                var minutesList = teacherCourseList.Where(c => c.AppUserId == item.AppUserId).Select(c => new { totalMinutes = (c.EndTime - c.StartTime).TotalMinutes }).ToList();
+                var totalminutes = minutesList.Count <= 0 ? 0 : minutesList.Sum(c => c.totalMinutes);
+                item.Experience += (int)totalminutes;
+                if (item.Experience<=300)
+                {
+                    item.Grade = 1;
+                }
+                else if (item.Experience <= 800 && item.Experience>=301)
+                {
+                    item.Grade = 2;
+                }
+                else if (item.Experience <= 1500 && item.Experience >= 801)
+                {
+                    item.Grade = 3;
+                }
+                else if (item.Experience <= 2000 && item.Experience >= 1501)
+                {
+                    item.Grade = 4;
+                }
+                else if (item.Experience <= 2500 && item.Experience >= 2001)
+                {
+                    item.Grade = 5;
+                }
+                else
+                {
+                    item.Grade = 6;
+                }
+            }
+            teacherCourseList.ForEach(c =>c.IsConversion = true);
+            await UnitWork.BatchUpdateAsync(teacherList.ToArray());
+            await UnitWork.BatchUpdateAsync(teacherCourseList.ToArray());
             await UnitWork.SaveAsync();
             return result;
         }
@@ -301,7 +350,27 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var query = await UnitWork.Find<classroom_teacher_apply_log>(null).Where(c => c.AppUserId == req.AppUserId).OrderByDescending(c => c.Id).FirstOrDefaultAsync();
-            if (query != null)
+            if (query == null || query.AuditState == 3)
+            {
+                classroom_teacher_apply_log model = new classroom_teacher_apply_log();
+                model.Name = req.Name;
+                model.Age = req.Age;
+                model.Mobile = req.Mobile;
+                model.HeaderImg = req.HeaderImg;
+                model.Department = req.Department;
+                model.CanTeachCourse = req.CanTeachCourse;
+                model.BeGoodAtTerritory = req.BeGoodAtTerritory;
+                model.CreateTime = DateTime.Now;
+                model.ModifyTime = DateTime.Now;
+                model.AppUserId = req.AppUserId;
+                model.OperationUser = "";
+                model.Experience = 0;
+                model.Grade = 1;
+                model.AuditState = 1;
+                await UnitWork.AddAsync<classroom_teacher_apply_log, int>(model);
+                await UnitWork.SaveAsync();
+            }
+            else
             {
                 if (query.AuditState == 4)
                 {
@@ -321,40 +390,6 @@ namespace OpenAuth.App
                     result.Message = "已是讲师无需申请!";
                     return result;
                 }
-                else if (query.AuditState == 3)
-                {
-                    classroom_teacher_apply_log model = new classroom_teacher_apply_log();
-                    model.Name = req.Name;
-                    model.Age = req.Age;
-                    model.Mobile = req.Mobile;
-                    model.HeaderImg = req.HeaderImg;
-                    model.Department = req.Department;
-                    model.CanTeachCourse = req.CanTeachCourse;
-                    model.BeGoodAtTerritory = req.BeGoodAtTerritory;
-                    model.CreateTime = DateTime.Now;
-                    model.ModifyTime = DateTime.Now;
-                    model.AppUserId = req.AppUserId;
-                    model.AuditState = 1;
-                    await UnitWork.AddAsync<classroom_teacher_apply_log, int>(query);
-                    await UnitWork.SaveAsync();
-                }
-            }
-            else
-            {
-                classroom_teacher_apply_log model = new classroom_teacher_apply_log();
-                model.Name = req.Name;
-                model.Age = req.Age;
-                model.Mobile = req.Mobile;
-                model.HeaderImg = req.HeaderImg;
-                model.Department = req.Department;
-                model.CanTeachCourse = req.CanTeachCourse;
-                model.BeGoodAtTerritory = req.BeGoodAtTerritory;
-                model.CreateTime = DateTime.Now;
-                model.ModifyTime = DateTime.Now;
-                model.AppUserId = req.AppUserId;
-                model.AuditState = 1;
-                await UnitWork.AddAsync<classroom_teacher_apply_log, int>(model);
-                await UnitWork.SaveAsync();
             }
             return result;
         }
@@ -392,6 +427,7 @@ namespace OpenAuth.App
             model.VideoUrl = "";
             model.AuditState = 1;
             model.CreateTime = DateTime.Now;
+            model.IsConversion = false;
             await UnitWork.AddAsync<classroom_teacher_course, int>(model);
             await UnitWork.SaveAsync();
             return result;
@@ -509,7 +545,7 @@ namespace OpenAuth.App
             return result;
         }
 
-     
+
         #endregion
     }
 }

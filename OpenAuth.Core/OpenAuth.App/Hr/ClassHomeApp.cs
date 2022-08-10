@@ -11,6 +11,7 @@ using OpenAuth.App.Hr.Request;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Hr;
 using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
@@ -138,36 +139,144 @@ namespace OpenAuth.App.Hr
                 }
             }
             result.Count = obj.Count;
-            result.Data = obj.Skip((pageIndex - 1) * pageSize).Take(pageSize);
+            result.Data = obj.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList(); 
+            return result;
+        }
+
+        /// <summary>
+        /// 专题列表
+        /// </summary>
+        /// <param name="appUserId">app用户id</param>
+        /// <param name="key">关键词</param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
+        public async Task<TableData> ClassroomSubjectList(int appUserId, string key, int pageIndex, int pageSize)
+        {
+            var result = new TableData();
+            List<classroom_subject_dto> obj = new List<classroom_subject_dto>();
+
+            var subjectList = await (from a in UnitWork.Find<classroom_subject>(null)
+                                   .WhereIf(!string.IsNullOrWhiteSpace(key), a => a.Name.Contains(key))
+                                   .Where(a => a.State == 1)
+                                     select a).ToListAsync();
+
+            var courseList = await (from a in UnitWork.Find<classroom_subject_course>(null)
+                                    select a).ToListAsync();
+
+
+            var userProgress = await (from a in UnitWork.Find<classroom_subject_course_user>(null)
+                                      .Where(a => a.AppUserId == appUserId)
+                                      select a).ToListAsync();
+
+            foreach (var item in subjectList)
+            {
+                var courseCount = courseList.Where(a => a.SubjectId == item.Id).Count();
+                if (courseCount == 0)
+                {
+                    continue;
+                }
+                var userProgressCount = userProgress.Where(a => a.SubjectId == item.Id && a.IsComplete == true).Count();
+
+                classroom_subject_dto info = new classroom_subject_dto();
+                info.Id = item.Id;
+                info.ViewNumbers = item.ViewNumbers;
+                info.Name = item.Name;
+                info.State = item.State;
+                info.CreateTime = item.CreateTime;
+                info.Sort = item.Sort;
+                info.CreateUser = item.CreateUser;
+                if (courseCount == userProgressCount)
+                {
+                    info.Schedule = 1;
+                    info.IsComplete = true;
+                }
+                else
+                {
+                    info.Schedule = Math.Round((decimal)userProgressCount / courseCount, 2);
+                    info.IsComplete = false;
+                }
+                obj.Add(info);
+            }
+            List<classroom_subject_dto> subList1 = obj.Where(a => a.IsComplete == true).OrderBy(a => a.Sort).ToList();
+            List<classroom_subject_dto> subList2 = obj.Where(a => a.IsComplete == false && a.Schedule > 0).OrderByDescending(a => a.Schedule).ToList();
+            List<classroom_subject_dto> subList3 = obj.Where(a => a.IsComplete == false && a.Schedule == 0).OrderBy(a => a.Sort).ToList();
+
+            obj.Clear();
+            obj.AddRange(subList2);
+            obj.AddRange(subList3);
+            obj.AddRange(subList1);
+            result.Count = obj.Count();
+            result.Data = obj.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+
             return result;
         }
 
 
+        /// <summary>
+        /// 视频回放列表
+        /// </summary>
+        /// <param name="appUserId">app用户id</param>
+        /// <param name="key">关键词</param>
+        /// <param name="pageIndex"></param>
+        /// <param name="pageSize"></param>
+        /// <returns></returns>
 
 
+        public async Task<TableData> TeacherCoursePlayBack(int appUserId, string key, int pageIndex, int pageSize)
+        {
+            var result = new TableData();
+            DateTime dt = DateTime.Now;  //当前时间
+            DateTime yesterday = dt.AddDays(-1);
 
+            var query = (from a in UnitWork.Find<classroom_teacher_course>(null)
+                         .Where(zw => zw.AuditState == 2
+                         && zw.TeachingMethod == 2
+                         && zw.EndTime > yesterday)
+                         .WhereIf(!string.IsNullOrWhiteSpace(key), a => a.Title.Contains(key))
+                         select a);
+            // 视频总数
+            result.Count = await query.CountAsync();
+            var pageData = await query.OrderByDescending(zw => zw.EndTime).Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
+            var teacherUserIds = pageData.Select(zw => zw.AppUserId).Distinct().ToList();
+            var teacherList = await UnitWork.Find<classroom_teacher_apply_log>(null)
+                        .Where(c => c.AuditState == 2 && teacherUserIds.Contains(c.AppUserId))
+                        .ToListAsync();
+            var teacherCourseIds = teacherList.Select(c => c.Id).ToList();
+            // 观看记录
+            var viewLogs = await UnitWork.Find<classroom_teacher_course_play_log>(null)
+                    .Where(c => c.AppUserId == appUserId && teacherCourseIds.Contains(c.TeacherCourseId)).ToListAsync();
 
-
-
-
-
-
-
-
-
-
-
-
-
+            List<TeacherCourseResp> obj = new List<TeacherCourseResp>();
+            foreach (var item in pageData)
+            {
+                var teacher = teacherList.FirstOrDefault(zw => zw.AppUserId == item.AppUserId);
+                var log = viewLogs.FirstOrDefault(zw => zw.TeacherCourseId == item.Id);
+                var newCourseResp = new TeacherCourseResp
+                {
+                    Id = item.Id,
+                    Title = item.Title,
+                    Name = teacher == null ? string.Empty : teacher.Name,
+                    AppUserId = item.AppUserId,
+                    Department = teacher == null ? string.Empty : teacher.Department,
+                    ForTheCrowd = item.ForTheCrowd,
+                    TeachingMethod = item.TeachingMethod,
+                    TeachingAddres = item.TeachingAddres,
+                    BackgroundImage = item.BackgroundImage,
+                    VideoUrl = item.VideoUrl,
+                    ViewedCount = item.ViewedCount,
+                    StartTime = item.StartTime.ToString(Defaults.DateTimeFormat),
+                    EndTime = item.EndTime.ToString(Defaults.DateTimeFormat),
+                    StartHourMinute = item.StartTime.ToString(Defaults.DateHourFormat),
+                    EndHourMinute = item.EndTime.ToString(Defaults.DateHourFormat),
+                    PlayDuration = log == null ? 0 : log.PlayDuration,
+                };
+                obj.Add(newCourseResp);
+            }
+            result.Data = obj;
+            return result;
+        }
         #endregion
-
-
-
-
-
-
-
-
 
     }
 }

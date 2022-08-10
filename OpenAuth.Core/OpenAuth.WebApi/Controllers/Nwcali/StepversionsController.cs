@@ -220,186 +220,6 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 烤机启动测试
-        /// </summary>
-        /// <param name="model"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public async Task<TableData> ChannelControlAsync(ChannelControlReq model)
-        {
-            var result = new TableData();
-            int stepCount = 0;
-            string step_data = string.Empty;
-            int stepCount2 = 0;
-            string step_data2 = string.Empty;
-            string message = string.Empty;
-            List<DeviceTestResponse> deviceTestResponses = new List<DeviceTestResponse>();
-            if (model.GeneratorCode.Count <= 0)
-            {
-                result.Code = 500;
-                result.Message = $"生产码缺失启动失败!";
-                return result;
-            }
-            if (model.SeriesName == "6" || model.SeriesName == "7")
-            {
-                if (string.IsNullOrWhiteSpace(model.FilePath2) || string.IsNullOrWhiteSpace(model.FilePath))
-                {
-                    result.Code = 500;
-                    result.Message = $"{model.SeriesName}系列必须有两个工步文件!";
-                    return result;
-                }
-                if (model.FirstStart != 1 && model.FirstStart != 2)
-                {
-                    result.Code = 500;
-                    result.Message = $"{model.SeriesName}系列工步未设置优先启动!";
-                    return result;
-                }
-                var xmlCpntent = XMLHelper.GetXDocument(model.FilePath).ToString();
-                StringReader Reader = new StringReader(xmlCpntent);
-                XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.Load(Reader);
-                string work_path = $"{AppDomain.CurrentDomain.BaseDirectory}step\\";
-                Directory.CreateDirectory(work_path);
-                string filename = DateTime.Now.ToString("yyyyMMddHHmmssffff");
-                string dir = $"{work_path}{filename}.xml";
-                xmlDoc.Save(dir);
-                if (!System.IO.File.Exists(dir))
-                {
-                    result.Code = 500;
-                    result.Message = "工步文件读取失败!";
-                    return result;
-                }
-                var step = Common.XmlStep.LoadStepFile(dir);
-                if (step == null)
-                {
-                    result.Code = 500;
-                    result.Message = "工步文件异常,无法解析!";
-                    return result;
-                }
-                System.IO.File.Delete(dir);
-                stepCount = step.ListStep.Count();
-                step_data = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent.ToString()));
-
-
-                var xmlCpntent1 = XMLHelper.GetXDocument(model.FilePath2).ToString();
-                StringReader Reader1 = new StringReader(xmlCpntent1);
-                XmlDocument xmlDoc1 = new XmlDocument();
-                xmlDoc1.Load(Reader1);
-                string work_path1 = $"{AppDomain.CurrentDomain.BaseDirectory}step\\";
-                Directory.CreateDirectory(work_path1);
-                string filename1 = DateTime.Now.ToString("yyyyMMddHHmmssffff");
-                string dir1 = $"{work_path1}{filename1}.xml";
-                xmlDoc1.Save(dir1);
-                if (!System.IO.File.Exists(dir1))
-                {
-                    result.Code = 500;
-                    result.Message = "工步文件读取失败!";
-                    return result;
-                }
-                var step1 = Common.XmlStep.LoadStepFile(dir1);
-                if (step1 == null)
-                {
-                    result.Code = 500;
-                    result.Message = "工步文件异常,无法解析!";
-                    return result;
-                }
-                System.IO.File.Delete(dir1);
-                stepCount2 = step1.ListStep.Count();
-                step_data2 = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent1.ToString()));
-                var res = await _app.DockChannelControl(model, stepCount, step_data, stepCount2, step_data2);
-                if (res.Code != 200)
-                {
-                    result.Code = res.Code;
-                    result.Message = res.Message;
-                    return result;
-                }
-                deviceTestResponses = res.Data;
-            }
-            else
-            {
-                var xmlCpntent = XMLHelper.GetXDocument(model.FilePath).ToString();
-                StringReader Reader = new StringReader(xmlCpntent);
-                XmlDocument xmlDoc = new XmlDocument();
-                xmlDoc.Load(Reader);
-                string work_path = $"{AppDomain.CurrentDomain.BaseDirectory}step\\";
-                Directory.CreateDirectory(work_path);
-                string filename = DateTime.Now.ToString("yyyyMMddHHmmssffff");
-                string dir = $"{work_path}{filename}.xml";
-                xmlDoc.Save(dir);
-                if (!System.IO.File.Exists(dir))
-                {
-                    result.Code = 500;
-                    result.Message = "工步文件读取失败!";
-                    return result;
-                }
-                var step = Common.XmlStep.LoadStepFile(dir);
-                if (step == null)
-                {
-                    result.Code = 500;
-                    result.Message = "工步文件异常,无法解析!";
-                    return result;
-                }
-                System.IO.File.Delete(dir);
-                stepCount = step.ListStep.Count();
-                step_data = Convert.ToBase64String(Encoding.UTF8.GetBytes(xmlCpntent.ToString()));
-                var res = await _app.ChannelControlAsync(model, stepCount, step_data);
-                if (res.Code != 200)
-                {
-                    result.Code = res.Code;
-                    result.Message = res.Message;
-                    return result;
-                }
-                deviceTestResponses = res.Data;
-            }
-            try
-            {
-                foreach (var item in deviceTestResponses)
-                {
-                    List<StartTestResp> list = new List<StartTestResp>();
-                    var testJson = JsonConvert.SerializeObject(item.canTestDeviceResp);
-                    var request = new Request { JsonParameter = Google.Protobuf.ByteString.CopyFromUtf8(testJson) };
-                    var testRes = _dataServiceClient.ControlCmd(request);
-                    string testData = Encoding.UTF8.GetString(testRes.Msg.Memory.ToArray());
-                    StartTestResp startTestResp = new StartTestResp();
-                    try
-                    {
-                        startTestResp = JsonConvert.DeserializeObject<StartTestResp>(testData);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Logger.Error($"{testData}", ex);
-                        result.Code = 500;
-                        result.Message = testData;
-                        return result;
-                    }
-                    startTestResp.GeneratorCode = item.GeneratorCode;
-                    startTestResp.EdgeGuid = item.EdgeGuid;
-                    startTestResp.BtsServerIp = item.BtsServerIp;
-                    startTestResp.MidGuid = item.MidGuid;
-                    startTestResp.LowGuid = item.LowGuid;
-                    startTestResp.SrvGuid = item.SrvGuid;
-                    startTestResp.Department = item.Department;
-                    startTestResp.stepCount = item.stepCount;
-                    startTestResp.MaxRange = item.MaxRange;
-                    startTestResp.FileIds = model.FileIds;
-                    list.Add(startTestResp);
-                    var successList = await _app.SaveTestResult(list);
-                }
-            }
-            catch (Exception e)
-            {
-                result.Code = 500;
-                result.Message = e.Message;
-                return result;
-            }
-            if (!string.IsNullOrWhiteSpace(message))
-            {
-                result.Message = message;
-            }
-            return result;
-        }
-
-        /// <summary>
         /// 烤机清单
         /// </summary>
         /// <param name="page">分页索引</param>
@@ -491,30 +311,6 @@ namespace OpenAuth.WebApi.Controllers
                     list.Add(btsDeviceResp);
                 }
                 return await _app.SyncDeviceList(list, EdgeGuid);
-            }
-            catch (Exception e)
-            {
-                result.Code = 500;
-                result.Message = e.Message;
-                return result;
-            }
-        }
-
-        /// <summary>
-        /// 当前扫码对应订单在线已启动测试需要重启
-        /// </summary>
-        /// <param name="GeneratorCode"></param>
-        /// <param name="ItemCode"></param>
-        /// <param name="page"></param>
-        /// <param name="limit"></param>
-        /// <returns></returns>
-        [HttpGet]
-        public async Task<TableData> NeedRestartList(string GeneratorCode, string ItemCode, int page, int limit)
-        {
-            var result = new TableData();
-            try
-            {
-                return await _app.NeedRestartList(GeneratorCode, ItemCode, page, limit);
             }
             catch (Exception e)
             {
@@ -715,7 +511,7 @@ namespace OpenAuth.WebApi.Controllers
 
 
         /// <summary>
-        /// 启动测试
+        /// 重新启动测试
         /// </summary>
         /// <param name="model"></param>
         /// <returns></returns>
@@ -931,6 +727,20 @@ namespace OpenAuth.WebApi.Controllers
                 return result;
             }
             result.Data = step;
+            return result;
+        }
+
+        /// <summary>
+        /// 根据量程获取系数
+        /// </summary>
+        /// <param name="rangeCurrArray">多个量程英文逗号隔开</param>
+        /// <returns></returns>
+        [HttpGet]
+        public TableData StepCoefficient(string rangeCurrArray)
+        {
+            var result = new TableData();
+            var currArray = _app.MaxCurrent(rangeCurrArray);
+            result.Data = _app.GetCurFactor(currArray);
             return result;
         }
         #endregion

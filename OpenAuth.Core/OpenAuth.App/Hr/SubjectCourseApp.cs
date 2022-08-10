@@ -102,7 +102,7 @@ namespace OpenAuth.App.Hr
                 {
                     Name = req.Name,
                     ViewNumbers = 0,
-                    State = 1,
+                    State = req.State,
                     CreateTime = DateTime.Now,
                     Sort = (int)sort + 1,
                     CreateUser = user.Name,
@@ -164,6 +164,7 @@ namespace OpenAuth.App.Hr
         {
             var result = new TableData();
             var query =  (from a in UnitWork.Find<classroom_subject_course>(null)
+                                     .WhereIf(req.State != null, c => c.State == req.State)
                                      .WhereIf(!string.IsNullOrWhiteSpace(req.Name), a => a.Name.Contains(req.Name))
                                      .WhereIf(!string.IsNullOrWhiteSpace(req.CreateUser), a => a.CreateUser.Contains(req.CreateUser))
                                      .WhereIf(req.StartTime != null, c => c.CreateTime >= req.StartTime)
@@ -315,10 +316,6 @@ namespace OpenAuth.App.Hr
             foreach (var item in subjectList)
             {
                 var courseCount = courseList.Where(a => a.SubjectId == item.Id).Count();
-                if (courseCount == 0)
-                {
-                    continue;
-                }
                 var userProgressCount = userProgress.Where(a => a.SubjectId == item.Id && a.IsComplete == true).Count();
 
                 classroom_subject_dto info = new classroom_subject_dto();
@@ -329,15 +326,23 @@ namespace OpenAuth.App.Hr
                 info.CreateTime = item.CreateTime;
                 info.Sort = item.Sort;
                 info.CreateUser = item.CreateUser;
-                if (courseCount == userProgressCount)
+                if (courseCount == 0)
                 {
-                    info.Schedule = 100;
-                    info.IsComplete = true;
+                    info.Schedule =0;
+                    info.IsComplete = false;
                 }
                 else
                 {
-                    info.Schedule = userProgressCount * 100 / courseCount;
-                    info.IsComplete = false;
+                    if (courseCount == userProgressCount)
+                    {
+                        info.Schedule = 100;
+                        info.IsComplete = true;
+                    }
+                    else
+                    {
+                        info.Schedule = userProgressCount * 100 / courseCount;
+                        info.IsComplete = false;
+                    }
                 }
                 obj.Add(info);
             }
@@ -346,9 +351,9 @@ namespace OpenAuth.App.Hr
             List<classroom_subject_dto> subList2 = obj.Where(a => a.IsComplete == false && a.Schedule > 0).OrderByDescending(a => a.Schedule).ToList();
             List<classroom_subject_dto> subList3 = obj.Where(a => a.IsComplete == false && a.Schedule == 0).OrderBy(a => a.Sort).ToList();
             obj.Clear();
-            obj.AddRange(subList1);
-            obj.AddRange(subList3);
             obj.AddRange(subList2);
+            obj.AddRange(subList3);
+            obj.AddRange(subList1);
 
 
             result.Data = obj;
@@ -368,7 +373,7 @@ namespace OpenAuth.App.Hr
 
             var courseList = await (from a in UnitWork.Find<classroom_subject_course>(null)
                                       .WhereIf(!string.IsNullOrWhiteSpace(name), a => a.Name.Contains(name))
-                                     .Where(a => a.SubjectId == subjectId)
+                                     .Where(a => a.SubjectId == subjectId && a.State ==1)
                                     select a).ToListAsync();
 
             var userProgress = await (from a in UnitWork.Find<classroom_subject_course_user>(null)
