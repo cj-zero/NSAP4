@@ -328,7 +328,7 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="startTime">开始时间 </param>
         /// <param name="endTime">结束时间</param>
-        /// <param name="teachingMethod">1:线下 2:线上 </param>
+        /// <param name="teachingMethod">1:线上  2:线下 </param>
         /// <param name="midNight">午夜凌晨 </param>
         ///  <param name="dt">当前时间 </param>
         /// <returns></returns>
@@ -343,7 +343,7 @@ namespace OpenAuth.App
             // 直播中/开课中
             if (dt >= startTime && dt <= endTime)
             {
-                sortValue = teachingMethod == 2 ? (int)TeacherCourseSignEnum.Living : (int)TeacherCourseSignEnum.InClass;
+                sortValue = teachingMethod == 1 ? (int)TeacherCourseSignEnum.Living : (int)TeacherCourseSignEnum.InClass;
             }
             else if (startTime > dt)
             {
@@ -354,7 +354,7 @@ namespace OpenAuth.App
             else if (endTime > midNight && startTime < dt)
             {
 
-                sortValue = teachingMethod == 2 ? (int)TeacherCourseSignEnum.EndOnLine : (int)TeacherCourseSignEnum.EndOffline; ;
+                sortValue = teachingMethod == 1 ? (int)TeacherCourseSignEnum.EndOnLine : (int)TeacherCourseSignEnum.EndOffline; ;
             }
             return sortValue;
         }
