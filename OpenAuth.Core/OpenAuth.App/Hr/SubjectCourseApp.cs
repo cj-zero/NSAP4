@@ -203,7 +203,6 @@ namespace OpenAuth.App.Hr
                     subject.Name = req.Name;
                     subject.Type = req.Type;
                     subject.Content = req.Content;
-                    subject.ViewNumbers = 0;
                     if(req.State == 1 && !subject.ShelfTime.HasValue)
                     {
                         subject.ShelfTime = DateTime.Now;
