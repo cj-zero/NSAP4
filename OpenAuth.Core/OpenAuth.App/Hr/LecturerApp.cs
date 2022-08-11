@@ -89,12 +89,12 @@ namespace OpenAuth.App
             }
             await UnitWork.UpdateAsync(query);
             await UnitWork.SaveAsync();
-            if (req.auditState == 3)
+            if (req.auditState == 3 || req.auditState==2)
             {
                 try
                 {
                     string title = "讲师申请";
-                    string content = "讲师申请失败!";
+                    string content = req.auditState == 3?"讲师申请失败!": "讲师申请成功!";
                     string payload = "{\"urlType\":1,\"url\":\"/pages/afterSale/course/publishCenter\"}";
                     var str = _helper.Post(new
                     {
@@ -188,7 +188,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(userName), c => c.Name.Contains(userName))
                 .WhereIf(!string.IsNullOrWhiteSpace(title), c => c.Title.Contains(title))
                 .WhereIf(startTime != null, c => c.StartTime >= startTime)
-                .WhereIf(endTime != null, c => c.EndTime <= endTime)
+                .WhereIf(endTime != null, c => c.StartTime <= endTime)
                 .WhereIf(auditState != null && auditState != 0, c => c.AuditState == auditState)
                 .OrderByDescending(c => c.Id)
                 .Skip((pageIndex - 1) * pageSize).Take(pageSize)
@@ -200,7 +200,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(userName), c => c.Name.Contains(userName))
                 .WhereIf(!string.IsNullOrWhiteSpace(title), c => c.Title.Contains(title))
                 .WhereIf(startTime != null, c => c.StartTime >= startTime)
-                .WhereIf(endTime != null, c => c.EndTime <= endTime)
+                .WhereIf(endTime != null, c => c.StartTime <= endTime)
                 .WhereIf(auditState != null && auditState != 0, c => c.AuditState == auditState)
                 .CountAsync();
             return result;
@@ -222,12 +222,12 @@ namespace OpenAuth.App
             }
             await UnitWork.UpdateAsync(query);
             await UnitWork.SaveAsync();
-            if (req.auditState == 3)
+            if (req.auditState == 3 || req.auditState == 2)
             {
                 try
                 {
                     string title = "讲师开课申请";
-                    string content = $"讲师【{query.Title}】课程开课申请失败!";
+                    string content = req.auditState == 3 ? $"讲师【{query.Title}】课程开课申请失败!" : $"讲师【{query.Title}】课程开课申请成功!";
                     string payload = "{\"urlType\":1,\"url\":\"/pages/afterSale/course/publishCenter\"}";
                     var str = _helper.Post(new
                     {
@@ -258,6 +258,56 @@ namespace OpenAuth.App
                 query.VideoUrl = req.VideoUrl;
             }
             await UnitWork.UpdateAsync(query);
+            await UnitWork.SaveAsync();
+            return result;
+        }
+
+
+        /// <summary>
+        /// 讲师经验值计算
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> CalculateTeacherExperience()
+        {
+            var result = new TableData();
+            DateTime dt=DateTime.Now;
+            var ids = await UnitWork.Find<classroom_teacher_apply_log>(null).GroupBy(c => c.AppUserId).Select(c => c.Max(c => c.Id)).ToListAsync();
+            var teacherList = await UnitWork.Find<classroom_teacher_apply_log>(null).Where(c => ids.Contains(c.Id) && c.AuditState == 2).ToListAsync();
+            var teacherIds = teacherList.Select(c => c.AppUserId).ToList();
+            var teacherCourseList = await UnitWork.Find<classroom_teacher_course>(null).Where(c => teacherIds.Contains(c.AppUserId) && c.IsConversion == false && c.AuditState == 2 && c.EndTime <= dt).ToListAsync();
+            foreach (var item in teacherList)
+            {
+                var minutesList = teacherCourseList.Where(c => c.AppUserId == item.AppUserId).Select(c => new { totalMinutes = (c.EndTime - c.StartTime).TotalMinutes }).ToList();
+                var totalminutes = minutesList.Count <= 0 ? 0 : minutesList.Sum(c => c.totalMinutes);
+                item.Experience += (int)totalminutes;
+                if (item.Experience<=300)
+                {
+                    item.Grade = 1;
+                }
+                else if (item.Experience <= 800 && item.Experience>=301)
+                {
+                    item.Grade = 2;
+                }
+                else if (item.Experience <= 1500 && item.Experience >= 801)
+                {
+                    item.Grade = 3;
+                }
+                else if (item.Experience <= 2000 && item.Experience >= 1501)
+                {
+                    item.Grade = 4;
+                }
+                else if (item.Experience <= 2500 && item.Experience >= 2001)
+                {
+                    item.Grade = 5;
+                }
+                else
+                {
+                    item.Grade = 6;
+                }
+            }
+            teacherCourseList.ForEach(c =>c.IsConversion = true);
+            await UnitWork.BatchUpdateAsync(teacherList.ToArray());
+            await UnitWork.BatchUpdateAsync(teacherCourseList.ToArray());
             await UnitWork.SaveAsync();
             return result;
         }
@@ -313,10 +363,11 @@ namespace OpenAuth.App
                 model.CreateTime = DateTime.Now;
                 model.ModifyTime = DateTime.Now;
                 model.AppUserId = req.AppUserId;
+                model.OperationUser = "";
                 model.Experience = 0;
                 model.Grade = 1;
                 model.AuditState = 1;
-                await UnitWork.AddAsync<classroom_teacher_apply_log, int>(query);
+                await UnitWork.AddAsync<classroom_teacher_apply_log, int>(model);
                 await UnitWork.SaveAsync();
             }
             else
@@ -376,6 +427,7 @@ namespace OpenAuth.App
             model.VideoUrl = "";
             model.AuditState = 1;
             model.CreateTime = DateTime.Now;
+            model.IsConversion = false;
             await UnitWork.AddAsync<classroom_teacher_course, int>(model);
             await UnitWork.SaveAsync();
             return result;

@@ -62,6 +62,11 @@ namespace OpenAuth.Repository.Domain
         public int ViewedCount { get; set; }
 
         /// <summary>
+        /// 是否已换算经验值
+        /// </summary>
+        public bool IsConversion { get; set; }
+
+        /// <summary>
         /// 
         /// </summary>
         public override void GenerateDefaultKeyVal()

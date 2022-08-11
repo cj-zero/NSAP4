@@ -312,16 +312,17 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// App用户列表
         /// </summary>
+        /// <param name="key"></param>
         /// <param name="pageIndex"></param>
         /// <param name="pageSize"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> GetAppUserInfo(int pageIndex, int pageSize)
+        public async Task<TableData> GetAppUserInfo(string key,int pageIndex, int pageSize)
         {
             var result = new TableData();
             try
             {
-                result = await _app.GetAppUserInfo(pageIndex,pageSize);
+                result = await _app.GetAppUserInfo(key,pageIndex, pageSize);
             }
             catch (Exception e)
             {

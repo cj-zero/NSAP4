@@ -335,17 +335,22 @@ namespace OpenAuth.App
             foreach (var item in packageUserLlist)
             {
                 var userInfo = query.Where(c => c.AppUserId == item.AppUserId).FirstOrDefault();
+                if (userInfo==null)
+                {
+                    continue;
+                }
                 int i = 0;
                 int totalDay = courseList.Sum(c => c.LearningCycle);
                 DateTime endTimes = item.CreateTime.AddDays(totalDay);
+                decimal schedules = 0;
                 foreach (var ctem in courseList)
                 {
                     var courseVideoList = videoList.Where(c => c.CourseId == ctem.Id).ToList();
                     int j = 0;
-                    foreach (var vitem in videoPlayList)
+                    foreach (var vitem in videoList)
                     {
-                        var isPass = examList.Where(c => c.CourseId == ctem.Id && c.CourseVideoId == vitem.CourseVideoId && c.AppUserId == item.AppUserId && c.IsPass == true).Any();
-                        var playResult = videoPlayList.Where(c => c.CourseId == ctem.Id && c.CourseVideoId == vitem.CourseVideoId && c.AppUserId == item.AppUserId).OrderByDescending(c => c.PlayDuration).FirstOrDefault();
+                        var isPass = examList.Where(c => c.CourseId == ctem.Id && c.CourseVideoId == vitem.Id && c.AppUserId == item.AppUserId && c.IsPass == true).Any();
+                        var playResult = videoPlayList.Where(c => c.CourseId == ctem.Id && c.CourseVideoId == vitem.Id && c.AppUserId == item.AppUserId).OrderByDescending(c => c.PlayDuration).FirstOrDefault();
                         var isFinish = playResult == null ? false : (playResult.PlayDuration / (double)playResult.TotalDuration > 0.8);
                         if (isFinish && isPass)
                         {
@@ -357,10 +362,16 @@ namespace OpenAuth.App
                         i++;
                     }
                 }
-                var schedules = i / courseList.Count;
-                if (schedule != null && schedule == schedules)
+                if (courseList.Count>0)
                 {
-                    list.Add(new { userInfo.Name, item.CreateTime, endTimes, schedules, item.Id, item.AppUserId });
+                    schedules = Math.Round((decimal)i / courseList.Count, 2);
+                }
+                if (schedule != null)
+                {
+                    if (schedule/100 == schedules)
+                    {
+                        list.Add(new { userInfo.Name, item.CreateTime, endTimes, schedules, item.Id, item.AppUserId });
+                    }
                 }
                 else
                 {
@@ -389,14 +400,16 @@ namespace OpenAuth.App
         /// <summary>
         /// App用户列表
         /// </summary>
+        /// <param name="key"></param>
         /// <param name="pageIndex"></param>
         /// <param name="pageSize"></param>
         /// <returns></returns>
-        public async Task<TableData> GetAppUserInfo(int pageIndex, int pageSize)
+        public async Task<TableData> GetAppUserInfo(string key,int pageIndex, int pageSize)
         {
             TableData result = new TableData();
             var query = (from a in UnitWork.Find<AppUserMap>(null)
                          join u in UnitWork.Find<User>(null) on a.UserID equals u.Id
+                         where u.Status==0
                          select new
                          {
                              erpId = u.Id,
@@ -404,7 +417,7 @@ namespace OpenAuth.App
                              erpName = u.Name,
                              appUserId = a.AppUserId,
                              u.EntryTime
-                         });
+                         }).WhereIf(!string.IsNullOrWhiteSpace(key),c=>c.erpName.Contains(key));
 
             result.Count = await query.CountAsync();
             result.Data = await query.OrderBy(c => c.appUserId).Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
@@ -753,7 +766,6 @@ namespace OpenAuth.App
         }
 
         #endregion
-
         #endregion
 
 
@@ -773,9 +785,10 @@ namespace OpenAuth.App
             List<object> obj = new List<object>();
             DateTime dt = DateTime.Now;
             var query = await (from a in UnitWork.Find<classroom_course_package_user>(null)
-                               join c in UnitWork.Find<classroom_course_package_map>(null) on a.CoursePackageId equals c.CoursePackageId
+                               join e in UnitWork.Find<classroom_course_package>(null) on a.CoursePackageId equals e.Id
+                               join c in UnitWork.Find<classroom_course_package_map>(null) on e.Id equals c.CoursePackageId
                                join d in UnitWork.Find<classroom_course>(null) on c.CourseId equals d.Id
-                               where a.AppUserId == appUserId && d.State == true
+                               where a.AppUserId == appUserId && d.State == true && e.State==true
                                select new { a.Id, d.Name, d.Source, d.State, d.LearningCycle, a.CreateTime, a.CoursePackageId, c.Sort, c.CourseId })
                                .WhereIf(source != null && source > 0, c => c.Source == source)
                                .OrderByDescending(c => c.Id)
@@ -830,13 +843,13 @@ namespace OpenAuth.App
                             }
                             else
                             {
-                                if (Schedule == 1)
+                                if (Schedule >= 1)
                                 {
                                     courseState = 2;
                                 }
-                                else if (Schedule != 1)
+                                else if (Schedule < 1)
                                 {
-                                    if (dt >= EndTime)
+                                    if (dt > EndTime)
                                     {
                                         courseState = 1;
                                     }
@@ -849,25 +862,25 @@ namespace OpenAuth.App
                             obj.Add(new { row.Name, row.CreateTime, EndTime, Schedule, row.CoursePackageId, row.CourseId, courseState });
                             break;
                         case 1:
-                            if (Schedule != 1 && dt >= EndTime)
+                            if (Schedule <1 && dt > EndTime && (playCount>0 || examCount>0))
                             {
                                 obj.Add(new { row.Name, row.CreateTime, EndTime, Schedule, row.CoursePackageId, row.CourseId, courseState = 1 });
                             }
                             break;
                         case 2:
-                            if (Schedule == 1)
+                            if (Schedule >=1)
                             {
                                 obj.Add(new { row.Name, row.CreateTime, EndTime, Schedule, row.CoursePackageId, row.CourseId, courseState = 2 });
                             }
                             break;
                         case 3:
-                            if (Schedule == 0 && playCount <= 0 && examCount <= 0)
+                            if (playCount <= 0 && examCount <= 0)
                             {
                                 obj.Add(new { row.Name, row.CreateTime, EndTime, Schedule, row.CoursePackageId, row.CourseId, courseState = 3 });
                             }
                             break;
                         case 4:
-                            if (playCount >= 0 || examCount >= 0)
+                            if ((playCount >0 || examCount >0) && Schedule<1 && dt <= EndTime)
                             {
                                 obj.Add(new { row.Name, row.CreateTime, EndTime, Schedule, row.CoursePackageId, row.CourseId, courseState = 4 });
                             }
@@ -999,18 +1012,21 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var videoInfo = await UnitWork.Find<classroom_course_video>(null).Where(c => c.Id == req.CourseVideoId).FirstOrDefaultAsync();
-            videoInfo.ViewedCount++;
-            classroom_video_play_log log = new classroom_video_play_log();
-            log.CoursePackageId = req.CoursePackageId;
-            log.CourseId = req.CourseId;
-            log.CourseVideoId = req.CourseVideoId;
-            log.AppUserId = req.AppUserId;
-            log.PlayDuration = req.PlayDuration;
-            log.TotalDuration = req.TotalDuration;
-            log.CreateTime = DateTime.Now;
-            await UnitWork.AddAsync<classroom_video_play_log, int>(log);
-            await UnitWork.UpdateAsync(videoInfo);
-            await UnitWork.SaveAsync();
+            if (videoInfo!=null)
+            {
+                videoInfo.ViewedCount++;
+                classroom_video_play_log log = new classroom_video_play_log();
+                log.CoursePackageId = req.CoursePackageId;
+                log.CourseId = req.CourseId;
+                log.CourseVideoId = req.CourseVideoId;
+                log.AppUserId = req.AppUserId;
+                log.PlayDuration = req.PlayDuration;
+                log.TotalDuration = req.TotalDuration;
+                log.CreateTime = DateTime.Now;
+                await UnitWork.AddAsync<classroom_video_play_log, int>(log);
+                await UnitWork.UpdateAsync(videoInfo);
+                await UnitWork.SaveAsync();
+            }
             return result;
         }
 
