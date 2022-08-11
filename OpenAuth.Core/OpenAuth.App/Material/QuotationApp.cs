@@ -692,6 +692,9 @@ namespace OpenAuth.App.Material
                     //}
                     e.UnitPrice = decimal.Parse(e.UnitPrice.ToString("#0.0000"));
                     e.lastPurPrc = e.UnitPrice * 3;
+                    //A6开头 不带机箱、机柜的物料 销售价为结算价的2倍
+                    if (e.ItemCode.StartsWith("A6") && !(e.ItemName.Contains("机柜") || e.ItemName.Contains("机箱")))
+                        e.lastPurPrc = e.UnitPrice * 2;
                 }
 
             });
@@ -1179,6 +1182,7 @@ namespace OpenAuth.App.Material
             }
             if (request.QueryType == 1)
             {
+                //A6开头 带机柜、机箱的物料不可见
                 var filterCode = await UnitWork.Find<OITM>(c => c.ItemCode.StartsWith("A6") && (c.ItemName.Contains("机柜") || c.ItemName.Contains("机箱"))).Select(c => c.ItemCode).ToListAsync();
                 query = query.Where(c => !filterCode.Contains(c.ItemCode));
             }
@@ -1239,6 +1243,9 @@ namespace OpenAuth.App.Material
                     //}
                     e.UnitPrice = decimal.Parse(e.UnitPrice.ToString("#0.0000"));
                     e.lastPurPrc = e.UnitPrice * 3;
+                    //A6开头 不带机箱、机柜的物料 销售价为结算价的2倍
+                    if (e.ItemCode.StartsWith("A6") && !(e.ItemName.Contains("机柜") || e.ItemName.Contains("机箱")))
+                        e.lastPurPrc = e.UnitPrice * 2;
                 }
 
             });
