@@ -84,7 +84,6 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             catch (Exception ex)
             {
-
                 result.Code = 500;
                 result.Message = ex.Message;
                 Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
@@ -1095,5 +1094,32 @@ namespace OpenAuth.WebApi.Controllers.Material
                 throw new Exception(e.Message);
             }
         }
+
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        ///// <param name=""></param>
+        ///// <returns></returns>
+        //[HttpGet]
+        //public async Task<TableData> GetMaterialDetial(int  Id)
+        //{
+        //    var result = new TableData();
+        //    try
+        //    {
+        //        List<string> list = new List<string>();
+        //        list.Add("CT-4016-5V100A-NTA");
+        //         await _app.GetMaterialDetial(Id, list);
+                
+        //    }
+        //    catch (Exception ex)
+        //    {
+
+        //        result.Code = 500;
+        //        result.Message = ex.Message;
+        //        //Log.Logger.Error($"地址：{Request.Path}，参数：{req.SalesOrderId}, 错误：{result.Message}");
+        //    }
+        //    return result;
+        //}
+        
     }
 }

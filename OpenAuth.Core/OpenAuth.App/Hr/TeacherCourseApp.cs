@@ -104,75 +104,23 @@ namespace OpenAuth.App
         public async Task<TableData> TeacherCourseAdvanceNotice(int appUserId,int pageIndex, int pageSize)
         {
             var result = new TableData();
-            DateTime midNight = DateTime.Now.Date; // 当天凌晨
             DateTime dt = DateTime.Now;
-
-            // 获取预告+ 直播中(开课中)+当天结束的开课
+ 
+            // 全部预告视频
             var query = (from a in UnitWork.Find<classroom_teacher_course>(null)
                         .Where(zw => zw.AuditState == 2
-                        && (zw.EndTime > midNight))
+                        && (zw.StartTime > dt))
                         select a); 
 
             result.Count = await query.CountAsync();
-            var totalList = await query.ToListAsync();
-
-            var pageData = totalList.Select( a=> new  teacher_course_sign
-                {
-                    Id = a.Id,
-                    Title = a.Title,
-                    StartTime = a.StartTime,
-                    EndTime = a.EndTime,
-                    ForTheCrowd = a.ForTheCrowd,
-                    TeachingMethod = a.TeachingMethod,
-                    TeachingAddres = a.TeachingAddres,
-                    AppUserId = a.AppUserId,
-                    BackgroundImage = a.BackgroundImage,
-                    VideoUrl = a.VideoUrl,
-                    AuditState = a.AuditState,
-                    CreateTime = a.CreateTime,
-                    ViewedCount = a.ViewedCount,
-                    Sign = getTeacherCourseSign(a.StartTime, a.EndTime, a.TeachingMethod, midNight, dt)
-            }).OrderByDescending(zw => zw.Sign).Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList(); ;
-
-            // 二次排序
-            var livingList = pageData.Where(zw => zw.Sign == (int)TeacherCourseSignEnum.Living).OrderByDescending(zw => zw.ViewedCount).ToList();
-            var inClassList = pageData.Where(zw => zw.Sign == (int)TeacherCourseSignEnum.InClass).OrderBy(zw => zw.StartTime).ToList();
-            var advanceNoticeList = pageData.Where(zw => zw.Sign == (int)TeacherCourseSignEnum.AdvanceNotice).OrderBy(zw => zw.StartTime).ToList();
-            var endOfflineList = pageData.Where(zw => zw.Sign == (int)TeacherCourseSignEnum.EndOffline).OrderBy(zw => zw.StartTime).ToList();
-            var endOnLineList = pageData.Where(zw => zw.Sign == (int)TeacherCourseSignEnum.EndOnLine).OrderBy(zw => zw.StartTime).ToList();
-            //if(endOnLineList.Count >0)
-            //{
-            //    var teacherCourseIds = endOnLineList.Select(zw => zw.Id);
-            //    var viewStatistics = await UnitWork.Find<classroom_teacher_course_play_log>(null)
-            //        .Where(c => c.AppUserId == appUserId  && teacherCourseIds.Contains(c.TeacherCourseId))
-            //        .GroupBy(t=>t.TeacherCourseId).Select(zw => new { TeacherCourseId = zw.Key, TotalPalyDuration =  zw.Sum(s=>s.PlayDuration) }).ToListAsync();
-
-            //    var results = (from e in endOnLineList
-            //                   join v in viewStatistics on e.Id equals v.TeacherCourseId into vtem
-            //                   from ev in vtem.DefaultIfEmpty()
-            //                   select new
-            //                   {
-            //                       e,
-            //                       TotalPalyDuration = ev == null ? 0 : ev.TotalPalyDuration
-            //                   }).ToList().OrderByDescending(zw=>zw.TotalPalyDuration).ToList();
-
-            //    endOnLineList.Clear();
-            //    endOnLineList = results.Select(zw => zw.e).ToList();
-            //}
-            var totalCourseList = new List<teacher_course_sign>();
-            totalCourseList.AddRange(livingList);
-            totalCourseList.AddRange(inClassList);
-            totalCourseList.AddRange(advanceNoticeList);
-            totalCourseList.AddRange(endOfflineList);
-            totalCourseList.AddRange(endOnLineList);
-
-            var teacherUserIds = totalCourseList.Select(zw => zw.AppUserId).Distinct().ToList();
+            var pageData = await query.OrderByDescending(zw => zw.StartTime).Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
+            var teacherUserIds = pageData.Select(zw => zw.AppUserId).Distinct().ToList();
             var teacherList = await UnitWork.Find<classroom_teacher_apply_log>(null)
                         .Where(c => c.AuditState == 2 && teacherUserIds.Contains(c.AppUserId))
                         .ToListAsync();
 
             List<TeacherCourseResp> obj = new List<TeacherCourseResp>();
-            foreach (var item in totalCourseList)
+            foreach (var item in pageData)
             {
                 var teacher = teacherList.FirstOrDefault(zw => zw.AppUserId == item.AppUserId);
                 var newCourseResp = new TeacherCourseResp
@@ -200,24 +148,60 @@ namespace OpenAuth.App
         }
 
         /// <summary>
-        ///  视频回放
+        ///  讲课视频区域
         /// </summary>
+        /// <param name="appUserId"></param>
         /// <param name="pageIndex"></param>
         /// <param name="pageSize"></param>
-        public async Task<TableData> TeacherCoursePlayBack(int appUserId, int pageIndex, int pageSize)
+        public async Task<TableData> TeacherCourseArea(int appUserId, int pageIndex, int pageSize)
         {
             var result = new TableData();
             DateTime dt = DateTime.Now;  //当前时间
-            DateTime yesterday = dt.AddDays(-1);
+            DateTime midNight = DateTime.Now.Date; // 当天凌晨
 
+            // 直播中(开课中)+当天结束的线下课+ 回放视频
             var query = (from a in UnitWork.Find<classroom_teacher_course>(null)
                          .Where(zw => zw.AuditState == 2 
-                         && zw.TeachingMethod == 2
-                         && zw.EndTime > yesterday)
+                          && ((zw.TeachingMethod == 2 && zw.StartTime < dt) 
+                          || (zw.TeachingMethod == 1  &&  zw.StartTime < dt && zw.EndTime > midNight))
+                          )
                          select a);
+
             // 视频总数
             result.Count = await query.CountAsync();
-            var pageData = await query.OrderByDescending(zw=>zw.EndTime).Skip((pageIndex - 1) * pageSize).Take(pageSize).ToListAsync();
+            var totalList = await query.ToListAsync();
+
+            var pageData = totalList.Select(a => new teacher_course_sign
+            {
+                Id = a.Id,
+                Title = a.Title,
+                StartTime = a.StartTime,
+                EndTime = a.EndTime,
+                ForTheCrowd = a.ForTheCrowd,
+                TeachingMethod = a.TeachingMethod,
+                TeachingAddres = a.TeachingAddres,
+                AppUserId = a.AppUserId,
+                BackgroundImage = a.BackgroundImage,
+                VideoUrl = a.VideoUrl,
+                AuditState = a.AuditState,
+                CreateTime = a.CreateTime,
+                ViewedCount = a.ViewedCount,
+                Sign = getTeacherCourseSign(a.StartTime, a.EndTime, a.TeachingMethod,a.VideoUrl , midNight, dt)
+            }).OrderByDescending(zw => zw.Sign).Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList(); ;
+
+
+            // 二次排序
+            var livingList = pageData.Where(zw => zw.Sign == (int)TeacherCourseSignEnum.Living).OrderByDescending(zw => zw.ViewedCount).ToList();
+            var inClassList = pageData.Where(zw => zw.Sign == (int)TeacherCourseSignEnum.InClass).OrderBy(zw => zw.StartTime).ToList();
+            var endOfflineList = pageData.Where(zw => zw.Sign == (int)TeacherCourseSignEnum.EndOffline).OrderBy(zw => zw.StartTime).ToList();
+            var endOnLineList = pageData.Where(zw => zw.Sign == (int)TeacherCourseSignEnum.EndOnLine).OrderBy(zw => zw.StartTime).ToList();
+
+            var totalCourseList = new List<teacher_course_sign>();
+            totalCourseList.AddRange(livingList);
+            totalCourseList.AddRange(inClassList);
+            totalCourseList.AddRange(endOfflineList);
+            totalCourseList.AddRange(endOnLineList);
+
             var teacherUserIds = pageData.Select(zw => zw.AppUserId).Distinct().ToList();
             var teacherList = await UnitWork.Find<classroom_teacher_apply_log>(null)
                         .Where(c => c.AuditState == 2 && teacherUserIds.Contains(c.AppUserId))
@@ -229,7 +213,7 @@ namespace OpenAuth.App
                     .Where(c => c.AppUserId == appUserId  && teacherCourseIds.Contains(c.TeacherCourseId)).ToListAsync();
 
             List<TeacherCourseResp> obj = new List<TeacherCourseResp>();
-            foreach(var item in pageData)
+            foreach(var item in totalCourseList)
             {
                 var teacher = teacherList.FirstOrDefault(zw => zw.AppUserId == item.AppUserId);
                 var log = viewLogs.FirstOrDefault(zw => zw.TeacherCourseId == item.Id);
@@ -329,10 +313,11 @@ namespace OpenAuth.App
         /// <param name="startTime">开始时间 </param>
         /// <param name="endTime">结束时间</param>
         /// <param name="teachingMethod">1:线上  2:线下 </param>
+        /// <param name="videoUrl">视频地址 </param>
         /// <param name="midNight">午夜凌晨 </param>
         ///  <param name="dt">当前时间 </param>
         /// <returns></returns>
-        public int getTeacherCourseSign(DateTime startTime, DateTime endTime, int teachingMethod, DateTime midNight, DateTime dt)
+        public int getTeacherCourseSign(DateTime startTime, DateTime endTime, int teachingMethod, string videoUrl , DateTime midNight, DateTime dt)
         {
             // 优先级：直播中 4 > 开课中 3 > 预告 2 > 线上待录播 = 线下已结束 1
             var sortValue = (int)TeacherCourseSignEnum.Default;
@@ -353,8 +338,33 @@ namespace OpenAuth.App
             }
             else if (endTime > midNight && startTime < dt)
             {
+                // 线上课
+                if(teachingMethod == 1)
+                {
+                    if(endTime.AddMinutes(30)> dt)
+                    {
+                        // 存在直播不是在规定时间结束 ,依然是 直播标识 （留下半小时缓冲）
+                        sortValue = (int)TeacherCourseSignEnum.Living;
 
-                sortValue = teachingMethod == 1 ? (int)TeacherCourseSignEnum.EndOnLine : (int)TeacherCourseSignEnum.EndOffline; ;
+                    }else 
+                    {
+                        if(videoUrl.Contains("live.polyv.cn"))
+                        {
+                            // 待录播
+                            sortValue = (int)TeacherCourseSignEnum.EndOnLine;
+                        }
+                        else
+                        {
+                            // 默认值
+                            sortValue = (int)TeacherCourseSignEnum.Default;
+                        }
+                    }
+                }
+                else
+                {
+                    // 线下课
+                    sortValue = (int)TeacherCourseSignEnum.EndOffline;
+                }
             }
             return sortValue;
         }

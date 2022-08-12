@@ -166,6 +166,12 @@ namespace OpenAuth.App.Material.Request
         public int? QueryType { get; set; }
 
         /// <summary>
+        /// 查询类型 (判断是否为ECN)
+        /// </summary>
+        public int? FromId { get; set; }
+        
+
+        /// <summary>
         /// 打印物料id
         /// </summary>
         public List<QuotationMergeMaterialReq> QuotationMergeMaterialReqs { get; set; }

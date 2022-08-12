@@ -49,5 +49,9 @@ namespace OpenAuth.App.Request
         /// 销售员
         /// </summary>
         public string SlpName { get; set; }
+        /// <summary>
+        /// 状态
+        /// </summary>
+        public string Status { get; set; }
     }
 }

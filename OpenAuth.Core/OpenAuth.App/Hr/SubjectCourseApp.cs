@@ -306,6 +306,7 @@ namespace OpenAuth.App.Hr
                                      select a).ToListAsync();
 
             var courseList = await (from a in UnitWork.Find<classroom_subject_course>(null)
+                                    .Where(a => a.State == 1)
                                     select a).ToListAsync();
 
             var userProgress = await (from a in UnitWork.Find<classroom_subject_course_user>(null)
@@ -315,7 +316,9 @@ namespace OpenAuth.App.Hr
             foreach (var item in subjectList)
             {
                 var courseCount = courseList.Where(a => a.SubjectId == item.Id).Count();
-                var userProgressCount = userProgress.Where(a => a.SubjectId == item.Id && a.IsComplete == true).Count();
+
+                var courseIdList = courseList.Select(a => a.Id).ToList();
+                var userProgressCount = userProgress.Where(a => a.SubjectId == item.Id && a.IsComplete == true && courseIdList.Contains(a.SubjectCourseId)).Count();
 
                 classroom_subject_dto info = new classroom_subject_dto();
                 info.Id = item.Id;
