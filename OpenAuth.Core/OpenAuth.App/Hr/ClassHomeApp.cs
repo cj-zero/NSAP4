@@ -243,11 +243,12 @@ namespace OpenAuth.App.Hr
             var teacherList = await UnitWork.Find<classroom_teacher_apply_log>(null)
                         .Where(c => c.AuditState == 2 && teacherUserIds.Contains(c.AppUserId))
                         .ToListAsync();
-            var teacherCourseIds = teacherList.Select(c => c.Id).ToList();
+
+            var teacherCourseIds = pageData.Select(c => c.Id).ToList();
             // 观看记录
             var viewLogs = await UnitWork.Find<classroom_teacher_course_play_log>(null)
                     .Where(c => c.AppUserId == appUserId && teacherCourseIds.Contains(c.TeacherCourseId)).ToListAsync();
-
+             
             List<TeacherCourseResp> obj = new List<TeacherCourseResp>();
             foreach (var item in pageData)
             {
