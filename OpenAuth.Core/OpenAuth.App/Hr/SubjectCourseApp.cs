@@ -306,6 +306,7 @@ namespace OpenAuth.App.Hr
                                      select a).ToListAsync();
 
             var courseList = await (from a in UnitWork.Find<classroom_subject_course>(null)
+                                    .Where(a => a.State == 1)
                                     select a).ToListAsync();
 
             var userProgress = await (from a in UnitWork.Find<classroom_subject_course_user>(null)
