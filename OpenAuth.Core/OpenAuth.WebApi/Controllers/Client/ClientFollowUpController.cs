@@ -38,12 +38,12 @@ namespace OpenAuth.WebApi.Controllers.Client
         /// <returns></returns>
         [HttpPost]
         [Route("AddClientFollowAsync")]
-        public async Task<Infrastructure.Response> AddClientFollowAsync(ClientFollowUp clientFollowUp)
+        public async Task<Infrastructure.Response> AddClientFollowAsync(ClientFollowUp clientFollowUp, bool isAdd)
         {
             var response = new Infrastructure.Response();
             try
             {
-                response = await _clientApp.AddClientFollowAsync(clientFollowUp);
+                response = await _clientApp.AddClientFollowAsync(clientFollowUp, isAdd);
             }
             catch (Exception ex)
             {
@@ -81,14 +81,14 @@ namespace OpenAuth.WebApi.Controllers.Client
         /// </summary>
         /// <param name="Id"></param>
         /// <returns></returns>
-        [HttpPost]
+        [HttpGet]
         [Route("DeleteFollowByCodeAsync")]
-        public async Task<Response<bool>> DeleteFollowByCodeAsync(List<int> Ids)
+        public async Task<Response<bool>> DeleteFollowByCodeAsync(int Id)
         {
             var result = new Response<bool>();
             try
             {
-                result.Result = await _clientApp.DeleteFollowByCodeAsync(Ids);
+                result.Result = await _clientApp.DeleteFollowByCodeAsync(Id);
             }
             catch (Exception ex)
             {
