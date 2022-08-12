@@ -530,7 +530,7 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var query = await UnitWork.Find<classroom_teacher_apply_log>(null)
-                .Where(c => c.AuditState == 2)
+                .Where(c => c.AuditState == 2 && c.Grade!=7)
                 .Select(c => new { c.Name, c.BeGoodAtTerritory, c.CanTeachCourse, c.Grade, c.Experience, c.AppUserId, c.HeaderImg }).OrderByDescending(c => c.Experience)
                 .ToListAsync();
             object myHonor = null;
