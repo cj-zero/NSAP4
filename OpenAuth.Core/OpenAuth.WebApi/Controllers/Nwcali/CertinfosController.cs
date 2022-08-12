@@ -242,15 +242,56 @@ namespace OpenAuth.WebApi.Controllers
             return await _app.MaterialDetail(docEntry);
         }
         /// <summary>
-        /// 生产唯一码下设备是否校准
+        /// 生成生产唯一码
         /// </summary>
-        /// <param name="wo"></param>
+        /// <param name="docEntry"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> CheckCalibration(string wo)
+        public async Task<Response> GenerateWO()
         {
-            return await _app.CheckCalibration(wo);
+            Response result = new Response();
+            try
+            {
+                await _app.GenerateWO();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
         }
+        /// <summary>
+        /// 生产单基本信息
+        /// </summary>
+        /// <param name="docEntry"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetOworDetail(int docEntry)
+        {
+            return await _app.GetOworDetail(docEntry);
+        }
+
+        /// <summary>
+        /// 生产进度
+        /// </summary>
+        /// <param name="docEntry"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetScheduleInfo([FromQuery] QueryProductionScheduleReq req)
+        {
+            return await _app.GetScheduleInfo(req);
+        }
+        ///// <summary>
+        ///// 生产唯一码下设备是否校准
+        ///// </summary>
+        ///// <param name="wo"></param>
+        ///// <returns></returns>
+        //[HttpGet]
+        //public async Task<TableData> CheckCalibration(string wo)
+        //{
+        //    return await _app.CheckCalibration(wo);
+        //}
 
         [HttpGet]
         public async Task<Response> SynSalesDelivery()
