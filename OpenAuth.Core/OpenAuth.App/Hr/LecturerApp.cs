@@ -188,7 +188,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(userName), c => c.Name.Contains(userName))
                 .WhereIf(!string.IsNullOrWhiteSpace(title), c => c.Title.Contains(title))
                 .WhereIf(startTime != null, c => c.StartTime >= startTime)
-                .WhereIf(endTime != null, c => c.EndTime <= endTime)
+                .WhereIf(endTime != null, c => c.StartTime <= endTime)
                 .WhereIf(auditState != null && auditState != 0, c => c.AuditState == auditState)
                 .OrderByDescending(c => c.Id)
                 .Skip((pageIndex - 1) * pageSize).Take(pageSize)
@@ -200,7 +200,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(userName), c => c.Name.Contains(userName))
                 .WhereIf(!string.IsNullOrWhiteSpace(title), c => c.Title.Contains(title))
                 .WhereIf(startTime != null, c => c.StartTime >= startTime)
-                .WhereIf(endTime != null, c => c.EndTime <= endTime)
+                .WhereIf(endTime != null, c => c.StartTime <= endTime)
                 .WhereIf(auditState != null && auditState != 0, c => c.AuditState == auditState)
                 .CountAsync();
             return result;

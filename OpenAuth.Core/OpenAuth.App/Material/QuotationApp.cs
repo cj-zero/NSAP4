@@ -499,6 +499,7 @@ namespace OpenAuth.App.Material
                     q.a.NewestContactTel,
                     q.b.FromTheme,
                     q.a.SalesMan,
+                    q.a.FromId,
                     BillingAddress = Address.Where(a => a.CardCode.Equals(q.a.CustomerId)).FirstOrDefault()?.BillingAddress,//开票地址
                     DeliveryAddress = Address.Where(a => a.CardCode.Equals(q.a.CustomerId)).FirstOrDefault()?.DeliveryAddress, //收货地址
                     Balance = Address.Where(a => a.CardCode.Equals(q.a.CustomerId)).FirstOrDefault()?.Balance, //额度
@@ -607,7 +608,7 @@ namespace OpenAuth.App.Material
                 {
                     quotationProducts = await UnitWork.Find<QuotationProduct>(q => q.QuotationId == request.QuotationId).ToListAsync();
                 }
-                result.Data = ServiceWorkOrderList.Select(s => new ProductCodeListResp
+                var data = ServiceWorkOrderList.Select(s => new ProductCodeListResp
                 {
                     SalesOrder = MnfSerialList.Where(m => m.MnfSerial.Equals(s.ManufacturerSerialNumber) && m.BaseType == 17)?.Max(m => m.BaseEntry),
                     ProductionOrder = MnfSerialList.Where(m => m.MnfSerial.Equals(s.ManufacturerSerialNumber) && m.BaseType == 202)?.Max(m => m.BaseEntry),
@@ -619,6 +620,12 @@ namespace OpenAuth.App.Material
                     FromTheme = s.FromTheme,
                     WarrantyTime = quotationProducts.Where(q => q.ProductCode.Equals(s.ManufacturerSerialNumber)).FirstOrDefault()?.WarrantyTime
                 }).OrderBy(s => s.MaterialCode).ToList();
+                if (request.FromId == 8 && false)
+                {
+                    var listCode = data.Select(a => a.MaterialCode).ToList();
+                    var xxx = GetMaterialDetial((int)request.ServiceOrderId, listCode);
+                }
+                result.Data = data;
             }
             result.Count = ServiceWorkOrderList.Count();
             return result;
@@ -4283,6 +4290,202 @@ namespace OpenAuth.App.Material
 
         #endregion
 
+        public async Task<List<SysEquipmentColumn>> GetMaterialDetial(int serviceOrderId ,List<string> MaterialCode)
+        {
+            //1.判断内部关联单是否存在
+            //2.取出变更内容
+            //3.根据变更后物料查询出基本信息
+            //4.如果服务单存在多个物料编码则进行物料关联
+            List<SysEquipmentColumn> result = new List<SysEquipmentColumn>();
+            var internalContact = await UnitWork.Find<InternalContactServiceOrder>(null).Where(a => a.ServiceOrderId == serviceOrderId).FirstOrDefaultAsync();
+            if (internalContact != null)
+            {
+                var info = await UnitWork.Find<InternalContact>(null).Where(a => a.Id == internalContact.InternalContactId).FirstOrDefaultAsync();
+               
+                if (info != null)
+                {
+                    var contentJson = JsonHelper.Instance.Deserialize<List<ContentJson>>(info.Content);
+
+                    var content = contentJson.Select(a => new { a.postMaterial, a.materialCode }).ToList();
+                    var postList = contentJson.Select(a => a.postMaterial).ToList();
+
+                    var listMaterial = from a in UnitWork.Find<OITM>(null).Where(q => postList.Contains(q.ItemCode))
+                               join b in UnitWork.Find<OITW>(null) on a.ItemCode equals b.ItemCode into ab
+                               from b in ab.DefaultIfEmpty()
+                               where b.WhsCode == "37"
+                               select new SysEquipmentColumn { ItemCode = a.ItemCode, ItemName = a.ItemName, lastPurPrc = a.LastPurPrc, BuyUnitMsr = a.SalUnitMsr, OnHand = b.OnHand, WhsCode = b.WhsCode };
+                    var filterCode = await UnitWork.Find<OITM>(c => c.ItemCode.StartsWith("A6") && (c.ItemName.Contains("机柜") || c.ItemName.Contains("机箱"))).Select(c => c.ItemCode).ToListAsync();
+                    listMaterial = listMaterial.Where(c => !filterCode.Contains(c.ItemCode));
+                    var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ShieldingMaterials")).Select(u => u.Name).ToListAsync();
+                    listMaterial = listMaterial.Where(e => !CategoryList.Contains(e.ItemCode));
+
+                    var materialDetial = await listMaterial.ToListAsync();
+
+                    var ItemCodes = materialDetial.Select(e => e.ItemCode).ToList();
+                    var MaterialPrices = await UnitWork.Find<MaterialPrice>(m => ItemCodes.Contains(m.MaterialCode)).ToListAsync();
+
+                    List<SysEquipmentColumn> list = new List<SysEquipmentColumn>();
+
+                    Dictionary<string, string> dic = new Dictionary<string, string>();
+
+                    if (MaterialCode.Count > 1)
+                    {
+                        var code = contentJson.Select(a => a.materialCode).Distinct().ToList();
+                        foreach (var item in code)
+                        {
+                            var association = await GetAssociation(item, MaterialCode);
+                            dic.Add(item, association);
+                        }
+                    }
+                    foreach (var item in contentJson)
+                    {
+                        var material = materialDetial.FirstOrDefault(a => a.ItemCode == item.postMaterial);
+                        if (material == null )
+                        {
+                            continue;
+                        }
+                        material.Quantity = Convert.ToInt32(item.postNums);
+
+                      
+
+                        var Prices = MaterialPrices.Where(m => m.MaterialCode.Equals(material.ItemCode)).FirstOrDefault();
+                        //4.0存在物料价格，取4.0的价格为售后结算价，不存在就当前进货价*1.2 为售后结算价。销售价均为售后结算价*3
+                        if (Prices != null)
+                        {
+                            material.UnitPrice = Prices?.SettlementPrice == null || Prices?.SettlementPrice <= 0 ? material.lastPurPrc * Prices?.SettlementPriceModel : Prices?.SettlementPrice;
+
+                            material.UnitPrice = decimal.Parse(material.UnitPrice.ToString("#0.0000"));
+                            material.lastPurPrc = material.UnitPrice * Prices?.SalesMultiple;
+                        }
+                        else
+                        {
+                            material.UnitPrice = material.lastPurPrc * 1.2M;
+
+                            material.UnitPrice = decimal.Parse(material.UnitPrice.ToString("#0.0000"));
+                            material.lastPurPrc = material.UnitPrice * 3;
+                        }
+                        if (MaterialCode.Count > 1)
+                        {
+                            material.MnfSerial = dic[item.materialCode];
+
+                            var mnfSerialList = material.MnfSerial.Split(",");
+                            if (mnfSerialList.Count() > 1)
+                            {
+                                material.MnfSerial = mnfSerialList[0];
+                                for (int i = 1; i <= mnfSerialList.Count(); i++)
+                                {
+                                    var NewMaterial = JsonHelper.Instance.Deserialize<SysEquipmentColumn>(JsonHelper.Instance.Serialize(material));
+                                    NewMaterial.MnfSerial = mnfSerialList[i];
+                                    result.Add(NewMaterial);
+
+                                }
+                            }
+                        }
+                        else
+                        {
+                            material.MnfSerial = MaterialCode[0];
+                        }
+
+                        result.Add(material);
+
+                        var sssssss = result.GroupBy(a => new { a.ItemCode, a.MnfSerial }).Select(a => new SysEquipmentColumn
+                        {
+                               ItemCode = a.Key.ItemCode,
+                            ItemName = a.Max(a => a.ItemName),
+
+                        }).ToList();
+
+
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public async Task<string> GetAssociation(string ItemCode, List<string> MaterialCode)
+        {
+            var material = await UnitWork.Find<InternalContactMaterial>(m => m.MaterialCode == ItemCode).FirstOrDefaultAsync();  
+            List<string> itemcode = new List<string>();
+            #region 匹配物料编码
+            var regex = new List<string>();
+            string where = "";
+            //
+            var Prefix = material.Prefix.Split(",");
+            Prefix.ForEach(c =>
+            {
+                regex.Add($"^{c}-[{string.Join("|", material.Series)}][0-999].*");
+            });
+            regex.ForEach(c =>
+            {
+                if (!string.IsNullOrWhiteSpace(where))
+                {
+                    where += " or ";
+                }
+                where += $"ItemCode REGEXP '{c}'";
+            });
+            var sql = $"SELECT * from materialrange where ({where}) and (Volt>={material.VoltsStart} and Volt<={material.VoltseEnd}) and (Amp>={material.AmpsStart} and Amp<={material.AmpsEnd} and Unit='{material.CurrentUnit}')";
+            var queryItemCode = UnitWork.Query<MaterialRange>(sql).ToList();
+
+            var Fixture = material.Fixture.Split(",").ToList();
+            var Special = material.Special.Split(",").ToList();
+            if ((material.Fixture == null || Fixture.Count == 0) && (material.Special == null || Special.Count == 0))
+            {
+                //没有后缀条件 筛选量程范围内所有物料
+                itemcode.AddRange(queryItemCode.Select(c => c.ItemCode).ToList());
+            }
+            else
+            {
+                //有后缀条件 按条件排列组合
+                queryItemCode = queryItemCode.GroupBy(c => string.Join("-", c.ItemCode.Split("-").Take(3))).Select(c => c.First()).ToList();
+                queryItemCode.ForEach(c =>
+                {
+                    //var am = $"{c.Prefix}-{c.Volt}V{c.Amp}{c.Unit}";
+                    var am = string.Join("-", c.ItemCode.Split('-').Take(3));
+                    //夹具
+                    if (Fixture != null && Fixture.Count > 0)
+                    {
+                        Fixture.ForEach(fi =>
+                        {
+                            var ft = $"{am}-{fi}";
+                            itemcode.Add(ft);
+                            //后缀
+                            if (material.Special != null && Special.Count > 0)
+                            {
+                                material.Special.ForEach(sp =>
+                                {
+                                    var s = $"{ft}{sp}";
+                                    itemcode.Add(s);
+                                });
+                            }
+                            else
+                            {
+                                itemcode.Add(am);
+                            }
+                        });
+                    }
+                    else
+                    {
+                        //后缀
+                        if (material.Special != null && Special.Count > 0)
+                        {
+                            material.Special.ForEach(sp =>
+                            {
+                                var s = $"{am}{sp}";
+                                itemcode.Add(s);
+                            });
+                        }
+                        else
+                        {
+                            itemcode.Add(am);
+                        }
+                    }
+                });
+            }
+            #endregion
+            var result = string.Join(",", itemcode.Intersect(MaterialCode).ToArray());
+            return result;
+        }
 
         public QuotationApp(IUnitWork unitWork, ICapPublisher capBus, FlowInstanceApp flowInstanceApp, WorkbenchApp workbenchApp, 
             ModuleFlowSchemeApp moduleFlowSchemeApp, IOptions<AppSetting> appConfiguration, IAuth auth, OrgManagerApp orgApp,
