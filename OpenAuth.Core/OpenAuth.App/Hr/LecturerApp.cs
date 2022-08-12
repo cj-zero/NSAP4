@@ -89,12 +89,12 @@ namespace OpenAuth.App
             }
             await UnitWork.UpdateAsync(query);
             await UnitWork.SaveAsync();
-            if (req.auditState == 3)
+            if (req.auditState == 3 || req.auditState==2)
             {
                 try
                 {
                     string title = "讲师申请";
-                    string content = "讲师申请失败!";
+                    string content = req.auditState == 3?"讲师申请失败!": "讲师申请成功!";
                     string payload = "{\"urlType\":1,\"url\":\"/pages/afterSale/course/publishCenter\"}";
                     var str = _helper.Post(new
                     {
@@ -188,7 +188,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(userName), c => c.Name.Contains(userName))
                 .WhereIf(!string.IsNullOrWhiteSpace(title), c => c.Title.Contains(title))
                 .WhereIf(startTime != null, c => c.StartTime >= startTime)
-                .WhereIf(endTime != null, c => c.EndTime <= endTime)
+                .WhereIf(endTime != null, c => c.StartTime <= endTime)
                 .WhereIf(auditState != null && auditState != 0, c => c.AuditState == auditState)
                 .OrderByDescending(c => c.Id)
                 .Skip((pageIndex - 1) * pageSize).Take(pageSize)
@@ -200,7 +200,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(userName), c => c.Name.Contains(userName))
                 .WhereIf(!string.IsNullOrWhiteSpace(title), c => c.Title.Contains(title))
                 .WhereIf(startTime != null, c => c.StartTime >= startTime)
-                .WhereIf(endTime != null, c => c.EndTime <= endTime)
+                .WhereIf(endTime != null, c => c.StartTime <= endTime)
                 .WhereIf(auditState != null && auditState != 0, c => c.AuditState == auditState)
                 .CountAsync();
             return result;
@@ -222,12 +222,12 @@ namespace OpenAuth.App
             }
             await UnitWork.UpdateAsync(query);
             await UnitWork.SaveAsync();
-            if (req.auditState == 3)
+            if (req.auditState == 3 || req.auditState == 2)
             {
                 try
                 {
                     string title = "讲师开课申请";
-                    string content = $"讲师【{query.Title}】课程开课申请失败!";
+                    string content = req.auditState == 3 ? $"讲师【{query.Title}】课程开课申请失败!" : $"讲师【{query.Title}】课程开课申请成功!";
                     string payload = "{\"urlType\":1,\"url\":\"/pages/afterSale/course/publishCenter\"}";
                     var str = _helper.Post(new
                     {

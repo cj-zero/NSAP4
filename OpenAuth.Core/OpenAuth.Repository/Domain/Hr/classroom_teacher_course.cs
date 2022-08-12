@@ -29,7 +29,7 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public string ForTheCrowd { get; set; }
         /// <summary>
-        /// 教学方式 1:线下 2:线上
+        /// 教学方式 1:线上  2:线下
         /// </summary>
         public int TeachingMethod { get; set; }
         /// <summary>

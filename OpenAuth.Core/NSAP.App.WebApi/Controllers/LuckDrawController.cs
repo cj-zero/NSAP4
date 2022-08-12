@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Response;
+using OpenAuth.App.Serve.Request;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,13 +16,16 @@ namespace NSAP.App.WebApi.Controllers
     public class LuckDrawController : Controller
     {
         private readonly AppLuckDrawApp _appLuckDrawApp;
+        private readonly AppUserBindApp _app;
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="appScanCodeApp"></param>
-        public LuckDrawController(AppLuckDrawApp appLuckDrawApp)
+        /// <param name="appLuckDrawApp"></param>
+        /// <param name="app"></param>
+        public LuckDrawController(AppLuckDrawApp appLuckDrawApp, AppUserBindApp app)
         {
             _appLuckDrawApp = appLuckDrawApp;
+            _app = app;
         }
 
         #region 售后报修抽奖中奖名单生成
@@ -47,5 +51,26 @@ namespace NSAP.App.WebApi.Controllers
             return result;
         }
         #endregion
+
+        /// <summary>
+        /// 获取App用户列表
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> AppUserList(AppUserReq model)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.AppUserList(model);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
     }
 }

@@ -136,7 +136,7 @@ namespace OpenAuth.App
             var query = await (from a in UnitWork.Find<AppUserMap>(null)
                                   join b in UnitWork.Find<User>(null) on a.UserID equals b.Id
                                   where b.Status==0
-                                  select new { user_id = a.AppUserId, real_name=b.Name, entry_time=b.EntryTime })
+                                  select new { user_id = a.AppUserId, real_name=b.Name, entry_time=b.EntryTime==null?"":b.EntryTime.ToString("yyyy-MM-dd HH:mm:ss") })
                                   .WhereIf(model.user_ids.Count>0, c => model.user_ids.Contains(c.user_id.Value))
                                   .WhereIf(!string.IsNullOrWhiteSpace(model.key),c=>c.real_name.Contains(model.key))
                                   .ToListAsync();
