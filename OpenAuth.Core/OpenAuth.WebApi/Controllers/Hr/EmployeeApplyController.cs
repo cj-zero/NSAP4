@@ -32,36 +32,20 @@ namespace OpenAuth.WebApi.Controllers.Hr
         /// <summary>
         /// 职工申请列表
         /// </summary>
-        /// <param name="req"></param>
+        /// <param name="StartTime"></param>
+        /// <param name="EndTime"></param>
+        /// <param name="Name"></param>
+        /// <param name="Mobile"></param>
+        /// <param name="PageIndex"></param>
+        /// <param name="PageSize"></param>
         /// <returns></returns>
-        [HttpPost]
-        public async Task<TableData> GetEmployeeApplyList(GetEmployeeApplyListReq req)
+        [HttpGet]
+        public async Task<TableData> GetEmployeeApplyList(DateTime? StartTime, DateTime? EndTime ,string Name ="", string Mobile="", int PageIndex=1, int PageSize = 20)
         {
             var result = new TableData();
             try
             {
-                result = await _app.GetEmployeeApplyList(req);
-            }
-            catch (Exception e)
-            {
-                result.Code = 500;
-                result.Message = e.Message;
-            }
-            return result;
-        }
-
-        /// <summary>
-        /// 职工申请审核
-        /// </summary>
-        /// <param name="req"></param>
-        /// <returns></returns>
-        [HttpPost]
-        public async Task<TableData> EmployeeApplyAudit(EmployeeApplyAuditReq req)
-        {
-            var result = new TableData();
-            try
-            {
-                result = await _app.EmployeeApplyAudit(req);
+                result = await _app.GetEmployeeApplyList( Name, Mobile, PageIndex, PageSize, StartTime , EndTime);
             }
             catch (Exception e)
             {

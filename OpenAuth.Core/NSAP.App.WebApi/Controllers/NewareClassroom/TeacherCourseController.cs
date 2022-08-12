@@ -72,16 +72,16 @@ namespace NSAP.App.WebApi.Controllers.NewareClassroom
         }
 
         /// <summary>
-        ///  直播回放
+        /// 讲课视频区域
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<TableData> TeacherCoursePlayBack(int appUserId, int pageIndex = 1, int pageSize = 10)
+        public async Task<TableData> TeacherCourseArea(int appUserId, int pageIndex = 1, int pageSize = 10)
         {
             var result = new TableData();
             try
             {
-                result = await _app.TeacherCoursePlayBack(appUserId,pageIndex, pageSize);
+                result = await _app.TeacherCourseArea(appUserId,pageIndex, pageSize);
             }
             catch (Exception e)
             {

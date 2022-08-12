@@ -231,8 +231,9 @@ namespace OpenAuth.App.Hr
 
             var query = (from a in UnitWork.Find<classroom_teacher_course>(null)
                          .Where(zw => zw.AuditState == 2
-                         && zw.TeachingMethod == 2
-                         && zw.EndTime > yesterday)
+                         && zw.TeachingMethod == 1
+                         && !zw.VideoUrl.Contains("live.polyv.cn")
+                         && zw.EndTime > dt)
                          .WhereIf(!string.IsNullOrWhiteSpace(key), a => a.Title.Contains(key))
                          select a);
             // 视频总数
