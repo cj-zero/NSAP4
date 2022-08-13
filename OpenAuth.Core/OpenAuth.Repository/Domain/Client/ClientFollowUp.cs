@@ -47,7 +47,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 下次联系时间
         /// </summary>
-        public DateTime NextTime { get; set; }
+        public DateTime? NextTime { get; set; }
 
         /// <summary>
         /// 内容
