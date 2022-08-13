@@ -10,7 +10,7 @@ namespace OpenAuth.App.Material.Request
         /// <summary>
         /// 销售单号
         /// </summary>
-        public int? SalesOrderId { get; set; }
+        public string SalesOrderId { get; set; }
 
         /// <summary>
         /// 客户
@@ -26,15 +26,16 @@ namespace OpenAuth.App.Material.Request
         /// </summary>
 
         public string SalesMan { get; set; }
-        public int? ReviewCode
-        {
-            get
-            {
-                return 0;
-            }
-            set { ReviewCode = value; }
-        }
-
+        public string ProjectNo { get; set; }
+        public string ProduceNo { get; set; }
+        /// <summary>
+        /// 是否有项目号（ Y 有 N 没有）
+        /// </summary>
+        public string IsPro { get; set; }
+        /// <summary>
+        /// 是否有图纸文件（ Y 有 N 没有）
+        /// </summary>
+        public string IsDraw { get; set; }
 
     }
 }

@@ -10,6 +10,7 @@ using OpenAuth.App.Order.ModelDto;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository;
+using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Extensions;
 using OpenAuth.Repository.Interface;
 using Serilog;
@@ -177,7 +178,7 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// 设计项目筛选（type=1 已筛选 type=0 未筛选）
         /// </summary>
         [HttpPost]
-        public TableData GridDataBind(SalesOrderMaterialReq request, int type)// int SboId, int? SalesOrderId, string ItemCode, string CardCode, int Type)
+        public TableData GridDataBind(SalesOrderMaterialReq request)// int SboId, int? SalesOrderId, string ItemCode, string CardCode, int Type)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -188,12 +189,11 @@ namespace OpenAuth.WebApi.Controllers.Material
             var UserID = _serviceBaseApp.GetUserNaspId();
             var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
             var result = new TableData();
-
             try
             {
-                TableData dts = _app.ForScreeningViewInfo(request, SboID, type);
+                TableData dts = _app.ForScreeningViewInfo(request, SboID);
                 result.Data = dts;
-                result.Count = 123;// rowCount;
+                result.Count = dts.Count;// rowCount;
             }
             catch (Exception ex)
             {
@@ -205,25 +205,47 @@ namespace OpenAuth.WebApi.Controllers.Material
         }
 
 
+        /// <summary>
+        /// 管理图纸文件路径
+        /// </summary>
+        /// <param name="AddDrawingFiles"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("AddDrawingFiles")]
+        public async Task<Infrastructure.Response> AddDrawingFiles(List<int> ids,string url)
+        {
+            var response = new Infrastructure.Response();
+            try
+            {
+                response = await _app.AddDrawingFiles(ids, url);
+            }
+            catch (Exception ex)
+            {
+                response.Message = ex.Message;
+            }
+            return response;
+        }
+
+
 
         /// <summary>
         /// 提交物料设计到manager系统
         /// </summary>
-        [HttpPost]
-        public Infrastructure.Response PostDataToManager(List<MaterialDes> list)// int SboId, int? SalesOrderId, string ItemCode, string CardCode, int Type)
-        {
-            var response = new Infrastructure.Response();
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-            var loginUser = loginContext.User;
-            var UserID = _serviceBaseApp.GetUserNaspId();
-            var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
+        //[HttpPost]
+        //public Infrastructure.Response PostDataToManager(List<MaterialDes> list)// int SboId, int? SalesOrderId, string ItemCode, string CardCode, int Type)
+        //{
+        //    var response = new Infrastructure.Response();
+        //    var loginContext = _auth.GetCurrentUser();
+        //    if (loginContext == null)
+        //    {
+        //        throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+        //    }
+        //    var loginUser = loginContext.User;
+        //    var UserID = _serviceBaseApp.GetUserNaspId();
+        //    var SboID = _serviceBaseApp.GetUserNaspSboID(UserID);
 
-            return _app.PostDataToManager(SboID, list);
-        }
+        //    return _app.PostDataToManager(SboID, list);
+        //}
 
         #endregion
 

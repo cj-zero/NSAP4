@@ -14,6 +14,7 @@ using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -130,7 +131,8 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var obsHelper = new HuaweiOBSHelper();
-            var fileName = "erp4-rom/resume/"+ DateTime.Now.ToString("yyyyMMddHHmmss") + file.FileName;
+            var fileExtension = Path.GetExtension(file.FileName);
+            var fileName = "erp4-rom/resume/"+ DateTime.Now.ToString("yyyyMMddHHmmssfff") + fileExtension;
             var stream = file?.OpenReadStream();
             var response = obsHelper.PutObject(fileName, null, stream, out string objectKey);
             dynamic obj = new

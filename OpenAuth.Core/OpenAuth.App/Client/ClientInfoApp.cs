@@ -2546,7 +2546,7 @@ namespace OpenAuth.App.Client
         /// </summary>
         /// <param name="addClueFollowUpReq"></param>
         /// <returns></returns>
-        public async Task<Infrastructure.Response> AddClientFollowAsync(ClientFollowUp clientFollowUp)
+        public async Task<Infrastructure.Response> AddClientFollowAsync(ClientFollowUp clientFollowUp, bool isAdd)
         {
             var response = new Infrastructure.Response();
             response.Message = "";
@@ -2559,27 +2559,31 @@ namespace OpenAuth.App.Client
             var userId = loginUser.User_Id.Value;
             var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
             int SlpCode = Convert.ToInt16(GetUserInfoById(sboid.ToString(), userId.ToString(), "1"));
-            ClientFollowUp info = new ClientFollowUp
+            if (isAdd)
             {
-                CardCode = clientFollowUp.CardCode,
-                CardName = clientFollowUp.CardName,
-                SlpCode = clientFollowUp.SlpCode,
-                SlpName = clientFollowUp.SlpName,
-                Contacts = clientFollowUp.Contacts,
-                FollowType = clientFollowUp.FollowType,
-                NextTime = clientFollowUp.NextTime,
-                Remark = clientFollowUp.Remark,
-                File = clientFollowUp.File,
-                CreateUser = loginUser.User_Id.Value,
-                CreateDate = DateTime.Now,
-                IsDelete = false
-            };
-            if (!string.IsNullOrWhiteSpace(clientFollowUp.Id.ToString()))
-            {
-                await UnitWork.AddAsync<ClientFollowUp, int>(info);
+                clientFollowUp.SlpCode = SlpCode;
+                clientFollowUp.CreateUser = loginUser.User_Id.Value;
+                clientFollowUp.CreateDate = DateTime.Now;
+                clientFollowUp.IsDelete = false;
+                await UnitWork.AddAsync<ClientFollowUp, int>(clientFollowUp);
             }
             else
             {
+                ClientFollowUp info = UnitWork.Find<ClientFollowUp>(q => q.Id == clientFollowUp.Id && !q.IsDelete).FirstOrDefault();
+                info.CardCode = clientFollowUp.CardCode;
+                info.CardName = clientFollowUp.CardName;
+                info.SlpCode = SlpCode;
+                info.SlpName = clientFollowUp.SlpName;
+                info.Contacts = clientFollowUp.Contacts;
+                info.FollowType = clientFollowUp.FollowType;
+                info.NextTime = clientFollowUp.NextTime;// NextFollowTime;
+                info.Remark = clientFollowUp.Remark;
+                info.FileId = clientFollowUp.FileId;
+                info.ImgId = clientFollowUp.ImgId;
+                info.ImgName = clientFollowUp.ImgName;
+                info.FileName = clientFollowUp.FileName;
+                clientFollowUp.UpdateUser = loginUser.User_Id.Value;
+                clientFollowUp.UpdateDate = DateTime.Now;
                 await UnitWork.UpdateAsync<ClientFollowUp>(info);
             }
             await UnitWork.SaveAsync();
@@ -2600,14 +2604,14 @@ namespace OpenAuth.App.Client
             var loginUser = _auth.GetCurrentUser().User;
             if (loginUser.Name == "韦京生" || loginUser.Name == "郭睿心" || loginUser.Name == "骆灵芝")
             {
-                result = UnitWork.Find<ClientFollowUp>(q => q.CardCode == CardCode && !q.IsDelete).MapToList<ClientFollowUp>();
+                result = UnitWork.Find<ClientFollowUp>(q => q.CardCode == CardCode && !q.IsDelete).OrderByDescending(t => t.CreateDate).MapToList<ClientFollowUp>();
             }
             else
             {
                 var userId = _serviceBaseApp.GetUserNaspId();
                 var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
                 int SlpCode = Convert.ToInt16(GetUserInfoById(sboid.ToString(), userId.ToString(), "1"));
-                result = UnitWork.Find<ClientFollowUp>(q => q.CardCode == CardCode && q.SlpCode == SlpCode && !q.IsDelete).MapToList<ClientFollowUp>();
+                result = UnitWork.Find<ClientFollowUp>(q => q.CardCode == CardCode && q.SlpCode == SlpCode && !q.IsDelete).OrderByDescending(t => t.CreateDate).MapToList<ClientFollowUp>();
             }
             return result;
         }
@@ -2618,20 +2622,20 @@ namespace OpenAuth.App.Client
         /// <param name="id"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public async Task<bool> DeleteFollowByCodeAsync(List<int> Ids)
+        public async Task<bool> DeleteFollowByCodeAsync(int Id)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            foreach (var item in Ids)
-            {
-                var clientFollowUp = await UnitWork.FindSingleAsync<ClientFollowUp>(q => q.Id == item);
-                clientFollowUp.IsDelete = true;
-                await UnitWork.UpdateAsync(clientFollowUp);
-                await UnitWork.SaveAsync();
-            }
+
+            var clientFollowUp = await UnitWork.FindSingleAsync<ClientFollowUp>(q => q.Id == Id);
+
+            clientFollowUp.IsDelete = true;
+            await UnitWork.UpdateAsync(clientFollowUp);
+            await UnitWork.SaveAsync();
+
             return true;
         }
 
