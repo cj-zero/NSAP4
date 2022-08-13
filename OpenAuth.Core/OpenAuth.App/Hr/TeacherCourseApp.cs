@@ -48,6 +48,9 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> RecommendTeachers(int limt)
         {
+            /*
+               过滤掉荣誉讲师
+             */
             var result = new TableData();
 
             DateTime dt = DateTime.Now;  //当前时间
@@ -55,9 +58,13 @@ namespace OpenAuth.App
 
             List<classroom_teacher_course> recentCourse = new List<classroom_teacher_course>();
 
+            var honoraryTeacherUserId = await UnitWork.Find<classroom_teacher_apply_log>(null)
+               .Where(c => c.AuditState == 2 && c.Grade == 7)
+               .Select(c=>c.AppUserId).ToListAsync();
+
             // 本月开课过或者即将要开课
             recentCourse = await UnitWork.Find<classroom_teacher_course>(null)
-                .Where(c => c.AuditState == 2 && (c.StartTime >= dt || (c.EndTime >= startMonth && c.StartTime < dt)))
+                .Where(c => c.AuditState == 2 && !honoraryTeacherUserId.Contains(c.AppUserId) && (c.StartTime >= dt || (c.EndTime >= startMonth && c.StartTime < dt)))
                 .ToListAsync();
 
             if (recentCourse.Count < limt)
@@ -65,14 +72,14 @@ namespace OpenAuth.App
                 var supplementCount = limt - recentCourse.Count;
                 var courseIds = recentCourse.Select(zw => zw.Id);
                 var supplementCourse = await UnitWork.Find<classroom_teacher_course>(null)
-                .Where(c => c.AuditState == 2 && !courseIds.Contains(c.Id)).OrderByDescending(c => c.EndTime)
+                .Where(c => c.AuditState == 2 && !honoraryTeacherUserId.Contains(c.AppUserId) && !courseIds.Contains(c.Id)).OrderByDescending(c => c.EndTime)
                 .Take(supplementCount*2).ToListAsync();
                 recentCourse.AddRange(supplementCourse);
             }
             var teacherUserId = recentCourse.Select(zw => zw.AppUserId).Distinct().ToList();
 
             var query = await UnitWork.Find<classroom_teacher_apply_log>(null)
-               .Where(c => c.AuditState == 2 )
+               .Where(c => c.AuditState == 2 && !honoraryTeacherUserId.Contains(c.AppUserId))
                .WhereIf(teacherUserId.Count >0, c=> teacherUserId.Contains(c.AppUserId))
                .Select(c => new { c.Name, c.AppUserId, c.HeaderImg ,c.Experience })
                .ToListAsync();
@@ -80,6 +87,7 @@ namespace OpenAuth.App
             if(query.Count < limt)
             {
                 var filterTeacherIds = query.Select(zw => zw.AppUserId).Distinct().ToList();
+                filterTeacherIds.AddRange(honoraryTeacherUserId);
                 var supplementCount = limt - query.Count;
                 var supplementTeacher = await UnitWork.Find<classroom_teacher_apply_log>(null)
                         .Where(c => c.AuditState == 2 && !filterTeacherIds.Contains(c.AppUserId))
