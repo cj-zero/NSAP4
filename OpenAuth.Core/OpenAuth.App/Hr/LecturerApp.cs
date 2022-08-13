@@ -272,7 +272,7 @@ namespace OpenAuth.App
             var result = new TableData();
             DateTime dt=DateTime.Now;
             var ids = await UnitWork.Find<classroom_teacher_apply_log>(null).GroupBy(c => c.AppUserId).Select(c => c.Max(c => c.Id)).ToListAsync();
-            var teacherList = await UnitWork.Find<classroom_teacher_apply_log>(null).Where(c => ids.Contains(c.Id) && c.AuditState == 2).ToListAsync();
+            var teacherList = await UnitWork.Find<classroom_teacher_apply_log>(null).Where(c => ids.Contains(c.Id) && c.AuditState == 2 && c.Grade!=7).ToListAsync();
             var teacherIds = teacherList.Select(c => c.AppUserId).ToList();
             var teacherCourseList = await UnitWork.Find<classroom_teacher_course>(null).Where(c => teacherIds.Contains(c.AppUserId) && c.IsConversion == false && c.AuditState == 2 && c.EndTime <= dt).ToListAsync();
             foreach (var item in teacherList)
