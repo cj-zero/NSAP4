@@ -13,6 +13,7 @@ namespace NSAP.App.WebApi.Controllers
     /// App抽奖
     /// </summary>
     [Route("ErpAppApi/[controller]/[action]")]
+    [ApiController]
     public class LuckDrawController : Controller
     {
         private readonly AppLuckDrawApp _appLuckDrawApp;
