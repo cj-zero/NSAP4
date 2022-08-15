@@ -868,19 +868,27 @@ namespace OpenAuth.App.Customer
                 foreach (var customer in customers)
                 {
                     DateTime? startTime = null;
-                    //查找客户最近一次的业务员变更(查找有不同业务员的客户)
-                    var acrdInfos = await UnitWork.Find<ACRD>(a => a.CardCode == customer.CardCode).Select(c => new { c.SlpCode, c.UpdateDate }).ToListAsync();
-                    var hasDiffClient = acrdInfos.Select(x => x.SlpCode).Distinct().Count() > 1;
-                    //如果有不同的业务员,则开始时间取最近一次的客户分配给业务员的时间
-                    if (hasDiffClient)
+
+                    string sql = "SELECT max(UpdateDate) UpdateDate from( select CardCode, SlpCode, min(UpdateDate) UpdateDate from (select CardCode, SlpCode, ISNULL(UpdateDate,CreateDate) UpdateDate from OCRD UNION select CardCode, SlpCode, UpdateDate from ACRD ) a GROUP BY CardCode, SlpCode) b WHERE cardcode = '" + customer.CardCode + "'";
+                    DataTable tbl = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, sql, CommandType.Text);
+                    if (tbl != null && tbl.Rows.Count != 0)
                     {
-                        startTime = UnitWork.Find<ACRD>(a => a.CardCode == customer.CardCode).Max(c => c.UpdateDate);
+                        startTime = tbl.Rows[0]["UpdateDate"].ToDateTime();
                     }
-                    //否则说明该客户的业务员无变动,取该客户的创建时间
-                    else
-                    {
-                        startTime = customer.CreateDate;
-                    }
+
+                    ////查找客户最近一次的业务员变更(查找有不同业务员的客户)
+                    //var acrdInfos = await UnitWork.Find<ACRD>(a => a.CardCode == customer.CardCode).Select(c => new { c.SlpCode, c.UpdateDate }).ToListAsync();
+                    //var hasDiffClient = acrdInfos.Select(x => x.SlpCode).Distinct().Count() > 1;
+                    ////如果有不同的业务员,则开始时间取最近一次的客户分配给业务员的时间
+                    //if (hasDiffClient)
+                    //{
+                    //    startTime = UnitWork.Find<ACRD>(a => a.CardCode == customer.CardCode).Max(c => c.UpdateDate);
+                    //}
+                    ////否则说明该客户的业务员无变动,取该客户的创建时间
+                    //else
+                    //{
+                    //    startTime = customer.CreateDate;
+                    //}
 
                     //超过规则定义的天数则放入redis中,这部分的数据是即将掉入公海,放入日期加上通知天数就是掉入公海的时间
                     if (startTime != null && (DateTime.Now - startTime).Value.Days > rule.day)
@@ -939,7 +947,7 @@ namespace OpenAuth.App.Customer
                                  on u.user_id equals s.user_id
                                  where s.sbo_id == Define.SBO_ID
                                  //&& new int[] { 0, 1 }.Contains(ud.status) //在职的员工,离职状态是2和3
-                                 && u.user_nm == "向琴琴" //取各个部门的leader的客户
+                                 && u.user_nm == "罗茹玲" //取各个部门的leader的客户
                                  select s.sale_id).Distinct().ToListAsync();
 
             //再根据销售编号查找客户
@@ -957,19 +965,26 @@ namespace OpenAuth.App.Customer
             foreach (var customer in customers)
             {
                 DateTime? startTime = null;
-                //查找客户最近一次的业务员变更(查找有不同业务员的客户)
-                var acrdInfos = await UnitWork.Find<ACRD>(a => a.CardCode == customer.CardCode).Select(c => new { c.SlpCode, c.UpdateDate }).ToListAsync();
-                var hasDiffClient = acrdInfos.Select(x => x.SlpCode).Distinct().Count() > 1;
-                //如果有不同的业务员,则开始时间取最近一次的客户分配给业务员的时间
-                if (hasDiffClient)
+                string sql = "SELECT max(UpdateDate) UpdateDate from( select CardCode, SlpCode, min(UpdateDate) UpdateDate from (select CardCode, SlpCode, ISNULL(UpdateDate,CreateDate) UpdateDate from OCRD UNION select CardCode, SlpCode, UpdateDate from ACRD ) a GROUP BY CardCode, SlpCode) b WHERE cardcode = '" + customer.CardCode + "'";
+                DataTable tbl = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, sql, CommandType.Text);
+                if (tbl != null && tbl.Rows.Count != 0)
                 {
-                    startTime = UnitWork.Find<ACRD>(a => a.CardCode == customer.CardCode).Max(c => c.UpdateDate);
+                    startTime = tbl.Rows[0]["UpdateDate"].ToDateTime();
                 }
-                //否则说明该客户的业务员无变动,取该客户的创建时间
-                else
-                {
-                    startTime = customer.CreateDate;
-                }
+
+                ////查找客户最近一次的业务员变更(查找有不同业务员的客户)
+                //var acrdInfos = await UnitWork.Find<ACRD>(a => a.CardCode == customer.CardCode).Select(c => new { c.SlpCode, c.UpdateDate }).ToListAsync();
+                //var hasDiffClient = acrdInfos.Select(x => x.SlpCode).Distinct().Count() > 1;
+                ////如果有不同的业务员,则开始时间取最近一次的客户分配给业务员的时间
+                //if (hasDiffClient)
+                //{
+                //    startTime = UnitWork.Find<ACRD>(a => a.CardCode == customer.CardCode).Max(c => c.UpdateDate);
+                //}
+                ////否则说明该客户的业务员无变动,取该客户的创建时间
+                //else
+                //{
+                //    startTime = customer.CreateDate;
+                //}
                 //超过规则定义的天数则放入redis中,这部分的数据是即将掉入公海,放入日期加上通知天数就是掉入公海的时间
                 if (startTime != null && (DateTime.Now - startTime).Value.Days > 731)
                 {

@@ -379,7 +379,11 @@ namespace OpenAuth.App.Material
         #region 获取进度
         public DataTable GetProgressAll()
         {
-            string strSql = string.Format("select * from ( select _System_objNBS,RecordGuid, fld005508 DocEntry, max(_System_Progress) progress,fld005506 itemCode from OBJ162 group by RecordGuid, fld005508,_System_objNBS,fld005506) a");
+            string strSql = string.Format(@"select  _System_objNBS,RecordGuid, b.DocEntry, progress,itemCode from
+                                            (select _System_objNBS, RecordGuid, progress, itemCode, DocEntry = cast('<v>' + replace(DocEntry, '/', '</v><v>') + '</v>' as xml) from
+                                            (select * from(select _System_objNBS, RecordGuid, fld005508 DocEntry, max(_System_Progress) progress, fld005506 itemCode
+                                            from OBJ162 group by RecordGuid, fld005508, _System_objNBS, fld005506) a) t
+                                            ) as a outer apply(select DocEntry = T.C.value('.', 'varchar(20)') from a.DocEntry.nodes('v') as T(C)) as b");
             return UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null);
         }
 
