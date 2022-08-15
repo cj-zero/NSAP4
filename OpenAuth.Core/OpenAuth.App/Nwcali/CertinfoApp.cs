@@ -33,6 +33,7 @@ using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository;
 using System.Text.RegularExpressions;
 using Infrastructure.Excel;
+using Newtonsoft.Json.Linq;
 
 namespace OpenAuth.App
 {
@@ -1643,12 +1644,13 @@ namespace OpenAuth.App
                         .WhereIf(!string.IsNullOrWhiteSpace(request.ProductionNo.ToString()), c => EF.Functions.Like(c.DocEntry, $"%{request.ProductionNo}%"))
                         .WhereIf(!string.IsNullOrWhiteSpace(request.SaleOrderNo.ToString()), c => EF.Functions.Like(c.OriginAbs, $"%{request.SaleOrderNo}%"))
                         .WhereIf(!string.IsNullOrWhiteSpace(request.ItemCode), c => c.ItemCode.Contains(request.ItemCode))
+                        .WhereIf(!string.IsNullOrWhiteSpace(request.Status), c => c.Status == request.Status)
                         join b in UnitWork.Find<sale_ordr>(null) on new { a.OriginAbs, a.sbo_id } equals new { OriginAbs = b.DocEntry, b.sbo_id } into ab
                         from b in ab.DefaultIfEmpty()
                         join c in UnitWork.Find<crm_oslp>(null)
                         on new { b.SlpCode, b.sbo_id } equals new { SlpCode = (short?)c.SlpCode, sbo_id = c.sbo_id.Value } into bc
                         from c in bc.DefaultIfEmpty()
-                        select new { a.DocEntry, a.ItemCode, ItemName = a.txtitemName, a.PlannedQty, a.CmpltQty, Status = "", OrgName = a.U_WO_LTDW, SaleOrderNo = a.OriginAbs, c.SlpName };
+                        select new { a.DocEntry, a.ItemCode, ItemName = a.txtitemName, a.PlannedQty, a.CmpltQty, Finish = "", OrgName = a.U_WO_LTDW, SaleOrderNo = a.OriginAbs, c.SlpName, a.Status };
             if (loginContext.User.Account != Define.SYSTEM_USERNAME)
             {
                 query = query.Where(c => c.OrgName.Contains(loginOrg.Name));
@@ -1686,22 +1688,39 @@ namespace OpenAuth.App
             return result;
         }
 
-        public async Task GenerateWO(int docEntry)
+        /// <summary>
+        /// 生成生产唯一码
+        /// </summary>
+        /// <param name="docEntry"></param>
+        /// <returns></returns>
+        public async Task GenerateWO()
         {
-            var owor = await UnitWork.Find<product_owor>(c => c.DocEntry == docEntry).Select(c => new { c.DocEntry, c.PlannedQty }).FirstOrDefaultAsync();
-            for (int i = 0; i < owor.PlannedQty; i++)
+            var product_owor = await UnitWork.Find<product_owor>(c => (c.ItemCode.StartsWith("C") || c.ItemCode.StartsWith("BT") || c.ItemCode.StartsWith("BTE") || c.ItemCode.StartsWith("BE")) && c.CreateDate >= DateTime.Parse("2021-01-01")).Select(c => new { c.DocEntry, c.PlannedQty }).ToListAsync();
+            var schedule = await UnitWork.Find<ProductionSchedule>(null).Select(c => c.DocEntry).Distinct().ToListAsync();
+            product_owor = product_owor.Where(c => !schedule.Contains(c.DocEntry)).ToList();
+            if (product_owor.Count > 0)
             {
-
+                List<ProductionSchedule> schedules = new List<ProductionSchedule>();
+                foreach (var item in product_owor)
+                {
+                    var count = Convert.ToInt32(item.PlannedQty.Value);
+                    for (int i = 1; i <= count; i++)
+                    {
+                        var wo = $"WO-{item.DocEntry}-{count}-{i}";
+                        schedules.Add(new ProductionSchedule { DocEntry = item.DocEntry, GeneratorCode = wo, ProductionStatus = 1, DeviceStatus = 1, NwcailStatus = 1, ReceiveStatus = 1, ReceiveLocation = "", SortNo = i });
+                    }
+                }
+                await UnitWork.BatchAddAsync(schedules.ToArray());
+                await UnitWork.SaveAsync();
             }
         }
-        #endregion
 
         /// <summary>
-        /// 生产唯一码下设备是否校准
+        /// 生产单基本信息
         /// </summary>
-        /// <param name="wo"></param>
+        /// <param name="docEntry"></param>
         /// <returns></returns>
-        public async Task<TableData> CheckCalibration(string wo)
+        public async Task<TableData> GetOworDetail(int docEntry)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -1709,23 +1728,250 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             TableData result = new TableData();
-            result.Data = false;
-            var lowGuid = await UnitWork.Find<DeviceBindMap>(c => c.GeneratorCode == wo).Select(c => c.LowGuid).ToListAsync();
+            var query = from a in UnitWork.Find<product_owor>(null)
+                        join b in UnitWork.Find<store_owhs>(null) on new { a.sbo_id, WhsCode = a.Warehouse } equals new { sbo_id = b.sbo_id.Value, b.WhsCode } into ab
+                        from b in ab.DefaultIfEmpty()
+                        join c in UnitWork.Find<crm_ocrd>(null) on new { a.sbo_id, a.CardCode } equals new { sbo_id = c.sbo_id.Value, c.CardCode } into ac
+                        from c in ac.DefaultIfEmpty()
+                        join d in UnitWork.Find<sale_rdr1>(null) on new { a.sbo_id, a.ItemCode, DocEntry = a.OriginAbs.Value } equals new { d.sbo_id, d.ItemCode, d.DocEntry } into ad
+                        from d in ad.DefaultIfEmpty()
+                        join f in UnitWork.Find<sale_ordr>(null) on new { a.OriginAbs, a.sbo_id } equals new { OriginAbs = f.DocEntry, f.sbo_id } into af
+                        from f in af.DefaultIfEmpty()
+                        join e in UnitWork.Find<crm_oslp>(null) on new { f.SlpCode, f.sbo_id } equals new { SlpCode = (short?)e.SlpCode, sbo_id = e.sbo_id.Value } into fe
+                        from e in fe.DefaultIfEmpty()
+                        where a.sbo_id == Define.SBO_ID && a.DocEntry == docEntry
+                        select new { a.ItemCode, a.U_BOM_BBH, a.txtitemName, a.PlannedQty, SaleOrderNo = a.OriginAbs, a.CardCode, a.Comments, a.PostDate, a.DueDate, a.CmpltQty, c.CardName, b.WhsName, a.Status, Quantity = d == null ? 0 : d.Quantity, e.SlpName };
+            result.Data = query;
+            return result;
+        }
+
+        /// <summary>
+        /// 生产进度
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetScheduleInfo(QueryProductionScheduleReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            var schedule = await UnitWork.Find<ProductionSchedule>(c => c.DocEntry == req.DocEntry)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.GeneratorCode), c => c.GeneratorCode == req.GeneratorCode)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.ReceiveStatus), c => c.ReceiveStatus == int.Parse(req.ReceiveStatus))
+                .WhereIf(!string.IsNullOrWhiteSpace(req.ProductionStatus), c => c.ProductionStatus == int.Parse(req.ProductionStatus))
+                .ToListAsync();
+            schedule.ForEach(c =>
+            {
+                var nwcail = c.NwcailStatus != 2 ? CheckCalibration(c.GeneratorCode) : (c.NwcailStatus, c.NwcailOperatorId, c.NwcailOperator, c.NwcailTime);
+                var device = c.DeviceStatus != 3 ? BakingMachine(c.DocEntry.Value, c.GeneratorCode) : (c.DeviceStatus, c.DeviceOperatorId, c.DeviceOperator, c.DeviceTime);
+
+                c.DeviceStatus = device.DeviceStatus;
+                c.DeviceOperatorId = device.DeviceOperatorId;
+                c.DeviceOperator = device.DeviceOperator;
+                c.DeviceTime = device.DeviceTime;
+                c.NwcailStatus = nwcail.NwcailStatus;
+                c.NwcailOperatorId = nwcail.NwcailOperatorId;
+                c.NwcailOperator = nwcail.NwcailOperator;
+                c.NwcailTime = nwcail.NwcailTime;
+            });
+            //var data = schedule.Select(c =>
+            //{
+            //    var nwcail = c.NwcailStatus != 2 ? CheckCalibration(c.GeneratorCode) : (c.NwcailStatus, c.NwcailOperatorId, c.NwcailOperator, c.NwcailTime);
+            //    var device = c.DeviceStatus != 3 ? BakingMachine(c.DocEntry.Value, c.GeneratorCode) : (c.DeviceStatus, c.DeviceOperatorId, c.DeviceOperator, c.DeviceTime);
+            //    return new ProductionSchedule
+            //    {
+            //        Id = c.Id,
+            //        DocEntry = c.DocEntry,
+            //        GeneratorCode = c.GeneratorCode,
+            //        ProductionStatus = c.ProductionStatus,
+            //        DeviceStatus = device.DeviceStatus,
+            //        DeviceOperatorId = device.DeviceOperatorId,
+            //        DeviceOperator = device.DeviceOperator,
+            //        DeviceTime = device.DeviceTime,
+            //        NwcailStatus = nwcail.NwcailStatus,
+            //        NwcailOperatorId = nwcail.NwcailOperatorId,
+            //        NwcailOperator = nwcail.NwcailOperator,
+            //        NwcailTime = nwcail.NwcailTime,
+            //        ReceiveLocation = c.ReceiveLocation,
+            //        ReceiveStatus = c.ReceiveStatus,
+            //        SortNo = c.SortNo
+            //    };
+            //} );
+
+            await UnitWork.BatchUpdateAsync(schedule.ToArray());
+            await UnitWork.SaveAsync();
+            if (!string.IsNullOrWhiteSpace(req.DeviceStatus))
+            {
+                schedule = schedule.Where(c => c.DeviceStatus == int.Parse(req.DeviceStatus)).ToList();
+            }
+            if (!string.IsNullOrWhiteSpace(req.NwcailStatus))
+            {
+                schedule = schedule.Where(c => c.NwcailStatus == int.Parse(req.NwcailStatus)).ToList();
+            }
+
+            result.Count = schedule.Count();
+            result.Data = schedule.OrderBy(c => c.SortNo).Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+            return result;
+        }
+
+        /// <summary>
+        /// 生产唯一码下 烤机过的下位机guid
+        /// </summary>
+        /// <param name="wo"></param>
+        /// <returns></returns>
+        public List<string> GetLowGuid(string wo)
+        {
+            List<string> guidList = new List<string>();
+            var newlog = UnitWork.Find<DeviceTestLog>(c => c.GeneratorCode == wo).OrderByDescending(c => c.Id).FirstOrDefault();
+            if (newlog!=null)
+            {
+                //最新环境下 最新通道测试记录
+                var guidSql = $@"select LowGuid from devicetestlog where id in(
+                                select MAX(Id) id from devicetestlog where EdgeGuid='{newlog.EdgeGuid}' and SrvGuid='{newlog.SrvGuid}' and DevUid={newlog.DevUid} AND GeneratorCode='{wo}'
+                                group by EdgeGuid,SrvGuid,DevUid,UnitId,ChlId)
+                                group by LowGuid";
+                guidList = UnitWork.Query<DeviceTestLog>(guidSql).Select(c => c.LowGuid).ToList();
+            }
+            return guidList;
+        }
+
+        /// <summary>
+        /// 烤机结果
+        /// </summary>
+        /// <param name="docEntry"></param>
+        /// <param name="wo"></param>
+        /// <returns></returns>
+        public (int Status, string UserId, string User, DateTime? Time) BakingMachine(int docEntry,string wo)
+        {
+            var guids =  GetLowGuid(wo);
+            var result = 1;//待烤机
+            string u1 = "", u2 = "";
+            DateTime? date = null;
+            ////下位机数量
+            //var wor1 =  UnitWork.Find<product_wor1>(c => c.DocEntry == docEntry && c.ItemCode.Contains("XWJ")).Sum(c => c.PlannedQty);
+            //if (guids.Count == 0)
+            //{
+            //    return (result, "", "", null);
+            //}
+            if (guids.Count > 0)
+            {
+                var url = "https://analytics.neware.com.cn/";
+                HttpHelper httpHelper = new HttpHelper(url);
+                var guidSuccessCount = 0;
+                var err = 0;
+                foreach (var guid in guids)
+                {
+                    //下位机最新的烤机环境下烤机记录
+                    var newlog = UnitWork.Find<DeviceTestLog>(c => c.LowGuid == guid).OrderByDescending(c => c.Id).FirstOrDefault();
+                    if (newlog != null)
+                    {
+                        var channel = UnitWork.Find<DeviceTestLog>(c => c.EdgeGuid == newlog.EdgeGuid && c.SrvGuid == newlog.SrvGuid && c.DevUid == newlog.DevUid && c.UnitId == newlog.UnitId).ToList();
+                        //通道最新测试ID
+                        var channelQuery = channel.GroupBy(c => c.ChlId).Select(c => c.OrderByDescending(o => o.TestId).First()).ToList();
+                        var channelCount = 0;
+                        foreach (var item in channelQuery)
+                        {
+                            //获取每个通道测试任务id
+                            var checktask = $"select EdgeGuid,SrvGuid,DevUid,UnitId,ChlId,TestId,TaskId from devicechecktask where EdgeGuid='{item.EdgeGuid}' and SrvGuid='{item.SrvGuid}' and DevUid={item.DevUid} and UnitId={item.UnitId} and ChlId={item.ChlId} and TestId={item.TestId}";
+                            var checktaskQuery = UnitWork.Query<DeviceCheckTask>(checktask).Select(c => c.TaskId).FirstOrDefault();
+                            if (!string.IsNullOrWhiteSpace(checktaskQuery))
+                            {
+                                var taskurl = $"api/DataCheck/TaskResult?id={checktaskQuery}";
+                                Dictionary<string, string> dic = null;
+                                //获取通道烤机结果
+                                var taskResult = httpHelper.Get(dic, taskurl);
+                                JObject resObj = JObject.Parse(taskResult);
+                                if (resObj["status"] == null || resObj["status"].ToString() != "200")
+                                {
+                                    err = 4;
+                                    break;
+                                }
+                                if (resObj["data"] != null)
+                                {
+                                    int.TryParse(resObj["data"]["ErrCount"].ToString(), out int errCount);
+                                    sbyte.TryParse(resObj["data"]["Status"].ToString(), out sbyte taskStatus);
+                                    if (errCount == 0 && taskStatus == 2)
+                                        channelCount++;
+                                    else if (errCount > 0)
+                                    {
+                                        err = 4;
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                //checkResp.Message = "烤机任务ID尚未创建。";
+                            }
+                        }
+                        if (err == 4)
+                        {
+                            result = err;//烤机异常
+                            break;
+                        }
+                        //烤机通道通过数=总通道数
+                        if (channelCount == channelQuery.Count)
+                            guidSuccessCount++;
+                    }
+                }
+                if (err == 4)
+                {
+                    return (result, "", "", null);
+                }
+                //通过数==所有guid数
+                if (guidSuccessCount == guids.Count)
+                {
+                    result = 3;//烤机通过
+                    var last = UnitWork.Find<DeviceTestLog>(c => guids.Contains(c.LowGuid)).OrderByDescending(c => c.CreateTime).FirstOrDefault();
+                    u1 = last.CreateUserId;
+                    u2 = last.CreateUser;
+                    date = DateTime.Now;
+                }
+                else
+                    result = 2;//烤机中
+            }
+            else
+            {
+                //result = 2;//烤机中
+            }
+            return (result, u1, u2, date);
+        }
+
+        /// <summary>
+        /// 生产唯一码下设备是否校准
+        /// </summary>
+        /// <param name="wo"></param>
+        /// <returns></returns>
+        public (int Status,string UserId,string User,DateTime? Time) CheckCalibration(string wo)
+        {
+            var result = 1;
+            var lowGuid =  GetLowGuid(wo);
             if (lowGuid.Count > 0)
             {
-                var pcplc = await UnitWork.Find<PcPlc>(c => lowGuid.Contains(c.Guid) && c.ExpirationDate >= DateTime.Now).ToListAsync();
-                pcplc = pcplc.GroupBy(c => c.Guid).Select(c => c.First()).ToList();
-                if (pcplc.Count > 0)
+                var machine = UnitWork.Find<MachineInfo>(c => lowGuid.Contains(c.Guid)).ToList();
+                if (machine.Count > 0)
                 {
                     //下位机数量是否等于下位机校准证书数量
-                    if (lowGuid.Count == pcplc.Count)
+                    if (lowGuid.Count <= machine.Count)
                     {
-                        result.Data = true;
+                        result = 2;
+                        var last = machine.OrderByDescending(c => c.CreateTime).FirstOrDefault();
+                        return (result, last.CreateUserId, last.CreateUser, last.CalibrationTime);
                     }
                 }
             }
-            return result;
+            return (result, "", "", null);
         }
+
+        public async Task UpdateStatus(List<ProductionSchedule> list)
+        {
+
+        }
+        #endregion
+
 
 
         /// <summary>

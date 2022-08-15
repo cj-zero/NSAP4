@@ -1128,7 +1128,7 @@ namespace OpenAuth.App.Customer
         {
             var result = new TableData();
             var queryCustomerSalers = new List<QueryCustomerSalerListResponse>();
-
+            DateTime dateStart = new DateTime(1970, 1, 1, 8, 0, 0);
             string addsql = $@"select sale_id,j.sync_dt from wfa_job j left join sbo_user u on j.user_id = u.user_id where job_nm ='添加业务伙伴:" + req.CardName + "' or card_name = '" + req.CardName + "'";
             var addtable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, addsql, System.Data.CommandType.Text);
             int saleid = (addtable != null && addtable.Rows.Count > 0) ? Convert.ToInt32(addtable.Rows[0]["sale_id"]) : 0;
@@ -1148,12 +1148,13 @@ namespace OpenAuth.App.Customer
                     type = 0,
                     movein_type = "创建",
                     remark = "",
-                    CreateTime = Convert.ToDateTime(addtable.Rows[0]["sync_dt"])
+                    CreateTime = Convert.ToDateTime(addtable.Rows[0]["sync_dt"]),
+                    t = Convert.ToInt32((Convert.ToDateTime(addtable.Rows[0]["sync_dt"]) - dateStart).TotalSeconds)
                 });
             }
 
             //查询客户领取掉落记录表
-            string sql = $@"select a.* FROM (select SlpCode,SlpName,movein_type,remark,CreateTime,3 type from customer_move_history where CardCode = '{req.CardCode}'
+            string sql = $@"select a.* FROM (select SlpCode,SlpName,movein_type,remark,CreateTime,case WHEN movein_type = '按规则掉入' then 3 else 4 END type from customer_move_history where CardCode = '{req.CardCode}'
                             UNION select SlpCode,SlpName,case when Is_SaleHistory = 1 then'领取' else '分配' end ,'',CreateTime,case when Is_SaleHistory = 1 then 1 else 2 end type from Customer_Saler_History where customerNo = '{req.CardCode}') as a order by a.CreateTime";
             var table = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, System.Data.CommandType.Text);
 
@@ -1161,6 +1162,7 @@ namespace OpenAuth.App.Customer
             {
                 for (int i = 0; i < table.Rows.Count; i++)
                 {
+                   
                     queryCustomerSalers.Add(new QueryCustomerSalerListResponse
                     {
                         SlpCode = Convert.ToInt32(table.Rows[i]["SlpCode"]),
@@ -1168,8 +1170,9 @@ namespace OpenAuth.App.Customer
                         type = table.Rows[i]["type"].ToInt(),
                         movein_type = table.Rows[i]["movein_type"].ToString(),
                         remark = table.Rows[i]["remark"].ToString(),
-                        CreateTime = Convert.ToDateTime(table.Rows[i]["CreateTime"])
-                    });
+                        CreateTime = Convert.ToDateTime(table.Rows[i]["CreateTime"]),
+                        t = Convert.ToInt32((Convert.ToDateTime(table.Rows[i]["CreateTime"]) - dateStart).TotalSeconds)
+                });
                 }
             }
 

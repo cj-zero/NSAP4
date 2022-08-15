@@ -48,6 +48,10 @@ namespace OpenAuth.App.Customer.Response
         public string movein_type { get; set; }
 
         public string remark { get; set; }
+        /// <summary>
+        /// 归属时长时间戳
+        /// </summary>
+        public int t { get; set; }
 
         #endregion
     }

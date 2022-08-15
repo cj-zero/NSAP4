@@ -1,7 +1,7 @@
 ﻿/*
- * @author : Eaven
- * @date : 2022-4-20
- * @desc : 客户规则
+ * @author : wangying
+ * @date : 2022-8-9
+ * @desc : 工程部物料设计
  */
 using OpenAuth.Repository.Core;
 using System;
@@ -14,11 +14,15 @@ using System.Text;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-    /// 客户规则
+    /// 工程部物料设计
     /// </summary>
-    [Table("client_followup")]
-    public class ClientFollowUp : BaseEntity<int>
+    [Table("manage_screening")]
+    public class ManageScreening : BaseEntity<int>
     {
+        /// <summary>
+        /// 单据编码
+        /// </summary>
+        public string DocEntry { get; set; }
         /// <summary>
         /// 客户编码
         /// </summary>
@@ -27,6 +31,14 @@ namespace OpenAuth.Repository.Domain
         /// 客户名称
         /// </summary>
         public string CardName { get; set; }
+        /// <summary>
+        /// 物料编码
+        /// </summary>
+        public string ItemCode { get; set; }
+        /// <summary>
+        /// 物料名称
+        /// </summary>
+        public string ItemDesc { get; set; }
         /// <summary>
         /// 业务员编码
         /// </summary>
@@ -37,38 +49,18 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public string SlpName { get; set; }
         /// <summary>
-        /// 联系人
+        /// 提交时间
         /// </summary>
-        public string Contacts { get; set; }
-        /// <summary>
-        /// 跟进方式
-        /// </summary>
-        public int FollowType { get; set; }
-        /// <summary>
-        /// 下次联系时间
-        /// </summary>
-        public DateTime? NextTime { get; set; }
+        public DateTime SubmitTime { get; set; }
 
         /// <summary>
-        /// 内容
+        /// 合约评审单号
         /// </summary>
-        public string Remark { get; set; }
+        public int? ContractReviewCode { get; set; }
         /// <summary>
-        /// 图片
+        /// 文件路径
         /// </summary>
-        public string ImgId { get; set; }
-        /// <summary>
-        /// 附件
-        /// </summary>
-        public string FileId { get; set; }
-        /// <summary>
-        /// 图片名称
-        /// </summary>
-        public string ImgName { get; set; }
-        /// <summary>
-        /// 附件名称
-        /// </summary>
-        public string FileName { get; set; }
+        public string FileUrl { get; set; }
         /// <summary>
         /// 创建人
         /// </summary>
@@ -77,20 +69,6 @@ namespace OpenAuth.Repository.Domain
         /// 创建时间
         /// </summary>
         public DateTime? CreateDate { get; set; }
-        /// <summary>
-        /// 更新人
-        /// </summary>
-        public int UpdateUser { get; set; }
-        /// <summary>
-        /// 更新时间
-        /// </summary>
-        public DateTime? UpdateDate { get; set; }
-
-        /// <summary>
-        /// 是否删除
-        /// </summary>
-        [Description("是否删除")]
-        public bool IsDelete { get; set; }
         public override void GenerateDefaultKeyVal()
         {
         }
