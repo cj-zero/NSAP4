@@ -59,10 +59,6 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public string ResumeFilePath { get; set; }
 
-        /// <summary>
-        /// 审核状态(1:未审核 2:审核已通过 3:已驳回 4.封禁)
-        /// </summary>
-        public int AuditState { get; set; }
 
         /// <summary>
         /// 创建时间
