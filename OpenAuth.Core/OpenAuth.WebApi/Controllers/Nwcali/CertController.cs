@@ -298,6 +298,8 @@ namespace OpenAuth.WebApi.Controllers
                     var timeRow2 = sheet.GetRow(2);
                     var time2 = timeRow2.GetCell(1).StringCellValue;
                     var timecomb = DateTime.Parse($"{time1} {time2}");
+                    var testerSnRow = sheet.GetRow(6);
+                    var orderno = testerSnRow.GetCell(1).StringCellValue;
                     var pclNoRow = sheet.GetRow(32);
                     var pclGuidRow = sheet.GetRow(33);
                     List<MachineInfo> machineInfo = new List<MachineInfo>();
@@ -309,7 +311,7 @@ namespace OpenAuth.WebApi.Controllers
                         machineInfo.Add(new MachineInfo
                         {
                             Guid = pclGuidRow.GetCell(i).StringCellValue,
-                            OrderNo = "",
+                            OrderNo = orderno,
                             Status = 1,
                             CreateTime = DateTime.Now,
                             FileId = fileResp.FilePath,
