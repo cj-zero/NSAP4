@@ -1850,13 +1850,13 @@ namespace OpenAuth.App
             var result = 1;//待烤机
             string u1 = "", u2 = "";
             DateTime? date = null;
-            //下位机数量
-            var wor1 =  UnitWork.Find<product_wor1>(c => c.DocEntry == docEntry && c.ItemCode.Contains("XWJ")).Sum(c => c.PlannedQty);
-            if (guids.Count == 0)
-            {
-                return (result, "", "", null);
-            }
-            if (guids.Count == Convert.ToInt32(wor1))
+            ////下位机数量
+            //var wor1 =  UnitWork.Find<product_wor1>(c => c.DocEntry == docEntry && c.ItemCode.Contains("XWJ")).Sum(c => c.PlannedQty);
+            //if (guids.Count == 0)
+            //{
+            //    return (result, "", "", null);
+            //}
+            if (guids.Count > 0)
             {
                 var url = "https://analytics.neware.com.cn/";
                 HttpHelper httpHelper = new HttpHelper(url);
@@ -1865,10 +1865,10 @@ namespace OpenAuth.App
                 foreach (var guid in guids)
                 {
                     //下位机最新的烤机环境下烤机记录
-                    var newlog =  UnitWork.Find<DeviceTestLog>(c => c.LowGuid == guid).OrderByDescending(c => c.Id).FirstOrDefault();
+                    var newlog = UnitWork.Find<DeviceTestLog>(c => c.LowGuid == guid).OrderByDescending(c => c.Id).FirstOrDefault();
                     if (newlog != null)
                     {
-                        var channel =  UnitWork.Find<DeviceTestLog>(c => c.EdgeGuid == newlog.EdgeGuid && c.SrvGuid == newlog.SrvGuid && c.DevUid == newlog.DevUid && c.UnitId == newlog.UnitId).ToList();
+                        var channel = UnitWork.Find<DeviceTestLog>(c => c.EdgeGuid == newlog.EdgeGuid && c.SrvGuid == newlog.SrvGuid && c.DevUid == newlog.DevUid && c.UnitId == newlog.UnitId).ToList();
                         //通道最新测试ID
                         var channelQuery = channel.GroupBy(c => c.ChlId).Select(c => c.OrderByDescending(o => o.TestId).First()).ToList();
                         var channelCount = 0;
@@ -1876,7 +1876,7 @@ namespace OpenAuth.App
                         {
                             //获取每个通道测试任务id
                             var checktask = $"select EdgeGuid,SrvGuid,DevUid,UnitId,ChlId,TestId,TaskId from devicechecktask where EdgeGuid='{item.EdgeGuid}' and SrvGuid='{item.SrvGuid}' and DevUid={item.DevUid} and UnitId={item.UnitId} and ChlId={item.ChlId} and TestId={item.TestId}";
-                            var checktaskQuery =  UnitWork.Query<DeviceCheckTask>(checktask).Select(c => c.TaskId).FirstOrDefault();
+                            var checktaskQuery = UnitWork.Query<DeviceCheckTask>(checktask).Select(c => c.TaskId).FirstOrDefault();
                             if (!string.IsNullOrWhiteSpace(checktaskQuery))
                             {
                                 var taskurl = $"api/DataCheck/TaskResult?id={checktaskQuery}";
@@ -1935,7 +1935,7 @@ namespace OpenAuth.App
             }
             else
             {
-                result = 2;//烤机中
+                //result = 2;//烤机中
             }
             return (result, u1, u2, date);
         }
@@ -1955,7 +1955,7 @@ namespace OpenAuth.App
                 if (machine.Count > 0)
                 {
                     //下位机数量是否等于下位机校准证书数量
-                    if (lowGuid.Count == machine.Count)
+                    if (lowGuid.Count <= machine.Count)
                     {
                         result = 2;
                         var last = machine.OrderByDescending(c => c.CreateTime).FirstOrDefault();
