@@ -221,7 +221,7 @@ namespace OpenAuth.App.Hr
                     return result;
                 }
 
-                int? sort = await UnitWork.Find<classroom_subject_course>(null).MaxAsync(a => (int?)a.Sort);
+                int? sort = await UnitWork.Find<classroom_subject_course>(null).Where(a => a.SubjectId == req.SubjectId).MaxAsync(a => (int?)a.Sort);
                 if (sort == null)
                     sort = 0;
                 classroom_subject_course info = new classroom_subject_course()
@@ -397,6 +397,7 @@ namespace OpenAuth.App.Hr
                               CreateUser = c.CreateUser,
                               IsComplete = sc?.IsComplete,
                               ViewNumbers =c.ViewNumbers,
+                              Sort =c.Sort,
                           };
             result.Data = results.OrderBy(a => a.Sort).ToList();
             result.Count = results.Count();
