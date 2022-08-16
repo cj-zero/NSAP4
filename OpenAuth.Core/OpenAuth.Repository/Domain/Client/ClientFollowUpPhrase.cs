@@ -28,6 +28,11 @@ namespace OpenAuth.Repository.Domain
         /// 内容
         /// </summary>
         public string Remark { get; set; }
+
+        /// <summary>
+        /// 类型（0 跟进 1 日程）
+        /// </summary>
+        public int Type { get; set; }
         
         /// <summary>
         /// 创建人

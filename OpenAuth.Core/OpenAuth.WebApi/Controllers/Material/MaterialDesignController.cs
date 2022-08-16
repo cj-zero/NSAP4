@@ -7,6 +7,7 @@ using OpenAuth.App.Material.Request;
 using OpenAuth.App.Material.Response;
 using OpenAuth.App.Order;
 using OpenAuth.App.Order.ModelDto;
+using OpenAuth.App.Order.Request;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository;
@@ -50,9 +51,10 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <summary>
         /// 查看物料明细
         /// </summary>
-        [HttpGet]
-        public TableData GetItemCodeList(string DocNum, string tablename = "sale_rdr1")/*, string ations = "", string billPageurl = ""*/
+        [HttpPost]
+        public TableData GetItemCodeList(SalesOrderListReq model)/*, string ations = "", string billPageurl = ""*/
         {
+            string tablename = "sale_rdr1";
             TableData tableData = new TableData();
             var userId = _serviceBaseApp.GetUserNaspId();
             bool ViewSales = true;
@@ -96,17 +98,20 @@ namespace OpenAuth.WebApi.Controllers.Material
             strSql += string.Format(" FROM {0}." + tablename + " d", "nsap_bone");
             strSql += string.Format(" LEFT JOIN {0}.store_oitw w ON d.ItemCode=w.ItemCode AND d.WhsCode=w.WhsCode AND d.sbo_id=w.sbo_id", "nsap_bone");
             strSql += string.Format(" LEFT JOIN {0}.store_oitm m ON d.ItemCode=m.ItemCode AND d.sbo_id=m.sbo_id", "nsap_bone");
-            strSql += string.Format(" LEFT JOIN (select d1.sbo_id,d1.BaseEntry ,d1.BaseLine,SUM(d1.Quantity) as SumQuantity from {0}.sale_DLN1 d1 inner join {0}.sale_odln d0 on d0.docentry=d1.docentry and d0.sbo_id=d1.sbo_id where d0.Canceled='N' AND d1.BaseType=17 and d1.BaseEntry=" + DocNum + " GROUP BY d1.sbo_id,d1.BaseEntry,d1.BaseLine) as T on d.sbo_id=T.sbo_id and d.DocEntry=T.BaseEntry and  d.LineNum=T.BaseLine  ", "nsap_bone");
-            strSql += string.Format(" WHERE d.DocEntry=" + DocNum + " AND d.sbo_id={0}", SboId);
-            strSql += string.Format(" and d.ItemCode REGEXP 'A605|A608|A313|A302|CT-4|CT-8|CE-4|CE-8|CE-7|CTE-4|CTE-8|CE-6|CA|CJE|CJ|CGE|CGE|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|M202|M203|MGDW|MIGW|MGW|MGDW|MHW|MIHW|MCD|MFF|MFYHS|MWL|MJZJ|MFXJ|MXFC|MFHL|MET|MRBH|MRH|MRF|MFB|MFYB|MRZH|MFYZ|MYSFR|MFSF|MYSHC|MYHF|MRSH|MRHF|MXFS|MZZ|MDCIR|MJR|MJF|MTP|MJY|MJJ|MCH|MCJ|MZJ'");
+            strSql += string.Format(" LEFT JOIN (select d1.sbo_id,d1.BaseEntry ,d1.BaseLine,SUM(d1.Quantity) as SumQuantity from {0}.sale_DLN1 d1 inner join {0}.sale_odln d0 on d0.docentry=d1.docentry and d0.sbo_id=d1.sbo_id where d0.Canceled='N' AND d1.BaseType=17 and d1.BaseEntry=" + model.DocEntry + " GROUP BY d1.sbo_id,d1.BaseEntry,d1.BaseLine) as T on d.sbo_id=T.sbo_id and d.DocEntry=T.BaseEntry and  d.LineNum=T.BaseLine  ", "nsap_bone");
+            strSql += string.Format(" WHERE d.DocEntry=" + model.DocEntry + " AND d.sbo_id={0}", SboId);
+            strSql += string.Format(" and d.ItemCode REGEXP 'A605|A608|A313|A302|CT-4|CT-8|CE-4|CE-8|CE-7|CTE-4|CTE-8|CE-6|CA|CJE|CJ|CGE|CGE|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|M202|M203|MGDW|MIGW|MGW|MGDW|MHW|MIHW|MCD|MFF|MFYHS|MWL|MJZJ|MFXJ|MXFC|MFHL|MET|MRBH|MRH|MRF|MFB|MFYB|MRZH|MFYZ|MYSFR|MFSF|MYSHC|MYHF|MRSH|MRHF|MXFS|MZZ|MDCIR|MJR|MJF|MTP|MJY|MJJ|MCH|MCJ|MZJ' and d.ItemCode not in(select ItemCode from erp4_serve.manage_screening where DocEntry = " + model.DocEntry + ")");
 
+            tableData.Count = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null).Rows.Count;
+
+            strSql += string.Format(" order by d.ItemCode limit {0} ,{1} ", (model.page - 1) * model.limit, model.limit);
             DataTable dts = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
             //int itemindex = 0;
             if (tablename.ToLower() == "sale_rdr1")
             {
                 foreach (DataRow tempr in dts.Rows)
                 {
-                    string statusSql = string.Format("select top 1 LineStatus from RDR1 where DocEntry={0} and LineNum={1}", DocNum, tempr["LineNum"].ToString());
+                    string statusSql = string.Format("select top 1 LineStatus from RDR1 where DocEntry={0} and LineNum={1}", model.DocEntry, tempr["LineNum"].ToString());
                     object statusobj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, statusSql.ToString(), CommandType.Text, null);
                     tempr["LineStatus"] = statusobj == null ? "" : statusobj.ToString();
                 }
@@ -119,7 +124,7 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// 获取物料关联合约评审单
         /// </summary>
         [HttpGet]
-        public TableData GetContractReviewList(string DocNum)/*, string ations = "", string billPageurl = ""*/
+        public TableData GetContractReviewList(string DocNum, string CardCode)/*, string ations = "", string billPageurl = ""*/
         {
             TableData tableData = new TableData();
             var userId = _serviceBaseApp.GetUserNaspId();
@@ -128,7 +133,7 @@ namespace OpenAuth.WebApi.Controllers.Material
             StringBuilder stringBuilder = new StringBuilder();
             string strSql = string.Format("select a.contract_id contract_Id,a.CardCode,  a.CardName, a.apply_dt Apply_dt,a.upd_dt ");
             strSql += string.Format(" FROM nsap_bone.sale_contract_review a");
-            strSql += string.Format(" WHERE a.sbo_id = {0} AND a.ItemCode='" + DocNum + "' AND a.apply_dt > DATE_SUB(CURDATE(), INTERVAL 6 MONTH)", SboId);
+            strSql += string.Format(" WHERE a.sbo_id = {0} AND a.ItemCode='" + DocNum + "' AND a.CardCode = '" + CardCode + "' AND a.apply_dt > DATE_SUB(CURDATE(), INTERVAL 6 MONTH)", SboId);
             DataTable dts = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
             tableData.Data = dts.Tolist<ReturnContractReview>();
             return tableData;
@@ -212,7 +217,7 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <returns></returns>
         [HttpPost]
         [Route("AddDrawingFiles")]
-        public async Task<Infrastructure.Response> AddDrawingFiles(List<int> ids,string url)
+        public async Task<Infrastructure.Response> AddDrawingFiles(List<int> ids, string url)
         {
             var response = new Infrastructure.Response();
             try
@@ -227,6 +232,20 @@ namespace OpenAuth.WebApi.Controllers.Material
         }
 
 
+        /// <summary>
+        /// 判断订单是否有合同号
+        /// </summary>
+        [HttpGet]
+        public TableData haveContact(string DocNum)/*, string ations = "", string billPageurl = ""*/
+        {
+            var result = new TableData();
+            TableData tableData = new TableData();
+            StringBuilder stringBuilder = new StringBuilder();
+            string strSql = string.Format("select * from contractapply where SaleNo = " + DocNum + " AND ContractStatus = -1 ");
+            int count = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, strSql.ToString(), CommandType.Text, null).Rows.Count;
+            result.Count = count;
+            return result;
+        }
 
         /// <summary>
         /// 提交物料设计到manager系统
