@@ -1981,12 +1981,17 @@ namespace OpenAuth.App
             foreach (var item in list)
             {
                 var user = userInfo.Where(c => c.NsapUserId == item.Operator).FirstOrDefault();
+                string id = "", name = "";
+                if (user!=null)
+                {
+                    id = user.Id; name= user.Id;
+                }
                 await UnitWork.UpdateAsync<ProductionSchedule>(c => c.GeneratorCode == item.GeneratorCode, c => new ProductionSchedule
                 {
                     ReceiveNo = item.ReceiveNo,
                     ReceiveStatus = 2,
-                    ReceiveOperatorId = user.Id,
-                    ReceiveOperator = user.Name,
+                    ReceiveOperatorId = id,
+                    ReceiveOperator = name,
                     ReceiveTime = item.OperateTime
                 });
             }
