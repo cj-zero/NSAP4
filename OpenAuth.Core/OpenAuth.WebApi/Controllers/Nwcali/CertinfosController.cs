@@ -4,9 +4,11 @@ using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
+using OpenAuth.App.Nwcali.Request;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
+using OpenAuth.WebApi.Model;
 using Serilog;
 
 namespace OpenAuth.WebApi.Controllers
@@ -292,6 +294,29 @@ namespace OpenAuth.WebApi.Controllers
         //{
         //    return await _app.CheckCalibration(wo);
         //}
+
+        /// <summary>
+        /// 收货
+        /// </summary>
+        /// <param name="list"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [TypeFilter(typeof(RequestActionFilter))]
+        public async Task<Response> ProductionReceipt(List<ReceiveReq> list)
+        {
+            Response result = new Response();
+            try
+            {
+                await _app.ProductionReceipt(list);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
 
         [HttpGet]
         public async Task<Response> SynSalesDelivery()

@@ -1707,7 +1707,7 @@ namespace OpenAuth.App
                     for (int i = 1; i <= count; i++)
                     {
                         var wo = $"WO-{item.DocEntry}-{count}-{i}";
-                        schedules.Add(new ProductionSchedule { DocEntry = item.DocEntry, GeneratorCode = wo, ProductionStatus = 1, DeviceStatus = 1, NwcailStatus = 1, ReceiveStatus = 1, ReceiveLocation = "", SortNo = i });
+                        schedules.Add(new ProductionSchedule { DocEntry = item.DocEntry, GeneratorCode = wo, ProductionStatus = 2, DeviceStatus = 1, NwcailStatus = 1, ReceiveStatus = 1, ReceiveLocation = "", SortNo = i });
                     }
                 }
                 await UnitWork.BatchAddAsync(schedules.ToArray());
@@ -1966,9 +1966,31 @@ namespace OpenAuth.App
             return (result, "", "", null);
         }
 
-        public async Task UpdateStatus(List<ProductionSchedule> list)
+        /// <summary>
+        /// 生产收货
+        /// </summary>
+        /// <param name="list"></param>
+        /// <returns></returns>
+        public async Task ProductionReceipt(List<ReceiveReq> list)
         {
-
+            var nsapId = list.Select(c => c.Operator).ToList();
+            var userInfo = from a in UnitWork.Find<User>(null)
+                       join b in UnitWork.Find<NsapUserMap>(null) on a.Id equals b.UserID
+                       where nsapId.Contains(b.NsapUserId)
+                       select new { b.NsapUserId, a.Id, a.Name };
+            foreach (var item in list)
+            {
+                var user = userInfo.Where(c => c.NsapUserId == item.Operator).FirstOrDefault();
+                await UnitWork.UpdateAsync<ProductionSchedule>(c => c.GeneratorCode == item.GeneratorCode, c => new ProductionSchedule
+                {
+                    ReceiveNo = item.ReceiveNo,
+                    ReceiveStatus = 2,
+                    ReceiveOperatorId = user.Id,
+                    ReceiveOperator = user.Name,
+                    ReceiveTime = item.OperateTime
+                });
+            }
+            await UnitWork.SaveAsync();
         }
         #endregion
 
