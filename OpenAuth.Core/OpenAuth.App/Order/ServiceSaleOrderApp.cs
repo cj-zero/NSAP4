@@ -4208,13 +4208,12 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
         {
             StringBuilder str = new StringBuilder();
             str.Append("SELECT distinct a.DocEntry,a.CardCode,a.CardName,b.Name,b.Tel1,b.Tel2,b.Cellolar,b.Address,c.SlpName,c.Memo,a.Comments,d.PymntGroup,");
-            str.Append(" a.DocTotal,CONCAT(e.Currency,' ',ROUND(IF(e.Currency = 'RMB',a.DocTotal,IFNUll(a.DocTotalFC,0.000000)),2))  ,DATE_FORMAT(a.DocDueDate,'%Y.%m.%d'),DATE_FORMAT(a.DocDate,'%Y.%m.%d'),a.U_ShipName,b.Fax,a.U_YGMD,a.Address2");
-            str.Append(" ,a.U_YSQX,a.BnkAccount,a.U_SL,a.NumAtCard,a.indicator, DATE_FORMAT(h.log_dt,'%Y.%m.%d'), a.DocCur,ROUND(a.DiscPrcnt,2) as DiscPrcnt,ROUND(IF(e.currency = 'RMB',a.DiscSum,(a.DiscSum/a.DocRate)),2) as DiscSum,a.DocRate ");
+            str.Append(" a.DocTotal,CONCAT(a.DocCur,' ',ROUND(IF(a.DocCur = 'RMB',a.DocTotal,IFNUll(a.DocTotalFC,0.000000)),2))  ,DATE_FORMAT(a.DocDueDate,'%Y.%m.%d'),DATE_FORMAT(a.DocDate,'%Y.%m.%d'),a.U_ShipName,b.Fax,a.U_YGMD,a.Address2");
+            str.Append(" ,a.U_YSQX,a.BnkAccount,a.U_SL,a.NumAtCard,a.indicator, DATE_FORMAT(h.log_dt,'%Y.%m.%d'), a.DocCur,ROUND(a.DiscPrcnt,2) as DiscPrcnt,ROUND(IF(a.DocCur = 'RMB',a.DiscSum,(a.DiscSum/a.DocRate)),2) as DiscSum,a.DocRate ");
             str.AppendFormat(" FROM {0}.sale_oqut a ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_ocpr b on a.CntctCode=b.CntctCode and a.sbo_id=b.sbo_id and a.CardCode=b.CardCode ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_oslp c on a.SlpCode=c.SlpCode and a.sbo_id=c.sbo_id ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_octg d on a.GroupNum=d.GroupNum AND a.sbo_id=d.sbo_id ", "nsap_bone");
-            str.AppendFormat(" left join {0}.sale_qut1 e on a.DocEntry=e.DocEntry and a.sbo_id=e.sbo_id ", "nsap_bone");
             str.AppendFormat(" left join (select f.job_type_id,f.user_id,f.sync_stat,f.job_state,f.sbo_id,f.sbo_itf_return,DATE_FORMAT(g.log_dt,'%Y.%m.%d') as log_dt ");
             str.AppendFormat(" from {0}.wfa_job f ", "nsap_base");
             str.AppendFormat(" left join {0}.wfa_log g on f.job_id= g.job_id ", "nsap_base");
@@ -10126,14 +10125,13 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
         {
             StringBuilder str = new StringBuilder();
             str.Append("SELECT distinct a.DocEntry,a.CardCode,a.CardName,b.Name,b.Tel1,b.Tel2,b.Cellolar,b.Address,c.SlpName,c.Memo,a.Comments,d.PymntGroup,");
-            str.Append(" a.DocTotal,CONCAT(e.Currency,' ',ROUND(IF(e.Currency = 'RMB',a.DocTotal,IFNUll(a.DocTotalFC,0.000000)),2)) as curtotal ,DATE_FORMAT(a.DocDueDate,'%Y.%m.%d %H:%i') as DocDueDate,DATE_FORMAT(a.DocDate,'%Y.%m.%d') as DocDate,a.U_ShipName,b.Fax,a.U_YGMD,a.Address2,a.U_YSQX,a.BnkAccount,f.HouseBank,CONCAT(ROUND(a.U_SL,0),'%')U_SL,a.NumAtCard ");
-            str.Append(" ,a.DiscSum,a.DiscSumFC,a.DocTotalFC,a.DocCur, DATE_FORMAT(k.log_dt,'%Y.%m.%d') as logdt, a.Indicator,ROUND(IF(e.Currency = 'RMB',a.DiscSum,(a.DiscSum/a.DocRate)),2) as DiscSumT,ROUND(a.DiscPrcnt,2) as DiscPrcnt ");
+            str.Append(" a.DocTotal,CONCAT(a.DocCur,' ',ROUND(IF(a.DocCur = 'RMB',a.DocTotal,IFNUll(a.DocTotalFC,0.000000)),2)) as curtotal ,DATE_FORMAT(a.DocDueDate,'%Y.%m.%d %H:%i') as DocDueDate,DATE_FORMAT(a.DocDate,'%Y.%m.%d') as DocDate,a.U_ShipName,b.Fax,a.U_YGMD,a.Address2,a.U_YSQX,a.BnkAccount,f.HouseBank,CONCAT(ROUND(a.U_SL,0),'%')U_SL,a.NumAtCard ");
+            str.Append(" ,a.DiscSum,a.DiscSumFC,a.DocTotalFC,a.DocCur, DATE_FORMAT(k.log_dt,'%Y.%m.%d') as logdt, a.Indicator,ROUND(IF(a.DocCur = 'RMB',a.DiscSum,(a.DiscSum/a.DocRate)),2) as DiscSumT,ROUND(a.DiscPrcnt,2) as DiscPrcnt ");
             str.AppendFormat(" FROM {0}.sale_ordr a ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_ocpr b on a.CntctCode=b.CntctCode and a.sbo_id=b.sbo_id and a.CardCode=b.CardCode ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_oslp c on a.SlpCode=c.SlpCode and a.sbo_id=c.sbo_id ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_octg d on a.GroupNum=d.GroupNum AND a.sbo_id=d.sbo_id ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_ocrd f on a.DocEntry=f.CardCode and a.sbo_id=f.sbo_id ", "nsap_bone");
-            str.AppendFormat(" left join {0}.sale_rdr1 e on a.DocEntry=e.DocEntry and a.sbo_id=e.sbo_id ", "nsap_bone");
             str.AppendFormat(" left join (select h.job_type_id,h.user_id,h.sync_stat,h.job_state,h.sbo_id,h.sbo_itf_return,DATE_FORMAT(g.log_dt,'%Y.%m.%d') as log_dt ");
             str.AppendFormat(" from {0}.wfa_job h ", "nsap_base");
             str.AppendFormat(" left join {0}.wfa_log g on h.job_id= g.job_id ", "nsap_base");
