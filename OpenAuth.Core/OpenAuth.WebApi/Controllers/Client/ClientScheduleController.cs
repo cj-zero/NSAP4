@@ -37,7 +37,7 @@ namespace OpenAuth.WebApi.Controllers.Client
         /// <param name="addClueFollowUpReq"></param>
         /// <returns></returns>
         [HttpPost]
-        [Route("AddClientFollowAsync")]
+        [Route("AddClientScheduleAsync")]
         public async Task<Infrastructure.Response> AddClientScheduleAsync(ClientSchedule clientSchedule, bool isAdd)
         {
             var response = new Infrastructure.Response();
@@ -59,7 +59,7 @@ namespace OpenAuth.WebApi.Controllers.Client
         /// <param name="CardCode"></param>
         /// <returns></returns>
         [HttpGet]
-        [Route("ClientFollowByCodeAsync")]
+        [Route("ClientScheduleByCodeAsync")]
         public async Task<Response<List<ClientSchedule>>> ClientScheduleByCodeAsync(string CardCode)
         {
             var result = new Response<List<ClientSchedule>>();
@@ -82,7 +82,7 @@ namespace OpenAuth.WebApi.Controllers.Client
         /// <param name="Id"></param>
         /// <returns></returns>
         [HttpGet]
-        [Route("DeleteFollowByCodeAsync")]
+        [Route("DeleteScheduleByCodeAsync")]
         public async Task<Response<bool>> DeleteScheduleByCodeAsync(int Id)
         {
             var result = new Response<bool>();
