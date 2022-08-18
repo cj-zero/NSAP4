@@ -211,6 +211,68 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+        /// <summary>
+        /// 技术员接工单数
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetTechnicianOrderInfo([FromQuery] QueryReportReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetTechnicianOrderInfo(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+
+        /// <summary>
+        /// 行程日报问题描述
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetProblemStatisticsInfo([FromQuery] QueryReportReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetProblemStatisticsInfo(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+        /// <summary>
+        /// 行程日报解决方案
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetSolutionStatisticsInfo([FromQuery] QueryReportReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetSolutionStatisticsInfo(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
         #endregion
 
         #region 服务呼叫报表
