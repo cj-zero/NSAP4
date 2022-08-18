@@ -356,9 +356,9 @@ namespace OpenAuth.App
                 // 线上课
                 if(teachingMethod == 1)
                 {
-                    if(endTime.AddMinutes(30)> dt)
+                    if(endTime> dt)
                     {
-                        // 存在直播不是在规定时间结束 ,依然是 直播标识 （留下半小时缓冲）
+                        // 直播标识 
                         sortValue = (int)TeacherCourseSignEnum.Living;
 
                     }else 

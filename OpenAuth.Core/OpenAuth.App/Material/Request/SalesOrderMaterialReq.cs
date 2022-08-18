@@ -36,6 +36,10 @@ namespace OpenAuth.App.Material.Request
         /// 是否有图纸文件（ Y 有 N 没有）
         /// </summary>
         public string IsDraw { get; set; }
+        /// <summary>
+        /// 排序方式（ASC DESC）
+        /// </summary>
+        public string sortorder { get; set; }
 
     }
 }

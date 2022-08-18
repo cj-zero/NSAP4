@@ -98,6 +98,27 @@ namespace OpenAuth.WebApi.Controllers.Client
             return result;
         }
 
+        /// <summary>
+        /// 添加常用语（type 0 跟进 1 日程）
+        /// </summary>
+        /// <param name="list"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("AddClientFollowPhraseAsync")]
+        public async Task<Infrastructure.Response> AddClientFollowPhraseAsync(List<ClientFollowUpPhrase> list)
+        {
+            var result = new Infrastructure.Response();
+            try
+            {
+                result = await _clientApp.AddClientFollowPhraseAsync(list);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
 
         /// <summary>
         /// 常用语列表
@@ -106,12 +127,12 @@ namespace OpenAuth.WebApi.Controllers.Client
         /// <returns></returns>
         [HttpGet]
         [Route("ClientFollowUpPhraseAsync")]
-        public async Task<Response<List<ClientFollowUpPhrase>>> ClientFollowUpPhraseAsync()
+        public async Task<Response<List<ClientFollowUpPhrase>>> ClientFollowUpPhraseAsync(int type)
         {
             var result = new Response<List<ClientFollowUpPhrase>>();
             try
             {
-                result.Result = await _clientApp.ClientFollowUpPhraseAsync();
+                result.Result = await _clientApp.ClientFollowUpPhraseAsync(type);
             }
             catch (Exception ex)
             {

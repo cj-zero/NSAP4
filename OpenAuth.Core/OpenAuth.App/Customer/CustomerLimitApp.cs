@@ -19,15 +19,21 @@ using OpenAuth.App.SignalR;
 using OpenAuth.Repository;
 using System.Data;
 using OpenAuth.Repository.Domain.Serve;
+using OpenAuth.App.Order;
+using NSAP.Entity.Client;
 
 namespace OpenAuth.App.Customer
 {
     public class CustomerLimitApp : OnlyUnitWorkBaeApp
     {
         private readonly IHubContext<MessageHub> _hubContext;
-        public CustomerLimitApp(IUnitWork unitWork, IAuth auth, IHubContext<MessageHub> hubContext) : base(unitWork, auth)
+        private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
+        private readonly ServiceBaseApp _serviceBaseApp;
+        public CustomerLimitApp(IUnitWork unitWork, IAuth auth, IHubContext<MessageHub> hubContext, ServiceSaleOrderApp serviceSaleOrderApp, ServiceBaseApp serviceBaseApp) : base(unitWork, auth)
         {
             _hubContext = hubContext;
+            _serviceSaleOrderApp = serviceSaleOrderApp;
+            _serviceBaseApp = serviceBaseApp;
         }
 
         public async Task<Infrastructure.Response> AddGroupRule(AddOrUpdateGroupRulesReq req)
@@ -868,19 +874,27 @@ namespace OpenAuth.App.Customer
                 foreach (var customer in customers)
                 {
                     DateTime? startTime = null;
-                    //查找客户最近一次的业务员变更(查找有不同业务员的客户)
-                    var acrdInfos = await UnitWork.Find<ACRD>(a => a.CardCode == customer.CardCode).Select(c => new { c.SlpCode, c.UpdateDate }).ToListAsync();
-                    var hasDiffClient = acrdInfos.Select(x => x.SlpCode).Distinct().Count() > 1;
-                    //如果有不同的业务员,则开始时间取最近一次的客户分配给业务员的时间
-                    if (hasDiffClient)
+
+                    string sql = "SELECT max(UpdateDate) UpdateDate from( select CardCode, SlpCode, min(UpdateDate) UpdateDate from (select CardCode, SlpCode, ISNULL(UpdateDate,CreateDate) UpdateDate from OCRD UNION select CardCode, SlpCode, UpdateDate from ACRD ) a GROUP BY CardCode, SlpCode) b WHERE cardcode = '" + customer.CardCode + "'";
+                    DataTable tbl = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, sql, CommandType.Text);
+                    if (tbl != null && tbl.Rows.Count != 0)
                     {
-                        startTime = UnitWork.Find<ACRD>(a => a.CardCode == customer.CardCode).Max(c => c.UpdateDate);
+                        startTime = tbl.Rows[0]["UpdateDate"].ToDateTime();
                     }
-                    //否则说明该客户的业务员无变动,取该客户的创建时间
-                    else
-                    {
-                        startTime = customer.CreateDate;
-                    }
+
+                    ////查找客户最近一次的业务员变更(查找有不同业务员的客户)
+                    //var acrdInfos = await UnitWork.Find<ACRD>(a => a.CardCode == customer.CardCode).Select(c => new { c.SlpCode, c.UpdateDate }).ToListAsync();
+                    //var hasDiffClient = acrdInfos.Select(x => x.SlpCode).Distinct().Count() > 1;
+                    ////如果有不同的业务员,则开始时间取最近一次的客户分配给业务员的时间
+                    //if (hasDiffClient)
+                    //{
+                    //    startTime = UnitWork.Find<ACRD>(a => a.CardCode == customer.CardCode).Max(c => c.UpdateDate);
+                    //}
+                    ////否则说明该客户的业务员无变动,取该客户的创建时间
+                    //else
+                    //{
+                    //    startTime = customer.CreateDate;
+                    //}
 
                     //超过规则定义的天数则放入redis中,这部分的数据是即将掉入公海,放入日期加上通知天数就是掉入公海的时间
                     if (startTime != null && (DateTime.Now - startTime).Value.Days > rule.day)
@@ -939,7 +953,7 @@ namespace OpenAuth.App.Customer
                                  on u.user_id equals s.user_id
                                  where s.sbo_id == Define.SBO_ID
                                  //&& new int[] { 0, 1 }.Contains(ud.status) //在职的员工,离职状态是2和3
-                                 && u.user_nm == "向琴琴" //取各个部门的leader的客户
+                                 && u.user_nm == "罗茹玲" //取各个部门的leader的客户
                                  select s.sale_id).Distinct().ToListAsync();
 
             //再根据销售编号查找客户
@@ -957,19 +971,26 @@ namespace OpenAuth.App.Customer
             foreach (var customer in customers)
             {
                 DateTime? startTime = null;
-                //查找客户最近一次的业务员变更(查找有不同业务员的客户)
-                var acrdInfos = await UnitWork.Find<ACRD>(a => a.CardCode == customer.CardCode).Select(c => new { c.SlpCode, c.UpdateDate }).ToListAsync();
-                var hasDiffClient = acrdInfos.Select(x => x.SlpCode).Distinct().Count() > 1;
-                //如果有不同的业务员,则开始时间取最近一次的客户分配给业务员的时间
-                if (hasDiffClient)
+                string sql = "SELECT max(UpdateDate) UpdateDate from( select CardCode, SlpCode, min(UpdateDate) UpdateDate from (select CardCode, SlpCode, ISNULL(UpdateDate,CreateDate) UpdateDate from OCRD UNION select CardCode, SlpCode, UpdateDate from ACRD ) a GROUP BY CardCode, SlpCode) b WHERE cardcode = '" + customer.CardCode + "'";
+                DataTable tbl = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, sql, CommandType.Text);
+                if (tbl != null && tbl.Rows.Count != 0)
                 {
-                    startTime = UnitWork.Find<ACRD>(a => a.CardCode == customer.CardCode).Max(c => c.UpdateDate);
+                    startTime = tbl.Rows[0]["UpdateDate"].ToDateTime();
                 }
-                //否则说明该客户的业务员无变动,取该客户的创建时间
-                else
-                {
-                    startTime = customer.CreateDate;
-                }
+
+                ////查找客户最近一次的业务员变更(查找有不同业务员的客户)
+                //var acrdInfos = await UnitWork.Find<ACRD>(a => a.CardCode == customer.CardCode).Select(c => new { c.SlpCode, c.UpdateDate }).ToListAsync();
+                //var hasDiffClient = acrdInfos.Select(x => x.SlpCode).Distinct().Count() > 1;
+                ////如果有不同的业务员,则开始时间取最近一次的客户分配给业务员的时间
+                //if (hasDiffClient)
+                //{
+                //    startTime = UnitWork.Find<ACRD>(a => a.CardCode == customer.CardCode).Max(c => c.UpdateDate);
+                //}
+                ////否则说明该客户的业务员无变动,取该客户的创建时间
+                //else
+                //{
+                //    startTime = customer.CreateDate;
+                //}
                 //超过规则定义的天数则放入redis中,这部分的数据是即将掉入公海,放入日期加上通知天数就是掉入公海的时间
                 if (startTime != null && (DateTime.Now - startTime).Value.Days > 731)
                 {
@@ -984,6 +1005,11 @@ namespace OpenAuth.App.Customer
         /// <returns></returns>
         public async Task RecoveryCustomer()
         {
+            var userInfo = _auth.GetCurrentUser();
+            if (userInfo == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
             var customerLists = new List<CustomerList>();
             //查询有哪些部门
             var depts = RedisHelper.SMembers("dept:");
@@ -1087,12 +1113,37 @@ namespace OpenAuth.App.Customer
 
             //已经掉入公海的客户,原来所属的销售员清空
             var customers = customerLists.Where(c => c.LabelIndex == 3);
-            await UnitWork.UpdateAsync<OCRD>(c => customers.Select(x => x.CustomerNo).Contains(c.CardCode), x => new OCRD
+            var cusTemp = new List<CustomerList>();
+
+            foreach (var item in customers)
             {
-                SlpCode = null
-            });
+                //修改客户的销售员和更新修改时间
+
+                string FuncID = _serviceSaleOrderApp.GetJobTypeByAddress("client/clientAssignSeller.aspx");
+
+                var loginUser = userInfo.User;
+                var userId = loginUser.User_Id.Value;
+                var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
+
+
+                clientOCRD client = new clientOCRD();
+                client.CardCode = item.CustomerNo;
+                client.SlpCode = null;
+                client.SboId = "1";         //帐套
+                byte[] job_data = ByteExtension.ToSerialize(client);
+                string job_id = _serviceSaleOrderApp.WorkflowBuild("业务伙伴分配销售员", Convert.ToInt32(FuncID), userId, job_data, "业务伙伴分配销售员", 1, "", "", 0, 0, 0, "BOneAPI", "NSAP.B1Api.BOneOCRDAssign");
+                if (int.Parse(job_id) > 0)
+                {
+                    string result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(job_id), userId, "业务伙伴分配销售员", "", 0);
+                    //如果成功,则将客户从公海中移出(如果有的话)
+                    if (result == "2")
+                    {
+                        cusTemp.Add(item);
+                    }
+                }
+            }
             //同时加入掉入记录表
-            var moveinHistorys = customers.Select(c => new CustomerMoveHistory
+            var moveinHistorys = cusTemp.Select(c => new CustomerMoveHistory
             {
                 CardCode = c.CustomerNo,
                 CardName = c.CustomerName,
