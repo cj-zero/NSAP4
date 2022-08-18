@@ -1651,7 +1651,7 @@ namespace OpenAuth.App
                         on new { b.SlpCode, b.sbo_id } equals new { SlpCode = (short?)c.SlpCode, sbo_id = c.sbo_id.Value } into bc
                         from c in bc.DefaultIfEmpty()
                         select new { a.DocEntry, a.ItemCode, ItemName = a.txtitemName, a.PlannedQty, a.CmpltQty, Finish = "", OrgName = a.U_WO_LTDW, SaleOrderNo = a.OriginAbs, c.SlpName, a.Status };
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Orgs.Any(r => r.Name.Equals("生产订单跟进")))
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("生产订单跟进")))
             {
                 query = query.Where(c => c.OrgName.Contains(loginOrg.Name));
             }

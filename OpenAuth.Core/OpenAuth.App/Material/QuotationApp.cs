@@ -4077,7 +4077,7 @@ namespace OpenAuth.App.Material
                     h.ApprovalResult,
                 }).ToListAsync();
             //销售单
-            var ordr = await UnitWork.Find<ORDR>(c => c.DocEntry == commissionOrder.SalesOrderId).Select(c => new { c.CardCode, c.CardName, c.CntctCode, c.Indicator, c.U_FPLB, c.U_SL, c.ShipToCode, c.Address, c.DocDate, c.DocDueDate, c.Comments, c.GroupNum, c.DocCur, c.DocRate, c.TotalExpns, c.DocType, WhsCode = "01", c.PartSupply }).FirstOrDefaultAsync();
+            var ordr = await UnitWork.Find<ORDR>(c => c.DocEntry == commissionOrder.SalesOrderId).Select(c => new { c.CardCode, c.CardName, c.CntctCode, c.Indicator, c.U_FPLB, c.U_SL, c.ShipToCode, c.PayToCode, c.Address, c.DocDate, c.DocDueDate, c.Comments, c.GroupNum, c.DocCur, c.DocRate, c.TotalExpns, c.DocType, WhsCode = "01", c.PartSupply }).FirstOrDefaultAsync();
             //科目余额和比率
             var balance = await AccountBalance(ordr.CardCode);
             var margeMatrials = await UnitWork.Find<QuotationMergeMaterial>(c => c.QuotationId == quaotion.Id).ToListAsync();
