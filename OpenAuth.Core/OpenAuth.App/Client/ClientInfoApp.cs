@@ -2644,13 +2644,13 @@ namespace OpenAuth.App.Client
         /// </summary>
         /// <param name="CardCode"></param>
         /// <returns></returns>
-        public async Task<List<ClientFollowUpPhrase>> ClientFollowUpPhraseAsync()
+        public async Task<List<ClientFollowUpPhrase>> ClientFollowUpPhraseAsync(int type)
         {
             var userId = _serviceBaseApp.GetUserNaspId();
             var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
             int SlpCode = Convert.ToInt16(GetUserInfoById(sboid.ToString(), userId.ToString(), "1"));
             var result = new List<ClientFollowUpPhrase>();
-            var ClientFollowUpPhrase = UnitWork.Find<ClientFollowUpPhrase>(q => q.SlpCode == SlpCode).MapToList<ClientFollowUpPhrase>();
+            var ClientFollowUpPhrase = UnitWork.Find<ClientFollowUpPhrase>(q => q.SlpCode == SlpCode && q.Type == type).MapToList<ClientFollowUpPhrase>();
             return ClientFollowUpPhrase;
         }
 
@@ -2672,12 +2672,15 @@ namespace OpenAuth.App.Client
             var userId = loginUser.User_Id.Value;
             var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
             int SlpCode = Convert.ToInt16(GetUserInfoById(sboid.ToString(), userId.ToString(), "1"));
+            int type = list[0].Type;
+            await UnitWork.DeleteAsync<ClientFollowUpPhrase>(q => q.SlpCode == SlpCode && q.Type == type);
             foreach (var item in list)
             {
                 await UnitWork.AddAsync<ClientFollowUpPhrase, int>(new ClientFollowUpPhrase
                 {
                     SlpCode = SlpCode,
                     Remark = item.Remark,
+                    Type = item.Type,
                     CreateUser = loginUser.Name,
                     CreateDate = DateTime.Now
                 });
@@ -2707,6 +2710,16 @@ namespace OpenAuth.App.Client
                 await _hubContext.Clients.User(slp.SlpName).SendAsync("ReceiveMessage", "系统", $"您有1个客户待跟进，客户名称：" + slp.CardName);
             }
 
+            var querySchedule = await (UnitWork.Find<ClientSchedule>(c => c.RemindTime >= startTime && c.RemindTime <= endTime).Select(g => new
+            {
+                SlpName = g.SlpName,
+                Title = g.Title
+            })).ToListAsync();
+            //查看有哪些业务员要发送提醒
+            foreach (var slp in querySchedule)
+            {
+                await _hubContext.Clients.User(slp.SlpName).SendAsync("ReceiveMessage", "系统", $"您有1个日程待跟进，日程标题：" + slp.Title);
+            }
         }
         #endregion
         #endregion

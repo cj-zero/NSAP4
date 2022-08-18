@@ -80,10 +80,14 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         [HttpPost]
-        public async Task<Response<bool>> Generate()
+        public async Task<Response<bool>> Generate(string loginfo ="")
         {
+
+
             var loginContext = _authUtil.GetCurrentUser();
             var loginOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).FirstOrDefault();
+            Log.Logger.Information($"校准证书上传，阶段：{loginOrg.Name}，参数loginfo：{loginfo}。");
+
             if (loginOrg.Name == "T1")//校准部门 上传校准数据 走校准流程生成证书
             {
                 var file = Request.Form.Files[0];

@@ -55,6 +55,7 @@ namespace OpenAuth.App.Material
                             from t in temp.DefaultIfEmpty()
                             select new
                             {
+                                id = n.Field<int>("id"),
                                 DocEntry = n.Field<string>("DocEntry"),
                                 CardCode = n.Field<string>("CardCode"),
                                 CardName = n.Field<string>("CardName"),
@@ -99,7 +100,15 @@ namespace OpenAuth.App.Material
                 }
 
             }
-            var data = querydata.OrderBy(q => q.CardCode).Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+            if (req.sortorder == "ASC")
+            {
+                querydata = querydata.OrderBy(q => q.SubmitTime);
+            }
+            else
+            {
+                querydata = querydata.OrderByDescending(q => q.SubmitTime);
+            }
+            var data = querydata.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
             result.Data = data;
             result.Count = querydata.Count();
 

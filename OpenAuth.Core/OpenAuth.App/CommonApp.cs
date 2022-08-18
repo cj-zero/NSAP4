@@ -1197,6 +1197,179 @@ namespace OpenAuth.App
             
             return result;
         }
+
+
+        /// <summary>
+        /// 技术员接工单数
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetTechnicianOrderInfo(QueryReportReq req)
+        {
+            var now = DateTime.Now;
+            var startTime = new DateTime(now.Year, now.Month, 1);
+            var endTime = startTime.AddMonths(1);
+            if (!string.IsNullOrEmpty(req.Year) && !string.IsNullOrEmpty(req.Month))
+            {
+                startTime = Convert.ToDateTime($"{req.Year}-{req.Month}");
+                endTime = startTime.AddMonths(1);
+            }
+            var query = from t1 in UnitWork.Find<ServiceWorkOrder>(null)
+                        join t2 in UnitWork.Find<ServiceOrder>(null) on t1.ServiceOrderId equals t2.Id
+                        where t1.Status >= 7 && t2.VestInOrg == 1 && t2.Status == 2 && t1.CurrentUserId != null && t1.CreateTime > startTime && t1.CreateTime < endTime
+                        group t1 by t1.CurrentUserId into g
+                        select new
+                        {
+                            Id = g.Key.Value,
+                            Name = g.Max(a => a.CurrentUser),
+                            Num = g.Count(),
+                        };
+            var  data= query.OrderByDescending(a => a.Num).Take(30).ToList();
+
+            return new TableData
+            {
+                Data = data
+            };
+        }
+        /// <summary>
+        /// 行程日报问题描述
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetProblemStatisticsInfo(QueryReportReq req)
+        {
+            var now = DateTime.Now;
+            var startTime = new DateTime(now.Year, now.Month, 1);
+            var endTime = startTime.AddMonths(1);
+            if (!string.IsNullOrEmpty(req.Year)&& !string.IsNullOrEmpty(req.Month))
+            {
+                 startTime = Convert.ToDateTime($"{req.Year}-{req.Month}");
+                 endTime = startTime.AddMonths(1);
+            }
+            //var query = from t1 in UnitWork.Find<ServiceDailyReport>(null)
+            var query = await UnitWork.Find<ServiceDailyReport>(c => c.CreateTime > startTime && c.CreateTime < endTime).ToListAsync();
+            List<string> list = new List<string>();
+            List<string> list2 = new List<string>();
+            query.ForEach(i =>
+            {
+                if (!string.IsNullOrEmpty(i.TroubleDescription))
+                {
+                    List<DailyReport> dailies = JsonHelper.Instance.Deserialize<List<DailyReport>>(i.TroubleDescription);
+                    foreach (var item in dailies)
+                    {
+                        if (string.IsNullOrEmpty(item.code))
+                        {
+                            continue;
+                        }
+                        var code = item.code.Split("-");
+                        if (code.Count() >= 3)
+                        {
+                            list.Add(code[1]);
+                            list2.Add(code[2]);
+                        }
+                    }
+                }
+            });
+            var knowledge = await UnitWork.Find<KnowledgeBase>(c => c.IsNew == true ).ToListAsync();
+
+            var maxKnowledge = (from r in list
+                                join k in knowledge on r equals k.Code
+                                where k.Rank == 2 && list.Distinct().Contains(k.Code)
+                                select new {k.Id, k.Code, k.Name }).ToList();
+
+            var minKnowledge = (from r in list2
+                                join k in knowledge on r equals k.Code
+                                where k.Rank == 3 && list2.Distinct().Contains(k.Code)
+                                select new { k.Code, k.ParentId, k.Name }).ToList();
+
+            var data = maxKnowledge.GroupBy(a => a.Code)
+                .Select(a => new ProblemStatisticsMax { Code = a.Key, Name = a.Max(b => b.Name), Num = a.Count() ,Id =a.Max(b => b.Id)})
+                .OrderByDescending(a => a.Num)
+                .ToList();
+            foreach (var item in data)
+            {
+                item.Children = minKnowledge.Where(a => a.ParentId == item.Id)
+                    .GroupBy(a => a.Code)
+                    .Select(a => new ProblemStatisticsMin { Code = a.Key, Name = a.Max(b => b.Name), Num = a.Count() })
+                    .OrderByDescending(a => a.Num)
+                    .ToList();
+            }
+
+            return new TableData
+            {
+                Data = data
+            };
+        }
+        /// <summary>
+        /// 行程日报解决方案
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetSolutionStatisticsInfo(QueryReportReq req)
+        {
+            var now = DateTime.Now;
+            var startTime = new DateTime(now.Year, now.Month, 1);
+            var endTime = startTime.AddMonths(1);
+            if (!string.IsNullOrEmpty(req.Year) && !string.IsNullOrEmpty(req.Month))
+            {
+                startTime = Convert.ToDateTime($"{req.Year}-{req.Month}");
+                endTime = startTime.AddMonths(1);
+            }
+            //var query = from t1 in UnitWork.Find<ServiceDailyReport>(null)
+            var query = await UnitWork.Find<ServiceDailyReport>(c => c.CreateTime > startTime && c.CreateTime < endTime).ToListAsync();
+            List<string> list = new List<string>();
+            List<string> list2 = new List<string>();
+            query.ForEach(i =>
+            {
+                if (!string.IsNullOrEmpty(i.TroubleDescription))
+                {
+                    List<DailyReport> dailies = JsonHelper.Instance.Deserialize<List<DailyReport>>(i.ProcessDescription);
+                    foreach (var item in dailies)
+                    {
+                        if (string.IsNullOrEmpty(item.code))
+                        {
+                            continue;
+                        }
+                        var code = item.code.Split("-");
+                        if (code.Count() >= 2)
+                        {
+                            list.Add(code[0]);
+                            list2.Add(code[1]);
+                        }
+                    }
+                }
+            });
+            var knowledge = await UnitWork.Find<Solution>(c => c.IsNew == true).ToListAsync();
+
+            var maxKnowledge = (from r in list
+                                join k in knowledge on r equals k.Code
+                                where k.Rank == 1 && list.Distinct().Contains(k.Code)
+                                select new { k.Id, k.Code, k.Subject }).ToList();
+
+            var minKnowledge = (from r in list2
+                                join k in knowledge on r equals k.Code
+                                where k.Rank == 2 && list2.Distinct().Contains(k.Code)
+                                select new { k.Code, k.ParentId, k.Subject }).ToList();
+
+            var data = maxKnowledge.GroupBy(a => a.Code)
+                .Select(a => new ProblemStatisticsMax { Code = a.Key, Name = a.Max(b => b.Subject), Num = a.Count(), Id = a.Max(b => b.Id) })
+                .OrderByDescending(a => a.Num)
+                .ToList();
+            foreach (var item in data)
+            {
+                item.Children = minKnowledge.Where(a => a.ParentId == item.Id)
+                    .GroupBy(a => a.Code)
+                    .Select(a => new ProblemStatisticsMin { Code = a.Key, Name = a.Max(b => b.Subject), Num = a.Count() })
+                    .OrderByDescending(a => a.Num)
+                    .ToList();
+            }
+
+            return new TableData
+            {
+                Data = data
+            };
+        }
+
         #endregion
 
         #region 报销模块报表
