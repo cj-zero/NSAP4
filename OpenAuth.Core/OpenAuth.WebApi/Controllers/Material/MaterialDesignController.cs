@@ -100,8 +100,15 @@ namespace OpenAuth.WebApi.Controllers.Material
             strSql += string.Format(" LEFT JOIN {0}.store_oitm m ON d.ItemCode=m.ItemCode AND d.sbo_id=m.sbo_id", "nsap_bone");
             strSql += string.Format(" LEFT JOIN (select d1.sbo_id,d1.BaseEntry ,d1.BaseLine,SUM(d1.Quantity) as SumQuantity from {0}.sale_DLN1 d1 inner join {0}.sale_odln d0 on d0.docentry=d1.docentry and d0.sbo_id=d1.sbo_id where d0.Canceled='N' AND d1.BaseType=17 and d1.BaseEntry=" + model.DocEntry + " GROUP BY d1.sbo_id,d1.BaseEntry,d1.BaseLine) as T on d.sbo_id=T.sbo_id and d.DocEntry=T.BaseEntry and  d.LineNum=T.BaseLine  ", "nsap_bone");
             strSql += string.Format(" WHERE d.DocEntry=" + model.DocEntry + " AND d.sbo_id={0}", SboId);
-            strSql += string.Format(" and d.ItemCode REGEXP 'A605|A608|A313|A302|CT-4|CT-8|CE-4|CE-8|CE-7|CTE-4|CTE-8|CE-6|CA|CJE|CJ|CGE|CGE|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|M202|M203|MGDW|MIGW|MGW|MGDW|MHW|MIHW|MCD|MFF|MFYHS|MWL|MJZJ|MFXJ|MXFC|MFHL|MET|MRBH|MRH|MRF|MFB|MFYB|MRZH|MFYZ|MYSFR|MFSF|MYSHC|MYHF|MRSH|MRHF|MXFS|MZZ|MDCIR|MJR|MJF|MTP|MJY|MJJ|MCH|MCJ|MZJ' and d.ItemCode not in(select ItemCode from erp4_serve.manage_screening where DocEntry = " + model.DocEntry + ")");
+            strSql += string.Format(" and d.ItemCode REGEXP 'A605|A608|A313|A302|CT-4|CT-8|CE-4|CE-8|CE-7|CTE-4|CTE-8|CE-6|CA|CJE|CJ|CGE|CGE|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|M202|M203|MGDW|MIGW|MGW|MGDW|MHW|MIHW|MCD|MFF|MFYHS|MWL|MJZJ|MFXJ|MXFC|MFHL|MET|MRBH|MRH|MRF|MFB|MFYB|MRZH|MFYZ|MYSFR|MFSF|MYSHC|MYHF|MRSH|MRHF|MXFS|MZZ|MDCIR|MJR|MJF|MTP|MJY|MJJ|MCH|MCJ|MZJ' ");
 
+            string docEntry = model.DocEntry;
+            var ItemCodeList = UnitWork.Find<ManageScreening>(q => q.DocEntry == docEntry).Select(q => q.ItemCode).ToList();
+            string itemCodeStr = String.Join(",", ItemCodeList.Select(q => $"'{q}'"));
+            if (!string.IsNullOrEmpty(itemCodeStr))
+            {
+                strSql += string.Format(" and d.ItemCode not in( " + itemCodeStr + ")");
+            }
             tableData.Count = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null).Rows.Count;
 
             strSql += string.Format(" order by d.ItemCode limit {0} ,{1} ", (model.page - 1) * model.limit, model.limit);
@@ -276,22 +283,40 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <param name="itemcode"></param>
         /// <returns></returns>
         [HttpGet]
-        public List<DataTable> GetAdvanceDetail(string docentry, string itemcode)
+        public AdvanceData GetAdvanceDetail(string docentry, string itemcode)
         {
+            AdvanceData advanceData = new AdvanceData();
+
             List<DataTable> list = new List<DataTable>();
-            string sql = "  select * from ( select RecordGuid, fld005508 DocEntry, max(_System_Progress) progress,fld005506 itemCode from OBJ162 group by RecordGuid, fld005508,_System_objNBS,fld005506) a ";
+            string sql = "  select * from ( select RecordGuid, fld005508 DocEntry, max(_System_Progress) progress,fld005506 itemCode,_System_objNBS ProjectNo from OBJ162 group by RecordGuid, fld005508,_System_objNBS,fld005506) a ";
             sql += "where a.DocEntry = 'SE-" + docentry + "' and itemCode = '" + itemcode + "'";
             DataTable dts = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, sql.ToString(), CommandType.Text, null);
             list.Add(dts);
             if (dts != null && dts.Rows.Count > 0)
             {
+                advanceData.ProjectNo = dts.Rows[0]["ProjectNo"].ToString();
+                advanceData.progress = dts.Rows[0]["progress"].ToString();
                 string guid = dts.Rows[0]["RecordGuid"].ToString();
+
+                var manage_screen = UnitWork.Find<ManageScreening>(q => q.DocEntry == docentry && q.ItemCode == itemcode).FirstOrDefault();
+                if (manage_screen != null)
+                {
+                    advanceData.SubmitTime = manage_screen.SubmitTime.ToString();
+                }
                 string sql1 = "SELECt t.isFinished,T.Subject, T.Complete, t.CaseRecGuid  FROM Tasks  as t where t.isDeleted = 0  and t.CaseRecGuid = '" + guid + "' ";
                 DataTable dts1 = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, sql1.ToString(), CommandType.Text, null);
-                list.Add(dts1);
+                advanceData.dt = dts1;
             }
-            return list;
+            return advanceData;
 
+        }
+
+        public class AdvanceData
+        {
+            public string ProjectNo { get; set; }
+            public string SubmitTime { get; set; }
+            public string progress { get; set; }
+            public DataTable dt { get; set; }
         }
         #endregion
     }

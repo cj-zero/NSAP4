@@ -43,9 +43,12 @@ namespace OpenAuth.App.Customer
         {
             var result = new TableData();
 
+            List<string> SpecialCodeList = UnitWork.Find<SpecialCustomer>(q => !q.Isdelete).Select(q => q.CustomerNo).ToList();
+
             var query = from c in UnitWork.Find<OCRD>(null)
-                        .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), c => c.CardCode == req.CardCode)
-                        .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), c => c.CardName.Contains(req.CardName))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), c => c.CardCode == req.CardCode)
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), c => c.CardName.Contains(req.CardName))
+                         .Where(q => !SpecialCodeList.Contains(q.CardCode))
                         join s in UnitWork.Find<OSLP>(null)
                         .WhereIf(!string.IsNullOrWhiteSpace(req.SlpName), s => s.SlpName.Contains(req.SlpName))
                         on c.SlpCode equals s.SlpCode
@@ -175,7 +178,7 @@ namespace OpenAuth.App.Customer
                         };
             var dataquery = await query.OrderBy(q => q.CustomerNo).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
             //查询历史领取记录获取次数
-            var receivedata = await UnitWork.Find<CustomerSalerHistory>(c => query.Select(x => x.CustomerNo).Contains(c.CustomerNo))
+            var receivedata = await UnitWork.Find<CustomerSalerHistory>(c => query.Select(x => x.CustomerNo).Contains(c.CustomerNo) && c.IsSaleHistory == true)
                 .GroupBy(c => c.CustomerNo)
                 .Select(g => new
                 {
@@ -1162,7 +1165,7 @@ namespace OpenAuth.App.Customer
             {
                 for (int i = 0; i < table.Rows.Count; i++)
                 {
-                   
+
                     queryCustomerSalers.Add(new QueryCustomerSalerListResponse
                     {
                         SlpCode = Convert.ToInt32(table.Rows[i]["SlpCode"]),
@@ -1172,7 +1175,7 @@ namespace OpenAuth.App.Customer
                         remark = table.Rows[i]["remark"].ToString(),
                         CreateTime = Convert.ToDateTime(table.Rows[i]["CreateTime"]),
                         t = Convert.ToInt32((Convert.ToDateTime(table.Rows[i]["CreateTime"]) - dateStart).TotalSeconds)
-                });
+                    });
                 }
             }
 

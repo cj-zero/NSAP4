@@ -38,6 +38,10 @@ namespace OpenAuth.App.Client.Request
         /// 联系人
         /// </summary>
         public string CntctPrsn { get; set; }
+        /// <summary>
+        /// 详细地址
+        /// </summary>
+        public string address { get; set; }
     }
     /// <summary>
     /// 查询所有技术员model
