@@ -106,7 +106,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<ReturnRepair> Returnrepairs { get; set; }
 
         public virtual DbSet<ServiceRedeploy> Serviceredeploys { get; set; }
-
+        public virtual DbSet<ProductModelType> productmodeltype { get; set; }
         public virtual DbSet<SharingPartner> SharingPartners { get; set; }
         #region 展会
         public virtual DbSet<Meeting> Meeting { get; set; }
@@ -121,7 +121,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<ProductModelCategory> productmodelcategory { get; set; }
         public virtual DbSet<ProductModelSelection> productmodelselections { get; set; }
         public virtual DbSet<ProductModelSelectionInfo> productmodelselectioninfo { get; set; }
-        public virtual DbSet<ProductModelType> productmodeltype { get; set; }
+        public virtual DbSet<FromThemeRelevant> FromThemeRelevants { get; set; }
 
         #region 客户
         public virtual DbSet<CustomerList> CustomerLists { get; set; }

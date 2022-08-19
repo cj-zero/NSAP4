@@ -1144,6 +1144,9 @@ namespace OpenAuth.App
                 obj.NewestContacter = obj.Contacter;
                 obj.NewestContactTel = obj.ContactTel;
             }
+            var expect = await CalculateRatio(obj.ServiceWorkOrders.FirstOrDefault()?.FromTheme);
+            obj.ExpectServiceMode = expect.ExpectServiceMode;
+            obj.ExpectRatio = expect.ExpectRatio;
             #region 该客户在5天内已有服务ID
             //var workOrders = obj.ServiceWorkOrders.Select(s => new { s.ManufacturerSerialNumber, s.FromTheme }).ToList();
             //var msNumbers = workOrders.Select(s => s.ManufacturerSerialNumber).ToList();
@@ -2995,7 +2998,8 @@ namespace OpenAuth.App
                 CurrentUser = u.User.Name,
                 CurrentUserNsapId = u.User.Id,
                 CurrentUserId = req.CurrentUserId,
-                Status = 2
+                Status = 2,
+                AcceptTime = DateTime.Now
             });
 
             await UnitWork.AddAsync<ServiceOrderParticipationRecord>(new ServiceOrderParticipationRecord
@@ -4353,6 +4357,9 @@ namespace OpenAuth.App
             obj.FromAppUserId = req.AppUserId;
             obj.VestInOrg = 1;
             obj.FromId = 6;//APP提交
+            var expect = await CalculateRatio(obj.ServiceWorkOrders.FirstOrDefault()?.FromTheme);
+            obj.ExpectServiceMode = expect.ExpectServiceMode;
+            obj.ExpectRatio = expect.ExpectRatio;
 
             var obj2 = from a in UnitWork.Find<OCRD>(null)
                        join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode into ab
@@ -5493,7 +5500,7 @@ namespace OpenAuth.App
                 .WhereIf(req.Type == 2, s => !s.ServiceWorkOrders.All(a => a.OrderTakeType == 0) && !s.ServiceWorkOrders.All(a => a.Status >= 7))//进行中 有任意一个设备类型进行了操作
                 .WhereIf(req.Type == 3, s => s.ServiceWorkOrders.All(a => a.Status >= 7)) //已完成 所有设备类型都已完成
                  .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => s.U_SAP_ID == id || s.CustomerName.Contains(req.key) || s.ServiceWorkOrders.Any(o => o.ManufacturerSerialNumber.Contains(req.key)))
-                 //.WhereIf(req.TechOrg != 2, s => s.VestInOrg == 1 || s.VestInOrg == 3)//E3技术员可查看e3的单
+                //.WhereIf(req.TechOrg != 2, s => s.VestInOrg == 1 || s.VestInOrg == 3)//E3技术员可查看e3的单
                 .Select(s => new
                 {
                     s.Id,
@@ -5531,7 +5538,8 @@ namespace OpenAuth.App
                         o.ServiceMode,
                         o.Priority,
                         o.TransactionType,
-                        o.FromTheme
+                        o.FromTheme,
+                        o.AcceptTime,
                     }),
                     s.ProblemTypeName,
                     ProblemType = s.ServiceWorkOrders.Select(s => s.ProblemType).FirstOrDefault(),
@@ -5565,6 +5573,7 @@ namespace OpenAuth.App
                 s.MaterialCode,
                 s.ManufacturerSerialNumber,
                 s.Reamrk,
+                AcceptTime= s.MaterialInfo.Select(s => s.AcceptTime).FirstOrDefault()?.ToString("yyyy.MM.dd HH:mm"),
                 FromTheme = s.MaterialInfo.Select(s => s.FromTheme).FirstOrDefault(),
                 TransactionType = s.MaterialInfo.Select(s => s.TransactionType).FirstOrDefault(),
                 Priority = s.MaterialInfo.Select(s => s.Priority).FirstOrDefault(),
@@ -6411,6 +6420,289 @@ namespace OpenAuth.App
             result.Data = dailyExpendResp;
             return result;
         }
+
+        /// <summary>
+        /// 获取工单池
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetServiceWorkOrderPool(QueryServiceWorkOrderPoolReq req)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.AppUserId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            var serviceOrder1 = UnitWork.Find<ServiceOrder>(c => c.VestInOrg == 1 && c.AllowOrNot == 0 && c.Status == 2 && c.U_SAP_ID != null && c.Supervisor == "王海涛")
+                                    .Include(c => c.ServiceWorkOrders)
+                                    .WhereIf(req.ServiceMode != null, c => c.ExpectServiceMode == req.ServiceMode)
+                                    .Where(c => c.ServiceWorkOrders.Any(s => s.Status == 1 && s.FromType != 2))
+                                    .Select(c => new
+                                    {
+                                        Services = GetServiceFromTheme(c.ServiceWorkOrders.FirstOrDefault().FromTheme),
+                                        c.U_SAP_ID,
+                                        c.Id,
+                                        c.FromId,
+                                        c.ExpectServiceMode,
+                                        c.ExpectRatio,
+                                        Address = c.Province + c.City + c.Area + c.Addr,
+                                        c.Latitude,
+                                        c.Longitude,
+                                        Count = c.ServiceWorkOrders.Count,
+                                        c.ServiceWorkOrders.FirstOrDefault().MaterialCode,
+                                    })
+                                   ;
+            var serviceOrder = await serviceOrder1.ToListAsync();
+            //if (req.ServiceMode != null)
+            //{
+            //    serviceOrder = serviceOrder.Where(c => c.ExpectServiceMode == req.ServiceMode).ToList();
+            //}
+            var workOrder = serviceOrder.Select(c => new
+            {
+                //c.ServiceWorkOrders.FirstOrDefault()?.FromTheme,
+                //Services = GetServiceFromTheme(c.ServiceWorkOrders.FirstOrDefault().FromTheme),
+                //c.U_SAP_ID,
+                //c.Id,
+                //c.FromId,
+                //c.ExpectServiceMode,
+                //c.ExpectRatio,
+                //Address = c.Province + c.City + c.Area + c.Addr,
+                //c.ServiceWorkOrders.FirstOrDefault()?.MaterialCode,
+                //Count = c.ServiceWorkOrders.Count,
+                c.Services,
+                c.U_SAP_ID,
+                c.Id,
+                c.FromId,
+                c.ExpectServiceMode,
+                c.ExpectRatio,
+                c.Address ,
+                c.MaterialCode,
+                c.Count,
+                Distance = (req.Latitude == 0 || c.Latitude is null) ? 0 : Math.Round(NauticaUtil.GetDistance(Convert.ToDouble(c.Latitude ?? 0), Convert.ToDouble(c.Longitude ?? 0), Convert.ToDouble(req.Latitude), Convert.ToDouble(req.Longitude)) / 1000)
+            });
+            if (req.Distance != null)
+            {
+                switch (req.Distance)
+                {
+                    case 1:
+                        workOrder = workOrder.Where(c => c.Distance <= 30);
+                        break;
+                    case 2:
+                        workOrder = workOrder.Where(c => c.Distance <= 50);
+                        break;
+                    case 3:
+                        workOrder = workOrder.Where(c => c.Distance <= 100);
+                        break;
+                    case 4:
+                        workOrder = workOrder.Where(c => c.Distance <= 200);
+                        break;
+                    case 5:
+                        workOrder = workOrder.Where(c => c.Distance <= 300);
+                        break;
+                    case 6:
+                        workOrder = workOrder.Where(c => c.Distance > 300);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            workOrder = workOrder.Skip((req.page - 1) * req.limit).Take(req.limit).OrderBy(c => c.U_SAP_ID).ToList();
+            result.Data = workOrder;
+            return result;
+        }
+
+        /// <summary>
+        /// 获取工单池数量
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> ServiceWorkOrderPoolCount()
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => c.VestInOrg == 1 && c.AllowOrNot == 0 && c.Status == 2 && c.U_SAP_ID != null && c.Supervisor == "王海涛")
+                                    .Include(c => c.ServiceWorkOrders)
+                                    .Where(c => c.ServiceWorkOrders.Any(s => s.Status == 1 && s.FromType != 2))
+                                    .CountAsync();
+            result.Data = serviceOrder;
+            return result;
+        }
+
+        /// <summary>
+        /// 抢单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> TakeOrder(TakeOrder req)
+        {
+            Infrastructure.Response response = new Infrastructure.Response();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.AppUserId).Include(i => i.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            var canSendOrder = await CheckCanTakeOrder(req.AppUserId);
+            if (!canSendOrder)
+            {
+                response.Code = 500;
+                response.Message = "抱歉，您当前单据数量已到达上限，请完成单据后再进行抢单。";
+                return response;
+            }
+            var model = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId).Select(c => new { c.Id, c.Status }).ToListAsync();
+            if (model.All(c => c.Status != 1))
+            {
+                response.Code = 500;
+                response.Message = "抱歉，您慢了一步，该单据已被其他人抢走。";
+                return response;
+            }
+            try
+            {
+                var ServiceOrderModel = await UnitWork.Find<ServiceOrder>(s => s.Id == req.ServiceOrderId).FirstOrDefaultAsync();
+                if (await RedisHelper.SetNxAsync(req.ServiceOrderId.ToString(), req.ServiceOrderId.ToString()))
+                {
+                    var ids = model.Select(c => c.Id).ToList();
+
+                    await UnitWork.UpdateAsync<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId, o => new ServiceWorkOrder
+                    {
+                        CurrentUser = userInfo.User.Name,
+                        CurrentUserNsapId = userInfo.User.Id,
+                        CurrentUserId = req.AppUserId,
+                        Status = 2,
+                        AcceptTime = DateTime.Now
+                    });
+
+                    await UnitWork.AddAsync<ServiceOrderParticipationRecord>(new ServiceOrderParticipationRecord
+                    {
+                        ServiceOrderId = req.ServiceOrderId,
+                        UserId = userInfo.User.Id,
+                        SapId = ServiceOrderModel.U_SAP_ID,
+                        ReimburseType = 0,
+                        CreateTime = DateTime.Now
+
+                    });
+                    await UnitWork.SaveAsync();
+                    await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+                    {
+                        Title = "技术员接单",
+                        Details = "已为您分配专属技术员进行处理，感谢您的耐心等待",
+                        LogType = 1,
+                        ServiceOrderId = Convert.ToInt32(req.ServiceOrderId),
+                        ServiceWorkOrder = string.Join(",", ids.ToArray()),
+                        MaterialType = ""
+                    });
+
+                    await _appServiceOrderLogApp.AddAsync(new AddOrUpdateAppServiceOrderLogReq
+                    {
+                        Title = "技术员接单成功",
+                        Details = "已接单成功，请选择服务方式：远程服务或上门服务",
+                        LogType = 2,
+                        ServiceOrderId = Convert.ToInt32(req.ServiceOrderId),
+                        ServiceWorkOrder = string.Join(",", ids.ToArray()),
+                        MaterialType = ""
+                    });
+                    var WorkOrderNumbers = String.Join(',', await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId).Select(s => s.WorkOrderNumber).ToArrayAsync());
+
+                    await _ServiceOrderLogApp.BatchAddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"技术员{userInfo.User.Name}抢单{WorkOrderNumbers}", ActionType = "技术员抢单", MaterialType = "" }, ids);
+                    await SendServiceOrderMessage(new SendServiceOrderMessageReq { ServiceOrderId = Convert.ToInt32(req.ServiceOrderId), Content = $"技术员{userInfo.User.Name}抢单{WorkOrderNumbers}", AppUserId = 0 });
+                    await PushMessageToApp(req.AppUserId, "派单成功提醒", "您已被派有一个新的售后服务，请尽快处理");
+                }
+                else
+                {
+                    response.Code = 500;
+                    response.Message = "抱歉，您慢了一步，该单据已被其他人抢走。";
+                    return response;
+                }
+            }
+            catch (Exception e)
+            {
+                response.Code = 500;
+                response.Message = e.Message;
+            }
+            finally
+            {
+                await RedisHelper.DelAsync(req.ServiceOrderId.ToString());
+            }
+            return response;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public async Task FromThemeForServiceMode()
+        {
+            var query = await (from a in UnitWork.Find<ServiceOrder>(null)
+                               join b in UnitWork.Find<ServiceWorkOrder>(null) on a.Id equals b.ServiceOrderId
+                               where a.VestInOrg == 1 && a.AllowOrNot == 0 && a.Status == 2 && b.FromType == 1 && b.ServiceMode > 0 && a.CreateTime >= DateTime.Parse("2021-05-13 18:37:43")
+                               select new { a.Id, b.FromTheme, b.ServiceMode }).ToListAsync();
+
+            List<FromThemeRelevant> ps = new List<FromThemeRelevant>();
+            query.ForEach(c =>
+            {
+                var codes = GetServiceTroubleAndSolution(c.FromTheme, "code");
+                codes.ForEach(f =>
+                {
+                    ps.Add(new FromThemeRelevant { FromThemeCode = f, ServiceMode = c.ServiceMode });
+                });
+            });
+
+            var list = ps.GroupBy(c => new { c.FromThemeCode, c.ServiceMode }).Select(c => new FromThemeRelevant { FromThemeCode = c.Key.FromThemeCode, ServiceMode = c.Key.ServiceMode, Count = c.Count() }).ToList();
+
+            var origin = await UnitWork.Find<FromThemeRelevant>(null).ToListAsync();
+            await UnitWork.BatchDeleteAsync(origin.ToArray());
+            await UnitWork.BatchAddAsync(list.ToArray());
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 计算预计服务方式及占比
+        /// </summary>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        public async Task<(int? ExpectServiceMode, decimal? ExpectRatio)> CalculateRatio(string data)
+        {
+            var codes = GetServiceTroubleAndSolution(data, "code");
+            var mode = await UnitWork.Find<FromThemeRelevant>(c => codes.Contains(c.FromThemeCode)).ToListAsync();
+            var sum = mode.Sum(c => c.Count);
+            var fianl = mode.GroupBy(c => c.ServiceMode).Select(c => new { c.Key, Count = Math.Round(Convert.ToDecimal(c.Sum(s => s.Count)) / sum * 100, 2) }).OrderByDescending(c => c.Count).FirstOrDefault();
+            return (fianl?.Key, fianl?.Count);
+        }
+
+        public async Task BatchModify()
+        {
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => c.VestInOrg == 1 && c.AllowOrNot == 0 && c.Status == 2 && c.U_SAP_ID != null && c.Supervisor == "王海涛")
+                                    .Include(c => c.ServiceWorkOrders)
+                                    .Where(c => c.ServiceWorkOrders.Any(s => s.Status == 1 && s.FromType != 2))
+                                    .Select(c => new { c.Id, c.ServiceWorkOrders.FirstOrDefault().FromTheme })
+                                    .ToListAsync();
+            foreach (var item in serviceOrder)
+            {
+                var ts = await CalculateRatio(item.FromTheme);
+                await UnitWork.UpdateAsync<ServiceOrder>(c => c.Id == item.Id, c => new ServiceOrder
+                {
+                    ExpectServiceMode = ts.ExpectServiceMode,
+                    ExpectRatio = ts.ExpectRatio
+                });
+            }
+            await UnitWork.SaveAsync();
+        }
         #endregion
 
         #region<<Admin/Supervisor>>
@@ -6657,7 +6949,8 @@ namespace OpenAuth.App
                 CurrentUser = u.User.Name,
                 CurrentUserNsapId = u.User.Id,
                 CurrentUserId = req.CurrentUserId,
-                Status = 2
+                Status = 2,
+                AcceptTime = DateTime.Now
             });
 
             await UnitWork.AddAsync<ServiceOrderParticipationRecord>(new ServiceOrderParticipationRecord
@@ -6733,7 +7026,8 @@ namespace OpenAuth.App
             {
                 CurrentUser = u.User.Name,
                 CurrentUserNsapId = u.User.Id,
-                CurrentUserId = req.TechnicianId
+                CurrentUserId = req.TechnicianId,
+                AcceptTime = DateTime.Now
             });
 
             await UnitWork.AddAsync<ServiceOrderParticipationRecord>(new ServiceOrderParticipationRecord

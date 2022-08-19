@@ -185,6 +185,11 @@ namespace OpenAuth.Repository.Domain
         [Description("清算日期")]
         public System.DateTime? LiquidationDate { get; set; }
         /// <summary>
+        /// 接单时间
+        /// </summary>
+        [Description("接单时间")]
+        public System.DateTime? AcceptTime { get; set; }
+        /// <summary>
         /// 解决方案Id
         /// </summary>
         [Description("解决方案Id")]
