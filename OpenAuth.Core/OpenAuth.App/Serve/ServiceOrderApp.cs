@@ -6565,6 +6565,17 @@ namespace OpenAuth.App
                 response.Message = "抱歉，您当前单据数量已到达上限，请完成单据后再进行抢单。";
                 return response;
             }
+            var maxTime = await UnitWork.Find<ServiceWorkOrder>(c => c.CurrentUserId == req.AppUserId && c.Status < 7).OrderByDescending(c => c.AcceptTime).Select(c => c.AcceptTime).FirstOrDefaultAsync();
+            if (maxTime != null)
+            {
+                TimeSpan ts = DateTime.Now.Subtract(maxTime.Value);
+                if (ts.Days > 30)
+                {
+                    response.Code = 500;
+                    response.Message = "当前存在服务单滞留超过30天，需要完成该单据后才能抢单。";
+                    return response;
+                }
+            }
             var model = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == req.ServiceOrderId).Select(c => new { c.Id, c.Status }).ToListAsync();
             if (model.All(c => c.Status != 1))
             {
