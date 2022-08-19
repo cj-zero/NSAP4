@@ -81,7 +81,7 @@ namespace OpenAuth.Repository.Domain
         /// 上传时间
         /// </summary>
         [Description("上传时间")]
-        public System.DateTime CreateTime { get; set; }
+        public System.DateTime? CreateTime { get; set; }
 
         /// <summary>
         /// 更新人

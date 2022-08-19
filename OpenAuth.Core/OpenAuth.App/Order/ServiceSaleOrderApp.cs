@@ -1051,16 +1051,16 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                     {
                         foreach (DataRow tempr in dt.Rows)
                         {
-                            foreach (DataRow item in tempt.Rows)
+                            for (int i = 0; i < tempt.Rows.Count; i++)
                             {
-                                if (item["ItemCode"].ToString().Equals(tempr["ItemCode"].ToString()))
+                                if (tempt.Rows[i]["ItemCode"].ToString().Equals(tempr["ItemCode"].ToString()))
                                 {
-                                    tempr["OnHand"] = tempt.Rows[0]["OnHand"] == null ? 0 : tempt.Rows[0]["OnHand"];
-                                    tempr["SumOnHand"] = tempt.Rows[0]["SumOnHand"] == null ? 0 : tempt.Rows[0]["SumOnHand"];
-                                    tempr["IsCommited"] = tempt.Rows[0]["IsCommited"] == null ? 0 : tempt.Rows[0]["IsCommited"];
-                                    tempr["OnOrder"] = tempt.Rows[0]["OnOrder"] == null ? 0 : tempt.Rows[0]["OnOrder"];
-                                    tempr["OnAvailable"] = tempt.Rows[0]["OnAvailable"] == null ? 0 : tempt.Rows[0]["OnAvailable"];
-                                    tempr["Available"] = tempt.Rows[0]["Available"] == null ? 0 : tempt.Rows[0]["Available"];
+                                    tempr["OnHand"] = tempt.Rows[i]["OnHand"] == null ? 0 : tempt.Rows[i]["OnHand"];
+                                    tempr["SumOnHand"] = tempt.Rows[i]["SumOnHand"] == null ? 0 : tempt.Rows[i]["SumOnHand"];
+                                    tempr["IsCommited"] = tempt.Rows[i]["IsCommited"] == null ? 0 : tempt.Rows[i]["IsCommited"];
+                                    tempr["OnOrder"] = tempt.Rows[i]["OnOrder"] == null ? 0 : tempt.Rows[i]["OnOrder"];
+                                    tempr["OnAvailable"] = tempt.Rows[i]["OnAvailable"] == null ? 0 : tempt.Rows[i]["OnAvailable"];
+                                    tempr["Available"] = tempt.Rows[i]["Available"] == null ? 0 : tempt.Rows[i]["Available"];
                                     break;
                                 }
                             }
