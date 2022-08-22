@@ -182,27 +182,18 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             List<int> appUserIds = new List<int>();
-            result.Data = await (from a in UnitWork.Find<classroom_teacher_course>(null)
-                                 join b in UnitWork.Find<classroom_teacher_apply_log>(null) on a.AppUserId equals b.AppUserId
-                                 select new { b.Name, a.Id, a.ForTheCrowd, a.Title, a.TeachingMethod, a.TeachingAddres, a.StartTime, a.EndTime, a.VideoUrl, a.AuditState, a.CreateTime })
-                .WhereIf(!string.IsNullOrWhiteSpace(userName), c => c.Name.Contains(userName))
-                .WhereIf(!string.IsNullOrWhiteSpace(title), c => c.Title.Contains(title))
-                .WhereIf(startTime != null, c => c.StartTime >= startTime)
-                .WhereIf(endTime != null, c => c.StartTime <= endTime)
-                .WhereIf(auditState != null && auditState != 0, c => c.AuditState == auditState)
-                .OrderByDescending(c => c.Id)
+            var query = (from a in UnitWork.Find<classroom_teacher_course>(null)
+                               join b in UnitWork.Find<classroom_teacher_apply_log>(null) on a.AppUserId equals b.AppUserId
+                               select new { b.Name, a.Id, a.ForTheCrowd, a.Title, a.TeachingMethod, a.TeachingAddres, a.StartTime, a.EndTime, a.VideoUrl, a.AuditState, a.CreateTime, a.IsEnable })
+                 .WhereIf(!string.IsNullOrWhiteSpace(userName), c => c.Name.Contains(userName))
+                 .WhereIf(!string.IsNullOrWhiteSpace(title), c => c.Title.Contains(title))
+                 .WhereIf(startTime != null, c => c.StartTime >= startTime)
+                 .WhereIf(endTime != null, c => c.StartTime <= endTime)
+                 .WhereIf(auditState != null && auditState != 0, c => c.AuditState == auditState);
+            result.Data= await query.OrderByDescending(c => c.Id)
                 .Skip((pageIndex - 1) * pageSize).Take(pageSize)
                 .ToListAsync();
-
-            result.Count = await (from a in UnitWork.Find<classroom_teacher_course>(null)
-                                  join b in UnitWork.Find<classroom_teacher_apply_log>(null) on a.AppUserId equals b.AppUserId
-                                  select new { b.Name, a.Id, a.ForTheCrowd, a.Title, a.TeachingMethod, a.TeachingAddres, a.StartTime, a.EndTime, a.VideoUrl, a.AuditState, a.CreateTime })
-                .WhereIf(!string.IsNullOrWhiteSpace(userName), c => c.Name.Contains(userName))
-                .WhereIf(!string.IsNullOrWhiteSpace(title), c => c.Title.Contains(title))
-                .WhereIf(startTime != null, c => c.StartTime >= startTime)
-                .WhereIf(endTime != null, c => c.StartTime <= endTime)
-                .WhereIf(auditState != null && auditState != 0, c => c.AuditState == auditState)
-                .CountAsync();
+            result.Count = await query.CountAsync();
             return result;
         }
 
@@ -270,8 +261,11 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var query = await UnitWork.Find<classroom_teacher_course>(null).FirstOrDefaultAsync(c => c.Id == req.Id);
-            await UnitWork.DeleteAsync(query);
-            await UnitWork.SaveAsync();
+            if (query!=null)
+            {
+                await UnitWork.DeleteAsync(query);
+                await UnitWork.SaveAsync();
+            }
             return result;
         }
         /// <summary>

@@ -137,6 +137,8 @@ namespace OpenAuth.WebApi.Controllers.Hr
             var result = new TableData();
             try
             {
+                pageIndex = pageIndex <= 0 ? 1 : pageIndex;
+                pageSize = pageSize <= 0 ? 15 : pageSize;
                 result = await _app.TeacherCourseList(userName, title, startTime, endTime, auditState, pageIndex, pageSize);
             }
             catch (Exception e)
