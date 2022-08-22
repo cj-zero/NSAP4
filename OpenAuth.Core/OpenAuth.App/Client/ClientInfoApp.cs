@@ -2443,7 +2443,7 @@ namespace OpenAuth.App.Client
                 }
             }
             //如果是这个原因,则加入黑名单
-            if (req.Remark == "公司已注销")
+            if (req.Remark == "公司已注销"|| req.Remark == "失信客户")
             {
                 using var tran = UnitWork.GetDbContext<CustomerList>().Database.BeginTransaction();
                 try
