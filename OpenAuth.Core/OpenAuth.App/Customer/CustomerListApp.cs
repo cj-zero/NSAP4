@@ -1152,8 +1152,8 @@ namespace OpenAuth.App.Customer
                     movein_type = "创建",
                     remark = "",
                     CreateTime = Convert.ToDateTime(addtable.Rows[0]["sync_dt"]),
-                    t = Convert.ToInt32((Convert.ToDateTime(addtable.Rows[0]["sync_dt"]) - dateStart).TotalSeconds)
-                });
+                    t = (Convert.ToDateTime(addtable.Rows[0]["sync_dt"]) - dateStart).TotalSeconds.ToString()
+                }); 
             }
 
             //查询客户领取掉落记录表
@@ -1174,7 +1174,7 @@ namespace OpenAuth.App.Customer
                         movein_type = table.Rows[i]["movein_type"].ToString(),
                         remark = table.Rows[i]["remark"].ToString(),
                         CreateTime = Convert.ToDateTime(table.Rows[i]["CreateTime"]),
-                        t = Convert.ToInt32((Convert.ToDateTime(table.Rows[i]["CreateTime"]) - dateStart).TotalSeconds)
+                        t = (Convert.ToDateTime(table.Rows[i]["CreateTime"]) - dateStart).TotalSeconds.ToString()
                     });
                 }
             }
