@@ -20,4 +20,13 @@ namespace OpenAuth.App.Request
         /// </summary>
         public int Type { get; set; }
     }
+
+    public class TakeOrder
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        public int AppUserId { get; set; }
+        public int ServiceOrderId { get; set; }
+    }
 }

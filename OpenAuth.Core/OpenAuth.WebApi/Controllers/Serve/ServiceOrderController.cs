@@ -2396,5 +2396,48 @@ namespace OpenAuth.WebApi.Controllers
             return await _serviceOrderApp.SetWorkOrderFinlish(ids);
         }
         #endregion
+
+        /// <summary>
+        /// 获取工单池
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetServiceWorkOrderPool([FromQuery]QueryServiceWorkOrderPoolReq req)
+        {
+            return await _serviceOrderApp.GetServiceWorkOrderPool(req);
+        }
+        /// <summary>
+        /// 获取工单池数量
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> ServiceWorkOrderPoolCount()
+        {
+            return await _serviceOrderApp.ServiceWorkOrderPoolCount();
+        }
+        /// <summary>
+        /// 抢单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Infrastructure.Response> TakeOrder(TakeOrder req)
+        {
+            return await _serviceOrderApp.TakeOrder(req);
+        }
+
+        [HttpGet]
+        public async Task FromThemeForServiceMode()
+        {
+            await _serviceOrderApp.FromThemeForServiceMode();
+        }
+        [HttpGet]
+        public async Task BatchModify()
+        {
+            await _serviceOrderApp.BatchModify();
+        }
+
     }
 }

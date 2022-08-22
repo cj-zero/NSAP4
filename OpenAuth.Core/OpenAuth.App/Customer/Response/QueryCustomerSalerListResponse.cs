@@ -51,7 +51,7 @@ namespace OpenAuth.App.Customer.Response
         /// <summary>
         /// 归属时长时间戳
         /// </summary>
-        public int t { get; set; }
+        public string t { get; set; }
 
         #endregion
     }

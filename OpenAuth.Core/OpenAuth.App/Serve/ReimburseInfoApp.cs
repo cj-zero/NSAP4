@@ -499,26 +499,26 @@ namespace OpenAuth.App
             };
 
             //本部门下或自己创建的服务单id
-            var currsoids = currentUser.Count > 0 ? await UnitWork.Find<ServiceWorkOrder>(c => currentUser.Contains(c.CurrentUserNsapId)).Select(c => c.ServiceOrderId).Distinct().ToListAsync() : null;
+            //var currsoids = currentUser.Count > 0 ? await UnitWork.Find<ServiceWorkOrder>(c => currentUser.Contains(c.CurrentUserNsapId)).Select(c => c.ServiceOrderId).Distinct().ToListAsync() : null;
             //根据条件过滤出来的报销单信息
             var reimburseInfoList = await reimburseInfos.Select(r => new { r.RemburseStatus, r.TotalMoney, r.ServiceOrderId }).ToListAsync();
             //已提交报销单的服务id
-            var serverOrderIds = reimburseInfoList.Select(r => r.ServiceOrderId).ToList();
-            //日费中未提交报销单的那部分(根据条件筛选出符合条件的日费,除开已提交报销单的那部分)
+            //var serverOrderIds = reimburseInfoList.Select(r => r.ServiceOrderId).ToList();
+            ////日费中未提交报销单的那部分(根据条件筛选出符合条件的日费,除开已提交报销单的那部分)
             decimal expends = 0;
-            //如果选择了条件,则四种费用都不包含日费
-            if (string.IsNullOrWhiteSpace(request.MainId) && string.IsNullOrWhiteSpace(request.CreateUserName) && string.IsNullOrWhiteSpace(request.TerminalCustomer)
-                && string.IsNullOrWhiteSpace(request.ServiceOrderId) && string.IsNullOrWhiteSpace(request.OrgName) && string.IsNullOrWhiteSpace(request.Status)
-                && request.StartDate == null && request.EndDate == null
-                && request.PaymentStartDate == null && request.PaymentEndDate == null
-                && request.CompletionStartDate == null && request.CompletionEndDate == null)
-            {
-                expends = (await UnitWork.Find<ServiceDailyExpends>(null)
-                        .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId))
-                        .WhereIf(currsoids != null, r => currsoids.Contains(r.ServiceOrderId))//不能查看全部的则查看自己或部门下的服务单关联的日费
-                        .WhereIf(currsoids == null, s => !serverOrderIds.Contains(s.ServiceOrderId))//全部日费
-                        .SumAsync(s => s.TotalMoney)).Value;
-            }
+            ////如果选择了条件,则四种费用都不包含日费
+            //if (string.IsNullOrWhiteSpace(request.MainId) && string.IsNullOrWhiteSpace(request.CreateUserName) && string.IsNullOrWhiteSpace(request.TerminalCustomer)
+            //    && string.IsNullOrWhiteSpace(request.ServiceOrderId) && string.IsNullOrWhiteSpace(request.OrgName) && string.IsNullOrWhiteSpace(request.Status)
+            //    && request.StartDate == null && request.EndDate == null
+            //    && request.PaymentStartDate == null && request.PaymentEndDate == null
+            //    && request.CompletionStartDate == null && request.CompletionEndDate == null)
+            //{
+            //    expends = (await UnitWork.Find<ServiceDailyExpends>(null)
+            //            .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => UserIds.Contains(r.CreateUserId))
+            //            .WhereIf(currsoids != null, r => currsoids.Contains(r.ServiceOrderId))//不能查看全部的则查看自己或部门下的服务单关联的日费
+            //            .WhereIf(currsoids == null, s => !serverOrderIds.Contains(s.ServiceOrderId))//全部日费
+            //            .SumAsync(s => s.TotalMoney)).Value;
+            //}
             //总费用 = 已提交报销的部分 + 未提交报销的部分(在日费，但不在报销单中的那部分)
             var totalmoney = reimburseInfoList.Sum(r => r.TotalMoney) + expends;
             var havepaid = reimburseInfoList.Where(r => r.RemburseStatus == 9).Sum(r => r.TotalMoney);

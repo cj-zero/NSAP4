@@ -259,6 +259,14 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("是否允许服务")]
         public int AllowOrNot { get; set; }
+        /// <summary>
+        /// 预计服务方式
+        /// </summary>
+        public int? ExpectServiceMode { get; set; }
+        /// <summary>
+        /// 预计服务方式占比
+        /// </summary>
+        public decimal? ExpectRatio { get; set; }
 
         /// <summary>
         /// 接单员部门
@@ -275,7 +283,7 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [NotMapped]
         public string SuperVisorDept { get; set; }
-        
+
         /// <summary>
         /// 服务单关联的工单
         /// </summary>

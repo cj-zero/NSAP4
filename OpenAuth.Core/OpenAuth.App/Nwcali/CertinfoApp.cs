@@ -1651,7 +1651,7 @@ namespace OpenAuth.App
                         on new { b.SlpCode, b.sbo_id } equals new { SlpCode = (short?)c.SlpCode, sbo_id = c.sbo_id.Value } into bc
                         from c in bc.DefaultIfEmpty()
                         select new { a.DocEntry, a.ItemCode, ItemName = a.txtitemName, a.PlannedQty, a.CmpltQty, Finish = "", OrgName = a.U_WO_LTDW, SaleOrderNo = a.OriginAbs, c.SlpName, a.Status };
-            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Orgs.Any(r => r.Name.Equals("生产订单跟进")))
+            if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("生产订单跟进")))
             {
                 query = query.Where(c => c.OrgName.Contains(loginOrg.Name));
             }
@@ -1777,29 +1777,6 @@ namespace OpenAuth.App
                 c.NwcailOperator = nwcail.NwcailOperator;
                 c.NwcailTime = nwcail.NwcailTime;
             });
-            //var data = schedule.Select(c =>
-            //{
-            //    var nwcail = c.NwcailStatus != 2 ? CheckCalibration(c.GeneratorCode) : (c.NwcailStatus, c.NwcailOperatorId, c.NwcailOperator, c.NwcailTime);
-            //    var device = c.DeviceStatus != 3 ? BakingMachine(c.DocEntry.Value, c.GeneratorCode) : (c.DeviceStatus, c.DeviceOperatorId, c.DeviceOperator, c.DeviceTime);
-            //    return new ProductionSchedule
-            //    {
-            //        Id = c.Id,
-            //        DocEntry = c.DocEntry,
-            //        GeneratorCode = c.GeneratorCode,
-            //        ProductionStatus = c.ProductionStatus,
-            //        DeviceStatus = device.DeviceStatus,
-            //        DeviceOperatorId = device.DeviceOperatorId,
-            //        DeviceOperator = device.DeviceOperator,
-            //        DeviceTime = device.DeviceTime,
-            //        NwcailStatus = nwcail.NwcailStatus,
-            //        NwcailOperatorId = nwcail.NwcailOperatorId,
-            //        NwcailOperator = nwcail.NwcailOperator,
-            //        NwcailTime = nwcail.NwcailTime,
-            //        ReceiveLocation = c.ReceiveLocation,
-            //        ReceiveStatus = c.ReceiveStatus,
-            //        SortNo = c.SortNo
-            //    };
-            //} );
 
             await UnitWork.BatchUpdateAsync(schedule.ToArray());
             await UnitWork.SaveAsync();
@@ -1813,7 +1790,22 @@ namespace OpenAuth.App
             }
 
             result.Count = schedule.Count();
-            result.Data = schedule.OrderBy(c => c.SortNo).Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+            result.Data = schedule.Select(c=>new 
+            {
+                c.GeneratorCode,
+                c.ProductionStatus,
+                c.DeviceOperator,
+                c.DeviceStatus,
+                DeviceTime=c.DeviceTime?.ToString("yyyy.MM.dd HH:mm"),
+                c.NwcailStatus ,
+                c.NwcailOperator ,
+                NwcailTime = c.NwcailTime?.ToString("yyyy.MM.dd HH:mm"),
+                c.ReceiveNo,
+                c.ReceiveOperator,
+                c.ReceiveStatus,
+                ReceiveTime=c.ReceiveTime?.ToString("yyyy.MM.dd HH:mm"),
+                c.SortNo
+            }).OrderBy(c => c.SortNo).Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
             return result;
         }
 

@@ -85,6 +85,7 @@ namespace OpenAuth.App.Client
                 info.StartDate = clientSchedule.StartDate;
                 info.EndDate = clientSchedule.EndDate;// NextFollowTime;
                 info.Participants = clientSchedule.Participants;
+                info.RemindType = clientSchedule.RemindType;
                 info.RemindTime = clientSchedule.RemindTime;
                 info.ScheduleType = clientSchedule.ScheduleType;
                 info.ScheduleRemark = clientSchedule.ScheduleRemark;
