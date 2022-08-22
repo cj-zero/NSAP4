@@ -65,6 +65,10 @@ namespace OpenAuth.Repository.Domain
         /// 是否已换算经验值
         /// </summary>
         public bool IsConversion { get; set; }
+        /// <summary>
+        /// 是否启用（0:禁用 1:启用）
+        /// </summary>
+        public bool IsEnable { get; set; }
 
         /// <summary>
         /// 

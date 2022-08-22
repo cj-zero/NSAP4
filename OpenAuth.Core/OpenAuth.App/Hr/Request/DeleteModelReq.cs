@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenAuth.App.Hr.Request
+namespace OpenAuth.App.Hr
 {
     /// <summary>
     /// 删除请求

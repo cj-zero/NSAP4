@@ -89,12 +89,12 @@ namespace OpenAuth.App
             }
             await UnitWork.UpdateAsync(query);
             await UnitWork.SaveAsync();
-            if (req.auditState == 3 || req.auditState==2)
+            if (req.auditState == 3 || req.auditState == 2)
             {
                 try
                 {
                     string title = "讲师申请";
-                    string content = req.auditState == 3?"讲师申请失败!": "讲师申请成功!";
+                    string content = req.auditState == 3 ? "讲师申请失败!" : "讲师申请成功!";
                     string payload = "{\"urlType\":1,\"url\":\"/pages/afterSale/course/publishCenter\"}";
                     var str = _helper.Post(new
                     {
@@ -261,8 +261,37 @@ namespace OpenAuth.App
             await UnitWork.SaveAsync();
             return result;
         }
-
-
+        /// <summary>
+        /// 删除讲师开课课程
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> DeleteTeacherCourse(DeleteModelReq<int> req)
+        {
+            var result = new TableData();
+            var query = await UnitWork.Find<classroom_teacher_course>(null).FirstOrDefaultAsync(c => c.Id == req.Id);
+            await UnitWork.DeleteAsync(query);
+            await UnitWork.SaveAsync();
+            return result;
+        }
+        /// <summary>
+        /// 讲师开课课程启用禁用
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> EnOrDisTeacherCourse(DeleteModelReq<int> req)
+        {
+            var result = new TableData();
+            var query = await UnitWork.Find<classroom_teacher_course>(null).FirstOrDefaultAsync(c => c.Id == req.Id);
+            if (query != null)
+            {
+                var flag = query.IsEnable == true ? false : true;
+                query.IsEnable = flag;
+            }
+            await UnitWork.UpdateAsync(query);
+            await UnitWork.SaveAsync();
+            return result;
+        }
         /// <summary>
         /// 讲师经验值计算
         /// </summary>
@@ -270,9 +299,9 @@ namespace OpenAuth.App
         public async Task<TableData> CalculateTeacherExperience()
         {
             var result = new TableData();
-            DateTime dt=DateTime.Now;
+            DateTime dt = DateTime.Now;
             var ids = await UnitWork.Find<classroom_teacher_apply_log>(null).GroupBy(c => c.AppUserId).Select(c => c.Max(c => c.Id)).ToListAsync();
-            var teacherList = await UnitWork.Find<classroom_teacher_apply_log>(null).Where(c => ids.Contains(c.Id) && c.AuditState == 2 && c.Grade!=7).ToListAsync();
+            var teacherList = await UnitWork.Find<classroom_teacher_apply_log>(null).Where(c => ids.Contains(c.Id) && c.AuditState == 2 && c.Grade != 7).ToListAsync();
             var teacherIds = teacherList.Select(c => c.AppUserId).ToList();
             var teacherCourseList = await UnitWork.Find<classroom_teacher_course>(null).Where(c => teacherIds.Contains(c.AppUserId) && c.IsConversion == false && c.AuditState == 2 && c.EndTime <= dt).ToListAsync();
             foreach (var item in teacherList)
@@ -280,11 +309,11 @@ namespace OpenAuth.App
                 var minutesList = teacherCourseList.Where(c => c.AppUserId == item.AppUserId).Select(c => new { totalMinutes = (c.EndTime - c.StartTime).TotalMinutes }).ToList();
                 var totalminutes = minutesList.Count <= 0 ? 0 : minutesList.Sum(c => c.totalMinutes);
                 item.Experience += (int)totalminutes;
-                if (item.Experience<=300)
+                if (item.Experience <= 300)
                 {
                     item.Grade = 1;
                 }
-                else if (item.Experience <= 800 && item.Experience>=301)
+                else if (item.Experience <= 800 && item.Experience >= 301)
                 {
                     item.Grade = 2;
                 }
@@ -305,7 +334,7 @@ namespace OpenAuth.App
                     item.Grade = 6;
                 }
             }
-            teacherCourseList.ForEach(c =>c.IsConversion = true);
+            teacherCourseList.ForEach(c => c.IsConversion = true);
             await UnitWork.BatchUpdateAsync(teacherList.ToArray());
             await UnitWork.BatchUpdateAsync(teacherCourseList.ToArray());
             await UnitWork.SaveAsync();
@@ -428,6 +457,7 @@ namespace OpenAuth.App
             model.AuditState = 1;
             model.CreateTime = DateTime.Now;
             model.IsConversion = false;
+            model.IsEnable = true;
             await UnitWork.AddAsync<classroom_teacher_course, int>(model);
             await UnitWork.SaveAsync();
             return result;
@@ -530,7 +560,7 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var query = await UnitWork.Find<classroom_teacher_apply_log>(null)
-                .Where(c => c.AuditState == 2 && c.Grade!=7)
+                .Where(c => c.AuditState == 2 && c.Grade != 7)
                 .Select(c => new { c.Name, c.BeGoodAtTerritory, c.CanTeachCourse, c.Grade, c.Experience, c.AppUserId, c.HeaderImg }).OrderByDescending(c => c.Experience)
                 .ToListAsync();
             object myHonor = null;
