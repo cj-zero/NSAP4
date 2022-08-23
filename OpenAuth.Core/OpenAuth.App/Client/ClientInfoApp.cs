@@ -387,7 +387,7 @@ namespace OpenAuth.App.Client
                         tableName.Append(@" LEFT JOIN OQUT AS q on A.CardCode = q.CardCode ");
                         tableName.Append(" WHERE q.CardCode IS NULL ");
                         //并且在历史归属表中存在但是公海中不存在的客户(说明已被领取)
-                        var cardCodes = (from h in UnitWork.Find<CustomerSalerHistory>(null)
+                        var cardCodes = (from h in UnitWork.Find<CustomerSalerHistory>(q => q.IsSaleHistory == true)
                                          join c in UnitWork.Find<CustomerList>(null) on h.CustomerNo equals c.CustomerNo into temp
                                          from t in temp.DefaultIfEmpty()
                                          where t.CustomerNo == null
