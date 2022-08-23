@@ -587,7 +587,12 @@ namespace OpenAuth.App
             var city = string.IsNullOrWhiteSpace(request.City) ? obj.City : request.City;
             var area = string.IsNullOrWhiteSpace(request.Area) ? obj.Area : request.Area;
             var addr = string.IsNullOrWhiteSpace(request.Addr) ? obj.Addr : request.Addr;
-           
+            if (obj.ServiceWorkOrders != null)
+            {
+                var expect = await CalculateRatio(obj.ServiceWorkOrders.FirstOrDefault()?.FromTheme);
+                obj.ExpectServiceMode = expect.ExpectServiceMode;
+                obj.ExpectRatio = expect.ExpectRatio;
+            }
             if (string.IsNullOrWhiteSpace(obj.TerminalCustomer) && string.IsNullOrWhiteSpace(obj.TerminalCustomerId))
             {
                 obj.TerminalCustomer = obj.CustomerName;
@@ -624,7 +629,9 @@ namespace OpenAuth.App
                 SupervisorId = obj.SupervisorId,
                 RecepUserName = loginContext.User.Name,
                 RecepUserId = loginContext.User.Id,
-                AllowOrNot= obj.AllowOrNot
+                AllowOrNot = obj.AllowOrNot,
+                ExpectRatio = obj.ExpectRatio,
+                ExpectServiceMode = obj.ExpectServiceMode
             });
             //获取"其他"问题类型及其子类
             var otherProblemType = await UnitWork.Find<ProblemType>(o => o.Name.Equals("其他") && string.IsNullOrWhiteSpace(o.ParentId)).FirstOrDefaultAsync();
