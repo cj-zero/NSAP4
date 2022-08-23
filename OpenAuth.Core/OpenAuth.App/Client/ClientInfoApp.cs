@@ -140,7 +140,7 @@ namespace OpenAuth.App.Client
         /// </summary>
         public DataTable SelectClientList(int limit, int page, string query, string sortname, string sortorder,
             int sboid, int userId, bool rIsViewSales, bool rIsViewSelf, bool rIsViewSelfDepartment, bool rIsViewFull,
-            int depID, string label, string contectTel, string slpName, string isReseller, int? Day, string CntctPrsn, out int rowCount)
+            int depID, string label, string contectTel, string slpName, string isReseller, int? Day, string CntctPrsn,string address, out int rowCount)
         {
             bool IsSaler = false, IsPurchase = false, IsTech = false, IsClerk = false;//业务员，采购员，技术员，文员
             string rSalCode = GetUserInfoById(sboid.ToString(), userId.ToString(), "1");
@@ -178,7 +178,11 @@ namespace OpenAuth.App.Client
             }
             if (!string.IsNullOrWhiteSpace(CntctPrsn))
             {
-                filterString.Append($" and cardcode in ( select cardcode from OCPR where name like '%{CntctPrsn}%') ");
+                filterString.Append($" and T.cardcode in ( select cardcode from OCPR where name like '%{CntctPrsn}%') ");
+            }
+            if (!string.IsNullOrWhiteSpace(address))
+            {
+                filterString.Append($" and T.cardcode in ( SELECT CardCode FROM CRD1 WHERE Building like '" + address + "') ");
             }
             //黑名单客户也不在客户列表上显示
             var blacklist = UnitWork.Find<SpecialCustomer>(c => c.Type == 0).Select(c => c.CustomerNo).ToList();
@@ -195,7 +199,7 @@ namespace OpenAuth.App.Client
                     }
                 }
 
-                filterString.Append($" and CardCode not in ({codes}) ");
+                filterString.Append($" and T.CardCode not in ({codes}) ");
             }
 
             if (!rIsViewFull)
@@ -209,13 +213,13 @@ namespace OpenAuth.App.Client
                         bool isMechanical = OCRDisSpecial(rPurCode, "2", sboid.ToString());
                         if (isMechanical)
                         {
-                            filter_str = string.Format(" (CardCode IN ('V00733','V00735','V00836') OR (SlpCode='-1' and (QryGroup2='Y' OR QryGroup3='Y')))", rPurCode);
+                            filter_str = string.Format(" (T.CardCode IN ('V00733','V00735','V00836') OR (SlpCode='-1' and (QryGroup2='Y' OR QryGroup3='Y')))", rPurCode);
 
                         }
                         else
                         {
 
-                            filter_str = string.Format(" (CardCode IN ('V00733','V00735','V00836') OR (SlpCode='-1' and QryGroup2='N')) ", rPurCode);
+                            filter_str = string.Format(" (T.CardCode IN ('V00733','V00735','V00836') OR (SlpCode='-1' and QryGroup2='N')) ", rPurCode);
                         }
                     }
 
@@ -237,13 +241,13 @@ namespace OpenAuth.App.Client
                         if (IsSaler)//业务员
                         {
                             flag = 1;
-                            filterString.AppendFormat(" (SlpCode={0} and CardCode like 'C%') ", rSalCode);
+                            filterString.AppendFormat(" (SlpCode={0} and T.CardCode like 'C%') ", rSalCode);
                         }
                         if (IsPurchase)//采购员
                         {
                             if (flag == 1)
                             {
-                                filterString.AppendFormat(" OR (SlpCode={0} and CardCode like 'V%') ", rPurCode);
+                                filterString.AppendFormat(" OR (SlpCode={0} and T.CardCode like 'V%') ", rPurCode);
                             }
                             else
                             {
@@ -253,28 +257,28 @@ namespace OpenAuth.App.Client
                                 bool isMechanical = OCRDisSpecial(rPurCode, "2", sboid.ToString());
                                 if (isMechanical)
                                 {
-                                    filter_str = string.Format(" (CardCode IN ('V00733','V00735','V00836') OR SlpCode ={0} OR ( SlpCode='-1' and (QryGroup2='Y' OR QryGroup3='Y')) ) ", rPurCode);
+                                    filter_str = string.Format(" (T.CardCode IN ('V00733','V00735','V00836') OR SlpCode ={0} OR ( SlpCode='-1' and (QryGroup2='Y' OR QryGroup3='Y')) ) ", rPurCode);
 
                                 }
                                 else
                                 {
 
-                                    filter_str = string.Format(" ( CardCode IN ('V00733','V00735','V00836') OR SlpCode ={0} OR ( SlpCode='-1' and QryGroup2='N') ) ", rPurCode);
+                                    filter_str = string.Format(" ( T.CardCode IN ('V00733','V00735','V00836') OR SlpCode ={0} OR ( SlpCode='-1' and QryGroup2='N') ) ", rPurCode);
                                 }
                                 //filterString.AppendFormat(" (SlpCode={0} OR SlpCode='-1' and CardCode like 'V%') ", rPurCode);
-                                filterString.AppendFormat(" ({0} and CardCode like 'V%') ", filter_str);
+                                filterString.AppendFormat(" ({0} and T.CardCode like 'V%') ", filter_str);
                             }
                         }
                         if (IsTech)//技术员
                         {
                             if (flag == 1)
                             {
-                                filterString.AppendFormat(" OR (DfTcnician={0} and CardCode like 'C%') ", rTcnicianCode);
+                                filterString.AppendFormat(" OR (DfTcnician={0} and T.CardCode like 'C%') ", rTcnicianCode);
                             }
                             else
                             {
                                 flag = 1;
-                                filterString.AppendFormat(" DfTcnician={0} and CardCode like 'C%' ", rTcnicianCode);
+                                filterString.AppendFormat(" DfTcnician={0} and T.CardCode like 'C%' ", rTcnicianCode);
                             }
                         }
 
@@ -287,11 +291,11 @@ namespace OpenAuth.App.Client
             {
                 if ((IsSaler || IsTech || IsClerk) && !IsPurchase)//业务员或技术员,文员
                 {
-                    filterString.Append(" AND CardCode LIKE 'C%' ");
+                    filterString.Append(" AND T.CardCode LIKE 'C%' ");
                 }
                 else if (IsPurchase && !IsSaler && !IsTech && !IsClerk)//采购员
                 {
-                    filterString.Append("AND CardCode LIKE 'V%' ");
+                    filterString.Append("AND T.CardCode LIKE 'V%' ");
                 }
             }
             if (!string.IsNullOrEmpty(sortname) && !string.IsNullOrEmpty(sortorder))
@@ -304,7 +308,7 @@ namespace OpenAuth.App.Client
                     string[] p = whereArray[i].Split(':');
                     if (!string.IsNullOrEmpty(p[1]))
                     {
-                        filterString.AppendFormat("AND {0} LIKE '%{1}%' ", p[0], p[1].Trim().FilterSQL().Replace("*", "%"));
+                        filterString.AppendFormat("AND T.{0} LIKE '%{1}%' ", p[0], p[1].Trim().FilterSQL().Replace("*", "%"));
                     }
                 }
             }
@@ -313,7 +317,7 @@ namespace OpenAuth.App.Client
             DataTable clientTable = new DataTable();
 
             if (!IsOpenSap) { filedName.Append("sbo_id,"); }
-            filedName.Append("CardCode, CardName, SlpName, Technician, CntctPrsn, Address, Phone1, Cellular,U_is_reseller, ");
+            filedName.Append("T.CardCode,T1.UpdateDate DistributionDate, CardName, SlpName, Technician, CntctPrsn, Address, Phone1, Cellular,U_is_reseller, ");
             if (rIsViewSales)
             {
                 filedName.Append("Balance,  BalanceTotal, DNotesBal, OrdersBal, OprCount, ");
@@ -322,7 +326,7 @@ namespace OpenAuth.App.Client
             {
                 filedName.Append("'****' AS Balance, '******************************' AS BalanceTotal, '****' AS DNotesBal, '****' AS OrdersBal, '****' AS OprCount, ");
             }
-            filedName.Append("CreateDate,UpdateDate , ");
+            filedName.Append("CreateDate,T.UpdateDate , ");
             filedName.Append(" validFor,validFrom,validTo,ValidComm,frozenFor,frozenFrom,frozenTo,FrozenComm ,GroupName,Free_Text");
             filedName.Append(",case when INVTotal90P>0 and Due90>0 then (Due90/INVTotal90P)*100 else 0 end as Due90Percent");
             var CardCodes = "";
@@ -383,7 +387,7 @@ namespace OpenAuth.App.Client
                         tableName.Append(@" LEFT JOIN OQUT AS q on A.CardCode = q.CardCode ");
                         tableName.Append(" WHERE q.CardCode IS NULL ");
                         //并且在历史归属表中存在但是公海中不存在的客户(说明已被领取)
-                        var cardCodes = (from h in UnitWork.Find<CustomerSalerHistory>(null)
+                        var cardCodes = (from h in UnitWork.Find<CustomerSalerHistory>(q => q.IsSaleHistory == true)
                                          join c in UnitWork.Find<CustomerList>(null) on h.CustomerNo equals c.CustomerNo into temp
                                          from t in temp.DefaultIfEmpty()
                                          where t.CustomerNo == null
@@ -421,6 +425,7 @@ namespace OpenAuth.App.Client
                 }
                 //tableName.Append("LEFT JOIN NSAP.dbo.test_kmye H ON A.CardCode=H.cardcode) T "); //科目余额总账表
                 tableName.Append(") T");
+                tableName.Append(" LEFT JOIN (SELECT CardCode, max(UpdateDate) UpdateDate from( select CardCode, SlpCode, min(UpdateDate) UpdateDate from (select CardCode, SlpCode, ISNULL(UpdateDate,CreateDate) UpdateDate from OCRD UNION select CardCode, SlpCode, UpdateDate from ACRD ) a GROUP BY CardCode, SlpCode) b  GROUP BY CardCode) T1 on T.CardCode = T1.CardCode ");
                 //tableName.Append("LEFT JOIN NSAP.dbo.biz_clerk_tech I ON A.CardCode=I.Cardcode "); //文员，技术员对照表
 
                 //modify by yangsiming @2022.06.16 调用存储过程,当sql语句太长,超过4000个字符,后面的会被截掉,造成报错
@@ -2438,7 +2443,7 @@ namespace OpenAuth.App.Client
                 }
             }
             //如果是这个原因,则加入黑名单
-            if (req.Remark == "公司已注销")
+            if (req.Remark == "公司已注销"|| req.Remark == "失信客户")
             {
                 using var tran = UnitWork.GetDbContext<CustomerList>().Database.BeginTransaction();
                 try

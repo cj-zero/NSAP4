@@ -137,6 +137,8 @@ namespace OpenAuth.WebApi.Controllers.Hr
             var result = new TableData();
             try
             {
+                pageIndex = pageIndex <= 0 ? 1 : pageIndex;
+                pageSize = pageSize <= 0 ? 15 : pageSize;
                 result = await _app.TeacherCourseList(userName, title, startTime, endTime, auditState, pageIndex, pageSize);
             }
             catch (Exception e)
@@ -180,6 +182,48 @@ namespace OpenAuth.WebApi.Controllers.Hr
             try
             {
                 result = await _app.EditTeacherCourse(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 删除讲师开课课程
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> DeleteTeacherCourse(DeleteModelReq<int> req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.DeleteTeacherCourse(req);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 讲师开课课程启用禁用
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> EnOrDisTeacherCourse(DeleteModelReq<int> req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.EnOrDisTeacherCourse(req);
             }
             catch (Exception e)
             {

@@ -413,17 +413,23 @@ namespace OpenAuth.App
             }
             var user = loginContext.User;
             var lowGuidList = model.low_Lists.Select(c => c.LowGuid).Distinct().ToList();
+
+            var OrderNo = Convert.ToInt32(model.GeneratorCode.Split("-")[1]);
+            //生产订单明细
+            var xwjCount = await UnitWork.Find<product_wor1>(null).Where(c => c.DocEntry == OrderNo && c.ItemCode.Contains("B01-XWJ")).Select(c=>c.BaseQty).FirstOrDefaultAsync();
+            var hasBindCount = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode == model.GeneratorCode).CountAsync();
+            if (hasBindCount+ lowGuidList.Count> xwjCount)
+            {
+                throw new Exception($"【{model.GeneratorCode}】共生产{xwjCount}台,已绑定{hasBindCount}台,本次绑定{lowGuidList.Count}超过生产数,请检查绑定情况!");
+            }
+
             var bindMap = await UnitWork.Find<DeviceBindMap>(null).Where(c => lowGuidList.Contains(c.LowGuid)).ToListAsync();
             if (bindMap.Count>0)
             {
                 var map_info = bindMap.FirstOrDefault();
-                throw new Exception($"存在下位机guid重复【{map_info.GeneratorCode}/{map_info.DevUid}/{map_info.LowNo}】!");
+                throw new Exception($"下位机guid【{map_info.LowGuid}】已被【{map_info.GeneratorCode}/{map_info.DevUid}/{map_info.LowNo}】绑定!");
             }
             var BindType = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode == model.GeneratorCode).Select(c => c.BindType).FirstOrDefaultAsync();
-            //if (BindType == 2)
-            //{
-            //    throw new Exception("有设备已被绑定!");
-            //}
             if (BindType == 1 && model.BindType == 2)
             {
                 throw new Exception("当前生产码已有中位机绑定,无法单独绑定下位机!");
