@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using Infrastructure.AutoMapper;
 using OpenAuth.Repository.Domain;
+using System;
 
 namespace OpenAuth.App.Request
 {
@@ -89,5 +90,10 @@ namespace OpenAuth.App.Request
         {
             OrganizationIds = string.Empty;
         }
+
+
+        public DateTime? EntryTime { get; set; }
+
+        
     }
 }

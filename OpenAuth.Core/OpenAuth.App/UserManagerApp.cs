@@ -268,7 +268,8 @@ namespace OpenAuth.App
                     Sex = requser.Sex,
                     Status = requser.Status,
                     ServiceRelations =request.ServiceRelations,
-                    CardNo = request.CardNo
+                    CardNo = request.CardNo,
+                    EntryTime = request.EntryTime
                 });
                 if (!string.IsNullOrEmpty(requser.Password))  //密码为空的时候，不做修改
                 {
