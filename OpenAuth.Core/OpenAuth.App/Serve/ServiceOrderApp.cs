@@ -4357,9 +4357,12 @@ namespace OpenAuth.App
             obj.FromAppUserId = req.AppUserId;
             obj.VestInOrg = 1;
             obj.FromId = 6;//APP提交
-            var expect = await CalculateRatio(obj.ServiceWorkOrders.FirstOrDefault()?.FromTheme);
-            obj.ExpectServiceMode = expect.ExpectServiceMode;
-            obj.ExpectRatio = expect.ExpectRatio;
+            if (obj.ServiceWorkOrders != null)
+            {
+                var expect = await CalculateRatio(obj.ServiceWorkOrders.FirstOrDefault()?.FromTheme);
+                obj.ExpectServiceMode = expect.ExpectServiceMode;
+                obj.ExpectRatio = expect.ExpectRatio;
+            }
 
             var obj2 = from a in UnitWork.Find<OCRD>(null)
                        join b in UnitWork.Find<OSLP>(null) on a.SlpCode equals b.SlpCode into ab
