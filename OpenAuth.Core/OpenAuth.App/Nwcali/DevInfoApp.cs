@@ -416,7 +416,7 @@ namespace OpenAuth.App
 
             var OrderNo = Convert.ToInt32(model.GeneratorCode.Split("-")[1]);
             //生产订单明细
-            var xwjCount = await UnitWork.Find<product_wor1>(null).Where(c => c.DocEntry == OrderNo && c.ItemCode.Contains("XWJ")).CountAsync();
+            var xwjCount = await UnitWork.Find<product_wor1>(null).Where(c => c.DocEntry == OrderNo && c.ItemCode.Contains("B01-XWJ")).Select(c=>c.BaseQty).FirstOrDefaultAsync();
             var hasBindCount = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode == model.GeneratorCode).CountAsync();
             if (hasBindCount+ lowGuidList.Count> xwjCount)
             {
@@ -427,7 +427,7 @@ namespace OpenAuth.App
             if (bindMap.Count>0)
             {
                 var map_info = bindMap.FirstOrDefault();
-                throw new Exception($"存在下位机guid重复【{map_info.GeneratorCode}/{map_info.DevUid}/{map_info.LowNo}】!");
+                throw new Exception($"下位机guid【{map_info.LowGuid}】已被【{map_info.GeneratorCode}/{map_info.DevUid}/{map_info.LowNo}】绑定!");
             }
             var BindType = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode == model.GeneratorCode).Select(c => c.BindType).FirstOrDefaultAsync();
             if (BindType == 1 && model.BindType == 2)
