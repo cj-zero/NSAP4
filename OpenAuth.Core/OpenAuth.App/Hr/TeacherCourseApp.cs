@@ -64,7 +64,7 @@ namespace OpenAuth.App
 
             // 本月开课过或者即将要开课
             recentCourse = await UnitWork.Find<classroom_teacher_course>(null)
-                .Where(c => c.AuditState == 2 && !honoraryTeacherUserId.Contains(c.AppUserId) && (c.StartTime >= dt || (c.EndTime >= startMonth && c.StartTime < dt)))
+                .Where(c => c.AuditState == 2 && c.IsEnable==true && !honoraryTeacherUserId.Contains(c.AppUserId) && (c.StartTime >= dt || (c.EndTime >= startMonth && c.StartTime < dt)))
                 .ToListAsync();
 
             if (recentCourse.Count < limt)
@@ -72,7 +72,7 @@ namespace OpenAuth.App
                 var supplementCount = limt - recentCourse.Count;
                 var courseIds = recentCourse.Select(zw => zw.Id);
                 var supplementCourse = await UnitWork.Find<classroom_teacher_course>(null)
-                .Where(c => c.AuditState == 2 && !honoraryTeacherUserId.Contains(c.AppUserId) && !courseIds.Contains(c.Id)).OrderByDescending(c => c.EndTime)
+                .Where(c => c.AuditState == 2 && c.IsEnable==true && !honoraryTeacherUserId.Contains(c.AppUserId) && !courseIds.Contains(c.Id)).OrderByDescending(c => c.EndTime)
                 .Take(supplementCount*2).ToListAsync();
                 recentCourse.AddRange(supplementCourse);
             }
@@ -116,7 +116,7 @@ namespace OpenAuth.App
  
             // 全部预告视频
             var query = (from a in UnitWork.Find<classroom_teacher_course>(null)
-                        .Where(zw => zw.AuditState == 2
+                        .Where(zw => zw.AuditState == 2 && zw.IsEnable==true
                         && (zw.StartTime > dt))
                         select a); 
 
@@ -170,6 +170,7 @@ namespace OpenAuth.App
             // 直播中(开课中)+当天结束的线下课+ 回放视频
             var query = (from a in UnitWork.Find<classroom_teacher_course>(null)
                          .Where(zw => zw.AuditState == 2 
+                         && zw.IsEnable==true
                           && ((zw.TeachingMethod == 1 && zw.StartTime < dt) 
                           || (zw.TeachingMethod == 2  &&  zw.StartTime < dt && zw.EndTime > midNight))
                           )

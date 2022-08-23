@@ -172,7 +172,7 @@ namespace OpenAuth.WebApi.Controllers.Client
             {
                 result.Data = _clientInfoApp.SelectClientList(clientListReq.limit, clientListReq.page,
                     clientListReq.query, clientListReq.sortname, clientListReq.sortorder, sboid, userId, rIsViewSales,
-                    rIsViewSelf, rIsViewSelfDepartment, rIsViewFull, depID, clientListReq.Label, clientListReq.ContectTel, clientListReq.SlpName, clientListReq.isReseller, clientListReq.Day, clientListReq.CntctPrsn, out rowCount);
+                    rIsViewSelf, rIsViewSelfDepartment, rIsViewFull, depID, clientListReq.Label, clientListReq.ContectTel, clientListReq.SlpName, clientListReq.isReseller, clientListReq.Day, clientListReq.CntctPrsn, clientListReq.address, out rowCount);
                 result.Count = rowCount;
             }
             catch (Exception ex)

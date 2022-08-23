@@ -66,7 +66,7 @@ namespace OpenAuth.App.Material
                                 SubmitTime = n.Field<DateTime>("SubmitTime"),
                                 FileUrl = n.Field<string>("FileUrl"),
                                 ProjectNo = t == null ? "" : t.Field<string>("_System_objNBS"),
-                                ProduceNo = t == null ? "" : t.Field<string>("_System_objNBS")
+                                ProduceNo = ""//t == null ? "" : t.Field<string>("_System_objNBS")
                             };
             //先把数据加载到内存
             if (!string.IsNullOrWhiteSpace(req.ProjectNo))

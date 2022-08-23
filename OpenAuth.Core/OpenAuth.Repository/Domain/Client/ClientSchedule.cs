@@ -53,6 +53,10 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public string Participants { get; set; }
         /// <summary>
+        /// 提醒类型
+        /// </summary>
+        public int? RemindType { get; set; }
+        /// <summary>
         /// 提醒时间
         /// </summary>
         public DateTime? RemindTime { get; set; }
