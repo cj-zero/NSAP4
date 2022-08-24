@@ -1959,5 +1959,47 @@ namespace OpenAuth.WebApi.Controllers
             }
             throw new Exception($"用户未配置签名。");
         }
+        /// <summary>
+        /// 校准报表
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetCalibrateReport([FromQuery] QueryCertReportReq req)
+        {
+            var result = new TableData();
+            try
+  
+            {
+                return await _nwcaliCertApp.GetCalibrateReport(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+        /// <summary>
+        /// 校准报表详情
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetCalibrateDetailReport([FromQuery] QueryCertReportReq req)
+        {
+            var result = new TableData();
+            try
+
+            {
+                return await _nwcaliCertApp.GetCalibrateDetailReport(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
     }
 }
