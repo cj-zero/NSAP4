@@ -253,7 +253,8 @@ namespace OpenAuth.App
                     Operator = c.Operator,
                     Sn = c.TesterSn,
                     FlowInstanceId = c.FlowInstanceId,
-                    RejectContent = rejectcontent
+                    RejectContent = rejectcontent,
+                    Issuer = !string.IsNullOrWhiteSpace(c.Issuer) ? c.Issuer : c.Operator
                 };
             });
             var certCount1 = await certObjs.CountAsync();
