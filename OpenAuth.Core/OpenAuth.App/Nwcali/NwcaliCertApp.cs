@@ -331,7 +331,7 @@ namespace OpenAuth.App.Nwcali
                         item.TesterSn = info.TesterSn;
                         item.Time = info.Time.ToString("yyyy-MM-dd HH:mm:ss");
                         item.Operator = info.Operator;
-                        item.GiveWitness = info.Operator;
+                        item.IsSuer = info.Issuer;
                     }
                 }
                 result.Data = shipmentCalibration;
