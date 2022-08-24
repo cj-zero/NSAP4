@@ -2669,12 +2669,12 @@ namespace OpenAuth.App
 
             #region 签名
             var us = await _userSignApp.GetUserSignList(new QueryUserSignListReq { });
-            if (baseInfo.Operator == "肖淑惠" || baseInfo.Operator == "阙勤勤")
-            {
-                var name = await UnitWork.Find<Category>(c => c.TypeId == "SYS_CalibrationCertificateSign").Select(c => c.Name).FirstOrDefaultAsync();
-                baseInfo.Operator = name;
-            }
-            var calibrationTechnician = us.Data.FirstOrDefault(u => u.UserName.Equals(baseInfo.Operator));
+            //if (baseInfo.Operator == "肖淑惠" || baseInfo.Operator == "阙勤勤")
+            //{
+            //    var name = await UnitWork.Find<Category>(c => c.TypeId == "SYS_CalibrationCertificateSign").Select(c => c.Name).FirstOrDefaultAsync();
+            //    baseInfo.Operator = name;
+            //}
+            var calibrationTechnician = us.Data.FirstOrDefault(u => u.UserName.Equals(baseInfo.Issuer));
             if (calibrationTechnician != null)
             {
                 model.CalibrationTechnician = await GetSignBase64(calibrationTechnician.PictureId);

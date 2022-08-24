@@ -50,6 +50,22 @@ namespace OpenAuth.App.Nwcali
                 baseInfo.CreateTime = DateTime.Now;
                 baseInfo.CreateUser = user.Name;
                 baseInfo.CreateUserId = user.Id;
+                var category = await UnitWork.Find<Category>(c => c.TypeId == "SYS_NwcilSignAcount" && c.Name.Contains(user.Name)).Select(c => c.DtValue).FirstOrDefaultAsync();
+                if (category != null)
+                {
+                    var uinfo = await UnitWork.Find<UserSign>(c => c.UserName == category).FirstOrDefaultAsync();
+                    if (uinfo == null)
+                    {
+                        throw new CommonException("当前出证人暂无签名图片，请确认后上传。", 400100);
+                    }
+                    baseInfo.Issuer = uinfo.UserName;
+                    baseInfo.IssuerId = uinfo.UserId;
+                }
+                else
+                {
+                    baseInfo.Issuer = user.Name;
+                    baseInfo.IssuerId = user.Id;
+                }
                 var testerModel = await UnitWork.Find<OINS>(o => o.manufSN.Equals(baseInfo.TesterSn)).Select(o => o.itemCode).ToListAsync();
                 if (testerModel != null && testerModel.Count == 1 && !testerModel.Contains("ZWJ"))
                 {
