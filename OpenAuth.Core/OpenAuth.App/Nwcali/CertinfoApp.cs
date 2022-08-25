@@ -1977,7 +1977,7 @@ namespace OpenAuth.App
                 string id = "", name = "";
                 if (user!=null)
                 {
-                    id = user.Id; name= user.Id;
+                    id = user.Id; name= user.Name;
                 }
                 await UnitWork.UpdateAsync<ProductionSchedule>(c => c.GeneratorCode == item.GeneratorCode, c => new ProductionSchedule
                 {
