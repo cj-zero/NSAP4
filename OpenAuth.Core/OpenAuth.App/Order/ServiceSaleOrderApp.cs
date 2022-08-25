@@ -4078,8 +4078,8 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 cssWeight = "normal";
                 cssSize = "13px";
                 DiscPrcnt = "含税： " + (string.IsNullOrEmpty(dtb.Rows[0][22].ToString()) || (dtb.Rows[0][22].ToString() == "0") ? " " : dtb.Rows[0][22].ToString()) + "%";
-                DiscSum = dtb.Rows[0][28].ToString() == "0.00" ? " " : "折扣金额：  " + dtb.Rows[0][28].ToString();
-                DiscTotal = dtb.Rows[0][28].ToString() == "0.00" ? " " : "总计金额：   " + dtbTotal.Rows[0][0].ToString();
+                DiscSum = dtb.Rows[0][28].ToString() == "0.00" ? " " : "折扣金额：  " + _serviceBaseApp.MoneyToCoin(dtb.Rows[0][28].ToDecimal(), 2);
+                DiscTotal = dtb.Rows[0][28].ToString() == "0.00" ? " " : "总计金额：   " + _serviceBaseApp.MoneyToCoin(dtbTotal.Rows[0][0].ToDecimal(), 2);
             }
 
             if (indicator == "01")
@@ -4130,7 +4130,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 Address2 = companyAddressData == null ? "" : companyAddressData.Description,
                 PymntGroup = string.IsNullOrEmpty(dtb.Rows[0][11].ToString()) ? " " : dtb.Rows[0][11].ToString(),
                 Comments = string.IsNullOrEmpty(dtb.Rows[0][10].ToString()) ? " " : dtb.Rows[0][10].ToString().Replace("<br>", " "),
-                DocTotal = string.IsNullOrEmpty(dtb.Rows[0][13].ToString()) ? " " : dtb.Rows[0][13].ToString(),
+                DocTotal = string.IsNullOrEmpty(dtb.Rows[0][13].ToString()) ? " " : dtb.Rows[0][13].ToString().Split(' ')[0] + " " + _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(dtb.Rows[0][13].ToString().Split(' ')[1]), 2),
                 DATEFORMAT = string.IsNullOrEmpty(dtb.Rows[0][14].ToString()) ? " " : dtb.Rows[0][14].ToString(),
                 logo = logostr,
                 QRcode = QRCoderHelper.CreateQRCodeToBase64(DocEntry),
@@ -4145,8 +4145,8 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                     Dscription = string.IsNullOrEmpty(dtbs.Rows[i][3].ToString()) ? " " : dtbs.Rows[i][3].ToString(),
                     Quantity = string.IsNullOrEmpty(dtbs.Rows[i][4].ToString()) ? " " : dtbs.Rows[i][4].ToString(),
                     unitMsr = string.IsNullOrEmpty(dtbs.Rows[i][5].ToString()) ? " " : dtbs.Rows[i][5].ToString(),
-                    Price = string.IsNullOrEmpty(dtbs.Rows[i][6].ToString()) ? " " : dtbs.Rows[i][6].ToString(),
-                    Money = string.IsNullOrEmpty(dtbs.Rows[i][7].ToString()) ? " " : dtbs.Rows[i][7].ToString()
+                    Price = string.IsNullOrEmpty(dtbs.Rows[i][6].ToString()) ? " " : _serviceBaseApp.MoneyToCoin(dtbs.Rows[i][6].ToDecimal() , 4),
+                    Money = string.IsNullOrEmpty(dtbs.Rows[i][7].ToString()) ? " " : _serviceBaseApp.MoneyToCoin(dtbs.Rows[i][7].ToDecimal(), 2)
                 };
 
                 PrintSalesQuotation.ReimburseCosts.Add(scon);
@@ -4176,7 +4176,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "PrintSalesQuotationfooter.html");
             var foottext = System.IO.File.ReadAllText(footUrl);
             foottext = foottext.Replace("@Model.Data.Chapter", Chapter);
-            foottext = foottext.Replace("@Model.Data.DocTotal", dtb.Rows[0][28].ToString() == "0.00" ? "总计金额：   " + PrintSalesQuotation.DocTotal : "折扣后金额：   " +  PrintSalesQuotation.DocTotal);
+            foottext = foottext.Replace("@Model.Data.DocTotal", dtb.Rows[0][28].ToString() == "0.00" ? "总计金额：     " +  PrintSalesQuotation.DocTotal : "折扣后金额：      " +  PrintSalesQuotation.DocTotal);
             foottext = foottext.Replace("@Model.Data.Company", companyName);
             foottext = foottext.Replace("@Model.Data.Address", companyAddressData == null ? "" : companyAddressData.Description);
             foottext = foottext.Replace("@Model.Data.Weight", cssWeight);
@@ -4214,7 +4214,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             str.AppendFormat(" left join {0}.crm_ocpr b on a.CntctCode=b.CntctCode and a.sbo_id=b.sbo_id and a.CardCode=b.CardCode ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_oslp c on a.SlpCode=c.SlpCode and a.sbo_id=c.sbo_id ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_octg d on a.GroupNum=d.GroupNum AND a.sbo_id=d.sbo_id ", "nsap_bone");
-            str.AppendFormat(" left join (select f.job_type_id,f.user_id,f.sync_stat,f.job_state,f.sbo_id,f.sbo_itf_return,DATE_FORMAT(g.log_dt,'%Y.%m.%d') as log_dt ");
+            str.AppendFormat(" left join (select f.sbo_id,f.sbo_itf_return,DATE_FORMAT(g.log_dt,'%Y.%m.%d') as log_dt ");
             str.AppendFormat(" from {0}.wfa_job f ", "nsap_base");
             str.AppendFormat(" left join {0}.wfa_log g on f.job_id= g.job_id ", "nsap_base");
             str.AppendFormat(" where sbo_itf_return = {0} and job_nm = '销售报价单' order by g.log_dt desc limit 1) h on a.sbo_id = h.sbo_id and a.DocEntry = h.sbo_itf_return", DocEntry);
@@ -10132,7 +10132,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             str.AppendFormat(" left join {0}.crm_oslp c on a.SlpCode=c.SlpCode and a.sbo_id=c.sbo_id ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_octg d on a.GroupNum=d.GroupNum AND a.sbo_id=d.sbo_id ", "nsap_bone");
             str.AppendFormat(" left join {0}.crm_ocrd f on a.DocEntry=f.CardCode and a.sbo_id=f.sbo_id ", "nsap_bone");
-            str.AppendFormat(" left join (select h.job_type_id,h.user_id,h.sync_stat,h.job_state,h.sbo_id,h.sbo_itf_return,DATE_FORMAT(g.log_dt,'%Y.%m.%d') as log_dt ");
+            str.AppendFormat(" left join (select h.sbo_id,h.sbo_itf_return,DATE_FORMAT(g.log_dt,'%Y.%m.%d') as log_dt ");
             str.AppendFormat(" from {0}.wfa_job h ", "nsap_base");
             str.AppendFormat(" left join {0}.wfa_log g on h.job_id= g.job_id ", "nsap_base");
             str.AppendFormat(" where h.sbo_itf_return = {0} and h.job_nm = '销售订单' order by g.log_dt desc limit 1) k on a.sbo_id = k.sbo_id and a.DocEntry = k.sbo_itf_return", DocEntry);
@@ -10534,13 +10534,13 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 Address2 = string.IsNullOrEmpty(dtb.Rows[0][19].ToString()) ? " " : dtb.Rows[0][19].ToString(),
                 PymntGroup = string.IsNullOrEmpty(dtb.Rows[0][11].ToString()) ? " " : dtb.Rows[0][11].ToString(),
                 Comments = string.IsNullOrEmpty(dtb.Rows[0][10].ToString()) ? " " : dtb.Rows[0][10].ToString().Replace("<br>", " "),
-                DocTotal = string.IsNullOrEmpty(dtb.Rows[0][13].ToString())? " " : (dtb.Rows[0][31].ToString() == "0.00" ? "总计金额：   " + dtb.Rows[0][13].ToString() : "折扣后金额：   " + dtb.Rows[0][13].ToString()),
+                DocTotal = string.IsNullOrEmpty(dtb.Rows[0][13].ToString())? " " : (dtb.Rows[0][31].ToString() == "0.00" ? "总计金额：   " + dtb.Rows[0][13].ToString().Split(' ')[0] + " " + _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(dtb.Rows[0][13].ToString().Split(' ')[1]), 2) : "折扣后金额：   " + dtb.Rows[0][13].ToString().Split(' ')[0] + " " + _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(dtb.Rows[0][13].ToString().Split(' ')[1]), 2)),
                 DATEFORMAT = string.IsNullOrEmpty(dtb.Rows[0][14].ToString()) ? " " : dtb.Rows[0][14].ToString(),
                 NumAtCard = string.IsNullOrEmpty(dtb.Rows[0][14].ToString()) ? " " : dtb.Rows[0][24].ToString(),
                 AcceptanceDates = string.IsNullOrEmpty(dtb.Rows[0][20].ToString()) ? " " : dtb.Rows[0][20].ToString(),
                 U_SL = string.IsNullOrEmpty(dtb.Rows[0][23].ToString()) ? " " : dtb.Rows[0][23].ToString(),
-                TAmount = (string.IsNullOrEmpty(dtTotal.Rows[0][0].ToString()) || dtb.Rows[0][31].ToString() == "0.00") ? " " : "总计金额：   " +  dtTotal.Rows[0][0].ToString(),
-                DiscSum = (string.IsNullOrEmpty(dtb.Rows[0][31].ToString()) || dtb.Rows[0][31].ToString() == "0.00") ? " " : "折扣金额：   " + dtb.Rows[0][31].ToString(),
+                TAmount = (string.IsNullOrEmpty(dtTotal.Rows[0][0].ToString()) || dtb.Rows[0][31].ToString() == "0.00") ? " " : "总计金额：   " + dtb.Rows[0][0].ToString().Split(' ')[0] + " " + _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(dtb.Rows[0][0].ToString().Split(' ')[1]), 2),
+                DiscSum = (string.IsNullOrEmpty(dtb.Rows[0][31].ToString()) || dtb.Rows[0][31].ToString() == "0.00") ? " " : "折扣金额：   " + _serviceBaseApp.MoneyToCoin(dtb.Rows[0][31].ToDecimal(), 2),
                 DisPlayStyle = (string.IsNullOrEmpty(dtb.Rows[0][31].ToString()) || dtb.Rows[0][31].ToString() == "0.00") ? "none" : "block",
                 DiscPrcnt = DiscPrcnt,
                 logo = logostr,
@@ -10558,9 +10558,8 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                     Dscription = string.IsNullOrEmpty(dtbs.Rows[i][3].ToString()) ? " " : dtbs.Rows[i][3].ToString(),
                     Quantity = string.IsNullOrEmpty(dtbs.Rows[i][4].ToString()) ? " " : dtbs.Rows[i][4].ToString(),
                     unitMsr = string.IsNullOrEmpty(dtbs.Rows[i][5].ToString()) ? " " : dtbs.Rows[i][5].ToString(),
-                    Price = string.IsNullOrEmpty(dtbs.Rows[i][6].ToString()) ? " " : dtbs.Rows[i][6].ToString(),
-                    Money = string.IsNullOrEmpty(dtbs.Rows[i][7].ToString()) ? " " : dtbs.Rows[i][7].ToString()
-
+                    Price = string.IsNullOrEmpty(dtbs.Rows[i][6].ToString()) ? " " : _serviceBaseApp.MoneyToCoin(dtbs.Rows[i][6].ToDecimal(), 4),
+                    Money = string.IsNullOrEmpty(dtbs.Rows[i][7].ToString()) ? " " : _serviceBaseApp.MoneyToCoin(dtbs.Rows[i][7].ToDecimal(), 2)
                 };
 
                 PrintSalesOrder.ReimburseCosts.Add(scon);

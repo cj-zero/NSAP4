@@ -2587,8 +2587,8 @@ namespace OpenAuth.App.Client
                 info.ImgId = clientFollowUp.ImgId;
                 info.ImgName = clientFollowUp.ImgName;
                 info.FileName = clientFollowUp.FileName;
-                clientFollowUp.UpdateUser = loginUser.User_Id.Value;
-                clientFollowUp.UpdateDate = DateTime.Now;
+                info.UpdateUser = loginUser.User_Id.Value;
+                info.UpdateDate = DateTime.Now;
                 await UnitWork.UpdateAsync<ClientFollowUp>(info);
             }
             await UnitWork.SaveAsync();
