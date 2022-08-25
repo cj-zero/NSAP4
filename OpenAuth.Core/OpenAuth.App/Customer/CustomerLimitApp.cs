@@ -19,21 +19,15 @@ using OpenAuth.App.SignalR;
 using OpenAuth.Repository;
 using System.Data;
 using OpenAuth.Repository.Domain.Serve;
-using OpenAuth.App.Order;
-using NSAP.Entity.Client;
 
 namespace OpenAuth.App.Customer
 {
     public class CustomerLimitApp : OnlyUnitWorkBaeApp
     {
         private readonly IHubContext<MessageHub> _hubContext;
-        private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
-        private readonly ServiceBaseApp _serviceBaseApp;
-        public CustomerLimitApp(IUnitWork unitWork, IAuth auth, IHubContext<MessageHub> hubContext, ServiceSaleOrderApp serviceSaleOrderApp, ServiceBaseApp serviceBaseApp) : base(unitWork, auth)
+        public CustomerLimitApp(IUnitWork unitWork, IAuth auth, IHubContext<MessageHub> hubContext) : base(unitWork, auth)
         {
             _hubContext = hubContext;
-            _serviceSaleOrderApp = serviceSaleOrderApp;
-            _serviceBaseApp = serviceBaseApp;
         }
 
         public async Task<Infrastructure.Response> AddGroupRule(AddOrUpdateGroupRulesReq req)
@@ -1005,11 +999,6 @@ namespace OpenAuth.App.Customer
         /// <returns></returns>
         public async Task RecoveryCustomer()
         {
-            var userInfo = _auth.GetCurrentUser();
-            if (userInfo == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
             var customerLists = new List<CustomerList>();
             //查询有哪些部门
             var depts = RedisHelper.SMembers("dept:");
