@@ -470,7 +470,7 @@ namespace OpenAuth.App.ContractManager
 
                     if (contractFileTypeList.Count() > 0)
                     {
-                        var contractOriginalFileList = await UnitWork.Find<UploadFile>(r => r.Id == contractFileTypeList.FirstOrDefault().ContractOriginalId).Select(u => new { u.FileName, u.Id, u.FilePath, u.FileType, u.FileSize, u.Extension }).ToListAsync();
+                        var contractOriginalFileList = await UnitWork.Find<UploadFile>(r => (contractFileTypeList.Select(r => r.ContractOriginalId)).Contains(r.Id)).Select(u => new { u.FileName, u.Id, u.FilePath, u.FileType, u.FileSize, u.Extension }).ToListAsync();
                         List<string> fileIdList = new List<string>();
                         foreach (ContractFileType item in contractFileTypeList)
                         {
@@ -1267,7 +1267,7 @@ namespace OpenAuth.App.ContractManager
         /// <param name="sqlcont">sql连接</param>
         /// <param name="sboname">sbo名称</param>
         /// <returns>成功返回数据信息，失败抛出异常信息</returns>
-        public DataTable SelectBillListInfo_ORDR(out int rowCount, SalesOrderListReq model, string type, bool ViewFull, bool ViewSelf, int UserID, int SboID, bool ViewSelfDepartment, int DepID, bool ViewCustom, bool ViewSales, string sqlcont, string sboname)
+        public DataTable SelectBillListInfo_ORDR(List<Role> roles, out int rowCount, SalesOrderListReq model, string type, bool ViewFull, bool ViewSelf, int UserID, int SboID, bool ViewSelfDepartment, int DepID, bool ViewCustom, bool ViewSales, string sqlcont, string sboname)
         {
             bool IsSql = true;
             string sortString = string.Empty;
@@ -1277,6 +1277,11 @@ namespace OpenAuth.App.ContractManager
                 sortString = string.Format("{0} {1}", model.sortname, model.sortorder.ToUpper());
 
             string dRowData = string.Empty;
+            DataTable rDataRowsSlp = _servcieSaleOrderApp.GetSboSlpCodeId(UserID, SboID);
+            if (!roles.Any(r => r.Name.Equals("管理员")))
+            {
+                filterString += string.Format(" a.SlpCode = '{0}' AND ", rDataRowsSlp.Rows[0][0].ToString());
+            }
 
             #region 搜索条件
             if (!string.IsNullOrEmpty(model.DocEntry))
@@ -1364,7 +1369,6 @@ namespace OpenAuth.App.ContractManager
             }
             else if (ViewSelf && !ViewFull && !ViewSelfDepartment)
             {
-                DataTable rDataRowsSlp = _servcieSaleOrderApp.GetSboSlpCodeId(UserID, SboID);
                 if (rDataRowsSlp.Rows.Count > 0)
                 {
                     string slpCode = rDataRowsSlp.Rows[0][0].ToString();
@@ -1713,7 +1717,7 @@ namespace OpenAuth.App.ContractManager
         /// <param name="sqlcont">数据连接</param>
         /// <param name="sboname">sbo名称</param>
         /// <returns>成功返回数据信息，失败抛出异常信息</returns>
-        public TableData SelectOrderDraftInfo(int pageSize, int pageIndex, QuerySalesQuotationReq query, string type, bool ViewFull, bool ViewSelf, int UserID, int SboID, bool ViewSelfDepartment, int DepID, bool ViewCustom, bool ViewSales, string sqlcont, string sboname)
+        public TableData SelectOrderDraftInfo(List<Role> roles, int pageSize, int pageIndex, QuerySalesQuotationReq query, string type, bool ViewFull, bool ViewSelf, int UserID, int SboID, bool ViewSelfDepartment, int DepID, bool ViewCustom, bool ViewSales, string sqlcont, string sboname)
         {
             TableData tableData = null;
             int rowCount = 0;
@@ -1734,6 +1738,12 @@ namespace OpenAuth.App.ContractManager
             }
 
             string dRowData = string.Empty;
+
+            System.Data.DataTable rDataRowsSlp = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sale_id,tech_id FROM nsap_base.sbo_user WHERE user_id={UserID} AND sbo_id={SboID}", CommandType.Text, null); ;
+            if (!roles.Any(r => r.Name.Equals("管理员")))
+            {
+                filterString += string.Format(" a.SlpCode = '{0}' AND ", rDataRowsSlp.Rows[0][0].ToString());
+            }
 
             #region 搜索条件
             //账
@@ -1889,7 +1899,6 @@ namespace OpenAuth.App.ContractManager
             }
             else if (ViewSelf && !ViewFull && !ViewSelfDepartment)
             {
-                System.Data.DataTable rDataRowsSlp = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sale_id,tech_id FROM nsap_base.sbo_user WHERE user_id={UserID} AND sbo_id={SboID}", CommandType.Text, null); ;
                 if (rDataRowsSlp.Rows.Count > 0)
                 {
                     string slpCode = rDataRowsSlp.Rows[0][0].ToString();
