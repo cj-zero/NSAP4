@@ -200,7 +200,6 @@ namespace OpenAuth.App
                     DeviceTestLog deviceTest = new DeviceTestLog();
                     deviceTest.GeneratorCode = item.GeneratorCode;
                     deviceTest.EdgeGuid = item.EdgeGuid;
-                    deviceTest.EdgeGuid = item.EdgeGuid;
                     deviceTest.BtsServerIp = item.BtsServerIp;
                     deviceTest.SrvGuid = item.SrvGuid;
                     deviceTest.MidGuid = item.MidGuid;
