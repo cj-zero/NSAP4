@@ -220,5 +220,16 @@ namespace OpenAuth.Repository.Domain
         [Description("")]
         public string UpdateUser { get; set; }
         public string FlowInstanceId { get; set; }
+        /// <summary>
+        /// 出证人
+        /// </summary>
+        [Description("")]
+        [Browsable(false)]
+        public string Issuer { get; set; }
+        /// <summary>
+        /// 出证人Id
+        /// </summary>
+        [Description("")]
+        public string IssuerId { get; set; }
     }
 }

@@ -59,5 +59,6 @@ namespace OpenAuth.App.Response
         /// </summary>
         public string RejectContent { get; set; }
         public int? IsFinish { get; set; }
+        public string Issuer { get; set; }
     }
 }
