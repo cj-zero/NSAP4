@@ -50,12 +50,12 @@ namespace OpenAuth.App.Nwcali
         {
             var payloads = Encoding.UTF8.GetString(payload);
             var obj = JsonConvert.DeserializeObject<EdgeData>(payloads);
-            int msg_type = obj == null ? 0: obj.msg_type;
-            string edge_guids = obj == null ? "":obj.edge_guid;
+            int msg_type = obj == null ? 0 : obj.msg_type;
+            string edge_guids = obj == null ? "" : obj.edge_guid;
             long upd_dt = obj.upd_dt;
             Log.Logger.Information($"{edge_guids},msg_type={msg_type}成功接收设备变更消息 upd_dt={upd_dt}!");
             string blackEdgeKey = "black_edge_list";
-            var black_edge_guids = RedisHelper.Get(blackEdgeKey) ==null?new List<string> { } : RedisHelper.Get(blackEdgeKey).Split(',').Distinct().ToList();
+            var black_edge_guids = RedisHelper.Get(blackEdgeKey) == null ? new List<string> { } : RedisHelper.Get(blackEdgeKey).Split(',').Distinct().ToList();
             if (black_edge_guids.Contains(edge_guids))
                 return true;
             if (msg_type != 1 && msg_type != 2 && msg_type != 3)
@@ -330,18 +330,14 @@ namespace OpenAuth.App.Nwcali
                                             {
                                                 foreach (var item in mid_rt.VecRt)
                                                 {
-                                                    var deviceTestLog = UnitWork.Find<DeviceTestLog>(null).Where(c => c.EdgeGuid == edge_guid && c.SrvGuid == srv_guid && c.DevUid == mid_rt.DevUid && c.UnitId == item.UnitId && c.ChlId == item.ChlId && c.TestId == item.TestId).FirstOrDefault();
-                                                    if (deviceTestLog != null)
+                                                    UnitWork.Update<DeviceTestLog>(c => c.EdgeGuid == edge_guid && c.SrvGuid == srv_guid && c.DevUid == mid_rt.DevUid && c.UnitId == item.UnitId && c.ChlId == item.ChlId && c.TestId == item.TestId, u => new DeviceTestLog
                                                     {
-                                                        deviceTestLog.Status = CheckWorkType(item.WorkType);
-                                                        deviceTestLog.ChangeStatusTime = DateTime.Now;
-                                                        deviceTestLog.StepId = (int)item.StepId;
-                                                        string v = "0x" + item.PrtCode.ToString("X8");
-                                                        deviceTestLog.CodeTxt = UnitWork.Find<DeviceTestCode>(null).Where(c => c.PrtCode == v).Select(c => c.CodeTxt).FirstOrDefault();
-                                                        deviceTestLog.PrtCode = item.PrtCode.ToString();
-                                                        UnitWork.Update(deviceTestLog);
-                                                        UnitWork.Save();
-                                                    }
+                                                        Status = CheckWorkType(item.WorkType),
+                                                        ChangeStatusTime = DateTime.Now,
+                                                        StepId = (int)item.StepId,
+                                                        CodeTxt = UnitWork.Find<DeviceTestCode>(null).Where(c => c.PrtCode == "0x" + item.PrtCode.ToString("X8")).Select(c => c.CodeTxt).FirstOrDefault(),
+                                                        PrtCode = item.PrtCode.ToString()
+                                                    });
                                                     try
                                                     {
                                                         UnitWork.Update<edge_channel>(c => c.edge_guid == edge_guid && c.srv_guid == srv_guid && c.mid_guid == mid_guid && c.dev_uid == mid_rt.DevUid && c.unit_id == item.UnitId && c.bts_id == item.ChlId, m => new edge_channel
@@ -368,7 +364,7 @@ namespace OpenAuth.App.Nwcali
                 }
                 catch (Exception ex)
                 {
-                    Log.Logger.Error($"rt订阅数据解析异常：edge_guids={edge_guid},{ex.StackTrace}");
+                    Log.Logger.Error($"rt订阅数据解析异常：edge_guids={edge_guid},{ex.Message}");
                     return false;
                 }
             }
