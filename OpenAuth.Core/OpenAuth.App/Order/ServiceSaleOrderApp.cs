@@ -10539,7 +10539,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 NumAtCard = string.IsNullOrEmpty(dtb.Rows[0][14].ToString()) ? " " : dtb.Rows[0][24].ToString(),
                 AcceptanceDates = string.IsNullOrEmpty(dtb.Rows[0][20].ToString()) ? " " : dtb.Rows[0][20].ToString(),
                 U_SL = string.IsNullOrEmpty(dtb.Rows[0][23].ToString()) ? " " : dtb.Rows[0][23].ToString(),
-                TAmount = (string.IsNullOrEmpty(dtTotal.Rows[0][0].ToString()) || dtb.Rows[0][31].ToString() == "0.00") ? " " : "总计金额：   " + dtb.Rows[0][0].ToString().Split(' ')[0] + " " + _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(dtb.Rows[0][0].ToString().Split(' ')[1]), 2),
+                TAmount = (string.IsNullOrEmpty(dtTotal.Rows[0][0].ToString()) || dtb.Rows[0][31].ToString() == "0.00") ? " " : "总计金额：   " + dtTotal.Rows[0][0].ToString().Split(' ')[0] + " " + _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(dtTotal.Rows[0][0].ToString().Split(' ')[1]), 2),
                 DiscSum = (string.IsNullOrEmpty(dtb.Rows[0][31].ToString()) || dtb.Rows[0][31].ToString() == "0.00") ? " " : "折扣金额：   " + _serviceBaseApp.MoneyToCoin(dtb.Rows[0][31].ToDecimal(), 2),
                 DisPlayStyle = (string.IsNullOrEmpty(dtb.Rows[0][31].ToString()) || dtb.Rows[0][31].ToString() == "0.00") ? "none" : "block",
                 DiscPrcnt = DiscPrcnt,
