@@ -32,106 +32,6 @@ namespace OpenAuth.App
         }
 
 
-        ///// <summary>
-        ///// 边缘计算在线未绑定/已绑定未测试设备列表
-        ///// </summary>
-        ///// <param name="page"></param>
-        ///// <param name="limit"></param>
-        ///// <returns></returns>
-        ///// <exception cref="CommonException"></exception>
-        //public async Task<TableData> OnlineDeviceList(int page, int limit)
-        //{
-        //    var result = new TableData();
-        //    var loginContext = _auth.GetCurrentUser();
-        //    if (loginContext == null)
-        //    {
-        //        throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-        //    }
-        //    var departmentList = loginContext.Orgs.Select(c => c.Name).ToList();
-        //    var onlineList = await (from a in UnitWork.Find<edge>(null)
-        //                            join b in UnitWork.Find<edge_host>(null) on a.edge_guid equals b.edge_guid
-        //                            join c in UnitWork.Find<edge_mid>(null) on new { b.edge_guid, b.srv_guid } equals new { c.edge_guid, c.srv_guid }
-        //                            join d in UnitWork.Find<edge_low>(null) on new { c.edge_guid, c.srv_guid, c.mid_guid } equals new { d.edge_guid, d.srv_guid, d.mid_guid }
-        //                            where departmentList.Contains(a.department)
-        //                            && a.status == 1 && b.status == 1 && c.status == 1 && d.status == 1
-        //                            select new { d.edge_guid, d.srv_guid, d.mid_guid, d.low_guid, b.bts_server_ip, c.dev_uid, d.unit_id, a.department, edge_status = a.status, host_status = b.status, mid_status = c.status, low_status = d.status, d.low_no }).ToListAsync();
-        //    var lowGuidList = onlineList.Select(c => c.low_guid).ToList();
-        //    var midGuidList = onlineList.Select(c => c.mid_guid).ToList();
-        //    var bindGuidList = await UnitWork.Find<DeviceBindMap>(null).Where(c => lowGuidList.Contains(c.Guid) || midGuidList.Contains(c.Guid)).Select(c => new { c.EdgeGuid, c.SrvGuid, c.Guid, c.GeneratorCode, c.LowGuid, c.BindType, c.UnitId }).ToListAsync();
-        //    var hasTestLowList = await UnitWork.Find<DeviceTestLog>(null).Where(c => lowGuidList.Contains(c.LowGuid)).ToListAsync();
-        //    var hasTestMidList = await UnitWork.Find<DeviceTestLog>(null).Where(c => midGuidList.Contains(c.MidGuid)).ToListAsync();
-        //    var host_list = onlineList.Select(c => new { c.edge_guid, c.srv_guid, c.bts_server_ip }).Distinct().Skip((page - 1) * limit).Take(limit).ToList();
-        //    int total = onlineList.Select(c => new { c.edge_guid, c.srv_guid, c.bts_server_ip }).Distinct().Count();
-        //    List<OnlineDeviceResp> list = new List<OnlineDeviceResp>();
-        //    foreach (var item in host_list)
-        //    {
-        //        OnlineDeviceResp onlineDeviceResp = new OnlineDeviceResp();
-        //        onlineDeviceResp.edge_guid = item.edge_guid;
-        //        onlineDeviceResp.srv_guid = item.srv_guid;
-        //        onlineDeviceResp.bts_server_ip = item.bts_server_ip;
-        //        onlineDeviceResp.status = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid).FirstOrDefault()?.host_status;
-        //        onlineDeviceResp.mid_Lists = new List<mid_list>();
-        //        var mid_lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid).OrderBy(c => c.dev_uid).Select(c => new { c.mid_guid, c.dev_uid }).Distinct().ToList();
-        //        foreach (var mitem in mid_lists)
-        //        {
-        //            mid_list ml = new mid_list();
-        //            ml.has_bind = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid && c.BindType==1).Any();
-        //            if (ml.has_bind)
-        //            {
-        //                string code = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
-        //                ml.has_test = hasTestMidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.MidGuid == mitem.mid_guid && c.GeneratorCode == code).Any();
-        //            }
-        //            else
-        //            {
-        //                ml.has_test = hasTestMidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.MidGuid == mitem.mid_guid).Any();
-        //            }
-        //            if (ml.has_test && ml.has_bind)
-        //                continue;
-        //            ml.dev_uid = mitem.dev_uid.Value;
-        //            ml.mid_guid = mitem.mid_guid;
-        //            ml.status = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).FirstOrDefault()?.host_status.Value;
-        //            ml.GeneratorCode = bindGuidList.Where(c => c.Guid == mitem.mid_guid && c.BindType == 1).Select(c => c.GeneratorCode).Distinct().FirstOrDefault(); ;
-        //            ml.low_Lists = new List<low_list>();
-        //            var low_Lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).OrderBy(c => c.low_no).Select(c => new low_list { unit_id = c.unit_id.Value, status = c.low_status.Value, low_guid = c.low_guid, low_no = c.low_no }).Distinct().ToList();
-        //            foreach (var litem in low_Lists)
-        //            {
-        //                low_list low_List = new low_list();
-        //                low_List.low_guid = litem.low_guid;
-        //                low_List.has_bind = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid && c.LowGuid == litem.low_guid).Any();
-        //                if (low_List.has_bind)
-        //                {
-        //                    string code = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid && c.LowGuid == litem.low_guid).Select(c => c.GeneratorCode).FirstOrDefault();
-        //                    low_List.has_test = hasTestLowList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.MidGuid == mitem.mid_guid && c.LowGuid == litem.low_guid && c.GeneratorCode == code).Any();
-        //                }
-        //                else
-        //                {
-        //                    low_List.has_test = hasTestLowList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.MidGuid == mitem.mid_guid && c.LowGuid == litem.low_guid).Any();
-        //                }
-        //                if (low_List.has_test && low_List.has_bind)
-        //                    continue;
-        //                low_List.status = litem.status;
-        //                low_List.unit_id = litem.unit_id;
-        //                low_List.low_no = litem.low_no;
-        //                low_List.GeneratorCode = bindGuidList.Where(c => c.LowGuid == litem.low_guid && c.Guid== mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
-        //                ml.low_Lists.Add(low_List);
-        //            }
-        //            if (!ml.low_Lists.Any())
-        //            {
-        //                continue;
-        //            }
-        //            onlineDeviceResp.mid_Lists.Add(ml);
-        //        }
-        //        if (!onlineDeviceResp.mid_Lists.Any())
-        //        {
-        //            continue;
-        //        }
-        //        list.Add(onlineDeviceResp);
-        //    }
-        //    result.Data = list;
-        //    result.Count = total;
-        //    return result;
-        //}
-
         /// <summary>
         /// 在线设备列表
         /// </summary>
@@ -215,111 +115,6 @@ namespace OpenAuth.App
             result.Count = total;
             return result;
         }
-
-        ///// <summary>
-        ///// 边缘计算已绑定设备列表
-        ///// </summary>
-        ///// <param name="GeneratorCode"></param>
-        ///// <param name="page"></param>
-        ///// <param name="limit"></param>
-        ///// <returns></returns>
-        ///// <exception cref="CommonException"></exception>
-        //public async Task<TableData> OnlineDeviceBindList(string GeneratorCode,int page, int limit)
-        //{
-        //    var result = new TableData();
-        //    var loginContext = _auth.GetCurrentUser();
-        //    if (loginContext == null)
-        //    {
-        //        throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-        //    }
-        //    var departmentList = loginContext.Orgs.Select(c => c.Name).ToList();
-        //    var onlineList = await (from a in UnitWork.Find<edge>(null)
-        //                            join b in UnitWork.Find<edge_host>(null) on a.edge_guid equals b.edge_guid
-        //                            join c in UnitWork.Find<edge_mid>(null) on new { b.edge_guid, b.srv_guid } equals new { c.edge_guid, c.srv_guid }
-        //                            join d in UnitWork.Find<edge_low>(null) on new { c.edge_guid, c.srv_guid, c.mid_guid } equals new { d.edge_guid, d.srv_guid, d.mid_guid }
-        //                            where departmentList.Contains(a.department)
-        //                            && a.status==1 
-        //                            select new { d.edge_guid, d.srv_guid, d.mid_guid, d.low_guid, b.bts_server_ip, c.dev_uid, d.unit_id, a.department, edge_status = a.status, host_status = b.status, mid_status = c.status, low_status = d.status, d.low_no }).ToListAsync();
-
-        //    var lowGuidList = onlineList.Select(c => c.low_guid).ToList();
-        //    var midGuidList = onlineList.Select(c => c.mid_guid).ToList();
-        //    var bindGuidList = await UnitWork.Find<DeviceBindMap>(null).Where(c => lowGuidList.Contains(c.Guid) || midGuidList.Contains(c.Guid)).Select(c => new { c.EdgeGuid, c.SrvGuid, c.Guid, c.GeneratorCode, c.LowGuid, c.BindType }).ToListAsync();
-        //    var hasTestLowList = await UnitWork.Find<DeviceTestLog>(null).Where(c => lowGuidList.Contains(c.LowGuid)).ToListAsync();
-        //    var hasTestMidList = await UnitWork.Find<DeviceTestLog>(null).Where(c => midGuidList.Contains(c.MidGuid)).ToListAsync();
-        //    var host_list = onlineList.Select(c => new { c.edge_guid, c.srv_guid, c.bts_server_ip }).Distinct().Skip((page - 1) * limit).Take(limit).ToList();
-        //    int total = onlineList.Select(c => new { c.edge_guid, c.srv_guid, c.bts_server_ip }).Distinct().Count();
-        //    List<OnlineDeviceResp> list = new List<OnlineDeviceResp>();
-        //    foreach (var item in host_list)
-        //    {
-        //        OnlineDeviceResp onlineDeviceResp = new OnlineDeviceResp();
-        //        onlineDeviceResp.edge_guid = item.edge_guid;
-        //        onlineDeviceResp.srv_guid = item.srv_guid;
-        //        onlineDeviceResp.bts_server_ip = item.bts_server_ip;
-        //        onlineDeviceResp.mid_Lists = new List<mid_list>();
-        //        var mid_lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid).OrderBy(c => c.dev_uid).Select(c => new { c.mid_guid, c.dev_uid }).Distinct().ToList();
-        //        foreach (var mitem in mid_lists)
-        //        {
-        //            var has_test = false;
-        //            var has_bind = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid).Any();
-        //            if (has_bind)
-        //            {
-        //                string code = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
-        //                has_test = hasTestMidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.MidGuid == mitem.mid_guid && c.GeneratorCode == code).Any();
-        //            }
-        //            else
-        //            {
-        //                has_test = hasTestMidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.MidGuid == mitem.mid_guid).Any();
-        //            }
-        //            if (has_test && has_bind)
-        //            {
-        //                mid_list ml = new mid_list();
-        //                ml.has_bind = has_bind;
-        //                ml.has_test = has_test;
-        //                ml.dev_uid = mitem.dev_uid.Value;
-        //                ml.mid_guid = mitem.mid_guid;
-        //                ml.GeneratorCode = bindGuidList.Where(c => c.Guid == mitem.mid_guid && c.BindType==1).Select(c => c.GeneratorCode).FirstOrDefault();
-        //                ml.low_Lists = new List<low_list>();
-        //                var low_Lists = onlineList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid && c.dev_uid == mitem.dev_uid && c.mid_guid == mitem.mid_guid).OrderBy(c => c.low_no).Select(c => new low_list { unit_id = c.unit_id.Value, status = c.low_status.Value, low_guid = c.low_guid, low_no = c.low_no }).Distinct().ToList();
-        //                foreach (var litem in low_Lists)
-        //                {
-        //                    low_list low_List = new low_list();
-        //                    low_List.has_bind = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid && c.LowGuid == litem.low_guid).Any();
-        //                    if (low_List.has_bind)
-        //                    {
-        //                        string code = bindGuidList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid && c.LowGuid == litem.low_guid).Select(c => c.GeneratorCode).FirstOrDefault();
-        //                        low_List.has_test = hasTestLowList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.MidGuid == mitem.mid_guid && c.LowGuid == litem.low_guid && c.GeneratorCode == code).Any();
-        //                    }
-        //                    else
-        //                    {
-        //                        low_List.has_test = hasTestLowList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.MidGuid == mitem.mid_guid && c.LowGuid == litem.low_guid).Any();
-        //                    }
-
-        //                    if (low_List.has_test && low_List.has_bind)
-        //                    {
-        //                        low_List.unit_id = litem.unit_id;
-        //                        low_List.low_no = litem.low_no;
-        //                        low_List.GeneratorCode = bindGuidList.Where(c => c.LowGuid == litem.low_guid && c.Guid == mitem.mid_guid).Select(c => c.GeneratorCode).FirstOrDefault();
-        //                        low_List.low_guid = litem.low_guid;
-        //                        ml.low_Lists.Add(low_List);
-        //                    }
-        //                }
-        //                if (!ml.low_Lists.Any())
-        //                {
-        //                    continue;
-        //                }
-        //                onlineDeviceResp.mid_Lists.Add(ml);
-        //            }
-        //        }
-        //        if (!onlineDeviceResp.mid_Lists.Any())
-        //        {
-        //            continue;
-        //        }
-        //        list.Add(onlineDeviceResp);
-        //    }
-        //    result.Data = list;
-        //    result.Count = total;
-        //    return result;
-        //}
 
         /// <summary>
         /// 已绑定列表
@@ -416,12 +211,12 @@ namespace OpenAuth.App
 
             var OrderNo = Convert.ToInt32(model.GeneratorCode.Split("-")[1]);
             //生产订单明细
-            var xwjCount = await UnitWork.Find<product_wor1>(null).Where(c => c.DocEntry == OrderNo && c.ItemCode.Contains("B01-XWJ")).Select(c=>c.BaseQty).FirstOrDefaultAsync();
-            var hasBindCount = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode == model.GeneratorCode).CountAsync();
-            if (hasBindCount+ lowGuidList.Count> xwjCount)
-            {
-                throw new Exception($"【{model.GeneratorCode}】共生产{xwjCount}台,已绑定{hasBindCount}台,本次绑定{lowGuidList.Count}超过生产数,请检查绑定情况!");
-            }
+            //var xwjCount = await UnitWork.Find<product_wor1>(null).Where(c => c.DocEntry == OrderNo && c.ItemCode.Contains("B01-XWJ")).Select(c=>c.BaseQty).FirstOrDefaultAsync();
+            //var hasBindCount = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode == model.GeneratorCode).CountAsync();
+            //if (hasBindCount+ lowGuidList.Count> xwjCount)
+            //{
+            //    throw new Exception($"【{model.GeneratorCode}】共生产{xwjCount}台,已绑定{hasBindCount}台,本次绑定{lowGuidList.Count}超过生产数,请检查绑定情况!");
+            //}
 
             var bindMap = await UnitWork.Find<DeviceBindMap>(null).Where(c => lowGuidList.Contains(c.LowGuid)).ToListAsync();
             if (bindMap.Count>0)

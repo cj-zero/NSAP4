@@ -90,8 +90,8 @@ namespace OpenAuth.App.Client
                 info.ScheduleType = clientSchedule.ScheduleType;
                 info.ScheduleRemark = clientSchedule.ScheduleRemark;
                 info.Remark = clientSchedule.Remark;
-                clientSchedule.UpdateUser = loginUser.User_Id.Value;
-                clientSchedule.UpdateDate = DateTime.Now;
+                info.UpdateUser = loginUser.User_Id.Value;
+                info.UpdateDate = DateTime.Now;
                 await UnitWork.UpdateAsync<ClientSchedule>(info);
             }
             await UnitWork.SaveAsync();

@@ -288,6 +288,7 @@ namespace OpenAuth.WebApi.Controllers
             string type = "SQO";
             var sboid = _serviceBaseApp.GetUserNaspSboID(userId);//UnitWork.ExcuteSql<sbo_info>(ContextType.Nsap4ServeDbContextType, "SELECT sbo_id FROM nsap_base.sbo_info WHERE is_curr = 1 AND valid = 1 LIMIT 1;", CommandType.Text, null).FirstOrDefault()?.sbo_id;
             var dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $"SELECT sql_db,sql_name,sql_pswd,sap_name,sap_pswd,sql_conn,is_open FROM nsap_base.sbo_info WHERE sbo_id={sboid}", CommandType.Text, null);
+            DataTable rDataRowsSlp = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $@"SELECT sale_id,tech_id FROM nsap_base.sbo_user WHERE user_id={userId} AND sbo_id={sboid}", CommandType.Text, null);
             string dRowData = string.Empty;
             string isOpen = "0";
             string sqlcont = string.Empty;
@@ -315,6 +316,11 @@ namespace OpenAuth.WebApi.Controllers
             if (!string.IsNullOrWhiteSpace(request.CardCode))
             {
                 filterString += string.Format("(a.CardCode  LIKE '%{0}%' OR a.CardName LIKE '%{0}%') AND ", request.CardCode);
+            }
+
+            if (!loginContext.Roles.Any(r => r.Name.Equals("管理员")))
+            {
+                filterString += string.Format(" a.SlpCode = '{0}' AND ", rDataRowsSlp.Rows[0][0].ToString());
             }
 
             var powerList = UnitWork.ExcuteSql<PowerDto>(ContextType.NsapBaseDbContext, $@"SELECT a.func_id funcID,b.page_url pageUrl,a.auth_map authMap FROM (SELECT a.func_id,a.page_id,b.auth_map FROM nsap_base.base_func a INNER JOIN (SELECT t.func_id,BIT_OR(t.auth_map) auth_map FROM (SELECT func_id,BIT_OR(auth_map) auth_map FROM nsap_base.base_role_func WHERE role_id IN (SELECT role_id FROM nsap_base.base_user_role WHERE user_id={userId}) GROUP BY func_id UNION ALL SELECT func_id,auth_map FROM nsap_base.base_user_func WHERE user_id={userId}) t GROUP BY t.func_id) b ON a.func_id=b.func_id) AS a INNER JOIN nsap_base.base_page AS b ON a.page_id=b.page_id", CommandType.Text, null);
@@ -362,7 +368,7 @@ namespace OpenAuth.WebApi.Controllers
             //判断是否机械类
             string CardTypeFilter = string.Empty;
             string DfTcnician = "";
-            DataTable rDataRowsSlp = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, $@"SELECT sale_id,tech_id FROM nsap_base.sbo_user WHERE user_id={userId} AND sbo_id={sboid}", CommandType.Text, null);
+
             if (rDataRowsSlp.Rows.Count > 0)
             {
                 string slpCode = rDataRowsSlp.Rows[0][0].ToString();
@@ -484,7 +490,7 @@ namespace OpenAuth.WebApi.Controllers
             {
                 if (isOpen == "1")
                 {
-                    DataTable dts = _contractapplyapp.SelectBillListInfo_ORDR(out rowCount, model, type, rata, true, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewSelfDepartment, DepID, true, true, sqlcont, sboname);
+                    DataTable dts = _contractapplyapp.SelectBillListInfo_ORDR(loginContext.Roles, out rowCount, model, type, rata, true, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewSelfDepartment, DepID, true, true, sqlcont, sboname);
                     result.Data = dts;
                     result.Count = rowCount;
                 }
@@ -557,7 +563,7 @@ namespace OpenAuth.WebApi.Controllers
                 viewCustom = powers.ViewCustom;
             }
 
-            result = _contractapplyapp.SelectOrderDraftInfo(request.limit, request.page, request, type, viewFull, viewSelf, userId, sboid, viewSelfDepartment, Convert.ToInt32(depId.Value), viewCustom, viewSales, sqlcont, sboname);
+            result = _contractapplyapp.SelectOrderDraftInfo(loginContext.Roles, request.limit, request.page, request, type, viewFull, viewSelf, userId, sboid, viewSelfDepartment, Convert.ToInt32(depId.Value), viewCustom, viewSales, sqlcont, sboname);
             return result;
         }
 

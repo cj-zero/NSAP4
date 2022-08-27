@@ -174,5 +174,16 @@ namespace OpenAuth.App
             return DepID;
         }
         #endregion
+
+        /// <summary>
+        /// 金钱转货币形式
+        /// </summary>
+        /// <param name="amount">金额</param>
+        /// <param name="count">余数</param>
+        /// <returns>返回货币形式</returns>
+        public string MoneyToCoin(decimal amount, int count)
+        {
+            return string.Format("{0:N0}", Math.Truncate(amount)) + "." + (Math.Round(amount, count)).ToString().Split(".")[1];
+        }
     }
 }

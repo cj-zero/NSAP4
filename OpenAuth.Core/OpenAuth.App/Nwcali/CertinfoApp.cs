@@ -253,7 +253,8 @@ namespace OpenAuth.App
                     Operator = c.Operator,
                     Sn = c.TesterSn,
                     FlowInstanceId = c.FlowInstanceId,
-                    RejectContent = rejectcontent
+                    RejectContent = rejectcontent,
+                    Issuer = !string.IsNullOrWhiteSpace(c.Issuer) ? c.Issuer : c.Operator
                 };
             });
             var certCount1 = await certObjs.CountAsync();
@@ -1976,7 +1977,7 @@ namespace OpenAuth.App
                 string id = "", name = "";
                 if (user!=null)
                 {
-                    id = user.Id; name= user.Id;
+                    id = user.Id; name= user.Name;
                 }
                 await UnitWork.UpdateAsync<ProductionSchedule>(c => c.GeneratorCode == item.GeneratorCode, c => new ProductionSchedule
                 {
@@ -1989,6 +1990,7 @@ namespace OpenAuth.App
             }
             await UnitWork.SaveAsync();
         }
+
         #endregion
 
 
