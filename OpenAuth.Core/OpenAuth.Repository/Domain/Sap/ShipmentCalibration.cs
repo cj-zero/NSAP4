@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenAuth.App.Response
+namespace OpenAuth.Repository.Domain.Sap
 {
-    public class ShipmentCalibrationResp
+    /// <summary>
+    /// 出货校准详情
+    /// </summary>
+    public class ShipmentCalibration
     {
         /// <summary>
         /// 设备型号
@@ -25,20 +28,40 @@ namespace OpenAuth.App.Response
         /// <summary>
         /// 出证人
         /// </summary>
-        public string GiveWitness { get; set; }
+        public string IsSuer { get; set; }
         /// <summary>
         /// 销售单号
         /// </summary>
-        public string SalesOrder { get; set; }
+        public int? SalesOrder { get; set; }
 
         /// <summary>
         /// 交货号
         /// </summary>
-        public string DeliveryNumber { get; set; }
+        public int? DeliveryNumber { get; set; }
 
         /// <summary>
         /// 销售员
         /// </summary>
         public string Salesman { get; set; }
+    }
+    public class ShipmentCalibration_sql
+    {
+
+        /// <summary>
+        /// 销售员
+        /// </summary>
+        public string Salesman { get; set; }
+        /// <summary>
+        /// 销售单号
+        /// </summary>
+        public int? SalesOrder { get; set; }
+        /// <summary>
+        /// 交货号
+        /// </summary>
+        public int? DeliveryNumber { get; set; }
+        /// <summary>
+        /// 序列号
+        /// </summary>
+        public string TesterSn { get; set; }
     }
 }

@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace OpenAuth.App.Response
+namespace OpenAuth.Repository.Domain.Sap
 {
-    public class ProductionCalibrationResp
+    /// <summary>
+    /// 生产校准详情
+    /// </summary>
+    public class ProductionCalibration
     {
         /// <summary>
         /// 设备型号
@@ -26,7 +29,5 @@ namespace OpenAuth.App.Response
         /// 生产部门
         /// </summary>
         public string Department { get; set; }
-
-        
     }
 }

@@ -190,6 +190,13 @@ namespace OpenAuth.App.Nwcali
 
             Repository.Domain.Org Org = new Repository.Domain.Org();
             List<User> user = new List<User>();
+            if (req.Type <= 0)
+            {
+                result.Code = 500;
+                result.Message = "校准类型有误！";
+                return result;
+            }
+
             if (!string.IsNullOrEmpty(req.Org))
             {
                 Org = await UnitWork.Find<Repository.Domain.Org>(a => a.Name == req.Org).FirstOrDefaultAsync();
@@ -199,7 +206,7 @@ namespace OpenAuth.App.Nwcali
                     result.Message = "部门名字有误！";
                     return result;
                 }
-                user = (from r in UnitWork.Find<Relevance>(a => a.Key == "UserRole" && a.SecondId == req.Org)
+                user = (from r in UnitWork.Find<Relevance>(a => a.Key == "UserOrg" && a.SecondId == req.Org)
                         join u in UnitWork.Find<User>(null) on r.FirstId equals u.Id
                         select u).ToList();
             }
@@ -209,12 +216,12 @@ namespace OpenAuth.App.Nwcali
             if (req.Type == 1)
             {
                 var query = UnitWork.Find<ProductionSchedule>(a => a.NwcailStatus == 2)
-                    .WhereIf(string.IsNullOrEmpty(req.Name), a => a.DeviceOperator == req.Name)
-                    .WhereIf(user.Count() > 0, a => userIdList.Contains(a.DeviceOperatorId))
+                    .WhereIf(!string.IsNullOrEmpty(req.Name), a => a.NwcailOperator == req.Name)
+                    .WhereIf(user.Count() > 0, a => userIdList.Contains(a.NwcailOperatorId))
                     .WhereIf(req.StartTime != null, c => c.NwcailTime.Value >= req.StartTime)
                     .WhereIf(req.EndTime != null, c => c.NwcailTime.Value < req.EndTime)
-                    .GroupBy(a => a.DeviceOperatorId)
-                    .Select(a => new { id = a.Key, name = a.Max(b => b.DeviceOperator), num = a.Count() });
+                    .GroupBy(a => a.NwcailOperatorId)
+                    .Select(a => new { id = a.Key, name = a.Max(b => b.NwcailOperator), num = a.Count() });
 
                 sum = query.Sum(a => a.num);
                 var list = await query.OrderByDescending(a => a.num)
@@ -223,9 +230,9 @@ namespace OpenAuth.App.Nwcali
 
 
                 var data = (from l in list
-                            join r in UnitWork.Find<Relevance>(a => a.Key == "UserRole") on l.id equals r.FirstId
+                            join r in UnitWork.Find<Relevance>(a => a.Key == "UserOrg") on l.id equals r.FirstId
                             join o in UnitWork.Find<Repository.Domain.Org>(null) on r.SecondId equals o.Id
-                            select new { l, orgName = o.Name }).ToList();
+                            select new { id = l.id,name = l.name, num = l.num, orgName = o.Name }).ToList();
                 result.Data = data;
                 result.Extra = sum.ToString();
 
@@ -233,7 +240,7 @@ namespace OpenAuth.App.Nwcali
             else
             {
                 var query = UnitWork.Find<NwcaliBaseInfo>(null)
-                    .WhereIf(string.IsNullOrEmpty(req.Name), a => a.Operator == req.Name)
+                    .WhereIf(!string.IsNullOrEmpty(req.Name), a => a.Operator == req.Name)
                     .WhereIf(user.Count() > 0, a => userIdList.Contains(a.OperatorId))
                     .WhereIf(req.StartTime != null, c => c.Time.Value >= req.StartTime)
                     .WhereIf(req.EndTime != null, c => c.Time.Value < req.EndTime)
@@ -247,9 +254,9 @@ namespace OpenAuth.App.Nwcali
 
 
                 var data = (from l in list
-                            join r in UnitWork.Find<Relevance>(a => a.Key == "UserRole") on l.id equals r.FirstId
+                            join r in UnitWork.Find<Relevance>(a => a.Key == "UserOrg") on l.id equals r.FirstId
                             join o in UnitWork.Find<Repository.Domain.Org>(null) on r.SecondId equals o.Id
-                            select new { l, orgName = o.Name }).ToList();
+                            select new { id = l.id, name = l.name, num = l.num, orgName = o.Name }).ToList();
                 result.Data = data;
                 result.Extra = sum.ToString();
             }
@@ -265,31 +272,56 @@ namespace OpenAuth.App.Nwcali
         {
             var result = new TableData();
 
-
+            if (string.IsNullOrEmpty(req.Id))
+            {
+                result.Code = 500;
+                result.Message = "人员ID有误！";
+                return result;
+            }
+            if (req.Type<=0)
+            {
+                result.Code = 500;
+                result.Message = "校准类型有误！";
+                return result;
+            }
 
             if (req.Type == 1)
             {
-                var query = await UnitWork.Find<ProductionSchedule>(a => a.NwcailStatus == 2)
-                     .WhereIf(string.IsNullOrEmpty(req.Name), a => a.DeviceOperator == req.Name)
+                var query = UnitWork.Find<ProductionSchedule>(a => a.NwcailStatus == 2)
+                     .WhereIf(!string.IsNullOrEmpty(req.Name), a => a.NwcailOperator == req.Name)
                       .WhereIf(req.StartTime != null, c => c.NwcailTime.Value >= req.StartTime)
                      .WhereIf(req.EndTime != null, c => c.NwcailTime.Value < req.EndTime)
-                     .ToListAsync();
-                var listDocEntry = query.Select(a => a.DocEntry).ToList();
+                     .Where(a => a.NwcailOperatorId == req.Id);
+                result.Count = query.Count();
 
-                List<ProductionCalibrationResp> list = new List<ProductionCalibrationResp>();
+                var listProduction = await query.OrderByDescending(a => a.NwcailTime)
+               .Skip((req.page - 1) * req.limit)
+               .Take(req.limit).ToListAsync();
 
-                var listOWOR = await UnitWork.Find<OWOR>(a => listDocEntry.Contains(a.DocEntry)).ToListAsync();
-                foreach (var item in query)
+
+                var listDocEntry = listProduction.Select(a => a.DocEntry).Distinct().ToList();
+
+                List<ProductionCalibration> list = new List<ProductionCalibration>();
+
+                var listOWOR = await UnitWork.Find<OWOR>(a => listDocEntry.Contains(a.DocEntry))
+                    .Select(a=> new { U_WO_LTDW =a.U_WO_LTDW, ItemCode =a.ItemCode, DocEntry =a.DocEntry })
+                    .ToListAsync();
+                foreach (var item in listProduction)
                 {
-                    ProductionCalibrationResp info = new ProductionCalibrationResp();
+                    ProductionCalibration info = new ProductionCalibration();
                     info.GeneratorCode =item.GeneratorCode;
                     info.NwcailTime = item.NwcailTime;
-                    info.ReceiveOperator = item.ReceiveOperator;
-                    var owor = listOWOR.Where(a => a.DocEntry == item.DocEntry).FirstOrDefault();
+                    info.ReceiveOperator = item.NwcailOperator;
+                    var docId = item.DocEntry;
+                    var owor = listOWOR.Where(a => a.DocEntry == docId).FirstOrDefault();
                     if (owor != null)
                     {
                         info.Department = owor.U_WO_LTDW;
                         info.TesterModel = owor.ItemCode;
+                    }
+                    else
+                    {
+
                     }
                     list.Add(info);
                 }
@@ -297,22 +329,26 @@ namespace OpenAuth.App.Nwcali
             }
             else
             {
-                var query = await UnitWork.Find<NwcaliBaseInfo>(null)
-                    .WhereIf(string.IsNullOrEmpty(req.Name), a => a.Operator == req.Name)
+                var query = UnitWork.Find<NwcaliBaseInfo>(a => a.OperatorId == req.Id)
+                    .WhereIf(!string.IsNullOrEmpty(req.Name), a => a.Operator == req.Name)
                     .WhereIf(req.StartTime != null, c => c.Time.Value >= req.StartTime)
-                    .WhereIf(req.EndTime != null, c => c.Time.Value < req.EndTime)
-                    .ToListAsync();
-                if (query.Count <= 0)
+                    .WhereIf(req.EndTime != null, c => c.Time.Value < req.EndTime);
+                result.Count = query.Count();
+                var listNwcali = await query.OrderByDescending(a => a.Time)
+                .Skip((req.page - 1) * req.limit)
+                .Take(req.limit).ToListAsync();
+
+                if (listNwcali.Count <= 0)
                 {
                     return result;
                 }
-                var listTesterSn = query.Select(a => a.TesterSn).ToList();
+                var listTesterSn = listNwcali.Select(a => a.TesterSn).ToList();
 
-                string strSql = @"select t4.SlpCode,t4.SlpName as 'Salesman',t3.DocEntry as'SalesOrder',t2.DocEntry as 'DeliveryNumber', t1.manufSN as 'TesterSn' from OINS t1
+                string strSql = @"select t4.SlpCode,t4.SlpName as 'Salesman',t3.DocEntry as'SalesOrder',t2.DocEntry as 'DeliveryNumber', t1.manufSN as 'TesterSn'from OINS t1
                     inner join (SELECT DocEntry,MIN(BaseEntry) as BaseEntry from DLN1 where BaseType=17  group by DocEntry )  t2 on t1.deliveryNo = t2.DocEntry 
                     inner join ORDR t3 on t2.BaseEntry = t3.DocEntry
                     inner join OSLP t4 on t3.SlpCode =t4.SlpCode ";
-              
+
                 for (int i = 0; i < listTesterSn.Count; i++)
                 {
                     listTesterSn[i] = "'" + listTesterSn[i] + "'";
@@ -320,21 +356,28 @@ namespace OpenAuth.App.Nwcali
                 var propertyStr = string.Join(',', listTesterSn);
                 strSql += $" where t1.manufSN in ({propertyStr})";
 
-                var shipmentCalibration = await UnitWork.Query<ShipmentCalibrationResp>(strSql).ToListAsync();
+                var shipmentCalibration =await  UnitWork.Query<ShipmentCalibration_sql>(strSql).ToListAsync();
 
-                foreach (var item in shipmentCalibration)
+                List<ShipmentCalibration> list = new List<ShipmentCalibration>();
+                foreach (var item in listNwcali)
                 {
-                    var info = query.Where(a => a.TesterSn == item.TesterSn).FirstOrDefault();
-                    if (info != null)
+                    ShipmentCalibration info = new ShipmentCalibration();
+                    info.TesterModel = item.TesterModel;
+                    info.TesterSn = item.TesterSn;
+                    info.Time = item.Time.ToString("yyyy-MM-dd HH:mm:ss");
+                    info.Operator = item.Operator;
+                    info.IsSuer = item.Issuer;
+                    var salesInfo = shipmentCalibration.FirstOrDefault(a => a.TesterSn == item.TesterSn);
+                    if (salesInfo!=null)
                     {
-                        item.TesterModel = info.TesterModel;
-                        item.TesterSn = info.TesterSn;
-                        item.Time = info.Time.ToString("yyyy-MM-dd HH:mm:ss");
-                        item.Operator = info.Operator;
-                        item.IsSuer = info.Issuer;
+                        info.SalesOrder = salesInfo.SalesOrder;
+                        info.DeliveryNumber = salesInfo.DeliveryNumber;
+                        info.Salesman = salesInfo.Salesman;
                     }
+                    list.Add(info);
                 }
-                result.Data = shipmentCalibration;
+          
+                result.Data = list;
 
             }
 
