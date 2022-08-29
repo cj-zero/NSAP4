@@ -711,41 +711,41 @@ namespace OpenAuth.App.Client.Request
 
         public string ShipToDef { get; set; }
 
-        /// <summary>
-        /// 属性 1
-        /// </summary>
+        ///// <summary>
+        ///// 属性 1
+        ///// </summary>
 
-        public string QryGroup1 { get; set; }
+        //public string QryGroup1 { get; set; }
 
-        /// <summary>
-        /// 属性 2
-        /// </summary>
+        ///// <summary>
+        ///// 属性 2
+        ///// </summary>
 
-        public string QryGroup2 { get; set; }
+        //public string QryGroup2 { get; set; }
 
-        /// <summary>
-        /// 属性 3
-        /// </summary>
+        ///// <summary>
+        ///// 属性 3
+        ///// </summary>
 
-        public string QryGroup3 { get; set; }
+        //public string QryGroup3 { get; set; }
 
-        /// <summary>
-        /// 属性 4
-        /// </summary>
+        ///// <summary>
+        ///// 属性 4
+        ///// </summary>
 
-        public string QryGroup4 { get; set; }
+        //public string QryGroup4 { get; set; }
 
-        /// <summary>
-        /// 属性 5
-        /// </summary>
+        ///// <summary>
+        ///// 属性 5
+        ///// </summary>
 
-        public string QryGroup5 { get; set; }
+        //public string QryGroup5 { get; set; }
 
-        /// <summary>
-        /// 属性 6
-        /// </summary>
+        ///// <summary>
+        ///// 属性 6
+        ///// </summary>
 
-        public string QryGroup6 { get; set; }
+        //public string QryGroup6 { get; set; }
         /// <summary>
         /// 业务伙伴操作类型
         /// </summary>

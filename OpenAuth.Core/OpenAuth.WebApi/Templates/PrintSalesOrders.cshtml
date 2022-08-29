@@ -16,7 +16,7 @@
             margin: 0 auto;
             margin-top: 10px;
             font-size: 13.5px;
-            font-family: "微软雅黑";
+            font-family: STSong;
             color: #444444;
         }
         
@@ -52,19 +52,24 @@
             width: 1000px;
             margin: 0 auto;
             border: 1px solid #000;
+            border-spacing: 0 4px;
+        }
+        #txtDiv tr td{
+        
+            vertical-align: text-top;
         }
     </style>
 </head>
 
 <body>
-    <table style="width:1000px">
+    <table style="width:1000px" id="txtDiv">
         @{int number = 0;} @foreach (var item in Model.Data.ReimburseCosts) {
         <tr>
             <td style="width: 30px;" align="left">@{++number;} @number </td>
-            <td style="width: 100px;" align="left">@item.ItemCode</td>
-            <td style="width: 250px;" align="left">@item.Dscription</td>
+            <td style="width: 120px;" align="left">@item.ItemCode</td>
+            <td style="width: 230px;" align="left">@item.Dscription</td>
             <td style="width: 50px;" align="right">@item.Quantity</td>
-            <td style="width: 50px; " align="left">&nbsp;@item.unitMsr</td>
+            <td style="width: 50px; " align="center">&nbsp;@item.unitMsr</td>
             <td style="width: 80px; " align="right">@item.Price</td>
             <td style="width: 80px; " align="right">@item.Money</td>
         </tr>

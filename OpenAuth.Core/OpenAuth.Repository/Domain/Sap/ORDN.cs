@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("ORDN")]
-    public partial class ORDN : Entity
+    public partial class ORDN
     {
         public ORDN()
         {
@@ -264,7 +264,12 @@ namespace OpenAuth.Repository.Domain.Sap
           this.U_EshopNo= string.Empty;
         }
 
-        
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? DocEntry { get; set; }
+
         /// <summary>
         /// 
         /// </summary>

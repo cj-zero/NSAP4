@@ -44,6 +44,10 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<CTR1>().HasKey(o => new { o.ContractID, o.Line });
             modelBuilder.Entity<OSRIModel>().HasKey(o => o.SuppSerial);
             modelBuilder.Entity<ORCTModel>().HasKey(o => o.DocEntry);
+            modelBuilder.Entity<ORCT>().HasKey(o => o.DocEntry);
+            modelBuilder.Entity<OQUT>().HasKey(o => o.DocEntry);
+            modelBuilder.Entity<ORDN>().HasKey(o => o.DocEntry);
+            modelBuilder.Entity<OWOR>().HasKey(o => o.DocEntry);
             modelBuilder.Entity<BalanceModel>().HasKey(o => o.Balance);
             #endregion
             #region 物料编码
@@ -52,6 +56,10 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<ITT1>().HasKey(o => new { o.Father, o.ChildNum });
             modelBuilder.Entity<WOR1>().HasKey(o => new { o.DocEntry, o.LineNum });
             modelBuilder.Entity<SysEquipmentColumn>().HasKey(o => o.ItemCode);
+            modelBuilder.Entity<ProductionCalibration>().HasKey(o => o.GeneratorCode);
+            modelBuilder.Entity<ShipmentCalibration_sql>().HasKey(o => o.TesterSn);
+
+
             #endregion
             #region 销售订单
             modelBuilder.Entity<ORDR>().HasKey(o => o.DocEntry);
@@ -93,6 +101,8 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<OSCL>().HasKey(o => o.callID);
         }
         //非数据库表格
+        public virtual DbSet<ProductionCalibration> ProductionCalibration { get; set; }
+        public virtual DbSet<ShipmentCalibration_sql> ShipmentCalibration_sql { get; set; }
         public virtual DbSet<SysEquipmentColumn> SysEquipmentColumns { get; set; }
         public virtual DbSet<OSRIModel> Osris { get; set; }
         public virtual DbSet<ORCTModel> Orcts { get; set; }
@@ -1554,8 +1564,8 @@ namespace OpenAuth.Repository
         //public virtual DbSet<ORCN> Orcns { get; set; }
         //public virtual DbSet<ORCP> Orcps { get; set; }
         //public virtual DbSet<ORCR> Orcrs { get; set; }
-        //public virtual DbSet<ORCT> Orcts { get; set; }
-        //public virtual DbSet<ORDN> Ordns { get; set; }
+        public virtual DbSet<ORCT> Orct { get; set; }
+        public virtual DbSet<ORDN> Ordns { get; set; }
         public virtual DbSet<ORDR> Ordrs { get; set; }
         //public virtual DbSet<OREA> Oreas { get; set; }
         //public virtual DbSet<OREQ> Oreqs { get; set; }

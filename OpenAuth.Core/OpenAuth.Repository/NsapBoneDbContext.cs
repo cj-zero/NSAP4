@@ -69,6 +69,7 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<finance_aftersalesbonus_batch>().HasKey(o => new { o.ExportBatchId });
             modelBuilder.Entity<crm_octg>().HasKey(o => new { o.sbo_id, o.GroupNum });
             modelBuilder.Entity<crm_ocrn>().HasKey(o => new { o.sbo_id, o.CurrCode });
+            modelBuilder.Entity<sale_qut1>().HasKey(o => new { o.DocEntry });
         }
 
         public virtual DbSet<sale_transport> sale_transports { get; set; }
@@ -136,5 +137,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<finance_aftersalesbonus_batch> finance_aftersalesbonus_batchs { get; set; }
         public virtual DbSet<crm_octg> crm_octgs { get; set; }
         public virtual DbSet<crm_ocrn> crm_ocrns { get; set; }
+
+        public virtual DbSet<sale_qut1> sale_qut1s { get; set; }
     }
 }
