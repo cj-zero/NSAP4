@@ -572,9 +572,9 @@ namespace OpenAuth.App.SaleBusiness
                 var queryNoComSaleOrderList = from a in oworList
                                               join b in ordrList on a.OriginAbs equals b.DocEntry into ab
                                               from b in ab.DefaultIfEmpty()
-                                              select new { b.SlpCode, a.DocEntry, a.OriginAbs };
+                                              select new { SlpCode = b == null ? 0 : b.SlpCode, a.DocEntry, a.OriginAbs };
 
-                modelNum = queryNoComSaleOrderList.Where(r => r.SlpCode != null).Count().ToString();
+                modelNum = queryNoComSaleOrderList.ToList().Where(r => r.SlpCode != null).Count().ToString();
             }
 
             customerBusiness.ModelName = "未完工销售订单";
