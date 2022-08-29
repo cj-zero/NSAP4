@@ -878,11 +878,11 @@ namespace OpenAuth.App.Client
                 UpdateDate = clientInfo.UpdateDate,//修改时间
                 BillToDef = clientInfo.BillToDef,//默认开票地址
                 ShipToDef = clientInfo.ShipToDef,//默认收货地址
-                QryGroup1 = clientInfo.QryGroup1,// 属性 1
-                QryGroup2 = clientInfo.QryGroup2,// 属性 2
-                QryGroup3 = clientInfo.QryGroup3,// 属性 3
-                QryGroup4 = clientInfo.QryGroup4,// 属性 4
-                QryGroup6 = clientInfo.QryGroup6,// 属性 6
+                //QryGroup1 = clientInfo.QryGroup1,// 属性 1
+                //QryGroup2 = clientInfo.QryGroup2,// 属性 2
+                //QryGroup3 = clientInfo.QryGroup3,// 属性 3
+                //QryGroup4 = clientInfo.QryGroup4,// 属性 4
+                //QryGroup6 = clientInfo.QryGroup6,// 属性 6
                 ClientOperateType = clientInfo.ClientOperateType,//业务伙伴操作类型
                 CustomFields = !string.IsNullOrEmpty(clientInfo.CustomFields) ? clientInfo.CustomFields.Replace(" ", "").Replace("　", "") : "",//  $"U_ShipName≮1≯≮0≯U_SCBM≮1≯P3-陈友祥",
                 IsActive = clientInfo.IsActive,//业务伙伴状态
