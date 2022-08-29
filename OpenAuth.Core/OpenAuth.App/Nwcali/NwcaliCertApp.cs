@@ -219,7 +219,7 @@ namespace OpenAuth.App.Nwcali
                     .WhereIf(!string.IsNullOrEmpty(req.Name), a => a.NwcailOperator == req.Name)
                     .WhereIf(user.Count() > 0, a => userIdList.Contains(a.NwcailOperatorId))
                     .WhereIf(req.StartTime != null, c => c.NwcailTime.Value >= req.StartTime)
-                    .WhereIf(req.EndTime != null, c => c.NwcailTime.Value < req.EndTime)
+                    .WhereIf(req.EndTime != null, c => c.NwcailTime.Value <= req.EndTime)
                     .GroupBy(a => a.NwcailOperatorId)
                     .Select(a => new { id = a.Key, name = a.Max(b => b.NwcailOperator), num = a.Count() });
 
@@ -243,7 +243,7 @@ namespace OpenAuth.App.Nwcali
                     .WhereIf(!string.IsNullOrEmpty(req.Name), a => a.Operator == req.Name)
                     .WhereIf(user.Count() > 0, a => userIdList.Contains(a.OperatorId))
                     .WhereIf(req.StartTime != null, c => c.Time.Value >= req.StartTime)
-                    .WhereIf(req.EndTime != null, c => c.Time.Value < req.EndTime)
+                    .WhereIf(req.EndTime != null, c => c.Time.Value <= req.EndTime)
                     .GroupBy(a => a.OperatorId)
                     .Select(a => new { id = a.Key, name = a.Max(b => b.Operator), num = a.Count() });
 
@@ -290,7 +290,7 @@ namespace OpenAuth.App.Nwcali
                 var query = UnitWork.Find<ProductionSchedule>(a => a.NwcailStatus == 2)
                      .WhereIf(!string.IsNullOrEmpty(req.Name), a => a.NwcailOperator == req.Name)
                       .WhereIf(req.StartTime != null, c => c.NwcailTime.Value >= req.StartTime)
-                     .WhereIf(req.EndTime != null, c => c.NwcailTime.Value < req.EndTime)
+                     .WhereIf(req.EndTime != null, c => c.NwcailTime.Value <= req.EndTime)
                      .Where(a => a.NwcailOperatorId == req.Id);
                 result.Count = query.Count();
 
@@ -332,7 +332,7 @@ namespace OpenAuth.App.Nwcali
                 var query = UnitWork.Find<NwcaliBaseInfo>(a => a.OperatorId == req.Id)
                     .WhereIf(!string.IsNullOrEmpty(req.Name), a => a.Operator == req.Name)
                     .WhereIf(req.StartTime != null, c => c.Time.Value >= req.StartTime)
-                    .WhereIf(req.EndTime != null, c => c.Time.Value < req.EndTime);
+                    .WhereIf(req.EndTime != null, c => c.Time.Value <= req.EndTime);
                 result.Count = query.Count();
                 var listNwcali = await query.OrderByDescending(a => a.Time)
                 .Skip((req.page - 1) * req.limit)
