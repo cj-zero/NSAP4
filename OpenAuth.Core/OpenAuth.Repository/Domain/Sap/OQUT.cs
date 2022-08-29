@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 报价单
 	/// </summary>
     [Table("OQUT")]
-    public partial class OQUT : Entity
+    public partial class OQUT
     {
         public OQUT()
         {

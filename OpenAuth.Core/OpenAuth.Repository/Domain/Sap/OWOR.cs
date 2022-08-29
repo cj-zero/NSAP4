@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("OWOR")]
-    public partial class OWOR : Entity
+    public partial class OWOR
     {
         public OWOR()
         {

@@ -14,144 +14,271 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 using OpenAuth.Repository.Core;
 
-namespace OpenAuth.Repository.Domain.Sap
+namespace OpenAuth.Repository.Domain
 {
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("ORCT")]
-    public partial class ORCT 
+    [Table("sale_qut1")]
+    public partial class sale_qut1
     {
-        public ORCT()
+        public sale_qut1()
         {
-          this.DocNum= 0;
-          this.DocType= string.Empty;
-          this.Canceled= string.Empty;
-          this.Handwrtten= string.Empty;
-          this.Printed= string.Empty;
-          this.DocDate= DateTime.Now;
-          this.DocDueDate= DateTime.Now;
-          this.CardCode= string.Empty;
-          this.CardName= string.Empty;
-          this.Address= string.Empty;
-          this.CashAcct= string.Empty;
-          this.CheckAcct= string.Empty;
-          this.TrsfrAcct= string.Empty;
-          this.TrsfrDate= DateTime.Now;
-          this.TrsfrRef= string.Empty;
-          this.PayNoDoc= string.Empty;
-          this.DocCurr= string.Empty;
-          this.DiffCurr= string.Empty;
-          this.Ref1= string.Empty;
-          this.Ref2= string.Empty;
-          this.CounterRef= string.Empty;
-          this.Comments= string.Empty;
-          this.JrnlMemo= string.Empty;
-          this.ShowAtCard= string.Empty;
-          this.SpiltTrans= string.Empty;
-          this.CreateTran= string.Empty;
-          this.ObjType= string.Empty;
-          this.UpdateDate= DateTime.Now;
-          this.CreateDate= DateTime.Now;
-          this.ApplyVAT= string.Empty;
-          this.TaxDate= DateTime.Now;
-          this.confirmed= string.Empty;
-          this.ShowJDT= string.Empty;
-          this.BankCode= string.Empty;
-          this.BankAcct= string.Empty;
-          this.DataSource= string.Empty;
-          this.VatGroup= string.Empty;
-          this.SpltCredLn= string.Empty;
-          this.PrjCode= string.Empty;
-          this.PaymentRef= string.Empty;
-          this.Submitted= string.Empty;
-          this.Status= string.Empty;
-          this.PayMth= string.Empty;
-          this.BankCountr= string.Empty;
-          this.BoeAcc= string.Empty;
-          this.BoeAgent= string.Empty;
-          this.BoeStatus= string.Empty;
-          this.WtCode= string.Empty;
-          this.WtAccount= string.Empty;
-          this.Proforma= string.Empty;
-          this.BpAct= string.Empty;
-          this.PIndicator= string.Empty;
-          this.PaPriority= string.Empty;
-          this.PayToCode= string.Empty;
-          this.IsPaytoBnk= string.Empty;
-          this.PBnkCnt= string.Empty;
-          this.PBnkCode= string.Empty;
-          this.PBnkAccnt= string.Empty;
-          this.PBnkBranch= string.Empty;
-          this.WizDunBlck= string.Empty;
-          this.VersionNum= string.Empty;
-          this.VatDate= DateTime.Now;
-          this.TransCode= string.Empty;
-          this.PaymType= string.Empty;
-          this.CancelDate= DateTime.Now;
-          this.ChallanNo= string.Empty;
-          this.ChallanBak= string.Empty;
-          this.ChallanDat= DateTime.Now;
-          this.WddStatus= string.Empty;
-          this.BcgVatGrp= string.Empty;
-          this.SeriesStr= string.Empty;
-          this.SubStr= string.Empty;
-          this.BSRCode= string.Empty;
-          this.BuildDesc= string.Empty;
-          this.ResidenNum= string.Empty;
-          this.OperatCode= string.Empty;
-          this.FreeText1= string.Empty;
-          this.FreeText2= string.Empty;
-          this.FreeText3= string.Empty;
-          this.ShowDocNo= string.Empty;
-          this.MIType= string.Empty;
-          this.SupplCode= string.Empty;
-          this.BPLName= string.Empty;
-          this.VATRegNum= string.Empty;
-          this.BPLCentPmt= string.Empty;
-          this.SEPADate= DateTime.Now;
-          this.TDSType= string.Empty;
-          this.DrNo= string.Empty;
-          this.PmntWTCert= string.Empty;
-          this.EnPBnkAcct= string.Empty;
-          this.EncryptIV= string.Empty;
-          this.DPPStatus= string.Empty;
-          this.PriceMode= string.Empty;
-          this.U_XSDB= string.Empty;
-          this.U_XSBM= string.Empty;
+            this.BaseRef = string.Empty;
+            this.LineStatus = string.Empty;
+            this.ItemCode = string.Empty;
+            this.Dscription = string.Empty;
+            this.ShipDate = DateTime.Now;
+            this.Currency = string.Empty;
+            this.VendorNum = string.Empty;
+            this.SerialNum = string.Empty;
+            this.WhsCode = string.Empty;
+            this.TreeType = string.Empty;
+            this.AcctCode = string.Empty;
+            this.TaxStatus = string.Empty;
+            this.DocDate = DateTime.Now;
+            this.UseBaseUn = string.Empty;
+            this.SubCatNum = string.Empty;
+            this.BaseCard = string.Empty;
+            this.InvntSttus = string.Empty;
+            this.OcrCode = string.Empty;
+            this.Project = string.Empty;
+            this.CodeBars = string.Empty;
+            this.VatGroup = string.Empty;
+            this.UpdInvntry = string.Empty;
+            this.BaseAtCard = string.Empty;
+            this.SWW = string.Empty;
+            this.ObjType = string.Empty;
+            this.BlockNum = string.Empty;
+            this.IsAqcuistn = string.Empty;
+            this.Address = string.Empty;
+            this.TaxCode = string.Empty;
+            this.TaxType = string.Empty;
+            this.OrigItem = string.Empty;
+            this.BackOrdr = string.Empty;
+            this.FreeTxt = string.Empty;
+            this.PickStatus = string.Empty;
+            this.WtLiable = string.Empty;
+            this.DeferrTax = string.Empty;
+            this.unitMsr = string.Empty;
+            this.LineType = string.Empty;
+            this.TranType = string.Empty;
+            this.Text = string.Empty;
+            this.ShipToCode = string.Empty;
+            this.ShipToDesc = string.Empty;
+            this.BasePrice = string.Empty;
+            this.DistribExp = string.Empty;
+            this.ActDelDate = DateTime.Now;
+            this.PostTax = string.Empty;
+            this.Excisable = string.Empty;
+            this.LnExcised = string.Empty;
+            this.isSrvCall = string.Empty;
+            this.PQTReqDate = DateTime.Now;
+            this.LinManClsd = string.Empty;
+            this.NoInvtryMv = string.Empty;
+            this.U_WLLY = string.Empty;
+            this.U_YYFX = string.Empty;
+            this.U_XWJBH = string.Empty;
+            this.U_ZWJBH = string.Empty;
+            this.U_IG_DW = string.Empty;
+            this.U_ZXDH = string.Empty;
+            this.U_TYWP = string.Empty;
+            this.U_CPH = string.Empty;
+            this.U_TYSL = string.Empty;
+            this.U_PRX_SID = string.Empty;
+            this.U_PRX_VMas = string.Empty;
+            this.U_PRX_VNum = string.Empty;
+            this.U_PRX_Note = string.Empty;
+            this.U_A_CCNo = string.Empty;
+            this.U_A_EDATE = string.Empty;
+            this.U_A_SECCOD = string.Empty;
+            this.U_A_ADDR1 = string.Empty;
+            this.U_A_ADDR2 = string.Empty;
+            this.U_A_ADDR3 = string.Empty;
+            this.U_A_CITY = string.Empty;
+            this.U_A_ZIP = string.Empty;
+            this.U_A_CTYPE = string.Empty;
+            this.U_A_CREFNO = string.Empty;
+            this.U_A_ADATE = string.Empty;
+            this.U_A_ACODE = string.Empty;
+            this.U_A_STATE = string.Empty;
+            this.U_A_CAMT = string.Empty;
+            this.U_A_PAYT = string.Empty;
+            this.U_BNIncTrm = string.Empty;
+            this.U_BNTrnMod = string.Empty;
+            this.U_PDXX = string.Empty;
+            this.U_BXSJ = string.Empty;
+            this.U_ZS = string.Empty;
+            this.U_XSTCBL = 0;
+            this.U_SCTCBL = 0;
+            this.U_YFTCBL = 0;
+            this.U_YWF = 0;
+            this.U_FWF = 0;
+            this.U_RelDoc = string.Empty;
         }
 
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
+        public int sbo_id { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
         public int DocEntry { get; set; }
-        
+
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int DocNum { get; set; }
+        public int? TargetType { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string DocType { get; set; }
+        public int? TrgetEntry { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string Canceled { get; set; }
+        public string BaseRef { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string Handwrtten { get; set; }
+        public int? BaseType { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string Printed { get; set; }
+        public int? BaseEntry { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public int? BaseLine { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string LineStatus { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string ItemCode { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string Dscription { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? Quantity { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public System.DateTime? ShipDate { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? OpenQty { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? Price { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string Currency { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? Rate { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? DiscPrcnt { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? LineTotal { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? TotalFrgn { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? OpenSum { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? OpenSumFC { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string VendorNum { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string SerialNum { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string WhsCode { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public short? SlpCode { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? Commission { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string TreeType { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string AcctCode { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string TaxStatus { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? GrossBuyPr { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? PriceBefDi { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -161,338 +288,47 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
-        public System.DateTime? DocDueDate { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CardCode { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CardName { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string Address { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? DdctPrcnt { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? DdctSum { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? DdctSumFC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CashAcct { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? CashSum { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? CashSumFC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? CreditSum { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? CredSumFC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CheckAcct { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? CheckSum { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? CheckSumFC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string TrsfrAcct { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? TrsfrSum { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? TrsfrSumFC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public System.DateTime? TrsfrDate { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string TrsfrRef { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string PayNoDoc { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? NoDocSum { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? NoDocSumFC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string DocCurr { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string DiffCurr { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? DocRate { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? SysRate { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? DocTotal { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? DocTotalFC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string Ref1 { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string Ref2 { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CounterRef { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string Comments { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string JrnlMemo { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        [Browsable(false)]
-        public int? TransId { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public short? DocTime { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string ShowAtCard { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string SpiltTrans { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string CreateTran { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
         public int? Flags { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? CntctCode { get; set; }
+        public decimal? OpenCreQty { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? DdctSumSy { get; set; }
+        public string UseBaseUn { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? CashSumSy { get; set; }
+        public string SubCatNum { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? CredSumSy { get; set; }
+        public string BaseCard { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? CheckSumSy { get; set; }
+        public string InvntSttus { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? TrsfrSumSy { get; set; }
+        public string OcrCode { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? NoDocSumSy { get; set; }
+        public string Project { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? DocTotalSy { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string ObjType { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? StornoRate { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public System.DateTime? UpdateDate { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public System.DateTime? CreateDate { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string ApplyVAT { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public System.DateTime? TaxDate { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? Series { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string confirmed { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string ShowJDT { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string BankCode { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string BankAcct { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string DataSource { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public short? UserSign { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? LogInstanc { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public string VatGroup { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? VatSum { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? VatSumFC { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public decimal? VatSumSy { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        [Description("")]
-        public int? FinncPriod { get; set; }
+        public string CodeBars { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -502,362 +338,483 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
-        public decimal? Dcount { get; set; }
+        public string VatGroup { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? DcntSum { get; set; }
+        public decimal? PriceAfVAT { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? DcntSumFC { get; set; }
+        public decimal? Height1 { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? DcntSumSy { get; set; }
+        public short? Hght1Unit { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string SpltCredLn { get; set; }
+        public decimal? Height2 { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string PrjCode { get; set; }
+        public short? Hght2Unit { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string PaymentRef { get; set; }
+        public decimal? Width1 { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string Submitted { get; set; }
+        public short? Wdth1Unit { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string Status { get; set; }
+        public decimal? Width2 { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string PayMth { get; set; }
+        public short? Wdth2Unit { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string BankCountr { get; set; }
+        public decimal? Length1 { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? FreightSum { get; set; }
+        public short? Len1Unit { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? FreigtFC { get; set; }
+        public decimal? length2 { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? FreigtSC { get; set; }
+        public short? Len2Unit { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string BoeAcc { get; set; }
+        public decimal? Volume { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? BoeNum { get; set; }
+        public short? VolUnit { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? BoeSum { get; set; }
+        public decimal? Weight1 { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? BoeSumFc { get; set; }
+        public short? Wght1Unit { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? BoeSumSc { get; set; }
+        public decimal? Weight2 { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string BoeAgent { get; set; }
+        public short? Wght2Unit { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string BoeStatus { get; set; }
+        public decimal? Factor1 { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string WtCode { get; set; }
+        public decimal? Factor2 { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? WtSum { get; set; }
+        public decimal? Factor3 { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? WtSumFrgn { get; set; }
+        public decimal? Factor4 { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? WtSumSys { get; set; }
+        public decimal? PackQty { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string WtAccount { get; set; }
+        public string UpdInvntry { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? WtBaseAmnt { get; set; }
+        public int? BaseDocNum { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string Proforma { get; set; }
+        public string BaseAtCard { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? BoeAbs { get; set; }
+        public string SWW { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string BpAct { get; set; }
+        public decimal? VatSum { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? BcgSum { get; set; }
+        public decimal? VatSumFrgn { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? BcgSumFC { get; set; }
+        public int? FinncPriod { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? BcgSumSy { get; set; }
+        public string ObjType { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string PIndicator { get; set; }
+        public string BlockNum { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string PaPriority { get; set; }
+        public decimal? DedVatSum { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string PayToCode { get; set; }
+        public decimal? DedVatSumF { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string IsPaytoBnk { get; set; }
+        public string IsAqcuistn { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string PBnkCnt { get; set; }
+        public decimal? DistribSum { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string PBnkCode { get; set; }
+        public decimal? DstrbSumFC { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string PBnkAccnt { get; set; }
+        public decimal? GrssProfit { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string PBnkBranch { get; set; }
+        public decimal? GrssProfFC { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string WizDunBlck { get; set; }
+        public int? VisOrder { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? WtBaseSum { get; set; }
+        public decimal? INMPrice { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? WtBaseSumF { get; set; }
+        public string Address { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? WtBaseSumS { get; set; }
+        public string TaxCode { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? UndOvDiff { get; set; }
+        public string TaxType { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? UndOvDiffS { get; set; }
+        public string OrigItem { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? BankActKey { get; set; }
+        public string BackOrdr { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string VersionNum { get; set; }
+        public string FreeTxt { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public System.DateTime? VatDate { get; set; }
+        public string PickStatus { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string TransCode { get; set; }
+        public decimal? PickOty { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string PaymType { get; set; }
+        [Browsable(false)]
+        public int? PickIdNo { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? TfrRealAmt { get; set; }
+        public short? TrnsCode { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public System.DateTime? CancelDate { get; set; }
+        public decimal? VatAppld { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? OpenBal { get; set; }
+        public decimal? VatAppldFC { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? OpenBalFc { get; set; }
+        public decimal? BaseQty { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? OpenBalSc { get; set; }
+        public decimal? BaseOpnQty { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? BcgTaxSum { get; set; }
+        public decimal? VatDscntPr { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? BcgTaxSumF { get; set; }
+        public string WtLiable { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? BcgTaxSumS { get; set; }
+        public string DeferrTax { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? TpwID { get; set; }
+        public decimal? EquVatPer { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string ChallanNo { get; set; }
+        public decimal? EquVatSum { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string ChallanBak { get; set; }
+        public decimal? EquVatSumF { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public System.DateTime? ChallanDat { get; set; }
+        public decimal? LineVat { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string WddStatus { get; set; }
+        public decimal? LineVatlF { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string BcgVatGrp { get; set; }
+        public string unitMsr { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? BcgVatPcnt { get; set; }
+        public decimal? NumPerMsr { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public short? SeqCode { get; set; }
+        public decimal? ExciseAmt { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? Serial { get; set; }
+        public decimal? TaxPerUnit { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string SeriesStr { get; set; }
+        public decimal? TotInclTax { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string SubStr { get; set; }
+        public decimal? StckDstSum { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string BSRCode { get; set; }
+        public decimal? ReleasQtty { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string LineType { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string TranType { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string Text { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? StockPrice { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? StockSum { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? StockSumFc { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string ShipToCode { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string ShipToDesc { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? StckAppD { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? StckAppDFC { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string BasePrice { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? GTotal { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? GTotalFC { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string DistribExp { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? QtyToShip { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? DelivrdQty { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? OrderedQty { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public System.DateTime? ActDelDate { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? TaxDistSum { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? TaxDistSFC { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string PostTax { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string Excisable { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? AssblValue { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string LnExcised { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -867,202 +824,281 @@ namespace OpenAuth.Repository.Domain.Sap
         /// 
         /// </summary>
         [Description("")]
-        public decimal? WTOnhldPst { get; set; }
+        public decimal? StockValue { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public short? UserSign2 { get; set; }
+        public decimal? GPTtlBasPr { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string BuildDesc { get; set; }
+        public string isSrvCall { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string ResidenNum { get; set; }
+        public decimal? PQTReqQty { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string OperatCode { get; set; }
+        public System.DateTime? PQTReqDate { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? UndOvDiffF { get; set; }
+        public int? PcDocType { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? MIEntry { get; set; }
+        public decimal? PcQuantity { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string FreeText1 { get; set; }
+        public string LinManClsd { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string FreeText2 { get; set; }
+        public string NoInvtryMv { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string FreeText3 { get; set; }
+        public decimal? OpenRtnQty { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string ShowDocNo { get; set; }
+        public string U_WLLY { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? TDSInterst { get; set; }
+        public string U_YYFX { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? TDSCharges { get; set; }
+        public string U_XWJBH { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? CUP { get; set; }
+        public string U_ZWJBH { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? CIG { get; set; }
+        public string U_IG_DW { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string MIType { get; set; }
+        public decimal? U_ZDJG { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string SupplCode { get; set; }
+        public string U_ZXDH { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        [Browsable(false)]
-        public int? BPLId { get; set; }
+        public string U_TYWP { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string BPLName { get; set; }
+        public string U_CPH { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string VATRegNum { get; set; }
+        public string U_TYSL { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string BPLCentPmt { get; set; }
+        public string U_PRX_SID { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? DraftKey { get; set; }
+        public string U_PRX_VMas { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? TDSFee { get; set; }
+        public string U_PRX_VNum { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? MinHeadCL { get; set; }
+        public string U_PRX_Note { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public System.DateTime? SEPADate { get; set; }
+        public string U_A_CCNo { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? OwnerCode { get; set; }
+        public string U_A_EDATE { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? AgrNo { get; set; }
+        public string U_A_SECCOD { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? CreateTS { get; set; }
+        public string U_A_ADDR1 { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? UpdateTS { get; set; }
+        public string U_A_ADDR2 { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string TDSType { get; set; }
+        public string U_A_ADDR3 { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string DrNo { get; set; }
+        public string U_A_CITY { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string PmntWTCert { get; set; }
+        public string U_A_ZIP { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string EnPBnkAcct { get; set; }
+        public string U_A_CTYPE { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string EncryptIV { get; set; }
+        public string U_A_CREFNO { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string DPPStatus { get; set; }
+        public string U_A_ADATE { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string PriceMode { get; set; }
+        public string U_A_ACODE { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string U_XSDB { get; set; }
+        public string U_A_STATE { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public string U_XSBM { get; set; }
+        public string U_A_CAMT { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public int? U_XSDD { get; set; }
+        public string U_A_PAYT { get; set; }
         /// <summary>
         /// 
         /// </summary>
         [Description("")]
-        public decimal? U_DKJE { get; set; }
+        public string U_BNIncTrm { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_BNTrnMod { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public short? U_CCSJ { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_PDXX { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_BXSJ { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public short? U_LineID { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_ZS { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal U_XSTCBL { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal U_SCTCBL { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal U_YFTCBL { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal U_YWF { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal U_FWF { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? U_YF { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? U_SHJSDJ { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? U_SHJSJ { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public decimal? U_SHTC { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [Description("")]
+        public string U_RelDoc { get; set; }
     }
 }
