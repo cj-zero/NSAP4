@@ -705,6 +705,8 @@ namespace OpenAuth.App.Material
                     //A6开头 不带机箱、机柜的物料 销售价为结算价的2倍
                     if (e.ItemCode.StartsWith("A6") && !(e.ItemName.Contains("机柜") || e.ItemName.Contains("机箱")))
                         e.lastPurPrc = e.UnitPrice * 2;
+                    if (e.ItemCode == "A801-7'S-CC-WX")
+                        e.lastPurPrc = e.UnitPrice * 2;
                 }
 
             });
@@ -1255,6 +1257,8 @@ namespace OpenAuth.App.Material
                     e.lastPurPrc = e.UnitPrice * 3;
                     //A6开头 不带机箱、机柜的物料 销售价为结算价的2倍
                     if (e.ItemCode.StartsWith("A6") && !(e.ItemName.Contains("机柜") || e.ItemName.Contains("机箱")))
+                        e.lastPurPrc = e.UnitPrice * 2;
+                    if (e.ItemCode == "A801-7'S-CC-WX")
                         e.lastPurPrc = e.UnitPrice * 2;
                 }
 
