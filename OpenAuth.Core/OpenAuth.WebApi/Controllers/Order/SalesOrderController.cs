@@ -516,24 +516,24 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// </summary>
         /// <param name="orderDataDocEntryReq">单据比较实体</param>
         /// <returns>返回单据基础信息对比、单据物料明细对比信息、单据物料明细金额百分比信息</returns>
-        [HttpPost]
-        [Route("GetSaleOrderDataContent")]
-        public async Task<TableData> GetSaleOrderDataContent(OrderDataDocEntryReq orderDataDocEntryReq)
-        {
-            var result = new TableData();
-            try
-            {
-                return await _orderDraftServiceApp.GetOrderDataContent(orderDataDocEntryReq.DocEntry, orderDataDocEntryReq.DocEntrys, "SaleOrder");
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.Message;
-                Log.Logger.Error($"地址：{Request.Path}，参数：{ex.Message.ToString().ToJson()}, 错误：{result.Message}");
-            }
+        //[HttpPost]
+        //[Route("GetSaleOrderDataContent")]
+        //public async Task<TableData> GetSaleOrderDataContent(OrderDataDocEntryReq orderDataDocEntryReq)
+        //{
+        //    var result = new TableData();
+        //    try
+        //    {
+        //        return await _orderDraftServiceApp.GetOrderDataContent(orderDataDocEntryReq.DocEntry, orderDataDocEntryReq.DocEntrys, "SaleOrder");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Code = 500;
+        //        result.Message = ex.Message;
+        //        Log.Logger.Error($"地址：{Request.Path}，参数：{ex.Message.ToString().ToJson()}, 错误：{result.Message}");
+        //    }
 
-            return result;
-        }
+        //    return result;
+        //}
         #endregion
     }
 }
