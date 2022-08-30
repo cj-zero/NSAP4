@@ -169,6 +169,7 @@ namespace OpenAuth.App
                                   .WhereIf(model.user_ids.Count > 0, c => model.user_ids.Contains(c.user_id.Value))
                                   .WhereIf(!string.IsNullOrWhiteSpace(model.username), c => c.user_name.Contains(model.username))
                                   .WhereIf(!string.IsNullOrWhiteSpace(model.department), c => c.department.Contains(model.department))
+                                  .WhereIf(!string.IsNullOrWhiteSpace(model.department_id),c=>c.department_id== model.department_id)
                                   .ToListAsync();
             result.Count = query.Count;
             if (model.page_index > 0 && model.page_size > 0)
