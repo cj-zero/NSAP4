@@ -73,5 +73,26 @@ namespace NSAP.App.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 获取App用户列表带部门
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> UserList(AppUserReq model)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.UserList(model);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
     }
 }
