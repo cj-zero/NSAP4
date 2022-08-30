@@ -46,6 +46,11 @@ namespace OpenAuth.App.Response
         /// </summary>
         public T Data;
 
+        /// <summary>
+        /// 冗余字段
+        /// </summary>
+        public string Extra;
+
         public TableData()
         {
             Code = 200;

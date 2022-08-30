@@ -551,64 +551,20 @@ namespace OpenAuth.App.Client
             //统计业务伙伴总的科目余额
             DataTable sbotable = new DataTable();
             sbotable = _serviceSaleOrderApp.DropListSboId();
-            var Arrays = from DataRow dr in sbotable.Rows select dr[0].ToString();
-            var heets = "";
-            foreach (var item in Arrays)
+            foreach (DataRow clientrow in clientTable.Rows)
             {
-                heets += "'" + item + "',";
-            }
-            var ids = heets.TrimEnd(',');
-            if (!string.IsNullOrWhiteSpace(CardCodes))
-            {
-                string strmySql = string.Format("SELECT sbo_id,CardCode,Balance FROM nsap_bone.crm_ocrd_oldsbo_balance WHERE CardCode IN ({0})", CardCodes);
-                var sbobalancestr = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strmySql, CommandType.Text, null);
-                if (sbobalancestr.Rows.Count > 0)
+                decimal totalbalance = 0;
+                foreach (DataRow sborow in sbotable.Rows)
                 {
-                    foreach (DataRow clientrow in clientTable.Rows)
-                    {
-                        decimal totalbalance = 0;
-                        foreach (DataRow item in sbobalancestr.Rows)
-                        {
-                            decimal sbobalance = 0;
-                            if (!string.IsNullOrEmpty(item["Balance"].ToString()) && Decimal.TryParse(item["Balance"].ToString(), out sbobalance) && clientrow["CardCode"].ToString() == item["CardCode"].ToString())
-                                totalbalance += sbobalance;
-                            if (clientTable.Columns.Contains("sbo_id") && clientrow["sbo_id"].ToString() == item["id"].ToString() && clientrow["CardCode"].ToString() == item["CardCode"].ToString())
-                                clientrow["Balance"] = sbobalance;
-                        }
-                        clientrow["BalanceTotal"] = totalbalance;
-                    }
+                    
+                   string sbobalancestr = GetClientSboBalanceNew(clientrow["CardCode"].ToString(), sborow["id"].ToString());
+                   decimal sbobalance = 0;
+                    if (!string.IsNullOrEmpty(sbobalancestr) && Decimal.TryParse(sbobalancestr, out sbobalance))
+                        totalbalance += sbobalance;
+                    if (clientTable.Columns.Contains("sbo_id") && clientrow["sbo_id"].ToString() == sborow["id"].ToString())
+                        clientrow["Balance"] = sbobalance;
                 }
-
-                DataTable Balancetb = new DataTable();
-                foreach (DataRow item in sbotable.Rows)
-                {
-                    bool sapflag = _serviceSaleOrderApp.GetSapSboIsOpen(item["id"].ToString());
-                    if (sapflag)
-                    {
-                        string strSql = string.Format("SELECT Balance,CardCode FROM OCRD WHERE CardCode in ({0}) and Balance>0", CardCodes);
-                        Balancetb = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql, CommandType.Text, null);
-                        break;
-                    }
-                }
-                if (Balancetb.Rows.Count > 0)
-                {
-                    foreach (DataRow clientrows in clientTable.Rows)
-                    {
-                        foreach (DataRow sborow in Balancetb.Rows)
-                        {
-                            if (clientrows["CardCode"].ToString() == sborow["CardCode"].ToString())
-                            {
-                                decimal totalbalance = 0;
-                                string sbobalancestrs = sborow["Balance"].ToString();
-                                decimal sbobalance = 0;
-                                if (!string.IsNullOrEmpty(sbobalancestrs) && Decimal.TryParse(sbobalancestrs, out sbobalance) && sbobalancestrs != "0.000000")
-                                    totalbalance += sbobalance;
-                                clientrows["BalanceTotal"] = totalbalance;
-                                break;
-                            }
-                        }
-                    }
-                }
+                clientrow["BalanceTotal"] = totalbalance;
             }
             return clientTable;
         }
@@ -706,12 +662,21 @@ namespace OpenAuth.App.Client
         /// <param name="CardCode">客戶代碼</param>
         /// <param name="SboId">賬套</param>
         /// <returns></returns>
-        public DataTable GetClientSboBalanceNew(string CardCode, string SboId)
+        public string GetClientSboBalanceNew(string CardCode, string SboId)
         {
-            DataTable dt = new DataTable();
-            string strmySql = string.Format("SELECT sbo_id,CardCode,Balance FROM {0}.crm_ocrd_oldsbo_balance WHERE sbo_id IN({1}) and CardCode IN ({2})", "nsap_bone", SboId, CardCode);
-            dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strmySql, CommandType.Text, null);
-            return dt;
+            bool sapflag = _serviceSaleOrderApp.GetSapSboIsOpen(SboId);
+            if (sapflag)
+            {
+                string strSql = string.Format("SELECT Balance FROM OCRD WHERE CardCode = '{0}'", CardCode);
+                object sapbobj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, strSql, CommandType.Text, null);
+                return sapbobj == null ? "" : sapbobj.ToString();
+            }
+            else {
+                string strmySql = string.Format("SELECT Balance FROM {0}.crm_ocrd_oldsbo_balance WHERE sbo_id IN({1}) and CardCode IN ('{2}')", "nsap_bone", SboId, CardCode);
+                DataTable sapbobj = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strmySql, CommandType.Text, null);
+                return sapbobj.Rows.Count == 0 ? "" : sapbobj.Rows[0][0].ToString(); 
+            }
+               
         }
         public string GetClientSboBalance(string CardCode, string SboId)
         {
@@ -720,9 +685,7 @@ namespace OpenAuth.App.Client
             if (sapflag)
             {
 
-                string strSql = string.Format("SELECT Balance FROM OCRD WHERE CardCode = '{0}'", CardCode);
-                object sapbobj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, strSql, CommandType.Text, null);
-                sapbobjs = sapbobj == null ? "" : sapbobj.ToString();
+                
             }
 
             return sapbobjs;
@@ -915,11 +878,11 @@ namespace OpenAuth.App.Client
                 UpdateDate = clientInfo.UpdateDate,//修改时间
                 BillToDef = clientInfo.BillToDef,//默认开票地址
                 ShipToDef = clientInfo.ShipToDef,//默认收货地址
-                QryGroup1 = clientInfo.QryGroup1,// 属性 1
-                QryGroup2 = clientInfo.QryGroup2,// 属性 2
-                QryGroup3 = clientInfo.QryGroup3,// 属性 3
-                QryGroup4 = clientInfo.QryGroup4,// 属性 4
-                QryGroup6 = clientInfo.QryGroup6,// 属性 6
+                //QryGroup1 = clientInfo.QryGroup1,// 属性 1
+                //QryGroup2 = clientInfo.QryGroup2,// 属性 2
+                //QryGroup3 = clientInfo.QryGroup3,// 属性 3
+                //QryGroup4 = clientInfo.QryGroup4,// 属性 4
+                //QryGroup6 = clientInfo.QryGroup6,// 属性 6
                 ClientOperateType = clientInfo.ClientOperateType,//业务伙伴操作类型
                 CustomFields = !string.IsNullOrEmpty(clientInfo.CustomFields) ? clientInfo.CustomFields.Replace(" ", "").Replace("　", "") : "",//  $"U_ShipName≮1≯≮0≯U_SCBM≮1≯P3-陈友祥",
                 IsActive = clientInfo.IsActive,//业务伙伴状态
