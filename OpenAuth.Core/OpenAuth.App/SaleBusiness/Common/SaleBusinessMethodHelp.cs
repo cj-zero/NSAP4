@@ -55,7 +55,15 @@ namespace OpenAuth.App.SaleBusiness.Common
             }
 
             User loginUser = loginContext.User;
-            slpCode = (UnitWork.Find<sbo_user>(r => r.user_id == loginUser.User_Id).FirstOrDefault()).sale_id;
+            if (loginUser.User_Id == null)
+            {
+                slpCode = 0;
+            }
+            else
+            {
+                slpCode = (UnitWork.Find<sbo_user>(r => r.user_id == loginUser.User_Id).FirstOrDefault()).sale_id;
+            }
+          
             return loginUser;
         }
 
