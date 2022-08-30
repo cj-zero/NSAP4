@@ -91,6 +91,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("是否删除")]
         public bool IsDelete { get; set; }
+
+        /// <summary>
+        /// 是否提醒
+        /// </summary>
+        public bool IsRemind { get; set; }
         public override void GenerateDefaultKeyVal()
         {
         }

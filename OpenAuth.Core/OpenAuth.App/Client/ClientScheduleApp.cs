@@ -72,6 +72,7 @@ namespace OpenAuth.App.Client
                 clientSchedule.CreateUser = loginUser.User_Id.Value;
                 clientSchedule.CreateDate = DateTime.Now;
                 clientSchedule.IsDelete = false;
+                clientSchedule.IsRemind = false;
                 await UnitWork.AddAsync<ClientSchedule, int>(clientSchedule);
             }
             else
