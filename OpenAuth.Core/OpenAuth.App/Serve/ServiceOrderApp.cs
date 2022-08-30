@@ -6450,7 +6450,7 @@ namespace OpenAuth.App
             {
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
             }
-            var serviceOrder1 = UnitWork.Find<ServiceOrder>(c => c.VestInOrg == 1 && c.AllowOrNot == 0 && c.Status == 2 && c.U_SAP_ID != null && c.Supervisor == "王海涛")
+            var serviceOrder1 = UnitWork.Find<ServiceOrder>(c => c.VestInOrg == 1 && c.AllowOrNot == 0 && c.Status == 2 && c.U_SAP_ID != null && c.Supervisor == "王海涛" && c.FromId != 8)
                                     .Include(c => c.ServiceWorkOrders)
                                     .WhereIf(req.ServiceMode != null, c => c.ExpectServiceMode == req.ServiceMode)
                                     .Where(c => c.ServiceWorkOrders.Any(s => s.Status == 1 && s.FromType != 2))
