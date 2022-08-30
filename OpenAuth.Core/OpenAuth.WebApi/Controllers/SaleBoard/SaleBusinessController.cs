@@ -197,6 +197,9 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 User loginUser = _saleBusinessMethodHelp.GetLoginUser(out int? slpCode);
+                if (slpCode == 0)
+                    return result;
+
                 QueryOINVRank query = new QueryOINVRank();
                 query.DepartRank = await _saleBusinessApp.GetDeliveryDepartRank(currency, loginUser, slpCode);
                 query.CompanyRank = await _saleBusinessApp.GetDelilveryCompanyRank(currency, loginUser, slpCode);
@@ -223,6 +226,9 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 User loginUser = _saleBusinessMethodHelp.GetLoginUser(out int? slpCode);
+                if (slpCode == 0)
+                    return result;
+
                 QueryOINVRank query = new QueryOINVRank();
                 query.DepartRank = await _saleBusinessApp.GetPericentageDepartRank(loginUser, slpCode);
                 query.CompanyRank = await _saleBusinessApp.GetPericentageCompanyRank(loginUser, slpCode);
@@ -327,6 +333,9 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 User loginUser = _saleBusinessMethodHelp.GetLoginUser(out int? slpCode);
+                if (slpCode == 0)
+                    return result;
+
                 QueryTableData td = _saleBusinessMethodHelp.TimeRangeType(startTime, endTime, timeType);
                 if (td.IsSuccess)
                 {
@@ -404,6 +413,9 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 User loginUser = _saleBusinessMethodHelp.GetLoginUser(out int? slpCode);
+                if (slpCode == 0)
+                    return result;
+
                 QueryTableData td = _saleBusinessMethodHelp.TimeRangeType(startTime, endTime, timeType);
                 if (td.IsSuccess)
                 {
@@ -455,6 +467,9 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 User loginUser = _saleBusinessMethodHelp.GetLoginUser(out int? slpCode);
+                if (slpCode == 0)
+                    return result;
+
                 QueryTableData td = _saleBusinessMethodHelp.TimeRangeType(startTime, endTime, timeType);
                 if (td.IsSuccess)
                 {
@@ -506,6 +521,9 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 User loginUser = _saleBusinessMethodHelp.GetLoginUser(out int? slpCode);
+                if (slpCode == 0)
+                    return result;
+
                 QueryTableData td = _saleBusinessMethodHelp.TimeRangeType(startTime, endTime, timeType);
                 if (td.IsSuccess)
                 {
@@ -557,6 +575,9 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 User loginUser = _saleBusinessMethodHelp.GetLoginUser(out int? slpCode);
+                if (slpCode == 0)
+                    return result;
+
                 QueryTableData td = _saleBusinessMethodHelp.TimeRangeType(startTime, endTime, timeType);
                 if (td.IsSuccess)
                 {
@@ -608,6 +629,9 @@ namespace OpenAuth.WebApi.Controllers
             try
             {
                 User loginUser = _saleBusinessMethodHelp.GetLoginUser(out int? slpCode);
+                if (slpCode == 0)
+                    return result;
+
                 QueryTableData td = _saleBusinessMethodHelp.TimeRangeType(startTime, endTime, timeType);
                 if (td.IsSuccess)
                 {

@@ -69,6 +69,9 @@ namespace OpenAuth.App.SaleBusiness
         {
             User loginUser = _saleBusinessMethodHelp.GetLoginUser(out int? slpCode);
             var result = new TableData();
+            if (slpCode == 0)
+                return result;
+
             List<QuerySaleBusinessRequest> saleList = new List<QuerySaleBusinessRequest>();
             QueryTime qt = _saleBusinessMethodHelp.TimeRange(timeRange);
             if (qt == null || qt.endTime == null || qt.startTime == null)
@@ -455,6 +458,9 @@ namespace OpenAuth.App.SaleBusiness
         {
             User loginUser = _saleBusinessMethodHelp.GetLoginUser(out int? slpCode);
             var result = new TableData();
+            if (slpCode == 0)
+                return result;
+
             List<QuerySaleBusinessRequest> saleStatusList = new List<QuerySaleBusinessRequest>();
             saleStatusList.Add(await GetSalesQuotationOrderAudit(XSBJD, loginUser));//获取审批中销售报价单
             saleStatusList.Add(await GetSalesQuotationOrderAudit(XSDD, loginUser));//获取审批中销售订单
@@ -746,6 +752,9 @@ namespace OpenAuth.App.SaleBusiness
         {
             User loginUser = _saleBusinessMethodHelp.GetLoginUser(out int? slpCode);
             var result = new TableData();
+            if (slpCode == 0)
+                return result;
+
             QueryOINV query = new QueryOINV();
             query.DeliveryNum = await GetDeliveryMoney(currency, slpCode);//获取应收款金额
             query.CompareLaterYear = await GetDeliveryCompareLastYearRatio(slpCode);//获取应收款余额占去年总回款比例
@@ -1166,6 +1175,9 @@ namespace OpenAuth.App.SaleBusiness
         {
             var result = new TableData();
             User loginUser = _saleBusinessMethodHelp.GetLoginUser(out int? slpCode);
+            if (slpCode == 0)
+                return result;
+
             QueryTableData td = _saleBusinessMethodHelp.TimeRangeType(startTime, endTime, timeType);
             if (td.IsSuccess)
             {
@@ -1299,6 +1311,9 @@ namespace OpenAuth.App.SaleBusiness
         {
             var result = new TableData();
             User loginUser = _saleBusinessMethodHelp.GetLoginUser(out int? slpCode);
+            if (slpCode == 0)
+                return result;
+
             QueryTableData td = _saleBusinessMethodHelp.TimeRangeType(startTime, endTime, timeType);
             if (td.IsSuccess)
             {
