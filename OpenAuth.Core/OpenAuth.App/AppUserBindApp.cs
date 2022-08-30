@@ -151,5 +151,35 @@ namespace OpenAuth.App
             }
             return result;
         }
+        /// <summary>
+        /// 获取App用户列表带部门
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        public async Task<TableData> UserList(AppUserReq model)
+        {
+            var result = new TableData();
+            List<string> user_ids = new List<string>();
+            var query = await (from a in UnitWork.Find<AppUserMap>(null)
+                               join b in UnitWork.Find<User>(null) on a.UserID equals b.Id
+                               join c in UnitWork.Find<Relevance>(null) on b.Id equals c.FirstId
+                               join d in UnitWork.Find<Repository.Domain.Org>(null) on c.SecondId equals d.Id
+                               where b.Status == 0 && c.Key=="UserOrg"
+                               select new { user_id = a.AppUserId, user_name = b.Name, department_id=d.Id, department=d.Name })
+                                  .WhereIf(model.user_ids.Count > 0, c => model.user_ids.Contains(c.user_id.Value))
+                                  .WhereIf(!string.IsNullOrWhiteSpace(model.username), c => c.user_name.Contains(model.username))
+                                  .WhereIf(!string.IsNullOrWhiteSpace(model.department), c => c.department.Contains(model.department))
+                                  .ToListAsync();
+            result.Count = query.Count;
+            if (model.page_index > 0 && model.page_size > 0)
+            {
+                result.Data = query.Skip((model.page_index - 1) * model.page_size).Take(model.page_size);
+            }
+            else
+            {
+                result.Data = query;
+            }
+            return result;
+        }
     }
 }
