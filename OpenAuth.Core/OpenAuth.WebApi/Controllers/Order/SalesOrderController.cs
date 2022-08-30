@@ -29,20 +29,20 @@ namespace OpenAuth.WebApi.Controllers.Order
     public class SalesOrderController : Controller
     {
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
-        private readonly OrderDraftServiceApp _orderDraftServiceApp;
+        //private readonly OrderDraftServiceApp _orderDraftServiceApp;
         private readonly IOptions<AppSetting> _appConfiguration;
         IAuth _auth;
         IUnitWork UnitWork;
         ServiceBaseApp _serviceBaseApp;
         MaterialDesignApp _materialdesignapp;
-        public SalesOrderController(IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, OrderDraftServiceApp orderDraftServiceApp, IOptions<AppSetting> appConfiguration, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp, MaterialDesignApp materialdesignapp)
+        public SalesOrderController(IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IOptions<AppSetting> appConfiguration, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp, MaterialDesignApp materialdesignapp)
         {
             this.UnitWork = UnitWork;
             this._serviceBaseApp = _serviceBaseApp;
             this._auth = _auth;
             _serviceSaleOrderApp = serviceSaleOrderApp;
             _materialdesignapp = materialdesignapp;
-            _orderDraftServiceApp = orderDraftServiceApp;
+            //_orderDraftServiceApp = orderDraftServiceApp;
             _appConfiguration = appConfiguration;
         }
         #region 销售订单列表视图
