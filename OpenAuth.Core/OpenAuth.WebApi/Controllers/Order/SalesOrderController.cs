@@ -1,5 +1,7 @@
 ﻿using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Material;
@@ -7,6 +9,7 @@ using OpenAuth.App.Order;
 using OpenAuth.App.Order.ModelDto;
 using OpenAuth.App.Order.Request;
 using OpenAuth.App.Response;
+using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 using Serilog;
 using System;
@@ -26,17 +29,21 @@ namespace OpenAuth.WebApi.Controllers.Order
     public class SalesOrderController : Controller
     {
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
+        private readonly OrderDraftServiceApp _orderDraftServiceApp;
+        private readonly IOptions<AppSetting> _appConfiguration;
         IAuth _auth;
         IUnitWork UnitWork;
         ServiceBaseApp _serviceBaseApp;
         MaterialDesignApp _materialdesignapp;
-        public SalesOrderController(IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp, MaterialDesignApp materialdesignapp)
+        public SalesOrderController(IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, OrderDraftServiceApp orderDraftServiceApp, IOptions<AppSetting> appConfiguration, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp, MaterialDesignApp materialdesignapp)
         {
             this.UnitWork = UnitWork;
             this._serviceBaseApp = _serviceBaseApp;
             this._auth = _auth;
             _serviceSaleOrderApp = serviceSaleOrderApp;
             _materialdesignapp = materialdesignapp;
+            _orderDraftServiceApp = orderDraftServiceApp;
+            _appConfiguration = appConfiguration;
         }
         #region 销售订单列表视图
         /// <summary>
@@ -256,6 +263,42 @@ namespace OpenAuth.WebApi.Controllers.Order
         }
 
         /// <summary>
+        /// 销售订单打印
+        /// </summary>
+        /// <param name="DocEntry">凭证编码</param>
+        /// <param name="Indicator">公司标识</param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("PrintSalesOrder")]
+        public async Task<TableData> PrintSalesOrder(string DocEntry, string Indicator)
+        {
+            var result = new TableData();
+            try
+            {
+                HttpHelper httpHelper = new HttpHelper(_appConfiguration.Value.ERP3Url);
+                var resultApi = httpHelper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "DocEntry", DocEntry }, { "Indicator", Indicator } }, "/spv/exportsaleorder.ashx");
+                if (resultApi["msg"] == "success")
+                {
+                    var url = resultApi["url"].Replace("192.168.0.208", "218.17.149.195");
+                    result.Data = url;
+                }
+                else
+                {
+                    result.Code = 500;
+                    result.Message = resultApi["msg"];
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{ex.Message.ToString().ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// PDF打印（新）
         /// </summary>
         /// <param name="sboid">账套Id</param>
@@ -465,6 +508,32 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
 
+        #endregion
+
+        #region 单据对比
+        /// <summary>
+        /// 单据对比
+        /// </summary>
+        /// <param name="orderDataDocEntryReq">单据比较实体</param>
+        /// <returns>返回单据基础信息对比、单据物料明细对比信息、单据物料明细金额百分比信息</returns>
+        [HttpPost]
+        [Route("GetSaleOrderDataContent")]
+        public async Task<TableData> GetSaleOrderDataContent(OrderDataDocEntryReq orderDataDocEntryReq)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _orderDraftServiceApp.GetOrderDataContent(orderDataDocEntryReq.DocEntry, orderDataDocEntryReq.DocEntrys, "SaleOrder");
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{ex.Message.ToString().ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
         #endregion
     }
 }
