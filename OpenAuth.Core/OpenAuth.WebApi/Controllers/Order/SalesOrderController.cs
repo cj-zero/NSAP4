@@ -29,20 +29,20 @@ namespace OpenAuth.WebApi.Controllers.Order
     public class SalesOrderController : Controller
     {
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
-        private readonly OrderDraftServiceApp _orderDraftServiceApp;
+        //private readonly OrderDraftServiceApp _orderDraftServiceApp;
         private readonly IOptions<AppSetting> _appConfiguration;
         IAuth _auth;
         IUnitWork UnitWork;
         ServiceBaseApp _serviceBaseApp;
         MaterialDesignApp _materialdesignapp;
-        public SalesOrderController(IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, OrderDraftServiceApp orderDraftServiceApp, IOptions<AppSetting> appConfiguration, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp, MaterialDesignApp materialdesignapp)
+        public SalesOrderController(IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IOptions<AppSetting> appConfiguration, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp, MaterialDesignApp materialdesignapp)
         {
             this.UnitWork = UnitWork;
             this._serviceBaseApp = _serviceBaseApp;
             this._auth = _auth;
             _serviceSaleOrderApp = serviceSaleOrderApp;
             _materialdesignapp = materialdesignapp;
-            _orderDraftServiceApp = orderDraftServiceApp;
+            //_orderDraftServiceApp = orderDraftServiceApp;
             _appConfiguration = appConfiguration;
         }
         #region 销售订单列表视图
@@ -516,24 +516,24 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// </summary>
         /// <param name="orderDataDocEntryReq">单据比较实体</param>
         /// <returns>返回单据基础信息对比、单据物料明细对比信息、单据物料明细金额百分比信息</returns>
-        [HttpPost]
-        [Route("GetSaleOrderDataContent")]
-        public async Task<TableData> GetSaleOrderDataContent(OrderDataDocEntryReq orderDataDocEntryReq)
-        {
-            var result = new TableData();
-            try
-            {
-                return await _orderDraftServiceApp.GetOrderDataContent(orderDataDocEntryReq.DocEntry, orderDataDocEntryReq.DocEntrys, "SaleOrder");
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.Message;
-                Log.Logger.Error($"地址：{Request.Path}，参数：{ex.Message.ToString().ToJson()}, 错误：{result.Message}");
-            }
+        //[HttpPost]
+        //[Route("GetSaleOrderDataContent")]
+        //public async Task<TableData> GetSaleOrderDataContent(OrderDataDocEntryReq orderDataDocEntryReq)
+        //{
+        //    var result = new TableData();
+        //    try
+        //    {
+        //        return await _orderDraftServiceApp.GetOrderDataContent(orderDataDocEntryReq.DocEntry, orderDataDocEntryReq.DocEntrys, "SaleOrder");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Code = 500;
+        //        result.Message = ex.Message;
+        //        Log.Logger.Error($"地址：{Request.Path}，参数：{ex.Message.ToString().ToJson()}, 错误：{result.Message}");
+        //    }
 
-            return result;
-        }
+        //    return result;
+        //}
         #endregion
     }
 }
