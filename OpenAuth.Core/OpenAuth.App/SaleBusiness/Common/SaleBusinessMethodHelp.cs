@@ -18,6 +18,7 @@ using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.App.SaleBusiness.Common;
 using Microsoft.EntityFrameworkCore;
+using OpenAuth.Repository.Domain.Customer;
 
 namespace OpenAuth.App.SaleBusiness.Common
 {
@@ -76,61 +77,17 @@ namespace OpenAuth.App.SaleBusiness.Common
         /// <returns>返回新增客户概况信息</returns>
         public async Task<int> GetTimeRangCustomer(string startTime, string endTime, int? slpCode)
         {
-            int count = 0;
-            List<QueryOCRD> ocrdList = await UnitWork.Find<OCRD>(r => r.SlpCode == slpCode).Select(r => new QueryOCRD { CardCode = r.CardCode, CreateDate = r.CreateDate, SlpCode = r.SlpCode, UpdateDate = r.UpdateDate }).ToListAsync();
-            foreach (QueryOCRD item in ocrdList)
-            {
-                var exitSlpList = await UnitWork.Find<ACRD>(r => r.CardCode == item.CardCode).Select(r => new { r.UpdateDate, r.CreateDate, r.CardCode, r.SlpCode }).ToListAsync();
-                if (exitSlpList.Count == 0)
-                {
-                    if (item.CreateDate >= Convert.ToDateTime(startTime) && item.CreateDate <= Convert.ToDateTime(endTime))
-                    {
-                        count = count + 1;
-                    }
-                }
-                else
-                {
-                    var exitEqualList = exitSlpList.Where(r => r.SlpCode == item.SlpCode).OrderByDescending(r => r.UpdateDate).ToList();
-                    if (exitEqualList.Count() > 0)
-                    {
-                        var exitNotList = exitSlpList.Where(r => r.SlpCode != item.SlpCode).OrderByDescending(r => r.UpdateDate).ToList();
-                        if (exitNotList.Count() > 0)
-                        {
-                            exitSlpList = exitSlpList.Where(r => r.UpdateDate > exitNotList.FirstOrDefault().UpdateDate).OrderBy(r => r.UpdateDate).ToList();
-                            if (exitSlpList.Count() > 0)
-                            {
-                                if (exitSlpList.FirstOrDefault().UpdateDate >= Convert.ToDateTime(startTime) && exitSlpList.FirstOrDefault().UpdateDate <= Convert.ToDateTime(endTime))
-                                {
-                                    count = count + 1;
-                                }
-                            }
-                            else
-                            {
-                                if (item.UpdateDate >= Convert.ToDateTime(startTime) && item.UpdateDate <= Convert.ToDateTime(endTime))
-                                {
-                                    count = count + 1;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (exitEqualList.Min(r => r.UpdateDate) >= Convert.ToDateTime(startTime) && exitEqualList.Min(r => r.UpdateDate) <= Convert.ToDateTime(endTime))
-                            {
-                                count = count + 1;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (item.UpdateDate >= Convert.ToDateTime(startTime) && item.UpdateDate <= Convert.ToDateTime(endTime))
-                        {
-                            count = count + 1;
-                        }
-                    }
-                }
-            }
+            List<QueryOCRD> customerSalerHistories = await UnitWork.Find<CustomerSalerHistory>(r => r.SlpCode == slpCode)
+                                                                   .GroupBy(r => new { r.CustomerNo, r.SlpCode })
+                                                                   .Select(r => new QueryOCRD
+                                                                   {
+                                                                       CardCode = r.Key.CustomerNo,
+                                                                       CreateDate = r.Max(r => r.CreateTime),
+                                                                       SlpCode = r.Key.SlpCode
+                                                                   }).ToListAsync();
 
-            return count;
+            customerSalerHistories = customerSalerHistories.Where(r => r.CreateDate >= Convert.ToDateTime(startTime) && r.CreateDate <= Convert.ToDateTime(endTime)).ToList();
+            return customerSalerHistories.Count();
         }
 
         /// <summary>
@@ -334,10 +291,10 @@ namespace OpenAuth.App.SaleBusiness.Common
             if (currency == "ALL")
             {
                 var orctTotalList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N").Select(r => new { r.U_XSDD, r.DocTotal, r.CreateDate }).ToListAsync()
-                                    join b in await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode).Select(r => new { r.DocEntry }).ToListAsync() on a.U_XSDD equals b.DocEntry
+                                    join b in await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode).Select(r => new { r.DocEntry, r.SlpCode }).ToListAsync() on a.U_XSDD equals b.DocEntry
                                     into ab
                                     from b in ab.DefaultIfEmpty()
-                                    where a.CreateDate >= Convert.ToDateTime(startTime) && a.CreateDate <= Convert.ToDateTime(endTime)
+                                    where a.CreateDate >= Convert.ToDateTime(startTime) && a.CreateDate <= Convert.ToDateTime(endTime) && b.SlpCode == slpCode
                                     select new { a.DocTotal };
 
                 return Math.Round(orctTotalList.Sum(r => r.DocTotal).ToDecimal(), 2);
@@ -345,10 +302,10 @@ namespace OpenAuth.App.SaleBusiness.Common
             else
             {
                 var orctTotalList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N" && r.DocCurr == currency).Select(r => new { r.U_XSDD, r.DocTotal, r.DocTotalFC, r.CreateDate }).ToListAsync()
-                                    join b in await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode && r.DocCur == currency).Select(r => new { r.DocEntry }).ToListAsync() on a.U_XSDD equals b.DocEntry
+                                    join b in await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode && r.DocCur == currency).Select(r => new { r.DocEntry, r.SlpCode}).ToListAsync() on a.U_XSDD equals b.DocEntry
                                     into ab
                                     from b in ab.DefaultIfEmpty()
-                                    where a.CreateDate >= Convert.ToDateTime(startTime) && a.CreateDate <= Convert.ToDateTime(endTime)
+                                    where a.CreateDate >= Convert.ToDateTime(startTime) && a.CreateDate <= Convert.ToDateTime(endTime) && b.SlpCode == slpCode
                                     select new { a.DocTotal, a.DocTotalFC };
 
                 return Math.Round(orctTotalList.Sum(r => currency == "RMB" ? r.DocTotal : r.DocTotalFC).ToDecimal(), 2);
