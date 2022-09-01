@@ -171,6 +171,12 @@ namespace OpenAuth.Repository.Domain
         [Description("测试预估工期")]
         public int? TestEstimate { get; set; }
         /// <summary>
+        /// 需求预估工期
+        /// </summary>
+        [Description("需求预估工期")]
+        public int? DemandEstimate { get; set; }
+        
+        /// <summary>
         /// 备注说明
         /// </summary>
         [Description("备注说明")]
