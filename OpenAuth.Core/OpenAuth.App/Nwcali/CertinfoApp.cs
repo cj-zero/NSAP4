@@ -1844,78 +1844,58 @@ namespace OpenAuth.App
             string u1 = "", u2 = "";
             DateTime? date = null;
             ////下位机数量
-            //var wor1 =  UnitWork.Find<product_wor1>(c => c.DocEntry == docEntry && c.ItemCode.Contains("XWJ")).Sum(c => c.PlannedQty);
+            //var wor1 = UnitWork.Find<product_wor1>(c => c.DocEntry == docEntry && c.ItemCode.Contains("XWJ")).Sum(c => c.PlannedQty);
             //if (guids.Count == 0)
             //{
             //    return (result, "", "", null);
             //}
-            if (guids.Count > 0)
+
+            var newlog = UnitWork.Find<DeviceTestLog>(c => c.GeneratorCode == wo).OrderByDescending(c => c.Id).FirstOrDefault();
+            if (newlog != null)
             {
                 var url = "https://analytics.neware.com.cn/";
                 HttpHelper httpHelper = new HttpHelper(url);
                 var guidSuccessCount = 0;
                 var err = 0;
-                foreach (var guid in guids)
+                //最新环境下 最新下位机测试记录
+                var guidSql = $@"select LowGuid,EdgeGuid,SrvGuid,DevUid,UnitId from devicetestlog where id in(
+                                select MAX(Id) id from devicetestlog where EdgeGuid='{newlog.EdgeGuid}' and SrvGuid='{newlog.SrvGuid}' and DevUid={newlog.DevUid} AND GeneratorCode='{wo}'
+                                group by EdgeGuid,SrvGuid,DevUid,UnitId,ChlId)
+                                group by LowGuid";
+                var guidList = UnitWork.Query<DeviceTestLog>(guidSql).Select(c => new { c.EdgeGuid, c.SrvGuid, c.DevUid, c.UnitId }).ToList();
+                var guidCount = 0;
+                foreach (var item in guidList)
                 {
-                    //下位机最新的烤机环境下烤机记录
-                    var newlog = UnitWork.Find<DeviceTestLog>(c => c.LowGuid == guid).OrderByDescending(c => c.Id).FirstOrDefault();
-                    if (newlog != null)
+                    var taskurl = $"api/DataCheck/TotalErr?edgeGuid={item.EdgeGuid}&srvGuid={item.SrvGuid}&devUid={item.DevUid}&unitId={item.UnitId}";
+                    Dictionary<string, string> dic = null;
+                    //获取下位机烤机结果
+                    var taskResult = httpHelper.Get(dic, taskurl);
+                    JObject resObj = JObject.Parse(taskResult);
+                    if (resObj["status"] == null || resObj["status"].ToString() != "200")
                     {
-                        var channel = UnitWork.Find<DeviceTestLog>(c => c.EdgeGuid == newlog.EdgeGuid && c.SrvGuid == newlog.SrvGuid && c.DevUid == newlog.DevUid && c.UnitId == newlog.UnitId).ToList();
-                        //通道最新测试ID
-                        var channelQuery = channel.GroupBy(c => c.ChlId).Select(c => c.OrderByDescending(o => o.TestId).First()).ToList();
-                        var channelCount = 0;
-                        foreach (var item in channelQuery)
+                        err = 4;
+                        break;
+                    }
+                    if (resObj["data"] != null)
+                    {
+                        int.TryParse(resObj["data"].ToString(), out int errCount);
+                        //sbyte.TryParse(resObj["data"]["Status"].ToString(), out sbyte taskStatus);
+                        if (errCount == 0)
+                            guidCount++;
+                        else if (errCount > 0)
                         {
-                            //获取每个通道测试任务id
-                            var checktask = $"select EdgeGuid,SrvGuid,DevUid,UnitId,ChlId,TestId,TaskId from devicechecktask where EdgeGuid='{item.EdgeGuid}' and SrvGuid='{item.SrvGuid}' and DevUid={item.DevUid} and UnitId={item.UnitId} and ChlId={item.ChlId} and TestId={item.TestId}";
-                            var checktaskQuery = UnitWork.Query<DeviceCheckTask>(checktask).Select(c => c.TaskId).FirstOrDefault();
-                            if (!string.IsNullOrWhiteSpace(checktaskQuery))
-                            {
-                                var taskurl = $"api/DataCheck/TaskResult?id={checktaskQuery}";
-                                Dictionary<string, string> dic = null;
-                                //获取通道烤机结果
-                                var taskResult = httpHelper.Get(dic, taskurl);
-                                JObject resObj = JObject.Parse(taskResult);
-                                if (resObj["status"] == null || resObj["status"].ToString() != "200")
-                                {
-                                    err = 4;
-                                    break;
-                                }
-                                if (resObj["data"] != null)
-                                {
-                                    int.TryParse(resObj["data"]["ErrCount"].ToString(), out int errCount);
-                                    sbyte.TryParse(resObj["data"]["Status"].ToString(), out sbyte taskStatus);
-                                    if (errCount == 0 && taskStatus == 2)
-                                        channelCount++;
-                                    else if (errCount > 0)
-                                    {
-                                        err = 4;
-                                        break;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                //checkResp.Message = "烤机任务ID尚未创建。";
-                            }
-                        }
-                        if (err == 4)
-                        {
-                            result = err;//烤机异常
+                            err = 4;
                             break;
                         }
-                        //烤机通道通过数=总通道数
-                        if (channelCount == channelQuery.Count)
-                            guidSuccessCount++;
                     }
                 }
+
                 if (err == 4)
                 {
-                    return (result, "", "", null);
+                    return (err, "", "", null);//烤机异常
                 }
-                //通过数==所有guid数
-                if (guidSuccessCount == guids.Count)
+                //通过数 == 所有guid数
+                if (guidCount == guidList.Count())
                 {
                     result = 3;//烤机通过
                     var last = UnitWork.Find<DeviceTestLog>(c => guids.Contains(c.LowGuid)).OrderByDescending(c => c.CreateTime).FirstOrDefault();
@@ -1923,13 +1903,94 @@ namespace OpenAuth.App
                     u2 = last.CreateUser;
                     date = DateTime.Now;
                 }
-                else
-                    result = 2;//烤机中
             }
             else
             {
-                //result = 2;//烤机中
+                return (result, "", "", null);
             }
+
+
+            //if (guids.Count > 0)
+            //{
+            //    var url = "https://analytics.neware.com.cn/";
+            //    HttpHelper httpHelper = new HttpHelper(url);
+            //    var guidSuccessCount = 0;
+            //    var err = 0;
+            //    foreach (var guid in guids)
+            //    {
+            //        //下位机最新的烤机环境下烤机记录
+            //        var newlog = UnitWork.Find<DeviceTestLog>(c => c.LowGuid == guid).OrderByDescending(c => c.Id).FirstOrDefault();
+            //        if (newlog != null)
+            //        {
+            //            var channel = UnitWork.Find<DeviceTestLog>(c => c.EdgeGuid == newlog.EdgeGuid && c.SrvGuid == newlog.SrvGuid && c.DevUid == newlog.DevUid && c.UnitId == newlog.UnitId).ToList();
+            //            //通道最新测试ID
+            //            var channelQuery = channel.GroupBy(c => c.ChlId).Select(c => c.OrderByDescending(o => o.TestId).First()).ToList();
+            //            var channelCount = 0;
+            //            foreach (var item in channelQuery)
+            //            {
+            //                //获取每个通道测试任务id
+            //                var checktask = $"select EdgeGuid,SrvGuid,DevUid,UnitId,ChlId,TestId,TaskId from devicechecktask where EdgeGuid='{item.EdgeGuid}' and SrvGuid='{item.SrvGuid}' and DevUid={item.DevUid} and UnitId={item.UnitId} and ChlId={item.ChlId} and TestId={item.TestId}";
+            //                var checktaskQuery = UnitWork.Query<DeviceCheckTask>(checktask).Select(c => c.TaskId).FirstOrDefault();
+            //                if (!string.IsNullOrWhiteSpace(checktaskQuery))
+            //                {
+            //                    var taskurl = $"api/DataCheck/TaskResult?id={checktaskQuery}";
+            //                    Dictionary<string, string> dic = null;
+            //                    //获取通道烤机结果
+            //                    var taskResult = httpHelper.Get(dic, taskurl);
+            //                    JObject resObj = JObject.Parse(taskResult);
+            //                    if (resObj["status"] == null || resObj["status"].ToString() != "200")
+            //                    {
+            //                        err = 4;
+            //                        break;
+            //                    }
+            //                    if (resObj["data"] != null)
+            //                    {
+            //                        int.TryParse(resObj["data"]["ErrCount"].ToString(), out int errCount);
+            //                        sbyte.TryParse(resObj["data"]["Status"].ToString(), out sbyte taskStatus);
+            //                        if (errCount == 0 && taskStatus == 2)
+            //                            channelCount++;
+            //                        else if (errCount > 0)
+            //                        {
+            //                            err = 4;
+            //                            break;
+            //                        }
+            //                    }
+            //                }
+            //                else
+            //                {
+            //                    //checkResp.Message = "烤机任务ID尚未创建。";
+            //                }
+            //            }
+            //            if (err == 4)
+            //            {
+            //                result = err;//烤机异常
+            //                break;
+            //            }
+            //            //烤机通道通过数=总通道数
+            //            if (channelCount == channelQuery.Count)
+            //                guidSuccessCount++;
+            //        }
+            //    }
+            //    if (err == 4)
+            //    {
+            //        return (result, "", "", null);
+            //    }
+            //    //通过数==所有guid数
+            //    if (guidSuccessCount == guids.Count)
+            //    {
+            //        result = 3;//烤机通过
+            //        var last = UnitWork.Find<DeviceTestLog>(c => guids.Contains(c.LowGuid)).OrderByDescending(c => c.CreateTime).FirstOrDefault();
+            //        u1 = last.CreateUserId;
+            //        u2 = last.CreateUser;
+            //        date = DateTime.Now;
+            //    }
+            //    else
+            //        result = 2;//烤机中
+            //}
+            //else
+            //{
+            //    //result = 2;//烤机中
+            //}
             return (result, u1, u2, date);
         }
 
