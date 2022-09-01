@@ -18,23 +18,23 @@
         /// 申请人
         /// </summary>
         public string ApplyUserName { get; set; }
-        /// <summary>
-        /// 申请日期-开始
-        /// </summary>
-        public System.DateTime? ApplyDateStart { get; set; }
-        /// <summary>
-        /// 申请日期-结束
-        /// </summary>
-        public System.DateTime? ApplyDateEnd { get; set; }
+        ///// <summary>
+        ///// 申请日期-开始
+        ///// </summary>
+        //public System.DateTime? ApplyDateStart { get; set; }
+        ///// <summary>
+        ///// 申请日期-结束
+        ///// </summary>
+        //public System.DateTime? ApplyDateEnd { get; set; }
 
-        /// <summary>
-        /// 更新日期-开始
-        /// </summary>
-        public System.DateTime? UpdateDateStart { get; set; }
-        /// <summary>
-        /// 更新日期-结束
-        /// </summary>
-        public System.DateTime? UpdateDateEnd { get; set; }
+        ///// <summary>
+        ///// 更新日期-开始
+        ///// </summary>
+        //public System.DateTime? UpdateDateStart { get; set; }
+        ///// <summary>
+        ///// 更新日期-结束
+        ///// </summary>
+        //public System.DateTime? UpdateDateEnd { get; set; }
         /// <summary>
         /// 流程状态0-草稿 1-审批中 2-结束
         /// 数据状态0-草稿 1-销售提交需求 2-销售总助审批 3-需求组提交需求 4-研发总助审批 5-研发确认 6-总经理审批
@@ -45,5 +45,25 @@
         /// 页面类型 0-所有流程 1-提给我的 2-我处理过
         /// </summary>
         public int PageType { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public int Id { get; set; }
+        /// <summary>
+        /// 客户代码
+        /// </summary>
+        public string CustomerCode { get; set; }
+
+        /// <summary>
+        /// 客户名称
+        /// </summary>
+        public string CustomerName { get; set; }
+
+        /// <summary>
+        /// 需求编号
+        /// </summary>
+        public string DemandNumber { get; set; }
+        
     }
 }

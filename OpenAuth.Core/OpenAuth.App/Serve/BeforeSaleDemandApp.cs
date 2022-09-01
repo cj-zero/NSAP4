@@ -46,11 +46,16 @@ namespace OpenAuth.App
                         .Include(c => c.Beforesaledemandoperationhistories)
                         .WhereIf(!string.IsNullOrWhiteSpace(req.ApplyUserName), c => c.ApplyUserName.Contains(req.ApplyUserName))
                         //.WhereIf(!string.IsNullOrWhiteSpace(req.ApplyUserId), c => c.ApplyUserName.Contains(req.ApplyUserId))
-                        .WhereIf(!string.IsNullOrWhiteSpace(req.KeyWord), k => k.BeforeDemandCode.Contains(req.KeyWord) || k.BeforeSaleDemandProjectName.Contains(req.KeyWord) || k.ApplyUserName.Contains(req.KeyWord) || k.DemandContents.Contains(req.KeyWord) || k.FirstConnects.Contains(req.KeyWord) || k.CustomerName.Contains(req.KeyWord))
-                        .WhereIf(!string.IsNullOrWhiteSpace(req.ApplyDateStart.ToString()), q => q.ApplyDate > req.ApplyDateStart)
-                        .WhereIf(!string.IsNullOrWhiteSpace(req.ApplyDateEnd.ToString()), q => q.ApplyDate < Convert.ToDateTime(req.ApplyDateEnd).AddDays(1))
-                        .WhereIf(!string.IsNullOrWhiteSpace(req.UpdateDateStart.ToString()), q => q.UpdateTime > req.UpdateDateStart)
-                        .WhereIf(!string.IsNullOrWhiteSpace(req.UpdateDateEnd.ToString()), q => q.UpdateTime < Convert.ToDateTime(req.UpdateDateEnd).AddDays(1));
+                        //.WhereIf(!string.IsNullOrWhiteSpace(req.KeyWord), k => k.BeforeDemandCode.Contains(req.KeyWord) || k.BeforeSaleDemandProjectName.Contains(req.KeyWord) || k.ApplyUserName.Contains(req.KeyWord) || k.DemandContents.Contains(req.KeyWord) || k.FirstConnects.Contains(req.KeyWord) || k.CustomerName.Contains(req.KeyWord))
+                        .WhereIf(req.Id > 0, c => c.Id == req.Id)
+                        .WhereIf(!string.IsNullOrWhiteSpace(req.CustomerCode), c => c.CustomerId.Contains(req.CustomerCode))
+                        .WhereIf(!string.IsNullOrWhiteSpace(req.CustomerName), c => c.CustomerName.Contains(req.CustomerName))
+                        .WhereIf(!string.IsNullOrWhiteSpace(req.DemandNumber), c => c.BeforeDemandCode.Contains(req.DemandNumber))
+                        .WhereIf(!string.IsNullOrWhiteSpace(req.KeyWord), c => c.BeforeSaleDemandProjectName.Contains(req.KeyWord));
+                        //.WhereIf(!string.IsNullOrWhiteSpace(req.ApplyDateStart.ToString()), q => q.ApplyDate > req.ApplyDateStart)
+                        //.WhereIf(!string.IsNullOrWhiteSpace(req.ApplyDateEnd.ToString()), q => q.ApplyDate < Convert.ToDateTime(req.ApplyDateEnd).AddDays(1))
+                        //.WhereIf(!string.IsNullOrWhiteSpace(req.UpdateDateStart.ToString()), q => q.UpdateTime > req.UpdateDateStart)
+                        //.WhereIf(!string.IsNullOrWhiteSpace(req.UpdateDateEnd.ToString()), q => q.UpdateTime < Convert.ToDateTime(req.UpdateDateEnd).AddDays(1));
 
             if (req.BeforeSaleDemandProjectId > 0)
             {
@@ -196,7 +201,9 @@ namespace OpenAuth.App
                     if (detail.Status == 5 && loginContext.Roles.Any(c => c.Name.Equal("总经理")) && flowInstance.ActivityName == "总经理审批")
                     {
                         //开发投入预估（开发预估工期+测试预估工期）*预估开发成本
-                        result.DevCost = result.PredictDevCost.Value * (result.BeforeSaleDemandDeptInfos.Sum(x => x.DevEstimate) + result.BeforeSaleDemandDeptInfos.Sum(x => x.TestEstimate));
+                        result.DevCost =(  result.PredictDevCost.ToInt32() * (result.BeforeSaleDemandDeptInfos.Sum(x => x.DevEstimate) + result.TestEstimate +result.DemandEstimate)).ToString();
+                      
+                        
                     }
                     if (detail.Status == 4)
                     {
@@ -274,7 +281,8 @@ namespace OpenAuth.App
             var files = await UnitWork.Find<UploadFile>(f => beforesalefileIds.Contains(f.Id)).ToListAsync();
             result.Files = files.MapTo<List<UploadFileResp>>();
             result.Files.ForEach(f => f.PictureType = beforesalefiles.Where(p => f.Id.Equals(p.FileId)).Select(p => p.Type).FirstOrDefault());
-
+            result.DevCost = String.Format("{0:N}", Convert.ToDouble(result.DevCost));
+            result.PredictDevCost = String.Format("{0:N}", Convert.ToDouble(result.PredictDevCost));
             return result;
         }
 
@@ -397,7 +405,11 @@ namespace OpenAuth.App
                         obj.ApplyUserId = loginContext.User.Id;//申请人id
                         obj.ApplyUserName = loginContext.User.Name;//申请人
                         obj.ApplyDate = DateTime.Now;//申请日期
-                        obj.BeforeDemandCode = "XQ" + DateTime.Now.ToString("yyyyMMddHHmm");//售前需求申请编号:XQ202201241453
+                        obj.BeforeDemandCode = "XQ" + DateTime.Now.ToString("yyyyMMdd") + createSerialNumber();//售前需求申请编号:XQ202201241453
+
+                        obj.PredictDevCost = 2000;
+                        obj.TestEstimate = 5;
+                        obj.DemandEstimate = 5;
                         obj = await UnitWork.AddAsync<BeforeSaleDemand, int>(obj);
 
                         //1、流程添加成功==>关联单据
@@ -438,7 +450,25 @@ namespace OpenAuth.App
                 }
             }
         }
+        public static string createSerialNumber()
+        {
+            //这里是 Redis key的前缀，
+            string key = "BeforeDemandCode" + DateTime.Now.ToString("yyyyMMdd");
 
+            //查询 key 是否存在， 不存在返回 1 ，存在的话则自增加1
+            var value = RedisHelper.Get<string>(key);
+            string number = "0001";
+            if (string.IsNullOrEmpty(value))
+            {
+                RedisHelper.Set(key, number, 24 * 60 * 60);
+            }
+            else
+            {
+                number = (Convert.ToInt32(value)+1).ToString("0000");
+                RedisHelper.Set(key, number, 24 * 60 * 60);
+            }
+            return number;
+        }
         /// <summary>
         /// 售前需求申请流程审批
         /// </summary>
@@ -480,6 +510,8 @@ namespace OpenAuth.App
 
                 if (!string.IsNullOrEmpty(req.NodeRejectType)&&req.NodeRejectType=="1")
                 {
+                    //删除掉确认部门信息，重新分配
+                    await UnitWork.BatchDeleteAsync<BeforeSaleDemandDeptInfo>(beforeSaleDemand.BeforeSaleDemandDeptInfos.ToArray());
                     beforeSaleDemand.Status = 0;//驳回至第一步，销售员重新提交
                 }
                 if (!string.IsNullOrEmpty(req.NodeRejectStep))
@@ -514,7 +546,6 @@ namespace OpenAuth.App
                         });
                          await UnitWork.BatchUpdateAsync<BeforeSaleDemandDeptInfo>(beforeSaleDemand.BeforeSaleDemandDeptInfos.ToArray());
                     }
-
                     if (beforeSaleDemand.Status == 6)
                     {
                         //表示驳回到【立项】节点，重置排期确认信息
@@ -855,7 +886,7 @@ namespace OpenAuth.App
                     //beforeSaleDemand.Beforesaledemandprojects.First().ActualTestEndDate = req.ActualTestEndDate;
                     //await UnitWork.UpdateAsync<BeforeSaleDemandProject>(beforeSaleDemand.Beforesaledemandprojects.First());
                 }
-                else if (flowinstace.ActivityName == "实施提交" && beforeSaleDemand.Beforesaledemandprojects.Any() && beforeSaleDemand.Beforesaledemandprojects.First().ExecutorUserId == loginContext.User.Id)
+                else if (flowinstace.ActivityName == "实施提交" && beforeSaleDemand.Beforesaledemandprojects.Any() && beforeSaleDemand.ExecutorUserId == loginContext.User.Id)
                 {
                     //实施提交时指定下一节点【客户验收】执行人：项目申请人
                     verificationReq.NodeDesignateType = Setinfo.RUNTIME_SPECIAL_USER;
@@ -987,6 +1018,7 @@ namespace OpenAuth.App
                 PredictDevCost = obj.PredictDevCost,
                 DevEstimate = obj.DevEstimate,
                 TestEstimate = obj.TestEstimate,
+                DemandEstimate = obj.DemandEstimate,
                 Remark = obj.Remark,
                 IsDevDeploy = obj.IsDevDeploy,
                 IsRelevanceProject = obj.IsRelevanceProject,

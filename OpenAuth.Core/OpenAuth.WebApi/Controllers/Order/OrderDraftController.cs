@@ -1,9 +1,8 @@
-﻿
-using Infrastructure;
-using Infrastructure.Helpers;
+﻿using Infrastructure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OpenAuth.App;
@@ -39,11 +38,13 @@ namespace OpenAuth.WebApi.Controllers.Order
     {
         private readonly FileApp _app;
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
+        //private readonly OrderDraftServiceApp _orderDraftServiceApp;
+        private readonly IOptions<AppSetting> _appConfiguration;
         private IHttpClientFactory _httpClient;
         IAuth _auth;
         IUnitWork UnitWork;
         ServiceBaseApp _serviceBaseApp;
-        public OrderDraftController(IHttpClientFactory _httpClient, FileApp app, IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
+        public OrderDraftController(IHttpClientFactory _httpClient, FileApp app, IUnitWork UnitWork, IOptions<AppSetting> appConfiguration, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
         {
             this._httpClient = _httpClient;
             this._app = app;
@@ -52,6 +53,8 @@ namespace OpenAuth.WebApi.Controllers.Order
             this._auth = _auth;
             _serviceSaleOrderApp = serviceSaleOrderApp;
             _auth.GetCurrentUser();
+            //this._orderDraftServiceApp = orderDraftServiceApp;
+            _appConfiguration = appConfiguration;
         }
         /// <summary>
         /// 获取业务伙伴\客户 应收账款
@@ -1448,10 +1451,10 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// <summary>
         /// PDF打印（老）
         /// </summary>
-        /// <param name="val"></param>
-        /// <param name="Indicator"></param>
-        /// <param name="sboid"></param>
-        /// <param name="DocEntry"></param>
+        /// <param name="val">报价单编码</param>
+        /// <param name="Indicator">公司标识</param>
+        /// <param name="sboid">账套id</param>
+        /// <param name="DocEntry">凭证编码</param>
         /// <returns></returns>
         [HttpGet]
         [Route("ExportShow")]
@@ -1467,6 +1470,42 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 result.Message = e.Message;
             }
+            return result;
+        }
+
+        /// <summary>
+        /// 销售报价单打印
+        /// </summary>
+        /// <param name="DocEntry">凭证编码</param>
+        /// <param name="Indicator">公司标识</param>
+        /// <returns>返回报价单打印url</returns>
+        [HttpGet]
+        [Route("PrintQuotation")]
+        public async Task<TableData> PrintQuotation(string DocEntry, string Indicator)
+        {
+            var result = new TableData();
+            try
+            {
+                HttpHelper httpHelper = new HttpHelper(_appConfiguration.Value.ERP3Url);
+                var resultApi = httpHelper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "DocEntry", DocEntry }, { "Indicator", Indicator }, { "DataType" , "Order"} }, "/spv/exportsaleorder.ashx");
+                if (resultApi["msg"] == "success")
+                {
+                    var url = resultApi["url"].Replace("192.168.0.208", "218.17.149.195");
+                    result.Data = url;
+                }
+                else
+                {
+                    result.Code = 500;
+                    result.Message = resultApi["msg"];
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{ex.Message.ToString().ToJson()}, 错误：{result.Message}");
+            }
+
             return result;
         }
         #endregion
@@ -2070,5 +2109,30 @@ namespace OpenAuth.WebApi.Controllers.Order
         }
         #endregion
 
+        #region 单据对比
+        /// <summary>
+        /// 单据对比
+        /// </summary>
+        /// <param name="orderDataDocEntryReq">单据比较实体</param>
+        /// <returns>返回单据基础信息对比、单据物料明细对比信息、单据物料明细金额百分比信息</returns>
+        //[HttpPost]
+        //[Route("GetOrderDataContent")]
+        //public async Task<TableData> GetOrderDataContent(OrderDataDocEntryReq orderDataDocEntryReq)
+        //{
+        //    var result = new TableData();
+        //    try
+        //    {
+        //        return await _orderDraftServiceApp.GetOrderDataContent(orderDataDocEntryReq.DocEntry, orderDataDocEntryReq.DocEntrys, "Quto");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        result.Code = 500;
+        //        result.Message = ex.Message;
+        //        Log.Logger.Error($"地址：{Request.Path}，参数：{ex.Message.ToString().ToJson()}, 错误：{result.Message}");
+        //    }
+
+        //    return result;
+        //}
+        #endregion
     }
 }
