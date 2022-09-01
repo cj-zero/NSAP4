@@ -62,7 +62,8 @@ namespace OpenAuth.App.SaleBusiness.Common
             }
             else
             {
-                slpCode = (UnitWork.Find<sbo_user>(r => r.user_id == loginUser.User_Id).FirstOrDefault()).sale_id;
+                var users =  UnitWork.Find<sbo_user>(r => r.user_id == loginUser.User_Id).FirstOrDefault();
+                slpCode = users == null ? 0 : users.sale_id;
             }
           
             return loginUser;
@@ -290,22 +291,22 @@ namespace OpenAuth.App.SaleBusiness.Common
         {
             if (currency == "ALL")
             {
-                var orctTotalList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N").Select(r => new { r.U_XSDD, r.DocTotal, r.CreateDate }).ToListAsync()
+                var orctTotalList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N").Select(r => new { r.U_XSDD, r.DocTotal, r.CreateDate, r.Canceled }).ToListAsync()
                                     join b in await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode).Select(r => new { r.DocEntry, r.SlpCode }).ToListAsync() on a.U_XSDD equals b.DocEntry
                                     into ab
                                     from b in ab.DefaultIfEmpty()
-                                    where a.CreateDate >= Convert.ToDateTime(startTime) && a.CreateDate <= Convert.ToDateTime(endTime) && b.SlpCode == slpCode
+                                    where a.CreateDate >= Convert.ToDateTime(startTime) && a.CreateDate <= Convert.ToDateTime(endTime) && (b == null ? a.Canceled == "N" : b.SlpCode == slpCode)
                                     select new { a.DocTotal };
 
                 return Math.Round(orctTotalList.Sum(r => r.DocTotal).ToDecimal(), 2);
             }
             else
             {
-                var orctTotalList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N" && r.DocCurr == currency).Select(r => new { r.U_XSDD, r.DocTotal, r.DocTotalFC, r.CreateDate }).ToListAsync()
+                var orctTotalList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N" && r.DocCurr == currency).Select(r => new { r.U_XSDD, r.DocTotal, r.DocTotalFC, r.CreateDate, r.Canceled }).ToListAsync()
                                     join b in await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode && r.DocCur == currency).Select(r => new { r.DocEntry, r.SlpCode}).ToListAsync() on a.U_XSDD equals b.DocEntry
                                     into ab
                                     from b in ab.DefaultIfEmpty()
-                                    where a.CreateDate >= Convert.ToDateTime(startTime) && a.CreateDate <= Convert.ToDateTime(endTime) && b.SlpCode == slpCode
+                                    where a.CreateDate >= Convert.ToDateTime(startTime) && a.CreateDate <= Convert.ToDateTime(endTime) && (b == null ? a.Canceled == "N" : b.SlpCode == slpCode)
                                     select new { a.DocTotal, a.DocTotalFC };
 
                 return Math.Round(orctTotalList.Sum(r => currency == "RMB" ? r.DocTotal : r.DocTotalFC).ToDecimal(), 2);

@@ -23,7 +23,6 @@ namespace OpenAuth.App.SaleBusiness
 {
     public class SaleBusinessApp: OnlyUnitWorkBaeApp
     {
-       
         private IUnitWork _UnitWork;
         private IAuth _auth;
         private ServiceSaleOrderApp _serviceSaleOrderApp;
@@ -377,22 +376,18 @@ namespace OpenAuth.App.SaleBusiness
             QuerySaleBusinessRequest customerBusiness = new QuerySaleBusinessRequest();
             if (startTime == "" || endTime == "")
             {
-                var orctTotalList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N").Select(r => new { r.U_XSDD, r.DocTotal }).ToListAsync()
+                var orctTotalList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N").Select(r => new { r.U_XSDD, r.DocTotal, r.Canceled }).ToListAsync()
                                     join b in await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode).Select(r => new { r.DocEntry, r.SlpCode }).ToListAsync() on a.U_XSDD equals b.DocEntry
-                                    into ab
-                                    from b in ab.DefaultIfEmpty()
-                                    where b.SlpCode == slpCode
+                                    where b == null ? a.Canceled == "N" : b.SlpCode == slpCode
                                     select new { a.DocTotal };
 
                 modelNum = orctTotalList.Sum(r => r.DocTotal).ToDecimal();
             }
             else
             {
-                var orctTotalList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N").Select(r => new { r.U_XSDD, r.DocTotal, r.CreateDate }).ToListAsync()
-                                    join b in await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode).Select(r => new { r.DocEntry, r.SlpCode }).ToListAsync() on a.U_XSDD equals b.DocEntry
-                                    into ab
-                                    from b in ab.DefaultIfEmpty()
-                                    where a.CreateDate >= Convert.ToDateTime(startTime) && a.CreateDate <= Convert.ToDateTime(endTime) && b.SlpCode == slpCode
+                var orctTotalList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N").Select(r => new { r.U_XSDD, r.DocTotal, r.CreateDate, r.Canceled }).ToListAsync()
+                                    join b in await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode).Select(r => new { r.DocEntry, r.SlpCode }).ToListAsync() on a.U_XSDD equals b.DocEntry       
+                                    where a.CreateDate >= Convert.ToDateTime(startTime) && a.CreateDate <= Convert.ToDateTime(endTime) && (b == null ?  a.Canceled == "N" : b.SlpCode == slpCode)
                                     select new { a.DocTotal };
 
                 modelNum = orctTotalList.Sum(r => r.DocTotal).ToDecimal();
@@ -465,14 +460,8 @@ namespace OpenAuth.App.SaleBusiness
             List<QuerySaleBusinessRequest> saleStatusList = new List<QuerySaleBusinessRequest>();
             saleStatusList.Add(await GetSalesQuotationOrderAudit(XSBJD, loginUser));//获取审批中销售报价单
             saleStatusList.Add(await GetSalesQuotationOrderAudit(XSDD, loginUser));//获取审批中销售订单
-            saleStatusList.Add(await GetNotEnoughGoosSaleOrder());//获取需申请工单订单
             saleStatusList.Add(await GetNoComSaleOrder(slpCode));//获取未完工销售订单
-            saleStatusList.Add(await GetEnoughGoosSaleOrder());//获取可交货销售订单
             saleStatusList.Add(await GetBillSaleOrder(loginUser, slpCode));//获取未开增值税发票销售订单
-            saleStatusList.Add(await GetWaitPaySaleOrder());//获取待收货前款订单
-            saleStatusList.Add(await GetPaySaleOrder());//获取待收货到款订单
-            saleStatusList.Add(await GetAcceptancePaySaleOrder());//获取待收验收款订单
-            saleStatusList.Add(await GetBalancePaySaleOrder());//获取待收尾款订单
             result.Data = new { saleList = saleStatusList, moduleSize = "2" };
             return result;
         }
@@ -580,7 +569,7 @@ namespace OpenAuth.App.SaleBusiness
                 var queryNoComSaleOrderList = from a in oworList
                                               join b in ordrList on a.OriginAbs equals b.DocEntry into ab
                                               from b in ab.DefaultIfEmpty()
-                                              where b.SlpCode == slpCode && b.CANCELED == "N"
+                                              where b == null ? (a.Status == "R" || a.Status == "P") : (b.SlpCode == slpCode && b.CANCELED == "N")
                                               select new { SlpCode = b == null ? 0 : b.SlpCode, a.DocEntry, a.OriginAbs };
 
                 modelNum = queryNoComSaleOrderList.ToList().Where(r => r.SlpCode != null).Count().ToString();
@@ -937,9 +926,7 @@ namespace OpenAuth.App.SaleBusiness
                 //获取未清销售收款
                 var orctList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N" && r.CreateDate >= NowYearFirstDay && r.CreateDate <= NowYearLastDay).Select(r => new { r.U_XSDD, r.OpenBal, r.Canceled }).ToListAsync()
                                join b in await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode).Select(r => new { r.DocEntry, r.SlpCode }).ToListAsync() on a.U_XSDD equals b.DocEntry
-                               into ab
-                               from b in ab.DefaultIfEmpty()
-                               where a.Canceled == "N" && b.SlpCode == slpCode
+                               where b == null ? a.Canceled == "N" : b.SlpCode == slpCode
                                select new { a.OpenBal };
 
                 if (orctList != null && orctList.Count() != 0)
@@ -958,7 +945,7 @@ namespace OpenAuth.App.SaleBusiness
             {
                 //获取未清应收发票
                 var oinvList = await UnitWork.Find<OINV>(r => r.SlpCode == slpCode && r.CANCELED == "N").Select(r => new { r.DocTotal, r.PaidToDate }).ToListAsync();
-                if (oinvList != null || oinvList.Count() != 0)
+                if (oinvList != null && oinvList.Count() != 0)
                 {
                     oinvSumAmount = oinvList.Sum(r => (r.DocTotal - r.PaidToDate)).ToDecimal();
                 }
@@ -966,19 +953,17 @@ namespace OpenAuth.App.SaleBusiness
                 //获取未清销售收款
                 var orctList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N").Select(r => new { r.U_XSDD, r.OpenBal, r.Canceled }).ToListAsync()
                                join b in await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode).Select(r => new { r.DocEntry, r.SlpCode }).ToListAsync() on a.U_XSDD equals b.DocEntry
-                               into ab
-                               from b in ab.DefaultIfEmpty()
-                               where a.Canceled == "N" && b.SlpCode == slpCode
+                               where b == null ? a.Canceled == "N" : b.SlpCode == slpCode
                                select new { a.OpenBal };
 
-                if (orctList != null || orctList.Count() != 0)
+                if (orctList != null && orctList.Count() != 0)
                 {
                     orctSumAmount = orctList.Sum(r => r.OpenBal).ToDecimal();
                 }
 
                 //获取未清应收贷项
                 var orinList = await UnitWork.Find<ORIN>(r => r.SlpCode == slpCode && r.CANCELED == "N").Select(r => new { r.DocTotal, r.PaidToDate }).ToListAsync();
-                if (orinList != null || orinList.Count() != 0)
+                if (orinList != null && orinList.Count() != 0)
                 {
                     orinSumAmount = orinList.Sum(r => (r.DocTotal - r.PaidToDate)).ToDecimal();
                 }
@@ -1009,11 +994,9 @@ namespace OpenAuth.App.SaleBusiness
             }
 
             //获取未清销售收款（RMB）
-            var orctList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N" && r.DocCurr == "RMB").Select(r => new { r.U_XSDD, r.OpenBal }).ToListAsync()
+            var orctList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N" && r.DocCurr == "RMB").Select(r => new { r.U_XSDD, r.OpenBal, r.Canceled }).ToListAsync()
                            join b in await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode).Select(r => new { r.DocEntry, r.SlpCode }).ToListAsync() on a.U_XSDD equals b.DocEntry
-                           into ab
-                           from b in ab.DefaultIfEmpty()
-                           where b.SlpCode == slpCode
+                           where b == null ? a.Canceled == "N" : b.SlpCode == slpCode
                            select new { a.OpenBal };
 
             if (orctList != null && orctList.Count() != 0)
@@ -1053,11 +1036,9 @@ namespace OpenAuth.App.SaleBusiness
             }
 
             //获取未清销售收款（外币）
-            var orctList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N" && r.DocCurr == currency).Select(r => new { r.U_XSDD, r.OpenBalFc, r.DocRate }).ToListAsync()
+            var orctList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N" && r.DocCurr == currency).Select(r => new { r.U_XSDD, r.OpenBalFc, r.DocRate, r.Canceled }).ToListAsync()
                            join b in await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode).Select(r => new { r.DocEntry, r.SlpCode }).ToListAsync() on a.U_XSDD equals b.DocEntry
-                           into ab
-                           from b in ab.DefaultIfEmpty()
-                           where b.SlpCode == slpCode
+                           where b == null ? a.Canceled == "N" : b.SlpCode == slpCode
                            select new { a.OpenBalFc };
 
             if (orctList != null && orctList.Count() != 0)
@@ -1085,11 +1066,11 @@ namespace OpenAuth.App.SaleBusiness
         public async Task<string> GetDeliveryCompareLastYearRatio(int? slpCode)
         {
             string deliveryNum = "0%";
-            var orctTotalList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N").Select(r => new { r.U_XSDD, r.DocTotal, r.OpenBal, r.CreateDate }).ToListAsync()
+            var orctTotalList = from a in await UnitWork.Find<ORCT>(r => r.Canceled == "N").Select(r => new { r.U_XSDD, r.DocTotal, r.OpenBal, r.CreateDate, r.Canceled }).ToListAsync()
                                 join b in await UnitWork.Find<ORDR>(r => r.SlpCode == slpCode).Select(r => new { r.DocEntry, r.SlpCode }).ToListAsync() on a.U_XSDD equals b.DocEntry
                                 into ab
                                 from b in ab.DefaultIfEmpty()
-                                where b.SlpCode == slpCode
+                                where b == null ? a.Canceled == "N" : b.SlpCode == slpCode
                                 select new { a.DocTotal, a.OpenBal, a.CreateDate };
 
             decimal lastYearAmount = orctTotalList.Where(r => r.CreateDate >= LastYearFirstDay && r.CreateDate <= LastYearLastDay).Sum(r => r.DocTotal).ToDecimal();
