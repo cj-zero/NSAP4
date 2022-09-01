@@ -83,80 +83,162 @@ namespace OpenAuth.App.ContractManager
             try
             {
                 var file = UnitWork.Find<ContractFile>(null);
-                var objs = UnitWork.Find<ContractApply>(null).Include(r => r.ContractFileTypeList).Include(r => r.contractOperationHistoryList);
-                var contractApply = objs.WhereIf(!string.IsNullOrWhiteSpace(request.ContractNo), r => r.ContractNo.Contains(request.ContractNo))
-                                        .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerCodeOrName), r => r.CustomerCode.Contains(request.CustomerCodeOrName) || r.CustomerName.Contains(request.CustomerCodeOrName))
-                                        .WhereIf(!string.IsNullOrWhiteSpace(request.CompanyType), r => r.CompanyType.Equals(request.CompanyType))
-                                        .WhereIf(!string.IsNullOrWhiteSpace(request.QuotationNo), r => r.QuotationNo.Contains(request.QuotationNo))
-                                        .WhereIf(!string.IsNullOrWhiteSpace(request.SaleNo), r => r.SaleNo.Contains(request.SaleNo))
-                                        .WhereIf(!string.IsNullOrWhiteSpace(request.CreateId), r => r.CreateId.Contains(request.CreateId))
-                                        .WhereIf(request.StartDate != null, r => r.CreateTime >= request.StartDate)
-                                        .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate)
-                                        .WhereIf(!string.IsNullOrWhiteSpace(request.ContractStatus), r => r.ContractStatus == request.ContractStatus);
-
-                contractApply.OrderByDescending(r => r.CreateTime);
-                var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
-                var categoryContractList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
-                var categoryStatusList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractStatus")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
-                List<string> contractId = contractApply.Select(r => r.Id).ToList();
-                var contractFile = UnitWork.Find<ContractFileType>(r => contractId.Contains(r.ContractApplyId));
-                var contractApplyList = await contractApply.Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
-                var contractResp = from a in contractApplyList
-                                   join b in categoryCompanyList on a.CompanyType equals b.DtValue
-                                   join c in categoryContractList on a.ContractType equals c.DtValue
-                                   join d in categoryStatusList on a.ContractStatus equals d.DtValue
-                                   select new
-                                   {
-                                       a,
-                                       CompanyDtValue = b.DtValue,
-                                       CompanyName = b.Name,
-                                       ContractDtValue = c.DtValue,
-                                       ContractName = c.Name,
-                                       StatusDtValue = d.DtValue,
-                                       StatusName = d.Name
-                                   };
-
-                var contractRespList = contractResp.Select(r => new
+                if (loginContext.Roles.Any(r => r.Name.Equal("合同管理权限")))
                 {
-                    Id = r.a.Id,
-                    ContractNo = r.a.ContractNo,
-                    CustomerCode = r.a.CustomerCode,
-                    CustomerName = r.a.CustomerName,
-                    CompanyType = r.a.CompanyType,
-                    ContractType = r.a.ContractType,
-                    QuotationNo = r.a.QuotationNo,
-                    SaleNo = r.a.SaleNo,
-                    IsDraft = r.a.IsDraft,
-                    IsUploadOriginal = r.a.IsUploadOriginal,
-                    FlowInstanceId = r.a.FlowInstanceId,
-                    DownloadNumber = r.a.DownloadNumber,
-                    ContractStatus = r.a.ContractStatus,
-                    Remark = r.a.Remark,
-                    CreateId = r.a.CreateId,
-                    CreateTime = r.a.CreateTime,
-                    UpdateTime = r.a.UpdateTime,
-                    CompanyDtValue = r.CompanyDtValue,
-                    CompanyName = r.CompanyName,
-                    ContractDtValue = r.ContractDtValue,
-                    ContractName = r.ContractName,
-                    StatusDtValue = r.StatusDtValue,
-                    StatusName = r.StatusName,
-                    ContractFileTypeList = r.a.ContractFileTypeList.Select(x => new
-                    {
-                        x.Id,
-                        x.ContractApplyId,
-                        x.ContractSealId,
-                        x.FileType,
-                        x.ContractOriginalId,
-                        x.FileNum,
-                        x.Remark,
-                        ContractFileList = file.Where(f => f.ContractFileTypeId == x.Id)
-                    }),
-                    ContractHistoryList = r.a.contractOperationHistoryList.OrderByDescending(o => o.CreateTime)
-                }).OrderByDescending(r => r.CreateTime).ToList();
+                    var objs = UnitWork.Find<ContractApply>(null).Include(r => r.ContractFileTypeList).Include(r => r.contractOperationHistoryList);
+                    var contractApply = objs.WhereIf(!string.IsNullOrWhiteSpace(request.ContractNo), r => r.ContractNo.Contains(request.ContractNo))
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerCodeOrName), r => r.CustomerCode.Contains(request.CustomerCodeOrName) || r.CustomerName.Contains(request.CustomerCodeOrName))
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.CompanyType), r => r.CompanyType.Equals(request.CompanyType))
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.QuotationNo), r => r.QuotationNo.Contains(request.QuotationNo))
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.SaleNo), r => r.SaleNo.Contains(request.SaleNo))
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), r => r.CreateName.Contains(request.CreateName))
+                                            .WhereIf(request.StartDate != null, r => r.CreateTime >= request.StartDate)
+                                            .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate)
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.ContractStatus), r => r.ContractStatus == request.ContractStatus);
 
-                result.Count = await contractApply.CountAsync();
-                result.Data = contractRespList;
+                    contractApply.OrderByDescending(r => r.CreateTime);
+                    var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
+                    var categoryContractList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
+                    var categoryStatusList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractStatus")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
+                    List<string> contractId = contractApply.Select(r => r.Id).ToList();
+                    var contractFile = UnitWork.Find<ContractFileType>(r => contractId.Contains(r.ContractApplyId));
+                    var contractApplyList = await contractApply.Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+                    var contractResp = from a in contractApplyList
+                                       join b in categoryCompanyList on a.CompanyType equals b.DtValue
+                                       join c in categoryContractList on a.ContractType equals c.DtValue
+                                       join d in categoryStatusList on a.ContractStatus equals d.DtValue
+                                       select new
+                                       {
+                                           a,
+                                           CompanyDtValue = b.DtValue,
+                                           CompanyName = b.Name,
+                                           ContractDtValue = c.DtValue,
+                                           ContractName = c.Name,
+                                           StatusDtValue = d.DtValue,
+                                           StatusName = d.Name
+                                       };
+
+                    var contractRespList = contractResp.Select(r => new
+                    {
+                        Id = r.a.Id,
+                        ContractNo = r.a.ContractNo,
+                        CustomerCode = r.a.CustomerCode,
+                        CustomerName = r.a.CustomerName,
+                        CompanyType = r.a.CompanyType,
+                        ContractType = r.a.ContractType,
+                        QuotationNo = r.a.QuotationNo,
+                        SaleNo = r.a.SaleNo,
+                        IsDraft = r.a.IsDraft,
+                        IsUploadOriginal = r.a.IsUploadOriginal,
+                        FlowInstanceId = r.a.FlowInstanceId,
+                        DownloadNumber = r.a.DownloadNumber,
+                        ContractStatus = r.a.ContractStatus,
+                        Remark = r.a.Remark,
+                        CreateId = r.a.CreateId,
+                        CreateName = r.a.CreateName,
+                        CreateTime = r.a.CreateTime,
+                        UpdateTime = r.a.UpdateTime,
+                        CompanyDtValue = r.CompanyDtValue,
+                        CompanyName = r.CompanyName,
+                        ContractDtValue = r.ContractDtValue,
+                        ContractName = r.ContractName,
+                        StatusDtValue = r.StatusDtValue,
+                        StatusName = r.StatusName,
+                        ContractFileTypeList = r.a.ContractFileTypeList.Select(x => new
+                        {
+                            x.Id,
+                            x.ContractApplyId,
+                            x.ContractSealId,
+                            x.FileType,
+                            x.ContractOriginalId,
+                            x.FileNum,
+                            x.Remark,
+                            ContractFileList = file.Where(f => f.ContractFileTypeId == x.Id)
+                        }),
+                        ContractHistoryList = r.a.contractOperationHistoryList.OrderByDescending(o => o.CreateTime)
+                    }).OrderByDescending(r => r.CreateTime).ToList();
+
+                    result.Count = await contractApply.CountAsync();
+                    result.Data = contractRespList;
+                }
+                else
+                {
+                    var objs = UnitWork.Find<ContractApply>(r => r.CreateId == loginUser.Id).Include(r => r.ContractFileTypeList).Include(r => r.contractOperationHistoryList);
+                    var contractApply = objs.WhereIf(!string.IsNullOrWhiteSpace(request.ContractNo), r => r.ContractNo.Contains(request.ContractNo))
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerCodeOrName), r => r.CustomerCode.Contains(request.CustomerCodeOrName) || r.CustomerName.Contains(request.CustomerCodeOrName))
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.CompanyType), r => r.CompanyType.Equals(request.CompanyType))
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.QuotationNo), r => r.QuotationNo.Contains(request.QuotationNo))
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.SaleNo), r => r.SaleNo.Contains(request.SaleNo))
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), r => r.CreateName.Contains(request.CreateName))
+                                            .WhereIf(request.StartDate != null, r => r.CreateTime >= request.StartDate)
+                                            .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate)
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.ContractStatus), r => r.ContractStatus == request.ContractStatus);
+
+                    contractApply.OrderByDescending(r => r.CreateTime);
+                    var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
+                    var categoryContractList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
+                    var categoryStatusList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractStatus")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
+                    List<string> contractId = contractApply.Select(r => r.Id).ToList();
+                    var contractFile = UnitWork.Find<ContractFileType>(r => contractId.Contains(r.ContractApplyId));
+                    var contractApplyList = await contractApply.Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+                    var contractResp = from a in contractApplyList
+                                       join b in categoryCompanyList on a.CompanyType equals b.DtValue
+                                       join c in categoryContractList on a.ContractType equals c.DtValue
+                                       join d in categoryStatusList on a.ContractStatus equals d.DtValue
+                                       select new
+                                       {
+                                           a,
+                                           CompanyDtValue = b.DtValue,
+                                           CompanyName = b.Name,
+                                           ContractDtValue = c.DtValue,
+                                           ContractName = c.Name,
+                                           StatusDtValue = d.DtValue,
+                                           StatusName = d.Name
+                                       };
+
+                    var contractRespList = contractResp.Select(r => new
+                    {
+                        Id = r.a.Id,
+                        ContractNo = r.a.ContractNo,
+                        CustomerCode = r.a.CustomerCode,
+                        CustomerName = r.a.CustomerName,
+                        CompanyType = r.a.CompanyType,
+                        ContractType = r.a.ContractType,
+                        QuotationNo = r.a.QuotationNo,
+                        SaleNo = r.a.SaleNo,
+                        IsDraft = r.a.IsDraft,
+                        IsUploadOriginal = r.a.IsUploadOriginal,
+                        FlowInstanceId = r.a.FlowInstanceId,
+                        DownloadNumber = r.a.DownloadNumber,
+                        ContractStatus = r.a.ContractStatus,
+                        Remark = r.a.Remark,
+                        CreateId = r.a.CreateId,
+                        CreateName = r.a.CreateName,
+                        CreateTime = r.a.CreateTime,
+                        UpdateTime = r.a.UpdateTime,
+                        CompanyDtValue = r.CompanyDtValue,
+                        CompanyName = r.CompanyName,
+                        ContractDtValue = r.ContractDtValue,
+                        ContractName = r.ContractName,
+                        StatusDtValue = r.StatusDtValue,
+                        StatusName = r.StatusName,
+                        ContractFileTypeList = r.a.ContractFileTypeList.Select(x => new
+                        {
+                            x.Id,
+                            x.ContractApplyId,
+                            x.ContractSealId,
+                            x.FileType,
+                            x.ContractOriginalId,
+                            x.FileNum,
+                            x.Remark,
+                            ContractFileList = file.Where(f => f.ContractFileTypeId == x.Id)
+                        }),
+                        ContractHistoryList = r.a.contractOperationHistoryList.OrderByDescending(o => o.CreateTime)
+                    }).OrderByDescending(r => r.CreateTime).ToList();
+
+                    result.Count = await contractApply.CountAsync();
+                    result.Data = contractRespList;
+                }
             }
             catch (Exception ex)
             {
@@ -216,6 +298,7 @@ namespace OpenAuth.App.ContractManager
                                                a.IsUploadOriginal,
                                                a.Remark,
                                                a.CreateId,
+                                               a.CreateName,
                                                a.CreateTime,
                                                a.UpdateTime,
                                                CompanyDtValue = b.DtValue,
@@ -245,7 +328,7 @@ namespace OpenAuth.App.ContractManager
                     List<ApprovalNodeReq> nodeList = new List<ApprovalNodeReq>();
                     ApprovalNodeReq nodeReq = new ApprovalNodeReq();
                     nodeReq.NodeName = "提交";
-                    nodeReq.NodeUser = contract.CreateId;
+                    nodeReq.NodeUser = contract.CreateName;
                     nodeList.Add(nodeReq);
                     var schemeContentJson = JsonHelper.Instance.Deserialize<FlowInstanceListJson>(scheme.SchemeContent);
                     if (contract.ContractStatus == "3")
@@ -589,7 +672,8 @@ namespace OpenAuth.App.ContractManager
                     obj.ContractStatus = "1";
                     obj.IsUploadOriginal = false;
                     obj.CreateTime = DateTime.Now;
-                    obj.CreateId = loginUser.Name;
+                    obj.CreateId = loginUser.Id;
+                    obj.CreateName = loginUser.Name;
 
                     //合同申请单单号设置
                     var maxContractNo = UnitWork.Find<ContractApply>(null).OrderByDescending(r => r.ContractNo).Select(r => r.ContractNo).FirstOrDefault();
@@ -797,6 +881,7 @@ namespace OpenAuth.App.ContractManager
                             ContractStatus = "1",
                             Remark = obj.Remark,
                             CreateId = obj.CreateId,
+                            CreateName = obj.CreateName,
                             CreateTime = obj.CreateTime
                         });
 
@@ -838,6 +923,7 @@ namespace OpenAuth.App.ContractManager
                             ContractStatus = obj.ContractType == "1" ? "3" : "4",
                             Remark = obj.Remark,
                             CreateId = obj.CreateId,
+                            CreateName = obj.CreateName,
                             CreateTime = obj.CreateTime
                         });
 
@@ -2129,6 +2215,7 @@ namespace OpenAuth.App.ContractManager
                         ContractStatus = "-1",
                         Remark = obj.Remark,
                         CreateId = obj.CreateId,
+                        CreateName = obj.CreateName,
                         CreateTime = obj.CreateTime
                     });
 
@@ -2330,6 +2417,7 @@ namespace OpenAuth.App.ContractManager
                         ContractStatus = "7",
                         Remark = obj.Remark,
                         CreateId = obj.CreateId,
+                        CreateName = obj.CreateName,
                         CreateTime = obj.CreateTime
                     });
 
@@ -2695,6 +2783,7 @@ namespace OpenAuth.App.ContractManager
                 ContractStatus = r.a.ContractStatus,
                 Remark = r.a.Remark,
                 CreateId = r.a.CreateId,
+                CreateName = r.a.CreateName,
                 CreateTime = r.a.CreateTime,
                 UpdateTime = r.a.UpdateTime,
                 CompanyDtValue = r.CompanyDtValue,
