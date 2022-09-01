@@ -42,11 +42,6 @@ namespace OpenAuth.App.SaleBusiness.Request
         public System.DateTime? CreateDate { get; set; }
 
         /// <summary>
-        /// 修改日期
-        /// </summary>
-        public System.DateTime? UpdateDate { get; set; }
-
-        /// <summary>
         /// 业务员编码
         /// </summary>
         public int? SlpCode { get; set; }

@@ -276,7 +276,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             try
             {
                 HttpHelper httpHelper = new HttpHelper(_appConfiguration.Value.ERP3Url);
-                var resultApi = httpHelper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "DocEntry", DocEntry }, { "Indicator", Indicator } }, "/spv/exportsaleorder.ashx");
+                var resultApi = httpHelper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "DocEntry", DocEntry }, { "Indicator", Indicator }, { "DataType", "SaleOrder" } }, "/spv/exportsaleorder.ashx");
                 if (resultApi["msg"] == "success")
                 {
                     var url = resultApi["url"].Replace("192.168.0.208", "218.17.149.195");
