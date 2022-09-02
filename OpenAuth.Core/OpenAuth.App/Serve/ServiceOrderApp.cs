@@ -5695,7 +5695,7 @@ namespace OpenAuth.App
                 {
                     o.MaterialCode,
                     o.ManufacturerSerialNumber,
-                    MaterialType = string.IsNullOrEmpty(o.MaterialCode)?"": "无序列号".Equals(o.MaterialCode) ? "无序列号" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")),
+                    MaterialType = string.IsNullOrEmpty(o.MaterialCode) ? "" : o.MaterialCode.IndexOf("-")>0? "无序列号".Equals(o.MaterialCode) ? "无序列号" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")):"",
                     o.Status,
                     o.Id,
                     o.OrderTakeType,
@@ -5705,6 +5705,7 @@ namespace OpenAuth.App
                     o.FromTheme,
                     o.AcceptTime,
                 });
+                
                 var ProblemType = serviceOrder.FirstOrDefault()?.ProblemType;
                 var flow = listFlow.Where(w => w.Creater == userInfo.UserID && w.ServiceOrderId == item.Id && w.FlowType == 1).ToList();
 
@@ -5734,8 +5735,8 @@ namespace OpenAuth.App
                     MaterialCode = item.VestInOrg == 2 ? serviceOrder.FirstOrDefault()?.MaterialCode : "",
                     ManufacturerSerialNumber = item.VestInOrg == 2 ? serviceOrder.FirstOrDefault()?.ManufacturerSerialNumber : "",
                     Reamrk = serviceOrder.FirstOrDefault()?.Remark,
-                    AcceptTime = MaterialInfo.Select(s => s.AcceptTime).FirstOrDefault()?.ToString("yyyy.MM.dd HH:mm"),
-                    FromTheme = MaterialInfo.Select(s => s.FromTheme).FirstOrDefault(),
+                    AcceptTime =MaterialInfo.Select(s => s.AcceptTime).FirstOrDefault()?.ToString("yyyy.MM.dd HH:mm"),
+                    FromTheme =MaterialInfo.Select(s => s.FromTheme).FirstOrDefault() ,
                     TransactionType = MaterialInfo.Select(s => s.TransactionType).FirstOrDefault(),
                     Priority = MaterialInfo.Select(s => s.Priority).FirstOrDefault(),
                     ProblemTypeName = string.IsNullOrEmpty(item.ProblemTypeName) ? ProblemType?.Name : item.ProblemTypeName,
