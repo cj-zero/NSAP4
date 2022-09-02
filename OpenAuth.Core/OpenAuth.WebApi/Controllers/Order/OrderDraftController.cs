@@ -568,7 +568,15 @@ namespace OpenAuth.WebApi.Controllers.Order
                 {
                     orderReq.Order.Remark = orderReq.Order.Remark.Replace("'", "''");
                 }
-                result.Result = _serviceSaleOrderApp.Save(orderReq);
+
+                string msg = _serviceSaleOrderApp.Save(orderReq);
+                if (msg.Contains("-201"))
+                {
+                    result.Result = msg.Split('-')[0].ToString();
+                    result.Code = 201;
+                }
+
+                result.Result = msg;
             }
             catch (Exception ex)
             {
