@@ -2527,9 +2527,12 @@ namespace OpenAuth.App.Client
             var userId = loginUser.User_Id.Value;
             var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
             int SlpCode = Convert.ToInt16(GetUserInfoById(sboid.ToString(), userId.ToString(), "1"));
+            var slpInfo = UnitWork.Find<OSLP>(q => q.SlpCode == SlpCode).FirstOrDefault();
+            var SlpName = slpInfo == null?"": slpInfo.SlpName;
             if (isAdd)
             {
                 clientFollowUp.SlpCode = SlpCode;
+                clientFollowUp.SlpName = SlpName;
                 clientFollowUp.CreateUser = loginUser.User_Id.Value;
                 clientFollowUp.CreateDate = DateTime.Now;
                 clientFollowUp.IsDelete = false;
@@ -2542,6 +2545,7 @@ namespace OpenAuth.App.Client
                 info.CardCode = clientFollowUp.CardCode;
                 info.CardName = clientFollowUp.CardName;
                 info.SlpCode = SlpCode;
+                info.SlpName = SlpName;
                 info.SlpName = clientFollowUp.SlpName;
                 info.Contacts = clientFollowUp.Contacts;
                 info.FollowType = clientFollowUp.FollowType;
