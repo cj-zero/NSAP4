@@ -584,7 +584,7 @@ namespace OpenAuth.WebApi.Controllers
                 Directory.Delete(pathZip, true);
             }
             var file = new FileStream(pathRes, FileMode.Open);
-            return File(file, "application/octet-stream", "CertifiCate.zip" + timespan);
+            return File(file, "application/octet-stream", "CertifiCate" + timespan+ ".zip");
         }
         /// <summary>
         /// 将byte数组转换为文件并保存到指定地址
