@@ -1206,17 +1206,21 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> GetTechnicianOrderInfo(QueryReportReq req)
         {
-            var now = DateTime.Now;
-            var startTime = new DateTime(now.Year, now.Month, 1);
+            var startTime = DateTime.Now;
             var endTime = DateTime.Now;
-            if (!string.IsNullOrEmpty(req.Year) && !string.IsNullOrEmpty(req.Month))
+            if ( !string.IsNullOrEmpty(req.Month))
             {
                 startTime = Convert.ToDateTime($"{req.Year}-{req.Month}");
                 endTime = startTime.AddMonths(1);
             }
+            else
+            {
+                startTime = new DateTime(req.Year.ToInt(), 1, 1);
+                endTime = startTime.AddYears(1);
+            }
             var query = from t1 in UnitWork.Find<ServiceWorkOrder>(null)
                         join t2 in UnitWork.Find<ServiceOrder>(null) on t1.ServiceOrderId equals t2.Id
-                        where t1.Status >= 7 && t2.VestInOrg == 1 && t2.Status == 2 && t1.CurrentUserId != null && t1.CreateTime >= startTime && t1.CreateTime <= endTime
+                        where t1.Status >= 7 && t2.VestInOrg == 1 && t2.Status == 2 && t1.CurrentUserId != null && t1.CreateTime >= startTime && t1.CreateTime < endTime
                         group t1 by t1.CurrentUserId into g
                         select new
                         {
@@ -1238,16 +1242,20 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> GetProblemStatisticsInfo(QueryReportReq req)
         {
-            var now = DateTime.Now;
-            var startTime = new DateTime(now.Year, now.Month, 1);
+            var startTime = DateTime.Now;
             var endTime = DateTime.Now;
-            if (!string.IsNullOrEmpty(req.Year)&& !string.IsNullOrEmpty(req.Month))
+            if (!string.IsNullOrEmpty(req.Month))
             {
-                 startTime = Convert.ToDateTime($"{req.Year}-{req.Month}");
-                 endTime = startTime.AddMonths(1);
+                startTime = Convert.ToDateTime($"{req.Year}-{req.Month}");
+                endTime = startTime.AddMonths(1);
+            }
+            else
+            {
+                startTime = new DateTime(req.Year.ToInt(), 1, 1);
+                endTime = startTime.AddYears(1);
             }
             //var query = from t1 in UnitWork.Find<ServiceDailyReport>(null)
-            var query = await UnitWork.Find<ServiceDailyReport>(c => c.CreateTime >= startTime && c.CreateTime <= endTime).ToListAsync();
+            var query = await UnitWork.Find<ServiceDailyReport>(c => c.CreateTime >= startTime && c.CreateTime < endTime).ToListAsync();
             List<string> list = new List<string>();
             List<string> list2 = new List<string>();
             query.ForEach(i =>
@@ -1307,16 +1315,20 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> GetSolutionStatisticsInfo(QueryReportReq req)
         {
-            var now = DateTime.Now;
-            var startTime = new DateTime(now.Year, 1, 1);
+            var startTime = DateTime.Now;
             var endTime = DateTime.Now;
-            if (!string.IsNullOrEmpty(req.Year) && !string.IsNullOrEmpty(req.Month))
+            if (!string.IsNullOrEmpty(req.Month))
             {
                 startTime = Convert.ToDateTime($"{req.Year}-{req.Month}");
                 endTime = startTime.AddMonths(1);
             }
+            else
+            {
+                startTime = new DateTime(req.Year.ToInt(), 1, 1);
+                endTime = startTime.AddYears(1);
+            }
             //var query = from t1 in UnitWork.Find<ServiceDailyReport>(null)
-            var query = await UnitWork.Find<ServiceDailyReport>(c => c.CreateTime >= startTime && c.CreateTime <= endTime).ToListAsync();
+            var query = await UnitWork.Find<ServiceDailyReport>(c => c.CreateTime >= startTime && c.CreateTime < endTime).ToListAsync();
             List<string> list = new List<string>();
             List<string> list2 = new List<string>();
             query.ForEach(i =>
