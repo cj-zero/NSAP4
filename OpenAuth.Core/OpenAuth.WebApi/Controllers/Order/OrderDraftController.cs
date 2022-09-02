@@ -575,8 +575,10 @@ namespace OpenAuth.WebApi.Controllers.Order
                     result.Result = msg.Split('-')[0].ToString();
                     result.Code = 201;
                 }
-
-                result.Result = msg;
+                else
+                {
+                    result.Result = msg;
+                }
             }
             catch (Exception ex)
             {
