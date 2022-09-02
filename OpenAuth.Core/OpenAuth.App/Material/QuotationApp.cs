@@ -2903,7 +2903,7 @@ namespace OpenAuth.App.Material
                 throw new Exception("开票单位不存在");
             }
             HttpHelper httpHelper = new HttpHelper(_appConfiguration.Value.ERP3Url);
-            var resultApi = httpHelper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "DocEntry", quotation.SalesOrderId.ToString() },{ "Indicator", category .DtCode} }, "/spv/exportsaleorder.ashx");
+            var resultApi = httpHelper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "DocEntry", quotation.SalesOrderId.ToString() }, { "Indicator", category.DtCode }, { "DataType", "SaleOrder" } }, "/spv/exportsaleorder.ashx");
             if (resultApi["msg"] == "success")
             {
                 var url = resultApi["url"].Replace("192.168.0.208", "218.17.149.195");
