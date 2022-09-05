@@ -5746,7 +5746,7 @@ namespace OpenAuth.App
                  {
                      MaterialType = o.Key,
                      Status = o.ToList().Select(s => s.Status).Distinct().FirstOrDefault(),
-                     MaterialTypeName = "无序列号".Equals(o.Key) ? "无序列号" : MaterialTypeModel.Where(a => a.TypeAlias == o.Key).FirstOrDefault().TypeName,
+                     MaterialTypeName = "无序列号".Equals(o.Key) ? "无序列号" : MaterialTypeModel.Where(a => a.TypeAlias == o.Key).FirstOrDefault()?.TypeName,
                      OrderTakeType = o.ToList().Select(s => s.OrderTakeType).Distinct().FirstOrDefault(),
                      ServiceMode = o.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault(),
                      flowInfo = flow.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToList()
