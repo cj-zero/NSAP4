@@ -373,7 +373,7 @@ namespace OpenAuth.App.Client
                             tableName.Append("(select CardCode, SlpCode, ISNULL(UpdateDate,CreateDate) UpdateDate from OCRD UNION select CardCode, SlpCode, UpdateDate from ACRD ) a GROUP BY CardCode, SlpCode) b ");
                             tableName.Append(" where DATEDIFF(day, b.UpdateDate, GETDATE()) > " + Day + " GROUP BY CardCode) c) ");
                         }
-                    }
+                        }
                     //已成交客户
                     else if (label == "2")
                     {
@@ -2527,12 +2527,16 @@ namespace OpenAuth.App.Client
             var userId = loginUser.User_Id.Value;
             var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
             int SlpCode = Convert.ToInt16(GetUserInfoById(sboid.ToString(), userId.ToString(), "1"));
+            var slpInfo = UnitWork.Find<OSLP>(q => q.SlpCode == SlpCode).FirstOrDefault();
+            var SlpName = slpInfo == null?"": slpInfo.SlpName;
             if (isAdd)
             {
                 clientFollowUp.SlpCode = SlpCode;
+                clientFollowUp.SlpName = SlpName;
                 clientFollowUp.CreateUser = loginUser.User_Id.Value;
                 clientFollowUp.CreateDate = DateTime.Now;
                 clientFollowUp.IsDelete = false;
+                clientFollowUp.IsRemind = false;
                 await UnitWork.AddAsync<ClientFollowUp, int>(clientFollowUp);
             }
             else
@@ -2541,6 +2545,7 @@ namespace OpenAuth.App.Client
                 info.CardCode = clientFollowUp.CardCode;
                 info.CardName = clientFollowUp.CardName;
                 info.SlpCode = SlpCode;
+                info.SlpName = SlpName;
                 info.SlpName = clientFollowUp.SlpName;
                 info.Contacts = clientFollowUp.Contacts;
                 info.FollowType = clientFollowUp.FollowType;
@@ -2665,29 +2670,40 @@ namespace OpenAuth.App.Client
         public async Task PushMessageToSlp()
         {
             DateTime startTime = DateTime.Now;
-            DateTime endTime = startTime.AddMinutes(1);
+            DateTime endTime = startTime.AddHours(0.5);
             //查询所有时间段内待跟进的任务
-            var query = await (UnitWork.Find<ClientFollowUp>(c => c.NextTime >= startTime && c.NextTime <= endTime).Select(g => new
+            var query = await (UnitWork.Find<ClientFollowUp>(c => c.NextTime >= startTime && c.NextTime <= endTime&&c.IsRemind==false&&c.IsDelete==false).Select(g => new
             {
                 SlpName = g.SlpName,
-                CardName = g.CardName
+                CardName = g.CardName,
+                Id = g.Id
             })).ToListAsync();
             //查看有哪些业务员要发送提醒
             foreach (var slp in query)
             {
                 await _hubContext.Clients.User(slp.SlpName).SendAsync("ReceiveMessage", "系统", $"您有1个客户待跟进，客户名称：" + slp.CardName);
+                int id = slp.Id;
+                ClientFollowUp item = UnitWork.Find<ClientFollowUp>(q=>q.Id==id).FirstOrDefault();
+                item.IsRemind = true;
+                UnitWork.Update<ClientFollowUp>(item);
             }
 
-            var querySchedule = await (UnitWork.Find<ClientSchedule>(c => c.RemindTime >= startTime && c.RemindTime <= endTime).Select(g => new
+            var querySchedule = await (UnitWork.Find<ClientSchedule>(c => c.RemindTime >= startTime && c.RemindTime <= endTime && c.IsRemind == false && c.IsDelete == false).Select(g => new
             {
                 SlpName = g.SlpName,
-                Title = g.Title
+                Title = g.Title,
+                Id = g.Id
             })).ToListAsync();
             //查看有哪些业务员要发送提醒
             foreach (var slp in querySchedule)
             {
                 await _hubContext.Clients.User(slp.SlpName).SendAsync("ReceiveMessage", "系统", $"您有1个日程待跟进，日程标题：" + slp.Title);
+                int id = slp.Id;
+                ClientSchedule item = UnitWork.Find<ClientSchedule>(q => q.Id == id).FirstOrDefault();
+                item.IsRemind = true;
+                UnitWork.Update<ClientSchedule>(item);
             }
+            UnitWork.Save();
         }
         #endregion
         #endregion

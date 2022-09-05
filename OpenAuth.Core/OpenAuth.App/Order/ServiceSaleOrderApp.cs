@@ -50,6 +50,7 @@ namespace OpenAuth.App.Order
         private readonly RevelanceManagerApp _revelanceApp;
         private readonly AppServiceOrderLogApp _appServiceOrderLogApp;
         private readonly ServiceOrderLogApp _ServiceOrderLogApp;
+        //private OrderDraftServiceApp _orderDraftServiceApp;
         private IOptions<AppSetting> _appConfiguration;
         private ICapPublisher _capBus;
         private readonly ServiceFlowApp _serviceFlowApp;
@@ -63,7 +64,7 @@ namespace OpenAuth.App.Order
         public ServiceSaleOrderApp(IUnitWork unitWork, ILogger<ServiceSaleOrderApp> logger, RevelanceManagerApp app, ServiceBaseApp serviceBaseApp, ServiceOrderLogApp serviceOrderLogApp, IAuth auth, AppServiceOrderLogApp appServiceOrderLogApp, IOptions<AppSetting> appConfiguration, ICapPublisher capBus, ServiceOrderLogApp ServiceOrderLogApp, ServiceFlowApp serviceFlowApp) : base(unitWork, auth)
         {
             _logger = logger;
-
+            //_orderDraftServiceApp = orderDraftServiceApp;
             _appConfiguration = appConfiguration;
             _revelanceApp = app;
             _appServiceOrderLogApp = appServiceOrderLogApp;
@@ -494,19 +495,29 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             }
             string result = "";
             int userID = _serviceBaseApp.GetUserNaspId();
+            int sboID = _serviceBaseApp.GetUserNaspSboID(userID);
+            int billSboId = sboID;
+            List<DropDownOption> dropDownOptions = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@"SELECT b.CntctCode AS id,b.Name AS name FROM  nsap_bone.crm_ocrd a LEFT JOIN  nsap_bone.crm_ocpr b ON a.CardCode=b.CardCode and a.sbo_id=b.sbo_id WHERE a.CardCode='{orderReq.Order.CardCode}' and a.sbo_id={billSboId} and b.Active='Y' ", CommandType.Text, null);
+            var customer = dropDownOptions.Where(r => r.Id.ToString() == orderReq.Order.CntctCode).ToList();
+            if (customer.Count() <= 0 || customer == null)
+            {
+                result = "联系人无效-201";
+                return result;
+            }
+
             if (orderReq.JobId != 0)
             {
                 if (orderReq.IsCopy == true)
                 {
                     if (IsExistDocOqut(orderReq.JobId.ToString(), "23", "7"))
                     {
-                        result = "该销售订单已提交";
+                        result = "该销售订单已提交-201";
                         return result;
                     }
                 }
                 if (IsExistDocOqut(orderReq.JobId.ToString(), "-5", "13"))
                 {
-                    result = "该销售报价单已提交";
+                    result = "该销售报价单已提交-201";
                     return result;
                 }
                 //DataTable objTable = GetAuditObjWithFlowChart(orderReq.JobId.ToString());
@@ -521,7 +532,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 //    }
                 //}
             }
-            int sboID = _serviceBaseApp.GetUserNaspSboID(userID);
+     
             int funcId = 50;
             string logstring = "";
             string jobname = "";
@@ -6342,6 +6353,12 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 sortString = string.Format("{0} {1}", model.sortname, model.sortorder.ToUpper());
             string dRowData = string.Empty;
             #region 搜索条件
+            //if (!string.IsNullOrEmpty(model.NewDocEntry))
+            //{
+            //    List<int> docEntrys = _orderDraftServiceApp.GetDocEntrys(model.NewDocEntry);
+            //    filterString += string.Format("a.DocEntry in ({0}) AND ", string.Join(",", docEntrys, 0, docEntrys.Count()));
+            //}
+
             if (!string.IsNullOrEmpty(model.DocEntry))
             {
                 filterString += string.Format("a.DocEntry LIKE '{0}' AND ", model.DocEntry.FilterSQL().Trim());

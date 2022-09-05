@@ -894,6 +894,30 @@ namespace NSAP.App.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 获取服务单详情
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<ServiceOrderDetailsResp>> GetDetails(int id)
+        {
+
+            var result = new Response<ServiceOrderDetailsResp>();
+
+            try
+            {
+                result.Result = await _serviceOrderApp.GetDetails(id);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+              //  Log.Logger.Error($"地址：{Request.Path}，参数：{id}， 错误：{result.Message}");
+            }
+            return result;
+        }
         #endregion
 
         #region<<Admin/Supervisor>>

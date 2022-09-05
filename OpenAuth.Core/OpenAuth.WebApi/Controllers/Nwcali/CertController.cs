@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using DinkToPdf;
@@ -418,7 +420,7 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 批量下载证书
+        /// 批量下载证书--老版
         /// </summary>
         /// <param name="serialNumber"></param>
         /// <param name="sign"></param>
@@ -426,7 +428,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <returns></returns>
         [ServiceFilter(typeof(CertAuthFilter))]
         [HttpGet]
-        public async Task<IActionResult> BatchDownloadCertPdf(string serialNumber, string sign, string timespan)
+        public async Task<IActionResult> BatchDownloadCertPdf2(string serialNumber, string sign, string timespan)
         {
             //System.IO.Compression.ZipFile.
             //if (System.IO.File.Exists(Directory.GetCurrentDirectory() + "/wwwroot/ziliao.zip"))
@@ -529,6 +531,61 @@ namespace OpenAuth.WebApi.Controllers
             //return File(stream, "application/octet-stream ; Charset=UTF8", System.Web.HttpUtility.UrlEncode("123.pdf", System.Text.Encoding.UTF8));
         }
 
+        /// <summary>
+        /// 批量下载证书
+        /// </summary>
+        /// <param name="serialNumber"></param>
+        /// <param name="sign"></param>
+        /// <param name="timespan"></param>
+        /// <returns></returns>
+        [ServiceFilter(typeof(CertAuthFilter))]
+        [HttpGet]
+        public async Task<IActionResult> BatchDownloadCertPdf(string serialNumber, string sign, string timespan)
+        {
+            var num = serialNumber.Split(',').ToList();
+            var bases = await _nwcaliCertApp.GetNwcaliList(num);
+            //远程下载多个文件的地址
+            List<string> filePaths = bases.Select(a => a.PdfPath).ToList();
+            //准备用来存放下载的多个文件流目录
+            string pathZip = Directory.GetCurrentDirectory() + "/wwwroot/downfile" + timespan + "/";
+
+            if (!Directory.Exists(pathZip))
+            {
+                Directory.CreateDirectory(pathZip);
+            }
+            for (int i = 0; i < filePaths.Count; i++)
+            {
+                if (string.IsNullOrEmpty(filePaths[i]))
+                {
+                    continue;
+                }
+                string name = filePaths[i].Split('/').Last() ;
+                string path = filePaths[i];
+                HttpClient client = new HttpClient();
+                client.BaseAddress = new Uri(path);
+                //根据文件信息中的文件地址获取远程服务器，返回文件流
+                var stream = await client.GetStreamAsync(path);
+
+                var fils = File(stream, "application/vnd.android.package-archive", Path.GetFileName(path));
+                //创建文件流(文件路径，文件操作.创建)
+                using (FileStream fs = new FileStream(pathZip + "/" + name, FileMode.Create))
+                {
+                    //复制文件流
+                    fils.FileStream.CopyTo(fs);
+                }
+            }
+            //对多个文件流所在的目录进行压缩
+            string pathRes = Directory.GetCurrentDirectory() + "/wwwroot/" + "CertifiCate" + timespan+ ".zip";
+            ZipFile.CreateFromDirectory(pathZip, pathRes);
+            //删除目录以及目录下的子文件
+            //存在即删除
+            if (Directory.Exists(pathZip))
+            {
+                Directory.Delete(pathZip, true);
+            }
+            var file = new FileStream(pathRes, FileMode.Open);
+            return File(file, "application/octet-stream", "CertifiCate" + timespan+ ".zip");
+        }
         /// <summary>
         /// 将byte数组转换为文件并保存到指定地址
         /// </summary>

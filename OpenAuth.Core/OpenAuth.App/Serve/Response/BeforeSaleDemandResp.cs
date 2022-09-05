@@ -109,7 +109,7 @@ namespace OpenAuth.App.Reponse
         /// <summary>
         /// 预估开发成本
         /// </summary>
-        public int? PredictDevCost { get; set; }
+        public string PredictDevCost { get; set; }
         /// <summary>
         /// 开发预估工期
         /// </summary>
@@ -118,6 +118,10 @@ namespace OpenAuth.App.Reponse
         /// 测试预估工期
         /// </summary>
         public int? TestEstimate { get; set; }
+        /// <summary>
+        /// 需求预估工期
+        /// </summary>
+        public int? DemandEstimate { get; set; }
         /// <summary>
         /// 备注
         /// </summary>
@@ -131,7 +135,7 @@ namespace OpenAuth.App.Reponse
         /// <summary>
         /// 开发投入预估（开发预估工期+测试预估工期）*预估开发成本
         /// </summary>
-        public int? DevCost { get; set; }
+        public string DevCost { get; set; }
         /// <summary>
         /// 是否收费 默认空
         /// 1:“单独研发收费”，2“免费技术支持”

@@ -66,12 +66,16 @@ namespace OpenAuth.App.Client
             var userId = loginUser.User_Id.Value;
             var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
             int SlpCode = Convert.ToInt16(GetUserInfoById(sboid.ToString(), userId.ToString(), "1"));
+            var slpInfo = UnitWork.Find<OSLP>(q => q.SlpCode == SlpCode).FirstOrDefault();
+            var SlpName = slpInfo == null ? "" : slpInfo.SlpName;
             if (isAdd)
             {
                 clientSchedule.SlpCode = SlpCode;
+                clientSchedule.SlpName = SlpName;
                 clientSchedule.CreateUser = loginUser.User_Id.Value;
                 clientSchedule.CreateDate = DateTime.Now;
                 clientSchedule.IsDelete = false;
+                clientSchedule.IsRemind = false;
                 await UnitWork.AddAsync<ClientSchedule, int>(clientSchedule);
             }
             else
@@ -80,7 +84,7 @@ namespace OpenAuth.App.Client
                 info.CardCode = clientSchedule.CardCode;
                 info.CardName = clientSchedule.CardName;
                 info.SlpCode = SlpCode;
-                info.SlpName = clientSchedule.SlpName;
+                info.SlpName = SlpName;
                 info.Title = clientSchedule.Title;
                 info.StartDate = clientSchedule.StartDate;
                 info.EndDate = clientSchedule.EndDate;// NextFollowTime;

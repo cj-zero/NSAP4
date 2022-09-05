@@ -1449,7 +1449,7 @@ namespace OpenAuth.App
             obj.NewestContacter = loginUser.Name;
             obj.Contacter = loginUser.Name;
             obj.Supervisor = d.TechName;
-            obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(req.Supervisor)))?.Id;
+            obj.SupervisorId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(obj.Supervisor)))?.Id;
             if (string.IsNullOrWhiteSpace(obj.NewestContacter) && string.IsNullOrWhiteSpace(obj.NewestContactTel))
             {
                 obj.NewestContacter = obj.Contacter;
@@ -5463,7 +5463,7 @@ namespace OpenAuth.App
         /// 2020.12.17版本 此版本有待处理、进行中、已完成3种单据状态列表 Type：1待处理 2进行中 3已完成
         /// </summary>
         /// <returns></returns>
-        public async Task<TableData> GetTechnicianServiceOrderNew(TechnicianServiceWorkOrderReq req)
+        public async Task<TableData> GetTechnicianServiceOrderNew1(TechnicianServiceWorkOrderReq req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -5612,6 +5612,159 @@ namespace OpenAuth.App
             return result;
         }
 
+        #region
+
+        /// <summary>
+        /// 技术员查看服务单列表(技术员主页-工单池)
+        /// 2020.12.17版本 此版本有待处理、进行中、已完成3种单据状态列表 Type：1待处理 2进行中 3已完成
+        /// </summary>
+        /// <returns></returns>
+        public async Task<TableData> GetTechnicianServiceOrderNew(TechnicianServiceWorkOrderReq req)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == req.TechnicianId).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            //获取设备信息
+            var MaterialTypeModel = await UnitWork.Find<MaterialType>(null).Select(u => new { u.TypeAlias, u.TypeName }).ToListAsync();
+            //获取当前技术员的服务单集合 排除在线解答的单子
+            var serviceOrderIds = await UnitWork.Find<ServiceWorkOrder>(s => s.CurrentUserId == req.TechnicianId && s.FromType == 1)
+                .Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+
+            List<int> workIds = new List<int>();
+            //获取转派的已完成的单据
+            if (req.Type == 3)
+            {
+                var redeployList = await UnitWork.Find<ServiceRedeploy>(w => w.TechnicianId == req.TechnicianId).ToListAsync();
+                var redeployIds = redeployList.Select(s => s.ServiceOrderId).Distinct().ToList();
+                foreach (var item in redeployList)
+                {
+                    List<int> ids = item.WorkOrderIds.Split(',').Select(m => Convert.ToInt32(m)).ToList();
+                    workIds = workIds.Concat(ids).ToList();
+                }
+                if (redeployIds.Count > 0)
+                {
+                    redeployIds.ForEach(f => serviceOrderIds.Add((int)f));
+                }
+            }
+            //获取完工报告集合
+            var completeReportList = await UnitWork.Find<CompletionReport>(w => serviceOrderIds.Contains((int)w.ServiceOrderId)).Select(s => new { s.ServiceOrderId, s.TechnicianId, s.IsReimburse, s.Id, s.ServiceMode, MaterialType = s.MaterialCode == "无序列号" ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) }).ToListAsync();
+            //获取我的报销单集合
+            var reimburseList = await UnitWork.Find<ReimburseInfo>(r => r.CreateUserId == userInfo.UserID).ToListAsync();
+
+            var querytest = from s in UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id) && w.AllowOrNot == 0 && w.VestInOrg == req.OrderType)
+                            join f in UnitWork.Find<ServiceWorkOrder>(null) on s.Id equals f.ServiceOrderId
+                            select new
+                            {
+                                s.Id,
+                                s.AppUserId,
+                                s.U_SAP_ID,
+                                s.CustomerName,
+                                f.OrderTakeType,
+                                f.Status,
+                                f.ManufacturerSerialNumber
+                            };
+            querytest = querytest.WhereIf(req.Type == 1, s => s.OrderTakeType == 0)//待处理 所有设备类型都未操作
+                   .WhereIf(req.Type == 2, s => s.OrderTakeType != 0 && s.Status < 7)//进行中 有任意一个设备类型进行了操作
+                   .WhereIf(req.Type == 3, s => s.Status >= 7) //已完成 所有设备类型都已完成
+                   .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => s.U_SAP_ID == id || s.CustomerName.Contains(req.key) || s.ManufacturerSerialNumber.Contains(req.key));
+            int count = querytest.Select(a => a.Id).Distinct().Count();
+
+
+
+            var listId = await querytest.GroupBy(a => a.Id).OrderByDescending(o => o.Key).Skip((req.page - 1) * req.limit)
+           .Take(req.limit).Select(a => a.Key).ToListAsync();
+
+            var listOrder = await UnitWork.Find<ServiceOrder>(a => listId.Contains(a.Id)).ToListAsync();
+            var listWorkOrder = await UnitWork.Find<ServiceWorkOrder>(a => listId.Contains(a.ServiceOrderId)).ToListAsync();
+            var listFlow = await UnitWork.Find<ServiceFlow>(a => listId.Contains((int)a.ServiceOrderId)).ToListAsync();
+
+            List<dynamic> listRes = new List<dynamic>();
+            foreach (var item in listOrder)
+            {
+                var serviceOrder = listWorkOrder.Where(a => a.ServiceOrderId == item.Id).ToList();
+                var MaterialInfo = serviceOrder.Where(w => req.Type == 3 && item.VestInOrg == 1 ? workIds.Contains(w.Id) : w.CurrentUserId == req.TechnicianId).Select(o => new
+                {
+                    o.MaterialCode,
+                    o.ManufacturerSerialNumber,
+                    MaterialType = string.IsNullOrEmpty(o.MaterialCode) ? "" : o.MaterialCode.IndexOf("-")>0? "无序列号".Equals(o.MaterialCode) ? "无序列号" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")):"",
+                    o.Status,
+                    o.Id,
+                    o.OrderTakeType,
+                    o.ServiceMode,
+                    o.Priority,
+                    o.TransactionType,
+                    o.FromTheme,
+                    o.AcceptTime,
+                });
+                
+                var ProblemType = serviceOrder.FirstOrDefault()?.ProblemType;
+                var flow = listFlow.Where(w => w.Creater == userInfo.UserID && w.ServiceOrderId == item.Id && w.FlowType == 1).ToList();
+
+                dynamic info = new
+                {
+                    Id = item.Id,
+                    AppUserId = item.AppUserId,
+                    Services = GetServiceFromTheme(serviceOrder.FirstOrDefault().FromTheme),
+                    Latitude = item.Latitude,
+                    Longitude = item.Longitude,
+                    Province = item.Province,
+                    City = item.City,
+                    Area = item.Area,
+                    Addr = item.Addr,
+                    //info.Contacter = item.Contacter,
+                    //info.ContactTel = item.ContactTel,
+                    NewestContacter = item.NewestContacter,
+                    NewestContactTel = item.NewestContactTel,
+                    Status = item.Status,
+                    CreateTime = item.CreateTime?.ToString("yyyy.MM.dd HH:mm"),
+                    U_SAP_ID = item.U_SAP_ID,
+                    CustomerId = item.CustomerId,
+                    CustomerName = item.CustomerName,
+                    TerminalCustomer = item.TerminalCustomer,
+                    Count = serviceOrder.Where(a => a.CurrentUserId == req.TechnicianId).Count(),
+                    VestInOrg = item.VestInOrg,
+                    MaterialCode = item.VestInOrg == 2 ? serviceOrder.FirstOrDefault()?.MaterialCode : "",
+                    ManufacturerSerialNumber = item.VestInOrg == 2 ? serviceOrder.FirstOrDefault()?.ManufacturerSerialNumber : "",
+                    Reamrk = serviceOrder.FirstOrDefault()?.Remark,
+                    AcceptTime =MaterialInfo.Select(s => s.AcceptTime).FirstOrDefault()?.ToString("yyyy.MM.dd HH:mm"),
+                    FromTheme =MaterialInfo.Select(s => s.FromTheme).FirstOrDefault() ,
+                    TransactionType = MaterialInfo.Select(s => s.TransactionType).FirstOrDefault(),
+                    Priority = MaterialInfo.Select(s => s.Priority).FirstOrDefault(),
+                    ProblemTypeName = string.IsNullOrEmpty(item.ProblemTypeName) ? ProblemType?.Name : item.ProblemTypeName,
+                    MaterialTypeQty = item.VestInOrg == 1 ? MaterialInfo.GroupBy(o => o.MaterialType).Select(i => i.Key).ToList().Count : 0,
+                    MaterialInfo = item.VestInOrg == 1 ? MaterialInfo.GroupBy(o => o.MaterialType).ToList()
+                 .Select(o => new
+                 {
+                     MaterialType = o.Key,
+                     Status = o.ToList().Select(s => s.Status).Distinct().FirstOrDefault(),
+                     MaterialTypeName = "无序列号".Equals(o.Key) ? "无序列号" : MaterialTypeModel.Where(a => a.TypeAlias == o.Key).FirstOrDefault().TypeName,
+                     OrderTakeType = o.ToList().Select(s => s.OrderTakeType).Distinct().FirstOrDefault(),
+                     ServiceMode = o.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault(),
+                     flowInfo = flow.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToList()
+                 }) : new object(),
+                    IsReimburse = req.Type == 3 && (item.VestInOrg == 1 || item.VestInOrg == 3) ? completeReportList.Where(w => w.ServiceOrderId == item.Id && (w.ServiceMode == 1 || item.VestInOrg == 3) && w.TechnicianId == req.TechnicianId.ToString()).FirstOrDefault() == null ? 0 : completeReportList.Where(w => w.ServiceOrderId == item.Id && (w.ServiceMode == 1 || item.VestInOrg == 3) && w.TechnicianId == req.TechnicianId.ToString()).FirstOrDefault().IsReimburse : 0,
+                    MaterialType = req.Type == 3 && item.VestInOrg == 1 ? completeReportList.Where(w => w.ServiceOrderId == item.Id && w.TechnicianId == req.TechnicianId.ToString()).FirstOrDefault() == null ? string.Empty : completeReportList.Where(w => w.ServiceOrderId == item.Id && w.TechnicianId == req.TechnicianId.ToString()).OrderBy(o => o.ServiceMode).FirstOrDefault().MaterialType : string.Empty,
+                    ReimburseId = req.Type == 3 && (item.VestInOrg == 1 || item.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == item.Id && w.CreateUserId == userInfo.UserID).Select(s => s.Id).FirstOrDefault() : 0,
+                    RemburseStatus = req.Type == 3 && (item.VestInOrg == 1 || item.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == item.Id && w.CreateUserId == userInfo.UserID).Select(s => s.RemburseStatus).FirstOrDefault() : 0,
+                    RemburseIsRead = req.Type == 3 && (item.VestInOrg == 1 || item.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == item.Id && w.CreateUserId == userInfo.UserID).Select(s => s.IsRead).FirstOrDefault() : 0,
+                };
+                listRes.Add(info);
+            }
+
+            result.Data = listRes.OrderByDescending(a => a.Id).ToList();
+            result.Count = count;
+            return result;
+        }
+        #endregion
         /// <summary>
         /// 获取技术员单据数量
         /// </summary>
