@@ -40,6 +40,26 @@ namespace OpenAuth.App.Material.Request
         /// 排序方式（ASC DESC）
         /// </summary>
         public string sortorder { get; set; }
+        /// <summary>
+        /// 特殊要求
+        /// </summary>
+        public string custom_req { get; set; }
+        /// <summary>
+        /// 编码类别
+        /// </summary>
+        public string ItemTypeName { get; set; }
+        /// <summary>
+        /// 图纸编码
+        /// </summary>
+        public string ItemName { get; set; }
+        /// <summary>
+        /// 版本号
+        /// </summary>
+        public string VersionNo { get; set; }
+        /// <summary>
+        /// 是否有版本号（ Y 有 N 没有）
+        /// </summary>
+        public string IsVersionNo { get; set; }
 
     }
 }

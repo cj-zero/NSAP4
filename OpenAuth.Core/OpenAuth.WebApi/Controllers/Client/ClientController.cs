@@ -770,6 +770,18 @@ namespace OpenAuth.WebApi.Controllers.Client
             return result;
         }
 
+        /// <summary>
+        /// 测试同步数据
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task TestAsync()
+        {
+            
+                await _clientInfoApp.PushMessageToSlp();
+            
+        }
+
     }
 }
 
