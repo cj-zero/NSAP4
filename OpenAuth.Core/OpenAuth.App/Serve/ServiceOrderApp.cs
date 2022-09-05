@@ -5463,7 +5463,7 @@ namespace OpenAuth.App
         /// 2020.12.17版本 此版本有待处理、进行中、已完成3种单据状态列表 Type：1待处理 2进行中 3已完成
         /// </summary>
         /// <returns></returns>
-        public async Task<TableData> GetTechnicianServiceOrderNew1(TechnicianServiceWorkOrderReq req)
+        public async Task<TableData> GetTechnicianServiceOrderNew(TechnicianServiceWorkOrderReq req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -5619,7 +5619,7 @@ namespace OpenAuth.App
         /// 2020.12.17版本 此版本有待处理、进行中、已完成3种单据状态列表 Type：1待处理 2进行中 3已完成
         /// </summary>
         /// <returns></returns>
-        public async Task<TableData> GetTechnicianServiceOrderNew(TechnicianServiceWorkOrderReq req)
+        public async Task<TableData> GetTechnicianServiceOrderNew1(TechnicianServiceWorkOrderReq req)
         {
             var result = new TableData();
             var loginContext = _auth.GetCurrentUser();
