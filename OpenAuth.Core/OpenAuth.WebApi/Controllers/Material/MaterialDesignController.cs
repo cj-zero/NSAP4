@@ -1,5 +1,6 @@
 ﻿using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Material;
@@ -33,18 +34,20 @@ namespace OpenAuth.WebApi.Controllers.Material
     [ApiExplorerSettings(GroupName = "Material")]
     public class MaterialDesignController : ControllerBase
     {
+        private readonly IOptions<AppSetting> _appConfiguration;
         private readonly MaterialDesignApp _app;
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
         ServiceBaseApp _serviceBaseApp;
         IUnitWork UnitWork;
         IAuth _auth;
-        public MaterialDesignController(MaterialDesignApp app, ServiceBaseApp _serviceBaseApp, IUnitWork UnitWork, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
+        public MaterialDesignController(MaterialDesignApp app, ServiceBaseApp _serviceBaseApp, IUnitWork UnitWork, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp, IOptions<AppSetting> appConfiguration)
         {
             _app = app;
             this._serviceBaseApp = _serviceBaseApp;
             this.UnitWork = UnitWork;
             this._auth = _auth;
             _serviceSaleOrderApp = serviceSaleOrderApp;
+            _appConfiguration = appConfiguration;
         }
 
         #region 物料设计弹窗
@@ -224,12 +227,12 @@ namespace OpenAuth.WebApi.Controllers.Material
         /// <returns></returns>
         [HttpPost]
         [Route("AddDrawingFiles")]
-        public async Task<Infrastructure.Response> AddDrawingFiles(List<int> ids, string url)
+        public async Task<Infrastructure.Response> AddDrawingFiles(List<int> ids, string url, string VersionNo)
         {
             var response = new Infrastructure.Response();
             try
             {
-                response = await _app.AddDrawingFiles(ids, url);
+                response = await _app.AddDrawingFiles(ids, url, VersionNo);
             }
             catch (Exception ex)
             {
@@ -237,7 +240,6 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return response;
         }
-
 
         /// <summary>
         /// 判断订单是否有合同号
@@ -303,12 +305,37 @@ namespace OpenAuth.WebApi.Controllers.Material
                 {
                     advanceData.SubmitTime = manage_screen.SubmitTime.ToString();
                 }
-                string sql1 = "SELECt t.isFinished,T.Subject, T.Complete, t.CaseRecGuid  FROM Tasks  as t where t.isDeleted = 0  and t.CaseRecGuid = '" + guid + "' ";
+                string sql1 = "SELECt t.isFinished,T.Subject, T.Complete, t.CaseRecGuid  FROM Tasks  as t where t.isDeleted = 0  and t.CaseRecGuid = '" + guid + "' order by t.StageId ";
                 DataTable dts1 = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, sql1.ToString(), CommandType.Text, null);
                 advanceData.dt = dts1;
             }
             return advanceData;
 
+        }
+        /// <summary>
+        /// 查看合约评审单
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <param name="VersionNo"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetContractFile")]
+        public TableData GetContractFile(string ContractId)
+        {
+            TableData result = new TableData();
+            HttpHelper httpHelper = new HttpHelper(_appConfiguration.Value.ERP3Url);
+            var resultApi = httpHelper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "ContractId", ContractId } }, "/spv/exportcontractreview.ashx");
+            if (resultApi["msg"] == "success")
+            {
+                var url = resultApi["url"].Replace("192.168.0.208", "218.17.149.195");
+                result.Data = url;
+            }
+            else
+            {
+                result.Code = 500;
+                result.Message = resultApi["msg"];
+            }
+            return result;
         }
 
         public class AdvanceData

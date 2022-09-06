@@ -210,14 +210,41 @@ namespace OpenAuth.App
             var lowGuidList = model.low_Lists.Select(c => c.LowGuid).Distinct().ToList();
 
             var OrderNo = Convert.ToInt32(model.GeneratorCode.Split("-")[1]);
-            //生产订单明细
-            //var xwjCount = await UnitWork.Find<product_wor1>(null).Where(c => c.DocEntry == OrderNo && c.ItemCode.Contains("B01-XWJ")).Select(c=>c.BaseQty).FirstOrDefaultAsync();
-            //var hasBindCount = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode == model.GeneratorCode).CountAsync();
-            //if (hasBindCount+ lowGuidList.Count> xwjCount)
-            //{
-            //    throw new Exception($"【{model.GeneratorCode}】共生产{xwjCount}台,已绑定{hasBindCount}台,本次绑定{lowGuidList.Count}超过生产数,请检查绑定情况!");
-            //}
-
+            int xwjCount = 0;
+            var BO1_XWJ = await UnitWork.Find<product_wor1>(null).Where(c => c.DocEntry == OrderNo && c.ItemCode.Contains("B01-XWJ")).Select(c => new { c.BaseQty }).FirstOrDefaultAsync();
+            if (BO1_XWJ==null)
+            {
+                string code ="B";
+                var itemCodeHeader= model.ItemCode.ToUpper().Split('-')[0];
+                if (itemCodeHeader== "CT")
+                {
+                    code = "BT";
+                }
+                else if (itemCodeHeader == "CE")
+                {
+                    code = "BE";
+                }
+                else if (itemCodeHeader == "CTE")
+                {
+                    code = "BTE";
+                }
+                var productItem= await UnitWork.Find<product_wor1>(null).Where(c => c.DocEntry == OrderNo && c.ItemCode.Contains(code)).Select(c => new { c.BaseQty,c.ItemCode }).FirstOrDefaultAsync();
+                if (productItem!=null)
+                {
+                    var bomsql = $@"SELECT Qauntity as CmpltQty FROM nsap_bone.store_oitt WHERE Code ='{productItem.ItemCode}' LIMIT 1";
+                    var bomItem = UnitWork.Query<product_owor_wor1>(bomsql).Select(c=>new { c.CmpltQty }).FirstOrDefault()?.CmpltQty;
+                    xwjCount = Convert.ToInt32(productItem.BaseQty.Value) * (bomItem==null?0:Convert.ToInt32(bomItem.Value));
+                }
+            }
+            else
+            {
+                xwjCount = Convert.ToInt32(BO1_XWJ.BaseQty.Value);
+            }
+            var hasBindCount = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode == model.GeneratorCode).CountAsync();
+            if (hasBindCount + lowGuidList.Count > xwjCount)
+            {
+                throw new Exception($"【{model.GeneratorCode}】共生产{xwjCount}台下位机,已绑定{hasBindCount}台,本次绑定{lowGuidList.Count}台超过生产数,请检查绑定情况!");
+            }
             var bindMap = await UnitWork.Find<DeviceBindMap>(null).Where(c => lowGuidList.Contains(c.LowGuid)).ToListAsync();
             if (bindMap.Count>0)
             {

@@ -236,6 +236,7 @@ namespace OpenAuth.App
                     checkTask.UnitId = citem.unit_id;
                     checkTask.ChlId = citem.chl_id;
                     checkTask.TestId = citem.test_id;
+                    checkTask.LowGuid = item.LowGuid;
                     checkTask.CreateTime = DateTime.Now;
                     deviceCheckTasks.Add(checkTask);
                 }

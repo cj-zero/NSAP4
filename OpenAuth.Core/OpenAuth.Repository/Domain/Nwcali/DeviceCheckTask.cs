@@ -33,6 +33,7 @@ namespace OpenAuth.Repository.Domain
         public sbyte TaskStatus { get; set; }
         public string TaskContent { get; set; }
         public int TaskErrCount { get; set; }
+        public string LowGuid { get; set; }
         /// <summary>
         /// 
         /// </summary>

@@ -5713,7 +5713,7 @@ namespace OpenAuth.App
                 {
                     Id = item.Id,
                     AppUserId = item.AppUserId,
-                    Services = GetServiceFromTheme(serviceOrder.FirstOrDefault().FromTheme),
+                    Services = GetServiceFromTheme(serviceOrder.FirstOrDefault()?.FromTheme),
                     Latitude = item.Latitude,
                     Longitude = item.Longitude,
                     Province = item.Province,
@@ -5746,13 +5746,13 @@ namespace OpenAuth.App
                  {
                      MaterialType = o.Key,
                      Status = o.ToList().Select(s => s.Status).Distinct().FirstOrDefault(),
-                     MaterialTypeName = "无序列号".Equals(o.Key) ? "无序列号" : MaterialTypeModel.Where(a => a.TypeAlias == o.Key).FirstOrDefault().TypeName,
+                     MaterialTypeName = "无序列号".Equals(o.Key) ? "无序列号" : MaterialTypeModel.Where(a => a.TypeAlias == o.Key).FirstOrDefault()?.TypeName,
                      OrderTakeType = o.ToList().Select(s => s.OrderTakeType).Distinct().FirstOrDefault(),
                      ServiceMode = o.ToList().Select(s => s.ServiceMode).Distinct().FirstOrDefault(),
                      flowInfo = flow.Where(w => w.MaterialType.Equals(o.Key)).OrderBy(o => o.Id).Select(s => new { s.FlowNum, s.FlowName, s.IsProceed }).ToList()
                  }) : new object(),
-                    IsReimburse = req.Type == 3 && (item.VestInOrg == 1 || item.VestInOrg == 3) ? completeReportList.Where(w => w.ServiceOrderId == item.Id && (w.ServiceMode == 1 || item.VestInOrg == 3) && w.TechnicianId == req.TechnicianId.ToString()).FirstOrDefault() == null ? 0 : completeReportList.Where(w => w.ServiceOrderId == item.Id && (w.ServiceMode == 1 || item.VestInOrg == 3) && w.TechnicianId == req.TechnicianId.ToString()).FirstOrDefault().IsReimburse : 0,
-                    MaterialType = req.Type == 3 && item.VestInOrg == 1 ? completeReportList.Where(w => w.ServiceOrderId == item.Id && w.TechnicianId == req.TechnicianId.ToString()).FirstOrDefault() == null ? string.Empty : completeReportList.Where(w => w.ServiceOrderId == item.Id && w.TechnicianId == req.TechnicianId.ToString()).OrderBy(o => o.ServiceMode).FirstOrDefault().MaterialType : string.Empty,
+                    IsReimburse = req.Type == 3 && (item.VestInOrg == 1 || item.VestInOrg == 3) ? completeReportList.Where(w => w.ServiceOrderId == item.Id && (w.ServiceMode == 1 || item.VestInOrg == 3) && w.TechnicianId == req.TechnicianId.ToString()).FirstOrDefault() == null ? 0 : completeReportList.Where(w => w.ServiceOrderId == item.Id && (w.ServiceMode == 1 || item.VestInOrg == 3) && w.TechnicianId == req.TechnicianId.ToString()).FirstOrDefault()?.IsReimburse : 0,
+                    MaterialType = req.Type == 3 && item.VestInOrg == 1 ? completeReportList.Where(w => w.ServiceOrderId == item.Id && w.TechnicianId == req.TechnicianId.ToString()).FirstOrDefault() == null ? string.Empty : completeReportList.Where(w => w.ServiceOrderId == item.Id && w.TechnicianId == req.TechnicianId.ToString()).OrderBy(o => o.ServiceMode).FirstOrDefault()?.MaterialType : string.Empty,
                     ReimburseId = req.Type == 3 && (item.VestInOrg == 1 || item.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == item.Id && w.CreateUserId == userInfo.UserID).Select(s => s.Id).FirstOrDefault() : 0,
                     RemburseStatus = req.Type == 3 && (item.VestInOrg == 1 || item.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == item.Id && w.CreateUserId == userInfo.UserID).Select(s => s.RemburseStatus).FirstOrDefault() : 0,
                     RemburseIsRead = req.Type == 3 && (item.VestInOrg == 1 || item.VestInOrg == 3) ? reimburseList.Where(w => w.ServiceOrderId == item.Id && w.CreateUserId == userInfo.UserID).Select(s => s.IsRead).FirstOrDefault() : 0,

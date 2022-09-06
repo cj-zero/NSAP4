@@ -35,6 +35,10 @@ namespace OpenAuth.App.Nwcali.Request
         /// </summary>
         public string BtsServerIp { get; set; }
         /// <summary>
+        /// 物料编码
+        /// </summary>
+        public string ItemCode { get; set; }
+        /// <summary>
         /// 下位机guid
         /// </summary>
         public List<LowList> low_Lists { get; set; }
