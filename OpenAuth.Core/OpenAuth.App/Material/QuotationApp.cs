@@ -1195,7 +1195,7 @@ namespace OpenAuth.App.Material
             if (request.QueryType == 1)
             {
                 //A6开头 带机柜、机箱的物料不可见
-                var filterCode = await UnitWork.Find<OITM>(c => c.ItemCode.StartsWith("A6") && (c.ItemName.Contains("机柜") || c.ItemName.Contains("机箱"))).Select(c => c.ItemCode).ToListAsync();
+                var filterCode = await UnitWork.Find<OITM>(c => c.ItemCode.StartsWith("A604") && (c.ItemName.StartsWith("机柜") || c.ItemName.StartsWith("机箱"))).Select(c => c.ItemCode).ToListAsync();
                 query = query.Where(c => !filterCode.Contains(c.ItemCode));
             }
 
