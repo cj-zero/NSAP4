@@ -58,6 +58,23 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public int? ContractReviewCode { get; set; }
         /// <summary>
+        /// 特殊要求
+        /// </summary>
+        public string custom_req { get; set; }
+        /// <summary>
+        /// 编码类别
+        /// </summary>
+        public string ItemTypeName { get; set; }
+        /// <summary>
+        /// 图纸编码
+        /// </summary>
+        public string ItemName { get; set; }
+
+        /// <summary>
+        /// 版本号
+        /// </summary>
+        public string VersionNo { get; set; }
+        /// <summary>
         /// 文件路径
         /// </summary>
         public string FileUrl { get; set; }
