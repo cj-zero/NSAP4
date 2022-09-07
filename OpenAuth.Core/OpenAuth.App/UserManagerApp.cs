@@ -619,6 +619,10 @@ namespace OpenAuth.App
             //获取角色权限
             Relevances = _revelanceApp.Get(Define.USERROLE, true, loginUser.User.Id);
             var Roles = loginUser.Roles.Where(o => Relevances.Contains(o.Id)).Select(r=>r.Name).ToList();
+            //获取能看到的报表
+            var reportid = UnitWork.Find<Relevance>(c => Relevances.Contains(c.FirstId) && c.Key == Define.REPORTROLE).Select(c => c.SecondId).Distinct().ToList();
+            var report = UnitWork.Find<ReportInfo>(c => reportid.Contains(c.Id)).ToList();
+
             var result = new TableData();
             result.Data = new
             {
@@ -631,6 +635,7 @@ namespace OpenAuth.App
                 Roles = Roles,
                 IsPassword =Encryption.Decrypt(loginUser.User.Password).ToLower() == "xinwei123" ? true : false,
                 AppUserId=Encryption.EncryptRSA(appUserId),
+                report
             };
             return result;
         }
