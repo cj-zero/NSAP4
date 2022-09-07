@@ -319,5 +319,30 @@ namespace OpenAuth.WebApi.Controllers.Material
             public DataTable dt { get; set; }
         }
         #endregion
+
+        /// <summary>
+        /// 物料过账记录
+        /// </summary>
+        [HttpPost]
+        public async Task<TableData> GetMaterialRecord(MaterialRecordReq req)
+        {
+           
+            var result = new TableData();
+            try
+            {
+                return await _app.GetMaterialRecord(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+
+
+        
     }
 }
