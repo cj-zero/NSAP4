@@ -16,6 +16,7 @@ using OpenAuth.Repository.Domain;
 using System.Data;
 using OpenAuth.Repository;
 using System.Data.SqlClient;
+using OpenAuth.App.Request;
 
 namespace OpenAuth.App.Material
 {
@@ -471,5 +472,94 @@ namespace OpenAuth.App.Material
 
 
         #endregion
+
+        public async Task<TableData> GetMaterialRecord(MaterialRecordReq req)
+        {
+
+            string where1 = "";
+            string where2 = " where 1=1 ";
+
+            if (!string.IsNullOrEmpty(req.MaterialCode))
+            {
+                where1 += $" and  t1.MaterialCode = '{req.MaterialCode}' ";
+                where2 += $" and  t1.MaterialCode = '{req.MaterialCode}' ";
+            }
+            if (!string.IsNullOrEmpty(req.CreateUser))
+            {
+                where1 += $" and  t3.CreateUser = '{req.CreateUser}' ";
+                where2 += $" and  t3.CreateUserName  = '{req.CreateUser}' ";
+            }
+            if (!string.IsNullOrEmpty(req.DocEntry))
+            {
+                where1 += $" and  t2.id = '{req.DocEntry}' ";
+                where2 += $" and  t2.id  = '{req.DocEntry}' ";
+            }
+            if (!string.IsNullOrEmpty(req.CustomerId))
+            {
+                where1 += $" and  t4.CustomerId = '{req.CustomerId}' ";
+                where2 += $" and  t4.CustomerId = '{req.CustomerId}' ";
+            }
+            if (!string.IsNullOrEmpty(req.WhsCode))
+            {
+                where1 += $" and  t1.WhsCode = '{req.WhsCode}' ";
+                where2 += $" and ( t1.GoodWhsCode = '{req.WhsCode}' or t1.SecondWhsCode = '{req.WhsCode}' ) ";
+            }
+            if (req.StartTime != null)
+            {
+                where1 += $" and  t3.CreateTime >= '{req.StartTime}' ";
+                where2 += $" and  t3.createDate  >= '{req.StartTime}' ";
+            }
+            if (req.EndTime != null)
+            {
+                where1 += $" and  t3.CreateTime < '{req.EndTime}' ";
+                where2 += $" and  t3.createDate < '{req.EndTime}' ";
+            }
+            string strSql = @$"select * from (
+select t2.id as 'Id', t1.MaterialCode as 'MaterialCode',t1.MaterialDescription as 'MaterialDescription', t3.Quantity as 'Quantity' ,t3.CreateUser as 'Name',
+t3.CreateTime as 'CreateTime',t1.WhsCode as 'WhsCode',t4.CustomerName as 'CustomerName' ,t4.CustomerId as 'CustomerId',t2.Remark  as 'Remark','1' as 'OrderType' 
+from quotationmergematerial t1
+inner join quotation t2 on t2.id = t1.QuotationId
+inner join logisticsrecord t3 on t1.id =t3.QuotationMaterialId
+inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id
+where t2.Status =2 and t2.QuotationStatus =11 {where1}
+UNION All
+select t2.id as 'Id',t1.MaterialCode as 'MaterialCode',t1.MaterialDescription as 'MaterialDescription', '1' as 'Quantity',t3.CreateUserName as 'Name',
+t3.createDate as 'CreateTime',CASE IsGood WHEN IsGood =1 THEN GoodWhsCode ELSE SecondWhsCode END  as 'WhsCode',t4.CustomerName as 'CustomerName',
+t4.CustomerId as 'CustomerId',t1.ReceivingRemark as 'Remark' ,'2' as 'OrderType'
+from returnnotematerial t1
+inner join ReturnNote t2 on t2.id = t1.ReturnNoteId
+inner join (select * from  erp4.flowinstanceoperationhistory 
+where Content='仓库入库'  )t3 on t2.FlowInstanceId =t3.instanceid
+inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
+)t ORDER BY t.CreateTime desc LIMIT {(req.pageIndex - 1) * req.pageSize},{req.pageSize}";
+
+
+            string strSql2 = @$"select count(*) as 'num' from (
+select t2.id as 'Id', t1.MaterialCode as 'MaterialCode',t1.MaterialDescription as 'MaterialDescription', t3.Quantity as 'Quantity' ,t3.CreateUser as 'Name',
+t3.CreateTime as 'CreateTime',t1.WhsCode as 'WhsCode',t4.CustomerName as 'CustomerName' ,t4.CustomerId as 'CustomerId',t2.Remark  as 'Remark','1' as 'OrderType' 
+from quotationmergematerial t1
+inner join quotation t2 on t2.id = t1.QuotationId
+inner join logisticsrecord t3 on t1.id =t3.QuotationMaterialId
+inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id
+where t2.Status =2 and t2.QuotationStatus =11 {where1}
+UNION All
+select t2.id as 'Id',t1.MaterialCode as 'MaterialCode',t1.MaterialDescription as 'MaterialDescription', '1' as 'Quantity',t3.CreateUserName as 'Name',
+t3.createDate as 'CreateTime',CASE IsGood WHEN IsGood =1 THEN GoodWhsCode ELSE SecondWhsCode END  as 'WhsCode',t4.CustomerName as 'CustomerName',
+t4.CustomerId as 'CustomerId',t1.ReceivingRemark as 'Remark' ,'2' as 'OrderType'
+from returnnotematerial t1
+inner join ReturnNote t2 on t2.id = t1.ReturnNoteId
+inner join (select * from  erp4.flowinstanceoperationhistory 
+where Content='仓库入库'  )t3 on t2.FlowInstanceId =t3.instanceid
+inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
+)t ";
+            var data = UnitWork.ExcuteSqlTable(ContextType.Nsap4MaterialDbContextType, strSql, CommandType.Text, null);
+
+            var count = UnitWork.ExcuteSqlTable(ContextType.Nsap4MaterialDbContextType, strSql2, CommandType.Text, null);
+            return new TableData
+            {
+                Data = data,
+                Count = count.Rows[0][0].ToInt(),
+            };
+        }
     }
 }
