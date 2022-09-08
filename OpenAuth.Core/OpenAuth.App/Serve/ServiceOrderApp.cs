@@ -5824,7 +5824,7 @@ namespace OpenAuth.App
             //获取我的报销单集合
             var reimburseList = await UnitWork.Find<ReimburseInfo>(r => r.CreateUserId == userInfo.UserID).ToListAsync();
 
-            var querytest = from s in UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id) && w.AllowOrNot == 0 && w.VestInOrg == req.OrderType)
+            var query = from s in UnitWork.Find<ServiceOrder>(w => serviceOrderIds.Contains(w.Id) && w.AllowOrNot == 0 && w.VestInOrg == req.OrderType)
                             join f in UnitWork.Find<ServiceWorkOrder>(null) on s.Id equals f.ServiceOrderId
                             select new
                             {
@@ -5836,16 +5836,22 @@ namespace OpenAuth.App
                                 f.Status,
                                 f.ManufacturerSerialNumber
                             };
-            querytest = querytest.WhereIf(req.Type == 1, s => s.OrderTakeType == 0)//待处理 所有设备类型都未操作
-                   .WhereIf(req.Type == 2, s => s.OrderTakeType != 0 && s.Status < 7)//进行中 有任意一个设备类型进行了操作
-                   .WhereIf(req.Type == 3, s => s.Status >= 7) //已完成 所有设备类型都已完成
-                   .WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => s.U_SAP_ID == id || s.CustomerName.Contains(req.key) || s.ManufacturerSerialNumber.Contains(req.key));
-            int count = querytest.Select(a => a.Id).Distinct().Count();
+            query = query.WhereIf(int.TryParse(req.key, out int id) || !string.IsNullOrWhiteSpace(req.key), s => s.U_SAP_ID == id || s.CustomerName.Contains(req.key) || s.ManufacturerSerialNumber.Contains(req.key)); ;
+            var queryGroup = (query.GroupBy(a => a.Id).Select(a => new
+            {
+                id = a.Key,
+                maxOrderTakeType = a.Max(b => b.OrderTakeType),
+                minOrderTakeType = a.Min(b => b.OrderTakeType),
+                maxStatus = a.Max(b => b.Status),
+                minStatus = a.Min(b => b.Status),
+            }))
+            .WhereIf(req.Type == 1, s => s.maxOrderTakeType == 0 && s.minOrderTakeType == 0)//待处理 所有设备类型都未操作
+            .WhereIf(req.Type == 2, s => s.maxOrderTakeType != 0 && s.minStatus < 7)//进行中 有任意一个设备类型进行了操作                  
+            .WhereIf(req.Type == 3, s => s.minStatus >= 7); //已完成 所有设备类型都已完成
 
-
-
-            var listId = await querytest.GroupBy(a => a.Id).OrderByDescending(o => o.Key).Skip((req.page - 1) * req.limit)
-           .Take(req.limit).Select(a => a.Key).ToListAsync();
+            var count = queryGroup.Count();
+            var listId = await queryGroup.OrderByDescending(o => o.id).Skip((req.page - 1) * req.limit)
+            .Take(req.limit).Select(a => a.id).ToListAsync();
 
             var listOrder = await UnitWork.Find<ServiceOrder>(a => listId.Contains(a.Id)).ToListAsync();
             var listWorkOrder = await UnitWork.Find<ServiceWorkOrder>(a => listId.Contains(a.ServiceOrderId)).ToListAsync();

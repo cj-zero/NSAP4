@@ -435,7 +435,7 @@ namespace OpenAuth.App.Customer
                                          }).ToListAsync())
                                .GroupBy(x => x.CardCode).Select(g => new { CardCode = g.Key, TotalMoney = g.Sum(x => x.LineTotal) }).ToList();
             //领取次数
-            var receiveTimedata = await UnitWork.Find<CustomerSalerHistory>(c => queryData.Select(x => x.CustomerNo).Contains(c.CustomerNo))
+            var receiveTimedata = await UnitWork.Find<CustomerSalerHistory>(c => queryData.Select(x => x.CustomerNo).Contains(c.CustomerNo) && c.IsSaleHistory == true)
                 .GroupBy(c => c.CustomerNo)
                 .Select(g => new
                 {
