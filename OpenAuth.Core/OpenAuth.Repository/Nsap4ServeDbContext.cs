@@ -94,6 +94,7 @@ namespace OpenAuth.Repository
         //非数据库表格
         public virtual DbQuery<SysTableColumn> SysTableColumns { get; set; }
         public virtual DbQuery<ProcessingEfficiency> ProcessingEfficiencies { get; set; }
+        public virtual DbQuery<ProcessingEfficiency2> ProcessingEfficiency2s { get; set; }
         public virtual DbQuery<ProblemTypeMonth> ProblemTypeMonths { get; set; }
         public virtual DbQuery<ServiceOrderData> ServiceOrderDatas { get; set; }
         /// <summary>

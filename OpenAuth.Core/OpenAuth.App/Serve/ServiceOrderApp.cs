@@ -36,6 +36,7 @@ using Newtonsoft.Json;
 using OpenAuth.Repository.Extensions;
 using OpenAuth.App.Sap.Request;
 using System.Text.RegularExpressions;
+using System.Data;
 
 namespace OpenAuth.App
 {
@@ -1550,7 +1551,7 @@ namespace OpenAuth.App
                 //.WhereIf(!string.IsNullOrWhiteSpace(req.QryTechName), q => q.CurrentUser.Contains(req.QryTechName))
                 .WhereIf(techName.Count > 0, q => techName.Contains(q.CurrentUser))
                 //.WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromTheme), q => q.FromTheme.Contains(req.QryFromTheme))
+                //.WhereIf(!string.IsNullOrWhiteSpace(req.QryFromTheme), q => q.FromTheme.Contains(req.QryFromTheme))
                 .WhereIf(req.CompleteDate != null, q => q.CompleteDate > req.CompleteDate)
                 .WhereIf(req.EndCompleteDate != null, q => q.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1))
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryMaterialCode), q => q.MaterialCode.Contains(req.QryMaterialCode))
@@ -1601,6 +1602,15 @@ namespace OpenAuth.App
                 else
                 {
                     param1 = " and true = false";
+                }
+
+                if (req.QryCreateTimeFrom != null)
+                {
+                    param1 += $" and so.CreateTime >= '{req.QryCreateTimeFrom}'";
+                }
+                if (req.QryCreateTimeTo != null)
+                {
+                    param1 += $" and so.CreateTime < '{req.QryCreateTimeTo.Value.AddDays(1).Date}'";
                 }
 
                 string sql = $@"select t.Id
@@ -1664,12 +1674,82 @@ namespace OpenAuth.App
                 var finishData = _dbExtension.GetObjectDataFromSQL<ServiceOrderData>(sql, parameters.ToArray(), typeof(Nsap4ServeDbContext))?.ToList();
                 query = query.Where(q => finishData.Select(x => x.Id).Contains(q.Id));
             }
+            //根据处理时效区间筛选数据 小时
+            if (!string.IsNullOrWhiteSpace(req.FinishResponseTime))
+            {
+                var param1 = "";
+                var param2 = "";
+                if (req.QryCreateTimeFrom != null)
+                {
+                    param1 += $" and so.CreateTime >= '{req.QryCreateTimeFrom}' ";
+                }
+                if (req.QryCreateTimeTo != null)
+                {
+                    param1 += $" and so.CreateTime < '{req.QryCreateTimeTo.Value.AddDays(1).Date}' ";
+                }
+
+
+                if (req.FinishResponseTime == "d1")
+                {
+                    param2 += $" and timestampdiff(HOUR,t.createtime,t.endtime) <= 24 ";
+                }
+                else if (req.FinishResponseTime == "d2")
+                {
+                    param2 += $" and timestampdiff(HOUR,t.createtime,t.endtime) >  24 and timestampdiff(minute,t.starttime,t.endtime) <=  48";
+                }
+                else if (req.FinishResponseTime == "d3")
+                {
+                    param2 += $" and timestampdiff(HOUR,t.createtime,t.endtime) >  48 and timestampdiff(minute,t.starttime,t.endtime) <=  72";
+                }
+                else if (req.FinishResponseTime == "d4")
+                {
+                    param2 += $" and timestampdiff(HOUR,t.createtime,t.endtime) >72 ";
+                }
+
+                //--min(sw.Status) as status,
+                string sql1 = $@"select t.Id
+                             from(
+                              select so.Id,
+                               max(so.Supervisor) as supervisor,
+                               min(so.CreateTime) as createtime,
+                               min(sw.AcceptTime) as endtime
+                              from serviceorder as so
+                              inner join serviceworkorder as sw 
+                              on so.Id = sw.ServiceOrderId
+                               where so.VestInOrg = 1
+                               and so.Status = 2
+                               {param1}  
+                                and ISNULL(sw.AcceptTime)= FALSE
+                                and not exists(
+                                select 1
+                                  from serviceworkorder as s
+                                  where s.status >= 7
+                                  and s.ServiceOrderId = so.Id
+                                )
+                               group by so.Id
+                             ) t WHERE 1=1 {param2}";
+
+
+                //var timeinterval = await UnitWork.Find<Category>(c => c.TypeId == "SYS_efficiency" && c.DtValue == req.FinishTimeInterval).Select(c => c.DtValue).FirstOrDefaultAsync();
+
+                var parameters = new List<object>();
+                //var finishData1 = _dbExtension.GetObjectDataFromSQL<ServiceOrderData>(sql1, parameters.ToArray(), typeof(Nsap4ServeDbContext))?.ToList();
+                var finishData1 = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql1, CommandType.Text);
+                List<int> list = new List<int>();
+                foreach(DataRow item in finishData1.Rows)
+                {
+                    list.Add(Convert.ToInt32(item.ItemArray[0]));
+                }
+                query = query.Where(q => list.Contains(q.Id));
+                //var query1 = query.Where(q => list.Contains(q.Id)).ToList();
+            }
             //未完成的服务单所处时间区间筛选
             if (!string.IsNullOrWhiteSpace(req.TimeInterval))
             {
                 //所有未完工的记录
                 IQueryable<ServiceOrder> services = UnitWork.Find<ServiceOrder>(s => s.Status == 2
-                                                        && s.ServiceWorkOrders.Any(sw => sw.Status < 7));
+                                                        && s.ServiceWorkOrders.Any(sw => sw.Status < 7))
+                                                    .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440));
                 var interval = req.TimeInterval.Split('-');
                 var currentTime = DateTime.Now;
                 //开始间隔天数
@@ -1686,6 +1766,43 @@ namespace OpenAuth.App
                 }
 
                 var unFinishServiceIds = await services.Select(s => s.Id).Distinct().ToListAsync();
+                query = query.Where(q => unFinishServiceIds.Contains(q.Id));
+            }
+            //已完成的服务单所处时间区间筛选
+            if (!string.IsNullOrWhiteSpace(req.CompletedTimeInterval))
+            {
+                //所有已完工的记录
+                //IQueryable<ServiceOrder> services = UnitWork.Find<ServiceOrder>(s => s.Status == 2 && s.VestInOrg == 1 && s.ServiceWorkOrders.Any(sw => sw.Status >= 7 && sw.AcceptTime != null && sw.CompleteDate != null))
+                //                                    .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
+                //                                    .Include(c => c.ServiceWorkOrders);
+                var serviceData = await (from so in UnitWork.Find<ServiceOrder>(s => s.Status == 2 && s.VestInOrg == 1 && s.ServiceWorkOrders.Any(sw => sw.Status >= 7 && sw.AcceptTime != null && sw.CompleteDate != null))
+                                            .WhereIf(!(req.QryCreateTimeFrom is null || req.QryCreateTimeTo is null), q => q.CreateTime >= req.QryCreateTimeFrom && q.CreateTime < Convert.ToDateTime(req.QryCreateTimeTo).AddMinutes(1440))
+                                            .Include(c => c.ServiceWorkOrders)
+                                         select new
+                                         {
+                                             so.Id,
+                                             ProcessingTime = (so.ServiceWorkOrders.FirstOrDefault().CompleteDate - so.ServiceWorkOrders.FirstOrDefault().AcceptTime).Value.TotalDays
+                                         }).ToListAsync();
+                var interval = req.CompletedTimeInterval.Split('-');
+                //var currentTime = DateTime.Now;
+                //开始间隔天数
+                if (!string.IsNullOrWhiteSpace(interval[0]))
+                {
+                    var startPoint = double.Parse(interval[0]);
+                    //services = services.Where(s => (s.ServiceWorkOrders.FirstOrDefault().CompleteDate.Value - s.ServiceWorkOrders.FirstOrDefault().AcceptTime.Value).Days > startPoint);
+                    serviceData = serviceData.Where(c => c.ProcessingTime > startPoint).ToList();
+                }
+                //结束间隔天数
+                if (!string.IsNullOrWhiteSpace(interval[1]))
+                {
+                    var endPoint = double.Parse(interval[1]);
+
+                    //services = services.Where(s => (s.ServiceWorkOrders.FirstOrDefault().CompleteDate.Value - s.ServiceWorkOrders.FirstOrDefault().AcceptTime.Value).Days <= endPoint);
+                    serviceData = serviceData.Where(c => c.ProcessingTime <= endPoint).ToList();
+                }
+                var unFinishServiceIds = serviceData.Select(s => s.Id).Distinct().ToList();
+                //var unFinishServiceIds = await services.Select(s => s.Id).Distinct().ToListAsync();
+                var query2 = await query.Where(q => unFinishServiceIds.Contains(q.Id)).CountAsync();
                 query = query.Where(q => unFinishServiceIds.Contains(q.Id));
             }
             //未完工原因筛选
@@ -1745,6 +1862,53 @@ namespace OpenAuth.App
                                              where superVisors.Contains(s.Supervisor) && m.Content.Contains("催办")
                                              select s.Id).Distinct().ToListAsync();
                 query = query.Where(q => serviceOrderIds.Contains(q.Id));
+            }
+            //日报解决方案
+            if (!string.IsNullOrWhiteSpace(req.QryProDescription))
+            {
+                var serviceOrderIds = await UnitWork.Find<ServiceDailyReport>(c => c.ProcessDescription.Contains(req.QryProDescription)).Select(c => new { c.ProcessDescription, c.ServiceOrderId }).ToListAsync();
+                List<int> sids = new List<int>();
+                serviceOrderIds.ForEach(c =>
+                {
+                    var gs = GetServiceTroubleAndSolution(c.ProcessDescription, "description");
+                    gs.ForEach(r =>
+                    {
+                        if (r == req.QryProDescription)
+                        {
+                            sids.Add(c.ServiceOrderId.Value);
+                        }
+                    });
+                });
+                query = query.Where(q => sids.Contains(q.Id));
+            }
+            //技术员部门
+            if (!string.IsNullOrWhiteSpace(req.QryTechOrgName))
+            {
+
+                var orgids = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(o => o.Name == req.QryTechOrgName).Select(o => o.Id).ToListAsync();
+                //查看自己部门下的成员
+                var orgUserIds = await UnitWork.Find<Relevance>(r => orgids.Contains(r.SecondId) && r.Key == Define.USERORG).Select(r => r.FirstId).ToListAsync();
+                //根据员工id过滤服务单id
+                var sIds = await UnitWork.Find<ServiceWorkOrder>(q => orgUserIds.Contains(q.CurrentUserNsapId)).Select(s => s.ServiceOrderId).Distinct().ToListAsync();
+                query = query.Where(q => sIds.Contains(q.Id));
+            }
+            //呼叫主题
+            if (!string.IsNullOrWhiteSpace(req.QryFromTheme))
+            {
+                var theme = await UnitWork.Find<ServiceWorkOrder>(c => c.FromTheme.Contains(req.QryFromTheme)).Select(c => new { c.ServiceOrderId, c.FromTheme }).ToListAsync();
+                List<int> sids = new List<int>();
+                theme.ForEach(c =>
+                {
+                    var gs = GetServiceTroubleAndSolution(c.FromTheme, "description");
+                    gs.ForEach(r =>
+                    {
+                        if (r== req.QryFromTheme)
+                        {
+                            sids.Add(c.ServiceOrderId);
+                        }
+                    });
+                });
+                query = query.Where(q => sids.Contains(q.Id));
             }
 
             //根据员工信息获取员工部门信息
@@ -6700,7 +6864,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
 
-            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => c.VestInOrg == 1 && c.AllowOrNot == 0 && c.Status == 2 && c.U_SAP_ID != null && c.Supervisor == "王海涛")
+            var serviceOrder = await UnitWork.Find<ServiceOrder>(c => c.VestInOrg == 1 && c.AllowOrNot == 0 && c.Status == 2 && c.U_SAP_ID != null && c.Supervisor == "王海涛" && c.FromId != 8)
                                     .Include(c => c.ServiceWorkOrders)
                                     .Where(c => c.ServiceWorkOrders.Any(s => s.Status == 1 && s.FromType != 2))
                                     .CountAsync();

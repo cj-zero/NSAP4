@@ -364,6 +364,39 @@ namespace OpenAuth.Repository.Domain
         public int D30 { get; set; }
     }
 
+    public class ProcessingEfficiency2
+    {
+        /// <summary>
+        /// 部门主管
+        /// </summary>
+        public string SuperVisor { get; set; }
+        /// <summary>
+        /// 部门
+        /// </summary>
+        [NotMapped]
+        public string Dept { get; set; }
+        /// <summary>
+        /// 已完成的服务单数量
+        /// </summary>
+        public int FinishCount { get; set; }
+        /// <summary>
+        /// 处理时间24小时内
+        /// </summary>
+        public int D1 { get; set; }
+        /// <summary>
+        /// 处理时间48小时内
+        /// </summary>
+        public int D2 { get; set; }
+        /// <summary>
+        /// 处理时间72小时内
+        /// </summary>
+        public int D3 { get; set; }
+        /// <summary>
+        /// 处理时间72小时外
+        /// </summary>
+        public int D4 { get; set; }
+    }
+
     public class ProblemTypeMonth
     {
         /// <summary>
@@ -384,7 +417,7 @@ namespace OpenAuth.Repository.Domain
 
     public class ServiceOrderData
     {
-        public int Id { get; set; }
+        public int? Id { get; set; }
         //public int status { get; set; }
         //public DateTime starttime { get; set; }
         //public DateTime? endtime { get; set; }

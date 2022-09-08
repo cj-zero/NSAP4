@@ -299,16 +299,16 @@ namespace OpenAuth.WebApi.Controllers.Material
                 advanceData.ProjectNo = dts.Rows[0]["ProjectNo"].ToString();
                 advanceData.progress = dts.Rows[0]["progress"].ToString();
                 string guid = dts.Rows[0]["RecordGuid"].ToString();
-
-                var manage_screen = UnitWork.Find<ManageScreening>(q => q.DocEntry == docentry && q.ItemCode == itemcode).FirstOrDefault();
-                if (manage_screen != null)
-                {
-                    advanceData.SubmitTime = manage_screen.SubmitTime.ToString();
-                }
                 string sql1 = "SELECt t.isFinished,T.Subject, T.Complete, t.CaseRecGuid  FROM Tasks  as t where t.isDeleted = 0  and t.CaseRecGuid = '" + guid + "' order by t.StageId ";
                 DataTable dts1 = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, sql1.ToString(), CommandType.Text, null);
                 advanceData.dt = dts1;
             }
+            var manage_screen = UnitWork.Find<ManageScreening>(q => q.DocEntry == docentry && q.ItemCode == itemcode).FirstOrDefault();
+            if (manage_screen != null)
+            {
+                advanceData.SubmitTime = manage_screen.SubmitTime.ToString();
+            }
+            
             return advanceData;
 
         }
