@@ -674,6 +674,11 @@ namespace OpenAuth.App.Material
                 ExecTime = c.HandleTime,
                 Count = c.Count
             });
+            List<FlowPathResp> FlowPathResp = new List<FlowPathResp>();
+            if (!string.IsNullOrWhiteSpace(detail.FlowInstanceId))
+            {
+                FlowPathResp = await _flowInstanceApp.FlowPathRespList(null, detail.FlowInstanceId);
+            }
             result.Data = new
             {
                 detail.Types,
@@ -730,7 +735,8 @@ namespace OpenAuth.App.Material
                     FromTheme = c.FromTheme,
                     CurrentUnit = c.CurrentUnit,
                     Fixture = !string.IsNullOrWhiteSpace(c.Fixture) ? c.Fixture.Split(",").ToList() : new List<string>(),
-                })
+                }),
+                FlowPathResp
             };
             return result;
         }
