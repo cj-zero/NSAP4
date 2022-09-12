@@ -162,5 +162,9 @@ namespace OpenAuth.Repository
         public virtual DbSet<ContractTemplate> contracttemplate { get; set; }
         public virtual DbSet<ContractFileType> contractfiletype { get; set; }
         #endregion
+
+        #region 新威字典
+        public virtual DbSet<NewareDictionary> newaredictionary { get; set; }
+        #endregion
     }
 }
