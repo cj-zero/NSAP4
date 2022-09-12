@@ -1094,7 +1094,28 @@ namespace OpenAuth.WebApi.Controllers.Material
                 throw new Exception(e.Message);
             }
         }
+        /// <summary>
+        /// 销售收款
+        /// </summary>
+        /// <param name="saleOrderId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetOrderPaymentAndFee([FromQuery] QueryCommissionOrderReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.GetOrderPaymentAndFee(req.Id);
+            }
+            catch (Exception ex)
+            {
 
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.SalesOrderId}, 错误：{result.Message}");
+            }
+            return result;
+        }
         /// <summary>
         /// 
         /// </summary>
