@@ -3082,17 +3082,31 @@ namespace OpenAuth.App
                 startTime = new DateTime(req.Year.ToInt(), 1, 1);
                 endTime = startTime.AddYears(1);
             }
+
             var query = from t1 in UnitWork.Find<ServiceWorkOrder>(null)
                         join t2 in UnitWork.Find<ServiceOrder>(null) on t1.ServiceOrderId equals t2.Id
                         where t1.Status >= 7 && t2.VestInOrg == 1 && t2.Status == 2 && t1.CurrentUserId != null && t1.CreateTime >= startTime && t1.CreateTime < endTime
-                        group t1 by t1.CurrentUserId into g
+                        group t1 by t2.Id into g
                         select new
                         {
-                            Id = g.Key.Value,
+                            Id = g.Key,
                             Name = g.Max(a => a.CurrentUser),
-                            Num = g.Count(),
                         };
-            var  data= query.OrderByDescending(a => a.Num).Take(30).ToList();
+
+            var query2 = query.GroupBy(a => a.Name).Select(a => new {Id =a.Max(b=>b.Id), Name = a.Key, Num = a.Count() });
+
+
+            //var query = from t1 in UnitWork.Find<ServiceWorkOrder>(null)
+            //            join t2 in UnitWork.Find<ServiceOrder>(null) on t1.ServiceOrderId equals t2.Id
+            //            where t1.Status >= 7 && t2.VestInOrg == 1 && t2.Status == 2 && t1.CurrentUserId != null && t1.CreateTime >= startTime && t1.CreateTime < endTime
+            //            group t1 by t1.CurrentUserId into g
+            //            select new
+            //            {
+            //                Id = g.Key.Value,
+            //                Name = g.Max(a => a.CurrentUser),
+            //                Num = g.Count(),
+            //            };
+            var  data= query2.OrderByDescending(a => a.Num).Take(30).ToList();
 
             return new TableData
             {
