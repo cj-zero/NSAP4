@@ -345,6 +345,29 @@ namespace OpenAuth.WebApi.Controllers
             }
         }
 
+
+        /// <summary>
+        /// 获取重启动列表
+        /// </summary>
+        /// <param name="GeneratorCode"></param>
+        /// <param name="FilterType">过滤类型 1:生产码  2:下位机</param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> CanResStartTestList(string GeneratorCode, int FilterType)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.CanResStartTestList(GeneratorCode, FilterType);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+                return result;
+            }
+        }
+
         /// <summary>
         /// 启动测试
         /// </summary>

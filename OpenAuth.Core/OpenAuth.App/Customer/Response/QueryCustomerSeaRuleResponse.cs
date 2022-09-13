@@ -59,32 +59,26 @@ namespace OpenAuth.App.Customer.Response
     public class RuleDetailInfo : IEquatable<RuleDetailInfo>
     {
         /// <summary>
-        /// 客户类型
+        /// 规则类型
         /// </summary>
-        public int CustomerType { get; set; }
+        public int RuleType { get; set; }
 
         /// <summary>
         /// 天数
         /// </summary>
-        public int Day { get; set; }
+        public string Day { get; set; }
 
-        /// <summary>
-        /// 交易类型
-        /// </summary>
-        public int OrderType { get; set; }
 
         public bool Equals([AllowNull] RuleDetailInfo other)
         {
-            return this.CustomerType == other.CustomerType
-                && this.Day == other.Day
-                && this.OrderType == other.OrderType;
+            return this.RuleType == other.RuleType
+                && this.Day == other.Day;
         }
 
         public override int GetHashCode()
         {
-            return this.CustomerType.GetHashCode()
-                ^ this.Day.GetHashCode()
-                ^ this.OrderType.GetHashCode();
+            return this.RuleType.GetHashCode()
+                ^ this.Day.GetHashCode();
         }
     }
 }
