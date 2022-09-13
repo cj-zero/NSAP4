@@ -44,26 +44,15 @@ namespace OpenAuth.App.Customer
                 return response;
             }
 
-            var customerTypeData = new Dictionary<int, string>();
-            customerTypeData.Add(0, "全部客户");
-            customerTypeData.Add(1, "未报价客户");
-            customerTypeData.Add(2, "已成交客户");
-
-            var orderTypeData = new Dictionary<int, string>();
-            orderTypeData.Add(0, "未报价");
-            orderTypeData.Add(1, "未成交");
-            orderTypeData.Add(2, "未交货");
-
             //判断部门、客户类型、事件类型3者组合是否已存在
             foreach(var dept in req.Departments)
             {
                 foreach(var rule in req.RuleDetails)
                 {
-                    var isExists = UnitWork.Find<CustomerSeaRuleItem>(c => c.DepartmentName == dept.DepartmentName && c.CustomerType == rule.CustomerType && c.OrderType == rule.OrderType).Any();
+                    var isExists = UnitWork.Find<CustomerSeaRuleItem>(c => c.DepartmentName == dept.DepartmentName && c.RuleType == rule.RuleType).Any();
                     if (isExists)
                     {
-                        //response.Message += $"{dept.DepartmentName}已存在规则,{customerTypeData.FirstOrDefault(t => t.Key == rule.CustomerType).Value},{orderTypeData.FirstOrDefault(o => o.Key == rule.OrderType).Value} \n";
-                        response.Message += $"{dept.DepartmentName}已存在规则,一个部门只能存在一个规则 \n";
+                       response.Message += $"{dept.DepartmentName}已存在规则,一个部门只能存在一个规则 \n";
                     }
                 }
             }
@@ -100,9 +89,8 @@ namespace OpenAuth.App.Customer
                             CustomerSeaRuleId = customerSeaRule.Id,
                             DepartmentId = dept.DepartmentId,
                             DepartmentName = dept.DepartmentName,
-                            CustomerType = rule.CustomerType,
+                            RuleType = rule.RuleType,
                             Day = rule.Day,
-                            OrderType = rule.OrderType,
                             CreateUser = userInfo?.User?.Name,
                             CreateDatetime = DateTime.Now,
                             UpdateUser = userInfo?.User?.Name,
@@ -153,9 +141,8 @@ namespace OpenAuth.App.Customer
                     }),
                     RuleDetailInfos = c.CustomerSeaRuleItems.Select(x => new RuleDetailInfo
                     {
-                        CustomerType = x.CustomerType,
-                        Day = x.Day,
-                        OrderType = x.OrderType
+                        RuleType = x.RuleType,
+                        Day = x.Day
                     }),
                     Enable = c.Enable
                 });
@@ -237,9 +224,8 @@ namespace OpenAuth.App.Customer
                             CustomerSeaRuleId = customerSeaRuleObject.Id,
                             DepartmentId = dept.DepartmentId,
                             DepartmentName = dept.DepartmentName,
-                            CustomerType = rule.CustomerType,
+                            RuleType = rule.RuleType,
                             Day = rule.Day,
-                            OrderType = rule.OrderType,
                             CreateUser = userInfo?.User?.Name,
                             CreateDatetime = DateTime.Now,
                             UpdateUser = userInfo?.User?.Name,
