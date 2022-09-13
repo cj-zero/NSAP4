@@ -16,6 +16,8 @@
 
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace OpenAuth.App
 {
@@ -51,9 +53,14 @@ namespace OpenAuth.App
             {
                 service = _normalAuthStrategy;
                 service.User = _unitWork.FindSingle<User>(u => u.Account == username);
-            }
+                
 
-         return new AuthStrategyContext(service);
+            }
+            //根据用户id 获取对应角色
+            var relavance = _unitWork.Find<Relevance>(u => u.FirstId == service.User.Id).Select(u => u.SecondId).ToList();
+            service.Roles = new List<Role> { };
+            service.Roles.AddRange(_unitWork.Find<Role>(u => relavance.Contains(u.Id)).ToList());
+            return new AuthStrategyContext(service);
         }
     }
 }
