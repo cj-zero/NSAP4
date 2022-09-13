@@ -829,13 +829,13 @@ namespace OpenAuth.App
                 loginUser = await GetUserId(Convert.ToInt32(obj.AppUserId));
                 loginOrg = await GetOrgs(loginUser.Id);
             }
-
+            var catetory = await UnitWork.Find<Category>(c => c.TypeId == "SYS_ReturnAllowXLH").Select(c => c.DtValue).ToListAsync();
             obj.ReturnNoteProducts.ForEach(c =>
             {
                 //modify by yangsiming @2022/3/23 检查每个产品下有多少个物料,如果查询数量和提交的数量不一致,说明是部分提交,则提示不能部分提交
                 var planCount = GetMaterialList(new ReturnMaterialReq { SalesOrderId = obj.SalesOrderId, InvoiceDocEntry = obj.InvoiceDocEntry, ProductCode = c.ProductCode }).Result.Count;
                 var realCount = c.ReturnNoteMaterials?.Count();
-                if (planCount != realCount)
+                if (planCount != realCount && !catetory.Contains(c.ProductCode))
                 {
                     throw new Exception($"序列号{c.ProductCode},不能部分退料。");
                 }

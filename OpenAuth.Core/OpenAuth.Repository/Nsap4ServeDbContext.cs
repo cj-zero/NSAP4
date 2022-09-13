@@ -94,6 +94,7 @@ namespace OpenAuth.Repository
         //非数据库表格
         public virtual DbQuery<SysTableColumn> SysTableColumns { get; set; }
         public virtual DbQuery<ProcessingEfficiency> ProcessingEfficiencies { get; set; }
+        public virtual DbQuery<ProcessingEfficiency2> ProcessingEfficiency2s { get; set; }
         public virtual DbQuery<ProblemTypeMonth> ProblemTypeMonths { get; set; }
         public virtual DbQuery<ServiceOrderData> ServiceOrderDatas { get; set; }
         /// <summary>
@@ -137,7 +138,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<CustomerOperationRecord> CustomerOperationRecord { get; set; }
         public virtual DbSet<ClientFollowUp> ClientFollowUp { get; set; }
         public virtual DbSet<ClientFollowUpPhrase> ClientFollowUpPhrase { get; set; }
-        public virtual DbSet<ManageScreening> ManageScreening { get; set; }
+        public virtual DbSet<ManageScreening> ManageScreening { get; set; }    
         public virtual DbSet<ClientSchedule> ClientSchedule { get; set; }
         #endregion
         #region 线索
@@ -160,6 +161,10 @@ namespace OpenAuth.Repository
         public virtual DbSet<ContractSealOperationHistory> contractsealoperationhistory { get; set; }
         public virtual DbSet<ContractTemplate> contracttemplate { get; set; }
         public virtual DbSet<ContractFileType> contractfiletype { get; set; }
+        #endregion
+
+        #region 新威字典
+        public virtual DbSet<NewareDictionary> newaredictionary { get; set; }
         #endregion
     }
 }

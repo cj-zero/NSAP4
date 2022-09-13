@@ -16,6 +16,7 @@ using OpenAuth.Repository.Domain;
 using System.Data;
 using OpenAuth.Repository;
 using System.Data.SqlClient;
+using OpenAuth.App.Request;
 
 namespace OpenAuth.App.Material
 {
@@ -44,27 +45,35 @@ namespace OpenAuth.App.Material
                          .WhereIf(!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()), c => c.DocEntry == req.SalesOrderId)
                          .WhereIf(!string.IsNullOrWhiteSpace(req.MaterialCode), c => c.ItemCode.Contains(req.MaterialCode))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.CustomerCode), c => c.CardCode.Contains(req.CustomerCode))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.custom_req), c => c.custom_req.Contains(req.custom_req))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), c => c.ItemName.Contains(req.ItemName))
+                         .WhereIf(!string.IsNullOrWhiteSpace(req.VersionNo), c => c.VersionNo.Contains(req.VersionNo))
                          .WhereIf(!string.IsNullOrWhiteSpace(req.SalesMan), c => c.SlpName.Contains(req.SalesMan))
-                             select n).ToDataTable().AsEnumerable();
+                             select n).ToList();
             var manageData = GetProgressAll().AsEnumerable(); // new DataTable().AsEnumerable();
+
 
             var querydata = from n in modeldata
                             join m in manageData
-                            on new { DocEntry = "SE-" + n.Field<string>("DocEntry"), itemCode = n.Field<string>("ItemCode") }
+                            on new { DocEntry = "SE-" + n.DocEntry, itemCode = n.ItemCode }
                             equals new { DocEntry = m.Field<string>("DocEntry"), itemCode = m.Field<string>("itemCode") } into temp
                             from t in temp.DefaultIfEmpty()
                             select new
                             {
-                                id = n.Field<int>("id"),
-                                DocEntry = n.Field<string>("DocEntry"),
-                                CardCode = n.Field<string>("CardCode"),
-                                CardName = n.Field<string>("CardName"),
-                                ItemCode = n.Field<string>("ItemCode"),
-                                ItemDesc = n.Field<string>("ItemDesc"),
-                                SlpName = n.Field<string>("SlpName"),
-                                ContractReviewCode = n.Field<int>("ContractReviewCode"),
-                                SubmitTime = n.Field<DateTime>("SubmitTime"),
-                                FileUrl = n.Field<string>("FileUrl"),
+                                id = n.Id,
+                                DocEntry = n.DocEntry,
+                                CardCode = n.CardCode,
+                                CardName = n.CardName,
+                                ItemCode = n.ItemCode,
+                                ItemDesc = n.ItemDesc,
+                                SlpName = n.SlpName,
+                                ContractReviewCode = n.ContractReviewCode,
+                                custom_req = n.custom_req,
+                                ItemTypeName = n.ItemTypeName,
+                                ItemName = n.ItemName,
+                                SubmitTime = n.SubmitTime,
+                                VersionNo = n.VersionNo,
+                                FileUrl = n.FileUrl,
                                 ProjectNo = t == null ? "" : t.Field<string>("_System_objNBS"),
                                 ProduceNo = ""//t == null ? "" : t.Field<string>("_System_objNBS")
                             };
@@ -98,6 +107,21 @@ namespace OpenAuth.App.Material
                 {
                     querydata = querydata.Where(t => t.FileUrl == null || t.FileUrl == "");
                 }
+            }
+            if (!string.IsNullOrWhiteSpace(req.ItemTypeName))
+            {
+                querydata = querydata.Where(t => t.ItemTypeName == req.ItemTypeName);
+            }
+            if (!string.IsNullOrWhiteSpace(req.IsVersionNo))
+            {
+                if (req.IsVersionNo == "Y")
+                {
+                    querydata = querydata.Where(t => t.VersionNo != null && t.VersionNo != "");
+                }
+                else
+                {
+                    querydata = querydata.Where(t => t.VersionNo == null || t.VersionNo == "");
+                }
 
             }
             if (req.sortorder == "ASC")
@@ -109,6 +133,7 @@ namespace OpenAuth.App.Material
                 querydata = querydata.OrderByDescending(q => q.SubmitTime);
             }
             var data = querydata.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+
             result.Data = data;
             result.Count = querydata.Count();
 
@@ -117,7 +142,8 @@ namespace OpenAuth.App.Material
 
         }
 
-        public async Task<Infrastructure.Response> AddDrawingFiles(List<int> ids, string url)
+
+        public async Task<Infrastructure.Response> AddDrawingFiles(List<int> ids, string url, string VersionNo)
         {
             var response = new Infrastructure.Response();
             response.Message = "";
@@ -130,7 +156,9 @@ namespace OpenAuth.App.Material
             {
                 int v = ids[i];
                 ManageScreening info = UnitWork.Find<ManageScreening>(q => q.Id == v).FirstOrDefault();
+
                 info.FileUrl = url;
+                info.VersionNo = VersionNo;
                 await UnitWork.UpdateAsync<ManageScreening>(info);
             }
 
@@ -195,19 +223,65 @@ namespace OpenAuth.App.Material
                                           ContractReviewCode = n.ContractReviewCode,
                                           SlpName = s.SlpName
                                       }).FirstOrDefaultAsync();
-                ManageScreening manageScreening = new ManageScreening();
-                manageScreening.DocEntry = dataitem.DocEntry.ToString();
-                manageScreening.CardCode = dataitem.CardCode;
-                manageScreening.CardName = dataitem.CardName;
-                manageScreening.ItemCode = dataitem.ItemCode;
-                manageScreening.ItemDesc = dataitem.ItemDesc;
-                manageScreening.SlpCode = dataitem.SlpCode.ToInt();
-                manageScreening.SlpName = dataitem.SlpName;
-                manageScreening.SubmitTime = date;
-                manageScreening.ContractReviewCode = dataitem.ContractReviewCode.ToInt();
-                manageScreening.CreateUser = loginContext.User.User_Id.Value;
-                manageScreening.CreateDate = DateTime.Now;
-                await UnitWork.AddAsync<ManageScreening, int>(manageScreening);
+
+                if (!string.IsNullOrEmpty(dataitem.ContractReviewCode))
+                {
+                    int ContractReviewCode = Convert.ToInt32(dataitem.ContractReviewCode);
+                    List<string> typeList = new List<string> { "套线", "铝条&#92;铜条", "钣金" };
+                    var data = (from n in UnitWork.Find<sale_contract_review>(q => q.sbo_id == 1)
+                                join m in UnitWork.Find<sale_contract_review_detail>(q => q.sbo_id == 1)
+                                on n.contract_id equals m.contract_id into temp
+                                from t in temp
+                                join s in UnitWork.Find<store_itemtype>(q => q.is_default == true && typeList.Contains(q.ItemTypeName))
+                                 on t.ItemTypeID equals s.ItemTypeId into temp1
+                                from t1 in temp1
+                                where n.contract_id == ContractReviewCode
+                                select new
+                                {
+                                    contract_id = n.contract_id,
+                                    custom_req = n.custom_req,
+                                    ItemTypeName = t1 == null ? "" : t1.ItemTypeName,
+                                    ItemName = t == null ? "" : t.ItemCode
+                                }).ToList();
+                    foreach (var item1 in data)
+                    {
+                        ManageScreening manageScreening = new ManageScreening();
+                        manageScreening.DocEntry = dataitem.DocEntry.ToString();
+                        manageScreening.CardCode = dataitem.CardCode;
+                        manageScreening.CardName = dataitem.CardName;
+                        manageScreening.ItemCode = dataitem.ItemCode;
+                        manageScreening.ItemDesc = dataitem.ItemDesc;
+                        manageScreening.SlpCode = dataitem.SlpCode.ToInt();
+                        manageScreening.SlpName = dataitem.SlpName;
+                        manageScreening.SubmitTime = date;
+                        manageScreening.ContractReviewCode = dataitem.ContractReviewCode.ToInt();
+                        manageScreening.custom_req = item1.custom_req;
+                        manageScreening.ItemTypeName = item1.ItemTypeName;
+                        manageScreening.ItemName = item1.ItemName;
+                        manageScreening.CreateUser = loginContext.User.User_Id.Value;
+                        manageScreening.CreateDate = DateTime.Now;
+                        await UnitWork.AddAsync<ManageScreening, int>(manageScreening);
+                    }
+                }
+                else
+                {
+                    ManageScreening manageScreening = new ManageScreening();
+                    manageScreening.DocEntry = dataitem.DocEntry.ToString();
+                    manageScreening.CardCode = dataitem.CardCode;
+                    manageScreening.CardName = dataitem.CardName;
+                    manageScreening.ItemCode = dataitem.ItemCode;
+                    manageScreening.ItemDesc = dataitem.ItemDesc;
+                    manageScreening.SlpCode = dataitem.SlpCode.ToInt();
+                    manageScreening.SlpName = dataitem.SlpName;
+                    manageScreening.SubmitTime = date;
+                    manageScreening.ContractReviewCode = dataitem.ContractReviewCode.ToInt();
+                    manageScreening.custom_req = "";
+                    manageScreening.ItemTypeName = "";
+                    manageScreening.ItemName = "";
+                    manageScreening.CreateUser = loginContext.User.User_Id.Value;
+                    manageScreening.CreateDate = DateTime.Now;
+                    await UnitWork.AddAsync<ManageScreening, int>(manageScreening);
+                }
             }
             await UnitWork.SaveAsync();
             return result;
@@ -398,5 +472,94 @@ namespace OpenAuth.App.Material
 
 
         #endregion
+
+        public async Task<TableData> GetMaterialRecord(MaterialRecordReq req)
+        {
+
+            string where1 = "";
+            string where2 = " where 1=1 ";
+
+            if (!string.IsNullOrEmpty(req.MaterialCode))
+            {
+                where1 += $" and  t1.MaterialCode = '{req.MaterialCode}' ";
+                where2 += $" and  t1.MaterialCode = '{req.MaterialCode}' ";
+            }
+            if (!string.IsNullOrEmpty(req.CreateUser))
+            {
+                where1 += $" and  t3.CreateUser = '{req.CreateUser}' ";
+                where2 += $" and  t3.CreateUserName  = '{req.CreateUser}' ";
+            }
+            if (!string.IsNullOrEmpty(req.DocEntry))
+            {
+                where1 += $" and  t2.id = '{req.DocEntry}' ";
+                where2 += $" and  t2.id  = '{req.DocEntry}' ";
+            }
+            if (!string.IsNullOrEmpty(req.CustomerId))
+            {
+                where1 += $" and  t4.CustomerId = '{req.CustomerId}' ";
+                where2 += $" and  t4.CustomerId = '{req.CustomerId}' ";
+            }
+            if (!string.IsNullOrEmpty(req.WhsCode))
+            {
+                where1 += $" and  t1.WhsCode = '{req.WhsCode}' ";
+                where2 += $" and ( t1.GoodWhsCode = '{req.WhsCode}' or t1.SecondWhsCode = '{req.WhsCode}' ) ";
+            }
+            if (req.StartTime != null)
+            {
+                where1 += $" and  t3.CreateTime >= '{req.StartTime}' ";
+                where2 += $" and  t3.createDate  >= '{req.StartTime}' ";
+            }
+            if (req.EndTime != null)
+            {
+                where1 += $" and  t3.CreateTime < '{req.EndTime}' ";
+                where2 += $" and  t3.createDate < '{req.EndTime}' ";
+            }
+            string strSql = @$"select * from (
+select t2.id as 'Id', t1.MaterialCode as 'MaterialCode',t1.MaterialDescription as 'MaterialDescription', t3.Quantity as 'Quantity' ,t3.CreateUser as 'Name',
+t3.CreateTime as 'CreateTime',t1.WhsCode as 'WhsCode',t4.CustomerName as 'CustomerName' ,t4.CustomerId as 'CustomerId',t2.Remark  as 'Remark','1' as 'OrderType' 
+from quotationmergematerial t1
+inner join quotation t2 on t2.id = t1.QuotationId
+inner join logisticsrecord t3 on t1.id =t3.QuotationMaterialId
+inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id
+where t2.Status =2 and t2.QuotationStatus =11 {where1}
+UNION All
+select t2.id as 'Id',t1.MaterialCode as 'MaterialCode',t1.MaterialDescription as 'MaterialDescription', '1' as 'Quantity',t3.CreateUserName as 'Name',
+t3.createDate as 'CreateTime',CASE IsGood WHEN IsGood =1 THEN GoodWhsCode ELSE SecondWhsCode END  as 'WhsCode',t4.CustomerName as 'CustomerName',
+t4.CustomerId as 'CustomerId',t1.ReceivingRemark as 'Remark' ,'2' as 'OrderType'
+from returnnotematerial t1
+inner join ReturnNote t2 on t2.id = t1.ReturnNoteId
+inner join (select * from  erp4.flowinstanceoperationhistory 
+where Content='仓库入库'  )t3 on t2.FlowInstanceId =t3.instanceid
+inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
+)t ORDER BY t.CreateTime desc LIMIT {(req.pageIndex - 1) * req.pageSize},{req.pageSize}";
+
+
+            string strSql2 = @$"select count(*) as 'num' from (
+select t2.id as 'Id', t1.MaterialCode as 'MaterialCode',t1.MaterialDescription as 'MaterialDescription', t3.Quantity as 'Quantity' ,t3.CreateUser as 'Name',
+t3.CreateTime as 'CreateTime',t1.WhsCode as 'WhsCode',t4.CustomerName as 'CustomerName' ,t4.CustomerId as 'CustomerId',t2.Remark  as 'Remark','1' as 'OrderType' 
+from quotationmergematerial t1
+inner join quotation t2 on t2.id = t1.QuotationId
+inner join logisticsrecord t3 on t1.id =t3.QuotationMaterialId
+inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id
+where t2.Status =2 and t2.QuotationStatus =11 {where1}
+UNION All
+select t2.id as 'Id',t1.MaterialCode as 'MaterialCode',t1.MaterialDescription as 'MaterialDescription', '1' as 'Quantity',t3.CreateUserName as 'Name',
+t3.createDate as 'CreateTime',CASE IsGood WHEN IsGood =1 THEN GoodWhsCode ELSE SecondWhsCode END  as 'WhsCode',t4.CustomerName as 'CustomerName',
+t4.CustomerId as 'CustomerId',t1.ReceivingRemark as 'Remark' ,'2' as 'OrderType'
+from returnnotematerial t1
+inner join ReturnNote t2 on t2.id = t1.ReturnNoteId
+inner join (select * from  erp4.flowinstanceoperationhistory 
+where Content='仓库入库'  )t3 on t2.FlowInstanceId =t3.instanceid
+inner join erp4_serve.serviceorder t4 on t2.ServiceOrderId = t4.id {where2}
+)t ";
+            var data = UnitWork.ExcuteSqlTable(ContextType.Nsap4MaterialDbContextType, strSql, CommandType.Text, null);
+
+            var count = UnitWork.ExcuteSqlTable(ContextType.Nsap4MaterialDbContextType, strSql2, CommandType.Text, null);
+            return new TableData
+            {
+                Data = data,
+                Count = count.Rows[0][0].ToInt(),
+            };
+        }
     }
 }

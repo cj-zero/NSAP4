@@ -97,7 +97,7 @@ namespace OpenAuth.App
             result.columnHeaders = properties;
             result.Data = await objs.OrderByDescending(u => u.CreateTime)
                 .Skip((request.page - 1) * request.limit)
-                .Take(request.limit).Select(x => new { x.Id, x.Code, ParentCode = x.Descriptio, x.Subject, x.CreateTime, x.CreateUserName, x.UpdateTime }).ToListAsync();
+                .Take(request.limit).Select(x => new { x.Id, x.Code, ParentCode = x.Descriptio, x.Subject, x.CreateTime, x.CreateUserName, x.UpdateTime, x.ParentName }).ToListAsync();
             result.Count = await objs.CountAsync();
             return result;
         }

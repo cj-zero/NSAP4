@@ -71,7 +71,7 @@ namespace OpenAuth.App.Client.Request
     /// <summary>
     /// 客户下销售报价单
     /// </summary>
-    public class SelectOqutReq 
+    public class SelectOqutReq:PageReq
     {
 
         public string Docentry { get; set; }
@@ -84,7 +84,7 @@ namespace OpenAuth.App.Client.Request
     /// <summary>
     /// 客户下销售订单
     /// </summary>
-    public class SelectOrdrReq
+    public class SelectOrdrReq : PageReq
     {
 
         public string Docentry { get; set; }

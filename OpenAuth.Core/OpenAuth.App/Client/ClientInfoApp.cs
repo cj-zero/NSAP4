@@ -182,7 +182,7 @@ namespace OpenAuth.App.Client
             }
             if (!string.IsNullOrWhiteSpace(address))
             {
-                filterString.Append($" and T.cardcode in ( SELECT CardCode FROM CRD1 WHERE Building like '" + address + "') ");
+                filterString.Append($" and (T.cardcode in ( SELECT CardCode FROM CRD1 WHERE Building like '" + address + "') or Address like '%"+address+"%') ");
             }
             //黑名单客户也不在客户列表上显示
             var blacklist = UnitWork.Find<SpecialCustomer>(c => c.Type == 0).Select(c => c.CustomerNo).ToList();
@@ -2237,8 +2237,10 @@ namespace OpenAuth.App.Client
         /// <summary>
         /// 查询业务伙伴报价单
         /// </summary>
-        public DataTable SelectOqut(SelectOqutReq selectOqutReq)
+        public OrderRq SelectOqut(SelectOqutReq selectOqutReq)
         {
+            OrderRq orderRq = new OrderRq();
+            DataTable dt = new DataTable();
             StringBuilder strSql = new StringBuilder();
             strSql.Append(
                 "SELECT  A.DocEntry,B.SlpName,A.DocTotal, (A.DocTotal-A.PaidToDate)  AS OpenDocTotal,A.CreateDate,A.DocStatus,A.Printed  ");
@@ -2274,17 +2276,44 @@ namespace OpenAuth.App.Client
 
                 strSql.AppendFormat("a.UpdateDate BETWEEN '{0}' AND '{1}' AND ", selectOqutReq.StartTime, selectOqutReq.EndTime);
             }
-            strSql.AppendFormat("ORDER BY A.DocEntry DESC");
+            strSql.AppendFormat("ORDER BY A.DocEntry DESC ");
 
-            return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+            int count = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null).Rows.Count;
+            strSql.AppendFormat(" offset " + (selectOqutReq.page - 1) * selectOqutReq.limit + " rows fetch next "+selectOqutReq.limit+" rows only ") ;
+            dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+
+            decimal Total = 0;
+            decimal OpenDocTotal = 0;
+            if (dt != null)
+            {
+                for (int i = 0; i < dt.Rows.Count; i++)
+                {
+                    Total += dt.Rows[i]["DocTotal"].ToDecimal();
+                    OpenDocTotal += dt.Rows[i]["OpenDocTotal"].ToDecimal();
+                }
+            }
+            orderRq.Total = Total;
+            orderRq.OpenDocTotal = OpenDocTotal;
+            orderRq.dt = dt;
+            orderRq.count = count;
+            return orderRq;
+        }
+        public class OrderRq { 
+        public decimal Total { set; get; }
+        public decimal OpenDocTotal { set; get; }
+        public DataTable dt { set; get; }
+
+        public int count { set; get; }
         }
         #endregion
         #region 查询业务伙销售订单
         /// <summary>
         /// 查询业务伙销售订单
         /// </summary>
-        public DataTable SelectOrdr(SelectOrdrReq selectOrdrReq)
+        public OrderRq SelectOrdr(SelectOrdrReq selectOrdrReq)
         {
+            OrderRq orderRq = new OrderRq();
+            DataTable dt = new DataTable();
             StringBuilder strSql = new StringBuilder();
             strSql.Append(
                 "SELECT  A.DocEntry,B.SlpName,A.DocTotal, (A.DocTotal-A.PaidToDate)  AS OpenDocTotal,A.CreateDate,A.DocStatus,A.Printed  ");
@@ -2322,7 +2351,24 @@ namespace OpenAuth.App.Client
             }
             strSql.AppendFormat("ORDER BY A.DocEntry DESC");
 
-            return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+            int count = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null).Rows.Count;
+            strSql.AppendFormat(" offset " + (selectOrdrReq.page - 1) * selectOrdrReq.limit + " rows fetch next " + selectOrdrReq.limit + " rows only ");
+            dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+            decimal Total = 0;
+            decimal OpenDocTotal = 0;
+            if (dt != null)
+            {
+                for (int i = 0; i < dt.Rows.Count; i++)
+                {
+                    Total += dt.Rows[i]["DocTotal"].ToDecimal();
+                    OpenDocTotal += dt.Rows[i]["OpenDocTotal"].ToDecimal();
+                }
+            }
+            orderRq.Total = Total;
+            orderRq.OpenDocTotal = OpenDocTotal;
+            orderRq.dt = dt;
+            orderRq.count = count;
+            return orderRq;
         }
         #endregion
 

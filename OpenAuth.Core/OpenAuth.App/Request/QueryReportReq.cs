@@ -4,7 +4,7 @@ using System.Text;
 
 namespace OpenAuth.App.Request
 {
-    public class QueryReportReq
+    public class QueryReportReq : PageReq
     {
         /// <summary>
         /// 年份
@@ -43,5 +43,26 @@ namespace OpenAuth.App.Request
         /// 请求类型:1--普通部门,2--生产部门
         /// </summary>
         public int CallType { get; set; }
+
+        public string QueryOrgName { get; set; }
+
+        /// <summary>
+        /// 是否研发
+        /// </summary>
+        public bool IsDevelop { get; set; }
+        /// <summary>
+        /// 是否售后
+        /// </summary>
+        public bool IsAfterSale { get; set; }
+
+        /// <summary>
+        /// 1 问题描述 2解决方案
+        /// </summary>
+        public int ViewType { get; set; }
+        /// <summary>
+        /// 报表名称
+        /// </summary>
+        public string ReportName { get; set; }
+        public string Size { get; set; }
     }
 }

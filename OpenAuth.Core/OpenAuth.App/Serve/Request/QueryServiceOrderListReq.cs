@@ -141,6 +141,11 @@ namespace OpenAuth.App.Request
         public string FinishTimeInterval { get; set; }
 
         /// <summary>
+        /// 响应时间
+        /// </summary>
+        public string FinishResponseTime { get; set; }
+
+        /// <summary>
         /// 未完工原因
         /// </summary>
         public string UnCompletedReason { get; set; }
@@ -163,5 +168,20 @@ namespace OpenAuth.App.Request
         /// 催办时间段-结束时间
         /// </summary>
         public DateTime? UrgedEndTime { get; set; }
+
+        /// <summary>
+        /// 日报解决方案
+        /// </summary>
+        public string QryProDescription { get; set; }
+
+        /// <summary>
+        /// 技术员部门
+        /// </summary>
+        public string QryTechOrgName { get; set; }
+
+        /// <summary>
+        /// 已完成时间间隔
+        /// </summary>
+        public string CompletedTimeInterval { get; set; }
     }
 }

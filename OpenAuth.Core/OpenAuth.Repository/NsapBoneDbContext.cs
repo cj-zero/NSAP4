@@ -70,6 +70,10 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<crm_octg>().HasKey(o => new { o.sbo_id, o.GroupNum });
             modelBuilder.Entity<crm_ocrn>().HasKey(o => new { o.sbo_id, o.CurrCode });
             modelBuilder.Entity<sale_qut1>().HasKey(o => new { o.DocEntry });
+            modelBuilder.Entity<sale_contract_review>().HasKey(o => new { o.contract_id });
+            modelBuilder.Entity<sale_contract_review_detail>().HasKey(o => new { o.seq_id });
+            modelBuilder.Entity<store_itemtype>().HasKey(o => new { o.ItemTypeId });
+            
         }
 
         public virtual DbSet<sale_transport> sale_transports { get; set; }
@@ -139,5 +143,9 @@ namespace OpenAuth.Repository
         public virtual DbSet<crm_ocrn> crm_ocrns { get; set; }
 
         public virtual DbSet<sale_qut1> sale_qut1s { get; set; }
+        public virtual DbSet<sale_contract_review> sale_contract_reviews { get; set; }
+        public virtual DbSet<sale_contract_review_detail> sale_contract_review_details { get; set; }
+        public virtual DbSet<store_itemtype> store_itemtypes { get; set; }
+
     }
 }
