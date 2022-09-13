@@ -728,7 +728,7 @@ namespace OpenAuth.App
             }
             if (FilterType == 1)
             {
-                var hasTestCode= await UnitWork.Find<DeviceTestLog>(null).Where(c => c.GeneratorCode == GeneratorCode).Select(c=>c.GeneratorCode).Distinct().ToListAsync();
+                var hasTestCode= await UnitWork.Find<DeviceTestLog>(null).Where(c => c.OrderNo == OrderNo).Select(c=>c.GeneratorCode).Distinct().ToListAsync();
                 result.Data = (from a in bindDevList.AsEnumerable()
                                join b in onlineDevList.AsEnumerable() on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, DevUid = b.dev_uid, LowGuid = b.low_guid }
                                where !hasTestCode.Contains(a.GeneratorCode)
@@ -739,7 +739,7 @@ namespace OpenAuth.App
             }
             else
             {
-                var hasTestLow = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.GeneratorCode == GeneratorCode).Select(c => c.LowGuid).Distinct().ToListAsync();
+                var hasTestLow = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.OrderNo == OrderNo).Select(c => c.LowGuid).Distinct().ToListAsync();
                 result.Data = (from a in bindDevList.AsEnumerable()
                                join b in onlineDevList.AsEnumerable() on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, DevUid = b.dev_uid, LowGuid = b.low_guid }
                                where !hasTestLow.Contains(a.LowGuid)
