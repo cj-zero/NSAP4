@@ -173,5 +173,9 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         public string ContractReviewCode { get; set; }
+        /// <summary>
+        /// 配置类型
+        /// </summary>
+        public string U_ZS { get; set; }
     }
 }

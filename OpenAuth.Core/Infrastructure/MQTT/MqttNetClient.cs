@@ -41,6 +41,7 @@ namespace Infrastructure.MQTT
                 .WithCredentials(_mqttConfig.Username, _mqttConfig.Password)
                 .WithClientId(clientId)
                 .WithCleanSession(true)
+                .WithKeepAlivePeriod(TimeSpan.FromHours(2))
                 .WithCommunicationTimeout(TimeSpan.FromMinutes(10))
                 .Build();
 

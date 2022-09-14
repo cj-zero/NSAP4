@@ -728,6 +728,61 @@ namespace OpenAuth.App
             }
             if (FilterType == 1)
             {
+                var hasTestCode= await UnitWork.Find<DeviceTestLog>(null).Where(c => c.OrderNo == OrderNo).Select(c=>c.GeneratorCode).Distinct().ToListAsync();
+                result.Data = (from a in bindDevList.AsEnumerable()
+                               join b in onlineDevList.AsEnumerable() on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, DevUid = b.dev_uid, LowGuid = b.low_guid }
+                               where !hasTestCode.Contains(a.GeneratorCode)
+                               select new { a.GeneratorCode })
+                               .OrderBy(c => c.GeneratorCode)
+                               .Distinct()
+                               .ToList();
+            }
+            else
+            {
+                var hasTestLow = await UnitWork.Find<DeviceTestLog>(null).Where(c => c.OrderNo == OrderNo).Select(c => c.LowGuid).Distinct().ToListAsync();
+                result.Data = (from a in bindDevList.AsEnumerable()
+                               join b in onlineDevList.AsEnumerable() on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, DevUid = b.dev_uid, LowGuid = b.low_guid }
+                               where !hasTestLow.Contains(a.LowGuid)
+                               select new { a.GeneratorCode, a.DevUid, b.low_no, a.EdgeGuid, a.SrvGuid, a.BtsServerIp, a.Guid, a.LowGuid, a.UnitId })
+                               .OrderBy(c => c.GeneratorCode)
+                               .ThenBy(c => c.DevUid)
+                               .ThenBy(c => c.low_no)
+                               .Distinct()
+                               .ToList();
+
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取重启动列表
+        /// </summary>
+        /// <param name="GeneratorCode"></param>
+        /// <param name="FilterType">过滤类型 1:生产码  2:下位机</param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public async Task<TableData> CanResStartTestList(string GeneratorCode, int FilterType)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var departmen = loginContext.Orgs.Select(c => c.Name).FirstOrDefault();
+            long.TryParse(GeneratorCode.Split('-')[1], out long OrderNo);
+            var onlineDevList = await (from a in UnitWork.Find<edge>(null)
+                                       join b in UnitWork.Find<edge_low>(null) on a.edge_guid equals b.edge_guid
+                                       where a.department == departmen && a.status == 1
+                                       select new { b.edge_guid, b.srv_guid, b.dev_uid, b.mid_guid, b.unit_id, b.low_guid, b.low_no }).ToListAsync();
+            var bindDevList = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.OrderNo == OrderNo).ToListAsync();
+            if (!bindDevList.Any() || !onlineDevList.Any())
+            {
+                result.Data = new List<string> { };
+                return result;
+            }
+            if (FilterType == 1)
+            {
                 result.Data = (from a in bindDevList.AsEnumerable()
                                join b in onlineDevList.AsEnumerable() on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.LowGuid } equals new { EdgeGuid = b.edge_guid, SrvGuid = b.srv_guid, DevUid = b.dev_uid, LowGuid = b.low_guid }
                                select new { a.GeneratorCode })

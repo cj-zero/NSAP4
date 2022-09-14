@@ -10,12 +10,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Npoi.Mapper;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Material.Dto;
 using OpenAuth.App.Material.Request;
 using OpenAuth.App.Material.Response;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.App.Sap.Request;
 using OpenAuth.App.Workbench;
+using OpenAuth.Repository;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Domain.Material;
 using OpenAuth.Repository.Domain.NsapBone;
@@ -24,6 +26,7 @@ using OpenAuth.Repository.Domain.Workbench;
 using OpenAuth.Repository.Interface;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -4293,6 +4296,58 @@ namespace OpenAuth.App.Material
             System.IO.File.Delete(tempUrl);
             //System.IO.File.Delete(footerUrl);
             return datas;
+        }
+        /// <summary>
+        /// 销售收款明细
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetOrderPaymentAndFee(int? id)
+        { 
+            TableData result = new TableData();
+            var commissionOrder = await UnitWork.Find<CommissionOrder>(c => c.Id == id).FirstOrDefaultAsync();
+            if (commissionOrder != null)
+            {
+                var sql = $@"SELECT * from (
+                    select '1' as DocType,DocEntry,SaleNo as OrderNo,DocTotal,DocDate,Printed,PaymentMethod,PaymentAcct,'' as SettleType from
+                    (SELECT T0.DocEntry,T3.DocEntry AS SaleNo,T0.TransId,T0.DocTotal,T0.DocDate,T0.DocDueDate,T0.Printed
+                    ,CASE when t0.CashSum>0 then 0 else 1 end as paymentMethod
+                    ,CASE when t0.CashSum > 0 then (select AcctCode + ' ' + AcctName from OACT where AcctCode = t0.CashAcct) else (select AcctCode + ' ' + AcctName from OACT where AcctCode = t0.TrsfrAcct) end as PaymentAcct
+                    FROM ORCT AS T0 
+                    LEFT JOIN RCT2 AS T4 ON T0.DocEntry = T4.DocNum and T4.InvType=13 
+                    LEFT JOIN INV1 AS T1 ON T4.DocEntry = T1.DocEntry 
+                    LEFT JOIN DLN1 AS T2 ON T1.BaseEntry = T2.DocEntry AND T1.BaseLine = T2.LineNum AND T1.BaseType = 15 
+                    LEFT JOIN RDR1 AS T3 ON T2.BaseEntry = T3.DocEntry AND T2.BaseLine = T3.LineNum AND T2.BaseType = 17  
+                    where T0.Canceled='N' and T3.DocEntry='{commissionOrder.SalesOrderId}' and T0.U_BonusOrderNo IS NULL
+                    group by T0.DocEntry,T3.DocEntry,T0.TransId,T0.DocTotal,T0.DocDate,T0.DocDueDate,t0.CashSum,t0.CashAcct,t0.TrsfrAcct,T0.Printed) T  
+                    where SaleNo is not null and SaleNo='{commissionOrder.SalesOrderId}' 
+                    union 
+                    select 1 as DocType,Tk.DocEntry,Tk.U_XSDD as SaleNo,Tk.DocTotal,Tk.DocDate,Tk.Printed,CASE when Tk.CashSum>0 then 0 else 1 end as paymentMethod
+                    ,CASE when Tk.CashSum > 0 then (select AcctCode + ' ' + AcctName from OACT where AcctCode = Tk.CashAcct) 
+                    else (select AcctCode + ' ' + AcctName from OACT where AcctCode = Tk.TrsfrAcct) end as PaymentAcct,'' as SettleType
+                    from ORCT Tk where Tk.Canceled='N' and Tk.U_XSDD='{commissionOrder.SalesOrderId}' and Tk.U_BonusOrderNo IS NULL
+                    ) a";
+
+                var orct = UnitWork.ExcuteSql<ORCTDto>(ContextType.SapDbContextType, sql, CommandType.Text, null);
+
+                var orderDeli = string.Format(@"SELECT r.DocEntry,r.DocTotal,r.U_DocRCTAmount as PayAmt,d.DeliAmt,d.DeliDiscAmt,f.FeeAmt,r.U_BonusSetType,d.DeliAmtFC,d.DeliDiscAmtFC
+                from {0}.sale_ordr r
+                left outer join ( select {1} as DocEntry,{2} as sbo_id ,sum(d0.docTotal) as DeliAmt,sum(d0.DiscSum) as DeliDiscAmt,sum(d0.DocTotalFC) as DeliAmtFC,sum(d0.DiscSumFC) as DeliDiscAmtFC from {0}.sale_odln d0 
+                    where d0.CANCELED='N' and d0.sbo_id={2} and exists( select 1 from {0}.sale_dln1 d1 where d1.DocEntry=d0.DocEntry and d1.sbo_id=d0.sbo_id and d1.basetype=17 and d1.baseentry={1})
+                ) d on d.docentry=r.docentry and d.sbo_id=r.sbo_id
+                left outer join ( 
+                    select {1} as DocEntry,{2} as sbo_id ,sum(FeeAmount) as FeeAmt from {0}.sale_ordr_PLFee where CANCELED='N' and OrderNo={1} and SboId={2}
+                ) f on f.docentry=r.docentry and f.sbo_id=r.sbo_id
+                where r.docentry={1} and r.sbo_id={2}", "nsap_bone", commissionOrder.SalesOrderId, 1);
+
+                var payment = UnitWork.ExcuteSql<PayMentDto>(ContextType.NsapBoneDbContextType, orderDeli, CommandType.Text, null).FirstOrDefault();
+                result.Data = new
+                {
+                    List = orct,
+                    Detail = payment
+                };
+            }
+            return result;
         }
 
         #endregion
