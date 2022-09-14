@@ -101,6 +101,11 @@ namespace OpenAuth.App.Serve.Response
         public System.DateTime UpdateTime { get; set; }
 
         /// <summary>
+        /// 是否业务员
+        /// </summary>
+        public int? IsSalesman { get; set; }
+
+        /// <summary>
         /// 出差补贴
         /// </summary>
         public virtual List<ReimburseTravellingAllowanceResp> ReimburseTravellingAllowances { get; set; }
