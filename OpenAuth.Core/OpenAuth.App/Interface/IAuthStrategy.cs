@@ -28,7 +28,7 @@ namespace OpenAuth.App
 
         List<ModuleElement> ModuleElements { get; }
 
-        List<Role> Roles { get; set; }
+        List<Role> Roles { get; }
 
          List<Resource> Resources { get; }
 

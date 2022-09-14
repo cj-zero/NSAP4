@@ -66,21 +66,14 @@ namespace OpenAuth.App
         {
             var datascoure = new List<ClueListDto>();
             var loginContext = _auth.GetCurrentUser();
-       
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
-            //需要增加对管理员开放全部数据，角色名称：  “公海管理员”
-
             Expression<Func<OpenAuth.Repository.Domain.Serve.Clue, bool>> exp = t => true;
             exp = exp.And(t => !t.IsDelete);
-            if (!loginContext.Roles.Exists(a => a.Name == "公海管理员"))
-            {
-                exp = exp.And(t => t.CreateUser == loginUser.Name);
-            }
-            
+            exp = exp.And(t => t.CreateUser == loginUser.Name);
             if (clueListReq.SboId != -1)
             {
 
