@@ -73,7 +73,10 @@ namespace OpenAuth.App
             var loginUser = loginContext.User;
             Expression<Func<OpenAuth.Repository.Domain.Serve.Clue, bool>> exp = t => true;
             exp = exp.And(t => !t.IsDelete);
-            exp = exp.And(t => t.CreateUser == loginUser.Name);
+            if (!loginContext.Roles.Exists(a => a.Name == "公海管理员"))
+            {
+                exp = exp.And(t => t.CreateUser == loginUser.Name);
+            }
             if (clueListReq.SboId != -1)
             {
 
