@@ -140,6 +140,11 @@ namespace OpenAuth.Repository.Domain
         [Description("更新时间")]
         public System.DateTime UpdateTime { get; set; }
 
+        /// <summary>
+        /// 是否为业务员
+        /// </summary>
+        [Description("是否为业务员")]
+        public int? IsSalesman { get; set; }
 
         /// <summary>
         /// 出差补贴
