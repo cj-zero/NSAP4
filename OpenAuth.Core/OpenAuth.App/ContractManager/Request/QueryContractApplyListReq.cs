@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace OpenAuth.App.Request
 {
@@ -58,5 +59,23 @@ namespace OpenAuth.App.Request
         /// 结束日期
         /// </summary>
         public DateTime? EndDate { get; set; }
+
+        /// <summary>
+        /// 文件类型
+        /// </summary>
+        public List<string> FileTypes { get; set; }
+    }
+
+    public class QueryReCallContractReq
+    { 
+        /// <summary>
+        /// 合同申请单Id
+        /// </summary>
+        public string ContractId { get; set; }
+
+        /// <summary>
+        /// 撤回备注
+        /// </summary>
+        public string Remarks { get; set; }
     }
 }

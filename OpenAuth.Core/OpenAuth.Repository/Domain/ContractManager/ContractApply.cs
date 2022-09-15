@@ -88,6 +88,12 @@ namespace OpenAuth.Repository.Domain
         public bool IsDraft { get; set; }
 
         /// <summary>
+        /// 是否使用公司模板
+        /// </summary>
+        [Description("是否使用公司模板")]
+        public bool IsUseCompanyTemplate { get; set; }
+
+        /// <summary>
         /// 是否上传原件
         /// </summary>
         [Description("是否上传原件")]
