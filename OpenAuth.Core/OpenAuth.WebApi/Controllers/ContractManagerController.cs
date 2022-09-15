@@ -713,14 +713,15 @@ namespace OpenAuth.WebApi.Controllers
         /// <summary>
         /// 获取所有文件类型
         /// </summary>
+        /// <param name="contractType">合同类型</param>
         /// <returns>成功返回文件类型，失败返回异常信息</returns>
         [HttpGet]
-        public async Task<TableData> GetContractFileTypeList()
+        public async Task<TableData> GetContractFileTypeList(string contractType)
         {
             var result = new TableData();
             try
             {
-                return await _contractapplyapp.GetContractFileTypeList();
+                return await _contractapplyapp.GetContractFileTypeList(contractType);
             }
             catch (Exception ex)
             {
@@ -871,29 +872,6 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
-        /// 更改文件名
-        /// </summary>
-        /// <param name="req">更改文件名实体数据</param>
-        /// <returns>返回TableData信息</returns>
-        [HttpPost]
-        public async Task<TableData> UpdateFileName(QueryUpdateFileNameReq req)
-        {
-            var result = new TableData();
-            try
-            {
-                result = await _contractapplyapp.UpdateFileName(req);  
-            }
-            catch (Exception ex)
-            {
-                result.Code = 500;
-                result.Message = ex.Message;
-                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
-            }
-
-            return result;
-        }
-
-        /// <summary>
         /// 文件类型实体数据集返回前端
         /// </summary>
         /// <param name="contractFileTypeList">合同文件类型实体数据集合</param>
@@ -918,6 +896,29 @@ namespace OpenAuth.WebApi.Controllers
                 Log.Logger.Error($"地址：{Request.Path}，参数：{contractFileTypeList.ToJson()}, 错误：{result.Message}");
             }
 
+            return result;
+        }
+
+        /// <summary>
+        /// 撤回合同申请单
+        /// </summary>
+        /// <param name="req">撤回合同申请单实体数据</param>
+        /// <returns>返回撤回结果</returns>
+        [HttpPost]
+        public async Task<Response> ReCallContract(QueryReCallContractReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _contractapplyapp.ReCallContract(req);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
             return result;
         }
         #endregion

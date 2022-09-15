@@ -12,6 +12,11 @@ namespace OpenAuth.App.ContractManager.Request
         public string NodeName { get; set; }
 
         /// <summary>
+        /// 节点状态
+        /// </summary>
+        public string NodeStatus { get; set; }
+
+        /// <summary>
         /// 节点用户
         /// </summary>
         public string NodeUser { get; set; }

@@ -211,7 +211,7 @@ namespace OpenAuth.App.Order.ModelDto
         /// <summary>
         /// 备注
         /// </summary>
-        public string Remark { get; set; }
+        public string Remarks { get; set; }
         /// <summary>
         /// 路径
         /// </summary>
@@ -228,14 +228,10 @@ namespace OpenAuth.App.Order.ModelDto
         /// 浏览地址
         /// </summary>
         public string ViewFilePath { get; set; }
-        ///// <summary>
-        ///// 
-        ///// </summary>
-        //public int file_type_id { get; set; }
-        ///// <summary>
-        ///// 
-        ///// </summary>
-        //public int acct_id { get; set; }
+        /// <summary>
+        /// 文件来源
+        /// </summary>
+        public string FileSource { get; set; }
 
     }
 
