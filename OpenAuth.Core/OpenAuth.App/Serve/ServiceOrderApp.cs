@@ -2405,7 +2405,7 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             //查看未完成的服务单
-            var serviceData = await (from so in UnitWork.Find<ServiceOrder>(s => s.Status == 2 && s.ServiceWorkOrders.Any(sw => sw.Status < 7))
+            var serviceData = await (from so in UnitWork.Find<ServiceOrder>(s => s.Status == 2 && s.ServiceWorkOrders.Any(sw => sw.Status < 7) && s.FromId != 8)
                                      .WhereIf(!string.IsNullOrWhiteSpace(req.QryVestInOrg), s => s.VestInOrg == int.Parse(req.QryVestInOrg))
                                      .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), s => s.Supervisor == req.QrySupervisor)
                                      .WhereIf(!string.IsNullOrWhiteSpace(req.QryTechName), s => s.ServiceWorkOrders.Any(sw => sw.CurrentUser == req.QryTechName))
