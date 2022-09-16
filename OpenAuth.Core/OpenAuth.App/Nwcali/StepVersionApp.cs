@@ -471,9 +471,9 @@ namespace OpenAuth.App
                 try
                 {
                     List<object> CheckItemsList = new List<object>();
-                    CheckItemsList.Add(new { CheckType = 1, CheckArgs = new { full_scale = 1000, tolerance = 0.002 } });
-                    CheckItemsList.Add(new { CheckType = 2, CheckArgs = new { std_thr = 0.02 } });
-                    CheckItemsList.Add(new { CheckType = 5, CheckArgs = new { std_thr = 0.02 } });
+                    CheckItemsList.Add(new { CheckType = 1, CheckArgs = new { full_scale = 1000, tolerance = 0.005 } });
+                    CheckItemsList.Add(new { CheckType = 2, CheckArgs = new { std_thr = 0.005 } });
+                    CheckItemsList.Add(new { CheckType = 5, CheckArgs = new { std_thr = 0.005 } });
                     var taskData = helper.Post(new
                     {
                         EdgeGuid = item.EdgeGuid,
