@@ -784,19 +784,12 @@ namespace OpenAuth.App.Customer
         /// <returns></returns>
         public async Task AsyncCustomerStatusService()
         {
+            string logStr = DateTime.Now.ToString() + "开始";
             //查询是否有通用规则的设置,如果没有或者开关没打开的话,不进行拉取
             var seaConfig = UnitWork.Find<CustomerSeaConf>(null).FirstOrDefault();
             if (seaConfig == null || seaConfig.Enable == false) { return; }
 
-            var customerTypeData = new Dictionary<int, string>();
-            customerTypeData.Add(0, "全部客户");
-            customerTypeData.Add(1, "未报价客户");
-            customerTypeData.Add(2, "已成交客户");
-
-            var orderTypeData = new Dictionary<int, string>();
-            orderTypeData.Add(0, "未报价");
-            orderTypeData.Add(1, "未成交");
-            orderTypeData.Add(2, "未交货");
+            logStr += "  **seaConfigId：" + seaConfig.Id;
 
             var deptLeader = new Dictionary<string, string>();
             deptLeader.Add("S1", "吴红娟");
@@ -813,31 +806,38 @@ namespace OpenAuth.App.Customer
                                   join ci in UnitWork.Find<CustomerSeaRuleItem>(null)
                                   on c.Id equals ci.CustomerSeaRuleId
                                   //true代表启用,目前的需求是先处理未报价客户未报价的规则
-                                  where c.Enable == true && ci.CustomerType == 1 && ci.OrderType == 0
-                                  group new { c, ci } by new { ci.DepartmentName, ci.CustomerType } into g
+                                  where c.Enable == true
                                   select new
                                   {
-                                      dept = g.Key.DepartmentName,
-                                      customerType = g.Key.CustomerType,
-                                      orderType = g.Min(x => x.ci.OrderType), //事件优先级越高,数值越小
-                                      day = g.Max(x => x.ci.Day) //优先级高的天数一定会比优先级低的大
+                                      dept = ci.DepartmentName,
+                                      ruleType = ci.RuleType,
+                                      day = ci.Day,
+                                      Id = c.Id,
+                                      Name = c.RuleName
                                   }).ToListAsync();
             if (ruleData.Count() <= 0)
             {
                 return;
             }
-
             //提前通知天数
             var notifyDay = seaConfig?.NotifyDay;
             //符合掉落公海规则的客户
             var customerLists = new List<CustomerList>();
+            //黑/白名单客户不会掉入公海池
+            var whiteList = await UnitWork.Find<SpecialCustomer>(null).Select(s => s.CustomerNo).ToListAsync(); //黑/白名单客户不会掉入公海池
             //符合掉入规则的客户会先放入缓存,提醒日期过后还没做单,就会放入公海表中
-            foreach (var rule in ruleData)
+
+
+            //未报价规则
+            var ruleData1 = ruleData.Where(q => q.ruleType == 0);
+            logStr += "  **ruleData1Count：" + ruleData1.Count();
+            foreach (var rule in ruleData1)
             {
+                logStr += "  **ruleID_" + rule.Id + "_RuleName：" + rule.Name + "_Day：" + rule.day;
                 var dept = rule.dept; //部门
                 var key = $"dept:{dept}";
                 RedisHelper.SAdd("dept:", dept);
-
+                logStr += "  **规则1_key：" + key;
                 string uname = deptLeader.FirstOrDefault(d => d.Key == rule.dept).Value;
                 //根据部门查找该部门下的业务员销售编号
                 var slpInfo = await (from u in UnitWork.Find<base_user>(null)
@@ -851,10 +851,9 @@ namespace OpenAuth.App.Customer
                                      && d.dep_alias == dept
                                      //&& new int[] { 0, 1 }.Contains(ud.status) //在职的员工,离职状态是2和3
                                      && u.user_nm == uname //取各个部门的leader的客户
+                                     && u.user_nm != "郭睿心"
                                      select s.sale_id).Distinct().ToListAsync();
 
-                //再根据销售编号查找客户
-                var whiteList = await UnitWork.Find<SpecialCustomer>(null).Select(s => s.CustomerNo).ToListAsync(); //黑/白名单客户不会掉入公海池
                 //查询客户(条件：是属于该部门的业务员，不在黑/白名单中，并且没有报价单)
                 var customers = await (from c in UnitWork.Find<OCRD>(null)
                                        join s in UnitWork.Find<OSLP>(null) on c.SlpCode equals s.SlpCode
@@ -869,29 +868,17 @@ namespace OpenAuth.App.Customer
                 {
                     DateTime? startTime = null;
 
-                    string sql = "SELECT max(UpdateDate) UpdateDate from( select CardCode, SlpCode, min(UpdateDate) UpdateDate from (select CardCode, SlpCode, ISNULL(UpdateDate,CreateDate) UpdateDate from OCRD UNION select CardCode, SlpCode, UpdateDate from ACRD ) a GROUP BY CardCode, SlpCode) b WHERE cardcode = '" + customer.CardCode + "'";
-                    DataTable tbl = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, sql, CommandType.Text);
+                    string sql = "select CreateTime from customer_saler_history where CustomerNo = '" + customer.CardCode + "' ORDER BY CreateTime desc LIMIT 0,1";
+                    DataTable tbl = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text);
                     if (tbl != null && tbl.Rows.Count != 0)
                     {
-                        startTime = tbl.Rows[0]["UpdateDate"].ToDateTime();
+                        startTime = tbl.Rows[0]["CreateTime"].ToDateTime();
                     }
 
                     ////查找客户最近一次的业务员变更(查找有不同业务员的客户)
-                    //var acrdInfos = await UnitWork.Find<ACRD>(a => a.CardCode == customer.CardCode).Select(c => new { c.SlpCode, c.UpdateDate }).ToListAsync();
-                    //var hasDiffClient = acrdInfos.Select(x => x.SlpCode).Distinct().Count() > 1;
-                    ////如果有不同的业务员,则开始时间取最近一次的客户分配给业务员的时间
-                    //if (hasDiffClient)
-                    //{
-                    //    startTime = UnitWork.Find<ACRD>(a => a.CardCode == customer.CardCode).Max(c => c.UpdateDate);
-                    //}
-                    ////否则说明该客户的业务员无变动,取该客户的创建时间
-                    //else
-                    //{
-                    //    startTime = customer.CreateDate;
-                    //}
 
                     //超过规则定义的天数则放入redis中,这部分的数据是即将掉入公海,放入日期加上通知天数就是掉入公海的时间
-                    if (startTime != null && (DateTime.Now - startTime).Value.Days > rule.day)
+                    if (startTime != null && (DateTime.Now - startTime).Value.Days > Convert.ToInt32(rule.day))
                     {
                         customerLists.Add(new CustomerList { DepartMent = dept, CustomerNo = customer.CardCode });
 
@@ -909,7 +896,76 @@ namespace OpenAuth.App.Customer
                         RedisHelper.HSet($"customer:{customer.CardCode}", "SlpName", customer.SlpName);
                         RedisHelper.HSet($"customer:{customer.CardCode}", "CreateDate", customer.CreateDate);
                         RedisHelper.HSet($"customer:{customer.CardCode}", "Remark", $"{rule.dept}," +
-                            $"{customerTypeData.FirstOrDefault(c => c.Key == rule.customerType).Value}超过{rule.day}天{orderTypeData.FirstOrDefault(o => o.Key == rule.orderType).Value}");
+                            $"未报价客户超过{rule.day}天未报价");
+                    }
+                }
+            }
+
+
+            //已成交规则
+            var ruleData2 = ruleData.Where(q => q.ruleType == 1);
+            logStr += "  **ruleData2Count：" + ruleData2.Count();
+            foreach (var rule in ruleData2)
+            {
+                logStr += "  **ruleID_" + rule.Id + "_RuleName：" + rule.Name + "_Day：" + rule.day;
+                var dept = rule.dept; //部门
+                var key = $"dept:{dept}";
+                RedisHelper.SAdd("dept:", dept);
+                logStr += "  **规则2_key：" + key;
+                string uname = deptLeader.FirstOrDefault(d => d.Key == rule.dept).Value;
+                //根据部门查找该部门下的业务员销售编号
+                var slpInfo = await (from u in UnitWork.Find<base_user>(null)
+                                     join ud in UnitWork.Find<base_user_detail>(null)
+                                     on u.user_id equals ud.user_id
+                                     join d in UnitWork.Find<base_dep>(null)
+                                     on ud.dep_id equals d.dep_id
+                                     join s in UnitWork.Find<sbo_user>(null)
+                                     on u.user_id equals s.user_id
+                                     where s.sbo_id == Define.SBO_ID
+                                     && d.dep_alias == dept
+                                     //&& new int[] { 0, 1 }.Contains(ud.status) //在职的员工,离职状态是2和3
+                                     && u.user_nm == uname //取各个部门的leader的客户
+                                     && u.user_nm != "郭睿心"
+                                     select s.sale_id).Distinct().ToListAsync();
+
+                //查询客户(条件：是属于该部门的业务员，不在黑/白名单中，已成交客户)
+                var list = from c in UnitWork.Find<ORDR>(q => q.DocStatus == "C" && q.CANCELED == "N")
+                           where slpInfo.Select(s => s).Contains(c.SlpCode)
+                                       && !whiteList.Contains(c.CardCode)
+                           group c by new { c.CardCode, c.SlpCode } into g
+                           select new { CardCode = g.Key.CardCode, SlpCode = g.Key.SlpCode, Money = g.Sum(c => c.DocTotal) };
+
+                var customersdata = await (from c in list
+                                           join s in UnitWork.Find<OCRD>(null) on c.CardCode equals s.CardCode
+                                           join s1 in UnitWork.Find<OSLP>(null) on c.SlpCode equals s1.SlpCode
+                                           orderby s.CreateDate
+                                           select new { c.CardCode, s.CardName, s.CreateDate, c.SlpCode, s1.SlpName, c.Money }).Take(50).ToListAsync();
+                foreach (var customer in customersdata)
+                {
+                    var moneyArr = rule.day.Split(',');
+
+                    ////查找客户最近一次的业务员变更(查找有不同业务员的客户)
+
+                    //超过规则定义的天数则放入redis中,这部分的数据是即将掉入公海,放入日期加上通知天数就是掉入公海的时间
+                    if (customer.Money >= Convert.ToInt32(moneyArr[0]) && customer.Money <= Convert.ToInt32(moneyArr[1]))
+                    {
+                        customerLists.Add(new CustomerList { DepartMent = dept, CustomerNo = customer.CardCode });
+
+                        var score = decimal.Parse(DateTime.Now.AddDays((double)notifyDay).ToString("yyyyMMdd"));
+                        //如果有序集合中不存在成员,则新增
+                        var memberScore = RedisHelper.ZScore(key, customer.CardCode);
+                        if (memberScore == null)
+                        {
+                            var result = RedisHelper.ZAdd(key, (score, customer.CardCode));
+                        }
+
+                        RedisHelper.HSet($"customer:{customer.CardCode}", "Department", dept);
+                        RedisHelper.HSet($"customer:{customer.CardCode}", "CustomerName", customer.CardName);
+                        RedisHelper.HSet($"customer:{customer.CardCode}", "SlpCode", customer.SlpCode);
+                        RedisHelper.HSet($"customer:{customer.CardCode}", "SlpName", customer.SlpName);
+                        RedisHelper.HSet($"customer:{customer.CardCode}", "CreateDate", customer.CreateDate);
+                        RedisHelper.HSet($"customer:{customer.CardCode}", "Remark", $"{rule.dept}," +
+                            $"已成交客户成交金额{moneyArr[0]}至{moneyArr[1]}");
                     }
                 }
             }
@@ -930,6 +986,13 @@ namespace OpenAuth.App.Customer
             var deptsData = RedisHelper.SMembers("dept:");
             RedisHelper.SRem("dept:", deptsData);
             RedisHelper.SAdd("dept:", depts.ToArray());
+            var test = new CustomerOperationRecord
+            {
+                LabelIndex = 5,
+                Remark = logStr
+            };
+            await UnitWork.AddAsync<CustomerOperationRecord, int>(test);
+            await UnitWork.SaveAsync();
         }
 
         public async Task Test()

@@ -124,7 +124,7 @@ namespace OpenAuth.App
                         ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 3);
                         break;
                     case "4":
-                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus >= 4 && r.RemburseStatus < 9);
+                        ReimburseInfos = ReimburseInfos.Where(r => (r.RemburseStatus >= 4 && r.RemburseStatus < 9) || r.RemburseStatus == 11);
                         break;
                     case "9":
                         ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 9);
@@ -242,6 +242,11 @@ namespace OpenAuth.App
                         Condition.Add(4);
                         //ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 4);
                     }
+                    if (loginContext.Roles.Any(r => r.Name.Equals("销售总助")))
+                    {
+                        Condition.Add(11);
+                        //ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus == 4);
+                    }
                     if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")))
                     {
                         Condition.Add(5);
@@ -269,19 +274,23 @@ namespace OpenAuth.App
                 case 3:
                     if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")))
                     {
-                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus > 4);
+                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus > 4 && r.RemburseStatus != 11 && (r.IsSalesman ==0|| r.IsSalesman ==null));
+                    }
+                    else if(loginContext.Roles.Any(r => r.Name.Equals("销售总助")))
+                    {
+                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus > 4 && r.RemburseStatus != 11 && r.IsSalesman == 1 );
                     }
                     else if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")))
                     {
-                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus > 5);
+                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus > 5 && r.RemburseStatus != 11);
                     }
                     else if (loginContext.Roles.Any(r => r.Name.Equals("财务复审")))
                     {
-                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus > 6);
+                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus > 6 && r.RemburseStatus != 11);
                     }
                     else if (loginContext.Roles.Any(r => r.Name.Equals("总经理")))
                     {
-                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus > 7);
+                        ReimburseInfos = ReimburseInfos.Where(r => r.RemburseStatus > 7 && r.RemburseStatus != 11);
                     }
                     else
                     {
@@ -293,11 +302,17 @@ namespace OpenAuth.App
                     {
                         var eohids = await UnitWork.Find<ReimurseOperationHistory>(r => r.ApprovalStage >= 4 && r.ApprovalResult == "驳回").Select(r => r.ReimburseInfoId).Distinct().ToListAsync();
 
-                        ReimburseInfos = ReimburseInfos.Where(r => eohids.Contains(r.Id) && r.RemburseStatus == 2);
+                        ReimburseInfos = ReimburseInfos.Where(r => eohids.Contains(r.Id) && r.RemburseStatus == 2 && (r.IsSalesman == 0 || r.IsSalesman == null));
+                    }
+                    else if (loginContext.Roles.Any(r => r.Name.Equals("销售总助")))
+                    {
+                        var eohids = await UnitWork.Find<ReimurseOperationHistory>(r => r.ApprovalStage >= 4 && r.ApprovalResult == "驳回").Select(r => r.ReimburseInfoId).Distinct().ToListAsync();
+
+                        ReimburseInfos = ReimburseInfos.Where(r => eohids.Contains(r.Id) && r.RemburseStatus == 2 && r.IsSalesman == 1);
                     }
                     else if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")))
                     {
-                        var eohids = await UnitWork.Find<ReimurseOperationHistory>(r => r.ApprovalStage >= 5 && r.ApprovalResult == "驳回").Select(r => r.ReimburseInfoId).Distinct().ToListAsync();
+                        var eohids = await UnitWork.Find<ReimurseOperationHistory>(r => r.ApprovalStage >= 5 &&  r.ApprovalResult == "驳回").Select(r => r.ReimburseInfoId).Distinct().ToListAsync();
 
                         ReimburseInfos = ReimburseInfos.Where(r => eohids.Contains(r.Id) && r.RemburseStatus == 2);
                     }
@@ -1316,7 +1331,12 @@ namespace OpenAuth.App
             {
                 loginUser = GetUserId(Convert.ToInt32(req.AppId)).ConfigureAwait(false).GetAwaiter().GetResult();
             }
-
+            int IsSalesman = 0;
+            if (loginContext.Roles.Where(a => a.Name =="销售员").Count() >0)
+            {
+                IsSalesman = 1;
+            }
+           
             #region 报销单唯一
             var ReimburseCount = UnitWork.Find<ReimburseInfo>(r => r.ServiceOrderId.Equals(req.ServiceOrderId) && r.CreateUserId.Equals(loginUser.Id)).Count();
             if (ReimburseCount > 0)
@@ -1350,11 +1370,17 @@ namespace OpenAuth.App
                         afir.FrmType = 2;
                         afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
                         afir.CustomName = $"报销" + DateTime.Now;
-                        afir.FrmData = "{\"ReimburseInfoId\":\"" + obj.Id + "\"}";
+                        //afir.FrmData = "{\"ReimburseInfoId\":\"" + obj.Id + "\"}";
+                        afir.FrmData = "{\"ReimburseInfoId\":\"" + obj.Id + "\",\"IsSalesman\": \"" + IsSalesman + "\"}";
                         obj.FlowInstanceId = _flowInstanceApp.CreateInstanceAndGetIdAsync(afir).ConfigureAwait(false).GetAwaiter().GetResult();
                         //添加报销单
                         obj.MainId = maxmainid + 1;
                         obj.RemburseStatus = 4;
+                        if (IsSalesman == 1)
+                        {
+                            obj.RemburseStatus = 11;
+                        }
+                        obj.IsSalesman = IsSalesman;
                         obj = UnitWork.Add<ReimburseInfo, int>(obj);
                         UnitWork.Save();
                         //记录操作日志
@@ -1522,6 +1548,11 @@ namespace OpenAuth.App
 
                     if (!req.IsDraft)
                     {
+                        int IsSalesman = 0;
+                        if (loginContext.Roles.Where(a => a.Name == "销售员").Count() > 0)
+                        {
+                            IsSalesman = 1;
+                        }
                         if (string.IsNullOrWhiteSpace(req.FlowInstanceId))
                         {
                             //添加流程
@@ -1531,7 +1562,8 @@ namespace OpenAuth.App
                             afir.FrmType = 2;
                             afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
                             afir.CustomName = $"报销";
-                            afir.FrmData = "{\"ReimburseInfoId\":\"" + obj.Id + "\"}";
+                            //afir.FrmData = "{\"ReimburseInfoId\":\"" + obj.Id + "\"}";
+                            afir.FrmData = "{\"ReimburseInfoId\":\"" + obj.Id + "\",\"IsSalesman\": \"" + IsSalesman + "\"}";
                             obj.FlowInstanceId = _flowInstanceApp.CreateInstanceAndGetIdAsync(afir).ConfigureAwait(false).GetAwaiter().GetResult();
                         }
                         else
@@ -1540,6 +1572,11 @@ namespace OpenAuth.App
                         }
                         //修改报销单
                         obj.RemburseStatus = 4;
+                        obj.IsSalesman = IsSalesman;
+                        if (IsSalesman == 1 )
+                        {
+                            obj.RemburseStatus = 11;
+                        }
                         UnitWork.Update<ReimburseInfo>(r => r.Id == obj.Id, r => new ReimburseInfo
                         {
                             UpdateTime = DateTime.Now,
@@ -1824,7 +1861,7 @@ namespace OpenAuth.App
             //obj.Responsibility = req.Responsibility;
             obj.UpdateTime = DateTime.Now;
             eoh.ApprovalStage = obj.RemburseStatus;
-            if (loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && obj.RemburseStatus == 4)
+            if ((loginContext.Roles.Any(r => r.Name.Equals("客服主管")) && obj.RemburseStatus == 4) || (loginContext.Roles.Any(r => r.Name.Equals("销售总助")) && obj.RemburseStatus == 11))
             {
                 if (!req.IsReject)
                 {
@@ -1902,6 +1939,10 @@ namespace OpenAuth.App
                     }
                 }
                 eoh.Action = "客服主管审批";
+                if (obj.RemburseStatus == 11)
+                {
+                    eoh.Action = "销售总助审批";
+                }
                 obj.RemburseStatus = 5;
             }
             else if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")) && obj.RemburseStatus == 5)

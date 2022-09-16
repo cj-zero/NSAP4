@@ -66,5 +66,7 @@ namespace OpenAuth.Repository.Domain.Customer
         public DateTime? CreateDateTime { get; set; }
 
         public string Score { get; set; }
+
+        public string Remark { get; set; }
     }
 }

@@ -2405,7 +2405,7 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             //查看未完成的服务单
-            var serviceData = await (from so in UnitWork.Find<ServiceOrder>(s => s.Status == 2 && s.ServiceWorkOrders.Any(sw => sw.Status < 7))
+            var serviceData = await (from so in UnitWork.Find<ServiceOrder>(s => s.Status == 2 && s.ServiceWorkOrders.Any(sw => sw.Status < 7) && s.FromId != 8)
                                      .WhereIf(!string.IsNullOrWhiteSpace(req.QryVestInOrg), s => s.VestInOrg == int.Parse(req.QryVestInOrg))
                                      .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), s => s.Supervisor == req.QrySupervisor)
                                      .WhereIf(!string.IsNullOrWhiteSpace(req.QryTechName), s => s.ServiceWorkOrders.Any(sw => sw.CurrentUser == req.QryTechName))
@@ -5865,7 +5865,7 @@ namespace OpenAuth.App
                 {
                     o.MaterialCode,
                     o.ManufacturerSerialNumber,
-                    MaterialType = string.IsNullOrEmpty(o.MaterialCode) ? "" : o.MaterialCode.IndexOf("-")>0? "无序列号".Equals(o.MaterialCode) ? "无序列号" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")):"",
+                    MaterialType = string.IsNullOrEmpty(o.MaterialCode) ? "" :( o.MaterialCode.IndexOf("-") > 0 || o.MaterialCode == "无序列号") ? "无序列号".Equals(o.MaterialCode) ? "无序列号" : o.MaterialCode.Substring(0, o.MaterialCode.IndexOf("-")):"",
                     o.Status,
                     o.Id,
                     o.OrderTakeType,
@@ -5875,7 +5875,8 @@ namespace OpenAuth.App
                     o.FromTheme,
                     o.AcceptTime,
                 });
-                
+
+
                 var ProblemType = serviceOrder.FirstOrDefault()?.ProblemType;
                 var flow = listFlow.Where(w => w.Creater == userInfo.UserID && w.ServiceOrderId == item.Id && w.FlowType == 1).ToList();
 

@@ -520,11 +520,11 @@ namespace OpenAuth.WebApi.Controllers.Order
             if (power != null)
             {
                 Powers powers = new Powers(power.AuthMap);
-                if (loginContext.User.Name == "韦京生" || loginContext.User.Name == "郭睿心")
+                if (loginContext.Roles.Any(r => r.Name.Equals("销售报价单管理员")))
                 {
                     viewFull = powers.ViewFull;
-
                 }
+
                 viewSelf = powers.ViewSelf;
                 viewSelfDepartment = powers.ViewSelfDepartment;
                 viewSales = powers.ViewSales;
@@ -1072,7 +1072,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                     billSboId = int.Parse(sboId);
                 }
                 else { billSboId = sboid; }
-                string strSql = string.Format("SELECT a.file_id as Id ,b.type_nm FileType ,a.file_nm as FileName ,a.remarks Remark,a.file_path as FilePath ,a.upd_dt CreateTime,c.user_nm CreateUserName ,a.view_file_path ViewFilePath ");//,a.file_type_id,a.acct_id
+                string strSql = string.Format("SELECT a.file_id as Id ,b.type_nm FileType ,a.file_nm as FileName ,a.remarks Remarks,a.file_path as FilePath ,a.upd_dt CreateTime,c.user_nm CreateUserName ,a.view_file_path ViewFilePath,(CASE a.file_path WHEN locate('/files/attachment', a.file_path) = 0 THEN '3.0' ELSE '4.0' END) as FileSource ");//,a.file_type_id,a.acct_id
                 strSql += string.Format(" FROM {0}.file_main a", "nsap_oa");
                 strSql += string.Format(" LEFT JOIN {0}.file_type b ON a.file_type_id=b.type_id", "nsap_oa");
                 strSql += string.Format(" LEFT JOIN {0}.base_user c ON a.acct_id=c.user_id", "nsap_base");
@@ -1085,6 +1085,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                     //非销售订单附件
                     strSql += string.Format(" WHERE a.docEntry='{0}' AND a.file_type_id='{1}' AND sbo_id={2}", OrderId, TypeId, sboid);
                 }
+
                 result.Result = UnitWork.ExcuteSql<OrderFile>(ContextType.NsapBaseDbContext, strSql, CommandType.Text, null);
             }
             return result;

@@ -48,18 +48,14 @@ namespace OpenAuth.App.Customer.Request
     public class RuleDetail
     {
         /// <summary>
-        /// 客户类型:0-全部客户,1-未报价客户,2-已成交客户
+        /// 规则类型:0-未报价,1-已成交规则
         /// </summary>
-        public int CustomerType { get; set; }
+        public int RuleType { get; set; }
 
         /// <summary>
         /// 天数
         /// </summary>
-        public int Day { get; set; }
+        public string Day { get; set; }
 
-        /// <summary>
-        /// 事件类型:0-未报价,1-未下单,2-未交货
-        /// </summary>
-        public int OrderType { get; set; }
     }
 }

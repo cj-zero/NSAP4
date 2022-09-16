@@ -93,21 +93,15 @@ namespace OpenAuth.Repository.Domain.Customer
         public string DepartmentName { get; set; }
 
         /// <summary>
-        /// 客户类型:0全部、1未报价、2已成交
+        /// 规则类型:0-未报价,1-已成交规则
         /// </summary>
-        [Column("Customer_Type")]
-        public int CustomerType { get; set; }
+        [Column("Rule_Type")]
+        public int RuleType { get; set; }
 
         /// <summary>
-        /// 天数
+        /// 天数(成交金额)
         /// </summary>
-        public int Day { get; set; }
-
-        /// <summary>
-        /// 订单类型:0未报价,1未下单,2未交货
-        /// </summary>
-        [Column("Order_Type")]
-        public int OrderType { get; set; }
+        public string Day { get; set; }
 
         /// <summary>
         /// 创建人

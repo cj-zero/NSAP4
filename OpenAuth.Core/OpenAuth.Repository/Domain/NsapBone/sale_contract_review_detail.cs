@@ -31,7 +31,7 @@ namespace OpenAuth.Repository.Domain
         public decimal qty { get; set; }
         public decimal PurPrice { get; set; }
         public decimal DocTotal { get; set; }
-        public TimeSpan upd_dt { get; set; }
+        public DateTime upd_dt { get; set; }
         public string UnitMsr { get; set; }
 
 

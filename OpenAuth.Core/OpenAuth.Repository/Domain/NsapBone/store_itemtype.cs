@@ -26,7 +26,7 @@ namespace OpenAuth.Repository.Domain
         public int ItemTypeId { get; set; }
         public string ItemTypeName { get; set; }
         public DateTime CreateDate { get; set; }
-        public TimeSpan upd_dt { get; set; }
+        public DateTime upd_dt { get; set; }
         public bool is_default { get; set; }
         public int order_idx { get; set; }
       
