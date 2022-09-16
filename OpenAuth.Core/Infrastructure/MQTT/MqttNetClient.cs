@@ -18,7 +18,7 @@ namespace Infrastructure.MQTT
     public class MqttNetClient
     {
         public static MqttClient mqttClient;
-        private IMqttClientOptions options;
+        public IMqttClientOptions options;
         public string clientId = string.Empty;
         private MqttConfig mqttConfig;
         public IConfiguration Configuration { get; }
@@ -41,7 +41,7 @@ namespace Infrastructure.MQTT
                 .WithCredentials(_mqttConfig.Username, _mqttConfig.Password)
                 .WithClientId(clientId)
                 .WithCleanSession(true)
-                .WithKeepAlivePeriod(TimeSpan.FromHours(2))
+                .WithKeepAlivePeriod(TimeSpan.FromHours(1))
                 .WithCommunicationTimeout(TimeSpan.FromMinutes(10))
                 .Build();
 
@@ -66,14 +66,15 @@ namespace Infrastructure.MQTT
         private void Disconnected(object sender, MqttClientDisconnectedEventArgs e)
         {
             Log.Logger.Error($"Mqtt>>Disconnected【{clientId}】>>已断开连接,断开连接原因:{e.Exception.Message}");
+            Thread.Sleep(600000);
             mqttClient.ConnectAsync(options);
             if (mqttClient.IsConnected)
             {
-                Log.Logger.Information($"{clientId}重连成功!");
+                Log.Logger.Information($"{clientId}断开重连成功!");
             }
             else
             {
-                Log.Logger.Error($"{clientId}重连失败!{e.Exception.Message}");
+                Log.Logger.Error($"{clientId}断开重连失败!{e.Exception.Message}");
             }
         }
         /// <summary>

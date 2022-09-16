@@ -22,6 +22,7 @@ using OpenAuth.App.Files;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
+using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.App.ContractManager.Request;
 using ICSharpCode.SharpZipLib.Zip;
 using Minio;
@@ -85,7 +86,7 @@ namespace OpenAuth.App.ContractManager
                 var file = UnitWork.Find<ContractFile>(null);
                 if (loginContext.Roles.Any(r => r.Name.Equal("合同管理权限")))
                 {
-                    var objs = UnitWork.Find<ContractApply>(null).Include(r => r.ContractFileTypeList).Include(r => r.contractOperationHistoryList);
+                    var objs = request.FileTypes == null || request.FileTypes.Count() <= 0 ? UnitWork.Find<ContractApply>(null).Include(r => r.ContractFileTypeList).Include(r => r.contractOperationHistoryList) : UnitWork.Find<ContractApply>(null).Include(r => r.ContractFileTypeList).Include(r => r.contractOperationHistoryList).Where(r => r.ContractFileTypeList.Any(x => request.FileTypes.Contains(x.FileType)));
                     var contractApply = objs.WhereIf(!string.IsNullOrWhiteSpace(request.ContractNo), r => r.ContractNo.Contains(request.ContractNo))
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerCodeOrName), r => r.CustomerCode.Contains(request.CustomerCodeOrName) || r.CustomerName.Contains(request.CustomerCodeOrName))
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.CompanyType), r => r.CompanyType.Equals(request.CompanyType))
@@ -129,6 +130,7 @@ namespace OpenAuth.App.ContractManager
                         QuotationNo = r.a.QuotationNo,
                         SaleNo = r.a.SaleNo,
                         IsDraft = r.a.IsDraft,
+                        IsUseCompanyTemplate = r.a.IsUseCompanyTemplate,
                         IsUploadOriginal = r.a.IsUploadOriginal,
                         FlowInstanceId = r.a.FlowInstanceId,
                         DownloadNumber = r.a.DownloadNumber,
@@ -163,7 +165,7 @@ namespace OpenAuth.App.ContractManager
                 }
                 else
                 {
-                    var objs = UnitWork.Find<ContractApply>(r => r.CreateId == loginUser.Id).Include(r => r.ContractFileTypeList).Include(r => r.contractOperationHistoryList);
+                    var objs = request.FileTypes == null || request.FileTypes.Count() <= 0 ? UnitWork.Find<ContractApply>(r => r.CreateId == loginUser.Id).Include(r => r.ContractFileTypeList).Include(r => r.contractOperationHistoryList) : UnitWork.Find<ContractApply>(r => r.CreateId == loginUser.Id).Include(r => r.ContractFileTypeList).Include(r => r.contractOperationHistoryList).Where(r => r.ContractFileTypeList.Any(x => request.FileTypes.Contains(x.FileType)));
                     var contractApply = objs.WhereIf(!string.IsNullOrWhiteSpace(request.ContractNo), r => r.ContractNo.Contains(request.ContractNo))
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerCodeOrName), r => r.CustomerCode.Contains(request.CustomerCodeOrName) || r.CustomerName.Contains(request.CustomerCodeOrName))
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.CompanyType), r => r.CompanyType.Equals(request.CompanyType))
@@ -207,6 +209,7 @@ namespace OpenAuth.App.ContractManager
                         QuotationNo = r.a.QuotationNo,
                         SaleNo = r.a.SaleNo,
                         IsDraft = r.a.IsDraft,
+                        IsUseCompanyTemplate = r.a.IsUseCompanyTemplate,
                         IsUploadOriginal = r.a.IsUploadOriginal,
                         FlowInstanceId = r.a.FlowInstanceId,
                         DownloadNumber = r.a.DownloadNumber,
@@ -263,7 +266,6 @@ namespace OpenAuth.App.ContractManager
 
             var loginUser = loginContext.User;
             var result = new TableData();
-            string userName = "";
             try
             {
                 var contractApply = await UnitWork.Find<ContractApply>(r => r.Id == contractApplyId).ToListAsync();
@@ -292,6 +294,7 @@ namespace OpenAuth.App.ContractManager
                                                a.QuotationNo,
                                                a.SaleNo,
                                                a.IsDraft,
+                                               a.IsUseCompanyTemplate,
                                                a.FlowInstanceId,
                                                a.DownloadNumber,
                                                a.ContractStatus,
@@ -312,243 +315,7 @@ namespace OpenAuth.App.ContractManager
 
                     #region 审批步骤
                     var contract = contractApply.FirstOrDefault();
-                    var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("订单合同申请"));
-                    string flowId = mf.FlowSchemeId;
-                    FlowScheme scheme = null;
-                    if (!string.IsNullOrEmpty(flowId))
-                    {
-                        scheme = await _flowSchemeApp.GetAsync(flowId);
-                    }
-
-                    if (scheme == null)
-                    {
-                        throw new Exception("该流程模板已不存在，请重新设计流程");
-                    }
-
-                    List<ApprovalNodeReq> nodeList = new List<ApprovalNodeReq>();
-                    ApprovalNodeReq nodeReq = new ApprovalNodeReq();
-                    nodeReq.NodeName = "提交";
-                    nodeReq.NodeUser = contract.CreateName;
-                    nodeList.Add(nodeReq);
-                    var schemeContentJson = JsonHelper.Instance.Deserialize<FlowInstanceListJson>(scheme.SchemeContent);
-                    if (contract.ContractStatus == "3")
-                    {
-                        var roles = await UnitWork.Find<Role>(r => r.Name == "法务人员").Select(r => new { r.Id }).ToListAsync();
-                        List<string> roleId = roles.Select(r => r.Id).ToList();
-                        var userole = await UnitWork.Find<Relevance>(u => roleId.Contains(u.SecondId) && u.Key == Define.USERROLE).ToListAsync();
-                        var userList = await UnitWork.Find<User>(null).ToListAsync();
-                        var users = from userRole in userole
-                                    join user in userList on userRole.FirstId equals user.Id into temp
-                                    from c in temp.Where(u => u.Id != null)
-                                    select new
-                                    {
-                                        c.Id,
-                                        c.Name
-                                    };
-
-                        int count = 0;
-                        foreach (var userItem in users)
-                        {
-                            if (users.Count() == 1)
-                            {
-                                userName = userItem.Name;
-                            }
-                            else
-                            {
-                                userName = count == 0 ? userItem.Name : userName + "," + userItem.Name;
-                                count++;
-                            }
-                        }
-
-                        ApprovalNodeReq nodeFWReq = new ApprovalNodeReq();
-                        nodeFWReq.NodeName = "法务审批";
-                        nodeFWReq.NodeUser = "等待" + userName + "审批";
-                        nodeList.Add(nodeFWReq);
-                    }
-                    else if (contract.ContractStatus == "4")
-                    {
-                        List<Role> roles = await UnitWork.Find<Role>(r => r.Name == "法务人员" || r.Name == "售前工程师").ToListAsync();
-                        List<string> roleId = roles.Select(r => r.Id).ToList();
-                        var userole = await UnitWork.Find<Relevance>(u => roleId.Contains(u.SecondId) && u.Key == Define.USERROLE).ToListAsync();
-                        var userList = await UnitWork.Find<User>(null).ToListAsync();
-                        var users = from userRole in userole
-                                    join user in userList on userRole.FirstId equals user.Id into temp
-                                    from c in temp.Where(u => u.Id != null)
-                                    select new
-                                    {
-                                        c.Id,
-                                        c.Name
-                                    };
-
-                        int count = 0;
-                        foreach (var userItem in users)
-                        {
-                            if (users.Count() == 1)
-                            {
-                                userName = userItem.Name;
-                            }
-                            else
-                            {
-                                userName = count == 0 ? userItem.Name : userName + "," + userItem.Name;                            
-                                count++;
-                            }
-                        }
-
-                        ApprovalNodeReq nodeFWReq = new ApprovalNodeReq();
-                        nodeFWReq.NodeName = "法务审批&技术审批";
-                        nodeFWReq.NodeUser = "等待" + userName + "审批";
-                        nodeList.Add(nodeFWReq);
-                    }
-                    else if (contract.ContractStatus == "8")
-                    {
-                        List<Role> roles = await UnitWork.Find<Role>(r => r.Name == "售前工程师").ToListAsync();
-                        List<string> roleId = roles.Select(r => r.Id).ToList();
-                        var userole = await UnitWork.Find<Relevance>(u => roleId.Contains(u.SecondId) && u.Key == Define.USERROLE).ToListAsync();
-                        var userList = await UnitWork.Find<User>(null).ToListAsync();
-                        var users = from userRole in userole
-                                    join user in userList on userRole.FirstId equals user.Id into temp
-                                    from c in temp.Where(u => u.Id != null)
-                                    select new
-                                    {
-                                        c.Id,
-                                        c.Name
-                                    };
-
-                        int count = 0;
-                        foreach (var userItem in users)
-                        {
-                            if (users.Count() == 1)
-                            {
-                                userName = userItem.Name;
-                            }
-                            else
-                            {
-                                userName = count == 0 ? userItem.Name : userName + "," + userItem.Name;                            
-                                count++;
-                            }
-                        }
-
-                        var historyData = await UnitWork.Find<ContractOperationHistory>(r => r.ApprovalStage == "8" && r.ContractApplyId == contractApplyId).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
-                        ApprovalNodeReq nodeFJReq = new ApprovalNodeReq();
-                        nodeFJReq.NodeName = "法务审批&技术审批";
-                        nodeFJReq.NodeUser = historyData.CreateUser + "已审批，等待" + userName + "审批";
-                        nodeList.Add(nodeFJReq);
-                    }
-                    else if (contract.ContractStatus == "9")
-                    {
-                        var roles = await UnitWork.Find<Role>(r => r.Name == "法务人员").Select(r => new { r.Id }).FirstOrDefaultAsync();
-                        var userRoleList = await UnitWork.Find<Relevance>(u => u.SecondId == roles.Id && u.Key == Define.USERROLE).ToListAsync();
-                        var userList =await UnitWork.Find<User>(null).ToListAsync();
-                        var users = from userRole in userRoleList
-                                    join user in userList on userRole.FirstId equals user.Id into temp
-                                    from c in temp.Where(u => u.Id != null)
-                                    select new
-                                    {
-                                        c.Id,
-                                        c.Name
-                                    };
-
-                        int count = 0;
-                        foreach (var userItem in users)
-                        {
-                            if (users.Count() == 1)
-                            {
-                                userName = userItem.Name;
-                            }
-                            else
-                            {
-                                userName = count == 0 ? userItem.Name : userName + "," + userItem.Name;
-                                count++;
-                            }
-                        }
-
-                        var historyData = await UnitWork.Find<ContractOperationHistory>(r => r.ApprovalStage == "9" && r.ContractApplyId == contractApplyId).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
-                        ApprovalNodeReq nodeFJReq = new ApprovalNodeReq();
-                        nodeFJReq.NodeName = "法务审批&技术审批";
-                        nodeFJReq.NodeUser = historyData.CreateUser + "已审批，等待" + userName + "审批";
-                        nodeList.Add(nodeFJReq);
-                    }
-                    else if (contract.ContractStatus == "5" || contract.ContractStatus == "6" || contract.ContractStatus == "7" || contract.ContractStatus == "-1")
-                    {
-                        if (contract.ContractType == "1")
-                        {
-                            var historyData = await UnitWork.Find<ContractOperationHistory>(r => r.ApprovalStage == "5" && r.ContractApplyId == contractApplyId).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
-                            ApprovalNodeReq nodeFJReq = new ApprovalNodeReq();
-                            nodeFJReq.NodeName = "法务审批";
-                            nodeFJReq.NodeUser = historyData == null ? "" : historyData.CreateUser + "已审批";
-                            nodeList.Add(nodeFJReq);
-                        }
-                        else
-                        {
-                            int count = 0;
-                            var historyData = await UnitWork.Find<ContractOperationHistory>(r => (r.ApprovalStage == "8" || r.ApprovalStage == "9" || r.ApprovalStage == "5") && r.ContractApplyId == contractApplyId).OrderByDescending(r => r.CreateTime).ToListAsync();
-                            foreach (ContractOperationHistory item in historyData)
-                            {
-                                userName = count == 0 ? item.CreateUser : userName + "," + item.CreateUser;
-                                count++;
-                            }
-
-                            ApprovalNodeReq nodeFJReq = new ApprovalNodeReq();
-                            nodeFJReq.NodeName = "法务审批&技术审批";
-                            nodeFJReq.NodeUser = userName + "已审批";
-                            nodeList.Add(nodeFJReq);
-                        }
-                    }
-                    else if (contract.ContractStatus == "2")
-                    {
-                        var historyData = await UnitWork.Find<ContractOperationHistory>(r => r.ApprovalStage == "2" && r.ContractApplyId == contractApplyId).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
-                        if (contract.ContractStatus == "1")
-                        {
-                            ApprovalNodeReq nodeFJReq = new ApprovalNodeReq();
-                            nodeFJReq.NodeName = "法务审批";
-                            nodeFJReq.NodeUser = historyData.CreateUser + "驳回";
-                            nodeList.Add(nodeFJReq);
-                        }
-                        else
-                        {
-                            ApprovalNodeReq nodeFJReq = new ApprovalNodeReq();
-                            nodeFJReq.NodeName = "法务审批&技术审批";
-                            nodeFJReq.NodeUser = historyData == null ? "" : historyData.CreateUser + "驳回";
-                            nodeList.Add(nodeFJReq);
-                        }                  
-                    }
-                    else
-                    {
-                        if (contract.ContractType == "1")
-                        {
-                            ApprovalNodeReq nodeFWReq = new ApprovalNodeReq();
-                            nodeFWReq.NodeName = "法务审批";
-                            nodeFWReq.NodeUser = "";
-                            nodeList.Add(nodeFWReq);
-                        }
-                        else
-                        {
-                            ApprovalNodeReq nodeFWReq = new ApprovalNodeReq();
-                            nodeFWReq.NodeName = "法务审批&技术审批";
-                            nodeFWReq.NodeUser = "";
-                            nodeList.Add(nodeFWReq);
-                        }
-                    }
-
-                    ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
-                    nodeZZReq.NodeName = "总助审批";
-                    nodeZZReq.NodeUser = "骆灵芝";
-                    nodeList.Add(nodeZZReq);
-
-                    ApprovalNodeReq nodeGZReq = new ApprovalNodeReq();
-                    nodeGZReq.NodeName = "待盖章";
-                    nodeGZReq.NodeUser = "";
-                    nodeList.Add(nodeGZReq);
-
-                    ApprovalNodeReq nodeSCReq = new ApprovalNodeReq();
-                    nodeSCReq.NodeName = "待上传原件";
-                    nodeSCReq.NodeUser = "";
-                    nodeList.Add(nodeSCReq);
-
-                    ApprovalNodeReq nodeEndReq = new ApprovalNodeReq();
-                    nodeEndReq.NodeName = "结束";
-                    nodeEndReq.NodeUser = "";
-                    nodeList.Add(nodeEndReq);
+                    List<ApprovalNodeReq> nodeList = await GetNodeMsg(contract, contractApplyId);
                     #endregion
 
                     if (contractFileTypeList.Count() > 0)
@@ -583,6 +350,7 @@ namespace OpenAuth.App.ContractManager
                                                   ContractFileList = from b in a.contractFileList
                                                                      join e in contractFileList on b.FileId equals e.Id into be
                                                                      from e in be.DefaultIfEmpty()
+                                                                     orderby b.CreateUploadTime descending
                                                                      select new { 
                                                                      b.Id,
                                                                      b.ContractFileTypeId,
@@ -642,6 +410,421 @@ namespace OpenAuth.App.ContractManager
         }
 
         /// <summary>
+        /// 获取审批步骤
+        /// </summary>
+        /// <param name="contract">合同实体数据</param>
+        /// <param name="contractApplyId">合同申请单Id</param>
+        /// <returns>返回合同申请各个节点信息</returns>
+        public async Task<List<ApprovalNodeReq>> GetNodeMsg(ContractApply contract, string contractApplyId)
+        {
+            string userName = "";
+            var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("订单合同申请"));
+            string flowId = mf.FlowSchemeId;
+            FlowScheme scheme = null;
+            if (!string.IsNullOrEmpty(flowId))
+            {
+                scheme = await _flowSchemeApp.GetAsync(flowId);
+            }
+
+            if (scheme == null)
+            {
+                throw new Exception("该流程模板已不存在，请重新设计流程");
+            }
+
+            List<ApprovalNodeReq> nodeList = new List<ApprovalNodeReq>();
+            ApprovalNodeReq nodeReq = new ApprovalNodeReq();
+            nodeReq.NodeName = "提交";
+            nodeReq.NodeStatus = contract.ContractStatus == "1" ? "1" : (contract.ContractStatus == "2" ? "2" : "") ;
+            nodeReq.NodeUser = contract.CreateName;
+            nodeList.Add(nodeReq);
+            if (contract.ContractType == "1")
+            {
+                if ((contract.ContractStatus == "1" || contract.ContractStatus == "2" || contract.ContractStatus == "3") && !contract.IsUseCompanyTemplate)
+                {
+                    var roles = await UnitWork.Find<Role>(r => r.Name == "法务人员").Select(r => new { r.Id }).ToListAsync();
+                    List<string> roleId = roles.Select(r => r.Id).ToList();
+                    var userole = await UnitWork.Find<Relevance>(u => roleId.Contains(u.SecondId) && u.Key == Define.USERROLE).ToListAsync();
+                    var userList = await UnitWork.Find<User>(null).ToListAsync();
+                    var users = from userRole in userole
+                                join user in userList on userRole.FirstId equals user.Id into temp
+                                from c in temp.Where(u => u.Id != null)
+                                select new
+                                {
+                                    c.Id,
+                                    c.Name
+                                };
+
+                    int count = 0;
+                    foreach (var userItem in users)
+                    {
+                        if (users.Count() == 1)
+                        {
+                            userName = userItem.Name;
+                        }
+                        else
+                        {
+                            userName = count == 0 ? userItem.Name : userName + "," + userItem.Name;
+                            count++;
+                        }
+                    }
+
+                    ApprovalNodeReq nodeFWReq = new ApprovalNodeReq();
+                    nodeFWReq.NodeName = "法务审批";
+                    nodeFWReq.NodeStatus = "3";
+                    nodeFWReq.NodeUser = "等待" + userName + "审批";
+                    nodeList.Add(nodeFWReq);
+
+                    ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
+                    nodeZZReq.NodeName = "总助审批";
+                    nodeZZReq.NodeStatus = "5";
+                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeList.Add(nodeZZReq);
+                }
+                else if (contract.ContractStatus == "5" && !contract.IsUseCompanyTemplate)
+                {
+                    var historyData = await UnitWork.Find<ContractOperationHistory>(r => r.ApprovalStage == "5" && r.ContractApplyId == contractApplyId).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
+                    ApprovalNodeReq nodeFJReq = new ApprovalNodeReq();
+                    nodeFJReq.NodeName = "法务审批";
+                    nodeFJReq.NodeStatus = "3";
+                    nodeFJReq.NodeUser = historyData == null ? "" : historyData.CreateUser + "已审批";
+                    nodeList.Add(nodeFJReq);
+
+                    ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
+                    nodeZZReq.NodeName = "总助审批";
+                    nodeZZReq.NodeStatus = "5";
+                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeList.Add(nodeZZReq);
+                }
+                else if ((contract.ContractStatus == "6" || contract.ContractStatus == "7" || contract.ContractStatus == "-1") && !contract.IsUseCompanyTemplate)
+                {
+                    var historyData = await UnitWork.Find<ContractOperationHistory>(r => r.ApprovalStage == "5" && r.ContractApplyId == contractApplyId).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
+                    ApprovalNodeReq nodeFJReq = new ApprovalNodeReq();
+                    nodeFJReq.NodeName = "法务审批";
+                    nodeFJReq.NodeStatus = "4";
+                    nodeFJReq.NodeUser = historyData == null ? "" : historyData.CreateUser + "已审批";
+                    nodeList.Add(nodeFJReq);
+
+                    ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
+                    nodeZZReq.NodeName = "总助审批";
+                    nodeZZReq.NodeStatus = "5";
+                    nodeZZReq.NodeUser = "骆灵芝已审批";
+                    nodeList.Add(nodeZZReq);
+                }
+
+                ApprovalNodeReq nodeGZReq = new ApprovalNodeReq();
+                nodeGZReq.NodeName = "待盖章";
+                nodeGZReq.NodeStatus = "6";
+                nodeGZReq.NodeUser = "";
+                nodeList.Add(nodeGZReq);
+
+                ApprovalNodeReq nodeSCReq = new ApprovalNodeReq();
+                nodeSCReq.NodeName = "待上传原件";
+                nodeSCReq.NodeStatus = "7";
+                nodeSCReq.NodeUser = "";
+                nodeList.Add(nodeSCReq);
+
+                ApprovalNodeReq nodeEndReq = new ApprovalNodeReq();
+                nodeEndReq.NodeName = "结束";
+                nodeSCReq.NodeStatus = "-1";
+                nodeEndReq.NodeUser = "";
+                nodeList.Add(nodeEndReq);
+            }
+            else if (contract.ContractType == "2")
+            {
+                if (contract.ContractStatus == "1" || contract.ContractStatus == "2" || contract.ContractStatus == "4")
+                {
+                    List<Role> roles = await UnitWork.Find<Role>(r => r.Name == "法务人员" || r.Name == "售前工程师").ToListAsync();
+                    List<string> roleId = roles.Select(r => r.Id).ToList();
+                    var userole = await UnitWork.Find<Relevance>(u => roleId.Contains(u.SecondId) && u.Key == Define.USERROLE).ToListAsync();
+                    var userList = await UnitWork.Find<User>(null).ToListAsync();
+                    var users = from userRole in userole
+                                join user in userList on userRole.FirstId equals user.Id into temp
+                                from c in temp.Where(u => u.Id != null)
+                                select new
+                                {
+                                    c.Id,
+                                    c.Name
+                                };
+
+                    int count = 0;
+                    foreach (var userItem in users)
+                    {
+                        if (users.Count() == 1)
+                        {
+                            userName = userItem.Name;
+                        }
+                        else
+                        {
+                            userName = count == 0 ? userItem.Name : userName + "," + userItem.Name;
+                            count++;
+                        }
+                    }
+
+                    ApprovalNodeReq nodeFWReq = new ApprovalNodeReq();
+                    nodeFWReq.NodeName = "法务审批&技术审批";
+                    nodeFWReq.NodeStatus = "4";
+                    nodeFWReq.NodeUser = "等待" + userName + "审批";
+                    nodeList.Add(nodeFWReq);
+
+                    ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
+                    nodeZZReq.NodeName = "总助审批";
+                    nodeZZReq.NodeStatus = "5";
+                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeList.Add(nodeZZReq);
+                }
+                else if (contract.ContractStatus == "8")
+                {
+                    List<Role> roles = await UnitWork.Find<Role>(r => r.Name == "售前工程师").ToListAsync();
+                    List<string> roleId = roles.Select(r => r.Id).ToList();
+                    var userole = await UnitWork.Find<Relevance>(u => roleId.Contains(u.SecondId) && u.Key == Define.USERROLE).ToListAsync();
+                    var userList = await UnitWork.Find<User>(null).ToListAsync();
+                    var users = from userRole in userole
+                                join user in userList on userRole.FirstId equals user.Id into temp
+                                from c in temp.Where(u => u.Id != null)
+                                select new
+                                {
+                                    c.Id,
+                                    c.Name
+                                };
+
+                    int count = 0;
+                    foreach (var userItem in users)
+                    {
+                        if (users.Count() == 1)
+                        {
+                            userName = userItem.Name;
+                        }
+                        else
+                        {
+                            userName = count == 0 ? userItem.Name : userName + "," + userItem.Name;
+                            count++;
+                        }
+                    }
+
+                    var historyData = await UnitWork.Find<ContractOperationHistory>(r => r.ApprovalStage == "8" && r.ContractApplyId == contractApplyId).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
+                    ApprovalNodeReq nodeFJReq = new ApprovalNodeReq();
+                    nodeFJReq.NodeName = "法务审批&技术审批";
+                    nodeFJReq.NodeStatus = "8";
+                    nodeFJReq.NodeUser = historyData.CreateUser + "已审批，等待" + userName + "审批";
+                    nodeList.Add(nodeFJReq);
+
+                    ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
+                    nodeZZReq.NodeName = "总助审批";
+                    nodeZZReq.NodeStatus = "5";
+                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeList.Add(nodeZZReq);
+                }
+                else if (contract.ContractStatus == "9")
+                {
+                    var roles = await UnitWork.Find<Role>(r => r.Name == "法务人员").Select(r => new { r.Id }).FirstOrDefaultAsync();
+                    var userRoleList = await UnitWork.Find<Relevance>(u => u.SecondId == roles.Id && u.Key == Define.USERROLE).ToListAsync();
+                    var userList = await UnitWork.Find<User>(null).ToListAsync();
+                    var users = from userRole in userRoleList
+                                join user in userList on userRole.FirstId equals user.Id into temp
+                                from c in temp.Where(u => u.Id != null)
+                                select new
+                                {
+                                    c.Id,
+                                    c.Name
+                                };
+
+                    int count = 0;
+                    foreach (var userItem in users)
+                    {
+                        if (users.Count() == 1)
+                        {
+                            userName = userItem.Name;
+                        }
+                        else
+                        {
+                            userName = count == 0 ? userItem.Name : userName + "," + userItem.Name;
+                            count++;
+                        }
+                    }
+
+                    var historyData = await UnitWork.Find<ContractOperationHistory>(r => r.ApprovalStage == "9" && r.ContractApplyId == contractApplyId).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
+                    ApprovalNodeReq nodeFJReq = new ApprovalNodeReq();
+                    nodeFJReq.NodeName = "法务审批&技术审批";
+                    nodeFJReq.NodeStatus = "9";
+                    nodeFJReq.NodeUser = historyData.CreateUser + "已审批，等待" + userName + "审批";
+                    nodeList.Add(nodeFJReq);
+
+                    ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
+                    nodeZZReq.NodeName = "总助审批";
+                    nodeZZReq.NodeStatus = "5";
+                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeList.Add(nodeZZReq);
+                }
+                else if (contract.ContractStatus == "5")
+                {
+                    int count = 0;
+                    var historyData = await UnitWork.Find<ContractOperationHistory>(r => (r.ApprovalStage == "8" || r.ApprovalStage == "9") && r.ContractApplyId == contractApplyId).OrderByDescending(r => r.CreateTime).ToListAsync();
+                    foreach (ContractOperationHistory item in historyData)
+                    {
+                        userName = count == 0 ? item.CreateUser : userName + "," + item.CreateUser;
+                        count++;
+                    }
+
+                    ApprovalNodeReq nodeFJReq = new ApprovalNodeReq();
+                    nodeFJReq.NodeName = "法务审批&技术审批";
+                    nodeFJReq.NodeStatus = "8";
+                    nodeFJReq.NodeUser = userName + "已审批";
+                    nodeList.Add(nodeFJReq);
+
+                    ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
+                    nodeZZReq.NodeName = "总助审批";
+                    nodeZZReq.NodeStatus = "5";
+                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeList.Add(nodeZZReq);
+                }
+                else if (contract.ContractStatus == "6" || contract.ContractStatus == "7" || contract.ContractStatus == "-1")
+                {
+                    int count = 0;
+                    var historyData = await UnitWork.Find<ContractOperationHistory>(r => (r.ApprovalStage == "8" || r.ApprovalStage == "9" || r.ApprovalStage == "5") && r.ContractApplyId == contractApplyId).OrderByDescending(r => r.CreateTime).ToListAsync();
+                    foreach (ContractOperationHistory item in historyData)
+                    {
+                        userName = count == 0 ? item.CreateUser : userName + "," + item.CreateUser;
+                        count++;
+                    }
+
+                    ApprovalNodeReq nodeFJReq = new ApprovalNodeReq();
+                    nodeFJReq.NodeName = "法务审批&技术审批";
+                    nodeFJReq.NodeStatus = "8";
+                    nodeFJReq.NodeUser = userName + "已审批";
+                    nodeList.Add(nodeFJReq);
+
+                    ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
+                    nodeZZReq.NodeName = "总助审批";
+                    nodeZZReq.NodeStatus = "5";
+                    nodeZZReq.NodeUser = "骆灵芝已审批";
+                    nodeList.Add(nodeZZReq);
+                }
+
+                ApprovalNodeReq nodeGZReq = new ApprovalNodeReq();
+                nodeGZReq.NodeName = "待盖章";
+                nodeGZReq.NodeStatus = "6";
+                nodeGZReq.NodeUser = "";
+                nodeList.Add(nodeGZReq);
+
+                ApprovalNodeReq nodeSCReq = new ApprovalNodeReq();
+                nodeSCReq.NodeName = "待上传原件";
+                nodeSCReq.NodeStatus = "7";
+                nodeSCReq.NodeUser = "";
+                nodeList.Add(nodeSCReq);
+
+                ApprovalNodeReq nodeEndReq = new ApprovalNodeReq();
+                nodeEndReq.NodeName = "结束";
+                nodeEndReq.NodeStatus = "-1";
+                nodeEndReq.NodeUser = "";
+                nodeList.Add(nodeEndReq);
+            }
+            else
+            {
+                if (contract.ContractStatus == "1" || contract.ContractStatus == "2" || contract.ContractStatus == "10")
+                {
+                    var roles = await UnitWork.Find<Role>(r => r.Name == "法务人员").Select(r => new { r.Id }).ToListAsync();
+                    List<string> roleId = roles.Select(r => r.Id).ToList();
+                    var userole = await UnitWork.Find<Relevance>(u => roleId.Contains(u.SecondId) && u.Key == Define.USERROLE).ToListAsync();
+                    var userList = await UnitWork.Find<User>(null).ToListAsync();
+                    var users = from userRole in userole
+                                join user in userList on userRole.FirstId equals user.Id into temp
+                                from c in temp.Where(u => u.Id != null)
+                                select new
+                                {
+                                    c.Id,
+                                    c.Name
+                                };
+
+                    int count = 0;
+                    foreach (var userItem in users)
+                    {
+                        if (users.Count() == 1)
+                        {
+                            userName = userItem.Name;
+                        }
+                        else
+                        {
+                            userName = count == 0 ? userItem.Name : userName + "," + userItem.Name;
+                            count++;
+                        }
+                    }
+
+                    ApprovalNodeReq nodeFWReq = new ApprovalNodeReq();
+                    nodeFWReq.NodeName = "法务/总助审批";
+                    nodeFWReq.NodeStatus = "10";
+                    nodeFWReq.NodeUser = "等待(" + userName + ")或骆灵芝审批";
+                    nodeList.Add(nodeFWReq);      
+                }
+                else if (contract.ContractStatus == "-1")
+                {
+                    var historyData = await UnitWork.Find<ContractOperationHistory>(r => r.ApprovalStage == "-1" && r.ContractApplyId == contractApplyId).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
+                    ApprovalNodeReq nodeFJReq = new ApprovalNodeReq();
+                    nodeFJReq.NodeName = historyData.Action;
+                    nodeFJReq.NodeStatus = "-1";
+                    nodeFJReq.NodeUser = historyData == null ? "" : historyData.CreateUser + "已审批";
+                    nodeList.Add(nodeFJReq);
+                }
+
+                ApprovalNodeReq nodeEndReq = new ApprovalNodeReq();
+                nodeEndReq.NodeName = "结束";
+                nodeEndReq.NodeStatus = "-1";
+                nodeEndReq.NodeUser = "";
+                nodeList.Add(nodeEndReq);
+            }
+
+            return nodeList;
+        }
+
+        /// <summary>
+        /// 撤回合同申请单
+        /// </summary>
+        /// <param name="req">撤回合同申请单实体</param>
+        /// <returns></returns>
+        public async Task ReCallContract(QueryReCallContractReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            List<string> statuList = new List<string>() { "1", "2", "6", "7", "-1" };
+            var quotationObj = await UnitWork.Find<ContractApply>(q => q.Id == req.ContractId).FirstOrDefaultAsync();
+            if (statuList.Contains(quotationObj.ContractStatus))
+            {
+                throw new Exception("该合同申请单状态不可撤销。");
+            }
+
+            //更改申请单合同申请单状态为撤回
+            await UnitWork.UpdateAsync<ContractApply>(q => q.Id == req.ContractId, q => new ContractApply
+            {
+                ContractStatus = "11"
+            });
+
+            //记录撤回历史操作记录
+            ContractOperationHistory contractHis = new ContractOperationHistory();
+            var seleoh = await UnitWork.Find<ContractOperationHistory>(r => r.ContractApplyId.Equals(req.ContractId)).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
+            contractHis.Action = "撤回";
+            contractHis.ApprovalResult = "撤回合同申请单";
+            contractHis.CreateUser = loginContext.User.Name;
+            contractHis.CreateUserId = loginContext.User.Id;
+            contractHis.CreateTime = DateTime.Now;
+            contractHis.ContractApplyId = req.ContractId;
+            contractHis.Remark = req.Remarks;
+            contractHis.ApprovalStage = "11";
+            contractHis.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalSeconds);
+            await UnitWork.AddAsync<ContractOperationHistory>(contractHis);
+
+            //调用撤回审批流方法
+            if (!string.IsNullOrWhiteSpace(quotationObj.FlowInstanceId))
+            {
+                await _flowInstanceApp.ReCall(new RecallFlowInstanceReq { FlowInstanceId = quotationObj.FlowInstanceId });
+            }
+
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
         /// 新增合同申请单
         /// </summary>
         /// <param name="obj">合同申请单实体数据</param>
@@ -661,6 +844,7 @@ namespace OpenAuth.App.ContractManager
             }
 
             obj.ContractFileTypeList.ForEach(r => r.ContractApplyId = r.ContractApplyId);
+            obj.CustomerName = string.IsNullOrEmpty(obj.CustomerCode) ? "" : (await UnitWork.Find<OCRD>(r => r.CardCode == obj.CustomerCode).FirstOrDefaultAsync()).CardName;
             var dbContext = UnitWork.GetDbContext<ContractApply>();
             using (var transaction = await dbContext.Database.BeginTransactionAsync())
             {
@@ -730,28 +914,48 @@ namespace OpenAuth.App.ContractManager
                     //判断是否存为草稿
                     if (!obj.IsDraft)
                     {
-                        //创建合同管理审批流程
-                        var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("订单合同申请"));
-                        var afir = new AddFlowInstanceReq();
-                        afir.SchemeId = mf.FlowSchemeId;
-                        afir.FrmType = 2;
-                        afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
-                        afir.CustomName = $"合同管理审批流程" + DateTime.Now;
-                        afir.FrmData = "{\"ContractApplyId\":\"" + obj.Id + "\",\"IsContractType\":\"" + obj.ContractType + "\"}";
-                        obj.FlowInstanceId = _flowInstanceApp.CreateInstanceAndGetIdAsync(afir).ConfigureAwait(false).GetAwaiter().GetResult();
-                        obj.ContractStatus = obj.ContractType == "1" ? "3" : "4";
-                        obj = await UnitWork.AddAsync<ContractApply, int>(obj);
-                        await UnitWork.AddAsync<ContractOperationHistory>(new ContractOperationHistory
+                        //当合同类型为商务合同，并且使用了公司合同模板，提交直接进入待盖章，不走审批流
+                        if (obj.ContractType == "1" && obj.IsUseCompanyTemplate)
                         {
-                            Action = "提交合同申请单",
-                            ApprovalStage = obj.ContractType == "1" ? "3" : "4",
-                            CreateUser = loginUser.Name,
-                            CreateUserId = loginUser.Id,
-                            CreateTime = DateTime.Now,
-                            ContractApplyId = obj.Id
-                        });
+                            obj.ContractStatus = "6";
+                            obj = await UnitWork.AddAsync<ContractApply, int>(obj);
+                            await UnitWork.AddAsync<ContractOperationHistory>(new ContractOperationHistory
+                            {
+                                Action = "商务合同使用了公司合同模板，直接进入待盖章",
+                                CreateUser = loginUser.Name,
+                                CreateUserId = loginUser.Id,
+                                CreateTime = DateTime.Now,
+                                ApprovalStage = "6",
+                                ContractApplyId = obj.Id
+                            });
 
-                        await UnitWork.SaveAsync();
+                            await UnitWork.SaveAsync();
+                        }
+                        else
+                        {
+                            //创建合同管理审批流程
+                            var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("订单合同申请"));
+                            var afir = new AddFlowInstanceReq();
+                            afir.SchemeId = mf.FlowSchemeId;
+                            afir.FrmType = 2;
+                            afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
+                            afir.CustomName = $"合同管理审批流程" + DateTime.Now;
+                            afir.FrmData = "{\"ContractApplyId\":\"" + obj.Id + "\",\"IsContractType\":\"" + obj.ContractType + "\"}";
+                            obj.FlowInstanceId = _flowInstanceApp.CreateInstanceAndGetIdAsync(afir).ConfigureAwait(false).GetAwaiter().GetResult();
+                            obj.ContractStatus = obj.ContractType == "1" ? "3" : (obj.ContractType == "2" ? "4" : "10");
+                            obj = await UnitWork.AddAsync<ContractApply, int>(obj);
+                            await UnitWork.AddAsync<ContractOperationHistory>(new ContractOperationHistory
+                            {
+                                Action = "提交合同申请单",
+                                ApprovalStage = obj.ContractType == "1" ? "3" : (obj.ContractType == "2" ? "4" : "10"),
+                                CreateUser = loginUser.Name,
+                                CreateUserId = loginUser.Id,
+                                CreateTime = DateTime.Now,
+                                ContractApplyId = obj.Id
+                            });
+
+                            await UnitWork.SaveAsync();
+                        }
                     }
                     else
                     {
@@ -876,6 +1080,8 @@ namespace OpenAuth.App.ContractManager
                             QuotationNo = obj.QuotationNo,
                             SaleNo = obj.SaleNo,
                             IsDraft = obj.IsDraft,
+                            IsUploadOriginal = obj.IsUploadOriginal,
+                            IsUseCompanyTemplate = obj.IsUseCompanyTemplate,
                             FlowInstanceId = obj.FlowInstanceId,
                             DownloadNumber = obj.DownloadNumber,
                             ContractStatus = "1",
@@ -889,53 +1095,96 @@ namespace OpenAuth.App.ContractManager
                     }
                     else
                     {
-                        if (string.IsNullOrWhiteSpace(obj.FlowInstanceId))
-                        {
-                            //添加流程
-                            var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("订单合同申请"));
-                            var afir = new AddFlowInstanceReq();
-                            afir.SchemeId = mf.FlowSchemeId;
-                            afir.FrmType = 2;
-                            afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
-                            afir.CustomName = $"合同管理审批流程" + DateTime.Now;
-                            afir.FrmData = "{\"ContractApplyId\":\"" + obj.Id + "\",\"IsContractType\":\"" + obj.ContractType + "\"}";
-                            obj.FlowInstanceId = _flowInstanceApp.CreateInstanceAndGetIdAsync(afir).ConfigureAwait(false).GetAwaiter().GetResult();
+                        //当合同类型为商务合同，并且使用了公司合同模板，提交直接进入待盖章，不走审批流
+                        if (obj.ContractType == "1" && obj.IsUseCompanyTemplate)
+                        {                  
+                            //修改合同申请单
+                            await UnitWork.UpdateAsync<ContractApply>(r => r.Id == obj.Id, r => new ContractApply
+                            {
+                                UpdateTime = DateTime.Now,
+                                ContractNo = obj.ContractNo,
+                                CustomerCode = obj.CustomerCode,
+                                CustomerName = obj.CustomerName,
+                                CompanyType = obj.CompanyType,
+                                ContractType = obj.ContractType,
+                                QuotationNo = obj.QuotationNo,
+                                SaleNo = obj.SaleNo,
+                                IsDraft = obj.IsDraft,
+                                IsUploadOriginal = obj.IsUploadOriginal,
+                                IsUseCompanyTemplate = obj.IsUseCompanyTemplate,
+                                FlowInstanceId = obj.FlowInstanceId,
+                                DownloadNumber = obj.DownloadNumber,
+                                ContractStatus = "6",
+                                Remark = obj.Remark,
+                                CreateId = obj.CreateId,
+                                CreateName = obj.CreateName,
+                                CreateTime = obj.CreateTime
+                            });
+
+                            await UnitWork.AddAsync<ContractOperationHistory>(new ContractOperationHistory
+                            {
+                                Action = "商务合同使用了公司合同模板，直接进入待盖章",
+                                CreateUser = loginUser.Name,
+                                CreateUserId = loginUser.Id,
+                                CreateTime = DateTime.Now,
+                                ApprovalStage = "6",
+                                ContractApplyId = obj.Id
+                            });
+
+                            await UnitWork.SaveAsync();
                         }
                         else
                         {
-                            _flowInstanceApp.Start(new StartFlowInstanceReq { FlowInstanceId = obj.FlowInstanceId }).ConfigureAwait(false).GetAwaiter().GetResult();
+                            if (string.IsNullOrWhiteSpace(obj.FlowInstanceId))
+                            {
+                                //添加流程
+                                var mf = _moduleFlowSchemeApp.Get(m => m.Module.Name.Equals("订单合同申请"));
+                                var afir = new AddFlowInstanceReq();
+                                afir.SchemeId = mf.FlowSchemeId;
+                                afir.FrmType = 2;
+                                afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
+                                afir.CustomName = $"合同管理审批流程" + DateTime.Now;
+                                afir.FrmData = "{\"ContractApplyId\":\"" + obj.Id + "\",\"IsContractType\":\"" + obj.ContractType + "\"}";
+                                obj.FlowInstanceId = _flowInstanceApp.CreateInstanceAndGetIdAsync(afir).ConfigureAwait(false).GetAwaiter().GetResult();
+                            }
+                            else
+                            {
+                                _flowInstanceApp.Start(new StartFlowInstanceReq { FlowInstanceId = obj.FlowInstanceId }).ConfigureAwait(false).GetAwaiter().GetResult();
+                            }
+
+                            //修改合同申请单
+                            await UnitWork.UpdateAsync<ContractApply>(r => r.Id == obj.Id, r => new ContractApply
+                            {
+                                UpdateTime = DateTime.Now,
+                                ContractNo = obj.ContractNo,
+                                CustomerCode = obj.CustomerCode,
+                                CustomerName = obj.CustomerName,
+                                CompanyType = obj.CompanyType,
+                                ContractType = obj.ContractType,
+                                QuotationNo = obj.QuotationNo,
+                                SaleNo = obj.SaleNo,
+                                IsDraft = obj.IsDraft,
+                                IsUploadOriginal = obj.IsUploadOriginal,
+                                IsUseCompanyTemplate = obj.IsUseCompanyTemplate,
+                                FlowInstanceId = obj.FlowInstanceId,
+                                DownloadNumber = obj.DownloadNumber,
+                                ContractStatus = obj.ContractType == "1" ? "3" : (obj.ContractType == "2" ? "4" : "10"),
+                                Remark = obj.Remark,
+                                CreateId = obj.CreateId,
+                                CreateName = obj.CreateName,
+                                CreateTime = obj.CreateTime
+                            });
+
+                            await UnitWork.AddAsync<ContractOperationHistory>(new ContractOperationHistory
+                            {
+                                Action = "提交合同申请单",
+                                CreateUser = loginUser.Name,
+                                CreateUserId = loginUser.Id,
+                                CreateTime = DateTime.Now,
+                                ApprovalStage = obj.ContractType == "1" ? "3" : (obj.ContractType == "2" ? "4" : "10"),
+                                ContractApplyId = obj.Id
+                            });
                         }
-
-                        //修改合同申请单
-                        await UnitWork.UpdateAsync<ContractApply>(r => r.Id == obj.Id, r => new ContractApply
-                        {
-                            UpdateTime = DateTime.Now,
-                            ContractNo = obj.ContractNo,
-                            CustomerCode = obj.CustomerCode,
-                            CustomerName = obj.CustomerName,
-                            CompanyType = obj.CompanyType,
-                            ContractType = obj.ContractType,
-                            QuotationNo = obj.QuotationNo,
-                            SaleNo = obj.SaleNo,
-                            IsDraft = obj.IsDraft,
-                            FlowInstanceId = obj.FlowInstanceId,
-                            DownloadNumber = obj.DownloadNumber,
-                            ContractStatus = obj.ContractType == "1" ? "3" : "4",
-                            Remark = obj.Remark,
-                            CreateId = obj.CreateId,
-                            CreateName = obj.CreateName,
-                            CreateTime = obj.CreateTime
-                        });
-
-                        await UnitWork.AddAsync<ContractOperationHistory>(new ContractOperationHistory
-                        {
-                            Action = "提交合同申请单",
-                            CreateUser = loginUser.Name,
-                            CreateUserId = loginUser.Id,
-                            CreateTime = DateTime.Now,
-                            ApprovalStage = obj.ContractType == "1" ? "3" : "4",
-                            ContractApplyId = obj.Id
-                        });
 
                         await UnitWork.SaveAsync();
                     }
@@ -967,8 +1216,7 @@ namespace OpenAuth.App.ContractManager
 
             var loginUser = loginContext.User;
             StringBuilder remark = new StringBuilder();
-                           var contractApply = await UnitWork.Find<ContractApply>(r => r.Id == contractId).Where(r => r.ContractStatus == "1").Include(r => r.ContractFileTypeList).ToListAsync();
-
+            var contractApply = await UnitWork.Find<ContractApply>(r => r.Id == contractId).Where(r => r.ContractStatus == "1").Include(r => r.ContractFileTypeList).ToListAsync();
             if (contractApply != null && contractApply.Count() > 0)
             {
                 var delfiles = await UnitWork.Find<ContractFileType>(f => f.ContractApplyId == contractId).Include(f => f.contractFileList).ToListAsync();
@@ -1120,6 +1368,18 @@ namespace OpenAuth.App.ContractManager
                 {
                     contractHis.Action = "法务人员审批";
                     obj.ContractStatus = "5";
+                }
+
+                if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")) && obj.ContractStatus == "10")
+                {
+                    contractHis.Action = "法务人员审批";
+                    obj.ContractStatus = "-1";
+                }
+
+                if (loginContext.Roles.Any(r => r.Name.Equals("总助")) && obj.ContractStatus == "10")
+                {
+                    contractHis.Action = "总助审批";
+                    obj.ContractStatus = "-1";
                 }
 
                 if (obj.ContractStatus == "4")
@@ -1384,19 +1644,11 @@ namespace OpenAuth.App.ContractManager
 
             if (!string.IsNullOrEmpty(model.DocStatus))
             {
-                if (model.DocStatus == "ON")
-                {
-                    filterString += string.Format(" (a.DocStatus = 'O' AND a.Printed = 'N' AND a.CANCELED = 'N') AND ");
-                }
-
-                if (model.DocStatus == "OY")
-                {
-                    filterString += string.Format(" (a.DocStatus = 'O' AND a.Printed = 'Y' AND a.CANCELED = 'N') AND ");
-                }
-            }
-            else
-            {
-                filterString += string.Format(" ((a.DocStatus = 'O' AND a.CANCELED = 'N') AND a.Printed = 'N' OR a.Printed = 'Y') AND ");
+                if (model.DocStatus == "ON") { filterString += string.Format(" (a.DocStatus = 'O' AND a.Printed = 'N' AND a.CANCELED = 'N') AND "); }
+                if (model.DocStatus == "OY") { filterString += string.Format(" (a.DocStatus = 'O' AND a.Printed = 'Y' AND a.CANCELED = 'N') AND "); }
+                if (model.DocStatus == "CY") { filterString += string.Format(" a.CANCELED = 'Y' AND "); }
+                if (model.DocStatus == "CN") { filterString += string.Format(" (a.DocStatus = 'C' AND a.CANCELED = 'N') AND "); }
+                if (model.DocStatus == "NC") { filterString += string.Format(" a.CANCELED = 'N' AND "); }
             }
 
             if (!string.IsNullOrEmpty(model.Comments))
@@ -2079,7 +2331,7 @@ namespace OpenAuth.App.ContractManager
             var result = new TableData();
             var categorTypeList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
             result.Count = categorTypeList.Count();
-            result.Data = categorTypeList;
+            result.Data = categorTypeList.OrderBy(r => r.DtValue).ToList();
             return result;
         }
 
@@ -2105,8 +2357,9 @@ namespace OpenAuth.App.ContractManager
         /// <summary>
         /// 获取所有文件类型
         /// </summary>
+        /// <param name="contractType">合同类型</param>
         /// <returns>返回文件类型信息</returns>
-        public async Task<TableData> GetContractFileTypeList()
+        public async Task<TableData> GetContractFileTypeList(string contractType)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -2115,9 +2368,36 @@ namespace OpenAuth.App.ContractManager
             }
 
             var result = new TableData();
-            var categorFileTypeList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractFileType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
-            result.Count = categorFileTypeList.Count();
-            result.Data = categorFileTypeList;
+            if (string.IsNullOrEmpty(contractType))
+            {
+                var categorFileTypeList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractFileType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
+                result.Count = categorFileTypeList.Count();
+                result.Data = categorFileTypeList;
+            }
+            else
+            {
+                List<Category> categorFileTypes = new List<Category>();
+                switch (contractType)
+                {
+                    case "1":
+                        List<string> contractTypes = new List<string>() { "1","2","3","4","5","6","7","8","9","10" };
+                        categorFileTypes = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractFileType") && contractTypes.Contains(u.DtValue)).ToListAsync();
+                        result.Count = categorFileTypes.Count();
+                        result.Data = categorFileTypes.OrderBy(r => r.DtValue).Select(u => new { u.DtValue, u.Name }).ToList();
+                        break;
+                    case "2":
+                        categorFileTypes = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractFileType") && (u.DtValue == "11" || u.DtValue == "12")).ToListAsync();
+                        result.Count = categorFileTypes.Count();
+                        result.Data = categorFileTypes.OrderBy(r => r.DtValue).Select(u => new { u.DtValue, u.Name }).ToList();
+                        break;
+                    default:
+                        categorFileTypes = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractFileType") && u.DtValue == "13").ToListAsync();
+                        result.Count = categorFileTypes.Count();
+                        result.Data = categorFileTypes.OrderBy(r => r.DtValue).Select(u => new { u.DtValue, u.Name }).ToList();
+                        break;
+                }
+            }
+
             return result;
         }
 
@@ -2717,6 +2997,7 @@ namespace OpenAuth.App.ContractManager
                 statusList.Add("3");
                 statusList.Add("4");
                 statusList.Add("9");
+                statusList.Add("10");
             }
 
             if (loginContext.Roles.Any(r => r.Name.Equals("售前工程师")))
@@ -2732,6 +3013,7 @@ namespace OpenAuth.App.ContractManager
             if (loginContext.Roles.Any(r => r.Name.Equals("销售总助")))
             {
                 statusList.Add("5");
+                statusList.Add("10");
             }
 
             var objs = UnitWork.Find<ContractApply>(r => statusList.Contains(r.ContractStatus)).Include(r => r.ContractFileTypeList).Include(r => r.contractOperationHistoryList);
@@ -2778,6 +3060,7 @@ namespace OpenAuth.App.ContractManager
                 SaleNo = r.a.SaleNo,
                 IsDraft = r.a.IsDraft,
                 IsUploadOriginal = r.a.IsUploadOriginal,
+                IsUseCompanyTemplate = r.a.IsUseCompanyTemplate,
                 FlowInstanceId = r.a.FlowInstanceId,
                 DownloadNumber = r.a.DownloadNumber,
                 ContractStatus = r.a.ContractStatus,
@@ -2882,54 +3165,6 @@ namespace OpenAuth.App.ContractManager
                     default:
                         break;
                 }    
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// 更改文件名
-        /// </summary>
-        /// <param name="req">更改文件名实体数据</param>>
-        /// <returns>成功返回200，失败返回500</returns>
-        public async Task<TableData> UpdateFileName(QueryUpdateFileNameReq req)
-        {
-            var result = new TableData();
-            try
-            {
-                if (string.IsNullOrEmpty(req.FileId))
-                {
-                    result.Message = "文件Id不能为空";
-                    result.Code = 500;
-                }
-                else
-                {
-                    if (!string.IsNullOrEmpty(req.NewName))
-                    {
-                        string sqlContractFile = string.Format("UPDATE erp4.uploadfile SET FileName='" + req.NewName + req.Extension + "' WHERE Id='" + req.FileId + "'");
-                        int resultCountFile = UnitWork.ExecuteSql(sqlContractFile, ContextType.NsapBaseDbContext);
-                        if (resultCountFile > 0)
-                        {
-                            result.Message = "更换文件名成功";
-                            result.Code = 200;
-                        }
-                        else
-                        {
-                            result.Message = "更换文件名失败";
-                            result.Code = 500;
-                        }
-                    }
-                    else
-                    {
-                        result.Message = "保持原文件名";
-                        result.Code = 200;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                result.Message = ex.ToString();
-                result.Code = 500;
             }
 
             return result;

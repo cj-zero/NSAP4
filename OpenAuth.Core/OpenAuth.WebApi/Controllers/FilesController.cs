@@ -16,6 +16,7 @@ using OpenAuth.App.Response;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
+using OpenAuth.App.ContractManager.Request;
 using Serilog;
 
 namespace OpenAuth.WebApi.Controllers
@@ -268,6 +269,68 @@ namespace OpenAuth.WebApi.Controllers
         public async Task<UploadFileResp> UploadStepFileToHuaweiOBS(IFormFile file)
         {
             var result = await _app.UploadStepFileToHuaweiOBS(file);
+            return result;
+        }
+
+        /// <summary>
+        /// 更改文件名
+        /// </summary>
+        /// <param name="req">更改文件名实体数据</param>>
+        /// <returns>成功返回200，失败返回500</returns>
+        [HttpPost]
+        public async Task<Response<IList<UploadFileResp>>> UpdateFileNames(List<QueryUpdateFileNameReq> req)
+        {
+            var result = new Response<IList<UploadFileResp>>();
+            try
+            {
+                var results = new List<UploadFileResp>();
+                foreach (QueryUpdateFileNameReq item in req)
+                {
+                    if (string.IsNullOrEmpty(item.FileId))
+                    {
+                        result.Message = "文件Id不能为空";
+                        result.Code = 500;
+                        break;
+                    }
+                    else
+                    {
+                        if (string.IsNullOrEmpty(item.Extension))
+                        {
+                            result.Message = "后缀名不能为空";
+                            result.Code = 500;
+                            break;
+                        }
+                        else
+                        {
+                            string newFileName = "QL-" + item.CardCode + "-" + DateTime.Now.ToString("yyyyMMddHHmmss") + "-" + item.FileId + item.Extension;
+                            string sqlContractFile = string.Format("UPDATE erp4.uploadfile SET FileName='" + newFileName + "' WHERE Id = '" + item.FileId + "'");
+                            int resultCountFile = UnitWork.ExecuteSql(sqlContractFile, ContextType.DefaultContextType);
+                            if (resultCountFile > 0)
+                            {
+                                result.Message = "更换文件名成功";
+                                result.Code = 200;
+                            }
+                            else
+                            {
+                                result.Message = "更换文件名失败";
+                                result.Code = 500;
+                                break;
+                            }
+                        }
+                    }
+
+                    UploadFileResp uploadFileResps = (UnitWork.Find<UploadFile>(r => r.Id == item.FileId).FirstOrDefault()).MapTo<UploadFileResp>();
+                    results.Add(uploadFileResps);
+                }
+
+                result.Result = results;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.ToString();
+                result.Code = 500;
+            }
+
             return result;
         }
     }

@@ -1984,14 +1984,24 @@ namespace OpenAuth.App
                         if (resObj["data"] != null)
                         {
                             var checkDto = JsonHelper.Instance.Deserialize<List<CheckResultDto>>(resObj["data"].ToString());
-                            var errCount = checkDto.Sum(c => c.ErrCount);
-                            if (errCount > 0)
+                            if (checkDto.Any(c => c.Status == 0))
                             {
-                                err = 4;
+
                             }
                             else
                             {
-                                guidSuccessCount++;
+                                var errCount = checkDto.Sum(c => c.ErrCount);
+                                if (errCount > 0)
+                                {
+                                    err = 4;
+                                }
+                                else
+                                {
+                                    if (checkDto.All(c => c.Status == 2))
+                                    {
+                                        guidSuccessCount++;
+                                    }
+                                }
                             }
                         }
 

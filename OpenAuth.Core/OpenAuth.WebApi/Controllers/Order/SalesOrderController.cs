@@ -65,10 +65,11 @@ namespace OpenAuth.WebApi.Controllers.Order
             var DepID = _serviceBaseApp.GetSalesDepID(UserID);
             var result = new TableData();
             bool rata = false;
-            if (loginUser.Name == "韦京生" || loginUser.Name == "郭睿心" || loginUser.Name == "唐琴" || loginUser.Name == "ErpAdmin")
+            if (loginContext.Roles.Any(r => r.Name.Equals("销售订单管理员")))
             {
                 rata = true;
             }
+
             string type = "ORDR";
             DataTable dt = _serviceSaleOrderApp.GetSboNamePwd(SboID);
             string dRowData = string.Empty; string isOpen = "0"; string sqlcont = string.Empty; string sboname = string.Empty;
