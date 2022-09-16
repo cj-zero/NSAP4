@@ -301,8 +301,8 @@ namespace OpenAuth.App.Material
                         obj.IW = single.IW;
                         obj.FlowInstanceId = single.FlowInstanceId;
                         obj.CreateTime = DateTime.Now;
-                        obj.CreateUserId = obj.CreateUserId;
-                        obj.CreateUser = obj.CreateUser;
+                        obj.CreateUserId = single.CreateUserId;
+                        obj.CreateUser = single.CreateUser;
 
                         #region 子表删除重新添加
                         if (obj.InternalContactAttchments.Count > 0)
