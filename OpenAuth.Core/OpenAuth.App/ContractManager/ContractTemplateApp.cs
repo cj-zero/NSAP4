@@ -59,7 +59,7 @@ namespace OpenAuth.App.ContractManager
                                     .WhereIf(request.StartDate != null, r => r.CreateTime >= request.StartDate)
                                     .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate);
 
-            contractTemplate.OrderByDescending(r => r.CreateTime);
+            contractTemplate = contractTemplate.OrderByDescending(r => r.CreateTime);
             var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
             var contractTemplateList = await contractTemplate.Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
             List<string> fileids = contractTemplate.Select(r => r.TemplateFileId).ToList();
@@ -310,7 +310,7 @@ namespace OpenAuth.App.ContractManager
             var objs = await UnitWork.Find<ContractTemplate>(r => r.Id == contractId).FirstOrDefaultAsync();
             try
             {
-                string sql = string.Format("UPDATE erp4_serve.contracttemplate SET DownLoadNum={0} WHERE Id= '" + contractId + "'", objs.DownLoadNum + 1);
+                string sql = string.Format("UPDATE erp4_serve.contracttemplate SET DownLoadNum={0},UpdateUserId='{1}',UpdateTime='{2}' WHERE Id= '" + contractId + "'", objs.DownLoadNum + 1,loginUser.Name,DateTime.Now);
                 int resultCountJob = UnitWork.ExecuteSql(sql, ContextType.NsapBaseDbContext);
                 if (resultCountJob > 0)
                 {

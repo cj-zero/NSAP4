@@ -175,6 +175,25 @@ namespace OpenAuth.App
 
 
         /// <summary>
+        /// 修改线索的状态
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> ChangeClueStatusById(int id)
+        {
+            var result = new Infrastructure.Response();
+
+            await UnitWork.UpdateAsync<Repository.Domain.Serve.Clue>(c => c.Id == id, x => new Repository.Domain.Serve.Clue
+            {
+                Status = 1
+            });
+            await UnitWork.SaveAsync();
+
+            return result;
+        }
+
+
+        /// <summary>
         /// 获取标签
         /// </summary>
         /// <param name="clueId"></param>
