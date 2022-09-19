@@ -1990,14 +1990,19 @@ namespace OpenAuth.App
                             }
                             else
                             {
-                                var errCount = checkDto.Sum(c => c.ErrCount);
+                                var checkItem = checkDto.Select(c => new CheckResultDto
+                                {
+                                    Status = c.Status,
+                                    ErrCount = c.CheckItems.Where(s => s.CheckType != 3 && s.CheckType != 4).Sum(s => s.ErrCount)
+                                }).ToList();
+                                var errCount = checkItem.Sum(c => c.ErrCount);
                                 if (errCount > 0)
                                 {
                                     err = 4;
                                 }
                                 else
                                 {
-                                    if (checkDto.All(c => c.Status == 2))
+                                    if (checkItem.All(c => c.Status == 2))
                                     {
                                         guidSuccessCount++;
                                     }
