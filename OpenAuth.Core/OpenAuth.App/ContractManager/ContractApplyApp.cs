@@ -97,7 +97,7 @@ namespace OpenAuth.App.ContractManager
                                             .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate)
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.ContractStatus), r => r.ContractStatus == request.ContractStatus);
 
-                    contractApply.OrderByDescending(r => r.CreateTime);
+                    contractApply = contractApply.OrderByDescending(r => r.CreateTime);
                     var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
                     var categoryContractList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
                     var categoryStatusList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractStatus")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
