@@ -1627,19 +1627,19 @@ namespace OpenAuth.App
             }
 
             //List<int?> outsourcIds = new List<int?>();
-            List<int?> serviceOrderId = new List<int?>();
+            List<int> serviceOrderId = new List<int>();
             if (!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()) || !string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()))
             {
-                var completion = await UnitWork.Find<CompletionReport>(c => c.IsReimburse == 4)
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()), c => c.EndDate > request.CompletionStartTime)
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()), c => c.EndDate < Convert.ToDateTime(request.CompletionEndTime).AddDays(1))
+                var serviceOrder = await UnitWork.Find<ServiceWorkOrder>(null)
+                    .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionStartTime.ToString()), c => c.CompleteDate > request.CompletionStartTime)
+                    .WhereIf(!string.IsNullOrWhiteSpace(request.CompletionEndTime.ToString()), c => c.CompleteDate < Convert.ToDateTime(request.CompletionEndTime).AddDays(1))
                     .Select(c => c.ServiceOrderId)
                     .ToListAsync();
-                serviceOrderId.AddRange(completion);
+                serviceOrderId.AddRange(serviceOrder);
             }
 
             var outsourcIds = await UnitWork.Find<OutsourcExpenses>(null)
-                .WhereIf(serviceOrderId.Count > 0, o => serviceOrderId.Contains(o.ServiceOrderId))
+                .WhereIf(serviceOrderId.Count > 0, o => serviceOrderId.Contains(o.ServiceOrderId.Value))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderSapId), o => o.ServiceOrderSapId == int.Parse(request.ServiceOrderSapId))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Customer), o => o.TerminalCustomer.Contains(request.Customer) || o.TerminalCustomerId.Contains(request.Customer))
                 .Select(c => c.OutsourcId)
