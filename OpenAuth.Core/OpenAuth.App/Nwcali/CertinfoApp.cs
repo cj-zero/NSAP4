@@ -868,7 +868,7 @@ namespace OpenAuth.App
                 //var fsid = fs.Select(f => f.Id).ToList();
 
                 var cerinfo = await UnitWork.Find<NwcaliBaseInfo>(o=>fsid.Contains(o.FlowInstanceId))
-                                .WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers), c => c.TesterSn.Equals(request.ManufacturerSerialNumbers))
+                                .WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers), c => c.TesterSn.Contains(request.ManufacturerSerialNumbers))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.CertNo), c => c.CertificateNumber.Contains(request.CertNo))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), c => c.Operator.Contains(request.Operator))
                                 .WhereIf(!(request.StartCalibrationDate == null && request.EndCalibrationDate == null), c => c.Time >= request.StartCalibrationDate && c.Time <= request.EndCalibrationDate)
@@ -1829,6 +1829,61 @@ namespace OpenAuth.App
                 guidList = UnitWork.Query<DeviceTestLog>(guidSql).Select(c => c.LowGuid).ToList();
             }
             return guidList;
+        }
+
+        /// <summary>
+        /// 获取通道结果
+        /// </summary>
+        /// <param name="guid"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetChlIdResult(string guid)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            List<CheckResultDto> checkResult = new List<CheckResultDto>();
+
+            //下位机最新的烤机环境下烤机记录
+            var newlog = UnitWork.Find<DeviceTestLog>(c => c.LowGuid == guid).OrderByDescending(c => c.Id).FirstOrDefault();
+            if (newlog != null)
+            {
+                var channel = UnitWork.Find<DeviceTestLog>(c => c.EdgeGuid == newlog.EdgeGuid && c.SrvGuid == newlog.SrvGuid && c.DevUid == newlog.DevUid && c.UnitId == newlog.UnitId && c.LowGuid == guid).ToList();
+                //通道最新测试ID
+                var channelQuery = channel.GroupBy(c => c.ChlId).Select(c => c.OrderByDescending(o => o.TestId).First()).ToList();
+                var channelCount = 0;
+                var url = "https://analytics.neware.com.cn/";
+                HttpHelper httpHelper = new HttpHelper(url);
+                foreach (var item in channelQuery)
+                {
+                    //获取每个通道测试任务id
+                    var checktask = $"select EdgeGuid,SrvGuid,DevUid,UnitId,ChlId,TestId,TaskId from devicechecktask where EdgeGuid='{item.EdgeGuid}' and SrvGuid='{item.SrvGuid}' and DevUid={item.DevUid} and UnitId={item.UnitId} and ChlId={item.ChlId} and TestId={item.TestId}";
+                    var checktaskQuery = UnitWork.Query<DeviceCheckTask>(checktask).Select(c => c.TaskId).FirstOrDefault();
+
+                    if (!string.IsNullOrWhiteSpace(checktaskQuery))
+                    {
+                        var taskurl = $"api/DataCheck/TaskResult?id={checktaskQuery}";
+                        Dictionary<string, string> dic = null;
+                        //获取通道烤机结果
+                        var taskResult = httpHelper.Get(dic, taskurl);
+                        JObject resObj = JObject.Parse(taskResult);
+                        if (resObj["status"] == null || resObj["status"].ToString() != "200")
+                        {
+                            continue;
+                        }
+                        if (resObj["data"] != null)
+                        {
+                            var checkDto = JsonHelper.Instance.Deserialize<CheckResultDto>(resObj["data"].ToString());
+                            checkDto.ChlId = item.ChlId;
+                            checkResult.Add(checkDto);
+                        }
+                    }
+                }
+            }
+            result.Data = checkResult;
+            return result;
         }
 
         /// <summary>

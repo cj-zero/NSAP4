@@ -284,6 +284,30 @@ namespace OpenAuth.WebApi.Controllers
         {
             return await _app.GetScheduleInfo(req);
         }
+
+        /// <summary>
+        /// 获取通道结果
+        /// </summary>
+        /// <param name="docEntry"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetChlIdResult(string guid)
+        {
+            return await _app.GetChlIdResult(guid);
+        }
+
+        /// <summary>
+        /// 获取下位机
+        /// </summary>
+        /// <param name="docEntry"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public Response<List<string>> GetLowGuid(string wo)
+        {
+            Response<List<string>> result = new Response<List<string>>();
+            result.Result= _app.GetLowGuid(wo);
+            return result;
+        }
         ///// <summary>
         ///// 生产唯一码下设备是否校准
         ///// </summary>
