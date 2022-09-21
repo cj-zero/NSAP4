@@ -6,6 +6,7 @@ namespace OpenAuth.App.Nwcali
 {
     public class CheckResultDto
     {
+        public int? ChlId { get; set; }
         public string TaskId { get; set; }
         public int? LastTime { get; set; }
         public int Status { get; set; }
