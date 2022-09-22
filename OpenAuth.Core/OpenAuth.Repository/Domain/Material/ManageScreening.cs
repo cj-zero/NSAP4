@@ -51,7 +51,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 提交时间
         /// </summary>
-        public DateTime SubmitTime { get; set; }
+        public DateTime? SubmitTime { get; set; }
 
         /// <summary>
         /// 合约评审单号
@@ -69,6 +69,14 @@ namespace OpenAuth.Repository.Domain
         /// 图纸编码
         /// </summary>
         public string ItemName { get; set; }
+        /// <summary>
+        /// 配置类型
+        /// </summary>
+        public string U_ZS { get; set; }
+        /// <summary>
+        /// 数量
+        /// </summary>
+        public decimal Quantity { get; set; }
 
         /// <summary>
         /// 版本号
@@ -79,9 +87,21 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         public string FileUrl { get; set; }
         /// <summary>
+        /// 编辑url时间
+        /// </summary>
+        public DateTime? UrlUpdate { get; set; }
+        /// <summary>
+        /// 样机或批量
+        /// </summary>
+        public string IsDemo { get; set; }
+        /// <summary>
+        /// 编辑样机批量时间
+        /// </summary>
+        public DateTime? DemoUpdate { get; set; }
+        /// <summary>
         /// 创建人
         /// </summary>
-        public int CreateUser { get; set; }
+        public string CreateUser { get; set; }
         /// <summary>
         /// 创建时间
         /// </summary>

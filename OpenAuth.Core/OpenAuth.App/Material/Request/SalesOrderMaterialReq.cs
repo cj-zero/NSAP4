@@ -60,6 +60,15 @@ namespace OpenAuth.App.Material.Request
         /// 是否有版本号（ Y 有 N 没有）
         /// </summary>
         public string IsVersionNo { get; set; }
+        /// <summary>
+        /// 样机/批量
+        /// </summary>
+        public string IsDemo { get; set; }
+        /// <summary>
+        /// 超时提醒
+        /// </summary>
+        public string TimeRemind { get; set; }
 
+        public string SubmitNo { get; set; }
     }
 }

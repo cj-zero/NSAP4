@@ -784,12 +784,9 @@ namespace OpenAuth.App.Customer
         /// <returns></returns>
         public async Task AsyncCustomerStatusService()
         {
-            string logStr = DateTime.Now.ToString() + "开始";
             //查询是否有通用规则的设置,如果没有或者开关没打开的话,不进行拉取
             var seaConfig = UnitWork.Find<CustomerSeaConf>(null).FirstOrDefault();
             if (seaConfig == null || seaConfig.Enable == false) { return; }
-
-            logStr += "  **seaConfigId：" + seaConfig.Id;
 
             var deptLeader = new Dictionary<string, string>();
             deptLeader.Add("S1", "吴红娟");
@@ -830,14 +827,11 @@ namespace OpenAuth.App.Customer
 
             //未报价规则
             var ruleData1 = ruleData.Where(q => q.ruleType == 0);
-            logStr += "  **ruleData1Count：" + ruleData1.Count();
             foreach (var rule in ruleData1)
             {
-                logStr += "  **ruleID_" + rule.Id + "_RuleName：" + rule.Name + "_Day：" + rule.day;
                 var dept = rule.dept; //部门
                 var key = $"dept:{dept}";
                 RedisHelper.SAdd("dept:", dept);
-                logStr += "  **规则1_key：" + key;
                 string uname = deptLeader.FirstOrDefault(d => d.Key == rule.dept).Value;
                 //根据部门查找该部门下的业务员销售编号
                 var slpInfo = await (from u in UnitWork.Find<base_user>(null)
@@ -904,14 +898,11 @@ namespace OpenAuth.App.Customer
 
             //已成交规则
             var ruleData2 = ruleData.Where(q => q.ruleType == 1);
-            logStr += "  **ruleData2Count：" + ruleData2.Count();
             foreach (var rule in ruleData2)
             {
-                logStr += "  **ruleID_" + rule.Id + "_RuleName：" + rule.Name + "_Day：" + rule.day;
                 var dept = rule.dept; //部门
                 var key = $"dept:{dept}";
                 RedisHelper.SAdd("dept:", dept);
-                logStr += "  **规则2_key：" + key;
                 string uname = deptLeader.FirstOrDefault(d => d.Key == rule.dept).Value;
                 //根据部门查找该部门下的业务员销售编号
                 var slpInfo = await (from u in UnitWork.Find<base_user>(null)
@@ -986,13 +977,6 @@ namespace OpenAuth.App.Customer
             var deptsData = RedisHelper.SMembers("dept:");
             RedisHelper.SRem("dept:", deptsData);
             RedisHelper.SAdd("dept:", depts.ToArray());
-            var test = new CustomerOperationRecord
-            {
-                LabelIndex = 5,
-                Remark = logStr
-            };
-            await UnitWork.AddAsync<CustomerOperationRecord, int>(test);
-            await UnitWork.SaveAsync();
         }
 
         public async Task Test()
