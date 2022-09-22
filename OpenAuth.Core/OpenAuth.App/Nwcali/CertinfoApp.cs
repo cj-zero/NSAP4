@@ -92,7 +92,7 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.TesterSn.Contains(request.Sn))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), u => u.Operator.Contains(request.Operator))
                        .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.Time >= request.CalibrationDateFrom && u.Time <= request.CalibrationDateTo);
-                ;
+            ;
             var certList = await certObjs.OrderByDescending(u => u.CreateTime)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
@@ -127,7 +127,7 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.Sn.Contains(request.Sn))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), u => u.Operator.Contains(request.Operator))
                        .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.CalibrationDate >= request.CalibrationDateFrom && u.CalibrationDate <= request.CalibrationDateTo);
-                       
+
             var take = certList.Count == 0 ? request.limit : request.limit - certList.Count;
             var page = certCount1 / request.limit;
             var skip = certList.Count == 0 ? (request.page - page) * request.limit : 0;
@@ -191,14 +191,14 @@ namespace OpenAuth.App
                     .Select(u => u.InstanceId).Distinct().ToListAsync();
 
             var activeName = "";
-            if (request.ActivityStatus==1) activeName = "待审核";
+            if (request.ActivityStatus == 1) activeName = "待审核";
             else if (request.ActivityStatus == 2) activeName = "待批准";
 
             var fs = await UnitWork.Find<FlowInstance>(f => f.SchemeId == mf.FlowSchemeId)
                 .WhereIf(request.FlowStatus != 1, o => o.MakerList == "1" || o.MakerList.Contains(user.User.Id))//待办事项
-                .WhereIf(request.FlowStatus == 1, o => (o.ActivityName == "待送审" || instances.Contains(o.Id)) && (o.ActivityName != "结束" && o.ActivityName!="已完成"))
-                .WhereIf(request.FlowStatus == 2, o => (o.ActivityName == "待审核" || o.ActivityName == "待批准") && o.IsFinish==0) //证书审核只显示进行中待核审和待批准
-                .WhereIf(!string.IsNullOrWhiteSpace(activeName),o=>o.ActivityName==activeName)
+                .WhereIf(request.FlowStatus == 1, o => (o.ActivityName == "待送审" || instances.Contains(o.Id)) && (o.ActivityName != "结束" && o.ActivityName != "已完成"))
+                .WhereIf(request.FlowStatus == 2, o => (o.ActivityName == "待审核" || o.ActivityName == "待批准") && o.IsFinish == 0) //证书审核只显示进行中待核审和待批准
+                .WhereIf(!string.IsNullOrWhiteSpace(activeName), o => o.ActivityName == activeName)
                 .ToListAsync();
 
             var fsid = fs.Select(f => f.Id).ToList();
@@ -217,7 +217,7 @@ namespace OpenAuth.App
             {
                 certObjs = certObjs.Where(o => o.Operator.Equals(user.User.Name));
             }
-            
+
             var certList = await certObjs.OrderByDescending(u => u.CreateTime)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
@@ -321,7 +321,7 @@ namespace OpenAuth.App
             //}
             #endregion
 
-            result.Data = view.OrderByDescending(d=>d.CreateTime).ToList();
+            result.Data = view.OrderByDescending(d => d.CreateTime).ToList();
             result.Count = certCount1;
             return result;
         }
@@ -450,7 +450,7 @@ namespace OpenAuth.App
                     var id = certInfo is null ? baseInfo.Id : certInfo.Id;
                     var certNo = certInfo is null ? baseInfo.CertificateNumber : certInfo.CertNo;
                     var b = await CheckCanOperation(id, loginContext.User.Name, req.Verification.VerificationFinally);
-                    if (!b && loginContext.User.Account!= "zhoudingkun")
+                    if (!b && loginContext.User.Account != "zhoudingkun")
                     {
                         throw new CommonException("您无法操作此步骤。", 80011);
                     }
@@ -564,15 +564,25 @@ namespace OpenAuth.App
                 catch (Exception e)
                 {
                     result.Code = 500;
-                    Message.Append("报错编号"+baseInfo.CertificateNumber +"报错信息："+ e.Message);
+                    Message.Append("报错编号" + baseInfo.CertificateNumber + "报错信息：" + e.Message);
                 }
-                if (request.Count > 1) 
+                if (request.Count > 1)
                 {
                     //await Task.Delay(30000);
                 }
             }
-            result.Message= string.IsNullOrWhiteSpace(Message.ToString()) ? "审批成功" : Message.ToString();
+            result.Message = string.IsNullOrWhiteSpace(Message.ToString()) ? "审批成功" : Message.ToString();
             return result;
+        }
+
+
+        public async Task CreateNwcailFileHelper()
+        {
+            var res = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId) && string.IsNullOrWhiteSpace(c.CNASPdfPath)).ToListAsync();
+            foreach (var item in res)
+            {
+                await CreateNwcailFile(item.CertificateNumber);
+            }
         }
 
         /// <summary>
