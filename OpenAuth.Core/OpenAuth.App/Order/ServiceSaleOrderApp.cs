@@ -5670,7 +5670,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
         /// <returns></returns>
         public object GetSalesInfoNos(string jobId, int typeId)
         {
-            string sql = string.Format("SELECT job_data FROM {0}.wfa_job WHERE job_type_id={1} AND job_state=3 AND sync_stat=4 AND   sbo_itf_return={2}", "nsap_base", typeId, jobId);
+            string sql = string.Format("SELECT job_data FROM {0}.wfa_job where job_id = (SELECT job_id FROM {0}.wfa_job WHERE job_type_id={1} AND job_state=3 AND sync_stat=4 AND  sbo_itf_return={2} limit 1)", "nsap_base", typeId, jobId);
             return UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
         }
         public int GetIsEdit(string jobId)

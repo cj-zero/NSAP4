@@ -84,7 +84,6 @@ namespace OpenAuth.App
         public List<Role> Roles
         {
             get { return UnitWork.Find<Role>(u => _userRoleIds.Contains(u.Id)).ToList(); }
-            set { }
         }
 
         public List<Resource> Resources

@@ -59,7 +59,7 @@ namespace OpenAuth.App.ContractManager
                                     .WhereIf(request.StartDate != null, r => r.CreateTime >= request.StartDate)
                                     .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate);
 
-            contractSeal.OrderByDescending(r => r.CreateTime);
+            contractSeal = contractSeal.OrderByDescending(r => r.CreateTime);
             var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
             var categorySealTypeList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractSealType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
             List<string> fileids = contractSeal.Select(r => r.SealImageFileId).ToList();
