@@ -281,7 +281,7 @@ namespace OpenAuth.App
             var files = await UnitWork.Find<UploadFile>(f => beforesalefileIds.Contains(f.Id)).ToListAsync();
             result.Files = files.MapTo<List<UploadFileResp>>();
             result.Files.ForEach(f => f.PictureType = beforesalefiles.Where(p => f.Id.Equals(p.FileId)).Select(p => p.Type).FirstOrDefault());
-            result.DevCost = String.Format("{0:N}", Convert.ToDouble(result.DevCost));
+            result.DevCost = String.Format("{0:N}", Convert.ToDouble(result.DevCost.ToDouble()));
             result.PredictDevCost = String.Format("{0:N}", Convert.ToDouble(result.PredictDevCost));
             return result;
         }
