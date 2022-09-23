@@ -2383,17 +2383,17 @@ namespace OpenAuth.App.ContractManager
                         List<string> contractTypes = new List<string>() { "1","2","3","4","5","6","7","8","9","10" };
                         categorFileTypes = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractFileType") && contractTypes.Contains(u.DtValue)).ToListAsync();
                         result.Count = categorFileTypes.Count();
-                        result.Data = categorFileTypes.OrderBy(r => r.DtValue).Select(u => new { u.DtValue, u.Name }).ToList();
+                        result.Data = categorFileTypes.OrderBy(r => r.SortNo).Select(u => new { u.DtValue, u.Name }).ToList();
                         break;
                     case "2":
                         categorFileTypes = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractFileType") && (u.DtValue == "11" || u.DtValue == "12")).ToListAsync();
                         result.Count = categorFileTypes.Count();
-                        result.Data = categorFileTypes.OrderBy(r => r.DtValue).Select(u => new { u.DtValue, u.Name }).ToList();
+                        result.Data = categorFileTypes.OrderBy(r => r.SortNo).Select(u => new { u.DtValue, u.Name }).ToList();
                         break;
                     default:
                         categorFileTypes = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractFileType") && u.DtValue == "13").ToListAsync();
                         result.Count = categorFileTypes.Count();
-                        result.Data = categorFileTypes.OrderBy(r => r.DtValue).Select(u => new { u.DtValue, u.Name }).ToList();
+                        result.Data = categorFileTypes.OrderBy(r => r.SortNo).Select(u => new { u.DtValue, u.Name }).ToList();
                         break;
                 }
             }

@@ -92,7 +92,7 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.TesterSn.Contains(request.Sn))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), u => u.Operator.Contains(request.Operator))
                        .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.Time >= request.CalibrationDateFrom && u.Time <= request.CalibrationDateTo);
-                ;
+            ;
             var certList = await certObjs.OrderByDescending(u => u.CreateTime)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
@@ -127,7 +127,7 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.Sn.Contains(request.Sn))
                        .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), u => u.Operator.Contains(request.Operator))
                        .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.CalibrationDate >= request.CalibrationDateFrom && u.CalibrationDate <= request.CalibrationDateTo);
-                       
+
             var take = certList.Count == 0 ? request.limit : request.limit - certList.Count;
             var page = certCount1 / request.limit;
             var skip = certList.Count == 0 ? (request.page - page) * request.limit : 0;
@@ -191,14 +191,14 @@ namespace OpenAuth.App
                     .Select(u => u.InstanceId).Distinct().ToListAsync();
 
             var activeName = "";
-            if (request.ActivityStatus==1) activeName = "待审核";
+            if (request.ActivityStatus == 1) activeName = "待审核";
             else if (request.ActivityStatus == 2) activeName = "待批准";
 
             var fs = await UnitWork.Find<FlowInstance>(f => f.SchemeId == mf.FlowSchemeId)
                 .WhereIf(request.FlowStatus != 1, o => o.MakerList == "1" || o.MakerList.Contains(user.User.Id))//待办事项
-                .WhereIf(request.FlowStatus == 1, o => (o.ActivityName == "待送审" || instances.Contains(o.Id)) && (o.ActivityName != "结束" && o.ActivityName!="已完成"))
-                .WhereIf(request.FlowStatus == 2, o => (o.ActivityName == "待审核" || o.ActivityName == "待批准") && o.IsFinish==0) //证书审核只显示进行中待核审和待批准
-                .WhereIf(!string.IsNullOrWhiteSpace(activeName),o=>o.ActivityName==activeName)
+                .WhereIf(request.FlowStatus == 1, o => (o.ActivityName == "待送审" || instances.Contains(o.Id)) && (o.ActivityName != "结束" && o.ActivityName != "已完成"))
+                .WhereIf(request.FlowStatus == 2, o => (o.ActivityName == "待审核" || o.ActivityName == "待批准") && o.IsFinish == 0) //证书审核只显示进行中待核审和待批准
+                .WhereIf(!string.IsNullOrWhiteSpace(activeName), o => o.ActivityName == activeName)
                 .ToListAsync();
 
             var fsid = fs.Select(f => f.Id).ToList();
@@ -217,7 +217,7 @@ namespace OpenAuth.App
             {
                 certObjs = certObjs.Where(o => o.Operator.Equals(user.User.Name));
             }
-            
+
             var certList = await certObjs.OrderByDescending(u => u.CreateTime)
                 .Skip((request.page - 1) * request.limit)
                 .Take(request.limit).ToListAsync();
@@ -321,7 +321,7 @@ namespace OpenAuth.App
             //}
             #endregion
 
-            result.Data = view.OrderByDescending(d=>d.CreateTime).ToList();
+            result.Data = view.OrderByDescending(d => d.CreateTime).ToList();
             result.Count = certCount1;
             return result;
         }
@@ -450,7 +450,7 @@ namespace OpenAuth.App
                     var id = certInfo is null ? baseInfo.Id : certInfo.Id;
                     var certNo = certInfo is null ? baseInfo.CertificateNumber : certInfo.CertNo;
                     var b = await CheckCanOperation(id, loginContext.User.Name, req.Verification.VerificationFinally);
-                    if (!b && loginContext.User.Account!= "zhoudingkun")
+                    if (!b && loginContext.User.Account != "zhoudingkun")
                     {
                         throw new CommonException("您无法操作此步骤。", 80011);
                     }
@@ -564,15 +564,25 @@ namespace OpenAuth.App
                 catch (Exception e)
                 {
                     result.Code = 500;
-                    Message.Append("报错编号"+baseInfo.CertificateNumber +"报错信息："+ e.Message);
+                    Message.Append("报错编号" + baseInfo.CertificateNumber + "报错信息：" + e.Message);
                 }
-                if (request.Count > 1) 
+                if (request.Count > 1)
                 {
                     //await Task.Delay(30000);
                 }
             }
-            result.Message= string.IsNullOrWhiteSpace(Message.ToString()) ? "审批成功" : Message.ToString();
+            result.Message = string.IsNullOrWhiteSpace(Message.ToString()) ? "审批成功" : Message.ToString();
             return result;
+        }
+
+
+        public async Task CreateNwcailFileHelper()
+        {
+            var res = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId) && string.IsNullOrWhiteSpace(c.CNASPdfPath)).ToListAsync();
+            foreach (var item in res)
+            {
+                await CreateNwcailFile(item.CertificateNumber);
+            }
         }
 
         /// <summary>
@@ -868,7 +878,7 @@ namespace OpenAuth.App
                 //var fsid = fs.Select(f => f.Id).ToList();
 
                 var cerinfo = await UnitWork.Find<NwcaliBaseInfo>(o=>fsid.Contains(o.FlowInstanceId))
-                                .WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers), c => c.TesterSn.Equals(request.ManufacturerSerialNumbers))
+                                .WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers), c => c.TesterSn.Contains(request.ManufacturerSerialNumbers))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.CertNo), c => c.CertificateNumber.Contains(request.CertNo))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), c => c.Operator.Contains(request.Operator))
                                 .WhereIf(!(request.StartCalibrationDate == null && request.EndCalibrationDate == null), c => c.Time >= request.StartCalibrationDate && c.Time <= request.EndCalibrationDate)
@@ -1829,6 +1839,61 @@ namespace OpenAuth.App
                 guidList = UnitWork.Query<DeviceTestLog>(guidSql).Select(c => c.LowGuid).ToList();
             }
             return guidList;
+        }
+
+        /// <summary>
+        /// 获取通道结果
+        /// </summary>
+        /// <param name="guid"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetChlIdResult(string guid)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            List<CheckResultDto> checkResult = new List<CheckResultDto>();
+
+            //下位机最新的烤机环境下烤机记录
+            var newlog = UnitWork.Find<DeviceTestLog>(c => c.LowGuid == guid).OrderByDescending(c => c.Id).FirstOrDefault();
+            if (newlog != null)
+            {
+                var channel = UnitWork.Find<DeviceTestLog>(c => c.EdgeGuid == newlog.EdgeGuid && c.SrvGuid == newlog.SrvGuid && c.DevUid == newlog.DevUid && c.UnitId == newlog.UnitId && c.LowGuid == guid).ToList();
+                //通道最新测试ID
+                var channelQuery = channel.GroupBy(c => c.ChlId).Select(c => c.OrderByDescending(o => o.TestId).First()).ToList();
+                var channelCount = 0;
+                var url = "https://analytics.neware.com.cn/";
+                HttpHelper httpHelper = new HttpHelper(url);
+                foreach (var item in channelQuery)
+                {
+                    //获取每个通道测试任务id
+                    var checktask = $"select EdgeGuid,SrvGuid,DevUid,UnitId,ChlId,TestId,TaskId from devicechecktask where EdgeGuid='{item.EdgeGuid}' and SrvGuid='{item.SrvGuid}' and DevUid={item.DevUid} and UnitId={item.UnitId} and ChlId={item.ChlId} and TestId={item.TestId}";
+                    var checktaskQuery = UnitWork.Query<DeviceCheckTask>(checktask).Select(c => c.TaskId).FirstOrDefault();
+
+                    if (!string.IsNullOrWhiteSpace(checktaskQuery))
+                    {
+                        var taskurl = $"api/DataCheck/TaskResult?id={checktaskQuery}";
+                        Dictionary<string, string> dic = null;
+                        //获取通道烤机结果
+                        var taskResult = httpHelper.Get(dic, taskurl);
+                        JObject resObj = JObject.Parse(taskResult);
+                        if (resObj["status"] == null || resObj["status"].ToString() != "200")
+                        {
+                            continue;
+                        }
+                        if (resObj["data"] != null)
+                        {
+                            var checkDto = JsonHelper.Instance.Deserialize<CheckResultDto>(resObj["data"].ToString());
+                            checkDto.ChlId = item.ChlId;
+                            checkResult.Add(checkDto);
+                        }
+                    }
+                }
+            }
+            result.Data = checkResult;
+            return result;
         }
 
         /// <summary>

@@ -40,42 +40,86 @@ namespace OpenAuth.App.Material
         public TableData ForScreeningViewInfo(SalesOrderMaterialReq req, int SboId)//, int? SalesOrderId, string ItemCode, string CardCode)
         {
             #region 注释
+            DateTime nowTime = DateTime.Now;
             var result = new TableData();
-            var modeldata = (from n in UnitWork.Find<ManageScreening>(null)
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()), c => c.DocEntry == req.SalesOrderId)
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.MaterialCode), c => c.ItemCode.Contains(req.MaterialCode))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.CustomerCode), c => c.CardCode.Contains(req.CustomerCode))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.custom_req), c => c.custom_req.Contains(req.custom_req))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.ItemName), c => c.ItemName.Contains(req.ItemName))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.VersionNo), c => c.VersionNo.Contains(req.VersionNo))
-                         .WhereIf(!string.IsNullOrWhiteSpace(req.SalesMan), c => c.SlpName.Contains(req.SalesMan))
-                             select n).ToList();
+
+            string sql = string.Format(@"select TO_DAYS(NOW())-TO_DAYS(n.SubmitTime) as SubmitDay,IFNULL(TO_DAYS(NOW())-TO_DAYS(n.UrlUpdate),0)  as UrlDay, n.Id,n.DocEntry,n.U_ZS,n.CardCode,n.CardName,n.ItemCode,n.ItemDesc,n.SlpName,n.ContractReviewCode,n.custom_req,n.ItemTypeName,n.ItemName,n.SubmitTime, n.VersionNo,n.FileUrl,
+                                         n.DemoUpdate, n.UrlUpdate, n.Quantity, n.IsDemo, m.Id SubmitNo, s.DocEntry ProductNo
+                                         from erp4_serve.manage_screening n
+                                         left
+                                         join erp4_serve.manage_screening_history m on n.DocEntry = m.DocEntry and n.U_ZS = m.U_ZS and n.ItemCode = m.ItemCode and n.Quantity = m.Quantity
+                                         left join nsap_bone.product_owor s on n.DocEntry = s.OriginNum and n.ItemCode = s.ItemCode where 1 = 1");
+            if (!string.IsNullOrWhiteSpace(req.SalesOrderId.ToString()))
+            {
+                sql += " and n.DocEntry =" + req.SalesOrderId;
+            }
+            if (!string.IsNullOrWhiteSpace(req.MaterialCode))
+            {
+                sql += " and n.ItemCode like '%" + req.MaterialCode + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.CustomerCode))
+            {
+                sql += " and n.CardCode like '%" + req.CustomerCode + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.custom_req))
+            {
+                sql += " and n.custom_req like '%" + req.custom_req + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.ItemName))
+            {
+                sql += " and n.ItemName like '%" + req.ItemName + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.VersionNo))
+            {
+                sql += " and n.VersionNo like '%" + req.VersionNo + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.SalesMan))
+            {
+                sql += " and n.SlpName like '%" + req.SalesMan + "%'";
+            }
+            if (!string.IsNullOrWhiteSpace(req.SubmitNo))
+            {
+                sql += " and m.Id = " + req.SubmitNo;
+            }
+            var modeldata = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text, null).AsEnumerable();
             var manageData = GetProgressAll().AsEnumerable(); // new DataTable().AsEnumerable();
 
 
             var querydata = from n in modeldata
                             join m in manageData
-                            on new { DocEntry = "SE-" + n.DocEntry, itemCode = n.ItemCode }
+                            on new { DocEntry = "SE-" + n.Field<string>("DocEntry"), itemCode = n.Field<string>("ItemCode") }
                             equals new { DocEntry = m.Field<string>("DocEntry"), itemCode = m.Field<string>("itemCode") } into temp
                             from t in temp.DefaultIfEmpty()
                             select new
                             {
-                                id = n.Id,
-                                DocEntry = n.DocEntry,
-                                CardCode = n.CardCode,
-                                CardName = n.CardName,
-                                ItemCode = n.ItemCode,
-                                ItemDesc = n.ItemDesc,
-                                SlpName = n.SlpName,
-                                ContractReviewCode = n.ContractReviewCode,
-                                custom_req = n.custom_req,
-                                ItemTypeName = n.ItemTypeName,
-                                ItemName = n.ItemName,
-                                SubmitTime = n.SubmitTime,
-                                VersionNo = n.VersionNo,
-                                FileUrl = n.FileUrl,
+                                id = n.Field<int>("Id"),
+                                DocEntry = n.Field<string>("DocEntry"),
+                                u_zs = n.Field<string>("U_ZS"),
+                                CardCode = n.Field<string>("CardCode"),
+                                CardName = n.Field<string>("CardName"),
+                                ItemCode = n.Field<string>("ItemCode"),
+                                ItemDesc = n.Field<string>("ItemDesc"),
+                                SlpName = n.Field<string>("SlpName"),
+                                ContractReviewCode = n.Field<int>("ContractReviewCode"),
+                                custom_req = n.Field<string>("custom_req"),
+                                ItemTypeName = n.Field<string>("ItemTypeName"),
+                                ItemName = n.Field<string>("ItemName"),
+                                SubmitTime = n.Field<DateTime>("SubmitTime"),
+                                VersionNo = n.Field<string>("VersionNo"),
+                                FileUrl = n.Field<string>("FileUrl"),
+                                DemoUpdate = n.Field<DateTime?>("DemoUpdate"),
+                                UrlUpdate = n.Field<DateTime?>("UrlUpdate"),
+                                Quantity = n.Field<decimal?>("Quantity"),
+                                IsDemo = n.Field<string>("IsDemo"),
+                                type = (n.Field<Int64>("SubmitDay") < 2) ? "-1"
+                                : ((n.Field<Int64>("SubmitDay") >= 2 && t == null) ? "0"
+                                : ((n.Field<Int64>("SubmitDay") >= 9 && string.IsNullOrEmpty(n.Field<string>("FileUrl"))) ? "1"
+                                : ((n.Field<Int64>("UrlDay") >= 10 && n.Field<string>("IsDemo") != "批量") ? "2"
+                                : "3"))),
+                                SubmitNo = n.Field<Int64?>("SubmitNo"),
                                 ProjectNo = t == null ? "" : t.Field<string>("_System_objNBS"),
-                                ProduceNo = ""//t == null ? "" : t.Field<string>("_System_objNBS")
+                                //ProCreatedDate = t == null ? "" : t.Field<string>("CreatedDate"),
+                                ProduceNo = n.Field<int?>("ProductNo")
                             };
             //先把数据加载到内存
             if (!string.IsNullOrWhiteSpace(req.ProjectNo))
@@ -84,7 +128,18 @@ namespace OpenAuth.App.Material
             }
             if (!string.IsNullOrWhiteSpace(req.ProduceNo))
             {
-                querydata = querydata.Where(t => t.ProduceNo == req.ProduceNo);
+                querydata = querydata.Where(t => t.ProduceNo == Convert.ToInt32(req.ProduceNo));
+            }
+            if (!string.IsNullOrWhiteSpace(req.IsDemo))
+            {
+                if (req.IsDemo == "未设置")
+                {
+                    querydata = querydata.Where(t => t.IsDemo == null || t.IsDemo == "");
+                }
+                else
+                {
+                    querydata = querydata.Where(t => t.IsDemo == req.IsDemo);
+                }
             }
             if (!string.IsNullOrWhiteSpace(req.IsPro))
             {
@@ -122,7 +177,10 @@ namespace OpenAuth.App.Material
                 {
                     querydata = querydata.Where(t => t.VersionNo == null || t.VersionNo == "");
                 }
-
+            }
+            if (!string.IsNullOrWhiteSpace(req.TimeRemind))
+            {
+                querydata = querydata.Where(t => t.type == req.TimeRemind);
             }
             if (req.sortorder == "ASC")
             {
@@ -143,7 +201,34 @@ namespace OpenAuth.App.Material
         }
 
 
-        public async Task<Infrastructure.Response> AddDrawingFiles(List<int> ids, string url, string VersionNo)
+        public async Task<Infrastructure.Response> AddDrawingFiles(UpdateManageScreen manageScreen)
+        {
+            var response = new Infrastructure.Response();
+            response.Message = "";
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            int id = manageScreen.id;
+            ManageScreening info = UnitWork.Find<ManageScreening>(q => q.Id == id).FirstOrDefault();
+            if (info != null)
+            {
+                info.FileUrl = manageScreen.url;
+                info.VersionNo = manageScreen.VersionNo;
+                info.UrlUpdate = manageScreen.UrlUpdate;
+                info.IsDemo = manageScreen.IsDemo;
+                info.DemoUpdate = manageScreen.DemoUpdate;
+            }
+            await UnitWork.UpdateAsync<ManageScreening>(info);
+            await UnitWork.SaveAsync();
+            response.Message = "操作成功";
+            return response;
+        }
+
+
+        public async Task<Infrastructure.Response> ItemCodeSync(List<int> ids)
         {
             var response = new Infrastructure.Response();
             response.Message = "";
@@ -157,11 +242,20 @@ namespace OpenAuth.App.Material
                 int v = ids[i];
                 ManageScreening info = UnitWork.Find<ManageScreening>(q => q.Id == v).FirstOrDefault();
 
-                info.FileUrl = url;
-                info.VersionNo = VersionNo;
-                await UnitWork.UpdateAsync<ManageScreening>(info);
+                string ItemTypeName = info.ItemTypeName;
+                int contract_id = info.ContractReviewCode.Value;
+                store_itemtype storeitemtype = UnitWork.Find<store_itemtype>(q => q.is_default == true && q.ItemTypeName == ItemTypeName).FirstOrDefault();
+                if (storeitemtype != null)
+                {
+                    int typeid = storeitemtype.ItemTypeId;
+                    sale_contract_review_detail contract_review_detail = UnitWork.Find<sale_contract_review_detail>(q => q.contract_id == contract_id && q.ItemTypeID == typeid).FirstOrDefault();
+                    if (contract_review_detail != null)
+                    {
+                        info.ItemName = contract_review_detail.ItemCode;
+                        await UnitWork.UpdateAsync<ManageScreening>(info);
+                    }
+                }
             }
-
             await UnitWork.SaveAsync();
             response.Message = "操作成功";
             return response;
@@ -195,7 +289,7 @@ namespace OpenAuth.App.Material
         /// </summary>
         /// <param name="req"></param>
         /// <returns></returns>
-        public async Task<Infrastructure.Response> SubmitItemCodeList(int SboId, int DocEntry, List<string> ItemCodeList)
+        public async Task<Infrastructure.Response> SubmitItemCodeList(int SboId, int DocEntry, List<SubmitItemCode> ItemCodeList)
         {
             var result = new Infrastructure.Response();
             var loginContext = _auth.GetCurrentUser();
@@ -206,8 +300,7 @@ namespace OpenAuth.App.Material
             DateTime date = DateTime.Now;
             foreach (var item in ItemCodeList)
             {
-                var dataitem = await (from n in UnitWork.Find<sale_rdr1>(null)
-                               .Where(s => s.sbo_id == SboId && s.DocEntry == DocEntry && s.ItemCode.Equals(item))
+                var dataitem = await (from n in UnitWork.Find<sale_rdr1>(s => s.sbo_id == SboId && s.DocEntry == DocEntry && s.ItemCode == item.ItemCode && s.U_ZS == item.U_ZS && s.Quantity == item.Quantity)
                                       join m in UnitWork.Find<sale_ordr>(null)
                                       on n.DocEntry equals m.DocEntry
                                       join s in UnitWork.Find<crm_oslp>(null)
@@ -221,8 +314,22 @@ namespace OpenAuth.App.Material
                                           ItemDesc = n.Dscription,
                                           SlpCode = m.SlpCode,
                                           ContractReviewCode = n.ContractReviewCode,
+                                          U_ZS = n.U_ZS,
+                                          Quantity = n.Quantity,
                                           SlpName = s.SlpName
                                       }).FirstOrDefaultAsync();
+
+                ManageScreeningHistory history = new ManageScreeningHistory();
+                history.DocEntry = DocEntry.ToString();
+                history.U_ZS = dataitem.U_ZS;
+                history.ItemCode = dataitem.ItemCode;
+                history.ItemDesc = dataitem.ItemDesc;
+                history.Quantity = dataitem.Quantity.ToDecimal();
+                history.ContractReviewCode = dataitem.ContractReviewCode;
+                history.SlpCode = dataitem.SlpCode.ToInt();
+                history.SubmitTime = date;
+                history.CreateUser = loginContext.User.Name;
+                await UnitWork.AddAsync<ManageScreeningHistory, int>(history);
 
                 if (!string.IsNullOrEmpty(dataitem.ContractReviewCode))
                 {
@@ -238,11 +345,21 @@ namespace OpenAuth.App.Material
                                 where n.contract_id == ContractReviewCode
                                 select new
                                 {
-                                    contract_id = n.contract_id,
                                     custom_req = n.custom_req,
                                     ItemTypeName = t1 == null ? "" : t1.ItemTypeName,
                                     ItemName = t == null ? "" : t.ItemCode
                                 }).ToList();
+                    if (data == null)
+                    {
+                        sale_contract_review reviewInfo = UnitWork.Find<sale_contract_review>(q => q.sbo_id == 1 && q.contract_id == ContractReviewCode).FirstOrDefault();
+                        data = (from s in UnitWork.Find<store_itemtype>(q => q.is_default == true && typeList.Contains(q.ItemTypeName))
+                                select new
+                                {
+                                    custom_req = reviewInfo.custom_req,
+                                    ItemTypeName = s.ItemTypeName,
+                                    ItemName = ""
+                                }).ToList();
+                    }
                     foreach (var item1 in data)
                     {
                         ManageScreening manageScreening = new ManageScreening();
@@ -252,13 +369,15 @@ namespace OpenAuth.App.Material
                         manageScreening.ItemCode = dataitem.ItemCode;
                         manageScreening.ItemDesc = dataitem.ItemDesc;
                         manageScreening.SlpCode = dataitem.SlpCode.ToInt();
+                        manageScreening.U_ZS = dataitem.U_ZS;
+                        manageScreening.Quantity = dataitem.Quantity.ToDecimal();
                         manageScreening.SlpName = dataitem.SlpName;
                         manageScreening.SubmitTime = date;
                         manageScreening.ContractReviewCode = dataitem.ContractReviewCode.ToInt();
                         manageScreening.custom_req = item1.custom_req;
                         manageScreening.ItemTypeName = item1.ItemTypeName;
                         manageScreening.ItemName = item1.ItemName;
-                        manageScreening.CreateUser = loginContext.User.User_Id.Value;
+                        manageScreening.CreateUser = loginContext.User.Name;
                         manageScreening.CreateDate = DateTime.Now;
                         await UnitWork.AddAsync<ManageScreening, int>(manageScreening);
                     }
@@ -278,7 +397,9 @@ namespace OpenAuth.App.Material
                     manageScreening.custom_req = "";
                     manageScreening.ItemTypeName = "";
                     manageScreening.ItemName = "";
-                    manageScreening.CreateUser = loginContext.User.User_Id.Value;
+                    manageScreening.U_ZS = dataitem.U_ZS;
+                    manageScreening.Quantity = dataitem.Quantity.ToDecimal();
+                    manageScreening.CreateUser = loginContext.User.Name;
                     manageScreening.CreateDate = DateTime.Now;
                     await UnitWork.AddAsync<ManageScreening, int>(manageScreening);
                 }
@@ -462,10 +583,10 @@ namespace OpenAuth.App.Material
         #region 获取进度
         public DataTable GetProgressAll()
         {
-            string strSql = string.Format(@"select  _System_objNBS,RecordGuid, b.DocEntry, progress,itemCode from
-                                            (select _System_objNBS, RecordGuid, progress, itemCode, DocEntry = cast('<v>' + replace(DocEntry, '/', '</v><v>') + '</v>' as xml) from
-                                            (select * from(select _System_objNBS, RecordGuid, fld005508 DocEntry, max(_System_Progress) progress, fld005506 itemCode
-                                            from OBJ162 group by RecordGuid, fld005508, _System_objNBS, fld005506) a) t
+            string strSql = string.Format(@" select  _System_objNBS,CreatedDate,RecordGuid, b.DocEntry, progress,itemCode from
+                                            (select _System_objNBS,CreatedDate, RecordGuid, progress, itemCode, DocEntry = cast('<v>' + replace(DocEntry, '/', '</v><v>') + '</v>' as xml) from
+                                            (select * from(select _System_objNBS,CreatedDate, RecordGuid, fld005508 DocEntry, max(_System_Progress) progress, fld005506 itemCode
+                                            from OBJ162 group by RecordGuid, fld005508, _System_objNBS, fld005506,CreatedDate) a) t
                                             ) as a outer apply(select DocEntry = T.C.value('.', 'varchar(20)') from a.DocEntry.nodes('v') as T(C)) as b");
             return UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, strSql, CommandType.Text, null);
         }

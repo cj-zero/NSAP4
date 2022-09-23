@@ -573,6 +573,7 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="files">表单文件集合</param>
         /// <returns>服务器存储的文件信息</returns>
         [HttpPost]
+        [DisableRequestSizeLimit]
         public async Task<Response<IList<UploadFileResp>>> UploadContractFiles([FromForm] IFormFileCollection files)
         {
             var result = new Response<IList<UploadFileResp>>();

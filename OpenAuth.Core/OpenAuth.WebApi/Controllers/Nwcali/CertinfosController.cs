@@ -132,6 +132,17 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 未生成证书 生成证书
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task CreateNwcailFileHelper()
+        {
+            await _app.CreateNwcailFileHelper();
+        }
+
+        /// <summary>
         /// 重新生成证书数据
         /// </summary>
         /// <param name="req"></param>
@@ -283,6 +294,30 @@ namespace OpenAuth.WebApi.Controllers
         public async Task<TableData> GetScheduleInfo([FromQuery] QueryProductionScheduleReq req)
         {
             return await _app.GetScheduleInfo(req);
+        }
+
+        /// <summary>
+        /// 获取通道结果
+        /// </summary>
+        /// <param name="docEntry"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetChlIdResult(string guid)
+        {
+            return await _app.GetChlIdResult(guid);
+        }
+
+        /// <summary>
+        /// 获取下位机
+        /// </summary>
+        /// <param name="docEntry"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public Response<List<string>> GetLowGuid(string wo)
+        {
+            Response<List<string>> result = new Response<List<string>>();
+            result.Result= _app.GetLowGuid(wo);
+            return result;
         }
         ///// <summary>
         ///// 生产唯一码下设备是否校准
