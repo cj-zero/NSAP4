@@ -249,7 +249,8 @@ namespace OpenAuth.App
             if (bindMap.Count>0)
             {
                 var map_info = bindMap.FirstOrDefault();
-                throw new Exception($"下位机guid【{map_info.LowGuid}】已被【{map_info.GeneratorCode}/{map_info.DevUid}/{map_info.LowNo}】绑定!");
+                var low_no = model.low_Lists.Where(c => c.LowGuid == map_info.LowGuid).Select(c => c.low_no).FirstOrDefault();
+                throw new Exception($"【{model.DevUid}/{low_no}】下位机GUID【{map_info.LowGuid}】已被【{map_info.GeneratorCode}/{map_info.DevUid}/{map_info.LowNo}】绑定!");
             }
             var BindType = await UnitWork.Find<DeviceBindMap>(null).Where(c => c.GeneratorCode == model.GeneratorCode).Select(c => c.BindType).FirstOrDefaultAsync();
             if (BindType == 1 && model.BindType == 2)
