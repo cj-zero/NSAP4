@@ -1332,7 +1332,7 @@ namespace OpenAuth.App
                 loginUser = GetUserId(Convert.ToInt32(req.AppId)).ConfigureAwait(false).GetAwaiter().GetResult();
             }
             int IsSalesman = 0;
-            if (loginContext.Roles.Where(a => a.Name =="销售员").Count() >0)
+            if (loginContext.Roles.Where(a => a.Name =="销售员").Count() >0 && loginContext.Roles.Where(a => a.Name == "售后技术员").Count() <= 0)
             {
                 IsSalesman = 1;
             }
@@ -1549,7 +1549,7 @@ namespace OpenAuth.App
                     if (!req.IsDraft)
                     {
                         int IsSalesman = 0;
-                        if (loginContext.Roles.Where(a => a.Name == "销售员").Count() > 0)
+                        if (loginContext.Roles.Where(a => a.Name == "销售员").Count() > 0&& loginContext.Roles.Where(a => a.Name == "售后技术员").Count() <= 0)
                         {
                             IsSalesman = 1;
                         }

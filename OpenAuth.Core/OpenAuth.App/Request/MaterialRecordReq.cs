@@ -43,4 +43,31 @@ namespace OpenAuth.App.Request
         public int pageIndex { get; set; }
         public int pageSize { get; set; }
     }
+
+    public class SubmitItemCode
+    {
+        /// <summary>
+        /// 配置类型
+        /// </summary>
+        public string U_ZS { get; set; }
+        /// <summary>
+        /// 物料编码
+        /// </summary>
+        public string ItemCode { get; set; }
+        /// <summary>
+        /// 数量
+        /// </summary>
+        public int Quantity { get; set; }
+    }
+
+    public class UpdateManageScreen
+    {
+        public int id { get; set; }
+        public string url { get; set; }
+        public string VersionNo { get; set; }
+        public DateTime? UrlUpdate { get; set; }
+
+        public string IsDemo { get; set; }
+        public DateTime? DemoUpdate { get; set; }
+    }
 }

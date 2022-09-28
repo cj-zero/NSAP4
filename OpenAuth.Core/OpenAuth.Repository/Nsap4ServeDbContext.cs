@@ -138,8 +138,13 @@ namespace OpenAuth.Repository
         public virtual DbSet<CustomerOperationRecord> CustomerOperationRecord { get; set; }
         public virtual DbSet<ClientFollowUp> ClientFollowUp { get; set; }
         public virtual DbSet<ClientFollowUpPhrase> ClientFollowUpPhrase { get; set; }
-        public virtual DbSet<ManageScreening> ManageScreening { get; set; }    
         public virtual DbSet<ClientSchedule> ClientSchedule { get; set; }
+
+        public virtual DbSet<LimsInfo> LimsInfo { get; set; }
+        #endregion
+        #region 工程部项目筛选
+        public virtual DbSet<ManageScreening> ManageScreening { get; set; }
+        public virtual DbSet<ManageScreeningHistory> ManageScreeningHistory { get; set; }
         #endregion
         #region 线索
         public virtual DbSet<Clue> Clue { get; set; }
