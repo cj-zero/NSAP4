@@ -20,7 +20,7 @@ namespace OpenAuth.Repository.Domain.Sap
 	/// 
 	/// </summary>
     [Table("RCT2")]
-    public partial class RCT2 : Entity
+    public class RCT2
     {
         public RCT2()
         {
@@ -45,7 +45,16 @@ namespace OpenAuth.Repository.Domain.Sap
           this.EncryptIV= string.Empty;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public int DocNum { get; set; }
         
+        /// <summary>
+        /// 
+        /// </summary>
+        public int InvoiceId { get; set; }
+
         /// <summary>
         /// 
         /// </summary>

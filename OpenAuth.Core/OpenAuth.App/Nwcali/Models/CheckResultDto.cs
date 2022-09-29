@@ -31,4 +31,10 @@ namespace OpenAuth.App.Nwcali
         public string Err { get; set; }
         public int? CheckTime { get; set; }
     }
+
+    public class GuidStatus
+    {
+        public string Guid { get; set; }
+        public int Status { get; set; }
+    }
 }

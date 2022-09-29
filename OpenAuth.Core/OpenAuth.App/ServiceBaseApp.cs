@@ -183,6 +183,7 @@ namespace OpenAuth.App
         /// <returns>返回货币形式</returns>
         public string MoneyToCoin(decimal amount, int count)
         {
+            amount = amount == 0 ? 0.00M : amount;
             return string.Format("{0:N0}", Math.Truncate(amount)) + "." + (Math.Round(amount, count)).ToString().Split(".")[1];
         }
     }
