@@ -127,6 +127,26 @@ namespace Infrastructure
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <param name="requestUri"></param>
+        /// <param name="header"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public string PostAuthentication(object entity, string requestUri,string token)
+        {
+            string request = string.Empty;
+            if (entity != null)
+                request = JsonHelper.Instance.Serialize(entity);
+            HttpContent httpContent = new StringContent(request);
+            httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            if (!string.IsNullOrWhiteSpace(token))
+                _httpClient.DefaultRequestHeaders.Authorization= new AuthenticationHeaderValue(token);
+            var result = _httpClient.PostAsync(ConcatURL(requestUri), httpContent);
+            return result.Result.Content.ReadAsStringAsync().Result;
+        }
+        /// <summary>
         /// 提交字典类型的数据
         /// <para>最终以formurlencode的方式放置在http体中</para>
         /// <para>李玉宝于2016-07-20 19:01:59</para>
@@ -176,7 +196,6 @@ namespace Infrastructure
             content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
             return Post(requestUrl, content);
         }
-
         private string Post(string requestUrl, HttpContent content)
         {
             var result = _httpClient.PostAsync(ConcatURL(requestUrl), content);

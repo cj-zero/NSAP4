@@ -211,7 +211,7 @@ namespace OpenAuth.App
 
             var OrderNo = Convert.ToInt32(model.GeneratorCode.Split("-")[1]);
             int xwjCount = 0;
-            var BO1_XWJ = await UnitWork.Find<product_wor1>(null).Where(c => c.DocEntry == OrderNo && c.ItemCode.Contains("B01-XWJ")).Select(c => new { c.BaseQty }).FirstOrDefaultAsync();
+            var BO1_XWJ = await UnitWork.Find<product_wor1>(null).Where(c => c.DocEntry == OrderNo && c.ItemCode.Contains("B01") && c.ItemCode.Contains("XWJ")).Select(c => new { c.BaseQty }).FirstOrDefaultAsync();
             if (BO1_XWJ==null)
             {
                 string code ="B";
@@ -280,6 +280,7 @@ namespace OpenAuth.App
                 deviceBind.Department = department;
                 deviceBind.OrderNo = Convert.ToInt64(model.GeneratorCode.Split('-')[1]);
                 deviceBind.LowNo = item.low_no;
+                //deviceBind.DataSource = 0;
                 deviceBind.RangeCurrArray = lowList.Where(c => c.edge_guid == model.EdgeGuid && c.srv_guid == model.SrvGuid && c.dev_uid == model.DevUid && c.low_guid == item.LowGuid).Select(c => c.range_curr_array).FirstOrDefault();
                 list.Add(deviceBind);
                 DeviceBindLog deviceBindLog = new DeviceBindLog();
