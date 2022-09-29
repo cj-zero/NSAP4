@@ -6343,7 +6343,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             return SelectPagingHaveRowsCount(tablename, fieldname, pageSize, pageIndex, orderName, filterQuery, out rowCount);
         }
         #region 10.9销售订单接口
-        public DataTable SelectBillListInfo_ORDR(out int rowCount, SalesOrderListReq model, string type, bool ViewFull, bool ViewSelf, int UserID, int SboID, bool ViewSelfDepartment, int DepID, bool ViewCustom, bool ViewSales, string sqlcont, string sboname)
+        public DataTable SelectBillListInfo_ORDR(out int rowCount, string docEntrys, SalesOrderListReq model, string type, bool ViewFull, bool ViewSelf, int UserID, int SboID, bool ViewSelfDepartment, int DepID, bool ViewCustom, bool ViewSales, string sqlcont, string sboname)
         {
             bool IsSql = true;
             string sortString = string.Empty;
@@ -6358,6 +6358,12 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             //    List<int> docEntrys = _orderDraftServiceApp.GetDocEntrys(model.NewDocEntry);
             //    filterString += string.Format("a.DocEntry in ({0}) AND ", string.Join(",", docEntrys, 0, docEntrys.Count()));
             //}
+            if (model.ReceiptStatus == "K")
+            {
+                
+                filterString += string.Format("a.DocEntry in ('{0}') AND ", docEntrys);
+            }
+
 
             if (!string.IsNullOrEmpty(model.DocEntry))
             {

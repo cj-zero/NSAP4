@@ -171,5 +171,11 @@ namespace OpenAuth.Repository
         #region 新威字典
         public virtual DbSet<NewareDictionary> newaredictionary { get; set; }
         #endregion
+
+        #region 付款条件
+        public virtual DbSet<PayTermSet> paytermset { get; set; }
+        public virtual DbSet<PayPhase> payphase { get; set; }
+        public virtual DbSet<PayTermSave> paytermsave { get; set; }
+        #endregion
     }
 }
