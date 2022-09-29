@@ -22,8 +22,10 @@ namespace Infrastructure
         /// <param name="ipaddress">请求的基础IP，例如：http://192.168.0.33:8080/ </param>
         public HttpHelper(string ipaddress = "")
         {
+            var handler = new HttpClientHandler();
+            handler.ServerCertificateCustomValidationCallback = (sender, certificate, chain, errors) => true;
             this._baseIPAddress = ipaddress;
-            _httpClient = new HttpClient { BaseAddress = new Uri(_baseIPAddress) };
+            _httpClient = new HttpClient(handler) { BaseAddress = new Uri(_baseIPAddress) };
         }
 
         /// <summary>

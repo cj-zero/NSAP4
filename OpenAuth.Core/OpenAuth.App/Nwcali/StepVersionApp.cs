@@ -616,6 +616,8 @@ namespace OpenAuth.App
             //}
             //sn获取生产码  TO DO
 
+
+
             DateTime dt = DateTime.Now;
             edgeInfo.status = 1;
             edgeInfo.CreateTime = dt;
