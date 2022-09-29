@@ -196,6 +196,21 @@ namespace OpenAuth.WebApi.Controllers
                             break;
                         }
                     }
+                    //新增字段 
+                    var startTime = sheet.GetRow(34);
+                    if (startTime != null)
+                    {
+                        var startTimeValue = startTime.GetCell(1)?.StringCellValue;
+                        if (!string.IsNullOrWhiteSpace(startTimeValue))
+                            baseInfo.StartTime = DateTime.Parse(startTimeValue);
+                    }
+                    var calibrationStatus = sheet.GetRow(35);
+                    if (calibrationStatus != null) baseInfo.CalibrationStatus = calibrationStatus.GetCell(1).StringCellValue;
+                    var calibrationMode = sheet.GetRow(36);
+                    if (calibrationMode != null) baseInfo.CalibrationMode = calibrationMode.GetCell(1).StringCellValue;
+                    var toolAssetCode = sheet.GetRow(37);
+                    if (toolAssetCode != null) baseInfo.ToolAssetCode = toolAssetCode.GetCell(1).StringCellValue;
+
                     #endregion
                     return baseInfo;
                 });
