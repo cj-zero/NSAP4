@@ -41,6 +41,7 @@ namespace OpenAuth.App.ClientRelation.Response
     public class GraphNodes
     {
         public string Id { get; set; }
+        public string CardCode { get; set; }
         public string Text { get; set; }
         public int flag { get; set; }
     }

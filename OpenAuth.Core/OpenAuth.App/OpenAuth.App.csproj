@@ -83,7 +83,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="ClientRelation\Request\" />
     <Folder Include="Settlement\Response\" />
     <Folder Include="Protos\" />
   </ItemGroup>

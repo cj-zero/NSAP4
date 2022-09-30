@@ -6,6 +6,10 @@ using System.Threading.Tasks;
 using System;
 using OpenAuth.App.ClientRelation;
 using OpenAuth.App.ClientRelation.Response;
+using OpenAuth.App.Request;
+using OpenAuth.App.ClientRelation.Request;
+using OpenAuth.Repository.Domain;
+using System.Collections.Generic;
 
 namespace OpenAuth.WebApi.Controllers
 {
@@ -49,6 +53,116 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
+
+        /// <summary>
+        /// 新增客户获取数据源
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<ClientPoolRsp>> GetRelatedClients()
+        {
+            var result = new Response<ClientPoolRsp>();
+            try
+            {
+                result.Result = await _app.GetRelatedClients();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 新增客户保存草稿，提交 保存关系
+        /// </summary>
+        /// <param name="job"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response<bool>> SaveScriptRelations([FromBody] JobScriptReq jobScript)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _app.SaveScriptRelations(jobScript);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 审核通过，同步成功后更新关系
+        /// </summary>
+        /// <param name="job"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response<bool>> UpdateRelations([FromBody] JobReq job)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _app.UpdateRelationsAfterSync(job);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 关联变更
+        /// </summary>
+        /// <param name="resignReq"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response<bool>> ResignRelations([FromBody] ResignRelReq resignReq)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _app.ResignRelations(resignReq);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取历史记录
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<List<ClientRelHistory>>> GetHistory()
+        {
+            var result = new Response<List<ClientRelHistory>>();
+            try
+            {
+                result.Result = await _app.GetHistory();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+
 
 
     }

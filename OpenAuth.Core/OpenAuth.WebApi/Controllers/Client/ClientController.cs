@@ -380,12 +380,12 @@ namespace OpenAuth.WebApi.Controllers.Client
         /// </summary>
         [HttpPost]
         [Route("UpdateClientJob")]
-        public Response<string> UpdateClientJob(UpdateClientJobReq updateClientJobReq)
+        public async Task<Response<string>> UpdateClientJob(UpdateClientJobReq updateClientJobReq)
         {
             var result = new Response<string>();
             try
             {
-                result.Result = _clientInfoApp.UpdateClientJob(updateClientJobReq);
+                result.Result = await _clientInfoApp.UpdateClientJob(updateClientJobReq);
             }
             catch (Exception ex)
             {

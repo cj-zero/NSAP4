@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NSAP.Entity.Sales;
 using OpenAuth.App;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Order;
@@ -1928,6 +1929,16 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 result.Result = _serviceSaleOrderApp.GetCntctCode(Code, Name, SboId);
             }
+            return result;
+        }
+
+
+        [HttpGet]
+        [Route("GetSalesDealDetail")]
+        public Response<string> GetSalesDealDetail(int jobid)
+        {
+            var result = new Response<string>();
+            billDelivery Model = _serviceSaleOrderApp.GetSalesDealDetail(jobid);
             return result;
         }
 

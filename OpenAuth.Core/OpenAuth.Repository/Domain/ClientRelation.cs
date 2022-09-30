@@ -109,10 +109,11 @@ namespace OpenAuth.Repository.Domain
         [Description("业务员编号")]
         public string Operatorid { get; set; }
 
-
         /// <summary>
-        /// 客户变更记录
+        /// 关联jobid
         /// </summary>
-        public virtual List<ClientRelHistory> clientRelHistoryList { get; set; }
+        [Description("关联jobid")]
+        public int JobId { get; set; }
+
     }
 }

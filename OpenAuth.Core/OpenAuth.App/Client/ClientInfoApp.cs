@@ -30,6 +30,7 @@ using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.App.Client.Response;
 using Microsoft.AspNetCore.SignalR;
 using OpenAuth.App.SignalR;
+using OpenAuth.App.ClientRelation;
 
 namespace OpenAuth.App.Client
 {
@@ -37,12 +38,14 @@ namespace OpenAuth.App.Client
     {
         ServiceBaseApp _serviceBaseApp;
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
+        private readonly ClientRelationApp _clientRelationApp;
         private readonly IHubContext<MessageHub> _hubContext;
-        public ClientInfoApp(ServiceSaleOrderApp serviceSaleOrderApp, ServiceBaseApp serviceBaseApp, IUnitWork unitWork, IAuth auth, IHubContext<MessageHub> hubContext) : base(unitWork, auth)
+        public ClientInfoApp(ServiceSaleOrderApp serviceSaleOrderApp, ClientRelationApp clientRelationApp, ServiceBaseApp serviceBaseApp, IUnitWork unitWork, IAuth auth, IHubContext<MessageHub> hubContext) : base(unitWork, auth)
         {
             _serviceBaseApp = serviceBaseApp;
             _serviceSaleOrderApp = serviceSaleOrderApp;
             _hubContext = hubContext;
+            _clientRelationApp = clientRelationApp;
         }
         #region 客户新增草稿 修改草稿
         /// <summary>
@@ -79,6 +82,18 @@ namespace OpenAuth.App.Client
                 bool updParaCardName = UpdateWfaJobPara(result, 2, OCRD.CardName);
                 bool updParaOperateType = UpdateWfaJobPara(result, 3, OCRD.ClientOperateType);
                 bool updParaAppChange = UpdateWfaJobPara(result, 4, OCRD.IsApplicationChange);
+                //新增更新草稿客户关系
+                await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
+                {
+                    JobId =Convert.ToInt32(result),
+                    ClientNo = "",
+                    Flag = Convert.ToInt32(OCRD.is_reseller),
+                    ClientName = OCRD.CardFName,
+                    EndCustomerName = OCRD.EndCustomerName,
+                    Operator = loginUser.Name,
+                    Operatorid = loginUser.User_Id.ToString()
+                });
+
             }
             else if (addClientInfoReq.submitType == "Submit")
             {
@@ -1441,9 +1456,11 @@ namespace OpenAuth.App.Client
         /// <summary>
         /// 修改流程任务
         /// </summary>
-        public string UpdateClientJob(UpdateClientJobReq updateClientJobReq)
+        public async Task<string> UpdateClientJob(UpdateClientJobReq updateClientJobReq)
         {
             string result = "";
+            var loginContext = _auth.GetCurrentUser();
+            var loginUser = loginContext.User;
             var UserId = _serviceBaseApp.GetUserNaspId();
             clientOCRD OCRD = BulidClientJob(updateClientJobReq.clientInfo);
             //根据客户类型生成业务伙伴编码
@@ -1457,6 +1474,17 @@ namespace OpenAuth.App.Client
                 bool updParaCardName = UpdateWfaJobPara(updateClientJobReq.JobId, 2, OCRD.CardName);
                 bool updParaOperateType = UpdateWfaJobPara(updateClientJobReq.JobId, 3, OCRD.ClientOperateType);
                 bool updParaAppChange = UpdateWfaJobPara(updateClientJobReq.JobId, 4, OCRD.IsApplicationChange);
+                //更新草稿客户关系
+                await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
+                {
+                    JobId = Convert.ToInt32(result),
+                    ClientNo = "",
+                    Flag = Convert.ToInt32(OCRD.is_reseller),
+                    ClientName = OCRD.CardFName,
+                    EndCustomerName = OCRD.EndCustomerName,
+                    Operator = loginUser.Name,
+                    Operatorid = loginUser.User_Id.ToString()
+                });
             }
             else if (updateClientJobReq.submitType == "Resubmit")
             {
@@ -1465,6 +1493,17 @@ namespace OpenAuth.App.Client
                 bool updParaCardName = UpdateWfaJobPara(updateClientJobReq.JobId, 2, OCRD.CardName);
                 bool updParaOperateType = UpdateWfaJobPara(updateClientJobReq.JobId, 3, OCRD.ClientOperateType);
                 bool updParaAppChange = UpdateWfaJobPara(updateClientJobReq.JobId, 4, OCRD.IsApplicationChange);
+                //更新草稿客户关系
+                await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
+                {
+                    JobId = Convert.ToInt32(result),
+                    ClientNo = "",
+                    Flag = Convert.ToInt32(OCRD.is_reseller),
+                    ClientName = OCRD.CardFName,
+                    EndCustomerName = OCRD.EndCustomerName,
+                    Operator = loginUser.Name,
+                    Operatorid = loginUser.User_Id.ToString()
+                });
                 if (res)
                 {
                     result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(updateClientJobReq.JobId), UserId, OCRD.FreeText, "", 0);
@@ -1505,6 +1544,17 @@ namespace OpenAuth.App.Client
                 bool updParaCardName = UpdateWfaJobPara(updateClientJobReq.JobId, 2, OCRD.CardName);
                 bool updParaOperateType = UpdateWfaJobPara(updateClientJobReq.JobId, 3, OCRD.ClientOperateType);
                 bool updParaAppChange = UpdateWfaJobPara(updateClientJobReq.JobId, 4, OCRD.IsApplicationChange);
+                //更新草稿客户关系
+                await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
+                {
+                    JobId = Convert.ToInt32(result),
+                    ClientNo = "",
+                    Flag = Convert.ToInt32(OCRD.is_reseller),
+                    ClientName = OCRD.CardFName,
+                    EndCustomerName = OCRD.EndCustomerName,
+                    Operator = loginUser.Name,
+                    Operatorid = loginUser.User_Id.ToString()
+                });
             }
             return result;
         }
