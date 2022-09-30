@@ -110,11 +110,17 @@ namespace OpenAuth.Repository.Domain
         public string Operatorid { get; set; }
 
         /// <summary>
-        ///变更类型：0.新增 1.修改 2.分配 3.公海领取 
+        /// 变更类型：0.新增中间商 1.新增终端 2.分配中间商 3.分配终端 4.公海领取中间商 5.公海领取终端  6.修改草稿
         /// </summary>
         [Description("变更类型")]
         public int OperateType { get; set; }
 
+
+        /// <summary>
+        /// 关联jobid
+        /// </summary>
+        [Description("关联jobid")]
+        public int JobId { get; set; }
 
     }
 }

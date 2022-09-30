@@ -5686,7 +5686,11 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             //return int.Parse(Sql.Action.ExecuteScalar(Sql.UTF8ConnectionString, CommandType.Text, sql).ToString());
         }
 
-
+        public billDelivery GetSalesDealDetail(int jobid)
+        {
+            billDelivery Model = DeSerialize<billDelivery>((byte[])(GetSalesInfo(jobid.ToString())));
+            return Model;
+        }
 
 
 
