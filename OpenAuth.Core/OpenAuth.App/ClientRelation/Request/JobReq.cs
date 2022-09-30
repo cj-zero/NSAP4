@@ -22,9 +22,13 @@ namespace OpenAuth.App.ClientRelation.Request
         /// </summary>
         public string username { get; set; }
         /// <summary>
-        /// 流程创建者
+        /// 业务员编号
         /// </summary>
         public string job_userid { get; set; }
+        /// <summary>
+        /// 业务员名字
+        /// </summary>
+        public string job_username { get; set; }
         /// <summary>
         /// 流程编号
         /// </summary>

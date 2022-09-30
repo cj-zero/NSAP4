@@ -415,6 +415,7 @@ namespace OpenAuth.App.ClientRelation
                                 Updater = resignReq.username,
                                 Updaterid = resignReq.userid,
                                 Operatorid = resignReq.job_userid,
+                                Operator = resignReq.job_username,
                                 JobId = resignReq.jobid
                             });
                         }
@@ -438,6 +439,7 @@ namespace OpenAuth.App.ClientRelation
                             Updater = resignReq.username,
                             Updaterid = resignReq.userid,
                             Operatorid = resignReq.job_userid,
+                            Operator = resignReq.job_username,
                             JobId = resignReq.jobid
                         });
                     }
