@@ -127,6 +127,12 @@ namespace OpenAuth.App.PayTerm
 
             var loginUser = loginContext.User;
 
+            //判断当前付款条件是否已经存在
+            if (!GetPayTermSetIsRepeat(obj))
+            {
+                return "当前付款条件已经存在，不允许重复添加";
+            }
+
             //判断是否已经存在各阶段节点计算方法
             if (obj.ModuleTypeId == 1 || obj.ModuleName == "各阶段节点计算方法")
             {
@@ -194,6 +200,13 @@ namespace OpenAuth.App.PayTerm
             }
 
             var loginUser = loginContext.User;
+
+            //判断当前付款条件是否已经存在
+            if (!GetPayTermSetIsRepeat(obj))
+            {
+                return "当前付款条件已经存在，不允许重复添加";
+            }
+
             var dbContext = UnitWork.GetDbContext<PayTermSet>();
             using (var transaction = await dbContext.Database.BeginTransactionAsync())
             {
@@ -295,6 +308,59 @@ namespace OpenAuth.App.PayTerm
             {
                 throw new Exception("删除失败，该付款条件不存在。");
             }
+        }
+
+        /// <summary>
+        /// 判定付款条件是否重复
+        /// </summary>
+        /// <param name="obj">付款条件实体数据</param>
+        /// <returns>付款条件重复，返回false，不重复返回true</returns>
+        public bool GetPayTermSetIsRepeat(PayTermSet obj)
+        {
+            bool isRepeat = true;
+            if (obj.PayPhases != null && obj.PayPhases.Count() > 0)
+            {
+                //当可选阶段不为空时，判定是否存在重复条件
+                var objs = UnitWork.Find<PayTermSet>((r => r.DateNumber == obj.DateNumber && r.ModuleTypeId == obj.ModuleTypeId && r.ModuleName == r.ModuleName && r.DateUnit == obj.DateUnit)).Include(r => r.PayPhases).ToList();
+                var payTermSets = objs.Select(r => new PayTermHelp
+                {
+                    Id = r.Id,
+                    ModuleTypeId = r.ModuleTypeId,
+                    ModuleName = r.ModuleName,
+                    DateNumber = Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2),
+                    DateUnit = r.DateUnit,
+                    DateUnitName = (Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? (Convert.ToInt32(r.DateNumber)).ToString() : (Math.Round(Convert.ToDecimal(r.DateNumber), 2)).ToString()) + CommonMethodHelp.GetDateTimeUnit(r.DateUnit),
+                    IsDefault = r.IsDefault,
+                    CreateUserId = r.CreateUserId,
+                    CreateUser = r.CreateUser,
+                    CreateDate = r.CreateDate,
+                    UpdateUserId = r.UpdateUserId,
+                    UpdateUser = r.UpdateUser,
+                    UpdateDate = r.UpdateDate,
+                    PayPhaseName = r.PayPhases != null && r.PayPhases.Count() > 0 ? GetPayPhaseName(r.PayPhases.OrderBy(r => r.PayPhaseType).ToList()) : "",
+                    PayPhases = r.PayPhases.OrderBy(r => r.PayPhaseType).ToList()
+                }).ToList();
+
+                if (payTermSets != null && payTermSets.Count() > 0)
+                {
+                    var payTermSetRepeat = payTermSets.Where(r => r.DateNumber == obj.DateNumber && r.ModuleTypeId == obj.ModuleTypeId && r.ModuleName == r.ModuleName && r.DateUnit == obj.DateUnit && r.PayPhaseName == GetPayPhaseName(obj.PayPhases.OrderBy(x => x.PayPhaseType).ToList()));
+                    if (payTermSetRepeat != null && payTermSetRepeat.Count() > 0)
+                    {
+                        isRepeat = false;
+                    }
+                }
+            }
+            else
+            {
+                //当可选阶段为空时，判定是否存在重复条件
+                var objs = UnitWork.Find<PayTermSet>(r => r.DateNumber == obj.DateNumber && r.ModuleTypeId == obj.ModuleTypeId && r.ModuleName == r.ModuleName && r.DateUnit == obj.DateUnit).Include(r => r.PayPhases).ToList();
+                if (objs != null && objs.Count() > 0)
+                {
+                    isRepeat = false;
+                }
+            }
+
+            return isRepeat;
         }
 
         /// <summary>
@@ -1303,6 +1369,7 @@ namespace OpenAuth.App.PayTerm
                     receDetailHelps.Add(receDetailHelp);
                 }
             }
+
             return receDetailHelps;
         }
 
