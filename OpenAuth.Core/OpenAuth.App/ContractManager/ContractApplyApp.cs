@@ -26,6 +26,7 @@ using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.App.ContractManager.Request;
 using ICSharpCode.SharpZipLib.Zip;
 using Minio;
+using Nito.AsyncEx;
 
 namespace OpenAuth.App.ContractManager
 {
@@ -41,6 +42,7 @@ namespace OpenAuth.App.ContractManager
         private ILogger<FileApp> _logger;
         private readonly MinioClient _minioClient;
         private readonly FileApp _fileApp;
+        private readonly AsyncLock asyncLock = new AsyncLock();
 
         /// <summary>
         /// 构造函数
@@ -1331,238 +1333,243 @@ namespace OpenAuth.App.ContractManager
             }
 
             var result = new TableData();
-            var obj = await UnitWork.Find<ContractApply>(r => r.Id == req.Id).Include(r => r.ContractFileTypeList).FirstOrDefaultAsync();
-            if (!string.IsNullOrEmpty(obj.ContractStatus))
-            {
-                if (Convert.ToInt32(obj.ContractStatus) < 2)
-                {
-                   result.Message = "合同申请单未提交，不可操作。";
-                   result.Code = 500;
-                    return result;
-                }
-            }
-            else
-            {
-                result.Message = "合同申请单不存在，不可操作。";
-                result.Code = 500;
-                return result;
-            }
 
-            //审批时判断文件类型
-            if (!req.IsReject)
+            //异步锁避免并发
+            using (await asyncLock.LockAsync())
             {
-                result = ApprovalNodeJudge(req.Id);
-            }
-           
-            if (result.Code == 500)
-            {
-                return result;
-            }
-
-            try
-            {
-                ContractOperationHistory contractHis = new ContractOperationHistory();
-                ContractSign contractSign = new ContractSign();
-                obj.UpdateTime = DateTime.Now;
-                if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")) && obj.ContractStatus == "3")
+                var obj = await UnitWork.Find<ContractApply>(r => r.Id == req.Id).Include(r => r.ContractFileTypeList).FirstOrDefaultAsync();
+                if (!string.IsNullOrEmpty(obj.ContractStatus))
                 {
-                    contractHis.Action = "法务人员审批";
-                    obj.ContractStatus = "5";
-                }
-
-                if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")) && obj.ContractStatus == "10")
-                {
-                    contractHis.Action = "法务人员审批";
-                    obj.ContractStatus = "-1";
-                }
-
-                if (loginContext.Roles.Any(r => r.Name.Equals("总助")) && obj.ContractStatus == "10")
-                {
-                    contractHis.Action = "总助审批";
-                    obj.ContractStatus = "-1";
-                }
-
-                if (obj.ContractStatus == "4")
-                {
-                    if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")))
+                    if (Convert.ToInt32(obj.ContractStatus) < 2)
                     {
-                        contractHis.Action = "会签-法务完成审批，待售前工程师审批";
-                        obj.ContractStatus = "8";
-                        contractSign.ContractApplyId = obj.Id;
-                        contractSign.TogetherSignRole = "法务人员";
-                        contractSign.ApprovalOrReject = req.IsReject ? 2 : 1;
-                        await SaveContractSign(contractSign);
+                        result.Message = "合同申请单未提交，不可操作。";
+                        result.Code = 500;
+                        return result;
                     }
-
-                    if (loginContext.Roles.Any(r => r.Name.Equals("售前工程师")))
-                    {
-                        contractHis.Action = "会签-售前工程师完成审批，待法务审批";
-                        obj.ContractStatus = "9";
-                        contractSign.ContractApplyId = obj.Id;
-                        contractSign.TogetherSignRole = "售前工程师";
-                        contractSign.ApprovalOrReject = req.IsReject ? 2 : 1;
-                        await SaveContractSign(contractSign);
-                    }
-                }
-
-                if (obj.ContractStatus == "8")
-                {
-                    if (loginContext.Roles.Any(r => r.Name.Equals("售前工程师")))
-                    {
-                        contractHis.Action = "会签-售前工程师完成审批，待法务审批";
-                        obj.ContractStatus = "9";
-                        contractSign.ContractApplyId = obj.Id;
-                        contractSign.TogetherSignRole = "售前工程师";
-                        contractSign.ApprovalOrReject = req.IsReject ? 2 : 1;
-                        await SaveContractSign(contractSign);
-                    }
-                }
-
-                if (obj.ContractStatus == "9")
-                {
-                    if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")))
-                    {
-                        contractHis.Action = "会签-法务完成审批，待售前工程师审批";
-                        obj.ContractStatus = "8";
-                        contractSign.ContractApplyId = obj.Id;
-                        contractSign.TogetherSignRole = "法务人员";
-                        contractSign.ApprovalOrReject = req.IsReject ? 2 : 1;
-                        await SaveContractSign(contractSign);
-                    }
-                }
-
-                //当法务人员和技术人员同时会签时才能将合同申请单传递给总助审批
-                var objs = UnitWork.Find<ContractSign>(r => r.ContractApplyId == obj.Id && r.ApprovalOrReject == 1);
-                if (objs != null && objs.Count() == 2)
-                {
-                    contractHis.Action = "会签-法务&售前工程师同时完成审批";
-                    obj.ContractStatus = "5";
-                }
-
-                if (loginContext.Roles.Any(r => r.Name.Equals("销售总助")) && obj.ContractStatus == "5")
-                {
-                    contractHis.Action = "总助审批";
-                    obj.ContractStatus = "6";
-                }
-
-                VerificationReq VerificationReqModle = new VerificationReq
-                {
-                    NodeRejectStep = "",
-                    NodeRejectType = "0",
-                    FlowInstanceId = obj.FlowInstanceId,
-                    VerificationFinally = "1",
-                    VerificationOpinion = "同意",
-                };
-
-                if (req.IsReject)
-                {
-                    VerificationReqModle.VerificationFinally = "3";
-                    VerificationReqModle.VerificationOpinion = req.Remark;
-                    VerificationReqModle.NodeRejectType = "1";
-                    contractHis.ApprovalResult = "驳回";
-                    //节点权限验证
-                    await _flowInstanceApp.Verification(VerificationReqModle);
-                    obj.ContractStatus = "2";
                 }
                 else
                 {
-                    if (obj.ContractStatus == "6")
+                    result.Message = "合同申请单不存在，不可操作。";
+                    result.Code = 500;
+                    return result;
+                }
+
+                //审批时判断文件类型
+                if (!req.IsReject)
+                {
+                    result = ApprovalNodeJudge(req.Id);
+                }
+
+                if (result.Code == 500)
+                {
+                    return result;
+                }
+
+                try
+                {
+                    ContractOperationHistory contractHis = new ContractOperationHistory();
+                    ContractSign contractSign = new ContractSign();
+                    obj.UpdateTime = DateTime.Now;
+                    if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")) && obj.ContractStatus == "3")
                     {
-                        obj.FlowInstanceId = "";
-                        contractHis.Action = "已结束";
-                        contractHis.ApprovalResult = "审批结束，待盖章";
-                        List<string> ids = new List<string>();
-                        ids.Add(obj.FlowInstanceId);
-                        await _flowInstanceApp.DeleteAsync(ids.ToArray());
+                        contractHis.Action = "法务人员审批";
+                        obj.ContractStatus = "5";
+                    }
+
+                    if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")) && obj.ContractStatus == "10")
+                    {
+                        contractHis.Action = "法务人员审批";
+                        obj.ContractStatus = "-1";
+                    }
+
+                    if (loginContext.Roles.Any(r => r.Name.Equals("总助")) && obj.ContractStatus == "10")
+                    {
+                        contractHis.Action = "总助审批";
+                        obj.ContractStatus = "-1";
+                    }
+
+                    if (obj.ContractStatus == "4")
+                    {
+                        if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")))
+                        {
+                            contractHis.Action = "会签-法务完成审批，待售前工程师审批";
+                            obj.ContractStatus = "8";
+                            contractSign.ContractApplyId = obj.Id;
+                            contractSign.TogetherSignRole = "法务人员";
+                            contractSign.ApprovalOrReject = req.IsReject ? 2 : 1;
+                            await SaveContractSign(contractSign);
+                        }
+
+                        if (loginContext.Roles.Any(r => r.Name.Equals("售前工程师")))
+                        {
+                            contractHis.Action = "会签-售前工程师完成审批，待法务审批";
+                            obj.ContractStatus = "9";
+                            contractSign.ContractApplyId = obj.Id;
+                            contractSign.TogetherSignRole = "售前工程师";
+                            contractSign.ApprovalOrReject = req.IsReject ? 2 : 1;
+                            await SaveContractSign(contractSign);
+                        }
+                    }
+
+                    if (obj.ContractStatus == "8")
+                    {
+                        if (loginContext.Roles.Any(r => r.Name.Equals("售前工程师")))
+                        {
+                            contractHis.Action = "会签-售前工程师完成审批，待法务审批";
+                            obj.ContractStatus = "9";
+                            contractSign.ContractApplyId = obj.Id;
+                            contractSign.TogetherSignRole = "售前工程师";
+                            contractSign.ApprovalOrReject = req.IsReject ? 2 : 1;
+                            await SaveContractSign(contractSign);
+                        }
+                    }
+
+                    if (obj.ContractStatus == "9")
+                    {
+                        if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")))
+                        {
+                            contractHis.Action = "会签-法务完成审批，待售前工程师审批";
+                            obj.ContractStatus = "8";
+                            contractSign.ContractApplyId = obj.Id;
+                            contractSign.TogetherSignRole = "法务人员";
+                            contractSign.ApprovalOrReject = req.IsReject ? 2 : 1;
+                            await SaveContractSign(contractSign);
+                        }
+                    }
+
+                    //当法务人员和技术人员同时会签时才能将合同申请单传递给总助审批
+                    var objs = UnitWork.Find<ContractSign>(r => r.ContractApplyId == obj.Id && r.ApprovalOrReject == 1);
+                    if (objs != null && objs.Count() == 2)
+                    {
+                        contractHis.Action = "会签-法务&售前工程师同时完成审批";
+                        obj.ContractStatus = "5";
+                    }
+
+                    if (loginContext.Roles.Any(r => r.Name.Equals("销售总助")) && obj.ContractStatus == "5")
+                    {
+                        contractHis.Action = "总助审批";
+                        obj.ContractStatus = "6";
+                    }
+
+                    VerificationReq VerificationReqModle = new VerificationReq
+                    {
+                        NodeRejectStep = "",
+                        NodeRejectType = "0",
+                        FlowInstanceId = obj.FlowInstanceId,
+                        VerificationFinally = "1",
+                        VerificationOpinion = "同意",
+                    };
+
+                    if (req.IsReject)
+                    {
+                        VerificationReqModle.VerificationFinally = "3";
+                        VerificationReqModle.VerificationOpinion = req.Remark;
+                        VerificationReqModle.NodeRejectType = "1";
+                        contractHis.ApprovalResult = "驳回";
+                        //节点权限验证
+                        await _flowInstanceApp.Verification(VerificationReqModle);
+                        obj.ContractStatus = "2";
                     }
                     else
                     {
-                        contractHis.ApprovalResult = "同意";
-                        await _flowInstanceApp.Verification(VerificationReqModle);
+                        if (obj.ContractStatus == "6")
+                        {
+                            req.contractApply.FlowInstanceId = "";
+                            contractHis.Action = "已结束";
+                            contractHis.ApprovalResult = "审批结束，待盖章";
+                            List<string> ids = new List<string>();
+                            ids.Add(obj.FlowInstanceId);
+                            await _flowInstanceApp.DeleteAsync(ids.ToArray());
+                        }
+                        else
+                        {
+                            contractHis.ApprovalResult = "同意";
+                            await _flowInstanceApp.Verification(VerificationReqModle);
+                        }
                     }
-                }
 
-                #region 删除
-                var contractFileType = await UnitWork.Find<ContractFileType>(r => r.ContractApplyId == obj.Id).ToListAsync();
-                foreach (ContractFileType item in contractFileType)
-                {
-                    await UnitWork.DeleteAsync<ContractFile>(r => r.ContractFileTypeId == item.Id);
-                }
-
-                await UnitWork.DeleteAsync<ContractFileType>(r => r.ContractApplyId == obj.Id);
-                await UnitWork.SaveAsync();
-                #endregion
-
-                #region 新增  
-                List<ContractFileType> contractFileTypeList = new List<ContractFileType>();
-                foreach (ContractFileType item in req.contractApply.ContractFileTypeList)
-                {
-                    if (item.FileType == "" || item.ContractSealId == "")
+                    #region 删除
+                    var contractFileType = await UnitWork.Find<ContractFileType>(r => r.ContractApplyId == obj.Id).ToListAsync();
+                    foreach (ContractFileType item in contractFileType)
                     {
-                        throw new Exception("文件类型或印章Id不能为空");
+                        await UnitWork.DeleteAsync<ContractFile>(r => r.ContractFileTypeId == item.Id);
                     }
 
-                    item.Id = Guid.NewGuid().ToString();
-                    item.ContractApplyId = obj.Id;
-                    List<ContractFile> contractFileList = new List<ContractFile>();
-                    foreach (ContractFile contractFile in item.contractFileList)
+                    await UnitWork.DeleteAsync<ContractFileType>(r => r.ContractApplyId == obj.Id);
+                    await UnitWork.SaveAsync();
+                    #endregion
+
+                    #region 新增  
+                    List<ContractFileType> contractFileTypeList = new List<ContractFileType>();
+                    foreach (ContractFileType item in req.contractApply.ContractFileTypeList)
                     {
-                        ContractFile file = new ContractFile();
-                        file.ContractFileTypeId = item.Id;
-                        file.IsSeal = contractFile.IsSeal;
-                        file.FileId = contractFile.FileId;
-                        file.IsFinalContract = contractFile.IsFinalContract;
-                        file.CreateUploadId = contractFile.CreateUploadId == "" ? loginContext.User.Name : contractFile.CreateUploadId;
-                        file.CreateUploadTime = contractFile.CreateUploadTime == null ? DateTime.Now : contractFile.CreateUploadTime;
-                        file.UpdateUserId = loginContext.User.Name;
-                        file.UpdateUserTime = DateTime.Now;
-                        contractFileList.Add(file);
+                        if (item.FileType == "" || item.ContractSealId == "")
+                        {
+                            throw new Exception("文件类型或印章Id不能为空");
+                        }
+
+                        item.Id = Guid.NewGuid().ToString();
+                        item.ContractApplyId = obj.Id;
+                        List<ContractFile> contractFileList = new List<ContractFile>();
+                        foreach (ContractFile contractFile in item.contractFileList)
+                        {
+                            ContractFile file = new ContractFile();
+                            file.ContractFileTypeId = item.Id;
+                            file.IsSeal = contractFile.IsSeal;
+                            file.FileId = contractFile.FileId;
+                            file.IsFinalContract = contractFile.IsFinalContract;
+                            file.CreateUploadId = contractFile.CreateUploadId == "" ? loginContext.User.Name : contractFile.CreateUploadId;
+                            file.CreateUploadTime = contractFile.CreateUploadTime == null ? DateTime.Now : contractFile.CreateUploadTime;
+                            file.UpdateUserId = loginContext.User.Name;
+                            file.UpdateUserTime = DateTime.Now;
+                            contractFileList.Add(file);
+                        }
+
+                        if (contractFileList != null && contractFileList.Count > 0)
+                        {
+                            await UnitWork.BatchAddAsync<ContractFile>(contractFileList.ToArray());
+                        }
+
+                        item.contractFileList = contractFileList;
+                        contractFileTypeList.Add(item);
                     }
 
-                    if (contractFileList != null && contractFileList.Count > 0)
+                    if (contractFileTypeList != null && contractFileTypeList.Count > 0)
                     {
-                        await UnitWork.BatchAddAsync<ContractFile>(contractFileList.ToArray());
+                        await UnitWork.BatchAddAsync<ContractFileType>(contractFileTypeList.ToArray());
                     }
 
-                    item.contractFileList = contractFileList;
-                    contractFileTypeList.Add(item);
+                    //清空旧数据
+                    req.contractApply.ContractFileTypeList.Clear();
+                    await UnitWork.SaveAsync();
+                    #endregion
+
+                    req.contractApply.ContractStatus = obj.ContractStatus;
+                    await UnitWork.UpdateAsync<ContractApply>(req.contractApply);
+
+                    //操作历史记录
+                    var seleoh = await UnitWork.Find<ContractOperationHistory>(r => r.ContractApplyId.Equals(obj.Id)).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
+                    contractHis.CreateUser = loginContext.User.Name;
+                    contractHis.CreateUserId = loginContext.User.Id;
+                    contractHis.CreateTime = DateTime.Now;
+                    contractHis.ContractApplyId = obj.Id;
+                    contractHis.Remark = req.Remark;
+                    contractHis.ApprovalStage = obj.ContractStatus;
+                    contractHis.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalSeconds);
+
+                    await UnitWork.AddAsync<ContractOperationHistory>(contractHis);
+                    await UnitWork.SaveAsync();
+
+                    result.Message = "审核通过";
+                    result.Code = 200;
                 }
-
-                if (contractFileTypeList != null && contractFileTypeList.Count > 0)
+                catch (Exception ex)
                 {
-                    await UnitWork.BatchAddAsync<ContractFileType>(contractFileTypeList.ToArray());
+                    result.Message = ex.Message.ToString();
+                    result.Code = 500;
                 }
-
-                //清空旧数据
-                req.contractApply.ContractFileTypeList.Clear();
-                await UnitWork.SaveAsync();
-                #endregion
-
-                req.contractApply.ContractStatus = obj.ContractStatus;
-                await UnitWork.UpdateAsync<ContractApply>(req.contractApply);
-
-                //操作历史记录
-                var seleoh = await UnitWork.Find<ContractOperationHistory>(r => r.ContractApplyId.Equals(obj.Id)).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
-                contractHis.CreateUser = loginContext.User.Name;
-                contractHis.CreateUserId = loginContext.User.Id;
-                contractHis.CreateTime = DateTime.Now;
-                contractHis.ContractApplyId = obj.Id;
-                contractHis.Remark = req.Remark;
-                contractHis.ApprovalStage = obj.ContractStatus;
-                contractHis.IntervalTime = Convert.ToInt32((DateTime.Now - Convert.ToDateTime(seleoh.CreateTime)).TotalSeconds);
-
-                await UnitWork.AddAsync<ContractOperationHistory>(contractHis);
-                await UnitWork.SaveAsync();
-
-                result.Message = "审核通过";
-                result.Code = 200;
             }
-            catch (Exception ex)
-            {
-                result.Message = ex.Message.ToString();
-                result.Code = 500;
-            }
-
+           
             return result;
         }
 
