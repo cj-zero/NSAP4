@@ -438,11 +438,13 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+
             var loginUser = loginContext.User;
-            if (loginUser.Name == "韦京生" || loginUser.Name == "郭睿心" || loginUser.Name == "唐琴" || loginUser.Name == "ErpAdmin")
+            if (loginContext.Roles.Any(r => r.Name.Equals("销售订单管理员")))
             {
                 ViewFull = true;
             }
+
             string dRowData = string.Empty; string isOpen = "0"; string sqlcont = string.Empty; string sboname = string.Empty;
             if (dt.Rows.Count > 0)
             {
