@@ -98,7 +98,13 @@ namespace OpenAuth.WebApi.Controllers
                 {
                     var baseInfo = new NwcaliBaseInfo();
                     var timeRow = sheet.GetRow(1);
-                    baseInfo.Time = DateTime.Parse(timeRow.GetCell(1).StringCellValue);
+                    var time1 = timeRow.GetCell(1).StringCellValue;
+                    var timeRow2 = sheet.GetRow(2);
+                    var time2 = timeRow2.GetCell(1).StringCellValue;
+                    var timecomb = DateTime.Parse($"{time1} {time2}");
+                    //var timeRow = sheet.GetRow(1);
+                    //baseInfo.Time = DateTime.Parse(timeRow.GetCell(1).StringCellValue);
+                    baseInfo.Time = timecomb;
                     var fileVersionRow = sheet.GetRow(3);
                     baseInfo.FileVersion = fileVersionRow.GetCell(1).StringCellValue;
                     var testerMakeRow = sheet.GetRow(4);
@@ -270,6 +276,11 @@ namespace OpenAuth.WebApi.Controllers
                                 StandardValue = l.Standard_Value
                             }));
                     }
+                    if (baseInfo.StartTime != null)
+                    {
+                        var ts = baseInfo.Time.Value.Subtract(baseInfo.StartTime.Value);
+                        baseInfo.TotalSeconds = ts.TotalSeconds.ToString();
+                    }
                     baseInfo.FlowInstanceId = await CreateFlow(baseInfo.CertificateNumber);
                     await _nwcaliCertApp.AddAsync(baseInfo);
                     //保存文件
@@ -313,42 +324,179 @@ namespace OpenAuth.WebApi.Controllers
                     //var fileResp = await _fileApp.Add(files, "machine");
                     //读取文件
                     var handler = new ExcelHandler(file.OpenReadStream());
-                    var sheet = handler.GetSheet();
-                    var timeRow = sheet.GetRow(1);
-                    var time1 = timeRow.GetCell(1).StringCellValue;
-                    var timeRow2 = sheet.GetRow(2);
-                    var time2 = timeRow2.GetCell(1).StringCellValue;
-                    var timecomb = DateTime.Parse($"{time1} {time2}");
-                    var testerSnRow = sheet.GetRow(6);
-                    var orderno = testerSnRow.GetCell(1).StringCellValue;
-                    var pclNoRow = sheet.GetRow(32);
-                    var pclGuidRow = sheet.GetRow(33);
-                    List<MachineInfo> machineInfo = new List<MachineInfo>();
-                    for (int i = 1; i < pclNoRow.LastCellNum; i++)
-                    {
-                        if (string.IsNullOrWhiteSpace(pclGuidRow.GetCell(i)?.StringCellValue))
-                            continue;
 
-                        machineInfo.Add(new MachineInfo
+                    var baseInfo = handler.GetBaseInfo<ProduceNwcaliBaseInfo>(sheet =>
+                    {
+                        var baseInfo = new ProduceNwcaliBaseInfo();
+                        var timeRow = sheet.GetRow(1);
+                        var time1 = timeRow.GetCell(1).StringCellValue;
+                        var timeRow2 = sheet.GetRow(2);
+                        var time2 = timeRow2.GetCell(1).StringCellValue;
+                        var timecomb = DateTime.Parse($"{time1} {time2}");
+                        //var timeRow = sheet.GetRow(1);
+                        //baseInfo.Time = DateTime.Parse(timeRow.GetCell(1).StringCellValue);
+                        baseInfo.Time = timecomb;
+                        var fileVersionRow = sheet.GetRow(3);
+                        baseInfo.FileVersion = fileVersionRow.GetCell(1).StringCellValue;
+                        var testerMakeRow = sheet.GetRow(4);
+                        baseInfo.TesterMake = testerMakeRow.GetCell(1).StringCellValue;
+                        var testerModelRow = sheet.GetRow(5);
+                        baseInfo.TesterModel = testerModelRow.GetCell(1).StringCellValue;
+                        var testerSnRow = sheet.GetRow(6);
+                        baseInfo.TesterSn = testerSnRow.GetCell(1).StringCellValue;
+                        var assetNoRow = sheet.GetRow(7);
+                        baseInfo.AssetNo = assetNoRow.GetCell(1).StringCellValue;
+                        var siteCodeRow = sheet.GetRow(8);
+                        baseInfo.SiteCode = siteCodeRow.GetCell(1).StringCellValue; //"Electrical Lab";
+                        var temperatureRow = sheet.GetRow(9);
+                        baseInfo.Temperature = temperatureRow.GetCell(1).StringCellValue;
+                        var relativeHumidityRow = sheet.GetRow(10);
+                        baseInfo.RelativeHumidity = relativeHumidityRow.GetCell(1).StringCellValue;
+                        var ratedAccuracyCRow = sheet.GetRow(11);
+                        baseInfo.RatedAccuracyC = ratedAccuracyCRow.GetCell(1).NumericCellValue / 1000;
+                        var ratedAccuracyVRow = sheet.GetRow(12);
+                        baseInfo.RatedAccuracyV = ratedAccuracyVRow.GetCell(1).NumericCellValue / 1000;
+                        var ammeterBitsRow = sheet.GetRow(13);
+                        baseInfo.AmmeterBits = Convert.ToInt32(ammeterBitsRow.GetCell(1).NumericCellValue);
+                        var VoltmeterBitsRow = sheet.GetRow(14);
+                        baseInfo.VoltmeterBits = Convert.ToInt32(VoltmeterBitsRow.GetCell(1).NumericCellValue);
+                        var certificateNumberRow = sheet.GetRow(15);
+                        baseInfo.CertificateNumber = certificateNumberRow.GetCell(1).StringCellValue;
+                        var calibrationEntityRow = sheet.GetRow(16);
+                        baseInfo.CallbrationEntity = calibrationEntityRow.GetCell(1).StringCellValue;
+                        var operatorRow = sheet.GetRow(17);
+                        baseInfo.Operator = operatorRow.GetCell(1).StringCellValue;
+                        #region 标准器设备信息
+                        var etalonsNameRow = sheet.GetRow(18);
+                        var etalonsCharacteristicsRow = sheet.GetRow(19);
+                        var etalonsAssetNoRow = sheet.GetRow(20);
+                        var etalonsCertificateNoRow = sheet.GetRow(22);
+                        var etalonsCalibrationEntity = sheet.GetRow(21);
+                        var etalonsDueDateRow = sheet.GetRow(23);
+                        for (int i = 1; i < etalonsNameRow.LastCellNum; i++)
                         {
-                            Guid = pclGuidRow.GetCell(i).StringCellValue,
-                            OrderNo = orderno,
-                            Status = 1,
-                            CreateTime = DateTime.Now,
-                            FileId = fileResp.FilePath,
-                            CalibrationTime = timecomb,
-                            CreateUser = loginContext.User.Name,
-                            CreateUserId = loginContext.User.Id
-                        });
+                            if (string.IsNullOrWhiteSpace(etalonsNameRow.GetCell(i).StringCellValue))
+                                break;
+                            try
+                            {
+                                baseInfo.ProduceEtalon.Add(new ProduceEtalon
+                                {
+                                    Name = etalonsNameRow.GetCell(i).StringCellValue,
+                                    Characteristics = etalonsCharacteristicsRow.GetCell(i).StringCellValue,
+                                    AssetNo = etalonsAssetNoRow.GetCell(i).StringCellValue,
+                                    CertificateNo = etalonsCertificateNoRow.GetCell(i).StringCellValue,
+                                    DueDate = etalonsDueDateRow.GetCell(i).StringCellValue,
+                                    CalibrationEntity = etalonsCalibrationEntity.GetCell(i).StringCellValue
+                                });
+                            }
+                            catch
+                            {
+                                break;
+                            }
+                        }
+                        #endregion
+                        var commentRow = sheet.GetRow(24);
+                        baseInfo.Comment = commentRow.GetCell(1).StringCellValue;
+                        var calibrationTypeRow = sheet.GetRow(25);
+                        baseInfo.CalibrationType = calibrationTypeRow.GetCell(1).StringCellValue;
+                        var repetitiveMeasurementsCountRow = sheet.GetRow(26);
+                        baseInfo.RepetitiveMeasurementsCount = Convert.ToInt32(repetitiveMeasurementsCountRow.GetCell(1).NumericCellValue);
+                        var turRow = sheet.GetRow(27);
+                        baseInfo.TUR = turRow.GetCell(1).StringCellValue;
+                        var acceptedToleranceRow = sheet.GetRow(28);
+                        baseInfo.AcceptedTolerance = acceptedToleranceRow.GetCell(1).StringCellValue;
+                        var kRow = sheet.GetRow(29);
+                        baseInfo.K = kRow.GetCell(1).NumericCellValue;
+                        var testIntervalRow = sheet.GetRow(30);
+                        baseInfo.TestInterval = testIntervalRow.GetCell(1).StringCellValue;
+                        #region 下位机
+                        //var pclCommentRow = sheet.GetRow(31);
+                        //var pclNoRow = sheet.GetRow(32);
+                        //var pclGuidRow = sheet.GetRow(33);
+                        //for (int i = 1; i < pclNoRow.LastCellNum; i++)
+                        //{
+                        //    if (string.IsNullOrWhiteSpace(pclGuidRow.GetCell(i)?.StringCellValue))
+                        //        continue;
+                        //    try
+                        //    {
+                        //        baseInfo.PcPlcs.Add(new PcPlc
+                        //        {
+                        //            Comment = pclCommentRow.GetCell(i).StringCellValue,
+                        //            No = Convert.ToInt32(pclNoRow.GetCell(i).StringCellValue),
+                        //            Guid = pclGuidRow.GetCell(i).StringCellValue,
+                        //            CalibrationDate = baseInfo.Time,
+                        //            ExpirationDate = DateTime.Parse(ConvertTestInterval(baseInfo.Time.Value.ToString(), baseInfo.TestInterval))
+                        //        });
+                        //    }
+                        //    catch
+                        //    {
+                        //        break;
+                        //    }
+                        //}
+                        #endregion
+                        //新增字段 
+                        var startTime = sheet.GetRow(34);
+                        if (startTime != null)
+                        {
+                            var startTimeValue = startTime.GetCell(1)?.StringCellValue;
+                            if (!string.IsNullOrWhiteSpace(startTimeValue))
+                                baseInfo.StartTime = DateTime.Parse(startTimeValue);
+                        }
+                        var calibrationStatus = sheet.GetRow(35);
+                        if (calibrationStatus != null) baseInfo.CalibrationStatus = calibrationStatus.GetCell(1).StringCellValue;
+                        var calibrationMode = sheet.GetRow(36);
+                        if (calibrationMode != null) baseInfo.CalibrationMode = calibrationMode.GetCell(1).StringCellValue;
+                        var toolAssetCode = sheet.GetRow(37);
+                        if (toolAssetCode != null) baseInfo.ToolAssetCode = toolAssetCode.GetCell(1).StringCellValue;
+
+                        return baseInfo;
+                    });
+                    if (baseInfo.StartTime != null)
+                    {
+                        var ts = baseInfo.Time.Value.Subtract(baseInfo.StartTime.Value);
+                        baseInfo.TotalSeconds = ts.TotalSeconds.ToString();
                     }
-                    //var guid = machineInfo.Select(c => c.Guid).ToList();
-                    //var orderNo = await _devInfoApp.GetDevInfoByGuid(guid);
-                    //machineInfo.ForEach(c =>
-                    //{
-                    //    var no = orderNo.Where(o => o.low_guid == c.Guid).FirstOrDefault();
-                    //    c.OrderNo = no?.order_no;
-                    //});
-                    await _machineInfoApp.BatchAddAsycn(machineInfo);
+                    await _nwcaliCertApp.AddProduceNwcaliBaseInfo(baseInfo);
+
+                    if (string.IsNullOrWhiteSpace(baseInfo.CalibrationStatus) || baseInfo.CalibrationStatus == "OK")
+                    {
+                        var sheet = handler.GetSheet();
+                        var timeRow = sheet.GetRow(1);
+                        var time1 = timeRow.GetCell(1).StringCellValue;
+                        var timeRow2 = sheet.GetRow(2);
+                        var time2 = timeRow2.GetCell(1).StringCellValue;
+                        var timecomb = DateTime.Parse($"{time1} {time2}");
+                        var testerSnRow = sheet.GetRow(6);
+                        var orderno = testerSnRow.GetCell(1).StringCellValue;
+                        var pclNoRow = sheet.GetRow(32);
+                        var pclGuidRow = sheet.GetRow(33);
+                        List<MachineInfo> machineInfo = new List<MachineInfo>();
+                        for (int i = 1; i < pclNoRow.LastCellNum; i++)
+                        {
+                            if (string.IsNullOrWhiteSpace(pclGuidRow.GetCell(i)?.StringCellValue))
+                                continue;
+
+                            machineInfo.Add(new MachineInfo
+                            {
+                                Guid = pclGuidRow.GetCell(i).StringCellValue,
+                                OrderNo = orderno,
+                                Status = 1,
+                                CreateTime = DateTime.Now,
+                                FileId = fileResp.FilePath,
+                                CalibrationTime = timecomb,
+                                CreateUser = loginContext.User.Name,
+                                CreateUserId = loginContext.User.Id
+                            });
+                        }
+                        //var guid = machineInfo.Select(c => c.Guid).ToList();
+                        //var orderNo = await _devInfoApp.GetDevInfoByGuid(guid);
+                        //machineInfo.ForEach(c =>
+                        //{
+                        //    var no = orderNo.Where(o => o.low_guid == c.Guid).FirstOrDefault();
+                        //    c.OrderNo = no?.order_no;
+                        //});
+                        await _machineInfoApp.BatchAddAsycn(machineInfo);
+                    }
                     return new Response<bool>()
                     {
                         Result = true
