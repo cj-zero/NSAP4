@@ -212,6 +212,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.TesterSn.Contains(request.Sn))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), u => u.Operator.Contains(request.Operator))
                 .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.Time >= request.CalibrationDateFrom && u.Time <= request.CalibrationDateTo)
+                .Where(c => c.CalibrationStatus != "NG")
                 ;
             if (request.FlowStatus == 1)
             {

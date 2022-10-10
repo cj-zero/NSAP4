@@ -19,10 +19,10 @@ namespace OpenAuth.Repository.Domain
     /// <summary>
 	/// 
 	/// </summary>
-    [Table("nwcalibaseinfo")]
-    public partial class NwcaliBaseInfo : Entity
+    [Table("producenwcalibaseinfo")]
+    public partial class ProduceNwcaliBaseInfo : Entity
     {
-        public NwcaliBaseInfo()
+        public ProduceNwcaliBaseInfo()
         {
           this.FileVersion= string.Empty;
           this.TesterMake= string.Empty;
@@ -181,11 +181,11 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         public string TestInterval { get; set; }
-        public virtual List<NwcaliPlcData> NwcaliPlcDatas { get; set; } = new List<NwcaliPlcData>();
-        public virtual List<NwcaliTur> NwcaliTurs { get; set; } = new List<NwcaliTur>();
-        public virtual List<Etalon> Etalons { get; set; } = new List<Etalon>();
-        public virtual List<PcPlc> PcPlcs { get; set; } = new List<PcPlc>();
-        public virtual FlowInstance FlowInstance { get; set; } = new FlowInstance();
+        //public virtual List<NwcaliPlcData> NwcaliPlcDatas { get; set; } = new List<NwcaliPlcData>();
+        //public virtual List<NwcaliTur> NwcaliTurs { get; set; } = new List<NwcaliTur>();
+        public virtual List<ProduceEtalon> ProduceEtalon { get; set; } = new List<ProduceEtalon>();
+        //public virtual List<PcPlc> PcPlcs { get; set; } = new List<PcPlc>();
+        //public virtual FlowInstance FlowInstance { get; set; } = new FlowInstance();
         /// <summary>
         /// 
         /// </summary>
