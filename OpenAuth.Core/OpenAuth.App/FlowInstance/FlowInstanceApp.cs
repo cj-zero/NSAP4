@@ -1002,20 +1002,23 @@ namespace OpenAuth.App
         /// <param name="ids">用户或角色Id</param>
         /// <param name="texts">用户或角色名</param>
         /// <param name="isRole">是否角色</param>
-        public async Task ModifyNodeUser(string instanceId,bool isCurrent, string[] ids, string texts, bool isRole)
+        public async Task ModifyNodeUser(string instanceId, bool isCurrent, string[] ids, string texts, bool isRole, bool isUpdate = true)
         {
             var flowInstance = await UnitWork.Find<FlowInstance>(c => c.Id == instanceId).FirstOrDefaultAsync();
             FlowRuntime wfruntime = new FlowRuntime(flowInstance);
             var nodeId = "";
             if (isCurrent) nodeId = wfruntime.currentNodeId;
             else nodeId = wfruntime.nextNodeId;
-
-            wfruntime.ModifyNodeUser(nodeId, ids, texts, isRole);
+            
+            if (isUpdate)
+            {
+                wfruntime.ModifyNodeUser(nodeId, ids, texts, isRole);
+            }
 
             var schemeContent = JsonHelper.Instance.Serialize(wfruntime.ToSchemeObj());
 
-           await UnitWork.UpdateAsync<FlowInstance>(c => c.Id == instanceId, c => new FlowInstance { SchemeContent = schemeContent, MakerList = string.Join(",", ids) });
-           await UnitWork.SaveAsync();
+            await UnitWork.UpdateAsync<FlowInstance>(c => c.Id == instanceId, c => new FlowInstance { SchemeContent = schemeContent, MakerList = string.Join(",", ids) });
+            await UnitWork.SaveAsync();
         }
 
         /// <summary>

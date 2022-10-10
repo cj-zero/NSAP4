@@ -35,6 +35,15 @@ namespace OpenAuth.App.Request
         /// 结束时间
         /// </summary>
         public DateTime? EndTime { get; set; }
-     
+
+        /// <summary>
+        /// 校准完成开始时间
+        /// </summary>
+        public DateTime? CompleteStartTime { get; set; }
+        /// <summary>
+        /// 校准完成结束时间
+        /// </summary>
+        public DateTime? CompleteEndTime { get; set; }
+
     }
 }
