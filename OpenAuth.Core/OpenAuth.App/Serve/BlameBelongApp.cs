@@ -151,7 +151,7 @@ namespace OpenAuth.App.Serve
 
             if (obj.DocType == 1)
             {
-                var seriviceOrder = await UnitWork.Find<ServiceOrder>(c => c.U_SAP_ID == req.OrderNo).Select(c => new { c.Id, c.TerminalCustomerId, c.TerminalCustomer }).FirstOrDefaultAsync();
+                var seriviceOrder = await UnitWork.Find<ServiceOrder>(c => c.U_SAP_ID == req.OrderNo || c.Id == req.OrderNo).Select(c => new { c.Id, c.TerminalCustomerId, c.TerminalCustomer, c.U_SAP_ID }).FirstOrDefaultAsync();
                 if (seriviceOrder == null)
                 {
                     result.Code = 500;
@@ -171,6 +171,7 @@ namespace OpenAuth.App.Serve
                 obj.ProductionOrg = query?.U_WO_LTDW;
                 obj.CardCode = seriviceOrder.TerminalCustomerId;
                 obj.CardName = seriviceOrder.TerminalCustomer;
+                obj.OrderNo = seriviceOrder.U_SAP_ID;
             }
             else if (obj.DocType == 2)
             {
@@ -197,8 +198,8 @@ namespace OpenAuth.App.Serve
             {
                 var ordr = await UnitWork.Find<ORDR>(c => c.DocEntry == req.SaleOrderId).Select(c => new { c.CardCode, c.CardName }).FirstOrDefaultAsync();
 
-                obj.CardCode = ordr.CardCode;
-                obj.CardName = ordr.CardName;
+                obj.CardCode = ordr?.CardCode;
+                obj.CardName = ordr?.CardName;
             }
 
             obj.BlameBelongOrgs = new List<BlameBelongOrg>();
