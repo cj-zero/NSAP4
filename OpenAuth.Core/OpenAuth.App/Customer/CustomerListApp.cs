@@ -874,7 +874,7 @@ namespace OpenAuth.App.Customer
                                 username = loginUser.Name,
                                 ClientNo = client.CardCode,
                                 flag = client.is_reseller=="Y"?1:0,
-                                OperateType= client.is_reseller == "Y"?5:4,
+                                OperateType= client.is_reseller == "Y"?4:5,
                                 job_userid = erpid.Id,
                                 job_username = loginUser.Name
                             });
@@ -1127,7 +1127,7 @@ namespace OpenAuth.App.Customer
                                 username = loginUser.Name,
                                 ClientNo = client.CardCode,
                                 flag = client.is_reseller == "Y" ? 1 : 0,
-                                OperateType = client.is_reseller == "Y" ? 5 : 4,
+                                OperateType = client.is_reseller == "Y" ? 4 : 5,
                                 job_userid = erpid.Id,
                                 job_username = req.SlpName
                             });
