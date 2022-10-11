@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MQ\Neware.Cap\Neware.Cap.csproj" />
+    <ProjectReference Include="..\OpenAuth.App\OpenAuth.App.csproj" />
     <ProjectReference Include="..\OpenAuth.Repository\OpenAuth.Repository.csproj" />
   </ItemGroup>
   <ItemGroup>

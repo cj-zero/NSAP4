@@ -48,6 +48,19 @@ namespace OpenAuth.App.ClientRelation.Request
     }
 
 
+    public class ResignOper
+    {
+        /// <summary>
+        /// 客户编号
+        /// </summary>
+        public string ClientNo { get; set; }
+        /// <summary>
+        /// 新业务员编号
+        /// </summary>
+        public string TerminalList { get; set; }
+    }
+
+
     public class ClientRelJob
     {
         public string customerNo { get; set; }

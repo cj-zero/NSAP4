@@ -142,6 +142,28 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 业务员修改客户
+        /// </summary>
+        /// <param name="resignReq"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response<bool>> ResignTerminals([FromBody] ResignOper resignReq)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _app.ResignTerminals(resignReq);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 获取历史记录
         /// </summary>
         /// <returns></returns>

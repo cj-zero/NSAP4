@@ -30,14 +30,14 @@ namespace OpenAuth.Repository.Domain
           this.step_id= 0;
           this.remarks= string.Empty;
           this.err_info= string.Empty;
-          this.sync_dt= string.Empty;
+          //this.sync_dt= string.Empty;
           this.card_code= string.Empty;
           this.card_name= string.Empty;
           this.base_type= 0;
           this.base_entry= 0;
           this.assembly_nm= string.Empty;
           this.class_nm= string.Empty;
-          this.upd_dt= string.Empty;
+         // this.upd_dt= string.Empty;
           this.sbo_itf_return= string.Empty;
         }
 
@@ -102,7 +102,7 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         [Description("")]
-        public string sync_dt { get; set; }
+        public DateTime sync_dt { get; set; }
         /// <summary>
         /// 
         /// </summary>
@@ -142,7 +142,7 @@ namespace OpenAuth.Repository.Domain
         /// 
         /// </summary>
         [Description("")]
-        public string upd_dt { get; set; }
+        public DateTime upd_dt { get; set; }
         /// <summary>
         /// 
         /// </summary>
