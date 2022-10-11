@@ -33,6 +33,7 @@ using OpenAuth.App.SignalR;
 using OpenAuth.App.ClientRelation;
 using DocumentFormat.OpenXml.Math;
 using OpenAuth.App.Request;
+using Microsoft.Extensions.Logging;
 
 namespace OpenAuth.App.Client
 {
@@ -42,12 +43,14 @@ namespace OpenAuth.App.Client
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
         private readonly ClientRelationApp _clientRelationApp;
         private readonly IHubContext<MessageHub> _hubContext;
-        public ClientInfoApp(ServiceSaleOrderApp serviceSaleOrderApp, ClientRelationApp clientRelationApp, ServiceBaseApp serviceBaseApp, IUnitWork unitWork, IAuth auth, IHubContext<MessageHub> hubContext) : base(unitWork, auth)
+        private ILogger<ClientInfoApp> _logger;
+        public ClientInfoApp(ServiceSaleOrderApp serviceSaleOrderApp, ClientRelationApp clientRelationApp, ServiceBaseApp serviceBaseApp, IUnitWork unitWork, IAuth auth, ILogger<ClientInfoApp> logger, IHubContext<MessageHub> hubContext) : base(unitWork, auth)
         {
             _serviceBaseApp = serviceBaseApp;
             _serviceSaleOrderApp = serviceSaleOrderApp;
             _hubContext = hubContext;
             _clientRelationApp = clientRelationApp;
+            _logger = logger;
         }
         #region 客户新增草稿 修改草稿
         /// <summary>
@@ -1478,22 +1481,27 @@ namespace OpenAuth.App.Client
             byte[] job_data = ByteExtension.ToSerialize(OCRD);
             if (updateClientJobReq.submitType == "Temporary")
             {
-                result = UpdateAuditJob(updateClientJobReq.JobId, rJobNm, OCRD.CardName, OCRD.FreeText.FilterESC(), job_data, true) ? "1" : "0";
+                var resultTFlag = UpdateAuditJob(updateClientJobReq.JobId, rJobNm, OCRD.CardName, OCRD.FreeText.FilterESC(), job_data, true);
+                result = resultTFlag ? "1" : "0";
                 bool updParaCardCode = UpdateWfaJobPara(updateClientJobReq.JobId, 1, OCRD.CardCode);
                 bool updParaCardName = UpdateWfaJobPara(updateClientJobReq.JobId, 2, OCRD.CardName);
                 bool updParaOperateType = UpdateWfaJobPara(updateClientJobReq.JobId, 3, OCRD.ClientOperateType);
                 bool updParaAppChange = UpdateWfaJobPara(updateClientJobReq.JobId, 4, OCRD.IsApplicationChange);
                 //更新草稿客户关系
-                await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
+                if (resultTFlag)
                 {
-                    JobId = Convert.ToInt32(result),
-                    ClientNo = "",
-                    Flag = Convert.ToInt32(OCRD.is_reseller),
-                    ClientName = OCRD.CardFName,
-                    EndCustomerName = OCRD.EndCustomerName,
-                    Operator = loginUser.Name,
-                    Operatorid = loginUser.User_Id.ToString()
-                });
+                    await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
+                    {
+                        JobId = Convert.ToInt32(updateClientJobReq.JobId),
+                        ClientNo = "",
+                        Flag = OCRD.is_reseller == "Y" ? 1 : 0,
+                        ClientName = OCRD.CardName,
+                        EndCustomerName = OCRD.EndCustomerName,
+                        Operator = loginUser.Name,
+                        Operatorid = loginUser.Id
+                    });
+                }
+                
             }
             else if (updateClientJobReq.submitType == "Resubmit")
             {
@@ -1502,19 +1510,20 @@ namespace OpenAuth.App.Client
                 bool updParaCardName = UpdateWfaJobPara(updateClientJobReq.JobId, 2, OCRD.CardName);
                 bool updParaOperateType = UpdateWfaJobPara(updateClientJobReq.JobId, 3, OCRD.ClientOperateType);
                 bool updParaAppChange = UpdateWfaJobPara(updateClientJobReq.JobId, 4, OCRD.IsApplicationChange);
-                //更新草稿客户关系
-                await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
-                {
-                    JobId = Convert.ToInt32(result),
-                    ClientNo = "",
-                    Flag = Convert.ToInt32(OCRD.is_reseller),
-                    ClientName = OCRD.CardFName,
-                    EndCustomerName = OCRD.EndCustomerName,
-                    Operator = loginUser.Name,
-                    Operatorid = loginUser.User_Id.ToString()
-                });
+                
                 if (res)
                 {
+                    //更新草稿客户关系
+                    await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
+                    {
+                        JobId = Convert.ToInt32(updateClientJobReq.JobId),
+                        ClientNo = "",
+                        Flag = OCRD.is_reseller == "Y" ? 1 : 0,
+                        ClientName = OCRD.CardName,
+                        EndCustomerName = OCRD.EndCustomerName,
+                        Operator = loginUser.Name,
+                        Operatorid = loginUser.Id
+                    });
                     result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(updateClientJobReq.JobId), UserId, OCRD.FreeText, "", 0);
                     if (result == "1")
                     {
@@ -1548,22 +1557,26 @@ namespace OpenAuth.App.Client
             }
             else if (updateClientJobReq.submitType == "Edit")
             {
-                result = UpdateAuditJob(updateClientJobReq.JobId, rJobNm, OCRD.CardName, OCRD.FreeText.FilterESC(), job_data, false) ? "1" : "0";
+                var resultTElag = UpdateAuditJob(updateClientJobReq.JobId, rJobNm, OCRD.CardName, OCRD.FreeText.FilterESC(), job_data, false);
+                result = resultTElag ? "1" : "0";
                 bool updParaCardCode = UpdateWfaJobPara(updateClientJobReq.JobId, 1, OCRD.CardCode);
                 bool updParaCardName = UpdateWfaJobPara(updateClientJobReq.JobId, 2, OCRD.CardName);
                 bool updParaOperateType = UpdateWfaJobPara(updateClientJobReq.JobId, 3, OCRD.ClientOperateType);
                 bool updParaAppChange = UpdateWfaJobPara(updateClientJobReq.JobId, 4, OCRD.IsApplicationChange);
                 //更新草稿客户关系
-                await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
+                if (resultTElag)
                 {
-                    JobId = Convert.ToInt32(result),
-                    ClientNo = "",
-                    Flag = Convert.ToInt32(OCRD.is_reseller),
-                    ClientName = OCRD.CardFName,
-                    EndCustomerName = OCRD.EndCustomerName,
-                    Operator = loginUser.Name,
-                    Operatorid = loginUser.User_Id.ToString()
-                });
+                    await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
+                    {
+                        JobId = Convert.ToInt32(updateClientJobReq.JobId),
+                        ClientNo = "",
+                        Flag = OCRD.is_reseller == "Y" ? 1 : 0,
+                        ClientName = OCRD.CardName,
+                        EndCustomerName = OCRD.EndCustomerName,
+                        Operator = loginUser.Name,
+                        Operatorid = loginUser.Id
+                    });
+                }
             }
             return result;
         }
@@ -1594,6 +1607,7 @@ namespace OpenAuth.App.Client
                     if (originClient.U_is_reseller =="N")
                     {
                         //add log to explain why
+                        _logger.LogError("不允许中间商变更为终端客户,请求参数为 jobid:" + JobId + " CardCode: "+ CardCode);
                         return "0";
                     }
                     else
@@ -1609,11 +1623,6 @@ namespace OpenAuth.App.Client
                             flag = 0,
                             OperateType = 1
                         });
-                        //await _clientRelationApp.ResignOperators(new ClientRelation.Request.ResignOper
-                        //{
-                        //    ClientNo = CardCode,
-                        //    userid = job.user_id
-                        //});
 
                     }
                 }

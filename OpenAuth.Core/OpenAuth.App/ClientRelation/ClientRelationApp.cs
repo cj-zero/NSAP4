@@ -186,7 +186,7 @@ namespace OpenAuth.App.ClientRelation
             List<OpenAuth.Repository.Domain.ClientRelHistory> addHistoryData = new List<OpenAuth.Repository.Domain.ClientRelHistory>();
             //find the script and activate the node
             var originRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.JobId == job.JobId && a.ScriptFlag == 1);
-            if (relatedClients.Exists(a => a.customerNo == legitJob.sbo_itf_return))
+            if (!string.IsNullOrEmpty(client.EndCustomerName) && relatedClients.Exists(a => a.customerNo == legitJob.sbo_itf_return))
             {
                 //self contained
                 OpenAuth.Repository.Domain.ClientRelation cr = new Repository.Domain.ClientRelation
@@ -237,6 +237,8 @@ namespace OpenAuth.App.ClientRelation
                 });
                 originRelation.IsActive = 1;
                 originRelation.ScriptFlag = 0;
+                originRelation.ClientNo = job.ClientNo;
+                originRelation.UpdateDate = DateTime.Now;
                 updateData.Add(originRelation);
             }
             else
