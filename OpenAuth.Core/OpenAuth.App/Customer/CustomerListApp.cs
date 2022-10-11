@@ -20,6 +20,7 @@ using System.Data;
 using OpenAuth.App.Order;
 using NSAP.Entity.Client;
 using OpenAuth.App.ClientRelation;
+using User = OpenAuth.Repository.Domain.User;
 
 namespace OpenAuth.App.Customer
 {
@@ -866,14 +867,15 @@ namespace OpenAuth.App.Customer
                             await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == item.CustomerNo);
 
                             //更新客户关系
+                            var erpid = UnitWork.FindSingle<User>(u => u.User_Id == userId);
                             await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq { 
-                                jobid = Convert.ToInt32(job_id),
-                                userid = userId.ToString(),
+                                jobid = int.Parse(job_id),
+                                userid = erpid.Id,
                                 username = loginUser.Name,
                                 ClientNo = client.CardCode,
                                 flag = client.is_reseller=="Y"?1:0,
-                                OperateType= client.is_reseller == "Y"?4:5,
-                                job_userid = userId.ToString(),
+                                OperateType= client.is_reseller == "Y"?5:4,
+                                job_userid = erpid.Id,
                                 job_username = loginUser.Name
                             });
 
@@ -1115,6 +1117,9 @@ namespace OpenAuth.App.Customer
                             await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == item.CustomerNo);
 
                             //更新客户关系
+                            //获取业务员4.0编号
+                            var saleidRaw = UnitWork.FindSingle<sbo_user>(s => s.sale_id == req.SlpCode);
+                            var erpid = UnitWork.FindSingle<User>(u =>u.User_Id == saleidRaw.user_id);
                             await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
                             {
                                 jobid = Convert.ToInt32(job_id),
@@ -1122,8 +1127,8 @@ namespace OpenAuth.App.Customer
                                 username = loginUser.Name,
                                 ClientNo = client.CardCode,
                                 flag = client.is_reseller == "Y" ? 1 : 0,
-                                OperateType = client.is_reseller == "Y" ? 4 : 5,
-                                job_userid = req.SlpCode.ToString(),
+                                OperateType = client.is_reseller == "Y" ? 5 : 4,
+                                job_userid = erpid.Id,
                                 job_username = req.SlpName
                             });
 

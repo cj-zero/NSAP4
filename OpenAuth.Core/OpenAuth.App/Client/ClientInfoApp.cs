@@ -31,6 +31,8 @@ using OpenAuth.App.Client.Response;
 using Microsoft.AspNetCore.SignalR;
 using OpenAuth.App.SignalR;
 using OpenAuth.App.ClientRelation;
+using DocumentFormat.OpenXml.Math;
+using OpenAuth.App.Request;
 
 namespace OpenAuth.App.Client
 {
@@ -87,11 +89,11 @@ namespace OpenAuth.App.Client
                 {
                     JobId =Convert.ToInt32(result),
                     ClientNo = "",
-                    Flag = Convert.ToInt32(OCRD.is_reseller),
-                    ClientName = OCRD.CardFName,
+                    Flag = OCRD.is_reseller=="N"?0:1,
+                    ClientName = OCRD.CardName,
                     EndCustomerName = OCRD.EndCustomerName,
                     Operator = loginUser.Name,
-                    Operatorid = loginUser.User_Id.ToString()
+                    Operatorid = loginUser.Id
                 });
 
             }
@@ -134,6 +136,13 @@ namespace OpenAuth.App.Client
                                 default:
                                     break;
                             }
+
+                            //20221008 业务员修改客户
+                            await _clientRelationApp.ResignTerminals(new ClientRelation.Request.ResignOper { 
+                                ClientNo = OCRD.CardCode,
+                                TerminalList = OCRD.EndCustomerName
+                            } );
+
                         }
                     }
                 }
@@ -1564,15 +1573,70 @@ namespace OpenAuth.App.Client
         /// <summary>
         /// 保存业务伙伴审核的录入方案
         /// </summary>
-        public string SaveCrmAuditInfo(string AuditType, string CardCode, string DfTcnician, string JobId)
+        public async Task<string> SaveCrmAuditInfo(string AuditType, string CardCode, string DfTcnician, string JobId)
         {
             clientOCRD client = new clientOCRD();
             client = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(JobId));
             client.ChangeType = AuditType;
             client.ChangeCardCode = CardCode;
+            var originClient = UnitWork.FindSingle<crm_ocrd>(a => a.CardCode == CardCode);
             if (AuditType == "Edit")
             {
                 client.DfTcnicianCode = DfTcnician;
+                //20221007  若审批是终端时 1. 中间商变更为终端，不允许 2. 终端变更，更改业务员，原先关系不解绑
+                var currentuser = _auth.GetCurrentUser();
+                var jobraw = Convert.ToInt32(JobId);
+                var job = UnitWork.FindSingle<wfa_job>(a => a.job_id == jobraw);
+               
+                var newOper = UnitWork.FindSingle<User>(a => a.User_Id == job.user_id);
+                if (client.is_reseller=="Y")
+                {
+                    if (originClient.U_is_reseller =="N")
+                    {
+                        //add log to explain why
+                        return "0";
+                    }
+                    else
+                    {
+                        
+                        await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq { 
+                            userid = currentuser.User.Id.ToString(),
+                            username = currentuser.User.Name,
+                            job_userid = newOper.Id,
+                            job_username = newOper.Name,
+                            jobid = (int)job.job_id,
+                            ClientNo = CardCode,
+                            flag = 0,
+                            OperateType = 1
+                        });
+                        //await _clientRelationApp.ResignOperators(new ClientRelation.Request.ResignOper
+                        //{
+                        //    ClientNo = CardCode,
+                        //    userid = job.user_id
+                        //});
+
+                    }
+                }
+                else
+                {
+                    //20221007  若审批是中间商时 1. 终端变更为中间商，更改业务员  2. 中间商变更，更改业务员，原先关系不解绑
+                    if (originClient.U_is_reseller == "N")
+                    {
+                        await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
+                        {
+                            userid = currentuser.User.Id.ToString(),
+                            username = currentuser.User.Name,
+                            job_userid = newOper.Id,
+                            job_username = newOper.Name,
+                            jobid = (int)job.job_id,
+                            ClientNo = CardCode,
+                            flag = 1,
+                            OperateType = 0
+                        });
+                    }
+
+
+                }
             }
             string rJobNm = string.Format("{0}{1}", client.ClientOperateType == "edit" ? "修改" : "添加", client.CardType == "S" ? "供应商" : "业务伙伴");
             byte[] job_data = ByteExtension.ToSerialize(client);
