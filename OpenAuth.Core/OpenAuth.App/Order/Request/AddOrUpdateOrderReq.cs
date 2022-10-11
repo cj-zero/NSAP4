@@ -318,7 +318,7 @@ namespace OpenAuth.App.Order.Request
         /// <summary>
         /// 关联订单Id
         /// </summary>
-        public int U_New_ORDRID { get; set; }
+        public string U_New_ORDRID { get; set; }
         /// <summary>
         /// 如果是商城订单记录商城单号
         public string U_EshopNo { get; set; }
