@@ -231,5 +231,25 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("")]
         public string IssuerId { get; set; }
+        /// <summary>
+        /// 校准开始时间
+        /// </summary>
+        public DateTime? StartTime { get; set; }
+        /// <summary>
+        /// 校准状态
+        /// </summary>
+        public string CalibrationStatus { get; set; }
+        /// <summary>
+        /// 校准方式
+        /// </summary>
+        public string CalibrationMode { get; set; }
+        /// <summary>
+        /// 校准工具资产编码
+        /// </summary>
+        public string ToolAssetCode { get; set; }
+        /// <summary>
+        /// 相差总秒数        
+        /// </summary>
+        public string TotalSeconds { get; set; }
     }
 }

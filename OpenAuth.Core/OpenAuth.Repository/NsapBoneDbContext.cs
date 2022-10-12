@@ -73,12 +73,14 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<sale_contract_review>().HasKey(o => new { o.contract_id });
             modelBuilder.Entity<sale_contract_review_detail>().HasKey(o => new { o.seq_id });
             modelBuilder.Entity<store_itemtype>().HasKey(o => new { o.ItemTypeId });
-            
+            modelBuilder.Entity<buy_porrel>().HasKey(o => new { o.sbo_id, o.POR_Entry, o.RelDoc_Entry });
+
         }
 
         public virtual DbSet<sale_transport> sale_transports { get; set; }
-
+        
         public virtual DbSet<buy_opor> buy_opors { get; set; }
+        public virtual DbSet<buy_porrel> buy_porrels { get; set; }
 
         public virtual DbSet<sale_dln1> sale_dln1s { get; set; }
 

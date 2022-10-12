@@ -59,6 +59,11 @@ namespace OpenAuth.Repository
         public virtual DbSet<BeforeSaleDemandDeptInfo> BeforeSaleDemandDeptInfos { get; set; }
         public virtual DbSet<BeforeSaleFiles> BeforeSaleFiles { get; set; }
         public virtual DbSet<BeforeSaleProScheduling> BeforeSaleProSchedulings { get; set; }
+        public virtual DbSet<BlameBelong> BlameBelongs { get; set; }
+        public virtual DbSet<BlameBelongFile> BlameBelongFiles { get; set; }
+        public virtual DbSet<BlameBelongOrg> BlameBelongOrgs { get; set; }
+        public virtual DbSet<BlameBelongOrgFile> BlameBelongOrgFiles { get; set; }
+        public virtual DbSet<BlameBelongHistory> BlameBelongHistorys { get; set; }
 
         public virtual DbSet<ServiceOrderSerial> Serviceorderserials { get; set; }
         public virtual DbSet<AppServiceOrderLog> Appserviceorderlogs { get; set; }
@@ -170,6 +175,12 @@ namespace OpenAuth.Repository
 
         #region 新威字典
         public virtual DbSet<NewareDictionary> newaredictionary { get; set; }
+        #endregion
+
+        #region 付款条件
+        public virtual DbSet<PayTermSet> paytermset { get; set; }
+        public virtual DbSet<PayPhase> payphase { get; set; }
+        public virtual DbSet<PayTermSave> paytermsave { get; set; }
         #endregion
     }
 }

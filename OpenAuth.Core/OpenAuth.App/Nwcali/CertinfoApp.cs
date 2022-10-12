@@ -212,6 +212,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Sn), u => u.TesterSn.Contains(request.Sn))
                 .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), u => u.Operator.Contains(request.Operator))
                 .WhereIf(!(request.CalibrationDateFrom == null && request.CalibrationDateTo == null), u => u.Time >= request.CalibrationDateFrom && u.Time <= request.CalibrationDateTo)
+                .Where(c => c.CalibrationStatus != "NG")
                 ;
             if (request.FlowStatus == 1)
             {
@@ -1842,11 +1843,39 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 获取下位机及烤机状态
+        /// </summary>
+        /// <param name="wo"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetLowGuidAndStatus(string wo)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            List<GuidStatus> guidStatuses = new List<GuidStatus>();
+            var guidList = GetLowGuid(wo);
+            if (guidList.Count > 0)
+            {
+                foreach (var item in guidList)
+                {
+                    var resList = await GetChlIdResult(item);
+                    var status = resList.Sum(c => c.ErrCount) > 0 ? 1 : 0;
+                    guidStatuses.Add(new GuidStatus { Guid = item, Status = status });
+                }
+            }
+            result.Data = guidStatuses;
+            return result;
+        }
+
+        /// <summary>
         /// 获取通道结果
         /// </summary>
         /// <param name="guid"></param>
         /// <returns></returns>
-        public async Task<TableData> GetChlIdResult(string guid)
+        public async Task<List<CheckResultDto>> GetChlIdResult(string guid)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -1887,13 +1916,15 @@ namespace OpenAuth.App
                         {
                             var checkDto = JsonHelper.Instance.Deserialize<CheckResultDto>(resObj["data"].ToString());
                             checkDto.ChlId = item.ChlId;
+                            checkDto.CheckItems = checkDto.CheckItems.Where(s => s.CheckType != 3 && s.CheckType != 4).ToList();
+                            checkDto.ErrCount = checkDto.CheckItems.Sum(c => c.ErrCount);
                             checkResult.Add(checkDto);
                         }
                     }
                 }
             }
             result.Data = checkResult;
-            return result;
+            return checkResult;
         }
 
         /// <summary>

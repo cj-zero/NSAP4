@@ -45,6 +45,7 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<OSRIModel>().HasKey(o => o.SuppSerial);
             modelBuilder.Entity<ORCTModel>().HasKey(o => o.DocEntry);
             modelBuilder.Entity<ORCT>().HasKey(o => o.DocEntry);
+            modelBuilder.Entity<RCT2>().HasKey(o => new { o.DocNum, o.InvoiceId });
             modelBuilder.Entity<OQUT>().HasKey(o => o.DocEntry);
             modelBuilder.Entity<ORDN>().HasKey(o => o.DocEntry);
             modelBuilder.Entity<OWOR>().HasKey(o => o.DocEntry);
@@ -1991,7 +1992,7 @@ namespace OpenAuth.Repository
         //public virtual DbSet<RCON> Rcons { get; set; }
         //public virtual DbSet<RCR1> Rcr1s { get; set; }
         //public virtual DbSet<RCT1> Rct1s { get; set; }
-        //public virtual DbSet<RCT2> Rct2s { get; set; }
+         public virtual DbSet<RCT2> Rct2s { get; set; }
         //public virtual DbSet<RCT3> Rct3s { get; set; }
         //public virtual DbSet<RCT4> Rct4s { get; set; }
         //public virtual DbSet<RCT5> Rct5s { get; set; }

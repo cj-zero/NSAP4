@@ -19,6 +19,8 @@ using System.Collections;
 using System.Data;
 using OpenAuth.App.Order;
 using NSAP.Entity.Client;
+using OpenAuth.App.ClientRelation;
+using User = OpenAuth.Repository.Domain.User;
 
 namespace OpenAuth.App.Customer
 {
@@ -27,12 +29,14 @@ namespace OpenAuth.App.Customer
         private readonly UserManagerApp _userManagerApp;
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
         private readonly ServiceBaseApp _serviceBaseApp;
+        private readonly ClientRelationApp _clientRelationApp;
         public CustomerListApp(IUnitWork unitWork, IAuth auth,
-            UserManagerApp userManagerApp, ServiceSaleOrderApp serviceSaleOrderApp, ServiceBaseApp serviceBaseApp) : base(unitWork, auth)
+            UserManagerApp userManagerApp, ServiceSaleOrderApp serviceSaleOrderApp,ClientRelationApp clientRelationApp, ServiceBaseApp serviceBaseApp) : base(unitWork, auth)
         {
             _userManagerApp = userManagerApp;
             _serviceSaleOrderApp = serviceSaleOrderApp;
             _serviceBaseApp = serviceBaseApp;
+            _clientRelationApp = clientRelationApp;
         }
 
         /// <summary>
@@ -861,6 +865,20 @@ namespace OpenAuth.App.Customer
                             await UnitWork.AddAsync<CustomerSalerHistory>(history);
                             //领取后,将客户从公海中移出
                             await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == item.CustomerNo);
+
+                            //更新客户关系
+                            var erpid = UnitWork.FindSingle<User>(u => u.User_Id == userId);
+                            await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq { 
+                                jobid = int.Parse(job_id),
+                                userid = erpid.Id,
+                                username = loginUser.Name,
+                                ClientNo = client.CardCode,
+                                flag = client.is_reseller=="Y"?1:0,
+                                OperateType= client.is_reseller == "Y"?4:5,
+                                job_userid = erpid.Id,
+                                job_username = loginUser.Name
+                            });
+
                             await UnitWork.SaveAsync();
                         }
                     }
@@ -1097,6 +1115,23 @@ namespace OpenAuth.App.Customer
                             await UnitWork.AddAsync<CustomerSalerHistory>(history);
                             //领取后,将客户从公海中移出
                             await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == item.CustomerNo);
+
+                            //更新客户关系
+                            //获取业务员4.0编号
+                            var saleidRaw = UnitWork.FindSingle<sbo_user>(s => s.sale_id == req.SlpCode);
+                            var erpid = UnitWork.FindSingle<User>(u =>u.User_Id == saleidRaw.user_id);
+                            await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
+                            {
+                                jobid = Convert.ToInt32(job_id),
+                                userid = userId.ToString(),
+                                username = loginUser.Name,
+                                ClientNo = client.CardCode,
+                                flag = client.is_reseller == "Y" ? 1 : 0,
+                                OperateType = client.is_reseller == "Y" ? 4 : 5,
+                                job_userid = erpid.Id,
+                                job_username = req.SlpName
+                            });
+
                             await UnitWork.SaveAsync();
                         }
                     }

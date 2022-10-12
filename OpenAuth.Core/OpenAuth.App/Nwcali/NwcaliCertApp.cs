@@ -81,6 +81,22 @@ namespace OpenAuth.App.Nwcali
             }
         }
 
+        public async Task AddProduceNwcaliBaseInfo(ProduceNwcaliBaseInfo baseInfo)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var user = loginContext.User;
+
+            baseInfo.CreateTime = DateTime.Now;
+            baseInfo.CreateUser = user.Name;
+            baseInfo.CreateUserId = user.Id;
+            await UnitWork.AddAsync(baseInfo);
+            await UnitWork.SaveAsync();
+        }
+
         public async Task UpdateTesterModel()
         {
             var query = await UnitWork.Find<NwcaliBaseInfo>(c => !c.TesterModel.Contains("-") && c.TesterSn.StartsWith("T")).ToListAsync();

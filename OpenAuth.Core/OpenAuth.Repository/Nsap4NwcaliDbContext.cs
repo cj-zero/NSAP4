@@ -35,6 +35,8 @@ namespace OpenAuth.Repository
         public virtual DbSet<NwcaliPlcData> Nwcaliplcdatas { get; set; }
         public virtual DbSet<NwcaliTur> Nwcaliturs { get; set; }
         public virtual DbSet<PcPlc> Pcplcs { get; set; }
+        public virtual DbSet<ProduceNwcaliBaseInfo> ProduceNwcaliBaseInfos { get; set; }
+        public virtual DbSet<ProduceEtalon> ProduceEtalons { get; set; }
 
         // BTS
 

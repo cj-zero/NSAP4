@@ -30,6 +30,10 @@ using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.App.Client.Response;
 using Microsoft.AspNetCore.SignalR;
 using OpenAuth.App.SignalR;
+using OpenAuth.App.ClientRelation;
+using DocumentFormat.OpenXml.Math;
+using OpenAuth.App.Request;
+using Microsoft.Extensions.Logging;
 
 namespace OpenAuth.App.Client
 {
@@ -37,12 +41,16 @@ namespace OpenAuth.App.Client
     {
         ServiceBaseApp _serviceBaseApp;
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
+        private readonly ClientRelationApp _clientRelationApp;
         private readonly IHubContext<MessageHub> _hubContext;
-        public ClientInfoApp(ServiceSaleOrderApp serviceSaleOrderApp, ServiceBaseApp serviceBaseApp, IUnitWork unitWork, IAuth auth, IHubContext<MessageHub> hubContext) : base(unitWork, auth)
+        private ILogger<ClientInfoApp> _logger;
+        public ClientInfoApp(ServiceSaleOrderApp serviceSaleOrderApp, ClientRelationApp clientRelationApp, ServiceBaseApp serviceBaseApp, IUnitWork unitWork, IAuth auth, ILogger<ClientInfoApp> logger, IHubContext<MessageHub> hubContext) : base(unitWork, auth)
         {
             _serviceBaseApp = serviceBaseApp;
             _serviceSaleOrderApp = serviceSaleOrderApp;
             _hubContext = hubContext;
+            _clientRelationApp = clientRelationApp;
+            _logger = logger;
         }
         #region 客户新增草稿 修改草稿
         /// <summary>
@@ -79,6 +87,18 @@ namespace OpenAuth.App.Client
                 bool updParaCardName = UpdateWfaJobPara(result, 2, OCRD.CardName);
                 bool updParaOperateType = UpdateWfaJobPara(result, 3, OCRD.ClientOperateType);
                 bool updParaAppChange = UpdateWfaJobPara(result, 4, OCRD.IsApplicationChange);
+                //新增更新草稿客户关系
+                await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
+                {
+                    JobId =Convert.ToInt32(result),
+                    ClientNo = "",
+                    Flag = OCRD.is_reseller=="N"?0:1,
+                    ClientName = OCRD.CardName,
+                    EndCustomerName = OCRD.EndCustomerName,
+                    Operator = loginUser.Name,
+                    Operatorid = loginUser.Id
+                });
+
             }
             else if (addClientInfoReq.submitType == "Submit")
             {
@@ -119,6 +139,13 @@ namespace OpenAuth.App.Client
                                 default:
                                     break;
                             }
+
+                            //20221008 业务员修改客户
+                            await _clientRelationApp.ResignTerminals(new ClientRelation.Request.ResignOper { 
+                                ClientNo = OCRD.CardCode,
+                                TerminalList = OCRD.EndCustomerName
+                            } );
+
                         }
                     }
                 }
@@ -1441,9 +1468,11 @@ namespace OpenAuth.App.Client
         /// <summary>
         /// 修改流程任务
         /// </summary>
-        public string UpdateClientJob(UpdateClientJobReq updateClientJobReq)
+        public async Task<string> UpdateClientJob(UpdateClientJobReq updateClientJobReq)
         {
             string result = "";
+            var loginContext = _auth.GetCurrentUser();
+            var loginUser = loginContext.User;
             var UserId = _serviceBaseApp.GetUserNaspId();
             clientOCRD OCRD = BulidClientJob(updateClientJobReq.clientInfo);
             //根据客户类型生成业务伙伴编码
@@ -1452,11 +1481,27 @@ namespace OpenAuth.App.Client
             byte[] job_data = ByteExtension.ToSerialize(OCRD);
             if (updateClientJobReq.submitType == "Temporary")
             {
-                result = UpdateAuditJob(updateClientJobReq.JobId, rJobNm, OCRD.CardName, OCRD.FreeText.FilterESC(), job_data, true) ? "1" : "0";
+                var resultTFlag = UpdateAuditJob(updateClientJobReq.JobId, rJobNm, OCRD.CardName, OCRD.FreeText.FilterESC(), job_data, true);
+                result = resultTFlag ? "1" : "0";
                 bool updParaCardCode = UpdateWfaJobPara(updateClientJobReq.JobId, 1, OCRD.CardCode);
                 bool updParaCardName = UpdateWfaJobPara(updateClientJobReq.JobId, 2, OCRD.CardName);
                 bool updParaOperateType = UpdateWfaJobPara(updateClientJobReq.JobId, 3, OCRD.ClientOperateType);
                 bool updParaAppChange = UpdateWfaJobPara(updateClientJobReq.JobId, 4, OCRD.IsApplicationChange);
+                //更新草稿客户关系
+                if (resultTFlag)
+                {
+                    await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
+                    {
+                        JobId = Convert.ToInt32(updateClientJobReq.JobId),
+                        ClientNo = "",
+                        Flag = OCRD.is_reseller == "Y" ? 1 : 0,
+                        ClientName = OCRD.CardName,
+                        EndCustomerName = OCRD.EndCustomerName,
+                        Operator = loginUser.Name,
+                        Operatorid = loginUser.Id
+                    });
+                }
+                
             }
             else if (updateClientJobReq.submitType == "Resubmit")
             {
@@ -1465,8 +1510,20 @@ namespace OpenAuth.App.Client
                 bool updParaCardName = UpdateWfaJobPara(updateClientJobReq.JobId, 2, OCRD.CardName);
                 bool updParaOperateType = UpdateWfaJobPara(updateClientJobReq.JobId, 3, OCRD.ClientOperateType);
                 bool updParaAppChange = UpdateWfaJobPara(updateClientJobReq.JobId, 4, OCRD.IsApplicationChange);
+                
                 if (res)
                 {
+                    //更新草稿客户关系
+                    await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
+                    {
+                        JobId = Convert.ToInt32(updateClientJobReq.JobId),
+                        ClientNo = "",
+                        Flag = OCRD.is_reseller == "Y" ? 1 : 0,
+                        ClientName = OCRD.CardName,
+                        EndCustomerName = OCRD.EndCustomerName,
+                        Operator = loginUser.Name,
+                        Operatorid = loginUser.Id
+                    });
                     result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(updateClientJobReq.JobId), UserId, OCRD.FreeText, "", 0);
                     if (result == "1")
                     {
@@ -1500,11 +1557,26 @@ namespace OpenAuth.App.Client
             }
             else if (updateClientJobReq.submitType == "Edit")
             {
-                result = UpdateAuditJob(updateClientJobReq.JobId, rJobNm, OCRD.CardName, OCRD.FreeText.FilterESC(), job_data, false) ? "1" : "0";
+                var resultTElag = UpdateAuditJob(updateClientJobReq.JobId, rJobNm, OCRD.CardName, OCRD.FreeText.FilterESC(), job_data, false);
+                result = resultTElag ? "1" : "0";
                 bool updParaCardCode = UpdateWfaJobPara(updateClientJobReq.JobId, 1, OCRD.CardCode);
                 bool updParaCardName = UpdateWfaJobPara(updateClientJobReq.JobId, 2, OCRD.CardName);
                 bool updParaOperateType = UpdateWfaJobPara(updateClientJobReq.JobId, 3, OCRD.ClientOperateType);
                 bool updParaAppChange = UpdateWfaJobPara(updateClientJobReq.JobId, 4, OCRD.IsApplicationChange);
+                //更新草稿客户关系
+                if (resultTElag)
+                {
+                    await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
+                    {
+                        JobId = Convert.ToInt32(updateClientJobReq.JobId),
+                        ClientNo = "",
+                        Flag = OCRD.is_reseller == "Y" ? 1 : 0,
+                        ClientName = OCRD.CardName,
+                        EndCustomerName = OCRD.EndCustomerName,
+                        Operator = loginUser.Name,
+                        Operatorid = loginUser.Id
+                    });
+                }
             }
             return result;
         }
@@ -1514,15 +1586,66 @@ namespace OpenAuth.App.Client
         /// <summary>
         /// 保存业务伙伴审核的录入方案
         /// </summary>
-        public string SaveCrmAuditInfo(string AuditType, string CardCode, string DfTcnician, string JobId)
+        public async Task<string> SaveCrmAuditInfo(string AuditType, string CardCode, string DfTcnician, string JobId)
         {
             clientOCRD client = new clientOCRD();
             client = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(JobId));
             client.ChangeType = AuditType;
             client.ChangeCardCode = CardCode;
+            var originClient = UnitWork.FindSingle<crm_ocrd>(a => a.CardCode == CardCode);
             if (AuditType == "Edit")
             {
                 client.DfTcnicianCode = DfTcnician;
+                //20221007  若审批是终端时 1. 中间商变更为终端，不允许 2. 终端变更，更改业务员，原先关系不解绑
+                var currentuser = _auth.GetCurrentUser();
+                var jobraw = Convert.ToInt32(JobId);
+                var job = UnitWork.FindSingle<wfa_job>(a => a.job_id == jobraw);
+               
+                var newOper = UnitWork.FindSingle<User>(a => a.User_Id == job.user_id);
+                if (client.is_reseller=="Y")
+                {
+                    if (originClient.U_is_reseller =="N")
+                    {
+                        //add log to explain why
+                        _logger.LogError("不允许中间商变更为终端客户,请求参数为 jobid:" + JobId + " CardCode: "+ CardCode);
+                        return "0";
+                    }
+                    else
+                    {
+                        
+                        await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq { 
+                            userid = currentuser.User.Id.ToString(),
+                            username = currentuser.User.Name,
+                            job_userid = newOper.Id,
+                            job_username = newOper.Name,
+                            jobid = (int)job.job_id,
+                            ClientNo = CardCode,
+                            flag = 0,
+                            OperateType = 1
+                        });
+
+                    }
+                }
+                else
+                {
+                    //20221007  若审批是中间商时 1. 终端变更为中间商，更改业务员  2. 中间商变更，更改业务员，原先关系不解绑
+                    if (originClient.U_is_reseller == "N")
+                    {
+                        await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
+                        {
+                            userid = currentuser.User.Id.ToString(),
+                            username = currentuser.User.Name,
+                            job_userid = newOper.Id,
+                            job_username = newOper.Name,
+                            jobid = (int)job.job_id,
+                            ClientNo = CardCode,
+                            flag = 1,
+                            OperateType = 0
+                        });
+                    }
+
+
+                }
             }
             string rJobNm = string.Format("{0}{1}", client.ClientOperateType == "edit" ? "修改" : "添加", client.CardType == "S" ? "供应商" : "业务伙伴");
             byte[] job_data = ByteExtension.ToSerialize(client);

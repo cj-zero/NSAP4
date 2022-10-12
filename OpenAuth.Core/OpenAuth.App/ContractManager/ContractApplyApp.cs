@@ -87,7 +87,7 @@ namespace OpenAuth.App.ContractManager
                 if (loginContext.Roles.Any(r => r.Name.Equal("合同管理权限")))
                 {
                     var objs = request.FileTypes == null || request.FileTypes.Count() <= 0 ? UnitWork.Find<ContractApply>(null).Include(r => r.ContractFileTypeList).Include(r => r.contractOperationHistoryList) : UnitWork.Find<ContractApply>(null).Include(r => r.ContractFileTypeList).Include(r => r.contractOperationHistoryList).Where(r => r.ContractFileTypeList.Any(x => request.FileTypes.Contains(x.FileType)));
-                    var contractApply = objs.WhereIf(!string.IsNullOrWhiteSpace(request.ContractNo), r => r.ContractNo.Contains(request.ContractNo))
+                    var contractApply = (objs.WhereIf(!string.IsNullOrWhiteSpace(request.ContractNo), r => r.ContractNo.Contains(request.ContractNo))
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerCodeOrName), r => r.CustomerCode.Contains(request.CustomerCodeOrName) || r.CustomerName.Contains(request.CustomerCodeOrName))
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.CompanyType), r => r.CompanyType.Equals(request.CompanyType))
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.QuotationNo), r => r.QuotationNo.Contains(request.QuotationNo))
@@ -95,15 +95,15 @@ namespace OpenAuth.App.ContractManager
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), r => r.CreateName.Contains(request.CreateName))
                                             .WhereIf(request.StartDate != null, r => r.CreateTime >= request.StartDate)
                                             .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate)
-                                            .WhereIf(!string.IsNullOrWhiteSpace(request.ContractStatus), r => r.ContractStatus == request.ContractStatus);
-
-                    contractApply = contractApply.OrderByDescending(r => r.CreateTime);
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.ContractStatus), r => r.ContractStatus == request.ContractStatus)).ToList();
+                    
+                    contractApply = (request.SortOrder == "asc" ? contractApply.OrderBy(r => r.GetType().GetProperty(request.SortName == "" || request.SortName == null ? "CreateTime" : request.SortName).GetValue(r, null)) : contractApply.OrderByDescending(r => r.GetType().GetProperty(request.SortName == "" || request.SortName == null ? "CreateTime" : request.SortName).GetValue(r, null))).ToList();
                     var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
                     var categoryContractList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
                     var categoryStatusList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractStatus")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
                     List<string> contractId = contractApply.Select(r => r.Id).ToList();
                     var contractFile = UnitWork.Find<ContractFileType>(r => contractId.Contains(r.ContractApplyId));
-                    var contractApplyList = await contractApply.Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+                    var contractApplyList = contractApply.Skip((request.page - 1) * request.limit).Take(request.limit).ToList();
                     var contractResp = from a in contractApplyList
                                        join b in categoryCompanyList on a.CompanyType equals b.DtValue
                                        join c in categoryContractList on a.ContractType equals c.DtValue
@@ -160,13 +160,13 @@ namespace OpenAuth.App.ContractManager
                         ContractHistoryList = r.a.contractOperationHistoryList.OrderByDescending(o => o.CreateTime)
                     }).OrderByDescending(r => r.CreateTime).ToList();
 
-                    result.Count = await contractApply.CountAsync();
+                    result.Count = contractApply.Count();
                     result.Data = contractRespList;
                 }
                 else
                 {
                     var objs = request.FileTypes == null || request.FileTypes.Count() <= 0 ? UnitWork.Find<ContractApply>(r => r.CreateId == loginUser.Id).Include(r => r.ContractFileTypeList).Include(r => r.contractOperationHistoryList) : UnitWork.Find<ContractApply>(r => r.CreateId == loginUser.Id).Include(r => r.ContractFileTypeList).Include(r => r.contractOperationHistoryList).Where(r => r.ContractFileTypeList.Any(x => request.FileTypes.Contains(x.FileType)));
-                    var contractApply = objs.WhereIf(!string.IsNullOrWhiteSpace(request.ContractNo), r => r.ContractNo.Contains(request.ContractNo))
+                    var contractApply = (objs.WhereIf(!string.IsNullOrWhiteSpace(request.ContractNo), r => r.ContractNo.Contains(request.ContractNo))
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerCodeOrName), r => r.CustomerCode.Contains(request.CustomerCodeOrName) || r.CustomerName.Contains(request.CustomerCodeOrName))
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.CompanyType), r => r.CompanyType.Equals(request.CompanyType))
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.QuotationNo), r => r.QuotationNo.Contains(request.QuotationNo))
@@ -174,15 +174,15 @@ namespace OpenAuth.App.ContractManager
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), r => r.CreateName.Contains(request.CreateName))
                                             .WhereIf(request.StartDate != null, r => r.CreateTime >= request.StartDate)
                                             .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate)
-                                            .WhereIf(!string.IsNullOrWhiteSpace(request.ContractStatus), r => r.ContractStatus == request.ContractStatus);
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.ContractStatus), r => r.ContractStatus == request.ContractStatus)).ToList();
 
-                    contractApply.OrderByDescending(r => r.CreateTime);
+                    contractApply = (request.SortOrder == "asc" ? contractApply.OrderBy(r => r.GetType().GetProperty(request.SortName == "" || request.SortName == null ? "CreateTime" : request.SortName).GetValue(r, null)) : contractApply.OrderByDescending(r => r.GetType().GetProperty(request.SortName == "" || request.SortName == null ? "CreateTime" : request.SortName).GetValue(r, null))).ToList();
                     var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
                     var categoryContractList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
                     var categoryStatusList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractStatus")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
                     List<string> contractId = contractApply.Select(r => r.Id).ToList();
                     var contractFile = UnitWork.Find<ContractFileType>(r => contractId.Contains(r.ContractApplyId));
-                    var contractApplyList = await contractApply.Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+                    var contractApplyList = contractApply.Skip((request.page - 1) * request.limit).Take(request.limit).ToList();
                     var contractResp = from a in contractApplyList
                                        join b in categoryCompanyList on a.CompanyType equals b.DtValue
                                        join c in categoryContractList on a.ContractType equals c.DtValue
@@ -237,9 +237,9 @@ namespace OpenAuth.App.ContractManager
                             ContractFileList = file.Where(f => f.ContractFileTypeId == x.Id)
                         }),
                         ContractHistoryList = r.a.contractOperationHistoryList.OrderByDescending(o => o.CreateTime)
-                    }).OrderByDescending(r => r.CreateTime).ToList();
+                    }).ToList();
 
-                    result.Count = await contractApply.CountAsync();
+                    result.Count = contractApply.Count();
                     result.Data = contractRespList;
                 }
             }
@@ -1331,13 +1331,14 @@ namespace OpenAuth.App.ContractManager
             }
 
             var result = new TableData();
+
             var obj = await UnitWork.Find<ContractApply>(r => r.Id == req.Id).Include(r => r.ContractFileTypeList).FirstOrDefaultAsync();
             if (!string.IsNullOrEmpty(obj.ContractStatus))
             {
                 if (Convert.ToInt32(obj.ContractStatus) < 2)
                 {
-                   result.Message = "合同申请单未提交，不可操作。";
-                   result.Code = 500;
+                    result.Message = "合同申请单未提交，不可操作。";
+                    result.Code = 500;
                     return result;
                 }
             }
@@ -1353,7 +1354,7 @@ namespace OpenAuth.App.ContractManager
             {
                 result = ApprovalNodeJudge(req.Id);
             }
-           
+
             if (result.Code == 500)
             {
                 return result;
@@ -1468,7 +1469,7 @@ namespace OpenAuth.App.ContractManager
                 {
                     if (obj.ContractStatus == "6")
                     {
-                        obj.FlowInstanceId = "";
+                        req.contractApply.FlowInstanceId = "";
                         contractHis.Action = "已结束";
                         contractHis.ApprovalResult = "审批结束，待盖章";
                         List<string> ids = new List<string>();
@@ -2853,12 +2854,8 @@ namespace OpenAuth.App.ContractManager
             var objs = await UnitWork.Find<ContractApply>(r => r.Id == contractId).FirstOrDefaultAsync();
             try
             {
-                string sql = string.Format("UPDATE erp4_serve.contractapply SET DownloadNumber={0} WHERE Id='" + contractId + "'", objs.DownloadNumber + 1);
-                int resultCountJob = UnitWork.ExecuteSql(sql, ContextType.NsapBaseDbContext);
-                if (resultCountJob > 0)
-                {
-                    return true;
-                }
+                await UnitWork.UpdateAsync<ContractApply>(q => q.Id == contractId, q => new ContractApply{ DownloadNumber = objs.DownloadNumber + 1 });
+                return true;
             }
             catch (Exception ex)
             {

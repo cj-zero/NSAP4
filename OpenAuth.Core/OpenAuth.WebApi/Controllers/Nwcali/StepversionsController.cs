@@ -766,6 +766,18 @@ namespace OpenAuth.WebApi.Controllers
             result.Data = _app.GetCurFactor(currArray);
             return result;
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public TableData sk()
+        {
+            var result = new TableData();
+            result.Data = _app.WmsAccessToken();
+            return result;
+        }
         #endregion
     }
 }
