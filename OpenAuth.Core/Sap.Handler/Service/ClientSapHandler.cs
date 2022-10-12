@@ -9,8 +9,10 @@ using Microsoft.Data.SqlClient;
 using NSAP.Entity.Client;
 using OpenAuth.App.Client;
 using OpenAuth.App.ClientRelation;
+using OpenAuth.App.ClientRelation.Request;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.Repository.Interface;
 using SAPbobsCOM;
 
@@ -600,7 +602,16 @@ namespace Sap.Handler.Service
                         else
                         {
                             errorMsg += "调SAP接口，修改业务伙伴【" + jobID + "】操作成功";
-
+                            //20221008 业务员修改客户
+                            if (client.is_reseller=="Y")
+                            {
+                                await _clientRelationApp.ResignTerminals(new ResignOper
+                                {
+                                    ClientNo = client.CardCode,
+                                    TerminalList = client.EndCustomerName
+                                });
+                            }
+                            
                         }
                         #endregion
                     }
