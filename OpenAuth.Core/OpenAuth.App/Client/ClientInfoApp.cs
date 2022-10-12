@@ -140,12 +140,6 @@ namespace OpenAuth.App.Client
                                     break;
                             }
 
-                            //20221008 业务员修改客户
-                            await _clientRelationApp.ResignTerminals(new ClientRelation.Request.ResignOper { 
-                                ClientNo = OCRD.CardCode,
-                                TerminalList = OCRD.EndCustomerName
-                            } );
-
                         }
                     }
                 }
