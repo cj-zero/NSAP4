@@ -120,7 +120,7 @@ namespace OpenAuth.App.Client
                         ret = SaveCrmAuditInfo1(JobId, userID, rJobNm);
                         await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
                         {
-                            JobId = Convert.ToInt32(result),
+                            JobId = Convert.ToInt32(JobId),
                             ClientNo = "",
                             Flag = OCRD.is_reseller == "N" ? 0 : 1,
                             ClientName = OCRD.CardName,
