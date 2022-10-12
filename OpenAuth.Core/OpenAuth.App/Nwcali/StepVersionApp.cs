@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
@@ -472,8 +473,8 @@ namespace OpenAuth.App
                 {
                     List<object> CheckItemsList = new List<object>();
                     CheckItemsList.Add(new { CheckType = 1, CheckArgs = new { full_scale = 1000, tolerance = 0.002 } });
-                    CheckItemsList.Add(new { CheckType = 2, CheckArgs = new { std_thr = 0.02 } });
-                    CheckItemsList.Add(new { CheckType = 5, CheckArgs = new { std_thr = 0.02 } });
+                    CheckItemsList.Add(new { CheckType = 2, CheckArgs = new { std_thr = 0.0007 } });
+                    CheckItemsList.Add(new { CheckType = 5, CheckArgs = new { std_thr = 0.0007 } });
                     var taskData = helper.Post(new
                     {
                         EdgeGuid = item.EdgeGuid,
@@ -530,6 +531,53 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// wms token
+        /// </summary>
+        /// <returns></returns>
+        public string WmsAccessToken()
+        {
+            try
+            {
+                var rk = "xy.service.api";
+                if (RedisHelper.Exists(rk))
+                {
+                    var token = RedisHelper.Get<string>(rk);
+                    if (!string.IsNullOrWhiteSpace(token))
+                    {
+                        return token;
+                    }
+                }
+                var key = "devbindxy.service.apixinwei123";
+                byte[] bytes = Encoding.UTF8.GetBytes(key);
+                byte[] hash = SHA256.Create().ComputeHash(bytes);
+                var signature = Convert.ToBase64String(hash);
+                var urls = "http://identity.neware.cloud/v1/token";
+                Infrastructure.HttpHelper helper = new Infrastructure.HttpHelper(urls);
+                var passTokenStr = helper.Post(new
+                {
+                    clientCode = "devbind",
+                    scope = new List<string> { "xy.service.api" },
+                    signature = signature
+                }, urls, "", "");
+                JObject passTokenObj = JObject.Parse(passTokenStr);
+                if (passTokenObj == null || passTokenObj["data"] == null || passTokenObj["data"]["accessToken"] == null)
+                {
+                    return "";
+                }
+                if (!string.IsNullOrWhiteSpace(passTokenObj["data"]["accessToken"].ToString()))
+                {
+                    RedisHelper.Set(rk, passTokenObj["data"]["accessToken"].ToString(), new TimeSpan(0, 0, Convert.ToInt32(passTokenObj["data"]["expireIn"])));
+                }
+                return passTokenObj["data"]["accessToken"].ToString();
+            }
+            catch (Exception ex)
+            {
+                Log.Logger.Error($"WMS Token 获取失败! message={ex.Message}");
+                return "";
+            }
+        }
+
+        /// <summary>
         /// 同步设备数据
         /// </summary>
         /// <param name="list"></param>
@@ -543,6 +591,33 @@ namespace OpenAuth.App
             {
                 throw new Exception($"{EdgeGuid}不存在!");
             }
+            //guid 获取sn TO DO
+            //var wmsAccessToken = WmsAccessToken();
+            //if (string.IsNullOrWhiteSpace(wmsAccessToken))
+            //{
+            //    throw new Exception($"WMS token 获取失败!");
+            //}
+            //string urls = "http://service.neware.cloud/common/DevSnByGuid";
+            //Infrastructure.HttpHelper helper = new Infrastructure.HttpHelper(urls);
+            //var guids = list.Select(c => c.low_guid).Distinct().ToArray();
+            //var hasBindGuids = await UnitWork.Find<DeviceBindMap>(null).Where(c => guids.Contains(c.LowGuid)).Select(c => c.LowGuid).ToListAsync();
+            //var unBindGuids = guids.Where(c => !hasBindGuids.Contains(c)).ToArray();
+            //var datastr = helper.PostAuthentication(unBindGuids, urls, wmsAccessToken);
+            //JObject dataObj = JObject.Parse(datastr);
+            //List<WmsLowGuidResp> wmsLowGuids = new List<WmsLowGuidResp>();
+            //try
+            //{
+            //    wmsLowGuids = JsonConvert.DeserializeObject<List<WmsLowGuidResp>>(JsonConvert.SerializeObject(dataObj["data"]["devBindInfo"]));
+            //}
+            //catch (Exception ex)
+            //{
+            //    wmsLowGuids = new List<WmsLowGuidResp>();
+            //    Log.Logger.Error($"WMS guid 获取失败! message={ex.Message}");
+            //}
+            //sn获取生产码  TO DO
+
+
+
             DateTime dt = DateTime.Now;
             edgeInfo.status = 1;
             edgeInfo.CreateTime = dt;
@@ -550,6 +625,7 @@ namespace OpenAuth.App
             List<edge_mid> midList = new List<edge_mid>();
             List<edge_low> lowList = new List<edge_low>();
             List<edge_channel> channelList = new List<edge_channel>();
+            List<DeviceBindMap> deviceBindMaps = new List<DeviceBindMap>();
             foreach (var item in list)
             {
                 var host = hostList.Where(c => c.edge_guid == item.edge_guid && c.srv_guid == item.srv_guid).Any();
@@ -1284,6 +1360,5 @@ namespace OpenAuth.App
             return dic.OrderByDescending(c => c.Value).Select(c => c.Key).FirstOrDefault();
         }
         #endregion
-
     }
 }

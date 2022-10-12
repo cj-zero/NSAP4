@@ -141,6 +141,76 @@ namespace OpenAuth.App.Serve
                 await _hubContext.Clients.User(user).SendAsync("ReturnNoteUnSubmitCount", "系统", item.Count());
             }
             #endregion
+            #region 责任归属
+            var blameBelong = await UnitWork.Find<BlameBelong>(c => c.Status > 1 && c.Status < 6).Include(c => c.BlameBelongOrgs).ToListAsync();
+            var groubyList = blameBelong.GroupBy(r => r.Status).Select(r => new 
+            { 
+                status = r.Key, 
+                count = r.Count(), 
+                detail = r.Select(c => new 
+                { 
+                    DocType = c.DocType, 
+                    Orgs = c.BlameBelongOrgs.Where(s => !string.IsNullOrWhiteSpace(s.HandleUserName)).Select(s => new { HandleUserName=s.HandleUserName,IsHandle=s.IsHandle }).ToList() 
+                }).ToList() 
+            }).ToList();
+            var hrCount = 0;
+            foreach (var item in groubyList)
+            {
+                switch (item.status)
+                {
+                    case 2:
+                        List<string> name = new List<string>();
+                        item.detail.ForEach(c =>
+                        {
+                            name.AddRange(c.Orgs.Where(w => w.IsHandle == false).Select(w => w.HandleUserName).ToList());
+                        });
+                        var user = name.GroupBy(c => c).Select(c => new { Name = c.Key, Count = c.Count() }).ToList();
+                        foreach (var item2 in user)
+                        {
+                            await _hubContext.Clients.User(item2.Name).SendAsync("BlameBelongCount", "系统", item2.Count);
+                        }
+                        break;
+                    case 3:
+                        //await _hubContext.Clients.Groups("按灯流程-人事审核").SendAsync("BlameBelongCount", "系统", item.count); 
+                        hrCount += item.count;
+                        break;
+                    case 4:
+                        //await _hubContext.Clients.Groups("财务复审").SendAsync("BlameBelongCount", "系统", item.count);
+                        var typeList = item.detail.GroupBy(c => c.DocType).Select(c => new { Type = c.Key, Count = c.Count() }).ToList();
+                        var otherCount = typeList.Where(c => c.Type == 2 || c.Type == 3).Sum(c => c.Count);
+                        foreach (var types in typeList)
+                        {
+                            switch (types.Type)
+                            {
+                                case 1:
+                                    await _hubContext.Clients.Groups("按灯流程-服务单审核").SendAsync("BlameBelongCount", "系统", types.Count);
+                                    break;
+                                case 2:
+                                    await _hubContext.Clients.Groups("按灯流程-采购生产审核").SendAsync("BlameBelongCount", "系统", otherCount);
+                                    break;
+                                case 3:
+                                    await _hubContext.Clients.Groups("按灯流程-采购生产审核").SendAsync("BlameBelongCount", "系统", otherCount);
+                                    break;
+                                case 4:
+                                    hrCount += types.Count;
+                                    //await _hubContext.Clients.Groups("按灯流程-人事审核").SendAsync("BlameBelongCount", "系统", hrCount);
+                                    break;
+                            }
+
+                        }
+                        break;
+                    case 5:
+                        await _hubContext.Clients.Groups("出纳").SendAsync("BlameBelongCount", "系统", item.count);
+                        break;
+                }
+
+            }
+            if (hrCount > 0)
+            {
+                await _hubContext.Clients.Groups("按灯流程-人事审核").SendAsync("BlameBelongCount", "系统", hrCount);
+
+            }
+            #endregion
 
             //推送版本号
             await _hubContext.Clients.All.SendAsync("Version", "系统", _appConfiguration.Value.Version);

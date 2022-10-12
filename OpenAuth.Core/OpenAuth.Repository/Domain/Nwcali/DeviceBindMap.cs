@@ -68,6 +68,10 @@ namespace OpenAuth.Repository.Domain
         public string RangeCurrArray { get; set; }
         public int LowNo { get; set; }
         /// <summary>
+        /// 数据来源(0:人工绑定 1:设备同步自动绑定  2:扫码自动绑定)
+        /// </summary>
+        //public int DataSource { get; set; }
+        /// <summary>
         /// 
         /// </summary>
         public override void GenerateDefaultKeyVal()

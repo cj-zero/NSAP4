@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using OpenAuth.App.PayTerm;
 
 namespace OpenAuth.WebApi.Controllers.Order
 {
@@ -29,20 +30,20 @@ namespace OpenAuth.WebApi.Controllers.Order
     public class SalesOrderController : Controller
     {
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
-        //private readonly OrderDraftServiceApp _orderDraftServiceApp;
+        private readonly PayTermApp _payTermApp;
         private readonly IOptions<AppSetting> _appConfiguration;
         IAuth _auth;
         IUnitWork UnitWork;
         ServiceBaseApp _serviceBaseApp;
         MaterialDesignApp _materialdesignapp;
-        public SalesOrderController(IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IOptions<AppSetting> appConfiguration, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp, MaterialDesignApp materialdesignapp)
+        public SalesOrderController(IUnitWork UnitWork,PayTermApp payTermApp,  ServiceBaseApp _serviceBaseApp, IOptions<AppSetting> appConfiguration, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp, MaterialDesignApp materialdesignapp)
         {
             this.UnitWork = UnitWork;
             this._serviceBaseApp = _serviceBaseApp;
             this._auth = _auth;
             _serviceSaleOrderApp = serviceSaleOrderApp;
             _materialdesignapp = materialdesignapp;
-            //_orderDraftServiceApp = orderDraftServiceApp;
+            _payTermApp = payTermApp;
             _appConfiguration = appConfiguration;
         }
         #region 销售订单列表视图
@@ -70,6 +71,12 @@ namespace OpenAuth.WebApi.Controllers.Order
                 rata = true;
             }
 
+            string docEntrys = "";
+            if (model.ReceiptStatus == "K")
+            {
+               docEntrys = _payTermApp.GetDocEntrys();
+            }
+
             string type = "ORDR";
             DataTable dt = _serviceSaleOrderApp.GetSboNamePwd(SboID);
             string dRowData = string.Empty; string isOpen = "0"; string sqlcont = string.Empty; string sboname = string.Empty;
@@ -82,7 +89,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 if (isOpen == "1")
                 {
-                    DataTable dts = _serviceSaleOrderApp.SelectBillListInfo_ORDR(out rowCount, model, type, rata, true, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewSelfDepartment, DepID, true, true, sqlcont, sboname);
+                    DataTable dts = _serviceSaleOrderApp.SelectBillListInfo_ORDR(out rowCount, docEntrys, model, type, rata, true, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewSelfDepartment, DepID, true, true, sqlcont, sboname);
                     result.Data = dts;
                     result.Count = rowCount;
                 }
@@ -431,11 +438,13 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+
             var loginUser = loginContext.User;
-            if (loginUser.Name == "韦京生" || loginUser.Name == "郭睿心" || loginUser.Name == "唐琴" || loginUser.Name == "ErpAdmin")
+            if (loginContext.Roles.Any(r => r.Name.Equals("销售订单管理员")))
             {
                 ViewFull = true;
             }
+
             string dRowData = string.Empty; string isOpen = "0"; string sqlcont = string.Empty; string sboname = string.Empty;
             if (dt.Rows.Count > 0)
             {

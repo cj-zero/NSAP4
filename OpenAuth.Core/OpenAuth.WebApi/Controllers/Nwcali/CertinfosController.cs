@@ -304,7 +304,17 @@ namespace OpenAuth.WebApi.Controllers
         [HttpGet]
         public async Task<TableData> GetChlIdResult(string guid)
         {
-            return await _app.GetChlIdResult(guid);
+            TableData result = new TableData();
+            try
+            {
+                result.Data= await _app.GetChlIdResult(guid);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+            }
+            return result;
         }
 
         /// <summary>
@@ -313,11 +323,9 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="docEntry"></param>
         /// <returns></returns>
         [HttpGet]
-        public Response<List<string>> GetLowGuid(string wo)
+        public async Task<TableData> GetLowGuid(string wo)
         {
-            Response<List<string>> result = new Response<List<string>>();
-            result.Result= _app.GetLowGuid(wo);
-            return result;
+            return await _app.GetLowGuidAndStatus(wo);
         }
         ///// <summary>
         ///// 生产唯一码下设备是否校准

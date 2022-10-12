@@ -302,10 +302,11 @@ namespace OpenAuth.WebApi.Controllers.Material
                 DataTable dts1 = UnitWork.ExcuteSqlTable(ContextType.ManagerDbContext, sql1.ToString(), CommandType.Text, null);
                 advanceData.dt = dts1;
             }
-            var manage_screen = UnitWork.Find<ManageScreening>(q => q.DocEntry == docentry && q.ItemCode == itemcode).FirstOrDefault();
-            if (manage_screen != null)
+            string sql2 = "select * from manage_screening where DocEntry = '" + docentry + "' and ItemCode = '" + itemcode + "' ";
+            DataTable dts2 = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql2.ToString(), CommandType.Text, null);
+            if (dts2 != null || dts2.Rows.Count != 0)
             {
-                advanceData.SubmitTime = manage_screen.SubmitTime.ToString();
+                advanceData.SubmitTime = dts2.Rows[0]["SubmitTime"].ToString();
             }
 
             return advanceData;
@@ -367,9 +368,5 @@ namespace OpenAuth.WebApi.Controllers.Material
             }
             return result;
         }
-
-
-
-
     }
 }

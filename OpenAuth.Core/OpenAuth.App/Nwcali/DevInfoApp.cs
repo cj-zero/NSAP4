@@ -7,6 +7,8 @@ using Infrastructure;
 using Infrastructure.Extensions;
 using Infrastructure.MQTT;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Nwcali.Request;
 using OpenAuth.App.Nwcali.Response;
@@ -14,21 +16,26 @@ using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
-
+using Serilog;
 
 namespace OpenAuth.App
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public class DevInfoApp : OnlyUnitWorkBaeApp
     {
         private RevelanceManagerApp _revelanceApp;
+        private StepVersionApp _stepVersionApp;
         /// <summary>
         /// 
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
-        /// <param name="mqttNetClient"></param>
-        public DevInfoApp(IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
+        /// <param name="stepVersionApp"></param>
+        public DevInfoApp(IUnitWork unitWork, IAuth auth, StepVersionApp stepVersionApp) : base(unitWork, auth)
         {
+            _stepVersionApp = stepVersionApp;
         }
 
 
@@ -96,7 +103,7 @@ namespace OpenAuth.App
                         {
                             low_List.GeneratorCode = binList.Where(c => c.EdgeGuid == item.edge_guid && c.SrvGuid == item.srv_guid && c.Guid == mitem.mid_guid && c.LowGuid == litem.low_guid).Select(c => c.GeneratorCode).FirstOrDefault();
                         }
-                        
+
                         ml.low_Lists.Add(low_List);
                     }
                     if (!ml.low_Lists.Any())
@@ -211,12 +218,12 @@ namespace OpenAuth.App
 
             var OrderNo = Convert.ToInt32(model.GeneratorCode.Split("-")[1]);
             int xwjCount = 0;
-            var BO1_XWJ = await UnitWork.Find<product_wor1>(null).Where(c => c.DocEntry == OrderNo && c.ItemCode.Contains("B01-XWJ")).Select(c => new { c.BaseQty }).FirstOrDefaultAsync();
-            if (BO1_XWJ==null)
+            var BO1_XWJ = await UnitWork.Find<product_wor1>(null).Where(c => c.DocEntry == OrderNo && c.ItemCode.Contains("B01") && c.ItemCode.Contains("XWJ")).Select(c => new { c.BaseQty }).FirstOrDefaultAsync();
+            if (BO1_XWJ == null)
             {
-                string code ="B";
-                var itemCodeHeader= model.ItemCode.ToUpper().Split('-')[0];
-                if (itemCodeHeader== "CT")
+                string code = "B";
+                var itemCodeHeader = model.ItemCode.ToUpper().Split('-')[0];
+                if (itemCodeHeader == "CT")
                 {
                     code = "BT";
                 }
@@ -228,12 +235,12 @@ namespace OpenAuth.App
                 {
                     code = "BTE";
                 }
-                var productItem= await UnitWork.Find<product_wor1>(null).Where(c => c.DocEntry == OrderNo && c.ItemCode.Contains(code)).Select(c => new { c.BaseQty,c.ItemCode }).FirstOrDefaultAsync();
-                if (productItem!=null)
+                var productItem = await UnitWork.Find<product_wor1>(null).Where(c => c.DocEntry == OrderNo && c.ItemCode.Contains(code)).Select(c => new { c.BaseQty, c.ItemCode }).FirstOrDefaultAsync();
+                if (productItem != null)
                 {
                     var bomsql = $@"SELECT Qauntity as CmpltQty FROM nsap_bone.store_oitt WHERE Code ='{productItem.ItemCode}' LIMIT 1";
-                    var bomItem = UnitWork.Query<product_owor_wor1>(bomsql).Select(c=>new { c.CmpltQty }).FirstOrDefault()?.CmpltQty;
-                    xwjCount = Convert.ToInt32(productItem.BaseQty.Value) * (bomItem==null?0:Convert.ToInt32(bomItem.Value));
+                    var bomItem = UnitWork.Query<product_owor_wor1>(bomsql).Select(c => new { c.CmpltQty }).FirstOrDefault()?.CmpltQty;
+                    xwjCount = Convert.ToInt32(productItem.BaseQty.Value) * (bomItem == null ? 0 : Convert.ToInt32(bomItem.Value));
                 }
             }
             else
@@ -246,7 +253,7 @@ namespace OpenAuth.App
                 throw new Exception($"【{model.GeneratorCode}】共生产{xwjCount}台下位机,已绑定{hasBindCount}台,本次绑定{lowGuidList.Count}台超过生产数,请检查绑定情况!");
             }
             var bindMap = await UnitWork.Find<DeviceBindMap>(null).Where(c => lowGuidList.Contains(c.LowGuid)).ToListAsync();
-            if (bindMap.Count>0)
+            if (bindMap.Count > 0)
             {
                 var map_info = bindMap.FirstOrDefault();
                 var low_no = model.low_Lists.Where(c => c.LowGuid == map_info.LowGuid).Select(c => c.low_no).FirstOrDefault();
@@ -280,6 +287,7 @@ namespace OpenAuth.App
                 deviceBind.Department = department;
                 deviceBind.OrderNo = Convert.ToInt64(model.GeneratorCode.Split('-')[1]);
                 deviceBind.LowNo = item.low_no;
+                //deviceBind.DataSource = 0;
                 deviceBind.RangeCurrArray = lowList.Where(c => c.edge_guid == model.EdgeGuid && c.srv_guid == model.SrvGuid && c.dev_uid == model.DevUid && c.low_guid == item.LowGuid).Select(c => c.range_curr_array).FirstOrDefault();
                 list.Add(deviceBind);
                 DeviceBindLog deviceBindLog = new DeviceBindLog();
@@ -459,6 +467,33 @@ namespace OpenAuth.App
             {
                 throw new Exception($"{OrderNo}订单不存在!");
             }
+            //生产码获取 B01编码 TO DO
+            //var b01List=new List<string>();
+
+            //B01 编码获取guid TO DO
+            //var wmsAccessToken = _stepVersionApp.WmsAccessToken();
+            //if (string.IsNullOrWhiteSpace(wmsAccessToken))
+            //{
+            //    throw new Exception($"WMS token 获取失败!");
+            //}
+            //string urls = "http://service.neware.cloud/common/DevGuidBySn";
+            //HttpHelper helper = new HttpHelper(urls);
+            //var datastr = helper.PostAuthentication(b01List.ToArray(), urls, wmsAccessToken);
+            //JObject dataObj = JObject.Parse(datastr);
+            //List<WmsLowGuidResp> wmsLowGuids = new List<WmsLowGuidResp>();
+            //try
+            //{
+            //    wmsLowGuids = JsonConvert.DeserializeObject<List<WmsLowGuidResp>>(JsonConvert.SerializeObject(dataObj["data"]["devBindInfo"]));
+            //}
+            //catch (Exception ex)
+            //{
+            //    wmsLowGuids = new List<WmsLowGuidResp>();
+            //    Log.Logger.Error($"WMS guid 获取失败! message={ex.Message}");
+            //}
+
+            //guid 获取在线设备 TO DO
+
+
             var arry = query.ItemCode.ToUpper().Split('-');
             string StepVersionName = string.Empty;
             string Voltage = string.Empty;
