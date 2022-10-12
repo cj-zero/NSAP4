@@ -7,6 +7,8 @@ using DotNetCore.CAP;
 using Infrastructure.Extensions;
 using Microsoft.Data.SqlClient;
 using NSAP.Entity.Client;
+using OpenAuth.App.Client;
+using OpenAuth.App.ClientRelation;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
@@ -23,10 +25,12 @@ namespace Sap.Handler.Service
 
         private readonly IUnitWork UnitWork;
         private readonly Company company;
-        public ClientSapHandler(IUnitWork unitWork, Company company)
+        private readonly ClientRelationApp  _clientRelationApp;
+        public ClientSapHandler(IUnitWork unitWork, Company company, ClientRelationApp  clientRelationApp)
         {
             UnitWork = unitWork;
             this.company = company;
+            _clientRelationApp = clientRelationApp;
         }
         [CapSubscribe("Serve.Client.Create")]
         public async Task ClientHandle(int jobID)
@@ -910,10 +914,16 @@ namespace Sap.Handler.Service
                                 {
                                     company.GetNewObjectCode(out gCardCode);
                                     errorMsg += "调SAP接口，添加业务伙伴【" + jobID + "】操作成功！返回的唯一编码：" + gCardCode;
-
+                                    
                                     #region 把接口返回值写入wfa_job表
                                     int saveKeyValue = GetSboReturn(gCardCode, jobID.ToString());
                                     errorMsg += "保存接口的唯一编码:" + (saveKeyValue > 0 ? "成功!" : "失败!");
+                                    //更新客户关系
+                                    await _clientRelationApp.UpdateRelationsAfterSync(new OpenAuth.App.ClientRelation.Request.JobReq
+                                    {
+                                        ClientNo = gCardCode,
+                                        JobId = jobID
+                                    });
                                     #endregion
                                 }
                                 else
@@ -1552,6 +1562,11 @@ namespace Sap.Handler.Service
                                 #region 把接口返回值写入wfa_job表
                                 int saveKeyValue = GetSboReturn(gCardCode, jobID.ToString());
                                 errorMsg += "保存接口的唯一编码:" + (saveKeyValue > 0 ? "成功!" : "失败!");
+                                //更新客户关系
+                                await _clientRelationApp.UpdateRelationsAfterSync(new OpenAuth.App.ClientRelation.Request.JobReq { 
+                                 ClientNo = gCardCode,
+                                 JobId = jobID
+                                });
                                 #endregion
                             }
                             else

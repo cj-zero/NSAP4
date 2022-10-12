@@ -380,12 +380,12 @@ namespace OpenAuth.WebApi.Controllers.Client
         /// </summary>
         [HttpPost]
         [Route("UpdateClientJob")]
-        public Response<string> UpdateClientJob(UpdateClientJobReq updateClientJobReq)
+        public async Task<Response<string>> UpdateClientJob(UpdateClientJobReq updateClientJobReq)
         {
             var result = new Response<string>();
             try
             {
-                result.Result = _clientInfoApp.UpdateClientJob(updateClientJobReq);
+                result.Result = await _clientInfoApp.UpdateClientJob(updateClientJobReq);
             }
             catch (Exception ex)
             {
@@ -406,7 +406,7 @@ namespace OpenAuth.WebApi.Controllers.Client
         [HttpPost]
         [Route("SaveCrmAuditInfo")]
 
-        public Response<string> SaveCrmAuditInfo(SaveCrmAuditInfoReq saveCrmAuditInfoReq)
+        public async Task<Response<string>> SaveCrmAuditInfo(SaveCrmAuditInfoReq saveCrmAuditInfoReq)
         {
             var result = new Response<string>();
             try
@@ -415,7 +415,7 @@ namespace OpenAuth.WebApi.Controllers.Client
                     !string.IsNullOrEmpty(saveCrmAuditInfoReq.JobId) &&
                     ((saveCrmAuditInfoReq.AuditType == "Edit" && !string.IsNullOrEmpty(saveCrmAuditInfoReq.CardCode)) ||
                      saveCrmAuditInfoReq.AuditType == "Add"))
-                    result.Result = _clientInfoApp.SaveCrmAuditInfo(saveCrmAuditInfoReq.AuditType,
+                    result.Result = await _clientInfoApp.SaveCrmAuditInfo(saveCrmAuditInfoReq.AuditType,
                         saveCrmAuditInfoReq.CardCode, saveCrmAuditInfoReq.DfTcnician, saveCrmAuditInfoReq.JobId);
                 else
                     result.Result = "0";
