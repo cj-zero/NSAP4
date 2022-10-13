@@ -250,7 +250,7 @@ namespace OpenAuth.App.ClientRelation
             //update parent node
             //切换4.0用户id 
             var erpid = UnitWork.FindSingle<User>(u => u.User_Id == legitJob.user_id);
-            var parentRelatedNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => originRelation.SubNo.Contains(a.ClientNo) &&  a.ClientNo != legitJob.sbo_itf_return && a.IsActive == 1 && a.IsDelete == 0 && a.Operatorid == erpid.Id).ToList();
+            var parentRelatedNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => originRelation.SubNo.Contains(a.ClientNo) &&  a.ClientNo != legitJob.sbo_itf_return && a.IsActive == 1 && a.IsDelete == 0 && a.ScriptFlag == 0 && a.Operatorid == erpid.Id).ToList();
             if (parentRelatedNodes.Count > 0)
             {
                 foreach (var pnode in parentRelatedNodes)
@@ -779,7 +779,7 @@ namespace OpenAuth.App.ClientRelation
         public async Task<bool> SyncRelations()
         {
             // get latest 3 minutes updated job(jobtype = 72)
-            var updatedRelationJob = UnitWork.Find<wfa_job>(a => a.job_type_id == 72 &&  a.sync_stat ==4 && a.upd_dt<=DateTime.Now.AddMinutes(-3) ).ToList();
+            var updatedRelationJob = UnitWork.Find<wfa_job>(a => a.job_type_id == 72 &&  a.sync_stat ==4 && a.upd_dt>=DateTime.Now.AddMinutes(-3) ).ToList();
             foreach (var relationJob in updatedRelationJob)
             {
                 var client = ByteExtension.ToDeSerialize<clientOCRD>(relationJob.job_data);
@@ -787,7 +787,7 @@ namespace OpenAuth.App.ClientRelation
                 {
                     await  UpdateRelationsAfterSync(new OpenAuth.App.ClientRelation.Request.JobReq
                     {
-                        ClientNo = client.CardCode,
+                        ClientNo = relationJob.sbo_itf_return,
                         JobId = (int)relationJob.job_id
                     });
                 }
