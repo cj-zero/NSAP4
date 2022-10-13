@@ -35,6 +35,12 @@ namespace OpenAuth.Repository.Domain
         public string ContractApplyId { get; set; }
 
         /// <summary>
+        /// 审批流程Id
+        /// </summary>
+        [Description("审批流程Id")]
+        public string FlowInstanceId { get; set; }
+
+        /// <summary>
         /// 会签角色
         /// </summary>
         [Description("会签角色")]
@@ -45,5 +51,23 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("同意或驳回")]
         public int? ApprovalOrReject { get; set; }
+
+        /// <summary>
+        /// 创建人Id
+        /// </summary>
+        [Description("创建人Id")]
+        public string CreateUserId { get; set; }
+
+        /// <summary>
+        /// 创建人
+        /// </summary>
+        [Description("创建人")]
+        public string CreateName { get; set; }
+
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        [Description("创建时间")]
+        public System.DateTime? CreateTime { get; set; }
     }
 }
