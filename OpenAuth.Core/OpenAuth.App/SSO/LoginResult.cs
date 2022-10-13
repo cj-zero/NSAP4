@@ -8,5 +8,6 @@ namespace OpenAuth.App.SSO
         public string Token;
         public string Name;
         public bool? ChangePassword;
+        public bool? isQuality;
     }
 }

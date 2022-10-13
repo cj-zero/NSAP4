@@ -184,7 +184,21 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        [HttpGet]
+        public async Task<bool> GetSyncRelations()
+        {
+            var result = true;
+            try
+            {
+                result = await _app.SyncRelations();
+            }
+            catch (Exception ex)
+            {
 
+            }
+
+            return result;
+        }
 
 
     }
