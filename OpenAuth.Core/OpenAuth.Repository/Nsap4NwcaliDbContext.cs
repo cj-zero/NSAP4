@@ -1,6 +1,7 @@
 ﻿using Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.Nwcali;
 
 namespace OpenAuth.Repository
 {
@@ -17,7 +18,8 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<Asset>().HasKey(c => new { c.Id });
             modelBuilder.Entity<NwcaliBaseInfo>().Ignore(c => c.FlowInstance );
         }
-
+        public virtual DbSet<PortfolioAssets> PortfolioAssets { get; set; }
+        public virtual DbSet<PortfolioAssetsMap> PortfolioAssetsMap { get; set; }
         public virtual DbSet<Certinfo> Certinfos { get; set; }
         public virtual DbSet<Certplc> Certplcs { get; set; }
         public virtual DbSet<Asset> Assets { get; set; }

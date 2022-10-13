@@ -18,9 +18,13 @@ namespace OpenAuth.App.SSO
         /// 用户名
         /// </summary>
         public string Name { get; set; }
-        
+
         public string IpAddress { get; set; }
 
         public DateTime CreateTime { get; set; }
+
+        public bool isQuality { get; set; }
+
+        
     }
 }
