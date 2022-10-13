@@ -118,6 +118,16 @@ namespace OpenAuth.App.Client
                         bool updParaAppChange = UpdateWfaJobPara(result, 4, OCRD.IsApplicationChange);//该参数决定流程跳转
                         result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(result), userID, OCRD.FreeText, "", 0);
                         ret = SaveCrmAuditInfo1(JobId, userID, rJobNm);
+                        await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
+                        {
+                            JobId = Convert.ToInt32(JobId),
+                            ClientNo = "",
+                            Flag = OCRD.is_reseller == "N" ? 0 : 1,
+                            ClientName = OCRD.CardName,
+                            EndCustomerName = OCRD.EndCustomerName,
+                            Operator = loginUser.Name,
+                            Operatorid = loginUser.Id
+                        });
                     }
                     else if (rJobNm == "修改业务伙伴")
                     {
@@ -139,12 +149,6 @@ namespace OpenAuth.App.Client
                                 default:
                                     break;
                             }
-
-                            //20221008 业务员修改客户
-                            await _clientRelationApp.ResignTerminals(new ClientRelation.Request.ResignOper { 
-                                ClientNo = OCRD.CardCode,
-                                TerminalList = OCRD.EndCustomerName
-                            } );
 
                         }
                     }
