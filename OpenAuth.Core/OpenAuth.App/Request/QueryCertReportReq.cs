@@ -44,6 +44,17 @@ namespace OpenAuth.App.Request
         /// 校准完成结束时间
         /// </summary>
         public DateTime? CompleteEndTime { get; set; }
-
+        /// <summary>
+        /// 序列号
+        /// </summary>
+        public string TesterSn { get; set; }
+        /// <summary>
+        /// 设别型号
+        /// </summary>
+        public string TesterModel { get; set; }
+        /// <summary>
+        /// 校准状态 OK-校准成功 NG-校准失败
+        /// </summary>
+        public string CalibrationStatus { get; set; }
     }
 }
