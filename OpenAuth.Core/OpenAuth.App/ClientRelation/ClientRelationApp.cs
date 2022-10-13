@@ -776,5 +776,38 @@ namespace OpenAuth.App.ClientRelation
         }
 
 
+        public async Task<bool> SyncRelations()
+        {
+            // get latest 3 minutes updated job(jobtype = 72)
+            var updatedRelationJob = UnitWork.Find<wfa_job>(a => a.job_type_id == 72 &&  a.sync_stat ==4 && a.upd_dt<=DateTime.Now.AddMinutes(-3) ).ToList();
+            foreach (var relationJob in updatedRelationJob)
+            {
+                var client = ByteExtension.ToDeSerialize<clientOCRD>(relationJob.job_data);
+                if (relationJob.job_nm == "添加业务伙伴")
+                {
+                    await  UpdateRelationsAfterSync(new OpenAuth.App.ClientRelation.Request.JobReq
+                    {
+                        ClientNo = client.CardCode,
+                        JobId = (int)relationJob.job_id
+                    });
+                }
+                if (relationJob.job_nm == "修改业务伙伴")
+                {
+                    if (client.is_reseller == "Y")
+                    {
+                        await ResignTerminals(new ResignOper
+                        {
+                            ClientNo = client.CardCode,
+                            TerminalList = client.EndCustomerName
+                        });
+                    }
+                }
+
+            }
+
+            return true;
+        }
+
+
     }
 }
