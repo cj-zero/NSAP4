@@ -3762,8 +3762,8 @@ namespace OpenAuth.App.Material
             var obj = UnitWork.Find<CommissionOrder>(c => c.CreateUserId == loginUser.Id && c.Status == 4);
                            
             var query = await obj.OrderByDescending(c => c.CreateTime)
-                            .Skip((request.page - 1) * request.limit)
-                            .Take(request.limit)
+                            //.Skip((request.page - 1) * request.limit)
+                            //.Take(request.limit)
                             .ToListAsync();
             result.Count = await obj.CountAsync();
             var serviceOrderId = query.Select(c => c.ServiceOrderId).ToList();
