@@ -167,6 +167,7 @@ namespace OpenAuth.App.ClientRelation
         /// <returns></returns>
         public async Task<bool> UpdateRelationsAfterSync(JobReq job)
         {
+            
             bool result = true;
             // check legit request  72 添加业务伙伴
             var legitJob = UnitWork.FindSingle<wfa_job>(a => a.job_id == job.JobId && a.sync_stat == 4 && (a.job_type_id == 72));
@@ -797,6 +798,7 @@ namespace OpenAuth.App.ClientRelation
         public async Task<bool> SyncRelations()
         {
             // get latest 3 minutes updated job(jobtype = 72)
+           
             var updatedRelationJob = UnitWork.Find<wfa_job>(a => a.job_type_id == 72 &&  a.sync_stat ==4 && a.upd_dt>=DateTime.Now.AddMinutes(-3) ).ToList();
             foreach (var relationJob in updatedRelationJob)
             {
@@ -836,7 +838,10 @@ namespace OpenAuth.App.ClientRelation
         /// <returns></returns>
         public async Task<bool> AddJobRelations(AddJobRelReq jrr)
         {
-
+            if (!jrr.Terminals.Contains("C"))
+            {
+                jrr.Terminals = "";
+            }
             await UnitWork.AddAsync<OpenAuth.Repository.Domain.JobClientRelation, int>(new JobClientRelation { 
                Jobid = jrr.Jobid,
                Terminals = jrr.Terminals,
