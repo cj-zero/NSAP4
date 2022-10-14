@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
@@ -13,6 +14,7 @@ using NSAP.Entity.Sales;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Order;
 using OpenAuth.Repository.Domain.Sap;
+using OpenAuth.Repository;
 
 namespace OpenAuth.App.PayTerm
 {
@@ -20,7 +22,6 @@ namespace OpenAuth.App.PayTerm
     {
         private IUnitWork _UnitWork;
         private IAuth _auth;
-        private ServiceSaleOrderApp _serviceSaleOrderApp;
         private ServiceBaseApp _serviceBaseApp;
         private List<string> RecePayTypes = new List<string>() { "预付/货前款", "货到款", "验收款", "质保款" };
 
@@ -29,11 +30,10 @@ namespace OpenAuth.App.PayTerm
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
-        public PayTermApp(IUnitWork unitWork, IAuth auth, ServiceSaleOrderApp serviceSaleOrderApp, ServiceBaseApp serviceBaseApp) : base(unitWork, auth)
+        public PayTermApp(IUnitWork unitWork, IAuth auth, ServiceBaseApp serviceBaseApp) : base(unitWork, auth)
         {
             _UnitWork = unitWork;
             _auth = auth;
-            _serviceSaleOrderApp = serviceSaleOrderApp;
             _serviceBaseApp = serviceBaseApp;
         }
 
@@ -57,7 +57,7 @@ namespace OpenAuth.App.PayTerm
                 Id = r.Id,
                 ModuleTypeId = r.ModuleTypeId,
                 ModuleName = r.ModuleName,
-                DateNumber =  Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2),
+                DateNumber = Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2),
                 DateUnit = r.DateUnit,
                 DateUnitName = (Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? (Convert.ToInt32(r.DateNumber)).ToString() : (Math.Round(Convert.ToDecimal(r.DateNumber), 2)).ToString()) + CommonMethodHelp.GetDateTimeUnit(r.DateUnit),
                 IsDefault = r.IsDefault,
@@ -81,7 +81,7 @@ namespace OpenAuth.App.PayTerm
         /// </summary>
         /// <param name="payPhases">可用阶段实体集合</param>
         /// <returns>返回可用阶段名称</returns>
-        public string GetPayPhaseName(List<PayPhase> payPhases) 
+        public string GetPayPhaseName(List<PayPhase> payPhases)
         {
             StringBuilder payPhaseName = new StringBuilder();
             foreach (PayPhase item in payPhases)
@@ -130,7 +130,7 @@ namespace OpenAuth.App.PayTerm
             //判断当前付款条件是否已经存在
             if (!GetPayTermSetIsRepeat(obj))
             {
-                return "当前付款条件已经存在，不允许重复添加";
+                throw new Exception("当前付款条件已经存在，不允许重复添加");
             }
 
             //判断是否已经存在各阶段节点计算方法
@@ -139,7 +139,7 @@ namespace OpenAuth.App.PayTerm
                 var payTermSets = await UnitWork.Find<PayTermSet>(r => r.ModuleTypeId == 1 || r.ModuleName == "各阶段节点计算方法").ToListAsync();
                 if (payTermSets.Count() >= 1)
                 {
-                    return "各阶段节点计算方法模块已经存在，不允许重复添加";
+                    throw new Exception("各阶段节点计算方法模块已经存在，不允许重复添加");
                 }
             }
 
@@ -251,17 +251,17 @@ namespace OpenAuth.App.PayTerm
                     //修改主表数据
                     await UnitWork.UpdateAsync<PayTermSet>(u => u.Id == obj.Id, u => new PayTermSet
                     {
-                       UpdateUser = loginUser.Name,
-                       UpdateUserId = loginUser.Id,
-                       UpdateDate = DateTime.Now,
-                       ModuleTypeId = obj.ModuleTypeId,
-                       ModuleName = obj.ModuleName,
-                       DateNumber = obj.DateNumber,
-                       DateUnit = obj.DateUnit,
-                       IsDefault = obj.IsDefault,
-                       CreateUserId = obj.CreateUserId,
-                       CreateUser = obj.CreateUser,
-                       CreateDate = obj.CreateDate
+                        UpdateUser = loginUser.Name,
+                        UpdateUserId = loginUser.Id,
+                        UpdateDate = DateTime.Now,
+                        ModuleTypeId = obj.ModuleTypeId,
+                        ModuleName = obj.ModuleName,
+                        DateNumber = obj.DateNumber,
+                        DateUnit = obj.DateUnit,
+                        IsDefault = obj.IsDefault,
+                        CreateUserId = obj.CreateUserId,
+                        CreateUser = obj.CreateUser,
+                        CreateDate = obj.CreateDate
                     });
 
                     await UnitWork.SaveAsync();
@@ -299,7 +299,7 @@ namespace OpenAuth.App.PayTerm
                 {
                     await UnitWork.BatchDeleteAsync<PayPhase>(payPhases.ToArray());
                 }
-                
+
                 await UnitWork.DeleteAsync<PayTermSet>(r => r.Id == payTermSetId);
                 await UnitWork.SaveAsync();
                 return "操作成功";
@@ -318,46 +318,10 @@ namespace OpenAuth.App.PayTerm
         public bool GetPayTermSetIsRepeat(PayTermSet obj)
         {
             bool isRepeat = true;
-            if (obj.PayPhases != null && obj.PayPhases.Count() > 0)
+            var objs = UnitWork.Find<PayTermSet>((r => r.DateNumber == obj.DateNumber && r.ModuleTypeId == obj.ModuleTypeId && r.ModuleName == r.ModuleName && r.DateUnit == obj.DateUnit)).Include(r => r.PayPhases).ToList();
+            if (objs != null && objs.Count() > 0)
             {
-                //当可选阶段不为空时，判定是否存在重复条件
-                var objs = UnitWork.Find<PayTermSet>((r => r.DateNumber == obj.DateNumber && r.ModuleTypeId == obj.ModuleTypeId && r.ModuleName == r.ModuleName && r.DateUnit == obj.DateUnit)).Include(r => r.PayPhases).ToList();
-                var payTermSets = objs.Select(r => new PayTermHelp
-                {
-                    Id = r.Id,
-                    ModuleTypeId = r.ModuleTypeId,
-                    ModuleName = r.ModuleName,
-                    DateNumber = Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2),
-                    DateUnit = r.DateUnit,
-                    DateUnitName = (Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? (Convert.ToInt32(r.DateNumber)).ToString() : (Math.Round(Convert.ToDecimal(r.DateNumber), 2)).ToString()) + CommonMethodHelp.GetDateTimeUnit(r.DateUnit),
-                    IsDefault = r.IsDefault,
-                    CreateUserId = r.CreateUserId,
-                    CreateUser = r.CreateUser,
-                    CreateDate = r.CreateDate,
-                    UpdateUserId = r.UpdateUserId,
-                    UpdateUser = r.UpdateUser,
-                    UpdateDate = r.UpdateDate,
-                    PayPhaseName = r.PayPhases != null && r.PayPhases.Count() > 0 ? GetPayPhaseName(r.PayPhases.OrderBy(r => r.PayPhaseType).ToList()) : "",
-                    PayPhases = r.PayPhases.OrderBy(r => r.PayPhaseType).ToList()
-                }).ToList();
-
-                if (payTermSets != null && payTermSets.Count() > 0)
-                {
-                    var payTermSetRepeat = payTermSets.Where(r => r.DateNumber == obj.DateNumber && r.ModuleTypeId == obj.ModuleTypeId && r.ModuleName == r.ModuleName && r.DateUnit == obj.DateUnit && r.PayPhaseName == GetPayPhaseName(obj.PayPhases.OrderBy(x => x.PayPhaseType).ToList()));
-                    if (payTermSetRepeat != null && payTermSetRepeat.Count() > 0)
-                    {
-                        isRepeat = false;
-                    }
-                }
-            }
-            else
-            {
-                //当可选阶段为空时，判定是否存在重复条件
-                var objs = UnitWork.Find<PayTermSet>(r => r.DateNumber == obj.DateNumber && r.ModuleTypeId == obj.ModuleTypeId && r.ModuleName == r.ModuleName && r.DateUnit == obj.DateUnit).Include(r => r.PayPhases).ToList();
-                if (objs != null && objs.Count() > 0)
-                {
-                    isRepeat = false;
-                }
+                isRepeat = false;
             }
 
             return isRepeat;
@@ -377,20 +341,24 @@ namespace OpenAuth.App.PayTerm
             }
 
             string result = "0";
-            string job_id = "0";
             int userID = _serviceBaseApp.GetUserNaspId();
-            int funcId = _serviceBaseApp.GetFuncsByUserID("sales/SalesCrmOctgConfiguration.aspx", userID);
             int sboID = _serviceBaseApp.GetUserNaspSboID(userID);
-            byte[] job_data = CommonMethodHelp.Serialize(rData);
 
-            //创建流程
-            job_id = _serviceSaleOrderApp.WorkflowBuild("付款条件", funcId, userID, job_data, "付款条件", sboID, "", "", 0, 0, 0, "BOneAPI", "NSAP.B1Api.BOneOCTG");//BOneAPI NSAP.B1Api.BOneOCTG
-            if (Convert.ToInt32(job_id) > 0)
+
+            //新增付款条件配置
+            string crmoctgcg = string.Format("INSERT INTO {0}.crm_octg_cfg(GroupNum,sbo_id,PrepaDay,PrepaPro,PayBefShip,GoodsToPro,GoodsToDay) VALUES({1},{2},{3},{4},{5},{6},{7}) ", "nsap_bone", Convert.ToInt32(rData.GroupNum), sboID, Convert.ToInt32(rData.PrepaDay), Convert.ToDecimal(rData.PrepaPro), Convert.ToDecimal(rData.PayBefShip), Convert.ToDecimal(rData.GoodsToPro), Convert.ToInt32(rData.GoodsToDay));
+            int crmoctgcgresult = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, crmoctgcg, CommandType.Text, null) != null ? 1 : 0;
+            if (crmoctgcgresult == 0)
             {
-                //提交流程
-                result = _serviceSaleOrderApp.WorkflowSubmit(Convert.ToInt32(job_id), userID, "付款条件", "提交审核", 0);
+                //新增付款条件
+                string crmoctg = string.Format("INSERT INTO {0}.crm_octg(GroupNum,sbo_id,PymntGroup,PayDuMonth,ExtraMonth,ExtraDays,Payments,NumOfPmnts,DataSource,OpenRcpt,BslineDate,VATFirst,CrdMthd) VALUES({1},{2},'{3}','N',0,0,'N',1,'N','N','T','N','L') ", "nsap_bone", Convert.ToInt32(rData.GroupNum), sboID, rData.PymntGroup);
+                int crmoctgresult = UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, crmoctg, CommandType.Text, null) != null ? 1 : 0;
+                if (crmoctgresult == 0)
+                {
+                    result = "2";
+                }
             }
-               
+
             return result;
         }
 
@@ -407,12 +375,12 @@ namespace OpenAuth.App.PayTerm
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-        
+
             var loginUser = loginContext.User;
             var dbContext = UnitWork.GetDbContext<PayTermSave>();
 
             //拼接付款条款组名称
-            string PrepaName = obj.PrepaDay == 0 && obj.PrepaPro == 0 ? "" : (obj.PrepaDay == 0 && obj.PrepaPro != 0 ? "预付" + obj.PrepaPro + "%" : (obj.PrepaDay != 0 && obj.PrepaPro == 0 ? obj.PrepaDay + CommonMethodHelp.GetDateTimeUnit(obj.PrepaUnit) + "内预付0%": obj.PrepaDay + CommonMethodHelp.GetDateTimeUnit(obj.PrepaUnit) + "内预付" + obj.PrepaPro + "%"));
+            string PrepaName = obj.PrepaDay == 0 && obj.PrepaPro == 0 ? "" : (obj.PrepaDay == 0 && obj.PrepaPro != 0 ? "预付" + obj.PrepaPro + "%" : (obj.PrepaDay != 0 && obj.PrepaPro == 0 ? obj.PrepaDay + CommonMethodHelp.GetDateTimeUnit(obj.PrepaUnit) + "内预付0%" : obj.PrepaDay + CommonMethodHelp.GetDateTimeUnit(obj.PrepaUnit) + "内预付" + obj.PrepaPro + "%"));
             string BefShiName = (obj.BefShipDay == 0 && obj.BefShipPro == 0 ? "" : (obj.BefShipDay == 0 && obj.BefShipPro != 0 ? "，货前付" + obj.BefShipPro + "%" : (obj.BefShipDay != 0 && obj.BefShipPro == 0 ? "，货前" + obj.BefShipDay + CommonMethodHelp.GetDateTimeUnit(obj.BefShipUnit) + "内付0%" : "，货前" + obj.BefShipDay + CommonMethodHelp.GetDateTimeUnit(obj.BefShipUnit) + "内付" + obj.BefShipPro + "%")));
             string GoodsToName = (obj.GoodsToDay == 0 && obj.GoodsToPro == 0 ? "" : (obj.GoodsToDay == 0 && obj.GoodsToPro != 0 ? "，货到付" + obj.GoodsToPro + "%" : (obj.GoodsToDay != 0 && obj.GoodsToPro == 0 ? "，货到" + obj.GoodsToDay + CommonMethodHelp.GetDateTimeUnit(obj.GoodsToUnit) + "内付0%" : "，货到" + obj.GoodsToDay + CommonMethodHelp.GetDateTimeUnit(obj.GoodsToUnit) + "内付" + obj.GoodsToPro + "%")));
             string AcceptancePayName = GetAcceptancePayName(obj);
@@ -423,6 +391,7 @@ namespace OpenAuth.App.PayTerm
             var crmOctgList = await UnitWork.Find<crm_octg>(r => r.PymntGroup == groupName).ToListAsync();
             var paytermsaves = await UnitWork.Find<PayTermSave>(r => r.GroupNum == groupName).ToListAsync();
             var payTermSets = await UnitWork.Find<PayTermSet>(r => r.ModuleName == "各阶段节点计算方法").ToListAsync();
+            int groupNum = (await UnitWork.Find<crm_octg>(null).ToListAsync()).Max(r => Convert.ToInt32(r.GroupNum)) + 1;
             if (crmOctgList != null && crmOctgList.Count() > 0)
             {
                 result.Code = 201;
@@ -458,14 +427,14 @@ namespace OpenAuth.App.PayTerm
 
             //3.0付款条件配置实体
             saleCrmOctgCfg scoc = new saleCrmOctgCfg();
-            scoc.GroupNum = "";
+            scoc.GroupNum = groupNum.ToString();
             scoc.sbo_id = "1";
             scoc.PymntGroup = groupName;
-            scoc.PrepaDay = obj.PrepaDay.ToString();
-            scoc.PrepaPro = obj.PrepaPro.ToString();
-            scoc.PayBefShip = obj.BefShipPro.ToString();
-            scoc.GoodsToDay = obj.GoodsToDay.ToString();
-            scoc.GoodsToPro = obj.GoodsToPro.ToString();
+            scoc.PrepaDay = string.IsNullOrEmpty(obj.PrepaDay.ToString()) ? "0" : obj.PrepaDay.ToString();
+            scoc.PrepaPro = string.IsNullOrEmpty(obj.PrepaPro.ToString()) ? "0" : obj.PrepaPro.ToString();
+            scoc.PayBefShip = string.IsNullOrEmpty(obj.BefShipPro.ToString()) ? "0" : obj.BefShipPro.ToString();
+            scoc.GoodsToDay = string.IsNullOrEmpty(obj.GoodsToDay.ToString()) ? "0" : obj.GoodsToDay.ToString();
+            scoc.GoodsToPro = string.IsNullOrEmpty(obj.GoodsToPro.ToString()) ? "0" : obj.GoodsToPro.ToString();
 
             //3.0付款条件实体
             saleCrmOctg modelCrmOctg = new saleCrmOctg();
@@ -500,6 +469,12 @@ namespace OpenAuth.App.PayTerm
                     }
                 }
 
+                result.Data = new
+                {
+                    Id = groupNum,
+                    GroupNum = groupName,
+                };
+
                 result.Message = "操作成功";
                 return result;
             }
@@ -508,7 +483,7 @@ namespace OpenAuth.App.PayTerm
                 result.Code = 500;
                 result.Message = "操作失败";
                 return result;
-            }  
+            }
         }
 
         /// <summary>
@@ -547,7 +522,7 @@ namespace OpenAuth.App.PayTerm
             {
                 AcceptancePayName = "，验收期后" + obj.AcceptancePayDay + CommonMethodHelp.GetDateTimeUnit(obj.AcceptancePayDayUnit) + "内付" + obj.AcceptancePayPro + "%";
             }
-            else 
+            else
             {
                 AcceptancePayName = "，" + obj.AcceptancePayLimit + CommonMethodHelp.GetDateTimeUnit(obj.AcceptancePayLimitUnit) + "验收期后" + obj.AcceptancePayDay + CommonMethodHelp.GetDateTimeUnit(obj.AcceptancePayDayUnit) + "内付" + obj.AcceptancePayPro + "%";
             }
@@ -610,72 +585,72 @@ namespace OpenAuth.App.PayTerm
 
             //预付款可选时间集合
             var prepPaList = payTermSets.Where(r => r.PayPhases.Any(x => x.PayPhaseType == 1))
-                                        .Select(r => new PayPhaseHelp 
-                                        { 
-                                            IsDefault = r.IsDefault, 
-                                            Number = Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2), 
-                                            Unit = r.DateUnit, 
-                                            Name = (Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2)).ToString() + CommonMethodHelp.GetDateTimeUnit(r.DateUnit) 
+                                        .Select(r => new PayPhaseHelp
+                                        {
+                                            IsDefault = r.IsDefault,
+                                            Number = Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2),
+                                            Unit = r.DateUnit,
+                                            Name = (Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2)).ToString() + CommonMethodHelp.GetDateTimeUnit(r.DateUnit)
                                         }).ToList();
-            
+
             //货前款可选时间集合
             var befShipList = payTermSets.Where(r => r.PayPhases.Any(x => x.PayPhaseType == 2))
-                                         .Select(r => new PayPhaseHelp 
-                                         { 
+                                         .Select(r => new PayPhaseHelp
+                                         {
                                              IsDefault = r.IsDefault,
                                              Number = Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2),
-                                             Unit = r.DateUnit, 
-                                             Name = (Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2)).ToString() + CommonMethodHelp.GetDateTimeUnit(r.DateUnit) 
+                                             Unit = r.DateUnit,
+                                             Name = (Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2)).ToString() + CommonMethodHelp.GetDateTimeUnit(r.DateUnit)
                                          }).ToList();
-            
+
             //货到款可选时间集合
             var goodsToList = payTermSets.Where(r => r.PayPhases.Any(x => x.PayPhaseType == 3))
-                                         .Select(r => new PayPhaseHelp 
-                                         { 
+                                         .Select(r => new PayPhaseHelp
+                                         {
                                              IsDefault = r.IsDefault,
                                              Number = Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2),
-                                             Unit = r.DateUnit, 
-                                             Name = (Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2)).ToString() + CommonMethodHelp.GetDateTimeUnit(r.DateUnit) 
+                                             Unit = r.DateUnit,
+                                             Name = (Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2)).ToString() + CommonMethodHelp.GetDateTimeUnit(r.DateUnit)
                                          }).ToList();
 
             //验收款可选时间集合
             var acceptancePayList = payTermSets.Where(r => r.PayPhases.Any(x => x.PayPhaseType == 4))
-                                               .Select(r => new PayPhaseHelp 
-                                               { 
+                                               .Select(r => new PayPhaseHelp
+                                               {
                                                    IsDefault = r.IsDefault,
                                                    Number = Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2),
-                                                   Unit = r.DateUnit, 
-                                                   Name = (Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2)).ToString() + CommonMethodHelp.GetDateTimeUnit(r.DateUnit) 
+                                                   Unit = r.DateUnit,
+                                                   Name = (Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2)).ToString() + CommonMethodHelp.GetDateTimeUnit(r.DateUnit)
                                                }).ToList();
 
             //验收款期限时间集合
             var acceptancePayLimitList = payTermSets.Where(r => r.ModuleTypeId == 4)
-                                                    .Select(r => new PayPhaseHelp 
-                                                    { 
+                                                    .Select(r => new PayPhaseHelp
+                                                    {
                                                         IsDefault = r.IsDefault,
                                                         Number = Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2),
-                                                        Unit = r.DateUnit, 
+                                                        Unit = r.DateUnit,
                                                         Name = (Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2)).ToString() + CommonMethodHelp.GetDateTimeUnit(r.DateUnit)
                                                     }).ToList();
 
             //质保款可选时间集合
             var qualityAssuranceList = payTermSets.Where(r => r.PayPhases.Any(x => x.PayPhaseType == 5))
-                                                  .Select(r => new PayPhaseHelp 
-                                                  { 
-                                                      IsDefault = r.IsDefault, 
-                                                      Number = Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2), 
-                                                      Unit = r.DateUnit, 
-                                                      Name = (Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2)).ToString() + CommonMethodHelp.GetDateTimeUnit(r.DateUnit) 
+                                                  .Select(r => new PayPhaseHelp
+                                                  {
+                                                      IsDefault = r.IsDefault,
+                                                      Number = Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2),
+                                                      Unit = r.DateUnit,
+                                                      Name = (Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2)).ToString() + CommonMethodHelp.GetDateTimeUnit(r.DateUnit)
                                                   }).ToList();
 
             //质保款期限时间集合
             var qualityAssuranceLimitList = payTermSets.Where(r => r.ModuleTypeId == 3)
-                                                       .Select(r => new PayPhaseHelp 
-                                                       { 
-                                                           IsDefault = r.IsDefault, 
+                                                       .Select(r => new PayPhaseHelp
+                                                       {
+                                                           IsDefault = r.IsDefault,
                                                            Number = Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2),
-                                                           Unit = r.DateUnit, 
-                                                           Name = (Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2)).ToString() + CommonMethodHelp.GetDateTimeUnit(r.DateUnit) 
+                                                           Unit = r.DateUnit,
+                                                           Name = (Convert.ToDecimal(r.DateNumber.ToString().Split('.')[1]) == 0 ? Convert.ToInt32(r.DateNumber) : Math.Round(Convert.ToDecimal(r.DateNumber), 2)).ToString() + CommonMethodHelp.GetDateTimeUnit(r.DateUnit)
                                                        }).ToList();
 
             result.Data = new
@@ -703,38 +678,38 @@ namespace OpenAuth.App.PayTerm
             var payTermSaveList = await UnitWork.Find<PayTermSave>(r => r.GroupNum == groupNum).ToListAsync();
             if (payTermSaveList != null && payTermSaveList.Count() > 0)
             {
-               var obj = payTermSaveList.FirstOrDefault();
-               var prepaName = new PayPhaseDetailHelp() 
-               { 
-                   Percentage = obj.PrepaPro == 0 ? "" : obj.PrepaPro + "%",
-                   DateNumber = obj.PrepaDay == 0 ? "" : obj.PrepaDay + CommonMethodHelp.GetDateTimeUnit(obj.PrepaUnit) 
-               };
+                var obj = payTermSaveList.FirstOrDefault();
+                var prepaName = new PayPhaseDetailHelp()
+                {
+                    Percentage = obj.PrepaPro == 0 ? "" : obj.PrepaPro + "%",
+                    DateNumber = obj.PrepaDay == 0 ? "" : obj.PrepaDay + CommonMethodHelp.GetDateTimeUnit(obj.PrepaUnit)
+                };
 
-               var befShipName = new PayPhaseDetailHelp() 
-               { 
-                   Percentage = obj.BefShipPro == 0 ? "" : obj.BefShipPro + "%", 
-                   DateNumber = obj.BefShipDay == 0 ? "" : obj.BefShipDay + CommonMethodHelp.GetDateTimeUnit(obj.BefShipUnit) 
-               };
+                var befShipName = new PayPhaseDetailHelp()
+                {
+                    Percentage = obj.BefShipPro == 0 ? "" : obj.BefShipPro + "%",
+                    DateNumber = obj.BefShipDay == 0 ? "" : obj.BefShipDay + CommonMethodHelp.GetDateTimeUnit(obj.BefShipUnit)
+                };
 
-               var goodsToName = new PayPhaseDetailHelp() 
-               { 
-                   Percentage = obj.GoodsToPro == 0 ? "" : obj.GoodsToPro + "%", 
-                   DateNumber = obj.GoodsToDay == 0 ? "" : obj.GoodsToDay + CommonMethodHelp.GetDateTimeUnit(obj.GoodsToUnit) 
-               };
+                var goodsToName = new PayPhaseDetailHelp()
+                {
+                    Percentage = obj.GoodsToPro == 0 ? "" : obj.GoodsToPro + "%",
+                    DateNumber = obj.GoodsToDay == 0 ? "" : obj.GoodsToDay + CommonMethodHelp.GetDateTimeUnit(obj.GoodsToUnit)
+                };
 
-               var qualityAssuranceName = new PayPhaseDetailHelp() 
-               { 
-                   Percentage = obj.QualityAssurancePro == 0 ? "" : obj.QualityAssurancePro + "%", 
-                   DateNumber = obj.QualityAssuranceDay == 0 ? "" : obj.QualityAssuranceDay + CommonMethodHelp.GetDateTimeUnit(obj.QualityAssuranceDayUnit), 
-                   DateLimit = obj.QualityAssuranceLimit == 0 ? "" : obj.QualityAssuranceLimit + CommonMethodHelp.GetDateTimeUnit(obj.QualityAssuranceLimitUnit)
-               };
+                var qualityAssuranceName = new PayPhaseDetailHelp()
+                {
+                    Percentage = obj.QualityAssurancePro == 0 ? "" : obj.QualityAssurancePro + "%",
+                    DateNumber = obj.QualityAssuranceDay == 0 ? "" : obj.QualityAssuranceDay + CommonMethodHelp.GetDateTimeUnit(obj.QualityAssuranceDayUnit),
+                    DateLimit = obj.QualityAssuranceLimit == 0 ? "" : obj.QualityAssuranceLimit + CommonMethodHelp.GetDateTimeUnit(obj.QualityAssuranceLimitUnit)
+                };
 
-               var acceptancePayName = new PayPhaseDetailHelp() 
-               { 
-                   Percentage = obj.AcceptancePayPro == 0 ? "" : obj.AcceptancePayPro + "%", 
-                   DateNumber = obj.AcceptancePayDay == 0 ? "" : obj.AcceptancePayDay + CommonMethodHelp.GetDateTimeUnit(obj.AcceptancePayDayUnit), 
-                   DateLimit = obj.AcceptancePayLimit == 0 ? "" : obj.AcceptancePayLimit + CommonMethodHelp.GetDateTimeUnit(obj.AcceptancePayLimitUnit) 
-               };
+                var acceptancePayName = new PayPhaseDetailHelp()
+                {
+                    Percentage = obj.AcceptancePayPro == 0 ? "" : obj.AcceptancePayPro + "%",
+                    DateNumber = obj.AcceptancePayDay == 0 ? "" : obj.AcceptancePayDay + CommonMethodHelp.GetDateTimeUnit(obj.AcceptancePayDayUnit),
+                    DateLimit = obj.AcceptancePayLimit == 0 ? "" : obj.AcceptancePayLimit + CommonMethodHelp.GetDateTimeUnit(obj.AcceptancePayLimitUnit)
+                };
 
                 result.Data = new
                 {
@@ -775,6 +750,12 @@ namespace OpenAuth.App.PayTerm
             {
                 //获取销售订单对应的销售交货单
                 var ordr = await UnitWork.Find<ORDR>(r => r.DocEntry == docEntry).Select(r => new { r.DocEntry, r.DocTotal, r.DocTotalFC }).FirstOrDefaultAsync();
+                if (ordr == null)
+                {
+                    result.Data = new SaleOrderDetailHelp();
+                    return result;
+                }
+
                 var odlns = await UnitWork.Find<DLN1>(r => r.BaseEntry == ordr.DocEntry).GroupBy(r => new { r.DocEntry }).Select(r => r.Key.DocEntry).ToListAsync();
                 if (odlns != null && odlns.Count() > 0)
                 {
@@ -801,8 +782,9 @@ namespace OpenAuth.App.PayTerm
                     if (orcts != null && orcts.Count() > 0)
                     {
                         orcts = (from c in orcts
-                                 join d in await UnitWork.Find<RCT2>(r => r.DocEntry == ordr.DocEntry).Select(r => new SapEntityHelp { DocEntry = r.DocNum, BaseEntry = r.DocEntry, TotalAmount = r.SumApplied, TotalAmountFC = r.AppliedFC }).ToListAsync()
-                                 on c.DocEntry equals d.DocEntry 
+                                 join d in await UnitWork.Find<RCT2>(null).Select(r => new SapEntityHelp { DocEntry = r.DocNum, BaseEntry = r.DocEntry, TotalAmount = r.SumApplied, TotalAmountFC = r.AppliedFC }).ToListAsync()
+                                 on c.DocEntry equals d.DocEntry into cd
+                                 from d in cd.DefaultIfEmpty()
                                  where d is null
                                  select new SapEntityHelp
                                  {
@@ -839,24 +821,27 @@ namespace OpenAuth.App.PayTerm
                         }
 
                         #region 当销售收款单在存在应收发票，并且产生销售收款单，则根据应收发票找到对应销售收款单对应的实际金额，并获取实际总金额
-                        rct2s = await UnitWork.Find<RCT2>(r => r.DocEntry == oINVHelp.DocEntry).Select(r => new SapEntityHelp { DocEntry = r.DocNum, BaseEntry = r.DocEntry, TotalAmount = r.SumApplied, TotalAmountFC = r.AppliedFC }).ToListAsync();
+                        List<SapEntityHelp> rct2Nows = await UnitWork.Find<RCT2>(r => r.DocEntry == oINVHelp.DocEntry).Select(r => new SapEntityHelp { DocEntry = r.DocNum, BaseEntry = r.DocEntry, TotalAmount = r.SumApplied, TotalAmountFC = r.AppliedFC }).ToListAsync();
                         var orctlist = await UnitWork.Find<ORCT>(r => r.CardCode == oINVHelp.CardCode).Select(r => new SapEntityHelp { DocEntry = r.DocNum, CreateDate = r.CreateDate, DocCur = r.DocCurr, DocRate = r.DocRate }).ToListAsync();
-                        if (rct2s != null && rct2s.Count() > 0)
+                        if (rct2Nows != null && rct2Nows.Count() > 0)
                         {
-                            rct2s = (from a in rct2s
-                                     join b in orctlist
-                                     on a.DocEntry equals b.DocEntry into ab
-                                     from b in ab.DefaultIfEmpty()
-                                     select new SapEntityHelp
-                                     {
-                                         DocEntry = b == null ? 0 : b.DocEntry,
-                                         BaseEntry = oINVHelp.DocEntry,
-                                         CreateDate = b == null? DateTime.Now : b.CreateDate,
-                                         DocCur = b == null ? "" : b.DocCur,
-                                         DocRate = b == null ? 0 : b.DocRate,
-                                         TotalAmount = a.TotalAmount,
-                                         TotalAmountFC = a.TotalAmountFC
-                                     }).ToList();
+                            rct2Nows = (from a in rct2Nows
+                                        join b in orctlist
+                                        on a.DocEntry equals b.DocEntry into ab
+                                        from b in ab.DefaultIfEmpty()
+                                        select new SapEntityHelp
+                                        {
+                                            DocEntry = b == null ? 0 : b.DocEntry,
+                                            BaseEntry = oINVHelp.DocEntry,
+                                            CreateDate = b == null ? DateTime.Now : b.CreateDate,
+                                            DocCur = b == null ? "" : b.DocCur,
+                                            DocRate = b == null ? 0 : b.DocRate,
+                                            TotalAmount = a.TotalAmount,
+                                            TotalAmountFC = a.TotalAmountFC
+                                        }).ToList();
+
+                            foreach (SapEntityHelp item in rct2Nows)
+                                rct2s.Add(item);
                         }
                         #endregion
                     }
@@ -885,7 +870,8 @@ namespace OpenAuth.App.PayTerm
 
                     //计算应收明细                 
                     receDetailHelps = GetReceDetailHelps(sapEntityHelps, receHelps);
-                    
+                    receDetailHelps = receDetailHelps.OrderBy(r => Convert.ToInt32(r.ReceInvoice)).ToList();
+
                     //总体情况
                     SaleReceHelp saleReceHelp = new SaleReceHelp();
                     saleReceHelp.DocEntry = docEntry;
@@ -895,15 +881,15 @@ namespace OpenAuth.App.PayTerm
                     saleReceHelp.SaleReceAmountFC = ordr.DocTotalFC == 0 || ordr.DocTotal == null ? "" : _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(ordr.DocTotalFC), 2);
                     saleReceHelp.ReceAmount = receHelps.Sum(r => r.ReceAmount) == 0 ? "" : _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(receHelps.Sum(r => r.ReceAmount)), 2);
                     saleReceHelp.ReceAmountFC = receHelps.Sum(r => r.ReceAmountFC) == 0 ? "" : _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(receHelps.Sum(r => r.ReceAmountFC)), 2);
-                    saleReceHelp.ActualAmount = (sapEntityHelpList == null ? 0 : sapEntityHelpList.Sum(r => r.TotalAmount)) == 0 ? "" : _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(sapEntityHelpList == null ? 0 : sapEntityHelpList.Sum(r => r.TotalAmount)) , 2);
+                    saleReceHelp.ActualAmount = (sapEntityHelpList == null ? 0 : sapEntityHelpList.Sum(r => r.TotalAmount)) == 0 ? "" : _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(sapEntityHelpList == null ? 0 : sapEntityHelpList.Sum(r => r.TotalAmount)), 2);
                     saleReceHelp.ActualAmountFC = (sapEntityHelpList == null ? 0 : sapEntityHelpList.Sum(r => r.TotalAmountFC)) == 0 ? "" : _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(sapEntityHelpList == null ? 0 : sapEntityHelpList.Sum(r => r.TotalAmountFC)), 2);
                     saleReceHelp.WithOutLimitMaxDay = receDetailHelps.OrderByDescending(r => r.WithinLimitDay).Select(r => r.WithinLimitDay).FirstOrDefault();
                     saleReceHelp.WithOutLimitAmount = _serviceBaseApp.MoneyToCoin(receDetailHelps.Sum(r => r.WithinAmount), 2);
                     saleReceHelp.WithOutLimitPre = receHelps.Sum(r => r.ReceAmount) == 0 ? "0%" : (saleReceHelp.DocCur == "RMB" ? (Convert.ToDecimal(sapEntityHelpList == null ? 0 : receDetailHelps.Sum(r => r.WithinAmount))) / (Convert.ToDecimal(receHelps.Sum(r => r.ReceAmount))) : (Convert.ToDecimal(sapEntityHelpList == null ? 0 : receDetailHelps.Sum(r => r.WithinAmount))) / (Convert.ToDecimal(receHelps.Sum(r => r.ReceAmountFC)))) * 100 + "%";
-                    
+
                     //应收明细和总体情况
                     result.Data = new SaleOrderDetailHelp
-                    { 
+                    {
                         ReceDetailHelps = receDetailHelps,
                         SaleReceHelp = saleReceHelp
                     };
@@ -931,6 +917,7 @@ namespace OpenAuth.App.PayTerm
         public List<ReceDetailHelp> GetReceDetailHelps(List<SapEntityHelp> sapEntityHelps, List<ReceHelp> receHelps)
         {
             List<ReceDetailHelp> receDetailHelps = new List<ReceDetailHelp>();
+            receHelps = receHelps.OrderBy(r => r.ReceDateTime).ToList();
             if (sapEntityHelps != null && sapEntityHelps.Count() > 0)
             {
                 var sapDocCurs = sapEntityHelps.GroupBy(r => new { r.DocCur }).Select(r => r.Key.DocCur).ToList();
@@ -949,7 +936,7 @@ namespace OpenAuth.App.PayTerm
                         receDetailHelp.InvoiceTotalAmount = receHelp.TotalAmount == 0 ? "" : _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(receHelp.TotalAmount), 2);
                         receDetailHelp.RecePayType = receHelp.RecePayType;
                         receDetailHelp.ReceDocCur = "RMB";
-                        receDetailHelp.ReceAmount = receHelp.ReceAmount == 0 ? "" :  _serviceBaseApp.MoneyToCoin(receHelp.ReceAmount, 2);
+                        receDetailHelp.ReceAmount = receHelp.ReceAmount == 0 ? "" : _serviceBaseApp.MoneyToCoin(receHelp.ReceAmount, 2);
                         receDetailHelp.ReceDate = receHelp.ReceDate;
                         receDetailHelp.ReceTypeDate = receHelp.ReceTypeDate;
 
@@ -1008,7 +995,7 @@ namespace OpenAuth.App.PayTerm
                                 }
                             }
                         }
-                      
+
                         if (sapEntityHelpList == null || sapEntityHelpList.Count() == 0)
                         {
                             if (receHelp.RecePayType == "预付/货前款")
@@ -1029,7 +1016,7 @@ namespace OpenAuth.App.PayTerm
                                 receDetailHelp.SaleReceiptNo = "";
                                 receDetailHelp.ReceiveAmount = "";
                                 receDetailHelp.NoReceiveAmount = receDetailHelp.ReceAmount;
-                                receDetailHelp.WithinLimitDay = DateTime.Now <= Convert.ToDateTime(receHelp.ReceDateTime) ? "" : (DateTime.Now - Convert.ToDateTime(receHelp.ReceDateTime)).Days.ToString() ;
+                                receDetailHelp.WithinLimitDay = DateTime.Now <= Convert.ToDateTime(receHelp.ReceDateTime) ? "" : (DateTime.Now - Convert.ToDateTime(receHelp.ReceDateTime)).Days.ToString();
                                 receDetailHelp.WithinLimitAmount = receDetailHelp.WithinLimitDay == "" ? "" : receDetailHelp.ReceAmount;
                                 receDetailHelp.WithinAmount = receDetailHelp.WithinLimitDay == "" ? 0 : (receHelp.ReceAmount == 0 ? 0 : receHelp.ReceAmount);
                                 receDetailHelp.WithinLimitPre = receDetailHelp.WithinLimitDay == "" ? "0%" : "100%";
@@ -1054,12 +1041,12 @@ namespace OpenAuth.App.PayTerm
                             else
                             {
                                 decimal receiveAmount = Convert.ToDecimal(sapEntityHelpList.Sum(r => r.TotalAmount));
-                                receDetailHelp.ActualReceDate = Convert.ToDecimal(receHelp.TotalAmount) <= receiveAmount ? (sapEntityHelpList.GroupBy(r => new { r.CreateDate }).Select(r => Convert.ToDateTime(r.Key.CreateDate)).ToList().OrderByDescending(r => r).FirstOrDefault()).ToString("yyyy.MM.dd") : "";
+                                receDetailHelp.ActualReceDate = Convert.ToDecimal(receHelp.ReceAmount) <= receiveAmount ? (sapEntityHelpList.GroupBy(r => new { r.CreateDate }).Select(r => Convert.ToDateTime(r.Key.CreateDate)).ToList().OrderByDescending(r => r).FirstOrDefault()).ToString("yyyy.MM.dd") : "";
                                 receDetailHelp.SaleReceiptNo = string.Join(",", sapEntityHelpList.GroupBy(r => new { r.DocEntry }).Select(r => r.Key.DocEntry).ToList());
                                 receDetailHelp.ReceiveAmount = receiveAmount == 0 ? "" : _serviceBaseApp.MoneyToCoin(receiveAmount, 2);
                                 receDetailHelp.NoReceiveAmount = Convert.ToDecimal(receHelp.ReceAmount) - receiveAmount == 0 ? "" : _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(receHelp.ReceAmount) - receiveAmount, 2);
                                 int days = (DateTime.Now - Convert.ToDateTime(receHelp.ReceDateTime)).Days;
-                                int recedays = receDetailHelp.ActualReceDate == "" ? 0 : (Convert.ToDateTime(receHelp.ReceDateTime) - Convert.ToDateTime(receDetailHelp.ActualReceDate)).Days;
+                                int recedays = receDetailHelp.ActualReceDate == "" ? 0 : (Convert.ToDateTime(receDetailHelp.ActualReceDate) - Convert.ToDateTime(receHelp.ReceDateTime)).Days;
                                 receDetailHelp.WithinLimitDay = Convert.ToDecimal(receHelp.ReceAmount) > receiveAmount ? (days <= 0 ? "" : days.ToString()) : (receHelp.ReceDateTime >= Convert.ToDateTime(receDetailHelp.ActualReceDate) ? (recedays <= 0 ? "" : recedays.ToString()) : "");
                                 receDetailHelp.WithinLimitAmount = receDetailHelp.WithinLimitDay == "" ? "" : (Convert.ToDecimal(receHelp.ReceAmount) - receiveAmount == 0 ? "" : _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(receHelp.ReceAmount) - receiveAmount, 2));
                                 receDetailHelp.WithinAmount = receDetailHelp.WithinLimitDay == "" ? 0 : (Convert.ToDecimal(receHelp.ReceAmount) - receiveAmount == 0 ? 0 : Convert.ToDecimal(receHelp.ReceAmount) - receiveAmount);
@@ -1188,7 +1175,7 @@ namespace OpenAuth.App.PayTerm
                                     receDetailHelp.ReceiveAmount = receiveAmount == 0 ? "" : _serviceBaseApp.MoneyToCoin(receiveAmount, 2);
                                     receDetailHelp.NoReceiveAmount = Convert.ToDecimal(receHelp.ReceAmountFC) - receiveAmount == 0 ? "" : _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(receHelp.ReceAmountFC) - receiveAmount, 2);
                                     int days = (DateTime.Now - Convert.ToDateTime(receHelp.ReceDateTime)).Days;
-                                    int receDays = receDetailHelp.ActualReceDate == "" ? 0 : (Convert.ToDateTime(receHelp.ReceDateTime) - Convert.ToDateTime(receDetailHelp.ActualReceDate)).Days;
+                                    int receDays = receDetailHelp.ActualReceDate == "" ? 0 : (Convert.ToDateTime(receDetailHelp.ActualReceDate) - Convert.ToDateTime(receHelp.ReceDateTime)).Days;
                                     receDetailHelp.WithinLimitDay = Convert.ToDecimal(receHelp.ReceAmountFC) > receiveAmount ? (days <= 0 ? "" : days.ToString()) : (receHelp.ReceDateTime >= Convert.ToDateTime(receDetailHelp.ActualReceDate) ? (receDays <= 0 ? "" : receDays.ToString()) : "");
                                     receDetailHelp.WithinLimitAmount = receDetailHelp.WithinLimitDay == "" ? "" : (Convert.ToDecimal(receHelp.ReceAmountFC) - receiveAmount == 0 ? "" : _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(receHelp.ReceAmountFC) - receiveAmount, 2));
                                     receDetailHelp.WithinAmount = receDetailHelp.WithinLimitDay == "" ? 0 : (Convert.ToDecimal(receHelp.ReceAmountFC) - receiveAmount == 0 ? 0 : Convert.ToDecimal(receHelp.ReceAmountFC) - receiveAmount);
@@ -1311,7 +1298,7 @@ namespace OpenAuth.App.PayTerm
                                     receDetailHelp.ReceiveAmount = receiveAmount == 0 ? "" : _serviceBaseApp.MoneyToCoin(receiveAmount, 2);
                                     receDetailHelp.NoReceiveAmount = Convert.ToDecimal(receHelp.ReceAmount) - receiveAmount == 0 ? "" : _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(receHelp.ReceAmount) - receiveAmount, 2);
                                     int days = (DateTime.Now - Convert.ToDateTime(receHelp.ReceDateTime)).Days;
-                                    int receDays = receDetailHelp.ActualReceDate == "" ? 0 : (Convert.ToDateTime(receHelp.ReceDateTime) - Convert.ToDateTime(receDetailHelp.ActualReceDate)).Days;
+                                    int receDays = receDetailHelp.ActualReceDate == "" ? 0 : (Convert.ToDateTime(receDetailHelp.ActualReceDate) - Convert.ToDateTime(receHelp.ReceDateTime)).Days;
                                     receDetailHelp.WithinLimitDay = Convert.ToDecimal(receHelp.ReceAmount) > receiveAmount ? (days <= 0 ? "" : days.ToString()) : (receHelp.ReceDateTime >= Convert.ToDateTime(receDetailHelp.ActualReceDate) ? (receDays <= 0 ? "" : receDays.ToString()) : "");
                                     receDetailHelp.WithinLimitAmount = receDetailHelp.WithinLimitDay == "" ? "" : (Convert.ToDecimal(receHelp.ReceAmount) - receiveAmount == 0 ? "" : _serviceBaseApp.MoneyToCoin(Convert.ToDecimal(receHelp.TotalAmount) - receiveAmount, 2));
                                     receDetailHelp.WithinAmount = receDetailHelp.WithinLimitDay == "" ? 0 : (Convert.ToDecimal(receHelp.ReceAmount) - receiveAmount == 0 ? 0 : Convert.ToDecimal(receHelp.TotalAmount) - receiveAmount);
@@ -1388,19 +1375,19 @@ namespace OpenAuth.App.PayTerm
                                      select new DocEntryGroupNumHelp
                                      {
                                          DocEntry = a.DocEntry,
-                                         GroupNum = b.GroupNum,
-                                         PymntGroup = b.PymntGroup
+                                         GroupNum = b == null ? 0 : b.GroupNum,
+                                         PymntGroup = b == null ? "" : b.PymntGroup
                                      }).ToList();
 
             //判定付款条件是否在4.0中存在
             var paytem = (from a in docEntryGroupNums
-                         join b in UnitWork.Find<PayTermSave>(null).ToList() on a.PymntGroup equals b.GroupNum
-                         select new DocEntryGroupNumHelp
-                         {
-                             DocEntry = a.DocEntry,
-                             GroupNum = a.GroupNum,
-                             PymntGroup = a.PymntGroup
-                         }).ToList();
+                          join b in UnitWork.Find<PayTermSave>(null).ToList() on a.PymntGroup equals b.GroupNum
+                          select new DocEntryGroupNumHelp
+                          {
+                              DocEntry = a.DocEntry,
+                              GroupNum = a.GroupNum,
+                              PymntGroup = a.PymntGroup
+                          }).ToList();
 
             if (paytem != null && paytem.Count() > 0)
             {
