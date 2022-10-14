@@ -488,6 +488,31 @@ namespace OpenAuth.WebApi.Controllers.Client
             return result;
         }
 
+        /// <summary>
+        /// 审核通过修改lims推广员数据状态
+        /// </summary>
+        /// <param name="CardCode"></param>
+        /// <param name="Type"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("AuditlimsInfo")]
+        public Response<string> AuditlimsInfo(string CardCode, string Type)
+        {
+            var result = new Response<string>();
+            try
+            {
+                _clientInfoApp.AuditlimsInfo(CardCode, Type);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{CardCode}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
 
         /// <summary>
         /// 查询 国家·省·市

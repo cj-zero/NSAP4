@@ -510,6 +510,14 @@ namespace OpenAuth.App.Client
                 tableName.Append("LEFT JOIN nsap_bone.crm_ocry F ON F.Code=A.Country  ");
                 tableName.Append("LEFT JOIN nsap_bone.crm_ocst G ON G.Code=A.State1 ");
 
+                tableName.Append("FROM nsap_bone.crm_ocrd A ");
+                tableName.Append("LEFT JOIN nsap_bone.crm_oslp B ON B.SlpCode=A.SlpCode  ");
+                tableName.Append("LEFT JOIN nsap_bone.crm_ocrg C ON C.GroupCode=A.GroupCode  ");
+                tableName.Append("LEFT JOIN nsap_bone.crm_oidc D ON D.Code=A.Indicator  ");
+                tableName.Append("LEFT JOIN nsap_bone.crm_ohem E ON E.empID=A.DfTcnician and E.sbo_id = A.sbo_id ");
+                tableName.Append("LEFT JOIN nsap_bone.crm_ocry F ON F.Code=A.Country  ");
+                tableName.Append("LEFT JOIN nsap_bone.crm_ocst G ON G.Code=A.State1 ");
+
                 //筛选标签
                 if (!string.IsNullOrWhiteSpace(label))
                 {
@@ -3028,6 +3036,511 @@ namespace OpenAuth.App.Client
             UnitWork.Save();
         }
         #endregion
+        #endregion
+
+        #region LIMS推广员
+
+        /// <summary>
+        /// 获取所有节点状态
+        /// </summary>
+        /// <returns>返回节点状态信息</returns>
+        public async Task<TableData> GetProductTypeList()
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var result = new TableData();
+            var categorStatusList = await UnitWork.Find<Category>(u => u.TypeId.Equals("ProductType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
+            result.Count = categorStatusList.Count();
+            result.Data = categorStatusList;
+            return result;
+        }
+
+        /// <summary>
+        ///  推广员列表（产品推广员模块）
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public async Task<TableData> QueryLIMSInfo(QueryLIMSInfoReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            var result = new TableData();
+            try
+            {
+                var map = UnitWork.Find<LimsInfoMap>(null);
+                //销售员部门数据
+                var deptData = await (from s in UnitWork.Find<sbo_user>(null)
+                                      join ud in UnitWork.Find<base_user_detail>(null) on s.user_id equals ud.user_id
+                                      join d in UnitWork.Find<base_dep>(null) on ud.dep_id equals d.dep_id
+                                      where s.sbo_id == Define.SBO_ID
+                                      select new
+                                      {
+                                          UserId = (int)s.user_id,
+                                          dept = d.dep_alias,
+                                      }).Distinct().ToListAsync();
+
+                var objs = from n in await UnitWork.Find<LimsInfo>(q => q.Type == request.Type).ToListAsync()
+                           join u in await UnitWork.Find<User>(null).ToListAsync() on n.UserId equals u.Id
+                           join d in deptData on u.User_Id equals d.UserId
+                           select new
+                           {
+                               Id = n.Id,
+                               UserId = n.UserId,
+                               Type = n.Type,
+                               Count = n.Count,
+                               u.Name,
+                               d.dept,
+                               u.Status,
+                               CreateUser = n.CreateUser,
+                               CreateDate = n.CreateDate,
+                           };
+                var LimsInfoList = objs.OrderByDescending(r => r.CreateDate).Skip((request.page - 1) * request.limit).Take(request.limit).ToList();
+
+                var LimsInfoListResp = LimsInfoList.Select(r => new
+                {
+                    Id = r.Id,
+                    UserId = r.UserId,
+                    Type = r.Type,
+                    Name = r.Name,
+                    dept = r.dept,
+                    Status = r.Status,
+                    Count = (map.Where(q => q.LimsInfoId == r.Id).Select(x => new
+                    {
+                        x.Id,
+                        x.CardCode,
+                        x.CardName
+                    })).Count(),
+                    CreateUser = r.CreateUser,
+                    CreateDate = r.CreateDate,
+                    limsInfoMapList = map.Where(q => q.LimsInfoId == r.Id).Select(x => new
+                    {
+                        x.Id,
+                        x.CardCode,
+                        x.CardName
+                    })
+                }).ToList();
+
+                result.Count = objs.Count();
+                result.Data = LimsInfoListResp;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message.ToString();
+                result.Code = 500;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 通过推广员获取已绑定的客户列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetCardCodeById(QueryClientInfoReq req)
+        {
+            var result = new TableData();
+            int id = req.id;
+            var CardCodeList = UnitWork.Find<LimsInfoMap>(q => q.LimsInfoId == id).Select(q => q.CardCode).ToList();
+
+            var query = from c in UnitWork.Find<OCRD>(q => CardCodeList.Contains(q.CardCode))
+                        join s in UnitWork.Find<OSLP>(null)
+                        on c.SlpCode equals s.SlpCode
+                        select new
+                        {
+                            c.CardCode,
+                            c.CardName,
+                            s.SlpCode,
+                            s.SlpName
+                        };
+            if (!string.IsNullOrWhiteSpace(req.key))
+            {
+                query = query.Where(q => q.CardCode.Contains(req.key) || q.CardName.Contains(req.key) || q.SlpName.Contains(req.key));
+            }
+            //先把数据加载到内存
+            var data = await query.OrderBy(q => q.CardCode).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+            //销售员部门数据
+            var deptData = await (from s in UnitWork.Find<sbo_user>(null)
+                                  join ud in UnitWork.Find<base_user_detail>(null) on s.user_id equals ud.user_id
+                                  join d in UnitWork.Find<base_dep>(null) on ud.dep_id equals d.dep_id
+                                  where s.sbo_id == Define.SBO_ID
+                                  && data.Select(x => x.SlpCode).Contains(s.sale_id.Value)
+                                  select new
+                                  {
+                                      slpCode = s.sale_id,
+                                      dept = d.dep_alias,
+                                  }).Distinct().ToListAsync();
+            var response = from q in data
+                           join d in deptData on q.SlpCode equals d.slpCode into temp1
+                           from t1 in temp1.DefaultIfEmpty()
+                           select new
+                           {
+                               CardCode = q.CardCode,
+                               CardName = q.CardName,
+                               SlpCode = q.SlpCode,
+                               SlpName = q.SlpName,
+                               DeptName = t1 == null ? null : t1.dept
+                           };
+            result.Data = response;
+            result.Count = await query.CountAsync();
+
+            return result;
+        }
+
+        /// <summary>
+        /// 添加lims推广员
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> AddLims(AddLIMSInfo req)
+        {
+            var result = new Infrastructure.Response();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            List<LimsInfo> LimsInfoList = new List<LimsInfo>();
+            foreach (var item in req.userIdList)
+            {
+                //获取业务员编码
+                int User_Id = UnitWork.Find<User>(q => q.Id == item).Select(q => q.User_Id).FirstOrDefault().Value;
+                int slpCode = UnitWork.Find<sbo_user>(q => q.user_id == User_Id).Select(q => q.sale_id).FirstOrDefault().Value;
+                string message = "";
+                LimsInfo info = UnitWork.Find<LimsInfo>(q => q.SlpCode == slpCode && q.Type == req.Type).FirstOrDefault();
+                if (info != null)
+                {
+                    string name = UnitWork.Find<crm_oslp>(q => q.SlpCode == slpCode).Select(q => q.SlpName).FirstOrDefault();
+                    message = $"{name}已存在推广员列表中";
+                    if (!string.IsNullOrWhiteSpace(message))
+                    {
+                        result.Code = 500;
+                        result.Message = message;
+                        return result;
+                    }
+                }
+                LimsInfoList.Add(new LimsInfo
+                {
+                    UserId = item,
+                    SlpCode = slpCode,
+                    Type = req.Type,
+                    Count = req.Count,
+                    CreateUser = loginUser.Name,
+                    CreateDate = DateTime.Now
+                });
+            }
+            await UnitWork.BatchAddAsync<LimsInfo, int>(LimsInfoList.ToArray());
+            await UnitWork.SaveAsync();
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// 绑定客户与推广员
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> AddLimsMap(AddLIMSInfoMap req)
+        {
+            var result = new Infrastructure.Response();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            List<LimsInfoMap> list = new List<LimsInfoMap>();
+            for (int i = 0; i < req.LimsIdList.Count; i++)
+            {
+                string message = "";
+                int LimsInfoId = req.LimsIdList[i].ToInt();
+                LimsInfoMap info = UnitWork.Find<LimsInfoMap>(q => q.LimsInfoId == LimsInfoId).FirstOrDefault();
+                if (info != null)
+                {
+                    int SlpCode = UnitWork.Find<LimsInfo>(q => q.Id == LimsInfoId).FirstOrDefault().SlpCode;
+                    string name = UnitWork.Find<crm_oslp>(q => q.SlpCode == SlpCode).Select(q => q.SlpName).FirstOrDefault();
+                    message = $"{name}已绑定该客户";
+                    if (!string.IsNullOrWhiteSpace(message))
+                    {
+                        result.Code = 500;
+                        result.Message = message;
+                        return result;
+                    }
+                }
+                list.Add(new LimsInfoMap
+                {
+                    CardCode = req.CardCode,
+                    CardName = req.CardName,
+                    LimsInfoId = LimsInfoId,
+                    CreateUser = loginUser.Name,
+                    CreateDate = DateTime.Now
+                });
+            }
+            await UnitWork.BatchAddAsync<LimsInfoMap, int>(list.ToArray());
+            await UnitWork.SaveAsync();
+
+            return result;
+        }
+
+        /// <summary>
+        /// 通过客户编码获取推广员信息
+        /// </summary>
+        /// <param name="CardCode"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetLIMSByCode(string CardCode, string Type, int page, int limit)
+        {
+            var tableData = new TableData();
+            var Mapdata = (from n in await UnitWork.Find<LimsInfoMap>(q => q.CardCode == CardCode).ToListAsync()
+                           join m in await UnitWork.Find<LimsInfo>(q => q.Type == Type).ToListAsync() on new { LimsInfoId = n.LimsInfoId.ToString() } equals new { LimsInfoId = m.Id.ToString() }
+                           join u in await UnitWork.Find<User>(null).ToListAsync() on m.UserId equals u.Id
+                           select new
+                           {
+                               n.Id,
+                               m.Type,
+                               u.User_Id,
+                               u.Name,
+                               n.CreateUser,
+                               n.CreateDate
+                           }).ToList();
+            var data = (from n in Mapdata
+                        join ud in UnitWork.Find<base_user_detail>(null) on new { User_Id = n.User_Id.ToInt() } equals new { User_Id = ud.user_id.ToInt() } into temp1
+                        from t1 in temp1.DefaultIfEmpty()
+                        join d in UnitWork.Find<base_dep>(null) on t1.dep_id equals d.dep_id into temp2
+                        from t2 in temp2.DefaultIfEmpty()
+                        select new
+                        {
+                            Id = n.Id,
+                            Type = n.Type,
+                            Name = n.Name,
+                            dep_nm = t2 == null ? "" : t2.dep_nm,
+                            CreateUser = n.CreateUser,
+                            CreateDate = n.CreateDate
+                        }).ToList();
+            var dataquery = data.Skip((page - 1) * limit).Take(limit).ToList();//.OrderByDescending(q => q.CreateDate)
+            tableData.Data = dataquery;
+            tableData.Count = data.Count();
+            return tableData;
+        }
+
+        /// <summary>
+        /// 在客户详情页删除推广员
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <param name="CardCode"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public async Task<bool> DeleteLIMS(List<int> Ids, string CardCode)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            foreach (var item in Ids)
+            {
+                await UnitWork.DeleteAsync<LimsInfoMap>(q => q.Id == item && q.CardCode == CardCode);
+            }
+            await UnitWork.SaveAsync();
+
+            return true;
+        }
+
+        /// <summary>
+        /// 在推广员模块删除推广员
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public async Task<bool> DeleteLIMSInfo(List<int> Ids)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            foreach (var item in Ids)
+            {
+                await UnitWork.DeleteAsync<LimsInfoMap>(q => q.LimsInfoId == item);
+                await UnitWork.DeleteAsync<LimsInfo>(q => q.Id == item);
+            }
+            await UnitWork.SaveAsync();
+            return true;
+        }
+
+        /// <summary>
+        /// 获取用户列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetUserInfo(QueryLIMSInfoReq req)
+        {
+            var tableData = new TableData();
+            //销售员部门数据
+            var deptData = await (from s in UnitWork.Find<sbo_user>(null)
+                                  join ud in UnitWork.Find<base_user_detail>(null) on s.user_id equals ud.user_id
+                                  join d in UnitWork.Find<base_dep>(null) on ud.dep_id equals d.dep_id
+                                  where s.sbo_id == Define.SBO_ID
+                                  select new
+                                  {
+                                      UserId = (int)s.user_id,
+                                      dept = d.dep_alias,
+                                  }).Distinct().ToListAsync();
+            var data = from n in await UnitWork.Find<User>(null).ToListAsync()
+                       join m in deptData on n.User_Id equals m.UserId
+                       select new
+                       {
+                           n.Id,
+                           n.Account,
+                           n.Name,
+                           n.Status,
+                           m.dept,
+                           n.CreateTime
+                       };
+            if (!string.IsNullOrWhiteSpace(req.key))
+            {
+                data = data.Where(q => q.Name.Contains(req.key) || q.dept.Contains(req.key));
+            }
+            var dataquery = data.OrderByDescending(q => q.CreateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+            tableData.Data = dataquery;
+            tableData.Count = data.Count();
+            return tableData;
+        }
+
+        /// <summary>
+        /// 获取登录用户的slpcode
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public async Task<int> GetSlpCode()
+        {
+            int slpCode = 0;
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            int userId = loginContext.User.User_Id.Value;
+            var sbouser = await UnitWork.Find<sbo_user>(q => q.user_id == userId).FirstOrDefaultAsync();
+            if (sbouser != null)
+            {
+                slpCode = sbouser.sale_id.Value;
+            }
+            return slpCode;
+        }
+
+        /// <summary>
+        /// 保存lims推广员的联系人地址
+        /// </summary>
+        /// <param name="crd1"></param>
+        /// <param name="ocpr"></param>
+        /// <param name="CardCode"></param>
+        /// <param name="slpCode"></param>
+        /// <param name="Type"></param>
+        /// <returns></returns>
+        public bool SavelimsData(List<clientCRD1Req> crd1, List<clientOCPRReq> ocpr, string CardCode, int slpCode)
+        {
+            if (crd1.Count > 0)
+            {
+                List<LimsCRD1> crd1List = new List<LimsCRD1>();
+                foreach (var c in crd1)
+                {
+                    crd1List.Add(new LimsCRD1
+                    {
+                        sbo_id = Define.SBO_ID,
+                        Address = c.Address,
+                        CardCode = CardCode,
+                        SlpCode = slpCode,
+                        ZipCode = c.ZipCode,
+                        City = c.City,
+                        County = c.County,
+                        Country = c.Country,
+                        State = c.State,
+                        LogInstanc = !string.IsNullOrWhiteSpace(c.LogInstanc) ? Convert.ToInt16(c.LogInstanc) : 0,
+                        ObjType = c.ObjType,
+                        LicTradNum = c.LicTradNum,
+                        LineNum = !string.IsNullOrWhiteSpace(c.LineNum) ? Convert.ToInt32(c.LineNum) : 0,
+                        TaxCode = c.TaxCode,
+                        Building = c.Building,
+                        AdresType = c.AdresType,
+                        Address2 = c.Address2,
+                        Address3 = c.Address3,
+                        U_Active = c.Active,
+                        Type = "Temporary"
+                    });
+                }
+                UnitWork.BatchAdd<LimsCRD1, int>(crd1List.ToArray());
+                UnitWork.Delete<LimsCRD1>(q => q.CardCode == CardCode && q.sbo_id == Define.SBO_ID && q.Type == "Temporary");
+            }
+
+            if (ocpr.Count > 0)
+            {
+                List<LimsOCPR> ocprList = new List<LimsOCPR>();
+                foreach (var c in ocpr)
+                {
+                    ocprList.Add(new LimsOCPR
+                    {
+                        CntctCode = !string.IsNullOrWhiteSpace(c.CntctCode) ? Convert.ToInt32(c.CntctCode) : 0,
+                        sbo_id = Define.SBO_ID,
+                        CardCode = CardCode,
+                        SlpCode = slpCode,
+                        Name = c.Name,
+                        Position = c.Position,
+                        Address = c.Address,
+                        Tel1 = c.Tel1,
+                        Tel2 = c.Tel2,
+                        Cellolar = c.Cellolar,
+                        Fax = c.Fax,
+                        E_MailL = c.E_MailL,
+                        Pager = c.Pager,
+                        Notes1 = c.Notes1,
+                        Notes2 = c.Notes2,
+                        DataSource = c.DataSource,
+                        UserSign = !string.IsNullOrWhiteSpace(c.UserSign) ? Convert.ToInt32(c.UserSign) : 0,
+                        Password = c.Password,
+                        LogInstanc = !string.IsNullOrWhiteSpace(c.LogInstanc) ? Convert.ToInt32(c.LogInstanc) : 0,
+                        ObjType = c.ObjType,
+                        BirthPlace = c.BirthPlace,
+                        Gender = c.Gender,
+                        Profession = c.Profession,
+                        Title = c.Title,
+                        BirthCity = c.BirthCity,
+                        Active = c.Active,
+                        FirstName = c.FirstName,
+                        MiddleName = c.MiddleName,
+                        LastName = c.LastName,
+                        U_ACCT = c.U_ACCT,
+                        U_BANK = c.U_BANK,
+                        Type = "Temporary"
+                    });
+                }
+                UnitWork.BatchAdd<LimsOCPR, int>(ocprList.ToArray());
+                UnitWork.Delete<LimsOCPR>(q => q.CardCode == CardCode && q.sbo_id == Define.SBO_ID && q.Type == "Temporary");
+            }
+            UnitWork.Save();
+            return true;
+        }
+
+        /// <summary>
+        /// 通过cardcode获取slpcode
+        /// </summary>
+        /// <param name="CardCode"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public int GetSlpCodeByCardCode(string CardCode)
+        {
+            int SlpCode = UnitWork.Find<crm_ocrd>(q => q.CardCode == CardCode).Select(q => q.SlpCode).FirstOrDefault().Value;
+            return SlpCode;
+        }
         #endregion
 
         #region LIMS推广员
