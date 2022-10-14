@@ -353,12 +353,12 @@ namespace OpenAuth.App.ClientRelation
                 var subList = JsonConvert.DeserializeObject<List<ClientRelJob>>(jobScript.EndCustomerName);
                 subListNodes.AddRange(subList.Select(a => a.customerNo).ToList());
             }
-            
+            var  finalSubnodes = subListNodes.Count ==0 ? "" : JsonConvert.SerializeObject(subListNodes);
             // add to db
             await UnitWork.AddAsync<OpenAuth.Repository.Domain.ClientRelation, int>(new Repository.Domain.ClientRelation
             {
                 ClientName = jobScript.ClientName,
-                SubNo = JsonConvert.SerializeObject(subListNodes),
+                SubNo = finalSubnodes,
                 Flag = jobScript.Flag,
                 ScriptFlag = 1,
                 IsDelete = 0,
