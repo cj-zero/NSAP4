@@ -184,7 +184,11 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
-
+        /// <summary>
+        /// 获取终端关系
+        /// </summary>
+        /// <param name="clientNo"></param>
+        /// <returns></returns>
         [HttpGet]
         public async Task<Response<JobClientRelation>> GetTerminals(string clientNo)
         {
@@ -202,7 +206,10 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
-
+        /// <summary>
+        /// 手动同步关系
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
         public async Task<bool> GetSyncRelations()
         {

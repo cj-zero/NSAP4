@@ -836,12 +836,10 @@ namespace OpenAuth.App.ClientRelation
         /// <returns></returns>
         public async Task<bool> AddJobRelations(AddJobRelReq jrr)
         {
-            var afterNodes = new List<string>();
-            var subList = JsonConvert.DeserializeObject<List<ClientRelJob>>(jrr.Terminals);
-            afterNodes.AddRange(subList.Select(a => a.customerNo).ToList());
+
             await UnitWork.AddAsync<OpenAuth.Repository.Domain.JobClientRelation, int>(new JobClientRelation { 
                Jobid = jrr.Jobid,
-               Terminals = JsonConvert.SerializeObject(afterNodes),
+               Terminals = jrr.Terminals,
                IsDelete =0,
                CreateDate = DateTime.Now,
                Creator = jrr.Creator,
