@@ -19,12 +19,17 @@ namespace OpenAuth.App.SSO
         public IRepository<User> _app;
         private ICacheContext _cacheContext;
         private readonly IRepository<Application> _appManager;
+        private readonly IRepository<Relevance> _appRelevance;
+        private readonly IRepository<Repository.Domain.Org> _appOrg;
 
-        public LoginParse(IRepository<Application> appManager, ICacheContext cacheContext, IRepository<User> userApp)
+        public LoginParse(IRepository<Application> appManager, ICacheContext cacheContext, IRepository<User> userApp,
+            IRepository<Relevance> appRelevance, IRepository<Repository.Domain.Org> appOrg)
         {
             _appManager = appManager;
             _cacheContext = cacheContext;
             _app = userApp;
+            _appRelevance = appRelevance;
+            _appOrg = appOrg;
         }
 
         public  LoginResult Do(PassportLoginRequest model)
@@ -55,7 +60,9 @@ namespace OpenAuth.App.SSO
                 //{
                     userInfo = _app.FindSingle(u =>u.Account == model.Account);
                 //}
-               
+           
+
+
                 if (userInfo == null)
                 {
                     throw new Exception("用户不存在");
@@ -69,6 +76,17 @@ namespace OpenAuth.App.SSO
                 {
                     throw new Exception("该用户已停用");
                 }
+                bool isQuality = false;
+                var relevance = _appRelevance.FindSingle(a => a.Key == "UserOrg" && a.FirstId == userInfo.Id);
+                if (relevance != null)
+                {
+                    var userOrg = _appOrg.FindSingle(a => a.Id == relevance.SecondId);
+                    if (userOrg!=null && userOrg.Name == "T1")
+                    {
+                        isQuality = true;
+                    }
+
+                }
 
                 var currentSession = new UserAuthSession
                 {
@@ -76,8 +94,9 @@ namespace OpenAuth.App.SSO
                     Name = userInfo.Name,
                     Token = Guid.NewGuid().ToString().GetHashCode().ToString("x"),
                     AppKey = model.AppKey,
-                    CreateTime = DateTime.Now
-               //    , IpAddress = HttpContext.Current.Request.UserHostAddress
+                    CreateTime = DateTime.Now,
+                    isQuality = isQuality
+                    //    , IpAddress = HttpContext.Current.Request.UserHostAddress
                 };
 
                 //创建Session
@@ -87,6 +106,7 @@ namespace OpenAuth.App.SSO
                 result.ReturnUrl = appInfo.ReturnUrl;
                 result.Token = currentSession.Token;
                 result.Name = userInfo.Name;
+                result.isQuality = currentSession.isQuality;
             }
             catch (Exception ex)
             {

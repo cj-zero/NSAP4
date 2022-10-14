@@ -6250,7 +6250,9 @@ namespace OpenAuth.App
                 throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
             }
             var dailyReports = await UnitWork.Find<ServiceDailyReport>(w => w.CreateUserId == userInfo.UserID && w.ServiceOrderId == req.ServiceOrderId).OrderByDescending(c => c.CreateTime).Select(c => c.CreateTime).FirstOrDefaultAsync();
-            result.Data = dailyReports;
+            //var data = dailyReports.Value.ToString("yyyy-MM-dd HH:mm:ss");
+            var data = dailyReports != null ? dailyReports.Value.ToString("yyyy-MM-dd HH:mm:ss") : null;
+            result.Data = data;
             return result;
         }
 

@@ -591,7 +591,23 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                                 thisinfo.OrderLastDate = DateTime.Now;
                                 thisinfo.FirstCreateDate = DateTime.Now;
                                 //设置报价单提交
-                                result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, orderReq.Order.U_New_ORDRID);
+                                if (string.IsNullOrEmpty(orderReq.Order.U_New_ORDRID))
+                                {
+                                    result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, 0);
+                                }
+                                else
+                                {
+                                    if (orderReq.Order.U_New_ORDRID.Contains(","))
+                                    {
+                                        string[] orderids = orderReq.Order.U_New_ORDRID.Split(',');
+                                        result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, Convert.ToInt32(orderids[0]));
+                                    }
+                                    else
+                                    {
+                                        result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, Convert.ToInt32(orderReq.Order.U_New_ORDRID));
+                                    }
+                                }
+                               
                                 #endregion
                             }
                             else { result = "0"; }
@@ -633,7 +649,22 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                             thisinfo.OrderLastDate = DateTime.Now;
                             thisinfo.FirstCreateDate = DateTime.Now;
                             //设置报价单提交
-                            result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, orderReq.Order.U_New_ORDRID);
+                            if (string.IsNullOrEmpty(orderReq.Order.U_New_ORDRID))
+                            {
+                                result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, 0);
+                            }
+                            else
+                            {
+                                if (orderReq.Order.U_New_ORDRID.Contains(","))
+                                {
+                                    string[] orderids = orderReq.Order.U_New_ORDRID.Split(',');
+                                    result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, Convert.ToInt32(orderids[0]));
+                                }
+                                else
+                                {
+                                    result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, Convert.ToInt32(orderReq.Order.U_New_ORDRID));
+                                }
+                            }
                             #endregion
                         }
                         else { result = "0"; }
@@ -1609,7 +1640,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 VatSum = !string.IsNullOrEmpty(order.VatSum.ToString()) ? order.VatSum.ToString() : "0",
                 WhsCode = order.WhsCode,
                 CntctCode = order.CntctCode.ToString(),
-                U_New_ORDRID = order.U_New_ORDRID.ToString(),
+                U_New_ORDRID = string.IsNullOrEmpty(order.U_New_ORDRID) ? "" : order.U_New_ORDRID,
                 attachmentData = order.FileList,//new List<billAttchment>(),
                 billSalesAcctCode = new List<billSalesAcctCode>(),
                 billSalesDetails = new List<billSalesDetails>(),
