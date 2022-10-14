@@ -87,6 +87,14 @@ namespace OpenAuth.App.Client
                 bool updParaCardName = UpdateWfaJobPara(result, 2, OCRD.CardName);
                 bool updParaOperateType = UpdateWfaJobPara(result, 3, OCRD.ClientOperateType);
                 bool updParaAppChange = UpdateWfaJobPara(result, 4, OCRD.IsApplicationChange);
+                //添加4.0关系
+                await _clientRelationApp.AddJobRelations(new ClientRelation.Request.AddJobRelReq
+                {
+                    Jobid = Convert.ToInt32(result),
+                    Terminals = addClientInfoReq.Terminals,
+                    Creator = loginUser.Name,
+                    CreatorId = loginUser.Id
+                });
                 //新增更新草稿客户关系
                 await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
                 {
@@ -94,7 +102,7 @@ namespace OpenAuth.App.Client
                     ClientNo = "",
                     Flag = OCRD.is_reseller=="N"?0:1,
                     ClientName = OCRD.CardName,
-                    EndCustomerName = OCRD.EndCustomerName,
+                    EndCustomerName = addClientInfoReq.Terminals,
                     Operator = loginUser.Name,
                     Operatorid = loginUser.Id
                 });
@@ -118,19 +126,35 @@ namespace OpenAuth.App.Client
                         bool updParaAppChange = UpdateWfaJobPara(result, 4, OCRD.IsApplicationChange);//该参数决定流程跳转
                         result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(result), userID, OCRD.FreeText, "", 0);
                         ret = SaveCrmAuditInfo1(JobId, userID, rJobNm);
+                        //添加4.0关系
+                        await _clientRelationApp.AddJobRelations(new ClientRelation.Request.AddJobRelReq
+                        {
+                            Jobid = Convert.ToInt32(JobId),
+                            Terminals = addClientInfoReq.Terminals,
+                            Creator = loginUser.Name,
+                            CreatorId = loginUser.Id
+                        });
                         await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
                         {
                             JobId = Convert.ToInt32(JobId),
                             ClientNo = "",
                             Flag = OCRD.is_reseller == "N" ? 0 : 1,
                             ClientName = OCRD.CardName,
-                            EndCustomerName = OCRD.EndCustomerName,
+                            EndCustomerName = addClientInfoReq.Terminals,
                             Operator = loginUser.Name,
                             Operatorid = loginUser.Id
                         });
                     }
                     else if (rJobNm == "修改业务伙伴")
                     {
+                        //添加4.0关系
+                        await _clientRelationApp.AddJobRelations(new ClientRelation.Request.AddJobRelReq {
+                            Jobid = Convert.ToInt32(JobId),
+                            Terminals = addClientInfoReq.Terminals,
+                            Creator = loginUser.Name,
+                            CreatorId = loginUser.Id
+                        });
+
                         result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(result), userID, OCRD.FreeText, "", 0);
                         if (result == "1")
                         {
@@ -1500,7 +1524,7 @@ namespace OpenAuth.App.Client
                         ClientNo = "",
                         Flag = OCRD.is_reseller == "Y" ? 1 : 0,
                         ClientName = OCRD.CardName,
-                        EndCustomerName = OCRD.EndCustomerName,
+                        EndCustomerName = updateClientJobReq.Terminals,
                         Operator = loginUser.Name,
                         Operatorid = loginUser.Id
                     });
@@ -1524,7 +1548,7 @@ namespace OpenAuth.App.Client
                         ClientNo = "",
                         Flag = OCRD.is_reseller == "Y" ? 1 : 0,
                         ClientName = OCRD.CardName,
-                        EndCustomerName = OCRD.EndCustomerName,
+                        EndCustomerName = updateClientJobReq.Terminals,
                         Operator = loginUser.Name,
                         Operatorid = loginUser.Id
                     });
@@ -1576,7 +1600,7 @@ namespace OpenAuth.App.Client
                         ClientNo = "",
                         Flag = OCRD.is_reseller == "Y" ? 1 : 0,
                         ClientName = OCRD.CardName,
-                        EndCustomerName = OCRD.EndCustomerName,
+                        EndCustomerName = updateClientJobReq.Terminals,
                         Operator = loginUser.Name,
                         Operatorid = loginUser.Id
                     });
