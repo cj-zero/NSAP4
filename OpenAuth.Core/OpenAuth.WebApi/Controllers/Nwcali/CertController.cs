@@ -2221,5 +2221,50 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+
+        /// <summary>
+        /// 校准报表2.0
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetCalibrateReportNew([FromQuery] QueryCertReportReq req)
+        {
+            var result = new TableData();
+            try
+
+            {
+                return await _nwcaliCertApp.GetCalibrateReportNew(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 校准报表详情2.0
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetCalibrateDetailReportNew([FromQuery] QueryCertReportReq req)
+        {
+            var result = new TableData();
+            try
+
+            {
+                return await _nwcaliCertApp.GetCalibrateDetailReportNew(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
     }
 }

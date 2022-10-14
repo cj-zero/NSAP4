@@ -1640,7 +1640,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 VatSum = !string.IsNullOrEmpty(order.VatSum.ToString()) ? order.VatSum.ToString() : "0",
                 WhsCode = order.WhsCode,
                 CntctCode = order.CntctCode.ToString(),
-                U_New_ORDRID = order.U_New_ORDRID.ToString(),
+                U_New_ORDRID = string.IsNullOrEmpty(order.U_New_ORDRID) ? "" : order.U_New_ORDRID,
                 attachmentData = order.FileList,//new List<billAttchment>(),
                 billSalesAcctCode = new List<billSalesAcctCode>(),
                 billSalesDetails = new List<billSalesDetails>(),

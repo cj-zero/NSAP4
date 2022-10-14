@@ -98,9 +98,9 @@ namespace OpenAuth.App.Client
                 //新增更新草稿客户关系
                 await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
                 {
-                    JobId =Convert.ToInt32(result),
+                    JobId = Convert.ToInt32(result),
                     ClientNo = "",
-                    Flag = OCRD.is_reseller=="N"?0:1,
+                    Flag = OCRD.is_reseller == "N" ? 0 : 1,
                     ClientName = OCRD.CardName,
                     EndCustomerName = addClientInfoReq.Terminals,
                     Operator = loginUser.Name,
@@ -114,6 +114,9 @@ namespace OpenAuth.App.Client
                 bool updParaCardCode = UpdateWfaJobPara(result, 1, OCRD.CardCode);
                 bool updParaCardName = UpdateWfaJobPara(result, 2, OCRD.CardName);
                 bool updParaOperateType = UpdateWfaJobPara(result, 3, OCRD.ClientOperateType);
+
+
+
 
                 string JobId = result;
                 bool bChangeTcnician = false;
@@ -186,6 +189,17 @@ namespace OpenAuth.App.Client
                     bool updParaAppChange = UpdateWfaJobPara(JobId, 4, OCRD.IsApplicationChange);
                 }
             }
+            //当前登录者业务员编码
+            int slpCode = UnitWork.Find<sbo_user>(q => q.user_id == loginUser.User_Id).Select(q => q.sale_id).FirstOrDefault().Value;
+            if (slpCode != addClientInfoReq.clientInfo.SlpCode.ToInt())
+            {
+                var crd1 = addClientInfoReq.clientInfo.AddrList.Where(q => q.isLims == true).ToList();
+                var ocpr = addClientInfoReq.clientInfo.ContactList.Where(q => q.isLims == true).ToList();
+
+                //如果是lims推广员
+                SavelimsData(crd1, ocpr, addClientInfoReq.clientInfo.CardCode, slpCode);
+            }
+
             return result;
         }
         #endregion
@@ -195,7 +209,11 @@ namespace OpenAuth.App.Client
         /// </summary>
         public DataTable SelectClientList(int limit, int page, string query, string sortname, string sortorder,
             int sboid, int userId, bool rIsViewSales, bool rIsViewSelf, bool rIsViewSelfDepartment, bool rIsViewFull,
-            int depID, string label, string contectTel, string slpName, string isReseller, int? Day, string CntctPrsn,string address, out int rowCount)
+            int depID, string label, string contectTel, string slpName, string isReseller, int? Day, string CntctPrsn, string address,
+            string U_CardTypeStr, string U_ClientSource, string U_CompSector, string U_TradeType, string U_StaffScale,
+            DateTime? CreateStartTime, DateTime? CreateEndTime, DateTime? DistributionStartTime, DateTime? DistributionEndTime,
+            decimal? dNotesBalStart, decimal? dNotesBalEnd, decimal? ordersBalStart, decimal? ordersBalEnd,
+            decimal? balanceStart, decimal? balanceEnd, decimal? balanceTotalStart, decimal? balanceTotalEnd, out int rowCount)
         {
             bool IsSaler = false, IsPurchase = false, IsTech = false, IsClerk = false;//业务员，采购员，技术员，文员
             string rSalCode = GetUserInfoById(sboid.ToString(), userId.ToString(), "1");
@@ -219,7 +237,7 @@ namespace OpenAuth.App.Client
             StringBuilder filterString = new StringBuilder();
             filterString.Append(IsOpenSap ? " 1=1 " : string.Format(" sbo_id={0} ", sboid.ToString()));
             //modify by yangis @2022.06.24
-            if(!string.IsNullOrWhiteSpace(slpName))
+            if (!string.IsNullOrWhiteSpace(slpName))
             {
                 filterString.Append($" and slpname like '%{slpName}%' ");
             }
@@ -233,30 +251,104 @@ namespace OpenAuth.App.Client
             }
             if (!string.IsNullOrWhiteSpace(CntctPrsn))
             {
-                filterString.Append($" and T.cardcode in ( select cardcode from OCPR where name like '%{CntctPrsn}%') ");
+                filterString.Append($" and T.cardcode in ( select cardcode from nsap_bone.crm_ocpr where name like '%{CntctPrsn}%') ");
             }
             if (!string.IsNullOrWhiteSpace(address))
             {
-                filterString.Append($" and (T.cardcode in ( SELECT CardCode FROM CRD1 WHERE Building like '" + address + "') or Address like '%"+address+"%') ");
+                filterString.Append($" and (T.cardcode in ( SELECT CardCode FROM nsap_bone.crm_crd1 WHERE Building like '" + address + "') or Address like '%" + address + "%') ");
+            }
+            if (Day != null)
+            {
+                DateTime date = DateTime.Now;
+                filterString.Append($" and TO_DAYS(NOW()) - TO_DAYS(T1.UpdateDate) > {Day.Value} ");
+            }
+            //客户类型
+            if (!string.IsNullOrWhiteSpace(U_CardTypeStr))
+            {
+                filterString.Append($" and U_CardTypeStr = '{U_CardTypeStr}'  ");
+            }
+            //客户来源
+            if (!string.IsNullOrWhiteSpace(U_ClientSource))
+            {
+                filterString.Append($" and U_ClientSource = '{U_ClientSource}'  ");
+            }
+            //所属行业
+            if (!string.IsNullOrWhiteSpace(U_CompSector))
+            {
+                filterString.Append($" and U_CompSector = '{U_CompSector}'  ");
+            }
+            //贸易类型
+            if (!string.IsNullOrWhiteSpace(U_TradeType))
+            {
+                filterString.Append($" and U_TradeType = '{U_TradeType}' ");
+            }
+            //人员规模
+            if (!string.IsNullOrWhiteSpace(U_StaffScale))
+            {
+                filterString.Append($" and U_StaffScale = '{U_StaffScale}' ");
+            }
+            //创建开始时间
+            if (CreateStartTime != null)
+            {
+                filterString.Append($" and CreateDate >= '{CreateStartTime}' ");
+            }
+            //创建结束时间
+            if (CreateEndTime != null)
+            {
+                filterString.Append($" and CreateDate <= '{CreateEndTime}' ");
+            }
+            //归属变更开始时间
+            if (DistributionStartTime != null)
+            {
+                filterString.Append($" and T1.UpdateDate >= '{DistributionStartTime}' ");
+            }
+            //归属变更结束时间
+            if (DistributionEndTime != null)
+            {
+                filterString.Append($" and T1.UpdateDate <= '{DistributionEndTime}' ");
+            }
+            //未清订单余额
+            if (ordersBalStart != null)
+            {
+                filterString.Append($" and ordersBal >= {ordersBalStart} ");
+            }
+            //未清订单余额
+            if (ordersBalEnd != null)
+            {
+                filterString.Append($" and ordersBal <= {ordersBalEnd} ");
+            }
+            //未清交货单余额
+            if (dNotesBalStart != null)
+            {
+                filterString.Append($" and dNotesBal >= {dNotesBalStart} ");
+            }
+            //未清交货单余额
+            if (dNotesBalEnd != null)
+            {
+                filterString.Append($" and dNotesBal <= {dNotesBalEnd} ");
+            }
+            //科目余额
+            if (balanceStart != null)
+            {
+                filterString.Append($" and T3.Balance >= {balanceStart} ");
+            }
+            //科目余额
+            if (balanceEnd != null)
+            {
+                filterString.Append($" and T3.Balance <= {balanceEnd} ");
+            }
+            //总科目余额
+            if (balanceTotalStart != null)
+            {
+                filterString.Append($" and T4.BalanceTotal >= {balanceTotalStart} ");
+            }
+            //总科目余额
+            if (balanceTotalEnd != null)
+            {
+                filterString.Append($" and T4.BalanceTotal <= {balanceTotalEnd} ");
             }
             //黑名单客户也不在客户列表上显示
-            var blacklist = UnitWork.Find<SpecialCustomer>(c => c.Type == 0).Select(c => c.CustomerNo).ToList();
-            if (blacklist.Count() > 0)
-            {
-                var selectCardCode = new StringBuilder("");
-                string codes = "''";
-                foreach (var item in blacklist)
-                {
-                    selectCardCode.Append($",'{item}'");
-                    if (!string.IsNullOrWhiteSpace(selectCardCode.ToString()))
-                    {
-                        codes = selectCardCode.ToString().Substring(1);
-                    }
-                }
-
-                filterString.Append($" and T.CardCode not in ({codes}) ");
-            }
-
+            filterString.Append($" and T.CardCode not in ( select Customer_No from erp4_serve.special_customer where type = 0) ");
             if (!rIsViewFull)
             {
                 #region 查看本部门
@@ -296,7 +388,7 @@ namespace OpenAuth.App.Client
                         if (IsSaler)//业务员
                         {
                             flag = 1;
-                            filterString.AppendFormat(" (SlpCode={0} and T.CardCode like 'C%') ", rSalCode);
+                            filterString.AppendFormat(" (SlpCode={0} or T.CardCode in (select CardCode from client_limsinfomap where LimsInfoId in( select LimsInfoId from client_limsinfo where SlpCode={0})) and t.sbo_id = 1) and T.CardCode like 'C%' ", rSalCode);
                         }
                         if (IsPurchase)//采购员
                         {
@@ -313,11 +405,9 @@ namespace OpenAuth.App.Client
                                 if (isMechanical)
                                 {
                                     filter_str = string.Format(" (T.CardCode IN ('V00733','V00735','V00836') OR SlpCode ={0} OR ( SlpCode='-1' and (QryGroup2='Y' OR QryGroup3='Y')) ) ", rPurCode);
-
                                 }
                                 else
                                 {
-
                                     filter_str = string.Format(" ( T.CardCode IN ('V00733','V00735','V00836') OR SlpCode ={0} OR ( SlpCode='-1' and QryGroup2='N') ) ", rPurCode);
                                 }
                                 //filterString.AppendFormat(" (SlpCode={0} OR SlpCode='-1' and CardCode like 'V%') ", rPurCode);
@@ -372,44 +462,33 @@ namespace OpenAuth.App.Client
             DataTable clientTable = new DataTable();
 
             if (!IsOpenSap) { filedName.Append("sbo_id,"); }
-            filedName.Append("T.CardCode,T1.UpdateDate DistributionDate, CardName, SlpName, Technician, CntctPrsn, Address, Phone1, Cellular,U_is_reseller, ");
+            filedName.Append("T.CardCode,T1.UpdateDate DistributionDate, FollowUpTime,TO_DAYS(NOW()) - TO_DAYS(FollowUpTime) FollowUpDay, CardName,SlpCode, SlpName, Technician, CntctPrsn, Address, Phone1, Cellular,U_is_reseller, ");
             if (rIsViewSales)
             {
-                filedName.Append("Balance,  BalanceTotal, DNotesBal, OrdersBal, OprCount, ");
+                filedName.Append("T3.Balance,  T4.BalanceTotal, DNotesBal, OrdersBal, OprCount, ");
             }
             else
             {
                 filedName.Append("'****' AS Balance, '******************************' AS BalanceTotal, '****' AS DNotesBal, '****' AS OrdersBal, '****' AS OprCount, ");
             }
             filedName.Append("CreateDate,T.UpdateDate , ");
-            filedName.Append(" validFor,validFrom,validTo,ValidComm,frozenFor,frozenFrom,frozenTo,FrozenComm ,GroupName,Free_Text");
-            filedName.Append(",case when INVTotal90P>0 and Due90>0 then (Due90/INVTotal90P)*100 else 0 end as Due90Percent");
-            var CardCodes = "";
+            filedName.Append(" GroupName,Free_Text,U_ClientSource,U_CompSector,U_TradeType,U_CardTypeStr,U_StaffScale ");
             if (IsOpenSap)
             {
-                tableName.Append("(SELECT A.CardCode,A.CardName,B.SlpName,(ISNULL(E.lastName,'')+ISNULL(E.firstName,'')) as Technician,");
-                tableName.Append("A.CntctPrsn,(ISNULL(F.Name,'')+ISNULL(G.Name,'')+ISNULL(A.City,'')+ISNULL(CONVERT(NVARCHAR(100),A.Building),'')) AS Address, ");
-                tableName.Append("A.Phone1,A.Cellular,A.U_is_reseller,");//,A.Balance,ISNULL(A.Balance,0) + ISNULL(H.doctoal,0) AS BalanceTotal
-                tableName.Append("A.DNotesBal,A.OrdersBal,A.OprCount,A.CreateDate,A.UpdateDate,A.SlpCode,A.DfTcnician ");
-                tableName.Append(",isnull(A.Balance,0) as Balance,0.00000000 as BalanceTotal ");
-                tableName.Append(" , A.validFor,A.validFrom,A.validTo,A.ValidComm,A.frozenFor,A.frozenFrom,A.frozenTo,A.FrozenComm,A.QryGroup2,A.QryGroup3 ");
-                tableName.Append(",C.GroupName,A.Free_Text");
-                //90天内未清收款金额
-                tableName.Append(",isnull(A.Balance,0)+isnull((select SUM(openBal) from ORCT WHERE CANCELED = 'N' AND openBal<>0 and datediff(DAY, docdate, getdate())<= 90 AND CardCode = A.CardCode),0)");
-                //90天内未清发票金额
-                tableName.Append("-isnull((select SUM(DocTotal - PaidToDate) from OINV WHERE CANCELED = 'N' and DocTotal-PaidToDate > 0 and datediff(DAY, docdate, getdate())<= 90 and CardCode = A.CardCode),0) ");
-                //90天内未清贷项金额
-                tableName.Append("+isnull((select SUM(DocTotal - PaidToDate) from ORIN where CANCELED = 'N' and DocTotal-PaidToDate > 0 and datediff(DAY, docdate, getdate())<= 90 and CardCode = A.CardCode),0) as Due90");
-                //90天前未清发票的发票总额
-                tableName.Append(",(select SUM(DocTotal) from OINV WHERE CANCELED = 'N' and DocTotal-PaidToDate > 0 and datediff(DAY, docdate, getdate())> 90 and CardCode = A.CardCode) as INVTotal90P ");
-                //
-                tableName.Append(" FROM OCRD A ");
-                tableName.Append("LEFT JOIN OSLP B ON B.SlpCode=A.SlpCode ");
-                tableName.Append("LEFT JOIN OCRG C ON C.GroupCode=A.GroupCode ");
-                tableName.Append("LEFT JOIN OIDC D ON D.Code=A.Indicator ");
-                tableName.Append("LEFT JOIN OHEM E ON E.empID=A.DfTcnician ");
-                tableName.Append("LEFT JOIN OCRY F ON F.Code=A.Country ");
-                tableName.Append("LEFT JOIN OCST G ON G.Code=A.State1 ");
+                tableName.Append("(SELECT A.sbo_id,A.CardCode,A.CardName,A.SlpCode,B.SlpName,(IFNULL(E.lastName,'')+IFNULL(E.firstName,'')) as Technician,");
+                tableName.Append("A.CntctPrsn,CONCAT(IFNULL(F.Name,''),IFNULL(G.Name,''),IFNULL(A.City,''),IFNULL(A.Building,'')) AS Address, ");
+                tableName.Append("A.Phone1,A.Cellular,A.U_is_reseller,");
+                tableName.Append("A.DNotesBal,A.OrdersBal,A.OprCount,A.CreateDate,A.upd_dt UpdateDate,A.DfTcnician ");
+                tableName.Append(" ,A.QryGroup2,A.QryGroup3 ");
+                tableName.Append(",C.GroupName,A.Free_Text,A.U_ClientSource,A.U_CompSector,A.U_TradeType,A.U_CardTypeStr,A.U_StaffScale ");
+
+                tableName.Append("FROM nsap_bone.crm_ocrd A ");
+                tableName.Append("LEFT JOIN nsap_bone.crm_oslp B ON B.SlpCode=A.SlpCode  ");
+                tableName.Append("LEFT JOIN nsap_bone.crm_ocrg C ON C.GroupCode=A.GroupCode  ");
+                tableName.Append("LEFT JOIN nsap_bone.crm_oidc D ON D.Code=A.Indicator  ");
+                tableName.Append("LEFT JOIN nsap_bone.crm_ohem E ON E.empID=A.DfTcnician and E.sbo_id = A.sbo_id ");
+                tableName.Append("LEFT JOIN nsap_bone.crm_ocry F ON F.Code=A.Country  ");
+                tableName.Append("LEFT JOIN nsap_bone.crm_ocst G ON G.Code=A.State1 ");
 
                 //筛选标签
                 if (!string.IsNullOrWhiteSpace(label))
@@ -417,156 +496,45 @@ namespace OpenAuth.App.Client
                     //全部客户
                     if (label == "0") { }
                     //未报价客户
-                    if (label == "1" || Day.Value != 0)
+                    if (label == "1" || Day != null)
                     {
                         //在报价单中不存在的客户
-                        tableName.Append(" LEFT JOIN OQUT AS q on A.CardCode = q.CardCode ");
+                        tableName.Append(" LEFT JOIN nsap_bone.sale_oqut AS q on A.CardCode = q.CardCode ");
                         tableName.Append(" WHERE q.CardCode IS NULL ");
-                        if (Day.Value != 0)
-                        {
-                            tableName.Append(" and A.CardCode in(SELECT CardCode from (SELECT CardCode, max(UpdateDate) UpdateDate from( select CardCode, SlpCode, min(UpdateDate) UpdateDate from ");
-                            tableName.Append("(select CardCode, SlpCode, ISNULL(UpdateDate,CreateDate) UpdateDate from OCRD UNION select CardCode, SlpCode, UpdateDate from ACRD ) a GROUP BY CardCode, SlpCode) b ");
-                            tableName.Append(" where DATEDIFF(day, b.UpdateDate, GETDATE()) > " + Day + " GROUP BY CardCode) c) ");
-                        }
-                        }
+                    }
                     //已成交客户
                     else if (label == "2")
                     {
                         //在交货单中存在的客户
-                        tableName.Append(@" where exists(select 1 from ODLN as n where n.CardCode = A.CardCode) ");
+                        tableName.Append(@" where exists(select 1 from nsap_bone.sale_odln as n where n.CardCode = A.CardCode) ");
                     }
                     //公海领取(掉入公海的客户被重新分配和领取,但是分配和领取之后没有做过报价单,做过单了就属于正常用户)
                     else if (label == "3")
                     {
                         //这些客户还没有做过单
-                        tableName.Append(@" LEFT JOIN OQUT AS q on A.CardCode = q.CardCode ");
+                        tableName.Append(@" LEFT JOIN nsap_bone.sale_oqut AS q on A.CardCode = q.CardCode ");
                         tableName.Append(" WHERE q.CardCode IS NULL ");
                         //并且在历史归属表中存在但是公海中不存在的客户(说明已被领取)
-                        var cardCodes = (from h in UnitWork.Find<CustomerSalerHistory>(q => q.IsSaleHistory == true)
-                                         join c in UnitWork.Find<CustomerList>(null) on h.CustomerNo equals c.CustomerNo into temp
-                                         from t in temp.DefaultIfEmpty()
-                                         where t.CustomerNo == null
-                                         select h.CustomerNo).Distinct().ToList();
-                        var selectCardCode = new StringBuilder("");
-                        string codes = "''";
-                        foreach (var item in cardCodes)
-                        {
-                            selectCardCode.Append($",'{item}'");
-                        }
-                        if (!string.IsNullOrWhiteSpace(selectCardCode.ToString()))
-                        {
-                            codes = selectCardCode.ToString().Substring(1);
-                        }
-
-                        tableName.Append($" AND A.CardCode IN ({codes}) ");
+                        tableName.Append($" AND A.CardCode IN (select distinct n.CustomerNo from erp4_serve.customer_saler_history n left join erp4_serve.customer_list m on n.CustomerNo = m.Customer_No where m.Customer_No is NULL) ");
                     }
                     //即将掉入公海
                     else if (label == "4")
                     {
-                        var cardCodes = UnitWork.Find<CustomerList>(c => c.LabelIndex == 4).Select(c => c.CustomerNo).ToList();
-                        var selectCardCode = new StringBuilder("");
-                        string codes = "''";
-                        foreach (var item in cardCodes)
-                        {
-                            selectCardCode.Append($",'{item}'");
-                        }
-                        if (!string.IsNullOrWhiteSpace(selectCardCode.ToString()))
-                        {
-                            codes = selectCardCode.ToString().Substring(1);
-                        }
-
-                        tableName.Append($" WHERE A.CardCode IN ({codes}) ");
+                        tableName.Append(" LEFT JOIN erp4_serve.customer_list AS q on A.CardCode = q.Customer_No and q.Label_Index = 4 ");
+                        tableName.Append(" WHERE q.Customer_No IS NOT NULL ");
                     }
                 }
-                //tableName.Append("LEFT JOIN NSAP.dbo.test_kmye H ON A.CardCode=H.cardcode) T "); //科目余额总账表
                 tableName.Append(") T");
-                tableName.Append(" LEFT JOIN (SELECT CardCode, max(UpdateDate) UpdateDate from( select CardCode, SlpCode, min(UpdateDate) UpdateDate from (select CardCode, SlpCode, ISNULL(UpdateDate,CreateDate) UpdateDate from OCRD UNION select CardCode, SlpCode, UpdateDate from ACRD ) a GROUP BY CardCode, SlpCode) b  GROUP BY CardCode) T1 on T.CardCode = T1.CardCode ");
-                //tableName.Append("LEFT JOIN NSAP.dbo.biz_clerk_tech I ON A.CardCode=I.Cardcode "); //文员，技术员对照表
-
-                //modify by yangsiming @2022.06.16 调用存储过程,当sql语句太长,超过4000个字符,后面的会被截掉,造成报错
-                //clientTable = _serviceSaleOrderApp.SAPSelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), limit, page, sortString, filterString.ToString(), out rowCount);
-                var sql2 = $" select {filedName.ToString()} from {tableName.ToString()} where {filterString.ToString()} order by {sortString} offset {(page - 1) * limit} rows fetch next {limit} rows only ";
-                clientTable = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, sql2, CommandType.Text);
+                //取公海领取记录表，得到客户的最新分配时间
+                tableName.Append(" LEFT JOIN (SELECT CustomerNo CardCode, max(CreateTime) UpdateDate from erp4_serve.customer_saler_history GROUP BY CustomerNo) T1 on T.CardCode = T1.CardCode ");
+                tableName.Append(" LEFT JOIN (SELECT CardCode, max(CreateDate) FollowUpTime from erp4_serve.client_followup GROUP BY CardCode) T2 on T.CardCode = T2.CardCode ");
+                tableName.Append(" LEFT JOIN (SELECT CardCode,sbo_id,SUM(Balance) Balance FROM nsap_bone.crm_ocrd_oldsbo_balance GROUP BY CardCode) T3 on T.CardCode = T3.CardCode and T.sbo_id = T3.sbo_id ");
+                tableName.Append(" LEFT JOIN (SELECT CardCode,SUM(Balance) BalanceTotal FROM nsap_bone.crm_ocrd_oldsbo_balance WHERE sbo_id IN(SELECT sbo_id  FROM nsap_base.sbo_info) GROUP BY CardCode) T4 on T.CardCode = T4.CardCode ");
+                var sql2 = $" select {filedName.ToString()} from {tableName.ToString()} where {filterString.ToString()} order by {sortString} limit {(page - 1) * limit}, {limit} ";
+                clientTable = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql2, CommandType.Text);
                 var sql3 = $" select count(*) from {tableName.ToString()} where {filterString.ToString()}; ";
-                rowCount = int.Parse(UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, sql3, CommandType.Text).Rows[0][0].ToString());
-                clientTable.Columns.Add("U_ClientSource", typeof(string));//客户来源
-                clientTable.Columns.Add("U_CompSector", typeof(string));//所属行业
-                clientTable.Columns.Add("U_TradeType", typeof(string));//贸易类型
-                clientTable.Columns.Add("FollowUpTime", typeof(string));//最后跟进时间
-                clientTable.Columns.Add("FollowUpDay", typeof(string));//未跟进天数
-                clientTable.Columns.Add("U_CardTypeStr", typeof(string));//新版客户类型
-                clientTable.Columns.Add("base_entry", typeof(int));//新版客户类型
+                rowCount = int.Parse(UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql3, CommandType.Text).Rows[0][0].ToString());
 
-                var Array = from DataRow dr in clientTable.Rows select dr[1].ToString();
-                var heet = "";
-                foreach (var item in Array)
-                {
-                    heet += "'" + item + "',";
-                }
-
-                CardCodes = heet.TrimEnd(',');
-                if (!string.IsNullOrWhiteSpace(CardCodes))
-                {
-                    //var sql = string.Format("SELECT U_TradeType,U_ClientSource,U_CompSector,U_CardTypeStr,CardCode FROM crm_ocrd WHERE CardCode IN ({0})", CardCodes);
-                    //var ClientSource = UnitWork.ExcuteSqlTable(ContextType.NsapBoneDbContextType, sql, CommandType.Text, null);
-
-                    //var strsql = string.Format("SELECT A.base_entry,CardCode FROM nsap_base.wfa_job   A LEFT JOIN nsap_bone.crm_ocrd B ON B.CardCode=A.sbo_itf_return WHERE A.job_type_id=72 AND B.CardCode IN ({0})", CardCodes);
-                    //var Baseentry = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strsql, CommandType.Text, null);
-
-                    string sql = string.Format(@"SELECT DISTINCT A.base_entry,U_TradeType,U_ClientSource,U_CompSector,U_CardTypeStr,CardCode FROM nsap_base.wfa_job   A 
-                        LEFT JOIN nsap_bone.crm_ocrd B ON B.CardCode = A.sbo_itf_return  WHERE B.CardCode IN ({0})", CardCodes);
-                    var ClientSource = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
-                    List<ClueFollowUp> clueFollowUpList = new List<ClueFollowUp>();
-                    if (ClientSource.Rows.Count > 0)
-                    {
-                        List<int> baseEntryids = (from d in ClientSource.AsEnumerable() select d.Field<int>("base_entry")).ToList();
-                        clueFollowUpList = UnitWork.Find<ClueFollowUp>(q => baseEntryids.Contains(q.Id)).ToList();
-                    }
-                    foreach (DataRow clientrow in clientTable.Rows)
-                    {
-                        clientrow["FollowUpDay"] = "暂无跟进天数";
-                        clientrow["FollowUpTime"] = "暂无跟进时间";
-                        if (ClientSource.Rows.Count > 0)
-                        {
-                            foreach (DataRow clientSource in ClientSource.Rows)
-                            {
-                                if (clientrow["CardCode"].ToString() == clientSource["CardCode"].ToString())
-                                {
-                                    clientrow["U_ClientSource"] = clientSource["U_ClientSource"];
-                                    clientrow["U_CompSector"] = clientSource["U_CompSector"];
-                                    clientrow["U_TradeType"] = clientSource["U_TradeType"];
-                                    clientrow["U_CardTypeStr"] = clientSource["U_CardTypeStr"];
-                                    clientrow["base_entry"] = clientSource["base_entry"].ToInt();
-                                    break;
-                                }
-                            }
-                            //foreach (DataRow item in Baseentry.Rows)
-                            //{
-                            //    var ClueId = item["base_entry"].ToInt();
-                            //    var FollowUpTime = UnitWork.FindSingle<ClueFollowUp>(q => q.Id == ClueId);
-                            //    //var strsql4 = string.Format("SELECT FollowUpTime FROM erp4_serve.cluefollowup   WHERE ClueId ={0}   ORDER BY  FollowUpTime  DESC LIMIT 1", item["base_entry"]);
-                            //    //var FollowUpTime = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, strsql4, CommandType.Text, null);
-                            //    if (FollowUpTime != null)
-                            //    {
-                            //        clientrow["FollowUpTime"] = FollowUpTime.FollowUpTime;
-                            //        var subTime = (DateTime.Now.Subtract(FollowUpTime.FollowUpTime));
-                            //        clientrow["FollowUpDay"] = $"{subTime.Days}天";
-                            //    }
-                            //}
-                        }
-                        var ClueId = clientrow["base_entry"].ToInt();
-                        foreach (var FollowUpTime in clueFollowUpList)
-                        {
-                            if (FollowUpTime.ClueId == ClueId)
-                            {
-                                clientrow["FollowUpTime"] = FollowUpTime.FollowUpTime;
-                                var subTime = (DateTime.Now.Subtract(FollowUpTime.FollowUpTime));
-                                clientrow["FollowUpDay"] = $"{subTime.Days}天";
-                                break;
-                            }
-                        }
-                    }
-                }
             }
             else
             {
@@ -600,26 +568,6 @@ namespace OpenAuth.App.Client
                 tableName.Append(") T");
                 //tableName.AppendFormat("LEFT JOIN {0}.crm_clerk_tech I ON I.sbo_id=A.sbo_id AND I.CardCode=A.CardCode ", "nsap_bone");
                 clientTable = _serviceSaleOrderApp.SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), limit, page, sortString, filterString.ToString(), out rowCount);
-            }
-
-
-            //统计业务伙伴总的科目余额
-            DataTable sbotable = new DataTable();
-            sbotable = _serviceSaleOrderApp.DropListSboId();
-            foreach (DataRow clientrow in clientTable.Rows)
-            {
-                decimal totalbalance = 0;
-                foreach (DataRow sborow in sbotable.Rows)
-                {
-                    
-                   string sbobalancestr = GetClientSboBalanceNew(clientrow["CardCode"].ToString(), sborow["id"].ToString());
-                   decimal sbobalance = 0;
-                    if (!string.IsNullOrEmpty(sbobalancestr) && Decimal.TryParse(sbobalancestr, out sbobalance))
-                        totalbalance += sbobalance;
-                    if (clientTable.Columns.Contains("sbo_id") && clientrow["sbo_id"].ToString() == sborow["id"].ToString())
-                        clientrow["Balance"] = sbobalance;
-                }
-                clientrow["BalanceTotal"] = totalbalance;
             }
             return clientTable;
         }
@@ -726,12 +674,13 @@ namespace OpenAuth.App.Client
                 object sapbobj = UnitWork.ExecuteScalar(ContextType.SapDbContextType, strSql, CommandType.Text, null);
                 return sapbobj == null ? "" : sapbobj.ToString();
             }
-            else {
+            else
+            {
                 string strmySql = string.Format("SELECT Balance FROM {0}.crm_ocrd_oldsbo_balance WHERE sbo_id IN({1}) and CardCode IN ('{2}')", "nsap_bone", SboId, CardCode);
                 DataTable sapbobj = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strmySql, CommandType.Text, null);
-                return sapbobj.Rows.Count == 0 ? "" : sapbobj.Rows[0][0].ToString(); 
+                return sapbobj.Rows.Count == 0 ? "" : sapbobj.Rows[0][0].ToString();
             }
-               
+
         }
         public string GetClientSboBalance(string CardCode, string SboId)
         {
@@ -740,7 +689,7 @@ namespace OpenAuth.App.Client
             if (sapflag)
             {
 
-                
+
             }
 
             return sapbobjs;
@@ -1368,31 +1317,72 @@ namespace OpenAuth.App.Client
         /// 查询业务伙伴的联系人
         /// </summary>
         /// <returns></returns>
-        public DataTable SelectClientContactData(string CardCode, string SboId, bool IsOpenSap, bool IsViewFull)
+        public List<DataTable> SelectClientContactData(string CardCode, string SboId, bool IsOpenSap, bool IsViewFull, string Type)
         {
-            //string StrWhere = IsViewFull ? "" : " AND Active='Y' ";
-            string StrWhere = "";
-            StringBuilder strSql = new StringBuilder();
-            if (IsOpenSap)
+            List<DataTable> dtList = new List<DataTable>();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
             {
-                strSql.Append("SELECT CardCode,CntctCode,Active,'0' AS IsDefault,Name,Gender,Title,Position,[Address],Notes1,Notes2,Tel1,Tel2,Cellolar,Fax,E_MailL,BirthDate,U_ACCT,U_BANK FROM OCPR ");
-                strSql.AppendFormat("WHERE CardCode='{0}' {1} ", CardCode, StrWhere);
-
-                return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            else
-            {
-                strSql.Append("SELECT CardCode,CntctCode,Active,'0' AS IsDefault,Name,Gender,Title,Position,Address,Notes1,Notes2,Tel1,Tel2,Cellolar,Fax,E_MailL,BirthDate,U_ACCT,U_BANK ");
-                strSql.AppendFormat("FROM {0}.crm_OCPR WHERE sbo_id=?sbo_id AND CardCode=?CardCode {1} ORDER BY Name ASC", "nsap_bone", StrWhere);
-
-                List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
-                {
-                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?sbo_id",    SboId),
-                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?CardCode",   CardCode)
-                };
-                return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text,
-                    strPara);
-            }
+            var loginUser = loginContext.User;
+            //当前登录用户业务员编码
+            int slpCode = UnitWork.Find<sbo_user>(q => q.user_id == loginUser.User_Id).Select(q => q.sale_id).FirstOrDefault().Value;
+            //该客户归属业务员编码
+            int slpCode_client = UnitWork.Find<crm_ocrd>(q => q.CardCode == CardCode).Select(q => q.SlpCode).FirstOrDefault().Value;
+            int sboId = SboId.ToInt();
+            //查出该客户的所有联系人信息
+            var data = (from n in UnitWork.Find<crm_ocpr>(q => q.sbo_id == sboId && q.CardCode == CardCode)
+                        select new
+                        {
+                            CardCode = n.CardCode,
+                            CntctCode = n.CntctCode,
+                            Active = n.Active,
+                            IsDefault = 0,
+                            Name = n.Name,
+                            Gender = n.Gender,
+                            Title = n.Title,
+                            Position = n.Position,
+                            Address = n.Address,
+                            Notes1 = n.Notes1,
+                            Notes2 = n.Notes2,
+                            Tel1 = n.Tel1,
+                            Tel2 = n.Tel2,
+                            Cellolar = n.Cellolar,
+                            Fax = n.Fax,
+                            E_MailL = n.E_MailL,
+                            U_ACCT = n.U_ACCT,
+                            U_BANK = n.U_BANK,
+                            flag = false
+                        }).ToList();
+            dtList.Add(data.ToDataTable());
+            var limsocpr = UnitWork.Find<LimsOCPR>(q => q.CardCode == CardCode && q.SlpCode == slpCode && q.sbo_id == Define.SBO_ID && q.Type == Type).ToList();
+            var limsocprdata = (from n in limsocpr
+                                select new
+                                {
+                                    CardCode = n.CardCode,
+                                    SlpCode = n.SlpCode,
+                                    CntctCode = n.CntctCode,
+                                    Active = n.Active,
+                                    IsDefault = 0,
+                                    Name = n.Name,
+                                    Gender = n.Gender,
+                                    Title = n.Title,
+                                    Position = n.Position,
+                                    Address = n.Address,
+                                    Notes1 = n.Notes1,
+                                    Notes2 = n.Notes2,
+                                    Tel1 = n.Tel1,
+                                    Tel2 = n.Tel2,
+                                    Cellolar = n.Cellolar,
+                                    Fax = n.Fax,
+                                    E_MailL = n.E_MailL,
+                                    U_ACCT = n.U_ACCT,
+                                    U_BANK = n.U_BANK,
+                                    flag = true
+                                }).ToList();
+            dtList.Add(limsocprdata.ToDataTable());
+            return dtList;
         }
         #endregion
         #region 查询业务伙伴的地址
@@ -1400,32 +1390,70 @@ namespace OpenAuth.App.Client
         /// 查询业务伙伴的地址
         /// </summary>
         /// <returns></returns>
-        public DataTable SelectClientAddrData(string CardCode, string SboId, bool IsOpenSap)
+        public List<DataTable> SelectClientAddrData(string CardCode, string SboId, bool IsOpenSap, string Type)
         {
-            StringBuilder strSql = new StringBuilder();
-            if (IsOpenSap)
+            List<DataTable> dtList = new List<DataTable>();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
             {
-                strSql.Append("SELECT CardCode,LineNum,U_Active AS Active,'0' AS IsDefault,a.AdresType,a.Address,b.Name AS Country,c.Name AS 'State',a.City,a.Building,a.ZipCode,a.Country AS CountryId,a.State AS StateId ");
-                strSql.Append("FROM CRD1 a LEFT JOIN OCRY b ON a.Country=b.Code LEFT JOIN OCST c ON a.State=c.Code ");
-                strSql.AppendFormat("WHERE a.CardCode='{0}' ", CardCode);
-
-                return UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            else
-            {
-                strSql.Append("SELECT CardCode,LineNum,U_Active AS Active,'0' AS IsDefault,a.AdresType,a.Address,b.Name AS Country,c.Name AS 'State',a.City,a.Building,a.ZipCode,a.Country AS CountryId,a.State AS StateId ");
-                strSql.AppendFormat("FROM {0}.crm_CRD1 a LEFT JOIN {0}.crm_OCRY b ON a.Country=b.Code LEFT JOIN {0}.crm_OCST c ON a.State=c.Code ", "nsap_bone");
-                strSql.Append("WHERE a.sbo_id=?sbo_id AND a.CardCode=?CardCode ORDER BY a.Address ASC");
-
-
-                List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> para = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
-                {
-                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?sbo_id",    SboId),
-                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?CardCode",     CardCode)
-
-                };
-                return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, para);
-            }
+            var loginUser = loginContext.User;
+            //当前登录用户业务员编码
+            int slpCode = UnitWork.Find<sbo_user>(q => q.user_id == loginUser.User_Id).Select(q => q.sale_id).FirstOrDefault().Value;
+            //该客户归属业务员编码
+            int slpCode_client = UnitWork.Find<crm_ocrd>(q => q.CardCode == CardCode).Select(q => q.SlpCode).FirstOrDefault().Value;
+            int sboId = SboId.ToInt();
+            //查出该客户的所有地址信息
+            var data = (from n in UnitWork.Find<crm_crd1>(q => q.sbo_id == sboId && q.CardCode == CardCode)
+                        join o in UnitWork.Find<crm_ocry>(null) on n.Country equals o.Code into temp1
+                        from t1 in temp1.DefaultIfEmpty()
+                        join c in UnitWork.Find<crm_ocst>(null) on n.State equals c.Code into temp2
+                        from t2 in temp2.DefaultIfEmpty()
+                        select new
+                        {
+                            CardCode = n.CardCode,
+                            LineNum = n.LineNum.Value,
+                            Active = n.U_Active,
+                            IsDefault = 0,
+                            AdresType = n.AdresType,
+                            Address = n.Address,
+                            Country = t1 == null ? "" : t1.Name,
+                            State = t2 == null ? "" : t2.Name,
+                            City = n.City,
+                            Building = n.Building,
+                            ZipCode = n.ZipCode,
+                            CountryId = n.Country,
+                            StateId = n.State,
+                            flag = false
+                        }).ToList();
+            dtList.Add(data.ToDataTable());
+            var limsCrd1 = UnitWork.Find<LimsCRD1>(q => q.CardCode == CardCode && q.SlpCode == slpCode && q.sbo_id == Define.SBO_ID && q.Type == Type).ToList();
+            var limsCrd1data = (from n in limsCrd1
+                                join o in UnitWork.Find<crm_ocry>(null) on n.Country equals o.Code into temp1
+                                from t1 in temp1.DefaultIfEmpty()
+                                join c in UnitWork.Find<crm_ocst>(null) on n.State equals c.Code into temp2
+                                from t2 in temp2.DefaultIfEmpty()
+                                select new
+                                {
+                                    CardCode = n.CardCode,
+                                    SlpCode = n.SlpCode,
+                                    LineNum = n.LineNum,
+                                    Active = n.U_Active.ToString(),
+                                    IsDefault = 0,
+                                    AdresType = n.AdresType,
+                                    Address = n.Address,
+                                    Country = t1 == null ? "" : t1.Name,
+                                    State = t2 == null ? "" : t2.Name,
+                                    City = n.City,
+                                    Building = n.Building,
+                                    ZipCode = n.ZipCode,
+                                    CountryId = n.Country,
+                                    StateId = n.State,
+                                    flag = true
+                                }).ToList();
+            dtList.Add(limsCrd1data.ToDataTable());
+            return dtList;
         }
         #endregion
         #region 查询所有技术员
@@ -1504,7 +1532,7 @@ namespace OpenAuth.App.Client
             var UserId = _serviceBaseApp.GetUserNaspId();
             clientOCRD OCRD = BulidClientJob(updateClientJobReq.clientInfo);
             //根据客户类型生成业务伙伴编码
-            if (!string.IsNullOrWhiteSpace(OCRD.CardNameCore.Trim())) { OCRD.U_Name = OCRD.CardNameCore; }
+            if (!string.IsNullOrWhiteSpace(OCRD.CardNameCore == null ? OCRD.CardNameCore : OCRD.CardNameCore.Trim())) { OCRD.U_Name = OCRD.CardNameCore; }
             string rJobNm = string.Format("{0}{1}", OCRD.ClientOperateType == "edit" ? "修改" : "添加", OCRD.CardType == "S" ? "供应商" : "业务伙伴");
             byte[] job_data = ByteExtension.ToSerialize(OCRD);
             if (updateClientJobReq.submitType == "Temporary")
@@ -1529,7 +1557,7 @@ namespace OpenAuth.App.Client
                         Operatorid = loginUser.Id
                     });
                 }
-                
+
             }
             else if (updateClientJobReq.submitType == "Resubmit")
             {
@@ -1538,7 +1566,7 @@ namespace OpenAuth.App.Client
                 bool updParaCardName = UpdateWfaJobPara(updateClientJobReq.JobId, 2, OCRD.CardName);
                 bool updParaOperateType = UpdateWfaJobPara(updateClientJobReq.JobId, 3, OCRD.ClientOperateType);
                 bool updParaAppChange = UpdateWfaJobPara(updateClientJobReq.JobId, 4, OCRD.IsApplicationChange);
-                
+
                 if (res)
                 {
                     //更新草稿客户关系
@@ -1604,8 +1632,17 @@ namespace OpenAuth.App.Client
                         Operator = loginUser.Name,
                         Operatorid = loginUser.Id
                     });
+
                 }
             }
+            //更新草稿推广员地址联系人
+            //当前登录者业务员编码
+            int slpCode = UnitWork.Find<sbo_user>(q => q.user_id == loginUser.User_Id).Select(q => q.sale_id).FirstOrDefault().Value;
+            var crd1 = updateClientJobReq.clientInfo.AddrList.Where(q => q.isLims == true && q.slpCode == slpCode).ToList();
+            var ocpr = updateClientJobReq.clientInfo.ContactList.Where(q => q.isLims == true && q.slpCode == slpCode).ToList();
+
+            //如果是lims推广员
+            SavelimsData(crd1, ocpr, updateClientJobReq.clientInfo.CardCode, slpCode);
             return result;
         }
         #endregion
@@ -1628,20 +1665,21 @@ namespace OpenAuth.App.Client
                 var currentuser = _auth.GetCurrentUser();
                 var jobraw = Convert.ToInt32(JobId);
                 var job = UnitWork.FindSingle<wfa_job>(a => a.job_id == jobraw);
-               
+
                 var newOper = UnitWork.FindSingle<User>(a => a.User_Id == job.user_id);
-                if (client.is_reseller=="Y")
+                if (client.is_reseller == "Y")
                 {
-                    if (originClient.U_is_reseller =="N")
+                    if (originClient.U_is_reseller == "N")
                     {
                         //add log to explain why
-                        _logger.LogError("不允许中间商变更为终端客户,请求参数为 jobid:" + JobId + " CardCode: "+ CardCode);
+                        _logger.LogError("不允许中间商变更为终端客户,请求参数为 jobid:" + JobId + " CardCode: " + CardCode);
                         return "0";
                     }
                     else
                     {
-                        
-                        await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq { 
+
+                        await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
+                        {
                             userid = currentuser.User.Id.ToString(),
                             username = currentuser.User.Name,
                             job_userid = newOper.Id,
@@ -1701,6 +1739,35 @@ namespace OpenAuth.App.Client
                 res = _serviceSaleOrderApp.SavePanding(jobID, userID, recommend);
             }
             return res;
+        }
+
+        /// <summary>
+        /// 审核通过修改lims推广员数据状态
+        /// </summary>
+        /// <param name="CardCode"></param>
+        /// <param name="Type"></param>
+        public void AuditlimsInfo(string CardCode, string Type)
+        {
+            if (Type == "agree")
+            {
+                var limsCrd1 = UnitWork.Find<LimsCRD1>(q => q.CardCode == CardCode && q.sbo_id == Define.SBO_ID && q.Type == "Temporary").ToList();
+                //数据处理
+                foreach (var item in limsCrd1)
+                {
+                    item.Type = "Submit";
+                    UnitWork.Update(item);
+                }
+                UnitWork.Delete<LimsCRD1>(q => q.CardCode == CardCode && q.sbo_id == Define.SBO_ID && q.Type == "Submit");
+                var limsOcpr = UnitWork.Find<LimsOCPR>(q => q.CardCode == CardCode && q.sbo_id == Define.SBO_ID && q.Type == "Temporary").ToList();
+                //数据处理
+                foreach (var item in limsOcpr)
+                {
+                    item.Type = "Submit";
+                    UnitWork.Update(item);
+                }
+                UnitWork.Delete<LimsOCPR>(q => q.CardCode == CardCode && q.sbo_id == Define.SBO_ID && q.Type == "Submit");
+                UnitWork.Save();
+            }
         }
         #region 查询 国家·省·市
         /// <summary>
@@ -2385,16 +2452,9 @@ namespace OpenAuth.App.Client
         }
         #endregion
         #region 查询业务伙伴报价单
-        /// <summary>
-        /// 查询业务伙伴报价单
-        /// </summary>
-        public OrderRq SelectOqut(SelectOqutReq selectOqutReq)
+        public StringBuilder getOqutSqlStr(SelectOqutReq selectOqutReq)
         {
-            OrderRq orderRq = new OrderRq();
-            DataTable dt = new DataTable();
             StringBuilder strSql = new StringBuilder();
-            strSql.Append(
-                "SELECT  A.DocEntry,B.SlpName,A.DocTotal, (A.DocTotal-A.PaidToDate)  AS OpenDocTotal,A.CreateDate,A.DocStatus,A.Printed  ");
             strSql.AppendFormat("FROM OQUT A LEFT JOIN OSLP B ON A.SlpCode=B.SlpCode WHERE A.CardCode='{0}'", selectOqutReq.CardCode);
             if (!string.IsNullOrWhiteSpace(selectOqutReq.Docentry))
             {
@@ -2420,27 +2480,42 @@ namespace OpenAuth.App.Client
             {
                 strSql.AppendFormat("AND (a.DocStatus = 'C' AND a.CANCELED = 'N') ");
             }
-
             //时间区间
             if (!string.IsNullOrWhiteSpace(selectOqutReq.StartTime) && !string.IsNullOrWhiteSpace(selectOqutReq.EndTime))
             {
-
-                strSql.AppendFormat("a.UpdateDate BETWEEN '{0}' AND '{1}' AND ", selectOqutReq.StartTime, selectOqutReq.EndTime);
+                strSql.AppendFormat("a.UpdateDate BETWEEN '{0}' AND '{1}' ", selectOqutReq.StartTime, selectOqutReq.EndTime);
             }
+            return strSql;
+        }
+        /// <summary>
+        /// 查询业务伙伴报价单
+        /// </summary>
+        public OrderRq SelectOqut(SelectOqutReq selectOqutReq)
+        {
+            OrderRq orderRq = new OrderRq();
+            DataTable dt = new DataTable();
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append("SELECT  A.DocEntry,B.SlpName,A.DocTotal, (A.DocTotal-A.PaidToDate)  AS OpenDocTotal,A.CreateDate,A.DocStatus,A.Printed  ");
+            strSql.Append(getOqutSqlStr(selectOqutReq));
             strSql.AppendFormat("ORDER BY A.DocEntry DESC ");
-
             int count = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null).Rows.Count;
-            strSql.AppendFormat(" offset " + (selectOqutReq.page - 1) * selectOqutReq.limit + " rows fetch next "+selectOqutReq.limit+" rows only ") ;
+
+            strSql.AppendFormat(" offset " + (selectOqutReq.page - 1) * selectOqutReq.limit + " rows fetch next " + selectOqutReq.limit + " rows only ");
             dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+
+            StringBuilder strSqlMoney = new StringBuilder();
+            strSqlMoney.Append("SELECT Sum(A.DocTotal) DocTotal, Sum(A.DocTotal-A.PaidToDate)  AS OpenDocTotal ");
+            strSqlMoney.Append(getOqutSqlStr(selectOqutReq));
+            DataTable dtMoney = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSqlMoney.ToString(), CommandType.Text, null);
 
             decimal Total = 0;
             decimal OpenDocTotal = 0;
-            if (dt != null)
+            if (dtMoney != null)
             {
-                for (int i = 0; i < dt.Rows.Count; i++)
+                for (int i = 0; i < dtMoney.Rows.Count; i++)
                 {
-                    Total += dt.Rows[i]["DocTotal"].ToDecimal();
-                    OpenDocTotal += dt.Rows[i]["OpenDocTotal"].ToDecimal();
+                    Total += dtMoney.Rows[i]["DocTotal"].ToDecimal();
+                    OpenDocTotal += dtMoney.Rows[i]["OpenDocTotal"].ToDecimal();
                 }
             }
             orderRq.Total = Total;
@@ -2449,25 +2524,12 @@ namespace OpenAuth.App.Client
             orderRq.count = count;
             return orderRq;
         }
-        public class OrderRq { 
-        public decimal Total { set; get; }
-        public decimal OpenDocTotal { set; get; }
-        public DataTable dt { set; get; }
 
-        public int count { set; get; }
-        }
         #endregion
         #region 查询业务伙销售订单
-        /// <summary>
-        /// 查询业务伙销售订单
-        /// </summary>
-        public OrderRq SelectOrdr(SelectOrdrReq selectOrdrReq)
+        public StringBuilder getOrdrSqlStr(SelectOrdrReq selectOrdrReq)
         {
-            OrderRq orderRq = new OrderRq();
-            DataTable dt = new DataTable();
             StringBuilder strSql = new StringBuilder();
-            strSql.Append(
-                "SELECT  A.DocEntry,B.SlpName,A.DocTotal, (A.DocTotal-A.PaidToDate)  AS OpenDocTotal,A.CreateDate,A.DocStatus,A.Printed  ");
             strSql.AppendFormat("FROM ORDR A LEFT JOIN OSLP B ON A.SlpCode=B.SlpCode WHERE A.CardCode='{0}'", selectOrdrReq.CardCode);
             if (!string.IsNullOrWhiteSpace(selectOrdrReq.Docentry))
             {
@@ -2498,21 +2560,39 @@ namespace OpenAuth.App.Client
             if (!string.IsNullOrWhiteSpace(selectOrdrReq.StartTime) && !string.IsNullOrWhiteSpace(selectOrdrReq.EndTime))
             {
 
-                strSql.AppendFormat("a.UpdateDate BETWEEN '{0}' AND '{1}' AND ", selectOrdrReq.StartTime, selectOrdrReq.EndTime);
+                strSql.AppendFormat("a.UpdateDate BETWEEN '{0}' AND '{1}' ", selectOrdrReq.StartTime, selectOrdrReq.EndTime);
             }
+            return strSql;
+        }
+        /// <summary>
+        /// 查询业务伙销售订单
+        /// </summary>
+        public OrderRq SelectOrdr(SelectOrdrReq selectOrdrReq)
+        {
+            OrderRq orderRq = new OrderRq();
+            DataTable dt = new DataTable();
+            StringBuilder strSql = new StringBuilder();
+            strSql.Append(
+                "SELECT  A.DocEntry,B.SlpName,A.DocTotal, (A.DocTotal-A.PaidToDate)  AS OpenDocTotal,A.CreateDate,A.DocStatus,A.Printed  ");
+            strSql.Append(getOrdrSqlStr(selectOrdrReq));
             strSql.AppendFormat("ORDER BY A.DocEntry DESC");
 
             int count = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null).Rows.Count;
             strSql.AppendFormat(" offset " + (selectOrdrReq.page - 1) * selectOrdrReq.limit + " rows fetch next " + selectOrdrReq.limit + " rows only ");
             dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+
+            StringBuilder strSqlMoney = new StringBuilder();
+            strSqlMoney.Append("SELECT Sum(A.DocTotal) DocTotal, Sum(A.DocTotal-A.PaidToDate)  AS OpenDocTotal ");
+            strSqlMoney.Append(getOrdrSqlStr(selectOrdrReq));
+            DataTable dtMoney = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSqlMoney.ToString(), CommandType.Text, null);
             decimal Total = 0;
             decimal OpenDocTotal = 0;
-            if (dt != null)
+            if (dtMoney != null)
             {
-                for (int i = 0; i < dt.Rows.Count; i++)
+                for (int i = 0; i < dtMoney.Rows.Count; i++)
                 {
-                    Total += dt.Rows[i]["DocTotal"].ToDecimal();
-                    OpenDocTotal += dt.Rows[i]["OpenDocTotal"].ToDecimal();
+                    Total += dtMoney.Rows[i]["DocTotal"].ToDecimal();
+                    OpenDocTotal += dtMoney.Rows[i]["OpenDocTotal"].ToDecimal();
                 }
             }
             orderRq.Total = Total;
@@ -2603,7 +2683,7 @@ namespace OpenAuth.App.Client
                 }
             }
             //如果是这个原因,则加入黑名单
-            if (req.Remark == "公司已注销"|| req.Remark == "失信客户")
+            if (req.Remark == "公司已注销" || req.Remark == "失信客户")
             {
                 using var tran = UnitWork.GetDbContext<CustomerList>().Database.BeginTransaction();
                 try
@@ -2638,7 +2718,7 @@ namespace OpenAuth.App.Client
                     await UnitWork.SaveAsync();
                     await tran.CommitAsync();
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     result.Code = 500;
                     result.Message = ex.Message ?? ex.InnerException?.Message ?? "";
@@ -2703,6 +2783,7 @@ namespace OpenAuth.App.Client
             return result;
         }
 
+
         #region 客户详情页
 
         #region 客户跟进记录
@@ -2725,12 +2806,12 @@ namespace OpenAuth.App.Client
             var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
             int SlpCode = Convert.ToInt16(GetUserInfoById(sboid.ToString(), userId.ToString(), "1"));
             var slpInfo = UnitWork.Find<OSLP>(q => q.SlpCode == SlpCode).FirstOrDefault();
-            var SlpName = slpInfo == null?"": slpInfo.SlpName;
+            var SlpName = slpInfo == null ? "" : slpInfo.SlpName;
             if (isAdd)
             {
                 clientFollowUp.SlpCode = SlpCode;
                 clientFollowUp.SlpName = SlpName;
-                clientFollowUp.CreateUser = loginUser.User_Id.Value;
+                clientFollowUp.CreateUser = loginUser.Name;
                 clientFollowUp.CreateDate = DateTime.Now;
                 clientFollowUp.IsDelete = false;
                 clientFollowUp.IsRemind = false;
@@ -2752,7 +2833,7 @@ namespace OpenAuth.App.Client
                 info.ImgId = clientFollowUp.ImgId;
                 info.ImgName = clientFollowUp.ImgName;
                 info.FileName = clientFollowUp.FileName;
-                info.UpdateUser = loginUser.User_Id.Value;
+                info.UpdateUser = loginUser.Name;
                 info.UpdateDate = DateTime.Now;
                 await UnitWork.UpdateAsync<ClientFollowUp>(info);
             }
@@ -2867,9 +2948,9 @@ namespace OpenAuth.App.Client
         public async Task PushMessageToSlp()
         {
             DateTime startTime = DateTime.Now;
-            DateTime endTime = startTime.AddHours(0.5);
+            DateTime endTime = startTime.AddMinutes(1);
             //查询所有时间段内待跟进的任务
-            var query = await (UnitWork.Find<ClientFollowUp>(c => c.NextTime >= startTime && c.NextTime <= endTime&&c.IsRemind==false&&c.IsDelete==false).Select(g => new
+            var query = await (UnitWork.Find<ClientFollowUp>(c => c.NextTime >= startTime && c.NextTime <= endTime && c.IsRemind == false && c.IsDelete == false).Select(g => new
             {
                 SlpName = g.SlpName,
                 CardName = g.CardName,
@@ -2880,7 +2961,7 @@ namespace OpenAuth.App.Client
             {
                 await _hubContext.Clients.User(slp.SlpName).SendAsync("ReceiveMessage", "系统", $"您有1个客户待跟进，客户名称：" + slp.CardName);
                 int id = slp.Id;
-                ClientFollowUp item = UnitWork.Find<ClientFollowUp>(q=>q.Id==id).FirstOrDefault();
+                ClientFollowUp item = UnitWork.Find<ClientFollowUp>(q => q.Id == id).FirstOrDefault();
                 item.IsRemind = true;
                 UnitWork.Update<ClientFollowUp>(item);
             }
@@ -2903,6 +2984,511 @@ namespace OpenAuth.App.Client
             UnitWork.Save();
         }
         #endregion
+        #endregion
+
+        #region LIMS推广员
+
+        /// <summary>
+        /// 获取所有节点状态
+        /// </summary>
+        /// <returns>返回节点状态信息</returns>
+        public async Task<TableData> GetProductTypeList()
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var result = new TableData();
+            var categorStatusList = await UnitWork.Find<Category>(u => u.TypeId.Equals("ProductType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
+            result.Count = categorStatusList.Count();
+            result.Data = categorStatusList;
+            return result;
+        }
+
+        /// <summary>
+        ///  推广员列表（产品推广员模块）
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public async Task<TableData> QueryLIMSInfo(QueryLIMSInfoReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            var result = new TableData();
+            try
+            {
+                var map = UnitWork.Find<LimsInfoMap>(null);
+                //销售员部门数据
+                var deptData = await (from s in UnitWork.Find<sbo_user>(null)
+                                      join ud in UnitWork.Find<base_user_detail>(null) on s.user_id equals ud.user_id
+                                      join d in UnitWork.Find<base_dep>(null) on ud.dep_id equals d.dep_id
+                                      where s.sbo_id == Define.SBO_ID
+                                      select new
+                                      {
+                                          UserId = (int)s.user_id,
+                                          dept = d.dep_alias,
+                                      }).Distinct().ToListAsync();
+
+                var objs = from n in await UnitWork.Find<LimsInfo>(q => q.Type == request.Type).ToListAsync()
+                           join u in await UnitWork.Find<User>(null).ToListAsync() on n.UserId equals u.Id
+                           join d in deptData on u.User_Id equals d.UserId
+                           select new
+                           {
+                               Id = n.Id,
+                               UserId = n.UserId,
+                               Type = n.Type,
+                               Count = n.Count,
+                               u.Name,
+                               d.dept,
+                               u.Status,
+                               CreateUser = n.CreateUser,
+                               CreateDate = n.CreateDate,
+                           };
+                var LimsInfoList = objs.OrderByDescending(r => r.CreateDate).Skip((request.page - 1) * request.limit).Take(request.limit).ToList();
+
+                var LimsInfoListResp = LimsInfoList.Select(r => new
+                {
+                    Id = r.Id,
+                    UserId = r.UserId,
+                    Type = r.Type,
+                    Name = r.Name,
+                    dept = r.dept,
+                    Status = r.Status,
+                    Count = (map.Where(q => q.LimsInfoId == r.Id).Select(x => new
+                    {
+                        x.Id,
+                        x.CardCode,
+                        x.CardName
+                    })).Count(),
+                    CreateUser = r.CreateUser,
+                    CreateDate = r.CreateDate,
+                    limsInfoMapList = map.Where(q => q.LimsInfoId == r.Id).Select(x => new
+                    {
+                        x.Id,
+                        x.CardCode,
+                        x.CardName
+                    })
+                }).ToList();
+
+                result.Count = objs.Count();
+                result.Data = LimsInfoListResp;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message.ToString();
+                result.Code = 500;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 通过推广员获取已绑定的客户列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetCardCodeById(QueryClientInfoReq req)
+        {
+            var result = new TableData();
+            int id = req.id;
+            var CardCodeList = UnitWork.Find<LimsInfoMap>(q => q.LimsInfoId == id).Select(q => q.CardCode).ToList();
+
+            var query = from c in UnitWork.Find<OCRD>(q => CardCodeList.Contains(q.CardCode))
+                        join s in UnitWork.Find<OSLP>(null)
+                        on c.SlpCode equals s.SlpCode
+                        select new
+                        {
+                            c.CardCode,
+                            c.CardName,
+                            s.SlpCode,
+                            s.SlpName
+                        };
+            if (!string.IsNullOrWhiteSpace(req.key))
+            {
+                query = query.Where(q => q.CardCode.Contains(req.key) || q.CardName.Contains(req.key) || q.SlpName.Contains(req.key));
+            }
+            //先把数据加载到内存
+            var data = await query.OrderBy(q => q.CardCode).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+            //销售员部门数据
+            var deptData = await (from s in UnitWork.Find<sbo_user>(null)
+                                  join ud in UnitWork.Find<base_user_detail>(null) on s.user_id equals ud.user_id
+                                  join d in UnitWork.Find<base_dep>(null) on ud.dep_id equals d.dep_id
+                                  where s.sbo_id == Define.SBO_ID
+                                  && data.Select(x => x.SlpCode).Contains(s.sale_id.Value)
+                                  select new
+                                  {
+                                      slpCode = s.sale_id,
+                                      dept = d.dep_alias,
+                                  }).Distinct().ToListAsync();
+            var response = from q in data
+                           join d in deptData on q.SlpCode equals d.slpCode into temp1
+                           from t1 in temp1.DefaultIfEmpty()
+                           select new
+                           {
+                               CardCode = q.CardCode,
+                               CardName = q.CardName,
+                               SlpCode = q.SlpCode,
+                               SlpName = q.SlpName,
+                               DeptName = t1 == null ? null : t1.dept
+                           };
+            result.Data = response;
+            result.Count = await query.CountAsync();
+
+            return result;
+        }
+
+        /// <summary>
+        /// 添加lims推广员
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> AddLims(AddLIMSInfo req)
+        {
+            var result = new Infrastructure.Response();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            List<LimsInfo> LimsInfoList = new List<LimsInfo>();
+            foreach (var item in req.userIdList)
+            {
+                //获取业务员编码
+                int User_Id = UnitWork.Find<User>(q => q.Id == item).Select(q => q.User_Id).FirstOrDefault().Value;
+                int slpCode = UnitWork.Find<sbo_user>(q => q.user_id == User_Id).Select(q => q.sale_id).FirstOrDefault().Value;
+                string message = "";
+                LimsInfo info = UnitWork.Find<LimsInfo>(q => q.SlpCode == slpCode && q.Type == req.Type).FirstOrDefault();
+                if (info != null)
+                {
+                    string name = UnitWork.Find<crm_oslp>(q => q.SlpCode == slpCode).Select(q => q.SlpName).FirstOrDefault();
+                    message = $"{name}已存在推广员列表中";
+                    if (!string.IsNullOrWhiteSpace(message))
+                    {
+                        result.Code = 500;
+                        result.Message = message;
+                        return result;
+                    }
+                }
+                LimsInfoList.Add(new LimsInfo
+                {
+                    UserId = item,
+                    SlpCode = slpCode,
+                    Type = req.Type,
+                    Count = req.Count,
+                    CreateUser = loginUser.Name,
+                    CreateDate = DateTime.Now
+                });
+            }
+            await UnitWork.BatchAddAsync<LimsInfo, int>(LimsInfoList.ToArray());
+            await UnitWork.SaveAsync();
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// 绑定客户与推广员
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> AddLimsMap(AddLIMSInfoMap req)
+        {
+            var result = new Infrastructure.Response();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var loginUser = loginContext.User;
+            List<LimsInfoMap> list = new List<LimsInfoMap>();
+            for (int i = 0; i < req.LimsIdList.Count; i++)
+            {
+                string message = "";
+                int LimsInfoId = req.LimsIdList[i].ToInt();
+                LimsInfoMap info = UnitWork.Find<LimsInfoMap>(q => q.LimsInfoId == LimsInfoId).FirstOrDefault();
+                if (info != null)
+                {
+                    int SlpCode = UnitWork.Find<LimsInfo>(q => q.Id == LimsInfoId).FirstOrDefault().SlpCode;
+                    string name = UnitWork.Find<crm_oslp>(q => q.SlpCode == SlpCode).Select(q => q.SlpName).FirstOrDefault();
+                    message = $"{name}已绑定该客户";
+                    if (!string.IsNullOrWhiteSpace(message))
+                    {
+                        result.Code = 500;
+                        result.Message = message;
+                        return result;
+                    }
+                }
+                list.Add(new LimsInfoMap
+                {
+                    CardCode = req.CardCode,
+                    CardName = req.CardName,
+                    LimsInfoId = LimsInfoId,
+                    CreateUser = loginUser.Name,
+                    CreateDate = DateTime.Now
+                });
+            }
+            await UnitWork.BatchAddAsync<LimsInfoMap, int>(list.ToArray());
+            await UnitWork.SaveAsync();
+
+            return result;
+        }
+
+        /// <summary>
+        /// 通过客户编码获取推广员信息
+        /// </summary>
+        /// <param name="CardCode"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetLIMSByCode(string CardCode, string Type, int page, int limit)
+        {
+            var tableData = new TableData();
+            var Mapdata = (from n in await UnitWork.Find<LimsInfoMap>(q => q.CardCode == CardCode).ToListAsync()
+                           join m in await UnitWork.Find<LimsInfo>(q => q.Type == Type).ToListAsync() on new { LimsInfoId = n.LimsInfoId.ToString() } equals new { LimsInfoId = m.Id.ToString() }
+                           join u in await UnitWork.Find<User>(null).ToListAsync() on m.UserId equals u.Id
+                           select new
+                           {
+                               n.Id,
+                               m.Type,
+                               u.User_Id,
+                               u.Name,
+                               n.CreateUser,
+                               n.CreateDate
+                           }).ToList();
+            var data = (from n in Mapdata
+                        join ud in UnitWork.Find<base_user_detail>(null) on new { User_Id = n.User_Id.ToInt() } equals new { User_Id = ud.user_id.ToInt() } into temp1
+                        from t1 in temp1.DefaultIfEmpty()
+                        join d in UnitWork.Find<base_dep>(null) on t1.dep_id equals d.dep_id into temp2
+                        from t2 in temp2.DefaultIfEmpty()
+                        select new
+                        {
+                            Id = n.Id,
+                            Type = n.Type,
+                            Name = n.Name,
+                            dep_nm = t2 == null ? "" : t2.dep_nm,
+                            CreateUser = n.CreateUser,
+                            CreateDate = n.CreateDate
+                        }).ToList();
+            var dataquery = data.Skip((page - 1) * limit).Take(limit).ToList();//.OrderByDescending(q => q.CreateDate)
+            tableData.Data = dataquery;
+            tableData.Count = data.Count();
+            return tableData;
+        }
+
+        /// <summary>
+        /// 在客户详情页删除推广员
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <param name="CardCode"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public async Task<bool> DeleteLIMS(List<int> Ids, string CardCode)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            foreach (var item in Ids)
+            {
+                await UnitWork.DeleteAsync<LimsInfoMap>(q => q.Id == item && q.CardCode == CardCode);
+            }
+            await UnitWork.SaveAsync();
+
+            return true;
+        }
+
+        /// <summary>
+        /// 在推广员模块删除推广员
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public async Task<bool> DeleteLIMSInfo(List<int> Ids)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            foreach (var item in Ids)
+            {
+                await UnitWork.DeleteAsync<LimsInfoMap>(q => q.LimsInfoId == item);
+                await UnitWork.DeleteAsync<LimsInfo>(q => q.Id == item);
+            }
+            await UnitWork.SaveAsync();
+            return true;
+        }
+
+        /// <summary>
+        /// 获取用户列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetUserInfo(QueryLIMSInfoReq req)
+        {
+            var tableData = new TableData();
+            //销售员部门数据
+            var deptData = await (from s in UnitWork.Find<sbo_user>(null)
+                                  join ud in UnitWork.Find<base_user_detail>(null) on s.user_id equals ud.user_id
+                                  join d in UnitWork.Find<base_dep>(null) on ud.dep_id equals d.dep_id
+                                  where s.sbo_id == Define.SBO_ID
+                                  select new
+                                  {
+                                      UserId = (int)s.user_id,
+                                      dept = d.dep_alias,
+                                  }).Distinct().ToListAsync();
+            var data = from n in await UnitWork.Find<User>(null).ToListAsync()
+                       join m in deptData on n.User_Id equals m.UserId
+                       select new
+                       {
+                           n.Id,
+                           n.Account,
+                           n.Name,
+                           n.Status,
+                           m.dept,
+                           n.CreateTime
+                       };
+            if (!string.IsNullOrWhiteSpace(req.key))
+            {
+                data = data.Where(q => q.Name.Contains(req.key) || q.dept.Contains(req.key));
+            }
+            var dataquery = data.OrderByDescending(q => q.CreateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
+            tableData.Data = dataquery;
+            tableData.Count = data.Count();
+            return tableData;
+        }
+
+        /// <summary>
+        /// 获取登录用户的slpcode
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public async Task<int> GetSlpCode()
+        {
+            int slpCode = 0;
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            int userId = loginContext.User.User_Id.Value;
+            var sbouser = await UnitWork.Find<sbo_user>(q => q.user_id == userId).FirstOrDefaultAsync();
+            if (sbouser != null)
+            {
+                slpCode = sbouser.sale_id.Value;
+            }
+            return slpCode;
+        }
+
+        /// <summary>
+        /// 保存lims推广员的联系人地址
+        /// </summary>
+        /// <param name="crd1"></param>
+        /// <param name="ocpr"></param>
+        /// <param name="CardCode"></param>
+        /// <param name="slpCode"></param>
+        /// <param name="Type"></param>
+        /// <returns></returns>
+        public bool SavelimsData(List<clientCRD1Req> crd1, List<clientOCPRReq> ocpr, string CardCode, int slpCode)
+        {
+            if (crd1.Count > 0)
+            {
+                List<LimsCRD1> crd1List = new List<LimsCRD1>();
+                foreach (var c in crd1)
+                {
+                    crd1List.Add(new LimsCRD1
+                    {
+                        sbo_id = Define.SBO_ID,
+                        Address = c.Address,
+                        CardCode = CardCode,
+                        SlpCode = slpCode,
+                        ZipCode = c.ZipCode,
+                        City = c.City,
+                        County = c.County,
+                        Country = c.Country,
+                        State = c.State,
+                        LogInstanc = !string.IsNullOrWhiteSpace(c.LogInstanc) ? Convert.ToInt16(c.LogInstanc) : 0,
+                        ObjType = c.ObjType,
+                        LicTradNum = c.LicTradNum,
+                        LineNum = !string.IsNullOrWhiteSpace(c.LineNum) ? Convert.ToInt32(c.LineNum) : 0,
+                        TaxCode = c.TaxCode,
+                        Building = c.Building,
+                        AdresType = c.AdresType,
+                        Address2 = c.Address2,
+                        Address3 = c.Address3,
+                        U_Active = c.Active,
+                        Type = "Temporary"
+                    });
+                }
+                UnitWork.BatchAdd<LimsCRD1, int>(crd1List.ToArray());
+                UnitWork.Delete<LimsCRD1>(q => q.CardCode == CardCode && q.sbo_id == Define.SBO_ID && q.Type == "Temporary");
+            }
+
+            if (ocpr.Count > 0)
+            {
+                List<LimsOCPR> ocprList = new List<LimsOCPR>();
+                foreach (var c in ocpr)
+                {
+                    ocprList.Add(new LimsOCPR
+                    {
+                        CntctCode = !string.IsNullOrWhiteSpace(c.CntctCode) ? Convert.ToInt32(c.CntctCode) : 0,
+                        sbo_id = Define.SBO_ID,
+                        CardCode = CardCode,
+                        SlpCode = slpCode,
+                        Name = c.Name,
+                        Position = c.Position,
+                        Address = c.Address,
+                        Tel1 = c.Tel1,
+                        Tel2 = c.Tel2,
+                        Cellolar = c.Cellolar,
+                        Fax = c.Fax,
+                        E_MailL = c.E_MailL,
+                        Pager = c.Pager,
+                        Notes1 = c.Notes1,
+                        Notes2 = c.Notes2,
+                        DataSource = c.DataSource,
+                        UserSign = !string.IsNullOrWhiteSpace(c.UserSign) ? Convert.ToInt32(c.UserSign) : 0,
+                        Password = c.Password,
+                        LogInstanc = !string.IsNullOrWhiteSpace(c.LogInstanc) ? Convert.ToInt32(c.LogInstanc) : 0,
+                        ObjType = c.ObjType,
+                        BirthPlace = c.BirthPlace,
+                        Gender = c.Gender,
+                        Profession = c.Profession,
+                        Title = c.Title,
+                        BirthCity = c.BirthCity,
+                        Active = c.Active,
+                        FirstName = c.FirstName,
+                        MiddleName = c.MiddleName,
+                        LastName = c.LastName,
+                        U_ACCT = c.U_ACCT,
+                        U_BANK = c.U_BANK,
+                        Type = "Temporary"
+                    });
+                }
+                UnitWork.BatchAdd<LimsOCPR, int>(ocprList.ToArray());
+                UnitWork.Delete<LimsOCPR>(q => q.CardCode == CardCode && q.sbo_id == Define.SBO_ID && q.Type == "Temporary");
+            }
+            UnitWork.Save();
+            return true;
+        }
+
+        /// <summary>
+        /// 通过cardcode获取slpcode
+        /// </summary>
+        /// <param name="CardCode"></param>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public int GetSlpCodeByCardCode(string CardCode)
+        {
+            int SlpCode = UnitWork.Find<crm_ocrd>(q => q.CardCode == CardCode).Select(q => q.SlpCode).FirstOrDefault().Value;
+            return SlpCode;
+        }
         #endregion
     }
 }
