@@ -72,7 +72,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 创建人
         /// </summary>
-        public int CreateUser { get; set; }
+        public string CreateUser { get; set; }
         /// <summary>
         /// 创建时间
         /// </summary>
@@ -80,7 +80,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 更新人
         /// </summary>
-        public int UpdateUser { get; set; }
+        public string UpdateUser { get; set; }
         /// <summary>
         /// 更新时间
         /// </summary>

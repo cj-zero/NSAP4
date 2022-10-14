@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OpenAuth.App.Request;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -1041,7 +1042,14 @@ namespace OpenAuth.App.Client.Request
 
         public string IsDefault { get; set; }
 
-
+        /// <summary>
+        /// 是否是推广员维护的
+        /// </summary>
+        public bool isLims { get; set; } = false;
+        /// <summary>
+        /// 业务员编码
+        /// </summary>
+        public int slpCode { get; set; }
 
     }
     public class clientOCPRReq
@@ -1255,6 +1263,14 @@ namespace OpenAuth.App.Client.Request
         /// </summary>
 
         public string IsDefault { get; set; }
+        /// <summary>
+        /// 是否是推广员维护的
+        /// </summary>
+        public bool isLims { get; set; } = false;
+        /// <summary>
+        /// 业务员编码
+        /// </summary>
+        public int slpCode { get; set; }
 
     }
     public class billAttchmentReq
@@ -1384,4 +1400,36 @@ namespace OpenAuth.App.Client.Request
 
     }
 
+    //添加LIMS推广员
+    public class AddLIMSInfo
+    {
+        public List<string> userIdList { get; set; }
+        public string Type { get; set; }
+
+        public int Count { get; set; } = 0;
+    }
+
+    //为客户绑定LIMS推广员
+    public class AddLIMSInfoMap
+    {
+        public string CardCode { get; set; }
+        public string CardName { get; set; }
+        public List<string> LimsIdList { get; set; }
+    }
+
+    public class SelLIMSByCodeReq : PageReq
+    {
+        public string CardCode { get; set; }
+        public string Type { get; set; }
+    }
+
+    public class QueryClientInfoReq : PageReq
+    {
+        public int id { get; set; }
+    }
+
+    public class QueryLIMSInfoReq : PageReq
+    {
+        public string Type { get; set; }
+    }
 }
