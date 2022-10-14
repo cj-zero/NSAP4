@@ -184,6 +184,25 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+
+        [HttpGet]
+        public async Task<Response<JobClientRelation>> GetTerminals(string clientNo)
+        {
+            var result = new Response<JobClientRelation>();
+            try
+            {
+                result.Result = await _app.GetTerminals(clientNo);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+
         [HttpGet]
         public async Task<bool> GetSyncRelations()
         {
