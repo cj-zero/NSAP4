@@ -129,7 +129,7 @@ namespace OpenAuth.WebApi
                 options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
                 //不使用驼峰样式的key
                 //options.SerializerSettings.ContractResolver = new DefaultContractResolver();    
-                options.SerializerSettings.DateFormatString = "yyyy-MM-dd HH:mm:ss";
+                options.SerializerSettings.DateFormatString = "yyyy.MM.dd HH:mm:ss";
             });
 
             var redisConnectionString = Configuration.GetValue<string>("AppSetting:Cache:Redis");

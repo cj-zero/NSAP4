@@ -16,33 +16,22 @@ namespace OpenAuth.Repository.Domain
     /// <summary>
     /// 客户与LIMS推广员绑定表
     /// </summary>
-    [Table("client_limsinfo")]
-    public partial class LimsInfo : BaseEntity<int>
+    [Table("client_limsinfomap")]
+    public class LimsInfoMap : BaseEntity<int>
     {
-        public LimsInfo()
-        {
-            this.UserId = string.Empty;
-            this.Type = string.Empty;
-            this.Count = 0;
-            this.CreateUser = string.Empty;
-            this.CreateDate = DateTime.Now;
-        }
+
         /// <summary>
-        /// 用户id
+        /// limsInfo主键
         /// </summary>
-        public string UserId { get; set; }
+        public int LimsInfoId { get; set; }
         /// <summary>
-        /// 业务员编码
+        /// 客户编码
         /// </summary>
-        public int SlpCode { get; set; }
+        public string CardCode { get; set; }
         /// <summary>
-        /// 类型
+        /// 客户编码
         /// </summary>
-        public string Type { get; set; }
-        /// <summary>
-        /// 可推广客户数
-        /// </summary>
-        public int Count { get; set; }
+        public string CardName { get; set; }
         /// <summary>
         /// 创建人
         /// </summary>
@@ -51,10 +40,6 @@ namespace OpenAuth.Repository.Domain
         /// 创建时间
         /// </summary>
         public DateTime CreateDate { get; set; }
-        /// <summary>
-        /// 推广员绑定客户集合
-        /// </summary>
-        public virtual List<LimsInfoMap> LimsInfoMapList { get; set; }
 
         public override void GenerateDefaultKeyVal()
         {

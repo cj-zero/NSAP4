@@ -70,7 +70,7 @@ namespace OpenAuth.WebApi.Controllers.Material
                          "IF(" + ViewSales + ", StockPrice, 0) StockPrice,");
             strSql += string.Format("d.WhsCode,w.OnHand,");
             strSql += string.Format("d.U_ZS");
-            strSql += ",(CASE WHEN d.ItemCode REGEXP 'A605|A608|A313|A302|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|M202|M203' THEN '--' ELSE d.ContractReviewCode END) U_RelDoc";
+            strSql += ",(CASE WHEN d.ItemCode REGEXP 'A605|A608|A313|A302|BT-4/8|BTE-4/8|BE-4/8|BA-4/8|M202|M203|A405' THEN '--' ELSE d.ContractReviewCode END) U_RelDoc";
             strSql += string.Format(" FROM {0}." + tablename + " d", "nsap_bone");
             strSql += string.Format(" LEFT JOIN {0}.store_oitw w ON d.ItemCode=w.ItemCode AND d.WhsCode=w.WhsCode AND d.sbo_id=w.sbo_id", "nsap_bone");
             strSql += string.Format(" left join manage_screening m on d.DocEntry = m.DocEntry and d.ItemCode = m.ItemCode and d.U_ZS = m.U_ZS and d.Quantity = m.Quantity", "erp4_serve");

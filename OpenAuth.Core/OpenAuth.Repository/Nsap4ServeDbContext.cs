@@ -59,6 +59,11 @@ namespace OpenAuth.Repository
         public virtual DbSet<BeforeSaleDemandDeptInfo> BeforeSaleDemandDeptInfos { get; set; }
         public virtual DbSet<BeforeSaleFiles> BeforeSaleFiles { get; set; }
         public virtual DbSet<BeforeSaleProScheduling> BeforeSaleProSchedulings { get; set; }
+        public virtual DbSet<BlameBelong> BlameBelongs { get; set; }
+        public virtual DbSet<BlameBelongFile> BlameBelongFiles { get; set; }
+        public virtual DbSet<BlameBelongOrg> BlameBelongOrgs { get; set; }
+        public virtual DbSet<BlameBelongOrgFile> BlameBelongOrgFiles { get; set; }
+        public virtual DbSet<BlameBelongHistory> BlameBelongHistorys { get; set; }
 
         public virtual DbSet<ServiceOrderSerial> Serviceorderserials { get; set; }
         public virtual DbSet<AppServiceOrderLog> Appserviceorderlogs { get; set; }
@@ -141,6 +146,11 @@ namespace OpenAuth.Repository
         public virtual DbSet<ClientSchedule> ClientSchedule { get; set; }
 
         public virtual DbSet<LimsInfo> LimsInfo { get; set; }
+        public virtual DbSet<LimsInfoMap> LimsInfoMap { get; set; }
+        //lims推广员维护客户联系人表
+        public virtual DbSet<LimsOCPR> LimsOCPR { get; set; }
+        //lims推广员维护客户地址表
+        public virtual DbSet<LimsCRD1> LimsCRD1 { get; set; }
         #endregion
         #region 工程部项目筛选
         public virtual DbSet<ManageScreening> ManageScreening { get; set; }

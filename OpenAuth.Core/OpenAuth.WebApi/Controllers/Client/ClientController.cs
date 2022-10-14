@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 using Infrastructure;
@@ -161,7 +162,7 @@ namespace OpenAuth.WebApi.Controllers.Client
                 .ViewSelfDepartment;
             //bool rIsViewFull = _serviceSaleOrderApp.GetPagePowersByUrl("client/ClientInfo.aspx", userId).ViewFull;
             bool rIsViewFull = false;
-            if (loginUser.Name == "韦京生" || loginUser.Name == "郭睿心"|| loginUser.Name == "骆灵芝")
+            if (loginUser.Name == "韦京生" || loginUser.Name == "郭睿心" || loginUser.Name == "骆灵芝")
             {
                 rIsViewFull = true;
             }
@@ -172,7 +173,11 @@ namespace OpenAuth.WebApi.Controllers.Client
             {
                 result.Data = _clientInfoApp.SelectClientList(clientListReq.limit, clientListReq.page,
                     clientListReq.query, clientListReq.sortname, clientListReq.sortorder, sboid, userId, rIsViewSales,
-                    rIsViewSelf, rIsViewSelfDepartment, rIsViewFull, depID, clientListReq.Label, clientListReq.ContectTel, clientListReq.SlpName, clientListReq.isReseller, clientListReq.Day, clientListReq.CntctPrsn, clientListReq.address, out rowCount);
+                    rIsViewSelf, rIsViewSelfDepartment, rIsViewFull, depID, clientListReq.Label, clientListReq.ContectTel, clientListReq.SlpName, clientListReq.isReseller, clientListReq.Day, clientListReq.CntctPrsn, clientListReq.address
+                    , clientListReq.U_CardTypeStr, clientListReq.U_ClientSource, clientListReq.U_CompSector, clientListReq.U_TradeType, clientListReq.U_StaffScale,
+                    clientListReq.CreateStartTime, clientListReq.CreateEndTime, clientListReq.DistributionStartTime, clientListReq.DistributionEndTime,
+            clientListReq.dNotesBalStart, clientListReq.dNotesBalEnd, clientListReq.ordersBalStart, clientListReq.ordersBalEnd,
+            clientListReq.balanceStart, clientListReq.balanceEnd, clientListReq.balanceTotalStart, clientListReq.balanceTotalEnd, out rowCount);
                 result.Count = rowCount;
             }
             catch (Exception ex)
@@ -198,7 +203,7 @@ namespace OpenAuth.WebApi.Controllers.Client
             {
                 result.Data = await _clientInfoApp.GetCustomerCount();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex?.Message ?? "";
@@ -212,7 +217,7 @@ namespace OpenAuth.WebApi.Controllers.Client
         /// </summary>
         [HttpGet]
         [Route("GetAuditInfo")]
-        public Response<NSAP.Entity.Client.clientOCRD> GetAuditInfo(string jobId)
+        public Response<clientOCRD> GetAuditInfo(string jobId)
         {
             var result = new Response<clientOCRD>();
             try
@@ -299,9 +304,8 @@ namespace OpenAuth.WebApi.Controllers.Client
         [HttpGet]
         [Route("SelectClientContactData")]
 
-        public TableData SelectClientContactData(string CardCode, string IsOpenSap)
+        public TableData SelectClientContactData(string CardCode, string IsOpenSap, string Type)
         {
-
             var result = new TableData();
             try
             {
@@ -312,7 +316,7 @@ namespace OpenAuth.WebApi.Controllers.Client
                 bool rIsOpenSap = IsOpenSap == "1" ? true : false;
                 if (!string.IsNullOrEmpty(CardCode) && !string.IsNullOrEmpty(SboId.ToString()))
                     result.Data =
-                        _clientInfoApp.SelectClientContactData(CardCode, SboId.ToString(), rIsOpenSap, rIsViewFull);
+                        _clientInfoApp.SelectClientContactData(CardCode, SboId.ToString(), rIsOpenSap, rIsViewFull, Type);
             }
             catch (Exception ex)
             {
@@ -329,14 +333,14 @@ namespace OpenAuth.WebApi.Controllers.Client
         /// </summary>
         [HttpGet]
         [Route("SelectClientAddrData")]
-        public TableData SelectClientAddrData(string CardCode, string SboId, string IsOpenSap)
+        public TableData SelectClientAddrData(string CardCode, string SboId, string IsOpenSap, string Type)
         {
             var result = new TableData();
             try
             {
                 bool rIsOpenSap = IsOpenSap == "1" ? true : false;
                 if (!string.IsNullOrEmpty(CardCode) && !string.IsNullOrEmpty(SboId))
-                    result.Data = _clientInfoApp.SelectClientAddrData(CardCode, SboId, rIsOpenSap);
+                    result.Data = _clientInfoApp.SelectClientAddrData(CardCode, SboId, rIsOpenSap, Type);
             }
             catch (Exception ex)
             {
@@ -449,6 +453,31 @@ namespace OpenAuth.WebApi.Controllers.Client
                 result.Code = 500;
                 result.Message = ex.InnerException?.Message ?? ex.Message;
                 Log.Logger.Error($"地址：{Request.Path}，参数：{auditResubmitNextReq.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 审核通过修改lims推广员数据状态
+        /// </summary>
+        /// <param name="CardCode"></param>
+        /// <param name="Type"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("AuditlimsInfo")]
+        public Response<string> AuditlimsInfo(string CardCode, string Type)
+        {
+            var result = new Response<string>();
+            try
+            {
+                _clientInfoApp.AuditlimsInfo(CardCode, Type);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{CardCode}， 错误：{result.Message}");
             }
 
             return result;
@@ -710,7 +739,7 @@ namespace OpenAuth.WebApi.Controllers.Client
             var result = new Response<bool>();
             try
             {
-                    result.Result =await _clientInfoApp.Synchronous(ClueId);
+                result.Result = await _clientInfoApp.Synchronous(ClueId);
             }
             catch (Exception ex)
             {
@@ -770,6 +799,7 @@ namespace OpenAuth.WebApi.Controllers.Client
             return result;
         }
 
+
         /// <summary>
         /// 测试同步数据
         /// </summary>
@@ -777,10 +807,259 @@ namespace OpenAuth.WebApi.Controllers.Client
         [HttpGet]
         public async Task TestAsync()
         {
-            
-                await _clientInfoApp.PushMessageToSlp();
-            
+
+            await _clientInfoApp.PushMessageToSlp();
+
         }
+
+        #region LIMS推广员
+        /// <summary>
+        /// 获取产品类型
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetProductTypeList")]
+        public async Task<TableData> GetProductTypeList()
+        {
+            var result = new TableData();
+            try
+            {
+                return await _clientInfoApp.GetProductTypeList();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+        /// <summary>
+        ///  推广员列表（产品推广员模块）
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("QueryLIMSInfo")]
+        public async Task<TableData> QueryLIMSInfo(QueryLIMSInfoReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _clientInfoApp.QueryLIMSInfo(request);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 通过推广员获取已绑定的客户列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GetCardCodeById")]
+        public async Task<TableData> GetCardCodeById(QueryClientInfoReq req)
+        {
+            var result = new TableData();
+
+            try
+            {
+                result = await _clientInfoApp.GetCardCodeById(req);
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.InnerException?.Message ?? ex.Message ?? "";
+                result.Code = 500;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 添加lims推广员
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("AddLims")]
+        public async Task<Infrastructure.Response> AddLims(AddLIMSInfo req)
+        {
+            var result = new Response();
+            try
+            {
+                result = await _clientInfoApp.AddLims(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 为客户绑定LIMS推广员
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("AddLimsMap")]
+        public async Task<Infrastructure.Response> AddLimsMap(AddLIMSInfoMap req)
+        {
+            var result = new Response();
+            try
+            {
+                result = await _clientInfoApp.AddLimsMap(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 通过客户编码获取推广员信息
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GetLIMSByCode")]
+        public async Task<TableData> GetLIMSByCode(SelLIMSByCodeReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _clientInfoApp.GetLIMSByCode(req.CardCode, req.Type, req.page, req.limit);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 在客户详情页删除推广员
+        /// </summary>
+        /// <param name="Ids"></param>
+        /// <param name="CardCode"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("DeleteLIMS1")]
+        public async Task<Response<bool>> DeleteLIMS(List<int> Ids, string CardCode)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _clientInfoApp.DeleteLIMS(Ids, CardCode);
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 在推广员模块删除推广员
+        /// </summary>
+        /// <param name="Ids"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("DeleteLIMSInfo")]
+        public async Task<Response<bool>> DeleteLIMSInfo(List<int> Ids)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _clientInfoApp.DeleteLIMSInfo(Ids);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取用户列表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GetUserInfo")]
+        public async Task<TableData> GetUserInfo(QueryLIMSInfoReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _clientInfoApp.GetUserInfo(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 获取登录用户的slpcode
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetSlpCode")]
+        public async Task<Response<int>> GetSlpCode()
+        {
+            var result = new Response<int>();
+            try
+            {
+                result.Result = await _clientInfoApp.GetSlpCode();
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 通过cardcode获取slpcode
+        /// </summary>
+        /// <param name="CardCode"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("GetSlpCodeByCardCode")]
+        public Response<int> GetSlpCodeByCardCode(string CardCode)
+        {
+            var result = new Response<int>();
+            try
+            {
+                result.Result = _clientInfoApp.GetSlpCodeByCardCode(CardCode);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+        #endregion
 
     }
 }
