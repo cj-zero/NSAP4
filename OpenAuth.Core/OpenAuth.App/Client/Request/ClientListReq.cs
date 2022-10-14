@@ -42,6 +42,74 @@ namespace OpenAuth.App.Client.Request
         /// 详细地址
         /// </summary>
         public string address { get; set; }
+        /// <summary>
+        /// 人员规模
+        /// </summary>
+        public string U_StaffScale { get; set; }
+        /// <summary>
+        /// 贸易类型
+        /// </summary>
+        public string U_TradeType { get; set; }
+        /// <summary>
+        /// 客户来源
+        /// </summary>
+        public string U_ClientSource { get; set; }
+        /// <summary>
+        /// 所属行业
+        /// </summary>
+        public string U_CompSector { get; set; }
+        /// <summary>
+        /// 客户类型
+        /// </summary>
+        public string U_CardTypeStr { get; set; }
+        /// <summary>
+        /// 创建开始时间
+        /// </summary>
+        public DateTime? CreateStartTime { get; set; }
+        /// <summary>
+        /// 创建结束时间
+        /// </summary>
+        public DateTime? CreateEndTime { get; set; }
+        /// <summary>
+        /// 归属变更开始时间
+        /// </summary>
+        public DateTime? DistributionStartTime { get; set; }
+        /// <summary>
+        /// 归属变更结束时间
+        /// </summary>
+        public DateTime? DistributionEndTime { get; set; }
+        /// <summary>
+        /// 未清交货单余额开始
+        /// </summary>
+        public decimal? dNotesBalStart { get; set; }
+        /// <summary>
+        /// 未清交货单余额结束
+        /// </summary>
+        public decimal? dNotesBalEnd { get; set; }
+        /// <summary>
+        /// 未清订单余额开始
+        /// </summary>
+        public decimal? ordersBalStart { get; set; }
+        /// <summary>
+        /// 未清订单余额结束
+        /// </summary>
+        public decimal? ordersBalEnd { get; set; }
+        /// <summary>
+        /// 科目余额开始
+        /// </summary>
+        public decimal? balanceStart { get; set; }
+        /// <summary>
+        /// 科目余额结束
+        /// </summary>
+        public decimal? balanceEnd { get; set; }
+        /// <summary>
+        /// 科目总余额开始
+        /// </summary>
+        public decimal? balanceTotalStart { get; set; }
+        /// <summary>
+        /// 科目总余额结束
+        /// </summary>
+        public decimal? balanceTotalEnd { get; set; }
     }
     /// <summary>
     /// 查询所有技术员model
@@ -80,6 +148,8 @@ namespace OpenAuth.App.Client.Request
         public string StartTime { get; set; }
         public string EndTime { get; set; }
         public string CardCode { get; set; }
+
+        public bool isCount { get; set; } = false;
     }
     /// <summary>
     /// 客户下销售订单
