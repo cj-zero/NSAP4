@@ -795,12 +795,6 @@ namespace OpenAuth.App.ContractManager
                 throw new Exception("该合同申请单状态不可撤销。");
             }
 
-            //更改申请单合同申请单状态为撤回
-            await UnitWork.UpdateAsync<ContractApply>(q => q.Id == req.ContractId, q => new ContractApply
-            {
-                ContractStatus = "11"
-            });
-
             //记录撤回历史操作记录
             ContractOperationHistory contractHis = new ContractOperationHistory();
             var seleoh = await UnitWork.Find<ContractOperationHistory>(r => r.ContractApplyId.Equals(req.ContractId)).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
@@ -820,6 +814,13 @@ namespace OpenAuth.App.ContractManager
             {
                 await _flowInstanceApp.ReCall(new RecallFlowInstanceReq { FlowInstanceId = quotationObj.FlowInstanceId });
             }
+
+            //更改申请单合同申请单状态为撤回
+            await UnitWork.UpdateAsync<ContractApply>(q => q.Id == req.ContractId, q => new ContractApply
+            {
+                ContractStatus = "11",
+                FlowInstanceId = ""
+            });
 
             await UnitWork.SaveAsync();
         }
@@ -1377,7 +1378,7 @@ namespace OpenAuth.App.ContractManager
                     obj.ContractStatus = "-1";
                 }
 
-                if (loginContext.Roles.Any(r => r.Name.Equals("总助")) && obj.ContractStatus == "10")
+                if (loginContext.Roles.Any(r => r.Name.Equals("销售总助")) && obj.ContractStatus == "10")
                 {
                     contractHis.Action = "总助审批";
                     obj.ContractStatus = "-1";
@@ -1392,6 +1393,7 @@ namespace OpenAuth.App.ContractManager
                         contractSign.ContractApplyId = obj.Id;
                         contractSign.TogetherSignRole = "法务人员";
                         contractSign.ApprovalOrReject = req.IsReject ? 2 : 1;
+                        contractSign.FlowInstanceId = obj.FlowInstanceId;
                         await SaveContractSign(contractSign);
                     }
 
@@ -1402,6 +1404,7 @@ namespace OpenAuth.App.ContractManager
                         contractSign.ContractApplyId = obj.Id;
                         contractSign.TogetherSignRole = "售前工程师";
                         contractSign.ApprovalOrReject = req.IsReject ? 2 : 1;
+                        contractSign.FlowInstanceId = obj.FlowInstanceId;
                         await SaveContractSign(contractSign);
                     }
                 }
@@ -1415,6 +1418,7 @@ namespace OpenAuth.App.ContractManager
                         contractSign.ContractApplyId = obj.Id;
                         contractSign.TogetherSignRole = "售前工程师";
                         contractSign.ApprovalOrReject = req.IsReject ? 2 : 1;
+                        contractSign.FlowInstanceId = obj.FlowInstanceId;
                         await SaveContractSign(contractSign);
                     }
                 }
@@ -1428,13 +1432,14 @@ namespace OpenAuth.App.ContractManager
                         contractSign.ContractApplyId = obj.Id;
                         contractSign.TogetherSignRole = "法务人员";
                         contractSign.ApprovalOrReject = req.IsReject ? 2 : 1;
+                        contractSign.FlowInstanceId = obj.FlowInstanceId;
                         await SaveContractSign(contractSign);
                     }
                 }
 
                 //当法务人员和技术人员同时会签时才能将合同申请单传递给总助审批
-                var objs = UnitWork.Find<ContractSign>(r => r.ContractApplyId == obj.Id && r.ApprovalOrReject == 1);
-                if (objs != null && objs.Count() == 2)
+                var objs = await UnitWork.Find<ContractSign>(r => r.ContractApplyId == obj.Id && r.ApprovalOrReject == 1 && r.FlowInstanceId == obj.FlowInstanceId).GroupBy(r => new { r.ContractApplyId, r.TogetherSignRole, r.ApprovalOrReject, r.FlowInstanceId }).Select(r => new { r.Key.ContractApplyId, r.Key.TogetherSignRole, r.Key.ApprovalOrReject, r.Key.FlowInstanceId }).ToListAsync();
+                if (objs != null && objs.Count() >= 2)
                 {
                     contractHis.Action = "会签-法务&售前工程师同时完成审批";
                     obj.ContractStatus = "5";
@@ -1461,6 +1466,8 @@ namespace OpenAuth.App.ContractManager
                     VerificationReqModle.VerificationOpinion = req.Remark;
                     VerificationReqModle.NodeRejectType = "1";
                     contractHis.ApprovalResult = "驳回";
+                    req.contractApply.FlowInstanceId = "";
+
                     //节点权限验证
                     await _flowInstanceApp.Verification(VerificationReqModle);
                     obj.ContractStatus = "2";
@@ -1574,6 +1581,12 @@ namespace OpenAuth.App.ContractManager
         /// <returns>成功返回为空，失败抛出异常</returns>
         public async Task SaveContractSign(ContractSign req)
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
             var dbContext = UnitWork.GetDbContext<ContractSign>();
             using (var transaction = dbContext.Database.BeginTransactionAsync().ConfigureAwait(false).GetAwaiter().GetResult())
             {
@@ -1583,7 +1596,11 @@ namespace OpenAuth.App.ContractManager
                     {
                        ContractApplyId = req.ContractApplyId,
                        TogetherSignRole = req.TogetherSignRole,
-                       ApprovalOrReject = req.ApprovalOrReject
+                       ApprovalOrReject = req.ApprovalOrReject,
+                       FlowInstanceId = req.FlowInstanceId,
+                       CreateUserId = loginContext.User.Id,
+                       CreateName = loginContext.User.Name,
+                       CreateTime = DateTime.Now
                     });
 
                     await UnitWork.SaveAsync();
