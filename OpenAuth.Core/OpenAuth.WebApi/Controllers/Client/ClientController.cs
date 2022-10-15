@@ -960,12 +960,12 @@ namespace OpenAuth.WebApi.Controllers.Client
         /// <returns></returns>
         [HttpPost]
         [Route("DeleteLIMS1")]
-        public async Task<Response<bool>> DeleteLIMS(List<int> Ids, string CardCode)
+        public async Task<Response<bool>> DeleteLIMS(DeleteLIMSInfoMap req)
         {
             var result = new Response<bool>();
             try
             {
-                result.Result = await _clientInfoApp.DeleteLIMS(Ids, CardCode);
+                result.Result = await _clientInfoApp.DeleteLIMS(req);
             }
             catch (Exception ex)
             {
@@ -1051,6 +1051,27 @@ namespace OpenAuth.WebApi.Controllers.Client
             try
             {
                 result.Result = _clientInfoApp.GetSlpCodeByCardCode(CardCode);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 判断登录用户是否是推广员身份
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("isLims")]
+        public async Task<Response<string>> isLims()
+        {
+            var result = new Response<string>();
+            try
+            {
+                result.Result = await _clientInfoApp.isLims();
             }
             catch (Exception ex)
             {

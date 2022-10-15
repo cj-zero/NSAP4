@@ -76,7 +76,7 @@ namespace OpenAuth.Repository.Domain
         /// <summary>
         /// 数量
         /// </summary>
-        public decimal Quantity { get; set; }
+        public decimal? Quantity { get; set; }
 
         /// <summary>
         /// 版本号
