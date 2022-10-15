@@ -106,6 +106,8 @@ namespace OpenAuth.App.ClientRelation.Request
 
         public string Operatorid { get; set; }
 
+        public int Initial { get; set; }
+
     }
 
 

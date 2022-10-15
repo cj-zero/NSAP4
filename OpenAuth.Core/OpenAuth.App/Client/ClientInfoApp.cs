@@ -104,7 +104,8 @@ namespace OpenAuth.App.Client
                     ClientName = OCRD.CardName,
                     EndCustomerName = addClientInfoReq.Terminals,
                     Operator = loginUser.Name,
-                    Operatorid = loginUser.Id
+                    Operatorid = loginUser.Id,
+                    Initial = 0
                 });
 
             }
@@ -145,7 +146,8 @@ namespace OpenAuth.App.Client
                             ClientName = OCRD.CardName,
                             EndCustomerName = addClientInfoReq.Terminals,
                             Operator = loginUser.Name,
-                            Operatorid = loginUser.Id
+                            Operatorid = loginUser.Id,
+                            Initial = 0
                         });
                     }
                     else if (rJobNm == "修改业务伙伴")
@@ -1554,7 +1556,8 @@ namespace OpenAuth.App.Client
                         ClientName = OCRD.CardName,
                         EndCustomerName = updateClientJobReq.Terminals,
                         Operator = loginUser.Name,
-                        Operatorid = loginUser.Id
+                        Operatorid = loginUser.Id,
+                        Initial = 1
                     });
                 }
 
@@ -1578,7 +1581,8 @@ namespace OpenAuth.App.Client
                         ClientName = OCRD.CardName,
                         EndCustomerName = updateClientJobReq.Terminals,
                         Operator = loginUser.Name,
-                        Operatorid = loginUser.Id
+                        Operatorid = loginUser.Id,
+                        Initial = 1
                     });
                     result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(updateClientJobReq.JobId), UserId, OCRD.FreeText, "", 0);
                     if (result == "1")
@@ -1630,7 +1634,8 @@ namespace OpenAuth.App.Client
                         ClientName = OCRD.CardName,
                         EndCustomerName = updateClientJobReq.Terminals,
                         Operator = loginUser.Name,
-                        Operatorid = loginUser.Id
+                        Operatorid = loginUser.Id,
+                        Initial = 1
                     });
 
                 }
