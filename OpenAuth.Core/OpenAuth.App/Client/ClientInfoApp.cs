@@ -481,7 +481,7 @@ namespace OpenAuth.App.Client
                 tableName.Append("A.CntctPrsn,CONCAT(IFNULL(F.Name,''),IFNULL(G.Name,''),IFNULL(A.City,''),IFNULL(A.Building,'')) AS Address, ");
                 tableName.Append("A.Phone1,A.Cellular,A.U_is_reseller,");
                 tableName.Append("A.DNotesBal,A.OrdersBal,A.OprCount,A.CreateDate,A.upd_dt UpdateDate,A.DfTcnician ");
-                tableName.Append(", case  when LOCATE(\"C\", Y.SubNo) = 0 then 0 ELSE 1 end as relationFlag ");
+                tableName.Append(", case  when LOCATE(\"C\", Y.SubNo)  is NULL  then 0 ELSE 1 end as relationFlag ");
                 tableName.Append(" ,A.QryGroup2,A.QryGroup3 ");
                 tableName.Append(",C.GroupName,A.Free_Text,A.U_ClientSource,A.U_CompSector,A.U_TradeType,A.U_CardTypeStr,A.U_StaffScale ");
 
@@ -547,7 +547,7 @@ namespace OpenAuth.App.Client
                 tableName.Append("A.Phone1,A.Cellular, ");//,A.Balance,H.Balance AS BalanceTotal
                 tableName.Append("A.DNotesBal,A.OrdersBal,A.OprCount,A.upd_dt AS UpdateDate,A.SlpCode,A.DfTcnician ");
                 tableName.Append(",IFNULL(A.Balance,0) as Balance,0.00 as BalanceTotal ");
-                tableName.Append(", case  when LOCATE(\"C\", Y.SubNo) = 0 then 0 ELSE 1 end as relationFlag ");
+                tableName.Append(", case  when LOCATE(\"C\", Y.SubNo)  is NULL  then 0 ELSE 1 end as relationFlag ");
                 tableName.Append(" , A.validFor,A.validFrom,A.validTo,A.ValidComm,A.frozenFor,A.frozenFrom,A.frozenTo,A.FrozenComm,A.QryGroup2,A.QryGroup3 ");
                 tableName.Append(",C.GroupName,A.Free_Text");
                 //90天内未清收款金额
