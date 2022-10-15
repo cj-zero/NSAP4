@@ -135,13 +135,13 @@ namespace OpenAuth.App.Client
                     else if (rJobNm == "修改业务伙伴")
                     {
                         //添加4.0关系
-                        await _clientRelationApp.AddJobRelations(new ClientRelation.Request.AddJobRelReq
-                        {
-                            Jobid = Convert.ToInt32(JobId),
-                            Terminals = addClientInfoReq.Terminals,
-                            Creator = loginUser.Name,
-                            CreatorId = loginUser.Id
-                        });
+                        //await _clientRelationApp.AddJobRelations(new ClientRelation.Request.AddJobRelReq
+                        //{
+                        //    Jobid = Convert.ToInt32(JobId),
+                        //    Terminals = addClientInfoReq.Terminals,
+                        //    Creator = loginUser.Name,
+                        //    CreatorId = loginUser.Id
+                        //});
 
                         result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(result), userID, OCRD.FreeText, "", 0);
                         if (result == "1")
