@@ -356,11 +356,16 @@ namespace OpenAuth.App.ClientRelation
             var  finalSubnodes = subListNodes.Count ==0 ? "" : JsonConvert.SerializeObject(subListNodes);
 
             //update the script jobrelation
-            var jobrelations = UnitWork.FindSingle<OpenAuth.Repository.Domain.JobClientRelation>(a => a.Jobid == jobScript.JobId && a.IsDelete == 0);
-            jobrelations.Terminals = jobScript.EndCustomerName;
+            if (jobScript.Initial == 1)
+            {
+                var jobrelations = UnitWork.FindSingle<OpenAuth.Repository.Domain.JobClientRelation>(a => a.Jobid == jobScript.JobId && a.IsDelete == 0);
+                jobrelations.Terminals = jobScript.EndCustomerName;
+                await UnitWork.UpdateAsync<JobClientRelation>(jobrelations);
+            }
+            
 
             // add to db
-            await UnitWork.UpdateAsync<JobClientRelation>(jobrelations);
+            
             await UnitWork.AddAsync<OpenAuth.Repository.Domain.ClientRelation, int>(new Repository.Domain.ClientRelation
             {
                 ClientName = jobScript.ClientName,
