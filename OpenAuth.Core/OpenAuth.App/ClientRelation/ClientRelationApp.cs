@@ -849,7 +849,7 @@ namespace OpenAuth.App.ClientRelation
         /// <returns></returns>
         public async Task<bool> AddJobRelations(AddJobRelReq jrr)
         {
-            if (!jrr.Terminals.Contains("C"))
+            if (!string.IsNullOrEmpty(jrr.Terminals)&& !jrr.Terminals.Contains("C"))
             {
                 jrr.Terminals = "";
             }
