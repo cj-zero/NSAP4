@@ -548,7 +548,7 @@ namespace OpenAuth.App.Client
                 tableName.Append("A.Phone1,A.Cellular, ");//,A.Balance,H.Balance AS BalanceTotal
                 tableName.Append("A.DNotesBal,A.OrdersBal,A.OprCount,A.upd_dt AS UpdateDate,A.SlpCode,A.DfTcnician ");
                 tableName.Append(",IFNULL(A.Balance,0) as Balance,0.00 as BalanceTotal ");
-                tableName.Append(", case  when LOCATE(\"C\", Y.SubNo) = 0 then 0 ELSE 1 end as relationFlag ");
+                tableName.Append(", case  when LOCATE(\"C\", Y.SubNo)  is NULL  then 0 ELSE 1 end as relationFlag ");
                 tableName.Append(" , A.validFor,A.validFrom,A.validTo,A.ValidComm,A.frozenFor,A.frozenFrom,A.frozenTo,A.FrozenComm,A.QryGroup2,A.QryGroup3 ");
                 tableName.Append(",C.GroupName,A.Free_Text");
                 //90天内未清收款金额
