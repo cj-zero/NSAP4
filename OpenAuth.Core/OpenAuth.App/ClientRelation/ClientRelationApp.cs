@@ -69,7 +69,7 @@ namespace OpenAuth.App.ClientRelation
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
 
-            var clientRel = await UnitWork.FindSingleAsync<OpenAuth.Repository.Domain.ClientRelation>(u => u.ClientNo == clientId && u.Operatorid == loginContext.User.Id && u.IsActive ==1&&u.IsDelete ==0);
+            var clientRel = await UnitWork.FindSingleAsync<OpenAuth.Repository.Domain.ClientRelation>(u => u.ClientNo == clientId && u.Operatorid == loginContext.User.Id && u.IsActive ==1 && u.ScriptFlag ==0 &&u.IsDelete ==0);
             if (clientRel == null)
             {
                 return rgp;
@@ -78,11 +78,11 @@ namespace OpenAuth.App.ClientRelation
             StringBuilder strSql = new StringBuilder();
             strSql.AppendFormat("with recursive cte (ClientNo, ClientName,Flag,ParentNo,SubNo) as ( ");
             strSql.AppendFormat("  select     a.ClientNo, a.ClientName,a.Flag,a.ParentNo,a.SubNo  from  clientrelation a ");
-            strSql.AppendFormat("  where      a.IsDelete = 0 && a.IsActive =1 && a.OperatorId = \"{1}\" &&  (LOCATE(\"{0}\", a.SubNo) !=0 || LOCATE(\"{0}\", a.ParentNo) !=0) ", clientId, loginContext.User.Id);
+            strSql.AppendFormat("  where      a.IsDelete = 0 && a.IsActive =1 && a.ScriptFlag = 0 && a.OperatorId = \"{1}\" &&  (LOCATE(\"{0}\", a.SubNo) !=0 || LOCATE(\"{0}\", a.ParentNo) !=0) ", clientId, loginContext.User.Id);
             strSql.AppendFormat("  union DISTINCT ");
             strSql.AppendFormat("  select     p.ClientNo, p.ClientName,p.Flag,p.ParentNo,p.SubNo from  clientrelation p ");
             strSql.AppendFormat("   inner join cte ");
-            strSql.AppendFormat("           on p.IsDelete = 0 && p.IsActive =1 && p.OperatorId = \"{0}\"  && (LOCATE(cte.ClientNo, p.SubNo)  !=0 || LOCATE(cte.ClientNo, p.ParentNo)  !=0)   limit 100", loginContext.User.Id);
+            strSql.AppendFormat("           on p.IsDelete = 0 && p.IsActive =1 && p.ScriptFlag = 0 && p.OperatorId = \"{0}\"  && (LOCATE(cte.ClientNo, p.SubNo)  !=0 || LOCATE(cte.ClientNo, p.ParentNo)  !=0)   limit 100", loginContext.User.Id);
             strSql.AppendFormat(" ) ");
             strSql.AppendFormat(" select * from cte; ");
             List<RawGraph> rawGraphList = new List<RawGraph>();
