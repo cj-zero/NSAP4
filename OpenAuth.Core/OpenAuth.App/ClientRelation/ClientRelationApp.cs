@@ -318,7 +318,7 @@ namespace OpenAuth.App.ClientRelation
             bool result = true;
             //if exists then delete  the previous script and store in history table 
             bool existFlag = false;
-            var existRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.JobId == jobScript.JobId && a.ScriptFlag == 1);
+            var existRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.JobId == jobScript.JobId && a.ScriptFlag == 1 && a.IsActive ==1);
             if (existRelation != null)
             {
                 existRelation.IsActive = 0;
