@@ -69,7 +69,7 @@ namespace OpenAuth.App.ClientRelation
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
 
-            var clientRel = await UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(u => u.ClientNo == clientId && u.Operatorid == loginContext.User.Id && u.IsActive ==1&&u.IsDelete ==0).FirstAsync();
+            var clientRel = await UnitWork.FindSingleAsync<OpenAuth.Repository.Domain.ClientRelation>(u => u.ClientNo == clientId && u.Operatorid == loginContext.User.Id && u.IsActive ==1&&u.IsDelete ==0);
             if (clientRel == null)
             {
                 return rgp;
