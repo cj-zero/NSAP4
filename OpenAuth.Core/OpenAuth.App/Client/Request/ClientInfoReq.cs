@@ -1426,6 +1426,12 @@ namespace OpenAuth.App.Client.Request
         public List<string> LimsIdList { get; set; }
     }
 
+    public class DeleteLIMSInfoMap
+    {
+        public string CardCode { get; set; }
+        public List<int> LimsIdList { get; set; }
+    }
+
     public class SelLIMSByCodeReq : PageReq
     {
         public string CardCode { get; set; }
@@ -1440,5 +1446,10 @@ namespace OpenAuth.App.Client.Request
     public class QueryLIMSInfoReq : PageReq
     {
         public string Type { get; set; }
+        /// <summary>
+        /// 是否客户详情页过来的数据
+        /// </summary>
+        public bool IsClientDetail { get; set; }
+        public string CardCode { get; set; }
     }
 }

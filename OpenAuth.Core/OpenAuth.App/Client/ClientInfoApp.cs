@@ -167,7 +167,8 @@ namespace OpenAuth.App.Client
                     else if (rJobNm == "修改业务伙伴")
                     {
                         //添加4.0关系
-                        await _clientRelationApp.AddJobRelations(new ClientRelation.Request.AddJobRelReq {
+                        await _clientRelationApp.AddJobRelations(new ClientRelation.Request.AddJobRelReq
+                        {
                             Jobid = Convert.ToInt32(JobId),
                             Terminals = addClientInfoReq.Terminals,
                             Creator = loginUser.Name,
@@ -1898,7 +1899,7 @@ namespace OpenAuth.App.Client
             else
             {
                 strSql.AppendFormat("SELECT COUNT(*) FROM {0}.wfa_job ", "nsap_base");
-                strSql.Append("WHERE job_type_id=?JobType AND sbo_id=?SboId AND user_id=?UserId AND job_state=?JobState ");
+                strSql.Append("WHERE job_type_id=?JobType AND sbo_id=?SboId AND job_state=?JobState ");// AND user_id=?UserId
                 if (!string.IsNullOrEmpty(CardCode))
                 {
                     strSql.AppendFormat(" AND (card_code='{0}' OR card_name=?CardName)", CardCode);
@@ -1911,12 +1912,23 @@ namespace OpenAuth.App.Client
                 {
                     new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?JobType",    JobType),
                     new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?SboId",     SboId),
-                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?UserId",     UserId),
+                    //new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?UserId",     UserId),
                     new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?JobState",     1),
                     new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?CardName",     CardName),
 
                 };
-                return Convert.ToInt32(UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara).ToString()) > 0 ? "true" : "false";
+                int result = Convert.ToInt32(UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara).ToString());
+                List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara1 = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
+                {
+                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?JobType",    JobType),
+                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?SboId",     SboId),
+                    //new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?UserId",     UserId),
+                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?JobState",     0),
+                    new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?CardName",     CardName),
+
+                };
+                int result1 = Convert.ToInt32(UnitWork.ExecuteScalar(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, strPara1).ToString());
+                return result + result1 > 0 ? "true" : "false";
             }
         }
         #endregion
@@ -3083,6 +3095,12 @@ namespace OpenAuth.App.Client
                                CreateUser = n.CreateUser,
                                CreateDate = n.CreateDate,
                            };
+                if (request.IsClientDetail)
+                {
+                    //已绑定客户的推广员
+                    var userlist = UnitWork.Find<LimsInfoMap>(q => q.CardCode == request.CardCode).Select(q => q.LimsInfoId).ToList();
+                    objs = objs.Where(q => !userlist.Contains(q.Id));
+                }
                 var LimsInfoList = objs.OrderByDescending(r => r.CreateDate).Skip((request.page - 1) * request.limit).Take(request.limit).ToList();
 
                 var LimsInfoListResp = LimsInfoList.Select(r => new
@@ -3195,19 +3213,6 @@ namespace OpenAuth.App.Client
                 //获取业务员编码
                 int User_Id = UnitWork.Find<User>(q => q.Id == item).Select(q => q.User_Id).FirstOrDefault().Value;
                 int slpCode = UnitWork.Find<sbo_user>(q => q.user_id == User_Id).Select(q => q.sale_id).FirstOrDefault().Value;
-                string message = "";
-                LimsInfo info = UnitWork.Find<LimsInfo>(q => q.SlpCode == slpCode && q.Type == req.Type).FirstOrDefault();
-                if (info != null)
-                {
-                    string name = UnitWork.Find<crm_oslp>(q => q.SlpCode == slpCode).Select(q => q.SlpName).FirstOrDefault();
-                    message = $"{name}已存在推广员列表中";
-                    if (!string.IsNullOrWhiteSpace(message))
-                    {
-                        result.Code = 500;
-                        result.Message = message;
-                        return result;
-                    }
-                }
                 LimsInfoList.Add(new LimsInfo
                 {
                     UserId = item,
@@ -3242,21 +3247,7 @@ namespace OpenAuth.App.Client
             List<LimsInfoMap> list = new List<LimsInfoMap>();
             for (int i = 0; i < req.LimsIdList.Count; i++)
             {
-                string message = "";
                 int LimsInfoId = req.LimsIdList[i].ToInt();
-                LimsInfoMap info = UnitWork.Find<LimsInfoMap>(q => q.LimsInfoId == LimsInfoId).FirstOrDefault();
-                if (info != null)
-                {
-                    int SlpCode = UnitWork.Find<LimsInfo>(q => q.Id == LimsInfoId).FirstOrDefault().SlpCode;
-                    string name = UnitWork.Find<crm_oslp>(q => q.SlpCode == SlpCode).Select(q => q.SlpName).FirstOrDefault();
-                    message = $"{name}已绑定该客户";
-                    if (!string.IsNullOrWhiteSpace(message))
-                    {
-                        result.Code = 500;
-                        result.Message = message;
-                        return result;
-                    }
-                }
                 list.Add(new LimsInfoMap
                 {
                     CardCode = req.CardCode,
@@ -3291,22 +3282,26 @@ namespace OpenAuth.App.Client
                                u.Name,
                                n.CreateUser,
                                n.CreateDate
-                           }).ToList();
+                           }).ToList();//on new { User_Id = n.User_Id.ToInt() } equals new { User_Id = ud.user_id.ToInt() }
+            var userDept = (from ud in UnitWork.Find<base_user_detail>(null)
+                            join d in UnitWork.Find<base_dep>(null) on ud.dep_id equals d.dep_id
+                            select new
+                            {
+                                ud.user_id,
+                                d.dep_nm
+                            }).ToList();
             var data = (from n in Mapdata
-                        join ud in UnitWork.Find<base_user_detail>(null) on new { User_Id = n.User_Id.ToInt() } equals new { User_Id = ud.user_id.ToInt() } into temp1
-                        from t1 in temp1.DefaultIfEmpty()
-                        join d in UnitWork.Find<base_dep>(null) on t1.dep_id equals d.dep_id into temp2
-                        from t2 in temp2.DefaultIfEmpty()
+                        join ud in userDept on new { User_Id = n.User_Id.ToInt() } equals new { User_Id = ud.user_id.ToInt() }
                         select new
                         {
                             Id = n.Id,
                             Type = n.Type,
                             Name = n.Name,
-                            dep_nm = t2 == null ? "" : t2.dep_nm,
+                            dep_nm = ud.dep_nm,
                             CreateUser = n.CreateUser,
                             CreateDate = n.CreateDate
                         }).ToList();
-            var dataquery = data.Skip((page - 1) * limit).Take(limit).ToList();//.OrderByDescending(q => q.CreateDate)
+            var dataquery = data.OrderByDescending(q => q.CreateDate).Skip((page - 1) * limit).Take(limit).ToList();
             tableData.Data = dataquery;
             tableData.Count = data.Count();
             return tableData;
@@ -3319,16 +3314,16 @@ namespace OpenAuth.App.Client
         /// <param name="CardCode"></param>
         /// <returns></returns>
         /// <exception cref="CommonException"></exception>
-        public async Task<bool> DeleteLIMS(List<int> Ids, string CardCode)
+        public async Task<bool> DeleteLIMS(DeleteLIMSInfoMap req)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            foreach (var item in Ids)
+            foreach (var item in req.LimsIdList)
             {
-                await UnitWork.DeleteAsync<LimsInfoMap>(q => q.Id == item && q.CardCode == CardCode);
+                await UnitWork.DeleteAsync<LimsInfoMap>(q => q.Id == item && q.CardCode == req.CardCode);
             }
             await UnitWork.SaveAsync();
 
@@ -3365,8 +3360,10 @@ namespace OpenAuth.App.Client
         public async Task<TableData> GetUserInfo(QueryLIMSInfoReq req)
         {
             var tableData = new TableData();
+            //已设置为推广员的用户
+            var userlist = UnitWork.Find<LimsInfo>(q => q.Type == req.Type).Select(q => q.UserId).ToList();
             //销售员部门数据
-            var deptData = await (from s in UnitWork.Find<sbo_user>(null)
+            var deptData = await (from s in UnitWork.Find<sbo_user>(q => q.sbo_id == Define.SBO_ID && q.sale_id != 0)
                                   join ud in UnitWork.Find<base_user_detail>(null) on s.user_id equals ud.user_id
                                   join d in UnitWork.Find<base_dep>(null) on ud.dep_id equals d.dep_id
                                   where s.sbo_id == Define.SBO_ID
@@ -3375,7 +3372,7 @@ namespace OpenAuth.App.Client
                                       UserId = (int)s.user_id,
                                       dept = d.dep_alias,
                                   }).Distinct().ToListAsync();
-            var data = from n in await UnitWork.Find<User>(null).ToListAsync()
+            var data = from n in await UnitWork.Find<User>(q => !userlist.Contains(q.Id)).ToListAsync()
                        join m in deptData on n.User_Id equals m.UserId
                        select new
                        {
@@ -3520,6 +3517,29 @@ namespace OpenAuth.App.Client
         {
             int SlpCode = UnitWork.Find<crm_ocrd>(q => q.CardCode == CardCode).Select(q => q.SlpCode).FirstOrDefault().Value;
             return SlpCode;
+        }
+
+        /// <summary>
+        /// 判断登录用户是否是推广员身份
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="CommonException"></exception>
+        public async Task<string> isLims()
+        {
+            int slpCode = 0;
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            int userId = loginContext.User.User_Id.Value;
+            var sbouser = await UnitWork.Find<sbo_user>(q => q.user_id == userId).FirstOrDefaultAsync();
+            if (sbouser != null)
+            {
+                slpCode = sbouser.sale_id.Value;
+            }
+            var limsList = UnitWork.Find<LimsInfo>(q => q.SlpCode == slpCode).ToList();
+            return limsList.Count > 0 ? "true" : "false";
         }
         #endregion
     }
