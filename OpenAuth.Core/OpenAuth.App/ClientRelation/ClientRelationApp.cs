@@ -354,7 +354,13 @@ namespace OpenAuth.App.ClientRelation
                 subListNodes.AddRange(subList.Select(a => a.customerNo).ToList());
             }
             var  finalSubnodes = subListNodes.Count ==0 ? "" : JsonConvert.SerializeObject(subListNodes);
+
+            //update the script jobrelation
+            var jobrelations = UnitWork.FindSingle<OpenAuth.Repository.Domain.JobClientRelation>(a => a.Jobid == jobScript.JobId && a.IsDelete == 0);
+            jobrelations.Terminals = jobScript.EndCustomerName;
+
             // add to db
+            await UnitWork.UpdateAsync<JobClientRelation>(jobrelations);
             await UnitWork.AddAsync<OpenAuth.Repository.Domain.ClientRelation, int>(new Repository.Domain.ClientRelation
             {
                 ClientName = jobScript.ClientName,
@@ -857,19 +863,29 @@ namespace OpenAuth.App.ClientRelation
         /// <summary>
         /// 获取终端关系
         /// </summary>
-        /// <param name="clientNo">客户编号</param>
+        /// <param name="clientNo"></param>
+        /// <param name="flag"></param>
         /// <returns></returns>
-        public async Task<JobClientRelation> GetTerminals(string clientNo)
+        public async Task<JobClientRelation> GetTerminals(string clientNo, int flag)
         {
             JobClientRelation result = new JobClientRelation();
-            var  relatedRelation =  UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a =>a.ClientNo == clientNo && a.IsDelete == 0 && a.IsActive == 1 );
-            if (relatedRelation == null)
+            int queryId ;
+            if (flag == 0)
             {
-                //add to log file to explain why 
-                _logger.LogError("获取终端关系，未找到对应的Job,请求参数为:" + JsonConvert.SerializeObject(clientNo));
-                return result;
+                var relatedRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == clientNo && a.IsDelete == 0 && a.IsActive == 1);
+                if (relatedRelation == null)
+                {
+                    //add to log file to explain why 
+                    _logger.LogError("获取终端关系，未找到对应的Job,请求参数为:" + JsonConvert.SerializeObject(clientNo));
+                    return result;
+                }
+                queryId = relatedRelation.JobId;
             }
-            result = await UnitWork.FindSingleAsync<OpenAuth.Repository.Domain.JobClientRelation>(a => a.Jobid == relatedRelation.JobId && a.IsDelete == 0);
+            else
+            {
+                queryId = Convert.ToInt32(clientNo);
+            }
+            result = await UnitWork.FindSingleAsync<OpenAuth.Repository.Domain.JobClientRelation>(a => a.Jobid == queryId && a.IsDelete == 0);
             return result;
         }
 

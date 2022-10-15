@@ -190,12 +190,12 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="clientNo"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<Response<JobClientRelation>> GetTerminals(string clientNo)
+        public async Task<Response<JobClientRelation>> GetTerminals(string clientNo, int flag)
         {
             var result = new Response<JobClientRelation>();
             try
             {
-                result.Result = await _app.GetTerminals(clientNo);
+                result.Result = await _app.GetTerminals(clientNo,flag);
             }
             catch (Exception ex)
             {
