@@ -19,6 +19,11 @@ namespace OpenAuth.Repository.Domain.Serve
         [Description("客户名称")]
         public string CardName { get; set; }
         /// <summary>
+        /// 客户编码
+        /// </summary>
+        [Description("客户编码")]
+        public string CardCode { get; set; }
+        /// <summary>
         /// 客户来源 0:领英、1:国内展会、2:国外展会、3:客户介绍、4:新威官网、5:其他
         /// </summary>
         [Description("客户来源")]

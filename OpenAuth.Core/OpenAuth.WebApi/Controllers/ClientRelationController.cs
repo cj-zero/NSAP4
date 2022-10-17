@@ -184,7 +184,47 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 获取终端关系
+        /// </summary>
+        /// <param name="clientNo"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<JobClientRelation>> GetTerminals(string clientNo, int flag)
+        {
+            var result = new Response<JobClientRelation>();
+            try
+            {
+                result.Result = await _app.GetTerminals(clientNo,flag);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
 
+            return result;
+        }
+
+        /// <summary>
+        /// 手动同步关系
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<bool> GetSyncRelations()
+        {
+            var result = true;
+            try
+            {
+                result = await _app.SyncRelations();
+            }
+            catch (Exception ex)
+            {
+
+            }
+
+            return result;
+        }
 
 
     }

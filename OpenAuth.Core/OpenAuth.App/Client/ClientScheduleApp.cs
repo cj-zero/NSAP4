@@ -72,7 +72,7 @@ namespace OpenAuth.App.Client
             {
                 clientSchedule.SlpCode = SlpCode;
                 clientSchedule.SlpName = SlpName;
-                clientSchedule.CreateUser = loginUser.User_Id.Value;
+                clientSchedule.CreateUser = loginUser.Name;
                 clientSchedule.CreateDate = DateTime.Now;
                 clientSchedule.IsDelete = false;
                 clientSchedule.IsRemind = false;
@@ -94,7 +94,7 @@ namespace OpenAuth.App.Client
                 info.ScheduleType = clientSchedule.ScheduleType;
                 info.ScheduleRemark = clientSchedule.ScheduleRemark;
                 info.Remark = clientSchedule.Remark;
-                info.UpdateUser = loginUser.User_Id.Value;
+                info.UpdateUser = loginUser.Name;
                 info.UpdateDate = DateTime.Now;
                 await UnitWork.UpdateAsync<ClientSchedule>(info);
             }

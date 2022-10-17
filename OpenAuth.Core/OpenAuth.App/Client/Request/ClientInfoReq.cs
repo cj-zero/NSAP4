@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OpenAuth.App.Request;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -12,6 +13,10 @@ namespace OpenAuth.App.Client.Request
         public int funcId { get; set; }
         public string keyId { get; set; }
         public string submitType { get; set; }
+        /// <summary>
+        /// 终端关系
+        /// </summary>
+        public string Terminals { get; set; }
         /// <summary>
         /// 请求类型add或者edit
         /// </summary>
@@ -33,6 +38,11 @@ namespace OpenAuth.App.Client.Request
         /// 提交或是保存草稿
         /// </summary>
         public string submitType { get; set; }
+
+        /// <summary>
+        /// 终端关系
+        /// </summary>
+        public string Terminals { get; set; }
         /// <summary>
         /// 详情
         /// </summary>
@@ -1041,7 +1051,14 @@ namespace OpenAuth.App.Client.Request
 
         public string IsDefault { get; set; }
 
-
+        /// <summary>
+        /// 是否是推广员维护的
+        /// </summary>
+        public bool isLims { get; set; } = false;
+        /// <summary>
+        /// 业务员编码
+        /// </summary>
+        public int slpCode { get; set; }
 
     }
     public class clientOCPRReq
@@ -1255,6 +1272,14 @@ namespace OpenAuth.App.Client.Request
         /// </summary>
 
         public string IsDefault { get; set; }
+        /// <summary>
+        /// 是否是推广员维护的
+        /// </summary>
+        public bool isLims { get; set; } = false;
+        /// <summary>
+        /// 业务员编码
+        /// </summary>
+        public int slpCode { get; set; }
 
     }
     public class billAttchmentReq
@@ -1384,4 +1409,47 @@ namespace OpenAuth.App.Client.Request
 
     }
 
+    //添加LIMS推广员
+    public class AddLIMSInfo
+    {
+        public List<string> userIdList { get; set; }
+        public string Type { get; set; }
+
+        public int Count { get; set; } = 0;
+    }
+
+    //为客户绑定LIMS推广员
+    public class AddLIMSInfoMap
+    {
+        public string CardCode { get; set; }
+        public string CardName { get; set; }
+        public List<string> LimsIdList { get; set; }
+    }
+
+    public class DeleteLIMSInfoMap
+    {
+        public string CardCode { get; set; }
+        public List<int> LimsIdList { get; set; }
+    }
+
+    public class SelLIMSByCodeReq : PageReq
+    {
+        public string CardCode { get; set; }
+        public string Type { get; set; }
+    }
+
+    public class QueryClientInfoReq : PageReq
+    {
+        public int id { get; set; }
+    }
+
+    public class QueryLIMSInfoReq : PageReq
+    {
+        public string Type { get; set; }
+        /// <summary>
+        /// 是否客户详情页过来的数据
+        /// </summary>
+        public bool IsClientDetail { get; set; }
+        public string CardCode { get; set; }
+    }
 }

@@ -2,6 +2,7 @@
 using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Interface;
+using OpenAuth.App.Nwcali.Response;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
@@ -255,7 +256,7 @@ namespace OpenAuth.App.Nwcali
             }
             else
             {
-                var query = UnitWork.Find<NwcaliBaseInfo>(null)
+                var query = UnitWork.Find<NwcaliBaseInfo>(c => c.CreateTime < DateTime.Parse("2022-10-08"))
                     .WhereIf(!string.IsNullOrEmpty(req.Name), a => a.Operator == req.Name)
                     .WhereIf(user.Count() > 0, a => userIdList.Contains(a.OperatorId))
                     .WhereIf(req.StartTime != null, c => c.Time.Value >= req.StartTime)
@@ -345,7 +346,7 @@ namespace OpenAuth.App.Nwcali
             }
             else
             {
-                var query = UnitWork.Find<NwcaliBaseInfo>(a => a.OperatorId == req.Id)
+                var query = UnitWork.Find<NwcaliBaseInfo>(a => a.OperatorId == req.Id && a.CreateTime < DateTime.Parse("2022-10-08"))
                     .WhereIf(!string.IsNullOrEmpty(req.Name), a => a.Operator == req.Name)
                     .WhereIf(req.StartTime != null, c => c.Time.Value >= req.StartTime)
                     .WhereIf(req.EndTime != null, c => c.Time.Value <= req.EndTime);
@@ -398,6 +399,232 @@ namespace OpenAuth.App.Nwcali
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// 校准报表2.0
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetCalibrateReportNew(QueryCertReportReq req)
+        {
+            var result = new TableData();
+
+            Repository.Domain.Org Org = new Repository.Domain.Org();
+            List<User> user = new List<User>();
+            if (req.Type <= 0)
+            {
+                result.Code = 500;
+                result.Message = "校准类型有误！";
+                return result;
+            }
+
+            if (!string.IsNullOrEmpty(req.Org))
+            {
+                Org = await UnitWork.Find<Repository.Domain.Org>(a => a.Name == req.Org).FirstOrDefaultAsync();
+                if (Org == null)
+                {
+                    result.Code = 500;
+                    result.Message = "部门名字有误！";
+                    return result;
+                }
+                user = (from r in UnitWork.Find<Relevance>(a => a.Key == "UserOrg" && a.SecondId == req.Org)
+                        join u in UnitWork.Find<User>(null) on r.FirstId equals u.Id
+                        select u).ToList();
+            }
+            int sum = 0;
+            List<string> userIdList = user.Select(a => a.Id).ToList();
+            if (req.Type == 1)
+            {
+
+            }
+            else if (req.Type == 2)
+            {
+                var query = await UnitWork.Find<NwcaliBaseInfo>(c => c.CreateTime >= DateTime.Parse("2022-10-08") && !string.IsNullOrWhiteSpace(c.StartTime.ToString()))
+                    .WhereIf(!string.IsNullOrEmpty(req.Name), a => a.Operator == req.Name)
+                    .WhereIf(user.Count() > 0, a => userIdList.Contains(a.OperatorId))
+                    .WhereIf(req.StartTime != null, c => c.StartTime.Value >= req.StartTime)
+                    .WhereIf(req.EndTime != null, c => c.StartTime.Value <= req.EndTime)
+                    .WhereIf(req.CompleteStartTime != null, c => c.Time.Value >= req.StartTime)
+                    .WhereIf(req.CompleteEndTime != null, c => c.Time.Value <= req.EndTime)
+                    .WhereIf(!string.IsNullOrEmpty(req.TesterSn), a => a.TesterSn == req.TesterSn)
+                    .WhereIf(!string.IsNullOrEmpty(req.TesterModel), a => a.TesterModel == req.TesterModel)
+                    //.WhereIf(!string.IsNullOrEmpty(req.CalibrationStatus), a => a.CalibrationStatus == req.CalibrationStatus)
+                    .Select(a => new { a.Time, a.StartTime, a.CalibrationStatus, a.Operator, a.OperatorId, a.TesterSn, a.CreateTime, a.TotalSeconds }).ToListAsync();
+                var summary = query.GroupBy(c => c.TesterSn).Select(c => c.OrderByDescending(o => o.CreateTime).First()).ToList();
+                var extra = new { Total = summary.Count(), OKCount = summary.Where(c => c.CalibrationStatus == "OK").Count(), NGCount = summary.Where(c => c.CalibrationStatus == "NG").Count() };
+                summary = query.GroupBy(c => new { c.TesterSn, c.OperatorId }).Select(c => c.OrderByDescending(o => o.CreateTime).First()).ToList();
+                //最新记录的状态
+                if (!string.IsNullOrEmpty(req.CalibrationStatus))
+                {
+                    summary = summary.Where(c => c.CalibrationStatus == req.CalibrationStatus).ToList();
+                }
+
+                var userIds = summary.Select(c => c.OperatorId).ToList();
+                var orgInfo = await (from r in UnitWork.Find<Relevance>(a => a.Key == "UserOrg")
+                                     join o in UnitWork.Find<Repository.Domain.Org>(null) on r.SecondId equals o.Id
+                                     where userIds.Contains(r.FirstId)
+                                     select new { r.FirstId, o.Name, o.CascadeId }).ToListAsync();
+
+                var summaryUser = summary.GroupBy(c => c.OperatorId).Select(c => new CalibrateReportResp
+                {
+                    Id = c.Key,
+                    Name = c.First().Operator,
+                    TotalCount = c.Count(),
+                    OKCount = c.Where(w => w.CalibrationStatus == "OK").Count(),
+                    NGCount = c.Where(w => w.CalibrationStatus == "NG").Count(),
+                    OrgName = orgInfo.Where(w => w.FirstId == c.Key).FirstOrDefault()?.Name,
+                    //Time = GetTime(c.Average(c => c.TotalSeconds.ToDouble()))
+                    Time = c.Average(c => c.TotalSeconds.ToDouble())
+                }).ToList();
+                result.Extra = JsonHelper.Instance.Serialize(extra);
+                result.Data = summaryUser;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 校准报表详情2.0
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetCalibrateDetailReportNew(QueryCertReportReq req)
+        {
+            var result = new TableData();
+
+            if (string.IsNullOrEmpty(req.Id))
+            {
+                result.Code = 500;
+                result.Message = "人员ID有误！";
+                return result;
+            }
+            if (req.Type <= 0)
+            {
+                result.Code = 500;
+                result.Message = "校准类型有误！";
+                return result;
+            }
+
+            if (req.Type == 1)
+            {
+
+            }
+            else if (req.Type == 2)
+            {
+                var query = await UnitWork.Find<NwcaliBaseInfo>(c => c.CreateTime >= DateTime.Parse("2022-10-08") && !string.IsNullOrWhiteSpace(c.StartTime.ToString())).Include(c => c.Etalons)
+                    .WhereIf(!string.IsNullOrEmpty(req.Name), a => a.Operator == req.Name)
+                    .WhereIf(!string.IsNullOrEmpty(req.Id), a => a.OperatorId == req.Id)
+                    //.WhereIf(user.Count() > 0, a => userIdList.Contains(a.OperatorId))
+                    .WhereIf(req.StartTime != null, c => c.StartTime.Value >= req.StartTime)
+                    .WhereIf(req.EndTime != null, c => c.StartTime.Value <= req.EndTime)
+                    .WhereIf(req.CompleteStartTime != null, c => c.Time.Value >= req.StartTime)
+                    .WhereIf(req.CompleteEndTime != null, c => c.Time.Value <= req.EndTime)
+                    .WhereIf(!string.IsNullOrEmpty(req.TesterSn), a => a.TesterSn == req.TesterSn)
+                    .WhereIf(!string.IsNullOrEmpty(req.TesterModel), a => a.TesterModel == req.TesterModel)
+                    //.WhereIf(!string.IsNullOrEmpty(req.CalibrationStatus), a => a.CalibrationStatus == req.CalibrationStatus)
+                    .Select(a => new { a.Time, a.StartTime, a.CalibrationStatus, a.Operator, a.OperatorId, a.TesterSn, a.CreateTime, a.TotalSeconds, a.Issuer, a.TesterModel, a.CalibrationMode, a.Etalons }).ToListAsync();
+
+                var listNwcali = query.GroupBy(c => c.TesterSn).Select(c => new
+                {
+                    c.First().TesterSn,
+                    c.First().TesterModel,
+                    //c.First().CalibrationStatus,
+                    //Time = GetTime(c.Average(c => c.TotalSeconds.ToDouble())),
+                    Time = c.Average(c => c.TotalSeconds.ToDouble()),
+                    Count = c.Count(),
+                    c.First().Issuer,
+                    c.OrderByDescending(o => o.CreateTime).First().CalibrationStatus
+                }).ToList();
+                //最新记录的状态
+                if (!string.IsNullOrEmpty(req.CalibrationStatus))
+                {
+                    listNwcali = listNwcali.Where(c => c.CalibrationStatus == req.CalibrationStatus).ToList();
+                }
+                result.Count = listNwcali.Count();
+                listNwcali = listNwcali.Skip((req.page - 1) * req.limit)
+                .Take(req.limit)
+                .ToList();
+
+
+                if (listNwcali.Count <= 0)
+                {
+                    return result;
+                }
+                var listTesterSn = listNwcali.Select(a => a.TesterSn).ToList();
+
+                string strSql = @"select t4.SlpCode,t4.SlpName as 'Salesman',t3.DocEntry as'SalesOrder',t2.DocEntry as 'DeliveryNumber', t1.manufSN as 'TesterSn'from OINS t1
+                    inner join (SELECT DocEntry,MIN(BaseEntry) as BaseEntry from DLN1 where BaseType=17  group by DocEntry )  t2 on t1.deliveryNo = t2.DocEntry 
+                    inner join ORDR t3 on t2.BaseEntry = t3.DocEntry
+                    inner join OSLP t4 on t3.SlpCode =t4.SlpCode ";
+
+                for (int i = 0; i < listTesterSn.Count; i++)
+                {
+                    listTesterSn[i] = "'" + listTesterSn[i] + "'";
+                }
+                var propertyStr = string.Join(',', listTesterSn);
+                strSql += $" where t1.manufSN in ({propertyStr})";
+
+                var shipmentCalibration = await UnitWork.Query<ShipmentCalibration_sql>(strSql).ToListAsync();
+
+                var calibration = from a in listNwcali
+                                  join b in shipmentCalibration on a.TesterSn equals b.TesterSn into ab
+                                  from b in ab.DefaultIfEmpty()
+                                  select new
+                                  {
+                                      a.TesterSn,
+                                      a.TesterModel,
+                                      a.CalibrationStatus,
+                                      a.Time,
+                                      a.Count,
+                                      a.Issuer,
+                                      SalesOrder = b != null ? b.SalesOrder : null,
+                                      DeliveryNumber = b != null ? b.DeliveryNumber : null,
+                                      Salesman = b != null ? b.Salesman : null,
+                                      Detail = query.Where(c => c.TesterSn == a.TesterSn).Select(c => new
+                                      {
+                                          c.StartTime,
+                                          EndTime = c.Time,
+                                          Time = GetTime(c.TotalSeconds.ToDouble()),
+                                          c.CalibrationStatus,
+                                          c.Operator,
+                                          c.CalibrationMode,
+                                          Standardizer = GetStandardizer(c.Etalons)
+                                      }).ToList()
+                                  };
+
+
+                result.Data = calibration;
+            }
+            return result;
+        }
+
+        public string GetTime(double? seconds)
+        {
+            TimeSpan ts = TimeSpan.FromSeconds(Convert.ToDouble(seconds));
+            string str = "";
+            if (ts.Hours > 0)
+            {
+                str = ts.Hours.ToString() + "小时" + ts.Minutes.ToString() + "分钟" + ts.Seconds + "秒";
+            }
+            if (ts.Hours == 0 && ts.Minutes > 0)
+            {
+                str = ts.Minutes.ToString() + "分钟" + ts.Seconds + "秒";
+            }
+            if (ts.Hours == 0 && ts.Minutes == 0)
+            {
+                str = ts.Seconds + "秒";
+            }
+            return str;
+        }
+
+        public string GetStandardizer(List<Etalon> etalons)
+        {
+            StringBuilder sb = new StringBuilder();
+            etalons.ForEach(c =>
+            {
+                sb.Append($"{c.AssetNo}({c.Name})\\");
+            });
+            return sb.ToString().TrimEnd('\\');
         }
     }
 }
