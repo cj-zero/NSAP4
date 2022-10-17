@@ -1549,7 +1549,7 @@ namespace OpenAuth.App
                     if (!req.IsDraft)
                     {
                         int IsSalesman = 0;
-                        if (loginContext.Roles.Where(a => a.Name == "销售员").Count() > 0&& loginContext.Roles.Where(a => a.Name == "售后技术员").Count() <= 0)
+                        if (loginContext.Roles.Where(a => a.Name == "销售员").Count() > 0 && loginContext.Roles.Where(a => a.Name == "售后技术员").Count() <= 0)
                         {
                             IsSalesman = 1;
                         }
@@ -1593,6 +1593,7 @@ namespace OpenAuth.App
                             IsDraft = obj.IsDraft,
                             FlowInstanceId = obj.FlowInstanceId,
                             MainId = obj.MainId,
+                            IsSalesman = obj.IsSalesman,
 
                         });
                         UnitWork.Save();
