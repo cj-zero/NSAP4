@@ -291,7 +291,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             var result = new Response<List<DropDownOption>>();
             var userId = _serviceBaseApp.GetUserNaspId();
             var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
-            result.Result = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@"SELECT GroupNum AS id,PymntGroup AS name FROM nsap_bone.crm_octg WHERE sbo_id={sboid}", CommandType.Text, null).ToList();
+            result.Result = UnitWork.ExcuteSql<DropDownOption>(ContextType.NsapBaseDbContext, $@"SELECT GroupNum AS id,PymntGroup AS name FROM nsap_bone.crm_octg WHERE sbo_id={sboid} order by GroupNum", CommandType.Text, null).ToList();
             return result;
         }
         /// <summary>
@@ -1499,7 +1499,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             try
             {
                 HttpHelper httpHelper = new HttpHelper(_appConfiguration.Value.ERP3Url);
-                var resultApi = httpHelper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "DocEntry", DocEntry }, { "Indicator", Indicator }, { "DataType" , "Order"} }, "/spv/exportsaleorder.ashx");
+                var resultApi = httpHelper.Get<Dictionary<string, string>>(new Dictionary<string, string> { { "DocEntry", DocEntry }, { "Indicator", Indicator }, { "DataType", "Order" } }, "/spv/exportsaleorder.ashx");
                 if (resultApi["msg"] == "success")
                 {
                     var url = resultApi["url"].Replace("192.168.0.208", "218.17.149.195");
@@ -1932,7 +1932,6 @@ namespace OpenAuth.WebApi.Controllers.Order
             return result;
         }
 
-
         [HttpGet]
         [Route("GetSalesDealDetail")]
         public Response<string> GetSalesDealDetail(int jobid)
@@ -2080,7 +2079,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         /// </summary>
         [HttpPost]
         [Route("GridDataBindDetails")]
-        public TableData  GridDataBindDetails(SalesOrderListReq request)
+        public TableData GridDataBindDetails(SalesOrderListReq request)
         {
             int rowCount = 0;
 
@@ -2115,7 +2114,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 //if (isOpen == "0")
                 //{
-                    result.Data= _serviceSaleOrderApp.SelectBillView(request.limit, request.page, request.query, request.sortname, request.sortorder, type, ViewFull, ViewSelf, UserID, SboID, ViewSelfDepartment, DepID, ViewCustom, ViewSales,out rowCount);
+                result.Data = _serviceSaleOrderApp.SelectBillView(request.limit, request.page, request.query, request.sortname, request.sortorder, type, ViewFull, ViewSelf, UserID, SboID, ViewSelfDepartment, DepID, ViewCustom, ViewSales, out rowCount);
                 //}
                 //else
                 //{
