@@ -917,9 +917,9 @@ namespace OpenAuth.App
                         {
                             Month = a.Name,
                             //Detail = b == null ? null : b.Child ,
-                            S17 = b == null ? 0 : b.Child.Where(c => c.OrgName == "S17").Sum(c => c.Money),
-                            SYH = b == null ? 0 : b.Child.Where(c => c.OrgName == "SYH").Sum(c => c.Money),
-                            Other = b == null ? 0 : b.Child.Where(c => c.OrgName != "SYH" && c.OrgName != "S17").Sum(c => c.Money),
+                            CS17 = b == null ? 0 : b.Child.Where(c => c.OrgName == "CS17").Sum(c => c.Money),
+                            CSYH = b == null ? 0 : b.Child.Where(c => c.OrgName == "CSYH").Sum(c => c.Money),
+                            Other = b == null ? 0 : b.Child.Where(c => c.OrgName != "CSYH" && c.OrgName != "CS17").Sum(c => c.Money),
                             Total = b == null ? 0 : b.Child.Sum(c => c.Money),
                             ServiceCount = b == null ? 0 : b.ServiceCount,
                         };
@@ -1000,17 +1000,17 @@ namespace OpenAuth.App
             }).OrderByDescending(c => c.Total).ToList();
             if (!string.IsNullOrWhiteSpace(req.QueryOrgName) && string.IsNullOrWhiteSpace(req.Range))//看全部的筛选
             {
-                if (req.QueryOrgName == "s17")
+                if (req.QueryOrgName == "cs17")
                 {
-                    data = data.Where(c => c.OrgName == "S17").ToList();
+                    data = data.Where(c => c.OrgName == "CS17").ToList();
                 }
-                else if (req.QueryOrgName == "syh")
+                else if (req.QueryOrgName == "csyh")
                 {
-                    data = data.Where(c => c.OrgName == "SYH").ToList();
+                    data = data.Where(c => c.OrgName == "CSYH").ToList();
                 }
                 else
                 {
-                    data = data.Where(c => c.OrgName != "SYH" && c.OrgName != "S17").ToList();
+                    data = data.Where(c => c.OrgName != "CSYH" && c.OrgName != "CS17").ToList();
                 }
             }
             result.Data = data;

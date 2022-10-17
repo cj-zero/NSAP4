@@ -60,10 +60,10 @@ namespace OpenAuth.App.Serve
             var loginContext = _auth.GetCurrentUser();
             var userId = loginContext.User.Id ?? "";
             var orgInfo = await _userManagerApp.GetUserOrgInfo(userId); //部门信息
-            if (orgInfo?.OrgName != "S19")
+            if (orgInfo?.OrgName != "CS0")
             {
                 response.Code = 500;
-                response.Message = "非S19人员不能撤回信息";
+                response.Message = "非CS0人员不能撤回信息";
             }
             var obj = await UnitWork.Find<ServiceOrderMessage>(null).FirstOrDefaultAsync(s => s.Id == messageId);
             if (obj != null)

@@ -1181,10 +1181,10 @@ namespace OpenAuth.App
             var serialNumber = await CheckManufSn(obj.CustomerId);
             obj.ServiceWorkOrders.ForEach(s =>
             {
-                if (s.ManufacturerSerialNumber== "无序列号" && loginUserOrg.OrgName!="S19")
+                if (s.ManufacturerSerialNumber== "无序列号" && loginUserOrg.OrgName!="CS0")
                 {
                     result.Code = 500;
-                    result.Message = "非S19呼叫中心人员，不允许提交无序列号的呼叫。";
+                    result.Message = "非CS0呼叫中心人员，不允许提交无序列号的呼叫。";
                     isHasNum = true;
                     //throw new Exception("");
                 }
@@ -2175,7 +2175,8 @@ namespace OpenAuth.App
             var totalCount = await UnitWork.Find<ServiceOrder>(so => so.VestInOrg == 1 && so.Status == 2 && so.ServiceWorkOrders.Count() > 0)
                        .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, so => so.CreateTime >= req.QryCreateTimeFrom && so.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
                        .Select(x => x.Id).Distinct().CountAsync();
-            var depts = new string[] { "SQ", "S7", "S12", "S14", "S15", "S29", "S36", "S37", "S32", "S20", "E3" }; //规定要查看的部门
+            //var depts = new string[] { "SQ", "S7", "S12", "S14", "S15", "S29", "S36", "S37", "S32", "S20", "E3" }; //规定要查看的部门
+            var depts = new string[] { "CS1", "CS7", "CS12", "CS14", "CS15", "CS29", "CS36", "CS37", "CS32", "CS20" }; //规定要查看的部门
             var data = from d in depts
                        join a in d1 on d equals a.dept into temp1
                        from a in temp1.DefaultIfEmpty()

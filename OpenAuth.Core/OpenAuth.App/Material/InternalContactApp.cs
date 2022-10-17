@@ -265,7 +265,7 @@ namespace OpenAuth.App.Material
                             UserId = user?.b?.Id,
                             UserName = user?.b?.Name,
                             Type = 2,
-                            Count = c.OrgName == "S19" ? obj.InternalContactServiceOrders.Count() : obj.InternalContactTasks.Where(m => m.ProductionOrg == c.OrgName).Count(),
+                            Count = c.OrgName == "S19" || c.OrgName == "CS0" ? obj.InternalContactServiceOrders.Count() : obj.InternalContactTasks.Where(m => m.ProductionOrg == c.OrgName).Count(),
                             InternalContactId = (single != null && single.Id > 0) ? single.Id : 0
                         });
                     });
@@ -2208,7 +2208,8 @@ namespace OpenAuth.App.Material
                         {
                             ItemCode = e.MaterialCode,
                             ProductionId = null,
-                            ProductionOrg = "E3",
+                            //ProductionOrg = "E3",
+                            ProductionOrg = "CS1",
                             ProductionOrgManager = "樊静涛",
                             WareHouse = item.WhsCode,
                             BelongQty = (int?)item.OnHand,
@@ -2238,7 +2239,8 @@ namespace OpenAuth.App.Material
                         {
                             ItemCode = e.MaterialCode,
                             ProductionId = null,
-                            ProductionOrg = "E3",
+                            //ProductionOrg = "E3",
+                            ProductionOrg = "CS1",
                             ProductionOrgManager = "樊静涛",
                             WareHouse = item.WhsCode,
                             BelongQty = (int?)item.OnHand,
@@ -2307,7 +2309,8 @@ namespace OpenAuth.App.Material
                             {
                                 ItemCode = c.ItemCode,
                                 ProductionId = ign2?.BaseEntry,
-                                ProductionOrg = "E3",
+                                //ProductionOrg = "E3",
+                                ProductionOrg = "CS1",
                                 ProductionOrgManager = "樊静涛",
                                 WareHouse = ign2?.WhsCode,
                                 BelongQty = c.Count,
@@ -2416,14 +2419,15 @@ namespace OpenAuth.App.Material
                                          MnfSerial = o.SuppSerial,
                                          Quantity = 1,
                                          WhsCode = o.Status == 0 ? string.Join(",", ign3.Select(i3 => i3.WhsCode).Distinct().ToList()) : "",
-                                         OrgName = o.Status == 0 ? "E3" : "S19"
+                                         //OrgName = o.Status == 0 ? "E3" : "S19"
+                                         OrgName = o.Status == 0 ? "CS1" : "CS0"
                                      };
                                  }).ToList();
                                  internalContactProductionDetailReq.AddRange(detail);
                              }
                              else
                              {
-                                 internalContactProductionDetailReq.Add(new InternalContactProductionDetailReq { MnfSerial = "", WhsCode = string.Join(",", ign3.Select(i3 => i3.WhsCode).Distinct().ToList()), OrgName = "E3", Quantity = (int)ign3.Sum(i3 => i3.Quantity) });
+                                 internalContactProductionDetailReq.Add(new InternalContactProductionDetailReq { MnfSerial = "", WhsCode = string.Join(",", ign3.Select(i3 => i3.WhsCode).Distinct().ToList()), OrgName = "CS1", Quantity = (int)ign3.Sum(i3 => i3.Quantity) });
                              }
 
                          }
@@ -2473,7 +2477,8 @@ namespace OpenAuth.App.Material
             var orgName = contactTasks.Select(c => c.ProductionOrg).ToList();
             if (contactServiceOrders.Count > 0)
             {
-                orgName.Add("S19");//有服务单增加
+                //orgName.Add("S19");//有服务单增加
+                orgName.Add("CS0");//有服务单增加
             }
             var checkOrg = UnitWork.Find<OpenAuth.Repository.Domain.Org>(c => orgName.Contains(c.Name)).Select(c => c.Id).ToList();
             var acceptOrg= UnitWork.Find<OpenAuth.Repository.Domain.Org>(c => catetoryOrg.Contains(c.Name)).Select(c => c.Id).ToList();
