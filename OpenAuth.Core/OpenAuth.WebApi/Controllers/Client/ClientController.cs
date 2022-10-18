@@ -419,10 +419,15 @@ namespace OpenAuth.WebApi.Controllers.Client
                     !string.IsNullOrEmpty(saveCrmAuditInfoReq.JobId) &&
                     ((saveCrmAuditInfoReq.AuditType == "Edit" && !string.IsNullOrEmpty(saveCrmAuditInfoReq.CardCode)) ||
                      saveCrmAuditInfoReq.AuditType == "Add"))
-                    result.Result = await _clientInfoApp.SaveCrmAuditInfo(saveCrmAuditInfoReq.AuditType,
+                {
+                    var finalR = await _clientInfoApp.SaveCrmAuditInfo(saveCrmAuditInfoReq.AuditType,
                         saveCrmAuditInfoReq.CardCode, saveCrmAuditInfoReq.DfTcnician, saveCrmAuditInfoReq.JobId);
+                    result.Message = finalR.Message;
+                }
                 else
+                {
                     result.Result = "0";
+                }
             }
             catch (Exception ex)
             {
