@@ -33,6 +33,7 @@ using NSAP.Entity.Client;
 using Microsoft.EntityFrameworkCore.Internal;
 using System;
 using DocumentFormat.OpenXml.Math;
+using OpenAuth.Repository.Domain.Sap;
 
 namespace OpenAuth.App.ClientRelation
 {
@@ -490,8 +491,8 @@ namespace OpenAuth.App.ClientRelation
             if (resignReq.flag ==1)
             {
                 var legitRel = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == resignReq.ClientNo && a.IsActive == 1);
-                //find pervious deactivated clients
-                var preRel = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == resignReq.ClientNo && a.IsActive == 0 && a.Operatorid == resignReq.job_userid);
+                //find pervious deactivated clients, get the latest one
+                var preRelList = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == resignReq.ClientNo && a.IsActive == 0 && a.Operatorid == resignReq.job_userid).OrderByDescending(a=>a.CreateDate).ToList();
                 if (resignReq.OperateType == 0 || resignReq.OperateType == 2 || resignReq.OperateType == 4)
                 {
                     #region  broker
@@ -522,38 +523,18 @@ namespace OpenAuth.App.ClientRelation
                         });
                     }
 
-                    if (preRel != null)
+                    if (preRelList.Count != 0)
                     {
-                        //recover the old relations if the terminals still intacted
-                        var preSubNodesCount = JsonConvert.DeserializeObject<JArray>(preRel.SubNo).Count; 
-                        var preSubNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a=> preRel.SubNo.Contains(a.ClientNo) && a.IsDelete ==0&& a.IsActive ==1 && a.Operatorid == resignReq.job_userid).ToList();
-                        //若残存对应关系，则应该添加进去
-                        if (preSubNodes.Count == preSubNodesCount)
+                        //recover the old relations if the terminals  or  broker still intacted
+                        string allSubNodes = "";
+                        foreach (var sub in preRelList)
                         {
-                            // recover the previous subnode 
-                            addData.Add(new Repository.Domain.ClientRelation
-                            {
-                                ClientNo = resignReq.ClientNo,
-                                ClientName = resignReq.ClientName,
-                                ParentNo = "",
-                                SubNo = preRel.SubNo,
-                                Flag = 1,
-                                ScriptFlag = 0,
-                                IsActive = 1,
-                                IsDelete = 0,
-                                CreateDate = DateTime.Now,
-                                UpdateDate = DateTime.Now,
-                                Creator = resignReq.username,
-                                Creatorid = resignReq.userid,
-                                Updater = resignReq.username,
-                                Updaterid = resignReq.userid,
-                                Operatorid = resignReq.job_userid,
-                                Operator = resignReq.job_username,
-                                JobId = resignReq.jobid
-                            });
+                            allSubNodes += sub.SubNo;
                         }
 
-                        if (preSubNodes.Count != preSubNodesCount && preSubNodes.Count > 0)
+                        var preSubNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a=> allSubNodes.Contains(a.ClientNo) && a.IsDelete ==0&& a.IsActive ==1 && a.Operatorid == resignReq.job_userid).Select(a=>a.ClientNo).ToList();
+
+                        if (preSubNodes.Count > 0)
                         {
                             //recover the residual nodes 
                             addData.Add(new Repository.Domain.ClientRelation
