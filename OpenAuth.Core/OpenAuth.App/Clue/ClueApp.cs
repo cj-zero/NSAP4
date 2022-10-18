@@ -180,11 +180,11 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public async Task<Infrastructure.Response> ChangeClueStatusById(int id)
+        public async Task<Infrastructure.Response> ChangeClueStatusById(int id,int jobid)
         {
             var result = new Infrastructure.Response();
             //2022.10.18 check if wfa.job is legit ,if not ,pass 
-            var legitJob = UnitWork.FindSingle<wfa_job>(a => a.base_entry == id && a.sync_stat == 4 && a.sbo_itf_return.Length > 1);
+            var legitJob = UnitWork.FindSingle<wfa_job>(a => a.base_entry == id && a.job_id ==jobid && a.sync_stat == 4 && a.sbo_itf_return.Length > 1);
             if (legitJob== null)
             {
                 return result;
