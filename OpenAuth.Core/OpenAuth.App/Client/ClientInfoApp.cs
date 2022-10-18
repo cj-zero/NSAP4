@@ -490,7 +490,7 @@ namespace OpenAuth.App.Client
                 tableName.Append("LEFT JOIN nsap_bone.crm_ocrg C ON C.GroupCode=A.GroupCode  ");
                 tableName.Append("LEFT JOIN nsap_bone.crm_oidc D ON D.Code=A.Indicator  ");
                 tableName.Append("LEFT JOIN nsap_bone.crm_ohem E ON E.empID=A.DfTcnician and E.sbo_id = A.sbo_id ");
-                tableName.AppendFormat("LEFT JOIN  {0}.clientrelation Y ON Y.ClientNo = A.CardCode  ", "erp4");
+                tableName.AppendFormat("LEFT JOIN  {0}.clientrelation Y ON Y.ClientNo = A.CardCode  AND Y.IsActive =1 AND Y.ScriptFlag =0 AND Y.IsDelete = 0   ", "erp4");
                 tableName.Append("LEFT JOIN nsap_bone.crm_ocry F ON F.Code=A.Country  ");
                 tableName.Append("LEFT JOIN nsap_bone.crm_ocst G ON G.Code=A.State1 ");
 
@@ -568,7 +568,7 @@ namespace OpenAuth.App.Client
                 tableName.AppendFormat("LEFT JOIN {0}.crm_OCST G ON G.Code=A.State1 ", "nsap_bone");
                 tableName.AppendFormat("LEFT JOIN {0}.wfa_job H ON H.sbo_itf_return=A.CardCode ", "nsap_base");
                 tableName.AppendFormat("LEFT JOIN {0}.clue I ON I.Id=H.base_entry", "nsap_serve");
-                tableName.AppendFormat("LEFT JOIN {0}.clientrelation Y ON Y.ClientNo = A.CardCode ", "erp4");
+                tableName.AppendFormat("LEFT JOIN {0}.clientrelation Y ON Y.ClientNo = A.CardCode  AND Y.IsActive =1 AND Y.ScriptFlag =0 AND Y.IsDelete = 0   ", "erp4");
                 tableName.AppendFormat("LEFT JOIN {0}.cluefollowup J ON J.ClueId=I.Id ORDER BY b.FollowUpTime DESC LIMIT 1 ", "nsap_serve");
                 //tableName.AppendFormat("LEFT JOIN {0}.crm_balance_sum H ON H.CardCode=A.CardCode) T ", "nsap_bone");
                 tableName.Append(") T");
@@ -1666,7 +1666,7 @@ namespace OpenAuth.App.Client
             client = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(JobId));
             client.ChangeType = AuditType;
             client.ChangeCardCode = CardCode;
-            var originClient = UnitWork.FindSingle<crm_ocrd>(a => a.CardCode == CardCode);
+            var originClient = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation > (a => a.ClientNo == CardCode && a.IsDelete == 0 && a.IsActive == 1 && a.Flag !=2 && a.ScriptFlag == 0);
             if (AuditType == "Edit")
             {
                 client.DfTcnicianCode = DfTcnician;
@@ -1676,9 +1676,9 @@ namespace OpenAuth.App.Client
                 var job = UnitWork.FindSingle<wfa_job>(a => a.job_id == jobraw);
 
                 var newOper = UnitWork.FindSingle<User>(a => a.User_Id == job.user_id);
-                if (client.is_reseller == "Y")
+                if (originClient !=null && client.is_reseller == "N")
                 {
-                    if (originClient.U_is_reseller == "N")
+                    if (originClient.Flag == 1)
                     {
                         //add log to explain why
                         _logger.LogError("不允许中间商变更为终端客户,请求参数为 jobid:" + JobId + " CardCode: " + CardCode);
@@ -1686,7 +1686,6 @@ namespace OpenAuth.App.Client
                     }
                     else
                     {
-
                         await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
                         {
                             userid = currentuser.User.Id.ToString(),
@@ -1704,7 +1703,7 @@ namespace OpenAuth.App.Client
                 else
                 {
                     //20221007  若审批是中间商时 1. 终端变更为中间商，更改业务员  2. 中间商变更，更改业务员，原先关系不解绑
-                    if (originClient.U_is_reseller == "N")
+                    if (originClient != null && client.is_reseller == "Y")
                     {
                         await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
                         {
@@ -1722,7 +1721,7 @@ namespace OpenAuth.App.Client
 
                 }
             }
-            string rJobNm = string.Format("{0}{1}", client.ClientOperateType == "edit" ? "修改" : "添加", client.CardType == "S" ? "供应商" : "业务伙伴");
+            string rJobNm = string.Format("{0}{1}", client.ChangeType == "edit" ? "修改" : "添加", client.CardType == "S" ? "供应商" : "业务伙伴");
             byte[] job_data = ByteExtension.ToSerialize(client);
             return UpdateAuditJob(JobId, rJobNm, client.FreeText.FilterESC(), job_data, false) ? "1" : "0";
 
@@ -2777,6 +2776,8 @@ namespace OpenAuth.App.Client
                         UpdateTime = DateTime.Now,
                         UpdateUser = userName
                     });
+                    // remove 4.0 relation if it exists
+                    await _clientRelationApp.RejectJobRelations(req.CardCode);
                     await UnitWork.SaveAsync();
                     await tran.CommitAsync();
                 }
