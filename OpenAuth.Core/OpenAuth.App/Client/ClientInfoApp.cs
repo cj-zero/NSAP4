@@ -34,6 +34,7 @@ using OpenAuth.App.ClientRelation;
 using DocumentFormat.OpenXml.Math;
 using OpenAuth.App.Request;
 using Microsoft.Extensions.Logging;
+using EdgeCmd;
 
 namespace OpenAuth.App.Client
 {
@@ -1661,8 +1662,9 @@ namespace OpenAuth.App.Client
         /// <summary>
         /// 保存业务伙伴审核的录入方案
         /// </summary>
-        public async Task<string> SaveCrmAuditInfo(string AuditType, string CardCode, string DfTcnician, string JobId)
+        public async Task<Infrastructure.Response> SaveCrmAuditInfo(string AuditType, string CardCode, string DfTcnician, string JobId)
         {
+            Infrastructure.Response rsp = new Infrastructure.Response();
             clientOCRD client = new clientOCRD();
             client = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(JobId));
             client.ChangeType = AuditType;
@@ -1683,7 +1685,9 @@ namespace OpenAuth.App.Client
                     {
                         //add log to explain why
                         _logger.LogError("不允许中间商变更为终端客户,请求参数为 jobid:" + JobId + " CardCode: " + CardCode);
-                        return "0";
+                        rsp.Message = "审核失败，不允许中间商变更为终端客户";
+                        rsp.Code = 200;
+                        return rsp;
                     }
                     else
                     {
@@ -1695,6 +1699,7 @@ namespace OpenAuth.App.Client
                             job_username = newOper.Name,
                             jobid = (int)job.job_id,
                             ClientNo = CardCode,
+                            ClientName = originClient.ClientName,
                             flag = 0,
                             OperateType = 1
                         });
@@ -1714,6 +1719,7 @@ namespace OpenAuth.App.Client
                             job_username = newOper.Name,
                             jobid = (int)job.job_id,
                             ClientNo = CardCode,
+                            ClientName = originClient.ClientName,
                             flag = 1,
                             OperateType = 0
                         });
@@ -1724,8 +1730,10 @@ namespace OpenAuth.App.Client
             }
             string rJobNm = string.Format("{0}{1}", client.ChangeType == "edit" ? "修改" : "添加", client.CardType == "S" ? "供应商" : "业务伙伴");
             byte[] job_data = ByteExtension.ToSerialize(client);
-            return UpdateAuditJob(JobId, rJobNm, client.FreeText.FilterESC(), job_data, false) ? "1" : "0";
-
+            var finalResult = UpdateAuditJob(JobId, rJobNm, client.FreeText.FilterESC(), job_data, false) ? "1" : "0";
+            rsp.Message = finalResult;
+            rsp.Code = 200;
+            return rsp;
         }
         #endregion
         #region 审核

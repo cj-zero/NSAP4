@@ -499,24 +499,6 @@ namespace OpenAuth.App.ClientRelation
                     {
                         legitRel.IsActive = 0;
                         updateData.Add(legitRel);
-                        // delete the old relations of  parentNode and subNode
-                        //var attachedNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a=>a.IsDelete == 0 && (a.ParentNo.Contains(resignReq.ClientNo) || a.SubNo.Contains(resignReq.ClientNo) && a.IsActive ==1)).ToList();
-                        //foreach (var anode in attachedNodes)
-                        //{
-                        //    if (anode.ParentNo.Contains(resignReq.ClientNo))
-                        //    {
-                        //        var pnodes = JsonConvert.DeserializeObject<JArray>(anode.ParentNo);
-                        //        pnodes.Where(i => i.Type == JTokenType.String && (string)i == resignReq.ClientNo).ToList().ForEach(i => i.Remove());
-                        //        anode.ParentNo = JsonConvert.SerializeObject(pnodes);
-                        //    }
-                        //    if (anode.SubNo.Contains(resignReq.ClientNo))
-                        //    {
-                        //        var snodes = JsonConvert.DeserializeObject<JArray>(anode.SubNo);
-                        //        snodes.Where(i => i.Type == JTokenType.String && (string)i == resignReq.ClientNo).ToList().ForEach(i => i.Remove());
-                        //        anode.SubNo = JsonConvert.SerializeObject(snodes);
-                        //    }
-                        //}
-                       // updateData.AddRange(attachedNodes);
                         addHistoryData.Add(new ClientRelHistory
                         {
                             CID = legitRel.Id,
@@ -551,8 +533,8 @@ namespace OpenAuth.App.ClientRelation
                             // recover the previous subnode 
                             addData.Add(new Repository.Domain.ClientRelation
                             {
-                                ClientNo = legitRel.ClientNo,
-                                ClientName = legitRel.ClientName,
+                                ClientNo = resignReq.ClientNo,
+                                ClientName = resignReq.ClientName,
                                 ParentNo = "",
                                 SubNo = preRel.SubNo,
                                 Flag = 1,
@@ -570,13 +552,14 @@ namespace OpenAuth.App.ClientRelation
                                 JobId = resignReq.jobid
                             });
                         }
+
                         if (preSubNodes.Count != preSubNodesCount && preSubNodes.Count > 0)
                         {
                             //recover the residual nodes 
                             addData.Add(new Repository.Domain.ClientRelation
                             {
-                                ClientNo = legitRel.ClientNo,
-                                ClientName = legitRel.ClientName,
+                                ClientNo = resignReq.ClientNo,
+                                ClientName = resignReq.ClientName,
                                 ParentNo = "",
                                 SubNo = JsonConvert.SerializeObject(preSubNodes),
                                 Flag = 1,
@@ -594,13 +577,37 @@ namespace OpenAuth.App.ClientRelation
                                 JobId = resignReq.jobid
                             }); ;
                         }
+
+                        if (preSubNodes.Count == 0)
+                        {
+                            addData.Add(new Repository.Domain.ClientRelation
+                            {
+                                ClientNo = resignReq.ClientNo,
+                                ClientName = resignReq.ClientName,
+                                ParentNo = "",
+                                SubNo = "",
+                                Flag = 1,
+                                ScriptFlag = 0,
+                                IsActive = 1,
+                                IsDelete = 0,
+                                CreateDate = DateTime.Now,
+                                UpdateDate = DateTime.Now,
+                                Creator = resignReq.username,
+                                Creatorid = resignReq.userid,
+                                Updater = resignReq.username,
+                                Updaterid = resignReq.userid,
+                                Operatorid = resignReq.job_userid,
+                                Operator = resignReq.job_username,
+                                JobId = resignReq.jobid
+                            });
+                        }
                     }
                     else
                     {
                         addData.Add(new Repository.Domain.ClientRelation
                         {
-                            ClientNo = legitRel.ClientNo,
-                            ClientName = legitRel.ClientName,
+                            ClientNo = resignReq.ClientNo,
+                            ClientName = resignReq.ClientName,
                             ParentNo = "",
                             SubNo = "",
                             Flag = 1,
