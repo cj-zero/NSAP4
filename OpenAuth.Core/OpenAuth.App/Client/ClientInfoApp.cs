@@ -3384,21 +3384,37 @@ namespace OpenAuth.App.Client
         /// </summary>
         /// <returns></returns>
         /// <exception cref="CommonException"></exception>
-        public async Task<int> GetSlpCode()
+        public async Task<Infrastructure.Response> GetSlpCode()
         {
-            int slpCode = 0;
+            var result = new Infrastructure.Response();
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            int userId = loginContext.User.User_Id.Value;
-            var sbouser = await UnitWork.Find<sbo_user>(q => q.user_id == userId).FirstOrDefaultAsync();
-            if (sbouser != null)
+            int userId = 0;
+            if (loginContext.User.User_Id != null)
             {
-                slpCode = sbouser.sale_id.Value;
+                userId = loginContext.User.User_Id.Value;
             }
-            return slpCode;
+            else
+            {
+                result.Code = 500;
+                result.Message = "业务员账号未绑定4.0，请联系管理员";
+                return result;
+            }
+            var sbouser = await UnitWork.Find<sbo_user>(q => q.user_id == userId).FirstOrDefaultAsync();
+            if (sbouser != null && sbouser.sale_id != null)
+            {
+                result.Message = sbouser.sale_id.Value.ToString();
+            }
+            else
+            {
+                result.Code = 500;
+                result.Message = "业务员账号未绑定3.0，请联系管理员";
+                return result;
+            }
+            return result;
         }
 
         /// <summary>
@@ -3510,22 +3526,40 @@ namespace OpenAuth.App.Client
         /// </summary>
         /// <returns></returns>
         /// <exception cref="CommonException"></exception>
-        public async Task<string> isLims()
+        public async Task<Infrastructure.Response> isLims()
         {
             int slpCode = 0;
+            var result = new Infrastructure.Response();
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            int userId = loginContext.User.User_Id.Value;
-            var sbouser = await UnitWork.Find<sbo_user>(q => q.user_id == userId).FirstOrDefaultAsync();
-            if (sbouser != null)
+            int userId = 0;
+            if (loginContext.User.User_Id != null)
             {
-                slpCode = sbouser.sale_id.Value;
+                userId = loginContext.User.User_Id.Value;
+            }
+            else
+            {
+                result.Code = 500;
+                result.Message = "业务员账号未绑定4.0，请联系管理员";
+                return result;
+            }
+            var sbouser = await UnitWork.Find<sbo_user>(q => q.user_id == userId).FirstOrDefaultAsync();
+            if (sbouser != null && sbouser.sale_id != null)
+            {
+                result.Message = sbouser.sale_id.Value.ToString();
+            }
+            else
+            {
+                result.Code = 500;
+                result.Message = "业务员账号未绑定3.0，请联系管理员";
+                return result;
             }
             var limsList = UnitWork.Find<LimsInfo>(q => q.SlpCode == slpCode).ToList();
-            return limsList.Count > 0 ? "true" : "false";
+            result.Message = limsList.Count > 0 ? "true" : "false";
+            return result;
         }
         #endregion
     }
