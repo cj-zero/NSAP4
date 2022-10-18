@@ -320,7 +320,7 @@ namespace OpenAuth.App.PayTerm
         public bool GetPayTermSetIsRepeat(PayTermSet obj)
         {
             bool isRepeat = true;
-            var objs = UnitWork.Find<PayTermSet>((r => r.DateNumber == obj.DateNumber && r.ModuleTypeId == obj.ModuleTypeId && r.ModuleName == r.ModuleName && r.DateUnit == obj.DateUnit)).Include(r => r.PayPhases).ToList();
+            var objs = UnitWork.Find<PayTermSet>((r => r.DateNumber == obj.DateNumber && r.ModuleTypeId == obj.ModuleTypeId && r.ModuleName == r.ModuleName && r.DateUnit == obj.DateUnit && r.IsDefault == obj.IsDefault)).Include(r => r.PayPhases).ToList();
             if (objs != null && objs.Count() > 0)
             {
                 isRepeat = false;
