@@ -569,7 +569,7 @@ namespace OpenAuth.App.Client
                 tableName.AppendFormat("LEFT JOIN {0}.crm_OCST G ON G.Code=A.State1 ", "nsap_bone");
                 tableName.AppendFormat("LEFT JOIN {0}.wfa_job H ON H.sbo_itf_return=A.CardCode ", "nsap_base");
                 tableName.AppendFormat("LEFT JOIN {0}.clue I ON I.Id=H.base_entry", "nsap_serve");
-                tableName.AppendFormat("LEFT JOIN {0}.clientrelation Y ON Y.ClientNo = A.CardCode ", "erp4");
+                tableName.AppendFormat("LEFT JOIN {0}.clientrelation Y ON Y.ClientNo = A.CardCode  AND Y.IsActive =1 AND Y.ScriptFlag =0 AND Y.IsDelete = 0   ", "erp4");
                 tableName.AppendFormat("LEFT JOIN {0}.cluefollowup J ON J.ClueId=I.Id ORDER BY b.FollowUpTime DESC LIMIT 1 ", "nsap_serve");
                 //tableName.AppendFormat("LEFT JOIN {0}.crm_balance_sum H ON H.CardCode=A.CardCode) T ", "nsap_bone");
                 tableName.Append(") T");
@@ -1667,7 +1667,7 @@ namespace OpenAuth.App.Client
             client = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(JobId));
             client.ChangeType = AuditType;
             client.ChangeCardCode = CardCode;
-            var originClient = UnitWork.FindSingle<crm_ocrd>(a => a.CardCode == CardCode);
+            var originClient = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation > (a => a.ClientNo == CardCode && a.IsDelete == 0 && a.IsActive == 1 && a.Flag !=2 && a.ScriptFlag == 0);
             if (AuditType == "Edit")
             {
                 client.DfTcnicianCode = DfTcnician;
@@ -1725,7 +1725,7 @@ namespace OpenAuth.App.Client
 
                 }
             }
-            string rJobNm = string.Format("{0}{1}", client.ClientOperateType == "edit" ? "修改" : "添加", client.CardType == "S" ? "供应商" : "业务伙伴");
+            string rJobNm = string.Format("{0}{1}", client.ChangeType == "edit" ? "修改" : "添加", client.CardType == "S" ? "供应商" : "业务伙伴");
             byte[] job_data = ByteExtension.ToSerialize(client);
             return UpdateAuditJob(JobId, rJobNm, client.FreeText.FilterESC(), job_data, false) ? "1" : "0";
 
@@ -2791,6 +2791,8 @@ namespace OpenAuth.App.Client
                         UpdateTime = DateTime.Now,
                         UpdateUser = userName
                     });
+                    // remove 4.0 relation if it exists
+                    await _clientRelationApp.RejectJobRelations(req.CardCode);
                     await UnitWork.SaveAsync();
                     await tran.CommitAsync();
                 }
