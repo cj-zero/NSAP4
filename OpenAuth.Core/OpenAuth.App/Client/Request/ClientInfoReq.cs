@@ -1054,11 +1054,11 @@ namespace OpenAuth.App.Client.Request
         /// <summary>
         /// 是否是推广员维护的
         /// </summary>
-        public bool isLims { get; set; } = false;
+        public bool? isLims { get; set; } = false;
         /// <summary>
         /// 业务员编码
         /// </summary>
-        public int slpCode { get; set; }
+        public int? slpCode { get; set; }
 
     }
     public class clientOCPRReq
@@ -1275,11 +1275,11 @@ namespace OpenAuth.App.Client.Request
         /// <summary>
         /// 是否是推广员维护的
         /// </summary>
-        public bool isLims { get; set; } = false;
+        public bool? isLims { get; set; } = false;
         /// <summary>
         /// 业务员编码
         /// </summary>
-        public int slpCode { get; set; }
+        public int? slpCode { get; set; }
 
     }
     public class billAttchmentReq
