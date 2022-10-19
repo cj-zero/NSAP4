@@ -320,10 +320,26 @@ namespace OpenAuth.App.PayTerm
         public bool GetPayTermSetIsRepeat(PayTermSet obj)
         {
             bool isRepeat = true;
-            var objs = UnitWork.Find<PayTermSet>((r => r.DateNumber == obj.DateNumber && r.ModuleTypeId == obj.ModuleTypeId && r.ModuleName == r.ModuleName && r.DateUnit == obj.DateUnit && r.IsDefault == obj.IsDefault)).Include(r => r.PayPhases).ToList();
-            if (objs != null && objs.Count() > 0)
+            if (obj.PayPhases != null && obj.PayPhases.Count() > 0)
             {
-                isRepeat = false;
+                var objs = UnitWork.Find<PayTermSet>((r => r.DateNumber == obj.DateNumber && r.ModuleTypeId == obj.ModuleTypeId && r.ModuleName == r.ModuleName && r.DateUnit == obj.DateUnit && r.IsDefault == obj.IsDefault)).Include(r => r.PayPhases).ToList();
+                if (objs != null && objs.Count() > 0)
+                {
+                    string payname = GetPayPhaseName(obj.PayPhases.OrderBy(r => r.PayPhaseType).ToList());
+                    string dbpayname = GetPayPhaseName((objs.FirstOrDefault()).PayPhases.OrderBy(r => r.PayPhaseType).ToList());
+                    if (payname == dbpayname)
+                    {
+                        isRepeat = false;
+                    }
+                }
+            }
+            else
+            {
+                var objs = UnitWork.Find<PayTermSet>((r => r.DateNumber == obj.DateNumber && r.ModuleTypeId == obj.ModuleTypeId && r.ModuleName == r.ModuleName && r.DateUnit == obj.DateUnit && r.IsDefault == obj.IsDefault)).Include(r => r.PayPhases).ToList();
+                if (objs != null && objs.Count() > 0)
+                {
+                    isRepeat = false;
+                }
             }
 
             return isRepeat;
