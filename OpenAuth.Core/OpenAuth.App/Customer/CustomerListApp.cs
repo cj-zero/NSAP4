@@ -867,7 +867,7 @@ namespace OpenAuth.App.Customer
                             await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == item.CustomerNo);
 
                             //更新客户关系
-                            var clientRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == item.CustomerNo && a.IsActive == 1 && a.IsDelete == 0 && a.ScriptFlag == 0 && a.Flag != 2);
+                            var clientRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == item.CustomerNo && a.IsActive == 0 && a.IsDelete == 0 && a.ScriptFlag == 0 && a.Flag != 2);
                             var erpid = UnitWork.FindSingle<User>(u => u.User_Id == userId);
                             if (clientRelation != null)
                             {
@@ -1126,7 +1126,7 @@ namespace OpenAuth.App.Customer
                             //获取业务员4.0编号
                             var saleidRaw = UnitWork.FindSingle<sbo_user>(s => s.sale_id == req.SlpCode);
                             var erpid = UnitWork.FindSingle<User>(u =>u.User_Id == saleidRaw.user_id);
-                            var clientRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == item.CustomerNo && a.IsActive == 1 && a.IsDelete == 0 && a.ScriptFlag == 0 && a.Flag != 2);
+                            var clientRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == item.CustomerNo && a.IsActive == 0 && a.IsDelete == 0 && a.ScriptFlag == 0 && a.Flag != 2);
                             if (clientRelation != null)
                             {
                                 await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
