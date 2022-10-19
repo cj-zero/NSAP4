@@ -176,6 +176,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<ContractSealOperationHistory> contractsealoperationhistory { get; set; }
         public virtual DbSet<ContractTemplate> contracttemplate { get; set; }
         public virtual DbSet<ContractFileType> contractfiletype { get; set; }
+        public virtual DbSet<ContractDownLoadFileHis> contractdownloadfilehis { get; set; }
         #endregion
 
         #region 新威字典
@@ -186,6 +187,12 @@ namespace OpenAuth.Repository
         public virtual DbSet<PayTermSet> paytermset { get; set; }
         public virtual DbSet<PayPhase> payphase { get; set; }
         public virtual DbSet<PayTermSave> paytermsave { get; set; }
+        #endregion
+
+        #region 钉钉
+        public virtual DbSet<DDSendMsgHitory> ddsendmsghistory { get; set; }
+        public virtual DbSet<DDUserDepartMsg> dduserdepartmsg { get; set; }
+        public virtual DbSet<DDBindUser> ddbinguser { get; set; }
         #endregion
     }
 }

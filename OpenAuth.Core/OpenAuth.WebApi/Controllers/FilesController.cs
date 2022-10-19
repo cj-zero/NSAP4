@@ -333,5 +333,53 @@ namespace OpenAuth.WebApi.Controllers
 
             return result;
         }
+
+        /// <summary>
+        /// 更改文件名(新)
+        /// </summary>
+        /// <param name="newNames">更改文件名实体数据</param>>
+        /// <returns>返回文件集</returns>
+        [HttpPost]
+        public async Task<Response<IList<UploadFileResp>>> UpdateFileNamesNew(List<QueryUpdateNewFileName> newNames)
+        {
+            var result = new Response<IList<UploadFileResp>>();
+            try
+            {
+                var results = new List<UploadFileResp>();
+                foreach (QueryUpdateNewFileName item in newNames)
+                {
+                    if (string.IsNullOrEmpty(item.FileId))
+                    {
+                        result.Message = "文件Id不能为空";
+                        result.Code = 500;
+                        break;
+                    }
+                    else
+                    {
+                        //更新文件名称
+                        await UnitWork.UpdateAsync<UploadFile>(r => r.Id == item.FileId, r => new UploadFile
+                        {
+                            FileName = item.FileNewName
+                        });
+
+                        await UnitWork.SaveAsync();
+                    }
+
+                    UploadFileResp uploadFileResps = (UnitWork.Find<UploadFile>(r => r.Id == item.FileId).FirstOrDefault()).MapTo<UploadFileResp>();
+                    results.Add(uploadFileResps);
+                }
+
+                result.Result = results;
+            }
+            catch (Exception ex)
+            {
+                result.Message = ex.ToString();
+                result.Code = 500;
+            }
+
+            return result;
+        }
+
+
     }
 }

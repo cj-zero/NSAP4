@@ -5,6 +5,7 @@ using System.Text;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
+using DotNetCore.CAP;
 using OpenAuth.App.Response;
 using OpenAuth.App.Interface;
 using OpenAuth.Repository.Interface;
@@ -22,7 +23,9 @@ namespace OpenAuth.App.PayTerm
     {
         private IUnitWork _UnitWork;
         private IAuth _auth;
+        private ICapPublisher _capBus;
         private ServiceBaseApp _serviceBaseApp;
+        private ServiceSaleOrderApp _serviceSaleOrderApp;
         private List<string> RecePayTypes = new List<string>() { "预付/货前款", "货到款", "验收款", "质保款" };
 
         /// <summary>
@@ -30,11 +33,12 @@ namespace OpenAuth.App.PayTerm
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
-        public PayTermApp(IUnitWork unitWork, IAuth auth, ServiceBaseApp serviceBaseApp) : base(unitWork, auth)
+        public PayTermApp(IUnitWork unitWork, IAuth auth, ServiceBaseApp serviceBaseApp, ServiceSaleOrderApp serviceSaleOrderApp) : base(unitWork, auth)
         {
             _UnitWork = unitWork;
             _auth = auth;
             _serviceBaseApp = serviceBaseApp;
+            _serviceSaleOrderApp = serviceSaleOrderApp;
         }
 
         /// <summary>
@@ -318,10 +322,26 @@ namespace OpenAuth.App.PayTerm
         public bool GetPayTermSetIsRepeat(PayTermSet obj)
         {
             bool isRepeat = true;
-            var objs = UnitWork.Find<PayTermSet>((r => r.DateNumber == obj.DateNumber && r.ModuleTypeId == obj.ModuleTypeId && r.ModuleName == r.ModuleName && r.DateUnit == obj.DateUnit)).Include(r => r.PayPhases).ToList();
-            if (objs != null && objs.Count() > 0)
+            if (obj.PayPhases != null && obj.PayPhases.Count() > 0)
             {
-                isRepeat = false;
+                var objs = UnitWork.Find<PayTermSet>((r => r.DateNumber == obj.DateNumber && r.ModuleTypeId == obj.ModuleTypeId && r.ModuleName == r.ModuleName && r.DateUnit == obj.DateUnit && r.IsDefault == obj.IsDefault)).Include(r => r.PayPhases).ToList();
+                if (objs != null && objs.Count() > 0)
+                {
+                    string payname = GetPayPhaseName(obj.PayPhases.OrderBy(r => r.PayPhaseType).ToList());
+                    string dbpayname = GetPayPhaseName((objs.FirstOrDefault()).PayPhases.OrderBy(r => r.PayPhaseType).ToList());
+                    if (payname == dbpayname)
+                    {
+                        isRepeat = false;
+                    }
+                }
+            }
+            else
+            {
+                var objs = UnitWork.Find<PayTermSet>((r => r.DateNumber == obj.DateNumber && r.ModuleTypeId == obj.ModuleTypeId && r.ModuleName == r.ModuleName && r.DateUnit == obj.DateUnit && r.IsDefault == obj.IsDefault)).Include(r => r.PayPhases).ToList();
+                if (objs != null && objs.Count() > 0)
+                {
+                    isRepeat = false;
+                }
             }
 
             return isRepeat;
@@ -442,48 +462,38 @@ namespace OpenAuth.App.PayTerm
             modelCrmOctg.GroupNum = "0";
             scoc.ModelCrmOctg = modelCrmOctg;
 
-            //付款条件同步到3.0接口
-            string isResult = await InsertCrmOctg(scoc);
-            if (isResult == "2")
+            //付款条件同步到SAP,3.0接口
+            _capBus.Publish("Serve.BOneOCTG.Create", scoc);
+            using (var transaction = await dbContext.Database.BeginTransactionAsync())
             {
-                using (var transaction = await dbContext.Database.BeginTransactionAsync())
+                try
                 {
-                    try
-                    {
-                        obj.Id = Guid.NewGuid().ToString();
-                        obj.SaleGoodsToDay = Convert.ToInt32((payTermSets.FirstOrDefault()).DateNumber);
-                        obj.SaleGoodsToUnit = (payTermSets.FirstOrDefault()).DateUnit;
-                        obj.CreateUserId = loginUser.Id;
-                        obj.CreateUserName = loginUser.Name;
-                        obj.CreateTime = DateTime.Now;
-                        obj.UpdateUserId = "";
-                        obj.GroupNum = groupName;
-                        obj = await UnitWork.AddAsync<PayTermSave, int>(obj);
-                        await UnitWork.SaveAsync();
-                        await transaction.CommitAsync();
-                    }
-                    catch (Exception)
-                    {
-                        await transaction.RollbackAsync();
-                        throw new Exception("保存付款条件失败,请重试");
-                    }
+                    obj.Id = Guid.NewGuid().ToString();
+                    obj.SaleGoodsToDay = Convert.ToInt32((payTermSets.FirstOrDefault()).DateNumber);
+                    obj.SaleGoodsToUnit = (payTermSets.FirstOrDefault()).DateUnit;
+                    obj.CreateUserId = loginUser.Id;
+                    obj.CreateUserName = loginUser.Name;
+                    obj.CreateTime = DateTime.Now;
+                    obj.UpdateUserId = "";
+                    obj.GroupNum = groupName;
+                    obj = await UnitWork.AddAsync<PayTermSave, int>(obj);
+                    await UnitWork.SaveAsync();
+                    await transaction.CommitAsync();
                 }
-
-                result.Data = new
+                catch (Exception)
                 {
-                    Id = groupNum,
-                    GroupNum = groupName,
-                };
+                    await transaction.RollbackAsync();
+                    throw new Exception("保存付款条件失败,请重试");
+                }
+            }
 
-                result.Message = "操作成功";
-                return result;
-            }
-            else
+            result.Data = new
             {
-                result.Code = 500;
-                result.Message = "操作失败";
-                return result;
-            }
+                GroupNum = groupName,
+            };
+
+            result.Message = "操作成功";
+            return result;
         }
 
         /// <summary>

@@ -21,4 +21,17 @@ namespace OpenAuth.App.ContractManager.Request
         /// </summary>
         public string Extension { get; set; }
     }
+
+    public class QueryUpdateNewFileName
+    { 
+        /// <summary>
+        /// 文件新名称
+        /// </summary>
+        public string FileNewName { get; set; }
+
+        /// <summary>
+        /// 文件Id
+        /// </summary>
+        public string FileId { get; set; }
+    }
 }

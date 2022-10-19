@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.IO;
 using System.Threading.Tasks;
 using Infrastructure;
@@ -12,13 +13,17 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using NStandard;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Request;
 using OpenAuth.App.Order;
 using OpenAuth.App.Response;
 using OpenAuth.App.Order.Request;
+using OpenAuth.App.ContractManager.Common;
 using OpenAuth.App.Files;
+using OpenAuth.App.SignalR;
+using OpenAuth.App.DDVoice;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
@@ -33,14 +38,15 @@ namespace OpenAuth.App.ContractManager
     {
         private readonly ModuleFlowSchemeApp _moduleFlowSchemeApp;
         private readonly FlowInstanceApp _flowInstanceApp;
-        private readonly RevelanceManagerApp _revelanceManagerApp;
         private readonly ServiceSaleOrderApp _servcieSaleOrderApp;
         private readonly FlowSchemeApp _flowSchemeApp;
+        private readonly DDVoiceApp _dDVoice;
         static Dictionary<int, DataTable> gRoles = new Dictionary<int, DataTable>();
-        private IFileStore _fileStore;
-        private ILogger<FileApp> _logger;
         private readonly MinioClient _minioClient;
         private readonly FileApp _fileApp;
+        private readonly IHubContext<MessageHub> _hubContext;
+        private IFileStore _fileStore;
+        private ILogger<FileApp> _logger;
 
         /// <summary>
         /// 构造函数
@@ -49,21 +55,20 @@ namespace OpenAuth.App.ContractManager
         /// <param name="moduleFlowSchemeApp"></param>
         /// <param name="flowInstanceApp"></param>
         /// <param name="servcieSaleOrderApp"></param>
-        /// <param name="revelanceManagerApp"></param>
         /// <param name="auth"></param>
-        public ContractApplyApp(IUnitWork unitWork, ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp,
-            IRepository<UploadFile> repository, ServiceSaleOrderApp servcieSaleOrderApp, MinioClient minioClient, FileApp fileApp,
-            RevelanceManagerApp revelanceManagerApp, FlowSchemeApp flowSchemeApp, IAuth auth, IFileStore fileStore, ILogger<FileApp> logger) : base(unitWork, repository, auth)
+        public ContractApplyApp(IUnitWork unitWork, ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp,DDVoiceApp dDVoice,
+            IRepository<UploadFile> repository, ServiceSaleOrderApp servcieSaleOrderApp, MinioClient minioClient, FileApp fileApp, FlowSchemeApp flowSchemeApp, IAuth auth, IFileStore fileStore, ILogger<FileApp> logger, IHubContext<MessageHub> hubContext) : base(unitWork, repository, auth)
         {
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _flowInstanceApp = flowInstanceApp;
-            _revelanceManagerApp = revelanceManagerApp;
             _servcieSaleOrderApp = servcieSaleOrderApp;
             _fileStore = fileStore;
             _logger = logger;
             _minioClient = minioClient;
             _fileApp = fileApp;
             _flowSchemeApp = flowSchemeApp;
+            _hubContext = hubContext;
+            _dDVoice = dDVoice;
         }
 
         /// <summary>
@@ -93,11 +98,16 @@ namespace OpenAuth.App.ContractManager
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.QuotationNo), r => r.QuotationNo.Contains(request.QuotationNo))
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.SaleNo), r => r.SaleNo.Contains(request.SaleNo))
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), r => r.CreateName.Contains(request.CreateName))
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.ItemNo), r => r.ItemNo.Contains(request.ItemNo))
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.ItemName), r => r.ItemName.Contains(request.ItemName))
                                             .WhereIf(request.StartDate != null, r => r.CreateTime >= request.StartDate)
                                             .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate)
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.ContractStatus), r => r.ContractStatus == request.ContractStatus)).ToList();
-                    
-                    contractApply = (request.SortOrder == "asc" ? contractApply.OrderBy(r => r.GetType().GetProperty(request.SortName == "" || request.SortName == null ? "CreateTime" : request.SortName).GetValue(r, null)) : contractApply.OrderByDescending(r => r.GetType().GetProperty(request.SortName == "" || request.SortName == null ? "CreateTime" : request.SortName).GetValue(r, null))).ToList();
+
+                    //通过反射将字段作为参数传入
+                    contractApply = (request.SortOrder == "asc" ? contractApply.OrderBy(r => r.GetType().GetProperty(request.SortName == "" || request.SortName == null ? "CreateTime" : Regex.Replace(request.SortName, @"^\w", t => t.Value.ToUpper())).GetValue(r, null)) : contractApply.OrderByDescending(r => r.GetType().GetProperty(request.SortName == "" || request.SortName == null ? "CreateTime" : Regex.Replace(request.SortName, @"^\w", t => t.Value.ToUpper())).GetValue(r, null))).ToList();
+
+                    //查询字典基本信息
                     var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
                     var categoryContractList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
                     var categoryStatusList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractStatus")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
@@ -134,6 +144,9 @@ namespace OpenAuth.App.ContractManager
                         IsUploadOriginal = r.a.IsUploadOriginal,
                         FlowInstanceId = r.a.FlowInstanceId,
                         DownloadNumber = r.a.DownloadNumber,
+                        U_SAP_Id = r.a.U_SAP_Id,
+                        ItemNo = r.a.ItemNo,
+                        ItemName = r.a.ItemName,
                         ContractStatus = r.a.ContractStatus,
                         Remark = r.a.Remark,
                         CreateId = r.a.CreateId,
@@ -172,11 +185,16 @@ namespace OpenAuth.App.ContractManager
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.QuotationNo), r => r.QuotationNo.Contains(request.QuotationNo))
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.SaleNo), r => r.SaleNo.Contains(request.SaleNo))
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), r => r.CreateName.Contains(request.CreateName))
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.ItemNo), r => r.ItemNo.Contains(request.ItemNo))
+                                            .WhereIf(!string.IsNullOrWhiteSpace(request.ItemName), r => r.ItemName.Contains(request.ItemName))
                                             .WhereIf(request.StartDate != null, r => r.CreateTime >= request.StartDate)
                                             .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate)
                                             .WhereIf(!string.IsNullOrWhiteSpace(request.ContractStatus), r => r.ContractStatus == request.ContractStatus)).ToList();
 
-                    contractApply = (request.SortOrder == "asc" ? contractApply.OrderBy(r => r.GetType().GetProperty(request.SortName == "" || request.SortName == null ? "CreateTime" : request.SortName).GetValue(r, null)) : contractApply.OrderByDescending(r => r.GetType().GetProperty(request.SortName == "" || request.SortName == null ? "CreateTime" : request.SortName).GetValue(r, null))).ToList();
+                    //通过反射将字段作为参数传入
+                    contractApply = (request.SortOrder == "asc" ? contractApply.OrderBy(r => r.GetType().GetProperty(request.SortName == "" || request.SortName == null ? "CreateTime" : Regex.Replace(request.SortName, @"^\w", t => t.Value.ToUpper())).GetValue(r, null)) : contractApply.OrderByDescending(r => r.GetType().GetProperty(request.SortName == "" || request.SortName == null ? "CreateTime" : Regex.Replace(request.SortName, @"^\w", t => t.Value.ToUpper())).GetValue(r, null))).ToList();
+
+                    //查询字典基本信息
                     var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
                     var categoryContractList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
                     var categoryStatusList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractStatus")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
@@ -213,6 +231,9 @@ namespace OpenAuth.App.ContractManager
                         IsUploadOriginal = r.a.IsUploadOriginal,
                         FlowInstanceId = r.a.FlowInstanceId,
                         DownloadNumber = r.a.DownloadNumber,
+                        U_SAP_Id = r.a.U_SAP_Id,
+                        ItemNo = r.a.ItemNo,
+                        ItemName = r.a.ItemName,
                         ContractStatus = r.a.ContractStatus,
                         Remark = r.a.Remark,
                         CreateId = r.a.CreateId,
@@ -277,7 +298,7 @@ namespace OpenAuth.App.ContractManager
                     var categoryContractList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
                     var categoryStatusList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractStatus")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
                     var categoryFileTypeList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractFileType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
-                   
+
                     #region 申请单主表信息
                     var contractApplyReq = from a in contractApply
                                            join b in categoryCompanyList on a.CompanyType equals b.DtValue
@@ -297,6 +318,9 @@ namespace OpenAuth.App.ContractManager
                                                a.IsUseCompanyTemplate,
                                                a.FlowInstanceId,
                                                a.DownloadNumber,
+                                               a.U_SAP_Id,
+                                               a.ItemNo,
+                                               a.ItemName,
                                                a.ContractStatus,
                                                a.IsUploadOriginal,
                                                a.Remark,
@@ -328,53 +352,54 @@ namespace OpenAuth.App.ContractManager
                             foreach (ContractFile file in fileList)
                             {
                                 fileIdList.Add(file.FileId);
-                            }    
+                            }
                         }
 
-                        var contractFileList = await UnitWork.Find<UploadFile>(r => fileIdList.Contains(r.Id)).Select(u => new { u.FileName, u.Id, u.FilePath, u.FileType, u.FileSize, u.Extension }).ToListAsync(); ;
-                       
+                        var contractFileList = await UnitWork.Find<UploadFile>(r => fileIdList.Contains(r.Id)).Select(u => new { u.FileName, u.Id, u.FilePath, u.FileType, u.FileSize, u.Extension }).ToListAsync();
+
                         #region 申请单文件表信息
                         var contractTypeFileReq = from a in contractFileTypeList
-                                              join c in contractOriginalFileList on a.ContractOriginalId equals c.Id into ac
-                                              from c in ac.DefaultIfEmpty()
-                                              join d in categoryFileTypeList on a.FileType equals d.DtValue
-                                              select new
-                                              {
-                                                  a.Id,
-                                                  a.ContractApplyId,
-                                                  a.ContractSealId,
-                                                  a.FileType,
-                                                  a.ContractOriginalId,
-                                                  a.FileNum,
-                                                  a.Remark,
-                                                  ContractFileList = from b in a.contractFileList
-                                                                     join e in contractFileList on b.FileId equals e.Id into be
-                                                                     from e in be.DefaultIfEmpty()
-                                                                     orderby b.CreateUploadTime descending
-                                                                     select new { 
-                                                                     b.Id,
-                                                                     b.ContractFileTypeId,
-                                                                     b.FileId,
-                                                                     b.IsSeal,
-                                                                     b.IsFinalContract,
-                                                                     b.CreateUploadId,
-                                                                     b.CreateUploadTime,
-                                                                     b.UpdateUserId,
-                                                                     b.UpdateUserTime,
-                                                                     FileName = e == null ? "" : e.FileName,
-                                                                     FilePath = e == null ? "" : e.FilePath,
-                                                                     FileType = e == null ? "" : e.FileType,
-                                                                     FileSize = e == null ? 0 : e.FileSize,
-                                                                     Extension = e == null ? "" : e.Extension
-                                                                     },
-                                                  OriginalFileName = c == null ? "" : c.FileName,
-                                                  OriginalFilePath = c == null ? "" : c.FilePath,
-                                                  OriginalFileType = c == null ? "" : c.FileType,
-                                                  OriginalFileSize = c == null ? 0 : c.FileSize,
-                                                  OriginalExtension = c == null ? "" : c.Extension,
-                                                  CategoryFileType = d.DtValue,
-                                                  CategoryFileName = d.Name
-                                              };
+                                                  join c in contractOriginalFileList on a.ContractOriginalId equals c.Id into ac
+                                                  from c in ac.DefaultIfEmpty()
+                                                  join d in categoryFileTypeList on a.FileType equals d.DtValue
+                                                  select new
+                                                  {
+                                                      a.Id,
+                                                      a.ContractApplyId,
+                                                      a.ContractSealId,
+                                                      a.FileType,
+                                                      a.ContractOriginalId,
+                                                      a.FileNum,
+                                                      a.Remark,
+                                                      ContractFileList = from b in a.contractFileList
+                                                                         join e in contractFileList on b.FileId equals e.Id into be
+                                                                         from e in be.DefaultIfEmpty()
+                                                                         orderby b.CreateUploadTime descending
+                                                                         select new
+                                                                         {
+                                                                             b.Id,
+                                                                             b.ContractFileTypeId,
+                                                                             b.FileId,
+                                                                             b.IsSeal,
+                                                                             b.IsFinalContract,
+                                                                             b.CreateUploadId,
+                                                                             b.CreateUploadTime,
+                                                                             b.UpdateUserId,
+                                                                             b.UpdateUserTime,
+                                                                             FileName = e == null ? "" : e.FileName,
+                                                                             FilePath = e == null ? "" : e.FilePath,
+                                                                             FileType = e == null ? "" : e.FileType,
+                                                                             FileSize = e == null ? 0 : e.FileSize,
+                                                                             Extension = e == null ? "" : e.Extension
+                                                                         },
+                                                      OriginalFileName = c == null ? "" : c.FileName,
+                                                      OriginalFilePath = c == null ? "" : c.FilePath,
+                                                      OriginalFileType = c == null ? "" : c.FileType,
+                                                      OriginalFileSize = c == null ? 0 : c.FileSize,
+                                                      OriginalExtension = c == null ? "" : c.Extension,
+                                                      CategoryFileType = d.DtValue,
+                                                      CategoryFileName = d.Name
+                                                  };
                         #endregion
 
                         result.Data = new
@@ -394,7 +419,7 @@ namespace OpenAuth.App.ContractManager
                             ContractFileTypeReq = new List<ContractFileType>(),
                             ContractStatusReq = nodeList
                         };
-                    }   
+                    }
                 }
                 else
                 {
@@ -407,6 +432,179 @@ namespace OpenAuth.App.ContractManager
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// 获取客户/报价单/销售订单合同信息
+        /// </summary>
+        /// <param name="ModuleType">模块类型（客户-KHXQ，销售报价单-XSBJD，销售订单-XSDD）</param>
+        /// <param name="ModuleCode">模块编码</param>
+        /// <returns>返回客户详情/销售报价单/销售订单模块对应的合同申请单</returns>
+        public async Task<TableData> GetCardOrOrderDraftOrSaleOrderContract(string ModuleType, string ModuleCode)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var result = new TableData();
+            if (string.IsNullOrEmpty(ModuleCode) || string.IsNullOrEmpty(ModuleType))
+            {
+                result.Code = 500;
+                result.Message = "模块编码或模块类型不允许为空";
+            }
+            else
+            {
+                List<ContractApplyMsgHelp> contractApplyMsgHelps = new List<ContractApplyMsgHelp>();
+                var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
+                var categoryContractList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
+                var categoryStatusList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractStatus")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
+                var categoryFileTypeList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractFileType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
+                if (ModuleType == "XSBJD")
+                {
+                    //获取销售报价单关联的合同申请单
+                    List<ContractApplyMsgHelp> contractApplyMsgHelpList = await UnitWork.Find<ContractApply>(r => r.QuotationNo.Contains(ModuleCode)).Select(r => new ContractApplyMsgHelp
+                    {
+                        Id = r.Id,
+                        ContractNo = r.ContractNo,
+                        QuotationNo = r.QuotationNo,
+                        ContractType = r.ContractType,
+                        CompanyType = r.CompanyType,
+                        CreateName = r.CreateName,
+                        CreateTime = r.CreateTime.ToString(),
+                        ContractStatus = r.ContractStatus
+                    }).ToListAsync();
+
+                    foreach (ContractApplyMsgHelp item in contractApplyMsgHelpList)
+                    {
+                        if (!string.IsNullOrEmpty(item.QuotationNo))
+                        {
+                            if (GetModuleCode(item.QuotationNo, ModuleCode) == item.QuotationNo)
+                            {
+                                contractApplyMsgHelps.Add(item);
+                            }
+                        }
+                    }
+                }
+                else if (ModuleType == "XSDD")
+                {
+                    //获取销售订单关联的合同申请单
+                    List<ContractApplyMsgHelp> contractApplyMsgHelpList = await UnitWork.Find<ContractApply>(r => r.SaleNo.Contains(ModuleCode)).Select(r => new ContractApplyMsgHelp
+                    {
+                        Id = r.Id,
+                        ContractNo = r.ContractNo,
+                        ContractType = r.ContractType,
+                        CompanyType = r.CompanyType,
+                        CreateName = r.CreateName,
+                        CreateTime = r.CreateTime.ToString(),
+                        ContractStatus = r.ContractStatus
+                    }).ToListAsync();
+
+                    foreach (ContractApplyMsgHelp item in contractApplyMsgHelpList)
+                    {
+                        if (!string.IsNullOrEmpty(item.SaleNo))
+                        {
+                            if (GetModuleCode(item.SaleNo, ModuleCode) == item.SaleNo)
+                            {
+                                contractApplyMsgHelps.Add(item);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    //获取客户关联的合同申请单
+                    contractApplyMsgHelps = await UnitWork.Find<ContractApply>(r => r.CustomerCode == ModuleCode).Select(r => new ContractApplyMsgHelp
+                    {
+                        Id = r.Id,
+                        ContractNo = r.ContractNo,
+                        ContractType = r.ContractType,
+                        CompanyType = r.CompanyType,
+                        CreateName = r.CreateName,
+                        CreateTime = r.CreateTime.ToString(),
+                        ContractStatus = r.ContractStatus
+                    }).ToListAsync();
+                }
+
+                if (contractApplyMsgHelps != null && contractApplyMsgHelps.Count() > 0)
+                {
+                    //查询字典
+                    var contractResps = (from a in contractApplyMsgHelps
+                                         join b in categoryCompanyList on a.CompanyType equals b.DtValue
+                                         join c in categoryContractList on a.ContractType equals c.DtValue
+                                         join d in categoryStatusList on a.ContractStatus equals d.DtValue
+                                         select new ContractApplyMsgHelp
+                                         {
+                                             Id = a.Id,
+                                             ContractNo = a.ContractNo,
+                                             ContractType = a.ContractType,
+                                             ContractTypeName = c.Name,
+                                             CreateName = a.CreateName,
+                                             CreateTime = a.CreateTime,
+                                             CompanyType = a.CompanyType,
+                                             CompanyName = b.Name,
+                                             ContractStatus = a.ContractStatus,
+                                             ContractStatusName = d.Name
+                                         }).ToList();
+
+                    //查找合同申请单对应的合同文件类型
+                    var contractFileTypes = await UnitWork.Find<ContractFileType>(null).Select(r => new { r.ContractApplyId, r.FileType }).ToListAsync();
+                    var contractFiles = (from a in contractResps
+                                         join b in contractFileTypes on a.Id equals b.ContractApplyId into ab
+                                         from b in ab.DefaultIfEmpty()
+                                         select new ContractMsgHelp
+                                         {
+                                             ContractNo = a.ContractNo,
+                                             ContractTypeName = a.ContractTypeName,
+                                             FileTypeName = b == null ? "" : b.FileType,
+                                             CreateName = a.CreateName,
+                                             CreateTime = a.CreateTime,
+                                             CompanyName = a.CompanyName,
+                                             ContractStatusName = a.ContractStatusName
+                                         }).ToList();
+
+                    //查询文件类型名称
+                    contractFiles = (from a in contractFiles
+                                     join b in categoryFileTypeList on a.FileTypeName equals b.DtValue into ab
+                                     from b in ab.DefaultIfEmpty()
+                                     select new ContractMsgHelp
+                                     {
+                                         ContractNo = a.ContractNo,
+                                         ContractTypeName = a.ContractTypeName,
+                                         FileTypeName = b == null ? "" : b.Name,
+                                         CreateName = a.CreateName,
+                                         CreateTime = a.CreateTime,
+                                         CompanyName = a.CompanyName,
+                                         ContractStatusName = a.ContractStatusName
+                                     }).ToList();
+
+                    result.Data = contractFiles;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 获取模块编码
+        /// </summary>
+        /// <param name="OldNo">旧编号</param>
+        /// <param name="ModuleCode">模块编码</param>
+        /// <returns>当旧编码包括模块编码时，返回旧编码，否则返回模块编码</returns>
+        public string GetModuleCode(string OldNo, string ModuleCode)
+        {
+            if (OldNo.Contains(","))
+            {
+                List<string> oldNos = OldNo.Split(',').ToList();
+                var moduleCodes = oldNos.Where(r => r == ModuleCode).ToList();
+                if (moduleCodes != null && moduleCodes.Count() > 0)
+                {
+                    return OldNo;
+                }
+            }
+
+            return ModuleCode;
         }
 
         /// <summary>
@@ -434,7 +632,7 @@ namespace OpenAuth.App.ContractManager
             List<ApprovalNodeReq> nodeList = new List<ApprovalNodeReq>();
             ApprovalNodeReq nodeReq = new ApprovalNodeReq();
             nodeReq.NodeName = "提交";
-            nodeReq.NodeStatus = contract.ContractStatus == "1" ? "1" : (contract.ContractStatus == "2" ? "2" : "") ;
+            nodeReq.NodeStatus = contract.ContractStatus == "1" ? "1" : (contract.ContractStatus == "2" ? "2" : "");
             nodeReq.NodeUser = contract.CreateName;
             nodeList.Add(nodeReq);
             if (contract.ContractType == "1")
@@ -500,7 +698,7 @@ namespace OpenAuth.App.ContractManager
                     var historyData = await UnitWork.Find<ContractOperationHistory>(r => r.ApprovalStage == "5" && r.ContractApplyId == contractApplyId).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
                     ApprovalNodeReq nodeFJReq = new ApprovalNodeReq();
                     nodeFJReq.NodeName = "法务审批";
-                    nodeFJReq.NodeStatus = "4";
+                    nodeFJReq.NodeStatus = "3";
                     nodeFJReq.NodeUser = historyData == null ? "" : historyData.CreateUser + "已审批";
                     nodeList.Add(nodeFJReq);
 
@@ -718,7 +916,7 @@ namespace OpenAuth.App.ContractManager
                 nodeEndReq.NodeUser = "";
                 nodeList.Add(nodeEndReq);
             }
-            else
+            else if (contract.ContractType == "3")
             {
                 if (contract.ContractStatus == "1" || contract.ContractStatus == "2" || contract.ContractStatus == "10")
                 {
@@ -753,7 +951,7 @@ namespace OpenAuth.App.ContractManager
                     nodeFWReq.NodeName = "法务/总助审批";
                     nodeFWReq.NodeStatus = "10";
                     nodeFWReq.NodeUser = "等待(" + userName + ")或骆灵芝审批";
-                    nodeList.Add(nodeFWReq);      
+                    nodeList.Add(nodeFWReq);
                 }
                 else if (contract.ContractStatus == "-1")
                 {
@@ -768,6 +966,98 @@ namespace OpenAuth.App.ContractManager
                 ApprovalNodeReq nodeEndReq = new ApprovalNodeReq();
                 nodeEndReq.NodeName = "结束";
                 nodeEndReq.NodeStatus = "-1";
+                nodeEndReq.NodeUser = "";
+                nodeList.Add(nodeEndReq);
+            }
+            else
+            {
+                if ((contract.ContractStatus == "1" || contract.ContractStatus == "2" || contract.ContractStatus == "12") && !contract.IsUseCompanyTemplate)
+                {
+                    var roles = await UnitWork.Find<Role>(r => r.Name == "售前工程师").Select(r => new { r.Id }).ToListAsync();
+                    List<string> roleId = roles.Select(r => r.Id).ToList();
+                    var userole = await UnitWork.Find<Relevance>(u => roleId.Contains(u.SecondId) && u.Key == Define.USERROLE).ToListAsync();
+                    var userList = await UnitWork.Find<User>(null).ToListAsync();
+                    var users = from userRole in userole
+                                join user in userList on userRole.FirstId equals user.Id into temp
+                                from c in temp.Where(u => u.Id != null)
+                                select new
+                                {
+                                    c.Id,
+                                    c.Name
+                                };
+
+                    int count = 0;
+                    foreach (var userItem in users)
+                    {
+                        if (users.Count() == 1)
+                        {
+                            userName = userItem.Name;
+                        }
+                        else
+                        {
+                            userName = count == 0 ? userItem.Name : userName + "," + userItem.Name;
+                            count++;
+                        }
+                    }
+
+                    ApprovalNodeReq nodeFWReq = new ApprovalNodeReq();
+                    nodeFWReq.NodeName = "技术审批";
+                    nodeFWReq.NodeStatus = "12";
+                    nodeFWReq.NodeUser = "等待" + userName + "审批";
+                    nodeList.Add(nodeFWReq);
+
+                    ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
+                    nodeZZReq.NodeName = "总助审批";
+                    nodeZZReq.NodeStatus = "5";
+                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeList.Add(nodeZZReq);
+                }
+                else if (contract.ContractStatus == "5" && !contract.IsUseCompanyTemplate)
+                {
+                    var historyData = await UnitWork.Find<ContractOperationHistory>(r => r.ApprovalStage == "5" && r.ContractApplyId == contractApplyId).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
+                    ApprovalNodeReq nodeFJReq = new ApprovalNodeReq();
+                    nodeFJReq.NodeName = "技术审批";
+                    nodeFJReq.NodeStatus = "12";
+                    nodeFJReq.NodeUser = historyData == null ? "" : historyData.CreateUser + "已审批";
+                    nodeList.Add(nodeFJReq);
+
+                    ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
+                    nodeZZReq.NodeName = "总助审批";
+                    nodeZZReq.NodeStatus = "5";
+                    nodeZZReq.NodeUser = "等待骆灵芝审批";
+                    nodeList.Add(nodeZZReq);
+                }
+                else if ((contract.ContractStatus == "6" || contract.ContractStatus == "7" || contract.ContractStatus == "-1") && !contract.IsUseCompanyTemplate)
+                {
+                    var historyData = await UnitWork.Find<ContractOperationHistory>(r => r.ApprovalStage == "5" && r.ContractApplyId == contractApplyId).OrderByDescending(r => r.CreateTime).FirstOrDefaultAsync();
+                    ApprovalNodeReq nodeFJReq = new ApprovalNodeReq();
+                    nodeFJReq.NodeName = "技术审批";
+                    nodeFJReq.NodeStatus = "12";
+                    nodeFJReq.NodeUser = historyData == null ? "" : historyData.CreateUser + "已审批";
+                    nodeList.Add(nodeFJReq);
+
+                    ApprovalNodeReq nodeZZReq = new ApprovalNodeReq();
+                    nodeZZReq.NodeName = "总助审批";
+                    nodeZZReq.NodeStatus = "5";
+                    nodeZZReq.NodeUser = "骆灵芝已审批";
+                    nodeList.Add(nodeZZReq);
+                }
+
+                ApprovalNodeReq nodeGZReq = new ApprovalNodeReq();
+                nodeGZReq.NodeName = "待盖章";
+                nodeGZReq.NodeStatus = "6";
+                nodeGZReq.NodeUser = "";
+                nodeList.Add(nodeGZReq);
+
+                ApprovalNodeReq nodeSCReq = new ApprovalNodeReq();
+                nodeSCReq.NodeName = "待上传原件";
+                nodeSCReq.NodeStatus = "7";
+                nodeSCReq.NodeUser = "";
+                nodeList.Add(nodeSCReq);
+
+                ApprovalNodeReq nodeEndReq = new ApprovalNodeReq();
+                nodeEndReq.NodeName = "结束";
+                nodeSCReq.NodeStatus = "-1";
                 nodeEndReq.NodeUser = "";
                 nodeList.Add(nodeEndReq);
             }
@@ -788,7 +1078,7 @@ namespace OpenAuth.App.ContractManager
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
 
-            List<string> statuList = new List<string>() { "1", "2", "6", "7", "-1" };
+            List<string> statuList = new List<string>() { "1", "2", "6", "7", "-1", "11" };
             var quotationObj = await UnitWork.Find<ContractApply>(q => q.Id == req.ContractId).FirstOrDefaultAsync();
             if (statuList.Contains(quotationObj.ContractStatus))
             {
@@ -823,6 +1113,102 @@ namespace OpenAuth.App.ContractManager
             });
 
             await UnitWork.SaveAsync();
+
+            //singlR推送消息
+            await SendSinglRMsg(quotationObj.ContractStatus, quotationObj.ContractNo, req.Remarks, loginContext.User);
+
+            //撤回申请单钉钉通知
+            await SendDDReCallMsg(quotationObj.ContractNo, req.Remarks, loginContext.User.Name);
+        }
+
+        /// <summary>
+        /// 钉钉通知撤回消息
+        /// </summary>
+        /// <param name="contractNo">合同单据号</param>
+        /// <param name="recallRemark">撤回备注</param>
+        /// <param name="userName">业务员</param>
+        /// <returns></returns>
+        public async Task SendDDReCallMsg(string contractNo, string recallRemark, string userName)
+        {
+            string userIds = "16601825539643395";
+            string remarks = "合同单号为" + contractNo + "申请单已被业务员-" + userName + "-撤回，撤回理由：" + recallRemark;
+            await _dDVoice.DDSendMsg("text", remarks, userIds);
+        }
+
+        /// <summary>
+        /// singlR推送消息
+        /// </summary>
+        /// <param name="contractStatus">合同申请单状态</param>
+        /// <param name="contractNo">合同申请单号</param>
+        /// <param name="remarks">撤回备注</param>
+        /// <param name="user">业务员</param>
+        /// <returns></returns>
+        public async Task SendSinglRMsg(string contractStatus, string contractNo, string remarks, User user)
+        {
+            //添加当前合同申请单状态对应的审批角色
+            List<string> roles = new List<string>();
+            switch (contractStatus)
+            {
+                case "3":
+                    roles.Add("法务人员");
+                    break;
+                case "4":
+                    roles.Add("法务人员");
+                    roles.Add("售前工程师");
+                    break;
+                case "5":
+                    roles.Add("销售总助");
+                    break;
+                case "8":
+                    roles.Add("售前工程师");
+                    break;
+                case "9":
+                    roles.Add("法务人员");
+                    break;
+                case "10":
+                    roles.Add("法务人员");
+                    roles.Add("销售总助");
+                    break;
+                case "12":
+                    roles.Add("售前工程师");
+                    break;
+            }
+
+            //当角色不为空时，singlR推送撤回原因消息
+            if (roles.Count() > 0)
+            {
+                foreach (string item in roles)
+                {
+                    await _hubContext.Clients.Groups(item).SendAsync("ContractMessage", user.Name, $"单号为" + contractNo + "申请单已撤回，撤回理由：" + remarks);
+                    // await _hubContext.Clients.Groups("呼叫中心").SendAsync("ServiceOrderECNCount", "系统", serviceOrderEcnCount);
+                }
+
+                //SinglR推送操作历史记录
+                await UnitWork.AddAsync<DDSendMsgHitory>(new DDSendMsgHitory()
+                {
+                    MsgType = "SinglR推送消息",
+                    MsgContent = contractNo + "推送成功",
+                    MsgResult = "成功",
+                    CreateName = user.Name,
+                    CreateUserId = user.Id,
+                    CreateTime = DateTime.Now
+                });
+            }
+            else
+            {
+                //SinglR推送操作历史记录
+                await UnitWork.AddAsync<DDSendMsgHitory>(new DDSendMsgHitory()
+                {
+                    MsgType = "SinglR推送消息",
+                    MsgContent = contractNo + "推送失败",
+                    MsgResult = "失败",
+                    CreateName = user.Name,
+                    CreateUserId = user.Id,
+                    CreateTime = DateTime.Now
+                });
+            }
+
+            await UnitWork.SaveAsync();
         }
 
         /// <summary>
@@ -842,6 +1228,11 @@ namespace OpenAuth.App.ContractManager
             if (obj.CompanyType == "" || obj.ContractType == "")
             {
                 throw new Exception("所属公司或文件类型不能为空");
+            }
+
+            if (obj.ContractType == "3" && (string.IsNullOrEmpty(obj.CustomerCode) || string.IsNullOrEmpty(obj.SaleNo)))
+            {
+                throw new Exception("工程设计类申请，客户代码及销售订单号必填");
             }
 
             obj.ContractFileTypeList.ForEach(r => r.ContractApplyId = r.ContractApplyId);
@@ -879,9 +1270,19 @@ namespace OpenAuth.App.ContractManager
                         List<ContractFileType> contractFileTypeList = new List<ContractFileType>();
                         foreach (ContractFileType item in obj.ContractFileTypeList)
                         {
-                            if (item.FileType == "" || item.ContractSealId == "")
+                            if (string.IsNullOrEmpty(item.FileType) || string.IsNullOrEmpty(item.ContractSealId))
                             {
                                 throw new Exception("文件类型或印章Id不能为空");
+                            }
+
+                            if (item.FileType == "3" && string.IsNullOrEmpty(obj.ItemName))
+                            {
+                                throw new Exception("文件类型包含标书，项目名称必填");
+                            }
+
+                            if (item.FileType == "8" && string.IsNullOrEmpty(obj.Remark))
+                            {
+                                throw new Exception("文件类型包含采购合同时，备注不能为空");
                             }
 
                             item.Id = Guid.NewGuid().ToString();
@@ -943,12 +1344,12 @@ namespace OpenAuth.App.ContractManager
                             afir.CustomName = $"合同管理审批流程" + DateTime.Now;
                             afir.FrmData = "{\"ContractApplyId\":\"" + obj.Id + "\",\"IsContractType\":\"" + obj.ContractType + "\"}";
                             obj.FlowInstanceId = _flowInstanceApp.CreateInstanceAndGetIdAsync(afir).ConfigureAwait(false).GetAwaiter().GetResult();
-                            obj.ContractStatus = obj.ContractType == "1" ? "3" : (obj.ContractType == "2" ? "4" : "10");
+                            obj.ContractStatus = ContractMethodHelp.GetConfigTypeStatus(obj.ContractType);
                             obj = await UnitWork.AddAsync<ContractApply, int>(obj);
                             await UnitWork.AddAsync<ContractOperationHistory>(new ContractOperationHistory
                             {
                                 Action = "提交合同申请单",
-                                ApprovalStage = obj.ContractType == "1" ? "3" : (obj.ContractType == "2" ? "4" : "10"),
+                                ApprovalStage = obj.ContractStatus,
                                 CreateUser = loginUser.Name,
                                 CreateUserId = loginUser.Id,
                                 CreateTime = DateTime.Now,
@@ -1027,9 +1428,19 @@ namespace OpenAuth.App.ContractManager
                     List<ContractFileType> contractFileTypeList = new List<ContractFileType>();
                     foreach (ContractFileType item in obj.ContractFileTypeList)
                     {
-                        if (item.FileType == "" || item.ContractSealId == "")
+                        if (string.IsNullOrEmpty(item.FileType) || string.IsNullOrEmpty(item.ContractSealId))
                         {
                             throw new Exception("文件类型或印章Id不能为空");
+                        }
+
+                        if (item.FileType == "3" && string.IsNullOrEmpty(obj.ItemName))
+                        {
+                            throw new Exception("文件类型包含标书，项目编号和项目名称必填");
+                        }
+
+                        if (item.FileType == "8" && string.IsNullOrEmpty(obj.Remark))
+                        {
+                            throw new Exception("文件类型包含采购合同时，备注不能为空");
                         }
 
                         item.Id = Guid.NewGuid().ToString();
@@ -1079,6 +1490,9 @@ namespace OpenAuth.App.ContractManager
                             CompanyType = obj.CompanyType,
                             ContractType = obj.ContractType,
                             QuotationNo = obj.QuotationNo,
+                            U_SAP_Id = obj.U_SAP_Id,
+                            ItemNo = obj.ItemNo,
+                            ItemName = obj.ItemName,
                             SaleNo = obj.SaleNo,
                             IsDraft = obj.IsDraft,
                             IsUploadOriginal = obj.IsUploadOriginal,
@@ -1098,7 +1512,7 @@ namespace OpenAuth.App.ContractManager
                     {
                         //当合同类型为商务合同，并且使用了公司合同模板，提交直接进入待盖章，不走审批流
                         if (obj.ContractType == "1" && obj.IsUseCompanyTemplate)
-                        {                  
+                        {
                             //修改合同申请单
                             await UnitWork.UpdateAsync<ContractApply>(r => r.Id == obj.Id, r => new ContractApply
                             {
@@ -1109,6 +1523,9 @@ namespace OpenAuth.App.ContractManager
                                 CompanyType = obj.CompanyType,
                                 ContractType = obj.ContractType,
                                 QuotationNo = obj.QuotationNo,
+                                U_SAP_Id = obj.U_SAP_Id,
+                                ItemName = obj.ItemName,
+                                ItemNo = obj.ItemNo,
                                 SaleNo = obj.SaleNo,
                                 IsDraft = obj.IsDraft,
                                 IsUploadOriginal = obj.IsUploadOriginal,
@@ -1163,13 +1580,16 @@ namespace OpenAuth.App.ContractManager
                                 CompanyType = obj.CompanyType,
                                 ContractType = obj.ContractType,
                                 QuotationNo = obj.QuotationNo,
+                                U_SAP_Id = obj.U_SAP_Id,
+                                ItemNo = obj.ItemNo,
+                                ItemName = obj.ItemName,
                                 SaleNo = obj.SaleNo,
                                 IsDraft = obj.IsDraft,
                                 IsUploadOriginal = obj.IsUploadOriginal,
                                 IsUseCompanyTemplate = obj.IsUseCompanyTemplate,
                                 FlowInstanceId = obj.FlowInstanceId,
                                 DownloadNumber = obj.DownloadNumber,
-                                ContractStatus = obj.ContractType == "1" ? "3" : (obj.ContractType == "2" ? "4" : "10"),
+                                ContractStatus = ContractMethodHelp.GetConfigTypeStatus(obj.ContractType),
                                 Remark = obj.Remark,
                                 CreateId = obj.CreateId,
                                 CreateName = obj.CreateName,
@@ -1182,7 +1602,7 @@ namespace OpenAuth.App.ContractManager
                                 CreateUser = loginUser.Name,
                                 CreateUserId = loginUser.Id,
                                 CreateTime = DateTime.Now,
-                                ApprovalStage = obj.ContractType == "1" ? "3" : (obj.ContractType == "2" ? "4" : "10"),
+                                ApprovalStage = ContractMethodHelp.GetConfigTypeStatus(obj.ContractType),
                                 ContractApplyId = obj.Id
                             });
                         }
@@ -1233,7 +1653,7 @@ namespace OpenAuth.App.ContractManager
 
                     await UnitWork.BatchDeleteAsync<ContractFileType>(delfiles.ToArray());
                 }
-               
+
                 await UnitWork.DeleteAsync<ContractApply>(q => q.Id == contractId);
                 remark.Append("删除单号为：" + contractApply.FirstOrDefault().ContractNo + " 的合同申请单！");
                 await UnitWork.AddAsync<ReimurseOperationHistory>(new ReimurseOperationHistory
@@ -1315,7 +1735,7 @@ namespace OpenAuth.App.ContractManager
             {
                 throw new Exception(ex.Message.ToString());
             }
-           
+
         }
 
         /// <summary>
@@ -1332,7 +1752,6 @@ namespace OpenAuth.App.ContractManager
             }
 
             var result = new TableData();
-
             var obj = await UnitWork.Find<ContractApply>(r => r.Id == req.Id).Include(r => r.ContractFileTypeList).FirstOrDefaultAsync();
             if (!string.IsNullOrEmpty(obj.ContractStatus))
             {
@@ -1369,6 +1788,12 @@ namespace OpenAuth.App.ContractManager
                 if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")) && obj.ContractStatus == "3")
                 {
                     contractHis.Action = "法务人员审批";
+                    obj.ContractStatus = "5";
+                }
+
+                if (loginContext.Roles.Any(r => r.Name.Equals("售前工程师")) && obj.ContractStatus == "12")
+                {
+                    contractHis.Action = "售前工程师审批";
                     obj.ContractStatus = "5";
                 }
 
@@ -1594,13 +2019,13 @@ namespace OpenAuth.App.ContractManager
                 {
                     await UnitWork.AddAsync<ContractSign>(new ContractSign
                     {
-                       ContractApplyId = req.ContractApplyId,
-                       TogetherSignRole = req.TogetherSignRole,
-                       ApprovalOrReject = req.ApprovalOrReject,
-                       FlowInstanceId = req.FlowInstanceId,
-                       CreateUserId = loginContext.User.Id,
-                       CreateName = loginContext.User.Name,
-                       CreateTime = DateTime.Now
+                        ContractApplyId = req.ContractApplyId,
+                        TogetherSignRole = req.TogetherSignRole,
+                        ApprovalOrReject = req.ApprovalOrReject,
+                        FlowInstanceId = req.FlowInstanceId,
+                        CreateUserId = loginContext.User.Id,
+                        CreateName = loginContext.User.Name,
+                        CreateTime = DateTime.Now
                     });
 
                     await UnitWork.SaveAsync();
@@ -1801,13 +2226,13 @@ namespace OpenAuth.App.ContractManager
                 p = fields[3].Split(':');
                 if (!string.IsNullOrEmpty(p[1]))
                 {
-                    if (p[1] == "ON") 
-                    { 
+                    if (p[1] == "ON")
+                    {
                         filterString += string.Format(" (a.DocStatus = 'O' AND a.Printed = 'N' AND a.CANCELED = 'N') AND ");
                     }
 
-                    if (p[1] == "OY") 
-                    { 
+                    if (p[1] == "OY")
+                    {
                         filterString += string.Format(" (a.DocStatus = 'O' AND a.Printed = 'Y' AND a.CANCELED = 'N') AND ");
                     }
                 }
@@ -1897,7 +2322,7 @@ namespace OpenAuth.App.ContractManager
                 {
                     rDataRows = _servcieSaleOrderApp.GetSboSlpCodeIds(DepID, SboID);
                 }
-                
+
                 if (rDataRows.Rows.Count > 0)
                 {
                     filterString += string.Format(" (a.SlpCode IN(");
@@ -2298,7 +2723,7 @@ namespace OpenAuth.App.ContractManager
             var contractSealList = string.IsNullOrEmpty(companyType) ? await UnitWork.Find<ContractSeal>(r => r.IsEnable == true).ToListAsync() : await UnitWork.Find<ContractSeal>(r => r.IsEnable == true).Where(r => r.CompanyType == companyType).ToListAsync();
             var contractSeal = from a in contractSealList
                                join b in categorySealList on a.SealType equals b.DtValue
-                               select new 
+                               select new
                                {
                                    a.Id,
                                    a.SealNo,
@@ -2306,7 +2731,7 @@ namespace OpenAuth.App.ContractManager
                                    a.SealType,
                                    a.CompanyType,
                                    SealTypeValue = b.DtValue,
-                                   SealTypeName = b.Name                               
+                                   SealTypeName = b.Name
                                };
 
             var result = new TableData();
@@ -2328,7 +2753,7 @@ namespace OpenAuth.App.ContractManager
             }
 
             var result = new TableData();
-            var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();             
+            var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
             result.Count = categoryCompanyList.Count();
             result.Data = categoryCompanyList;
             return result;
@@ -2398,18 +2823,23 @@ namespace OpenAuth.App.ContractManager
                 switch (contractType)
                 {
                     case "1":
-                        List<string> contractTypes = new List<string>() { "1","2","3","4","5","6","7","8","9","10" };
+                        List<string> contractTypes = new List<string>() { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "14", "15" };
                         categorFileTypes = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractFileType") && contractTypes.Contains(u.DtValue)).ToListAsync();
                         result.Count = categorFileTypes.Count();
                         result.Data = categorFileTypes.OrderBy(r => r.SortNo).Select(u => new { u.DtValue, u.Name }).ToList();
                         break;
                     case "2":
-                        categorFileTypes = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractFileType") && (u.DtValue == "11" || u.DtValue == "12")).ToListAsync();
+                        categorFileTypes = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractFileType") && (u.DtValue == "11")).ToListAsync();
+                        result.Count = categorFileTypes.Count();
+                        result.Data = categorFileTypes.OrderBy(r => r.SortNo).Select(u => new { u.DtValue, u.Name }).ToList();
+                        break;
+                    case "3":
+                        categorFileTypes = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractFileType") && u.DtValue == "13").ToListAsync();
                         result.Count = categorFileTypes.Count();
                         result.Data = categorFileTypes.OrderBy(r => r.SortNo).Select(u => new { u.DtValue, u.Name }).ToList();
                         break;
                     default:
-                        categorFileTypes = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractFileType") && u.DtValue == "13").ToListAsync();
+                        categorFileTypes = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractFileType") && u.DtValue == "12").ToListAsync();
                         result.Count = categorFileTypes.Count();
                         result.Data = categorFileTypes.OrderBy(r => r.SortNo).Select(u => new { u.DtValue, u.Name }).ToList();
                         break;
@@ -2454,9 +2884,14 @@ namespace OpenAuth.App.ContractManager
                     List<ContractFileType> contractFileTypeList = new List<ContractFileType>();
                     foreach (ContractFileType item in obj.ContractFileTypeList)
                     {
-                        if (item.FileType == "" || item.ContractSealId == "")
+                        if (string.IsNullOrEmpty(item.FileType) || string.IsNullOrEmpty(item.ContractSealId))
                         {
                             throw new Exception("文件类型或印章Id不能为空");
+                        }
+
+                        if (string.IsNullOrEmpty(item.ContractOriginalId))
+                        {
+                            throw new Exception("结束合同申请单时合同原件不能为空");
                         }
 
                         item.Id = Guid.NewGuid().ToString();
@@ -2508,8 +2943,12 @@ namespace OpenAuth.App.ContractManager
                         SaleNo = obj.SaleNo,
                         IsDraft = obj.IsDraft,
                         IsUploadOriginal = true,
+                        IsUseCompanyTemplate = obj.IsUseCompanyTemplate,
                         FlowInstanceId = obj.FlowInstanceId,
                         DownloadNumber = obj.DownloadNumber,
+                        U_SAP_Id = obj.U_SAP_Id,
+                        ItemNo = obj.ItemNo,
+                        ItemName = obj.ItemName,
                         ContractStatus = "-1",
                         Remark = obj.Remark,
                         CreateId = obj.CreateId,
@@ -2710,8 +3149,13 @@ namespace OpenAuth.App.ContractManager
                         QuotationNo = obj.QuotationNo,
                         SaleNo = obj.SaleNo,
                         IsDraft = obj.IsDraft,
+                        IsUseCompanyTemplate = obj.IsUseCompanyTemplate,
+                        IsUploadOriginal = obj.IsUploadOriginal,
                         FlowInstanceId = obj.FlowInstanceId,
                         DownloadNumber = obj.DownloadNumber,
+                        U_SAP_Id = obj.U_SAP_Id,
+                        ItemName = obj.ItemName,
+                        ItemNo = obj.ItemNo,
                         ContractStatus = "7",
                         Remark = obj.Remark,
                         CreateId = obj.CreateId,
@@ -2729,7 +3173,7 @@ namespace OpenAuth.App.ContractManager
                         ContractApplyId = obj.Id
                     });
 
-                    var contractFilesList = await UnitWork.Find<ContractFileType>(r => r.ContractApplyId == obj.Id).Select(r => new ContractFileQuery{ Id = r.Id, ContractSealId = r.ContractSealId}).ToListAsync();
+                    var contractFilesList = await UnitWork.Find<ContractFileType>(r => r.ContractApplyId == obj.Id).Select(r => new ContractFileQuery { Id = r.Id, ContractSealId = r.ContractSealId }).ToListAsync();
                     foreach (ContractFileQuery item in contractFilesList.Distinct())
                     {
                         await UnitWork.AddAsync<ContractSealOperationHistory>(new ContractSealOperationHistory
@@ -2776,7 +3220,7 @@ namespace OpenAuth.App.ContractManager
             var loginUser = loginContext.User;
             var result = new TableData();
             string path;
-            string newFileName ="";
+            string newFileName = "";
             UploadFile uploadResult = new UploadFile();
 
             //获取合同申请单
@@ -2787,7 +3231,7 @@ namespace OpenAuth.App.ContractManager
                 result.Code = 500;
                 return result;
             }
-            
+
             //获取文件流
             var contractFile = await UnitWork.Find<UploadFile>(r => r.Id == req.ContractFileId).FirstOrDefaultAsync();
             var documentStream = await _fileStore.DownloadFile(contractFile.BucketName, contractFile.FilePath);
@@ -2858,8 +3302,9 @@ namespace OpenAuth.App.ContractManager
         /// 更新文件下载次数
         /// </summary>
         /// <param name="contractId">合同申请单Id</param>
+        /// <param name="fileId">文件Id</param>
         /// <returns>成功返回true，失败返回false</returns>
-        public async Task<bool> GetFileDownloadNum(string contractId)
+        public async Task<bool> GetFileDownloadNum(string contractId, string fileId)
         {
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
@@ -2869,14 +3314,32 @@ namespace OpenAuth.App.ContractManager
 
             var loginUser = loginContext.User;
             var objs = await UnitWork.Find<ContractApply>(r => r.Id == contractId).FirstOrDefaultAsync();
-            try
+            var dbContext = UnitWork.GetDbContext<ContractApply>();
+            using (var transaction = dbContext.Database.BeginTransactionAsync().ConfigureAwait(false).GetAwaiter().GetResult())
             {
-                await UnitWork.UpdateAsync<ContractApply>(q => q.Id == contractId, q => new ContractApply{ DownloadNumber = objs.DownloadNumber + 1 });
-                return true;
-            }
-            catch (Exception ex)
-            {
-                ex.ToString();
+                try
+                {
+                    //更新下载次数
+                    await UnitWork.UpdateAsync<ContractApply>(q => q.Id == contractId, q => new ContractApply { DownloadNumber = objs.DownloadNumber + 1 });
+
+                    //文件下载记录
+                    await UnitWork.AddAsync<ContractDownLoadFileHis>(new ContractDownLoadFileHis
+                    {
+                        ContractApplyId = contractId,
+                        FileId = fileId,
+                        CreateUserId = loginUser.Id,
+                        CreateName = loginUser.Name,
+                        CreateTime = DateTime.Now
+                    });
+
+                    await UnitWork.SaveAsync();
+                    await transaction.CommitAsync();
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                }
             }
 
             return false;
@@ -2903,6 +3366,7 @@ namespace OpenAuth.App.ContractManager
             string zipfile = $"Templates/files/{ number + ".zip"}";
             try
             {
+                List<ContractDownLoadFileHis> contractDownLoadFileHiss = new List<ContractDownLoadFileHis>();
                 #region 本地服务器生成压缩包
                 ZipOutputStream s = new ZipOutputStream(System.IO.File.Create(zipfile));
                 s.SetLevel(6);
@@ -2921,6 +3385,15 @@ namespace OpenAuth.App.ContractManager
                     fs.Close();
                     s.PutNextEntry(entry);
                     s.Write(buffer, 0, buffer.Length);
+
+                    //记录文件下载历史
+                    ContractDownLoadFileHis contractDownLoadFileHis = new ContractDownLoadFileHis();
+                    contractDownLoadFileHis.ContractApplyId = contractId;
+                    contractDownLoadFileHis.FileId = file;
+                    contractDownLoadFileHis.CreateUserId = loginUser.Id;
+                    contractDownLoadFileHis.CreateName = loginUser.Name;
+                    contractDownLoadFileHis.CreateTime = DateTime.Now;
+                    contractDownLoadFileHiss.Add(contractDownLoadFileHis);
                 }
 
                 s.Finish();
@@ -2937,6 +3410,13 @@ namespace OpenAuth.App.ContractManager
                 //删除本地服务器文件
                 await DeleteFile(path);
 
+                //批量保存文件下载历史记录
+                if (contractDownLoadFileHiss.Count() > 0)
+                {
+                    await UnitWork.BatchAddAsync<ContractDownLoadFileHis>(contractDownLoadFileHiss.ToArray());
+                }
+
+                await UnitWork.SaveAsync();
                 result.Data = await Repository.AddAsync(uploadResult);
                 result.Code = 200;
             }
@@ -3007,7 +3487,6 @@ namespace OpenAuth.App.ContractManager
             List<string> statusList = new List<string>();
             if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")))
             {
-                
                 statusList.Add("3");
                 statusList.Add("4");
                 statusList.Add("9");
@@ -3022,6 +3501,7 @@ namespace OpenAuth.App.ContractManager
                 }
 
                 statusList.Add("8");
+                statusList.Add("12");
             }
 
             if (loginContext.Roles.Any(r => r.Name.Equals("销售总助")))
@@ -3031,22 +3511,27 @@ namespace OpenAuth.App.ContractManager
             }
 
             var objs = UnitWork.Find<ContractApply>(r => statusList.Contains(r.ContractStatus)).Include(r => r.ContractFileTypeList).Include(r => r.contractOperationHistoryList);
-            var contractApply = objs.WhereIf(!string.IsNullOrWhiteSpace(request.ContractNo), r => r.ContractNo.Contains(request.ContractNo))
+            var contractApply = (objs.WhereIf(!string.IsNullOrWhiteSpace(request.ContractNo), r => r.ContractNo.Contains(request.ContractNo))
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerCodeOrName), r => r.CustomerCode.Contains(request.CustomerCodeOrName))
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerCodeOrName), r => r.CustomerName.Contains(request.CustomerCodeOrName))
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.CompanyType), r => r.CompanyType.Equals(request.CompanyType))
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.QuotationNo), r => r.QuotationNo.Contains(request.QuotationNo))
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.SaleNo), r => r.SaleNo.Contains(request.SaleNo))
+                                    .WhereIf(!string.IsNullOrWhiteSpace(request.ItemNo), r => r.ItemNo.Contains(request.ItemNo))
+                                    .WhereIf(!string.IsNullOrWhiteSpace(request.ItemName), r => r.ItemName.Contains(request.ItemName))
                                     .WhereIf(request.StartDate != null, r => r.CreateTime >= request.StartDate)
-                                    .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate);
+                                    .WhereIf(request.EndDate != null, r => r.CreateTime <= request.EndDate)).ToList();
 
-            contractApply.OrderByDescending(r => r.CreateTime);
+            //通过反射将字段作为参数传入
+            contractApply = (request.SortOrder == "asc" ? contractApply.OrderBy(r => r.GetType().GetProperty(request.SortName == "" || request.SortName == null ? "CreateTime" : Regex.Replace(request.SortName, @"^\w", t => t.Value.ToUpper())).GetValue(r, null)) : contractApply.OrderByDescending(r => r.GetType().GetProperty(request.SortName == "" || request.SortName == null ? "CreateTime" : Regex.Replace(request.SortName, @"^\w", t => t.Value.ToUpper())).GetValue(r, null))).ToList();
+
+            //查询字典信息
             var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
             var categoryContractList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
             var categoryStatusList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractStatus")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
             List<string> contractId = contractApply.Select(r => r.Id).ToList();
             var contractFile = UnitWork.Find<ContractFileType>(r => contractId.Contains(r.ContractApplyId));
-            var contractApplyList = await contractApply.Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+            var contractApplyList = contractApply.Skip((request.page - 1) * request.limit).Take(request.limit).ToList();
             var contractResp = from a in contractApplyList
                                join b in categoryCompanyList on a.CompanyType equals b.DtValue
                                join c in categoryContractList on a.ContractType equals c.DtValue
@@ -3077,6 +3562,9 @@ namespace OpenAuth.App.ContractManager
                 IsUseCompanyTemplate = r.a.IsUseCompanyTemplate,
                 FlowInstanceId = r.a.FlowInstanceId,
                 DownloadNumber = r.a.DownloadNumber,
+                U_SAP_Id = r.a.U_SAP_Id,
+                ItemNo = r.a.ItemNo,
+                ItemName = r.a.ItemName,
                 ContractStatus = r.a.ContractStatus,
                 Remark = r.a.Remark,
                 CreateId = r.a.CreateId,
@@ -3091,9 +3579,9 @@ namespace OpenAuth.App.ContractManager
                 StatusName = r.StatusName,
                 ContractFileTypeList = r.a.ContractFileTypeList,
                 ContractHistoryList = r.a.contractOperationHistoryList
-            }).OrderByDescending(r => r.CreateTime).ToList();
+            }).ToList();
 
-            result.Count = await contractApply.CountAsync();
+            result.Count = contractApply.Count();
             result.Data = contractRespList;
             return result;
         }
@@ -3116,7 +3604,7 @@ namespace OpenAuth.App.ContractManager
                     case "1":
                         if (obj.CustomerCode == "")
                         {
-                            result.Message = categoryFileList.Where(r => r.DtValue == "1").FirstOrDefault().Name +  "客户不允许为空！";
+                            result.Message = categoryFileList.Where(r => r.DtValue == "1").FirstOrDefault().Name + "客户不允许为空！";
                             result.Code = 500;
                         }
                         break;
@@ -3162,13 +3650,6 @@ namespace OpenAuth.App.ContractManager
                             result.Code = 500;
                         }
                         break;
-                    case "8":
-                        if (obj.CustomerCode == "")
-                        {
-                            result.Message = categoryFileList.Where(r => r.DtValue == "8").FirstOrDefault().Name + "客户不允许为空！";
-                            result.Code = 500;
-                        }
-                        break;
                     case "9":
                         if (obj.CustomerCode == "")
                         {
@@ -3178,9 +3659,68 @@ namespace OpenAuth.App.ContractManager
                         break;
                     default:
                         break;
-                }    
+                }
             }
 
+            return result;
+        }
+
+        /// <summary>
+        /// 获取合同文件下载历史记录
+        /// </summary>
+        /// <param name="contractId">合同Id</param>
+        /// <returns>返回合同文件下载历史记录</returns>
+        public async Task<TableData> GetDownLoadFileHis(QueryContractDownLoadFilesReq req)
+        {
+            var result = new TableData();
+
+            //查询该合同申请单文件下载记录
+            var objs = (await UnitWork.Find<ContractDownLoadFileHis>(r => r.ContractApplyId == req.ContractId).ToListAsync()).OrderByDescending(r => r.CreateTime).ToList();
+
+            //查询已下载文件Id的文件类型Id
+            var contractfiles = await UnitWork.Find<ContractFile>(r => (objs.Select(x => x.FileId).ToList()).Contains(r.FileId)).Select(r => new { r.ContractFileTypeId, r.FileId }).ToListAsync();
+
+            //查询字典中文件类型名称
+            var categoryFileTypeList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractFileType")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
+
+            //查询文件类型
+            var contractFileTypes = await UnitWork.Find<ContractFileType>(r => (contractfiles.Select(x => x.ContractFileTypeId).ToList()).Contains(r.Id)).Select(r => new { r.Id, r.FileType }).ToListAsync();
+
+            //查询Mino文件存储信息
+            var contractFile = await UnitWork.Find<UploadFile>(r => (objs.Select(x => x.FileId).ToList()).Contains(r.Id)).Select(u => new { u.FileName, u.Id, u.FilePath, u.FileType, u.FileSize, u.Extension }).ToListAsync();
+
+            //获取合同文件下载基本信息
+            var contracts = from a in objs
+                            join b in contractfiles on a.FileId equals b.FileId
+                            join c in contractFileTypes on b.ContractFileTypeId equals c.Id
+                            join d in categoryFileTypeList on c.FileType equals d.DtValue
+                            select new
+                            {
+                                a.Id,
+                                a.FileId,
+                                a.CreateName,
+                                a.CreateTime,
+                                c.FileType,
+                                d.Name
+                            };
+
+            //文件历史下载记录信息
+            var contractDownLoadFileHiss = (from a in contracts
+                                            join b in contractFile on a.FileId equals b.Id
+                                            into ab
+                                            from b in ab.DefaultIfEmpty()
+                                            select new ContractDownLoadFiles
+                                            {
+                                                FileTypeName = a.Name,
+                                                FileName = b.FileName,
+                                                CreateName = a.CreateName,
+                                                CreateTime = (Convert.ToDateTime(a.CreateTime)).ToString("yyyy.MM.dd hh:mm:ss")
+                                            }).ToList();
+
+            contractDownLoadFileHiss = (req.SortOrder == "asc" ? contractDownLoadFileHiss.OrderBy(r => r.GetType().GetProperty(req.SortName == "" || req.SortName == null ? "CreateTime" : Regex.Replace(req.SortName, @"^\w", t => t.Value.ToUpper())).GetValue(r, null)) : contractDownLoadFileHiss.OrderByDescending(r => r.GetType().GetProperty(req.SortName == "" || req.SortName == null ? "CreateTime" : Regex.Replace(req.SortName, @"^\w", t => t.Value.ToUpper())).GetValue(r, null))).ToList();
+
+            result.Count = contracts.Count();
+            result.Data = contractDownLoadFileHiss.Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
             return result;
         }
     }
