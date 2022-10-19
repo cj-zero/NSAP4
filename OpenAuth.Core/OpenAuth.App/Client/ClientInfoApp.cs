@@ -482,7 +482,7 @@ namespace OpenAuth.App.Client
                 tableName.Append("A.CntctPrsn,CONCAT(IFNULL(F.Name,''),IFNULL(G.Name,''),IFNULL(A.City,''),IFNULL(A.Building,'')) AS Address, ");
                 tableName.Append("A.Phone1,A.Cellular,A.U_is_reseller,");
                 tableName.Append("A.DNotesBal,A.OrdersBal,A.OprCount,A.CreateDate,A.upd_dt UpdateDate,A.DfTcnician ");
-                tableName.Append(", case  when LOCATE(\"C\", Y.SubNo)  is NULL  then 0 ELSE 1 end as relationFlag ");
+                tableName.Append(", case  when LOCATE(\"C\", Y.SubNo)  > 0  then 1  ELSE 0 end as relationFlag ");
                 tableName.Append(" ,A.QryGroup2,A.QryGroup3 ");
                 tableName.Append(",C.GroupName,A.Free_Text,A.U_ClientSource,A.U_CompSector,A.U_TradeType,A.U_CardTypeStr,A.U_StaffScale ");
 
@@ -491,7 +491,7 @@ namespace OpenAuth.App.Client
                 tableName.Append("LEFT JOIN nsap_bone.crm_ocrg C ON C.GroupCode=A.GroupCode  ");
                 tableName.Append("LEFT JOIN nsap_bone.crm_oidc D ON D.Code=A.Indicator  ");
                 tableName.Append("LEFT JOIN nsap_bone.crm_ohem E ON E.empID=A.DfTcnician and E.sbo_id = A.sbo_id ");
-                tableName.AppendFormat("LEFT JOIN  {0}.clientrelation Y ON Y.ClientNo = A.CardCode  AND Y.IsActive =1 AND Y.ScriptFlag =0 AND Y.IsDelete = 0   ", "erp4");
+                tableName.AppendFormat("LEFT JOIN  (SELECT c.Id, c.SubNo ,c.ClientNo, c.IsActive, c.IsDelete, c.ScriptFlag,ROW_NUMBER() OVER (PARTITION BY ClientNo ORDER BY CreateDate  DESC) rn from {0}.clientrelation c)   Y ON Y.ClientNo = A.CardCode  AND Y.IsActive =1 AND Y.ScriptFlag =0 AND   Y.rn = 1  AND  Y.IsDelete = 0   ", "erp4");
                 tableName.Append("LEFT JOIN nsap_bone.crm_ocry F ON F.Code=A.Country  ");
                 tableName.Append("LEFT JOIN nsap_bone.crm_ocst G ON G.Code=A.State1 ");
 
@@ -548,7 +548,7 @@ namespace OpenAuth.App.Client
                 tableName.Append("A.Phone1,A.Cellular, ");//,A.Balance,H.Balance AS BalanceTotal
                 tableName.Append("A.DNotesBal,A.OrdersBal,A.OprCount,A.upd_dt AS UpdateDate,A.SlpCode,A.DfTcnician ");
                 tableName.Append(",IFNULL(A.Balance,0) as Balance,0.00 as BalanceTotal ");
-                tableName.Append(", case  when LOCATE(\"C\", Y.SubNo)  is NULL  then 0 ELSE 1 end as relationFlag ");
+                tableName.Append(", case  when LOCATE(\"C\", Y.SubNo)  > 0  then 1  ELSE 0 end as relationFlag ");
                 tableName.Append(" , A.validFor,A.validFrom,A.validTo,A.ValidComm,A.frozenFor,A.frozenFrom,A.frozenTo,A.FrozenComm,A.QryGroup2,A.QryGroup3 ");
                 tableName.Append(",C.GroupName,A.Free_Text");
                 //90天内未清收款金额
@@ -569,7 +569,7 @@ namespace OpenAuth.App.Client
                 tableName.AppendFormat("LEFT JOIN {0}.crm_OCST G ON G.Code=A.State1 ", "nsap_bone");
                 tableName.AppendFormat("LEFT JOIN {0}.wfa_job H ON H.sbo_itf_return=A.CardCode ", "nsap_base");
                 tableName.AppendFormat("LEFT JOIN {0}.clue I ON I.Id=H.base_entry", "nsap_serve");
-                tableName.AppendFormat("LEFT JOIN {0}.clientrelation Y ON Y.ClientNo = A.CardCode  AND Y.IsActive =1 AND Y.ScriptFlag =0 AND Y.IsDelete = 0   ", "erp4");
+                tableName.AppendFormat("LEFT JOIN  (SELECT c.Id, c.SubNo ,c.ClientNo, c.IsActive, c.IsDelete, c.ScriptFlag,ROW_NUMBER() OVER (PARTITION BY ClientNo ORDER BY CreateDate DESC) rn from {0}.clientrelation c)   Y ON Y.ClientNo = A.CardCode  AND Y.IsActive =1 AND Y.ScriptFlag =0 AND   Y.rn = 1  AND  Y.IsDelete = 0   ", "erp4");
                 tableName.AppendFormat("LEFT JOIN {0}.cluefollowup J ON J.ClueId=I.Id ORDER BY b.FollowUpTime DESC LIMIT 1 ", "nsap_serve");
                 //tableName.AppendFormat("LEFT JOIN {0}.crm_balance_sum H ON H.CardCode=A.CardCode) T ", "nsap_bone");
                 tableName.Append(") T");
