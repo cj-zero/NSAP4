@@ -419,10 +419,15 @@ namespace OpenAuth.WebApi.Controllers.Client
                     !string.IsNullOrEmpty(saveCrmAuditInfoReq.JobId) &&
                     ((saveCrmAuditInfoReq.AuditType == "Edit" && !string.IsNullOrEmpty(saveCrmAuditInfoReq.CardCode)) ||
                      saveCrmAuditInfoReq.AuditType == "Add"))
-                    result.Result = await _clientInfoApp.SaveCrmAuditInfo(saveCrmAuditInfoReq.AuditType,
+                {
+                    var finalR = await _clientInfoApp.SaveCrmAuditInfo(saveCrmAuditInfoReq.AuditType,
                         saveCrmAuditInfoReq.CardCode, saveCrmAuditInfoReq.DfTcnician, saveCrmAuditInfoReq.JobId);
+                    result.Message = finalR.Message;
+                }
                 else
+                {
                     result.Result = "0";
+                }
             }
             catch (Exception ex)
             {
@@ -1023,12 +1028,12 @@ namespace OpenAuth.WebApi.Controllers.Client
         /// <returns></returns>
         [HttpGet]
         [Route("GetSlpCode")]
-        public async Task<Response<int>> GetSlpCode()
+        public async Task<Infrastructure.Response> GetSlpCode()
         {
-            var result = new Response<int>();
+            var result = new Response();
             try
             {
-                result.Result = await _clientInfoApp.GetSlpCode();
+                result = await _clientInfoApp.GetSlpCode();
             }
             catch (Exception ex)
             {
@@ -1066,12 +1071,12 @@ namespace OpenAuth.WebApi.Controllers.Client
         /// <returns></returns>
         [HttpGet]
         [Route("isLims")]
-        public async Task<Response<string>> isLims()
+        public async Task<Infrastructure.Response> isLims()
         {
-            var result = new Response<string>();
+            var result = new Response();
             try
             {
-                result.Result = await _clientInfoApp.isLims();
+                result = await _clientInfoApp.isLims();
             }
             catch (Exception ex)
             {

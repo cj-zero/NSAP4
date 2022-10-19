@@ -59,9 +59,13 @@ namespace OpenAuth.App.ClientRelation.Request
         /// </summary>
         public string ClientNo { get; set; }
         /// <summary>
-        /// 新业务员编号
+        /// 终端
         /// </summary>
         public string TerminalList { get; set; }
+        /// <summary>
+        /// 编号
+        /// </summary>
+        public int jobId { get; set; }
     }
 
 
@@ -81,6 +85,8 @@ namespace OpenAuth.App.ClientRelation.Request
         public string CreatorId { get; set; }
 
     }
+
+
 
 
     public class ClientRelJob

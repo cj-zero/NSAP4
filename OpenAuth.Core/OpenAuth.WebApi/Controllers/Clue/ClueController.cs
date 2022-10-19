@@ -113,12 +113,12 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <returns></returns>
         [HttpGet]
         [Route("ChangeClueStatusById")]
-        public async Task<Response> ChangeClueStatusById(int id)
+        public async Task<Response> ChangeClueStatusById(int id,int jobid)
         {
             var result = new Response();
             try
             {
-                result = await _clueApp.ChangeClueStatusById(id);
+                result = await _clueApp.ChangeClueStatusById(id,jobid);
             }
             catch (Exception ex)
             {

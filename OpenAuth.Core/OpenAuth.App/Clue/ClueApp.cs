@@ -30,6 +30,7 @@ using AutoMapper;
 using MailKit.Search;
 using Microsoft.EntityFrameworkCore.Internal;
 using static OpenAuth.App.Clue.ModelDto.KuaiBaosHelper;
+using OpenAuth.Repository.Domain;
 
 namespace OpenAuth.App
 {
@@ -179,10 +180,16 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public async Task<Infrastructure.Response> ChangeClueStatusById(int id)
+        public async Task<Infrastructure.Response> ChangeClueStatusById(int id,int jobid)
         {
             var result = new Infrastructure.Response();
-
+            //2022.10.18 check if wfa.job is legit ,if not ,pass ，wait for a minute for the sync process
+            System.Threading.Thread.Sleep(50000);
+            var legitJob = UnitWork.FindSingle<wfa_job>(a => a.base_entry == id && a.job_id ==jobid && a.sync_stat == 4 );
+            if (legitJob== null)
+            {
+                return result;
+            }
             await UnitWork.UpdateAsync<Repository.Domain.Serve.Clue>(c => c.Id == id, x => new Repository.Domain.Serve.Clue
             {
                 Status = 1

@@ -34,6 +34,7 @@ using OpenAuth.App.ClientRelation;
 using DocumentFormat.OpenXml.Math;
 using OpenAuth.App.Request;
 using Microsoft.Extensions.Logging;
+using EdgeCmd;
 
 namespace OpenAuth.App.Client
 {
@@ -482,7 +483,7 @@ namespace OpenAuth.App.Client
                 tableName.Append("A.CntctPrsn,CONCAT(IFNULL(F.Name,''),IFNULL(G.Name,''),IFNULL(A.City,''),IFNULL(A.Building,'')) AS Address, ");
                 tableName.Append("A.Phone1,A.Cellular,A.U_is_reseller,");
                 tableName.Append("A.DNotesBal,A.OrdersBal,A.OprCount,A.CreateDate,A.upd_dt UpdateDate,A.DfTcnician ");
-                tableName.Append(", case  when LOCATE(\"C\", Y.SubNo)  is NULL  then 0 ELSE 1 end as relationFlag ");
+                tableName.Append(", case  when LOCATE(\"C\", Y.SubNo)  > 0   ||  LOCATE(\"C\", Y.ParentNo) > 0   then 1  ELSE 0 end as relationFlag ");
                 tableName.Append(" ,A.QryGroup2,A.QryGroup3 ");
                 tableName.Append(",C.GroupName,A.Free_Text,A.U_ClientSource,A.U_CompSector,A.U_TradeType,A.U_CardTypeStr,A.U_StaffScale ");
 
@@ -491,7 +492,7 @@ namespace OpenAuth.App.Client
                 tableName.Append("LEFT JOIN nsap_bone.crm_ocrg C ON C.GroupCode=A.GroupCode  ");
                 tableName.Append("LEFT JOIN nsap_bone.crm_oidc D ON D.Code=A.Indicator  ");
                 tableName.Append("LEFT JOIN nsap_bone.crm_ohem E ON E.empID=A.DfTcnician and E.sbo_id = A.sbo_id ");
-                tableName.AppendFormat("LEFT JOIN  {0}.clientrelation Y ON Y.ClientNo = A.CardCode  ", "erp4");
+                tableName.AppendFormat("LEFT JOIN  (SELECT c.Id, c.SubNo ,c.ClientNo, c.IsActive, c.ParentNo, c.IsDelete, c.ScriptFlag,ROW_NUMBER() OVER (PARTITION BY ClientNo ORDER BY CreateDate  DESC) rn from {0}.clientrelation c)   Y ON Y.ClientNo = A.CardCode  AND Y.IsActive =1 AND Y.ScriptFlag =0 AND   Y.rn = 1  AND  Y.IsDelete = 0   ", "erp4");
                 tableName.Append("LEFT JOIN nsap_bone.crm_ocry F ON F.Code=A.Country  ");
                 tableName.Append("LEFT JOIN nsap_bone.crm_ocst G ON G.Code=A.State1 ");
 
@@ -548,7 +549,7 @@ namespace OpenAuth.App.Client
                 tableName.Append("A.Phone1,A.Cellular, ");//,A.Balance,H.Balance AS BalanceTotal
                 tableName.Append("A.DNotesBal,A.OrdersBal,A.OprCount,A.upd_dt AS UpdateDate,A.SlpCode,A.DfTcnician ");
                 tableName.Append(",IFNULL(A.Balance,0) as Balance,0.00 as BalanceTotal ");
-                tableName.Append(", case  when LOCATE(\"C\", Y.SubNo)  is NULL  then 0 ELSE 1 end as relationFlag ");
+                tableName.Append(", case  when LOCATE(\"C\", Y.SubNo)  > 0  ||  LOCATE(\"C\", Y.ParentNo) > 0  then 1  ELSE 0 end as relationFlag ");
                 tableName.Append(" , A.validFor,A.validFrom,A.validTo,A.ValidComm,A.frozenFor,A.frozenFrom,A.frozenTo,A.FrozenComm,A.QryGroup2,A.QryGroup3 ");
                 tableName.Append(",C.GroupName,A.Free_Text");
                 //90天内未清收款金额
@@ -569,7 +570,7 @@ namespace OpenAuth.App.Client
                 tableName.AppendFormat("LEFT JOIN {0}.crm_OCST G ON G.Code=A.State1 ", "nsap_bone");
                 tableName.AppendFormat("LEFT JOIN {0}.wfa_job H ON H.sbo_itf_return=A.CardCode ", "nsap_base");
                 tableName.AppendFormat("LEFT JOIN {0}.clue I ON I.Id=H.base_entry", "nsap_serve");
-                tableName.AppendFormat("LEFT JOIN {0}.clientrelation Y ON Y.ClientNo = A.CardCode ", "erp4");
+                tableName.AppendFormat("LEFT JOIN  (SELECT c.Id, c.SubNo ,c.ClientNo, c.ParentNo, c.IsActive, c.IsDelete, c.ScriptFlag,ROW_NUMBER() OVER (PARTITION BY ClientNo ORDER BY CreateDate DESC) rn from {0}.clientrelation c)   Y ON Y.ClientNo = A.CardCode  AND Y.IsActive =1 AND Y.ScriptFlag =0 AND   Y.rn = 1  AND  Y.IsDelete = 0   ", "erp4");
                 tableName.AppendFormat("LEFT JOIN {0}.cluefollowup J ON J.ClueId=I.Id ORDER BY b.FollowUpTime DESC LIMIT 1 ", "nsap_serve");
                 //tableName.AppendFormat("LEFT JOIN {0}.crm_balance_sum H ON H.CardCode=A.CardCode) T ", "nsap_bone");
                 tableName.Append(") T");
@@ -1661,13 +1662,14 @@ namespace OpenAuth.App.Client
         /// <summary>
         /// 保存业务伙伴审核的录入方案
         /// </summary>
-        public async Task<string> SaveCrmAuditInfo(string AuditType, string CardCode, string DfTcnician, string JobId)
+        public async Task<Infrastructure.Response> SaveCrmAuditInfo(string AuditType, string CardCode, string DfTcnician, string JobId)
         {
+            Infrastructure.Response rsp = new Infrastructure.Response();
             clientOCRD client = new clientOCRD();
             client = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(JobId));
             client.ChangeType = AuditType;
             client.ChangeCardCode = CardCode;
-            var originClient = UnitWork.FindSingle<crm_ocrd>(a => a.CardCode == CardCode);
+            var originClient = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation > (a => a.ClientNo == CardCode && a.IsDelete == 0 && a.IsActive == 1 && a.Flag !=2 && a.ScriptFlag == 0);
             if (AuditType == "Edit")
             {
                 client.DfTcnicianCode = DfTcnician;
@@ -1677,17 +1679,18 @@ namespace OpenAuth.App.Client
                 var job = UnitWork.FindSingle<wfa_job>(a => a.job_id == jobraw);
 
                 var newOper = UnitWork.FindSingle<User>(a => a.User_Id == job.user_id);
-                if (client.is_reseller == "Y")
+                if (originClient !=null && client.is_reseller == "N")
                 {
-                    if (originClient.U_is_reseller == "N")
+                    if (originClient.Flag == 1)
                     {
                         //add log to explain why
                         _logger.LogError("不允许中间商变更为终端客户,请求参数为 jobid:" + JobId + " CardCode: " + CardCode);
-                        return "0";
+                        rsp.Message = "审核失败，不允许中间商变更为终端客户";
+                        rsp.Code = 200;
+                        return rsp;
                     }
                     else
                     {
-
                         await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
                         {
                             userid = currentuser.User.Id.ToString(),
@@ -1696,6 +1699,7 @@ namespace OpenAuth.App.Client
                             job_username = newOper.Name,
                             jobid = (int)job.job_id,
                             ClientNo = CardCode,
+                            ClientName = originClient.ClientName,
                             flag = 0,
                             OperateType = 1
                         });
@@ -1705,7 +1709,7 @@ namespace OpenAuth.App.Client
                 else
                 {
                     //20221007  若审批是中间商时 1. 终端变更为中间商，更改业务员  2. 中间商变更，更改业务员，原先关系不解绑
-                    if (originClient.U_is_reseller == "N")
+                    if (originClient != null && client.is_reseller == "Y")
                     {
                         await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
                         {
@@ -1715,6 +1719,7 @@ namespace OpenAuth.App.Client
                             job_username = newOper.Name,
                             jobid = (int)job.job_id,
                             ClientNo = CardCode,
+                            ClientName = originClient.ClientName,
                             flag = 1,
                             OperateType = 0
                         });
@@ -1723,10 +1728,12 @@ namespace OpenAuth.App.Client
 
                 }
             }
-            string rJobNm = string.Format("{0}{1}", client.ClientOperateType == "edit" ? "修改" : "添加", client.CardType == "S" ? "供应商" : "业务伙伴");
+            string rJobNm = string.Format("{0}{1}", client.ChangeType == "edit" ? "修改" : "添加", client.CardType == "S" ? "供应商" : "业务伙伴");
             byte[] job_data = ByteExtension.ToSerialize(client);
-            return UpdateAuditJob(JobId, rJobNm, client.FreeText.FilterESC(), job_data, false) ? "1" : "0";
-
+            var finalResult = UpdateAuditJob(JobId, rJobNm, client.FreeText.FilterESC(), job_data, false) ? "1" : "0";
+            rsp.Message = finalResult;
+            rsp.Code = 200;
+            return rsp;
         }
         #endregion
         #region 审核
@@ -2789,6 +2796,8 @@ namespace OpenAuth.App.Client
                         UpdateTime = DateTime.Now,
                         UpdateUser = userName
                     });
+                    // remove 4.0 relation if it exists
+                    await _clientRelationApp.RejectJobRelations(req.CardCode);
                     await UnitWork.SaveAsync();
                     await tran.CommitAsync();
                 }
@@ -3375,21 +3384,37 @@ namespace OpenAuth.App.Client
         /// </summary>
         /// <returns></returns>
         /// <exception cref="CommonException"></exception>
-        public async Task<int> GetSlpCode()
+        public async Task<Infrastructure.Response> GetSlpCode()
         {
-            int slpCode = 0;
+            var result = new Infrastructure.Response();
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            int userId = loginContext.User.User_Id.Value;
-            var sbouser = await UnitWork.Find<sbo_user>(q => q.user_id == userId).FirstOrDefaultAsync();
-            if (sbouser != null)
+            int userId = 0;
+            if (loginContext.User.User_Id != null)
             {
-                slpCode = sbouser.sale_id.Value;
+                userId = loginContext.User.User_Id.Value;
             }
-            return slpCode;
+            else
+            {
+                result.Code = 500;
+                result.Message = "业务员账号未绑定4.0，请联系管理员";
+                return result;
+            }
+            var sbouser = await UnitWork.Find<sbo_user>(q => q.user_id == userId).FirstOrDefaultAsync();
+            if (sbouser != null && sbouser.sale_id != null)
+            {
+                result.Message = sbouser.sale_id.Value.ToString();
+            }
+            else
+            {
+                result.Code = 500;
+                result.Message = "业务员账号未绑定3.0，请联系管理员";
+                return result;
+            }
+            return result;
         }
 
         /// <summary>
@@ -3501,22 +3526,40 @@ namespace OpenAuth.App.Client
         /// </summary>
         /// <returns></returns>
         /// <exception cref="CommonException"></exception>
-        public async Task<string> isLims()
+        public async Task<Infrastructure.Response> isLims()
         {
             int slpCode = 0;
+            var result = new Infrastructure.Response();
             var loginContext = _auth.GetCurrentUser();
             if (loginContext == null)
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-            int userId = loginContext.User.User_Id.Value;
-            var sbouser = await UnitWork.Find<sbo_user>(q => q.user_id == userId).FirstOrDefaultAsync();
-            if (sbouser != null)
+            int userId = 0;
+            if (loginContext.User.User_Id != null)
             {
-                slpCode = sbouser.sale_id.Value;
+                userId = loginContext.User.User_Id.Value;
+            }
+            else
+            {
+                result.Code = 500;
+                result.Message = "业务员账号未绑定4.0，请联系管理员";
+                return result;
+            }
+            var sbouser = await UnitWork.Find<sbo_user>(q => q.user_id == userId).FirstOrDefaultAsync();
+            if (sbouser != null && sbouser.sale_id != null)
+            {
+                result.Message = sbouser.sale_id.Value.ToString();
+            }
+            else
+            {
+                result.Code = 500;
+                result.Message = "业务员账号未绑定3.0，请联系管理员";
+                return result;
             }
             var limsList = UnitWork.Find<LimsInfo>(q => q.SlpCode == slpCode).ToList();
-            return limsList.Count > 0 ? "true" : "false";
+            result.Message = limsList.Count > 0 ? "true" : "false";
+            return result;
         }
         #endregion
     }
