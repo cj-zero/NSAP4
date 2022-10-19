@@ -1359,6 +1359,7 @@ namespace OpenAuth.App
                     obj.CreateTime = DateTime.Now;
                     obj.CreateUserId = loginUser.Id;
                     obj.IsRead = 1;
+                    obj.IsSalesman = IsSalesman;
                     //判断是否存为草稿
                     if (!obj.IsDraft)
                     {
@@ -1545,14 +1546,20 @@ namespace OpenAuth.App
                         var maxmainid = UnitWork.Find<ReimburseInfo>(null).OrderByDescending(r => r.MainId).Select(r => r.MainId).FirstOrDefault();
                         obj.MainId = maxmainid + 1;
                     }
+                    int IsSalesman = 0;
+                    if (loginContext.Roles.Where(a => a.Name == "销售员").Count() > 0 && loginContext.Roles.Where(a => a.Name == "售后技术员").Count() <= 0)
+                    {
+                        IsSalesman = 1;
+                    }
+                    obj.IsSalesman = IsSalesman;
+                    if (IsSalesman == 1)
+                    {
+                        obj.RemburseStatus = 11;
+                    }
 
                     if (!req.IsDraft)
                     {
-                        int IsSalesman = 0;
-                        if (loginContext.Roles.Where(a => a.Name == "销售员").Count() > 0 && loginContext.Roles.Where(a => a.Name == "售后技术员").Count() <= 0)
-                        {
-                            IsSalesman = 1;
-                        }
+                     
                         if (string.IsNullOrWhiteSpace(req.FlowInstanceId))
                         {
                             //添加流程
@@ -1572,11 +1579,8 @@ namespace OpenAuth.App
                         }
                         //修改报销单
                         obj.RemburseStatus = 4;
-                        obj.IsSalesman = IsSalesman;
-                        if (IsSalesman == 1 )
-                        {
-                            obj.RemburseStatus = 11;
-                        }
+                 
+                        
                         UnitWork.Update<ReimburseInfo>(r => r.Id == obj.Id, r => new ReimburseInfo
                         {
                             UpdateTime = DateTime.Now,
@@ -1644,7 +1648,8 @@ namespace OpenAuth.App
                             PayTime = obj.PayTime,
                             IsDraft = obj.IsDraft,
                             FlowInstanceId = obj.FlowInstanceId,
-                            MainId = obj.MainId
+                            MainId = obj.MainId,
+                            IsSalesman = obj.IsSalesman
                         });
                         UnitWork.Save();
                     }
