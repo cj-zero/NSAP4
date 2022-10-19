@@ -183,7 +183,8 @@ namespace OpenAuth.App
         public async Task<Infrastructure.Response> ChangeClueStatusById(int id,int jobid)
         {
             var result = new Infrastructure.Response();
-            //2022.10.18 check if wfa.job is legit ,if not ,pass 
+            //2022.10.18 check if wfa.job is legit ,if not ,pass ，wait for a minute for the sync process
+            System.Threading.Thread.Sleep(50000);
             var legitJob = UnitWork.FindSingle<wfa_job>(a => a.base_entry == id && a.job_id ==jobid && a.sync_stat == 4 );
             if (legitJob== null)
             {
