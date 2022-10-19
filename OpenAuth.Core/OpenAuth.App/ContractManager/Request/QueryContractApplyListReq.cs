@@ -19,7 +19,7 @@ namespace OpenAuth.App.Request
         /// Id
         /// </summary>
         public string Id { get; set; }
-      
+
         /// <summary>
         /// 合同申请单编号
         /// </summary>
@@ -71,13 +71,23 @@ namespace OpenAuth.App.Request
         public DateTime? EndDate { get; set; }
 
         /// <summary>
+        /// 项目名称
+        /// </summary>
+        public string ItemName { get; set; }
+
+        /// <summary>
+        /// 项目编号
+        /// </summary>
+        public string ItemNo { get; set; }
+
+        /// <summary>
         /// 文件类型
         /// </summary>
         public List<string> FileTypes { get; set; }
     }
 
     public class QueryReCallContractReq
-    { 
+    {
         /// <summary>
         /// 合同申请单Id
         /// </summary>
@@ -88,4 +98,146 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string Remarks { get; set; }
     }
+
+    public class ContractMsgHelp
+    {
+        /// <summary>
+        /// 合同编号
+        /// </summary>
+        public string ContractNo { get; set; }
+
+        /// <summary>
+        /// 合同类型名称
+        /// </summary>
+        public string ContractTypeName { get; set; }
+
+        /// <summary>
+        /// 文件类型名称
+        /// </summary>
+        public string FileTypeName { get; set; }
+
+        /// <summary>
+        /// 申请人
+        /// </summary>
+        public string CreateName { get; set; }
+
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        public string CreateTime { get; set; }
+
+        /// <summary>
+        /// 所属公司
+        /// </summary>
+        public string CompanyName { get; set; }
+
+        /// <summary>
+        /// 合同状态
+        /// </summary>
+        public string ContractStatusName { get; set; }
+    }
+
+    public class ContractApplyMsgHelp
+    {
+        /// <summary>
+        /// Id
+        /// </summary>
+        public string Id { get; set; }
+
+        /// <summary>
+        /// 销售报价单号
+        /// </summary>
+        public string QuotationNo { get; set; }
+
+        /// <summary>
+        /// 销售订单号
+        /// </summary>
+        public string SaleNo { get; set; }
+
+        /// <summary>
+        /// 合同编号
+        /// </summary>
+        public string ContractNo { get; set; }
+
+        /// <summary>
+        /// 合同类型
+        /// </summary>
+        public string ContractType { get; set; }
+
+        /// <summary>
+        /// 合同类型名称
+        /// </summary>
+        public string ContractTypeName { get; set; }
+
+        /// <summary>
+        /// 申请人
+        /// </summary>
+        public string CreateName { get; set; }
+
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        public string CreateTime { get; set; }
+
+        /// <summary>
+        /// 所属公司
+        /// </summary>
+        public string CompanyType { get; set; }
+
+        /// <summary>
+        /// 公司名称
+        /// </summary>
+        public string CompanyName { get; set; }
+
+        /// <summary>
+        /// 合同状态
+        /// </summary>
+        public string ContractStatus { get; set; }
+
+        /// <summary>
+        /// 合同状态名称
+        /// </summary>
+        public string ContractStatusName { get; set; }
+    }
+
+    public class QueryContractDownLoadFilesReq : PageReq
+    {
+        /// <summary>
+        /// 排序字段
+        /// </summary>
+        public string SortName { get; set; }
+
+        /// <summary>
+        /// desc 降序，asc 升序
+        /// </summary>
+        public string SortOrder { get; set; }
+
+        /// <summary>
+        /// 合同申请单Id
+        /// </summary>
+        public string ContractId { get; set; }
+    }
+
+    public class ContractDownLoadFiles
+    {
+        /// <summary>
+        /// 文件类型名称
+        /// </summary>
+        public string FileTypeName { get; set; }
+
+        /// <summary>
+        /// 文件名称
+        /// </summary>
+        public string FileName { get; set; }
+
+        /// <summary>
+        /// 操作人
+        /// </summary>
+        public string CreateName { get; set; }
+
+        /// <summary>
+        /// 操作时间
+        /// </summary>
+        public string CreateTime { get; set; }
+    }  
 }

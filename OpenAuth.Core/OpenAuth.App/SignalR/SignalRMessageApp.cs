@@ -33,7 +33,7 @@ namespace OpenAuth.App.SignalR
         public async Task SendContractRoleMessage(SendRoleMessageReq req)
         {
             string userName = _auth.GetUserName();
-            await _hubContext.Clients.Group(req.Role).SendAsync("ContractMessage", userName, req.Message);
+            await _hubContext.Clients.Groups(req.Role).SendAsync("ContractMessage", userName, req.Message);
         }
 
         /// <summary>

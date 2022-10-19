@@ -5,6 +5,7 @@ using System.Text;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure;
+using DotNetCore.CAP;
 using OpenAuth.App.Response;
 using OpenAuth.App.Interface;
 using OpenAuth.Repository.Interface;
@@ -14,7 +15,6 @@ using NSAP.Entity.Sales;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.App.Order;
 using OpenAuth.Repository.Domain.Sap;
-using OpenAuth.Repository;
 
 namespace OpenAuth.App.PayTerm
 {
@@ -22,6 +22,7 @@ namespace OpenAuth.App.PayTerm
     {
         private IUnitWork _UnitWork;
         private IAuth _auth;
+        private ICapPublisher _capBus;
         private ServiceBaseApp _serviceBaseApp;
         private ServiceSaleOrderApp _serviceSaleOrderApp;
         private List<string> RecePayTypes = new List<string>() { "预付/货前款", "货到款", "验收款", "质保款" };
@@ -455,47 +456,38 @@ namespace OpenAuth.App.PayTerm
             modelCrmOctg.GroupNum = "0";
             scoc.ModelCrmOctg = modelCrmOctg;
 
-            //付款条件同步到3.0接口
-            string isResult = await InsertCrmOctg(scoc);
-            if (isResult == "2")
+            //付款条件同步到SAP,3.0接口
+            _capBus.Publish("Serve.BOneOCTG.Create", scoc);
+            using (var transaction = await dbContext.Database.BeginTransactionAsync())
             {
-                using (var transaction = await dbContext.Database.BeginTransactionAsync())
+                try
                 {
-                    try
-                    {
-                        obj.Id = Guid.NewGuid().ToString();
-                        obj.SaleGoodsToDay = Convert.ToInt32((payTermSets.FirstOrDefault()).DateNumber);
-                        obj.SaleGoodsToUnit = (payTermSets.FirstOrDefault()).DateUnit;
-                        obj.CreateUserId = loginUser.Id;
-                        obj.CreateUserName = loginUser.Name;
-                        obj.CreateTime = DateTime.Now;
-                        obj.UpdateUserId = "";
-                        obj.GroupNum = groupName;
-                        obj = await UnitWork.AddAsync<PayTermSave, int>(obj);
-                        await UnitWork.SaveAsync();
-                        await transaction.CommitAsync();
-                    }
-                    catch (Exception)
-                    {
-                        await transaction.RollbackAsync();
-                        throw new Exception("保存付款条件失败,请重试");
-                    }
+                    obj.Id = Guid.NewGuid().ToString();
+                    obj.SaleGoodsToDay = Convert.ToInt32((payTermSets.FirstOrDefault()).DateNumber);
+                    obj.SaleGoodsToUnit = (payTermSets.FirstOrDefault()).DateUnit;
+                    obj.CreateUserId = loginUser.Id;
+                    obj.CreateUserName = loginUser.Name;
+                    obj.CreateTime = DateTime.Now;
+                    obj.UpdateUserId = "";
+                    obj.GroupNum = groupName;
+                    obj = await UnitWork.AddAsync<PayTermSave, int>(obj);
+                    await UnitWork.SaveAsync();
+                    await transaction.CommitAsync();
                 }
-
-                result.Data = new
+                catch (Exception)
                 {
-                    GroupNum = groupName,
-                };
+                    await transaction.RollbackAsync();
+                    throw new Exception("保存付款条件失败,请重试");
+                }
+            }
 
-                result.Message = "操作成功";
-                return result;
-            }
-            else
+            result.Data = new
             {
-                result.Code = 500;
-                result.Message = "操作失败";
-                return result;
-            }
+                GroupNum = groupName,
+            };
+
+            result.Message = "操作成功";
+            return result;
         }
 
         /// <summary>

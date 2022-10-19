@@ -38,7 +38,8 @@ namespace OpenAuth.WebApi.Controllers
         private readonly BusinessPartnerApp _businessPartnerApp;
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
         private readonly FileApp _fileApp;
-        ServiceBaseApp _serviceBaseApp;
+        private readonly ServiceBaseApp _serviceBaseApp;
+        private readonly ServiceOrderApp _serviceOrderApp;
         IAuth _auth;
         IUnitWork UnitWork;
 
@@ -53,9 +54,10 @@ namespace OpenAuth.WebApi.Controllers
         /// <param name="serviceBaseApp"></param>
         /// <param name="contractSealApp"></param>
         /// <param name="contractTemplateApp"></param>
-        public ContractManagerController(ContractApplyApp contractapplyapp, IUnitWork UnitWork, IAuth auth, ServiceSaleOrderApp serviceSaleOrderApp, 
+        public ContractManagerController(ServiceOrderApp serviceOrderApp, ContractApplyApp contractapplyapp, IUnitWork UnitWork, IAuth auth, ServiceSaleOrderApp serviceSaleOrderApp,
             ServiceBaseApp serviceBaseApp, ContractSealApp contractSealApp, FileApp fileApp, ContractTemplateApp contractTemplateApp, BusinessPartnerApp businessPartnerApp)
         {
+            this._serviceOrderApp = serviceOrderApp;
             this._contractapplyapp = contractapplyapp;
             this._businessPartnerApp = businessPartnerApp;
             this._serviceBaseApp = serviceBaseApp;
@@ -115,6 +117,30 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 客户详情/销售报价单/销售订单的合同申请
+        /// </summary>
+        /// <param name="ModuleType">模块类型(客户-KHXQ,销售报价单-XSBJD,销售订单-XSDD)</param>
+        /// <param name="ModuleCode">模块编码</param>
+        /// <returns>返回客户详情/销售报价单/销售订单对应的合同申请单</returns>
+        [HttpGet]
+        public async Task<TableData> GetCardOrOrderDraftOrSaleOrderContract(string ModuleType, string ModuleCode)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _contractapplyapp.GetCardOrOrderDraftOrSaleOrderContract(ModuleType, ModuleCode);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{ModuleType.ToJson()}, 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 添加合同申请单
         /// </summary>
         /// <param name="obj">合同申请单实体数据</param>
@@ -129,7 +155,7 @@ namespace OpenAuth.WebApi.Controllers
                 if (!string.IsNullOrWhiteSpace(Message))
                 {
                     result.Message = Message;
-                }               
+                }
             }
             catch (Exception ex)
             {
@@ -256,7 +282,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
-               result = await _contractapplyapp.GetMyAccraditation(request);
+                result = await _contractapplyapp.GetMyAccraditation(request);
             }
             catch (Exception ex)
             {
@@ -568,6 +594,29 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 呼叫服务(客服)右侧查询列表
+        /// </summary>
+        /// <param name="req">查询服务单实体</param>
+        /// <returns>返回呼叫服务查询实体</returns>
+        [HttpGet]
+        public async Task<TableData> ServiceWorkOrderList([FromQuery] QueryServiceOrderListReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                result.Data = await _serviceOrderApp.ServiceWorkOrderList(req);
+                result.Count = result.Data.Count;
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
         ///  上传合同文件
         /// </summary>
         /// <param name="files">表单文件集合</param>
@@ -619,7 +668,7 @@ namespace OpenAuth.WebApi.Controllers
                 result.Message = ex.Message;
                 Log.Logger.Error($"地址：{Request.Path}， 错误：{result.Message}");
             }
-            
+
             return result;
         }
 
@@ -747,13 +796,13 @@ namespace OpenAuth.WebApi.Controllers
             {
                 if (obj.ContractStatus == "6")
                 {
-                    result = await _contractapplyapp.SetContractSeal(obj);   
+                    result = await _contractapplyapp.SetContractSeal(obj);
                 }
                 else
                 {
                     result.Code = 500;
                     result.Message = "当前节点不允许盖章，请在总助审批完成后盖章";
-                }             
+                }
             }
             catch (Exception ex)
             {
@@ -769,14 +818,15 @@ namespace OpenAuth.WebApi.Controllers
         /// 合同文件更新下载次数
         /// </summary>
         /// <param name="contractId">合同申请单Id</param>
+        /// <param name="fileId">文件Id</param>
         /// <returns>返回TableData信息</returns>
         [HttpGet]
-        public async Task<TableData> Download(string contractId)
+        public async Task<TableData> GetDownloadFile(string contractId, string fileId)
         {
             var result = new TableData();
             try
             {
-                bool isSuccess = await _contractapplyapp.GetFileDownloadNum(contractId);
+                bool isSuccess = await _contractapplyapp.GetFileDownloadNum(contractId, fileId);
                 if (isSuccess)
                 {
                     result.Message = "更新成功";
@@ -834,7 +884,7 @@ namespace OpenAuth.WebApi.Controllers
                 result.Message = ex.Message;
                 Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
             }
-          
+
             return result;
         }
 
@@ -920,6 +970,29 @@ namespace OpenAuth.WebApi.Controllers
                 result.Message = ex.Message;
                 Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
             }
+            return result;
+        }
+
+        /// <summary>
+        /// 合同文件下载历史记录
+        /// </summary>
+        /// <param name="req">合同历史记录查询</param>
+        /// <returns>返回合同文件下载历史记录信息</returns>
+        [HttpPost]
+        public async Task<TableData> GetDownLoadFileHis(QueryContractDownLoadFilesReq req)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _contractapplyapp.GetDownLoadFileHis(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}, 错误：{result.Message}");
+            }
+
             return result;
         }
         #endregion
