@@ -1331,12 +1331,7 @@ namespace OpenAuth.App
             {
                 loginUser = GetUserId(Convert.ToInt32(req.AppId)).ConfigureAwait(false).GetAwaiter().GetResult();
             }
-            int IsSalesman = 0;
-            if (loginContext.Roles.Where(a => a.Name =="销售员").Count() >0 && loginContext.Roles.Where(a => a.Name == "售后技术员").Count() <= 0)
-            {
-                IsSalesman = 1;
-            }
-           
+         
             #region 报销单唯一
             var ReimburseCount = UnitWork.Find<ReimburseInfo>(r => r.ServiceOrderId.Equals(req.ServiceOrderId) && r.CreateUserId.Equals(loginUser.Id)).Count();
             if (ReimburseCount > 0)
@@ -1355,11 +1350,19 @@ namespace OpenAuth.App
             {
                 try
                 {
+
+                     obj.IsSalesman = 0;
+                    if (loginContext.Roles.Where(a => a.Name == "销售员").Count() > 0 && loginContext.Roles.Where(a => a.Name == "售后技术员").Count() <= 0)
+                    {
+                        obj.IsSalesman = 1;
+                    }
+
+
+
                     obj.UpdateTime = DateTime.Now;
                     obj.CreateTime = DateTime.Now;
                     obj.CreateUserId = loginUser.Id;
                     obj.IsRead = 1;
-                    obj.IsSalesman = IsSalesman;
                     //判断是否存为草稿
                     if (!obj.IsDraft)
                     {
@@ -1372,16 +1375,15 @@ namespace OpenAuth.App
                         afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
                         afir.CustomName = $"报销" + DateTime.Now;
                         //afir.FrmData = "{\"ReimburseInfoId\":\"" + obj.Id + "\"}";
-                        afir.FrmData = "{\"ReimburseInfoId\":\"" + obj.Id + "\",\"IsSalesman\": \"" + IsSalesman + "\"}";
+                        afir.FrmData = "{\"ReimburseInfoId\":\"" + obj.Id + "\",\"IsSalesman\": \"" + obj.IsSalesman + "\"}";
                         obj.FlowInstanceId = _flowInstanceApp.CreateInstanceAndGetIdAsync(afir).ConfigureAwait(false).GetAwaiter().GetResult();
                         //添加报销单
                         obj.MainId = maxmainid + 1;
                         obj.RemburseStatus = 4;
-                        if (IsSalesman == 1)
+                        if (obj.IsSalesman == 1)
                         {
                             obj.RemburseStatus = 11;
                         }
-                        obj.IsSalesman = IsSalesman;
                         obj = UnitWork.Add<ReimburseInfo, int>(obj);
                         UnitWork.Save();
                         //记录操作日志
@@ -1546,17 +1548,13 @@ namespace OpenAuth.App
                         var maxmainid = UnitWork.Find<ReimburseInfo>(null).OrderByDescending(r => r.MainId).Select(r => r.MainId).FirstOrDefault();
                         obj.MainId = maxmainid + 1;
                     }
-                    int IsSalesman = 0;
+       
+                    obj.IsSalesman = 0;
                     if (loginContext.Roles.Where(a => a.Name == "销售员").Count() > 0 && loginContext.Roles.Where(a => a.Name == "售后技术员").Count() <= 0)
                     {
-                        IsSalesman = 1;
+                        obj.IsSalesman = 1;
                     }
-                    obj.IsSalesman = IsSalesman;
-                    if (IsSalesman == 1)
-                    {
-                        obj.RemburseStatus = 11;
-                    }
-
+                
                     if (!req.IsDraft)
                     {
                      
@@ -1570,7 +1568,7 @@ namespace OpenAuth.App
                             afir.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
                             afir.CustomName = $"报销";
                             //afir.FrmData = "{\"ReimburseInfoId\":\"" + obj.Id + "\"}";
-                            afir.FrmData = "{\"ReimburseInfoId\":\"" + obj.Id + "\",\"IsSalesman\": \"" + IsSalesman + "\"}";
+                            afir.FrmData = "{\"ReimburseInfoId\":\"" + obj.Id + "\",\"IsSalesman\": \"" + obj.IsSalesman + "\"}";
                             obj.FlowInstanceId = _flowInstanceApp.CreateInstanceAndGetIdAsync(afir).ConfigureAwait(false).GetAwaiter().GetResult();
                         }
                         else
@@ -1579,8 +1577,11 @@ namespace OpenAuth.App
                         }
                         //修改报销单
                         obj.RemburseStatus = 4;
-                 
-                        
+
+                        if (obj.IsSalesman == 1)
+                        {
+                            obj.RemburseStatus = 11;
+                        }
                         UnitWork.Update<ReimburseInfo>(r => r.Id == obj.Id, r => new ReimburseInfo
                         {
                             UpdateTime = DateTime.Now,
