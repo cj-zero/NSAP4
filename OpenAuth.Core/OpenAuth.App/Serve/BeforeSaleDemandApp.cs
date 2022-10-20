@@ -409,7 +409,7 @@ namespace OpenAuth.App
 
                         obj.PredictDevCost = 2000;
                         obj.TestEstimate = 5;
-                        obj.DemandEstimate = 5;
+                        obj.DemandEstimate = 3;
                         obj = await UnitWork.AddAsync<BeforeSaleDemand, int>(obj);
 
                         //1、流程添加成功==>关联单据
