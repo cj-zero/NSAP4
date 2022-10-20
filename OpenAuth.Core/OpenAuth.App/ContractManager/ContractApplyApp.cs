@@ -1761,6 +1761,13 @@ namespace OpenAuth.App.ContractManager
                     result.Code = 500;
                     return result;
                 }
+
+                if (obj.ContractStatus == "11")
+                {
+                    result.Message = "合同申请单已经被撤回，停止审批。";
+                    result.Code = 500;
+                    return result;
+                }
             }
             else
             {
@@ -1787,24 +1794,52 @@ namespace OpenAuth.App.ContractManager
                 obj.UpdateTime = DateTime.Now;
                 if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")) && obj.ContractStatus == "3")
                 {
+                    if (obj.ContractStatus == "5")
+                    {
+                        result.Message = "合同申请单已经由法务人员审批成功，无需再次审批。";
+                        result.Code = 500;
+                        return result;
+                    }
+
                     contractHis.Action = "法务人员审批";
                     obj.ContractStatus = "5";
                 }
 
                 if (loginContext.Roles.Any(r => r.Name.Equals("售前工程师")) && obj.ContractStatus == "12")
                 {
+                    if (obj.ContractStatus == "5")
+                    {
+                        result.Message = "合同申请单已经由售前工程师审批审批成功，无需再次审批。";
+                        result.Code = 500;
+                        return result;
+                    }
+
                     contractHis.Action = "售前工程师审批";
                     obj.ContractStatus = "5";
                 }
 
                 if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")) && obj.ContractStatus == "10")
                 {
+                    if (obj.ContractStatus == "-1")
+                    {
+                        result.Message = "合同申请单已经由法务人员审批审批成功，无需再次审批。";
+                        result.Code = 500;
+                        return result;
+                    }
+
                     contractHis.Action = "法务人员审批";
                     obj.ContractStatus = "-1";
                 }
 
                 if (loginContext.Roles.Any(r => r.Name.Equals("销售总助")) && obj.ContractStatus == "10")
                 {
+                    if (obj.ContractStatus == "-1")
+                    {
+                        result.Message = "合同申请单已经由销售总助审批审批成功，无需再次审批。";
+                        result.Code = 500;
+                        return result;
+                    }
+
                     contractHis.Action = "总助审批";
                     obj.ContractStatus = "-1";
                 }
@@ -1813,6 +1848,13 @@ namespace OpenAuth.App.ContractManager
                 {
                     if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")))
                     {
+                        if (obj.ContractStatus == "8")
+                        {
+                            result.Message = "合同申请单已经由法务人员审批成功，无需再次审批。";
+                            result.Code = 500;
+                            return result;
+                        }
+
                         contractHis.Action = "会签-法务完成审批，待售前工程师审批";
                         obj.ContractStatus = "8";
                         contractSign.ContractApplyId = obj.Id;
@@ -1824,6 +1866,13 @@ namespace OpenAuth.App.ContractManager
 
                     if (loginContext.Roles.Any(r => r.Name.Equals("售前工程师")))
                     {
+                        if (obj.ContractStatus == "9")
+                        {
+                            result.Message = "合同申请单已经由售前工程师审批成功，无需再次审批。";
+                            result.Code = 500;
+                            return result;
+                        }
+
                         contractHis.Action = "会签-售前工程师完成审批，待法务审批";
                         obj.ContractStatus = "9";
                         contractSign.ContractApplyId = obj.Id;
@@ -1838,6 +1887,13 @@ namespace OpenAuth.App.ContractManager
                 {
                     if (loginContext.Roles.Any(r => r.Name.Equals("售前工程师")))
                     {
+                        if (obj.ContractStatus == "9")
+                        {
+                            result.Message = "合同申请单已经由售前工程师审批成功，无需再次审批。";
+                            result.Code = 500;
+                            return result;
+                        }
+
                         contractHis.Action = "会签-售前工程师完成审批，待法务审批";
                         obj.ContractStatus = "9";
                         contractSign.ContractApplyId = obj.Id;
@@ -1852,6 +1908,13 @@ namespace OpenAuth.App.ContractManager
                 {
                     if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")))
                     {
+                        if (obj.ContractStatus == "8")
+                        {
+                            result.Message = "合同申请单已经由法务人员审批成功，无需再次审批。";
+                            result.Code = 500;
+                            return result;
+                        }
+
                         contractHis.Action = "会签-法务完成审批，待售前工程师审批";
                         obj.ContractStatus = "8";
                         contractSign.ContractApplyId = obj.Id;
@@ -1866,12 +1929,26 @@ namespace OpenAuth.App.ContractManager
                 var objs = await UnitWork.Find<ContractSign>(r => r.ContractApplyId == obj.Id && r.ApprovalOrReject == 1 && r.FlowInstanceId == obj.FlowInstanceId).GroupBy(r => new { r.ContractApplyId, r.TogetherSignRole, r.ApprovalOrReject, r.FlowInstanceId }).Select(r => new { r.Key.ContractApplyId, r.Key.TogetherSignRole, r.Key.ApprovalOrReject, r.Key.FlowInstanceId }).ToListAsync();
                 if (objs != null && objs.Count() >= 2)
                 {
+                    if (obj.ContractStatus == "5")
+                    {
+                        result.Message = "合同申请单已经会签审批成功，无需再次审批。";
+                        result.Code = 500;
+                        return result;
+                    }
+
                     contractHis.Action = "会签-法务&售前工程师同时完成审批";
                     obj.ContractStatus = "5";
                 }
 
                 if (loginContext.Roles.Any(r => r.Name.Equals("销售总助")) && obj.ContractStatus == "5")
                 {
+                    if (obj.ContractStatus == "6")
+                    {
+                        result.Message = "合同申请单已经由销售总助审批成功，无需再次审批。";
+                        result.Code = 500;
+                        return result;
+                    }
+
                     contractHis.Action = "总助审批";
                     obj.ContractStatus = "6";
                 }
@@ -1887,6 +1964,13 @@ namespace OpenAuth.App.ContractManager
 
                 if (req.IsReject)
                 {
+                    if (obj.ContractStatus == "2")
+                    {
+                        result.Message = "合同申请单已经驳回。";
+                        result.Code = 500;
+                        return result;
+                    }
+
                     VerificationReqModle.VerificationFinally = "3";
                     VerificationReqModle.VerificationOpinion = req.Remark;
                     VerificationReqModle.NodeRejectType = "1";
