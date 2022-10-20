@@ -498,7 +498,8 @@ namespace OpenAuth.App.ContractManager
                         CompanyType = r.CompanyType,
                         CreateName = r.CreateName,
                         CreateTime = r.CreateTime.ToString(),
-                        ContractStatus = r.ContractStatus
+                        ContractStatus = r.ContractStatus,
+                        SaleNo = r.SaleNo
                     }).ToListAsync();
 
                     foreach (ContractApplyMsgHelp item in contractApplyMsgHelpList)
