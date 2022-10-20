@@ -126,4 +126,18 @@ namespace OpenAuth.App.Request
 
         public virtual List<ServiceOrderSerial> ServiceOrderSNs { get; set; }
     }
+
+    public class CreateRepairOrderReq
+    {
+        /// <summary>
+        /// 联系人电话
+        /// </summary>
+        public string ContactTel { get; set; }
+        /// <summary>
+        /// 操作人
+        /// </summary>
+        public int? Operator { get; set; }
+        public string pn { get; set; }
+        public string sn { get; set; }
+    }
 }

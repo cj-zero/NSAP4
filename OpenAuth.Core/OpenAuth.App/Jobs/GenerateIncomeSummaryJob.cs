@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace OpenAuth.App.Jobs
 {
-    public class GenerateIncomeSummaryJob
+    public class GenerateIncomeSummaryJob : IJob
     {
         private readonly OpenJobApp _openJobApp;
         private readonly ServiceOrderApp _serviceOrderApp;

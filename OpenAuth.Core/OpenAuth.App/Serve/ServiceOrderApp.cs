@@ -1492,6 +1492,76 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// WMS自动创建维修单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task CreateRepairOrder(CreateRepairOrderReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var userInfo = await (from a in UnitWork.Find<User>(null)
+                                  join b in UnitWork.Find<NsapUserMap>(null) on a.Id equals b.UserID
+                                  where req.Operator == b.NsapUserId
+                                  select new { b.NsapUserId, a.Id, a.Name }).FirstOrDefaultAsync();
+
+            var supervisorinfo = await UnitWork.FindSingleAsync<User>(u => u.Name.Equals("樊静涛"));
+            var d = await _businessPartnerApp.GetDetails("C37852");
+            ServiceOrder obj = new ServiceOrder();
+            List<ServiceWorkOrder> order = new List<ServiceWorkOrder>();
+            obj.SalesMan = d?.SlpName;
+            if (obj.SalesMan != null)
+            {
+                obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
+            }
+            obj.TerminalCustomerId = "C37852";
+            obj.TerminalCustomer = "东莞新威检测技术有限公司";
+            obj.CustomerId = "C37852";
+            obj.CustomerName = "东莞新威检测技术有限公司";
+            obj.NewestContactTel = req.ContactTel;
+            obj.NewestContacter = userInfo.Name;
+            obj.ContactTel = req.ContactTel;
+            obj.Contacter = userInfo.Name;
+            obj.RecepUserName = userInfo.Name;
+            obj.RecepUserId = userInfo.Id;
+            obj.CreateUserId = userInfo.Id;
+            obj.CreateTime = DateTime.Now;
+            obj.VestInOrg = 2;
+            obj.Supervisor = "樊静涛";
+            obj.SupervisorId = supervisorinfo?.Id;
+            obj.Status = 2;
+            obj.FromId = 9;
+            var appuserid = await UnitWork.Find<AppUserMap>(s => s.UserID == userInfo.Id).Select(s => s.AppUserId).FirstOrDefaultAsync();
+            obj.AppUserId = appuserid;
+            order.Add(new ServiceWorkOrder
+            {
+                SubmitDate = DateTime.Now,
+                SubmitUserId = userInfo.Id,
+                Status = 2,
+                CurrentUserNsapId = userInfo.Id,
+                CurrentUserId = appuserid,
+                FromType = 1,
+                FeeType = 1,
+                CurrentUser = userInfo.Name,
+                OrderTakeType = 1,
+                Priority = 1,
+                ManufacturerSerialNumber = req.pn,
+                MaterialCode = req.sn,
+                FromTheme = "[{\"id\":\"6d8f056b-6561-4b8f-add5-f63302f64994\",\"description\":\"烧录程序\",\"code\":\"024-01-01281\"}]"
+            });
+            obj.ServiceWorkOrders = order;
+            var e = await UnitWork.AddAsync<ServiceOrder, int>(obj);
+            await UnitWork.SaveAsync();
+            #region 同步到SAP 并拿到服务单主键
+            _capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
+            #endregion
+        }
+
+        /// <summary>
         /// 重新同步至SAP，未获取到SAPID时用
         /// </summary>
         /// <param name="serviceOrderId"></param>
