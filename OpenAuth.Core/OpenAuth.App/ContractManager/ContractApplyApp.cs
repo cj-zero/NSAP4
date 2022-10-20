@@ -144,7 +144,7 @@ namespace OpenAuth.App.ContractManager
                         IsUploadOriginal = r.a.IsUploadOriginal,
                         FlowInstanceId = r.a.FlowInstanceId,
                         DownloadNumber = r.a.DownloadNumber,
-                        U_SAP_Id = r.a.U_SAP_Id,
+                        U_SAP_ID = r.a.U_SAP_ID,
                         ItemNo = r.a.ItemNo,
                         ItemName = r.a.ItemName,
                         ContractStatus = r.a.ContractStatus,
@@ -231,7 +231,7 @@ namespace OpenAuth.App.ContractManager
                         IsUploadOriginal = r.a.IsUploadOriginal,
                         FlowInstanceId = r.a.FlowInstanceId,
                         DownloadNumber = r.a.DownloadNumber,
-                        U_SAP_Id = r.a.U_SAP_Id,
+                        U_SAP_ID = r.a.U_SAP_ID,
                         ItemNo = r.a.ItemNo,
                         ItemName = r.a.ItemName,
                         ContractStatus = r.a.ContractStatus,
@@ -318,7 +318,7 @@ namespace OpenAuth.App.ContractManager
                                                a.IsUseCompanyTemplate,
                                                a.FlowInstanceId,
                                                a.DownloadNumber,
-                                               a.U_SAP_Id,
+                                               a.U_SAP_ID,
                                                a.ItemNo,
                                                a.ItemName,
                                                a.ContractStatus,
@@ -1118,7 +1118,7 @@ namespace OpenAuth.App.ContractManager
             await SendSinglRMsg(quotationObj.ContractStatus, quotationObj.ContractNo, req.Remarks, loginContext.User);
 
             //撤回申请单钉钉通知
-            await SendDDReCallMsg(quotationObj.ContractNo, req.Remarks, loginContext.User.Name);
+            //await SendDDReCallMsg(quotationObj.ContractNo, req.Remarks, loginContext.User.Name);
         }
 
         /// <summary>
@@ -1490,7 +1490,7 @@ namespace OpenAuth.App.ContractManager
                             CompanyType = obj.CompanyType,
                             ContractType = obj.ContractType,
                             QuotationNo = obj.QuotationNo,
-                            U_SAP_Id = obj.U_SAP_Id,
+                            U_SAP_ID = obj.U_SAP_ID,
                             ItemNo = obj.ItemNo,
                             ItemName = obj.ItemName,
                             SaleNo = obj.SaleNo,
@@ -1523,7 +1523,7 @@ namespace OpenAuth.App.ContractManager
                                 CompanyType = obj.CompanyType,
                                 ContractType = obj.ContractType,
                                 QuotationNo = obj.QuotationNo,
-                                U_SAP_Id = obj.U_SAP_Id,
+                                U_SAP_ID = obj.U_SAP_ID,
                                 ItemName = obj.ItemName,
                                 ItemNo = obj.ItemNo,
                                 SaleNo = obj.SaleNo,
@@ -1580,7 +1580,7 @@ namespace OpenAuth.App.ContractManager
                                 CompanyType = obj.CompanyType,
                                 ContractType = obj.ContractType,
                                 QuotationNo = obj.QuotationNo,
-                                U_SAP_Id = obj.U_SAP_Id,
+                                U_SAP_ID = obj.U_SAP_ID,
                                 ItemNo = obj.ItemNo,
                                 ItemName = obj.ItemName,
                                 SaleNo = obj.SaleNo,
@@ -2946,7 +2946,7 @@ namespace OpenAuth.App.ContractManager
                         IsUseCompanyTemplate = obj.IsUseCompanyTemplate,
                         FlowInstanceId = obj.FlowInstanceId,
                         DownloadNumber = obj.DownloadNumber,
-                        U_SAP_Id = obj.U_SAP_Id,
+                        U_SAP_ID = obj.U_SAP_ID,
                         ItemNo = obj.ItemNo,
                         ItemName = obj.ItemName,
                         ContractStatus = "-1",
@@ -3153,7 +3153,7 @@ namespace OpenAuth.App.ContractManager
                         IsUploadOriginal = obj.IsUploadOriginal,
                         FlowInstanceId = obj.FlowInstanceId,
                         DownloadNumber = obj.DownloadNumber,
-                        U_SAP_Id = obj.U_SAP_Id,
+                        U_SAP_ID = obj.U_SAP_ID,
                         ItemName = obj.ItemName,
                         ItemNo = obj.ItemNo,
                         ContractStatus = "7",
@@ -3562,7 +3562,7 @@ namespace OpenAuth.App.ContractManager
                 IsUseCompanyTemplate = r.a.IsUseCompanyTemplate,
                 FlowInstanceId = r.a.FlowInstanceId,
                 DownloadNumber = r.a.DownloadNumber,
-                U_SAP_Id = r.a.U_SAP_Id,
+                U_SAP_ID = r.a.U_SAP_ID,
                 ItemNo = r.a.ItemNo,
                 ItemName = r.a.ItemName,
                 ContractStatus = r.a.ContractStatus,
