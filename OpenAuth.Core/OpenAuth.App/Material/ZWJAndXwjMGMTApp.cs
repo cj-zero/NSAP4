@@ -492,8 +492,10 @@ namespace OpenAuth.App.Material
                        {
                            h.XWJSn,
                            s.XWJSoftwareVersionName,
+                           s.FilePath,
                            s.Alias,
                            XWJSoftwareVersionNameEn = t == null ? "" : t.XWJSoftwareVersionName,
+                           FilePathEn = t == null ? "" : t.FilePath,
                            AliasEn = t == null ? "" : t.Alias,
                            h.Remark,
                            h.CreateTime,
