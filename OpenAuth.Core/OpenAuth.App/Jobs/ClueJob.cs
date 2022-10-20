@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace OpenAuth.App.Jobs
 {
-    public class ClueJob
+    public class ClueJob : IJob
     {
         private readonly OpenJobApp _openJobApp;
         private readonly ClueApp  _clueApp;
