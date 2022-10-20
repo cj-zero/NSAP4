@@ -214,6 +214,24 @@ namespace OpenAuth.WebApi.Controllers.Clue
             return result;
         }
 
+
+        [HttpGet]
+        [Route("RunClueJob")]
+        public Response<bool> RunClueJob()
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = _clueApp.ChangeClueStatusByJob().Result;
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
         /// <summary>
         /// 新增标签
         /// </summary>
