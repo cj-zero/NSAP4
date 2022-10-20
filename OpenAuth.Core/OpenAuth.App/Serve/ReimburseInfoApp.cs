@@ -1955,7 +1955,7 @@ namespace OpenAuth.App
             else if (loginContext.Roles.Any(r => r.Name.Equals("财务初审")) && obj.RemburseStatus == 5)
             {
                 eoh.Action = "财务初审";
-                obj.RemburseStatus = 6;
+                obj.RemburseStatus = 6 ;
             }
             else if (loginContext.Roles.Any(r => r.Name.Equals("财务复审")) && obj.RemburseStatus == 6)
             {
