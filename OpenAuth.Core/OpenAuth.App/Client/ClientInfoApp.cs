@@ -135,13 +135,13 @@ namespace OpenAuth.App.Client
                     else if (rJobNm == "修改业务伙伴")
                     {
                         //添加4.0关系
-                        await _clientRelationApp.AddJobRelations(new ClientRelation.Request.AddJobRelReq
-                        {
-                            Jobid = Convert.ToInt32(JobId),
-                            Terminals = addClientInfoReq.Terminals,
-                            Creator = loginUser.Name,
-                            CreatorId = loginUser.Id
-                        });
+                        //await _clientRelationApp.AddJobRelations(new ClientRelation.Request.AddJobRelReq
+                        //{
+                        //    Jobid = Convert.ToInt32(JobId),
+                        //    Terminals = addClientInfoReq.Terminals,
+                        //    Creator = loginUser.Name,
+                        //    CreatorId = loginUser.Id
+                        //});
 
                         result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(result), userID, OCRD.FreeText, "", 0);
                         if (result == "1")
@@ -1654,53 +1654,53 @@ namespace OpenAuth.App.Client
                 var job = UnitWork.FindSingle<wfa_job>(a => a.job_id == jobraw);
 
                 var newOper = UnitWork.FindSingle<User>(a => a.User_Id == job.user_id);
-                if (originClient !=null && client.is_reseller == "N")
-                {
-                    if (originClient.Flag == 1)
-                    {
-                        //add log to explain why
-                        _logger.LogError("不允许中间商变更为终端客户,请求参数为 jobid:" + JobId + " CardCode: " + CardCode);
-                        rsp.Message = "审核失败，不允许中间商变更为终端客户";
-                        rsp.Code = 200;
-                        return rsp;
-                    }
-                    else
-                    {
-                        await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
-                        {
-                            userid = currentuser.User.Id.ToString(),
-                            username = currentuser.User.Name,
-                            job_userid = newOper.Id,
-                            job_username = newOper.Name,
-                            jobid = (int)job.job_id,
-                            ClientNo = CardCode,
-                            ClientName = originClient.ClientName,
-                            flag = 0,
-                            OperateType = 1
-                        });
+                //if (originClient !=null && client.is_reseller == "N")
+                //{
+                //    if (originClient.Flag == 1)
+                //    {
+                //        //add log to explain why
+                //        _logger.LogError("不允许中间商变更为终端客户,请求参数为 jobid:" + JobId + " CardCode: " + CardCode);
+                //        rsp.Message = "审核失败，不允许中间商变更为终端客户";
+                //        rsp.Code = 200;
+                //        return rsp;
+                //    }
+                //    else
+                //    {
+                //        await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
+                //        {
+                //            userid = currentuser.User.Id.ToString(),
+                //            username = currentuser.User.Name,
+                //            job_userid = newOper.Id,
+                //            job_username = newOper.Name,
+                //            jobid = (int)job.job_id,
+                //            ClientNo = CardCode,
+                //            ClientName = originClient.ClientName,
+                //            flag = 0,
+                //            OperateType = 1
+                //        });
 
-                    }
-                }
-                else
-                {
-                    //20221007  若审批是中间商时 1. 终端变更为中间商，更改业务员  2. 中间商变更，更改业务员，原先关系不解绑
-                    if (originClient != null && client.is_reseller == "Y")
-                    {
-                        await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
-                        {
-                            userid = currentuser.User.Id.ToString(),
-                            username = currentuser.User.Name,
-                            job_userid = newOper.Id,
-                            job_username = newOper.Name,
-                            jobid = (int)job.job_id,
-                            ClientNo = CardCode,
-                            flag = 1,
-                            OperateType = 0
-                        });
-                    }
+                //    }
+                //}
+                //else
+                //{
+                //    //20221007  若审批是中间商时 1. 终端变更为中间商，更改业务员  2. 中间商变更，更改业务员，原先关系不解绑
+                //    if (originClient != null && client.is_reseller == "Y")
+                //    {
+                //        await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
+                //        {
+                //            userid = currentuser.User.Id.ToString(),
+                //            username = currentuser.User.Name,
+                //            job_userid = newOper.Id,
+                //            job_username = newOper.Name,
+                //            jobid = (int)job.job_id,
+                //            ClientNo = CardCode,
+                //            flag = 1,
+                //            OperateType = 0
+                //        });
+                //    }
 
 
-                }
+                //}
             }
             string rJobNm = string.Format("{0}{1}", client.ClientOperateType == "edit" ? "修改" : "添加", client.CardType == "S" ? "供应商" : "业务伙伴");
             byte[] job_data = ByteExtension.ToSerialize(client);
