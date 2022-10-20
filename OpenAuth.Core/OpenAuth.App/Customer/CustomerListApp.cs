@@ -867,23 +867,17 @@ namespace OpenAuth.App.Customer
                             await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == item.CustomerNo);
 
                             //更新客户关系
-                            var clientRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == item.CustomerNo && a.IsActive == 0 && a.IsDelete == 0 && a.ScriptFlag == 0 && a.Flag != 2);
                             var erpid = UnitWork.FindSingle<User>(u => u.User_Id == userId);
-                            if (clientRelation != null)
-                            {
-                                await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
-                                {
-                                    jobid = int.Parse(job_id),
-                                    userid = erpid.Id,
-                                    username = loginUser.Name,
-                                    ClientNo = item.CustomerNo,
-                                    ClientName = item.CustomerName,
-                                    flag = clientRelation.Flag,
-                                    OperateType = clientRelation.Flag == 1 ? 4 : 5,
-                                    job_userid = erpid.Id,
-                                    job_username = loginUser.Name
-                                });
-                            }
+                            await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq { 
+                                jobid = int.Parse(job_id),
+                                userid = erpid.Id,
+                                username = loginUser.Name,
+                                ClientNo = client.CardCode,
+                                flag = client.is_reseller=="Y"?1:0,
+                                OperateType= client.is_reseller == "Y"?4:5,
+                                job_userid = erpid.Id,
+                                job_username = loginUser.Name
+                            });
 
                             await UnitWork.SaveAsync();
                         }
@@ -1126,22 +1120,17 @@ namespace OpenAuth.App.Customer
                             //获取业务员4.0编号
                             var saleidRaw = UnitWork.FindSingle<sbo_user>(s => s.sale_id == req.SlpCode);
                             var erpid = UnitWork.FindSingle<User>(u =>u.User_Id == saleidRaw.user_id);
-                            var clientRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == item.CustomerNo && a.IsActive == 0 && a.IsDelete == 0 && a.ScriptFlag == 0 && a.Flag != 2);
-                            if (clientRelation != null)
+                            await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
                             {
-                                await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
-                                {
-                                    jobid = Convert.ToInt32(job_id),
-                                    userid = userId.ToString(),
-                                    username = loginUser.Name,
-                                    ClientNo = item.CustomerNo,
-                                    ClientName = item.CustomerName,
-                                    flag = clientRelation.Flag,
-                                    OperateType = clientRelation.Flag == 1 ? 4 : 5,
-                                    job_userid = erpid.Id,
-                                    job_username = req.SlpName
-                                });
-                            }
+                                jobid = Convert.ToInt32(job_id),
+                                userid = userId.ToString(),
+                                username = loginUser.Name,
+                                ClientNo = client.CardCode,
+                                flag = client.is_reseller == "Y" ? 1 : 0,
+                                OperateType = client.is_reseller == "Y" ? 4 : 5,
+                                job_userid = erpid.Id,
+                                job_username = req.SlpName
+                            });
 
                             await UnitWork.SaveAsync();
                         }

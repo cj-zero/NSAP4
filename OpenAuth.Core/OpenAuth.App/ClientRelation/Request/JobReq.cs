@@ -38,10 +38,6 @@ namespace OpenAuth.App.ClientRelation.Request
         /// </summary>
         public string ClientNo { get; set; }
         /// <summary>
-        /// 客户名称
-        /// </summary>
-        public string ClientName { get; set; }
-        /// <summary>
         /// 0.终端 1.中间商 2.中间商关联自己 
         /// </summary>
         public int flag { get; set; }
@@ -59,34 +55,10 @@ namespace OpenAuth.App.ClientRelation.Request
         /// </summary>
         public string ClientNo { get; set; }
         /// <summary>
-        /// 终端
+        /// 新业务员编号
         /// </summary>
         public string TerminalList { get; set; }
-        /// <summary>
-        /// 编号
-        /// </summary>
-        public int jobId { get; set; }
     }
-
-
-    public class AddJobRelReq
-    {
-        /// <summary>
-        /// 任务编号
-        /// </summary>
-        public int Jobid { get; set; }
-        /// <summary>
-        /// 终端关系
-        /// </summary>
-        public string Terminals { get; set; }
-
-        public string Creator { get; set; }
-
-        public string CreatorId { get; set; }
-
-    }
-
-
 
 
     public class ClientRelJob
@@ -111,8 +83,6 @@ namespace OpenAuth.App.ClientRelation.Request
         public string Operator { get; set; }
 
         public string Operatorid { get; set; }
-
-        public int Initial { get; set; }
 
     }
 

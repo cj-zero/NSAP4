@@ -14,10 +14,6 @@ namespace OpenAuth.App.Client.Request
         public string keyId { get; set; }
         public string submitType { get; set; }
         /// <summary>
-        /// 终端关系
-        /// </summary>
-        public string Terminals { get; set; }
-        /// <summary>
         /// 请求类型add或者edit
         /// </summary>
         public string type { get; set; }
@@ -38,11 +34,6 @@ namespace OpenAuth.App.Client.Request
         /// 提交或是保存草稿
         /// </summary>
         public string submitType { get; set; }
-
-        /// <summary>
-        /// 终端关系
-        /// </summary>
-        public string Terminals { get; set; }
         /// <summary>
         /// 详情
         /// </summary>
