@@ -166,7 +166,7 @@ namespace OpenAuth.App.Serve
                 var query = await (from a in UnitWork.Find<OINS>(null)
                                    join b in UnitWork.Find<DLN1>(null) on a.deliveryNo equals b.DocEntry into ab
                                    from b in ab.DefaultIfEmpty()
-                                   join c in UnitWork.Find<OWOR>(null) on b.DocEntry equals c.OriginAbs into bc
+                                   join c in UnitWork.Find<OWOR>(null) on b.BaseEntry equals c.OriginAbs into bc
                                    from c in bc.DefaultIfEmpty()
                                    where a.manufSN == req.SerialNumber && b.BaseType == 17 && b.BaseEntry > 0
                                    select new { b.BaseEntry, c.DocEntry, c.U_WO_LTDW }).FirstOrDefaultAsync();
