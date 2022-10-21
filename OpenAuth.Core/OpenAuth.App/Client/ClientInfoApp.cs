@@ -1738,7 +1738,7 @@ namespace OpenAuth.App.Client
         #endregion
         #region 审核
         /// <summary>
-        /// 审核
+        /// 审核 next
         /// </summary>
         public string AuditResubmitNext(int jobID, int userID, string recommend, string auditOpinionid)
         {
