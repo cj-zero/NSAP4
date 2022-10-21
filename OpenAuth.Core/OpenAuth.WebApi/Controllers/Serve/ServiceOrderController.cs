@@ -404,6 +404,27 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// WMS自动创建维修单
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> CreateRepairOrder(CreateRepairOrderReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _serviceOrderApp.CreateRepairOrder(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
+        }
         /// <summary>
         /// 新建行政单
         /// </summary>
