@@ -125,7 +125,8 @@ namespace Sap.Handler.Service
                             //付款条件修改
                             await UnitWork.UpdateAsync<crm_octg>(r => r.GroupNum == GroupNum, r => new crm_octg()
                             {
-                                sbo_id = Define.SBO_ID
+                                sbo_id = Define.SBO_ID,
+                                PymntGroup = model.PymntGroup
                             });
                         }
                         else
@@ -134,7 +135,8 @@ namespace Sap.Handler.Service
                             await UnitWork.AddAsync<crm_octg, int>(new crm_octg()
                             {
                                 GroupNum = Convert.ToInt32(model.ModelCrmOctg.GroupNum),
-                                sbo_id = Define.SBO_ID
+                                sbo_id = Define.SBO_ID,
+                                PymntGroup = model.PymntGroup
                             });
                         }
 
