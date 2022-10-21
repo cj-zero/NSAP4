@@ -1,7 +1,7 @@
 ﻿using DotNetCore.CAP;
 using Microsoft.EntityFrameworkCore;
 using OpenAuth.Repository.Domain;
-using OpenAuth.Repository.Domain.Sap;
+using Infrastructure;
 using OpenAuth.Repository.Interface;
 using Sap.Handler.Sap;
 using SAPbobsCOM;
@@ -51,7 +51,7 @@ namespace Sap.Handler.Service
                 if (res != 0)
                 {
                     company.GetLastError(out eCode, out eMesg);
-                    allerror.Append("添加付款条件到SAP时异常！错误代码：" + eCode + "错误信息：" + eMesg);
+                    allerror.Append("添加付款条件到SAP时异常！错误代码：" + eCode + "错误信息：" + eMesg + "参数："+ model.ToJson());
                 }
                 else
                 {
@@ -62,7 +62,7 @@ namespace Sap.Handler.Service
             }
             catch (Exception e)
             {
-                allerror.Append("调用SBO接口添加付款条件时异常：" + e.ToString() + "");
+                allerror.Append("调用SBO接口添加付款条件时异常：" + e.ToString() + "" + "参数：" + model.ToJson());
             }
 
             if (!string.IsNullOrEmpty(docNum))
@@ -77,12 +77,12 @@ namespace Sap.Handler.Service
                     }
                     else
                     {
-                        Log.Logger.Error($"反写4.0失败，SAP_ID：{docNum}", typeof(SellOrderSapHandler));
+                        Log.Logger.Error($"反写4.0失败，SAP_ID：{docNum} 参数：{model.ToJson()}", typeof(SellOrderSapHandler));
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Logger.Error($"反写4.0失败，SAP_ID：{docNum}失败原因:{ex.Message}", typeof(SellOrderSapHandler));
+                    Log.Logger.Error($"反写4.0失败，SAP_ID：{docNum}失败原因:{ex.Message} + 参数：+ {model.ToJson()}", typeof(SellOrderSapHandler));
                 }
                 finally
                 {
@@ -177,7 +177,7 @@ namespace Sap.Handler.Service
                 {
                     await transaction.RollbackAsync();
                     message = $"同步3.0失败，SAP_ID：{model.GroupNum}" + ex.Message;
-                    Log.Logger.Error($"同步3.0失败，SAP_ID：{model.GroupNum}" + ex.Message, typeof(BOneOCTGSapHandler));
+                    Log.Logger.Error($"同步3.0失败，SAP_ID：{model.GroupNum}" + ex.Message + "参数：" + model.ToJson(), typeof(BOneOCTGSapHandler));
                 }
             }
             if (message != "")
