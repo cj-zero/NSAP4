@@ -1930,13 +1930,6 @@ namespace OpenAuth.App.ContractManager
                 var objs = await UnitWork.Find<ContractSign>(r => r.ContractApplyId == obj.Id && r.ApprovalOrReject == 1 && r.FlowInstanceId == obj.FlowInstanceId).GroupBy(r => new { r.ContractApplyId, r.TogetherSignRole, r.ApprovalOrReject, r.FlowInstanceId }).Select(r => new { r.Key.ContractApplyId, r.Key.TogetherSignRole, r.Key.ApprovalOrReject, r.Key.FlowInstanceId }).ToListAsync();
                 if (objs != null && objs.Count() >= 2)
                 {
-                    if (obj.ContractStatus == "5")
-                    {
-                        result.Message = "合同申请单已经会签审批成功，无需再次审批。";
-                        result.Code = 500;
-                        return result;
-                    }
-
                     contractHis.Action = "会签-法务&售前工程师同时完成审批";
                     obj.ContractStatus = "5";
                 }
