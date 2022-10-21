@@ -71,7 +71,7 @@ namespace OpenAuth.Repository.Domain.Serve
         [Description("标签集合")]
         public string Tags { get; set; }
         /// <summary>
-        /// 状态（0：销售线索，1：已转客户）
+        /// 状态（0：销售线索，1：已转客户 , 2 : 审批中 , 3 : 审批通过，同步数据中）
         /// </summary>
         [Description("状态")]
         public int Status { get; set; }
