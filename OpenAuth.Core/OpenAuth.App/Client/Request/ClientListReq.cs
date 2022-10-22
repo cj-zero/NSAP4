@@ -16,7 +16,10 @@ namespace OpenAuth.App.Client.Request
         /// 标签：0-全部,1-未报价,2-已成交,3-公海领取,4-即将掉入公海
         /// </summary>
         public string Label { get; set; }
-
+        /// <summary>
+        /// 客户名称
+        /// </summary>
+        public string CardName { get; set; }
         /// <summary>
         /// 联系电话
         /// </summary>
