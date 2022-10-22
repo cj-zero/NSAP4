@@ -825,7 +825,35 @@ namespace OpenAuth.App.ClientRelation
                IsDelete =0,
                CreateDate = DateTime.Now,
                Creator = jrr.Creator,
-               CreatorId = jrr.CreatorId
+               CreatorId = jrr.CreatorId,
+               Origin = jrr.Origin
+            });
+            await UnitWork.SaveAsync();
+            return true;
+        }
+
+        /// <summary>
+        /// 添加销售报价单关系
+        /// </summary>
+        /// <param name="jrr"></param>
+        /// <returns></returns>
+        public async Task<bool> AddSaleQuoteRelations(SalesQuoteReq  jrr)
+        {
+            if (!string.IsNullOrEmpty(jrr.Terminals) && !jrr.Terminals.Contains("C"))
+            {
+                jrr.Terminals = "";
+            }
+            var currentUser = _auth.GetCurrentUser().User;
+            await UnitWork.AddAsync<OpenAuth.Repository.Domain.JobClientRelation, int>(new JobClientRelation
+            {
+                Jobid = jrr.Jobid,
+                Terminals = jrr.Terminals,
+                IsDelete = 0,
+                CreateDate = DateTime.Now,
+                Creator = currentUser.Name,
+                CreatorId = currentUser.Id,
+                Origin =2,
+                AffiliateData = jrr.ClientNo
             });
             await UnitWork.SaveAsync();
             return true;
@@ -887,7 +915,7 @@ namespace OpenAuth.App.ClientRelation
         /// 获取终端关系
         /// </summary>
         /// <param name="clientNo"></param>
-        /// <param name="flag"></param>
+        /// <param name="flag">来源标注 0： 客户编号   1： Jobid   </param>
         /// <returns></returns>
         public async Task<JobClientRelation> GetTerminals(string clientNo, int flag)
         {
