@@ -84,7 +84,28 @@ namespace OpenAuth.App.ClientRelation.Request
 
         public string CreatorId { get; set; }
 
+        public int Origin { get; set; }
+
     }
+
+
+    public class SalesQuoteReq
+    {
+        /// <summary>
+        /// 任务编号
+        /// </summary>
+        public int Jobid { get; set; }
+        /// <summary>
+        /// 终端关系
+        /// </summary>
+        public string Terminals { get; set; }
+
+        /// <summary>
+        /// 客户代码
+        /// </summary>
+        public string ClientNo { get; set; }
+    }
+
 
 
 

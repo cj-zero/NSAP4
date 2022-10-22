@@ -105,7 +105,8 @@ namespace OpenAuth.App.Client
                     Jobid = Convert.ToInt32(result),
                     Terminals = addClientInfoReq.Terminals,
                     Creator = loginUser.Name,
-                    CreatorId = loginUser.Id
+                    CreatorId = loginUser.Id,
+                    Origin = 0
                 });
                 //新增更新草稿客户关系
                 await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
@@ -148,7 +149,8 @@ namespace OpenAuth.App.Client
                             Jobid = Convert.ToInt32(JobId),
                             Terminals = addClientInfoReq.Terminals,
                             Creator = loginUser.Name,
-                            CreatorId = loginUser.Id
+                            CreatorId = loginUser.Id,
+                            Origin  = 0
                         });
                         await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
                         {
@@ -169,7 +171,8 @@ namespace OpenAuth.App.Client
                             Jobid = Convert.ToInt32(JobId),
                             Terminals = addClientInfoReq.Terminals,
                             Creator = loginUser.Name,
-                            CreatorId = loginUser.Id
+                            CreatorId = loginUser.Id,
+                            Origin =1
                         });
 
                         result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(result), userID, OCRD.FreeText, "", 0);
