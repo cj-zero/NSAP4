@@ -1,4 +1,6 @@
-﻿using Quartz;
+﻿using OpenAuth.App.Client;
+using OpenAuth.App.ClientRelation;
+using Quartz;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -6,22 +8,27 @@ using System.Threading.Tasks;
 
 namespace OpenAuth.App.Jobs
 {
-    public class GenerateIncomeSummaryJob : IJob
+    public class ClueJob : IJob
     {
         private readonly OpenJobApp _openJobApp;
-        private readonly ServiceOrderApp _serviceOrderApp;
+        private readonly ClueApp  _clueApp;
 
-        public GenerateIncomeSummaryJob(OpenJobApp openJobApp, ServiceOrderApp quotationfoApp)
+        public ClueJob(OpenJobApp openJobApp, ClueApp  clueApp)
         {
             _openJobApp = openJobApp;
-            _serviceOrderApp = quotationfoApp;
+            _clueApp = clueApp;
         }
+
 
         public async Task Execute(IJobExecutionContext context)
         {
             var jobId = context.MergedJobDataMap.GetString(Define.JOBMAPKEY);
-            await _serviceOrderApp.GenerateIncomeSummary();
+            await _clueApp.ChangeClueStatusByJob();
             _openJobApp.RecordRun(jobId);
         }
+
+
     }
+
+
 }

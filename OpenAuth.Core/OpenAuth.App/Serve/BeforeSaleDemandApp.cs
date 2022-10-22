@@ -408,7 +408,7 @@ namespace OpenAuth.App
                         obj.BeforeDemandCode = "XQ" + DateTime.Now.ToString("yyyyMMdd") + createSerialNumber();//售前需求申请编号:XQ202201241453
 
                         obj.PredictDevCost = 2000;
-                        obj.TestEstimate = 5;
+                        obj.TestEstimate = 5 ;
                         obj.DemandEstimate = 3;
                         obj = await UnitWork.AddAsync<BeforeSaleDemand, int>(obj);
 

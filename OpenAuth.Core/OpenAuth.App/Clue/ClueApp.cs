@@ -31,6 +31,7 @@ using MailKit.Search;
 using Microsoft.EntityFrameworkCore.Internal;
 using static OpenAuth.App.Clue.ModelDto.KuaiBaosHelper;
 using OpenAuth.Repository.Domain;
+using Microsoft.Extensions.Logging;
 
 namespace OpenAuth.App
 {
@@ -46,11 +47,12 @@ namespace OpenAuth.App
         //public static Express express = new Express();
         private RevelanceManagerApp _revelanceApp;
         ServiceBaseApp _serviceBaseApp;
-        public ClueApp(IHttpClientFactory _httpClient, ServiceBaseApp serviceBaseApp, IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
+        private ILogger<ClueApp> _logger;
+        public ClueApp(IHttpClientFactory _httpClient, ILogger<ClueApp> logger, ServiceBaseApp serviceBaseApp, IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
         {
             _serviceBaseApp = serviceBaseApp;
             this._httpClient = _httpClient;
-
+            _logger = logger;
         }
 
 
@@ -194,6 +196,62 @@ namespace OpenAuth.App
             {
                 Status = 1
             });
+            await UnitWork.SaveAsync();
+
+            return result;
+        }
+
+        /// <summary>
+        /// 线索状态轮转
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="status"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> ClueStatusRotation(int id, int status)
+        {
+            var result = new Infrastructure.Response();
+            await UnitWork.UpdateAsync<Repository.Domain.Serve.Clue>(c => c.Id == id, x => new Repository.Domain.Serve.Clue
+            {
+                Status = status
+            });
+            await UnitWork.SaveAsync();
+
+            return result;
+        }
+
+
+        /// <summary>
+        /// 修改线索的状态
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<bool> ChangeClueStatusByJob()
+        {
+            _logger.LogError("运行修改线索状态定时任务");
+            var result = true;
+            // get latest 3 minutes updated job(jobtype = 72)
+            List<Repository.Domain.Serve.Clue> updateData = new List<Repository.Domain.Serve.Clue>();
+            var updatedClueJob = UnitWork.Find<wfa_job>(a => a.job_type_id == 72 && a.sync_stat == 4 && a.base_entry > 0 && a.upd_dt >= DateTime.Now.AddMinutes(-2)).OrderBy(a => a.upd_dt).ToList();
+            if (updatedClueJob.Count != 0)
+            {
+                var updateClueIDs = updatedClueJob.Select(a => a.base_entry).ToList();
+                var logList = updatedClueJob.Select(a =>new { a.job_id, a.base_entry, a.sbo_itf_return}).ToList();
+                _logger.LogError("运行修改线索状态定时任务，Job修改线索参数为"+ JsonConvert.SerializeObject(logList));
+                var clueList = UnitWork.Find<Repository.Domain.Serve.Clue>(a=> updateClueIDs.Contains(a.Id) && a.Status!=0 ).ToList();
+                _logger.LogError("运行修改线索状态定时任务，实际修改线索参数为" + JsonConvert.SerializeObject(clueList));
+                foreach (var clue in clueList)
+                {
+                    clue.Status = 1;
+                    clue.CardCode = updatedClueJob.Where(a => a.base_entry == clue.Id).FirstOrDefault().sbo_itf_return;
+                    updateData.Add(clue);
+                }
+            }
+            else
+            {
+                return result;
+            }
+
+            await UnitWork.BatchUpdateAsync<Repository.Domain.Serve.Clue>(updateData.ToArray());
             await UnitWork.SaveAsync();
 
             return result;
