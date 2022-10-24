@@ -275,25 +275,6 @@ namespace OpenAuth.App
         }
 
         /// <summary>
-        /// 回写客户编码
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        public async Task<Infrastructure.Response> GetCardcodeById(int id,string cardcode)
-        {
-            var result = new Infrastructure.Response();
-
-            await UnitWork.UpdateAsync<Repository.Domain.Serve.Clue>(c => c.Id == id, x => new Repository.Domain.Serve.Clue
-            {
-                CardCode = cardcode
-            });
-            await UnitWork.SaveAsync();
-
-            return result;
-        }
-
-
-        /// <summary>
         /// 获取标签
         /// </summary>
         /// <param name="clueId"></param>
