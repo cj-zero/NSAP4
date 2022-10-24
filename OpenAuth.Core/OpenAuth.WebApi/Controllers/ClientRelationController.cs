@@ -10,6 +10,7 @@ using OpenAuth.App.Request;
 using OpenAuth.App.ClientRelation.Request;
 using OpenAuth.Repository.Domain;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Authorization;
 
 namespace OpenAuth.WebApi.Controllers
 {
@@ -234,6 +235,7 @@ namespace OpenAuth.WebApi.Controllers
         /// 手动同步关系
         /// </summary>
         /// <returns></returns>
+        [AllowAnonymous]
         [HttpGet]
         public async Task<bool> GetSyncRelations()
         {
