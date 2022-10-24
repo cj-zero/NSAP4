@@ -774,8 +774,17 @@ namespace OpenAuth.App.ClientRelation
         public async Task<bool> SyncRelations()
         {
             // get latest 3 minutes updated job(jobtype = 72)
-           
+            _logger.LogError("Job同步更新关系");
             var updatedRelationJob = UnitWork.Find<wfa_job>(a => a.job_type_id == 72 &&  a.sync_stat ==4 && a.upd_dt>=DateTime.Now.AddMinutes(-2) ).OrderBy(a=>a.upd_dt).ToList();
+            if (updatedRelationJob.Count==0)
+            {
+                return false;
+            }
+            else
+            {
+                var jobidList = updatedRelationJob.Select(a => a.job_id).ToList();
+                _logger.LogError("Job同步更新关系,参数为" + JsonConvert.SerializeObject(jobidList));
+            }
             foreach (var relationJob in updatedRelationJob)
             {
                 var client = ByteExtension.ToDeSerialize<clientOCRD>(relationJob.job_data);
