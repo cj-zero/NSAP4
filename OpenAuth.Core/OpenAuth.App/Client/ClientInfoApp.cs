@@ -514,14 +514,6 @@ namespace OpenAuth.App.Client
                 tableName.Append("LEFT JOIN nsap_bone.crm_ocry F ON F.Code=A.Country  ");
                 tableName.Append("LEFT JOIN nsap_bone.crm_ocst G ON G.Code=A.State1 ");
 
-                tableName.Append("FROM nsap_bone.crm_ocrd A ");
-                tableName.Append("LEFT JOIN nsap_bone.crm_oslp B ON B.SlpCode=A.SlpCode  ");
-                tableName.Append("LEFT JOIN nsap_bone.crm_ocrg C ON C.GroupCode=A.GroupCode  ");
-                tableName.Append("LEFT JOIN nsap_bone.crm_oidc D ON D.Code=A.Indicator  ");
-                tableName.Append("LEFT JOIN nsap_bone.crm_ohem E ON E.empID=A.DfTcnician and E.sbo_id = A.sbo_id ");
-                tableName.Append("LEFT JOIN nsap_bone.crm_ocry F ON F.Code=A.Country  ");
-                tableName.Append("LEFT JOIN nsap_bone.crm_ocst G ON G.Code=A.State1 ");
-
                 //筛选标签
                 if (!string.IsNullOrWhiteSpace(label))
                 {
