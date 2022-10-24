@@ -2870,6 +2870,11 @@ namespace OpenAuth.App
             #region Discharging Current
             CalculateCurrent("DisCharge", 10, int.Parse(CategoryObj.Description), int.Parse(CategoryObj.DtCode));
             model.DischargingCurrent = model.DischargingCurrent.OrderBy(s => s.Sort1).ThenBy(s => s.Sort2).ToList();
+            //放电不确定度改为充电不确定度
+            for (int i = 0; i < model.DischargingCurrent.Count; i++)
+            {
+                model.DischargingCurrent[i].Uncertainty = model.ChargingCurrent[i].Uncertainty;
+            }
             #endregion
 
 
