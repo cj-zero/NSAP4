@@ -318,6 +318,25 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 烤机记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> BakingMachineRecord([FromQuery] QueryBakingMachineRecordReq req)
+        {
+            TableData result = new TableData();
+            if (req.StartTime==null || req.EndTime==null)
+            {
+                result.Code = 500;
+                result.Message = "请选择烤机开始时间!";
+                return result;
+            }
+            result= await _app.BakingMachineRecord(req);
+            return result;
+        }
+
+        /// <summary>
         /// 获取下位机
         /// </summary>
         /// <param name="docEntry"></param>

@@ -34,6 +34,9 @@ using OpenAuth.Repository;
 using System.Text.RegularExpressions;
 using Infrastructure.Excel;
 using Newtonsoft.Json.Linq;
+using OpenAuth.App.Nwcali.Response;
+using Newtonsoft.Json;
+using Serilog;
 
 namespace OpenAuth.App
 {
@@ -47,6 +50,7 @@ namespace OpenAuth.App
         private readonly FileApp _fileApp;
         private readonly UserSignApp _userSignApp;
         private readonly ServiceOrderApp _serviceOrderApp;
+        private readonly StepVersionApp _stepVersionApp;
         private static readonly string BaseCertDir = Path.Combine(Directory.GetCurrentDirectory(), "certs");
         static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);//用信号量代替锁
         private static readonly Dictionary<int, double> PoorCoefficients = new Dictionary<int, double>()
@@ -1927,6 +1931,65 @@ namespace OpenAuth.App
             return checkResult;
         }
 
+
+        /// <summary>
+        /// 烤机记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> BakingMachineRecord(QueryBakingMachineRecordReq req)
+        {
+            TableData result = new TableData();
+            int productionOrder = 0;
+            List<long> productionOrderList = new List<long>();
+            if (req.OriginAbs!=0)
+            {
+                productionOrder =await UnitWork.Find<product_owor>(null).Where(c => c.OriginAbs == req.OriginAbs).Select(c => c.DocEntry).FirstOrDefaultAsync();
+            }
+            if (!string.IsNullOrWhiteSpace(req.ItemCode))
+            {
+                productionOrderList = await UnitWork.Find<product_owor>(null).Where(c => c.ItemCode.Contains(req.ItemCode)).Select(c => (long)c.DocEntry).ToListAsync();
+            }
+            List<WmsLowGuidResp> wmsLowGuids = new List<WmsLowGuidResp>();
+            if (!string.IsNullOrWhiteSpace(req.Sn))
+            {
+                var b01List = new List<string>();
+                var wmsAccessToken = _stepVersionApp.WmsAccessToken();
+                if (string.IsNullOrWhiteSpace(wmsAccessToken))
+                {
+                    throw new Exception($"WMS token 获取失败!");
+                }
+                string urls = "http://service.neware.cloud/common/DevGuidBySn";
+                HttpHelper helper = new HttpHelper(urls);
+                var datastr = helper.PostAuthentication(b01List.ToArray(), urls, wmsAccessToken);
+                JObject dataObj = JObject.Parse(datastr);
+                try
+                {
+                    wmsLowGuids = JsonConvert.DeserializeObject<List<WmsLowGuidResp>>(JsonConvert.SerializeObject(dataObj["data"]["devBindInfo"]));
+                }
+                catch (Exception ex)
+                {
+                    result.Code = 500;
+                    result.Message = $"WMS guid 获取失败! message={ex.Message}";
+                    return result;
+                }
+            }
+            var wmsGuidList = wmsLowGuids.Select(c => c.devGuid).ToList();
+            var query =(from a in UnitWork.Find<DeviceTestLog>(null)
+                       join b in UnitWork.Find<DeviceCheckTask>(null) on new {a.EdgeGuid,a.SrvGuid,a.DevUid,a.UnitId,a.TestId,a.LowGuid,a.ChlId } equals new { b.EdgeGuid, b.SrvGuid, b.DevUid, b.UnitId, b.TestId, b.LowGuid, b.ChlId }
+                       where a.CreateTime >= req.StartTime && a.CreateTime <= req.EndTime
+                       select new {a.Id,a.OrderNo,a.GeneratorCode,a.Department,a.MidGuid,a.LowGuid,a.DevUid,a.UnitId,a.ChlId,a.TestId,a.CreateTime,b.TaskId })
+                       .WhereIf(productionOrder != 0, c => c.OrderNo == productionOrder)
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.GeneratorCode), c => c.GeneratorCode == req.GeneratorCode)
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), c => productionOrderList.Contains(c.OrderNo))
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid));
+            result.Data = query.OrderBy(c => c.Id)
+                       .Skip((req.page - 1) * req.limit)
+                       .Take(req.limit).ToList();
+            result.Count = query.Count();
+            return result;
+        }
+
         /// <summary>
         /// 烤机结果
         /// </summary>
@@ -2987,7 +3050,7 @@ namespace OpenAuth.App
 
 
         public CertinfoApp(IUnitWork unitWork, IRepository<Certinfo> repository,
-            RevelanceManagerApp app, IAuth auth, FlowInstanceApp flowInstanceApp, CertOperationHistoryApp certOperationHistoryApp, ModuleFlowSchemeApp moduleFlowSchemeApp, NwcaliCertApp nwcaliCertApp, FileApp fileApp, UserSignApp userSignApp, ServiceOrderApp serviceOrderApp) : base(unitWork, repository, auth)
+            RevelanceManagerApp app, IAuth auth, FlowInstanceApp flowInstanceApp, CertOperationHistoryApp certOperationHistoryApp, ModuleFlowSchemeApp moduleFlowSchemeApp, NwcaliCertApp nwcaliCertApp, FileApp fileApp, UserSignApp userSignApp, ServiceOrderApp serviceOrderApp, StepVersionApp stepVersionApp) : base(unitWork, repository, auth)
         {
             _revelanceApp = app;
             _flowInstanceApp = flowInstanceApp;
@@ -2997,6 +3060,7 @@ namespace OpenAuth.App
             _userSignApp = userSignApp;
             _fileApp = fileApp;
             _serviceOrderApp = serviceOrderApp;
+            _stepVersionApp = stepVersionApp;
         }
     }
 }
