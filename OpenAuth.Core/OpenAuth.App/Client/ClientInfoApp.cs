@@ -1354,9 +1354,6 @@ namespace OpenAuth.App.Client
             var loginUser = loginContext.User;
             //当前登录用户业务员编码
             int slpCode = UnitWork.Find<sbo_user>(q => q.user_id == loginUser.User_Id).Select(q => q.sale_id).FirstOrDefault().Value;
-            //该客户归属业务员编码
-            int slpCode_client = UnitWork.Find<crm_ocrd>(q => q.CardCode == CardCode).Select(q => q.SlpCode).FirstOrDefault().Value;
-            int sboId = SboId.ToInt();
             //查出该客户的所有联系人信息
             var data = (from n in UnitWork.Find<crm_ocpr>(q => q.CardCode == CardCode)
                         select new
@@ -1427,9 +1424,6 @@ namespace OpenAuth.App.Client
             var loginUser = loginContext.User;
             //当前登录用户业务员编码
             int slpCode = UnitWork.Find<sbo_user>(q => q.user_id == loginUser.User_Id).Select(q => q.sale_id).FirstOrDefault().Value;
-            //该客户归属业务员编码
-            int slpCode_client = UnitWork.Find<crm_ocrd>(q => q.CardCode == CardCode).Select(q => q.SlpCode).FirstOrDefault().Value;
-            int sboId = SboId.ToInt();
             //查出该客户的所有地址信息
             var data = (from n in UnitWork.Find<crm_crd1>(q => q.CardCode == CardCode)
                         join o in UnitWork.Find<crm_ocry>(null) on n.Country equals o.Code into temp1
