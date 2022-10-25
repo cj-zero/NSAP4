@@ -65,6 +65,15 @@ namespace OpenAuth.App.Order
         /// 是否有附件
         /// </summary>
         public string AttachFlag { get; set; }
+
+        /// <summary>
+        /// 是否中间商
+        /// </summary>
+        public int Flag { get; set; }
+        /// <summary>
+        /// 终端
+        /// </summary>
+        public string Terminals { get; set; }
     }
     public class SboInfoDto
     {
