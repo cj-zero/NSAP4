@@ -48,12 +48,21 @@ namespace OpenAuth.App.Customer
             var result = new TableData();
 
             List<string> SpecialCodeList = UnitWork.Find<SpecialCustomer>(q => !q.Isdelete).Select(q => q.CustomerNo).ToList();
+            // add slpcode 
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var loginUser = loginContext.User;
+            int slpCodeCurrent = UnitWork.Find<sbo_user>(q => q.user_id == loginUser.User_Id).Select(q => q.sale_id).FirstOrDefault().Value;
 
             var query = from c in UnitWork.Find<OCRD>(null)
                          .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), c => c.CardCode == req.CardCode)
                          .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), c => c.CardName.Contains(req.CardName))
                          .Where(q => !SpecialCodeList.Contains(q.CardCode))
-                        join s in UnitWork.Find<OSLP>(null)
+                        join s in UnitWork.Find<OSLP>(a=>a.SlpCode == slpCodeCurrent)
                         .WhereIf(!string.IsNullOrWhiteSpace(req.SlpName), s => s.SlpName.Contains(req.SlpName))
                         on c.SlpCode equals s.SlpCode
                         join g in UnitWork.Find<OCRG>(null) on (int)c.GroupCode equals g.GroupCode
