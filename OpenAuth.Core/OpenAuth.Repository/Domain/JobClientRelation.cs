@@ -45,6 +45,17 @@ namespace OpenAuth.Repository.Domain
         [Description("是否删除")]
         public int IsDelete { get; set; }
 
+        /// <summary>
+        /// 来源    0： 草稿     1：变更    2: 销售报价单    3：订单
+        /// </summary>
+        [Description("来源")]
+        public int Origin { get; set; }
+
+        /// <summary>
+        /// 来源关联数据
+        /// </summary>
+        [Description("关联数据")]
+        public string AffiliateData { get; set; }
 
     }
 

@@ -37,6 +37,9 @@ using System.Net.Http.Headers;
 using Infrastructure.Export;
 using DinkToPdf;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using OpenAuth.App.Client.Request;
+using SAPbobsCOM;
 
 namespace OpenAuth.App.Order
 {
@@ -1013,6 +1016,12 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             TableData tableData = new TableData();
             string sortString = string.Empty;
             string filterString = string.Empty;
+            //lims推广员），只能选对应产品的对应物料编码。lims软件的物料编码： S111-SERVICE-LIMS  && u.Type == "LIMS"
+            var currentUser = _auth.GetCurrentUser().User;
+            var erpLims = UnitWork.Find<LimsInfo>(u => u.UserId == currentUser.Id && u.Type == "LIMS").ToList();
+            //var lims1 = UnitWork.FromSql<LimsInfo>(" SELECT * from client_limsinfo where Type =\"LIMS\" AND UserId =\"" + currentUser.Id + "\" ").ToList();
+
+
             if (!string.IsNullOrEmpty(query.SortName) && !string.IsNullOrEmpty(query.SortOrder))
             {
                 sortString = string.Format("{0} {1}", query.SortName.Replace("itemcode", "m.itemcode"), query.SortOrder.ToUpper());
@@ -1021,6 +1030,11 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             {
                 filterString += string.Format("(m.ItemCode LIKE '%{0}%' OR m.ItemName LIKE '%{0}%') AND ", query.ItemCode.FilterWildCard());
             }
+            if (erpLims!=null)
+            {
+                filterString += string.Format(" (m.ItemCode = \"{0}\" ) AND  ", "S111-SERVICE-LIMS");
+            }
+
             if (query.TypeId == "1")
             {
                 filterString += string.Format("(m.ItemCode NOT LIKE 'CT%') AND ");
