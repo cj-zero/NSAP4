@@ -657,11 +657,14 @@ namespace Sap.Handler.Service
 
                 dts.Lines.WarehouseCode = dln1.WhsCode;
 
-                dts.Lines.BaseEntry = (int)obj?.InvoiceDocEntry;
+                if (dln1.MaterialCode == materials.MaterialCode)
+                {
+                    dts.Lines.BaseEntry = (int)obj?.InvoiceDocEntry;
 
-                dts.Lines.BaseLine = (int)inv1.Where(o => o.ItemCode.Equals(materials.MaterialCode) && (o.Price == materials.DiscountPrices || o.Price == decimal.Parse(Convert.ToDecimal(materials.DiscountPrices).ToString("#0.00")))).FirstOrDefault()?.LineNum;
+                    dts.Lines.BaseLine = (int)inv1.Where(o => o.ItemCode.Equals(materials.MaterialCode) && (o.Price == materials.DiscountPrices || o.Price == decimal.Parse(Convert.ToDecimal(materials.DiscountPrices).ToString("#0.00")))).FirstOrDefault()?.LineNum;
 
-                dts.Lines.BaseType = 13;
+                    dts.Lines.BaseType = 13;
+                }
 
                 dts.Lines.SalesPersonCode = (int)slpcode;
 

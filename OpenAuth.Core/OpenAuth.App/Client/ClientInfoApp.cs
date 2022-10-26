@@ -1729,7 +1729,7 @@ namespace OpenAuth.App.Client
                 var job = UnitWork.FindSingle<wfa_job>(a => a.job_id == jobraw);
 
                 var newOper = UnitWork.FindSingle<User>(a => a.User_Id == job.user_id);
-                if (originClient !=null && client.is_reseller == "N")
+                if (originClient != null && client.is_reseller == "N")
                 {
                     if (originClient.Flag == 1)
                     {

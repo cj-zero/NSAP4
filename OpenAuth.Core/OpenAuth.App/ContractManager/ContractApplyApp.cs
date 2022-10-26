@@ -144,7 +144,7 @@ namespace OpenAuth.App.ContractManager
                         IsUploadOriginal = r.a.IsUploadOriginal,
                         FlowInstanceId = r.a.FlowInstanceId,
                         DownloadNumber = r.a.DownloadNumber,
-                        U_SAP_Id = r.a.U_SAP_Id,
+                        U_SAP_ID = r.a.U_SAP_ID,
                         ItemNo = r.a.ItemNo,
                         ItemName = r.a.ItemName,
                         ContractStatus = r.a.ContractStatus,
@@ -231,7 +231,7 @@ namespace OpenAuth.App.ContractManager
                         IsUploadOriginal = r.a.IsUploadOriginal,
                         FlowInstanceId = r.a.FlowInstanceId,
                         DownloadNumber = r.a.DownloadNumber,
-                        U_SAP_Id = r.a.U_SAP_Id,
+                        U_SAP_ID = r.a.U_SAP_ID,
                         ItemNo = r.a.ItemNo,
                         ItemName = r.a.ItemName,
                         ContractStatus = r.a.ContractStatus,
@@ -318,7 +318,7 @@ namespace OpenAuth.App.ContractManager
                                                a.IsUseCompanyTemplate,
                                                a.FlowInstanceId,
                                                a.DownloadNumber,
-                                               a.U_SAP_Id,
+                                               a.U_SAP_ID,
                                                a.ItemNo,
                                                a.ItemName,
                                                a.ContractStatus,
@@ -498,7 +498,8 @@ namespace OpenAuth.App.ContractManager
                         CompanyType = r.CompanyType,
                         CreateName = r.CreateName,
                         CreateTime = r.CreateTime.ToString(),
-                        ContractStatus = r.ContractStatus
+                        ContractStatus = r.ContractStatus,
+                        SaleNo = r.SaleNo
                     }).ToListAsync();
 
                     foreach (ContractApplyMsgHelp item in contractApplyMsgHelpList)
@@ -1118,7 +1119,7 @@ namespace OpenAuth.App.ContractManager
             await SendSinglRMsg(quotationObj.ContractStatus, quotationObj.ContractNo, req.Remarks, loginContext.User);
 
             //撤回申请单钉钉通知
-            await SendDDReCallMsg(quotationObj.ContractNo, req.Remarks, loginContext.User.Name);
+            //await SendDDReCallMsg(quotationObj.ContractNo, req.Remarks, loginContext.User.Name);
         }
 
         /// <summary>
@@ -1275,10 +1276,10 @@ namespace OpenAuth.App.ContractManager
                                 throw new Exception("文件类型或印章Id不能为空");
                             }
 
-                            if (item.FileType == "3" && string.IsNullOrEmpty(obj.ItemName))
-                            {
-                                throw new Exception("文件类型包含标书，项目名称必填");
-                            }
+                            //if (item.FileType == "3" && string.IsNullOrEmpty(obj.ItemName))
+                            //{
+                            //    throw new Exception("文件类型包含标书，项目名称必填");
+                            //}
 
                             if (item.FileType == "8" && string.IsNullOrEmpty(obj.Remark))
                             {
@@ -1433,10 +1434,10 @@ namespace OpenAuth.App.ContractManager
                             throw new Exception("文件类型或印章Id不能为空");
                         }
 
-                        if (item.FileType == "3" && string.IsNullOrEmpty(obj.ItemName))
-                        {
-                            throw new Exception("文件类型包含标书，项目编号和项目名称必填");
-                        }
+                        //if (item.FileType == "3" && string.IsNullOrEmpty(obj.ItemName))
+                        //{
+                        //    throw new Exception("文件类型包含标书，项目编号和项目名称必填");
+                        //}
 
                         if (item.FileType == "8" && string.IsNullOrEmpty(obj.Remark))
                         {
@@ -1490,7 +1491,7 @@ namespace OpenAuth.App.ContractManager
                             CompanyType = obj.CompanyType,
                             ContractType = obj.ContractType,
                             QuotationNo = obj.QuotationNo,
-                            U_SAP_Id = obj.U_SAP_Id,
+                            U_SAP_ID = obj.U_SAP_ID,
                             ItemNo = obj.ItemNo,
                             ItemName = obj.ItemName,
                             SaleNo = obj.SaleNo,
@@ -1523,7 +1524,7 @@ namespace OpenAuth.App.ContractManager
                                 CompanyType = obj.CompanyType,
                                 ContractType = obj.ContractType,
                                 QuotationNo = obj.QuotationNo,
-                                U_SAP_Id = obj.U_SAP_Id,
+                                U_SAP_ID = obj.U_SAP_ID,
                                 ItemName = obj.ItemName,
                                 ItemNo = obj.ItemNo,
                                 SaleNo = obj.SaleNo,
@@ -1580,7 +1581,7 @@ namespace OpenAuth.App.ContractManager
                                 CompanyType = obj.CompanyType,
                                 ContractType = obj.ContractType,
                                 QuotationNo = obj.QuotationNo,
-                                U_SAP_Id = obj.U_SAP_Id,
+                                U_SAP_ID = obj.U_SAP_ID,
                                 ItemNo = obj.ItemNo,
                                 ItemName = obj.ItemName,
                                 SaleNo = obj.SaleNo,
@@ -1761,6 +1762,13 @@ namespace OpenAuth.App.ContractManager
                     result.Code = 500;
                     return result;
                 }
+
+                if (obj.ContractStatus == "11")
+                {
+                    result.Message = "合同申请单已经被撤回，停止审批。";
+                    result.Code = 500;
+                    return result;
+                }
             }
             else
             {
@@ -1787,24 +1795,52 @@ namespace OpenAuth.App.ContractManager
                 obj.UpdateTime = DateTime.Now;
                 if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")) && obj.ContractStatus == "3")
                 {
+                    if (obj.ContractStatus == "5")
+                    {
+                        result.Message = "合同申请单已经由法务人员审批成功，无需再次审批。";
+                        result.Code = 500;
+                        return result;
+                    }
+
                     contractHis.Action = "法务人员审批";
                     obj.ContractStatus = "5";
                 }
 
                 if (loginContext.Roles.Any(r => r.Name.Equals("售前工程师")) && obj.ContractStatus == "12")
                 {
+                    if (obj.ContractStatus == "5")
+                    {
+                        result.Message = "合同申请单已经由售前工程师审批审批成功，无需再次审批。";
+                        result.Code = 500;
+                        return result;
+                    }
+
                     contractHis.Action = "售前工程师审批";
                     obj.ContractStatus = "5";
                 }
 
                 if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")) && obj.ContractStatus == "10")
                 {
+                    if (obj.ContractStatus == "-1")
+                    {
+                        result.Message = "合同申请单已经由法务人员审批审批成功，无需再次审批。";
+                        result.Code = 500;
+                        return result;
+                    }
+
                     contractHis.Action = "法务人员审批";
                     obj.ContractStatus = "-1";
                 }
 
                 if (loginContext.Roles.Any(r => r.Name.Equals("销售总助")) && obj.ContractStatus == "10")
                 {
+                    if (obj.ContractStatus == "-1")
+                    {
+                        result.Message = "合同申请单已经由销售总助审批审批成功，无需再次审批。";
+                        result.Code = 500;
+                        return result;
+                    }
+
                     contractHis.Action = "总助审批";
                     obj.ContractStatus = "-1";
                 }
@@ -1813,6 +1849,13 @@ namespace OpenAuth.App.ContractManager
                 {
                     if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")))
                     {
+                        if (obj.ContractStatus == "8")
+                        {
+                            result.Message = "合同申请单已经由法务人员审批成功，无需再次审批。";
+                            result.Code = 500;
+                            return result;
+                        }
+
                         contractHis.Action = "会签-法务完成审批，待售前工程师审批";
                         obj.ContractStatus = "8";
                         contractSign.ContractApplyId = obj.Id;
@@ -1824,6 +1867,13 @@ namespace OpenAuth.App.ContractManager
 
                     if (loginContext.Roles.Any(r => r.Name.Equals("售前工程师")))
                     {
+                        if (obj.ContractStatus == "9")
+                        {
+                            result.Message = "合同申请单已经由售前工程师审批成功，无需再次审批。";
+                            result.Code = 500;
+                            return result;
+                        }
+
                         contractHis.Action = "会签-售前工程师完成审批，待法务审批";
                         obj.ContractStatus = "9";
                         contractSign.ContractApplyId = obj.Id;
@@ -1838,6 +1888,13 @@ namespace OpenAuth.App.ContractManager
                 {
                     if (loginContext.Roles.Any(r => r.Name.Equals("售前工程师")))
                     {
+                        if (obj.ContractStatus == "9")
+                        {
+                            result.Message = "合同申请单已经由售前工程师审批成功，无需再次审批。";
+                            result.Code = 500;
+                            return result;
+                        }
+
                         contractHis.Action = "会签-售前工程师完成审批，待法务审批";
                         obj.ContractStatus = "9";
                         contractSign.ContractApplyId = obj.Id;
@@ -1852,6 +1909,13 @@ namespace OpenAuth.App.ContractManager
                 {
                     if (loginContext.Roles.Any(r => r.Name.Equals("法务人员")))
                     {
+                        if (obj.ContractStatus == "8")
+                        {
+                            result.Message = "合同申请单已经由法务人员审批成功，无需再次审批。";
+                            result.Code = 500;
+                            return result;
+                        }
+
                         contractHis.Action = "会签-法务完成审批，待售前工程师审批";
                         obj.ContractStatus = "8";
                         contractSign.ContractApplyId = obj.Id;
@@ -1872,6 +1936,13 @@ namespace OpenAuth.App.ContractManager
 
                 if (loginContext.Roles.Any(r => r.Name.Equals("销售总助")) && obj.ContractStatus == "5")
                 {
+                    if (obj.ContractStatus == "6")
+                    {
+                        result.Message = "合同申请单已经由销售总助审批成功，无需再次审批。";
+                        result.Code = 500;
+                        return result;
+                    }
+
                     contractHis.Action = "总助审批";
                     obj.ContractStatus = "6";
                 }
@@ -1887,6 +1958,13 @@ namespace OpenAuth.App.ContractManager
 
                 if (req.IsReject)
                 {
+                    if (obj.ContractStatus == "2")
+                    {
+                        result.Message = "合同申请单已经驳回。";
+                        result.Code = 500;
+                        return result;
+                    }
+
                     VerificationReqModle.VerificationFinally = "3";
                     VerificationReqModle.VerificationOpinion = req.Remark;
                     VerificationReqModle.NodeRejectType = "1";
@@ -2946,7 +3024,7 @@ namespace OpenAuth.App.ContractManager
                         IsUseCompanyTemplate = obj.IsUseCompanyTemplate,
                         FlowInstanceId = obj.FlowInstanceId,
                         DownloadNumber = obj.DownloadNumber,
-                        U_SAP_Id = obj.U_SAP_Id,
+                        U_SAP_ID = obj.U_SAP_ID,
                         ItemNo = obj.ItemNo,
                         ItemName = obj.ItemName,
                         ContractStatus = "-1",
@@ -3153,7 +3231,7 @@ namespace OpenAuth.App.ContractManager
                         IsUploadOriginal = obj.IsUploadOriginal,
                         FlowInstanceId = obj.FlowInstanceId,
                         DownloadNumber = obj.DownloadNumber,
-                        U_SAP_Id = obj.U_SAP_Id,
+                        U_SAP_ID = obj.U_SAP_ID,
                         ItemName = obj.ItemName,
                         ItemNo = obj.ItemNo,
                         ContractStatus = "7",
@@ -3562,7 +3640,7 @@ namespace OpenAuth.App.ContractManager
                 IsUseCompanyTemplate = r.a.IsUseCompanyTemplate,
                 FlowInstanceId = r.a.FlowInstanceId,
                 DownloadNumber = r.a.DownloadNumber,
-                U_SAP_Id = r.a.U_SAP_Id,
+                U_SAP_ID = r.a.U_SAP_ID,
                 ItemNo = r.a.ItemNo,
                 ItemName = r.a.ItemName,
                 ContractStatus = r.a.ContractStatus,
