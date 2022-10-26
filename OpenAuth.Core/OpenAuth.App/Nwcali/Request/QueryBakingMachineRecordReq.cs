@@ -35,7 +35,7 @@ namespace OpenAuth.App.Nwcali.Request
         /// </summary>
         public string Sn { get; set; }
         /// <summary>
-        /// 烤机结果 1:通过  2:失败
+        /// 烤机结果 0:全部 1:通过  2:失败
         /// </summary>
         public int State { get; set; }
     }

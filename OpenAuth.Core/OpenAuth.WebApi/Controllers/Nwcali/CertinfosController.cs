@@ -335,7 +335,21 @@ namespace OpenAuth.WebApi.Controllers
             result= await _app.BakingMachineRecord(req);
             return result;
         }
-
+        /// <summary>
+        /// 导出烤机记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> ExportBakingMachineRecord([FromQuery] QueryBakingMachineRecordReq req)
+        {
+            if (req.StartTime == null || req.EndTime == null)
+            {
+                throw new Exception($"请选择烤机开始时间");
+            }
+            var data = await _app.ExportBakingMachineRecord(req);
+            return File(data, "application/vnd.ms-excel");
+        }
         /// <summary>
         /// 获取下位机
         /// </summary>
