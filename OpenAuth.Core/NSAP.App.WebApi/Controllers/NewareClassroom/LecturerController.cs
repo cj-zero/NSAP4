@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using OpenAuth.App;
 using OpenAuth.App.Hr;
 using OpenAuth.App.Response;
@@ -163,6 +164,28 @@ namespace NSAP.App.WebApi.Controllers.NewareClassroom
             try
             {
                 result = await _app.HonorWall(appUserId,pageIndex,pageSize);
+            }
+            catch (Exception e)
+            {
+                result.Code = 500;
+                result.Message = e.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 获取讲师等级名称
+        /// </summary>
+        /// <param name="appUserId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<TableData> TeacherLevel(int appUserId)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.TeacherLevel(appUserId);
             }
             catch (Exception e)
             {
