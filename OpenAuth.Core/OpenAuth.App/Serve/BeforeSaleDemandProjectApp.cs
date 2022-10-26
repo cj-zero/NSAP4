@@ -49,7 +49,30 @@ namespace OpenAuth.App
             }
             var resp = await query.OrderByDescending(c => c.CreateTime).Skip((req.page - 1) * req.limit)
                 .Take(req.limit).ToListAsync();
-            result.Data = resp.ToList();
+
+            List<string> userIds = new List<string>();
+
+            userIds.AddRange(resp.Select(a => a.PromoterId));
+            userIds.AddRange(resp.Select(a => a.ReqUserId));
+            userIds.AddRange(resp.Select(a => a.DevUserId));
+            userIds.AddRange(resp.Select(a => a.TestUserId));
+            userIds.AddRange(resp.Select(a => a.ExecutorUserId));
+            userIds = userIds.Distinct().ToList();
+
+            var user = (from a in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId))
+                        join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
+                        select new { a.FirstId, c.Name }).ToList();
+
+            var dxxx = resp.SelectMany(a => a.PromoterId);
+            foreach (var item in resp) 
+            {
+                item.PromoterName = user.FirstOrDefault(a => a.FirstId == item.PromoterId)?.Name + "-" + item.PromoterName;
+                item.ReqUserName = user.FirstOrDefault(a => a.FirstId == item.ReqUserId)?.Name + "-" + item.ReqUserName;
+                item.DevUserName = user.FirstOrDefault(a => a.FirstId == item.DevUserId)?.Name + "-" + item.DevUserName;
+                item.TestUserName = user.FirstOrDefault(a => a.FirstId == item.TestUserId)?.Name + "-" + item.TestUserName;
+                item.ExecutorName = user.FirstOrDefault(a => a.FirstId == item.ExecutorUserId)?.Name + "-" + item.ExecutorName;
+            }
+            result.Data = resp;
             result.Count = await query.CountAsync();
             return result;
         }
