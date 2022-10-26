@@ -2305,7 +2305,7 @@ namespace OpenAuth.App.Client
                         string[] p = queryArray[i].Split(':');
                         if (!string.IsNullOrEmpty(p[1]))
                         {
-                            strSql.AppendFormat("AND {0} LIKE '%{1}%' ", p[0], p[1].Trim().FilterSQL());
+                            strSql.AppendFormat("AND CONVERT({0} USING utf8)  LIKE '%{1}%' ", p[0], p[1].Trim().FilterSQL());
                         }
                     }
                 }
