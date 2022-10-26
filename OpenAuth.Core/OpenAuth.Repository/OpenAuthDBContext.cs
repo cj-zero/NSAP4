@@ -70,6 +70,7 @@ namespace OpenAuth.Repository
         #region 客户中间商 终端关系维护表
         public virtual DbSet<ClientRelation> ClientRelations { get; set; }
         public virtual DbSet<ClientRelHistory> ClientRelHistories { get; set; }
+        public virtual DbSet<JobClientRelation>  JobClientRelations { get; set; }
         #endregion
 
         //非数据库表格

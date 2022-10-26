@@ -10,6 +10,7 @@ using OpenAuth.App.Request;
 using OpenAuth.App.ClientRelation.Request;
 using OpenAuth.Repository.Domain;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Authorization;
 
 namespace OpenAuth.WebApi.Controllers
 {
@@ -164,6 +165,29 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 新增销售报价单是否中间商和终端关系
+        /// </summary>
+        /// <param name="quoteReq"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response<bool>> AddSaleQuoteRelations([FromBody] SalesQuoteReq quoteReq)
+        {
+            var result = new Response<bool>();
+            try
+            {
+                result.Result = await _app.AddSaleQuoteRelations(quoteReq);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+
+        /// <summary>
         /// 获取历史记录
         /// </summary>
         /// <returns></returns>
@@ -184,6 +208,34 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 获取终端关系
+        /// </summary>
+        /// <param name="clientNo"></param>
+        /// <param name="flag"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<Response<JobClientRelation>> GetTerminals(string clientNo, int flag)
+        {
+            var result = new Response<JobClientRelation>();
+            try
+            {
+                result.Result = await _app.GetTerminals(clientNo,flag);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 手动同步关系
+        /// </summary>
+        /// <returns></returns>
+        [AllowAnonymous]
         [HttpGet]
         public async Task<bool> GetSyncRelations()
         {
