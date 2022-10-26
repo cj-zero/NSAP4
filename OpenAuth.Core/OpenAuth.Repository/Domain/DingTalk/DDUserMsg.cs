@@ -17,15 +17,13 @@ using OpenAuth.Repository.Core;
 namespace OpenAuth.Repository.Domain
 {
     /// <summary>
-    /// 钉钉用户部门信息表
+    /// 钉钉用户信息表
     /// </summary>
-    [Table("dduserdepartmsg")]
-    public partial class DDUserDepartMsg : Entity
+    [Table("ddusermsg")]
+    public partial class DDUserMsg : Entity
     {
-        public DDUserDepartMsg()
+        public DDUserMsg()
         {
-            this.DepartId = 0;
-            this.DepartName = string.Empty;
             this.UserId = string.Empty;
             this.UserName = string.Empty;
             this.UserPhone = string.Empty;
@@ -33,18 +31,6 @@ namespace OpenAuth.Repository.Domain
             this.CreateName = string.Empty;
             this.IsBind = false;
         }
-
-        /// <summary>
-        /// 部门Id
-        /// </summary>
-        [Description("部门Id")]
-        public int? DepartId { get; set; }
-
-        /// <summary>
-        /// 部门名称
-        /// </summary>
-        [Description("部门名称")]
-        public string DepartName { get; set; }
 
         /// <summary>
         /// 用户Id
