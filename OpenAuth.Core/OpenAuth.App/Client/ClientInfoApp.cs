@@ -72,6 +72,17 @@ namespace OpenAuth.App.Client
             addClientInfoReq.clientInfo.SlpName = loginUser.Name;
             string result = "";
             int userID = _serviceBaseApp.GetUserNaspId();
+            //20221021 lims推广员使用线索转客户功能无法新增客户
+            if (addClientInfoReq.baseEntry > 0 && addClientInfoReq.type == "Add")
+            {
+                var erpLims = UnitWork.FindSingle<LimsInfo>(u => u.UserId == loginUser.Id && u.Type == "LIMS");
+                if (erpLims != null)
+                {
+                    _logger.LogWarning("lims推广员使用线索转客户功能无法新增客户,参数为：" + JsonConvert.SerializeObject(addClientInfoReq));
+                    return "0";
+                }
+            }
+
             clientOCRD OCRD = BulidClientJob(addClientInfoReq.clientInfo);
             OCRD.SboId = "1";
             if (OCRD.CardType == "S")
@@ -94,7 +105,8 @@ namespace OpenAuth.App.Client
                     Jobid = Convert.ToInt32(result),
                     Terminals = addClientInfoReq.Terminals,
                     Creator = loginUser.Name,
-                    CreatorId = loginUser.Id
+                    CreatorId = loginUser.Id,
+                    Origin = 0
                 });
                 //新增更新草稿客户关系
                 await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
@@ -137,7 +149,8 @@ namespace OpenAuth.App.Client
                             Jobid = Convert.ToInt32(JobId),
                             Terminals = addClientInfoReq.Terminals,
                             Creator = loginUser.Name,
-                            CreatorId = loginUser.Id
+                            CreatorId = loginUser.Id,
+                            Origin  = 0
                         });
                         await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
                         {
@@ -159,7 +172,8 @@ namespace OpenAuth.App.Client
                             Jobid = Convert.ToInt32(JobId),
                             Terminals = addClientInfoReq.Terminals,
                             Creator = loginUser.Name,
-                            CreatorId = loginUser.Id
+                            CreatorId = loginUser.Id,
+                            Origin =1
                         });
 
                         result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(result), userID, OCRD.FreeText, "", 0);
@@ -217,7 +231,7 @@ namespace OpenAuth.App.Client
             string U_CardTypeStr, string U_ClientSource, string U_CompSector, string U_TradeType, string U_StaffScale,
             DateTime? CreateStartTime, DateTime? CreateEndTime, DateTime? DistributionStartTime, DateTime? DistributionEndTime,
             decimal? dNotesBalStart, decimal? dNotesBalEnd, decimal? ordersBalStart, decimal? ordersBalEnd,
-            decimal? balanceStart, decimal? balanceEnd, decimal? balanceTotalStart, decimal? balanceTotalEnd, out int rowCount)
+            decimal? balanceStart, decimal? balanceEnd, decimal? balanceTotalStart, decimal? balanceTotalEnd, string CardName, out int rowCount)
         {
             bool IsSaler = false, IsPurchase = false, IsTech = false, IsClerk = false;//业务员，采购员，技术员，文员
             string rSalCode = GetUserInfoById(sboid.ToString(), userId.ToString(), "1");
@@ -239,8 +253,12 @@ namespace OpenAuth.App.Client
             bool IsOpenSap = _serviceSaleOrderApp.GetSapSboIsOpen(sboid.ToString());
             string sortString = string.Empty;
             StringBuilder filterString = new StringBuilder();
-            filterString.Append(IsOpenSap ? " 1=1 " : string.Format(" sbo_id={0} ", sboid.ToString()));
+            filterString.Append(string.Format(" T.sbo_id={0} ", sboid.ToString()));
             //modify by yangis @2022.06.24
+            if (!string.IsNullOrWhiteSpace(CardName))
+            {
+                filterString.Append($" and (cardname like '%" + CardName + "%' or cardfname like '%" + CardName + "%' )");
+            }
             if (!string.IsNullOrWhiteSpace(slpName))
             {
                 filterString.Append($" and slpname like '%{slpName}%' ");
@@ -479,7 +497,7 @@ namespace OpenAuth.App.Client
             filedName.Append(" GroupName,Free_Text,U_ClientSource,U_CompSector,U_TradeType,U_CardTypeStr,U_StaffScale ");
             if (IsOpenSap)
             {
-                tableName.Append("(SELECT A.sbo_id,A.CardCode,A.CardName,A.SlpCode,B.SlpName,(IFNULL(E.lastName,'')+IFNULL(E.firstName,'')) as Technician,");
+                tableName.Append("(SELECT A.sbo_id,A.CardCode,A.CardName,A.CardFName,A.SlpCode,B.SlpName,CONCAT(IFNULL(E.lastName,''),IFNULL(E.firstName,'')) as Technician,");
                 tableName.Append("A.CntctPrsn,CONCAT(IFNULL(F.Name,''),IFNULL(G.Name,''),IFNULL(A.City,''),IFNULL(A.Building,'')) AS Address, ");
                 tableName.Append("A.Phone1,A.Cellular,A.U_is_reseller,");
                 tableName.Append("A.DNotesBal,A.OrdersBal,A.OprCount,A.CreateDate,A.upd_dt UpdateDate,A.DfTcnician ");
@@ -1336,11 +1354,8 @@ namespace OpenAuth.App.Client
             var loginUser = loginContext.User;
             //当前登录用户业务员编码
             int slpCode = UnitWork.Find<sbo_user>(q => q.user_id == loginUser.User_Id).Select(q => q.sale_id).FirstOrDefault().Value;
-            //该客户归属业务员编码
-            int slpCode_client = UnitWork.Find<crm_ocrd>(q => q.CardCode == CardCode).Select(q => q.SlpCode).FirstOrDefault().Value;
-            int sboId = SboId.ToInt();
             //查出该客户的所有联系人信息
-            var data = (from n in UnitWork.Find<crm_ocpr>(q => q.sbo_id == sboId && q.CardCode == CardCode)
+            var data = (from n in UnitWork.Find<crm_ocpr>(q => q.CardCode == CardCode)
                         select new
                         {
                             CardCode = n.CardCode,
@@ -1364,7 +1379,7 @@ namespace OpenAuth.App.Client
                             flag = false
                         }).ToList();
             dtList.Add(data.ToDataTable());
-            var limsocpr = UnitWork.Find<LimsOCPR>(q => q.CardCode == CardCode && q.SlpCode == slpCode && q.sbo_id == Define.SBO_ID && q.Type == Type).ToList();
+            var limsocpr = UnitWork.Find<LimsOCPR>(q => q.CardCode == CardCode && q.SlpCode == slpCode && q.Type == Type).ToList();
             var limsocprdata = (from n in limsocpr
                                 select new
                                 {
@@ -1409,11 +1424,8 @@ namespace OpenAuth.App.Client
             var loginUser = loginContext.User;
             //当前登录用户业务员编码
             int slpCode = UnitWork.Find<sbo_user>(q => q.user_id == loginUser.User_Id).Select(q => q.sale_id).FirstOrDefault().Value;
-            //该客户归属业务员编码
-            int slpCode_client = UnitWork.Find<crm_ocrd>(q => q.CardCode == CardCode).Select(q => q.SlpCode).FirstOrDefault().Value;
-            int sboId = SboId.ToInt();
             //查出该客户的所有地址信息
-            var data = (from n in UnitWork.Find<crm_crd1>(q => q.sbo_id == sboId && q.CardCode == CardCode)
+            var data = (from n in UnitWork.Find<crm_crd1>(q => q.CardCode == CardCode)
                         join o in UnitWork.Find<crm_ocry>(null) on n.Country equals o.Code into temp1
                         from t1 in temp1.DefaultIfEmpty()
                         join c in UnitWork.Find<crm_ocst>(null) on n.State equals c.Code into temp2
@@ -1436,7 +1448,7 @@ namespace OpenAuth.App.Client
                             flag = false
                         }).ToList();
             dtList.Add(data.ToDataTable());
-            var limsCrd1 = UnitWork.Find<LimsCRD1>(q => q.CardCode == CardCode && q.SlpCode == slpCode && q.sbo_id == Define.SBO_ID && q.Type == Type).ToList();
+            var limsCrd1 = UnitWork.Find<LimsCRD1>(q => q.CardCode == CardCode && q.SlpCode == slpCode && q.Type == Type).ToList();
             var limsCrd1data = (from n in limsCrd1
                                 join o in UnitWork.Find<crm_ocry>(null) on n.Country equals o.Code into temp1
                                 from t1 in temp1.DefaultIfEmpty()
@@ -1463,6 +1475,44 @@ namespace OpenAuth.App.Client
             dtList.Add(limsCrd1data.ToDataTable());
             return dtList;
         }
+        #endregion
+        #region 查询业务伙伴机会
+        /// <summary>
+        /// 查询业务伙伴机会
+        /// </summary>
+        /// <returns></returns>
+        public DataTable SelectClientClueData(string CardCode, string SboId)
+        {
+            DataTable dt = new DataTable();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            string sql = "select SerialNumber,c.CreateUser SlpName,c.CreateTime clueDate,od.CreateDate clientDate from clue c";
+            sql += " join nsap_bone.crm_ocrd od on c.CardCode = od.CardCode and od.sbo_id = " + SboId + " where od.CardCode = '" + CardCode + "'";
+            dt = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text);
+            for (int i = 0; i < dt.Rows.Count; i++)
+            {
+                string username = dt.Rows[i]["SlpName"].ToString();
+                string dept = "";
+                //销售员部门数据
+                var deptData = (from s in UnitWork.Find<base_user>(q => q.user_nm == username)
+                                join ud in UnitWork.Find<base_user_detail>(null) on s.user_id equals ud.user_id
+                                join d in UnitWork.Find<base_dep>(null) on ud.dep_id equals d.dep_id
+                                select new
+                                {
+                                    dept = d.dep_alias
+                                }).Distinct().ToList();
+                if (deptData.Count > 0)
+                {
+                    dept = deptData[0].dept;
+                }
+                dt.Rows[i]["SlpName"] = dept + "-" + username;
+            }
+            return dt;
+        }
+
         #endregion
         #region 查询所有技术员
         /// <summary>
@@ -1669,7 +1719,7 @@ namespace OpenAuth.App.Client
             client = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(JobId));
             client.ChangeType = AuditType;
             client.ChangeCardCode = CardCode;
-            var originClient = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation > (a => a.ClientNo == CardCode && a.IsDelete == 0 && a.IsActive == 1 && a.Flag !=2 && a.ScriptFlag == 0);
+            var originClient = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation >(a => a.ClientNo == CardCode && a.IsDelete == 0 && a.IsActive == 1 && a.Flag !=2 && a.ScriptFlag == 0);
             if (AuditType == "Edit")
             {
                 client.DfTcnicianCode = DfTcnician;
@@ -1738,7 +1788,7 @@ namespace OpenAuth.App.Client
         #endregion
         #region 审核
         /// <summary>
-        /// 审核
+        /// 审核 next
         /// </summary>
         public string AuditResubmitNext(int jobID, int userID, string recommend, string auditOpinionid)
         {
@@ -2255,7 +2305,7 @@ namespace OpenAuth.App.Client
                         string[] p = queryArray[i].Split(':');
                         if (!string.IsNullOrEmpty(p[1]))
                         {
-                            strSql.AppendFormat("AND {0} LIKE '%{1}%' ", p[0], p[1].Trim().FilterSQL());
+                            strSql.AppendFormat("AND CONVERT({0} USING utf8)  LIKE '%{1}%' ", p[0], p[1].Trim().FilterSQL());
                         }
                     }
                 }
@@ -2530,6 +2580,24 @@ namespace OpenAuth.App.Client
 
             strSql.AppendFormat(" offset " + (selectOqutReq.page - 1) * selectOqutReq.limit + " rows fetch next " + selectOqutReq.limit + " rows only ");
             dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
+            for (int i = 0; i < dt.Rows.Count; i++)
+            {
+                string username = dt.Rows[i]["SlpName"].ToString();
+                string dept = "";
+                //销售员部门数据
+                var deptData = (from s in UnitWork.Find<base_user>(q => q.user_nm == username)
+                                join ud in UnitWork.Find<base_user_detail>(null) on s.user_id equals ud.user_id
+                                join d in UnitWork.Find<base_dep>(null) on ud.dep_id equals d.dep_id
+                                select new
+                                {
+                                    dept = d.dep_alias
+                                }).Distinct().ToList();
+                if (deptData.Count > 0)
+                {
+                    dept = deptData[0].dept;
+                }
+                dt.Rows[i]["SlpName"] = dept + "-" + username;
+            }
 
             StringBuilder strSqlMoney = new StringBuilder();
             strSqlMoney.Append("SELECT Sum(A.DocTotal) DocTotal, Sum(A.DocTotal-A.PaidToDate)  AS OpenDocTotal ");
@@ -2608,7 +2676,24 @@ namespace OpenAuth.App.Client
             int count = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null).Rows.Count;
             strSql.AppendFormat(" offset " + (selectOrdrReq.page - 1) * selectOrdrReq.limit + " rows fetch next " + selectOrdrReq.limit + " rows only ");
             dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, strSql.ToString(), CommandType.Text, null);
-
+            for (int i = 0; i < dt.Rows.Count; i++)
+            {
+                string username = dt.Rows[i]["SlpName"].ToString();
+                string dept = "";
+                //销售员部门数据
+                var deptData = (from s in UnitWork.Find<base_user>(q => q.user_nm == username)
+                                join ud in UnitWork.Find<base_user_detail>(null) on s.user_id equals ud.user_id
+                                join d in UnitWork.Find<base_dep>(null) on ud.dep_id equals d.dep_id
+                                select new
+                                {
+                                    dept = d.dep_alias
+                                }).Distinct().ToList();
+                if (deptData.Count > 0)
+                {
+                    dept = deptData[0].dept;
+                }
+                dt.Rows[i]["SlpName"] = dept + "-" + username;
+            }
             StringBuilder strSqlMoney = new StringBuilder();
             strSqlMoney.Append("SELECT Sum(A.DocTotal) DocTotal, Sum(A.DocTotal-A.PaidToDate)  AS OpenDocTotal ");
             strSqlMoney.Append(getOrdrSqlStr(selectOrdrReq));
@@ -2660,11 +2745,15 @@ namespace OpenAuth.App.Client
         public async Task<Infrastructure.Response> MoveInCustomerSea(MoveInCustomerSeaReq req)
         {
             var result = new Infrastructure.Response();
-
+            var userInfo = _auth.GetCurrentUser();
+            if (userInfo == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
             //判断是否是公海管理员
-            var isCustomerSeaAdmin = _auth.GetCurrentUser().Roles.Any(r => r.Name == "公海管理员");
+            var isCustomerSeaAdmin = userInfo.Roles.Any(r => r.Name == "公海管理员");
             //操作人名称
-            var userName = _auth.GetCurrentUser()?.User?.Name;
+            var userName = userInfo?.User?.Name;
 
             //根据客户代码查询所属销售员信息
             var slpInfo = await (from c in UnitWork.Find<OCRD>(null)
@@ -2779,23 +2868,36 @@ namespace OpenAuth.App.Client
                 try
                 {
                     await UnitWork.BatchAddAsync<CustomerList, int>(customerLists.ToArray());
-                    await UnitWork.UpdateAsync<OCRD>(c => customerLists.Select(x => x.CustomerNo).Contains(c.CardCode), x => new OCRD
+
+                    string FuncID = _serviceSaleOrderApp.GetJobTypeByAddress("client/clientAssignSeller.aspx");
+
+                    clientOCRD client = new clientOCRD();
+                    client.CardCode = req.CardCode;
+                    client.SlpCode = "1054";
+                    client.SboId = "1";         //帐套
+                    byte[] job_data = ByteExtension.ToSerialize(client);
+                    string job_id = _serviceSaleOrderApp.WorkflowBuild("业务伙伴分配销售员", Convert.ToInt32(FuncID), userInfo.User.User_Id.Value, job_data, "业务伙伴分配销售员", 1, "", "", 0, 0, 0, "BOneAPI", "NSAP.B1Api.BOneOCRDAssign");
+                    if (int.Parse(job_id) > 0)
                     {
-                        SlpCode = null
-                    });
-                    await UnitWork.AddAsync<CustomerMoveHistory, int>(new CustomerMoveHistory
-                    {
-                        CardCode = req.CardCode,
-                        CardName = req.CardName,
-                        SlpCode = slpInfo.SlpCode,
-                        SlpName = slpInfo.SlpName,
-                        MoveInType = "主动移入",
-                        Remark = req.Remark,
-                        CreateTime = DateTime.Now,
-                        CreateUser = userName,
-                        UpdateTime = DateTime.Now,
-                        UpdateUser = userName
-                    });
+                        string re = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(job_id), userInfo.User.User_Id.Value, "业务伙伴分配销售员", "", 0);
+                        //如果成功,则将客户从公海中移出(如果有的话)
+                        if (re == "2")
+                        {
+                            await UnitWork.AddAsync<CustomerMoveHistory, int>(new CustomerMoveHistory
+                            {
+                                CardCode = req.CardCode,
+                                CardName = req.CardName,
+                                SlpCode = slpInfo.SlpCode,
+                                SlpName = slpInfo.SlpName,
+                                MoveInType = "主动移入",
+                                Remark = req.Remark,
+                                CreateTime = DateTime.Now,
+                                CreateUser = userName,
+                                UpdateTime = DateTime.Now,
+                                UpdateUser = userName
+                            });
+                        }
+                    }
                     // remove 4.0 relation if it exists
                     await _clientRelationApp.RejectJobRelations(req.CardCode);
                     await UnitWork.SaveAsync();
@@ -2808,8 +2910,6 @@ namespace OpenAuth.App.Client
                     await tran.RollbackAsync();
                 }
             }
-
-
             return result;
         }
 

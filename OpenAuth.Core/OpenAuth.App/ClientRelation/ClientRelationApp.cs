@@ -774,8 +774,17 @@ namespace OpenAuth.App.ClientRelation
         public async Task<bool> SyncRelations()
         {
             // get latest 3 minutes updated job(jobtype = 72)
-           
+            _logger.LogError("Job同步更新关系");
             var updatedRelationJob = UnitWork.Find<wfa_job>(a => a.job_type_id == 72 &&  a.sync_stat ==4 && a.upd_dt>=DateTime.Now.AddMinutes(-2) ).OrderBy(a=>a.upd_dt).ToList();
+            if (updatedRelationJob.Count==0)
+            {
+                return false;
+            }
+            else
+            {
+                var jobidList = updatedRelationJob.Select(a => a.job_id).ToList();
+                _logger.LogError("Job同步更新关系,参数为" + JsonConvert.SerializeObject(jobidList));
+            }
             foreach (var relationJob in updatedRelationJob)
             {
                 var client = ByteExtension.ToDeSerialize<clientOCRD>(relationJob.job_data);
@@ -825,7 +834,35 @@ namespace OpenAuth.App.ClientRelation
                IsDelete =0,
                CreateDate = DateTime.Now,
                Creator = jrr.Creator,
-               CreatorId = jrr.CreatorId
+               CreatorId = jrr.CreatorId,
+               Origin = jrr.Origin
+            });
+            await UnitWork.SaveAsync();
+            return true;
+        }
+
+        /// <summary>
+        /// 添加销售报价单关系
+        /// </summary>
+        /// <param name="jrr"></param>
+        /// <returns></returns>
+        public async Task<bool> AddSaleQuoteRelations(SalesQuoteReq  jrr)
+        {
+            if (!string.IsNullOrEmpty(jrr.Terminals) && !jrr.Terminals.Contains("C"))
+            {
+                jrr.Terminals = "";
+            }
+            var currentUser = _auth.GetCurrentUser().User;
+            await UnitWork.AddAsync<OpenAuth.Repository.Domain.JobClientRelation, int>(new JobClientRelation
+            {
+                Jobid = jrr.Jobid,
+                Terminals = jrr.Terminals,
+                IsDelete = 0,
+                CreateDate = DateTime.Now,
+                Creator = currentUser.Name,
+                CreatorId = currentUser.Id,
+                Origin =2,
+                AffiliateData = jrr.ClientNo
             });
             await UnitWork.SaveAsync();
             return true;
@@ -887,7 +924,7 @@ namespace OpenAuth.App.ClientRelation
         /// 获取终端关系
         /// </summary>
         /// <param name="clientNo"></param>
-        /// <param name="flag"></param>
+        /// <param name="flag">来源标注 0： 客户编号   1： Jobid   </param>
         /// <returns></returns>
         public async Task<JobClientRelation> GetTerminals(string clientNo, int flag)
         {

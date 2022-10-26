@@ -37,6 +37,10 @@ using System.Net.Http.Headers;
 using Infrastructure.Export;
 using DinkToPdf;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
+using OpenAuth.App.Client.Request;
+using SAPbobsCOM;
+using DocumentFormat.OpenXml.Math;
 
 namespace OpenAuth.App.Order
 {
@@ -347,6 +351,7 @@ namespace OpenAuth.App.Order
             paramOut.Direction = ParameterDirection.Output;
             sqlParameters.Add(paramOut);
             DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, $"sp_common_pager", CommandType.StoredProcedure, sqlParameters);
+
             if (dt.Rows.Count > 0)
             {
                 tableData.Count = Convert.ToInt32(paramOut.Value);
@@ -357,6 +362,7 @@ namespace OpenAuth.App.Order
                 tableData.Count = 0;
                 rowCounts = 0;
             }
+            #region comment
             // dt = Sql.SAPSelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCounts);
             //if (type.ToLower() == "ordr" || type.ToLower() == "opor")
             //{
@@ -377,10 +383,42 @@ namespace OpenAuth.App.Order
 
             //    }
             //}
+            #endregion
             if (type.ToLower() == "oqut")
             {
                 if (dt.Rows.Count > 0)
                 {
+                    //添加4.0 中间商 终端
+                    #region
+                    dt.Columns.Add("Flag", typeof(int));
+                    dt.Columns.Add("Terminals", typeof(String));
+                    var clientNoList = dt.AsEnumerable().Select(row => row.Field<string>("CardCode")).ToList();  //CardCode
+                    var reimbursementList = dt.AsEnumerable().Select(row => row.Field<int>("DocEntry").ToString()).ToList();
+                    var legitJobList = UnitWork.Find<wfa_job>(a => reimbursementList.Contains(a.sbo_itf_return) && a.sync_stat == 4 && a.job_type_id == 13).ToList();
+                    var legitJobIdList = legitJobList.Select(a => a.job_id).ToList();
+                    var jobrelations = UnitWork.Find<OpenAuth.Repository.Domain.JobClientRelation>(a => clientNoList.Contains(a.AffiliateData) && legitJobIdList.Contains(a.Jobid) && a.IsDelete == 0 && a.Origin ==2).ToList();
+                    foreach (var datarow in dt.AsEnumerable())
+                    {
+                        var specJob = legitJobList.Where(a => a.sbo_itf_return == datarow["DocEntry"].ToString()).FirstOrDefault();
+                        if (specJob != null)
+                        {
+                            var relation = jobrelations.Where(a => a.AffiliateData == datarow["CardCode"].ToString() && a.Jobid == specJob.job_id).FirstOrDefault();
+                            if (relation != null)
+                            {
+                                datarow["Flag"] = 1;
+                                datarow["Terminals"] = relation.Terminals;
+
+                            }
+                        }
+                        else
+                        {
+                            datarow["Flag"] = 0;
+                            datarow["Terminals"] = "";
+                       
+                        }
+                    }
+                    #endregion
+
                     //获取订单号
                     List<int> orderNos = (from d in dt.AsEnumerable() select d.Field<int>("DocEntry")).ToList();
                     string orderNo = string.Join(",", orderNos);
@@ -1013,6 +1051,12 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             TableData tableData = new TableData();
             string sortString = string.Empty;
             string filterString = string.Empty;
+            //lims推广员），只能选对应产品的对应物料编码。lims软件的物料编码： S111-SERVICE-LIMS  && u.Type == "LIMS"
+            var currentUser = _auth.GetCurrentUser().User;
+            var erpLims = UnitWork.Find<LimsInfo>(u => u.UserId == currentUser.Id && u.Type == "LIMS").ToList();
+            //var lims1 = UnitWork.FromSql<LimsInfo>(" SELECT * from client_limsinfo where Type =\"LIMS\" AND UserId =\"" + currentUser.Id + "\" ").ToList();
+
+
             if (!string.IsNullOrEmpty(query.SortName) && !string.IsNullOrEmpty(query.SortOrder))
             {
                 sortString = string.Format("{0} {1}", query.SortName.Replace("itemcode", "m.itemcode"), query.SortOrder.ToUpper());
@@ -1021,6 +1065,11 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             {
                 filterString += string.Format("(m.ItemCode LIKE '%{0}%' OR m.ItemName LIKE '%{0}%') AND ", query.ItemCode.FilterWildCard());
             }
+            if (erpLims!=null)
+            {
+                filterString += string.Format(" (m.ItemCode = \"{0}\" ) AND  ", "S111-SERVICE-LIMS");
+            }
+
             if (query.TypeId == "1")
             {
                 filterString += string.Format("(m.ItemCode NOT LIKE 'CT%') AND ");
