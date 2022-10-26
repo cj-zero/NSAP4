@@ -2410,6 +2410,7 @@ namespace OpenAuth.App.Client
                                 strSql.AppendFormat(" AND CONVERT({0} USING utf8)  LIKE '%{1}%'  ", p[0], p[1].Trim().FilterSQL());
                             }
 
+                            strSql.AppendFormat("AND CONVERT({0} USING utf8)  LIKE '%{1}%' ", p[0], p[1].Trim().FilterSQL());
                         }
                     }
                 }
