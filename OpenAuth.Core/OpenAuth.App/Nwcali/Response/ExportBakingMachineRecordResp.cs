@@ -13,7 +13,7 @@ namespace OpenAuth.App.Nwcali.Response
     public class ExportBakingMachineRecordResp
     {
         [ExporterHeader(DisplayName = "销售单号")]
-        public long OriginAbs { get; set; }
+        public int? OriginAbs { get; set; }
 
 
         [ExporterHeader(DisplayName = "产品编码")]
@@ -52,10 +52,10 @@ namespace OpenAuth.App.Nwcali.Response
         [ExporterHeader(DisplayName = "烤机结果")]
         public string result { get; set; }
 
-        [ExporterHeader(DisplayName = "耗电(kWh)")]
+        [ExporterHeader(DisplayName = "耗电(mWh)")]
         public string power { get; set; }
 
-        [ExporterHeader(DisplayName = "二氧化碳(Kg)")]
+        [ExporterHeader(DisplayName = "二氧化碳(mg)")]
         public string carbon { get; set; }
 
         [ExporterHeader(DisplayName = "烤机耗时(秒)")]

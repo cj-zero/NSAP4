@@ -745,7 +745,7 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var result = new TableData();
-            var saleMan = await UnitWork.Find<crm_oslp>(c => c.SlpName == loginContext.User.Name).Select(c=>c.SlpCode).FirstOrDefaultAsync();
+            var saleMan = await UnitWork.Find<crm_oslp>(c => c.SlpName == loginContext.User.Name).Select(c => c.SlpCode).FirstOrDefaultAsync();
             var saleOrder = UnitWork.Find<sale_ordr>(o => o.SlpCode == saleMan);
             //获取该销售员下所有销售订单号
             var saleOederIds = await saleOrder.Select(c => c.DocEntry).ToListAsync();
@@ -756,8 +756,8 @@ namespace OpenAuth.App
                                            join c in UnitWork.Find<store_osrn>(null) on new { b.ItemCode, b.SysNumber } equals new { c.ItemCode, c.SysNumber } into bc
                                            from c in bc.DefaultIfEmpty()
                                            where a.DocType == 15 && saleOederIds.Contains(a.BaseEntry) && !string.IsNullOrWhiteSpace(c.MnfSerial)
-                                           select new { c.MnfSerial,a.ItemCode, a.DocEntry, a.BaseEntry, a.DocType, a.CreateDate, a.BaseType };
-            
+                                           select new { c.MnfSerial, a.ItemCode, a.DocEntry, a.BaseEntry, a.DocType, a.CreateDate, a.BaseType };
+
             if (request.PageStatus == 1)//销售订单列表
             {
                 //获取序列号下订单号
@@ -785,17 +785,17 @@ namespace OpenAuth.App
                     c.CardCode,
                     c.CardName,
                     CreateDate = c.CreateDate
-                }) ;
+                });
                 result.Data = resultData;
                 result.Count = dataCount;
             }
-            else if(request.PageStatus == 2)//设备列表
+            else if (request.PageStatus == 2)//设备列表
             {
                 var numList = await manufacturerSerialNumber
                     .WhereIf(!string.IsNullOrWhiteSpace(request.SalesOrderId), c => c.BaseEntry == int.Parse(request.SalesOrderId))
-                    .WhereIf(!string.IsNullOrWhiteSpace(request.TesterModel),c=>c.ItemCode.Contains(request.TesterModel))
+                    .WhereIf(!string.IsNullOrWhiteSpace(request.TesterModel), c => c.ItemCode.Contains(request.TesterModel))
                     .WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers), c => c.MnfSerial.Contains(request.ManufacturerSerialNumbers))
-                    .Select(c=>new NwcaliBaseInfo {TesterSn=c.MnfSerial,TesterModel=c.ItemCode }).ToListAsync();
+                    .Select(c => new NwcaliBaseInfo { TesterSn = c.MnfSerial, TesterModel = c.ItemCode }).ToListAsync();
 
                 var mf = await _moduleFlowSchemeApp.GetAsync(m => m.Module.Name.Equals("校准证书"));
                 var fsid = await UnitWork.Find<FlowInstance>(null)
@@ -805,34 +805,34 @@ namespace OpenAuth.App
                 //var fsid = fs.Select(f => f.Id).ToList();
 
                 var cerlist = await UnitWork.Find<NwcaliBaseInfo>(o => fsid.Contains(o.FlowInstanceId)).ToListAsync();
-                var test= cerlist.OrderByDescending(c => c.Time).GroupBy(c => c.TesterSn).Select(c => c.First()).ToList();
+                var test = cerlist.OrderByDescending(c => c.Time).GroupBy(c => c.TesterSn).Select(c => c.First()).ToList();
 
                 var devicelist1 = from a in numList
                                   join b in cerlist on a.TesterSn equals b.TesterSn into ab
                                   from b in ab.DefaultIfEmpty()
                                   select new NwcaliBaseInfo
                                   {
-                                      TesterSn=a.TesterSn,
-                                      TesterModel=a.TesterModel,
+                                      TesterSn = a.TesterSn,
+                                      TesterModel = a.TesterModel,
                                       AssetNo = b?.AssetNo,
-                                      CertificateNumber=b?.CertificateNumber,
-                                      Time=b?.Time,
-                                      ExpirationDate=b?.ExpirationDate,
-                                      Operator=b?.Operator 
+                                      CertificateNumber = b?.CertificateNumber,
+                                      Time = b?.Time,
+                                      ExpirationDate = b?.ExpirationDate,
+                                      Operator = b?.Operator
                                   };
 
-                devicelist1= devicelist1.OrderByDescending(c => c.Time).GroupBy(c => c.TesterSn).Select(c => c.First()).ToList();
+                devicelist1 = devicelist1.OrderByDescending(c => c.Time).GroupBy(c => c.TesterSn).Select(c => c.First()).ToList();
 
                 if (!string.IsNullOrWhiteSpace(request.CertNo))
-                    devicelist1 = devicelist1.Where(c =>!string.IsNullOrWhiteSpace(c.CertificateNumber) && c.CertificateNumber.Contains(request.CertNo)).ToList();
+                    devicelist1 = devicelist1.Where(c => !string.IsNullOrWhiteSpace(c.CertificateNumber) && c.CertificateNumber.Contains(request.CertNo)).ToList();
                 if (!(request.StartCalibrationDate == null && request.EndCalibrationDate == null))
                     devicelist1 = devicelist1.Where(c => c.Time >= request.StartCalibrationDate && c.Time <= request.EndCalibrationDate).ToList();
 
                 #region 老数据
                 //序列号下最新的校验证书
                 var testNo = numList.Select(c => c.TesterSn).ToList();
-                var old = await UnitWork.Find<Certinfo>(c=> testNo.Contains(c.Sn) && fsid.Contains(c.FlowInstanceId)).ToListAsync();
-                if (old.Count>0)
+                var old = await UnitWork.Find<Certinfo>(c => testNo.Contains(c.Sn) && fsid.Contains(c.FlowInstanceId)).ToListAsync();
+                if (old.Count > 0)
                 {
                     old = old.OrderByDescending(c => c.CalibrationDate).GroupBy(c => c.Sn).Select(c => c.First()).ToList();
                     //条件
@@ -859,7 +859,7 @@ namespace OpenAuth.App
                 #endregion
 
                 result.Count = devicelist1.Count();
-                result.Data = devicelist1.Select(c=> 
+                result.Data = devicelist1.Select(c =>
                 {
                     return new
                     {
@@ -886,13 +886,13 @@ namespace OpenAuth.App
                     .ToListAsync();
                 //var fsid = fs.Select(f => f.Id).ToList();
 
-                var cerinfo = await UnitWork.Find<NwcaliBaseInfo>(o=>fsid.Contains(o.FlowInstanceId))
+                var cerinfo = await UnitWork.Find<NwcaliBaseInfo>(o => fsid.Contains(o.FlowInstanceId))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.ManufacturerSerialNumbers), c => c.TesterSn.Contains(request.ManufacturerSerialNumbers))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.CertNo), c => c.CertificateNumber.Contains(request.CertNo))
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), c => c.Operator.Contains(request.Operator))
                                 .WhereIf(!(request.StartCalibrationDate == null && request.EndCalibrationDate == null), c => c.Time >= request.StartCalibrationDate && c.Time <= request.EndCalibrationDate)
                                 .ToListAsync();
-                                ;
+                ;
                 var view = cerinfo.Select(c =>
                  {
                      return new CertinfoView
@@ -916,7 +916,7 @@ namespace OpenAuth.App
                                 .WhereIf(!string.IsNullOrWhiteSpace(request.Operator), c => c.Operator.Contains(request.Operator))
                                 .WhereIf(!(request.StartCalibrationDate == null && request.EndCalibrationDate == null), c => c.CalibrationDate >= request.StartCalibrationDate && c.CalibrationDate <= request.EndCalibrationDate)
                                 .ToListAsync();
-                if (obj.Count>0)
+                if (obj.Count > 0)
                 {
                     var view2 = obj.Select(c =>
                     {
@@ -1021,7 +1021,7 @@ namespace OpenAuth.App
                                     ExpirationDate = DateTime.Parse(ConvertTestInterval(baseInfo.Time.Value.ToString(), baseInfo.TestInterval))
                                 });
                             }
-                            catch(Exception ex)
+                            catch (Exception ex)
                             {
                                 break;
                             }
@@ -1134,8 +1134,8 @@ namespace OpenAuth.App
             }
             var result = new TableData();
 
-            var list = await UnitWork.Find<Entrustment>(c => c.Id == id).Include(c=>c.EntrustmentDetails).FirstOrDefaultAsync();
-            list.EntrustmentDetails=list.EntrustmentDetails.OrderBy(c => c.Sort).ToList();
+            var list = await UnitWork.Find<Entrustment>(c => c.Id == id).Include(c => c.EntrustmentDetails).FirstOrDefaultAsync();
+            list.EntrustmentDetails = list.EntrustmentDetails.OrderBy(c => c.Sort).ToList();
             result.Data = list;
             return result;
         }
@@ -1216,14 +1216,14 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task PushCertGuidToApp()
         {
-            var plcguid = await UnitWork.FromSql<PcPlc>(@$"SELECT * from pcplc where timestampdiff(day,ExpirationDate,NOW())=30 or timestampdiff(day,ExpirationDate,NOW())=20 or timestampdiff(day,ExpirationDate,NOW())=10").Select(c => new { c.Guid, DueTime=c.ExpirationDate }).ToListAsync();
+            var plcguid = await UnitWork.FromSql<PcPlc>(@$"SELECT * from pcplc where timestampdiff(day,ExpirationDate,NOW())=30 or timestampdiff(day,ExpirationDate,NOW())=20 or timestampdiff(day,ExpirationDate,NOW())=10").Select(c => new { c.Guid, DueTime = c.ExpirationDate }).ToListAsync();
 
-            var guid = await UnitWork.FromSql<Certplc>(@$"SELECT * from certplc where timestampdiff(day,ExpirationDate,NOW())=30 or timestampdiff(day,ExpirationDate,NOW())=20 or timestampdiff(day,ExpirationDate,NOW())=10").Select(c => new { Guid=c.PlcGuid, DueTime = c.ExpirationDate } ).ToListAsync();
+            var guid = await UnitWork.FromSql<Certplc>(@$"SELECT * from certplc where timestampdiff(day,ExpirationDate,NOW())=30 or timestampdiff(day,ExpirationDate,NOW())=20 or timestampdiff(day,ExpirationDate,NOW())=10").Select(c => new { Guid = c.PlcGuid, DueTime = c.ExpirationDate }).ToListAsync();
 
-            if (guid.Count>0) plcguid = plcguid.Concat(guid).ToList();
+            if (guid.Count > 0) plcguid = plcguid.Concat(guid).ToList();
 
 
-           await _serviceOrderApp.PushMessageToApp(0, "", "", "1", plcguid);
+            await _serviceOrderApp.PushMessageToApp(0, "", "", "1", plcguid);
         }
 
         /// <summary>
@@ -1292,7 +1292,7 @@ namespace OpenAuth.App
                         if (!string.IsNullOrWhiteSpace(saleOrder.U_SCBM))
                             saleOrder.U_SCBM += ",";
 
-                        single.Remark = (saleOrder.Comments + saleOrder.U_CPH + saleOrder.U_YSQX + saleOrder.U_YGMD  + saleOrder.U_SCBM).Trim();
+                        single.Remark = (saleOrder.Comments + saleOrder.U_CPH + saleOrder.U_YSQX + saleOrder.U_YGMD + saleOrder.U_SCBM).Trim();
                         single.Status = 1;
                         single.UpdateDate = DateTime.Now;
                         single.JodId = item.job_id;
@@ -1329,7 +1329,7 @@ namespace OpenAuth.App
 
             #region 生成委托单
             var finlishJob = deliveryList.Where(c => c.job_state == 3 && c.sync_stat == 4).Select(c => c.job_id).ToList();//选择了序列号/结束的交货流程并且同步完成
-            var finlishEntrusted = entrusted.Where(c => finlishJob.Contains(c.JodId) && c.Status==1).ToList();
+            var finlishEntrusted = entrusted.Where(c => finlishJob.Contains(c.JodId) && c.Status == 1).ToList();
             for (int i = 0; i < finlishEntrusted.Count; i++)
             {
                 var item = finlishEntrusted[i];
@@ -1349,7 +1349,7 @@ namespace OpenAuth.App
                 foreach (var groupItem in serialNumber.GroupBy(c => c.ItemCode).ToList())
                 {
                     int line2 = 0;
-                    
+
                     var deleteData = await UnitWork.Find<EntrustmentDetail>(x => x.EntrustmentId == item.Id)?.ToArrayAsync();
                     if (deleteData != null && deleteData.Count() > 0)
                     {
@@ -1358,7 +1358,7 @@ namespace OpenAuth.App
                             await UnitWork.BatchDeleteAsync<EntrustmentDetail>(deleteData);
                             await UnitWork.SaveAsync();
                         }
-                        catch(DbUpdateConcurrencyException ex)
+                        catch (DbUpdateConcurrencyException ex)
                         {
                             throw new Exception("数据删除异常", ex);
                         }
@@ -1375,7 +1375,7 @@ namespace OpenAuth.App
                         ++line;
                         foreach (var items in groupItem)
                         {
-                            ++line2;++sort;
+                            ++line2; ++sort;
                             EntrustmentDetail entrustmentDetail = new EntrustmentDetail();
                             entrustmentDetail.EntrustmentId = item.Id;
                             entrustmentDetail.ItemCode = groupItem.Key;
@@ -1400,7 +1400,7 @@ namespace OpenAuth.App
                     EntrustedUser = item.Contacts,
                     EntrustedDate = DateTime.Now,
                     UpdateDate = DateTime.Now
-                }) ;
+                });
                 await UnitWork.SaveAsync();
             }
             #endregion
@@ -1412,7 +1412,7 @@ namespace OpenAuth.App
                 var details = await UnitWork.FindTrack<EntrustmentDetail>(c => c.EntrustmentId == item.Id).ToListAsync();
                 var snids = details.Select(c => c.SerialNumber).ToList();
                 var nwcert = await UnitWork.Find<NwcaliBaseInfo>(c => snids.Contains(c.TesterSn)).ToListAsync();
-                if (nwcert != null && nwcert.Count>0)
+                if (nwcert != null && nwcert.Count > 0)
                 {
                     var status = 4;//校准中
                     SetStatus(ref details, nwcert);
@@ -1431,7 +1431,7 @@ namespace OpenAuth.App
             #endregion
         }
 
-        private void SetStatus(ref List<EntrustmentDetail> detail,List<NwcaliBaseInfo> nwcert)
+        private void SetStatus(ref List<EntrustmentDetail> detail, List<NwcaliBaseInfo> nwcert)
         {
             foreach (var item in detail)
             {
@@ -1456,7 +1456,7 @@ namespace OpenAuth.App
                 IFormatter bs = new BinaryFormatter();
                 stream.Write(bytes, 0, bytes.Length);
                 stream.Seek(0, SeekOrigin.Begin);
-                return  (NSAP.Entity.Sales.billDelivery)bs.Deserialize(stream);
+                return (NSAP.Entity.Sales.billDelivery)bs.Deserialize(stream);
             }
         }
 
@@ -1469,14 +1469,14 @@ namespace OpenAuth.App
         public dynamic GetAddress(string cardcode, int sboid)
         {
             var query = from a in UnitWork.Find<crm_crd1>(null)
-                        join d in UnitWork.Find< crm_ocrd >(null) on new { a.CardCode,a.Address }  equals new { d.CardCode, Address=d.BillToDef } into ad
+                        join d in UnitWork.Find<crm_ocrd>(null) on new { a.CardCode, a.Address } equals new { d.CardCode, Address = d.BillToDef } into ad
                         from d in ad.DefaultIfEmpty()
                         join b in UnitWork.Find<crm_ocry>(null) on a.Country equals b.Code into ab
                         from b in ab.DefaultIfEmpty()
                         join c in UnitWork.Find<crm_ocst>(null) on a.State equals c.Code into ac
                         from c in ac.DefaultIfEmpty()
                         where d.sbo_id == sboid && a.CardCode == cardcode // && a.AdresType=="B" && a.Address== "开票到"
-                        select new { d.CardCode,d.CardName, a.LineNum, Active = a.U_Active, a.AdresType, a.Address, Country = b.Name, State = c.Name, a.City, a.Building };
+                        select new { d.CardCode, d.CardName, a.LineNum, Active = a.U_Active, a.AdresType, a.Address, Country = b.Name, State = c.Name, a.City, a.Building };
             return query.FirstOrDefault();
         }
         public void Add(AddOrUpdateCertinfoReq req)
@@ -1542,12 +1542,12 @@ namespace OpenAuth.App
         /// <param name="id"></param>
         /// <param name="name"></param>
         /// <returns></returns>
-        private async Task<bool> CheckCanOperation(string id, string name,string operate)
+        private async Task<bool> CheckCanOperation(string id, string name, string operate)
         {
             //撤回操作不验证
             if (operate.Equals("4")) return true;
             var history = await UnitWork.Find<CertOperationHistory>(c => c.CertInfoId.Equals(id)).ToListAsync();
-            var rejectTime = history.Where(c=>c.Action.Contains("驳回")).OrderByDescending(c => c.CreateTime).Select(c => c.CreateTime).FirstOrDefault();
+            var rejectTime = history.Where(c => c.Action.Contains("驳回")).OrderByDescending(c => c.CreateTime).Select(c => c.CreateTime).FirstOrDefault();
             //有无驳回操作
             if (rejectTime == null)
             {
@@ -1603,7 +1603,7 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<Category> GetCategory(string Model)
         {
-            var objs = await UnitWork.Find<Category>(c=> Model.Contains(c.Name) && c.TypeId.Equals("SYS_CalibrationCertificateType")).FirstOrDefaultAsync();
+            var objs = await UnitWork.Find<Category>(c => Model.Contains(c.Name) && c.TypeId.Equals("SYS_CalibrationCertificateType")).FirstOrDefaultAsync();
             return objs;
         }
 
@@ -1620,7 +1620,7 @@ namespace OpenAuth.App
                         join b in UnitWork.Find<NwcaliBaseInfo>(null) on a.NwcaliBaseInfoId equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
                         where req.plcGuid.Contains(a.Guid)
-                        select new { id = a.Id, plcGuid = a.Guid, materialCode = b.TesterModel, TesterSn=b.TesterSn };
+                        select new { id = a.Id, plcGuid = a.Guid, materialCode = b.TesterModel, TesterSn = b.TesterSn };
 
             result.Data = await query.ToListAsync();
             return result;
@@ -1639,7 +1639,7 @@ namespace OpenAuth.App
                         join b in UnitWork.Find<NwcaliBaseInfo>(null) on a.NwcaliBaseInfoId equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
                         where req.plcGuid.Contains(a.Guid)
-                        select new { id=a.Id,plcGuid=a.Guid,certNo=b.CertificateNumber, calibrationDate=a.CalibrationDate,b.Operator, expirationDate=a.ExpirationDate};
+                        select new { id = a.Id, plcGuid = a.Guid, certNo = b.CertificateNumber, calibrationDate = a.CalibrationDate, b.Operator, expirationDate = a.ExpirationDate };
 
             result.Data = await query.ToListAsync();
             return result;
@@ -1810,20 +1810,20 @@ namespace OpenAuth.App
             }
 
             result.Count = schedule.Count();
-            result.Data = schedule.Select(c=>new 
+            result.Data = schedule.Select(c => new
             {
                 c.GeneratorCode,
                 c.ProductionStatus,
                 c.DeviceOperator,
                 c.DeviceStatus,
-                DeviceTime=c.DeviceTime?.ToString("yyyy.MM.dd HH:mm"),
-                c.NwcailStatus ,
-                c.NwcailOperator ,
+                DeviceTime = c.DeviceTime?.ToString("yyyy.MM.dd HH:mm"),
+                c.NwcailStatus,
+                c.NwcailOperator,
                 NwcailTime = c.NwcailTime?.ToString("yyyy.MM.dd HH:mm"),
                 c.ReceiveNo,
                 c.ReceiveOperator,
                 c.ReceiveStatus,
-                ReceiveTime=c.ReceiveTime?.ToString("yyyy.MM.dd HH:mm"),
+                ReceiveTime = c.ReceiveTime?.ToString("yyyy.MM.dd HH:mm"),
                 c.SortNo
             }).OrderBy(c => c.SortNo).Skip((req.page - 1) * req.limit).Take(req.limit).ToList();
             return result;
@@ -1838,7 +1838,7 @@ namespace OpenAuth.App
         {
             List<string> guidList = new List<string>();
             var newlog = UnitWork.Find<DeviceTestLog>(c => c.GeneratorCode == wo).OrderByDescending(c => c.Id).FirstOrDefault();
-            if (newlog!=null)
+            if (newlog != null)
             {
                 //最新环境下 最新通道测试记录
                 var guidSql = $@"select LowGuid from devicetestlog where id in(
@@ -1947,9 +1947,9 @@ namespace OpenAuth.App
             List<object> list = new List<object>();
             int productionOrder = 0;
             List<long> productionOrderList = new List<long>();
-            if (req.OriginAbs!=0)
+            if (req.OriginAbs != 0)
             {
-                productionOrder =await UnitWork.Find<product_owor>(null).Where(c => c.OriginAbs == req.OriginAbs).Select(c => c.DocEntry).FirstOrDefaultAsync();
+                productionOrder = await UnitWork.Find<product_owor>(null).Where(c => c.OriginAbs == req.OriginAbs).Select(c => c.DocEntry).FirstOrDefaultAsync();
             }
             if (!string.IsNullOrWhiteSpace(req.ItemCode))
             {
@@ -1981,10 +1981,10 @@ namespace OpenAuth.App
                 }
             }
             var wmsGuidList = wmsLowGuids.Select(c => c.devGuid).ToList();
-            var query =(from a in UnitWork.Find<DeviceTestLog>(null)
-                       join b in UnitWork.Find<DeviceCheckTask>(null) on new {a.EdgeGuid,a.SrvGuid,a.DevUid,a.UnitId,a.TestId,a.ChlId, a.LowGuid } equals new { b.EdgeGuid, b.SrvGuid, b.DevUid, b.UnitId, b.TestId, b.ChlId, b.LowGuid }
-                       where a.CreateTime >= req.StartTime && a.CreateTime <= req.EndTime
-                       select new {a.Id,a.OrderNo,a.GeneratorCode,a.Department,a.MidGuid,a.LowGuid,a.DevUid,a.UnitId,a.ChlId,a.TestId,a.CreateTime,b.TaskId,a.CreateUser })
+            var query = (from a in UnitWork.Find<DeviceTestLog>(null)
+                         join b in UnitWork.Find<DeviceCheckTask>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.UnitId, a.TestId, a.ChlId, a.LowGuid } equals new { b.EdgeGuid, b.SrvGuid, b.DevUid, b.UnitId, b.TestId, b.ChlId, b.LowGuid }
+                         where a.CreateTime >= req.StartTime && a.CreateTime <= req.EndTime
+                         select new { a.Id, a.OrderNo, a.GeneratorCode, a.Department, a.MidGuid, a.LowGuid, a.DevUid, a.UnitId, a.ChlId, a.TestId, a.CreateTime, b.TaskId, a.CreateUser })
                        .WhereIf(req.OriginAbs != 0, c => c.OrderNo == productionOrder)
                        .WhereIf(!string.IsNullOrWhiteSpace(req.GeneratorCode), c => c.GeneratorCode.Contains(req.GeneratorCode))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), c => productionOrderList.Contains(c.OrderNo))
@@ -1993,9 +1993,9 @@ namespace OpenAuth.App
             var taskList = query.OrderBy(c => c.Id)
                        .Skip((req.page - 1) * req.limit)
                        .Take(req.limit).ToList();
-            var orderIds= taskList.Select(c=>c.OrderNo).Distinct().ToList();
-            var taskIds = taskList.Select(c => c.TaskId).Distinct().ToList();
-            var orderList = await UnitWork.Find<product_owor>(null).Where(c => orderIds.Contains(c.DocEntry)).Select(c => new { c.DocEntry,c.OriginAbs,c.ItemCode}).ToListAsync();
+            var orderIds = taskList.Select(c => c.OrderNo).Distinct().ToList();
+            var taskIds = taskList.Where(c => !string.IsNullOrWhiteSpace(c.TaskId)).Select(c => c.TaskId).Distinct().ToList();
+            var orderList = await UnitWork.Find<product_owor>(null).Where(c => orderIds.Contains(c.DocEntry)).Select(c => new { c.DocEntry, c.OriginAbs, c.ItemCode }).ToListAsync();
             string url = $"{_appConfiguration.Value.AnalyticsUrl}api/check/report";
             object re = null;
             switch (req.State)
@@ -2014,11 +2014,11 @@ namespace OpenAuth.App
             {
                 PageSize = req.limit,
                 Page = req.page,
-                Result =re,
+                Result = re,
                 TaskIDs = taskIds
             }, url, "", "");
             JObject taskObj = JObject.Parse(taskData);
-            if (taskObj==null || taskObj["status"].ToString()!="200")
+            if (taskObj == null || taskObj["status"].ToString() != "200")
             {
                 result.Code = 500;
                 result.Message = $"数据分析烤机列表接口异常!";
@@ -2030,7 +2030,7 @@ namespace OpenAuth.App
             {
                 throw new Exception($"wms guid获取sn token 获取失败!");
             }
-            string url2= "http://service.neware.cloud/common/DevSnByGuid";
+            string url2 = "http://service.neware.cloud/common/DevSnByGuid";
             var guids = taskList.Select(c => c.LowGuid).Distinct().ToArray();
             var datastr2 = helper.PostAuthentication(guids, url2, wmsAccessToken2);
             JObject dataObj2 = JObject.Parse(datastr2);
@@ -2053,8 +2053,8 @@ namespace OpenAuth.App
                 var snInfo = wmsSnGuids.FirstOrDefault(c => c.devGuid == item.LowGuid);
                 list.Add(new
                 {
-                    OriginAbs=item.OrderNo,
-                    ItemCode= orderInfo==null?"": orderInfo.ItemCode,
+                    OriginAbs = orderInfo.OriginAbs,
+                    ItemCode = orderInfo == null ? "" : orderInfo.ItemCode,
                     item.GeneratorCode,
                     item.Department,
                     item.TaskId,
@@ -2066,14 +2066,14 @@ namespace OpenAuth.App
                     item.TestId,
                     item.CreateTime,
                     item.CreateUser,
-                    begin= records == null ? "" : TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).Add(new TimeSpan((Convert.ToInt64(records["begin"]) * 10000000))).ToString("yyyy.MM.dd HH:mm:ss"),
-                    end=records==null?"": TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).Add(new TimeSpan((Convert.ToInt64(records["end"]) * 10000000))).ToString("yyyy.MM.dd HH:mm:ss"),
-                    result= records == null ?"":(records["end"].ToString().Equal("OK")? "通过" : "失败"),
-                    power = records == null?0:records["power"],
-                    carbon = records == null ? 0:records["carbon"],
-                    duration = records == null ? 0:records["duration"],
-                    sn= snInfo==null?"": snInfo.sn
-                }) ;
+                    begin = records == null ? "" : TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).Add(new TimeSpan((Convert.ToInt64(records["begin"]) * 10000000))).ToString("yyyy.MM.dd HH:mm:ss"),
+                    end = records == null ? "" : TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).Add(new TimeSpan((Convert.ToInt64(records["end"]) * 10000000))).ToString("yyyy.MM.dd HH:mm:ss"),
+                    result = records == null ? "" : (records["end"].ToString().Equal("OK") ? "通过" : "失败"),
+                    power = records == null ? 0 : records["power"],
+                    carbon = records == null ? 0 : records["carbon"],
+                    duration = records == null ? 0 : records["duration"],
+                    sn = snInfo == null ? "" : snInfo.sn
+                });
             }
             result.Data = list;
             return result;
@@ -2124,15 +2124,15 @@ namespace OpenAuth.App
             }
             var wmsGuidList = wmsLowGuids.Select(c => c.devGuid).ToList();
             var taskList = (from a in UnitWork.Find<DeviceTestLog>(null)
-                         join b in UnitWork.Find<DeviceCheckTask>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.UnitId, a.TestId, a.ChlId, a.LowGuid } equals new { b.EdgeGuid, b.SrvGuid, b.DevUid, b.UnitId, b.TestId, b.ChlId, b.LowGuid }
-                         where a.CreateTime >= req.StartTime && a.CreateTime <= req.EndTime
-                         select new { a.Id, a.OrderNo, a.GeneratorCode, a.Department, a.MidGuid, a.LowGuid, a.DevUid, a.UnitId, a.ChlId, a.TestId, a.CreateTime, b.TaskId, a.CreateUser })
+                            join b in UnitWork.Find<DeviceCheckTask>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.UnitId, a.TestId, a.ChlId, a.LowGuid } equals new { b.EdgeGuid, b.SrvGuid, b.DevUid, b.UnitId, b.TestId, b.ChlId, b.LowGuid }
+                            where a.CreateTime >= req.StartTime && a.CreateTime <= req.EndTime
+                            select new { a.Id, a.OrderNo, a.GeneratorCode, a.Department, a.MidGuid, a.LowGuid, a.DevUid, a.UnitId, a.ChlId, a.TestId, a.CreateTime, b.TaskId, a.CreateUser })
                        .WhereIf(req.OriginAbs != 0, c => c.OrderNo == productionOrder)
                        .WhereIf(!string.IsNullOrWhiteSpace(req.GeneratorCode), c => c.GeneratorCode.Contains(req.GeneratorCode))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), c => productionOrderList.Contains(c.OrderNo))
-                       .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid));
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid)).OrderBy(c => c.Id);
             var orderIds = taskList.Select(c => c.OrderNo).Distinct().ToList();
-            var taskIds = taskList.Select(c => c.TaskId).Distinct().ToList();
+            var taskIds = taskList.Where(c => !string.IsNullOrWhiteSpace(c.TaskId)).Select(c => c.TaskId).Distinct().ToList();
             var orderList = await UnitWork.Find<product_owor>(null).Where(c => orderIds.Contains(c.DocEntry)).Select(c => new { c.DocEntry, c.OriginAbs, c.ItemCode }).ToListAsync();
             string url = $"{_appConfiguration.Value.AnalyticsUrl}api/check/report";
             object re = null;
@@ -2187,22 +2187,22 @@ namespace OpenAuth.App
                 var snInfo = wmsSnGuids.FirstOrDefault(c => c.devGuid == item.LowGuid);
                 list.Add(new ExportBakingMachineRecordResp
                 {
-                    OriginAbs = item.OrderNo,
+                    OriginAbs = orderInfo.OriginAbs,
                     ItemCode = orderInfo == null ? "" : orderInfo.ItemCode,
-                    GeneratorCode=item.GeneratorCode,
-                    Department=item.Department,
-                    TaskId=item.TaskId,
-                    MidGuid=item.MidGuid,
-                    LowGuid=item.LowGuid,
-                    DevUid=item.DevUid,
-                    UnitId=item.UnitId,
-                    ChlId=item.ChlId,
-                    TestId=item.TestId,
+                    GeneratorCode = item.GeneratorCode,
+                    Department = item.Department,
+                    TaskId = item.TaskId,
+                    MidGuid = item.MidGuid,
+                    LowGuid = item.LowGuid,
+                    DevUid = item.DevUid,
+                    UnitId = item.UnitId,
+                    ChlId = item.ChlId,
+                    TestId = item.TestId,
                     begin = records == null ? "" : TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).Add(new TimeSpan((Convert.ToInt64(records["begin"]) * 10000000))).ToString("yyyy.MM.dd HH:mm:ss"),
                     end = records == null ? "" : TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).Add(new TimeSpan((Convert.ToInt64(records["end"]) * 10000000))).ToString("yyyy.MM.dd HH:mm:ss"),
                     result = records == null ? "" : (records["end"].ToString().Equal("OK") ? "通过" : "失败"),
-                    power = records == null ? "": records["power"].ToString(),
-                    carbon = records == null ? "": records["carbon"].ToString(),
+                    power = records == null ? "" : records["power"].ToString(),
+                    carbon = records == null ? "" : records["carbon"].ToString(),
                     duration = records == null ? "" : records["duration"].ToString(),
                     sn = snInfo == null ? "" : snInfo.sn
                 });
@@ -2218,9 +2218,9 @@ namespace OpenAuth.App
         /// <param name="docEntry"></param>
         /// <param name="wo"></param>
         /// <returns></returns>
-        public (int Status, string UserId, string User, DateTime? Time) BakingMachine(int docEntry,string wo)
+        public (int Status, string UserId, string User, DateTime? Time) BakingMachine(int docEntry, string wo)
         {
-            var guids =  GetLowGuid(wo);
+            var guids = GetLowGuid(wo);
             var result = 1;//待烤机
             string u1 = "", u2 = "";
             DateTime? date = null;
@@ -2430,10 +2430,10 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="wo"></param>
         /// <returns></returns>
-        public (int Status,string UserId,string User,DateTime? Time) CheckCalibration(string wo)
+        public (int Status, string UserId, string User, DateTime? Time) CheckCalibration(string wo)
         {
             var result = 1;
-            var lowGuid =  GetLowGuid(wo);
+            var lowGuid = GetLowGuid(wo);
             if (lowGuid.Count > 0)
             {
                 var machine = UnitWork.Find<MachineInfo>(c => lowGuid.Contains(c.Guid)).ToList();
@@ -2460,16 +2460,16 @@ namespace OpenAuth.App
         {
             var nsapId = list.Select(c => c.Operator).ToList();
             var userInfo = from a in UnitWork.Find<User>(null)
-                       join b in UnitWork.Find<NsapUserMap>(null) on a.Id equals b.UserID
-                       where nsapId.Contains(b.NsapUserId)
-                       select new { b.NsapUserId, a.Id, a.Name };
+                           join b in UnitWork.Find<NsapUserMap>(null) on a.Id equals b.UserID
+                           where nsapId.Contains(b.NsapUserId)
+                           select new { b.NsapUserId, a.Id, a.Name };
             foreach (var item in list)
             {
                 var user = userInfo.Where(c => c.NsapUserId == item.Operator).FirstOrDefault();
                 string id = "", name = "";
-                if (user!=null)
+                if (user != null)
                 {
-                    id = user.Id; name= user.Name;
+                    id = user.Id; name = user.Name;
                 }
                 await UnitWork.UpdateAsync<ProductionSchedule>(c => c.GeneratorCode == item.GeneratorCode, c => new ProductionSchedule
                 {
@@ -3214,7 +3214,7 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="data"></param>
         /// <returns></returns>
-        public  async Task<string> BarcodeGenerate(string data)
+        public async Task<string> BarcodeGenerate(string data)
         {
             System.Drawing.Font labelFont = new System.Drawing.Font("OCRB", 11f, FontStyle.Bold);//
             BarcodeLib.Barcode b = new BarcodeLib.Barcode
