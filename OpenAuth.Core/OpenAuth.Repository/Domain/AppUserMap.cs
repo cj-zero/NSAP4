@@ -48,5 +48,15 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("App的UserRole")]
         public int? AppUserRole { get; set; }
+
+        /// <summary>
+        /// App的UserRole
+        /// </summary>
+        [Description("PassPort的PassPortId")]
+        public int? PassPortId { get; set; }
+
+
+
+
     }
 }

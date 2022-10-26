@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
@@ -240,6 +241,27 @@ namespace OpenAuth.WebApi.Controllers
                 result.Code = 500;
                 result.Message = ex.Message;
                 Log.Logger.Error($"地址：{Request.Path}，参数：{appUserId}， 错误：{result.Message}");
+            }
+            return result;
+        }
+        /// <summary>
+        /// 根据PassPortId获取用户信息
+        /// </summary>
+        /// <param name="appUserId"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<TableData> GetUserInfoByPassPortId(List<int?>  passPortIds)
+        {
+            var result = new TableData();
+            try
+            {
+                result = await _app.GetUserInfoByPassPortId(passPortIds);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{passPortIds}， 错误：{result.Message}");
             }
             return result;
         }
