@@ -273,6 +273,10 @@ namespace OpenAuth.App.Order
             }
             if (IsSql)
             {
+                if (!ViewSelf)
+                {
+                    filterString += "1 = 2";
+                }
                 //视图查询数据
                 tableData = SelectOrdersInfo(out rowCount, pageSize, pageIndex, filterString, sortString, type, line, ViewCustom, ViewSales, sqlcont, sboname);
 
