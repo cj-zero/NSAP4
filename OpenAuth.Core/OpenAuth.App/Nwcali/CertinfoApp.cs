@@ -38,6 +38,8 @@ using OpenAuth.App.Nwcali.Response;
 using Newtonsoft.Json;
 using Serilog;
 using Microsoft.Extensions.Options;
+using Magicodes.ExporterAndImporter.Core;
+using Magicodes.ExporterAndImporter.Excel;
 
 namespace OpenAuth.App
 {
@@ -1956,6 +1958,7 @@ namespace OpenAuth.App
             string urls = "http://service.neware.cloud/common/DevGuidBySn";
             HttpHelper helper = new HttpHelper(urls);
             List<WmsLowGuidResp> wmsLowGuids = new List<WmsLowGuidResp>();
+            //sn 获取guid
             if (!string.IsNullOrWhiteSpace(req.Sn))
             {
                 var b01List = new List<string>();
@@ -1973,7 +1976,7 @@ namespace OpenAuth.App
                 catch (Exception ex)
                 {
                     result.Code = 500;
-                    result.Message = $"WMS guid 获取失败! message={ex.Message}";
+                    result.Message = $"wms sn获取guid失败! message={ex.Message}";
                     return result;
                 }
             }
@@ -1982,17 +1985,31 @@ namespace OpenAuth.App
                        join b in UnitWork.Find<DeviceCheckTask>(null) on new {a.EdgeGuid,a.SrvGuid,a.DevUid,a.UnitId,a.TestId,a.ChlId, a.LowGuid } equals new { b.EdgeGuid, b.SrvGuid, b.DevUid, b.UnitId, b.TestId, b.ChlId, b.LowGuid }
                        where a.CreateTime >= req.StartTime && a.CreateTime <= req.EndTime
                        select new {a.Id,a.OrderNo,a.GeneratorCode,a.Department,a.MidGuid,a.LowGuid,a.DevUid,a.UnitId,a.ChlId,a.TestId,a.CreateTime,b.TaskId,a.CreateUser })
-                       .WhereIf(productionOrder != 0, c => c.OrderNo == productionOrder)
-                       .WhereIf(!string.IsNullOrWhiteSpace(req.GeneratorCode), c => c.GeneratorCode == req.GeneratorCode)
+                       .WhereIf(req.OriginAbs != 0, c => c.OrderNo == productionOrder)
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.GeneratorCode), c => c.GeneratorCode.Contains(req.GeneratorCode))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), c => productionOrderList.Contains(c.OrderNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid));
             result.Count = query.Count();
             var taskList = query.OrderBy(c => c.Id)
                        .Skip((req.page - 1) * req.limit)
                        .Take(req.limit).ToList();
-            var taskIds = taskList.Distinct().Select(c => c.TaskId).ToList();
+            var orderIds= taskList.Select(c=>c.OrderNo).Distinct().ToList();
+            var taskIds = taskList.Select(c => c.TaskId).Distinct().ToList();
+            var orderList = await UnitWork.Find<product_owor>(null).Where(c => orderIds.Contains(c.DocEntry)).Select(c => new { c.DocEntry,c.OriginAbs,c.ItemCode}).ToListAsync();
             string url = $"{_appConfiguration.Value.AnalyticsUrl}api/check/report";
             object re = null;
+            switch (req.State)
+            {
+                case 0:
+                    re = null;
+                    break;
+                case 1:
+                    re = true;
+                    break;
+                case 2:
+                    re = false;
+                    break;
+            }
             var taskData = helper.Post(new
             {
                 PageSize = req.limit,
@@ -2007,12 +2024,37 @@ namespace OpenAuth.App
                 result.Message = $"数据分析烤机列表接口异常!";
                 return result;
             }
+            //guid 获取sn TO DO
+            var wmsAccessToken2 = _stepVersionApp.WmsAccessToken();
+            if (string.IsNullOrWhiteSpace(wmsAccessToken2))
+            {
+                throw new Exception($"wms guid获取sn token 获取失败!");
+            }
+            string url2= "http://service.neware.cloud/common/DevSnByGuid";
+            var guids = taskList.Select(c => c.LowGuid).Distinct().ToArray();
+            var datastr2 = helper.PostAuthentication(guids, url2, wmsAccessToken2);
+            JObject dataObj2 = JObject.Parse(datastr2);
+            List<WmsLowGuidResp> wmsSnGuids = new List<WmsLowGuidResp>();
+            try
+            {
+                wmsSnGuids = JsonConvert.DeserializeObject<List<WmsLowGuidResp>>(JsonConvert.SerializeObject(dataObj2["data"]["devBindInfo"]));
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = $"wms guid获取sn失败! message={ex.Message}";
+                return result;
+            }
+
             foreach (var item in taskList)
             {
-                var records = taskObj["data"]["records"].Where(c => c["taskID"].ToString() == item.TaskId).FirstOrDefault();
+                var records = taskObj["data"]["records"].FirstOrDefault(c => c["taskID"].ToString() == item.TaskId);
+                var orderInfo = orderList.FirstOrDefault(c => c.DocEntry == item.OrderNo);
+                var snInfo = wmsSnGuids.FirstOrDefault(c => c.devGuid == item.LowGuid);
                 list.Add(new
                 {
-                    item.OrderNo,
+                    OriginAbs=item.OrderNo,
+                    ItemCode= orderInfo==null?"": orderInfo.ItemCode,
                     item.GeneratorCode,
                     item.Department,
                     item.TaskId,
@@ -2023,17 +2065,151 @@ namespace OpenAuth.App
                     item.ChlId,
                     item.TestId,
                     item.CreateTime,
+                    item.CreateUser,
                     begin= records == null ? "" : TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).Add(new TimeSpan((Convert.ToInt64(records["begin"]) * 10000000))).ToString("yyyy.MM.dd HH:mm:ss"),
                     end=records==null?"": TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).Add(new TimeSpan((Convert.ToInt64(records["end"]) * 10000000))).ToString("yyyy.MM.dd HH:mm:ss"),
                     result= records == null ?"":(records["end"].ToString().Equal("OK")? "通过" : "失败"),
                     power = records == null?0:records["power"],
                     carbon = records == null ? 0:records["carbon"],
                     duration = records == null ? 0:records["duration"],
-                    sn=""
+                    sn= snInfo==null?"": snInfo.sn
                 }) ;
             }
             result.Data = list;
             return result;
+        }
+
+        /// <summary>
+        /// 导出烤机记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task<byte[]> ExportBakingMachineRecord(QueryBakingMachineRecordReq req)
+        {
+            TableData result = new TableData();
+            List<ExportBakingMachineRecordResp> list = new List<ExportBakingMachineRecordResp>();
+            int productionOrder = 0;
+            List<long> productionOrderList = new List<long>();
+            if (req.OriginAbs != 0)
+            {
+                productionOrder = await UnitWork.Find<product_owor>(null).Where(c => c.OriginAbs == req.OriginAbs).Select(c => c.DocEntry).FirstOrDefaultAsync();
+            }
+            if (!string.IsNullOrWhiteSpace(req.ItemCode))
+            {
+                productionOrderList = await UnitWork.Find<product_owor>(null).Where(c => c.ItemCode.Contains(req.ItemCode)).Select(c => (long)c.DocEntry).ToListAsync();
+            }
+            string urls = "http://service.neware.cloud/common/DevGuidBySn";
+            HttpHelper helper = new HttpHelper(urls);
+            List<WmsLowGuidResp> wmsLowGuids = new List<WmsLowGuidResp>();
+            //sn 获取guid
+            if (!string.IsNullOrWhiteSpace(req.Sn))
+            {
+                var b01List = new List<string>();
+                var wmsAccessToken = _stepVersionApp.WmsAccessToken();
+                if (string.IsNullOrWhiteSpace(wmsAccessToken))
+                {
+                    throw new Exception($"WMS token 获取失败!");
+                }
+                var datastr = helper.PostAuthentication(b01List.ToArray(), urls, wmsAccessToken);
+                JObject dataObj = JObject.Parse(datastr);
+                try
+                {
+                    wmsLowGuids = JsonConvert.DeserializeObject<List<WmsLowGuidResp>>(JsonConvert.SerializeObject(dataObj["data"]["devBindInfo"]));
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"wms sn获取guid失败! message={ex.Message}");
+                }
+            }
+            var wmsGuidList = wmsLowGuids.Select(c => c.devGuid).ToList();
+            var taskList = (from a in UnitWork.Find<DeviceTestLog>(null)
+                         join b in UnitWork.Find<DeviceCheckTask>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.UnitId, a.TestId, a.ChlId, a.LowGuid } equals new { b.EdgeGuid, b.SrvGuid, b.DevUid, b.UnitId, b.TestId, b.ChlId, b.LowGuid }
+                         where a.CreateTime >= req.StartTime && a.CreateTime <= req.EndTime
+                         select new { a.Id, a.OrderNo, a.GeneratorCode, a.Department, a.MidGuid, a.LowGuid, a.DevUid, a.UnitId, a.ChlId, a.TestId, a.CreateTime, b.TaskId, a.CreateUser })
+                       .WhereIf(req.OriginAbs != 0, c => c.OrderNo == productionOrder)
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.GeneratorCode), c => c.GeneratorCode.Contains(req.GeneratorCode))
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), c => productionOrderList.Contains(c.OrderNo))
+                       .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid));
+            var orderIds = taskList.Select(c => c.OrderNo).Distinct().ToList();
+            var taskIds = taskList.Select(c => c.TaskId).Distinct().ToList();
+            var orderList = await UnitWork.Find<product_owor>(null).Where(c => orderIds.Contains(c.DocEntry)).Select(c => new { c.DocEntry, c.OriginAbs, c.ItemCode }).ToListAsync();
+            string url = $"{_appConfiguration.Value.AnalyticsUrl}api/check/report";
+            object re = null;
+            switch (req.State)
+            {
+                case 0:
+                    re = null;
+                    break;
+                case 1:
+                    re = true;
+                    break;
+                case 2:
+                    re = false;
+                    break;
+            }
+            var taskData = helper.Post(new
+            {
+                PageSize = taskList.Count(),
+                Page = 1,
+                Result = re,
+                TaskIDs = taskIds
+            }, url, "", "");
+            JObject taskObj = JObject.Parse(taskData);
+            if (taskObj == null || taskObj["status"].ToString() != "200")
+            {
+                throw new Exception($"数据分析烤机列表接口异常!");
+            }
+            //guid 获取sn TO DO
+            var wmsAccessToken2 = _stepVersionApp.WmsAccessToken();
+            if (string.IsNullOrWhiteSpace(wmsAccessToken2))
+            {
+                throw new Exception($"wms guid获取sn token 获取失败!");
+            }
+            string url2 = "http://service.neware.cloud/common/DevSnByGuid";
+            var guids = taskList.Select(c => c.LowGuid).Distinct().ToArray();
+            var datastr2 = helper.PostAuthentication(guids, url2, wmsAccessToken2);
+            JObject dataObj2 = JObject.Parse(datastr2);
+            List<WmsLowGuidResp> wmsSnGuids = new List<WmsLowGuidResp>();
+            try
+            {
+                wmsSnGuids = JsonConvert.DeserializeObject<List<WmsLowGuidResp>>(JsonConvert.SerializeObject(dataObj2["data"]["devBindInfo"]));
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"wms guid获取sn失败! message={ex.Message}");
+            }
+
+            foreach (var item in taskList)
+            {
+                var records = taskObj["data"]["records"].FirstOrDefault(c => c["taskID"].ToString() == item.TaskId);
+                var orderInfo = orderList.FirstOrDefault(c => c.DocEntry == item.OrderNo);
+                var snInfo = wmsSnGuids.FirstOrDefault(c => c.devGuid == item.LowGuid);
+                list.Add(new ExportBakingMachineRecordResp
+                {
+                    OriginAbs = item.OrderNo,
+                    ItemCode = orderInfo == null ? "" : orderInfo.ItemCode,
+                    GeneratorCode=item.GeneratorCode,
+                    Department=item.Department,
+                    TaskId=item.TaskId,
+                    MidGuid=item.MidGuid,
+                    LowGuid=item.LowGuid,
+                    DevUid=item.DevUid,
+                    UnitId=item.UnitId,
+                    ChlId=item.ChlId,
+                    TestId=item.TestId,
+                    begin = records == null ? "" : TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).Add(new TimeSpan((Convert.ToInt64(records["begin"]) * 10000000))).ToString("yyyy.MM.dd HH:mm:ss"),
+                    end = records == null ? "" : TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).Add(new TimeSpan((Convert.ToInt64(records["end"]) * 10000000))).ToString("yyyy.MM.dd HH:mm:ss"),
+                    result = records == null ? "" : (records["end"].ToString().Equal("OK") ? "通过" : "失败"),
+                    power = records == null ? "": records["power"].ToString(),
+                    carbon = records == null ? "": records["carbon"].ToString(),
+                    duration = records == null ? "" : records["duration"].ToString(),
+                    sn = snInfo == null ? "" : snInfo.sn
+                });
+            }
+            IExporter exporter = new ExcelExporter();
+            var bytes = await exporter.ExportAsByteArray(list);
+            return bytes;
         }
 
         /// <summary>
