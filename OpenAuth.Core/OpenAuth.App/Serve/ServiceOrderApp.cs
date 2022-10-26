@@ -8753,7 +8753,7 @@ namespace OpenAuth.App
                 month = 12;
             }
             //服务单
-            var serviceOrdr = await UnitWork.Find<ServiceOrder>(c => c.CreateTime.Value.Year == year && c.CreateTime.Value.Month == month && c.VestInOrg == 1 && c.Status == 2).Include(c => c.ServiceWorkOrders).Where(c => c.ServiceWorkOrders.All(s => s.Status >= 7))
+            var serviceOrdr = await UnitWork.Find<ServiceOrder>(c => c.CreateTime.Value.Year == year && c.CreateTime.Value.Month == month && c.VestInOrg == 1 && c.Status == 2).Include(c => c.ServiceWorkOrders).Where(c => c.ServiceWorkOrders.Any(s => s.Status >= 7))
                 .Select(c => new { c.Id, c.ServiceWorkOrders.FirstOrDefault().CurrentUserNsapId, c.ServiceWorkOrders.FirstOrDefault().CurrentUser, c.CreateTime })
                 .ToListAsync();
 

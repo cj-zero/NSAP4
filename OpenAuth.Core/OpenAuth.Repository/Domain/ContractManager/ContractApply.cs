@@ -116,7 +116,7 @@ namespace OpenAuth.Repository.Domain
         /// 服务单号
         /// </summary>
         [Description("服务单号")]
-        public int? U_SAP_Id { get; set; }
+        public int? U_SAP_ID { get; set; }
 
         /// <summary>
         /// 项目编号

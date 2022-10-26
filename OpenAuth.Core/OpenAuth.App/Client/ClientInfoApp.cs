@@ -1729,30 +1729,30 @@ namespace OpenAuth.App.Client
                 var job = UnitWork.FindSingle<wfa_job>(a => a.job_id == jobraw);
 
                 var newOper = UnitWork.FindSingle<User>(a => a.User_Id == job.user_id);
-                if (originClient !=null && client.is_reseller == "N")
-                {
-                    if (originClient.Flag == 1)
-                    {
-                        //add log to explain why
-                        _logger.LogError("不允许中间商变更为终端客户,请求参数为 jobid:" + JobId + " CardCode: " + CardCode);
-                        rsp.Message = "审核失败，不允许中间商变更为终端客户";
-                        rsp.Code = 200;
-                        return rsp;
-                    }
-                    else
-                    {
-                        await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
-                        {
-                            userid = currentuser.User.Id.ToString(),
-                            username = currentuser.User.Name,
-                            job_userid = newOper.Id,
-                            job_username = newOper.Name,
-                            jobid = (int)job.job_id,
-                            ClientNo = CardCode,
-                            ClientName = originClient.ClientName,
-                            flag = 0,
-                            OperateType = 1
-                        });
+                //if (originClient !=null && client.is_reseller == "N")
+                //{
+                //    if (originClient.Flag == 1)
+                //    {
+                //        //add log to explain why
+                //        _logger.LogError("不允许中间商变更为终端客户,请求参数为 jobid:" + JobId + " CardCode: " + CardCode);
+                //        rsp.Message = "审核失败，不允许中间商变更为终端客户";
+                //        rsp.Code = 200;
+                //        return rsp;
+                //    }
+                //    else
+                //    {
+                //        await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
+                //        {
+                //            userid = currentuser.User.Id.ToString(),
+                //            username = currentuser.User.Name,
+                //            job_userid = newOper.Id,
+                //            job_username = newOper.Name,
+                //            jobid = (int)job.job_id,
+                //            ClientNo = CardCode,
+                //            ClientName = originClient.ClientName,
+                //            flag = 0,
+                //            OperateType = 1
+                //        });
 
                     }
                 }
@@ -1776,7 +1776,7 @@ namespace OpenAuth.App.Client
                     }
 
 
-                }
+                //}
             }
             string rJobNm = string.Format("{0}{1}", client.ChangeType == "edit" ? "修改" : "添加", client.CardType == "S" ? "供应商" : "业务伙伴");
             byte[] job_data = ByteExtension.ToSerialize(client);
