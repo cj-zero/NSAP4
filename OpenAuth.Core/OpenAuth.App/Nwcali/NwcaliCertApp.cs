@@ -256,7 +256,7 @@ namespace OpenAuth.App.Nwcali
             }
             else
             {
-                var query = UnitWork.Find<NwcaliBaseInfo>(c => c.CreateTime < DateTime.Parse("2022-10-08"))
+                var query = UnitWork.Find<NwcaliBaseInfo>(c => c.Time < DateTime.Parse("2022-10-08"))
                     .WhereIf(!string.IsNullOrEmpty(req.Name), a => a.Operator == req.Name)
                     .WhereIf(user.Count() > 0, a => userIdList.Contains(a.OperatorId))
                     .WhereIf(req.StartTime != null, c => c.Time.Value >= req.StartTime)
@@ -346,7 +346,7 @@ namespace OpenAuth.App.Nwcali
             }
             else
             {
-                var query = UnitWork.Find<NwcaliBaseInfo>(a => a.OperatorId == req.Id && a.CreateTime < DateTime.Parse("2022-10-08"))
+                var query = UnitWork.Find<NwcaliBaseInfo>(a => a.OperatorId == req.Id && a.Time < DateTime.Parse("2022-10-08"))
                     .WhereIf(!string.IsNullOrEmpty(req.Name), a => a.Operator == req.Name)
                     .WhereIf(req.StartTime != null, c => c.Time.Value >= req.StartTime)
                     .WhereIf(req.EndTime != null, c => c.Time.Value <= req.EndTime);
@@ -443,10 +443,10 @@ namespace OpenAuth.App.Nwcali
                 var query = await UnitWork.Find<NwcaliBaseInfo>(c => c.CreateTime >= DateTime.Parse("2022-10-08") && !string.IsNullOrWhiteSpace(c.StartTime.ToString()))
                     .WhereIf(!string.IsNullOrEmpty(req.Name), a => a.Operator == req.Name)
                     .WhereIf(user.Count() > 0, a => userIdList.Contains(a.OperatorId))
-                    .WhereIf(req.StartTime != null, c => c.StartTime.Value >= req.StartTime)
-                    .WhereIf(req.EndTime != null, c => c.StartTime.Value <= req.EndTime)
-                    .WhereIf(req.CompleteStartTime != null, c => c.Time.Value >= req.StartTime)
-                    .WhereIf(req.CompleteEndTime != null, c => c.Time.Value <= req.EndTime)
+                    .WhereIf(req.StartTime != null, c => c.StartTime.Value >= req.StartTime.Value.Date)
+                    .WhereIf(req.EndTime != null, c => c.StartTime.Value < req.EndTime.Value.AddDays(1).Date)
+                    .WhereIf(req.CompleteStartTime != null, c => c.Time.Value >= req.CompleteStartTime.Value.Date)
+                    .WhereIf(req.CompleteEndTime != null, c => c.Time.Value < req.CompleteEndTime.Value.AddDays(1).Date)
                     .WhereIf(!string.IsNullOrEmpty(req.TesterSn), a => a.TesterSn == req.TesterSn)
                     .WhereIf(!string.IsNullOrEmpty(req.TesterModel), a => a.TesterModel == req.TesterModel)
                     //.WhereIf(!string.IsNullOrEmpty(req.CalibrationStatus), a => a.CalibrationStatus == req.CalibrationStatus)
@@ -515,10 +515,10 @@ namespace OpenAuth.App.Nwcali
                     .WhereIf(!string.IsNullOrEmpty(req.Name), a => a.Operator == req.Name)
                     .WhereIf(!string.IsNullOrEmpty(req.Id), a => a.OperatorId == req.Id)
                     //.WhereIf(user.Count() > 0, a => userIdList.Contains(a.OperatorId))
-                    .WhereIf(req.StartTime != null, c => c.StartTime.Value >= req.StartTime)
-                    .WhereIf(req.EndTime != null, c => c.StartTime.Value <= req.EndTime)
-                    .WhereIf(req.CompleteStartTime != null, c => c.Time.Value >= req.StartTime)
-                    .WhereIf(req.CompleteEndTime != null, c => c.Time.Value <= req.EndTime)
+                    .WhereIf(req.StartTime != null, c => c.StartTime.Value >= req.StartTime.Value.Date)
+                    .WhereIf(req.EndTime != null, c => c.StartTime.Value < req.EndTime.Value.AddDays(1).Date)
+                    .WhereIf(req.CompleteStartTime != null, c => c.Time.Value >= req.CompleteStartTime.Value.Date)
+                    .WhereIf(req.CompleteEndTime != null, c => c.Time.Value < req.CompleteEndTime.Value.AddDays(1).Date)
                     .WhereIf(!string.IsNullOrEmpty(req.TesterSn), a => a.TesterSn == req.TesterSn)
                     .WhereIf(!string.IsNullOrEmpty(req.TesterModel), a => a.TesterModel == req.TesterModel)
                     //.WhereIf(!string.IsNullOrEmpty(req.CalibrationStatus), a => a.CalibrationStatus == req.CalibrationStatus)

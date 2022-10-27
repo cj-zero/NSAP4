@@ -1181,10 +1181,10 @@ namespace OpenAuth.App
             var serialNumber = await CheckManufSn(obj.CustomerId);
             obj.ServiceWorkOrders.ForEach(s =>
             {
-                if (s.ManufacturerSerialNumber== "无序列号" && loginUserOrg.OrgName!="S19")
+                if (s.ManufacturerSerialNumber== "无序列号" && loginUserOrg.OrgName!="CS0")
                 {
                     result.Code = 500;
-                    result.Message = "非S19呼叫中心人员，不允许提交无序列号的呼叫。";
+                    result.Message = "非CS0呼叫中心人员，不允许提交无序列号的呼叫。";
                     isHasNum = true;
                     //throw new Exception("");
                 }
@@ -1486,6 +1486,76 @@ namespace OpenAuth.App
             await UnitWork.SaveAsync();
 
             await _ServiceOrderLogApp.AddAsync(new AddOrUpdateServiceOrderLogReq { Action = $"用户:{loginUser.Name}创建行政单", ActionType = "创建行政单", ServiceOrderId = e.Id });
+            #region 同步到SAP 并拿到服务单主键
+            _capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
+            #endregion
+        }
+
+        /// <summary>
+        /// WMS自动创建维修单
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task CreateRepairOrder(CreateRepairOrderReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+
+            var userInfo = await (from a in UnitWork.Find<User>(null)
+                                  join b in UnitWork.Find<NsapUserMap>(null) on a.Id equals b.UserID
+                                  where req.Operator == b.NsapUserId
+                                  select new { b.NsapUserId, a.Id, a.Name }).FirstOrDefaultAsync();
+
+            var supervisorinfo = await UnitWork.FindSingleAsync<User>(u => u.Name.Equals("樊静涛"));
+            var d = await _businessPartnerApp.GetDetails("C37852");
+            ServiceOrder obj = new ServiceOrder();
+            List<ServiceWorkOrder> order = new List<ServiceWorkOrder>();
+            obj.SalesMan = d?.SlpName;
+            if (obj.SalesMan != null)
+            {
+                obj.SalesManId = (await UnitWork.FindSingleAsync<User>(u => u.Name.Equals(d.SlpName)))?.Id;
+            }
+            obj.TerminalCustomerId = "C37852";
+            obj.TerminalCustomer = "东莞新威检测技术有限公司";
+            obj.CustomerId = "C37852";
+            obj.CustomerName = "东莞新威检测技术有限公司";
+            obj.NewestContactTel = req.ContactTel;
+            obj.NewestContacter = userInfo.Name;
+            obj.ContactTel = req.ContactTel;
+            obj.Contacter = userInfo.Name;
+            obj.RecepUserName = userInfo.Name;
+            obj.RecepUserId = userInfo.Id;
+            obj.CreateUserId = userInfo.Id;
+            obj.CreateTime = DateTime.Now;
+            obj.VestInOrg = 2;
+            obj.Supervisor = "樊静涛";
+            obj.SupervisorId = supervisorinfo?.Id;
+            obj.Status = 2;
+            obj.FromId = 9;
+            var appuserid = await UnitWork.Find<AppUserMap>(s => s.UserID == userInfo.Id).Select(s => s.AppUserId).FirstOrDefaultAsync();
+            obj.AppUserId = appuserid;
+            order.Add(new ServiceWorkOrder
+            {
+                SubmitDate = DateTime.Now,
+                SubmitUserId = userInfo.Id,
+                Status = 2,
+                CurrentUserNsapId = userInfo.Id,
+                CurrentUserId = appuserid,
+                FromType = 1,
+                FeeType = 1,
+                CurrentUser = userInfo.Name,
+                OrderTakeType = 1,
+                Priority = 1,
+                ManufacturerSerialNumber = req.pn,
+                MaterialCode = req.sn,
+                FromTheme = "[{\"id\":\"6d8f056b-6561-4b8f-add5-f63302f64994\",\"description\":\"烧录程序\",\"code\":\"024-01-01281\"}]"
+            });
+            obj.ServiceWorkOrders = order;
+            var e = await UnitWork.AddAsync<ServiceOrder, int>(obj);
+            await UnitWork.SaveAsync();
             #region 同步到SAP 并拿到服务单主键
             _capBus.Publish("Serve.ServcieOrder.Create", obj.Id);
             #endregion
@@ -2175,7 +2245,8 @@ namespace OpenAuth.App
             var totalCount = await UnitWork.Find<ServiceOrder>(so => so.VestInOrg == 1 && so.Status == 2 && so.ServiceWorkOrders.Count() > 0)
                        .WhereIf(req.QryCreateTimeFrom != null && req.QryCreateTimeTo != null, so => so.CreateTime >= req.QryCreateTimeFrom && so.CreateTime < req.QryCreateTimeTo.Value.AddDays(1))
                        .Select(x => x.Id).Distinct().CountAsync();
-            var depts = new string[] { "SQ", "S7", "S12", "S14", "S15", "S29", "S36", "S37", "S32", "S20", "E3" }; //规定要查看的部门
+            //var depts = new string[] { "SQ", "S7", "S12", "S14", "S15", "S29", "S36", "S37", "S32", "S20", "E3" }; //规定要查看的部门
+            var depts = new string[] { "CS1", "CS7", "CS12", "CS14", "CS15", "CS29", "CS36", "CS37", "CS32", "CS20" }; //规定要查看的部门
             var data = from d in depts
                        join a in d1 on d equals a.dept into temp1
                        from a in temp1.DefaultIfEmpty()
@@ -8353,6 +8424,480 @@ namespace OpenAuth.App
         }
         #endregion
 
+
+        #region 技术员收入排行
+        /// <summary>
+        /// 我的收入
+        /// </summary>
+        /// <param name="CurrentUserId"></param>
+        /// <returns></returns>
+        public async Task<TableData> MyIncome(int CurrentUserId)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == CurrentUserId).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            var year = DateTime.Now.Year;
+            var month = DateTime.Now.Month;
+            if (DateTime.Now.Month == 1 && DateTime.Now.Day == 1)
+            {
+                year = DateTime.Now.AddYears(-1).Year;
+                month = 12;
+            }
+            var incomeCurrent = await UnitWork.Find<IncomeSummary>(c => c.UserId == userInfo.UserID && c.Year == year && c.Month == month).ToListAsync();
+
+            result.Data = new { 
+                serviceOrderCount= incomeCurrent.Where(c=>c.Type==1).FirstOrDefault()?.Quantity, 
+                settlemmentAmount = incomeCurrent.Where(c => c.Type == 2).FirstOrDefault()?.TotalMoney,
+                commissionAmount = incomeCurrent.Where(c => c.Type == 3).FirstOrDefault()?.TotalMoney,
+                reimburseinfoAmount = incomeCurrent.Where(c => c.Type == 4).FirstOrDefault()?.TotalMoney,
+            };
+            return result;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="CurrentUserId"></param>
+        /// <returns></returns>
+        public async Task<TableData> MyIncomeDetail(int CurrentUserId)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == CurrentUserId).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+
+            var year = DateTime.Now.Year;
+            var month = DateTime.Now.Month;
+            var lastYaer= DateTime.Now.Year;
+            var lastMonth = DateTime.Now.Month - 1;
+            if (DateTime.Now.Month == 1 && DateTime.Now.Day == 1)
+            {
+                year = DateTime.Now.AddYears(-1).Year;
+                month = 12;
+            }
+            if (month == 1)
+            {
+                lastYaer = DateTime.Now.Year - 1;
+                lastMonth = 12;
+            }
+            var temp = new List<int> { 1, 2, 3, 4 };
+            List<string> userIds = new List<string>();
+            //本月和上月
+            var incomeCurrent = await UnitWork.Find<IncomeSummary>(c => c.UserId == userInfo.UserID && ((c.Year == year && c.Month == month) || (c.Year == lastYaer && c.Month == lastMonth))).ToListAsync();
+            //第一
+            var incomeTop = await UnitWork.Find<IncomeSummary>(c => c.Year == year && ((c.Year == year && c.Month == month) || (c.Year == lastYaer && c.Month == lastMonth)) && c.Rank == 1).ToListAsync();
+
+
+            var incomeCurrentG = incomeCurrent.GroupBy(c => c.Type).Select(c => new IncomeSummaryDetailResp
+            {
+                Type = c.Key,
+                Detail = c.Select(s => new IncomeSummaryDetail
+                {
+                    Month = s.Year == year && s.Month == month ? "本月" : "上月",
+                    Rank = s.Rank,
+                    Quantity = s.Quantity,
+                    TotalMoney = s.TotalMoney,
+                    TopQuantity = incomeTop.Where(w => w.Year == s.Year && w.Month == s.Month && w.Type == s.Type).FirstOrDefault()?.Quantity,
+                    TopTotalMoney = s.Type == 1 ? "0" : ReplaceWithSpecialChar(incomeTop.Where(w => w.Year == s.Year && w.Month == s.Month && w.Type == s.Type).FirstOrDefault()?.TotalMoney.Value.ToString("0.00"), 1, 0),
+                }).ToList()
+            }).ToList();
+
+            //构造四项明细
+            List<IncomeSummaryDetailResp> detailResps = new List<IncomeSummaryDetailResp>();
+            temp.ForEach(c =>
+            {
+                detailResps.Add(new IncomeSummaryDetailResp
+                {
+                    Type = c,
+                    Detail = new List<IncomeSummaryDetail>
+                    {
+                        new IncomeSummaryDetail {Month="本月",TopQuantity=incomeTop.Where(w => w.Year == year && w.Month == month && w.Type == c).FirstOrDefault()?.Quantity, TopTotalMoney = c == 1 ? "0" : ReplaceWithSpecialChar(incomeTop.Where(w =>  w.Year == year && w.Month == month && w.Type == c).FirstOrDefault()?.TotalMoney.Value.ToString("0.00"), 1, 0)},
+                        new IncomeSummaryDetail {Month="上月",TopQuantity=incomeTop.Where(w => w.Year == lastYaer && w.Month == lastMonth && w.Type == c).FirstOrDefault()?.Quantity, TopTotalMoney = c == 1 ? "0" : ReplaceWithSpecialChar(incomeTop.Where(w =>  w.Year == lastYaer && w.Month == lastMonth && w.Type == c).FirstOrDefault()?.TotalMoney.Value.ToString("0.00"), 1, 0)},
+
+                    }
+                });
+            });
+
+            var merge = from a in detailResps
+                        join b in incomeCurrentG on a.Type equals b.Type into ab
+                        from b in ab.DefaultIfEmpty()
+                        select new { Type = a.Type, Detail = b == null ? a.Detail : b.Detail };
+
+            result.Data = merge.ToList();
+            return result;
+        }
+
+        /// <summary>
+        /// 更多排名
+        /// </summary>
+        /// <param name="CurrentUserId"></param>
+        /// <param name="year"></param>
+        /// <param name="month"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public async Task<TableData> MoreRankings(int CurrentUserId, int year, int month, int type)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == CurrentUserId).Include(c => c.User).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            var income = await UnitWork.Find<IncomeSummary>(c => c.UserId == userInfo.UserID && c.Year == year && c.Month == month && c.Type == type).FirstOrDefaultAsync();
+            if (income==null)
+                income = new IncomeSummary { UserId = userInfo.UserID, UserName = userInfo.User.Name };
+
+            var ranks = await UnitWork.Find<IncomeSummary>(c => c.Year == year && c.Month == month && c.Type == type).OrderBy(c => c.Rank).Take(20).Select(c => new { c.Quantity, c.UserId, c.UserName, c.Rank, c.TotalMoney }).ToListAsync();
+            var userIds = ranks.Select(c => c.UserId).ToList();
+            userIds.Add(income?.UserId);
+
+            var appuserids = await UnitWork.Find<AppUserMap>(a => userIds.Contains(a.UserID)).ToListAsync();
+            var orgInfo = await (from r in UnitWork.Find<Relevance>(a => a.Key == "UserOrg")
+                                 join o in UnitWork.Find<Repository.Domain.Org>(null) on r.SecondId equals o.Id
+                                 where userIds.Contains(r.FirstId)
+                                 select new { r.FirstId, o.Name, o.CascadeId }).ToListAsync();
+            if (type == 1)
+            {
+                income.UserName = orgInfo.Where(c => c.FirstId == income.UserId).FirstOrDefault()?.Name + "-" + income.UserName;
+                var ranking= ranks.Select(c => new
+                {
+                    AppUserId= appuserids.Where(a=>a.UserID==c.UserId).FirstOrDefault()?.AppUserId,
+                    UserName = orgInfo.Where(w => w.FirstId == c.UserId).FirstOrDefault()?.Name + "-" + c.UserName,
+                    c.Rank,
+                    Total = c.Quantity
+                }).ToList();
+                result.Data = new { ranking, current = income };
+            }
+            else
+            {
+                income.UserName = orgInfo.Where(c => c.FirstId == income.UserId).FirstOrDefault()?.Name + "-" + income.UserName;
+                var ranking= ranks.Select(c => new
+                {
+                    AppUserId = appuserids.Where(a => a.UserID == c.UserId).FirstOrDefault()?.AppUserId,
+                    UserName = orgInfo.Where(w => w.FirstId == c.UserId).FirstOrDefault()?.Name + "-" + c.UserName,
+                    c.Rank,
+                    Total = ReplaceWithSpecialChar(c.TotalMoney.Value.ToString("0.00"), 1, 0)
+                }).ToList();
+                result.Data = new { ranking, current = income };
+            }
+            result.Extra = DateTime.Now.AddDays(-1).ToString("yyyy.MM.dd") + " 23:59";
+            return result;
+        }
+
+        /// <summary>
+        /// 历史收入
+        /// </summary>
+        /// <param name="CurrentUserId"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public async Task<TableData> HistoricalIncome(int CurrentUserId, int type)
+        {
+            var result = new TableData();
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            //获取当前用户nsap用户信息
+            var userInfo = await UnitWork.Find<AppUserMap>(a => a.AppUserId == CurrentUserId).FirstOrDefaultAsync();
+            if (userInfo == null)
+            {
+                throw new CommonException("未绑定App账户", Define.INVALID_APPUser);
+            }
+            var year = DateTime.Now.Year;
+            var lastYear = DateTime.Now.Year - 1;
+
+            var income = await UnitWork.Find<IncomeSummary>(c => c.UserId == userInfo.UserID && (c.Year == year || c.Year == lastYear) && c.Type == type).ToListAsync();
+            var maxIncome = await UnitWork.Find<IncomeSummary>(c => (c.Year == year || c.Year == lastYear) && c.Type == type && c.Rank == 1).ToListAsync();
+
+            var merge = from a in maxIncome
+                        join b in income on new { a.Year, a.Month } equals new { b.Year, b.Month } into ab
+                        from b in ab.DefaultIfEmpty()
+                        select new
+                        {
+                            a.Year,
+                            a.Month,
+                            Top = type == 1 ? a.Quantity.ToString() : ReplaceWithSpecialChar(a.TotalMoney.Value.ToString("0.00"), 1, 0),
+                            Rank = b != null ? b.Rank : null,
+                            Current = b != null ? type == 1 ? b.Quantity : b.TotalMoney : 0
+                        };
+
+            result.Data = merge.GroupBy(c => c.Year).Select(c => new { Year = c.Key, Detail = c.OrderByDescending(o => o.Month).ToList() }).ToList();
+
+            return result;
+        }
+
+        public async Task Summy2()
+        {
+            var serviceOrdr = await UnitWork.Find<ServiceOrder>(c => c.CreateTime >= DateTime.Parse("2021-01-01") && c.VestInOrg == 1 && c.Status == 2).Include(c => c.ServiceWorkOrders).Where(c => c.ServiceWorkOrders.All(s => s.Status >= 7))
+                .Select(c => new { c.Id, c.ServiceWorkOrders.FirstOrDefault().CurrentUserNsapId, c.ServiceWorkOrders.FirstOrDefault().CurrentUser, c.CreateTime })
+                .ToListAsync();
+
+            var aa = serviceOrdr.Where(c => !string.IsNullOrWhiteSpace(c.CurrentUser)).GroupBy(c => new { c.CurrentUserNsapId, c.CreateTime.Value.Year, c.CreateTime.Value.Month })
+                .Select(c => new { c.Key.CurrentUserNsapId, c.Key.Year, c.Key.Month, Count = c.Count(), c.First().CurrentUser })
+                .ToList();
+            //var aaa = aa.OrderByDescending(c => c.Count).GroupBy(c => new { c.Year, c.Month}).Select(c=>new {c.Key.Year,c.Key.Month,Detail=c.ToList() })
+            //    .SelectMany((g, i) => g.Detail.Select(c => new { c.CurrentUser, c.CurrentUserNsapId, c.Year, c.Month, Rank = i + 1, c.Count }))
+            //    .ToList();
+            var aaa = aa.OrderByDescending(c => c.Count).GroupBy(c => new { c.Year, c.Month }).Select(c => new { c.Key.Year, c.Key.Month, Detail = c.ToList() })
+                .ToList();
+            List<IncomeSummary> incomeSummaries = new List<IncomeSummary>();
+            aaa.ForEach(c =>
+            {
+                var i = 1;
+                c.Detail.ForEach(d =>
+                {
+                    incomeSummaries.Add(new IncomeSummary { Type = 1, Rank = i++, Quantity = d.Count, UserId = d.CurrentUserNsapId, UserName = d.CurrentUser, Year = d.Year, Month = d.Month });
+                });
+            });
+
+            var settlemment = await UnitWork.Find<Repository.Domain.Settlement.Outsourc>(c => c.CreateTime >= DateTime.Parse("2021-01-01"))
+                .Select(c => new { c.CreateTime, c.CreateUser, c.CreateUserId, c.TotalMoney })
+                .ToListAsync();
+
+
+            var settlemmentg = settlemment
+                .GroupBy(c => new { c.CreateTime.Value.Year, c.CreateTime.Value.Month, c.CreateUserId })
+                .Select(c => new { c.Key.Year, c.Key.Month, c.Key.CreateUserId, c.FirstOrDefault().CreateUser, TotalMoney = c.Sum(s => s.TotalMoney) })
+                .OrderByDescending(c => c.TotalMoney)
+                .GroupBy(c => new { c.Year, c.Month }).Select(c => new { c.Key.Year, c.Key.Month, Detail = c.ToList() })
+                .ToList();
+            settlemmentg.ForEach(c =>
+            {
+                var i = 1;
+                c.Detail.ForEach(d =>
+                {
+                    incomeSummaries.Add(new IncomeSummary { Type = 2, Rank = i++, TotalMoney = d.TotalMoney, UserId = d.CreateUserId, UserName = d.CreateUser, Year = d.Year, Month = d.Month });
+                });
+            });
+
+
+            var commssionOrder = await UnitWork.Find<CommissionOrder>(c => c.CreateTime >= DateTime.Parse("2021-01-01"))
+                .Select(c => new { c.CreateTime, c.CreateUser, c.CreateUserId, c.Amount })
+                .ToListAsync();
+            var commssionOrderg= commssionOrder
+                .GroupBy(c => new { c.CreateTime.Value.Year, c.CreateTime.Value.Month, c.CreateUserId })
+                .Select(c => new { c.Key.Year, c.Key.Month, c.Key.CreateUserId, c.FirstOrDefault().CreateUser, TotalMoney = c.Sum(s => s.Amount) })
+                .OrderByDescending(c => c.TotalMoney)
+                .GroupBy(c => new { c.Year, c.Month }).Select(c => new { c.Key.Year, c.Key.Month, Detail = c.ToList() })
+                .ToList();
+            commssionOrderg.ForEach(c =>
+            {
+                var i = 1;
+                c.Detail.ForEach(d =>
+                {
+                    incomeSummaries.Add(new IncomeSummary { Type = 3, Rank = i++, TotalMoney = d.TotalMoney, UserId = d.CreateUserId, UserName = d.CreateUser, Year = d.Year, Month = d.Month });
+                });
+            });
+
+
+            var reimburseinfo=await UnitWork.Find<ReimburseInfo>(c => c.CreateTime >= DateTime.Parse("2021-01-01"))
+                .Select(c => new { c.CreateTime, c.CreateUserId, c.TotalMoney })
+                .ToListAsync();
+            var userId = reimburseinfo.Select(c => c.CreateUserId).Distinct().ToList();
+            var userInfo = await UnitWork.Find<User>(c => userId.Contains(c.Id)).Select(c => new { c.Id, c.Name }).ToListAsync();
+            var reimburseinfog = reimburseinfo
+                .GroupBy(c => new { c.CreateTime.Year, c.CreateTime.Month, c.CreateUserId })
+                .Select(c => new { c.Key.Year, c.Key.Month, c.Key.CreateUserId, TotalMoney = c.Sum(s => s.TotalMoney) })
+                .OrderByDescending(c => c.TotalMoney)
+                .GroupBy(c => new { c.Year, c.Month }).Select(c => new { c.Key.Year, c.Key.Month, Detail = c.ToList() })
+                .ToList();
+
+            reimburseinfog.ForEach(c =>
+            {
+                var i = 1;
+                c.Detail.ForEach(d =>
+                {
+                    var user = userInfo.Where(c => c.Id == d.CreateUserId).FirstOrDefault();
+                    incomeSummaries.Add(new IncomeSummary { Type = 4, Rank = i++, TotalMoney = d.TotalMoney, UserId = d.CreateUserId, UserName = user?.Name, Year = d.Year, Month = d.Month });
+                });
+            });
+            await UnitWork.BatchAddAsync(incomeSummaries.ToArray());
+            await UnitWork.SaveAsync();
+        }
+
+        /// <summary>
+        /// 生成技术员收入汇总
+        /// </summary>
+        /// <returns></returns>
+        public async Task GenerateIncomeSummary()
+        {
+            var year = DateTime.Now.Year;
+            var month = DateTime.Now.Month;
+            if (DateTime.Now.Month == 1 && DateTime.Now.Day == 1)
+            {
+                year = DateTime.Now.AddYears(-1).Year;
+                month = 12;
+            }
+            //服务单
+            var serviceOrdr = await UnitWork.Find<ServiceOrder>(c => c.CreateTime.Value.Year == year && c.CreateTime.Value.Month == month && c.VestInOrg == 1 && c.Status == 2).Include(c => c.ServiceWorkOrders).Where(c => c.ServiceWorkOrders.Any(s => s.Status >= 7))
+                .Select(c => new { c.Id, c.ServiceWorkOrders.FirstOrDefault().CurrentUserNsapId, c.ServiceWorkOrders.FirstOrDefault().CurrentUser, c.CreateTime })
+                .ToListAsync();
+
+            var aa = serviceOrdr.GroupBy(c => new { c.CurrentUserNsapId, c.CreateTime.Value.Year, c.CreateTime.Value.Month })
+                .Select(c => new { c.Key.CurrentUserNsapId, c.Key.Year, c.Key.Month, Count = c.Count(), c.First().CurrentUser })
+                .ToList();
+            //var aaa = aa.OrderByDescending(c => c.Count).GroupBy(c => new { c.Year, c.Month}).Select(c=>new {c.Key.Year,c.Key.Month,Detail=c.ToList() })
+            //    .SelectMany((g, i) => g.Detail.Select(c => new { c.CurrentUser, c.CurrentUserNsapId, c.Year, c.Month, Rank = i + 1, c.Count }))
+            //    .ToList();
+            var aaa = aa.OrderByDescending(c => c.Count).GroupBy(c => new { c.Year, c.Month }).Select(c => new { c.Key.Year, c.Key.Month, Detail = c.ToList() })
+                .ToList();
+            List<IncomeSummary> incomeSummaries = new List<IncomeSummary>();
+            aaa.ForEach(c =>
+            {
+                var i = 1;
+                c.Detail.ForEach(d =>
+                {
+                    incomeSummaries.Add(new IncomeSummary { Type = 1, Rank = i++, Quantity = d.Count, UserId = d.CurrentUserNsapId, UserName = d.CurrentUser, Year = d.Year, Month = d.Month });
+                });
+            });
+
+            //个代
+            var settlemment = await UnitWork.Find<Repository.Domain.Settlement.Outsourc>(c => c.CreateTime.Value.Year == year && c.CreateTime.Value.Month == month)
+                .Select(c => new { c.CreateTime, c.CreateUser, c.CreateUserId, c.TotalMoney })
+                .ToListAsync();
+
+
+            var settlemmentg = settlemment
+                .GroupBy(c => new { c.CreateTime.Value.Year, c.CreateTime.Value.Month, c.CreateUserId })
+                .Select(c => new { c.Key.Year, c.Key.Month, c.Key.CreateUserId, c.FirstOrDefault().CreateUser, TotalMoney = c.Sum(s => s.TotalMoney) })
+                .OrderByDescending(c => c.TotalMoney)
+                .GroupBy(c => new { c.Year, c.Month }).Select(c => new { c.Key.Year, c.Key.Month, Detail = c.ToList() })
+                .ToList();
+            settlemmentg.ForEach(c =>
+            {
+                var i = 1;
+                c.Detail.ForEach(d =>
+                {
+                    incomeSummaries.Add(new IncomeSummary { Type = 2, Rank = i++, TotalMoney = d.TotalMoney, UserId = d.CreateUserId, UserName = d.CreateUser, Year = d.Year, Month = d.Month });
+                });
+            });
+
+            
+            //提成
+            var commssionOrder = await UnitWork.Find<CommissionOrder>(c => c.CreateTime.Value.Year == year && c.CreateTime.Value.Month == month)
+                .Select(c => new { c.CreateTime, c.CreateUser, c.CreateUserId, c.Amount })
+                .ToListAsync();
+            var commssionOrderg = commssionOrder
+                .GroupBy(c => new { c.CreateTime.Value.Year, c.CreateTime.Value.Month, c.CreateUserId })
+                .Select(c => new { c.Key.Year, c.Key.Month, c.Key.CreateUserId, c.FirstOrDefault().CreateUser, TotalMoney = c.Sum(s => s.Amount) })
+                .OrderByDescending(c => c.TotalMoney)
+                .GroupBy(c => new { c.Year, c.Month }).Select(c => new { c.Key.Year, c.Key.Month, Detail = c.ToList() })
+                .ToList();
+            commssionOrderg.ForEach(c =>
+            {
+                var i = 1;
+                c.Detail.ForEach(d =>
+                {
+                    incomeSummaries.Add(new IncomeSummary { Type = 3, Rank = i++, TotalMoney = d.TotalMoney, UserId = d.CreateUserId, UserName = d.CreateUser, Year = d.Year, Month = d.Month });
+                });
+            });
+
+            //报销
+            var reimburseinfo = await UnitWork.Find<ReimburseInfo>(c => c.CreateTime.Year == year && c.CreateTime.Month == month)
+                .Select(c => new { c.CreateTime, c.CreateUserId, c.TotalMoney })
+                .ToListAsync();
+            var userId = reimburseinfo.Select(c => c.CreateUserId).Distinct().ToList();
+            var userInfo = await UnitWork.Find<User>(c => userId.Contains(c.Id)).Select(c => new { c.Id, c.Name }).ToListAsync();
+            var reimburseinfog = reimburseinfo
+                .GroupBy(c => new { c.CreateTime.Year, c.CreateTime.Month, c.CreateUserId })
+                .Select(c => new { c.Key.Year, c.Key.Month, c.Key.CreateUserId, TotalMoney = c.Sum(s => s.TotalMoney) })
+                .OrderByDescending(c => c.TotalMoney)
+                .GroupBy(c => new { c.Year, c.Month }).Select(c => new { c.Key.Year, c.Key.Month, Detail = c.ToList() })
+                .ToList();
+
+            reimburseinfog.ForEach(c =>
+            {
+                var i = 1;
+                c.Detail.ForEach(d =>
+                {
+                    var user = userInfo.Where(c => c.Id == d.CreateUserId).FirstOrDefault();
+                    incomeSummaries.Add(new IncomeSummary { Type = 4, Rank = i++, TotalMoney = d.TotalMoney, UserId = d.CreateUserId, UserName = user?.Name, Year = d.Year, Month = d.Month });
+                });
+            });
+
+            var dbContext = UnitWork.GetDbContext<InternalContact>();
+            using (var transaction = await dbContext.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    await UnitWork.DeleteAsync<IncomeSummary>(c => c.Year == year && c.Month == month);
+                    await UnitWork.BatchAddAsync(incomeSummaries.ToArray());
+                    await UnitWork.SaveAsync();
+                    await transaction.CommitAsync();
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// 将传入的字符串中间部分字符替换成特殊字符
+        /// </summary>
+        /// <param name="value">需要替换的字符串</param>
+        /// <param name="startLen">前保留长度</param>
+        /// <param name="endLen">尾保留长度</param>
+        /// <param name="replaceChar">特殊字符</param>
+        /// <returns>被特殊字符替换的字符串</returns>
+        private static string ReplaceWithSpecialChar(string value, int startLen = 4, int endLen = 4, char specialChar = '*')
+        {
+            try
+            {
+                //var 
+                var sp = value.Split(".");
+                value = sp[0];
+                var end = sp[1];
+                if (value.Length == 1)
+                {
+                    return $"{value}.{end}";
+                }
+                int lenth = value.Length - startLen - endLen;
+
+                string replaceStr = value.Substring(startLen, lenth);
+
+                string specialStr = string.Empty;
+
+                for (int i = 0; i < replaceStr.Length; i++)
+                {
+                    specialStr += specialChar;
+                }
+
+                value = value.Replace(replaceStr, specialStr) + "."+end;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return value;
+        }
+        #endregion
 
         #region ProblemHelp
         public async Task<TableData> SetWorkOrderFinlish(string ids)

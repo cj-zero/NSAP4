@@ -23,5 +23,6 @@ namespace OpenAuth.Repository
         public virtual DbSet<OutsourcExpenses> Outsourcexpenses { get; set; }
         public virtual DbSet<OutsourcExpenseOrg> OutsourcExpenseOrgs { get; set; }
         public virtual DbSet<OutsourcExpensesPicture> Outsourcexpensespictures { get; set; }
+        public virtual DbSet<OutsourcReport> OutsourcReports { get; set; }
     }
 }

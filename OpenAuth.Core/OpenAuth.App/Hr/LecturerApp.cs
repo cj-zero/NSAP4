@@ -183,14 +183,14 @@ namespace OpenAuth.App
             var result = new TableData();
             List<int> appUserIds = new List<int>();
             var query = (from a in UnitWork.Find<classroom_teacher_course>(null)
-                               join b in UnitWork.Find<classroom_teacher_apply_log>(null) on a.AppUserId equals b.AppUserId
-                               select new { b.Name, a.Id, a.ForTheCrowd, a.Title, a.TeachingMethod, a.TeachingAddres, a.StartTime, a.EndTime, a.VideoUrl, a.AuditState, a.CreateTime, a.IsEnable })
+                         join b in UnitWork.Find<classroom_teacher_apply_log>(null) on a.AppUserId equals b.AppUserId
+                         select new { b.Name, a.Id, a.ForTheCrowd, a.Title, a.TeachingMethod, a.TeachingAddres, a.StartTime, a.EndTime, a.VideoUrl, a.AuditState, a.CreateTime, a.IsEnable })
                  .WhereIf(!string.IsNullOrWhiteSpace(userName), c => c.Name.Contains(userName))
                  .WhereIf(!string.IsNullOrWhiteSpace(title), c => c.Title.Contains(title))
                  .WhereIf(startTime != null, c => c.StartTime >= startTime)
                  .WhereIf(endTime != null, c => c.StartTime <= endTime)
                  .WhereIf(auditState != null && auditState != 0, c => c.AuditState == auditState);
-            result.Data= await query.OrderByDescending(c => c.Id)
+            result.Data = await query.OrderByDescending(c => c.Id)
                 .Skip((pageIndex - 1) * pageSize).Take(pageSize)
                 .ToListAsync();
             result.Count = await query.CountAsync();
@@ -261,7 +261,7 @@ namespace OpenAuth.App
         {
             var result = new TableData();
             var query = await UnitWork.Find<classroom_teacher_course>(null).FirstOrDefaultAsync(c => c.Id == req.Id);
-            if (query!=null)
+            if (query != null)
             {
                 await UnitWork.DeleteAsync(query);
                 await UnitWork.SaveAsync();
@@ -569,7 +569,46 @@ namespace OpenAuth.App
             return result;
         }
 
+        /// <summary>
+        /// 讲师详情
+        /// </summary>
+        /// <param name="appUserId"></param>
+        /// <returns></returns>
+        public async Task<TableData> TeacherLevel(int appUserId)
+        {
+            var result = new TableData();
+            result.Data = "";
+            var query = await UnitWork.Find<classroom_teacher_apply_log>(null).FirstOrDefaultAsync(c => c.AppUserId == appUserId && c.AuditState == 2);
+            if (query != null)
+            {
+                switch (query.Grade)
+                {
+                    case 1:
+                        result.Data = "新星讲师";
+                        break;
+                    case 2:
+                        result.Data = "助理讲师";
+                        break;
+                    case 3:
+                        result.Data = "中级讲师";
+                        break;
+                    case 4:
+                        result.Data = "高级讲师";
+                        break;
+                    case 5:
+                        result.Data = "明星讲师";
+                        break;
+                    case 6:
+                        result.Data = "王牌讲师";
+                        break;
+                    case 7:
+                        result.Data = "荣誉讲师";
+                        break;
 
+                }
+            }
+            return result;
+        }
         #endregion
     }
 }

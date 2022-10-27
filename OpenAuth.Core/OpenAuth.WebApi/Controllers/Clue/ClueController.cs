@@ -113,12 +113,35 @@ namespace OpenAuth.WebApi.Controllers.Clue
         /// <returns></returns>
         [HttpGet]
         [Route("ChangeClueStatusById")]
-        public async Task<Response> ChangeClueStatusById(int id)
+        public async Task<Response> ChangeClueStatusById(int id,int jobid)
         {
             var result = new Response();
             try
             {
-                result = await _clueApp.ChangeClueStatusById(id);
+                result = await _clueApp.ChangeClueStatusById(id,jobid);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// 线索状态轮转
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="status">状态（0：销售线索，1：已转客户 , 2 : 审批中 , 3 : 审批通过，同步数据中）</param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("ClueStatusRotation")]
+        public async Task<Response> ClueStatusRotation(int id, int status)
+        {
+            var result = new Response();
+            try
+            {
+                result = await _clueApp.ClueStatusRotation(id, status);
             }
             catch (Exception ex)
             {

@@ -42,7 +42,11 @@ namespace OpenAuth.App.Request
         /// 
         /// </summary>
         public int? AppUserRole { get; set; }
-        
-         //todo:添加自己的请求字段
+        /// <summary>
+        /// 
+        /// </summary>
+        public int? PassPortId { get; set; }
+
+        //todo:添加自己的请求字段
     }
 }

@@ -182,11 +182,12 @@ namespace OpenAuth.App
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public async Task<Infrastructure.Response> ChangeClueStatusById(int id)
+        public async Task<Infrastructure.Response> ChangeClueStatusById(int id,int jobid)
         {
             var result = new Infrastructure.Response();
-            //2022.10.18 check if wfa.job is legit ,if not ,pass 
-            var legitJob = UnitWork.FindSingle<wfa_job>(a => a.base_entry == id && a.sync_stat == 4 && a.sbo_itf_return.Length > 1);
+            //2022.10.18 check if wfa.job is legit ,if not ,pass ，wait for a minute for the sync process
+            System.Threading.Thread.Sleep(50000);
+            var legitJob = UnitWork.FindSingle<wfa_job>(a => a.base_entry == id && a.job_id ==jobid && a.sync_stat == 4 );
             if (legitJob== null)
             {
                 return result;
@@ -199,6 +200,25 @@ namespace OpenAuth.App
 
             return result;
         }
+
+        /// <summary>
+        /// 线索状态轮转
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="status"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> ClueStatusRotation(int id, int status)
+        {
+            var result = new Infrastructure.Response();
+            await UnitWork.UpdateAsync<Repository.Domain.Serve.Clue>(c => c.Id == id, x => new Repository.Domain.Serve.Clue
+            {
+                Status = status
+            });
+            await UnitWork.SaveAsync();
+
+            return result;
+        }
+
 
         /// <summary>
         /// 线索状态轮转
@@ -236,7 +256,7 @@ namespace OpenAuth.App
                 var updateClueIDs = updatedClueJob.Select(a => a.base_entry).ToList();
                 var logList = updatedClueJob.Select(a =>new { a.job_id, a.base_entry, a.sbo_itf_return}).ToList();
                 _logger.LogError("运行修改线索状态定时任务，Job修改线索参数为"+ JsonConvert.SerializeObject(logList));
-                var clueList = UnitWork.Find<Repository.Domain.Serve.Clue>(a=> updateClueIDs.Contains(a.Id) && a.Status==0 ).ToList();
+                var clueList = UnitWork.Find<Repository.Domain.Serve.Clue>(a=> updateClueIDs.Contains(a.Id) && a.Status!=0 ).ToList();
                 _logger.LogError("运行修改线索状态定时任务，实际修改线索参数为" + JsonConvert.SerializeObject(clueList));
                 foreach (var clue in clueList)
                 {
@@ -273,6 +293,7 @@ namespace OpenAuth.App
 
             return result;
         }
+
 
         /// <summary>
         /// 获取标签

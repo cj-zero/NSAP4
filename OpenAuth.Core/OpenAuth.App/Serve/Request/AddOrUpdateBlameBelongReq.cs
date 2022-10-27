@@ -14,6 +14,7 @@ namespace OpenAuth.App.Serve.Request
             this.Source = 1;
             this.SerialNumber = string.Empty;
         }
+        public int? Id { get; set; }
         public int? AppUserId { get; set; }
         /// <summary>
         /// 归属部门

@@ -25,6 +25,28 @@ namespace OpenAuth.WebApi.Controllers.SignalR
         }
 
         /// <summary>
+        /// 给合同管理用户发送消息
+        /// </summary>
+        /// <param name="req">给用户发送消息实体</param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<Response> SendContractRoleMessage(SendRoleMessageReq req)
+        {
+            var result = new Response();
+            try
+            {
+                await _messageApp.SendContractRoleMessage(req);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.ToJson()}， 错误：{result.Message}");
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 给一个角色用户发送消息
         /// </summary>
         /// <param name="req"></param>

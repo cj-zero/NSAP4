@@ -21,6 +21,7 @@ namespace Sap.Handler.DependencyInjection
             oCompany.DbUserName = settings.DbUserName; //dRow[4].ToString();
             oCompany.DbPassword = settings.DbPassword; //dRow[5].ToString();
             oCompany.LicenseServer = settings.LicenseServer;//dell-t30:40000 //dRow[1].ToString();
+            //oCompany.SLDServer = settings.LicenseServer;
             oCompany.UserName = settings.UserName; //dRow[2].ToString();
             oCompany.Password = settings.Password; //dRow[3].ToString();Aa789123@
             oCompany.CompanyDB = settings.CompanyDB; //dRow[6].ToString();

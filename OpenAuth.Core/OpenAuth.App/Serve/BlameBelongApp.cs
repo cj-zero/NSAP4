@@ -140,18 +140,21 @@ namespace OpenAuth.App.Serve
             {
                 loginUser = await GetUserId(Convert.ToInt32(req.AppUserId));
             }
-            var isExist = await UnitWork.Find<BlameBelong>(null).AnyAsync(c => c.DocType == req.DocType && c.OrderNo == req.OrderNo && c.SerialNumber==req.SerialNumber);
-            if (isExist && req.DocType != 4)
+            var isExist = await UnitWork.Find<BlameBelong>(null).FirstOrDefaultAsync(c => c.DocType == req.DocType && c.OrderNo == req.OrderNo && c.SerialNumber == req.SerialNumber);
+            if (isExist != null && req.DocType != 4)
             {
-                result.Code = 500;
-                result.Message = "单据类型或单据号错误。";
-                return result;
+                if (isExist.Id != req.Id)
+                {
+                    result.Code = 500;
+                    result.Message = "单据类型或单据号错误。";
+                    return result;
+                }
             }
             var obj = req.MapTo<BlameBelong>();
 
             if (obj.DocType == 1)
             {
-                var seriviceOrder = await UnitWork.Find<ServiceOrder>(c => c.U_SAP_ID == req.OrderNo || c.Id == req.OrderNo).Select(c => new { c.Id, c.TerminalCustomerId, c.TerminalCustomer, c.U_SAP_ID }).FirstOrDefaultAsync();
+                var seriviceOrder = await UnitWork.Find<ServiceOrder>(c => c.U_SAP_ID == req.OrderNo).Select(c => new { c.Id, c.TerminalCustomerId, c.TerminalCustomer, c.U_SAP_ID }).FirstOrDefaultAsync();
                 if (seriviceOrder == null)
                 {
                     result.Code = 500;
@@ -163,7 +166,7 @@ namespace OpenAuth.App.Serve
                 var query = await (from a in UnitWork.Find<OINS>(null)
                                    join b in UnitWork.Find<DLN1>(null) on a.deliveryNo equals b.DocEntry into ab
                                    from b in ab.DefaultIfEmpty()
-                                   join c in UnitWork.Find<OWOR>(null) on b.DocEntry equals c.OriginAbs into bc
+                                   join c in UnitWork.Find<OWOR>(null) on b.BaseEntry equals c.OriginAbs into bc
                                    from c in bc.DefaultIfEmpty()
                                    where a.manufSN == req.SerialNumber && b.BaseType == 17 && b.BaseEntry > 0
                                    select new { b.BaseEntry, c.DocEntry, c.U_WO_LTDW }).FirstOrDefaultAsync();
@@ -175,8 +178,8 @@ namespace OpenAuth.App.Serve
             }
             else if (obj.DocType == 2)
             {
-                isExist = await UnitWork.Find<OWOR>(null).AnyAsync(c => c.DocEntry == req.OrderNo);
-                if (!isExist)
+                var isExists = await UnitWork.Find<OWOR>(null).AnyAsync(c => c.DocEntry == req.OrderNo);
+                if (!isExists)
                 {
                     result.Code = 500;
                     result.Message = "单据类型或单据号错误。";
@@ -240,23 +243,65 @@ namespace OpenAuth.App.Serve
             {
                 try
                 {
-                    obj.CreateTime = DateTime.Now;
-                    obj.CreateUser = loginUser.Name;
-                    obj.CreateUserId = loginUser.Id;
+                    var single = await UnitWork.Find<BlameBelong>(c => c.Id == obj.Id).FirstOrDefaultAsync();
+                    if (single != null && single.Id > 0)
+                    {
+                        //删除
+                        await UnitWork.DeleteAsync<BlameBelongOrg>(c => c.BlameBelongId == single.Id);
+                        await UnitWork.DeleteAsync<BlameBelongFile>(c => c.BlameBelongId == single.Id);
+                        //新增
+                        obj.BlameBelongOrgs.ForEach(c => { c.BlameBelongId = single.Id; });
+                        obj.BlameBelongFiles.ForEach(c => { c.BlameBelongId = single.Id; });
+                        await UnitWork.BatchAddAsync(obj.BlameBelongOrgs.ToArray());
+                        await UnitWork.BatchAddAsync(obj.BlameBelongFiles.ToArray());
 
-                    //创建流程
-                    var mf = await UnitWork.Find<FlowScheme>(c => c.SchemeName == "按灯").FirstOrDefaultAsync();
-                    var flow = new AddFlowInstanceReq();
-                    flow.SchemeId = mf.Id;
-                    flow.FrmType = 2;
-                    flow.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
-                    flow.CustomName = $"按灯";
-                    flow.FrmData = "{\"IsAgree\": \"" + 1 + "\"}";
-                    obj.FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(flow);
-                    obj.Status = 2;
+                        await UnitWork.UpdateAsync<BlameBelong>(c => c.Id == obj.Id, c => new BlameBelong
+                        {
+                            Basis = obj.Basis,
+                            Description = obj.Basis,
+                            DocType = obj.DocType,
+                            OrderNo = obj.OrderNo,
+                            SerialNumber = obj.SerialNumber,
+                            VestinOrg = obj.VestinOrg,
+                            ProductionOrg = obj.ProductionOrg,
+                            SaleOrderId = obj.SaleOrderId,
+                            CardCode = obj.CardCode,
+                            CardName = obj.CardName,
+                            AffectMoney = obj.AffectMoney,
+                            Status = 2,
+                        });
+                        VerificationReq verificationReq = new VerificationReq
+                        {
+                            NodeRejectStep = "",
+                            NodeRejectType = "0",
+                            FlowInstanceId = single.FlowInstanceId,
+                            VerificationFinally = "1",
+                            VerificationOpinion = ""
+                        };
+                        obj.FlowInstanceId = single.FlowInstanceId;
+                        await _flowInstanceApp.Verification(verificationReq);
+                        await UnitWork.SaveAsync();
+                    }
+                    else
+                    {
+                        obj.CreateTime = DateTime.Now;
+                        obj.CreateUser = loginUser.Name;
+                        obj.CreateUserId = loginUser.Id;
+                        //创建流程
+                        var mf = await UnitWork.Find<FlowScheme>(c => c.SchemeName == "按灯").FirstOrDefaultAsync();
+                        var flow = new AddFlowInstanceReq();
+                        flow.SchemeId = mf.Id;
+                        flow.FrmType = 2;
+                        flow.Code = DatetimeUtil.ToUnixTimestampByMilliseconds(DateTime.Now).ToString();
+                        flow.CustomName = $"按灯";
+                        flow.FrmData = "{\"IsAgree\": \"" + 1 + "\"}";
+                        obj.FlowInstanceId = await _flowInstanceApp.CreateInstanceAndGetIdAsync(flow);
+                        obj.Status = 2;
 
-                    obj = await UnitWork.AddAsync<BlameBelong, int>(obj);
-                    await UnitWork.SaveAsync();
+                        obj = await UnitWork.AddAsync<BlameBelong, int>(obj);
+                        await UnitWork.SaveAsync();
+
+                    }
 
                     //设置环节执行人
                     var userIds = obj.BlameBelongOrgs.Select(c => c.ManagerId).ToArray();

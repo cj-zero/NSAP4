@@ -188,9 +188,17 @@ namespace OpenAuth.App
             if (obj.Rank == 3)
             {
                 var parent = await UnitWork.Find<KnowledgeBase>(k => k.ParentId == obj.ParentId && k.Rank == 3).OrderByDescending(c => c.Code).FirstOrDefaultAsync();
-                var ParentCode = parent.Code.Substring(0, 2);
-                var childCode = Convert.ToInt32(parent.Code.Substring(2, 3)) + 1;
-                obj.Code = ParentCode + childCode.ToString().PadLeft(3, '0');
+                if (parent == null)
+                {
+                    var code = await UnitWork.Find<KnowledgeBase>(c => c.Id == obj.ParentId && c.Rank == 2).Select(c => c.Code).FirstOrDefaultAsync();
+                    obj.Code = $"{code}001";
+                }
+                else
+                {
+                    var ParentCode = parent.Code.Substring(0, 2);
+                    var childCode = Convert.ToInt32(parent.Code.Substring(2, 3)) + 1;
+                    obj.Code = ParentCode + childCode.ToString().PadLeft(3, '0');
+                }
                 //if (parent == null)
                 //{
                 //    throw new Exception("无父级目录，请检查。");

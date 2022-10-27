@@ -110,7 +110,25 @@ namespace OpenAuth.Repository.Domain
         /// 合同下载次数
         /// </summary>
         [Description("合同下载次数")]
-        public int DownloadNumber { get; set; }
+        public int? DownloadNumber { get; set; }
+
+        /// <summary>
+        /// 服务单号
+        /// </summary>
+        [Description("服务单号")]
+        public int? U_SAP_ID { get; set; }
+
+        /// <summary>
+        /// 项目编号
+        /// </summary>
+        [Description("项目编号")]
+        public string ItemNo { get; set; }
+
+        /// <summary>
+        /// 项目名称
+        /// </summary>
+        [Description("项目名称")]
+        public string ItemName { get; set; }
 
         /// <summary>
         /// 合同状态

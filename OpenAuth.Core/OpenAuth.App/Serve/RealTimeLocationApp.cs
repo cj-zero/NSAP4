@@ -157,7 +157,7 @@ namespace OpenAuth.App
                     var query = from o in UnitWork.Find<Repository.Domain.Org>(null)
                                 join r in UnitWork.Find<Repository.Domain.Relevance>(null)
                                 on o.Id equals r.SecondId
-                                where r.Key == Define.USERORG && o.Name == "SYH"
+                                where r.Key == Define.USERORG && o.Name == "CSYH"
                                 select r.FirstId;
                     syhUserIds.AddRange(await query.ToListAsync());
                 }

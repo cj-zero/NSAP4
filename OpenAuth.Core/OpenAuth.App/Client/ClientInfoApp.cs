@@ -1424,7 +1424,6 @@ namespace OpenAuth.App.Client
             var loginUser = loginContext.User;
             //当前登录用户业务员编码
             int slpCode = UnitWork.Find<sbo_user>(q => q.user_id == loginUser.User_Id).Select(q => q.sale_id).FirstOrDefault().Value;
-            int sboId = SboId.ToInt();
             //查出该客户的所有地址信息
             var data = (from n in UnitWork.Find<crm_crd1>(q => q.CardCode == CardCode)
                         join o in UnitWork.Find<crm_ocry>(null) on n.Country equals o.Code into temp1
@@ -1730,7 +1729,7 @@ namespace OpenAuth.App.Client
                 var job = UnitWork.FindSingle<wfa_job>(a => a.job_id == jobraw);
 
                 var newOper = UnitWork.FindSingle<User>(a => a.User_Id == job.user_id);
-                if (originClient !=null && client.is_reseller == "N")
+                if (originClient != null && client.is_reseller == "N")
                 {
                     if (originClient.Flag == 1)
                     {
@@ -1789,7 +1788,7 @@ namespace OpenAuth.App.Client
         #endregion
         #region 审核
         /// <summary>
-        /// 审核
+        /// 审核 next
         /// </summary>
         public string AuditResubmitNext(int jobID, int userID, string recommend, string auditOpinionid)
         {
@@ -2306,7 +2305,7 @@ namespace OpenAuth.App.Client
                         string[] p = queryArray[i].Split(':');
                         if (!string.IsNullOrEmpty(p[1]))
                         {
-                            strSql.AppendFormat("AND {0} LIKE '%{1}%' ", p[0], p[1].Trim().FilterSQL());
+                            strSql.AppendFormat("AND CONVERT({0} USING utf8)  LIKE '%{1}%' ", p[0], p[1].Trim().FilterSQL());
                         }
                     }
                 }

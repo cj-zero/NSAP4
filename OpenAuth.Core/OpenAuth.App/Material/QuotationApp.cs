@@ -2771,7 +2771,7 @@ namespace OpenAuth.App.Material
                     m.SalesPrice = m.MaterialType != 3 ? m.SalesPrice : 0;
                     m.DiscountPrices = m.MaterialType != 3 && m.MaterialType != 4 ? m.DiscountPrices : 0;
                     m.Discount = m.MaterialType != 3 && m.MaterialType != 4 ? m.SalesPrice != 0 ? (m.DiscountPrices / m.SalesPrice) * 100 : 100 : 100;
-                    m.TotalPrice = m.MaterialType != 3 ? Convert.ToDecimal(Convert.ToDecimal(m.DiscountPrices * m.Count).ToString("#0.00")) : 0;
+                    m.TotalPrice = m.MaterialType != 3 ? Convert.ToDecimal(Convert.ToDecimal(m.DiscountPrices * m.Count).ToString("#0.0000")) : 0;
                     QuotationObj.TotalCostPrice += m.MaterialType != 3 ? Convert.ToDecimal(Convert.ToDecimal(m.DiscountPrices * m.Count).ToString("#0.00")) : 0;
                     QuotationObj.TotalMoney += m.MaterialType != 3 ? Convert.ToDecimal(Convert.ToDecimal(m.DiscountPrices * m.Count).ToString("#0.00")) : 0;
                     //销售类型下销售物料才有佣金
@@ -3112,6 +3112,10 @@ namespace OpenAuth.App.Material
                 text = text.Replace("@Model.CreateTime", DateTime.Now.ToString("yyyy.MM.dd"));
                 text = text.Replace("@Model.QRcode", QRCoderHelper.CreateQRCodeToBase64(model.Id.ToString()));
                 text = text.Replace("@Model.OrgName", orgName);
+                text = text.Replace("@Model.NewestContacter", model.NewestContacter);
+                text = text.Replace("@Model.NewestContactTel", model.NewestContactTel);
+                text = text.Replace("@Model.ShippingAddress", model.ShippingAddress);
+                text = text.Replace("@Model.CreateUser", model.CreateUser);
                 var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"StockRequisitionHeader{model.Id}.html");
                 System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
                 var footUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", "StockRequisitionFooter.html");
@@ -3762,8 +3766,8 @@ namespace OpenAuth.App.Material
             var obj = UnitWork.Find<CommissionOrder>(c => c.CreateUserId == loginUser.Id && c.Status == 4);
                            
             var query = await obj.OrderByDescending(c => c.CreateTime)
-                            .Skip((request.page - 1) * request.limit)
-                            .Take(request.limit)
+                            //.Skip((request.page - 1) * request.limit)
+                            //.Take(request.limit)
                             .ToListAsync();
             result.Count = await obj.CountAsync();
             var serviceOrderId = query.Select(c => c.ServiceOrderId).ToList();

@@ -124,23 +124,38 @@ namespace OpenAuth.App
             {
                 userIds.AddRange(item.Split(","));
             }
-            var userList = await UnitWork.Find<User>(u => userIds.Contains(u.Id)).ToListAsync();
+            userIds = userIds.Distinct().ToList();
+         //   var userList = await UnitWork.Find<User>(u => userIds.Contains(u.Id)).ToListAsync();
+
+
+            var userList = (from a in UnitWork.Find<User>(u => userIds.Contains(u.Id))
+                         join b in  UnitWork.Find<Relevance>(r => r.Key == Define.USERORG) on a.Id equals b.FirstId
+                        join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id
+                        select new { a.Id, Name = c.Name+a.Name }).ToList();
+
+
             var flowinstanceObjs = flowInstanceList.Select(s => new
             {
                 s.Id,
                 s.ActivityName,
                 s.MakerList,
-                Name = string.Join(",", userList.Where(x => s.MakerList.Contains(x.Id)).Select(x => x.Name).ToArray())
+                Name = string.Join(",", userList.Where(x => s.MakerList.Contains(x.Id)).GroupBy(a => a.Id).Select(x => x.Max(a => a.Name)).ToArray())
             });
             var resp = await query.OrderByDescending(c => c.Id).Skip((req.page - 1) * req.limit)
                                 .Take(req.limit).ToListAsync();
+
+            var userListIds = resp.Select(a => a.ApplyUserId).ToList();
+            var user = (from a in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userListIds.Contains(r.FirstId))
+                        join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
+                        select new { a.FirstId, c.Name }).ToList();
+
             result.Data = resp.Select(c => new
             {
                 c.Id,
                 c.BeforeDemandCode,
                 c.ApplyDate,
                 c.ApplyUserId,
-                c.ApplyUserName,
+                ApplyUserName = user.Where(a => a.FirstId == c.ApplyUserId).FirstOrDefault()?.Name  +"-"+ c.ApplyUserName,
                 c.CustomerId,
                 c.CustomerName,
                 c.CreateTime,
@@ -151,6 +166,7 @@ namespace OpenAuth.App
                 c.UpdateTime,
                 c.Status
             }).ToList();
+
             result.Count = await query.CountAsync();
             return result;
         }
@@ -408,8 +424,8 @@ namespace OpenAuth.App
                         obj.BeforeDemandCode = "XQ" + DateTime.Now.ToString("yyyyMMdd") + createSerialNumber();//售前需求申请编号:XQ202201241453
 
                         obj.PredictDevCost = 2000;
-                        obj.TestEstimate = 5;
-                        obj.DemandEstimate = 5;
+                        obj.TestEstimate = 5 ;
+                        obj.DemandEstimate = 3;
                         obj = await UnitWork.AddAsync<BeforeSaleDemand, int>(obj);
 
                         //1、流程添加成功==>关联单据

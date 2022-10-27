@@ -40,6 +40,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using OpenAuth.App.Client.Request;
 using SAPbobsCOM;
+using DocumentFormat.OpenXml.Math;
 
 namespace OpenAuth.App.Order
 {
@@ -350,6 +351,7 @@ namespace OpenAuth.App.Order
             paramOut.Direction = ParameterDirection.Output;
             sqlParameters.Add(paramOut);
             DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, $"sp_common_pager", CommandType.StoredProcedure, sqlParameters);
+
             if (dt.Rows.Count > 0)
             {
                 tableData.Count = Convert.ToInt32(paramOut.Value);
@@ -360,6 +362,7 @@ namespace OpenAuth.App.Order
                 tableData.Count = 0;
                 rowCounts = 0;
             }
+            #region comment
             // dt = Sql.SAPSelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), pageSize, pageIndex, orderName, filterQuery, out rowCounts);
             //if (type.ToLower() == "ordr" || type.ToLower() == "opor")
             //{
@@ -380,10 +383,42 @@ namespace OpenAuth.App.Order
 
             //    }
             //}
+            #endregion
             if (type.ToLower() == "oqut")
             {
                 if (dt.Rows.Count > 0)
                 {
+                    //添加4.0 中间商 终端
+                    #region
+                    dt.Columns.Add("Flag", typeof(int));
+                    dt.Columns.Add("Terminals", typeof(String));
+                    var clientNoList = dt.AsEnumerable().Select(row => row.Field<string>("CardCode")).ToList();  //CardCode
+                    var reimbursementList = dt.AsEnumerable().Select(row => row.Field<int>("DocEntry").ToString()).ToList();
+                    var legitJobList = UnitWork.Find<wfa_job>(a => reimbursementList.Contains(a.sbo_itf_return) && a.sync_stat == 4 && a.job_type_id == 13).ToList();
+                    var legitJobIdList = legitJobList.Select(a => a.job_id).ToList();
+                    var jobrelations = UnitWork.Find<OpenAuth.Repository.Domain.JobClientRelation>(a => clientNoList.Contains(a.AffiliateData) && legitJobIdList.Contains(a.Jobid) && a.IsDelete == 0 && a.Origin ==2).ToList();
+                    foreach (var datarow in dt.AsEnumerable())
+                    {
+                        var specJob = legitJobList.Where(a => a.sbo_itf_return == datarow["DocEntry"].ToString()).FirstOrDefault();
+                        if (specJob != null)
+                        {
+                            var relation = jobrelations.Where(a => a.AffiliateData == datarow["CardCode"].ToString() && a.Jobid == specJob.job_id).FirstOrDefault();
+                            if (relation != null)
+                            {
+                                datarow["Flag"] = 1;
+                                datarow["Terminals"] = relation.Terminals;
+
+                            }
+                        }
+                        else
+                        {
+                            datarow["Flag"] = 0;
+                            datarow["Terminals"] = "";
+                       
+                        }
+                    }
+                    #endregion
+
                     //获取订单号
                     List<int> orderNos = (from d in dt.AsEnumerable() select d.Field<int>("DocEntry")).ToList();
                     string orderNo = string.Join(",", orderNos);

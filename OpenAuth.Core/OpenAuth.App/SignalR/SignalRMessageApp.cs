@@ -24,6 +24,18 @@ namespace OpenAuth.App.SignalR
             _hubContext = hubContext;
             _auth = auth;
         }
+
+        /// <summary>
+        /// 给合同管理用户发送消息
+        /// </summary>
+        /// <param name="req">给用户发送消息实体</param>
+        /// <returns></returns>
+        public async Task SendContractRoleMessage(SendRoleMessageReq req)
+        {
+            string userName = _auth.GetUserName();
+            await _hubContext.Clients.Groups(req.Role).SendAsync("ContractMessage", userName, req.Message);
+        }
+
         /// <summary>
         /// 给单个用户发消息
         /// </summary>
