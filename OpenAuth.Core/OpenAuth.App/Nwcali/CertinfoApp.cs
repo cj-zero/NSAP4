@@ -1945,11 +1945,11 @@ namespace OpenAuth.App
         {
             TableData result = new TableData();
             List<object> list = new List<object>();
-            int productionOrder = 0;
+            List<long> productionOrder = new List<long>();
             List<long> productionOrderList = new List<long>();
             if (req.OriginAbs != 0)
             {
-                productionOrder = await UnitWork.Find<product_owor>(null).Where(c => c.OriginAbs == req.OriginAbs).Select(c => c.DocEntry).FirstOrDefaultAsync();
+                productionOrder = await UnitWork.Find<product_owor>(null).Where(c => c.OriginAbs == req.OriginAbs).Select(c => (long)c.DocEntry).ToListAsync();
             }
             if (!string.IsNullOrWhiteSpace(req.ItemCode))
             {
@@ -1986,14 +1986,12 @@ namespace OpenAuth.App
                          join b in UnitWork.Find<DeviceCheckTask>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.UnitId, a.TestId, a.ChlId, a.LowGuid } equals new { b.EdgeGuid, b.SrvGuid, b.DevUid, b.UnitId, b.TestId, b.ChlId, b.LowGuid }
                          where a.CreateTime >= req.StartTime && a.CreateTime <= req.EndTime
                          select new { a.Id, a.OrderNo, a.GeneratorCode, a.Department, a.MidGuid, a.LowGuid, a.DevUid, a.UnitId, a.ChlId, a.TestId, a.CreateTime, b.TaskId, a.CreateUser })
-                       .WhereIf(req.OriginAbs != 0, c => c.OrderNo == productionOrder)
+                       .WhereIf(req.OriginAbs != 0, c => productionOrder.Contains(c.OrderNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.GeneratorCode), c => c.GeneratorCode.Contains(req.GeneratorCode))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), c => productionOrderList.Contains(c.OrderNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid));
             result.Count = query.Count();
-            var taskList = query.OrderBy(c => c.Id)
-                       .Skip((req.page - 1) * req.limit)
-                       .Take(req.limit).ToList();
+            var taskList =req.State==0?query.OrderBy(c => c.Id).Skip((req.page - 1) * req.limit).Take(req.limit).ToList(): query.OrderBy(c => c.Id).ToList();
             var orderIds = taskList.Select(c => c.OrderNo).Distinct().ToList();
             var taskIds = taskList.Where(c => !string.IsNullOrWhiteSpace(c.TaskId)).Select(c => c.TaskId).Distinct().ToList();
             var orderList = await UnitWork.Find<product_owor>(null).Where(c => orderIds.Contains(c.DocEntry)).Select(c => new { c.DocEntry, c.OriginAbs, c.ItemCode }).ToListAsync();
@@ -2046,15 +2044,22 @@ namespace OpenAuth.App
                 result.Message = $"wms guid获取sn失败! message={ex.Message}";
                 return result;
             }
-
+            if (req.State == 1 || req.State == 2)
+            {
+                result.Count = Convert.ToInt32(taskObj["data"]["Total"]);
+            }
             foreach (var item in taskList)
             {
                 var records = taskObj["data"]["records"].FirstOrDefault(c => c["taskID"].ToString() == item.TaskId);
                 var orderInfo = orderList.FirstOrDefault(c => c.DocEntry == item.OrderNo);
                 var snInfo = wmsSnGuids.FirstOrDefault(c => c.devGuid == item.LowGuid);
+                if ((req.State==1 || req.State==2) && records==null)
+                {
+                    continue;
+                }
                 list.Add(new
                 {
-                    OriginAbs = orderInfo.OriginAbs,
+                    OriginAbs = orderInfo.OriginAbs==0?"": orderInfo.OriginAbs.ToString(),
                     ItemCode = orderInfo == null ? "" : orderInfo.ItemCode,
                     item.GeneratorCode,
                     item.Department,
@@ -2069,7 +2074,7 @@ namespace OpenAuth.App
                     item.CreateUser,
                     begin = records == null ? "" : TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).Add(new TimeSpan((Convert.ToInt64(records["begin"]) * 10000000))).ToString("yyyy.MM.dd HH:mm:ss"),
                     end = records == null ? "" : TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).Add(new TimeSpan((Convert.ToInt64(records["end"]) * 10000000))).ToString("yyyy.MM.dd HH:mm:ss"),
-                    result = records == null ? "" : (records["end"].ToString().Equal("OK") ? "通过" : "失败"),
+                    result = records == null ? "" : (records["result"].ToString().Equal("OK") ? "通过" : "失败"),
                     power = records == null ? 0 : records["power"],
                     carbon = records == null ? 0 : records["carbon"],
                     duration = records == null ? 0 : records["duration"],
@@ -2090,11 +2095,11 @@ namespace OpenAuth.App
         {
             TableData result = new TableData();
             List<ExportBakingMachineRecordResp> list = new List<ExportBakingMachineRecordResp>();
-            int productionOrder = 0;
+            List<long> productionOrder = new List<long>();
             List<long> productionOrderList = new List<long>();
             if (req.OriginAbs != 0)
             {
-                productionOrder = await UnitWork.Find<product_owor>(null).Where(c => c.OriginAbs == req.OriginAbs).Select(c => c.DocEntry).FirstOrDefaultAsync();
+                productionOrder = await UnitWork.Find<product_owor>(null).Where(c => c.OriginAbs == req.OriginAbs).Select(c => (long)c.DocEntry).ToListAsync();
             }
             if (!string.IsNullOrWhiteSpace(req.ItemCode))
             {
@@ -2129,7 +2134,7 @@ namespace OpenAuth.App
                             join b in UnitWork.Find<DeviceCheckTask>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.UnitId, a.TestId, a.ChlId, a.LowGuid } equals new { b.EdgeGuid, b.SrvGuid, b.DevUid, b.UnitId, b.TestId, b.ChlId, b.LowGuid }
                             where a.CreateTime >= req.StartTime && a.CreateTime <= req.EndTime
                             select new { a.Id, a.OrderNo, a.GeneratorCode, a.Department, a.MidGuid, a.LowGuid, a.DevUid, a.UnitId, a.ChlId, a.TestId, a.CreateTime, b.TaskId, a.CreateUser })
-                       .WhereIf(req.OriginAbs != 0, c => c.OrderNo == productionOrder)
+                       .WhereIf(req.OriginAbs != 0, c => productionOrder.Contains(c.OrderNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.GeneratorCode), c => c.GeneratorCode.Contains(req.GeneratorCode))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), c => productionOrderList.Contains(c.OrderNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid)).OrderBy(c => c.Id);
@@ -2189,7 +2194,7 @@ namespace OpenAuth.App
                 var snInfo = wmsSnGuids.FirstOrDefault(c => c.devGuid == item.LowGuid);
                 list.Add(new ExportBakingMachineRecordResp
                 {
-                    OriginAbs = orderInfo.OriginAbs,
+                    OriginAbs = orderInfo.OriginAbs==0?"": orderInfo.OriginAbs.ToString(),
                     ItemCode = orderInfo == null ? "" : orderInfo.ItemCode,
                     GeneratorCode = item.GeneratorCode,
                     Department = item.Department,
@@ -2202,7 +2207,7 @@ namespace OpenAuth.App
                     TestId = item.TestId,
                     begin = records == null ? "" : TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).Add(new TimeSpan((Convert.ToInt64(records["begin"]) * 10000000))).ToString("yyyy.MM.dd HH:mm:ss"),
                     end = records == null ? "" : TimeZone.CurrentTimeZone.ToLocalTime(new DateTime(1970, 1, 1)).Add(new TimeSpan((Convert.ToInt64(records["end"]) * 10000000))).ToString("yyyy.MM.dd HH:mm:ss"),
-                    result = records == null ? "" : (records["end"].ToString().Equal("OK") ? "通过" : "失败"),
+                    result = records == null ? "" : (records["result"].ToString().Equal("OK") ? "通过" : "失败"),
                     power = records == null ? "" : records["power"].ToString(),
                     carbon = records == null ? "" : records["carbon"].ToString(),
                     duration = records == null ? "" : records["duration"].ToString(),

@@ -13,7 +13,7 @@ namespace OpenAuth.App.Nwcali.Response
     public class ExportBakingMachineRecordResp
     {
         [ExporterHeader(DisplayName = "销售单号")]
-        public int? OriginAbs { get; set; }
+        public string OriginAbs { get; set; }
 
 
         [ExporterHeader(DisplayName = "产品编码")]
