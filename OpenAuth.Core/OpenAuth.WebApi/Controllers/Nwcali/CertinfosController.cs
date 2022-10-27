@@ -143,6 +143,17 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 未生成证书 生成证书
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task CreateNwcailFileHelper2()
+        {
+            await _app.CreateNwcailFileHelper2();
+        }
+
+        /// <summary>
         /// 重新生成证书数据
         /// </summary>
         /// <param name="req"></param>
