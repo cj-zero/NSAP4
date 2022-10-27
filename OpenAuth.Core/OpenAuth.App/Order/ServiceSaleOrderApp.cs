@@ -5305,11 +5305,14 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             DateTime goodsToDate;
             DateTime.TryParse(bill.GoodsToDate, out goodsToDate);
             bill.GoodsToDate = goodsToDate.ToString("yyyy/MM/dd");
-            foreach (var files in bill.attachmentData)
+            if (bill.attachmentData != null)
             {
-                DateTime filetime;
-                DateTime.TryParse(files.filetime, out filetime);
-                files.filetime = filetime.ToString("yyyy/MM/dd hh:mm:ss");
+                foreach (var files in bill.attachmentData)
+                {
+                    DateTime filetime;
+                    DateTime.TryParse(files.filetime, out filetime);
+                    files.filetime = filetime.ToString("yyyy/MM/dd hh:mm:ss");
+                }
             }
             //if (bill.CustomFields.ToString().Contains("≯"))
             //{
