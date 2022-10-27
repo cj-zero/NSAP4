@@ -10,6 +10,8 @@ using OpenAuth.App.Order.ModelDto;
 using OpenAuth.App.Order.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository.Domain;
+using OpenAuth.App.CommonHelp;
+using OpenAuth.Repository.Extensions;
 using OpenAuth.Repository.Interface;
 using Serilog;
 using System;
@@ -29,6 +31,7 @@ namespace OpenAuth.WebApi.Controllers.Order
     [ApiExplorerSettings(GroupName = "Order")]
     public class SalesOrderController : Controller
     {
+        private UserDepartMsgHelp _userDepartMsgHelp;
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
         private readonly PayTermApp _payTermApp;
         private readonly IOptions<AppSetting> _appConfiguration;
@@ -36,7 +39,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         IUnitWork UnitWork;
         ServiceBaseApp _serviceBaseApp;
         MaterialDesignApp _materialdesignapp;
-        public SalesOrderController(IUnitWork UnitWork,PayTermApp payTermApp,  ServiceBaseApp _serviceBaseApp, IOptions<AppSetting> appConfiguration, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp, MaterialDesignApp materialdesignapp)
+        public SalesOrderController(UserDepartMsgHelp userDepartMsgHelp, IUnitWork UnitWork,PayTermApp payTermApp,  ServiceBaseApp _serviceBaseApp, IOptions<AppSetting> appConfiguration, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp, MaterialDesignApp materialdesignapp)
         {
             this.UnitWork = UnitWork;
             this._serviceBaseApp = _serviceBaseApp;
@@ -45,6 +48,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             _materialdesignapp = materialdesignapp;
             _payTermApp = payTermApp;
             _appConfiguration = appConfiguration;
+            _userDepartMsgHelp = userDepartMsgHelp;
         }
         #region 销售订单列表视图
         /// <summary>
@@ -90,7 +94,13 @@ namespace OpenAuth.WebApi.Controllers.Order
                 if (isOpen == "1")
                 {
                     DataTable dts = _serviceSaleOrderApp.SelectBillListInfo_ORDR(out rowCount, docEntrys, model, type, rata, true, UserID, SboID, _serviceSaleOrderApp.GetPagePowersByUrl("sales/SalesOrder.aspx", UserID).ViewSelfDepartment, DepID, true, true, sqlcont, sboname);
-                    result.Data = dts;
+                    List<SaleOrderDeptDto>  saleOrderDeptDtos = dts.Tolist<SaleOrderDeptDto>();
+                    foreach (SaleOrderDeptDto item in saleOrderDeptDtos)
+                    {
+                        item.DeptName = _userDepartMsgHelp.GetUserDepart(item.SlpCode);
+                    }
+
+                    result.Data = saleOrderDeptDtos;
                     result.Count = rowCount;
                 }
                 else
@@ -457,51 +467,15 @@ namespace OpenAuth.WebApi.Controllers.Order
                 //{
 
                 var data = _serviceSaleOrderApp.SelectBillView(model.limit, model.page, model.query, model.sortname, model.sortorder, type, ViewFull, ViewSelf, UserID, SboID, ViewSelfDepartment, DepID, ViewCustom, ViewSales, out rowCount);
-                //var progressAll = new DataTable().AsEnumerable();
-                //try
-                //{
-                //    progressAll = _materialdesignapp.GetProgressAll().AsEnumerable();
-                //}
-                //catch (Exception)
-                //{
-                //    progressAll = new DataTable().AsEnumerable();
-                //}
-
-                //var obj = from n in data
-                //          join p in progressAll
-                //          on new { DocEntry = n.Field<string>("docEntry1"), itemCode = n.Field<string>("itemCode") } equals new { DocEntry = p.Field<string>("DocEntry"), itemCode = p.Field<string>("itemCode") } into temp
-                //          from t in temp.DefaultIfEmpty()
-                //          select new
-                //          {
-
-                //              updateDate = n.Field<DateTime?>("updateDate"),
-                //              docEntry = n.Field<uint>("docEntry"),
-                //              cardCode = n.Field<string>("cardCode"),
-                //              cardName = n.Field<string>("CardName"),
-                //              itemCode = n.Field<string>("itemCode"),
-                //              dscription = n.Field<string>("dscription"),
-                //              quantity = n.Field<decimal>("quantity"),
-                //              price = n.Field<string>("price"),
-                //              lineTotal = n.Field<string>("lineTotal"),
-                //              docTotal = n.Field<string>("docTotal"),
-                //              openDocTotal = n.Field<string>("openDocTotal"),
-                //              createDate = n.Field<DateTime?>("createDate"),
-                //              slpCode = n.Field<Int16>("slpCode"),
-                //              comments = n.Field<string>("comments"),
-                //              docStatus = n.Field<string>("docStatus"),
-                //              printed = n.Field<string>("printed"),
-                //              slpName = n.Field<string>("slpName"),
-                //              docDueDate = n.Field<DateTime?>("docDueDate"),
-                //              lineNum = n.Field<uint>("lineNum"),
-                //              u_RelDoc = n.Field<string>("u_RelDoc"),
-                //              RecordGuid = t == null ? null : t.Field<string>("RecordGuid"),
-                //              progress = t == null ? 0 : t.Field<double>("progress"),
-                //              DocEntry1 = n.Field<string>("docEntry1"),
-                //          };
 
 
-                result.Data = data;
+                List<SaleOrderDetail> saleOrderDetails = data.Tolist<SaleOrderDetail>();
+                foreach (SaleOrderDetail dataRow in saleOrderDetails)
+                {
+                    dataRow.DeptName = _userDepartMsgHelp.GetUserDepart(dataRow.SlpCode);
+                }
 
+                result.Data = saleOrderDetails;
                 result.Count = rowCount;
                 //}
                 //else

@@ -18,7 +18,7 @@ using OpenAuth.App.Order;
 using OpenAuth.App.Response;
 using OpenAuth.App.Serve.Request;
 using OpenAuth.App.Order.Request;
-using OpenAuth.Repository;
+using OpenAuth.App.CommonHelp;
 using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 
@@ -26,13 +26,16 @@ namespace OpenAuth.App.ContractManager
 {
     public class ContractSealApp : OnlyUnitWorkBaeApp
     {
+        private UserDepartMsgHelp _userDepartMsgHelp;
+
         /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
-        public ContractSealApp(IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
+        public ContractSealApp(UserDepartMsgHelp userDepartMsgHelp,IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
         {
+            _userDepartMsgHelp = userDepartMsgHelp;
         }
 
         /// <summary>
@@ -81,8 +84,12 @@ namespace OpenAuth.App.ContractManager
                                       a.SealImageFileId,
                                       a.IsEnable,
                                       a.CreateUserId,
+                                      CreateUserName = a.CreateUserName,
+                                      CreateDeptName = _userDepartMsgHelp.GetUserOrgName(a.CreateUserId),
                                       a.CreateTime,
                                       a.UpdateUserId,
+                                      UpdateUserName = a.UpdateUserName,
+                                      UpdateDeptName = _userDepartMsgHelp.GetUserOrgName(a.UpdateUserId),
                                       a.UpdateTime,
                                       a.Remark,
                                       LastUserName = a.contractSealOperationHistoryList.Count() == 0 ? "" : a.contractSealOperationHistoryList.OrderByDescending(r => r.CreateTime).FirstOrDefault().CreateUserId,
@@ -144,6 +151,11 @@ namespace OpenAuth.App.ContractManager
                                               a.SealImageFileId,
                                               a.IsEnable,
                                               a.CreateUserId,
+                                              CreateUserName = a.CreateUserName,
+                                              CreateDeptName = _userDepartMsgHelp.GetUserOrgName(a.CreateUserId),
+                                              a.UpdateUserId,
+                                              UpdateUserName = a.UpdateUserName,
+                                              UpdateDeptName = _userDepartMsgHelp.GetUserOrgName(a.UpdateUserId),
                                               a.CreateTime,
                                               a.UpdateTime,
                                               a.Remark,
@@ -199,8 +211,10 @@ namespace OpenAuth.App.ContractManager
                 {
                     obj.Id = Guid.NewGuid().ToString();                    
                     obj.CreateTime = DateTime.Now;
-                    obj.CreateUserId = loginUser.Name;
+                    obj.CreateUserId = loginUser.Id;
+                    obj.CreateUserName = loginUser.Name;
                     obj.UpdateUserId = null;
+                    obj.UpdateUserName = null;
                     obj.UpdateTime = null;
 
                     //印章编号唯一
@@ -251,7 +265,8 @@ namespace OpenAuth.App.ContractManager
                     await UnitWork.UpdateAsync<ContractSeal>(r => r.Id == obj.Id, r => new ContractSeal
                     {
                         UpdateTime = DateTime.Now,
-                        UpdateUserId = loginContext.User.Name,
+                        UpdateUserId = loginContext.User.Id,
+                        UpdateUserName = loginContext.User.Name,
                         SealNo = obj.SealNo,
                         SealName = obj.SealName,
                         CompanyType = obj.CompanyType,
@@ -260,6 +275,7 @@ namespace OpenAuth.App.ContractManager
                         IsEnable = obj.IsEnable,
                         Remark = obj.Remark,
                         CreateUserId = obj.CreateUserId,
+                        CreateUserName = obj.CreateUserName,
                         CreateTime = obj.CreateTime
                     });
 

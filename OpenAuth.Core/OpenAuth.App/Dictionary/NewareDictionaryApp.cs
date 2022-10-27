@@ -10,12 +10,14 @@ using OpenAuth.App.Interface;
 using OpenAuth.Repository.Interface;
 using OpenAuth.Repository.Domain;
 using OpenAuth.App.Request;
+using OpenAuth.App.CommonHelp;
 using Microsoft.EntityFrameworkCore;
 
 namespace OpenAuth.App.Dictionary
 {
     public class NewareDictionaryApp : OnlyUnitWorkBaeApp
     {
+        private UserDepartMsgHelp _userDepartMsgHelp;
         private IUnitWork _UnitWork;
         private IAuth _auth;
 
@@ -24,10 +26,11 @@ namespace OpenAuth.App.Dictionary
         /// </summary>
         /// <param name="unitWork"></param>
         /// <param name="auth"></param>
-        public NewareDictionaryApp(IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
+        public NewareDictionaryApp(UserDepartMsgHelp userDepartMsgHelp, IUnitWork unitWork, IAuth auth) : base(unitWork, auth)
         {
             _UnitWork = unitWork;
             _auth = auth;
+            _userDepartMsgHelp = userDepartMsgHelp;
         }
 
         /// <summary>
@@ -50,11 +53,23 @@ namespace OpenAuth.App.Dictionary
                                          .WhereIf(!string.IsNullOrWhiteSpace(request.English), r => r.English.Contains(request.English))
                                          .WhereIf(!string.IsNullOrWhiteSpace(request.ChineseExplain), r => r.ChineseExplain.Contains(request.ChineseExplain))
                                          .WhereIf(!string.IsNullOrWhiteSpace(request.EnglishExplain), r => r.EnglishExplain.Contains(request.EnglishExplain))
-                                         .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUser), r => r.CreateUser.Contains(request.CreateUser));
+                                         .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUser), r => r.CreateUser.Contains(request.CreateUser))
+                                         .WhereIf(!string.IsNullOrWhiteSpace(request.CreateUserName), r => r.CreateUserName.Contains(request.CreateUserName));
 
             var newareDictionarieList = await newareDictionaries.Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
             result.Count = await newareDictionaries.CountAsync();
-            result.Data = newareDictionarieList;
+            result.Data = newareDictionarieList.Select(r => new NewareDictionary 
+            { 
+                Id = r.Id,
+                Chinese = r.Chinese,
+                English = r.English,
+                ChineseExplain = r.ChineseExplain,
+                EnglishExplain = r.EnglishExplain,
+                CreateUser = r.CreateUser,
+                CreateUserName = _userDepartMsgHelp.GetUserOrgName(r.CreateUser) + r.CreateUserName,
+                CreateTime = r.CreateTime,
+                UpdateTime = r.UpdateTime
+            }).ToList();
             return result;
         }
 
@@ -76,7 +91,18 @@ namespace OpenAuth.App.Dictionary
             var newareDictionaries = await UnitWork.Find<NewareDictionary>(r => r.Id == id).ToListAsync();
             if (newareDictionaries != null)
             {
-                result.Data = newareDictionaries;
+                result.Data = newareDictionaries.Select(r => new NewareDictionary
+                {
+                    Id = r.Id,
+                    Chinese = r.Chinese,
+                    English = r.English,
+                    ChineseExplain = r.ChineseExplain,
+                    EnglishExplain = r.EnglishExplain,
+                    CreateUser = r.CreateUser,
+                    CreateUserName = _userDepartMsgHelp.GetUserOrgName(r.CreateUser) + r.CreateUserName,
+                    CreateTime = r.CreateTime,
+                    UpdateTime = r.UpdateTime
+                }).ToList(); ;
             }
             else
             {
@@ -106,7 +132,8 @@ namespace OpenAuth.App.Dictionary
                 try
                 {
                     obj.CreateTime = DateTime.Now;
-                    obj.CreateUser = loginUser.Name;
+                    obj.CreateUser = loginUser.Id;
+                    obj.CreateUserName = loginUser.Name;
                     obj.UpdateTime = null;
                     obj = await UnitWork.AddAsync<NewareDictionary, int>(obj);
                     await UnitWork.SaveAsync();
@@ -149,6 +176,7 @@ namespace OpenAuth.App.Dictionary
                         ChineseExplain = obj.ChineseExplain,
                         EnglishExplain = obj.EnglishExplain,
                         CreateUser = obj.CreateUser,
+                        CreateUserName = obj.CreateUserName,
                         CreateTime = obj.CreateTime
                     });
 

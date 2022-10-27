@@ -152,7 +152,7 @@ namespace OpenAuth.App.Order
         {
             StringBuilder tableName = new StringBuilder();
             StringBuilder filedName = new StringBuilder();
-            filedName.Append("ROW_NUMBER() OVER (ORDER BY a.job_id) RowNum,'', a.job_id,c.job_type_nm,a.job_nm,b.user_nm,a.job_state,a.upd_dt,a.remarks,c.job_type_id,a.step_id,a.card_code,");
+            filedName.Append("ROW_NUMBER() OVER (ORDER BY a.job_id) RowNum,'', a.job_id,c.job_type_nm,a.job_nm,b.user_nm,a.user_id,a.job_state,a.upd_dt,a.remarks,c.job_type_id,a.step_id,a.card_code,");
             filedName.Append("CASE WHEN a.card_name IS NULL THEN NULL WHEN a.card_name = '' THEN '' WHEN a.card_name IS NOT NULL AND a.card_name <> '' AND " + ViewCustom + " THEN a.card_name ELSE '******' END AS CardName,");
             filedName.Append("CASE WHEN a.doc_total IS NULL THEN NULL WHEN a.doc_total = '' THEN '' WHEN a.doc_total IS NOT NULL AND a.doc_total <> '' AND " + ViewSales + " THEN a.doc_total ELSE '******' END AS DocTotal,");
             filedName.Append("a.base_type,a.base_entry,d.step_nm,a.sbo_id,f.page_url,d.audit_level,g.sbo_nm");
