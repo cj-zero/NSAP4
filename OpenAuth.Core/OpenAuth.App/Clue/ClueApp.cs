@@ -219,26 +219,6 @@ namespace OpenAuth.App
             return result;
         }
 
-
-        /// <summary>
-        /// 线索状态轮转
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="status"></param>
-        /// <returns></returns>
-        public async Task<Infrastructure.Response> ClueStatusRotation(int id, int status)
-        {
-            var result = new Infrastructure.Response();
-            await UnitWork.UpdateAsync<Repository.Domain.Serve.Clue>(c => c.Id == id, x => new Repository.Domain.Serve.Clue
-            {
-                Status = status
-            });
-            await UnitWork.SaveAsync();
-
-            return result;
-        }
-
-
         /// <summary>
         /// 修改线索的状态
         /// </summary>
