@@ -27,7 +27,10 @@ namespace OpenAuth.Repository.Domain
             this.ContractFileTypeId = string.Empty;
             this.FileId = string.Empty;
             this.CreateUploadId = string.Empty;
+            this.CreateUploadName = string.Empty;
             this.CreateUploadTime = DateTime.Now;
+            this.UpdateUserId = string.Empty;
+            this.UpdateUserName = string.Empty;
         }
 
         /// <summary>
@@ -55,10 +58,16 @@ namespace OpenAuth.Repository.Domain
         public bool IsSeal { get; set; }
 
         /// <summary>
+        /// 上传人Id
+        /// </summary>
+        [Description("上传人Id")]
+        public string CreateUploadId { get; set; }
+
+        /// <summary>
         /// 上传人
         /// </summary>
         [Description("上传人")]
-        public string CreateUploadId { get; set; }
+        public string CreateUploadName { get; set; }
 
         /// <summary>
         /// 上传时间
@@ -71,6 +80,12 @@ namespace OpenAuth.Repository.Domain
         /// </summary>
         [Description("更新人")]
         public string UpdateUserId { get; set; }
+
+        /// <summary>
+        /// 更新人
+        /// </summary>
+        [Description("更新人")]
+        public string UpdateUserName { get; set; }
 
         /// <summary>
         /// 更新时间

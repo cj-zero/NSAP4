@@ -48,10 +48,16 @@ namespace OpenAuth.Repository.Domain
         public string EnglishExplain { get; set; }
 
         /// <summary>
+        /// 创建人Id
+        /// </summary>
+        [Description("创建人Id")]
+        public string CreateUser { get; set; }
+
+        /// <summary>
         /// 创建人
         /// </summary>
         [Description("创建人")]
-        public string CreateUser { get; set; }
+        public string CreateUserName { get; set; }
 
         /// <summary>
         /// 创建时间
