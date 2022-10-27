@@ -677,6 +677,18 @@ namespace OpenAuth.App
             return result;
         }
         /// <summary>
+        /// 根据UserId获取PassportID/AppUserID
+        /// </summary>
+        /// <param name="AppUserId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetAppUserIDByErpUserId(string Id)
+        {
+            var result = new TableData();
+            var userInfo = await UnitWork.Find<AppUserMap>(w => w.UserID == Id).Select(s => new {s.UserID, s.AppUserId , s.PassPortId }).FirstOrDefaultAsync();
+            result.Data = userInfo;
+            return result;
+        }
+        /// <summary>
         /// 获取erp3.0人员
         /// </summary>
         /// <param name="request"></param>
