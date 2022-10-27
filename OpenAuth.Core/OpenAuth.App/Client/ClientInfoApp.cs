@@ -1513,44 +1513,7 @@ namespace OpenAuth.App.Client
         }
 
         #endregion
-        #region 查询业务伙伴机会
-        /// <summary>
-        /// 查询业务伙伴机会
-        /// </summary>
-        /// <returns></returns>
-        public DataTable SelectClientClueData(string CardCode, string SboId)
-        {
-            DataTable dt = new DataTable();
-            var loginContext = _auth.GetCurrentUser();
-            if (loginContext == null)
-            {
-                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
-            }
-            string sql = "select SerialNumber,c.CreateUser SlpName,c.CreateTime clueDate,od.CreateDate clientDate from clue c";
-            sql += " join nsap_bone.crm_ocrd od on c.CardCode = od.CardCode and od.sbo_id = " + SboId + " where od.CardCode = '" + CardCode + "'";
-            dt = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql, CommandType.Text);
-            for (int i = 0; i < dt.Rows.Count; i++)
-            {
-                string username = dt.Rows[i]["SlpName"].ToString();
-                string dept = "";
-                //销售员部门数据
-                var deptData = (from s in UnitWork.Find<base_user>(q => q.user_nm == username)
-                                join ud in UnitWork.Find<base_user_detail>(null) on s.user_id equals ud.user_id
-                                join d in UnitWork.Find<base_dep>(null) on ud.dep_id equals d.dep_id
-                                select new
-                                {
-                                    dept = d.dep_alias
-                                }).Distinct().ToList();
-                if (deptData.Count > 0)
-                {
-                    dept = deptData[0].dept;
-                }
-                dt.Rows[i]["SlpName"] = dept + "-" + username;
-            }
-            return dt;
-        }
 
-        #endregion
         #region 查询所有技术员
         /// <summary>
         /// 查询所有技术员
