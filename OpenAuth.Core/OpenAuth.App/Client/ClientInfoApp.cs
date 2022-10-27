@@ -34,6 +34,7 @@ using OpenAuth.App.ClientRelation;
 using DocumentFormat.OpenXml.Math;
 using OpenAuth.App.Request;
 using Microsoft.Extensions.Logging;
+using EdgeCmd;
 
 namespace OpenAuth.App.Client
 {
@@ -71,6 +72,17 @@ namespace OpenAuth.App.Client
             addClientInfoReq.clientInfo.SlpName = loginUser.Name;
             string result = "";
             int userID = _serviceBaseApp.GetUserNaspId();
+            //20221021 lims推广员使用线索转客户功能无法新增客户
+            if (addClientInfoReq.baseEntry > 0 && addClientInfoReq.type == "Add")
+            {
+                var erpLims = UnitWork.FindSingle<LimsInfo>(u => u.UserId == loginUser.Id && u.Type == "LIMS");
+                if (erpLims != null)
+                {
+                    _logger.LogWarning("lims推广员使用线索转客户功能无法新增客户,参数为：" + JsonConvert.SerializeObject(addClientInfoReq));
+                    return "0";
+                }
+            }
+
             clientOCRD OCRD = BulidClientJob(addClientInfoReq.clientInfo);
             OCRD.SboId = "1";
             if (OCRD.CardType == "S")
@@ -87,6 +99,15 @@ namespace OpenAuth.App.Client
                 bool updParaCardName = UpdateWfaJobPara(result, 2, OCRD.CardName);
                 bool updParaOperateType = UpdateWfaJobPara(result, 3, OCRD.ClientOperateType);
                 bool updParaAppChange = UpdateWfaJobPara(result, 4, OCRD.IsApplicationChange);
+                //添加4.0关系
+                await _clientRelationApp.AddJobRelations(new ClientRelation.Request.AddJobRelReq
+                {
+                    Jobid = Convert.ToInt32(result),
+                    Terminals = addClientInfoReq.Terminals,
+                    Creator = loginUser.Name,
+                    CreatorId = loginUser.Id,
+                    Origin = 0
+                });
                 //新增更新草稿客户关系
                 await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
                 {
@@ -94,9 +115,10 @@ namespace OpenAuth.App.Client
                     ClientNo = "",
                     Flag = OCRD.is_reseller == "N" ? 0 : 1,
                     ClientName = OCRD.CardName,
-                    EndCustomerName = OCRD.EndCustomerName,
+                    EndCustomerName = addClientInfoReq.Terminals,
                     Operator = loginUser.Name,
-                    Operatorid = loginUser.Id
+                    Operatorid = loginUser.Id,
+                    Initial = 0
                 });
 
             }
@@ -121,15 +143,25 @@ namespace OpenAuth.App.Client
                         bool updParaAppChange = UpdateWfaJobPara(result, 4, OCRD.IsApplicationChange);//该参数决定流程跳转
                         result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(result), userID, OCRD.FreeText, "", 0);
                         ret = SaveCrmAuditInfo1(JobId, userID, rJobNm);
+                        //添加4.0关系
+                        await _clientRelationApp.AddJobRelations(new ClientRelation.Request.AddJobRelReq
+                        {
+                            Jobid = Convert.ToInt32(JobId),
+                            Terminals = addClientInfoReq.Terminals,
+                            Creator = loginUser.Name,
+                            CreatorId = loginUser.Id,
+                            Origin  = 0
+                        });
                         await _clientRelationApp.SaveScriptRelations(new ClientRelation.Request.JobScriptReq
                         {
                             JobId = Convert.ToInt32(JobId),
                             ClientNo = "",
                             Flag = OCRD.is_reseller == "N" ? 0 : 1,
                             ClientName = OCRD.CardName,
-                            EndCustomerName = OCRD.EndCustomerName,
+                            EndCustomerName = addClientInfoReq.Terminals,
                             Operator = loginUser.Name,
-                            Operatorid = loginUser.Id
+                            Operatorid = loginUser.Id,
+                            Initial = 0
                         });
                     }
                     else if (rJobNm == "修改业务伙伴")
@@ -534,6 +566,7 @@ namespace OpenAuth.App.Client
                 tableName.Append("A.Phone1,A.Cellular, ");//,A.Balance,H.Balance AS BalanceTotal
                 tableName.Append("A.DNotesBal,A.OrdersBal,A.OprCount,A.upd_dt AS UpdateDate,A.SlpCode,A.DfTcnician ");
                 tableName.Append(",IFNULL(A.Balance,0) as Balance,0.00 as BalanceTotal ");
+                tableName.Append(", case  when LOCATE(\"C\", Y.SubNo)  > 0  ||  LOCATE(\"C\", Y.ParentNo) > 0  then 1  ELSE 0 end as relationFlag ");
                 tableName.Append(" , A.validFor,A.validFrom,A.validTo,A.ValidComm,A.frozenFor,A.frozenFrom,A.frozenTo,A.FrozenComm,A.QryGroup2,A.QryGroup3 ");
                 tableName.Append(",C.GroupName,A.Free_Text");
                 //90天内未清收款金额
@@ -554,6 +587,7 @@ namespace OpenAuth.App.Client
                 tableName.AppendFormat("LEFT JOIN {0}.crm_OCST G ON G.Code=A.State1 ", "nsap_bone");
                 tableName.AppendFormat("LEFT JOIN {0}.wfa_job H ON H.sbo_itf_return=A.CardCode ", "nsap_base");
                 tableName.AppendFormat("LEFT JOIN {0}.clue I ON I.Id=H.base_entry", "nsap_serve");
+                tableName.AppendFormat("LEFT JOIN  (SELECT c.Id, c.SubNo ,c.ClientNo, c.ParentNo, c.IsActive, c.IsDelete, c.ScriptFlag,ROW_NUMBER() OVER (PARTITION BY ClientNo ORDER BY CreateDate DESC) rn from {0}.clientrelation c)   Y ON Y.ClientNo = A.CardCode  AND Y.IsActive =1 AND Y.ScriptFlag =0 AND   Y.rn = 1  AND  Y.IsDelete = 0   ", "erp4");
                 tableName.AppendFormat("LEFT JOIN {0}.cluefollowup J ON J.ClueId=I.Id ORDER BY b.FollowUpTime DESC LIMIT 1 ", "nsap_serve");
                 //tableName.AppendFormat("LEFT JOIN {0}.crm_balance_sum H ON H.CardCode=A.CardCode) T ", "nsap_bone");
                 tableName.Append(") T");
@@ -1479,6 +1513,7 @@ namespace OpenAuth.App.Client
         }
 
         #endregion
+
         #region 查询所有技术员
         /// <summary>
         /// 查询所有技术员
@@ -1575,9 +1610,10 @@ namespace OpenAuth.App.Client
                         ClientNo = "",
                         Flag = OCRD.is_reseller == "Y" ? 1 : 0,
                         ClientName = OCRD.CardName,
-                        EndCustomerName = OCRD.EndCustomerName,
+                        EndCustomerName = updateClientJobReq.Terminals,
                         Operator = loginUser.Name,
-                        Operatorid = loginUser.Id
+                        Operatorid = loginUser.Id,
+                        Initial = 1
                     });
                 }
 
@@ -1599,9 +1635,10 @@ namespace OpenAuth.App.Client
                         ClientNo = "",
                         Flag = OCRD.is_reseller == "Y" ? 1 : 0,
                         ClientName = OCRD.CardName,
-                        EndCustomerName = OCRD.EndCustomerName,
+                        EndCustomerName = updateClientJobReq.Terminals,
                         Operator = loginUser.Name,
-                        Operatorid = loginUser.Id
+                        Operatorid = loginUser.Id,
+                        Initial = 1
                     });
                     result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(updateClientJobReq.JobId), UserId, OCRD.FreeText, "", 0);
                     if (result == "1")
@@ -1651,9 +1688,10 @@ namespace OpenAuth.App.Client
                         ClientNo = "",
                         Flag = OCRD.is_reseller == "Y" ? 1 : 0,
                         ClientName = OCRD.CardName,
-                        EndCustomerName = OCRD.EndCustomerName,
+                        EndCustomerName = updateClientJobReq.Terminals,
                         Operator = loginUser.Name,
-                        Operatorid = loginUser.Id
+                        Operatorid = loginUser.Id,
+                        Initial = 1
                     });
 
                 }
@@ -1674,8 +1712,9 @@ namespace OpenAuth.App.Client
         /// <summary>
         /// 保存业务伙伴审核的录入方案
         /// </summary>
-        public async Task<string> SaveCrmAuditInfo(string AuditType, string CardCode, string DfTcnician, string JobId)
+        public async Task<Infrastructure.Response> SaveCrmAuditInfo(string AuditType, string CardCode, string DfTcnician, string JobId)
         {
+            Infrastructure.Response rsp = new Infrastructure.Response();
             clientOCRD client = new clientOCRD();
             client = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(JobId));
             client.ChangeType = AuditType;
@@ -1738,15 +1777,17 @@ namespace OpenAuth.App.Client
 
                 //}
             }
-            string rJobNm = string.Format("{0}{1}", client.ClientOperateType == "edit" ? "修改" : "添加", client.CardType == "S" ? "供应商" : "业务伙伴");
+            string rJobNm = string.Format("{0}{1}", client.ChangeType == "edit" ? "修改" : "添加", client.CardType == "S" ? "供应商" : "业务伙伴");
             byte[] job_data = ByteExtension.ToSerialize(client);
-            return UpdateAuditJob(JobId, rJobNm, client.FreeText.FilterESC(), job_data, false) ? "1" : "0";
-
+            var finalResult = UpdateAuditJob(JobId, rJobNm, client.FreeText.FilterESC(), job_data, false) ? "1" : "0";
+            rsp.Message = finalResult;
+            rsp.Code = 200;
+            return rsp;
         }
         #endregion
         #region 审核
         /// <summary>
-        /// 审核
+        /// 审核 next
         /// </summary>
         public string AuditResubmitNext(int jobID, int userID, string recommend, string auditOpinionid)
         {
@@ -2826,23 +2867,38 @@ namespace OpenAuth.App.Client
                 try
                 {
                     await UnitWork.BatchAddAsync<CustomerList, int>(customerLists.ToArray());
-                    await UnitWork.UpdateAsync<OCRD>(c => customerLists.Select(x => x.CustomerNo).Contains(c.CardCode), x => new OCRD
+
+                    string FuncID = _serviceSaleOrderApp.GetJobTypeByAddress("client/clientAssignSeller.aspx");
+
+                    clientOCRD client = new clientOCRD();
+                    client.CardCode = req.CardCode;
+                    client.SlpCode = "1054";
+                    client.SboId = "1";         //帐套
+                    byte[] job_data = ByteExtension.ToSerialize(client);
+                    string job_id = _serviceSaleOrderApp.WorkflowBuild("业务伙伴分配销售员", Convert.ToInt32(FuncID), userInfo.User.User_Id.Value, job_data, "业务伙伴分配销售员", 1, "", "", 0, 0, 0, "BOneAPI", "NSAP.B1Api.BOneOCRDAssign");
+                    if (int.Parse(job_id) > 0)
                     {
-                        SlpCode = null
-                    });
-                    await UnitWork.AddAsync<CustomerMoveHistory, int>(new CustomerMoveHistory
-                    {
-                        CardCode = req.CardCode,
-                        CardName = req.CardName,
-                        SlpCode = slpInfo.SlpCode,
-                        SlpName = slpInfo.SlpName,
-                        MoveInType = "主动移入",
-                        Remark = req.Remark,
-                        CreateTime = DateTime.Now,
-                        CreateUser = userName,
-                        UpdateTime = DateTime.Now,
-                        UpdateUser = userName
-                    });
+                        string re = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(job_id), userInfo.User.User_Id.Value, "业务伙伴分配销售员", "", 0);
+                        //如果成功,则将客户从公海中移出(如果有的话)
+                        if (re == "2")
+                        {
+                            await UnitWork.AddAsync<CustomerMoveHistory, int>(new CustomerMoveHistory
+                            {
+                                CardCode = req.CardCode,
+                                CardName = req.CardName,
+                                SlpCode = slpInfo.SlpCode,
+                                SlpName = slpInfo.SlpName,
+                                MoveInType = "主动移入",
+                                Remark = req.Remark,
+                                CreateTime = DateTime.Now,
+                                CreateUser = userName,
+                                UpdateTime = DateTime.Now,
+                                UpdateUser = userName
+                            });
+                        }
+                    }
+                    // remove 4.0 relation if it exists
+                    await _clientRelationApp.RejectJobRelations(req.CardCode);
                     await UnitWork.SaveAsync();
                     await tran.CommitAsync();
                 }
