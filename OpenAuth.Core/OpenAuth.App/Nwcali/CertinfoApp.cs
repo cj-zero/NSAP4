@@ -1962,6 +1962,7 @@ namespace OpenAuth.App
             if (!string.IsNullOrWhiteSpace(req.Sn))
             {
                 var b01List = new List<string>();
+                b01List.Add(req.Sn);
                 var wmsAccessToken = _stepVersionApp.WmsAccessToken();
                 if (string.IsNullOrWhiteSpace(wmsAccessToken))
                 {
@@ -2106,6 +2107,7 @@ namespace OpenAuth.App
             if (!string.IsNullOrWhiteSpace(req.Sn))
             {
                 var b01List = new List<string>();
+                b01List.Add(req.Sn);
                 var wmsAccessToken = _stepVersionApp.WmsAccessToken();
                 if (string.IsNullOrWhiteSpace(wmsAccessToken))
                 {
