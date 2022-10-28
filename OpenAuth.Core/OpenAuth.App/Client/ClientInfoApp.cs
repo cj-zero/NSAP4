@@ -2332,7 +2332,21 @@ namespace OpenAuth.App.Client
 
                 #region 搜索条件
                 strSql.AppendFormat("WHERE sbo_id={0} ", SboId);
+                var queryFlag = false;
                 if (!string.IsNullOrEmpty(Query))
+                {
+                    string[] queryArray = Query.Split('`');
+                    for (int i = 0; i < queryArray.Length; i++)
+                    {
+                        string[] p = queryArray[i].Split(':');
+                        if (!string.IsNullOrEmpty(p[1]))
+                        {
+                            queryFlag = true;
+                        }
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(Query)&& queryFlag)
                 {
                     strSql.Append(" AND (  ");
                     string[] queryArray = Query.Split('`');
@@ -2359,14 +2373,13 @@ namespace OpenAuth.App.Client
                         }
                     }
 
-                    if (queryArray.Length > 0)
+                    if (queryArray.Length > 0&& queryFlag)
                     {
                         strSql.Append(" ) ");
                     }
 
                 }
-
-                if (!string.IsNullOrEmpty(Query))
+                if (!string.IsNullOrEmpty(Query) && queryFlag)
                 {
                     string[] queryArray = Query.Split('`');
                     for (int i = 0; i < queryArray.Length; i++)
@@ -2390,7 +2403,7 @@ namespace OpenAuth.App.Client
                         }
                     }
                 }
-                if (!string.IsNullOrEmpty(Query))
+                if (!string.IsNullOrEmpty(Query) && queryFlag)
                 {
                     strSql.Append(" ) ");
                 }
