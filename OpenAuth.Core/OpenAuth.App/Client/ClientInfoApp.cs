@@ -70,10 +70,10 @@ namespace OpenAuth.App.Client
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             //20221027修改将文件置空，文件已经保存在4.0
-            if (isEdit)
-            {
-                addClientInfoReq.clientInfo.FilesDetails = new List<billAttchmentReq>();
-            }
+            //if (isEdit)
+            //{
+            //    addClientInfoReq.clientInfo.FilesDetails = new List<billAttchmentReq>();
+            //}
             var loginUser = loginContext.User;
             addClientInfoReq.clientInfo.SlpName = loginUser.Name;
             string result = "";
