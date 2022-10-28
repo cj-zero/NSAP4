@@ -2176,7 +2176,7 @@ namespace OpenAuth.App.Client
             pubSql += "D.Phone1,D.Cellular,D.Balance,D.U_Name,D.U_EndCustomerName,D.U_EndCustomerContact,{0} FROM {1}.crm_OCRD D ";
             pubSql += "LEFT JOIN {1}.crm_OCRY Y ON Y.Code=D.MailCountr LEFT JOIN {1}.crm_OCST T ON T.Code=D.State2 ";
             pubSql += "LEFT JOIN {1}.crm_OSLP P ON P.SlpCode=D.SlpCode AND P.sbo_id=D.sbo_id ";
-            string strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,0 AS Similarity12,  case  when Flag is null then 0 ELSE Flag END as IsFlag , ClueId   ";
+            string strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,0 AS Similarity12   ";
 
             StringBuilder strSql = new StringBuilder();
             strSql.Append("SELECT   sbo_id,CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact,");
@@ -2186,7 +2186,7 @@ namespace OpenAuth.App.Client
             }
             else
             {
-                strSql.Append("Similarity1, Similarity2, Similarity3, Similarity4, Similarity5, Similarity6, Similarity7, Similarity8, Similarity9, Similarity10,Similarity11,Similarity12,DfTcnician, case  when Flag is null then 0 ELSE Flag END as IsFlag , ClueId  FROM ( ");
+                strSql.Append("Similarity1, Similarity2, Similarity3, Similarity4, Similarity5, Similarity6, Similarity7, Similarity8, Similarity9, Similarity10,Similarity11,Similarity12,DfTcnician  FROM ( ");
             }
           
 
@@ -2274,7 +2274,7 @@ namespace OpenAuth.App.Client
             {  //搜索当前业务伙伴相似
                 strSql.Append("SELECT sbo_id,E.CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact,");
                 strSql.Append("SUM(Similarity1) AS Similarity1,SUM(Similarity2) AS Similarity2,SUM(Similarity3) AS Similarity3,SUM(Similarity4) AS Similarity4,SUM(Similarity5) AS Similarity5,");
-                strSql.Append("SUM(Similarity6) AS Similarity6,SUM(Similarity7) AS Similarity7,SUM(Similarity8) AS Similarity8,SUM(Similarity9) AS Similarity9,SUM(Similarity10) AS Similarity10,SUM(Similarity11) AS Similarity11,SUM(Similarity12) AS Similarity12,DfTcnician,   Y.Flag , Z.SerialNumber as ClueId  ");
+                strSql.Append("SUM(Similarity6) AS Similarity6,SUM(Similarity7) AS Similarity7,SUM(Similarity8) AS Similarity8,SUM(Similarity9) AS Similarity9,SUM(Similarity10) AS Similarity10,SUM(Similarity11) AS Similarity11,SUM(Similarity12) AS Similarity12,DfTcnician  ");
                 strSql.Append(" FROM (");
                 #region CardName
                 //==
@@ -2403,8 +2403,8 @@ namespace OpenAuth.App.Client
                 }
                 #endregion
                 strSql.Append(" ) AS E ");
-                strSql.Append(" LEFT JOIN  (SELECT c.Id, c.SubNo ,c.ClientNo,c.Flag , c.IsActive, c.ParentNo, c.IsDelete, c.ScriptFlag,ROW_NUMBER() OVER (PARTITION BY ClientNo ORDER BY CreateDate  DESC) rn from erp4.clientrelation c)   Y ON Y.ClientNo = E.CardCode AND Y.Flag !=2  AND Y.IsActive =1 AND Y.ScriptFlag =0 AND   Y.rn = 1  AND  Y.IsDelete = 0    ");
-                strSql.Append("  LEFT JOIN  (SELECT SerialNumber,CardCode from  erp4_serve.clue) Z  ON Z.CardCode = E.CardCode      ");
+                //strSql.Append(" LEFT JOIN  (SELECT c.Id, c.SubNo ,c.ClientNo,c.Flag , c.IsActive, c.ParentNo, c.IsDelete, c.ScriptFlag,ROW_NUMBER() OVER (PARTITION BY ClientNo ORDER BY CreateDate  DESC) rn from erp4.clientrelation c)   Y ON Y.ClientNo = E.CardCode AND Y.Flag !=2  AND Y.IsActive =1 AND Y.ScriptFlag =0 AND   Y.rn = 1  AND  Y.IsDelete = 0    ");
+                //strSql.Append("  LEFT JOIN  (SELECT SerialNumber,CardCode from  erp4_serve.clue) Z  ON Z.CardCode = E.CardCode      ");
                 strSql.Append("  LEFT JOIN (SELECT GROUP_CONCAT(b.`Name`) as multiname ,GROUP_CONCAT(b.Tel1) as multiTel,GROUP_CONCAT(b.Cellolar) as multiCell ,a.CardCode  from nsap_bone.crm_OCRD a left join nsap_bone.crm_ocpr b on a.CardCode = b.CardCode  GROUP BY a.CardCode)  k on k.CardCode = E.CardCode      ");
                 strSql.Append("  LEFT JOIN (SELECT GROUP_CONCAT(b.Address) as multiAddress ,GROUP_CONCAT(b.Building) as multiBuilding ,a.CardCode  from nsap_bone.crm_OCRD a left join nsap_bone.crm_crd1 b on a.CardCode = b.CardCode  GROUP BY a.CardCode)  T on T.CardCode = E.CardCode    ");
 
