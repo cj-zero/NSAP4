@@ -606,8 +606,8 @@ namespace OpenAuth.App.Client
                 string slpname = clientTable.Rows[i]["SlpName"].ToString();
                 string technician = clientTable.Rows[i]["Technician"].ToString();
                 var recepUserOrgInfo = GetUserOrgInfo("", slpname + "," + technician);
-                clientTable.Rows[i]["SlpName"] = recepUserOrgInfo.Select(q => q.Name == slpname) == null ? clientTable.Rows[i]["SlpName"] : recepUserOrgInfo.FirstOrDefault(q => q.Name == slpname).OrgName + "-" + clientTable.Rows[i]["SlpName"];
-                clientTable.Rows[i]["Technician"] = recepUserOrgInfo.Select(q => q.Name == technician) == null ? clientTable.Rows[i]["Technician"] : recepUserOrgInfo.FirstOrDefault(q => q.Name == technician).OrgName + "-" + clientTable.Rows[i]["Technician"];
+                clientTable.Rows[i]["SlpName"] = recepUserOrgInfo.FirstOrDefault(q => q.Name == slpname) == null ? clientTable.Rows[i]["SlpName"] : recepUserOrgInfo.FirstOrDefault(q => q.Name == slpname).OrgName + "-" + clientTable.Rows[i]["SlpName"];
+                clientTable.Rows[i]["Technician"] = recepUserOrgInfo.FirstOrDefault(q => q.Name == technician) == null ? clientTable.Rows[i]["Technician"] : recepUserOrgInfo.FirstOrDefault(q => q.Name == technician).OrgName + "-" + clientTable.Rows[i]["Technician"];
             }
 
             return clientTable;
@@ -1157,7 +1157,7 @@ namespace OpenAuth.App.Client
         /// <param name="Technician"></param>
         /// <param name="SlpName"></param>
         /// <returns></returns>
-        public AuditCode GetClueNo(string jobId, string CardCode, string Technician, string SlpName)
+        public AuditCode GetClueNo(string jobId, string CardCode, string Technician, string SlpName,string Applicant)
         {
             AuditCode auditCode = new AuditCode();
             string sql = string.Format("SELECT base_entry FROM {0}.wfa_job WHERE job_id={1}", "nsap_base", jobId);
@@ -1172,9 +1172,10 @@ namespace OpenAuth.App.Client
             {
                 auditCode.base_entry = UnitWork.Find<OpenAuth.Repository.Domain.Serve.Clue>(q => q.CardCode == CardCode).OrderByDescending(q => q.CreateTime).Select(q => q.SerialNumber).FirstOrDefault();
             }
-            var recepUserOrgInfo = GetUserOrgInfo("", Technician + "," + SlpName);
+            var recepUserOrgInfo = GetUserOrgInfo("", Technician + "," + SlpName + "," + Applicant);
             auditCode.DfTcnician_dept = recepUserOrgInfo.FirstOrDefault(q => q.Name == Technician).OrgName;
             auditCode.SlpName_dept = recepUserOrgInfo.FirstOrDefault(q => q.Name == SlpName).OrgName;
+            auditCode.Applicant_dept = recepUserOrgInfo.FirstOrDefault(q => q.Name == Applicant).OrgName;
             return auditCode;
         }
 
@@ -2496,8 +2497,14 @@ namespace OpenAuth.App.Client
                 strSql.Append(" ORDER BY SUM(Similarity1+Similarity2+Similarity3+Similarity4+Similarity5+Similarity6+Similarity7+Similarity8+Similarity9+Similarity10+Similarity11+Similarity12) DESC,MIN(Grade) ASC LIMIT 50 ");
             }
             strSql.Append(") T ");
-
-            return UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
+            
+            DataTable datatable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
+            for (int i = 0; i < datatable.Rows.Count; i++)
+            {
+               var info = GetUserOrgInfo("", datatable.Rows[i]["SlpName"].ToString());
+                datatable.Rows[i]["SlpName"] = info == null ? datatable.Rows[i]["SlpName"] : info.FirstOrDefault().OrgName + "-" + datatable.Rows[i]["SlpName"];
+            }
+            return datatable;
         }
         #endregion
         #region 处理电话号码
