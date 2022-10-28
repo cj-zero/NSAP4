@@ -36,6 +36,7 @@ using OpenAuth.App.Request;
 using Microsoft.Extensions.Logging;
 using EdgeCmd;
 
+
 namespace OpenAuth.App.Client
 {
     public class ClientInfoApp : OnlyUnitWorkBaeApp
@@ -45,6 +46,7 @@ namespace OpenAuth.App.Client
         private readonly ClientRelationApp _clientRelationApp;
         private readonly IHubContext<MessageHub> _hubContext;
         private ILogger<ClientInfoApp> _logger;
+
         public ClientInfoApp(ServiceSaleOrderApp serviceSaleOrderApp, ClientRelationApp clientRelationApp, ServiceBaseApp serviceBaseApp, IUnitWork unitWork, IAuth auth, ILogger<ClientInfoApp> logger, IHubContext<MessageHub> hubContext) : base(unitWork, auth)
         {
             _serviceBaseApp = serviceBaseApp;
@@ -67,7 +69,11 @@ namespace OpenAuth.App.Client
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
-
+            //20221027修改将文件置空，文件已经保存在4.0
+            //if (isEdit)
+            //{
+            //    addClientInfoReq.clientInfo.FilesDetails = new List<billAttchmentReq>();
+            //}
             var loginUser = loginContext.User;
             addClientInfoReq.clientInfo.SlpName = loginUser.Name;
             string result = "";
@@ -2170,17 +2176,25 @@ namespace OpenAuth.App.Client
             pubSql += "D.Phone1,D.Cellular,D.Balance,D.U_Name,D.U_EndCustomerName,D.U_EndCustomerContact,{0} FROM {1}.crm_OCRD D ";
             pubSql += "LEFT JOIN {1}.crm_OCRY Y ON Y.Code=D.MailCountr LEFT JOIN {1}.crm_OCST T ON T.Code=D.State2 ";
             pubSql += "LEFT JOIN {1}.crm_OSLP P ON P.SlpCode=D.SlpCode AND P.sbo_id=D.sbo_id ";
-            string strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,0 AS Similarity12 ";
+            string strSimilarity = "0 AS Similarity1, 0 AS Similarity2, 0 AS Similarity3, 0 AS Similarity4, 0 AS Similarity5, 0 AS Similarity6, 0 AS Similarity7, 0 AS Similarity8, 0 AS Similarity9, 0 AS Similarity10,0 AS Similarity11,0 AS Similarity12,  case  when Flag is null then 0 ELSE Flag END as IsFlag , ClueId   ";
 
             StringBuilder strSql = new StringBuilder();
             strSql.Append("SELECT   sbo_id,CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact,");
-            strSql.Append("Similarity1, Similarity2, Similarity3, Similarity4, Similarity5, Similarity6, Similarity7, Similarity8, Similarity9, Similarity10,Similarity11,Similarity12,DfTcnician FROM ( ");
+            if (IsSearchAll)
+            {
+                strSql.Append("Similarity1, Similarity2, Similarity3, Similarity4, Similarity5, Similarity6, Similarity7, Similarity8, Similarity9, Similarity10,Similarity11,Similarity12,DfTcnician  FROM ( ");
+            }
+            else
+            {
+                strSql.Append("Similarity1, Similarity2, Similarity3, Similarity4, Similarity5, Similarity6, Similarity7, Similarity8, Similarity9, Similarity10,Similarity11,Similarity12,DfTcnician, case  when Flag is null then 0 ELSE Flag END as IsFlag , ClueId  FROM ( ");
+            }
+          
 
             if (IsSearchAll)  //根据搜索条件全局搜索
             {
-                strSql.Append("SELECT  sbo_id,CardCode ,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact,");
+                strSql.Append("SELECT  sbo_id,E.CardCode ,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact,");
                 strSql.Append("SUM(Similarity1) AS Similarity1,SUM(Similarity2) AS Similarity2,SUM(Similarity3) AS Similarity3,SUM(Similarity4) AS Similarity4,SUM(Similarity5) AS Similarity5,");
-                strSql.Append("SUM(Similarity6) AS Similarity6,SUM(Similarity7) AS Similarity7,SUM(Similarity8) AS Similarity8,SUM(Similarity9) AS Similarity9,SUM(Similarity10) AS Similarity10,SUM(Similarity11) AS Similarity11,SUM(Similarity12) AS Similarity12,DfTcnician ");
+                strSql.Append("SUM(Similarity6) AS Similarity6,SUM(Similarity7) AS Similarity7,SUM(Similarity8) AS Similarity8,SUM(Similarity9) AS Similarity9,SUM(Similarity10) AS Similarity10,SUM(Similarity11) AS Similarity11,SUM(Similarity12) AS Similarity12,DfTcnician  ");
                 strSql.Append(" FROM (");
 
                 string[] whereArray = Query.Split('`');
@@ -2258,9 +2272,9 @@ namespace OpenAuth.App.Client
             }
             else
             {  //搜索当前业务伙伴相似
-                strSql.Append("SELECT sbo_id,CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact,");
+                strSql.Append("SELECT sbo_id,E.CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact,");
                 strSql.Append("SUM(Similarity1) AS Similarity1,SUM(Similarity2) AS Similarity2,SUM(Similarity3) AS Similarity3,SUM(Similarity4) AS Similarity4,SUM(Similarity5) AS Similarity5,");
-                strSql.Append("SUM(Similarity6) AS Similarity6,SUM(Similarity7) AS Similarity7,SUM(Similarity8) AS Similarity8,SUM(Similarity9) AS Similarity9,SUM(Similarity10) AS Similarity10,SUM(Similarity11) AS Similarity11,SUM(Similarity12) AS Similarity12,DfTcnician ");
+                strSql.Append("SUM(Similarity6) AS Similarity6,SUM(Similarity7) AS Similarity7,SUM(Similarity8) AS Similarity8,SUM(Similarity9) AS Similarity9,SUM(Similarity10) AS Similarity10,SUM(Similarity11) AS Similarity11,SUM(Similarity12) AS Similarity12,DfTcnician,   Y.Flag , Z.SerialNumber as ClueId  ");
                 strSql.Append(" FROM (");
                 #region CardName
                 //==
@@ -2388,9 +2402,15 @@ namespace OpenAuth.App.Client
                     strSql.AppendFormat("WHERE D.sbo_id={0} AND D.U_EndCustomerContact IS NOT NULL AND D.U_EndCustomerContact like '%{1}%' AND D.U_EndCustomerContact<>'{1}' ", SboId, Model.EndCustomerContact.FilterSQL());
                 }
                 #endregion
-                strSql.Append(") AS E ");
+                strSql.Append(" ) AS E ");
+                strSql.Append(" LEFT JOIN  (SELECT c.Id, c.SubNo ,c.ClientNo,c.Flag , c.IsActive, c.ParentNo, c.IsDelete, c.ScriptFlag,ROW_NUMBER() OVER (PARTITION BY ClientNo ORDER BY CreateDate  DESC) rn from erp4.clientrelation c)   Y ON Y.ClientNo = E.CardCode AND Y.Flag !=2  AND Y.IsActive =1 AND Y.ScriptFlag =0 AND   Y.rn = 1  AND  Y.IsDelete = 0    ");
+                strSql.Append("  LEFT JOIN  (SELECT SerialNumber,CardCode from  erp4_serve.clue) Z  ON Z.CardCode = E.CardCode      ");
+                strSql.Append("  LEFT JOIN (SELECT GROUP_CONCAT(b.`Name`) as multiname ,GROUP_CONCAT(b.Tel1) as multiTel,GROUP_CONCAT(b.Cellolar) as multiCell ,a.CardCode  from nsap_bone.crm_OCRD a left join nsap_bone.crm_ocpr b on a.CardCode = b.CardCode  GROUP BY a.CardCode)  k on k.CardCode = E.CardCode      ");
+                strSql.Append("  LEFT JOIN (SELECT GROUP_CONCAT(b.Address) as multiAddress ,GROUP_CONCAT(b.Building) as multiBuilding ,a.CardCode  from nsap_bone.crm_OCRD a left join nsap_bone.crm_crd1 b on a.CardCode = b.CardCode  GROUP BY a.CardCode)  T on T.CardCode = E.CardCode    ");
+
                 #region 搜索条件
                 strSql.AppendFormat("WHERE sbo_id={0} ", SboId);
+                var queryFlag = false;
                 if (!string.IsNullOrEmpty(Query))
                 {
                     string[] queryArray = Query.Split('`');
@@ -2399,12 +2419,102 @@ namespace OpenAuth.App.Client
                         string[] p = queryArray[i].Split(':');
                         if (!string.IsNullOrEmpty(p[1]))
                         {
-                            strSql.AppendFormat("AND {0} LIKE '%{1}%' ", p[0], p[1].Trim().FilterSQL());
+                            queryFlag = true;
                         }
                     }
                 }
-                #endregion
-                strSql.Append(" GROUP BY CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact ");
+
+                if (!string.IsNullOrEmpty(Query)&& queryFlag)
+                {
+                    strSql.Append(" AND (  ");
+                    string[] queryArray = Query.Split('`');
+                    if (queryArray.Length > 0)
+                    {
+                        strSql.Append(" ( ");
+                    }
+                    var flag = true;
+
+                    for (int i = 0; i < queryArray.Length; i++)
+                    {
+                        string[] p = queryArray[i].Split(':');
+                        if (!string.IsNullOrEmpty(p[1]))
+                        {
+                            if (flag)
+                            {
+                                if (p[0] == "CardName")
+                                {
+                                    strSql.AppendFormat(" ( CONVERT({0} USING utf8)  LIKE '%{1}%'  or CONVERT(CardFName  USING utf8)  LIKE '%{1}%' ) ", p[0], p[1].Trim().FilterSQL());
+                                }
+                                else
+                                {
+                                    if (p[0] != "CardFName")
+                                    {
+                                        strSql.AppendFormat(" CONVERT({0} USING utf8)  LIKE '%{1}%'  ", p[0], p[1].Trim().FilterSQL());
+                                    }
+                                }
+                                flag = false;
+                            }
+                            else
+                            {
+                                if (p[0] == "CardName")
+                                {
+                                    strSql.AppendFormat(" AND ( CONVERT({0} USING utf8)  LIKE '%{1}%'  or CONVERT(CardFName  USING utf8)  LIKE '%{1}%' ) ", p[0], p[1].Trim().FilterSQL());
+                                }
+                                else
+                                {
+                                    if (p[0] != "CardFName")
+                                    {
+                                        strSql.AppendFormat(" AND CONVERT({0} USING utf8)  LIKE '%{1}%'  ", p[0], p[1].Trim().FilterSQL());
+                                    }
+                                }
+
+                            }
+                            
+                        }
+                    }
+
+                    if (queryArray.Length > 0&& queryFlag)
+                    {
+                        strSql.Append(" ) ");
+                    }
+
+                }
+                if (!string.IsNullOrEmpty(Query) && queryFlag)
+                {
+                    string[] queryArray = Query.Split('`');
+                    for (int i = 0; i < queryArray.Length; i++)
+                    {
+                        string[] p = queryArray[i].Split(':');
+                        if (!string.IsNullOrEmpty(p[1]))
+                        {
+                            if (p[0] == "CntctPrsn")
+                            {
+                                //strSql.Append(" OR  INSTR(k.multiname, CONVERT(\"" + p[1].Trim().FilterSQL()  + "\" USING utf8))  >0  ");
+                                strSql.AppendFormat(@" OR  INSTR(k.multiname, CONVERT(""{0}"" USING utf8))  >0  ", p[1].Trim().FilterSQL());
+                            }
+                            if (p[0] == "Address")
+                            {
+                                //strSql.Append(" OR  INSTR(k.multiname, CONVERT(\"" + p[1].Trim().FilterSQL()  + "\" USING utf8))  >0  ");
+                                strSql.AppendFormat(@" OR  INSTR(T.multiAddress, CONVERT(""{0}"" USING utf8))  >0  ", p[1].Trim().FilterSQL());
+                                strSql.AppendFormat(@" OR  INSTR(T.multiBuilding, CONVERT(""{0}"" USING utf8))  >0  ", p[1].Trim().FilterSQL());
+                            }
+                            if (p[0] == "Phone1")
+                            {
+                                strSql.Append(" OR  INSTR(k.multiTel, CONVERT(\"" + p[1].Trim().FilterSQL() + "\" USING utf8))  >0  ");
+                                strSql.Append(" OR  INSTR(k.multiCell, CONVERT(\"" + p[1].Trim().FilterSQL() + "\" USING utf8))  >0  ");
+                                //strSql.AppendFormat(" OR  INSTR(k.multiTel, CONVERT(\"{0}\" USING utf8))  >0  ", p[1].Trim().FilterSQL());
+                                //strSql.AppendFormat(" OR  INSTR(k.multiCell, CONVERT(\"{0}\" USING utf8))  >0  ", p[1].Trim().FilterSQL());
+                            }
+
+                        }
+                    }
+                }
+                if (!string.IsNullOrEmpty(Query) && queryFlag)
+                {
+                    strSql.Append(" ) ");
+                }
+                    #endregion
+                    strSql.Append(" GROUP BY CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact ");
                 strSql.Append(" ORDER BY SUM(Similarity1+Similarity2+Similarity3+Similarity4+Similarity5+Similarity6+Similarity7+Similarity8+Similarity9+Similarity10+Similarity11+Similarity12) DESC,MIN(Grade) ASC LIMIT 50 ");
             }
             strSql.Append(") T ");
