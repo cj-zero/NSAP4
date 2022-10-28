@@ -113,10 +113,22 @@ namespace OpenAuth.App.ContractManager.Request
         public bool IsSeal { get; set; }
 
         /// <summary>
+        /// 上传人Id
+        /// </summary>
+        [Description("上传人Id")]
+        public string CreateUploadId { get; set; }
+
+        /// <summary>
+        /// 部门
+        /// </summary>
+        [Description("部门")]
+        public string CreateDeptName { get; set; }
+
+        /// <summary>
         /// 上传人
         /// </summary>
         [Description("上传人")]
-        public string CreateUploadId { get; set; }
+        public string CreateUploadName { get; set; }
 
         /// <summary>
         /// 上传时间
@@ -125,10 +137,22 @@ namespace OpenAuth.App.ContractManager.Request
         public System.DateTime? CreateUploadTime { get; set; }
 
         /// <summary>
+        /// 更新人Id
+        /// </summary>
+        [Description("更新人Id")]
+        public string UpdateUserId { get; set; }
+
+        /// <summary>
+        /// 部门
+        /// </summary>
+        [Description("部门")]
+        public string UpdateDeptName { get; set; }
+
+        /// <summary>
         /// 更新人
         /// </summary>
         [Description("更新人")]
-        public string UpdateUserId { get; set; }
+        public string UpdateUserName { get; set; }
 
         /// <summary>
         /// 更新时间
