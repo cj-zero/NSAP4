@@ -2401,9 +2401,10 @@ namespace OpenAuth.App.Client
                 strSql.Append("  LEFT JOIN (SELECT GROUP_CONCAT(b.`Name`) as multiname ,GROUP_CONCAT(b.Tel1) as multiTel,GROUP_CONCAT(b.Cellolar) as multiCell ,a.CardCode  from nsap_bone.crm_OCRD a left join nsap_bone.crm_ocpr b on a.CardCode = b.CardCode  GROUP BY a.CardCode)  k on k.CardCode = E.CardCode      ");
 
                 #region 搜索条件
-                strSql.AppendFormat("WHERE sbo_id={0} AND (  ", SboId);
+                strSql.AppendFormat("WHERE sbo_id={0} ", SboId);
                 if (!string.IsNullOrEmpty(Query))
                 {
+                    strSql.Append(" AND (  ");
                     string[] queryArray = Query.Split('`');
                     if (queryArray.Length > 0)
                     {
@@ -2457,9 +2458,12 @@ namespace OpenAuth.App.Client
                         }
                     }
                 }
-                strSql.Append(" ) ");
-                #endregion
-                strSql.Append(" GROUP BY CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact ");
+                if (!string.IsNullOrEmpty(Query))
+                {
+                    strSql.Append(" ) ");
+                }
+                    #endregion
+                    strSql.Append(" GROUP BY CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact ");
                 strSql.Append(" ORDER BY SUM(Similarity1+Similarity2+Similarity3+Similarity4+Similarity5+Similarity6+Similarity7+Similarity8+Similarity9+Similarity10+Similarity11+Similarity12) DESC,MIN(Grade) ASC LIMIT 50 ");
             }
             strSql.Append(") T ");
