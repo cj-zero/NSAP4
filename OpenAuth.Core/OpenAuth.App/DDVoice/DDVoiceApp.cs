@@ -447,6 +447,7 @@ namespace OpenAuth.App.DDVoice
                             });
 
                             await UnitWork.SaveAsync();
+                            await transaction.CommitAsync();
                             result.Message = "手动绑定成功";
                         }
                         catch (Exception ex)
