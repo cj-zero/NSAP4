@@ -316,9 +316,12 @@ namespace OpenAuth.App
         {
             var query = await (from a in UnitWork.Find<User>(null)
                                join b in UnitWork.Find<Relevance>(c => c.Key == "OrgRole" && c.SecondId == orgId) on a.Id equals b.FirstId
+                               join c in UnitWork.Find<Repository.Domain.Org>(null) on b.SecondId equals c.Id
                                select new
                                {
-                                   a
+                                   a.Id,
+                                   a.Name,
+                                   OrgName = c.Name
                                }).FirstOrDefaultAsync();
             return query;
         }

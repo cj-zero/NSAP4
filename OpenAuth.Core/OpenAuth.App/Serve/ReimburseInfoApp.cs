@@ -8,6 +8,8 @@ using Infrastructure;
 using Infrastructure.Export;
 using Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
 using NStandard;
 using OpenAuth.App.Interface;
 using OpenAuth.App.Material;
@@ -36,6 +38,8 @@ namespace OpenAuth.App
         private readonly BusinessPartnerApp _businessPartnerApp;
         private readonly UserManagerApp _userManagerApp;
         private readonly RealTimeLocationApp _realTimeLocationApp;
+        private IOptions<AppSetting> _appConfiguration;
+        private HttpHelper _helper;
 
         //报销单据类型(0 报销单，1 出差补贴， 2 交通费用， 3 住宿补贴， 4 其他费用, 5 我的费用)
         /// <summary>
@@ -414,6 +418,7 @@ namespace OpenAuth.App
             {
                 ReimburseResps = ReimburseResps.OrderBy(r => r.a.CreateUserId).ThenBy(r => r.a.MainId);
             }
+            var independentOrg = new string[] { "CS7", "CS12", "CS14", "CS17", "CS20", "CS29", "CS32", "CS34", "CS36", "CS37", "CS38", "CS9", "CS50", "CSYH" };
             var ReimburseRespList = ReimburseResps.Select(r => new
             {
                 ReimburseResp = r.a,
@@ -421,13 +426,17 @@ namespace OpenAuth.App
                 fillTime = r.a.CreateTime.ToString("yyyy.MM.dd HH:mm:ss"),
                 r.b.TerminalCustomerId,
                 r.b.TerminalCustomer,
+                TerminalCustomerOrg = SelOrgName.Where(s => s.Id == Relevances.Where(w => w.FirstId == r.c.SupervisorId).FirstOrDefault()?.SecondId).FirstOrDefault()?.Name,
+                IsContracting = independentOrg.Contains(SelOrgName.Where(s => s.Id == Relevances.Where(w => w.FirstId == r.c.SupervisorId).FirstOrDefault()?.SecondId).FirstOrDefault()?.Name) ? 1 : 0,
                 BusinessTripDate = serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).FirstOrDefault() == null ? CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c => c.BusinessTripDate) == null ? Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.CreateTime)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Min(c => c.BusinessTripDate)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).Min(s => s.EditTime)).ToString("yyyy.MM.dd HH:mm:ss"),
                 EndDate = serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).FirstOrDefault() == null ? CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate) == null ? Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.CreateTime)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(CompletionReports.Where(c => c.ServiceOrderId.Equals(r.a.ServiceOrderId)).Max(c => c.EndDate)).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(serviceDailyReports.Where(s => s.ServiceOrderId == r.a.ServiceOrderId).Max(s => s.EditTime)).ToString("yyyy.MM.dd HH:mm:ss"),
                 Days = r.a.ReimburseTravellingAllowances?.Sum(r => r.Days),
                 r.b.FromTheme,
-                r.c.SalesMan,
+                SalesMan = SelOrgName.Where(s => s.Id == Relevances.Where(w => w.FirstId == r.c.SalesManId).FirstOrDefault()?.SecondId).FirstOrDefault()?.Name + "-" + r.c.SalesMan,
+                r.c.SalesManId,
                 ApprovalNumber = workbench.Where(c => c.SourceNumbers == r.a.MainId).FirstOrDefault()?.ApprovalNumber,
                 UserName = r.f.Name == null ? r.d.Name : r.f.Name + "-" + r.d.Name,
+                UserId = r.a.CreateUserId,
                 //OrgName = r.f.Name,
                 UpdateTime = r.a.ReimurseOperationHistories.OrderByDescending(r => r.CreateTime).FirstOrDefault() != null ? Convert.ToDateTime(r.a.ReimurseOperationHistories.OrderByDescending(r => r.CreateTime).FirstOrDefault()?.CreateTime).ToString("yyyy.MM.dd HH:mm:ss") : Convert.ToDateTime(r.a.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss")
             }).OrderByDescending(r => r.UpdateTime).ToList();
@@ -3089,7 +3098,7 @@ namespace OpenAuth.App
                     break;
                 default:
                     break;
-            } 
+            }
 
             #region 个人信息
             var userinfo = await _userManagerApp.GetUserOrgInfo(req.CreateUserId);
@@ -3097,17 +3106,35 @@ namespace OpenAuth.App
             var nsapusermap = await UnitWork.Find<NsapUserMap>(c => c.UserID == userinfo.Id).FirstOrDefaultAsync();
             var nsapid = nsapusermap != null ? nsapusermap.NsapUserId : 0;
             var nsapUserInfo = await UnitWork.Find<base_user_detail>(c => c.user_id == nsapid).Select(c => new { c.try_date, c.office_addr }).FirstOrDefaultAsync();
+
+            //获取技术员等级
+            List<TechnicianGrades> grades = new List<TechnicianGrades>();
+            var appuserIds = new List<int> { nsapid.Value };
+            var timespan = DatetimeUtil.ToUnixTimestampBySeconds(DateTime.Now.AddMinutes(5));
+            var text = $"NewareApiTokenDeadline:{timespan}";
+            var aes = Encryption.AESEncrypt(text);
+            var grade = _helper.Post(new
+            {
+                UserIds = appuserIds,
+            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Exam/GetTechnicianGrades", "EncryToken", aes);
+            JObject resObj = JObject.Parse(grade);
+            if (resObj["Data"] != null)
+            {
+                grades = JsonHelper.Instance.Deserialize<List<TechnicianGrades>>(resObj["Data"].ToString());
+            }
+
             var userdetail = new
             {
                 Name = userinfo.Name,
                 Account = userinfo.Account,
                 Sex = userinfo.Sex,
                 OrgName = userinfo.OrgName,
-                Manager = manager?.a?.Name,
-                InDate = nsapUserInfo?.try_date,
+                Manager = manager?.OrgName + "-" + manager?.Name,
+                InDate = nsapUserInfo?.try_date.ToString("yyyy-MM-dd"),
                 Moblie = userinfo.Mobile,
                 Email = userinfo.Email,
-                OfficeAddr = nsapUserInfo?.office_addr
+                OfficeAddr = nsapUserInfo?.office_addr,
+                GradeName = grades.FirstOrDefault()?.GradeName
             };
             #endregion
 
@@ -3729,8 +3756,10 @@ namespace OpenAuth.App
 
         }
 
-        public ReimburseInfoApp(IUnitWork unitWork, ModuleFlowSchemeApp moduleFlowSchemeApp, WorkbenchApp workbenchApp, FlowInstanceApp flowInstanceApp, IAuth auth, QuotationApp quotationApp, OrgManagerApp orgApp, BusinessPartnerApp businessPartnerApp, UserManagerApp userManagerApp, RealTimeLocationApp realTimeLocationApp) : base(unitWork, auth)
+        public ReimburseInfoApp(IUnitWork unitWork, ModuleFlowSchemeApp moduleFlowSchemeApp, WorkbenchApp workbenchApp, FlowInstanceApp flowInstanceApp, IAuth auth, QuotationApp quotationApp, OrgManagerApp orgApp, BusinessPartnerApp businessPartnerApp, UserManagerApp userManagerApp, RealTimeLocationApp realTimeLocationApp, IOptions<AppSetting> appConfiguration) : base(unitWork, auth)
         {
+            _appConfiguration = appConfiguration;
+            _helper = new HttpHelper(_appConfiguration.Value.AppPushMsgUrl);
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _flowInstanceApp = flowInstanceApp;
             _quotation = quotationApp;
