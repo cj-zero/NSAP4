@@ -103,7 +103,7 @@ namespace OpenAuth.App.Client
             return response;
         }
 
-
+       
         /// <summary>
         /// 日程列表
         /// </summary>
@@ -124,6 +124,11 @@ namespace OpenAuth.App.Client
                 var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
                 int SlpCode = Convert.ToInt16(GetUserInfoById(sboid.ToString(), userId.ToString(), "1"));
                 result = UnitWork.Find<ClientSchedule>(q => q.CardCode == CardCode && q.SlpCode == SlpCode && !q.IsDelete).OrderByDescending(t => t.CreateDate).MapToList<ClientSchedule>();
+                for (int i = 0; i < result.Count; i++)
+                {
+                    var info = _clientInfoapp.GetUserOrgInfo("", result[i].CreateUser).FirstOrDefault(q => q.Name == result[i].CreateUser);
+                    result[i].CreateUser_dept = info == null ? "" : info.OrgName;
+                }
             }
             return result;
         }
