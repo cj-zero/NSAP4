@@ -516,7 +516,7 @@ namespace OpenAuth.App
                                 });
                                 await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { ApprovalDirector = loginContext.User.Name, ApprovalDirectorId = loginContext.User.Id });
                                 await UnitWork.SaveAsync();
-                                await CreateNwcailFile(certNo);
+                                //await CreateNwcailFile(certNo);
                             }
                             else if (flowInstance.ActivityName.Equals("开始") && flowInstance.IsFinish == -1)
                             {
@@ -587,28 +587,7 @@ namespace OpenAuth.App
 
         public async Task CreateNwcailFileHelper()
         {
-            var res = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId) && string.IsNullOrWhiteSpace(c.CNASPdfPath)).OrderByDescending(c => c.Time).Take(1000).ToListAsync();
-            foreach (var item in res)
-            {
-                await CreateNwcailFile(item.CertificateNumber);
-            }
-        }
-
-        public async Task CreateNwcailFileHelper2(int docEntry)
-        {
-            //获取销售订单下所有序列号
-            var manufacturerSerialNumber = from a in UnitWork.Find<store_oitl>(null)
-                                           join b in UnitWork.Find<store_itl1>(null) on new { a.LogEntry, a.ItemCode } equals new { b.LogEntry, b.ItemCode } into ab
-                                           from b in ab.DefaultIfEmpty()
-                                           join c in UnitWork.Find<store_osrn>(null) on new { b.ItemCode, b.SysNumber } equals new { c.ItemCode, c.SysNumber } into bc
-                                           from c in bc.DefaultIfEmpty()
-                                           where a.DocType == 15 && !string.IsNullOrWhiteSpace(c.MnfSerial) && a.BaseEntry== docEntry
-                                           select new { c.MnfSerial, a.ItemCode, a.DocEntry, a.BaseEntry, a.DocType, a.CreateDate, a.BaseType };
-
-            var numList = await manufacturerSerialNumber
-                .Select(c => c.MnfSerial).ToListAsync();
-
-            var res = await UnitWork.Find<NwcaliBaseInfo>(c => numList.Contains(c.TesterSn)).ToListAsync();
+            var res = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId) && string.IsNullOrWhiteSpace(c.CNASPdfPath)).ToListAsync();
             foreach (var item in res)
             {
                 await CreateNwcailFile(item.CertificateNumber);
@@ -748,7 +727,7 @@ namespace OpenAuth.App
                 catch (Exception e)
                 {
 
-                    //throw e;
+                    throw e;
                 }
             }
         }
@@ -2083,7 +2062,7 @@ namespace OpenAuth.App
                     OriginAbs = orderInfo.OriginAbs == 0 ? "" : orderInfo.OriginAbs.ToString(),
                     ItemCode = orderInfo == null ? "" : orderInfo.ItemCode,
                     item.GeneratorCode,
-                    item.Department,
+                    Department= item.CreateUser== "杨想来"?"P8":item.Department,
                     item.TaskId,
                     item.MidGuid,
                     item.LowGuid,
@@ -2218,7 +2197,7 @@ namespace OpenAuth.App
                     OriginAbs = orderInfo.OriginAbs == 0 ? "" : orderInfo.OriginAbs.ToString(),
                     ItemCode = orderInfo == null ? "" : orderInfo.ItemCode,
                     GeneratorCode = item.GeneratorCode,
-                    Department = item.Department,
+                    Department = item.CreateUser == "杨想来" ? "P8" : item.Department,
                     TaskId = item.TaskId,
                     MidGuid = item.MidGuid,
                     LowGuid = item.LowGuid,
