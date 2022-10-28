@@ -30,7 +30,9 @@ namespace OpenAuth.Repository.Domain
             this.SealName = string.Empty;
             this.SealImageFileId = string.Empty;
             this.CreateUserId = string.Empty;
+            this.CreateUserName = string.Empty;
             this.UpdateUserId = string.Empty;
+            this.UpdateUserName = string.Empty;
             this.CreateTime = DateTime.Now;
             this.Remark = string.Empty;
         }
@@ -72,10 +74,16 @@ namespace OpenAuth.Repository.Domain
         public bool IsEnable { get; set; }
 
         /// <summary>
+        /// 上传人Id
+        /// </summary>
+        [Description("上传人Id")]
+        public string CreateUserId { get; set; }
+
+        /// <summary>
         /// 上传人
         /// </summary>
         [Description("上传人")]
-        public string CreateUserId { get; set; }
+        public string CreateUserName { get; set; }
 
         /// <summary>
         /// 上传时间
@@ -84,10 +92,16 @@ namespace OpenAuth.Repository.Domain
         public System.DateTime? CreateTime { get; set; }
 
         /// <summary>
+        /// 更新人Id
+        /// </summary>
+        [Description("更新人Id")]
+        public string UpdateUserId { get; set; }
+
+        /// <summary>
         /// 更新人
         /// </summary>
         [Description("更新人")]
-        public string UpdateUserId { get; set; }
+        public string UpdateUserName { get; set; }
 
         /// <summary>
         /// 更新时间

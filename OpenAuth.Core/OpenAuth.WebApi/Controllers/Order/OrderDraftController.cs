@@ -17,6 +17,7 @@ using OpenAuth.App.Response;
 using OpenAuth.Repository;
 using OpenAuth.Repository.Extensions;
 using OpenAuth.Repository.Interface;
+using OpenAuth.App.CommonHelp;
 using OpenAuth.WebApi.Comm;
 using Serilog;
 using System;
@@ -37,6 +38,7 @@ namespace OpenAuth.WebApi.Controllers.Order
     [ApiExplorerSettings(GroupName = "Order")]
     public class OrderDraftController : Controller
     {
+        private UserDepartMsgHelp _userDepartMsgHelp;
         private readonly FileApp _app;
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
         //private readonly OrderDraftServiceApp _orderDraftServiceApp;
@@ -45,7 +47,7 @@ namespace OpenAuth.WebApi.Controllers.Order
         IAuth _auth;
         IUnitWork UnitWork;
         ServiceBaseApp _serviceBaseApp;
-        public OrderDraftController(IHttpClientFactory _httpClient, FileApp app, IUnitWork UnitWork, IOptions<AppSetting> appConfiguration, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
+        public OrderDraftController(UserDepartMsgHelp userDepartMsgHelp, IHttpClientFactory _httpClient, FileApp app, IUnitWork UnitWork, IOptions<AppSetting> appConfiguration, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
         {
             this._httpClient = _httpClient;
             this._app = app;
@@ -55,6 +57,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             _serviceSaleOrderApp = serviceSaleOrderApp;
             _auth.GetCurrentUser();
             //this._orderDraftServiceApp = orderDraftServiceApp;
+            this._userDepartMsgHelp = userDepartMsgHelp;
             _appConfiguration = appConfiguration;
         }
         /// <summary>
@@ -534,6 +537,33 @@ namespace OpenAuth.WebApi.Controllers.Order
 
             result = _serviceSaleOrderApp.SelectOrderDraftInfo(request.limit, request.page, request, type, viewFull, viewSelf, userId, sboid, viewSelfDepartment, Convert.ToInt32(depId.Value), viewCustom, viewSales, sqlcont, sboname);
 
+            List<SalesDraftDto> salesDraftDtos = new List<SalesDraftDto>();
+            foreach (SalesDraftDto salesDraftDto in result.Data)
+            {
+                salesDraftDtos.Add(new SalesDraftDto()
+                {
+                    RowNumber = salesDraftDto.RowNumber,
+                    UpdateDate = salesDraftDto.UpdateDate,
+                    DocEntry = salesDraftDto.DocEntry,
+                    CardCode = salesDraftDto.CardCode,
+                    CardName = salesDraftDto.CardName,
+                    DocTotal = salesDraftDto.DocTotal,
+                    OpenDocTotal = salesDraftDto.OpenDocTotal,
+                    CreateDate = salesDraftDto.CreateDate,
+                    SlpCode = salesDraftDto.SlpCode,
+                    DeptName = _userDepartMsgHelp.GetUserDepart(salesDraftDto.SlpCode),
+                    SlpName = salesDraftDto.SlpName,
+                    Comments = salesDraftDto.Comments,
+                    DocStatus = salesDraftDto.DocStatus,
+                    CANCELED = salesDraftDto.CANCELED,
+                    Printed = salesDraftDto.Printed,
+                    AttachFlag = salesDraftDto.AttachFlag,
+                    Flag = salesDraftDto.Flag,
+                    Terminals = salesDraftDto.Terminals
+                });
+            }
+
+            result.Data = salesDraftDtos;
             return result;
         }
         /// <summary>

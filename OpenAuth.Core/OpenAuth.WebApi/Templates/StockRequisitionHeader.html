@@ -43,7 +43,16 @@
     <img color="#6F6F6F" style="width: 110px;height:110px;  float:right;" src="@Model.QRcode" />
     
     <div style=" clear: both;">
-        <span>领料部门：@Model.OrgName</span>
+        <p>
+            <span>领料部门：@Model.OrgName</span>&nbsp;  &nbsp;
+            <span>领料人：@Model.CreateUser</span>
+        </p>
+        <p>
+            <span>收货地址：@Model.ShippingAddress</span>&nbsp;  &nbsp;  &nbsp;
+            <span>联系人：@Model.NewestContacter</span>&nbsp;  &nbsp;
+            <span>联系电话：@Model.NewestContactTel</span>
+        </p>
+
         <table style="margin-top:2px; font-size:15pt;">
             <tr class="TH">
                 <td style="width: 30px; " align="center"># </td>

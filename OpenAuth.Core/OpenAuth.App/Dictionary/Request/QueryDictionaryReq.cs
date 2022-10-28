@@ -25,8 +25,13 @@ namespace OpenAuth.App.Request
         public string EnglishExplain { get; set; }
 
         /// <summary>
-        /// 创建人
+        /// 创建人Id
         /// </summary>
         public string CreateUser { get; set; }
+
+        /// <summary>
+        /// 创建人
+        /// </summary>
+        public string CreateUserName { get; set; }
     }
 }

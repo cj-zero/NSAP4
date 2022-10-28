@@ -110,7 +110,7 @@ namespace OpenAuth.Repository.Domain
         public string Operatorid { get; set; }
 
         /// <summary>
-        /// 变更类型：0.新增中间商 1.新增终端 2.分配中间商 3.分配终端 4.公海领取中间商 5.公海领取终端  6.修改草稿 7.业务员修改客户
+        /// 变更类型：0.新增中间商 1.新增终端 2.分配中间商 3.分配终端 4.公海领取中间商 5.公海领取终端  6.修改草稿 7.业务员修改客户 8.移入公海
         /// </summary>
         [Description("变更类型")]
         public int OperateType { get; set; }

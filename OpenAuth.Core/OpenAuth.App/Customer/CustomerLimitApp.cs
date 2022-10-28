@@ -20,15 +20,18 @@ using OpenAuth.Repository;
 using System.Data;
 using OpenAuth.Repository.Domain.Serve;
 using NSAP.Entity.Client;
+using OpenAuth.App.Order;
 
 namespace OpenAuth.App.Customer
 {
     public class CustomerLimitApp : OnlyUnitWorkBaeApp
     {
         private readonly IHubContext<MessageHub> _hubContext;
-        public CustomerLimitApp(IUnitWork unitWork, IAuth auth, IHubContext<MessageHub> hubContext) : base(unitWork, auth)
+        private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
+        public CustomerLimitApp(IUnitWork unitWork, IAuth auth, IHubContext<MessageHub> hubContext, ServiceSaleOrderApp serviceSaleOrderApp) : base(unitWork, auth)
         {
             _hubContext = hubContext;
+            _serviceSaleOrderApp = serviceSaleOrderApp;
         }
 
         public async Task<Infrastructure.Response> AddGroupRule(AddOrUpdateGroupRulesReq req)
@@ -982,8 +985,36 @@ namespace OpenAuth.App.Customer
 
         public async Task Test()
         {
-            var wfa_job = UnitWork.FindSingle<wfa_job>(s => s.job_id == 255013);
-            var client = ByteExtension.ToDeSerialize<clientOCRD>(wfa_job.job_data);
+            #region SAP和3.0数据同步
+            //string info = "";
+            //string info1 = "";
+            //var customerList = UnitWork.Find<OCRD>(null).Select(q => new { q.CardCode, q.SlpCode }).ToList();
+            //for (int i = 0; i < customerList.Count; i++)
+            //{
+            //    var crm_ocrd = UnitWork.Find<crm_ocrd>(q => q.CardCode == customerList[i].CardCode && q.sbo_id == 1).FirstOrDefault();
+            //    if (crm_ocrd != null)
+            //    {
+            //        if (crm_ocrd.SlpCode != customerList[i].SlpCode)
+            //        {
+            //            string CardCode = customerList[i].CardCode;
+            //            var oqut = UnitWork.Find<OQUT>(q => q.CardCode == CardCode).ToList();
+            //            if (oqut.Count > 0)
+            //            {
+            //                info += CardCode + ",";
+            //            }
+            //            else
+            //            {
+            //                info1 += CardCode + ",";
+            //                //await UnitWork.UpdateAsync<crm_ocrd>(c => c.CardCode == CardCode && c.sbo_id == 1, x => new crm_ocrd
+            //                //{
+            //                //    SlpCode = customerList[i].SlpCode
+            //                //});
+            //            }
+            //        }
+            //    }
+            //}
+            //await UnitWork.SaveAsync();
+            #endregion
         }
 
         /// <summary>
@@ -992,6 +1023,11 @@ namespace OpenAuth.App.Customer
         /// <returns></returns>
         public async Task RecoveryCustomer()
         {
+            var userInfo = _auth.GetCurrentUser();
+            if (userInfo == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
             var customerLists = new List<CustomerList>();
             //查询有哪些部门
             var depts = RedisHelper.SMembers("dept:");
@@ -1095,28 +1131,38 @@ namespace OpenAuth.App.Customer
 
             //已经掉入公海的客户,原来所属的销售员清空
             var customers = customerLists.Where(c => c.LabelIndex == 3);
-            await UnitWork.UpdateAsync<OCRD>(c => customers.Select(x => x.CustomerNo).Contains(c.CardCode), x => new OCRD
+            string FuncID = _serviceSaleOrderApp.GetJobTypeByAddress("client/clientAssignSeller.aspx");
+            var moveinHistorys = new List<CustomerMoveHistory>();
+            foreach (var item in customers)
             {
-                SlpCode = null
-            });
-            await UnitWork.UpdateAsync<crm_ocrd>(c => customers.Select(x => x.CustomerNo).Contains(c.CardCode), x => new crm_ocrd
-            {
-                SlpCode = null
-            });
-            //同时加入掉入记录表
-            var moveinHistorys = customers.Select(c => new CustomerMoveHistory
-            {
-                CardCode = c.CustomerNo,
-                CardName = c.CustomerName,
-                SlpCode = c.SlpCode,
-                SlpName = c.SlpName,
-                MoveInType = "按规则掉入",
-                Remark = c.Remark,
-                CreateTime = DateTime.Now,
-                CreateUser = "系统",
-                UpdateTime = DateTime.Now,
-                UpdateUser = "系统"
-            });
+                clientOCRD client = new clientOCRD();
+                client.CardCode = item.CustomerNo;
+                client.SlpCode = "1054";
+                client.SboId = "1";         //帐套
+                byte[] job_data = ByteExtension.ToSerialize(client);
+                string job_id = _serviceSaleOrderApp.WorkflowBuild("业务伙伴分配销售员", Convert.ToInt32(FuncID), userInfo.User.User_Id.Value, job_data, "业务伙伴分配销售员", 1, "", "", 0, 0, 0, "BOneAPI", "NSAP.B1Api.BOneOCRDAssign");
+                if (int.Parse(job_id) > 0)
+                {
+                    string result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(job_id), userInfo.User.User_Id.Value, "业务伙伴分配销售员", "", 0);
+                    //如果成功,则将客户从公海中移出(如果有的话)
+                    if (result == "2")
+                    {
+                        moveinHistorys.Add(new CustomerMoveHistory
+                        {
+                            CardCode = item.CustomerNo,
+                            CardName = item.CustomerName,
+                            SlpCode = item.SlpCode,
+                            SlpName = item.SlpName,
+                            MoveInType = "按规则掉入",
+                            Remark = item.Remark,
+                            CreateTime = DateTime.Now,
+                            CreateUser = "系统",
+                            UpdateTime = DateTime.Now,
+                            UpdateUser = "系统"
+                        });
+                    }
+                }
+            }
             await UnitWork.BatchAddAsync<CustomerMoveHistory, int>(moveinHistorys.ToArray());
             await UnitWork.SaveAsync();
 

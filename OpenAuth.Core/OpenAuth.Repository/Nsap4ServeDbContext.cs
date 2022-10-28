@@ -192,7 +192,8 @@ namespace OpenAuth.Repository
 
         #region 钉钉
         public virtual DbSet<DDSendMsgHitory> ddsendmsghistory { get; set; }
-        public virtual DbSet<DDUserDepartMsg> dduserdepartmsg { get; set; }
+        public virtual DbSet<DDUserMsg> dduserdepartmsg { get; set; }
+        public virtual DbSet<DDDepartMsg> dddeaprtmsg { get; set; }
         public virtual DbSet<DDBindUser> ddbinguser { get; set; }
         #endregion
     }

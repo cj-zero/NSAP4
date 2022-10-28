@@ -501,7 +501,9 @@ namespace OpenAuth.App
             {
                 await UnitWork.UpdateAsync<AppUserMap>(a => a.Id.Equals(o.Id), s => new AppUserMap
                 {
-                    UserID = req.UserID
+                    UserID = req.UserID,
+                    PassPortId = req.PassPortId 
+
                 });
                 await UnitWork.SaveAsync();
             }
@@ -651,7 +653,41 @@ namespace OpenAuth.App
             result.Data = userInfo;
             return result;
         }
-
+        /// <summary>
+        /// 根据PassPortId获取用户信息
+        /// </summary>
+        /// <param name="AppUserId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetUserInfoByPassPortId(List<int?> passPortIds)
+        {
+            var result = new TableData();
+            var userInfo = (from a in UnitWork.Find<AppUserMap>(w => passPortIds.Contains(w.PassPortId))
+                            join u in UnitWork.Find<User>(null) on a.UserID equals u.Id
+                            join b in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG) on a.UserID equals b.FirstId
+                            join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id
+                            select new
+                            {
+                                erpUserId = a.UserID,
+                                a.PassPortId,
+                                erpUserName = u.Name,
+                                orgId = c.Id,
+                                orgName = c.Name
+                            }).ToList();
+            result.Data = userInfo;
+            return result;
+        }
+        /// <summary>
+        /// 根据UserId获取PassportID/AppUserID
+        /// </summary>
+        /// <param name="AppUserId"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetAppUserIDByErpUserId(string Id)
+        {
+            var result = new TableData();
+            var userInfo = await UnitWork.Find<AppUserMap>(w => w.UserID == Id).Select(s => new {s.UserID, s.AppUserId , s.PassPortId }).FirstOrDefaultAsync();
+            result.Data = userInfo;
+            return result;
+        }
         /// <summary>
         /// 获取erp3.0人员
         /// </summary>

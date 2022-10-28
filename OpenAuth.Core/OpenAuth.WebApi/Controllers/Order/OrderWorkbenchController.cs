@@ -7,7 +7,9 @@ using OpenAuth.App.Order.ModelDto;
 using OpenAuth.App.Order.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository;
+using OpenAuth.Repository.Extensions;
 using OpenAuth.Repository.Interface;
+using OpenAuth.App.CommonHelp;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -25,14 +27,16 @@ namespace OpenAuth.WebApi.Controllers.Order
     [ApiExplorerSettings(GroupName = "Order")]
     public class OrderWorkbenchController : Controller
     {
+        private UserDepartMsgHelp _userDepartMsgHelp;
         OrderWorkbenchApp _orderWorkbenchApp;
         ServiceBaseApp _serviceBaseApp;
         IUnitWork _unitWork;
-        public OrderWorkbenchController(OrderWorkbenchApp orderWorkbenchApp, ServiceBaseApp serviceBaseApp, IUnitWork unitWork)
+        public OrderWorkbenchController(UserDepartMsgHelp userDepartMsgHelp,OrderWorkbenchApp orderWorkbenchApp, ServiceBaseApp serviceBaseApp, IUnitWork unitWork)
         {
             _orderWorkbenchApp = orderWorkbenchApp;
             _serviceBaseApp = serviceBaseApp;
             this._unitWork = unitWork;
+            _userDepartMsgHelp = userDepartMsgHelp;
         }
         /// <summary>
         /// 提交给我的
@@ -57,7 +61,14 @@ namespace OpenAuth.WebApi.Controllers.Order
                 viewCustom = true;
             }
             DataTable dt = _orderWorkbenchApp.GetSubmtToMe(orderSubmtToMeReq.limit, orderSubmtToMeReq.page, orderSubmtToMeReq.query, orderSubmtToMeReq.sortname, orderSubmtToMeReq.sortorder, UserID, orderSubmtToMeReq.types, orderSubmtToMeReq.Applicator, orderSubmtToMeReq.Customer, orderSubmtToMeReq.Status, orderSubmtToMeReq.BeginDate, orderSubmtToMeReq.EndDate, ViewCustom: viewCustom, ViewSales: viewSales, out rowCount);
-            result.Data = dt;
+
+            List<SaleDeptSubToMe> saleDeptSubToMes = dt.Tolist<SaleDeptSubToMe>();
+            foreach (SaleDeptSubToMe item in saleDeptSubToMes)
+            {
+                item.DeptName = _userDepartMsgHelp.GetUserIdDepart(item.user_id);
+            }
+
+            result.Data = saleDeptSubToMes;
             result.Count = rowCount;
             return result;
         }

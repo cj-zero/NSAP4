@@ -58,10 +58,16 @@ namespace OpenAuth.Repository.Domain
         public string TemplateFileId { get; set; }
 
         /// <summary>
+        /// 上传人Id
+        /// </summary>
+        [Description("上传人Id")]
+        public string CreateUserId { get; set; }
+
+        /// <summary>
         /// 上传人
         /// </summary>
         [Description("上传人")]
-        public string CreateUserId { get; set; }
+        public string CreateUserName { get; set; }
 
         /// <summary>
         /// 上传时间
@@ -70,10 +76,16 @@ namespace OpenAuth.Repository.Domain
         public System.DateTime CreateTime { get; set; }
 
         /// <summary>
+        /// 更新人Id
+        /// </summary>
+        [Description("更新人Id")]
+        public string UpdateUserId { get; set; }
+
+        /// <summary>
         /// 更新人
         /// </summary>
         [Description("更新人")]
-        public string UpdateUserId { get; set; }
+        public string UpdateUserName { get; set; }
 
         /// <summary>
         /// 更新时间

@@ -145,8 +145,8 @@ namespace OpenAuth.App.Serve
             {
                 if (isExist.Id != req.Id)
                 {
-                    result.Code = 500;
-                    result.Message = "单据类型或单据号错误。";
+                    result.Code = Define.Warning;
+                    result.Message = "此单已有按灯记录。";
                     return result;
                 }
             }
@@ -157,7 +157,7 @@ namespace OpenAuth.App.Serve
                 var seriviceOrder = await UnitWork.Find<ServiceOrder>(c => c.U_SAP_ID == req.OrderNo).Select(c => new { c.Id, c.TerminalCustomerId, c.TerminalCustomer, c.U_SAP_ID }).FirstOrDefaultAsync();
                 if (seriviceOrder == null)
                 {
-                    result.Code = 500;
+                    result.Code = Define.Warning;
                     result.Message = "单据类型或单据号错误。";
                     return result;
                 }
@@ -181,7 +181,7 @@ namespace OpenAuth.App.Serve
                 var isExists = await UnitWork.Find<OWOR>(null).AnyAsync(c => c.DocEntry == req.OrderNo);
                 if (!isExists)
                 {
-                    result.Code = 500;
+                    result.Code = Define.Warning;
                     result.Message = "单据类型或单据号错误。";
                     return result;
                 }
@@ -228,7 +228,7 @@ namespace OpenAuth.App.Serve
             var manager = obj.BlameBelongOrgs.Where(c => string.IsNullOrWhiteSpace(c.Manager)).FirstOrDefault();
             if (manager != null)
             {
-                result.Code = 500;
+                result.Code = Define.Warning;
                 result.Message = $"部门{manager.OrgName}暂未设置部门主管。";
                 return result;
             }

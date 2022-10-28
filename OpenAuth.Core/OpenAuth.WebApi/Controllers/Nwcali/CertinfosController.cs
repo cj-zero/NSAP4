@@ -143,6 +143,17 @@ namespace OpenAuth.WebApi.Controllers
         }
 
         /// <summary>
+        /// 未生成证书 生成证书
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task CreateNwcailFileHelper2()
+        {
+            await _app.CreateNwcailFileHelper2();
+        }
+
+        /// <summary>
         /// 重新生成证书数据
         /// </summary>
         /// <param name="req"></param>
@@ -317,6 +328,39 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
 
+        /// <summary>
+        /// 烤机记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> BakingMachineRecord([FromQuery] QueryBakingMachineRecordReq req)
+        {
+            TableData result = new TableData();
+            if (req.StartTime==null || req.EndTime==null)
+            {
+                result.Code = 500;
+                result.Message = "请选择烤机开始时间!";
+                return result;
+            }
+            result= await _app.BakingMachineRecord(req);
+            return result;
+        }
+        /// <summary>
+        /// 导出烤机记录
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<IActionResult> ExportBakingMachineRecord([FromQuery] QueryBakingMachineRecordReq req)
+        {
+            if (req.StartTime == null || req.EndTime == null)
+            {
+                throw new Exception($"请选择烤机开始时间");
+            }
+            var data = await _app.ExportBakingMachineRecord(req);
+            return File(data, "application/vnd.ms-excel");
+        }
         /// <summary>
         /// 获取下位机
         /// </summary>

@@ -177,7 +177,7 @@ namespace OpenAuth.WebApi.Controllers.Client
                     , clientListReq.U_CardTypeStr, clientListReq.U_ClientSource, clientListReq.U_CompSector, clientListReq.U_TradeType, clientListReq.U_StaffScale,
                     clientListReq.CreateStartTime, clientListReq.CreateEndTime, clientListReq.DistributionStartTime, clientListReq.DistributionEndTime,
             clientListReq.dNotesBalStart, clientListReq.dNotesBalEnd, clientListReq.ordersBalStart, clientListReq.ordersBalEnd,
-            clientListReq.balanceStart, clientListReq.balanceEnd, clientListReq.balanceTotalStart, clientListReq.balanceTotalEnd, out rowCount);
+            clientListReq.balanceStart, clientListReq.balanceEnd, clientListReq.balanceTotalStart, clientListReq.balanceTotalEnd, clientListReq.CardName ,out rowCount);
                 result.Count = rowCount;
             }
             catch (Exception ex)
@@ -353,6 +353,32 @@ namespace OpenAuth.WebApi.Controllers.Client
         }
 
         /// <summary>
+        /// 查询业务伙伴的机会
+        /// </summary>
+        /// <param name="CardCode"></param>
+        /// <param name="SboId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("SelectClientClueData")]
+        public TableData SelectClientClueData(string CardCode, string SboId)
+        {
+            var result = new TableData();
+            try
+            {
+                if (!string.IsNullOrEmpty(CardCode) && !string.IsNullOrEmpty(SboId))
+                    result.Data = _clientInfoApp.SelectClientClueData(CardCode, SboId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{CardCode}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 查询所有技术员
         /// </summary>
         [HttpPost]
@@ -419,10 +445,15 @@ namespace OpenAuth.WebApi.Controllers.Client
                     !string.IsNullOrEmpty(saveCrmAuditInfoReq.JobId) &&
                     ((saveCrmAuditInfoReq.AuditType == "Edit" && !string.IsNullOrEmpty(saveCrmAuditInfoReq.CardCode)) ||
                      saveCrmAuditInfoReq.AuditType == "Add"))
-                    result.Result = await _clientInfoApp.SaveCrmAuditInfo(saveCrmAuditInfoReq.AuditType,
+                {
+                    var finalR = await _clientInfoApp.SaveCrmAuditInfo(saveCrmAuditInfoReq.AuditType,
                         saveCrmAuditInfoReq.CardCode, saveCrmAuditInfoReq.DfTcnician, saveCrmAuditInfoReq.JobId);
+                    result.Message = finalR.Message;
+                }
                 else
+                {
                     result.Result = "0";
+                }
             }
             catch (Exception ex)
             {

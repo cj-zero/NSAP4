@@ -57,7 +57,7 @@ namespace OpenAuth.Repository.Domain.Customer
         /// <summary>
         /// 与SAP的ACRD表关联的字段
         /// </summary>
-        public int LogInstance { get; set; }
+        public int? LogInstance { get; set; }
 
         /// <summary>
         /// 是否分配客户销售历史记录

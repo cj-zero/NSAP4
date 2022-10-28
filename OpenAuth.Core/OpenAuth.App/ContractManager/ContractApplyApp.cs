@@ -29,6 +29,7 @@ using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Interface;
 using OpenAuth.Repository.Domain.Sap;
 using OpenAuth.App.ContractManager.Request;
+using OpenAuth.App.CommonHelp;
 using ICSharpCode.SharpZipLib.Zip;
 using Minio;
 
@@ -44,6 +45,7 @@ namespace OpenAuth.App.ContractManager
         static Dictionary<int, DataTable> gRoles = new Dictionary<int, DataTable>();
         private readonly MinioClient _minioClient;
         private readonly FileApp _fileApp;
+        private UserDepartMsgHelp _userDepartMsgHelp;
         private readonly IHubContext<MessageHub> _hubContext;
         private IFileStore _fileStore;
         private ILogger<FileApp> _logger;
@@ -57,7 +59,7 @@ namespace OpenAuth.App.ContractManager
         /// <param name="servcieSaleOrderApp"></param>
         /// <param name="auth"></param>
         public ContractApplyApp(IUnitWork unitWork, ModuleFlowSchemeApp moduleFlowSchemeApp, FlowInstanceApp flowInstanceApp,DDVoiceApp dDVoice,
-            IRepository<UploadFile> repository, ServiceSaleOrderApp servcieSaleOrderApp, MinioClient minioClient, FileApp fileApp, FlowSchemeApp flowSchemeApp, IAuth auth, IFileStore fileStore, ILogger<FileApp> logger, IHubContext<MessageHub> hubContext) : base(unitWork, repository, auth)
+            IRepository<UploadFile> repository, ServiceSaleOrderApp servcieSaleOrderApp, UserDepartMsgHelp userDepartMsgHelp, MinioClient minioClient, FileApp fileApp, FlowSchemeApp flowSchemeApp, IAuth auth, IFileStore fileStore, ILogger<FileApp> logger, IHubContext<MessageHub> hubContext) : base(unitWork, repository, auth)
         {
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _flowInstanceApp = flowInstanceApp;
@@ -69,6 +71,7 @@ namespace OpenAuth.App.ContractManager
             _flowSchemeApp = flowSchemeApp;
             _hubContext = hubContext;
             _dDVoice = dDVoice;
+            _userDepartMsgHelp = userDepartMsgHelp;
         }
 
         /// <summary>
@@ -151,6 +154,7 @@ namespace OpenAuth.App.ContractManager
                         Remark = r.a.Remark,
                         CreateId = r.a.CreateId,
                         CreateName = r.a.CreateName,
+                        DeptName = _userDepartMsgHelp.GetUserOrgName(r.a.CreateId),
                         CreateTime = r.a.CreateTime,
                         UpdateTime = r.a.UpdateTime,
                         CompanyDtValue = r.CompanyDtValue,
@@ -238,6 +242,7 @@ namespace OpenAuth.App.ContractManager
                         Remark = r.a.Remark,
                         CreateId = r.a.CreateId,
                         CreateName = r.a.CreateName,
+                        DeptName = _userDepartMsgHelp.GetUserOrgName(r.a.CreateId),
                         CreateTime = r.a.CreateTime,
                         UpdateTime = r.a.UpdateTime,
                         CompanyDtValue = r.CompanyDtValue,
@@ -292,6 +297,21 @@ namespace OpenAuth.App.ContractManager
                 var contractApply = await UnitWork.Find<ContractApply>(r => r.Id == contractApplyId).ToListAsync();
                 var contractFileTypeList = await UnitWork.Find<ContractFileType>(r => r.ContractApplyId == contractApplyId).Include(r => r.contractFileList).ToListAsync();
                 var contractOperationHistoryList = await UnitWork.Find<ContractOperationHistory>(r => r.ContractApplyId == contractApplyId).OrderByDescending(r => r.CreateTime).ToListAsync();
+                List<ContractHistory> contractHistories  = contractOperationHistoryList.Select(r => new ContractHistory
+                {
+                    Id = r.Id,
+                    ContractApplyId = r.ContractApplyId,
+                    Action = r.Action,
+                    DeptName = (_userDepartMsgHelp.GetUserOrgName(r.CreateUserId)),
+                    CreateUser = r.CreateUser,
+                    CreateUserId = r.CreateUserId,
+                    CreateTime = r.CreateTime,
+                    IntervalTime = r.IntervalTime,
+                    ApprovalResult = r.ApprovalResult,
+                    Remark = r.Remark,
+                    ApprovalStage = r.ApprovalStage
+                }).ToList();
+
                 if (contractApply != null && contractApply.Count() > 0)
                 {
                     var categoryCompanyList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ContractCompany")).Select(u => new { u.DtValue, u.Name }).ToListAsync();
@@ -325,7 +345,8 @@ namespace OpenAuth.App.ContractManager
                                                a.IsUploadOriginal,
                                                a.Remark,
                                                a.CreateId,
-                                               a.CreateName,
+                                               DeptName = _userDepartMsgHelp.GetUserOrgName(a.CreateId),
+                                               CreateName = a.CreateName,
                                                a.CreateTime,
                                                a.UpdateTime,
                                                CompanyDtValue = b.DtValue,
@@ -383,8 +404,12 @@ namespace OpenAuth.App.ContractManager
                                                                              b.IsSeal,
                                                                              b.IsFinalContract,
                                                                              b.CreateUploadId,
+                                                                             CreateUploadName = b.CreateUploadName,
+                                                                             CreateDeptName = _userDepartMsgHelp.GetUserOrgName(b.CreateUploadId),
                                                                              b.CreateUploadTime,
                                                                              b.UpdateUserId,
+                                                                             UpdateUserName = b.UpdateUserName,
+                                                                             UpdateDeptName = _userDepartMsgHelp.GetUserOrgName(b.UpdateUserId),
                                                                              b.UpdateUserTime,
                                                                              FileName = e == null ? "" : e.FileName,
                                                                              FilePath = e == null ? "" : e.FilePath,
@@ -405,7 +430,7 @@ namespace OpenAuth.App.ContractManager
                         result.Data = new
                         {
                             ContractApplyReq = contractApplyReq,
-                            ContractOperationHistoryList = contractOperationHistoryList,
+                            ContractOperationHistoryList = contractHistories,
                             ContractFileTypeReq = contractTypeFileReq,
                             ContractStatusReq = nodeList
                         };
@@ -415,7 +440,7 @@ namespace OpenAuth.App.ContractManager
                         result.Data = new
                         {
                             ContractApplyReq = contractApplyReq,
-                            ContractOperationHistoryList = contractOperationHistoryList,
+                            ContractOperationHistoryList = contractHistories,
                             ContractFileTypeReq = new List<ContractFileType>(),
                             ContractStatusReq = nodeList
                         };
@@ -471,6 +496,7 @@ namespace OpenAuth.App.ContractManager
                         QuotationNo = r.QuotationNo,
                         ContractType = r.ContractType,
                         CompanyType = r.CompanyType,
+                        CreateId = r.CreateId,
                         CreateName = r.CreateName,
                         CreateTime = r.CreateTime.ToString(),
                         ContractStatus = r.ContractStatus
@@ -496,6 +522,7 @@ namespace OpenAuth.App.ContractManager
                         ContractNo = r.ContractNo,
                         ContractType = r.ContractType,
                         CompanyType = r.CompanyType,
+                        CreateId = r.CreateId,
                         CreateName = r.CreateName,
                         CreateTime = r.CreateTime.ToString(),
                         ContractStatus = r.ContractStatus,
@@ -522,6 +549,7 @@ namespace OpenAuth.App.ContractManager
                         ContractNo = r.ContractNo,
                         ContractType = r.ContractType,
                         CompanyType = r.CompanyType,
+                        CreateId = r.CreateId,
                         CreateName = r.CreateName,
                         CreateTime = r.CreateTime.ToString(),
                         ContractStatus = r.ContractStatus
@@ -546,7 +574,8 @@ namespace OpenAuth.App.ContractManager
                                              CompanyType = a.CompanyType,
                                              CompanyName = b.Name,
                                              ContractStatus = a.ContractStatus,
-                                             ContractStatusName = d.Name
+                                             ContractStatusName = d.Name,
+                                             CreateId = a.CreateId
                                          }).ToList();
 
                     //查找合同申请单对应的合同文件类型
@@ -559,6 +588,7 @@ namespace OpenAuth.App.ContractManager
                                              ContractNo = a.ContractNo,
                                              ContractTypeName = a.ContractTypeName,
                                              FileTypeName = b == null ? "" : b.FileType,
+                                             CreateId = a.CreateId,
                                              CreateName = a.CreateName,
                                              CreateTime = a.CreateTime,
                                              CompanyName = a.CompanyName,
@@ -574,7 +604,9 @@ namespace OpenAuth.App.ContractManager
                                          ContractNo = a.ContractNo,
                                          ContractTypeName = a.ContractTypeName,
                                          FileTypeName = b == null ? "" : b.Name,
+                                         CreateId = a.CreateId,
                                          CreateName = a.CreateName,
+                                         DeptName = _userDepartMsgHelp.GetUserOrgName(a.CreateId),
                                          CreateTime = a.CreateTime,
                                          CompanyName = a.CompanyName,
                                          ContractStatusName = a.ContractStatusName
@@ -724,7 +756,7 @@ namespace OpenAuth.App.ContractManager
 
                 ApprovalNodeReq nodeEndReq = new ApprovalNodeReq();
                 nodeEndReq.NodeName = "结束";
-                nodeSCReq.NodeStatus = "-1";
+                nodeEndReq.NodeStatus = "-1";
                 nodeEndReq.NodeUser = "";
                 nodeList.Add(nodeEndReq);
             }
@@ -1058,7 +1090,7 @@ namespace OpenAuth.App.ContractManager
 
                 ApprovalNodeReq nodeEndReq = new ApprovalNodeReq();
                 nodeEndReq.NodeName = "结束";
-                nodeSCReq.NodeStatus = "-1";
+                nodeEndReq.NodeStatus = "-1";
                 nodeEndReq.NodeUser = "";
                 nodeList.Add(nodeEndReq);
             }
@@ -1119,21 +1151,82 @@ namespace OpenAuth.App.ContractManager
             await SendSinglRMsg(quotationObj.ContractStatus, quotationObj.ContractNo, req.Remarks, loginContext.User);
 
             //撤回申请单钉钉通知
-            //await SendDDReCallMsg(quotationObj.ContractNo, req.Remarks, loginContext.User.Name);
+            //await SendDDReCallMsg(quotationObj.ContractStatus, quotationObj.ContractNo, req.Remarks, loginContext.User);
         }
 
         /// <summary>
         /// 钉钉通知撤回消息
         /// </summary>
+        /// <param name="contractStatus">合同单状态</param>
         /// <param name="contractNo">合同单据号</param>
         /// <param name="recallRemark">撤回备注</param>
-        /// <param name="userName">业务员</param>
+        /// <param name="user">业务员</param>
         /// <returns></returns>
-        public async Task SendDDReCallMsg(string contractNo, string recallRemark, string userName)
+        public async Task SendDDReCallMsg(string contractStatus, string contractNo, string recallRemark, User user)
         {
-            string userIds = "16601825539643395";
-            string remarks = "合同单号为" + contractNo + "申请单已被业务员-" + userName + "-撤回，撤回理由：" + recallRemark;
-            await _dDVoice.DDSendMsg("text", remarks, userIds);
+            //添加当前合同申请单状态对应的审批角色
+            List<string> roles = new List<string>();
+            switch (contractStatus)
+            {
+                case "3":
+                    roles.Add("法务人员");
+                    break;
+                case "4":
+                    roles.Add("法务人员");
+                    roles.Add("售前工程师");
+                    break;
+                case "5":
+                    roles.Add("销售总助");
+                    break;
+                case "8":
+                    roles.Add("售前工程师");
+                    break;
+                case "9":
+                    roles.Add("法务人员");
+                    break;
+                case "10":
+                    roles.Add("法务人员");
+                    roles.Add("销售总助");
+                    break;
+                case "12":
+                    roles.Add("售前工程师");
+                    break;
+            }
+
+            if (roles.Count() > 0)
+            {
+                //查询角色Id
+                List<string> roleMsgs = await UnitWork.Find<Role>(r => roles.Contains(r.Name)).Select(r => r.Id).ToListAsync();
+
+                //查询角色和用户的对应关系
+                List<string> relevances = await UnitWork.Find<Relevance>(r => roleMsgs.Contains(r.SecondId)).Select(r => r.FirstId).ToListAsync();
+
+                //查询用户绑定的钉钉用户Id
+                List<string> ddBindUsers = await UnitWork.Find<DDBindUser>(r => relevances.Contains(r.UserId)).Select(r => r.DDUserId).ToListAsync();
+
+                //绑定钉钉用户不为空时，通过钉钉推送消息
+                if (ddBindUsers != null && ddBindUsers.Count() > 0)
+                {
+                    string userIds = string.Join(",", ddBindUsers);
+                    string remarks = "合同单号为" + contractNo + "申请单已被业务员-" + _userDepartMsgHelp.GetUserOrgName(user.Id) + user.Name + "-撤回，撤回理由：" + recallRemark;
+                    await _dDVoice.DDSendMsg("text", remarks, userIds);
+                }
+                else
+                {
+                    //钉钉推送操作历史记录
+                    await UnitWork.AddAsync<DDSendMsgHitory>(new DDSendMsgHitory()
+                    {
+                        MsgType = "钉钉推送撤回合同申请单消息",
+                        MsgContent = contractNo + "推送失败,不存在钉钉绑定用户",
+                        MsgResult = "失败",
+                        CreateName = user.Name,
+                        CreateUserId = user.Id,
+                        CreateTime = DateTime.Now
+                    });
+
+                    await UnitWork.SaveAsync();
+                }
+            }
         }
 
         /// <summary>
@@ -1180,8 +1273,7 @@ namespace OpenAuth.App.ContractManager
             {
                 foreach (string item in roles)
                 {
-                    await _hubContext.Clients.Groups(item).SendAsync("ContractMessage", user.Name, $"单号为" + contractNo + "申请单已撤回，撤回理由：" + remarks);
-                    // await _hubContext.Clients.Groups("呼叫中心").SendAsync("ServiceOrderECNCount", "系统", serviceOrderEcnCount);
+                    await _hubContext.Clients.Groups(item).SendAsync("ContractMessage", _userDepartMsgHelp.GetUserOrgName(user.Id) + user.Name, $"单号为" + contractNo + "申请单已撤回，撤回理由：" + remarks);
                 }
 
                 //SinglR推送操作历史记录
@@ -1295,7 +1387,8 @@ namespace OpenAuth.App.ContractManager
                                 contractFile.Id = Guid.NewGuid().ToString();
                                 contractFile.ContractFileTypeId = item.Id;
                                 contractFile.IsSeal = false;
-                                contractFile.CreateUploadId = loginUser.Name;
+                                contractFile.CreateUploadId = loginUser.Id;
+                                contractFile.CreateUploadName = loginUser.Name;
                                 contractFile.CreateUploadTime = DateTime.Now;
                             }
 
@@ -1454,9 +1547,11 @@ namespace OpenAuth.App.ContractManager
                             file.IsSeal = contractFile.IsSeal;
                             file.FileId = contractFile.FileId;
                             file.IsFinalContract = contractFile.IsFinalContract;
-                            file.CreateUploadId = contractFile.CreateUploadId == "" ? loginUser.Name : contractFile.CreateUploadId;
+                            file.CreateUploadId = contractFile.CreateUploadId == "" ? loginUser.Id : contractFile.CreateUploadId;
+                            file.CreateUploadName = contractFile.CreateUploadName;
                             file.CreateUploadTime = contractFile.CreateUploadTime == null ? DateTime.Now : contractFile.CreateUploadTime;
-                            file.UpdateUserId = loginUser.Name;
+                            file.UpdateUserId = loginUser.Id;
+                            file.UpdateUserName = loginUser.Name;
                             file.UpdateUserTime = DateTime.Now;
                             contractFileList.Add(file);
                         }
@@ -2023,9 +2118,11 @@ namespace OpenAuth.App.ContractManager
                         file.IsSeal = contractFile.IsSeal;
                         file.FileId = contractFile.FileId;
                         file.IsFinalContract = contractFile.IsFinalContract;
-                        file.CreateUploadId = contractFile.CreateUploadId == "" ? loginContext.User.Name : contractFile.CreateUploadId;
+                        file.CreateUploadId = contractFile.CreateUploadId == "" ? loginContext.User.Id : contractFile.CreateUploadId;
+                        file.CreateUploadName = contractFile.CreateUploadName;
                         file.CreateUploadTime = contractFile.CreateUploadTime == null ? DateTime.Now : contractFile.CreateUploadTime;
-                        file.UpdateUserId = loginContext.User.Name;
+                        file.UpdateUserId = loginContext.User.Id;
+                        file.UpdateUserName = loginContext.User.Name;
                         file.UpdateUserTime = DateTime.Now;
                         contractFileList.Add(file);
                     }
@@ -2050,6 +2147,7 @@ namespace OpenAuth.App.ContractManager
                 #endregion
 
                 req.contractApply.ContractStatus = obj.ContractStatus;
+                req.contractApply.UpdateTime = DateTime.Now;
                 await UnitWork.UpdateAsync<ContractApply>(req.contractApply);
 
                 //操作历史记录
@@ -2982,9 +3080,11 @@ namespace OpenAuth.App.ContractManager
                             file.IsSeal = contractFile.IsSeal;
                             file.FileId = contractFile.FileId;
                             file.IsFinalContract = contractFile.IsFinalContract;
-                            file.CreateUploadId = contractFile.CreateUploadId == "" ? loginContext.User.Name : contractFile.CreateUploadId;
+                            file.CreateUploadId = contractFile.CreateUploadId == "" ? loginContext.User.Id : contractFile.CreateUploadId;
+                            file.CreateUploadName = contractFile.CreateUploadName;
                             file.CreateUploadTime = contractFile.CreateUploadTime == null ? DateTime.Now : contractFile.CreateUploadTime;
-                            file.UpdateUserId = loginContext.User.Name;
+                            file.UpdateUserId = loginContext.User.Id;
+                            file.UpdateUserName = loginContext.User.Name;
                             file.UpdateUserTime = DateTime.Now;
                             contractFileList.Add(file);
                         }
@@ -3127,7 +3227,8 @@ namespace OpenAuth.App.ContractManager
                 {
                     ContractSealId = contractFileSeal.ContractSealId,
                     ContractNo = objs.ContractNo,
-                    CreateUserId = loginUser.Name,
+                    CreateUserId = loginUser.Id,
+                    CreateUserName = loginUser.Name,
                     CreateTime = DateTime.Now,
                     ContractFinalNum = (UnitWork.Find<ContractFileType>(r => r.ContractApplyId == req.ContractApplyId).GroupBy(r => new { r.ContractApplyId, contractFileSeal.ContractSealId })).Count(),
                     OperationType = "电子盖章"
@@ -3189,9 +3290,11 @@ namespace OpenAuth.App.ContractManager
                             file.IsSeal = contractFile.IsSeal;
                             file.FileId = contractFile.FileId;
                             file.IsFinalContract = contractFile.IsFinalContract;
-                            file.CreateUploadId = contractFile.CreateUploadId == "" ? loginContext.User.Name : contractFile.CreateUploadId;
+                            file.CreateUploadId = contractFile.CreateUploadId == "" ? loginContext.User.Id : contractFile.CreateUploadId;
+                            file.CreateUploadName = contractFile.CreateUploadName;
                             file.CreateUploadTime = contractFile.CreateUploadTime == null ? DateTime.Now : contractFile.CreateUploadTime;
-                            file.UpdateUserId = loginContext.User.Name;
+                            file.UpdateUserId = loginContext.User.Id;
+                            file.UpdateUserName = loginContext.User.Name;
                             file.UpdateUserTime = DateTime.Now;
                             contractFileList.Add(file);
                         }
@@ -3258,7 +3361,8 @@ namespace OpenAuth.App.ContractManager
                         {
                             ContractSealId = item.ContractSealId,
                             ContractNo = obj.ContractNo,
-                            CreateUserId = loginUser.Name,
+                            CreateUserId = loginUser.Id,
+                            CreateUserName = loginUser.Name,
                             CreateTime = DateTime.Now,
                             ContractFinalNum = (await UnitWork.Find<ContractFile>(r => r.ContractFileTypeId == item.Id && r.IsFinalContract == true).ToListAsync()).Count(),
                             OperationType = "线下盖章"
@@ -3352,7 +3456,8 @@ namespace OpenAuth.App.ContractManager
                     {
                         ContractSealId = contractFileSeal.ContractSealId,
                         ContractNo = objs.ContractNo,
-                        CreateUserId = loginUser.Name,
+                        CreateUserId = loginUser.Id,
+                        CreateUserName = loginUser.Name,
                         CreateTime = DateTime.Now,
                         ContractFinalNum = (UnitWork.Find<ContractFileType>(r => r.ContractApplyId == req.ContractApplyId).GroupBy(r => new { r.ContractApplyId, contractFileSeal.ContractSealId })).Count(),
                         OperationType = "电子盖章"
@@ -3590,8 +3695,7 @@ namespace OpenAuth.App.ContractManager
 
             var objs = UnitWork.Find<ContractApply>(r => statusList.Contains(r.ContractStatus)).Include(r => r.ContractFileTypeList).Include(r => r.contractOperationHistoryList);
             var contractApply = (objs.WhereIf(!string.IsNullOrWhiteSpace(request.ContractNo), r => r.ContractNo.Contains(request.ContractNo))
-                                    .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerCodeOrName), r => r.CustomerCode.Contains(request.CustomerCodeOrName))
-                                    .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerCodeOrName), r => r.CustomerName.Contains(request.CustomerCodeOrName))
+                                     .WhereIf(!string.IsNullOrWhiteSpace(request.CustomerCodeOrName), r => r.CustomerCode.Contains(request.CustomerCodeOrName) || r.CustomerName.Contains(request.CustomerCodeOrName))
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.CompanyType), r => r.CompanyType.Equals(request.CompanyType))
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.QuotationNo), r => r.QuotationNo.Contains(request.QuotationNo))
                                     .WhereIf(!string.IsNullOrWhiteSpace(request.SaleNo), r => r.SaleNo.Contains(request.SaleNo))
@@ -3647,6 +3751,7 @@ namespace OpenAuth.App.ContractManager
                 Remark = r.a.Remark,
                 CreateId = r.a.CreateId,
                 CreateName = r.a.CreateName,
+                DeptName = _userDepartMsgHelp.GetUserOrgName(r.a.CreateId),
                 CreateTime = r.a.CreateTime,
                 UpdateTime = r.a.UpdateTime,
                 CompanyDtValue = r.CompanyDtValue,
@@ -3776,6 +3881,7 @@ namespace OpenAuth.App.ContractManager
                             {
                                 a.Id,
                                 a.FileId,
+                                a.CreateUserId,
                                 a.CreateName,
                                 a.CreateTime,
                                 c.FileType,
@@ -3792,6 +3898,7 @@ namespace OpenAuth.App.ContractManager
                                                 FileTypeName = a.Name,
                                                 FileName = b.FileName,
                                                 CreateName = a.CreateName,
+                                                DeptName = _userDepartMsgHelp.GetUserOrgName(a.CreateUserId),
                                                 CreateTime = (Convert.ToDateTime(a.CreateTime)).ToString("yyyy.MM.dd hh:mm:ss")
                                             }).ToList();
 

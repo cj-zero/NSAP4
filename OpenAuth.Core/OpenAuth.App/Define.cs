@@ -26,6 +26,7 @@ namespace OpenAuth.App
         public const int IS_OverTime = 50019;//时间超时
         public const int IS_Return_Finish = 50020;//退料完成
         public const int Express_NotFound = 50021;//快递已不存在
+        public const int Warning = 50023;//前端警告弹窗（黄色弹窗）
         public const string TOKEN_NAME = "X-Token";
 
 
