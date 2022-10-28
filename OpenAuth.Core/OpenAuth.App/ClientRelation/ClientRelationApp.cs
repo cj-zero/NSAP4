@@ -189,13 +189,13 @@ namespace OpenAuth.App.ClientRelation
                 _logger.LogError("审核通过，同步成功后更新关系未找到对应表JobClientRelation的Job关系,请求参数为" + JsonConvert.SerializeObject(job));
                 return false;
             }
-            var syncedRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.JobId == job.JobId && a.ClientNo.Length >2 && a.IsActive == 1 && a.IsDelete == 0);
-            if (syncedRelation != null)
-            {
-                //add to log file to explain why 
-                _logger.LogError("审核通过，同步成功后更新关系已同步,请求参数为" + JsonConvert.SerializeObject(job));
-                return false;
-            }
+            //var syncedRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.JobId == job.JobId && a.ClientNo.Length >2 && a.IsActive == 1 && a.IsDelete == 0);
+            //if (syncedRelation != null)
+            //{
+            //    //add to log file to explain why 
+            //    _logger.LogError("审核通过，同步成功后更新关系已同步,请求参数为" + JsonConvert.SerializeObject(job));
+            //    return false;
+            //}
             var relatedClients = JsonConvert.DeserializeObject<List<ClientRelJob>>(jobRelation.Terminals);
             //get add  ,update batch
             List<OpenAuth.Repository.Domain.ClientRelation> updateData = new List<OpenAuth.Repository.Domain.ClientRelation>();
@@ -226,6 +226,38 @@ namespace OpenAuth.App.ClientRelation
                     Operatorid = originRelation.Operatorid
                 };
                 await UnitWork.AddAsync<OpenAuth.Repository.Domain.ClientRelation, int>(cr);
+            }
+            //20221027 审批中间商修改客户关系
+            if (!string.IsNullOrEmpty(jobRelation.Terminals) && originRelation==null)
+            {
+
+                var uptRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.JobId == job.JobId && a.ScriptFlag == 0 && a.IsActive == 1 && a.IsDelete == 0 );
+                addHistoryData.Add(new ClientRelHistory
+                {
+                    CID = uptRelation.Id,
+                    ClientNo = uptRelation.ClientNo,
+                    ClientName = uptRelation.ClientName,
+                    ParentNo = uptRelation.ParentNo,
+                    SubNo = uptRelation.SubNo,
+                    Flag = uptRelation.Flag,
+                    ScriptFlag = uptRelation.ScriptFlag,
+                    IsDelete = uptRelation.IsDelete,
+                    CreateDate = DateTime.Now,
+                    UpdateDate = uptRelation.UpdateDate,
+                    Creator = uptRelation.Creator,
+                    Creatorid = uptRelation.Creatorid,
+                    Updater = uptRelation.Updater,
+                    Updaterid = uptRelation.Updaterid,
+                    Operator = uptRelation.Operator,
+                    Operatorid = uptRelation.Operatorid,
+                    OperateType = 0,
+                    JobId = uptRelation.JobId
+                });
+                var subList = JsonConvert.DeserializeObject<List<ClientRelJob>>(jobRelation.Terminals);
+                uptRelation.SubNo = JsonConvert.SerializeObject(subList.Select(a => a.customerNo).ToList());
+                uptRelation.Operatorid = jobRelation.CreatorId;
+                uptRelation.Operator = jobRelation.Creator;
+                updateData.Add(uptRelation);
             }
        
             if (originRelation != null)
@@ -305,11 +337,7 @@ namespace OpenAuth.App.ClientRelation
                 }
 
             }
-            else
-            {
-                _logger.LogError("审核通过，同步成功后更新关系未找到对应的草稿关系,请求参数为" + JsonConvert.SerializeObject(job));
-                return false;
-            }
+
             //await UnitWork.BatchAddAsync<OpenAuth.Repository.Domain.ClientRelation, int>(addData.ToArray());
             await UnitWork.BatchAddAsync<OpenAuth.Repository.Domain.ClientRelHistory, int>(addHistoryData.ToArray());
             await UnitWork.BatchUpdateAsync<OpenAuth.Repository.Domain.ClientRelation>(updateData.ToArray());
@@ -366,7 +394,7 @@ namespace OpenAuth.App.ClientRelation
             var  finalSubnodes = subListNodes.Count ==0 ? "" : JsonConvert.SerializeObject(subListNodes);
 
             //update the script jobrelation
-            if (jobScript.Initial == 1)
+            if (!string.IsNullOrEmpty(jobScript.EndCustomerName)&&jobScript.Initial == 1)
             {
                 var jobrelations = UnitWork.FindSingle<OpenAuth.Repository.Domain.JobClientRelation>(a => a.Jobid == jobScript.JobId && a.IsDelete == 0);
                 jobrelations.Terminals = jobScript.EndCustomerName;
