@@ -100,6 +100,12 @@ namespace OpenAuth.Repository.Domain
         /// 是否提醒
         /// </summary>
         public bool IsRemind { get; set; }
+
+        /// <summary>
+        /// 创建人部门
+        /// </summary>
+        [NotMapped]
+        public string CreateUser_dept { get; set; }
         public override void GenerateDefaultKeyVal()
         {
         }
