@@ -587,28 +587,7 @@ namespace OpenAuth.App
 
         public async Task CreateNwcailFileHelper()
         {
-            var res = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId) && string.IsNullOrWhiteSpace(c.CNASPdfPath) && c.Time == DateTime.Parse("2022-08-16")).ToListAsync();
-            foreach (var item in res)
-            {
-                await CreateNwcailFile(item.CertificateNumber);
-            }
-        }
-
-        public async Task CreateNwcailFileHelper2()
-        {
-            //获取销售订单下所有序列号
-            var manufacturerSerialNumber = from a in UnitWork.Find<store_oitl>(null)
-                                           join b in UnitWork.Find<store_itl1>(null) on new { a.LogEntry, a.ItemCode } equals new { b.LogEntry, b.ItemCode } into ab
-                                           from b in ab.DefaultIfEmpty()
-                                           join c in UnitWork.Find<store_osrn>(null) on new { b.ItemCode, b.SysNumber } equals new { c.ItemCode, c.SysNumber } into bc
-                                           from c in bc.DefaultIfEmpty()
-                                           where a.DocType == 15 && !string.IsNullOrWhiteSpace(c.MnfSerial) && a.BaseEntry== 92836
-                                           select new { c.MnfSerial, a.ItemCode, a.DocEntry, a.BaseEntry, a.DocType, a.CreateDate, a.BaseType };
-
-            var numList = await manufacturerSerialNumber
-                .Select(c => c.MnfSerial).ToListAsync();
-
-            var res = await UnitWork.Find<NwcaliBaseInfo>(c => numList.Contains(c.TesterSn)).ToListAsync();
+            var res = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId) && string.IsNullOrWhiteSpace(c.CNASPdfPath)).ToListAsync();
             foreach (var item in res)
             {
                 await CreateNwcailFile(item.CertificateNumber);
@@ -748,7 +727,7 @@ namespace OpenAuth.App
                 catch (Exception e)
                 {
 
-                    //throw e;
+                    throw e;
                 }
             }
         }
@@ -2012,7 +1991,7 @@ namespace OpenAuth.App
                        .WhereIf(!string.IsNullOrWhiteSpace(req.ItemCode), c => productionOrderList.Contains(c.OrderNo))
                        .WhereIf(!string.IsNullOrWhiteSpace(req.Sn), c => wmsGuidList.Contains(c.LowGuid));
             result.Count = query.Count();
-            var taskList =req.State==0?query.OrderBy(c => c.Id).Skip((req.page - 1) * req.limit).Take(req.limit).ToList(): query.OrderBy(c => c.Id).ToList();
+            var taskList = req.State == 0 ? query.OrderBy(c => c.Id).Skip((req.page - 1) * req.limit).Take(req.limit).ToList() : query.OrderBy(c => c.Id).ToList();
             var orderIds = taskList.Select(c => c.OrderNo).Distinct().ToList();
             var taskIds = taskList.Where(c => !string.IsNullOrWhiteSpace(c.TaskId)).Select(c => c.TaskId).Distinct().ToList();
             var orderList = await UnitWork.Find<product_owor>(null).Where(c => orderIds.Contains(c.DocEntry)).Select(c => new { c.DocEntry, c.OriginAbs, c.ItemCode }).ToListAsync();
@@ -2033,7 +2012,7 @@ namespace OpenAuth.App
             var taskData = helper.Post(new
             {
                 PageSize = req.limit,
-                Page = req.page,
+                Page = req.State != 0 ? req.page : 1,
                 Result = re,
                 TaskIDs = taskIds
             }, url, "", "");
@@ -2074,13 +2053,13 @@ namespace OpenAuth.App
                 var records = taskObj["data"]["records"].FirstOrDefault(c => c["taskID"].ToString() == item.TaskId);
                 var orderInfo = orderList.FirstOrDefault(c => c.DocEntry == item.OrderNo);
                 var snInfo = wmsSnGuids.FirstOrDefault(c => c.devGuid == item.LowGuid);
-                if ((req.State==1 || req.State==2) && records==null)
+                if ((req.State == 1 || req.State == 2) && records == null)
                 {
                     continue;
                 }
                 list.Add(new
                 {
-                    OriginAbs = orderInfo.OriginAbs==0?"": orderInfo.OriginAbs.ToString(),
+                    OriginAbs = orderInfo.OriginAbs == 0 ? "" : orderInfo.OriginAbs.ToString(),
                     ItemCode = orderInfo == null ? "" : orderInfo.ItemCode,
                     item.GeneratorCode,
                     item.Department,
@@ -2215,7 +2194,7 @@ namespace OpenAuth.App
                 var snInfo = wmsSnGuids.FirstOrDefault(c => c.devGuid == item.LowGuid);
                 list.Add(new ExportBakingMachineRecordResp
                 {
-                    OriginAbs = orderInfo.OriginAbs==0?"": orderInfo.OriginAbs.ToString(),
+                    OriginAbs = orderInfo.OriginAbs == 0 ? "" : orderInfo.OriginAbs.ToString(),
                     ItemCode = orderInfo == null ? "" : orderInfo.ItemCode,
                     GeneratorCode = item.GeneratorCode,
                     Department = item.Department,
@@ -2233,6 +2212,156 @@ namespace OpenAuth.App
                     carbon = records == null ? "" : records["carbon"].ToString(),
                     duration = records == null ? "" : records["duration"].ToString(),
                     sn = snInfo == null ? "" : snInfo.sn
+                });
+            }
+            IExporter exporter = new ExcelExporter();
+            var bytes = await exporter.ExportAsByteArray(list);
+            return bytes;
+        }
+
+        /// <summary>
+        /// 校准明细报表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> CalibrationReport(QueryCalibrationReportReq req)
+        {
+            TableData result = new TableData();
+            List<object> list = new List<object>();
+            List<string> userIds = new List<string>();
+            if (!string.IsNullOrWhiteSpace(req.OrgId))
+            {
+                var query = await UnitWork.Find<Relevance>(null).Where(c => c.Key == Define.USERORG && c.SecondId == req.OrgId).Select(c => c.FirstId).ToListAsync();
+                userIds.AddRange(query);
+            }
+            if (!string.IsNullOrWhiteSpace(req.Operator))
+            {
+                var query = await UnitWork.Find<User>(null).Where(c => c.Name.Contains(req.Operator) && c.Status == 0).Select(c => c.Id).ToListAsync();
+                userIds.AddRange(query);
+            }
+            var ids = userIds.Distinct();
+            var passportIDs = UnitWork.Find<AppUserMap>(null).Where(c => ids.Contains(c.UserID)).Select(c => c.PassPortId)
+                //.Skip((req.page - 1) * req.limit).Take(req.limit)
+                .ToList();
+            string url = "http://121.37.222.129:50001/api/Calibration/c-report";
+            HttpHelper helper = new HttpHelper(url);
+            var taskData = helper.Post(new
+            {
+                passportIDs = passportIDs,
+                beginTime = req.StartTime,
+                endTime = req.EndTime
+            }, url, "", "");
+            JObject taskObj = JObject.Parse(taskData);
+            if (taskObj == null || taskObj["code"].ToString() != "1001")
+            {
+                result.Code = 500;
+                result.Message = $"获取人员校准报表接口异常!";
+                return result;
+            }
+            var passportUserIds = taskObj["data"].Select(c => Convert.ToInt32(c["userId"])).Distinct().ToList();
+            var userList = await (from a in UnitWork.Find<AppUserMap>(null)
+                                  join b in UnitWork.Find<User>(null) on a.UserID equals b.Id
+                                  join c in UnitWork.Find<Relevance>(null) on b.Id equals c.FirstId
+                                  join d in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on c.SecondId equals d.Id
+                                  where passportUserIds.Contains(a.PassPortId.Value) && b.Status == 0 && c.Key == Define.USERORG
+                                  select new { userName = b.Name, orgName = d.Name, a.PassPortId }).ToListAsync();
+            var taskIds = taskObj["data"].Select(c => c["taskId"].ToString()).Distinct().ToList();
+            var codelist = await (from a in UnitWork.Find<DeviceCheckTask>(null)
+                                  join b in UnitWork.Find<DeviceTestLog>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.UnitId, a.TestId, a.ChlId, a.LowGuid } equals new { b.EdgeGuid, b.SrvGuid, b.DevUid, b.UnitId, b.TestId, b.ChlId, b.LowGuid }
+                                  where taskIds.Contains(a.TaskId)
+                                  select new { b.GeneratorCode, a.TaskId }).ToListAsync();
+            foreach (var item in taskObj["data"])
+            {
+                var userInfo = userList.Where(c => c.PassPortId == Convert.ToInt32(item["userId"])).FirstOrDefault();
+                var codeInfo = codelist.Where(c => c.TaskId == item["taskId"].ToString()).FirstOrDefault();
+                list.Add(new
+                {
+                    taskSubId = item["taskSubId"].ToString(),
+                    chlId = item["chlId"].ToString(),
+                    beginTime = item["beginTime"].ToString(),
+                    endTime = item["endTime"].ToString(),
+                    lowGuid = item["lowGuid"].ToString(),
+                    lowVer = item["lowVer"].ToString(),
+                    midGuid = item["lowVer"].ToString(),
+                    midVer = item["lowVer"].ToString(),
+                    assetInfo = item["assetInfo"].ToString(),
+                    conclusion = item["conclusion"].ToString(),
+                    duration = item["duration"].ToString(),
+                    userName = userInfo == null ? "" : userInfo.userName,
+                    orgName = userInfo == null ? "" : userInfo.orgName,
+                    generatorCode = codeInfo == null ? "" : codeInfo.GeneratorCode
+                });
+            }
+            result.Data = list;
+            return result;
+        }
+
+
+        /// <summary>
+        /// 导出校准明细报表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<byte[]> ExportCalibrationReport(QueryCalibrationReportReq req)
+        {
+            List<ExportCalibrationReportResp> list = new List<ExportCalibrationReportResp>();
+            List<string> userIds = new List<string>();
+            if (!string.IsNullOrWhiteSpace(req.OrgId))
+            {
+                var query = await UnitWork.Find<Relevance>(null).Where(c => c.Key == Define.USERORG && c.SecondId == req.OrgId).Select(c => c.FirstId).ToListAsync();
+                userIds.AddRange(query);
+            }
+            if (!string.IsNullOrWhiteSpace(req.Operator))
+            {
+                var query = await UnitWork.Find<User>(null).Where(c => c.Name.Contains(req.Operator) && c.Status == 0).Select(c => c.Id).ToListAsync();
+                userIds.AddRange(query);
+            }
+            var ids = userIds.Distinct();
+            var passportIDs = UnitWork.Find<AppUserMap>(null).Where(c => ids.Contains(c.UserID)).Select(c => c.PassPortId)
+                //.Skip((req.page - 1) * req.limit).Take(req.limit)
+                .ToList();
+            string url = "http://121.37.222.129:50001/api/Calibration/c-report";
+            HttpHelper helper = new HttpHelper(url);
+            var taskData = helper.Post(new
+            {
+                passportIDs = passportIDs,
+                beginTime = req.StartTime,
+                endTime = req.EndTime
+            }, url, "", "");
+            JObject taskObj = JObject.Parse(taskData);
+            if (taskObj == null || taskObj["code"].ToString() != "1001")
+            {
+                throw new Exception($"获取人员校准报表接口异常!");
+            }
+            var passportUserIds = taskObj["data"].Select(c => Convert.ToInt32(c["userId"])).Distinct().ToList();
+            var userList = await (from a in UnitWork.Find<AppUserMap>(null)
+                                  join b in UnitWork.Find<User>(null) on a.UserID equals b.Id
+                                  join c in UnitWork.Find<Relevance>(null) on b.Id equals c.FirstId
+                                  join d in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on c.SecondId equals d.Id
+                                  where passportUserIds.Contains(a.PassPortId.Value) && b.Status == 0 && c.Key == Define.USERORG
+                                  select new { userName = b.Name, orgName = d.Name, a.PassPortId }).ToListAsync();
+            var taskIds = taskObj["data"].Select(c => c["taskId"].ToString()).Distinct().ToList();
+            var codelist = await (from a in UnitWork.Find<DeviceCheckTask>(null)
+                                  join b in UnitWork.Find<DeviceTestLog>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.UnitId, a.TestId, a.ChlId, a.LowGuid } equals new { b.EdgeGuid, b.SrvGuid, b.DevUid, b.UnitId, b.TestId, b.ChlId, b.LowGuid }
+                                  where taskIds.Contains(a.TaskId)
+                                  select new { b.GeneratorCode, a.TaskId }).ToListAsync();
+            foreach (var item in taskObj["data"])
+            {
+                var userInfo = userList.Where(c => c.PassPortId == Convert.ToInt32(item["userId"])).FirstOrDefault();
+                var codeInfo = codelist.Where(c => c.TaskId == item["taskId"].ToString()).FirstOrDefault();
+                list.Add(new ExportCalibrationReportResp
+                {
+                    taskSubId = item["taskSubId"].ToString(),
+                    chlId = item["chlId"].ToString(),
+                    beginTime = item["beginTime"].ToString(),
+                    endTime = item["endTime"].ToString(),
+                    lowGuid = item["lowGuid"].ToString(),
+                    lowVer = item["lowVer"].ToString(),
+                    conclusion = item["conclusion"].ToString(),
+                    duration = item["duration"].ToString(),
+                    userName = userInfo == null ? "" : userInfo.userName,
+                    orgName = userInfo == null ? "" : userInfo.orgName,
+                    generatorCode = codeInfo == null ? "" : codeInfo.GeneratorCode
                 });
             }
             IExporter exporter = new ExcelExporter();
