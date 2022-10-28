@@ -375,7 +375,7 @@ namespace OpenAuth.App.ClientRelation
             var  finalSubnodes = subListNodes.Count ==0 ? "" : JsonConvert.SerializeObject(subListNodes);
 
             //update the script jobrelation
-            if (jobScript.Initial == 1)
+            if (!string.IsNullOrEmpty(jobScript.EndCustomerName)&&jobScript.Initial == 1)
             {
                 var jobrelations = UnitWork.FindSingle<OpenAuth.Repository.Domain.JobClientRelation>(a => a.Jobid == jobScript.JobId && a.IsDelete == 0);
                 jobrelations.Terminals = jobScript.EndCustomerName;
