@@ -2086,7 +2086,15 @@ namespace OpenAuth.App
                 && (req.CompleteDate == null || (a.CompleteDate > req.CompleteDate))
                 && (req.EndCompleteDate == null || (a.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1)))
                 ).OrderBy(a => a.Status).ToList(),
-            }) ;
+            }).ToList();
+            data.ForEach(c =>
+            {
+                if (c.VestInOrg == 1)
+                {
+                    c.MaterialTypes = c.ServiceWorkOrders.Select(s => s.MaterialCode.IndexOf("-") == -1 ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-"))).Distinct().ToList();
+                    //c.MaterialTypes = c.ServiceWorkOrders.Select(s => s.MaterialCode == "无序列号" ? "无序列号" : (s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == "" ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Distinct().ToList();
+                }
+            });
             userId = new List<string>();
             foreach (var item in resultsql)
             {
@@ -2134,14 +2142,6 @@ namespace OpenAuth.App
             {
                 d.UnCompletedReason = lastUncompletedReason.FirstOrDefault(l => l.ServiceOrderId == d.ServiceOrderId)?.Content ?? "";
                 return true;
-            });
-            data.ForEach(c =>
-            {
-                if (c.VestInOrg == 1)
-                {
-                    c.MaterialTypes = c.ServiceWorkOrders.Select(s => s.MaterialCode.IndexOf("-") == -1 ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-"))).Distinct().ToList();
-                    //c.MaterialTypes = c.ServiceWorkOrders.Select(s => s.MaterialCode == "无序列号" ? "无序列号" : (s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == "" ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Distinct().ToList();
-                }
             });
             result.Data = data;
             result.Count = query.Count();
