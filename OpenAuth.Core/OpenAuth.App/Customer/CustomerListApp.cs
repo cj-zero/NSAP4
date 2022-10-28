@@ -163,7 +163,42 @@ namespace OpenAuth.App.Customer
 
             return result;
         }
-
+        /// <summary>
+        /// 获取用户部门信息
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public string GetUserOrgInfo(string userId, string name = "")
+        {
+            var petitioner = (from a in UnitWork.Find<User>(null)
+                                           .WhereIf(!string.IsNullOrWhiteSpace(userId), c => c.Id == userId)
+                                           .WhereIf(!string.IsNullOrWhiteSpace(name), c => c.Name == name)
+                              join b in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG) on a.Id equals b.FirstId into ab
+                              from b in ab.DefaultIfEmpty()
+                              join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id into bc
+                              from c in bc.DefaultIfEmpty()
+                              select new UserResp
+                              {
+                                  Name = a.Name,
+                                  Id = a.Id,
+                                  OrgId = c.Id,
+                                  OrgName = c.Name,
+                                  CascadeId = c.CascadeId,
+                                  Account = a.Account,
+                                  Sex = a.Sex,
+                                  Mobile = a.Mobile,
+                                  Email = a.Email
+                              }).OrderByDescending(u => u.CascadeId).FirstOrDefault();
+            if (petitioner == null)
+            {
+                return "";
+            }
+            else
+            {
+                return petitioner.OrgName;
+            }
+        }
         /// <summary>
         /// 获取黑白名单列表
         /// </summary>
@@ -179,15 +214,15 @@ namespace OpenAuth.App.Customer
             var query = from x in UnitWork.Find<SpecialCustomer>(c => c.Type == req.Type && c.Isdelete == false)
                         select new
                         {
-                            x.Id,
-                            x.CustomerNo,
-                            x.CustomerName,
-                            x.SalerName,
-                            x.DepartmentName,
-                            x.Type,
-                            x.Remark,
-                            x.UpdateUser,
-                            x.UpdateDatetime
+                            Id = x.Id,
+                            CustomerNo = x.CustomerNo,
+                            CustomerName = x.CustomerName,
+                            SalerName = x.SalerName,
+                            DepartmentName = x.DepartmentName,
+                            Type = x.Type,
+                            Remark = x.Remark,
+                            UpdateUser = x.UpdateUser,
+                            UpdateDatetime = x.UpdateDatetime
                         };
             var dataquery = await query.OrderBy(q => q.CustomerNo).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
             //查询历史领取记录获取次数
@@ -229,6 +264,7 @@ namespace OpenAuth.App.Customer
                            fallResult = t2 == null ? "" : t2.Remark,
                            Remark = s.Remark,
                            UpdateUser = s.UpdateUser,
+                           UpdateUser_dept = GetUserOrgInfo("", s.UpdateUser),
                            UpdateDatetime = s.UpdateDatetime
                        };
 
@@ -472,6 +508,8 @@ namespace OpenAuth.App.Customer
                            SlpCode = q.SlpCode,
                            SlpName = isAdmin ? q.SlpName : "******",
                            CreateDateTime = q.CreateDateTime.Value,
+                           CreateUser = q.CreateUser,
+                           CreateUser_dept = GetUserOrgInfo("", q.CreateUser),
                            FallIntoTime = q.FallIntoTime.Value,
                            LastOrderTime = isAdmin ? (t1 == null ? "" : t1.LastOrderTime.ToString("yyyyMMdd")) : null,
                            TotalMoney = isAdmin ? (t2 == null ? 0 : t2.TotalMoney) : null,

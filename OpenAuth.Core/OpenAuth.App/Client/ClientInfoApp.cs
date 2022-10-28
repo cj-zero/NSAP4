@@ -283,7 +283,7 @@ namespace OpenAuth.App.Client
             }
             if (!string.IsNullOrWhiteSpace(address))
             {
-                filterString.Append($" and (T.cardcode in ( SELECT CardCode FROM nsap_bone.crm_crd1 WHERE Building like '" + address + "') or Address like '%" + address + "%') ");
+                filterString.Append($" and (T.cardcode in ( SELECT CardCode FROM nsap_bone.crm_crd1 WHERE Building like '" + address + "' and sbo_id  =1) or Address like '%" + address + "%') ");
             }
             if (Day != null)
             {
@@ -601,7 +601,51 @@ namespace OpenAuth.App.Client
                 //tableName.AppendFormat("LEFT JOIN {0}.crm_clerk_tech I ON I.sbo_id=A.sbo_id AND I.CardCode=A.CardCode ", "nsap_bone");
                 clientTable = _serviceSaleOrderApp.SelectPagingHaveRowsCount(tableName.ToString(), filedName.ToString(), limit, page, sortString, filterString.ToString(), out rowCount);
             }
+            for (int i = 0; i < clientTable.Rows.Count; i++)
+            {
+                string slpname = clientTable.Rows[i]["SlpName"].ToString();
+                string technician = clientTable.Rows[i]["Technician"].ToString();
+                var recepUserOrgInfo = GetUserOrgInfo("", slpname + "," + technician);
+                clientTable.Rows[i]["SlpName"] = recepUserOrgInfo.Select(q => q.Name == slpname) == null ? clientTable.Rows[i]["SlpName"] : recepUserOrgInfo.FirstOrDefault(q => q.Name == slpname).OrgName + "-" + clientTable.Rows[i]["SlpName"];
+                clientTable.Rows[i]["Technician"] = recepUserOrgInfo.Select(q => q.Name == technician) == null ? clientTable.Rows[i]["Technician"] : recepUserOrgInfo.FirstOrDefault(q => q.Name == technician).OrgName + "-" + clientTable.Rows[i]["Technician"];
+            }
+
             return clientTable;
+        }
+
+        /// <summary>
+        /// 获取用户部门信息
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public List<UserResp> GetUserOrgInfo(string userId, string name = "")
+        {
+            List<string> nameList = null;
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                nameList = name.Split(',').ToList();
+            }
+            var petitioner = (from a in UnitWork.Find<User>(null)
+                                           .WhereIf(!string.IsNullOrWhiteSpace(userId), c => c.Id == userId)
+                                           .WhereIf(!string.IsNullOrWhiteSpace(name), c => nameList.Contains(c.Name))
+                              join b in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG) on a.Id equals b.FirstId into ab
+                              from b in ab.DefaultIfEmpty()
+                              join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on b.SecondId equals c.Id into bc
+                              from c in bc.DefaultIfEmpty()
+                              select new UserResp
+                              {
+                                  Name = a.Name,
+                                  Id = a.Id,
+                                  OrgId = c.Id,
+                                  OrgName = c.Name,
+                                  CascadeId = c.CascadeId,
+                                  Account = a.Account,
+                                  Sex = a.Sex,
+                                  Mobile = a.Mobile,
+                                  Email = a.Email
+                              }).OrderByDescending(u => u.CascadeId).ToList();
+            return petitioner;
         }
 
         /// <summary>
@@ -1105,6 +1149,34 @@ namespace OpenAuth.App.Client
             clientOCRD bill = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(jobId));
             return bill;
         }
+        /// <summary>
+        /// 审批页面获取机会编码
+        /// </summary>
+        /// <param name="jobId"></param>
+        /// <param name="CardCode"></param>
+        /// <param name="Technician"></param>
+        /// <param name="SlpName"></param>
+        /// <returns></returns>
+        public AuditCode GetClueNo(string jobId, string CardCode, string Technician, string SlpName)
+        {
+            AuditCode auditCode = new AuditCode();
+            string sql = string.Format("SELECT base_entry FROM {0}.wfa_job WHERE job_id={1}", "nsap_base", jobId);
+            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, sql, CommandType.Text, null);
+            int base_entry = dt.Rows[0]["base_entry"] == null ? 0 : dt.Rows[0]["base_entry"].ToInt();
+            var clue = UnitWork.Find<OpenAuth.Repository.Domain.Serve.Clue>(q => q.Id == base_entry);
+            if (clue != null && clue.ToList().Count > 0)
+            {
+                auditCode.base_entry = clue.ToList()[0].SerialNumber;
+            }
+            else
+            {
+                auditCode.base_entry = UnitWork.Find<OpenAuth.Repository.Domain.Serve.Clue>(q => q.CardCode == CardCode).OrderByDescending(q => q.CreateTime).Select(q => q.SerialNumber).FirstOrDefault();
+            }
+            var recepUserOrgInfo = GetUserOrgInfo("", Technician + "," + SlpName);
+            auditCode.DfTcnician_dept = recepUserOrgInfo.FirstOrDefault(q => q.Name == Technician).OrgName;
+            auditCode.SlpName_dept = recepUserOrgInfo.FirstOrDefault(q => q.Name == SlpName).OrgName;
+            return auditCode;
+        }
 
 
         public clientOCRD AlterAuditInfoNew(string jobId)
@@ -1309,6 +1381,7 @@ namespace OpenAuth.App.Client
                 dtRet.Columns.Add("U_TradeType", typeof(string));//贸易类型
                 dtRet.Columns.Add("U_CardTypeStr", typeof(string));//新版客户类型
                 dtRet.Columns.Add("U_StaffScale", typeof(string));//人员规模
+                dtRet.Columns.Add("DfTcnician_dept", typeof(string));//售后主管部门
                 foreach (DataRow clientrow in dtRet.Rows)
                 {
                     var sql = string.Format(
@@ -1327,6 +1400,10 @@ namespace OpenAuth.App.Client
                             clientrow["U_StaffScale"] = clientSource["U_StaffScale"];
                         }
                     }
+
+                    string technician = clientrow["DfTcnician"].ToString();
+                    var recepUserOrgInfo = GetUserOrgInfo("", technician);
+                    clientrow["DfTcnician_dept"] = recepUserOrgInfo.FirstOrDefault(q => q.Name == technician).OrgName;
                 }
             }
             else
@@ -1378,7 +1455,7 @@ namespace OpenAuth.App.Client
             //当前登录用户业务员编码
             int slpCode = UnitWork.Find<sbo_user>(q => q.user_id == loginUser.User_Id).Select(q => q.sale_id).FirstOrDefault().Value;
             //查出该客户的所有联系人信息
-            var data = (from n in UnitWork.Find<crm_ocpr>(q => q.CardCode == CardCode)
+            var data = (from n in UnitWork.Find<crm_ocpr>(q => q.CardCode == CardCode && q.sbo_id == 1)
                         select new
                         {
                             CardCode = n.CardCode,
@@ -1402,7 +1479,7 @@ namespace OpenAuth.App.Client
                             flag = false
                         }).ToList();
             dtList.Add(data.ToDataTable());
-            var limsocpr = UnitWork.Find<LimsOCPR>(q => q.CardCode == CardCode && q.SlpCode == slpCode && q.Type == Type).ToList();
+            var limsocpr = UnitWork.Find<LimsOCPR>(q => q.CardCode == CardCode && q.SlpCode == slpCode && q.Type == Type && q.sbo_id == 1).ToList();
             var limsocprdata = (from n in limsocpr
                                 select new
                                 {
@@ -1448,7 +1525,7 @@ namespace OpenAuth.App.Client
             //当前登录用户业务员编码
             int slpCode = UnitWork.Find<sbo_user>(q => q.user_id == loginUser.User_Id).Select(q => q.sale_id).FirstOrDefault().Value;
             //查出该客户的所有地址信息
-            var data = (from n in UnitWork.Find<crm_crd1>(q => q.CardCode == CardCode)
+            var data = (from n in UnitWork.Find<crm_crd1>(q => q.CardCode == CardCode && q.sbo_id == 1)
                         join o in UnitWork.Find<crm_ocry>(null) on n.Country equals o.Code into temp1
                         from t1 in temp1.DefaultIfEmpty()
                         join c in UnitWork.Find<crm_ocst>(null) on n.State equals c.Code into temp2
@@ -1471,7 +1548,7 @@ namespace OpenAuth.App.Client
                             flag = false
                         }).ToList();
             dtList.Add(data.ToDataTable());
-            var limsCrd1 = UnitWork.Find<LimsCRD1>(q => q.CardCode == CardCode && q.SlpCode == slpCode && q.Type == Type).ToList();
+            var limsCrd1 = UnitWork.Find<LimsCRD1>(q => q.CardCode == CardCode && q.SlpCode == slpCode && q.Type == Type && q.sbo_id == 1).ToList();
             var limsCrd1data = (from n in limsCrd1
                                 join o in UnitWork.Find<crm_ocry>(null) on n.Country equals o.Code into temp1
                                 from t1 in temp1.DefaultIfEmpty()
@@ -1742,7 +1819,7 @@ namespace OpenAuth.App.Client
             client = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(JobId));
             client.ChangeType = AuditType;
             client.ChangeCardCode = CardCode;
-            var originClient = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation >(a => a.ClientNo == CardCode && a.IsDelete == 0 && a.IsActive == 1 && a.Flag !=2 && a.ScriptFlag == 0);
+            var originClient = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation >(a => a.ClientNo == CardCode && a.IsDelete == 0 && a.IsActive == 1 && a.Flag != 2 && a.ScriptFlag == 0);
             if (AuditType == "Edit")
             {
                 client.DfTcnicianCode = DfTcnician;
@@ -2369,7 +2446,7 @@ namespace OpenAuth.App.Client
                             {
                                 strSql.AppendFormat(" AND CONVERT({0} USING utf8)  LIKE '%{1}%'  ", p[0], p[1].Trim().FilterSQL());
                             }
-                            
+
                         }
                     }
 
@@ -2407,8 +2484,8 @@ namespace OpenAuth.App.Client
                 {
                     strSql.Append(" ) ");
                 }
-                    #endregion
-                    strSql.Append(" GROUP BY CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact ");
+                #endregion
+                strSql.Append(" GROUP BY CardCode,CardName,CardFName,SlpName,CntctPrsn,Address,Phone1,Cellular,Balance,U_Name,U_EndCustomerName,U_EndCustomerContact ");
                 strSql.Append(" ORDER BY SUM(Similarity1+Similarity2+Similarity3+Similarity4+Similarity5+Similarity6+Similarity7+Similarity8+Similarity9+Similarity10+Similarity11+Similarity12) DESC,MIN(Grade) ASC LIMIT 50 ");
             }
             strSql.Append(") T ");
@@ -3091,6 +3168,11 @@ namespace OpenAuth.App.Client
                 var sboid = _serviceBaseApp.GetUserNaspSboID(userId);
                 int SlpCode = Convert.ToInt16(GetUserInfoById(sboid.ToString(), userId.ToString(), "1"));
                 result = UnitWork.Find<ClientFollowUp>(q => q.CardCode == CardCode && q.SlpCode == SlpCode && !q.IsDelete).OrderByDescending(t => t.CreateDate).MapToList<ClientFollowUp>();
+                for (int i = 0; i < result.Count; i++)
+                {
+                    var info = GetUserOrgInfo("", result[i].Contacts).FirstOrDefault(q => q.Name == result[i].Contacts);
+                    result[i].Contacts_dept = info == null ? "" : info.OrgName;
+                }
             }
             return result;
         }
@@ -3483,6 +3565,7 @@ namespace OpenAuth.App.Client
                             Name = n.Name,
                             dep_nm = ud.dep_nm,
                             CreateUser = n.CreateUser,
+                            createUser_dept = GetUserOrgInfo("", n.CreateUser).FirstOrDefault(q => q.Name == n.CreateUser).OrgName,
                             CreateDate = n.CreateDate
                         }).ToList();
             var dataquery = data.OrderByDescending(q => q.CreateDate).Skip((page - 1) * limit).Take(limit).ToList();

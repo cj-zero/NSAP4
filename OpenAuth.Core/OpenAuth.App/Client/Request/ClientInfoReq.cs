@@ -1452,4 +1452,13 @@ namespace OpenAuth.App.Client.Request
         public bool IsClientDetail { get; set; }
         public string CardCode { get; set; }
     }
+    public class Getbase_entry
+    {
+        public string jobId { get; set; }
+       
+        public string CardCode { get; set; }
+       
+        public string Technician { get; set; }
+        public string SlpName { get; set; }
+    }
 }

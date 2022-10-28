@@ -60,6 +60,10 @@ namespace OpenAuth.App.Customer.Response
         /// 创建人
         /// </summary>
         public string CreateUser { get; set; }
+        /// <summary>
+        /// 创建人部门
+        /// </summary>
+        public string CreateUser_dept { get; set; }
 
         /// <summary>
         /// 创建名称

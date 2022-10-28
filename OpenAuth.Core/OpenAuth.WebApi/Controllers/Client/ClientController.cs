@@ -255,6 +255,34 @@ namespace OpenAuth.WebApi.Controllers.Client
         }
 
         /// <summary>
+        /// 审批页面获取机会编码
+        /// </summary>
+        /// <param name="jobId"></param>
+        /// <param name="CardCode"></param>
+        /// <param name="Technician"></param>
+        /// <param name="SlpName"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [Route("GetClueNo")]
+        public Response<AuditCode> GetClueNo(Getbase_entry req)
+        {
+            var result = new Response<AuditCode>();
+            try
+            {
+                result.Result = _clientInfoApp.GetClueNo(req.jobId, req.CardCode, req.Technician, req.SlpName);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{req.jobId.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+
+        }
+
+        /// <summary>
         /// 上级客户下拉
         /// </summary>
         [HttpGet]
