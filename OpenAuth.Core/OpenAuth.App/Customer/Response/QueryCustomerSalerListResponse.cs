@@ -42,7 +42,10 @@ namespace OpenAuth.App.Customer.Response
         public DateTime? FallIntoDate { get; set; }
 
         public string Department { get; set; }
-
+        /// <summary>
+        /// 归属人部门
+        /// </summary>
+        public string SalerName_dept { get; set; }
 
         #region 黑名单历史归属
         public int type { get; set; }
