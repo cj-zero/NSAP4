@@ -587,14 +587,14 @@ namespace OpenAuth.App
 
         public async Task CreateNwcailFileHelper()
         {
-            var res = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId) && string.IsNullOrWhiteSpace(c.CNASPdfPath) && c.Time == DateTime.Parse("2022-08-16")).ToListAsync();
+            var res = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId) && string.IsNullOrWhiteSpace(c.CNASPdfPath)).ToListAsync();
             foreach (var item in res)
             {
                 await CreateNwcailFile(item.CertificateNumber);
             }
         }
 
-        public async Task CreateNwcailFileHelper2()
+        public async Task CreateNwcailFileHelper2(int docEntry)
         {
             //获取销售订单下所有序列号
             var manufacturerSerialNumber = from a in UnitWork.Find<store_oitl>(null)
@@ -602,7 +602,7 @@ namespace OpenAuth.App
                                            from b in ab.DefaultIfEmpty()
                                            join c in UnitWork.Find<store_osrn>(null) on new { b.ItemCode, b.SysNumber } equals new { c.ItemCode, c.SysNumber } into bc
                                            from c in bc.DefaultIfEmpty()
-                                           where a.DocType == 15 && !string.IsNullOrWhiteSpace(c.MnfSerial) && a.BaseEntry== 92836
+                                           where a.DocType == 15 && !string.IsNullOrWhiteSpace(c.MnfSerial) && a.BaseEntry== docEntry
                                            select new { c.MnfSerial, a.ItemCode, a.DocEntry, a.BaseEntry, a.DocType, a.CreateDate, a.BaseType };
 
             var numList = await manufacturerSerialNumber
