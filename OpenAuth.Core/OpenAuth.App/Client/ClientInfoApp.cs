@@ -2433,6 +2433,7 @@ namespace OpenAuth.App.Client
                         strSql.Append(" ( ");
                     }
                     var flag = true;
+
                     for (int i = 0; i < queryArray.Length; i++)
                     {
                         string[] p = queryArray[i].Split(':');
@@ -2440,12 +2441,33 @@ namespace OpenAuth.App.Client
                         {
                             if (flag)
                             {
-                                strSql.AppendFormat(" CONVERT({0} USING utf8)  LIKE '%{1}%'  ", p[0], p[1].Trim().FilterSQL());
+                                if (p[0] == "CardName")
+                                {
+                                    strSql.AppendFormat(" ( CONVERT({0} USING utf8)  LIKE '%{1}%'  or CONVERT(CardFName  USING utf8)  LIKE '%{1}%' ) ", p[0], p[1].Trim().FilterSQL());
+                                }
+                                else
+                                {
+                                    if (p[0] != "CardFName")
+                                    {
+                                        strSql.AppendFormat(" CONVERT({0} USING utf8)  LIKE '%{1}%'  ", p[0], p[1].Trim().FilterSQL());
+                                    }
+                                }
                                 flag = false;
                             }
                             else
                             {
-                                strSql.AppendFormat(" AND CONVERT({0} USING utf8)  LIKE '%{1}%'  ", p[0], p[1].Trim().FilterSQL());
+                                if (p[0] == "CardName")
+                                {
+                                    strSql.AppendFormat(" AND ( CONVERT({0} USING utf8)  LIKE '%{1}%'  or CONVERT(CardFName  USING utf8)  LIKE '%{1}%' ) ", p[0], p[1].Trim().FilterSQL());
+                                }
+                                else
+                                {
+                                    if (p[0] != "CardFName")
+                                    {
+                                        strSql.AppendFormat(" AND CONVERT({0} USING utf8)  LIKE '%{1}%'  ", p[0], p[1].Trim().FilterSQL());
+                                    }
+                                }
+
                             }
 
                         }
