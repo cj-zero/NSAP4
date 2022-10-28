@@ -2406,6 +2406,7 @@ namespace OpenAuth.App.Client
                 strSql.Append(" LEFT JOIN  (SELECT c.Id, c.SubNo ,c.ClientNo,c.Flag , c.IsActive, c.ParentNo, c.IsDelete, c.ScriptFlag,ROW_NUMBER() OVER (PARTITION BY ClientNo ORDER BY CreateDate  DESC) rn from erp4.clientrelation c)   Y ON Y.ClientNo = E.CardCode AND Y.Flag !=2  AND Y.IsActive =1 AND Y.ScriptFlag =0 AND   Y.rn = 1  AND  Y.IsDelete = 0    ");
                 strSql.Append("  LEFT JOIN  (SELECT SerialNumber,CardCode from  erp4_serve.clue) Z  ON Z.CardCode = E.CardCode      ");
                 strSql.Append("  LEFT JOIN (SELECT GROUP_CONCAT(b.`Name`) as multiname ,GROUP_CONCAT(b.Tel1) as multiTel,GROUP_CONCAT(b.Cellolar) as multiCell ,a.CardCode  from nsap_bone.crm_OCRD a left join nsap_bone.crm_ocpr b on a.CardCode = b.CardCode  GROUP BY a.CardCode)  k on k.CardCode = E.CardCode      ");
+                strSql.Append("  LEFT JOIN (SELECT GROUP_CONCAT(b.Address) as multiAddress ,GROUP_CONCAT(b.Building) as multiBuilding ,a.CardCode  from nsap_bone.crm_OCRD a left join nsap_bone.crm_crd1 b on a.CardCode = b.CardCode  GROUP BY a.CardCode)  T on T.CardCode = E.CardCode    ");
 
                 #region 搜索条件
                 strSql.AppendFormat("WHERE sbo_id={0} ", SboId);
@@ -2468,6 +2469,12 @@ namespace OpenAuth.App.Client
                             {
                                 //strSql.Append(" OR  INSTR(k.multiname, CONVERT(\"" + p[1].Trim().FilterSQL()  + "\" USING utf8))  >0  ");
                                 strSql.AppendFormat(@" OR  INSTR(k.multiname, CONVERT(""{0}"" USING utf8))  >0  ", p[1].Trim().FilterSQL());
+                            }
+                            if (p[0] == "Address")
+                            {
+                                //strSql.Append(" OR  INSTR(k.multiname, CONVERT(\"" + p[1].Trim().FilterSQL()  + "\" USING utf8))  >0  ");
+                                strSql.AppendFormat(@" OR  INSTR(T.multiAddress, CONVERT(""{0}"" USING utf8))  >0  ", p[1].Trim().FilterSQL());
+                                strSql.AppendFormat(@" OR  INSTR(T.multiBuilding, CONVERT(""{0}"" USING utf8))  >0  ", p[1].Trim().FilterSQL());
                             }
                             if (p[0] == "Phone1")
                             {
