@@ -2214,9 +2214,9 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response<bool>();
             try
             {
-                var r = await _httpClienService.Post(req, "api/serve/ServiceOrder/SendOrders");
-                result = JsonConvert.DeserializeObject<Response<bool>>(r);
-                //await _serviceOrderApp.SendOrders(req);
+                //var r = await _httpClienService.Post(req, "api/serve/ServiceOrder/SendOrders");
+                //result = JsonConvert.DeserializeObject<Response<bool>>(r);
+                await _serviceOrderApp.SendOrders(req);
                 //result.Result = true;
             }
             catch (Exception ex)
