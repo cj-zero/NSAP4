@@ -36,6 +36,7 @@ namespace OpenAuth.Repository.Domain
         /// 业务员名称
         /// </summary>
         public string SlpName { get; set; }
+        
         /// <summary>
         /// 联系人
         /// </summary>
@@ -96,6 +97,11 @@ namespace OpenAuth.Repository.Domain
         /// 是否提醒
         /// </summary>
         public bool IsRemind { get; set; }
+        /// <summary>
+        /// 跟进人
+        /// </summary>
+        [NotMapped]
+        public string Contacts_dept { get; set; }
         public override void GenerateDefaultKeyVal()
         {
         }
