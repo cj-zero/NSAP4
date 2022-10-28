@@ -2518,7 +2518,7 @@ namespace OpenAuth.App.Client
                 strSql.Append(" ORDER BY SUM(Similarity1+Similarity2+Similarity3+Similarity4+Similarity5+Similarity6+Similarity7+Similarity8+Similarity9+Similarity10+Similarity11+Similarity12) DESC,MIN(Grade) ASC LIMIT 50 ");
             }
             strSql.Append(") T ");
-            
+            _logger.LogError(strSql.ToString());
             DataTable datatable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
             for (int i = 0; i < datatable.Rows.Count; i++)
             {
