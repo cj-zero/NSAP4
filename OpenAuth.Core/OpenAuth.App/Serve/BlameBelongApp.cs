@@ -116,8 +116,21 @@ namespace OpenAuth.App.Serve
 
             }
 
+            var data = await query.OrderByDescending(c => c.CreateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+
+            List<string> userId = data.Select(a => a.CreateUserId).Distinct().ToList();
+
+            var userList = (from a in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userId.Contains(r.FirstId))
+                            join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
+                            select new { a.FirstId, c.Name }).ToList();
+
+            foreach (var item in data)
+            {
+                item.CreateUser = userList.FirstOrDefault(a => a.FirstId == item.CreateUserId)?.Name + "-" + item.CreateUser;
+            }
+
             result.Count = await query.CountAsync();
-            result.Data = await query.OrderByDescending(c => c.CreateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+            result.Data = data;
             return result;
         }
 

@@ -138,12 +138,19 @@ namespace OpenAuth.App
             var parentCodes = await UnitWork.Find<KnowledgeBase>(k => ids.Contains(k.Id)).Select(k => new { k.Id, k.Code,k.ParentId }).ToListAsync();
             ids = parentCodes.Select(k => k.ParentId);
             var grandpaCodes = await UnitWork.Find<KnowledgeBase>(k => ids.Contains(k.Id)).Select(k => new { k.Id, k.Code, k.ParentId }).ToListAsync();
+
+            var userId = knowledgeBases.Select(a => a.CreateUserId).Distinct().ToList();
+            var userList = (from a in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userId.Contains(r.FirstId))
+                            join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
+                            select new { a.FirstId, c.Name }).ToList();
+
             result.Data = knowledgeBases.Select(k => new
             {
                 k.Id,
                 k.Code,
                 k.Name,
-                k.CreateUserName,
+                CreateUserName = userList.FirstOrDefault(a => a.FirstId == k.CreateUserId)?.Name+ "-" + k.CreateUserName,
+                k.CreateUserId,
                 k.ParentId,
                 Rank = k.Rank.ToString(),
                 k.ParentName,

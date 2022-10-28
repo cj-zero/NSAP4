@@ -325,7 +325,7 @@ namespace OpenAuth.App.Material
 
             var file = await UnitWork.Find<UploadFile>(f => fileids.Contains(f.Id)).ToListAsync();
             ServiceOrderids = QuotationDate.Select(q => q.ServiceOrderId).ToList();
-            var ServiceOrders = await UnitWork.Find<ServiceOrder>(null).Where(q => ServiceOrderids.Contains(q.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.CustomerId, s.SalesMan }).ToListAsync();
+            var ServiceOrders = await UnitWork.Find<ServiceOrder>(null).Where(q => ServiceOrderids.Contains(q.Id)).Select(s => new { s.Id, s.TerminalCustomer, s.TerminalCustomerId, s.CustomerId, s.SalesMan, s.SalesManId }).ToListAsync();
             //提成状态
             var saleOrderId = QuotationDate.Select(c => c.SalesOrderId).ToList();
             var commsion = await UnitWork.Find<CommissionOrder>(c => saleOrderId.Contains(c.SalesOrderId)).Select(c => new { c.SalesOrderId, c.Status }).ToListAsync();
@@ -357,6 +357,7 @@ namespace OpenAuth.App.Material
                     CommissionStatus = status,
                     //CreateUser = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name == null ? q.a.CreateUser : SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + q.a.CreateUser,
                     CreateUser = orgName == null ? q.a.CreateUser : orgName + "-" + q.a.CreateUser,
+                    CreateUserId =q.a.CreateUserId,
                     q.a.Remark,
                     q.a.SalesOrderId,
                     q.a.IsMaterialType,
@@ -369,7 +370,9 @@ namespace OpenAuth.App.Material
                     q.a.IsProtected,
                     q.a.PrintWarehouse,
                     q.a.CancelRequest,
-                    q.b.SalesMan,
+                    q.b.SalesManId,
+                    SalesMan = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.b.SalesManId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name +"-"+ q.b.SalesMan,
+                    SalesManDept = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.b.SalesManId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name,
                     Balance = ocrds.Where(o => o.CardCode.Equals(q.b.TerminalCustomerId)).FirstOrDefault()?.Balance,
                     files = q.a.QuotationPictures.Select(p => new
                     {

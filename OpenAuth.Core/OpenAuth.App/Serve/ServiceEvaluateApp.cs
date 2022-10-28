@@ -50,14 +50,37 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(request.VisitPeople), s => s.a.VisitPeople.Contains(request.VisitPeople))
                 .WhereIf(request.DateFrom != null && request.DateTo != null, s => s.a.CommentDate >= request.DateFrom && s.a.CommentDate < Convert.ToDateTime(request.DateTo).AddMinutes(1440))
                 ;
-            var ServiceEvaluates = objs.Select(s => new
+            if (request.IsReimburse == null || !(bool)request.IsReimburse)
+            {
+                // 主管只能看到本部门的技术员的评价
+                if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
+                {
+                    var userIds = _revelanceApp.Get(Define.USERORG, false, loginContext.Orgs.Select(o => o.Id).ToArray());
+                    objs = objs.Where(q => userIds.Contains(q.a.TechnicianId));
+                }
+            }
+            var ServiceEvaluates = objs.OrderByDescending(u => u.a.CreateTime)
+                .Skip((request.page - 1) * request.limit)
+                .Take(request.limit).ToList();
+
+
+            List<string> userId = new List<string>();
+            userId.AddRange(ServiceEvaluates.Select(a => a.a.TechnicianId));
+            userId.AddRange(ServiceEvaluates.Select(a => a.a.VisitPeopleId));
+            userId = userId.Distinct().ToList();
+
+            var userList = (from a in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userId.Contains(r.FirstId))
+                            join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
+                            select new { a.FirstId, c.Name }).ToList();
+
+            var data = ServiceEvaluates.Select(s => new
             {
                 s.a.ServiceOrderId,
                 s.a.CustomerId,
                 s.a.Cutomer,
                 s.a.Contact,
                 s.a.CaontactTel,
-                s.a.Technician,
+                Technician = userList.FirstOrDefault(a => a.FirstId == s.a.TechnicianId)?.Name + "-"+s.a.Technician,
                 s.a.TechnicianId,
                 s.a.TechnicianAppId,
                 s.a.ResponseSpeed,
@@ -67,31 +90,19 @@ namespace OpenAuth.App
                 s.a.ServicePrice,
                 s.a.Comment,
                 s.a.VisitPeopleId,
-                s.a.VisitPeople,
+                VisitPeople = userList.FirstOrDefault(a => a.FirstId == s.a.VisitPeopleId)?.Name + "-" + s.a.VisitPeople,
                 s.a.CommentDate,
                 s.a.CreateTime,
                 s.a.CreateUserId,
                 s.a.CreateUserName,
                 s.b.U_SAP_ID
             });
-            //if (!string.IsNullOrEmpty(request.key))
-            //{
-            //    objs = objs.Where(u => u.Id.Contains(request.key));
-            //}
-            if (request.IsReimburse == null || !(bool)request.IsReimburse)
-            {
-                // 主管只能看到本部门的技术员的评价
-                if (loginContext.User.Account != Define.SYSTEM_USERNAME && !loginContext.Roles.Any(r => r.Name.Equals("呼叫中心")))
-                {
-                    var userIds = _revelanceApp.Get(Define.USERORG, false, loginContext.Orgs.Select(o => o.Id).ToArray());
-                    ServiceEvaluates = ServiceEvaluates.Where(q => userIds.Contains(q.TechnicianId));
-                }
-            }
-            //var propertyStr = string.Join(',', properties.Select(u => u.Key));
+
+
+
+
             result.columnHeaders = properties;
-            result.Data = ServiceEvaluates.OrderByDescending(u => u.CreateTime)
-                .Skip((request.page - 1) * request.limit)
-                .Take(request.limit).ToList();
+            result.Data = data;
             result.Count = objs.Count();
             return result;
         }

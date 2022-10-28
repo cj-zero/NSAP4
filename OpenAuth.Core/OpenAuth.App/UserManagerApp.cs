@@ -794,7 +794,9 @@ namespace OpenAuth.App
                     }
                 }
             }
-
+            //var saleUser3 = UnitWork.Find<sbo_user>(a => a.sale_id > 0).Select(a => (int?)a.user_id ).ToList();
+            //var saleUser4 = UnitWork.Find<NsapUserMap>(a => saleUser3.Contains(a.NsapUserId) ).Select(a => a.UserID).ToList();
+            //var
 
 
 

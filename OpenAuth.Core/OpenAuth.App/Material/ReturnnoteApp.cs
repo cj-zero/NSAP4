@@ -209,6 +209,7 @@ namespace OpenAuth.App
                 SalesOrderId = r.SalesOrderId,
                 ServiceOrderSapId = r.ServiceOrderSapId,
                 Reason = r.Reason,
+                CreateUserId = r.CreateUserId,
                 CreateUser = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(r.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name == null ? r.CreateUser : SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(r.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + r.CreateUser,
                 CreateTime = Convert.ToDateTime(r.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 UpdateTime = Convert.ToDateTime(r.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
@@ -551,6 +552,12 @@ namespace OpenAuth.App
                         select new { a, b };
             var CategoryList = await UnitWork.Find<Category>(u => u.TypeId.Equals("SYS_ShieldingMaterials")).Select(u => u.Name).ToListAsync();
 
+            var userIds = query.Select(a => a.a.CreateUserId).Distinct().ToList();
+            var user = (from a in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId))
+                        join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
+                        select new { a.FirstId, c.Name }).ToList();
+
+
             result.Data = query.Select(c => new
             {
                 c.a.Id,
@@ -564,7 +571,9 @@ namespace OpenAuth.App
                 Expressages = c.a.Expressages,
                 DeviceNum = c.a.QuotationProducts.Count(),
                 c.a.CreateTime,
-                c.a.CreateUser,
+                CreateUser = user.FirstOrDefault(a => a.FirstId == c.a.CreateUserId)?.Name+"-" +c.a.CreateUser ,
+                c.a.CreateUserId,
+                CreateDept = user.FirstOrDefault(a => a.FirstId == c.a.CreateUserId)?.Name,
                 //modify by yangsiming @2022.04.14 MaterialType=3,即赠送的物料不在填写计划内
                 Status = materialReplaceRecord.Where(m => m.QuotationId == c.a.Id).Count() > 0 ? (materialReplaceRecord.Where(m => m.QuotationId == c.a.Id && m.MaterialType != 3).Count() == c.a.QuotationMergeMaterials.Where(c => c.MaterialType != 3 && !CategoryList.Contains(c.MaterialCode)).Sum(s => s.Count) ? "已更新" : "部分更新") : "待更新"
             });

@@ -33,5 +33,8 @@ namespace OpenAuth.App.Material.Response
         public string TerminalCustomerId { get; set; }
         public bool? IsUpDate { get; set; }
         public int? Reason { get; set; }
+        public string CreateUserId { get; set; }
+
+        
     }
 }

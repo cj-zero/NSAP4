@@ -119,7 +119,7 @@ namespace OpenAuth.App
             //.Include(s => s.ServiceWorkOrders).ThenInclude(s => s.Solution)
             var obj = await UnitWork.Find<ServiceOrder>(s => s.Id.Equals(id))
                 .Include(s => s.ServiceOrderPictures).FirstOrDefaultAsync();
-            obj.ServiceWorkOrders = await UnitWork.Find<ServiceWorkOrder>(w => w.ServiceOrderId == id).Include(w=>w.ProblemType).Include(w=>w.Solution).ToListAsync();
+            obj.ServiceWorkOrders = await UnitWork.Find<ServiceWorkOrder>(w => w.ServiceOrderId == id).Include(w => w.ProblemType).Include(w => w.Solution).ToListAsync();
             //判断所有工单是否都已完成
             var notFinishcount = obj.ServiceWorkOrders.Where(w => w.ServiceOrderId == id && w.Status < 7).Count();
             var result = obj.MapTo<ServiceOrderDetailsResp>();
@@ -746,13 +746,13 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task DeleteWorkOrder(QueryServiceOrderListReq req)
         {
-            if (req.QryAllowOrNot == -1) 
+            if (req.QryAllowOrNot == -1)
             {
-                await UnitWork.UpdateAsync<ServiceOrder>(s=>s.Id==int.Parse(req.QryServiceOrderId),s=>new ServiceOrder { AllowOrNot=1});
+                await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id == int.Parse(req.QryServiceOrderId), s => new ServiceOrder { AllowOrNot = 1 });
             }
-            var count=await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == int.Parse(req.QryServiceOrderId)).CountAsync();
-            if(count<=1) throw new Exception("不可删除最后一个工单，如需删除请新建工单后重新删除。");
-            await UnitWork.DeleteAsync<ServiceWorkOrder>(s => s.Id==int.Parse(req.QryServiceWorkOrderId));
+            var count = await UnitWork.Find<ServiceWorkOrder>(s => s.ServiceOrderId == int.Parse(req.QryServiceOrderId)).CountAsync();
+            if (count <= 1) throw new Exception("不可删除最后一个工单，如需删除请新建工单后重新删除。");
+            await UnitWork.DeleteAsync<ServiceWorkOrder>(s => s.Id == int.Parse(req.QryServiceWorkOrderId));
             await UnitWork.SaveAsync();
         }
 
@@ -824,7 +824,7 @@ namespace OpenAuth.App
                     }
                 }
                 await UnitWork.AddAsync<ServiceWorkOrder, int>(obj);
-                if (request.AllowOrNot == -1) 
+                if (request.AllowOrNot == -1)
                 {
                     await UnitWork.UpdateAsync<ServiceOrder>(s => s.Id == request.ServiceOrderId, s => new ServiceOrder { AllowOrNot = 1 });
                 }
@@ -935,7 +935,7 @@ namespace OpenAuth.App
             var query = from a in UnitWork.Find<ServiceWorkOrder>(null)
                         join b in UnitWork.Find<ServiceOrder>(null) on a.ServiceOrderId equals b.Id into ab
                         from b in ab.DefaultIfEmpty()
-                        where b.VestInOrg == 1 && b.AllowOrNot==0 && b.FromId!=8
+                        where b.VestInOrg == 1 && b.AllowOrNot == 0 && b.FromId != 8
                         select new { a, b };
 
             query = query.WhereIf(!string.IsNullOrWhiteSpace(req.QryU_SAP_ID), q => q.b.U_SAP_ID.Equals(Convert.ToInt32(req.QryU_SAP_ID)))
@@ -1046,7 +1046,7 @@ namespace OpenAuth.App
         private async Task<int> IsAllowOrNo(CustomerServiceAgentCreateOrderReq req)
         {
             //大学学院客户过滤
-            if (!req.TerminalCustomer.Contains("大学") && !req.TerminalCustomer.Contains("学院") && !req.TerminalCustomer.Contains("中科院") && req.ServiceWorkOrders.FirstOrDefault()?.FromType!=2)
+            if (!req.TerminalCustomer.Contains("大学") && !req.TerminalCustomer.Contains("学院") && !req.TerminalCustomer.Contains("中科院") && req.ServiceWorkOrders.FirstOrDefault()?.FromType != 2)
             {
                 if (req.ServiceWorkOrders.Select(s => s.ManufacturerSerialNumber).ToList().Contains("无序列号"))
                 {
@@ -1056,7 +1056,7 @@ namespace OpenAuth.App
                 {
                     var mnfSerials = req.ServiceWorkOrders.Select(s => s.ManufacturerSerialNumber).ToList();
                     var warrantyDates = await UnitWork.Find<SalesOrderWarrantyDate>(s => mnfSerials.Contains(s.MnfSerial)).ToListAsync();
-                    
+
                     foreach (var item in mnfSerials)
                     {
                         var warrantyDate = warrantyDates.Where(w => w.MnfSerial.Equals(item)).FirstOrDefault();
@@ -1110,7 +1110,7 @@ namespace OpenAuth.App
             #endregion
 
             var loginUser = loginContext.User;
-            var loginUserOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).Select(c=>new UserResp { Name = "", Id = "", OrgId = c.Id, OrgName = c.Name, CascadeId = c.CascadeId }).FirstOrDefault();
+            var loginUserOrg = loginContext.Orgs.OrderByDescending(c => c.CascadeId).Select(c => new UserResp { Name = "", Id = "", OrgId = c.Id, OrgName = c.Name, CascadeId = c.CascadeId }).FirstOrDefault();
             if (loginContext.User.Account == Define.USERAPP && req.AppUserId != null)
             {
                 loginUser = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(req.AppUserId)).Include(u => u.User).Select(u => u.User).FirstOrDefaultAsync();
@@ -1181,7 +1181,7 @@ namespace OpenAuth.App
             var serialNumber = await CheckManufSn(obj.CustomerId);
             obj.ServiceWorkOrders.ForEach(s =>
             {
-                if (s.ManufacturerSerialNumber== "无序列号" && loginUserOrg.OrgName!="CS0")
+                if (s.ManufacturerSerialNumber == "无序列号" && loginUserOrg.OrgName != "CS0")
                 {
                     result.Code = 500;
                     result.Message = "非CS0呼叫中心人员，不允许提交无序列号的呼叫。";
@@ -1292,7 +1292,7 @@ namespace OpenAuth.App
         {
             var query = await UnitWork.Find<OINS>(c => c.customer == cardCode).Select(c => new SerialNumberResp { ManufSN = c.manufSN, ItemCode = c.itemCode, DeliveryNo = c.deliveryNo }).ToListAsync();
 
-            var ServiceOinsModels =await UnitWork.Find<ServiceOins>(q => q.customer == cardCode).Select(q => new SerialNumberResp
+            var ServiceOinsModels = await UnitWork.Find<ServiceOins>(q => q.customer == cardCode).Select(q => new SerialNumberResp
             {
                 ManufSN = q.manufSN,
                 ItemCode = q.itemCode,
@@ -1595,9 +1595,9 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             var loginUser = loginContext.User;
-            if (loginContext.User.Account == Define.USERAPP && req.AppUserId!=null) 
+            if (loginContext.User.Account == Define.USERAPP && req.AppUserId != null)
             {
-                loginUser = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(req.AppUserId)).Include(u=>u.User).Select(u=>u.User).FirstOrDefaultAsync();
+                loginUser = await UnitWork.Find<AppUserMap>(u => u.AppUserId.Equals(req.AppUserId)).Include(u => u.User).Select(u => u.User).FirstOrDefaultAsync();
             }
             var result = new TableData();
             List<string> techName = new List<string>();
@@ -1606,7 +1606,7 @@ namespace OpenAuth.App
                 techName = req.QryTechName.Split(",").ToList();
             if (!string.IsNullOrWhiteSpace(req.QryStateList))
             {
-                var num= req.QryStateList.Split(",");
+                var num = req.QryStateList.Split(",");
                 status = Array.ConvertAll(num, int.Parse).ToList();
             }
 
@@ -1638,7 +1638,7 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryAllowOrNot.ToString()), q => q.AllowOrNot == req.QryAllowOrNot)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QrySalesMan), q => q.SalesMan == req.QrySalesMan)
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QryFromId), q => q.FromId == Convert.ToInt32(req.QryFromId))
-                .WhereIf(string.IsNullOrWhiteSpace(req.QryFromId) && (req.QryVestInOrg == "1"|| req.QryVestInOrg == "2"), q => q.FromId != 8)//服务呼叫列表排除ECN
+                .WhereIf(string.IsNullOrWhiteSpace(req.QryFromId) && (req.QryVestInOrg == "1" || req.QryVestInOrg == "2"), q => q.FromId != 8)//服务呼叫列表排除ECN
                 .Where(q => ids.Contains(q.Id) && q.Status == 2);
 
             //根据部门筛选数据
@@ -1806,7 +1806,7 @@ namespace OpenAuth.App
                 //var finishData1 = _dbExtension.GetObjectDataFromSQL<ServiceOrderData>(sql1, parameters.ToArray(), typeof(Nsap4ServeDbContext))?.ToList();
                 var finishData1 = UnitWork.ExcuteSqlTable(ContextType.Nsap4ServeDbContextType, sql1, CommandType.Text);
                 List<int> list = new List<int>();
-                foreach(DataRow item in finishData1.Rows)
+                foreach (DataRow item in finishData1.Rows)
                 {
                     list.Add(Convert.ToInt32(item.ItemArray[0]));
                 }
@@ -1908,7 +1908,7 @@ namespace OpenAuth.App
                     query = query.Where(q => q.ServiceWorkOrders.Any(sw => sw.Status < 7) && unCompletedIds.Contains(q.Id));
                 }
             }
-            if(!string.IsNullOrWhiteSpace(req.UrgedDept))
+            if (!string.IsNullOrWhiteSpace(req.UrgedDept))
             {
                 //查询服务单中所有主管的名字
                 var supervisorNames = await UnitWork.Find<ServiceOrder>(null).Select(s => s.Supervisor).Distinct().ToListAsync();
@@ -1972,7 +1972,7 @@ namespace OpenAuth.App
                     var gs = GetServiceTroubleAndSolution(c.FromTheme, "description");
                     gs.ForEach(r =>
                     {
-                        if (r== req.QryFromTheme)
+                        if (r == req.QryFromTheme)
                         {
                             sids.Add(c.ServiceOrderId);
                         }
@@ -2031,21 +2031,40 @@ namespace OpenAuth.App
                     query = query.Where(q => q.SupervisorId.Equals(loginUser.Id) || sIds.Contains(q.Id) || q.SalesManId.Equals(loginUser.Id) || q.CreateUserId.Equals(loginUser.Id));
                 }
             }
+            var resultsql = await query.OrderByDescending(q => q.CreateTime).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
 
-            var resultsql = query.OrderByDescending(q => q.CreateTime).Select(q => new ServiceWorkOrderList
+            List<string> userId = new List<string>();
+            userId.AddRange(resultsql.Select(a => a.RecepUserId));
+            userId.AddRange(resultsql.Select(a => a.SalesManId));
+            userId.AddRange(resultsql.Select(a => a.SupervisorId));
+            userId = userId.Distinct().ToList();
+
+            var userList = (from a in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userId.Contains(r.FirstId))
+                            join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
+                            select new { a.FirstId, c.Name }).ToList();
+
+
+            var data = resultsql.Select(q => new ServiceWorkOrderList
             {
+                IsContracting = GetIsContracting(userList.FirstOrDefault(a => a.FirstId == q.SupervisorId)?.Name),
                 ServiceOrderId = q.Id,
                 CustomerId = q.CustomerId,
                 CustomerName = q.CustomerName,
                 TerminalCustomerId = q.TerminalCustomerId,
                 TerminalCustomer = q.TerminalCustomer,
-                RecepUserName = q.RecepUserName,
+                RecepUserId = q.RecepUserId,
+                RecepUserName = userList.FirstOrDefault(a => a.FirstId == q.RecepUserId)?.Name + "-" + q.RecepUserName,
+                RecepUserDept = userList.FirstOrDefault(a => a.FirstId == q.RecepUserId)?.Name,
                 Contacter = q.Contacter,
                 ContactTel = q.ContactTel,
                 NewestContacter = q.NewestContacter,
                 NewestContactTel = q.NewestContactTel,
-                Supervisor = q.Supervisor,
-                SalesMan = q.SalesMan,
+                SupervisorId = q.SupervisorId,
+                Supervisor = userList.FirstOrDefault(a => a.FirstId == q.SupervisorId)?.Name + "-" + q.Supervisor,
+                SuperVisorDept = userList.FirstOrDefault(a => a.FirstId == q.SupervisorId)?.Name,
+                SalesManId = q.SalesManId,
+                SalesMan = userList.FirstOrDefault(a => a.FirstId == q.SalesManId)?.Name + "-" + q.SalesMan,
+                SalesManDept = userList.FirstOrDefault(a => a.FirstId == q.SalesManId)?.Name,
                 //TechName = "",
                 U_SAP_ID = q.U_SAP_ID,
                 VestInOrg = q.VestInOrg,
@@ -2067,10 +2086,39 @@ namespace OpenAuth.App
                 && (req.CompleteDate == null || (a.CompleteDate > req.CompleteDate))
                 && (req.EndCompleteDate == null || (a.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1)))
                 ).OrderBy(a => a.Status).ToList(),
-            });
+            }) ;
+            userId = new List<string>();
+            foreach (var item in resultsql)
+            {
+                userId.AddRange(item.ServiceWorkOrders.Select(a => a.CurrentUserNsapId));
+            }
+            userId = userId.Distinct().ToList();
 
-            var data = await resultsql.Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
+            userList = (from a in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userId.Contains(r.FirstId))
+                        join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
+                        select new { a.FirstId, c.Name }).ToList();
 
+            var AppUserId = UnitWork.Find<AppUserMap>(r => userId.Contains(r.UserID)).ToList();
+            var technicianLevelList = GetTechnicianGrade(AppUserId.Select(a => a.AppUserId).ToArray());
+            foreach (var item in data)
+            {
+
+                foreach (var item2 in item.ServiceWorkOrders)
+                {
+          
+                    if (!string.IsNullOrEmpty(item2.CurrentUser))
+                    {
+                        item2.CurrentUser = userList.FirstOrDefault(a => a.FirstId == item2.CurrentUserNsapId)?.Name + "-" + item2.CurrentUser;
+
+                        var appId = AppUserId.FirstOrDefault(a => a.UserID == item.CustomerId)?.AppUserId;
+                        if (appId != null)
+                        {
+                            item2.TechnicianLevel = technicianLevelList.FirstOrDefault(a => a.AppUserId == appId)?.GradeName;
+                        }
+                    //item.TechnicianLevel =
+                    }
+                }
+            }
             //根据服务id进行分组,取最近的一次未完工原因提交记录
             var lastUncompletedId = UnitWork.Find<ServiceUnCompletedReasonHistory>(null)
                                         .Where(s => data.Select(d => d.ServiceOrderId).Contains(s.ServiceOrderId))
@@ -2099,6 +2147,48 @@ namespace OpenAuth.App
             result.Data = data;
             result.Count = query.Count();
             return result;
+        }
+        public int GetIsContracting(string name)
+        {
+            if (string.IsNullOrEmpty(name) )
+            {
+                return 0;
+            }
+            
+            string[] arr = new string[] { "CS7", "CS12", "CS14", "CS17", "CS20", "CS29", "CS32", "CS34", "CS36", "CS37", "CS38", "CS39", "CS50", "CSYH" };
+            int flag = 0;
+            name = name.ToUpper();
+            if (arr.Contains(name))
+            {
+                flag = 1;
+            }
+            return flag;
+        }
+        public List<TechnicianGrade> GetTechnicianGrade(int?[] userArr)
+        {
+            var technicianLevelList = new List<TechnicianGrade>();
+            try
+            {
+                var timespan = DatetimeUtil.ToUnixTimestampBySeconds(DateTime.Now.AddMinutes(5));
+                var text = $"NewareApiTokenDeadline:{timespan}";
+                var aes = Encryption.AESEncrypt(text);
+                var grade = _helper.Post(new
+                {
+                    UserId = userArr,
+
+                }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Exam/GetTechnicianGrades", "EncryToken", aes);
+
+                JObject resObj = JObject.Parse(grade);
+                if (resObj["Data"] != null)
+                {
+                    technicianLevelList = JsonHelper.Instance.Deserialize<List<TechnicianGrade>>(resObj["Data"].ToString());
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
+            return technicianLevelList;
         }
 
         /// <summary>
@@ -2730,7 +2820,22 @@ namespace OpenAuth.App
                 }
             }
 
-            var resultsql = query.OrderBy(r => r.a.Id).ThenBy(r => r.a.WorkOrderNumber).Select(q => new
+            var resultsql = await query
+                .OrderBy(r => r.a.Id).ThenBy(r => r.a.WorkOrderNumber)
+            .Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToListAsync();
+
+
+            List<string> userId = new List<string>();
+            userId.AddRange(resultsql.Select(a => a.b.RecepUserId));
+            userId.AddRange(resultsql.Select(a => a.b.SalesManId));
+            userId.AddRange(resultsql.Select(a => a.b.SupervisorId));
+            userId = userId.Distinct().ToList();
+
+            var userList = (from a in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userId.Contains(r.FirstId))
+                            join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
+                            select new { a.FirstId, c.Name }).ToList();
+            var data = resultsql.Select(q => new
             {
                 ServiceOrderId = q.b.Id,
                 q.a.Priority,
@@ -2742,29 +2847,30 @@ namespace OpenAuth.App
                 q.b.CustomerName,
                 q.a.FromTheme,
                 q.a.CreateTime,
-                q.b.RecepUserName,
+                q.b.RecepUserId,
+                RecepUserName = userList.FirstOrDefault(a => a.FirstId == q.b.RecepUserId)?.Name + "-" + q.b.RecepUserName,
+                RecepUserDept = userList.FirstOrDefault(a => a.FirstId == q.b.RecepUserId)?.Name,
                 TechName = "",
                 q.a.ManufacturerSerialNumber,
                 q.a.MaterialCode,
                 q.a.MaterialDescription,
                 q.b.Contacter,
                 q.b.ContactTel,
-                q.b.Supervisor,
-                q.b.SalesMan,
+                q.b.SupervisorId,
+                Supervisor = userList.FirstOrDefault(a => a.FirstId == q.b.SupervisorId)?.Name + "-" + q.b.Supervisor,
+                SuperVisorDept = userList.FirstOrDefault(a => a.FirstId == q.b.SupervisorId)?.Name,
+                q.b.SalesManId,
+                SalesMan = userList.FirstOrDefault(a => a.FirstId == q.b.SalesManId)?.Name + "-" + q.b.SalesMan,
+                SalesManDept = userList.FirstOrDefault(a => a.FirstId == q.b.SalesManId)?.Name,
                 ServiceWorkOrderId = q.a.Id,
-                ProblemTypeName = q.c.Name,
+                ProblemTypeName = q.c?.Name,
                 q.a.CurrentUserId,
                 q.a.CurrentUser,
                 q.a.CurrentUserNsapId,
                 q.b.U_SAP_ID,
                 q.a.WorkOrderNumber
             });
-
-
-            result.Data =
-            (await resultsql
-            .Skip((req.page - 1) * req.limit)
-            .Take(req.limit).ToListAsync());//.GroupBy(o => o.Id).ToList();
+            result.Data =data;
             result.Count = query.Count();
             return result;
         }
@@ -3313,20 +3419,44 @@ namespace OpenAuth.App
                 .WhereIf(!string.IsNullOrWhiteSpace(req.QrySupervisor), q => q.Supervisor.Contains(req.QrySupervisor))
                 .Where(q => q.SalesManId.Equals(loginContext.User.Id) && ids.Contains(q.Id) && q.Status == 2);
 
-            var resultsql = query.OrderByDescending(q => q.CreateTime).Select(q => new
+
+
+
+
+
+            var resultsql = await query.OrderByDescending(q => q.CreateTime).Skip((req.page - 1) * req.limit)
+            .Take(req.limit).ToListAsync();
+
+            List<string> userId = new List<string>();
+            userId.AddRange(resultsql.Select(a => a.RecepUserId));
+            userId.AddRange(resultsql.Select(a => a.SalesManId));
+            userId.AddRange(resultsql.Select(a => a.SupervisorId));
+            userId = userId.Distinct().ToList();
+
+            var userList = (from a in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userId.Contains(r.FirstId))
+                            join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
+                            select new { a.FirstId, c.Name }).ToList();
+
+            var data = resultsql.Select(q => new
             {
                 ServiceOrderId = q.Id,
                 q.CustomerId,
                 q.CustomerName,
                 q.TerminalCustomerId,
                 q.TerminalCustomer,
-                q.RecepUserName,
+                q.RecepUserId,
+                RecepUserName = userList.FirstOrDefault(a => a.FirstId == q.RecepUserId)?.Name +"-"+ q.RecepUserName ,
+                RecepUserDept = userList.FirstOrDefault(a => a.FirstId == q.RecepUserId)?.Name,
                 q.Contacter,
                 q.ContactTel,
                 q.NewestContacter,
                 q.NewestContactTel,
-                q.Supervisor,
-                q.SalesMan,
+                q.SupervisorId,
+                Supervisor = userList.FirstOrDefault(a => a.FirstId == q.SupervisorId)?.Name + "-" + q.Supervisor,
+                SuperVisorDept = userList.FirstOrDefault(a => a.FirstId == q.SupervisorId)?.Name,
+                q.SalesManId,
+                SalesMan = userList.FirstOrDefault(a => a.FirstId == q.SalesManId)?.Name +"-"+q.SalesMan,
+                SalesManDept = userList.FirstOrDefault(a => a.FirstId == q.SalesManId)?.Name,
                 TechName = "",
                 q.U_SAP_ID,
                 ServiceStatus = q.Status,
@@ -3341,8 +3471,7 @@ namespace OpenAuth.App
                 && (string.IsNullOrWhiteSpace(req.QryFromTheme) || a.FromTheme.Contains(req.QryFromTheme))).ToList()
             });
 
-            result.Data = await resultsql.Skip((req.page - 1) * req.limit)
-            .Take(req.limit).ToListAsync();
+            result.Data = data;
             result.Count = query.Count();
             return result;
         }
@@ -7156,7 +7285,9 @@ namespace OpenAuth.App
                 q.Contacter,
                 q.ContactTel,
                 q.Supervisor,
+                q.SupervisorId,
                 q.SalesMan,
+                q.SalesManId,
                 q.Status,
                 q.Province,
                 q.City,
@@ -7189,6 +7320,15 @@ namespace OpenAuth.App
             .Skip((req.page - 1) * req.limit)
             .Take(req.limit).ToListAsync();
 
+            List<string> userId = new List<string>();
+            userId.AddRange(data.Select(a => a.SalesManId));
+            userId.AddRange(data.Select(a => a.SupervisorId));
+            userId = userId.Distinct().ToList();
+
+            var userList = (from a in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userId.Contains(r.FirstId))
+                            join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
+                            select new { a.FirstId, c.Name }).ToList();
+
             result.Data =
             data.Select(s => new
             {
@@ -7199,8 +7339,12 @@ namespace OpenAuth.App
                 CreateTime = s.CreateTime?.ToString("yyyy.MM.dd HH:mm:ss"),
                 s.Contacter,
                 s.ContactTel,
-                s.Supervisor,
-                s.SalesMan,
+                s.SupervisorId,
+                Supervisor = userList.FirstOrDefault(a => a.FirstId == s.SupervisorId)?.Name +"-" +s.Supervisor,
+                SuperVisorDept = userList.FirstOrDefault(a => a.FirstId == s.SupervisorId)?.Name,
+                s.SalesManId,
+                SalesMan = userList.FirstOrDefault(a => a.FirstId == s.SalesManId)?.Name + "-" + s.SalesMan,
+                SalesManDept = userList.FirstOrDefault(a => a.FirstId == s.SalesManId)?.Name,
                 s.Status,
                 s.Province,
                 s.City,
@@ -8966,5 +9110,11 @@ namespace OpenAuth.App
             //await UnitWork.BatchAddAsync<ServiceWorkOrder, int>(serviceOrders.ToArray());
             await UnitWork.SaveAsync();
         }
+        public class TechnicianGrade
+        {
+            public int AppUserId { get; set; }
+            public string GradeName { get; set; }
+        }
     }
+
 }
