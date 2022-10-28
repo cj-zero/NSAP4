@@ -231,7 +231,7 @@ namespace OpenAuth.App
             var result = true;
             // get latest 3 minutes updated job(jobtype = 72)
             List<Repository.Domain.Serve.Clue> updateData = new List<Repository.Domain.Serve.Clue>();
-            var updatedClueJob = UnitWork.Find<wfa_job>(a => a.job_type_id == 72 && a.sync_stat == 4 && a.base_entry > 0 && a.upd_dt >= DateTime.Now.AddMinutes(-2)).OrderBy(a => a.upd_dt).ToList();
+            var updatedClueJob = UnitWork.Find<wfa_job>(a => a.job_type_id == 72 && (a.sync_stat == 4 || a.sync_stat==2 || a.sync_stat == 3) && a.base_entry > 0 && a.upd_dt >= DateTime.Now.AddMinutes(-2)).OrderBy(a => a.upd_dt).ToList();
             if (updatedClueJob.Count != 0)
             {
                 var updateClueIDs = updatedClueJob.Select(a => a.base_entry).ToList();
@@ -241,8 +241,18 @@ namespace OpenAuth.App
                 _logger.LogError("运行修改线索状态定时任务，实际修改线索参数为" + JsonConvert.SerializeObject(clueList));
                 foreach (var clue in clueList)
                 {
-                    clue.Status = 1;
-                    clue.CardCode = updatedClueJob.Where(a => a.base_entry == clue.Id).FirstOrDefault().sbo_itf_return;
+                    var specJob = updatedClueJob.Where(a => a.base_entry == clue.Id).FirstOrDefault();
+                    if (specJob.sync_stat == 4)
+                    {
+                        clue.Status = 1;
+                        clue.CardCode = specJob.sbo_itf_return;
+                    }
+                    else
+                    {
+                        clue.Status = 4;
+                    }
+                    
+                    
                     updateData.Add(clue);
                 }
             }
