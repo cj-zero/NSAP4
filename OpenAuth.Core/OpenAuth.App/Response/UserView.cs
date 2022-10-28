@@ -84,6 +84,16 @@ namespace OpenAuth.App.Response
         /// </summary>
         public DateTime? EntryTime { get; set; }
 
+        /// <summary>
+        /// 钉钉用户Id
+        /// </summary>
+        public string DDUserId { get; set; }
+
+        /// <summary>
+        /// 钉钉用户名称
+        /// </summary>
+        public string DDUserName { get; set; }
+
         public static implicit operator UserView(User user)
         {
             return user.MapTo<UserView>();

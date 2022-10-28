@@ -38,6 +38,15 @@ namespace OpenAuth.App
                 query = UnitWork.Find<User>(u => u.Name.Contains(request.key) || u.Account.Contains(request.key));
             }
 
+            var ddusser = from a in UnitWork.Find<DDBindUser>(null)
+                          join b in UnitWork.Find<DDUserMsg>(null) on a.DDUserId equals b.UserId
+                          select new
+                          {
+                              a.UserId,
+                              a.DDUserId,
+                              b.UserName
+                          };
+
             var userOrgs = from user in query
                            join relevance in UnitWork.Find<Relevance>(u => u.Key == Define.USERORG)
                                on user.Id equals relevance.FirstId into temp
@@ -63,8 +72,34 @@ namespace OpenAuth.App
                                r.SecondId,
                                OrgId = o.Id,
                                OrgName = o.Name,
-                               user.EntryTime 
+                               user.EntryTime
                            };
+
+            var userddbind = from a in userOrgs.ToList()
+                             join b in ddusser.ToList() on a.Id equals b.UserId into ab
+                             from b in ab.DefaultIfEmpty()
+                             select new
+                             {
+                                 a.Account,
+                                 a.Name,
+                                 a.Id,
+                                 a.Sex,
+                                 a.Status,
+                                 a.BizCode,
+                                 a.CreateId,
+                                 a.CreateTime,
+                                 a.TypeId,
+                                 a.TypeName,
+                                 a.ServiceRelations,
+                                 a.CardNo,
+                                 a.Key,
+                                 a.SecondId,
+                                 OrgId = a.OrgId,
+                                 OrgName = a.OrgName,
+                                 a.EntryTime,
+                                 DDUserId = b == null ? "" : b.DDUserId,
+                                 DDUserName = b == null ? "" : b.UserName
+                             };
 
             //如果请求的orgId不为空
             if (!string.IsNullOrEmpty(request.orgId))
@@ -95,7 +130,7 @@ namespace OpenAuth.App
                 userOrgs = userOrgs.Where(u => (u.Key == Define.USERORG && orgIds.Contains(u.OrgId)) || (u.OrgId == null));
             }
 
-            var userViews = userOrgs.ToList().GroupBy(b => b.Account).Select(u => new UserView
+            var userViews = userddbind.ToList().GroupBy(b => b.Account).Select(u => new UserView
             {
                 Id = u.First().Id,
                 Account = u.Key,
@@ -104,11 +139,13 @@ namespace OpenAuth.App
                 Status = u.First().Status,
                 CreateTime = u.First().CreateTime,
                 CreateUser = u.First().CreateId,
-                ServiceRelations=u.First()?.ServiceRelations,
-                CardNo=u.First()?.CardNo,
+                ServiceRelations = u.First()?.ServiceRelations,
+                CardNo = u.First()?.CardNo,
                 OrganizationIds = string.Join(",", u.Select(x => x.OrgId)),
                 Organizations = string.Join(",", u.Select(x => x.OrgName)),
-                EntryTime = u.First().EntryTime
+                EntryTime = u.First().EntryTime,
+                DDUserId = u.First().DDUserId,
+                DDUserName = u.First().DDUserName
 
             });
 
