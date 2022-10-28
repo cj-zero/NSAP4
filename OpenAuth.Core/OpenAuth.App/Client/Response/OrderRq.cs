@@ -19,7 +19,7 @@ namespace OpenAuth.App.Client.Response
     /// <summary>
     /// 审批页面额外字段
     /// </summary>
-    public class AuditCode 
+    public class AuditCode
     {
         /// <summary>
         /// 机会编码
@@ -33,5 +33,9 @@ namespace OpenAuth.App.Client.Response
         /// 业务员部门
         /// </summary>
         public string SlpName_dept { set; get; }
+        /// <summary>
+        /// 申请人部门
+        /// </summary>
+        public string Applicant_dept { set; get; }
     }
 }

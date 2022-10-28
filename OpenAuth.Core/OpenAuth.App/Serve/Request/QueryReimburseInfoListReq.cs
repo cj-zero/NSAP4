@@ -140,4 +140,10 @@ namespace OpenAuth.App.Request
 
         public string StatusType { get; set; }
     }
+
+    public class TechnicianGrades
+    {
+        public int AppUserId { get; set; }
+        public string GradeName { get; set; }
+    }
 }

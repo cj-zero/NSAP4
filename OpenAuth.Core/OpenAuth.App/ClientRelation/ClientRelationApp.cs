@@ -227,6 +227,15 @@ namespace OpenAuth.App.ClientRelation
                 };
                 await UnitWork.AddAsync<OpenAuth.Repository.Domain.ClientRelation, int>(cr);
             }
+            //20221027 审批中间商修改客户关系
+            if (!string.IsNullOrEmpty(jobRelation.Terminals) && originRelation==null)
+            {
+                var uptRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.JobId == job.JobId && a.ScriptFlag == 0 && a.IsActive == 1 && a.IsDelete == 0);
+                uptRelation.SubNo = jobRelation.Terminals;
+                var subList = JsonConvert.DeserializeObject<List<ClientRelJob>>(jobRelation.Terminals);
+                uptRelation.SubNo = subList.Select(a => a.customerNo).ToList().ToString();
+                updateData.Add(uptRelation);
+            }
        
             if (originRelation != null)
             {
@@ -366,7 +375,7 @@ namespace OpenAuth.App.ClientRelation
             var  finalSubnodes = subListNodes.Count ==0 ? "" : JsonConvert.SerializeObject(subListNodes);
 
             //update the script jobrelation
-            if (jobScript.Initial == 1)
+            if (!string.IsNullOrEmpty(jobScript.EndCustomerName)&&jobScript.Initial == 1)
             {
                 var jobrelations = UnitWork.FindSingle<OpenAuth.Repository.Domain.JobClientRelation>(a => a.Jobid == jobScript.JobId && a.IsDelete == 0);
                 jobrelations.Terminals = jobScript.EndCustomerName;

@@ -67,6 +67,12 @@ namespace OpenAuth.Repository
         public virtual DbSet<VersionsLog> VersionsLogs { get; set; }
         public virtual DbSet<ReportInfo> ReportInfos { get; set; }
 
+        #region 钉钉
+        public virtual DbSet<DDBindUser> DDBindUsers { get; set; }
+        public virtual DbSet<DDUserMsg> DDUserMsgs { get; set; }
+        public virtual DbSet<DDDepartMsg> DDDepartMsgs { get; set; }
+        #endregion
+
         #region 客户中间商 终端关系维护表
         public virtual DbSet<ClientRelation> ClientRelations { get; set; }
         public virtual DbSet<ClientRelHistory> ClientRelHistories { get; set; }
