@@ -249,7 +249,7 @@ namespace OpenAuth.WebApi.Controllers.Client
             var result = new Response<AuditCode>();
             try
             {
-                result.Result = _clientInfoApp.GetClueNo(req.jobId, req.CardCode, req.Technician, req.SlpName);
+                result.Result = _clientInfoApp.GetClueNo(req.jobId, req.CardCode, req.Technician, req.SlpName,req.Applicant);
             }
             catch (Exception ex)
             {

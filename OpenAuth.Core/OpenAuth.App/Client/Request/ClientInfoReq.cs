@@ -1455,10 +1455,12 @@ namespace OpenAuth.App.Client.Request
     public class Getbase_entry
     {
         public string jobId { get; set; }
-       
+
         public string CardCode { get; set; }
-       
+
         public string Technician { get; set; }
         public string SlpName { get; set; }
+
+        public string Applicant { get; set; }
     }
 }

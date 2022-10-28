@@ -1238,7 +1238,8 @@ namespace OpenAuth.App.Customer
                         remark = table.Rows[i]["remark"].ToString(),
                         CreateTime = Convert.ToDateTime(table.Rows[i]["CreateTime"]),
                         Department = table.Rows[i]["Department"].ToString(),
-                        t = (Convert.ToDateTime(table.Rows[i]["CreateTime"]) - dateStart).TotalSeconds.ToString()
+                        t = (Convert.ToDateTime(table.Rows[i]["CreateTime"]) - dateStart).TotalSeconds.ToString(),
+                        SalerName_dept = GetUserOrgInfo("", table.Rows[i]["SlpName"].ToString())
                     });
                 }
             }
