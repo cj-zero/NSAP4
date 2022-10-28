@@ -2409,14 +2409,16 @@ namespace OpenAuth.App.Client
                     {
                         strSql.Append(" ( ");
                     }
+                    var flag = true;
                     for (int i = 0; i < queryArray.Length; i++)
                     {
                         string[] p = queryArray[i].Split(':');
                         if (!string.IsNullOrEmpty(p[1]))
                         {
-                            if (i==0)
+                            if (flag)
                             {
                                 strSql.AppendFormat(" CONVERT({0} USING utf8)  LIKE '%{1}%'  ", p[0], p[1].Trim().FilterSQL());
+                                flag = false;
                             }
                             else
                             {
