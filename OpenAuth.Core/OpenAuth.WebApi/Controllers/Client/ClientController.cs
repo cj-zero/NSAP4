@@ -234,6 +234,26 @@ namespace OpenAuth.WebApi.Controllers.Client
             return result;
         }
 
+
+        [HttpGet]
+        [Route("AlterAuditInfo")]
+        public Response<clientOCRD> AlterAuditInfo(string jobId)
+        {
+            var result = new Response<clientOCRD>();
+            try
+            {
+                result.Result = _clientInfoApp.AlterAuditInfoNew(jobId);
+            }
+            catch (Exception ex)
+            {
+                result.Code = 500;
+                result.Message = ex.InnerException?.Message ?? ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{jobId.ToJson()}， 错误：{result.Message}");
+            }
+
+            return result;
+        }
+
         /// <summary>
         /// 审批页面获取机会编码
         /// </summary>
