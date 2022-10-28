@@ -516,7 +516,7 @@ namespace OpenAuth.App
                                 });
                                 await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { ApprovalDirector = loginContext.User.Name, ApprovalDirectorId = loginContext.User.Id });
                                 await UnitWork.SaveAsync();
-                                //await CreateNwcailFile(certNo);
+                                await CreateNwcailFile(certNo);
                             }
                             else if (flowInstance.ActivityName.Equals("开始") && flowInstance.IsFinish == -1)
                             {
@@ -587,7 +587,7 @@ namespace OpenAuth.App
 
         public async Task CreateNwcailFileHelper()
         {
-            var res = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId) && string.IsNullOrWhiteSpace(c.CNASPdfPath)).ToListAsync();
+            var res = await UnitWork.Find<NwcaliBaseInfo>(c => !string.IsNullOrWhiteSpace(c.ApprovalDirectorId) && string.IsNullOrWhiteSpace(c.CNASPdfPath)).OrderByDescending(c => c.Time).Take(1000).ToListAsync();
             foreach (var item in res)
             {
                 await CreateNwcailFile(item.CertificateNumber);
