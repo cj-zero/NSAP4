@@ -298,6 +298,7 @@ namespace Sap.Handler.Service
                 slpcode = (await UnitWork.Find<OSLP>(o => o.SlpName.Equals(quotation.CreateUser)).FirstOrDefaultAsync())?.SlpCode;
             }
             var ocrdObj = await UnitWork.Find<OCRD>(o => o.CardCode.Equals(serviceOrder.TerminalCustomerId)).Select(o => new { o.SlpCode ,o.CardName}).FirstOrDefaultAsync();
+            var cntctCode = await UnitWork.Find<ORDR>(c => c.DocEntry == quotation.SalesOrderId).Select(c => c.CntctCode).FirstOrDefaultAsync();
             List<string> typeids = new List<string> { "SYS_MaterialInvoiceCategory", "SYS_MaterialTaxRate", "SYS_InvoiceCompany", "SYS_DeliveryMethod" };
             var categoryList = await UnitWork.Find<Category>(c => typeids.Contains(c.TypeId)).ToListAsync();
             var dbContext = UnitWork.GetDbContext<sale_ordr>();
@@ -313,7 +314,8 @@ namespace Sap.Handler.Service
                         CardCode = serviceOrder.TerminalCustomerId, //客户id
                         CardName = ocrdObj.CardName,//客户名称
                         SlpCode = (short)slpcode, //销售人代码
-                        CntctCode = int.Parse(string.IsNullOrWhiteSpace(oCPR.CntctCode.ToString()) ? "0" : oCPR.CntctCode.ToString()),//联系人
+                        //CntctCode = int.Parse(string.IsNullOrWhiteSpace(oCPR.CntctCode.ToString()) ? "0" : oCPR.CntctCode.ToString()),//联系人
+                        CntctCode = cntctCode == null ? 0 : cntctCode,//联系人
                         Comments = quotation.Remark, //备注
                         U_YWY = ocrdObj.SlpCode.ToString(),//业务员
                         U_FPLB = categoryList.Where(c => c.TypeId.Equals("SYS_MaterialInvoiceCategory") && c.DtValue.Equals(quotation.InvoiceCategory.ToString())).FirstOrDefault()?.Name,

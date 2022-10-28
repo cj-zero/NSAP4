@@ -91,7 +91,12 @@ namespace OpenAuth.Repository.Domain.Settlement
         /// </summary>
         [Description("报价单id")]
         public int? QuotationId { get; set; }
-        
+
+        /// <summary>
+        /// 报表ID
+        /// </summary>
+        public int? OutsourcReportId { get; set; }
+
         /// <summary>
         /// 费用明细表
         /// </summary>
