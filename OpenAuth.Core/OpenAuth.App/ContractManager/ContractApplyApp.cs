@@ -1151,7 +1151,7 @@ namespace OpenAuth.App.ContractManager
             await SendSinglRMsg(quotationObj.ContractStatus, quotationObj.ContractNo, req.Remarks, loginContext.User);
 
             //撤回申请单钉钉通知
-            //await SendDDReCallMsg(quotationObj.ContractStatus, quotationObj.ContractNo, req.Remarks, loginContext.User);
+            await SendDDReCallMsg(quotationObj.ContractStatus, quotationObj.ContractNo, req.Remarks, loginContext.User);
         }
 
         /// <summary>
