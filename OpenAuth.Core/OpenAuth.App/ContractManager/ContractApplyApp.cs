@@ -1368,10 +1368,10 @@ namespace OpenAuth.App.ContractManager
                                 throw new Exception("文件类型或印章Id不能为空");
                             }
 
-                            //if (item.FileType == "3" && string.IsNullOrEmpty(obj.ItemName))
-                            //{
-                            //    throw new Exception("文件类型包含标书，项目名称必填");
-                            //}
+                            if (item.FileType == "3" && string.IsNullOrEmpty(obj.ItemName))
+                            {
+                                throw new Exception("文件类型包含标书，项目名称必填");
+                            }
 
                             if (item.FileType == "8" && string.IsNullOrEmpty(obj.Remark))
                             {
@@ -1527,10 +1527,10 @@ namespace OpenAuth.App.ContractManager
                             throw new Exception("文件类型或印章Id不能为空");
                         }
 
-                        //if (item.FileType == "3" && string.IsNullOrEmpty(obj.ItemName))
-                        //{
-                        //    throw new Exception("文件类型包含标书，项目编号和项目名称必填");
-                        //}
+                        if (item.FileType == "3" && string.IsNullOrEmpty(obj.ItemName))
+                        {
+                            throw new Exception("文件类型包含标书，项目编号和项目名称必填");
+                        }
 
                         if (item.FileType == "8" && string.IsNullOrEmpty(obj.Remark))
                         {

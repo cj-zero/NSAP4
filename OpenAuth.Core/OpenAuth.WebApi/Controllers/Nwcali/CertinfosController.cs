@@ -361,6 +361,41 @@ namespace OpenAuth.WebApi.Controllers
             var data = await _app.ExportBakingMachineRecord(req);
             return File(data, "application/vnd.ms-excel");
         }
+
+        /// <summary>
+        /// 校准明细报表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> CalibrationReport([FromQuery] QueryCalibrationReportReq req)
+        {
+            TableData result = new TableData();
+            if (req.StartTime == null || req.EndTime == null)
+            {
+                result.Code = 500;
+                result.Message = "请选择校准开始时间!";
+                return result;
+            }
+            result = await _app.CalibrationReport(req);
+            return result;
+        }
+        /// <summary>
+        /// 导出校准明细报表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        [HttpGet]
+        public async Task<IActionResult> ExportCalibrationReport([FromQuery] QueryCalibrationReportReq req)
+        {
+            if (req.StartTime == null || req.EndTime == null)
+            {
+                throw new Exception($"请选择校准开始时间");
+            }
+            var data = await _app.ExportCalibrationReport(req);
+            return File(data, "application/vnd.ms-excel");
+        }
         /// <summary>
         /// 获取下位机
         /// </summary>

@@ -67,7 +67,7 @@ namespace OpenAuth.App.CommonHelp
                     List<int> deptusers = UnitWork.Find<base_user_detail>(r => r.user_id == userids).Select(r => r.dep_id).ToList();
                     if (deptusers != null && deptusers.Count() > 0)
                     {
-                        List<string> depts = UnitWork.Find<base_dep>(r => deptusers.Contains(r.dep_id)).Select(r => r.dep_nm).ToList();
+                        List<string> depts = UnitWork.Find<base_dep>(r => deptusers.Contains(r.dep_id)).Select(r => r.dep_alias).ToList();
                         departName = string.Join(",", depts);
                     }
                 }
@@ -91,7 +91,7 @@ namespace OpenAuth.App.CommonHelp
                     List<int> deptusers = UnitWork.Find<base_user_detail>(r => r.user_id == userId).Select(r => r.dep_id).ToList();
                     if (deptusers != null && deptusers.Count() > 0)
                     {
-                        List<string> depts = UnitWork.Find<base_dep>(r => deptusers.Contains(r.dep_id)).Select(r => r.dep_nm).ToList();
+                        List<string> depts = UnitWork.Find<base_dep>(r => deptusers.Contains(r.dep_id)).Select(r => r.dep_alias).ToList();
                         departName = string.Join(",", depts);
                     }
                 }
