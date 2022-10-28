@@ -2060,10 +2060,10 @@ namespace OpenAuth.App
                 NewestContacter = q.NewestContacter,
                 NewestContactTel = q.NewestContactTel,
                 SupervisorId = q.SupervisorId,
-                Supervisor = userList.FirstOrDefault(a => a.FirstId == q.SupervisorId)?.Name + "-" + q.Supervisor,
+                Supervisor = userList.Where(a => a.FirstId == q.SupervisorId).FirstOrDefault()?.Name + "-" + q.Supervisor,
                 SuperVisorDept = userList.FirstOrDefault(a => a.FirstId == q.SupervisorId)?.Name,
                 SalesManId = q.SalesManId,
-                SalesMan = userList.FirstOrDefault(a => a.FirstId == q.SalesManId)?.Name + "-" + q.SalesMan,
+                SalesMan = userList.Where(a => a.FirstId == q.SalesManId).FirstOrDefault()?.Name + "-" + q.SalesMan,
                 SalesManDept = userList.FirstOrDefault(a => a.FirstId == q.SalesManId)?.Name,
                 //TechName = "",
                 U_SAP_ID = q.U_SAP_ID,
@@ -2093,8 +2093,7 @@ namespace OpenAuth.App
                 userId.AddRange(item.ServiceWorkOrders.Select(a => a.CurrentUserNsapId));
             }
             userId = userId.Distinct().ToList();
-
-            userList = (from a in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userId.Contains(r.FirstId))
+            var userList2 = (from a in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userId.Contains(r.FirstId))
                         join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
                         select new { a.FirstId, c.Name }).ToList();
 
@@ -2108,7 +2107,7 @@ namespace OpenAuth.App
           
                     if (!string.IsNullOrEmpty(item2.CurrentUser))
                     {
-                        item2.CurrentUser = userList.FirstOrDefault(a => a.FirstId == item2.CurrentUserNsapId)?.Name + "-" + item2.CurrentUser;
+                        item2.CurrentUser = userList2.FirstOrDefault(a => a.FirstId == item2.CurrentUserNsapId)?.Name + "-" + item2.CurrentUser;
 
                         var appId = AppUserId.FirstOrDefault(a => a.UserID == item.CustomerId)?.AppUserId;
                         if (appId != null)
