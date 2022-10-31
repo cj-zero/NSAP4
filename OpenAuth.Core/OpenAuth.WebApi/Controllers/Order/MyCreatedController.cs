@@ -58,7 +58,8 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 item.DeptName = _userDepartMsgHelp.GetUserIdDepart(item.user_id);
             }
-            result.Data = dt;
+
+            result.Data = saleMyCreates;
             result.Count = rowCount;
             return result;
 
