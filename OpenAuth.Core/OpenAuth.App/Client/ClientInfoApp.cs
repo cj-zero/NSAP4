@@ -2525,6 +2525,21 @@ namespace OpenAuth.App.Client
             //   var info = GetUserOrgInfo("", datatable.Rows[i]["SlpName"].ToString());
             //    datatable.Rows[i]["SlpName"] = info == null ? datatable.Rows[i]["SlpName"] : info.FirstOrDefault().OrgName + "-" + datatable.Rows[i]["SlpName"];
             //}
+
+            #region 
+            datatable.Columns.Add("IsFlag", typeof(int));
+            datatable.Columns.Add("ClueId", typeof(String));
+            var clientNoList = datatable.AsEnumerable().Select(row => row.Field<string>("CardCode")).ToList();  //CardCode
+            var clueList = UnitWork.Find<OpenAuth.Repository.Domain.Serve.Clue>(a=>clientNoList.Contains(a.CardCode)).ToList();
+            var flagList = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => clientNoList.Contains(a.ClientNo) && a.IsActive == 1 && a.ScriptFlag == 0 && a.Flag != 2 && a.IsDelete == 0).ToList();
+            foreach (var datarow in datatable.AsEnumerable())
+            {
+                var specClue = clueList.Where(a => a.CardCode == datarow["CardCode"].ToString()).FirstOrDefault();
+                var specFlag = flagList.Where(a => a.ClientNo == datarow["CardCode"].ToString()).FirstOrDefault();
+                datarow["IsFlag"] = specFlag == null ? 0 : specFlag.Flag;
+                datarow["ClueId"] = specClue==null? "": specClue.SerialNumber;
+            }
+            #endregion
             return datatable;
         }
         #endregion
