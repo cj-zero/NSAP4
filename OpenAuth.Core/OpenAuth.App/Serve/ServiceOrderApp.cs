@@ -2173,7 +2173,7 @@ namespace OpenAuth.App
                 var aes = Encryption.AESEncrypt(text);
                 var grade = _helper.Post(new
                 {
-                    UserId = userArr,
+                    UserIds = userArr,
 
                 }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Exam/GetTechnicianGrades", "EncryToken", aes);
 
