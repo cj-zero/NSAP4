@@ -194,6 +194,7 @@ namespace OpenAuth.App
             var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
 
             List<dynamic> outsourcs = new List<dynamic>();
+            var independentOrg = new string[] { "CS7", "CS12", "CS14", "CS17", "CS20", "CS29", "CS32", "CS34", "CS36", "CS37", "CS38", "CS9", "CS50", "CSYH" };
             outsourcList.ForEach(o =>
             {
                 var orgName = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(o.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name;
@@ -215,9 +216,10 @@ namespace OpenAuth.App
                     PayTime = o.PayTime != null ? Convert.ToDateTime(o.PayTime).ToString("yyyy.MM.dd HH:mm:ss") : null,
                     o.TotalMoney,
                     CreateUser = orgName == null ? o.CreateUser : orgName + "-" + o.CreateUser,
+                    IsContracting = string.IsNullOrEmpty(orgName) ? 0 : independentOrg.Contains(orgName) ? 1 : 0,
                     o.Remark,
                     IsRejected = o.IsRejected ? "是" : null
-                });
+                }) ;
             });
             result.Data = new
             {
