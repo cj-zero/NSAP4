@@ -8,7 +8,9 @@ using OpenAuth.App.Order;
 using OpenAuth.App.Order.ModelDto;
 using OpenAuth.App.Order.Request;
 using OpenAuth.App.Response;
+using OpenAuth.App.CommonHelp;
 using OpenAuth.Repository.Interface;
+using OpenAuth.Repository.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -25,16 +27,18 @@ namespace OpenAuth.WebApi.Controllers.Order
     [ApiExplorerSettings(GroupName = "Order")]
     public class MyCreatedController : Controller
     {
+        private UserDepartMsgHelp _userDepartMsgHelp;
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
         IAuth _auth;
         IUnitWork UnitWork;
         ServiceBaseApp _serviceBaseApp;
-        public MyCreatedController(IUnitWork UnitWork, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
+        public MyCreatedController(IUnitWork UnitWork, UserDepartMsgHelp userDepartMsgHelp, ServiceBaseApp _serviceBaseApp, IAuth _auth, ServiceSaleOrderApp serviceSaleOrderApp)
         {
             this.UnitWork = UnitWork;
             this._serviceBaseApp = _serviceBaseApp;
             this._auth = _auth;
             _serviceSaleOrderApp = serviceSaleOrderApp;
+            _userDepartMsgHelp = userDepartMsgHelp;
         }
         #region 我创建的
         /// <summary>
@@ -49,6 +53,11 @@ namespace OpenAuth.WebApi.Controllers.Order
             int rowCount = 0;
             //DataTable dt = _serviceSaleOrderApp.GetICreated(model.limit, model.page, model.query, model.sortname, model.sortorder, UserID, model.types, model.Applicator, model.Customer, model.Status, model.BeginDate, model.EndDate, _serviceSaleOrderApp.GetPagePowersByUrl("mywork/AuditAllNew.aspx",UserID).ViewCustom, _serviceSaleOrderApp.GetPagePowersByUrl("mywork/AuditAllNew.aspx",UserID).ViewSales);
             DataTable dt = _serviceSaleOrderApp.GetICreated(out rowCount, model, UserID, true, true);
+            List<SaleMyCreates> saleMyCreates = dt.Tolist<SaleMyCreates>();
+            foreach (SaleMyCreates item in saleMyCreates)
+            {
+                item.DeptName = _userDepartMsgHelp.GetUserIdDepart(item.user_id);
+            }
             result.Data = dt;
             result.Count = rowCount;
             return result;
