@@ -202,6 +202,9 @@ namespace OpenAuth.App
             var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
             var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
 
+            var independentOrg = new string[] { "CS7", "CS12", "CS14", "CS17", "CS20", "CS29", "CS32", "CS34", "CS36", "CS37", "CS38", "CS9", "CS50", "CSYH" };
+
+
             var returnNoteMainRespList = returnNoteList.Select(r => new ReturnNoteMainResp
             {
                 returnNoteId = r.Id,
@@ -210,7 +213,8 @@ namespace OpenAuth.App
                 ServiceOrderSapId = r.ServiceOrderSapId,
                 Reason = r.Reason,
                 CreateUserId = r.CreateUserId,
-                CreateUser = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(r.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name == null ? r.CreateUser : SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(r.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + r.CreateUser,
+                CreateUser = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(r.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name == null ?
+                r.CreateUser : SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(r.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + r.CreateUser,
                 CreateTime = Convert.ToDateTime(r.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 UpdateTime = Convert.ToDateTime(r.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
                 TotalMoney = r.TotalMoney,
@@ -221,6 +225,9 @@ namespace OpenAuth.App
                 InvoiceDocEntry = r.ReturnNoteProducts.FirstOrDefault()?.ReturnNoteMaterials.FirstOrDefault()?.InvoiceDocEntry,
                 TerminalCustomer = serviceOrders.Where(s => s.Id == r.ServiceOrderId).FirstOrDefault()?.TerminalCustomer,
                 TerminalCustomerId = serviceOrders.Where(s => s.Id == r.ServiceOrderId).FirstOrDefault()?.TerminalCustomerId,
+                IsContracting = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(r.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name == null ?
+                0: independentOrg.Contains(SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(r.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name)?1:0
+
             }).ToList();
             returnNoteMainRespList.ForEach(r => { r.StatusName = r.Status != null ? CategoryList.Where(c => c.DtValue.Equals(r.Status)).FirstOrDefault()?.Name : "未提交"; r.Status = r.Status != null ? r.Status : "开始"; });
             result.Data = returnNoteMainRespList;
