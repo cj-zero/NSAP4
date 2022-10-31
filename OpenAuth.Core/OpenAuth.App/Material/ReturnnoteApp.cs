@@ -557,6 +557,7 @@ namespace OpenAuth.App
                         join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
                         select new { a.FirstId, c.Name }).ToList();
 
+            var independentOrg = new string[] { "CS7", "CS12", "CS14", "CS17", "CS20", "CS29", "CS32", "CS34", "CS36", "CS37", "CS38", "CS9", "CS50", "CSYH" };
 
             result.Data = query.Select(c => new
             {
@@ -574,6 +575,8 @@ namespace OpenAuth.App
                 CreateUser = user.FirstOrDefault(a => a.FirstId == c.a.CreateUserId)?.Name+"-" +c.a.CreateUser ,
                 c.a.CreateUserId,
                 CreateDept = user.FirstOrDefault(a => a.FirstId == c.a.CreateUserId)?.Name,
+                IsContracting = independentOrg.Contains(user.FirstOrDefault(a => a.FirstId == c.a.CreateUserId)?.Name) ? 1 : 0,
+
                 //modify by yangsiming @2022.04.14 MaterialType=3,即赠送的物料不在填写计划内
                 Status = materialReplaceRecord.Where(m => m.QuotationId == c.a.Id).Count() > 0 ? (materialReplaceRecord.Where(m => m.QuotationId == c.a.Id && m.MaterialType != 3).Count() == c.a.QuotationMergeMaterials.Where(c => c.MaterialType != 3 && !CategoryList.Contains(c.MaterialCode)).Sum(s => s.Count) ? "已更新" : "部分更新") : "待更新"
             });
