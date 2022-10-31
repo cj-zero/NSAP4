@@ -2520,11 +2520,11 @@ namespace OpenAuth.App.Client
             strSql.Append(") T ");
             _logger.LogError(strSql.ToString());
             DataTable datatable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
-            for (int i = 0; i < datatable.Rows.Count; i++)
-            {
-               var info = GetUserOrgInfo("", datatable.Rows[i]["SlpName"].ToString());
-                datatable.Rows[i]["SlpName"] = info == null ? datatable.Rows[i]["SlpName"] : info.FirstOrDefault().OrgName + "-" + datatable.Rows[i]["SlpName"];
-            }
+            //for (int i = 0; i < datatable.Rows.Count; i++)
+            //{
+            //   var info = GetUserOrgInfo("", datatable.Rows[i]["SlpName"].ToString());
+            //    datatable.Rows[i]["SlpName"] = info == null ? datatable.Rows[i]["SlpName"] : info.FirstOrDefault().OrgName + "-" + datatable.Rows[i]["SlpName"];
+            //}
             return datatable;
         }
         #endregion
