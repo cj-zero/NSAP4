@@ -1179,20 +1179,20 @@ namespace OpenAuth.App.Client
         }
 
 
-        public clientOCRD AlterAuditInfoNew(string jobId)
+        public clientOCRD AlterAuditInfoNew(string jobId, clientOCRD client)
         {
-            clientOCRD bill = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(jobId));
-            bill.FilesDetails = null;
-            byte[] job_data = ByteExtension.ToSerialize(bill);
+            //clientOCRD bill = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(jobId));
+            //bill.FilesDetails = null;
+            byte[] job_data = ByteExtension.ToSerialize(client);
             StringBuilder strSql = new StringBuilder();
-            strSql.AppendFormat("UPDATE  nsap_base.wfa_job SET  job_data=?job_data WHERE job_id={0}", jobId);
+            strSql.AppendFormat("UPDATE  nsap_base.wfa_job SET  job_data=?job_data , sync_start = 0,sync_stat =0  WHERE job_id={0}", jobId);
             List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
                  {
                      new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_data",     job_data)
 
                  };
             var rows = UnitWork.ExecuteNonQuery(ContextType.NsapBaseDbContext, CommandType.Text, strSql.ToString(), strPara);
-            return bill;
+            return client;
         }
         #endregion
         #region 修改审核数据
@@ -2520,11 +2520,26 @@ namespace OpenAuth.App.Client
             strSql.Append(") T ");
             _logger.LogError(strSql.ToString());
             DataTable datatable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
-            for (int i = 0; i < datatable.Rows.Count; i++)
+            //for (int i = 0; i < datatable.Rows.Count; i++)
+            //{
+            //   var info = GetUserOrgInfo("", datatable.Rows[i]["SlpName"].ToString());
+            //    datatable.Rows[i]["SlpName"] = info == null ? datatable.Rows[i]["SlpName"] : info.FirstOrDefault().OrgName + "-" + datatable.Rows[i]["SlpName"];
+            //}
+
+            #region 
+            datatable.Columns.Add("IsFlag", typeof(int));
+            datatable.Columns.Add("ClueId", typeof(String));
+            var clientNoList = datatable.AsEnumerable().Select(row => row.Field<string>("CardCode")).ToList();  //CardCode
+            var clueList = UnitWork.Find<OpenAuth.Repository.Domain.Serve.Clue>(a=>clientNoList.Contains(a.CardCode)).ToList();
+            var flagList = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => clientNoList.Contains(a.ClientNo) && a.IsActive == 1 && a.ScriptFlag == 0 && a.Flag != 2 && a.IsDelete == 0).ToList();
+            foreach (var datarow in datatable.AsEnumerable())
             {
-               var info = GetUserOrgInfo("", datatable.Rows[i]["SlpName"].ToString());
-                datatable.Rows[i]["SlpName"] = info == null ? datatable.Rows[i]["SlpName"] : info.FirstOrDefault().OrgName + "-" + datatable.Rows[i]["SlpName"];
+                var specClue = clueList.Where(a => a.CardCode == datarow["CardCode"].ToString()).FirstOrDefault();
+                var specFlag = flagList.Where(a => a.ClientNo == datarow["CardCode"].ToString()).FirstOrDefault();
+                datarow["IsFlag"] = specFlag == null ? 0 : specFlag.Flag;
+                datarow["ClueId"] = specClue==null? "": specClue.SerialNumber;
             }
+            #endregion
             return datatable;
         }
         #endregion

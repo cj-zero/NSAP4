@@ -304,7 +304,7 @@ namespace OpenAuth.App.Order
 
         public int job_state { get; set; }
 
-        public DateTime? upd_dt { get; set; }
+        public System.DateTime? upd_dt { get; set; }
 
         public string remarks { get; set; }
 
@@ -357,7 +357,7 @@ namespace OpenAuth.App.Order
 
         public int job_state { get; set; }
 
-        public DateTime? upd_dt { get; set; }
+        public System.DateTime? upd_dt { get; set; }
 
         public string remarks { get; set; }
 
