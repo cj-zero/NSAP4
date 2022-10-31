@@ -1180,20 +1180,20 @@ namespace OpenAuth.App.Client
         }
 
 
-        public clientOCRD AlterAuditInfoNew(string jobId)
+        public clientOCRD AlterAuditInfoNew(string jobId, clientOCRD client)
         {
-            clientOCRD bill = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(jobId));
-            bill.FilesDetails = null;
-            byte[] job_data = ByteExtension.ToSerialize(bill);
+            //clientOCRD bill = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(jobId));
+            //bill.FilesDetails = null;
+            byte[] job_data = ByteExtension.ToSerialize(client);
             StringBuilder strSql = new StringBuilder();
-            strSql.AppendFormat("UPDATE  nsap_base.wfa_job SET  job_data=?job_data WHERE job_id={0}", jobId);
+            strSql.AppendFormat("UPDATE  nsap_base.wfa_job SET  job_data=?job_data , sync_start = 0,sync_stat =0  WHERE job_id={0}", jobId);
             List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
                  {
                      new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_data",     job_data)
 
                  };
             var rows = UnitWork.ExecuteNonQuery(ContextType.NsapBaseDbContext, CommandType.Text, strSql.ToString(), strPara);
-            return bill;
+            return client;
         }
         #endregion
         #region 修改审核数据
