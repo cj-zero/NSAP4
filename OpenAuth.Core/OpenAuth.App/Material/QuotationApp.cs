@@ -3696,6 +3696,7 @@ namespace OpenAuth.App.Material
                                        b.ManufacturerSerialNumber,
                                        b.FromTheme,
                                        b.MaterialCode,
+                                       a.CreateUserId,
                                        CreateUser = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name == null ?
                                        a.CreateUser : SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + a.CreateUser,
                                        IsContracting = independentOrg.Contains(SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name) ? 1 : 0,
