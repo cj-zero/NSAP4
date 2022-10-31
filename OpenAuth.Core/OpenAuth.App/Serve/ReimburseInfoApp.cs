@@ -3103,8 +3103,8 @@ namespace OpenAuth.App
             #region 个人信息
             var userinfo = await _userManagerApp.GetUserOrgInfo(req.CreateUserId);
             var manager = await _orgApp.GetOrgManager(userinfo.OrgId);
-            var nsapusermap = await UnitWork.Find<NsapUserMap>(c => c.UserID == userinfo.Id).FirstOrDefaultAsync();
-            var nsapid = nsapusermap != null ? nsapusermap.NsapUserId : 0;
+            var nsapusermap = await UnitWork.Find<AppUserMap>(c => c.UserID == userinfo.Id).FirstOrDefaultAsync();
+            var nsapid = nsapusermap != null ? nsapusermap.AppUserId : 0;
             var nsapUserInfo = await UnitWork.Find<base_user_detail>(c => c.user_id == nsapid).Select(c => new { c.try_date, c.office_addr }).FirstOrDefaultAsync();
 
             //获取技术员等级

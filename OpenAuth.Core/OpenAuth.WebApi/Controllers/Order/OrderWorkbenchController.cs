@@ -62,13 +62,13 @@ namespace OpenAuth.WebApi.Controllers.Order
             }
             DataTable dt = _orderWorkbenchApp.GetSubmtToMe(orderSubmtToMeReq.limit, orderSubmtToMeReq.page, orderSubmtToMeReq.query, orderSubmtToMeReq.sortname, orderSubmtToMeReq.sortorder, UserID, orderSubmtToMeReq.types, orderSubmtToMeReq.Applicator, orderSubmtToMeReq.Customer, orderSubmtToMeReq.Status, orderSubmtToMeReq.BeginDate, orderSubmtToMeReq.EndDate, ViewCustom: viewCustom, ViewSales: viewSales, out rowCount);
 
-            //List<SaleDeptSubToMe> saleDeptSubToMes = dt.Tolist<SaleDeptSubToMe>();
-            //foreach (SaleDeptSubToMe item in saleDeptSubToMes)
-            //{
-            //    item.DeptName = _userDepartMsgHelp.GetUserIdDepart(item.user_id);
-            //}
-            result.Data = dt;
-            //result.Data = saleDeptSubToMes;
+            List<SaleDeptSubToMe> saleDeptSubToMes = dt.Tolist<SaleDeptSubToMe>();
+            foreach (SaleDeptSubToMe item in saleDeptSubToMes)
+            {
+                item.DeptName = _userDepartMsgHelp.GetUserIdDepart(item.user_id);
+            }
+
+            result.Data = saleDeptSubToMes;
             result.Count = rowCount;
             return result;
         }

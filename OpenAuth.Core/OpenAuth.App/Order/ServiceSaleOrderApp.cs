@@ -5259,7 +5259,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
         {
             StringBuilder tableName = new StringBuilder();
             StringBuilder filedName = new StringBuilder();
-            filedName.Append(" '',a.job_id,b.job_type_nm,a.job_nm,c.user_nm,a.job_state,a.upd_dt,a.remarks,b.job_type_id,a.card_code,");
+            filedName.Append(" '',a.job_id,b.job_type_nm,a.job_nm,c.user_nm,a.user_id,a.job_state,a.upd_dt,a.remarks,b.job_type_id,a.card_code,");
             filedName.Append("CASE WHEN a.card_name IS NULL THEN NULL WHEN a.card_name = '' THEN '' WHEN a.card_name IS NOT NULL AND a.card_name <> '' AND " + ViewCustom + " THEN a.card_name ELSE '******' END AS CardName,");
             filedName.Append("CASE WHEN a.doc_total IS NULL THEN NULL WHEN a.doc_total = '' THEN '' WHEN a.doc_total IS NOT NULL AND a.doc_total <> '' AND " + ViewSales + " THEN a.doc_total ELSE '******' END AS DocTotal,");
             filedName.Append("a.base_type,a.base_entry,d.step_nm,a.sbo_id,f.page_url,a.sbo_itf_return,g.sbo_nm,a.sync_start,a.sync_stat,b.sync_sap ");
