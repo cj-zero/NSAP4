@@ -1842,18 +1842,18 @@ namespace OpenAuth.App.Client
                     }
                     else
                     {
-                        await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
-                        {
-                            userid = currentuser.User.Id.ToString(),
-                            username = currentuser.User.Name,
-                            job_userid = newOper.Id,
-                            job_username = newOper.Name,
-                            jobid = (int)job.job_id,
-                            ClientNo = CardCode,
-                            ClientName = originClient.ClientName,
-                            flag = 0,
-                            OperateType = 1
-                        });
+                        //await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
+                        //{
+                        //    userid = currentuser.User.Id.ToString(),
+                        //    username = currentuser.User.Name,
+                        //    job_userid = newOper.Id,
+                        //    job_username = newOper.Name,
+                        //    jobid = (int)job.job_id,
+                        //    ClientNo = CardCode,
+                        //    ClientName = originClient.ClientName,
+                        //    flag = 0,
+                        //    OperateType = 1
+                        //});
 
                     }
                 }
@@ -1862,18 +1862,18 @@ namespace OpenAuth.App.Client
                     //20221007  若审批是中间商时 1. 终端变更为中间商，更改业务员  2. 中间商变更，更改业务员，原先关系不解绑
                     if (originClient != null && client.is_reseller == "Y")
                     {
-                        await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
-                        {
-                            userid = currentuser.User.Id.ToString(),
-                            username = currentuser.User.Name,
-                            job_userid = newOper.Id,
-                            job_username = newOper.Name,
-                            jobid = (int)job.job_id,
-                            ClientNo = CardCode,
-                            ClientName = originClient.ClientName,
-                            flag = 1,
-                            OperateType = 0
-                        });
+                        //await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
+                        //{
+                        //    userid = currentuser.User.Id.ToString(),
+                        //    username = currentuser.User.Name,
+                        //    job_userid = newOper.Id,
+                        //    job_username = newOper.Name,
+                        //    jobid = (int)job.job_id,
+                        //    ClientNo = CardCode,
+                        //    ClientName = originClient.ClientName,
+                        //    flag = 1,
+                        //    OperateType = 0
+                        //});
                     }
 
 
