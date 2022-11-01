@@ -199,9 +199,11 @@ namespace OpenAuth.App.ClientRelation
             var relatedClients = JsonConvert.DeserializeObject<List<ClientRelJob>>(jobRelation.Terminals);
             //get add  ,update batch
             List<OpenAuth.Repository.Domain.ClientRelation> updateData = new List<OpenAuth.Repository.Domain.ClientRelation>();
+            List<OpenAuth.Repository.Domain.ClientRelation> addData = new List<OpenAuth.Repository.Domain.ClientRelation>();
             List<OpenAuth.Repository.Domain.ClientRelHistory> addHistoryData = new List<OpenAuth.Repository.Domain.ClientRelHistory>();
             //find the script and activate the node
             var originRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.JobId == job.JobId && a.ScriptFlag == 1 && a.IsActive ==1 && a.IsDelete ==0);
+            var uptRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == job.ClientNo && a.ScriptFlag == 0 && a.IsActive == 1 && a.IsDelete == 0);
             if (!string.IsNullOrEmpty(jobRelation.Terminals) && relatedClients.Exists(a => a.customerNo == legitJob.sbo_itf_return))
             {
                 //self contained
@@ -228,16 +230,156 @@ namespace OpenAuth.App.ClientRelation
                 await UnitWork.AddAsync<OpenAuth.Repository.Domain.ClientRelation, int>(cr);
             }
             //20221027 审批中间商修改客户关系
-            if (!string.IsNullOrEmpty(jobRelation.Terminals) && originRelation==null)
+            if (!string.IsNullOrEmpty(jobRelation.Terminals) && uptRelation != null)
             {
-                var uptRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.JobId == job.JobId && a.ScriptFlag == 0 && a.IsActive == 1 && a.IsDelete == 0);
-                uptRelation.SubNo = jobRelation.Terminals;
+
+                addHistoryData.Add(new ClientRelHistory
+                {
+                    CID = uptRelation.Id,
+                    ClientNo = uptRelation.ClientNo,
+                    ClientName = uptRelation.ClientName,
+                    ParentNo = uptRelation.ParentNo,
+                    SubNo = uptRelation.SubNo,
+                    Flag = uptRelation.Flag,
+                    ScriptFlag = uptRelation.ScriptFlag,
+                    IsDelete = uptRelation.IsDelete,
+                    CreateDate = DateTime.Now,
+                    UpdateDate = uptRelation.UpdateDate,
+                    Creator = uptRelation.Creator,
+                    Creatorid = uptRelation.Creatorid,
+                    Updater = uptRelation.Updater,
+                    Updaterid = uptRelation.Updaterid,
+                    Operator = uptRelation.Operator,
+                    Operatorid = uptRelation.Operatorid,
+                    OperateType = 7,
+                    JobId = uptRelation.JobId
+                });
+                //update subno and parentno
+                var existParentNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => uptRelation.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == uptRelation.Operatorid && a.ParentNo.Contains(uptRelation.ClientNo)).ToList();
+                var existSubNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => uptRelation.ParentNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == uptRelation.Operatorid && a.SubNo.Contains(uptRelation.ClientNo)).ToList();
+                if (existParentNodes.Count != 0)
+                {
+                    foreach (var dnode in existParentNodes)
+                    {
+                        var dhisClient = new ClientRelHistory
+                        {
+                            CID = dnode.Id,
+                            ClientNo = dnode.ClientNo,
+                            ClientName = dnode.ClientName,
+                            ParentNo = dnode.ParentNo,
+                            SubNo = dnode.SubNo,
+                            Flag = dnode.Flag,
+                            ScriptFlag = dnode.ScriptFlag,
+                            IsDelete = dnode.IsDelete,
+                            CreateDate = DateTime.Now,
+                            UpdateDate = dnode.UpdateDate,
+                            Creator = dnode.Creator,
+                            Creatorid = dnode.Creatorid,
+                            Updater = dnode.Updater,
+                            Updaterid = dnode.Updaterid,
+                            Operator = dnode.Operator,
+                            Operatorid = dnode.Operatorid,
+                            OperateType = 7,
+                            JobId = job.JobId
+                        };
+                        addHistoryData.Add(dhisClient);
+                        addData.Add(new Repository.Domain.ClientRelation { 
+                          ClientNo = dnode.ClientNo,
+                          ClientName = dnode.ClientName,
+                          ParentNo= dnode.ParentNo,
+                          SubNo= dnode.SubNo,
+                          Flag= dnode.Flag,
+                          ScriptFlag= dnode.ScriptFlag,
+                          IsDelete= dnode.IsDelete,
+                          IsActive = 0,
+                          CreateDate= dnode.CreateDate,
+                          Creator = dnode.Creator,
+                          Creatorid= dnode.Creatorid,
+                          UpdateDate = DateTime.Now,
+                          Updaterid = dnode.Updaterid,
+                          Updater = dnode.Updater,
+                          Operatorid = dnode.Operatorid,
+                          Operator=dnode.Operator,
+                          JobId = dnode.JobId
+                        });
+                        JArray jsonPdnode = new JArray();
+                        if (!string.IsNullOrEmpty(dnode.ParentNo) && dnode.ParentNo.Contains(uptRelation.ClientNo))
+                        {
+                            jsonPdnode = JsonConvert.DeserializeObject<JArray>(dnode.ParentNo);
+                            jsonPdnode.Where(i => i.Type == JTokenType.String && (string)i == uptRelation.ClientNo).ToList().ForEach(i => i.Remove());
+                            dnode.ParentNo = JsonConvert.SerializeObject(jsonPdnode);
+                            updateData.Add(dnode);
+                        }
+                    }
+                }
+                if (existSubNodes.Count != 0)
+                {
+                    foreach (var dnode in existSubNodes)
+                    {
+                        var dhisClient = new ClientRelHistory
+                        {
+                            CID = dnode.Id,
+                            ClientNo = dnode.ClientNo,
+                            ClientName = dnode.ClientName,
+                            ParentNo = dnode.ParentNo,
+                            SubNo = dnode.SubNo,
+                            Flag = dnode.Flag,
+                            ScriptFlag = dnode.ScriptFlag,
+                            IsDelete = dnode.IsDelete,
+                            CreateDate = DateTime.Now,
+                            UpdateDate = dnode.UpdateDate,
+                            Creator = dnode.Creator,
+                            Creatorid = dnode.Creatorid,
+                            Updater = dnode.Updater,
+                            Updaterid = dnode.Updaterid,
+                            Operator = dnode.Operator,
+                            Operatorid = dnode.Operatorid,
+                            OperateType = 7,
+                            JobId = job.JobId
+                        };
+                        addHistoryData.Add(dhisClient);
+                        addData.Add(new Repository.Domain.ClientRelation
+                        {
+                            ClientNo = dnode.ClientNo,
+                            ClientName = dnode.ClientName,
+                            ParentNo = dnode.ParentNo,
+                            SubNo = dnode.SubNo,
+                            Flag = dnode.Flag,
+                            ScriptFlag = dnode.ScriptFlag,
+                            IsDelete = dnode.IsDelete,
+                            IsActive = 0,
+                            CreateDate = dnode.CreateDate,
+                            Creator = dnode.Creator,
+                            Creatorid = dnode.Creatorid,
+                            UpdateDate = DateTime.Now,
+                            Updaterid = dnode.Updaterid,
+                            Updater = dnode.Updater,
+                            Operatorid = dnode.Operatorid,
+                            Operator = dnode.Operator,
+                            JobId = dnode.JobId
+                        });
+                        JArray jsonPdnode = new JArray();
+                        if (!string.IsNullOrEmpty(dnode.SubNo) && dnode.SubNo.Contains(uptRelation.ClientNo))
+                        {
+                            jsonPdnode = JsonConvert.DeserializeObject<JArray>(dnode.SubNo);
+                            jsonPdnode.Where(i => i.Type == JTokenType.String && (string)i == uptRelation.ClientNo).ToList().ForEach(i => i.Remove());
+                            dnode.SubNo = JsonConvert.SerializeObject(jsonPdnode);
+                            updateData.Add(dnode);
+                        }
+                    }
+                }
+
                 var subList = JsonConvert.DeserializeObject<List<ClientRelJob>>(jobRelation.Terminals);
-                uptRelation.SubNo = subList.Select(a => a.customerNo).ToList().ToString();
+                uptRelation.SubNo = JsonConvert.SerializeObject(subList.Select(a => a.customerNo).ToList());
+                uptRelation.ParentNo = "";
+                uptRelation.Flag = 1;
+                uptRelation.Operatorid = jobRelation.CreatorId;
+                uptRelation.Operator = jobRelation.Creator;
+                uptRelation.UpdateDate = DateTime.Now;
                 updateData.Add(uptRelation);
             }
        
-            if (originRelation != null)
+            if (originRelation != null && uptRelation == null)
             {
                 //add history data 
                 addHistoryData.Add(new ClientRelHistory
@@ -314,12 +456,8 @@ namespace OpenAuth.App.ClientRelation
                 }
 
             }
-            else
-            {
-                _logger.LogError("审核通过，同步成功后更新关系未找到对应的草稿关系,请求参数为" + JsonConvert.SerializeObject(job));
-                return false;
-            }
-            //await UnitWork.BatchAddAsync<OpenAuth.Repository.Domain.ClientRelation, int>(addData.ToArray());
+
+            await UnitWork.BatchAddAsync<OpenAuth.Repository.Domain.ClientRelation, int>(addData.ToArray());
             await UnitWork.BatchAddAsync<OpenAuth.Repository.Domain.ClientRelHistory, int>(addHistoryData.ToArray());
             await UnitWork.BatchUpdateAsync<OpenAuth.Repository.Domain.ClientRelation>(updateData.ToArray());
             await UnitWork.SaveAsync();
