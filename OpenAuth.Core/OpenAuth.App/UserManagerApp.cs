@@ -49,6 +49,8 @@ namespace OpenAuth.App
                            into usera 
                            from a  in usera.DefaultIfEmpty()
                            join b in UnitWork.Find<DDUserMsg>(null) on a.DDUserId equals b.UserId
+                           into ab 
+                           from b in ab.DefaultIfEmpty()
                            select new
                            {
                                user.Account,
