@@ -38,15 +38,6 @@ namespace OpenAuth.App
                 query = UnitWork.Find<User>(u => u.Name.Contains(request.key) || u.Account.Contains(request.key));
             }
 
-            var ddusser = from a in UnitWork.Find<DDBindUser>(null)
-                          join b in UnitWork.Find<DDUserMsg>(null) on a.DDUserId equals b.UserId
-                          select new
-                          {
-                              a.UserId,
-                              a.DDUserId,
-                              b.UserName
-                          };
-
             var userOrgs = from user in query
                            join relevance in UnitWork.Find<Relevance>(u => u.Key == Define.USERORG)
                                on user.Id equals relevance.FirstId into temp
@@ -54,6 +45,10 @@ namespace OpenAuth.App
                            join org in UnitWork.Find<Repository.Domain.Org>(null)
                                on r.SecondId equals org.Id into orgtmp
                            from o in orgtmp.DefaultIfEmpty()
+                           join a in UnitWork.Find<DDBindUser>(null) on user.Id equals a.UserId
+                           into usera 
+                           from a  in usera.DefaultIfEmpty()
+                           join b in UnitWork.Find<DDUserMsg>(null) on a.DDUserId equals b.UserId
                            select new
                            {
                                user.Account,
@@ -72,34 +67,10 @@ namespace OpenAuth.App
                                r.SecondId,
                                OrgId = o.Id,
                                OrgName = o.Name,
-                               user.EntryTime
+                               user.EntryTime,
+                               DDUserId = a == null ? "" : a.DDUserId,
+                               DDUserName = b == null ? "" : b.UserName
                            };
-
-            var userddbind = from a in userOrgs.ToList()
-                             join b in ddusser.ToList() on a.Id equals b.UserId into ab
-                             from b in ab.DefaultIfEmpty()
-                             select new
-                             {
-                                 a.Account,
-                                 a.Name,
-                                 a.Id,
-                                 a.Sex,
-                                 a.Status,
-                                 a.BizCode,
-                                 a.CreateId,
-                                 a.CreateTime,
-                                 a.TypeId,
-                                 a.TypeName,
-                                 a.ServiceRelations,
-                                 a.CardNo,
-                                 a.Key,
-                                 a.SecondId,
-                                 OrgId = a.OrgId,
-                                 OrgName = a.OrgName,
-                                 a.EntryTime,
-                                 DDUserId = b == null ? "" : b.DDUserId,
-                                 DDUserName = b == null ? "" : b.UserName
-                             };
 
             //如果请求的orgId不为空
             if (!string.IsNullOrEmpty(request.orgId))
@@ -130,7 +101,7 @@ namespace OpenAuth.App
                 userOrgs = userOrgs.Where(u => (u.Key == Define.USERORG && orgIds.Contains(u.OrgId)) || (u.OrgId == null));
             }
 
-            var userViews = userddbind.ToList().GroupBy(b => b.Account).Select(u => new UserView
+            var userViews = userOrgs.ToList().GroupBy(b => b.Account).Select(u => new UserView
             {
                 Id = u.First().Id,
                 Account = u.Key,
@@ -153,8 +124,8 @@ namespace OpenAuth.App
             {
                 Count = userViews.Count(),
                 Data = userViews.OrderBy(u => u.Status)
-                    .Skip((request.page - 1) * request.limit)
-                    .Take(request.limit),
+                .Skip((request.page - 1) * request.limit)
+                .Take(request.limit),
             };
         }
 
