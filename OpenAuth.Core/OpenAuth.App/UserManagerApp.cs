@@ -11,6 +11,7 @@ using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.App.SSO;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.NsapBase;
 using OpenAuth.Repository.Interface;
 
 
@@ -831,11 +832,33 @@ namespace OpenAuth.App
                     }
                 }
             }
-            //var saleUser3 = UnitWork.Find<sbo_user>(a => a.sale_id > 0).Select(a => (int?)a.user_id ).ToList();
-            //var saleUser4 = UnitWork.Find<NsapUserMap>(a => saleUser3.Contains(a.NsapUserId) ).Select(a => a.UserID).ToList();
-            //var
 
+            var saleUser3 = UnitWork.Find<base_user_role>(a => a.role_id == 1).Select(a => (int?)a.user_id).ToList();
+            var listOut = erpUsers.Where(c => c.out_date.ToString() != "0000-00-00").Select(c => (int?)c.user_id).ToList();//3.0已离职
+            var saleUser4 = UnitWork.Find<NsapUserMap>(a => saleUser3.Contains(a.NsapUserId) && !listOut.Contains(a.NsapUserId)).Select(a => a.UserID).ToList();
 
+            var saleRoleId = UnitWork.Find<Role>(a => a.Name == "销售员").FirstOrDefault();
+            var saleList =  UnitWork.Find<Relevance>(a => a.Key == Define.USERROLE && a.SecondId == saleRoleId.Id).Select(a=> a.FirstId).ToList();
+            var needAddSaleId = saleList.Except(saleUser4);
+
+            foreach (var item in saleUser4)
+            {
+                if (!saleList.Contains(item))
+                {
+                    Relevance relevance = new Relevance();
+                    relevance.Key = Define.USERROLE;
+                    relevance.Status = 0;
+                    relevance.OperateTime = DateTime.Now;
+                    relevance.OperatorId = "";
+                    relevance.FirstId = item;
+                    relevance.SecondId = saleRoleId.Id;
+                    relevance.ThirdId = "";
+                    relevance.ExtendInfo = "";
+                    relevance.Description = "同步ERP3.0";
+                    UnitWork.Add(relevance);
+                }
+            }
+            UnitWork.Save();
 
         }
 

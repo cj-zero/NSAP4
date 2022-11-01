@@ -39,6 +39,8 @@ namespace OpenAuth.Repository
             modelBuilder.Entity<base_dep>().HasKey(o => o.dep_id);
             modelBuilder.Entity<base_contact>().HasKey(o => o.seq_id);
             modelBuilder.Entity<sbo_info>().HasKey(o => o.sbo_id);
+            modelBuilder.Entity<base_user_role>().HasKey(o => new { o.role_id, o.user_id });
+
         }
 
         public virtual DbSet<sbo_info> sbo_infos { get; set; }
@@ -47,6 +49,7 @@ namespace OpenAuth.Repository
         public virtual DbSet<wfa_eshop_oqutdetail> WfaEshopOqutdetails { get; set; }
         public virtual DbSet<wfa_eshop_status> WfaEshopStatuses { get; set; }
         public virtual DbSet<sbo_user> SboUsers { get; set; }
+        public virtual DbSet<base_user_role> BaseUserRole { get; set; }
         public virtual DbSet<base_user_detail> BaseUserDetails { get; set; }
         public virtual DbSet<base_user_log> BaseUserLog { get; set; }
         public virtual DbSet<WfaJobPara> WfaJobPara { get; set; }
