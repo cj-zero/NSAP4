@@ -254,6 +254,26 @@ namespace OpenAuth.App.ClientRelation
                     OperateType = 7,
                     JobId = uptRelation.JobId
                 });
+                addData.Add(new Repository.Domain.ClientRelation
+                {
+                    ClientNo = uptRelation.ClientNo,
+                    ClientName = uptRelation.ClientName,
+                    ParentNo = uptRelation.ParentNo,
+                    SubNo = uptRelation.SubNo,
+                    Flag = uptRelation.Flag,
+                    ScriptFlag = uptRelation.ScriptFlag,
+                    IsDelete = uptRelation.IsDelete,
+                    IsActive = 0,
+                    CreateDate = uptRelation.CreateDate,
+                    Creator = uptRelation.Creator,
+                    Creatorid = uptRelation.Creatorid,
+                    UpdateDate = DateTime.Now,
+                    Updaterid = uptRelation.Updaterid,
+                    Updater = uptRelation.Updater,
+                    Operatorid = uptRelation.Operatorid,
+                    Operator = uptRelation.Operator,
+                    JobId = uptRelation.JobId
+                });
                 //update subno and parentno
                 var existParentNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => uptRelation.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == uptRelation.Operatorid && a.ParentNo.Contains(uptRelation.ClientNo)).ToList();
                 var existSubNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => uptRelation.ParentNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == uptRelation.Operatorid && a.SubNo.Contains(uptRelation.ClientNo)).ToList();
