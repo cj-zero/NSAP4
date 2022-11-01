@@ -21,6 +21,8 @@ using OpenAuth.App.Order;
 using NSAP.Entity.Client;
 using OpenAuth.App.ClientRelation;
 using User = OpenAuth.Repository.Domain.User;
+using OpenAuth.App.Clue.ModelDto;
+using OpenAuth.Repository.Domain.Serve;
 
 namespace OpenAuth.App.Customer
 {
@@ -113,6 +115,25 @@ namespace OpenAuth.App.Customer
                                CompSector = t1 == null ? null : t1.U_CompSector
                            };
 
+            //20221101获取行业数据
+            //var proIdList = response.Select(a=>a.CompSector).ToList();
+            //string proText = string.Join(",", proIdList);
+            //var entity = UnitWork.Find<ClueClassification>(q => proText.Contains(q.Id.ToString())).ToList();
+            //foreach (var item in response)
+            //{
+            //    if (!string.IsNullOrEmpty(item.CompSector))
+            //    {
+            //        var finalCompSector = "";
+            //        foreach (var c in entity)
+            //        {
+            //            if (item.CompSector.Contains(c.Id.ToString()))
+            //            {
+            //                finalCompSector += c.Name+";";
+            //            }
+            //        }
+            //        item.CompSector = finalCompSector;
+            //    }
+            //}
             result.Data = response;
             result.Count = await query.CountAsync();
 
