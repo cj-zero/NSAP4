@@ -376,6 +376,8 @@ namespace OpenAuth.App.ClientRelation
                 uptRelation.Operatorid = jobRelation.CreatorId;
                 uptRelation.Operator = jobRelation.Creator;
                 uptRelation.UpdateDate = DateTime.Now;
+                uptRelation.CreateDate = DateTime.Now;
+                uptRelation.JobId = jobRelation.Jobid;
                 updateData.Add(uptRelation);
             }
        
