@@ -79,15 +79,15 @@ namespace OpenAuth.App.Client
             string result = "";
             int userID = _serviceBaseApp.GetUserNaspId();
             //20221021 lims推广员使用线索转客户功能无法新增客户
-            if (addClientInfoReq.baseEntry > 0 && addClientInfoReq.type == "Add")
-            {
-                var erpLims = UnitWork.FindSingle<LimsInfo>(u => u.UserId == loginUser.Id && u.Type == "LIMS");
-                if (erpLims != null)
-                {
-                    _logger.LogWarning("lims推广员使用线索转客户功能无法新增客户,参数为：" + JsonConvert.SerializeObject(addClientInfoReq));
-                    return "0";
-                }
-            }
+            //if (addClientInfoReq.baseEntry > 0 && addClientInfoReq.type == "Add")
+            //{
+            //    var erpLims = UnitWork.FindSingle<LimsInfo>(u => u.UserId == loginUser.Id && u.Type == "LIMS");
+            //    if (erpLims != null)
+            //    {
+            //        _logger.LogWarning("lims推广员使用线索转客户功能无法新增客户,参数为：" + JsonConvert.SerializeObject(addClientInfoReq));
+            //        return "0";
+            //    }
+            //}
 
             clientOCRD OCRD = BulidClientJob(addClientInfoReq.clientInfo);
             OCRD.SboId = "1";
