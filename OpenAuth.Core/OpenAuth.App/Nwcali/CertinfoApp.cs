@@ -2086,6 +2086,29 @@ namespace OpenAuth.App
         }
 
         /// <summary>
+        /// 获取烤机失败原因
+        /// </summary>
+        /// <param name="id">检测任务id</param>
+        /// <returns></returns>
+        public TableData BakingMachineFailMessage(long id)
+        {
+            TableData result = new TableData();
+            string url = $"{_appConfiguration.Value.AnalyticsUrl}api/DataCheck/TaskResult?id={id}";
+            HttpHelper helper = new HttpHelper(url);
+            Dictionary<string, string> dic = null;
+            var taskResult = helper.Get(dic, url);
+            JObject resObj = JObject.Parse(taskResult);
+            if (resObj["status"] == null || resObj["status"].ToString() != "200")
+            {
+                result.Message = $"任务【{id}】通道获取检测结果失败!";
+                result.Code = 500;
+                return result;
+            }
+            result.Data = resObj["data"]["CheckItems"].Where(c => (int)c["ErrCount"] > 0).Select(c => c["Records"]).ToList();
+            return result;
+        }
+
+        /// <summary>
         /// 导出烤机记录
         /// </summary>
         /// <param name="req"></param>
@@ -2198,6 +2221,7 @@ namespace OpenAuth.App
                     ItemCode = orderInfo == null ? "" : orderInfo.ItemCode,
                     GeneratorCode = item.GeneratorCode,
                     Department = item.CreateUser == "杨想来" ? "P8" : item.Department,
+                    CreateUser = item.CreateUser,
                     TaskId = item.TaskId,
                     MidGuid = item.MidGuid,
                     LowGuid = item.LowGuid,
@@ -2236,18 +2260,15 @@ namespace OpenAuth.App
             }
             if (!string.IsNullOrWhiteSpace(req.Operator))
             {
-                var query = await UnitWork.Find<User>(null).Where(c => c.Name.Contains(req.Operator) && c.Status == 0).Select(c => c.Id).ToListAsync();
+                var query = await UnitWork.Find<User>(null).Where(c => c.Name.Contains(req.Operator)).Select(c => c.Id).ToListAsync();
                 userIds.AddRange(query);
             }
             var ids = userIds.Distinct();
-            var passportIDs = UnitWork.Find<AppUserMap>(null).Where(c => ids.Contains(c.UserID)).Select(c => c.PassPortId)
-                //.Skip((req.page - 1) * req.limit).Take(req.limit)
-                .ToList();
             string url = "http://121.37.222.129:50001/api/Calibration/c-report";
             HttpHelper helper = new HttpHelper(url);
             var taskData = helper.Post(new
             {
-                passportIDs = passportIDs,
+                passportIDs = ids,
                 beginTime = req.StartTime,
                 endTime = req.EndTime
             }, url, "", "");
@@ -2258,13 +2279,12 @@ namespace OpenAuth.App
                 result.Message = $"获取人员校准报表接口异常!";
                 return result;
             }
-            var passportUserIds = taskObj["data"].Select(c => Convert.ToInt32(c["userId"])).Distinct().ToList();
-            var userList = await (from a in UnitWork.Find<AppUserMap>(null)
-                                  join b in UnitWork.Find<User>(null) on a.UserID equals b.Id
+            var erpUserIds = taskObj["data"].Select(c =>c["userId"].ToString()).Distinct().ToList();
+            var userList = await (from b in UnitWork.Find<User>(null)
                                   join c in UnitWork.Find<Relevance>(null) on b.Id equals c.FirstId
                                   join d in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on c.SecondId equals d.Id
-                                  where passportUserIds.Contains(a.PassPortId.Value) && b.Status == 0 && c.Key == Define.USERORG
-                                  select new { userName = b.Name, orgName = d.Name, a.PassPortId }).ToListAsync();
+                                  where erpUserIds.Contains(b.Id) && c.Key == Define.USERORG
+                                  select new { userName = b.Name, orgName = d.Name,b.Id}).ToListAsync();
             var taskIds = taskObj["data"].Select(c => c["taskId"].ToString()).Distinct().ToList();
             var codelist = await (from a in UnitWork.Find<DeviceCheckTask>(null)
                                   join b in UnitWork.Find<DeviceTestLog>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.UnitId, a.TestId, a.ChlId, a.LowGuid } equals new { b.EdgeGuid, b.SrvGuid, b.DevUid, b.UnitId, b.TestId, b.ChlId, b.LowGuid }
@@ -2272,10 +2292,11 @@ namespace OpenAuth.App
                                   select new { b.GeneratorCode, a.TaskId }).ToListAsync();
             foreach (var item in taskObj["data"])
             {
-                var userInfo = userList.Where(c => c.PassPortId == Convert.ToInt32(item["userId"])).FirstOrDefault();
+                var userInfo = userList.Where(c => c.Id == item["userId"].ToString()).FirstOrDefault();
                 var codeInfo = codelist.Where(c => c.TaskId == item["taskId"].ToString()).FirstOrDefault();
                 list.Add(new
                 {
+                    userId = item["userId"].ToString(),
                     taskSubId = item["taskSubId"].ToString(),
                     chlId = item["chlId"].ToString(),
                     beginTime = item["beginTime"].ToString(),
@@ -2313,18 +2334,15 @@ namespace OpenAuth.App
             }
             if (!string.IsNullOrWhiteSpace(req.Operator))
             {
-                var query = await UnitWork.Find<User>(null).Where(c => c.Name.Contains(req.Operator) && c.Status == 0).Select(c => c.Id).ToListAsync();
+                var query = await UnitWork.Find<User>(null).Where(c => c.Name.Contains(req.Operator)).Select(c => c.Id).ToListAsync();
                 userIds.AddRange(query);
             }
             var ids = userIds.Distinct();
-            var passportIDs = UnitWork.Find<AppUserMap>(null).Where(c => ids.Contains(c.UserID)).Select(c => c.PassPortId)
-                //.Skip((req.page - 1) * req.limit).Take(req.limit)
-                .ToList();
             string url = "http://121.37.222.129:50001/api/Calibration/c-report";
             HttpHelper helper = new HttpHelper(url);
             var taskData = helper.Post(new
             {
-                passportIDs = passportIDs,
+                passportIDs = ids,
                 beginTime = req.StartTime,
                 endTime = req.EndTime
             }, url, "", "");
@@ -2333,13 +2351,12 @@ namespace OpenAuth.App
             {
                 throw new Exception($"获取人员校准报表接口异常!");
             }
-            var passportUserIds = taskObj["data"].Select(c => Convert.ToInt32(c["userId"])).Distinct().ToList();
-            var userList = await (from a in UnitWork.Find<AppUserMap>(null)
-                                  join b in UnitWork.Find<User>(null) on a.UserID equals b.Id
+            var erpUserIds = taskObj["data"].Select(c => c["userId"].ToString()).Distinct().ToList();
+            var userList = await (from b in UnitWork.Find<User>(null)
                                   join c in UnitWork.Find<Relevance>(null) on b.Id equals c.FirstId
                                   join d in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on c.SecondId equals d.Id
-                                  where passportUserIds.Contains(a.PassPortId.Value) && b.Status == 0 && c.Key == Define.USERORG
-                                  select new { userName = b.Name, orgName = d.Name, a.PassPortId }).ToListAsync();
+                                  where erpUserIds.Contains(b.Id) && c.Key == Define.USERORG
+                                  select new { userName = b.Name, orgName = d.Name, b.Id }).ToListAsync();
             var taskIds = taskObj["data"].Select(c => c["taskId"].ToString()).Distinct().ToList();
             var codelist = await (from a in UnitWork.Find<DeviceCheckTask>(null)
                                   join b in UnitWork.Find<DeviceTestLog>(null) on new { a.EdgeGuid, a.SrvGuid, a.DevUid, a.UnitId, a.TestId, a.ChlId, a.LowGuid } equals new { b.EdgeGuid, b.SrvGuid, b.DevUid, b.UnitId, b.TestId, b.ChlId, b.LowGuid }
@@ -2347,7 +2364,7 @@ namespace OpenAuth.App
                                   select new { b.GeneratorCode, a.TaskId }).ToListAsync();
             foreach (var item in taskObj["data"])
             {
-                var userInfo = userList.Where(c => c.PassPortId == Convert.ToInt32(item["userId"])).FirstOrDefault();
+                var userInfo = userList.Where(c => c.Id == item["userId"].ToString()).FirstOrDefault();
                 var codeInfo = codelist.Where(c => c.TaskId == item["taskId"].ToString()).FirstOrDefault();
                 list.Add(new ExportCalibrationReportResp
                 {
