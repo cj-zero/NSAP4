@@ -1149,7 +1149,8 @@ namespace OpenAuth.App.ClientRelation
                CreateDate = DateTime.Now,
                Creator = jrr.Creator,
                CreatorId = jrr.CreatorId,
-               Origin = jrr.Origin
+               Origin = jrr.Origin,
+               AffiliateData = jrr.AffiliateData
             });
             await UnitWork.SaveAsync();
             return true;
