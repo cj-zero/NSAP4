@@ -23,6 +23,8 @@ using OpenAuth.App.ClientRelation;
 using User = OpenAuth.Repository.Domain.User;
 using OpenAuth.App.Clue.ModelDto;
 using OpenAuth.Repository.Domain.Serve;
+using Newtonsoft.Json;
+using OpenAuth.App.ClientRelation.Request;
 
 namespace OpenAuth.App.Customer
 {
@@ -80,7 +82,29 @@ namespace OpenAuth.App.Customer
             var data = await query.OrderBy(q => q.CardCode).Skip((req.page - 1) * req.limit).Take(req.limit).ToListAsync();
             //跨库查询,把要查询的数据一次查完,优化查询速度
             //客户所属行业数据
-            var compSectorData = await UnitWork.Find<crm_ocrd>(x => data.Select(d => d.CardCode).Contains(x.CardCode) && x.sbo_id == Define.SBO_ID).Select(x => new { x.U_CompSector, x.CardCode }).ToListAsync();
+            var compSectorData = await UnitWork.Find<crm_ocrd>(x => data.Select(d => d.CardCode).Contains(x.CardCode) && x.sbo_id == Define.SBO_ID).Select(x => new cateList { U_CompSector = x.U_CompSector, CardCode= x.CardCode }).ToListAsync();
+            //20221101获取行业数据
+            var proIdList = compSectorData.Select(a => a.U_CompSector).ToList();
+            string proText = string.Join(",", proIdList);
+            var entity = UnitWork.Find<ClueClassification>(q => proText.Contains(q.Id.ToString())).ToList();
+            foreach (var item in compSectorData)
+            {
+                var finalCompSector = "";
+                if (!string.IsNullOrEmpty(item.U_CompSector) && !item.U_CompSector.Contains("-1") && !item.U_CompSector.Contains("1") && item.U_CompSector.Contains("["))
+                {
+
+                    var cateList = JsonConvert.DeserializeObject<List<int>>(item.U_CompSector.Replace(@"""", ""));
+                    foreach (var c in entity)
+                    {
+                        if (cateList.Contains(c.Id))
+                        {
+                            finalCompSector += c.Name + ";";
+                        }
+                    }
+
+                }
+                item.U_CompSector = finalCompSector;
+            }
             //销售员部门数据
             var deptData = await (from s in UnitWork.Find<sbo_user>(null)
                                   join ud in UnitWork.Find<base_user_detail>(null) on s.user_id equals ud.user_id
@@ -124,25 +148,7 @@ namespace OpenAuth.App.Customer
                                CompSector = t1 == null ? null : t1.U_CompSector
                            };
 
-            //20221101获取行业数据
-            //var proIdList = response.Select(a=>a.CompSector).ToList();
-            //string proText = string.Join(",", proIdList);
-            //var entity = UnitWork.Find<ClueClassification>(q => proText.Contains(q.Id.ToString())).ToList();
-            //foreach (var item in response)
-            //{
-            //    if (!string.IsNullOrEmpty(item.CompSector))
-            //    {
-            //        var finalCompSector = "";
-            //        foreach (var c in entity)
-            //        {
-            //            if (item.CompSector.Contains(c.Id.ToString()))
-            //            {
-            //                finalCompSector += c.Name+";";
-            //            }
-            //        }
-            //        item.CompSector = finalCompSector;
-            //    }
-            //}
+            
             result.Data = response;
             result.Count = await query.CountAsync();
 

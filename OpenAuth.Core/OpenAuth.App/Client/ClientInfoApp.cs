@@ -179,7 +179,8 @@ namespace OpenAuth.App.Client
                             Terminals = addClientInfoReq.Terminals,
                             Creator = loginUser.Name,
                             CreatorId = loginUser.Id,
-                            Origin =1
+                            Origin =1,
+                            AffiliateData = addClientInfoReq.clientInfo.CardName
                         });
 
                         result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(result), userID, OCRD.FreeText, "", 0);

@@ -850,129 +850,231 @@ namespace OpenAuth.App.ClientRelation
                 return false;
             }
             List<OpenAuth.Repository.Domain.ClientRelation> updateData = new List<OpenAuth.Repository.Domain.ClientRelation>();
+            List<OpenAuth.Repository.Domain.ClientRelation> addData = new List<OpenAuth.Repository.Domain.ClientRelation>();
             List<OpenAuth.Repository.Domain.ClientRelHistory> addHistoryData = new List<OpenAuth.Repository.Domain.ClientRelHistory>();
-            var existRel = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == resignReq.ClientNo && a.IsDelete ==0 && a.IsActive ==1 && a.ScriptFlag == 0);
+            var existRel = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == resignReq.ClientNo && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0);
             if (existRel == null)
             {
                 //add to log file to explain why 
                 _logger.LogError("修改客户未找到对应表ClientRelation的记录,请求参数为：" + JsonConvert.SerializeObject(resignReq));
                 return true;
             }
-            //add history
-            var hisClient = new ClientRelHistory
+            if (string.IsNullOrEmpty(resignReq.TerminalList))
             {
-                CID = existRel.Id,
-                ClientNo = existRel.ClientNo,
-                ClientName = existRel.ClientName,
-                ParentNo = existRel.ParentNo,
-                SubNo = existRel.SubNo,
-                Flag = existRel.Flag,
-                ScriptFlag = existRel.ScriptFlag,
-                IsDelete = existRel.IsDelete,
-                CreateDate = DateTime.Now,
-                UpdateDate = existRel.UpdateDate,
-                Creator = existRel.Creator,
-                Creatorid = existRel.Creatorid,
-                Updater = existRel.Updater,
-                Updaterid = existRel.Updaterid,
-                Operator = existRel.Operator,
-                Operatorid = existRel.Operatorid,
-                OperateType = 7,
-                JobId = existRel.JobId
-            };
-            addHistoryData.Add(hisClient);
-
-            var afterNodes = new List<string>();
-            var subList = JsonConvert.DeserializeObject<List<ClientRelJob>>(resignReq.TerminalList);
-            afterNodes.AddRange(subList.Select(a => a.customerNo).ToList());
-
-            //update parent node, more or less
-            var existNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => afterNodes.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == existRel.Operatorid && !a.ParentNo.Contains(existRel.ClientNo)).ToList();
-            var detachedNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => existRel.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == existRel.Operatorid && !afterNodes.Contains(a.ClientNo)).ToList();
-            if (existNodes.Count != 0)
-            {
-                foreach (var enode in existNodes)
+                //fix terminal means just fix the name
+                existRel.ClientName = resignReq.AffiliateData;
+                existRel.UpdateDate = DateTime.Now;
+                existRel.JobId = resignReq.jobId;
+                addData.Add(new Repository.Domain.ClientRelation
                 {
-                    var phisClient = new ClientRelHistory
-                    {
-                        CID = enode.Id,
-                        ClientNo = enode.ClientNo,
-                        ClientName = enode.ClientName,
-                        ParentNo = enode.ParentNo,
-                        SubNo = enode.SubNo,
-                        Flag = enode.Flag,
-                        ScriptFlag = enode.ScriptFlag,
-                        IsDelete = enode.IsDelete,
-                        CreateDate = DateTime.Now,
-                        UpdateDate = enode.UpdateDate,
-                        Creator = enode.Creator,
-                        Creatorid = enode.Creatorid,
-                        Updater = enode.Updater,
-                        Updaterid = enode.Updaterid,
-                        Operator = enode.Operator,
-                        Operatorid = enode.Operatorid,
-                        OperateType = 7,
-                        JobId = existRel.JobId
-                    };
-                    addHistoryData.Add(phisClient);
-                    JArray jsonPnode = new JArray();
-                    if (!string.IsNullOrEmpty(enode.ParentNo))
-                    {
-                        jsonPnode = JsonConvert.DeserializeObject<JArray>(enode.ParentNo);
-                    }
-                    else
-                    {
-                        jsonPnode = JsonConvert.DeserializeObject<JArray>("[]");
-                    }
-                    jsonPnode.Add(existRel.ClientNo);
-                    enode.ParentNo = JsonConvert.SerializeObject(jsonPnode);
-                    updateData.Add(enode);
-                }
-                foreach (var dnode in detachedNodes)
-                {
-                    var dhisClient = new ClientRelHistory
-                    {
-                        CID = dnode.Id,
-                        ClientNo = dnode.ClientNo,
-                        ClientName = dnode.ClientName,
-                        ParentNo = dnode.ParentNo,
-                        SubNo = dnode.SubNo,
-                        Flag = dnode.Flag,
-                        ScriptFlag = dnode.ScriptFlag,
-                        IsDelete = dnode.IsDelete,
-                        CreateDate = DateTime.Now,
-                        UpdateDate = dnode.UpdateDate,
-                        Creator = dnode.Creator,
-                        Creatorid = dnode.Creatorid,
-                        Updater = dnode.Updater,
-                        Updaterid = dnode.Updaterid,
-                        Operator = dnode.Operator,
-                        Operatorid = dnode.Operatorid,
-                        OperateType = 7,
-                        JobId = resignReq.jobId
-                    };
-                    addHistoryData.Add(dhisClient);
-                    JArray jsonPdnode = new JArray();
-                    if (!string.IsNullOrEmpty(dnode.ParentNo) && dnode.ParentNo.Contains(resignReq.ClientNo))
-                    {
-                        jsonPdnode = JsonConvert.DeserializeObject<JArray>(dnode.ParentNo);
-                        jsonPdnode.Where(i => i.Type == JTokenType.String && (string)i == resignReq.ClientNo).ToList().ForEach(i => i.Remove());
-                        dnode.ParentNo = JsonConvert.SerializeObject(jsonPdnode);
-                        updateData.Add(dnode);
-                    }
-                }
+                    ClientNo = existRel.ClientNo,
+                    ClientName = existRel.ClientName,
+                    ParentNo = existRel.ParentNo,
+                    SubNo = existRel.SubNo,
+                    Flag = existRel.Flag,
+                    ScriptFlag = existRel.ScriptFlag,
+                    IsDelete = existRel.IsDelete,
+                    IsActive = 0,
+                    CreateDate = existRel.CreateDate,
+                    Creator = existRel.Creator,
+                    Creatorid = existRel.Creatorid,
+                    UpdateDate = DateTime.Now,
+                    Updaterid = existRel.Updaterid,
+                    Updater = existRel.Updater,
+                    Operatorid = existRel.Operatorid,
+                    Operator = existRel.Operator,
+                    JobId = existRel.JobId
+                });
+                updateData.Add(existRel);
             }
-
-
-            existRel.SubNo = JsonConvert.SerializeObject(afterNodes);
-            if (afterNodes.Count ==0)
+            else
             {
-                existRel.SubNo = "";
+                //add history
+                var hisClient = new ClientRelHistory
+                {
+                    CID = existRel.Id,
+                    ClientNo = existRel.ClientNo,
+                    ClientName = existRel.ClientName,
+                    ParentNo = existRel.ParentNo,
+                    SubNo = existRel.SubNo,
+                    Flag = existRel.Flag,
+                    ScriptFlag = existRel.ScriptFlag,
+                    IsDelete = existRel.IsDelete,
+                    CreateDate = DateTime.Now,
+                    UpdateDate = existRel.UpdateDate,
+                    Creator = existRel.Creator,
+                    Creatorid = existRel.Creatorid,
+                    Updater = existRel.Updater,
+                    Updaterid = existRel.Updaterid,
+                    Operator = existRel.Operator,
+                    Operatorid = existRel.Operatorid,
+                    OperateType = 7,
+                    JobId = existRel.JobId
+                };
+                addHistoryData.Add(hisClient);
+                addData.Add(new Repository.Domain.ClientRelation
+                {
+                    ClientNo = existRel.ClientNo,
+                    ClientName = existRel.ClientName,
+                    ParentNo = existRel.ParentNo,
+                    SubNo = existRel.SubNo,
+                    Flag = existRel.Flag,
+                    ScriptFlag = existRel.ScriptFlag,
+                    IsDelete = existRel.IsDelete,
+                    IsActive = 0,
+                    CreateDate = existRel.CreateDate,
+                    Creator = existRel.Creator,
+                    Creatorid = existRel.Creatorid,
+                    UpdateDate = DateTime.Now,
+                    Updaterid = existRel.Updaterid,
+                    Updater = existRel.Updater,
+                    Operatorid = existRel.Operatorid,
+                    Operator = existRel.Operator,
+                    JobId = existRel.JobId
+                });
+
+                var afterNodes = new List<string>();
+                var subList = JsonConvert.DeserializeObject<List<ClientRelJob>>(resignReq.TerminalList);
+                afterNodes.AddRange(subList.Select(a => a.customerNo).ToList());
+
+                //update parent node, more or less
+                var existNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => afterNodes.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == existRel.Operatorid && (a.ParentNo == null || (a.ParentNo != null && !a.ParentNo.Contains(existRel.ClientNo)))).ToList();
+                var detachedNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => existRel.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == existRel.Operatorid && !afterNodes.Contains(a.ClientNo)).ToList();
+                if (existNodes.Count != 0)
+                {
+                    foreach (var enode in existNodes)
+                    {
+                        var phisClient = new ClientRelHistory
+                        {
+                            CID = enode.Id,
+                            ClientNo = enode.ClientNo,
+                            ClientName = enode.ClientName,
+                            ParentNo = enode.ParentNo,
+                            SubNo = enode.SubNo,
+                            Flag = enode.Flag,
+                            ScriptFlag = enode.ScriptFlag,
+                            IsDelete = enode.IsDelete,
+                            CreateDate = DateTime.Now,
+                            UpdateDate = enode.UpdateDate,
+                            Creator = enode.Creator,
+                            Creatorid = enode.Creatorid,
+                            Updater = enode.Updater,
+                            Updaterid = enode.Updaterid,
+                            Operator = enode.Operator,
+                            Operatorid = enode.Operatorid,
+                            OperateType = 7,
+                            JobId = existRel.JobId
+                        };
+                        addHistoryData.Add(phisClient);
+                        addData.Add(new Repository.Domain.ClientRelation
+                        {
+                            ClientNo = enode.ClientNo,
+                            ClientName = enode.ClientName,
+                            ParentNo = enode.ParentNo,
+                            SubNo = enode.SubNo,
+                            Flag = enode.Flag,
+                            ScriptFlag = enode.ScriptFlag,
+                            IsDelete = enode.IsDelete,
+                            IsActive = 0,
+                            CreateDate = enode.CreateDate,
+                            Creator = enode.Creator,
+                            Creatorid = enode.Creatorid,
+                            UpdateDate = DateTime.Now,
+                            Updaterid = enode.Updaterid,
+                            Updater = enode.Updater,
+                            Operatorid = enode.Operatorid,
+                            Operator = enode.Operator,
+                            JobId = enode.JobId
+                        });
+                        JArray jsonPnode = new JArray();
+                        if (!string.IsNullOrEmpty(enode.ParentNo))
+                        {
+                            jsonPnode = JsonConvert.DeserializeObject<JArray>(enode.ParentNo);
+                        }
+                        else
+                        {
+                            jsonPnode = JsonConvert.DeserializeObject<JArray>("[]");
+                        }
+                        jsonPnode.Add(existRel.ClientNo);
+                        enode.ParentNo = JsonConvert.SerializeObject(jsonPnode);
+                        enode.JobId = resignReq.jobId;
+                        enode.UpdateDate = DateTime.Now;
+                        updateData.Add(enode);
+                    }
+                }
+                if (detachedNodes.Count != 0)
+                {
+                    foreach (var dnode in detachedNodes)
+                    {
+                        var dhisClient = new ClientRelHistory
+                        {
+                            CID = dnode.Id,
+                            ClientNo = dnode.ClientNo,
+                            ClientName = dnode.ClientName,
+                            ParentNo = dnode.ParentNo,
+                            SubNo = dnode.SubNo,
+                            Flag = dnode.Flag,
+                            ScriptFlag = dnode.ScriptFlag,
+                            IsDelete = dnode.IsDelete,
+                            CreateDate = DateTime.Now,
+                            UpdateDate = dnode.UpdateDate,
+                            Creator = dnode.Creator,
+                            Creatorid = dnode.Creatorid,
+                            Updater = dnode.Updater,
+                            Updaterid = dnode.Updaterid,
+                            Operator = dnode.Operator,
+                            Operatorid = dnode.Operatorid,
+                            OperateType = 7,
+                            JobId = resignReq.jobId
+                        };
+                        addHistoryData.Add(dhisClient);
+                        addData.Add(new Repository.Domain.ClientRelation
+                        {
+                            ClientNo = dnode.ClientNo,
+                            ClientName = dnode.ClientName,
+                            ParentNo = dnode.ParentNo,
+                            SubNo = dnode.SubNo,
+                            Flag = dnode.Flag,
+                            ScriptFlag = dnode.ScriptFlag,
+                            IsDelete = dnode.IsDelete,
+                            IsActive = 0,
+                            CreateDate = dnode.CreateDate,
+                            Creator = dnode.Creator,
+                            Creatorid = dnode.Creatorid,
+                            UpdateDate = DateTime.Now,
+                            Updaterid = dnode.Updaterid,
+                            Updater = dnode.Updater,
+                            Operatorid = dnode.Operatorid,
+                            Operator = dnode.Operator,
+                            JobId = dnode.JobId
+                        });
+                        JArray jsonPdnode = new JArray();
+                        if (!string.IsNullOrEmpty(dnode.ParentNo) && dnode.ParentNo.Contains(resignReq.ClientNo))
+                        {
+                            jsonPdnode = JsonConvert.DeserializeObject<JArray>(dnode.ParentNo);
+                            jsonPdnode.Where(i => i.Type == JTokenType.String && (string)i == resignReq.ClientNo).ToList().ForEach(i => i.Remove());
+                            dnode.ParentNo = JsonConvert.SerializeObject(jsonPdnode);
+                            dnode.JobId = resignReq.jobId;
+                            dnode.UpdateDate = DateTime.Now;
+                            updateData.Add(dnode);
+                        }
+                    }
+                }
+
+
+                existRel.SubNo = JsonConvert.SerializeObject(afterNodes);
+                if (afterNodes.Count == 0)
+                {
+                    existRel.SubNo = "";
+                }
+                existRel.Flag = 1;
+                existRel.UpdateDate = DateTime.Now;
+                existRel.JobId = resignReq.jobId;
+                updateData.Add(existRel);
+
             }
-            existRel.UpdateDate = DateTime.Now;
-            existRel.JobId = resignReq.jobId;
-            updateData.Add(existRel);
             await UnitWork.BatchUpdateAsync<OpenAuth.Repository.Domain.ClientRelation>(updateData.ToArray());
+            await UnitWork.BatchAddAsync<OpenAuth.Repository.Domain.ClientRelation, int>(addData.ToArray());
             await UnitWork.BatchAddAsync<OpenAuth.Repository.Domain.ClientRelHistory, int>(addHistoryData.ToArray());
             await UnitWork.SaveAsync();
             return result;
@@ -1018,7 +1120,8 @@ namespace OpenAuth.App.ClientRelation
                         {
                             ClientNo = client.CardCode,
                             TerminalList = jobRelation.Terminals,
-                            jobId   = compareJobid
+                            jobId   = compareJobid,
+                            AffiliateData = jobRelation.AffiliateData
                         });
                     }
                 }
@@ -1101,7 +1204,7 @@ namespace OpenAuth.App.ClientRelation
                 _logger.LogError("移入公海未找到对应表JobClientRelation的Job关系,请求参数为：" + JsonConvert.SerializeObject(ClientNo));
                 return true;
             }
-            jobRelation.IsDelete = 1;
+            jobRelation.IsDelete = 0;
             clientRelation.IsActive = 0;
 
             await UnitWork.AddAsync<OpenAuth.Repository.Domain.ClientRelHistory>(new ClientRelHistory
