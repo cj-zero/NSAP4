@@ -151,6 +151,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response();
             try
             {
+                Log.Logger.Error($"参数：{obj.ToJson()}");
                 var Message = await _contractapplyapp.Add(obj);
                 if (!string.IsNullOrWhiteSpace(Message))
                 {
@@ -178,6 +179,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new Response();
             try
             {
+                Log.Logger.Error($"参数：{obj.ToJson()}");
                 var Message = await _contractapplyapp.UpDate(obj);
                 if (!string.IsNullOrWhiteSpace(Message))
                 {
@@ -259,6 +261,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
+                Log.Logger.Error($"参数：{req.ToJson()}");
                 result = await _contractapplyapp.Accraditation(req);
             }
             catch (Exception ex)
@@ -282,6 +285,7 @@ namespace OpenAuth.WebApi.Controllers
             var result = new TableData();
             try
             {
+                Log.Logger.Error($"参数：{request.ToJson()}");
                 result = await _contractapplyapp.GetMyAccraditation(request);
             }
             catch (Exception ex)

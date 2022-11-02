@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.IO;
 using System.Threading.Tasks;
+using Serilog;
 using Infrastructure;
 using Infrastructure.Extensions;
 using Infrastructure.Helpers;
@@ -1318,9 +1319,14 @@ namespace OpenAuth.App.ContractManager
             }
 
             var loginUser = loginContext.User;
-            if (obj.CompanyType == "" || obj.ContractType == "")
+            if (string.IsNullOrEmpty(obj.CompanyType) || string.IsNullOrEmpty(obj.ContractType))
             {
                 throw new Exception("所属公司或文件类型不能为空");
+            }
+
+            if (obj.ContractFileTypeList == null || obj.ContractFileTypeList.Count() == 0)
+            {
+                throw new Exception("合同文件类型不能为空");
             }
 
             if (obj.ContractType == "3" && (string.IsNullOrEmpty(obj.CustomerCode) || string.IsNullOrEmpty(obj.SaleNo)))
@@ -1396,11 +1402,19 @@ namespace OpenAuth.App.ContractManager
                             {
                                 await UnitWork.BatchAddAsync<ContractFile>(contractFileList.ToArray());
                             }
+                            else
+                            {
+                                throw new Exception("合同文件不能为空");
+                            }
                         }
 
                         if (contractFileTypeList != null && contractFileTypeList.Count > 0)
                         {
                             await UnitWork.BatchAddAsync<ContractFileType>(contractFileTypeList.ToArray());
+                        }
+                        else
+                        {
+                            throw new Exception("合同文件类型不能为空");
                         }
                     }
 
@@ -1497,9 +1511,14 @@ namespace OpenAuth.App.ContractManager
             }
 
             var loginUser = loginContext.User;
-            if (obj.CompanyType == "" || obj.ContractType == "")
+            if (string.IsNullOrEmpty(obj.CompanyType) || string.IsNullOrEmpty(obj.ContractType))
             {
                 throw new Exception("所属公司或文件类型不能为空");
+            }
+
+            if (obj.ContractFileTypeList == null || obj.ContractFileTypeList.Count() == 0)
+            {
+                throw new Exception("合同文件不能为空");
             }
 
             var dbContext = UnitWork.GetDbContext<ContractApply>();
@@ -1560,6 +1579,10 @@ namespace OpenAuth.App.ContractManager
                         {
                             await UnitWork.BatchAddAsync<ContractFile>(contractFileList.ToArray());
                         }
+                        else
+                        {
+                            throw new Exception("合同文件不能为空");
+                        }
 
                         item.contractFileList = contractFileList;
                         contractFileTypeList.Add(item);
@@ -1568,6 +1591,10 @@ namespace OpenAuth.App.ContractManager
                     if (contractFileTypeList != null && contractFileTypeList.Count > 0)
                     {
                         await UnitWork.BatchAddAsync<ContractFileType>(contractFileTypeList.ToArray());
+                    }
+                    else
+                    {
+                        throw new Exception("合同文件类型不能为空");
                     }
 
                     //清空旧数据
@@ -1848,6 +1875,22 @@ namespace OpenAuth.App.ContractManager
             }
 
             var result = new TableData();
+            if (string.IsNullOrEmpty(req.contractApply.CompanyType) || string.IsNullOrEmpty(req.contractApply.ContractType))
+            {
+                result.Message = "合同申请单所属公司或合同类型不能为空。";
+                Log.Logger.Error($"参数{req}");
+                result.Code = 500;
+                return result;
+            }
+
+            if (req.contractApply.ContractFileTypeList == null || req.contractApply.ContractFileTypeList.Count() == 0)
+            {
+                result.Message = "合同申请单合同文件类型不能为空。";
+                result.Code = 500;
+                Log.Logger.Error($"参数{req}");
+                return result;
+            }
+
             var obj = await UnitWork.Find<ContractApply>(r => r.Id == req.Id).Include(r => r.ContractFileTypeList).FirstOrDefaultAsync();
             if (!string.IsNullOrEmpty(obj.ContractStatus))
             {
@@ -1855,6 +1898,7 @@ namespace OpenAuth.App.ContractManager
                 {
                     result.Message = "合同申请单未提交，不可操作。";
                     result.Code = 500;
+                    Log.Logger.Error($"参数{req}");
                     return result;
                 }
 
@@ -1862,6 +1906,7 @@ namespace OpenAuth.App.ContractManager
                 {
                     result.Message = "合同申请单已经被撤回，停止审批。";
                     result.Code = 500;
+                    Log.Logger.Error($"参数{req}");
                     return result;
                 }
             }
@@ -1869,6 +1914,7 @@ namespace OpenAuth.App.ContractManager
             {
                 result.Message = "合同申请单不存在，不可操作。";
                 result.Code = 500;
+                Log.Logger.Error($"参数{req}");
                 return result;
             }
 
