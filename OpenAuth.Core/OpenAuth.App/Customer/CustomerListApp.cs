@@ -94,11 +94,20 @@ namespace OpenAuth.App.Customer
                 {
 
                     var cateList = JsonConvert.DeserializeObject<List<int>>(item.U_CompSector.Replace(@"""", ""));
+
                     foreach (var c in entity)
                     {
                         if (cateList.Contains(c.Id))
                         {
-                            finalCompSector += c.Name + ";";
+                            if (cateList.Last() == c.Id)
+                            {
+                                finalCompSector += c.Name ;
+                            }
+                            else
+                            {
+                                finalCompSector += c.Name + " / ";
+                            }
+
                         }
                     }
 
