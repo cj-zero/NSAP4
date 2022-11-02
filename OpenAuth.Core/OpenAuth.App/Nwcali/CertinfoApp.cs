@@ -2093,6 +2093,7 @@ namespace OpenAuth.App
         public TableData BakingMachineFailMessage(long id)
         {
             TableData result = new TableData();
+            List<object> list = new List<object>();
             string url = $"{_appConfiguration.Value.AnalyticsUrl}api/DataCheck/TaskResult?id={id}";
             HttpHelper helper = new HttpHelper(url);
             Dictionary<string, string> dic = null;
@@ -2104,7 +2105,15 @@ namespace OpenAuth.App
                 result.Code = 500;
                 return result;
             }
-            result.Data = resObj["data"]["CheckItems"].Where(c => (int)c["ErrCount"] > 0).Select(c => c["Records"]).ToList();
+            var m = resObj["data"]["CheckItems"];
+            foreach (var item in m)
+            {
+                if ((int)item["ErrCount"]>0)
+                {
+                    list.AddRange(item["Records"]);
+                }
+            }
+            result.Data = list;
             return result;
         }
 
