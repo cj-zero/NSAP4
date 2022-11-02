@@ -862,9 +862,6 @@ namespace OpenAuth.App.ClientRelation
             if (string.IsNullOrEmpty(resignReq.TerminalList))
             {
                 //fix terminal means just fix the name
-                existRel.ClientName = resignReq.AffiliateData;
-                existRel.UpdateDate = DateTime.Now;
-                existRel.JobId = resignReq.jobId;
                 addData.Add(new Repository.Domain.ClientRelation
                 {
                     ClientNo = existRel.ClientNo,
@@ -885,6 +882,10 @@ namespace OpenAuth.App.ClientRelation
                     Operator = existRel.Operator,
                     JobId = existRel.JobId
                 });
+                existRel.ClientName = resignReq.AffiliateData;
+                existRel.UpdateDate = DateTime.Now;
+                existRel.JobId = resignReq.jobId;
+                
                 updateData.Add(existRel);
             }
             else
@@ -1111,8 +1112,7 @@ namespace OpenAuth.App.ClientRelation
                 }
                 if (relationJob.job_nm == "修改业务伙伴")
                 {
-                    if (client.is_reseller == "Y")
-                    {
+
                         //修改数据源
                         int compareJobid = (int)relationJob.job_id;
                         var jobRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.JobClientRelation>(a => a.Jobid == compareJobid && a.IsDelete == 0);
@@ -1123,7 +1123,7 @@ namespace OpenAuth.App.ClientRelation
                             jobId   = compareJobid,
                             AffiliateData = jobRelation.AffiliateData
                         });
-                    }
+
                 }
 
             }
@@ -1149,7 +1149,8 @@ namespace OpenAuth.App.ClientRelation
                CreateDate = DateTime.Now,
                Creator = jrr.Creator,
                CreatorId = jrr.CreatorId,
-               Origin = jrr.Origin
+               Origin = jrr.Origin,
+               AffiliateData = jrr.AffiliateData
             });
             await UnitWork.SaveAsync();
             return true;
