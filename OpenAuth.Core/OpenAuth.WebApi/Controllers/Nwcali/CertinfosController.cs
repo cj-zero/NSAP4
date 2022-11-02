@@ -336,6 +336,18 @@ namespace OpenAuth.WebApi.Controllers
             return result;
         }
         /// <summary>
+        /// 获取烤机失败原因
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public TableData BakingMachineFailMessage(long id)
+        {
+            TableData result = new TableData();
+            result = _app.BakingMachineFailMessage(id);
+            return result;
+        }
+        /// <summary>
         /// 导出烤机记录
         /// </summary>
         /// <param name="req"></param>
@@ -369,6 +381,7 @@ namespace OpenAuth.WebApi.Controllers
             result = await _app.CalibrationReport(req);
             return result;
         }
+
         /// <summary>
         /// 导出校准明细报表
         /// </summary>
@@ -385,6 +398,7 @@ namespace OpenAuth.WebApi.Controllers
             var data = await _app.ExportCalibrationReport(req);
             return File(data, "application/vnd.ms-excel");
         }
+
         /// <summary>
         /// 获取下位机
         /// </summary>
