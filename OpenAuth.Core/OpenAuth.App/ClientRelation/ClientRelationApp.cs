@@ -1176,7 +1176,7 @@ namespace OpenAuth.App.ClientRelation
                 _logger.LogError("移入公海未找到对应表JobClientRelation的Job关系,请求参数为：" + JsonConvert.SerializeObject(ClientNo));
                 return true;
             }
-            jobRelation.IsDelete = 1;
+            jobRelation.IsDelete = 0;
             clientRelation.IsActive = 0;
 
             await UnitWork.AddAsync<OpenAuth.Repository.Domain.ClientRelHistory>(new ClientRelHistory
