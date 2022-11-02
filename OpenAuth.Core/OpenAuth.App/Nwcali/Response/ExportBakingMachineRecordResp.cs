@@ -19,8 +19,14 @@ namespace OpenAuth.App.Nwcali.Response
         [ExporterHeader(DisplayName = "产品编码")]
         public string GeneratorCode { get; set; }
 
+        [ExporterHeader(DisplayName = "物料编码")]
+        public string ItemCode { get; set; }
+
         [ExporterHeader(DisplayName = "部门")]
         public string Department { get; set; }
+
+        [ExporterHeader(DisplayName = "操作人")]
+        public string CreateUser { get; set; }
 
         [ExporterHeader(DisplayName = "任务ID")]
         public string TaskId { get; set; }
@@ -63,8 +69,5 @@ namespace OpenAuth.App.Nwcali.Response
 
         [ExporterHeader(DisplayName = "PCBA SN码")]
         public string sn { get; set; }
-
-        [ExporterHeader(DisplayName = "物料编码")]
-        public string ItemCode { get; set; }
     }
 }
