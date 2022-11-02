@@ -66,6 +66,10 @@ namespace OpenAuth.App.ClientRelation.Request
         /// 编号
         /// </summary>
         public int jobId { get; set; }
+        /// <summary>
+        /// 附属数据
+        /// </summary>
+        public string AffiliateData { get; set; }
     }
 
 
@@ -85,6 +89,8 @@ namespace OpenAuth.App.ClientRelation.Request
         public string CreatorId { get; set; }
 
         public int Origin { get; set; }
+
+        public string AffiliateData { get; set; }
 
     }
 
