@@ -22,4 +22,15 @@ namespace OpenAuth.App.Customer.Request
         /// </summary>
         public string SlpName { get; set; }
     }
+
+    /// <summary>
+    /// 行业数据
+    /// </summary>
+    public class cateList
+    {
+        public string U_CompSector { get; set; }
+
+
+        public string CardCode { get; set; }
+    }
 }
