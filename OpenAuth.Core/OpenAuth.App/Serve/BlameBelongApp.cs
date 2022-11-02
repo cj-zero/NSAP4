@@ -123,10 +123,13 @@ namespace OpenAuth.App.Serve
             var userList = (from a in UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userId.Contains(r.FirstId))
                             join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
                             select new { a.FirstId, c.Name }).ToList();
-
+        
+            var independentOrg = new string[] { "CS7", "CS12", "CS14", "CS17", "CS20", "CS29", "CS32", "CS34", "CS36", "CS37", "CS38", "CS9", "CS50", "CSYH" };
             foreach (var item in data)
             {
                 item.CreateUser = userList.FirstOrDefault(a => a.FirstId == item.CreateUserId)?.Name + "-" + item.CreateUser;
+
+                item.IsContracting = independentOrg.Contains(userList.FirstOrDefault(a => a.FirstId == item.CreateUserId)?.Name) ? 1 : 0;
             }
 
             result.Count = await query.CountAsync();

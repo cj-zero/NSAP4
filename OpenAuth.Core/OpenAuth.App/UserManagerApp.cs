@@ -812,7 +812,6 @@ namespace OpenAuth.App
 
             var saleRoleId = UnitWork.Find<Role>(a => a.Name == "销售员").FirstOrDefault();
             var saleList =  UnitWork.Find<Relevance>(a => a.Key == Define.USERROLE && a.SecondId == saleRoleId.Id).Select(a=> a.FirstId).ToList();
-            var needAddSaleId = saleList.Except(saleUser4);
 
             foreach (var item in saleUser4)
             {

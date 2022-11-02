@@ -216,6 +216,7 @@ namespace OpenAuth.App
                     PayTime = o.PayTime != null ? Convert.ToDateTime(o.PayTime).ToString("yyyy.MM.dd HH:mm:ss") : null,
                     o.TotalMoney,
                     CreateUser = orgName == null ? o.CreateUser : orgName + "-" + o.CreateUser,
+                    CreateUserId = o.CreateUserId,
                     IsContracting = string.IsNullOrEmpty(orgName) ? 0 : independentOrg.Contains(orgName) ? 1 : 0,
                     o.Remark,
                     IsRejected = o.IsRejected ? "是" : null
