@@ -238,9 +238,7 @@ namespace OpenAuth.WebApi.Controllers
         [HttpPost]
         public async Task<Response> DissolutionReport(QueryoutsourcListReq req)
         {
-            var result = new Response();
-            await _app.DissolutionReport(req.Id);
-            return result;
+            return await _app.DissolutionReport(req.Id);
         }
 
         /// <summary>

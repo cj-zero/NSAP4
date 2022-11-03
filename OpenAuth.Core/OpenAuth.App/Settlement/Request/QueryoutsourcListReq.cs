@@ -97,5 +97,7 @@ namespace OpenAuth.App.Request
         public string Name { get; set; }
         public int? Status { get; set; }
         public int? ReportId { get; set; }
+
+        public string OrgName { get; set; }
     }
 }

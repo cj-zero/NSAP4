@@ -1932,7 +1932,7 @@ namespace OpenAuth.App
             }
             Infrastructure.Response result = new Infrastructure.Response();
             var report = await UnitWork.Find<OutsourcReport>(c => c.Id == id).FirstOrDefaultAsync();
-            if (report.Status > 2)
+            if (report.Status > 3)
             {
                 result.Code = 500;
                 result.Message = "该状态不能撤回。";
@@ -1960,9 +1960,9 @@ namespace OpenAuth.App
             }
             TableData result = new TableData();
             var loginUser = loginContext.User;
-            var resport = UnitWork.Find<OutsourcReport>(c => c.MakerList.Contains(loginUser.Id))
+            var resport = UnitWork.Find<OutsourcReport>(null)
                                .WhereIf(!string.IsNullOrWhiteSpace(request.BatchNo), q => q.BatchNo.Contains(request.BatchNo))
-                               .WhereIf(!string.IsNullOrWhiteSpace(request.Name), q => q.BatchNo.Contains(request.Name))
+                               .WhereIf(!string.IsNullOrWhiteSpace(request.Name), q => q.Name.Contains(request.Name))
                                .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), q => q.CreateUser.Contains(request.CreateName))
                                .WhereIf(request.Status != null, q => q.Status == request.Status)
                                .WhereIf(!string.IsNullOrWhiteSpace(request.StartTime.ToString()), q => q.CreateTime > request.StartTime)
@@ -1997,6 +1997,12 @@ namespace OpenAuth.App
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
             TableData result = new TableData();
+            List<string> userId = new List<string>();
+            if (!string.IsNullOrWhiteSpace(request.OrgName))
+            {
+                var orgId = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(c => c.Name.Contains(request.OrgName)).Select(c => c.Id).ToListAsync();
+                userId.AddRange(await UnitWork.Find<Relevance>(c => orgId.Contains(c.SecondId) && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync());
+            }
             var incomeSummry = await UnitWork.Find<IncomeSummary>(c => c.Year == DateTime.Now.Year && c.Month == DateTime.Now.Month && c.Type == 1).ToListAsync();
             var catetory = await UnitWork.Find<Category>(c => c.TypeId == "SYS_SettlementOrg").Select(c => c.DtValue).ToListAsync();
             var outsourcIds = await UnitWork.Find<OutsourcExpenses>(null)
@@ -2008,6 +2014,7 @@ namespace OpenAuth.App
                 .ToListAsync();
 
             var query = UnitWork.Find<Outsourc>(c => c.OutsourcReportId == request.ReportId).Include(c => c.OutsourcExpenses)
+                                .WhereIf(userId.Count() > 0, c => userId.Contains(c.CreateUserId))
                                .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), q => q.CreateUser.Contains(request.CreateName))
                                .WhereIf(!string.IsNullOrWhiteSpace(request.StartTime.ToString()), q => q.CreateTime > request.StartTime)
                                .WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), q => q.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1))
@@ -2086,6 +2093,7 @@ namespace OpenAuth.App
                 AccommodationFee = c.Sum(s => s.AccommodationFee),
                 OtherFee = c.Sum(s => s.OtherFee),
                 TotalMoney = c.Sum(s => s.TotalMoney),
+                Detail = c
             });
             result.Data = outsourcResult;
             return result;
@@ -2113,9 +2121,12 @@ namespace OpenAuth.App
             await BatchAccraditation(list);
 
             var makerList = "";
-            var roleId = await UnitWork.Find<Role>(c => c.Name == "出纳").FirstOrDefaultAsync();
-            var users = _revelanceApp.Get(Define.USERROLE, false, roleId?.Id);
-            makerList = GenericHelpers.ArrayToString(users, makerList);
+            if (report.Status == 3)
+            {
+                var roleId = await UnitWork.Find<Role>(c => c.Name == "出纳").FirstOrDefaultAsync();
+                var users = _revelanceApp.Get(Define.USERROLE, false, roleId?.Id);
+                makerList = GenericHelpers.ArrayToString(users, makerList);
+            }
 
             report.ProcessedList += "," + loginContext.User.Id;
             report.Status += 1;
