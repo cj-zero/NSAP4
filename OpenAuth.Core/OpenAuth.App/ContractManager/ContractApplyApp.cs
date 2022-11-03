@@ -1334,6 +1334,15 @@ namespace OpenAuth.App.ContractManager
                 throw new Exception("工程设计类申请，客户代码及销售订单号必填");
             }
 
+            if (!string.IsNullOrEmpty(obj.CustomerCode))
+            {
+                var ocrds = await UnitWork.Find<OCRD>(r => r.CardCode == obj.CustomerCode).ToListAsync();
+                if (ocrds == null && ocrds.Count() == 0)
+                {
+                    throw new Exception("当前客户无效");
+                }
+            }
+
             obj.ContractFileTypeList.ForEach(r => r.ContractApplyId = r.ContractApplyId);
             obj.CustomerName = string.IsNullOrEmpty(obj.CustomerCode) ? "" : (await UnitWork.Find<OCRD>(r => r.CardCode == obj.CustomerCode).FirstOrDefaultAsync()).CardName;
             var dbContext = UnitWork.GetDbContext<ContractApply>();
@@ -1396,6 +1405,7 @@ namespace OpenAuth.App.ContractManager
                                 contractFile.CreateUploadId = loginUser.Id;
                                 contractFile.CreateUploadName = loginUser.Name;
                                 contractFile.CreateUploadTime = DateTime.Now;
+                                contractFileList.Add(contractFile);
                             }
 
                             if (contractFileList != null && contractFileList.Count > 0)
@@ -1490,7 +1500,7 @@ namespace OpenAuth.App.ContractManager
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
-                    throw new Exception("创建合同申请单失败,请重试");
+                    throw new Exception(ex.Message.ToString());
                 }
             }
 
