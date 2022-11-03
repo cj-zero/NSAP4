@@ -406,6 +406,37 @@ namespace OpenAuth.App.ClientRelation
 
                 var subList = JsonConvert.DeserializeObject<List<ClientRelJob>>(jobRelation.Terminals);
                 uptRelation.SubNo = JsonConvert.SerializeObject(subList.Select(a => a.customerNo).ToList());
+                //if SubNo not exists for which it is not created in 4.0,then deal with it 
+                var  exiSubList = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => uptRelation.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 ).Select(a=>a.ClientNo).ToList();
+                foreach (var addItem in subList)
+                {
+                    if (!exiSubList.Contains(addItem.customerNo))
+                    {
+                        JArray jsonAddPnode =  JsonConvert.DeserializeObject<JArray>("[]");
+                        jsonAddPnode.Add(uptRelation.ClientNo);
+                        addData.Add(new Repository.Domain.ClientRelation
+                        {
+                            ClientNo = addItem.customerNo,
+                            ClientName = addItem.customerName,
+                            ParentNo = JsonConvert.SerializeObject(jsonAddPnode),
+                            SubNo = "",
+                            Flag = 0,
+                            ScriptFlag = 0,
+                            IsDelete = 0,
+                            IsActive = 1,
+                            CreateDate = DateTime.Now,
+                            Creator = uptRelation.Creator,
+                            Creatorid = uptRelation.Creatorid,
+                            UpdateDate = DateTime.Now,
+                            Updaterid = uptRelation.Updaterid,
+                            Updater = uptRelation.Updater,
+                            Operatorid = uptRelation.Operatorid,
+                            Operator = uptRelation.Operator,
+                            JobId = uptRelation.JobId
+                        });
+                    }
+                }
+
                 //update parentNo
                 var afterParentNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => uptRelation.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == jobRelation.CreatorId && (a.ParentNo == null ||(a.ParentNo!=null && !a.ParentNo.Contains(uptRelation.ClientNo)) )).ToList();
 
