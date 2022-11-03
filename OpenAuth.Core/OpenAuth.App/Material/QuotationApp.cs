@@ -3120,7 +3120,7 @@ namespace OpenAuth.App.Material
                 text = text.Replace("@Model.OrgName", orgName);
                 text = text.Replace("@Model.NewestContacter", model.NewestContacter);
                 text = text.Replace("@Model.NewestContactTel", model.NewestContactTel);
-                text = text.Replace("@Model.ShippingAddress", model.ShippingAddress);
+                text = text.Replace("@Model.ShippingAddress", model.ShippingAddress + model.ShippingDA);
                 text = text.Replace("@Model.CreateUser", model.CreateUser);
                 var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"StockRequisitionHeader{model.Id}.html");
                 System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
