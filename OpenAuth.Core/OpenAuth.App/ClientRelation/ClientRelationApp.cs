@@ -71,7 +71,7 @@ namespace OpenAuth.App.ClientRelation
             }
 
             var clientRel = await UnitWork.FindSingleAsync<OpenAuth.Repository.Domain.ClientRelation>(u => u.ClientNo == clientId && u.Operatorid == loginContext.User.Id && u.IsActive ==1 && u.ScriptFlag ==0 &&u.IsDelete ==0);
-            if (clientRel == null)
+            if (clientRel == null && !loginContext.Roles.Exists(a => a.Name == "公海管理员"))
             {
                 return rgp;
             }
