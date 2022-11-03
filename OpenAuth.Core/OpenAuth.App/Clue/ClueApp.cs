@@ -374,23 +374,27 @@ namespace OpenAuth.App
             };
             var data = UnitWork.Add<OpenAuth.Repository.Domain.Serve.Clue, int>(clue);
             UnitWork.Save();
-            OpenAuth.Repository.Domain.Serve.ClueContacts cluecontacts = new Repository.Domain.Serve.ClueContacts
+            #region multiple contact person info
+            List<ClueContacts> clueContacts = new List<ClueContacts>();
+            foreach (var contactItem in addClueReq.ContPerList)
             {
-                ClueId = data.Id,
-                Name = addClueReq.Name,
-                Tel1 = addClueReq.Tel1,
-                Role = addClueReq.Role,
-                Email = addClueReq.Email,
-                Position = addClueReq.Position,
-                Address1 = addClueReq.Address1,
-                Address2 = addClueReq.Address2,
-                CreateTime = DateTime.Now,
-                CreateUser = loginUser.Name,
-                IsDefault = true
-            };
-            UnitWork.Add<OpenAuth.Repository.Domain.Serve.ClueContacts, int>(cluecontacts);
-            UnitWork.Save();
+                clueContacts.Add(new Repository.Domain.Serve.ClueContacts {
+                    ClueId = data.Id,
+                    Name = contactItem.Name,
+                    Tel1 = contactItem.Tel1,
+                    Email = contactItem.Email,
+                    Position = contactItem.Position,
+                    Address1 = contactItem.Address1,
+                    Address2 = contactItem.Address2,
+                    CreateTime = DateTime.Now,
+                    CreateUser = loginUser.Name,
+                    IsDefault = contactItem.IsDefault
+                });
+            }
 
+            UnitWork.BatchAdd<OpenAuth.Repository.Domain.Serve.ClueContacts, int>(clueContacts.ToArray());
+            UnitWork.Save();
+            #endregion
             var log = new AddClueLogReq();
             log.ClueId = data.Id;
             log.LogType = 0;
