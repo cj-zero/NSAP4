@@ -171,7 +171,7 @@ namespace OpenAuth.App.ClientRelation
             
             bool result = true;
             // check legit request  72 添加业务伙伴
-            _logger.LogError("审核通过，添加业务伙伴请求参数为" + JsonConvert.SerializeObject(job));
+            _logger.LogInformation("审核通过，添加业务伙伴请求参数为" + JsonConvert.SerializeObject(job));
             var legitJob = UnitWork.FindSingle<wfa_job>(a => a.job_id == job.JobId && a.sync_stat == 4 && (a.job_type_id == 72));
             if (legitJob == null)
             {
@@ -840,7 +840,7 @@ namespace OpenAuth.App.ClientRelation
         {
 
             bool result = true;
-            _logger.LogError("定时任务同步修改业务伙伴请求参数为" + JsonConvert.SerializeObject(resignReq));
+            _logger.LogInformation("定时任务同步修改业务伙伴请求参数为" + JsonConvert.SerializeObject(resignReq));
             //judge if it is legit ,check from the history
             var existRelhis = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelHistory>(a => a.ClientNo == resignReq.ClientNo && a.IsDelete == 0 && a.OperateType == 7 && a.JobId == resignReq.jobId );
             if (existRelhis != null)
@@ -1071,6 +1071,7 @@ namespace OpenAuth.App.ClientRelation
                 existRel.Flag = 1;
                 existRel.UpdateDate = DateTime.Now;
                 existRel.JobId = resignReq.jobId;
+                existRel.ClientName = resignReq.AffiliateData;
                 updateData.Add(existRel);
 
             }
@@ -1088,7 +1089,7 @@ namespace OpenAuth.App.ClientRelation
         public async Task<bool> SyncRelations()
         {
             // get latest 3 minutes updated job(jobtype = 72)
-            _logger.LogError("Job同步更新关系");
+            _logger.LogInformation("Job同步更新关系");
             var updatedRelationJob = UnitWork.Find<wfa_job>(a => a.job_type_id == 72 &&  a.sync_stat ==4 && a.upd_dt>=DateTime.Now.AddMinutes(-2) ).OrderBy(a=>a.upd_dt).ToList();
             if (updatedRelationJob.Count==0)
             {
@@ -1097,7 +1098,7 @@ namespace OpenAuth.App.ClientRelation
             else
             {
                 var jobidList = updatedRelationJob.Select(a => a.job_id).ToList();
-                _logger.LogError("Job同步更新关系,参数为" + JsonConvert.SerializeObject(jobidList));
+                _logger.LogInformation("Job同步更新关系,参数为" + JsonConvert.SerializeObject(jobidList));
             }
             foreach (var relationJob in updatedRelationJob)
             {
