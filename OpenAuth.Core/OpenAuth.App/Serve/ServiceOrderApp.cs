@@ -1551,7 +1551,7 @@ namespace OpenAuth.App
                 Priority = 1,
                 ManufacturerSerialNumber = req.pn,
                 MaterialCode = req.sn,
-                FromTheme = "[{\"id\":\"6d8f056b-6561-4b8f-add5-f63302f64994\",\"description\":\"烧录程序\",\"code\":\"024-01-01281\"}]"
+                FromTheme = "[{\"id\":\"6d8f056b-6561-4b8f-add5-f63302f64994\",\"description\":\"绑定GUID\",\"code\":\"024-05-05096\"}]"
             });
             obj.ServiceWorkOrders = order;
             var e = await UnitWork.AddAsync<ServiceOrder, int>(obj);
