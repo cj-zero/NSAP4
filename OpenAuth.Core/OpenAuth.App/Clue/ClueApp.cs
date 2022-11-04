@@ -32,6 +32,7 @@ using Microsoft.EntityFrameworkCore.Internal;
 using static OpenAuth.App.Clue.ModelDto.KuaiBaosHelper;
 using OpenAuth.Repository.Domain;
 using Microsoft.Extensions.Logging;
+using OpenAuth.Repository.Domain.View;
 
 namespace OpenAuth.App
 {
@@ -110,12 +111,12 @@ namespace OpenAuth.App
                 exp = exp.And(t => t.Tags.Contains(clueListReq.Tag));
             }
             var clue = UnitWork.Find(exp).MapToList<Repository.Domain.Serve.Clue>();
-            var clueFollowUp = new List<ClueFollowUp>();
-            foreach (var item in clue)
-            {
-                var scon = UnitWork.Find<ClueFollowUp>(q => !q.IsDelete && q.ClueId == item.Id).MapToList<ClueFollowUp>().OrderByDescending(q => q.FollowUpTime).Take(1);
-                clueFollowUp.AddRange(scon);
-            }
+            //var clueFollowUp = new List<ClueFollowUp>();
+            //foreach (var item in clue)
+            //{
+            //    var scon = UnitWork.Find<ClueFollowUp>(q => !q.IsDelete && q.ClueId == item.Id).MapToList<ClueFollowUp>().OrderByDescending(q => q.FollowUpTime).Take(1);
+            //    clueFollowUp.AddRange(scon);
+            //}
             var clueContacts = UnitWork.Find<ClueContacts>(q => !q.IsDelete && q.IsDefault).MapToList<ClueContacts>();
             var queryAllCustomers = from a in clue
                                     join b in clueContacts on a.Id equals b.ClueId
@@ -140,20 +141,49 @@ namespace OpenAuth.App
                                         Tel1 = b.Tel1,
                                         Address1 = b.Address1,
                                         Address2 = b.Address2,
-                                        Email = b.Email
+                                        Email = b.Email,
+                                        SlpName = a.CreateUser
                                     };
             rowcount = queryAllCustomers.Count();
-            var datas = queryAllCustomers.Skip((clueListReq.page - 1) * clueListReq.limit).Take(clueListReq.limit);
+            var datas = queryAllCustomers.Skip((clueListReq.page - 1) * clueListReq.limit).Take(clueListReq.limit).ToList();
+            //get dept 
+            var dataNameList = datas.Select(a=>a.SlpName).ToList();
+            //UnitWork.ExcuteSql<RawGraph>(ContextType.DefaultContextType, strSql.ToString(), CommandType.Text, null)
+            StringBuilder strSql = new StringBuilder();
+            strSql.AppendFormat("select * from userorgutility u where LOCATE(u.Name , \"{0}\")  > 0", JsonConvert.SerializeObject(dataNameList).Replace(@"""", ""));
+            var deptList = UnitWork.ExcuteSql<UserOrgUtilityView>(ContextType.DefaultContextType, strSql.ToString(), CommandType.Text, null);
+            foreach (var itemDept in datas)
+            {
+                var specDept = deptList.Where(a => a.Name == itemDept.SlpName).FirstOrDefault();
+                if (specDept!=null)
+                {
+                    itemDept.SlpName = specDept.deptName + "-" + itemDept.SlpName;
+                }
+            }
+
+            //opti
+            var followupIdList = datas.Select(a => a.Id).ToList();
+            var cluefollowups = UnitWork.Find<ClueFollowUp>(q => followupIdList.Contains(q.ClueId)).ToList();
             foreach (var item in datas)
             {
-                var cluefollowups = UnitWork.FindSingle<ClueFollowUp>(q => q.ClueId == item.Id);
-                if (cluefollowups != null)
+                if (cluefollowups.Exists(a=>a.ClueId == item.Id))
                 {
-                    item.FollowUpTime = cluefollowups.FollowUpTime.ToString();
-                    var subTime = (DateTime.Now.Subtract(cluefollowups.FollowUpTime));
+                    var exactFollow = cluefollowups.Where(a => a.ClueId == item.Id).FirstOrDefault();
+                    item.FollowUpTime = exactFollow.FollowUpTime.ToString();
+                    var subTime = (DateTime.Now.Subtract(exactFollow.FollowUpTime));
                     item.DaysNotFollowedUp = $"{subTime.Days}天";
                 }
             }
+            //foreach (var item in datas)
+            //{
+            //    var cluefollowups = UnitWork.FindSingle<ClueFollowUp>(q => q.ClueId == item.Id);
+            //    if (cluefollowups != null)
+            //    {
+            //        item.FollowUpTime = cluefollowups.FollowUpTime.ToString();
+            //        var subTime = (DateTime.Now.Subtract(cluefollowups.FollowUpTime));
+            //        item.DaysNotFollowedUp = $"{subTime.Days}天";
+            //    }
+            //}
             var list = datas.MapToList<ClueListDto>();
             return list;
         }

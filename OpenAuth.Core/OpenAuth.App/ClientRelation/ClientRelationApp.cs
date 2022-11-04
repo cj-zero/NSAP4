@@ -186,7 +186,7 @@ namespace OpenAuth.App.ClientRelation
 
             bool result = true;
             // check legit request  72 添加业务伙伴
-            _logger.LogError("审核通过，添加业务伙伴请求参数为" + JsonConvert.SerializeObject(job));
+            _logger.LogInformation("审核通过，添加业务伙伴请求参数为" + JsonConvert.SerializeObject(job));
             var legitJob = UnitWork.FindSingle<wfa_job>(a => a.job_id == job.JobId && a.sync_stat == 4 && (a.job_type_id == 72));
             if (legitJob == null)
             {
@@ -407,8 +407,39 @@ namespace OpenAuth.App.ClientRelation
 
                 var subList = JsonConvert.DeserializeObject<List<ClientRelJob>>(jobRelation.Terminals);
                 uptRelation.SubNo = JsonConvert.SerializeObject(subList.Select(a => a.customerNo).ToList());
+                //if SubNo not exists for which it is not created in 4.0,then deal with it 
+                var exiSubList = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => uptRelation.SubNo.Contains(a.ClientNo) && a.IsDelete == 0).Select(a => a.ClientNo).ToList();
+                foreach (var addItem in subList)
+                {
+                    if (!exiSubList.Contains(addItem.customerNo))
+                    {
+                        JArray jsonAddPnode = JsonConvert.DeserializeObject<JArray>("[]");
+                        jsonAddPnode.Add(uptRelation.ClientNo);
+                        addData.Add(new Repository.Domain.ClientRelation
+                        {
+                            ClientNo = addItem.customerNo,
+                            ClientName = addItem.customerName,
+                            ParentNo = JsonConvert.SerializeObject(jsonAddPnode),
+                            SubNo = "",
+                            Flag = 0,
+                            ScriptFlag = 0,
+                            IsDelete = 0,
+                            IsActive = 1,
+                            CreateDate = DateTime.Now,
+                            Creator = uptRelation.Creator,
+                            Creatorid = uptRelation.Creatorid,
+                            UpdateDate = DateTime.Now,
+                            Updaterid = uptRelation.Updaterid,
+                            Updater = uptRelation.Updater,
+                            Operatorid = uptRelation.Operatorid,
+                            Operator = uptRelation.Operator,
+                            JobId = uptRelation.JobId
+                        });
+                    }
+                }
+
                 //update parentNo
-                var afterParentNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => uptRelation.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == jobRelation.CreatorId && (a.ParentNo == null ||(a.ParentNo!=null && !a.ParentNo.Contains(uptRelation.ClientNo)) )).ToList();
+                var afterParentNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => uptRelation.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == jobRelation.CreatorId && (a.ParentNo == null || (a.ParentNo != null && !a.ParentNo.Contains(uptRelation.ClientNo)))).ToList();
 
                 foreach (var enode in afterParentNodes)
                 {
