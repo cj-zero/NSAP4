@@ -86,11 +86,8 @@ namespace OpenAuth.App.Clue.Request
         /// <summary>
         /// 详细地址（地址（省市））
         /// </summary>
-        public string Address1 { get; set; }
-        /// <summary>
-        /// 详细地址
-        /// </summary>
-        public string Address2 { get; set; }
+        public string Address { get; set; }
+
         /// <summary>
         /// 邮箱
         /// </summary>
