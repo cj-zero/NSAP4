@@ -1932,10 +1932,10 @@ namespace OpenAuth.App
             }
             Infrastructure.Response result = new Infrastructure.Response();
             var report = await UnitWork.Find<OutsourcReport>(c => c.Id == id).FirstOrDefaultAsync();
-            if (report.Status > 3)
+            if (report.Status > 2)
             {
                 result.Code = 500;
-                result.Message = "该状态不能撤回。";
+                result.Message = "该状态不能解散报表。";
                 return result;
             }
 
