@@ -981,6 +981,38 @@ namespace OpenAuth.App.ClientRelation
                 var subList = JsonConvert.DeserializeObject<List<ClientRelJob>>(resignReq.TerminalList);
                 afterNodes.AddRange(subList.Select(a => a.customerNo).ToList());
 
+                //if SubNo not exists for which it is not created in 4.0,then deal with it 
+                var exiSubList = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => afterNodes.Contains(a.ClientNo) && a.IsDelete == 0).Select(a => a.ClientNo).ToList();
+                foreach (var addItem in subList)
+                {
+                    if (!exiSubList.Contains(addItem.customerNo))
+                    {
+                        JArray jsonAddPnode = JsonConvert.DeserializeObject<JArray>("[]");
+                        jsonAddPnode.Add(resignReq.ClientNo);
+                        addData.Add(new Repository.Domain.ClientRelation
+                        {
+                            ClientNo = addItem.customerNo,
+                            ClientName = addItem.customerName,
+                            ParentNo = JsonConvert.SerializeObject(jsonAddPnode),
+                            SubNo = "",
+                            Flag = 0,
+                            ScriptFlag = 0,
+                            IsDelete = 0,
+                            IsActive = 1,
+                            CreateDate = DateTime.Now,
+                            Creator = existRel.Creator,
+                            Creatorid = existRel.Creatorid,
+                            UpdateDate = DateTime.Now,
+                            Updaterid = existRel.Updaterid,
+                            Updater = existRel.Updater,
+                            Operatorid = existRel.Operatorid,
+                            Operator = existRel.Operator,
+                            JobId = resignReq.jobId
+                        });
+                    }
+                }
+
+
                 //update parent node, more or less
                 var existNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => afterNodes.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == existRel.Operatorid && (a.ParentNo == null || (a.ParentNo != null && !a.ParentNo.Contains(existRel.ClientNo)))).ToList();
                 var detachedNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => existRel.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == existRel.Operatorid && !afterNodes.Contains(a.ClientNo)).ToList();
