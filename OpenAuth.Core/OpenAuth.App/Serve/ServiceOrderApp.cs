@@ -1541,7 +1541,7 @@ namespace OpenAuth.App
             {
                 SubmitDate = DateTime.Now,
                 SubmitUserId = userInfo.Id,
-                Status = 2,
+                Status = 7,
                 CurrentUserNsapId = userInfo.Id,
                 CurrentUserId = appuserid,
                 FromType = 1,
@@ -8895,7 +8895,7 @@ namespace OpenAuth.App
                 year = DateTime.Now.AddYears(-1).Year;
                 month = 12;
             }
-            //服务单
+            //服务单(客诉单)
             var serviceOrdr = await UnitWork.Find<ServiceOrder>(c => c.CreateTime.Value.Year == year && c.CreateTime.Value.Month == month && c.VestInOrg == 1 && c.Status == 2).Include(c => c.ServiceWorkOrders).Where(c => c.ServiceWorkOrders.Any(s => s.Status >= 7))
                 .Select(c => new { c.Id, c.ServiceWorkOrders.FirstOrDefault().CurrentUserNsapId, c.ServiceWorkOrders.FirstOrDefault().CurrentUser, c.CreateTime })
                 .ToListAsync();
@@ -8917,6 +8917,11 @@ namespace OpenAuth.App
                     incomeSummaries.Add(new IncomeSummary { Type = 1, Rank = i++, Quantity = d.Count, UserId = d.CurrentUserNsapId, UserName = d.CurrentUser, Year = d.Year, Month = d.Month });
                 });
             });
+
+            //所有服务单完成数量
+            var workOrder = await UnitWork.Find<ServiceWorkOrder>(c => c.CompleteDate.Value.Year == year && c.CompleteDate.Value.Month == month && c.Status > 6).Select(c => new { c.ServiceOrderId, c.CurrentUserNsapId, c.CurrentUser, c.Status, c.CompleteDate }).ToListAsync();
+            var completedQuantity = workOrder.GroupBy(c => new { c.CurrentUserNsapId, c.CompleteDate.Value.Year, c.CompleteDate.Value.Month }).Select(c => new TechnicianCompletedQuantity { UserId = c.Key.CurrentUserNsapId, UserName = c.First().CurrentUser, Year = c.Key.Year, Month = c.Key.Month, Quantity = c.Select(c => c.ServiceOrderId).Distinct().Count() }).ToList();
+
 
             //个代
             var settlemment = await UnitWork.Find<Repository.Domain.Settlement.Outsourc>(c => c.CreateTime.Value.Year == year && c.CreateTime.Value.Month == month)
@@ -8989,6 +8994,8 @@ namespace OpenAuth.App
                 {
                     await UnitWork.DeleteAsync<IncomeSummary>(c => c.Year == year && c.Month == month);
                     await UnitWork.BatchAddAsync(incomeSummaries.ToArray());
+                    await UnitWork.DeleteAsync<TechnicianCompletedQuantity>(c => c.Year == year && c.Month == month);
+                    await UnitWork.BatchAddAsync(completedQuantity.ToArray());
                     await UnitWork.SaveAsync();
                     await transaction.CommitAsync();
                 }
