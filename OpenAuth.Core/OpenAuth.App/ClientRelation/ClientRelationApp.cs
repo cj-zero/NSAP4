@@ -899,13 +899,8 @@ namespace OpenAuth.App.ClientRelation
             List<OpenAuth.Repository.Domain.ClientRelation> updateData = new List<OpenAuth.Repository.Domain.ClientRelation>();
             List<OpenAuth.Repository.Domain.ClientRelation> addData = new List<OpenAuth.Repository.Domain.ClientRelation>();
             List<OpenAuth.Repository.Domain.ClientRelHistory> addHistoryData = new List<OpenAuth.Repository.Domain.ClientRelHistory>();
-            var existRel = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == resignReq.ClientNo && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0);
-            if (existRel == null)
-            {
-                //add to log file to explain why 
-                _logger.LogError("修改客户未找到对应表ClientRelation的记录,请求参数为：" + JsonConvert.SerializeObject(resignReq));
-                return true;
-            }
+            var existRel = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == resignReq.ClientNo && a.IsDelete == 0 && a.IsActive == 1 );
+
             if (string.IsNullOrEmpty(resignReq.TerminalList))
             {
                 //fix terminal means just fix the name
@@ -932,7 +927,8 @@ namespace OpenAuth.App.ClientRelation
                 existRel.ClientName = resignReq.AffiliateData;
                 existRel.UpdateDate = DateTime.Now;
                 existRel.JobId = resignReq.jobId;
-                
+                existRel.ClientNo = resignReq.ClientNo;
+                existRel.ScriptFlag = 0;
                 updateData.Add(existRel);
             }
             else
@@ -1119,6 +1115,8 @@ namespace OpenAuth.App.ClientRelation
                 existRel.UpdateDate = DateTime.Now;
                 existRel.JobId = resignReq.jobId;
                 existRel.ClientName = resignReq.AffiliateData;
+                existRel.ClientNo = resignReq.ClientNo;
+                existRel.ScriptFlag = 0;
                 updateData.Add(existRel);
 
             }
