@@ -900,9 +900,15 @@ namespace OpenAuth.App.ClientRelation
             List<OpenAuth.Repository.Domain.ClientRelation> addData = new List<OpenAuth.Repository.Domain.ClientRelation>();
             List<OpenAuth.Repository.Domain.ClientRelHistory> addHistoryData = new List<OpenAuth.Repository.Domain.ClientRelHistory>();
             var existRel = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == resignReq.ClientNo && a.IsDelete == 0 && a.IsActive == 1 );
+            if (existRel == null)
+            {
+                //edit from scrach
+                existRel = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.JobId == resignReq.jobId && a.IsDelete == 0 && a.IsActive == 1);
+            }
 
             if (string.IsNullOrEmpty(resignReq.TerminalList))
             {
+                
                 //fix terminal means just fix the name
                 addData.Add(new Repository.Domain.ClientRelation
                 {
@@ -1012,7 +1018,8 @@ namespace OpenAuth.App.ClientRelation
                     }
                 }
 
-
+                existRel.ClientName = resignReq.AffiliateData;
+                existRel.ClientNo = resignReq.ClientNo;
                 //update parent node, more or less
                 var existNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => afterNodes.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == existRel.Operatorid && (a.ParentNo == null || (a.ParentNo != null && !a.ParentNo.Contains(existRel.ClientNo)))).ToList();
                 var detachedNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => existRel.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == existRel.Operatorid && !afterNodes.Contains(a.ClientNo)).ToList();
@@ -1146,8 +1153,7 @@ namespace OpenAuth.App.ClientRelation
                 existRel.Flag = 1;
                 existRel.UpdateDate = DateTime.Now;
                 existRel.JobId = resignReq.jobId;
-                existRel.ClientName = resignReq.AffiliateData;
-                existRel.ClientNo = resignReq.ClientNo;
+                
                 existRel.ScriptFlag = 0;
                 updateData.Add(existRel);
 
