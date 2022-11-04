@@ -286,6 +286,57 @@ namespace OpenAuth.App.Order
         public string U_RelDoc { get; set; }
     }
 
+    public class SaleMyCreates
+    {
+        public string Column1 { get; set; }
+
+        public int job_id { get; set; }
+
+        public string job_type_nm { get; set; }
+
+        public string job_nm { get; set; }
+
+        public string DeptName { get; set; }
+
+        public int user_id { get; set; }
+
+        public string user_nm { get; set; }
+
+        public int job_state { get; set; }
+
+        public System.DateTime? upd_dt { get; set; }
+
+        public string remarks { get; set; }
+
+        public int job_type_id { get; set; }
+
+        public string card_code { get; set; }
+
+        public string CardName { get; set; }
+
+        public string DocTotal { get; set; }
+
+        public int base_type { get; set; }
+
+        public int base_entry { get; set; }
+
+        public string step_nm { get; set; }
+
+        public int sbo_id { get; set; }
+
+        public string page_url { get; set; }
+
+        public int sbo_itf_return { get; set; }
+
+        public string sbo_nm { get; set; }
+
+        public int sync_start { get; set; }
+
+        public int sync_stat { get; set; }
+
+        public int sync_sap { get; set; }
+    }
+
     public class SaleDeptSubToMe 
     {
         public int RowNum { get; set; }
@@ -306,7 +357,7 @@ namespace OpenAuth.App.Order
 
         public int job_state { get; set; }
 
-        public DateTime? upd_dt { get; set; }
+        public System.DateTime? upd_dt { get; set; }
 
         public string remarks { get; set; }
 

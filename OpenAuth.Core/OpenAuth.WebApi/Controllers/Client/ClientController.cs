@@ -234,15 +234,15 @@ namespace OpenAuth.WebApi.Controllers.Client
             return result;
         }
 
-
-        [HttpGet]
+        [AllowAnonymous]
+        [HttpPost]
         [Route("AlterAuditInfo")]
-        public Response<clientOCRD> AlterAuditInfo(string jobId)
+        public Response<clientOCRD> AlterAuditInfo(string jobId, clientOCRD client)
         {
             var result = new Response<clientOCRD>();
             try
             {
-                result.Result = _clientInfoApp.AlterAuditInfoNew(jobId);
+                result.Result = _clientInfoApp.AlterAuditInfoNew(jobId,client);
             }
             catch (Exception ex)
             {

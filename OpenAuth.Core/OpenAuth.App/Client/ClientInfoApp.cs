@@ -79,15 +79,15 @@ namespace OpenAuth.App.Client
             string result = "";
             int userID = _serviceBaseApp.GetUserNaspId();
             //20221021 lims推广员使用线索转客户功能无法新增客户
-            if (addClientInfoReq.baseEntry > 0 && addClientInfoReq.type == "Add")
-            {
-                var erpLims = UnitWork.FindSingle<LimsInfo>(u => u.UserId == loginUser.Id && u.Type == "LIMS");
-                if (erpLims != null)
-                {
-                    _logger.LogWarning("lims推广员使用线索转客户功能无法新增客户,参数为：" + JsonConvert.SerializeObject(addClientInfoReq));
-                    return "0";
-                }
-            }
+            //if (addClientInfoReq.baseEntry > 0 && addClientInfoReq.type == "Add")
+            //{
+            //    var erpLims = UnitWork.FindSingle<LimsInfo>(u => u.UserId == loginUser.Id && u.Type == "LIMS");
+            //    if (erpLims != null)
+            //    {
+            //        _logger.LogWarning("lims推广员使用线索转客户功能无法新增客户,参数为：" + JsonConvert.SerializeObject(addClientInfoReq));
+            //        return "0";
+            //    }
+            //}
 
             clientOCRD OCRD = BulidClientJob(addClientInfoReq.clientInfo);
             OCRD.SboId = "1";
@@ -515,7 +515,7 @@ namespace OpenAuth.App.Client
                 tableName.Append("LEFT JOIN nsap_bone.crm_ocrg C ON C.GroupCode=A.GroupCode  ");
                 tableName.Append("LEFT JOIN nsap_bone.crm_oidc D ON D.Code=A.Indicator  ");
                 tableName.Append("LEFT JOIN nsap_bone.crm_ohem E ON E.empID=A.DfTcnician and E.sbo_id = A.sbo_id ");
-                tableName.AppendFormat("LEFT JOIN  (SELECT c.Id, c.SubNo ,c.ClientNo, c.IsActive, c.ParentNo, c.IsDelete, c.ScriptFlag,ROW_NUMBER() OVER (PARTITION BY ClientNo ORDER BY CreateDate  DESC) rn from {0}.clientrelation c)   Y ON Y.ClientNo = A.CardCode  AND Y.IsActive =1 AND Y.ScriptFlag =0 AND   Y.rn = 1  AND  Y.IsDelete = 0   ", "erp4");
+                tableName.AppendFormat("LEFT JOIN  (SELECT c.Id, c.SubNo ,c.ClientNo, c.IsActive, c.ParentNo, c.IsDelete, c.ScriptFlag,ROW_NUMBER() OVER (PARTITION BY ClientNo ORDER BY  UpdateDate  ) rn from {0}.clientrelation c)   Y ON Y.ClientNo = A.CardCode  AND Y.IsActive =1 AND Y.ScriptFlag =0    AND  Y.IsDelete = 0   ", "erp4");
                 tableName.Append("LEFT JOIN nsap_bone.crm_ocry F ON F.Code=A.Country  ");
                 tableName.Append("LEFT JOIN nsap_bone.crm_ocst G ON G.Code=A.State1 ");
 
@@ -593,7 +593,7 @@ namespace OpenAuth.App.Client
                 tableName.AppendFormat("LEFT JOIN {0}.crm_OCST G ON G.Code=A.State1 ", "nsap_bone");
                 tableName.AppendFormat("LEFT JOIN {0}.wfa_job H ON H.sbo_itf_return=A.CardCode ", "nsap_base");
                 tableName.AppendFormat("LEFT JOIN {0}.clue I ON I.Id=H.base_entry", "nsap_serve");
-                tableName.AppendFormat("LEFT JOIN  (SELECT c.Id, c.SubNo ,c.ClientNo, c.ParentNo, c.IsActive, c.IsDelete, c.ScriptFlag,ROW_NUMBER() OVER (PARTITION BY ClientNo ORDER BY CreateDate DESC) rn from {0}.clientrelation c)   Y ON Y.ClientNo = A.CardCode  AND Y.IsActive =1 AND Y.ScriptFlag =0 AND   Y.rn = 1  AND  Y.IsDelete = 0   ", "erp4");
+                tableName.AppendFormat("LEFT JOIN  (SELECT c.Id, c.SubNo ,c.ClientNo, c.ParentNo, c.IsActive, c.IsDelete, c.ScriptFlag,ROW_NUMBER() OVER (PARTITION BY ClientNo ORDER BY UpdateDate) rn from {0}.clientrelation c)   Y ON Y.ClientNo = A.CardCode  AND Y.IsActive =1 AND Y.ScriptFlag =0        AND  Y.IsDelete = 0   ", "erp4");
                 tableName.AppendFormat("LEFT JOIN {0}.cluefollowup J ON J.ClueId=I.Id ORDER BY b.FollowUpTime DESC LIMIT 1 ", "nsap_serve");
                 //tableName.AppendFormat("LEFT JOIN {0}.crm_balance_sum H ON H.CardCode=A.CardCode) T ", "nsap_bone");
                 tableName.Append(") T");
@@ -1179,20 +1179,20 @@ namespace OpenAuth.App.Client
         }
 
 
-        public clientOCRD AlterAuditInfoNew(string jobId)
+        public clientOCRD AlterAuditInfoNew(string jobId, clientOCRD client)
         {
-            clientOCRD bill = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(jobId));
-            bill.FilesDetails = null;
-            byte[] job_data = ByteExtension.ToSerialize(bill);
+            //clientOCRD bill = _serviceSaleOrderApp.DeSerialize<clientOCRD>((byte[])GetAuditInfo(jobId));
+            //bill.FilesDetails = null;
+            byte[] job_data = ByteExtension.ToSerialize(client);
             StringBuilder strSql = new StringBuilder();
-            strSql.AppendFormat("UPDATE  nsap_base.wfa_job SET  job_data=?job_data WHERE job_id={0}", jobId);
+            strSql.AppendFormat("UPDATE  nsap_base.wfa_job SET  job_data=?job_data , sync_start = 0,sync_stat =0  WHERE job_id={0}", jobId);
             List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter> strPara = new List<MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter>()
                  {
                      new MySqlConnectorAlias::MySql.Data.MySqlClient.MySqlParameter("?job_data",     job_data)
 
                  };
             var rows = UnitWork.ExecuteNonQuery(ContextType.NsapBaseDbContext, CommandType.Text, strSql.ToString(), strPara);
-            return bill;
+            return client;
         }
         #endregion
         #region 修改审核数据
@@ -2518,13 +2518,27 @@ namespace OpenAuth.App.Client
                 strSql.Append(" ORDER BY SUM(Similarity1+Similarity2+Similarity3+Similarity4+Similarity5+Similarity6+Similarity7+Similarity8+Similarity9+Similarity10+Similarity11+Similarity12) DESC,MIN(Grade) ASC LIMIT 50 ");
             }
             strSql.Append(") T ");
-            _logger.LogError(strSql.ToString());
+            
             DataTable datatable = UnitWork.ExcuteSqlTable(ContextType.NsapBaseDbContext, strSql.ToString(), CommandType.Text, null);
-            for (int i = 0; i < datatable.Rows.Count; i++)
+            //for (int i = 0; i < datatable.Rows.Count; i++)
+            //{
+            //    var info = GetUserOrgInfo("", datatable.Rows[i]["SlpName"].ToString());
+            //    datatable.Rows[i]["SlpName"] = info == null ? datatable.Rows[i]["SlpName"] : info.FirstOrDefault().OrgName + "-" + datatable.Rows[i]["SlpName"];
+            //}
+            #region 
+            datatable.Columns.Add("IsFlag", typeof(int));
+            datatable.Columns.Add("ClueId", typeof(String));
+            var clientNoList = datatable.AsEnumerable().Select(row => row.Field<string>("CardCode")).ToList();  //CardCode
+            var clueList = UnitWork.Find<OpenAuth.Repository.Domain.Serve.Clue>(a=>clientNoList.Contains(a.CardCode)).ToList();
+            var flagList = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => clientNoList.Contains(a.ClientNo) && a.IsActive == 1 && a.ScriptFlag == 0 && a.Flag != 2 && a.IsDelete == 0).ToList();
+            foreach (var datarow in datatable.AsEnumerable())
             {
-               var info = GetUserOrgInfo("", datatable.Rows[i]["SlpName"].ToString());
-                datatable.Rows[i]["SlpName"] = info == null ? datatable.Rows[i]["SlpName"] : info.FirstOrDefault().OrgName + "-" + datatable.Rows[i]["SlpName"];
+                var specClue = clueList.Where(a => a.CardCode == datarow["CardCode"].ToString()).FirstOrDefault();
+                var specFlag = flagList.Where(a => a.ClientNo == datarow["CardCode"].ToString()).FirstOrDefault();
+                datarow["IsFlag"] = specFlag == null ? 0 : specFlag.Flag;
+                datarow["ClueId"] = specClue==null? "": specClue.SerialNumber;
             }
+            #endregion
             return datatable;
         }
         #endregion

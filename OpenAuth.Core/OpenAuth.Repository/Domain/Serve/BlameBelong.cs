@@ -129,6 +129,9 @@ namespace OpenAuth.Repository.Domain
         public virtual List<BlameBelongOrg> BlameBelongOrgs { get; set; }
         public virtual List<BlameBelongFile> BlameBelongFiles { get; set; }
 
+        [NotMapped]
+        public int? IsContracting { get; set; }
+
         public override void GenerateDefaultKeyVal()
         {
 

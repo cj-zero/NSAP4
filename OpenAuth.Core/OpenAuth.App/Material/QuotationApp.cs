@@ -338,6 +338,8 @@ namespace OpenAuth.App.Material
             var userIds = query.Select(q => q.a.CreateUserId).ToList();
             var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
             var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
+            var independentOrg = new string[] { "CS7", "CS12", "CS14", "CS17", "CS20", "CS29", "CS32", "CS34", "CS36", "CS37", "CS38", "CS9", "CS50", "CSYH" };
+
             result.Data = query.Select(q =>
             {
                 var isfinish = flowinstanceObjs.Where(f => f.Id.Equals(q.a.FlowInstanceId)).FirstOrDefault()?.IsFinish;
@@ -357,7 +359,8 @@ namespace OpenAuth.App.Material
                     CommissionStatus = status,
                     //CreateUser = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name == null ? q.a.CreateUser : SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + q.a.CreateUser,
                     CreateUser = orgName == null ? q.a.CreateUser : orgName + "-" + q.a.CreateUser,
-                    CreateUserId =q.a.CreateUserId,
+                    CreateUserId = q.a.CreateUserId,
+                    IsContracting = orgName == null ? 0 : independentOrg.Contains(orgName) ? 1 : 0,
                     q.a.Remark,
                     q.a.SalesOrderId,
                     q.a.IsMaterialType,
@@ -371,7 +374,7 @@ namespace OpenAuth.App.Material
                     q.a.PrintWarehouse,
                     q.a.CancelRequest,
                     q.b.SalesManId,
-                    SalesMan = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.b.SalesManId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name +"-"+ q.b.SalesMan,
+                    SalesMan = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.b.SalesManId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + q.b.SalesMan,
                     SalesManDept = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(q.b.SalesManId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name,
                     Balance = ocrds.Where(o => o.CardCode.Equals(q.b.TerminalCustomerId)).FirstOrDefault()?.Balance,
                     files = q.a.QuotationPictures.Select(p => new
@@ -3117,7 +3120,7 @@ namespace OpenAuth.App.Material
                 text = text.Replace("@Model.OrgName", orgName);
                 text = text.Replace("@Model.NewestContacter", model.NewestContacter);
                 text = text.Replace("@Model.NewestContactTel", model.NewestContactTel);
-                text = text.Replace("@Model.ShippingAddress", model.ShippingAddress);
+                text = text.Replace("@Model.ShippingAddress", model.ShippingAddress + model.ShippingDA);
                 text = text.Replace("@Model.CreateUser", model.CreateUser);
                 var tempUrl = Path.Combine(Directory.GetCurrentDirectory(), "Templates", $"StockRequisitionHeader{model.Id}.html");
                 System.IO.File.WriteAllText(tempUrl, text, Encoding.Unicode);
@@ -3693,6 +3696,7 @@ namespace OpenAuth.App.Material
                                        b.ManufacturerSerialNumber,
                                        b.FromTheme,
                                        b.MaterialCode,
+                                       a.CreateUserId,
                                        CreateUser = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name == null ?
                                        a.CreateUser : SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name + "-" + a.CreateUser,
                                        IsContracting = independentOrg.Contains(SelOrgName.Where(s => s.Id.Equals(Relevances.Where(w => w.FirstId.Equals(a.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name) ? 1 : 0,

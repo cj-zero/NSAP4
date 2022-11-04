@@ -11,6 +11,7 @@ using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.App.SSO;
 using OpenAuth.Repository.Domain;
+using OpenAuth.Repository.Domain.NsapBase;
 using OpenAuth.Repository.Interface;
 
 
@@ -38,15 +39,6 @@ namespace OpenAuth.App
                 query = UnitWork.Find<User>(u => u.Name.Contains(request.key) || u.Account.Contains(request.key));
             }
 
-            var ddusser = from a in UnitWork.Find<DDBindUser>(null)
-                          join b in UnitWork.Find<DDUserMsg>(null) on a.DDUserId equals b.UserId
-                          select new
-                          {
-                              a.UserId,
-                              a.DDUserId,
-                              b.UserName
-                          };
-
             var userOrgs = from user in query
                            join relevance in UnitWork.Find<Relevance>(u => u.Key == Define.USERORG)
                                on user.Id equals relevance.FirstId into temp
@@ -54,6 +46,12 @@ namespace OpenAuth.App
                            join org in UnitWork.Find<Repository.Domain.Org>(null)
                                on r.SecondId equals org.Id into orgtmp
                            from o in orgtmp.DefaultIfEmpty()
+                           join a in UnitWork.Find<DDBindUser>(null) on user.Id equals a.UserId
+                           into usera 
+                           from a  in usera.DefaultIfEmpty()
+                           join b in UnitWork.Find<DDUserMsg>(null) on a.DDUserId equals b.UserId
+                           into ab 
+                           from b in ab.DefaultIfEmpty()
                            select new
                            {
                                user.Account,
@@ -72,34 +70,10 @@ namespace OpenAuth.App
                                r.SecondId,
                                OrgId = o.Id,
                                OrgName = o.Name,
-                               user.EntryTime
+                               user.EntryTime,
+                               DDUserId = a == null ? "" : a.DDUserId,
+                               DDUserName = b == null ? "" : b.UserName
                            };
-
-            var userddbind = from a in userOrgs.ToList()
-                             join b in ddusser.ToList() on a.Id equals b.UserId into ab
-                             from b in ab.DefaultIfEmpty()
-                             select new
-                             {
-                                 a.Account,
-                                 a.Name,
-                                 a.Id,
-                                 a.Sex,
-                                 a.Status,
-                                 a.BizCode,
-                                 a.CreateId,
-                                 a.CreateTime,
-                                 a.TypeId,
-                                 a.TypeName,
-                                 a.ServiceRelations,
-                                 a.CardNo,
-                                 a.Key,
-                                 a.SecondId,
-                                 OrgId = a.OrgId,
-                                 OrgName = a.OrgName,
-                                 a.EntryTime,
-                                 DDUserId = b == null ? "" : b.DDUserId,
-                                 DDUserName = b == null ? "" : b.UserName
-                             };
 
             //如果请求的orgId不为空
             if (!string.IsNullOrEmpty(request.orgId))
@@ -130,7 +104,7 @@ namespace OpenAuth.App
                 userOrgs = userOrgs.Where(u => (u.Key == Define.USERORG && orgIds.Contains(u.OrgId)) || (u.OrgId == null));
             }
 
-            var userViews = userddbind.ToList().GroupBy(b => b.Account).Select(u => new UserView
+            var userViews = userOrgs.ToList().GroupBy(b => b.Account).Select(u => new UserView
             {
                 Id = u.First().Id,
                 Account = u.Key,
@@ -153,8 +127,8 @@ namespace OpenAuth.App
             {
                 Count = userViews.Count(),
                 Data = userViews.OrderBy(u => u.Status)
-                    .Skip((request.page - 1) * request.limit)
-                    .Take(request.limit),
+                .Skip((request.page - 1) * request.limit)
+                .Take(request.limit),
             };
         }
 
@@ -831,11 +805,32 @@ namespace OpenAuth.App
                     }
                 }
             }
-            //var saleUser3 = UnitWork.Find<sbo_user>(a => a.sale_id > 0).Select(a => (int?)a.user_id ).ToList();
-            //var saleUser4 = UnitWork.Find<NsapUserMap>(a => saleUser3.Contains(a.NsapUserId) ).Select(a => a.UserID).ToList();
-            //var
 
+            var saleUser3 = UnitWork.Find<base_user_role>(a => a.role_id == 1).Select(a => (int?)a.user_id).ToList();
+            var listOut = erpUsers.Where(c => c.out_date.ToString() != "0000-00-00").Select(c => (int?)c.user_id).ToList();//3.0已离职
+            var saleUser4 = UnitWork.Find<NsapUserMap>(a => saleUser3.Contains(a.NsapUserId) && !listOut.Contains(a.NsapUserId)).Select(a => a.UserID).ToList();
 
+            var saleRoleId = UnitWork.Find<Role>(a => a.Name == "销售员").FirstOrDefault();
+            var saleList =  UnitWork.Find<Relevance>(a => a.Key == Define.USERROLE && a.SecondId == saleRoleId.Id).Select(a=> a.FirstId).ToList();
+
+            foreach (var item in saleUser4)
+            {
+                if (!saleList.Contains(item))
+                {
+                    Relevance relevance = new Relevance();
+                    relevance.Key = Define.USERROLE;
+                    relevance.Status = 0;
+                    relevance.OperateTime = DateTime.Now;
+                    relevance.OperatorId = "";
+                    relevance.FirstId = item;
+                    relevance.SecondId = saleRoleId.Id;
+                    relevance.ThirdId = "";
+                    relevance.ExtendInfo = "";
+                    relevance.Description = "同步ERP3.0";
+                    UnitWork.Add(relevance);
+                }
+            }
+            UnitWork.Save();
 
         }
 

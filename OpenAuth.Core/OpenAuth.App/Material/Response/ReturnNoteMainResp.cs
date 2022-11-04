@@ -34,7 +34,6 @@ namespace OpenAuth.App.Material.Response
         public bool? IsUpDate { get; set; }
         public int? Reason { get; set; }
         public string CreateUserId { get; set; }
-
-        
+        public int? IsContracting { get; set; }
     }
 }

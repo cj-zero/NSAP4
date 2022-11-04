@@ -2117,7 +2117,7 @@ namespace OpenAuth.App
                     {
                         item2.CurrentUser = userList2.FirstOrDefault(a => a.FirstId == item2.CurrentUserNsapId)?.Name + "-" + item2.CurrentUser;
 
-                        var appId = AppUserId.FirstOrDefault(a => a.UserID == item.CustomerId)?.AppUserId;
+                        var appId = AppUserId.FirstOrDefault(a => a.UserID == item2.CurrentUserNsapId)?.AppUserId;
                         if (appId != null)
                         {
                             item2.TechnicianLevel = technicianLevelList.FirstOrDefault(a => a.AppUserId == appId)?.GradeName;

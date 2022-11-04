@@ -636,7 +636,7 @@ namespace OpenAuth.App.Material
                 where2 += $" and  t3.createDate < '{req.EndTime}' ";
             }
             string strSql = @$"select * from (
-select t2.id as 'Id', t1.MaterialCode as 'MaterialCode',t1.MaterialDescription as 'MaterialDescription', t3.Quantity as 'Quantity' ,t3.CreateUser as 'Name',t3.CreateUserId as 'CreateUserId',
+select t2.id as 'Id', t1.MaterialCode as 'MaterialCode',t1.MaterialDescription as 'MaterialDescription', t3.Quantity as 'Quantity' ,t3.CreateUser as 'Name',
 t3.CreateTime as 'CreateTime',t1.WhsCode as 'WhsCode',t4.CustomerName as 'CustomerName' ,t4.CustomerId as 'CustomerId',t2.Remark  as 'Remark','1' as 'OrderType' 
 from quotationmergematerial t1
 inner join quotation t2 on t2.id = t1.QuotationId
