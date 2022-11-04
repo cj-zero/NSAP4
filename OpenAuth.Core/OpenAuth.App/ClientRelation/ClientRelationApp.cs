@@ -627,6 +627,7 @@ namespace OpenAuth.App.ClientRelation
             {
                 var jobrelations = UnitWork.FindSingle<OpenAuth.Repository.Domain.JobClientRelation>(a => a.Jobid == jobScript.JobId && a.IsDelete == 0);
                 jobrelations.Terminals = jobScript.EndCustomerName;
+                jobrelations.AffiliateData = jobScript.ClientName;
                 await UnitWork.UpdateAsync<JobClientRelation>(jobrelations);
             }
             

@@ -1744,6 +1744,8 @@ namespace OpenAuth.App.Client
                         Operatorid = loginUser.Id,
                         Initial = 1
                     });
+  
+
                     result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(updateClientJobReq.JobId), UserId, OCRD.FreeText, "", 0);
                     if (result == "1")
                     {
