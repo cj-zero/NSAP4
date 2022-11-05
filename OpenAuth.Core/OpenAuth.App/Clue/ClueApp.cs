@@ -123,6 +123,7 @@ namespace OpenAuth.App
 
                                     where !string.IsNullOrEmpty(clueListReq.Contacts) ? b.Name.Contains(clueListReq.Contacts) : true
                                     where !string.IsNullOrEmpty(clueListReq.Address) ? b.Address2.Contains(clueListReq.Address) : true
+                                    where !string.IsNullOrEmpty(clueListReq.slpName) ? b.CreateUser.Contains(clueListReq.slpName) : true
                                     orderby a.Id descending
                                     select new ClueListDto
                                     {

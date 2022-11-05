@@ -51,6 +51,9 @@ namespace OpenAuth.App.Clue.Request
         /// 排序字段
         /// </summary>
         public string sortName { get; set; }
-
+        /// <summary>
+        /// 归属业务员
+        /// </summary>
+        public string slpName { get; set; }
     }
 }
