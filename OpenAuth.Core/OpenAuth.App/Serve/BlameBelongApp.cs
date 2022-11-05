@@ -592,7 +592,7 @@ namespace OpenAuth.App.Serve
                                 await UnitWork.UpdateAsync<FlowInstance>(c => c.Id == flowinstace.Id, c => new FlowInstance { MakerList = "1" });//自动同意前 将审批人设为全部
                                 //var sql = $"update flowinstance set MakerList='1' where Id='{flowinstace.Id}'";
                                 //UnitWork.ExecuteNonQuery(ContextType.DefaultContextType, CommandType.Text, sql);
-                                await Task.Delay(500);
+                                await Task.Delay(1000);
                                 await _flowInstanceApp.Verification(verificationReq);
 
                                 //下一环节 根据不同单据 流转不同的人
