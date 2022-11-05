@@ -8,6 +8,7 @@ using Infrastructure.Extensions;
 using Magicodes.ExporterAndImporter.Core;
 using Magicodes.ExporterAndImporter.Excel;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OpenAuth.App.Interface;
@@ -36,6 +37,9 @@ namespace OpenAuth.App
         private readonly PendingApp _pendingApp;
         private readonly QuotationApp _quotationApp;
         private readonly UserManagerApp _userManagerApp;
+        private readonly RevelanceManagerApp _revelanceApp;
+        private HttpHelper _helper;
+        private IOptions<AppSetting> _appConfiguration;
 
         /// <summary>
         /// 加载列表
@@ -1084,6 +1088,10 @@ namespace OpenAuth.App
                 await UnitWork.UpdateAsync<OutsourcExpenses>(o => o.OutsourcId == outsourcObj.Id && o.ExpenseType == 3, o => new OutsourcExpenses { Money = 0 });
                 await UnitWork.DeleteAsync<OutsourcExpenseOrg>(o => outsourcObj.OutsourcExpenses.Select(e => e.Id).Contains(o.ExpenseId));
                 if (!string.IsNullOrWhiteSpace(outsourcObj.QuotationId.ToString())) await _quotationApp.CancellationSalesOrder(new QueryQuotationListReq { QuotationId = outsourcObj.QuotationId });
+                if (outsourcObj.OutsourcReportId != null && outsourcObj.OutsourcReportId > 0)
+                {
+                    await UnitWork.UpdateAsync<OutsourcReport>(c => c.Id == outsourcObj.OutsourcReportId, c => new OutsourcReport { Status = 2, MakerList = "" });
+                }
             }
             else
             {
@@ -1825,15 +1833,337 @@ namespace OpenAuth.App
         //}
         #endregion
 
-        public OutsourcApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, PendingApp pendingApp, WorkbenchApp workbenchApp,
-            QuotationApp quotationApp, ModuleFlowSchemeApp moduleFlowSchemeApp, IAuth auth, UserManagerApp userManagerApp) : base(unitWork, auth)
+        /// <summary>
+        /// 提交审核报表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> CreateReport(CreateReportReq req)
         {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            Infrastructure.Response result = new Infrastructure.Response();
+            var outsourcObj = await OutsourcCondition(req.Ids);
+            if (outsourcObj.Any(c => c.StatusName == "驳回"))
+            {
+                result.Code = 500;
+                result.Message = "驳回状态的结算请勿提交。";
+                return result;
+            }
+            if (outsourcObj.Any(c => c.OutsourcReportId > 0))
+            {
+                result.Code = 500;
+                result.Message = "已提交过的结算，请勿重复提交。";
+                return result;
+            }
+            var report = await UnitWork.Find<OutsourcReport>(null).OrderByDescending(c => c.Id).FirstOrDefaultAsync();
+            var year = DateTime.Now.Year.ToString();
+            var num = "01";
+            int temp = 1;
+            if (report != null)
+            {
+                temp = Convert.ToInt32(report.BatchNo?.Split(year)[1]);
+                temp++;
+            }
+            if (temp < 10)
+                num = $"0{temp}";
+            else
+                num = temp.ToString();
+            //批次单号
+            var batchNo = $"SHDL{year}{num}";
+
+            var makerList = "";
+            var roleId = await UnitWork.Find<Role>(c => c.Name == "总经理").FirstOrDefaultAsync();
+            var users = _revelanceApp.Get(Define.USERROLE, false, roleId?.Id);
+            makerList = GenericHelpers.ArrayToString(users, makerList);
+            OutsourcReport outsourcReport = new OutsourcReport();
+            outsourcReport.BatchNo = batchNo;
+            outsourcReport.Name = req.Name;
+            outsourcReport.CreateTime = DateTime.Now;
+            outsourcReport.CreateUser = loginContext.User.Name;
+            outsourcReport.CreateUserId = loginContext.User.Id;
+            outsourcReport.Status = 3;
+            outsourcReport.MakerList = makerList;
+            outsourcReport = await UnitWork.AddAsync<OutsourcReport, int>(outsourcReport);
+            await UnitWork.SaveAsync();
+
+            await UnitWork.UpdateAsync<Outsourc>(c => req.Ids.Contains(c.Id), c => new Outsourc { OutsourcReportId = outsourcReport.Id });
+            await UnitWork.SaveAsync();
+            return result;
+        }
+
+
+        /// <summary>
+        /// 撤回
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> RevocationReport(int id)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            Infrastructure.Response result = new Infrastructure.Response();
+            var report = await UnitWork.Find<OutsourcReport>(c => c.Id == id).FirstOrDefaultAsync();
+            if (report.Status != 3)
+            {
+                result.Code = 500;
+                result.Message = "该状态不能撤回。";
+                return result;
+            }
+            await UnitWork.UpdateAsync<OutsourcReport>(c => c.Id == id, c => new OutsourcReport { Status = 1 });
+            await UnitWork.SaveAsync();
+            return result;
+        }
+
+        /// <summary>
+        /// 解散报表
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<Infrastructure.Response> DissolutionReport(int id)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            Infrastructure.Response result = new Infrastructure.Response();
+            var report = await UnitWork.Find<OutsourcReport>(c => c.Id == id).FirstOrDefaultAsync();
+            if (report.Status > 2)
+            {
+                result.Code = 500;
+                result.Message = "该状态不能解散报表。";
+                return result;
+            }
+
+            await UnitWork.UpdateAsync<Outsourc>(c => c.OutsourcReportId == id, c => new Outsourc { OutsourcReportId = null });
+            await UnitWork.DeleteAsync<OutsourcReport>(c => c.Id == id);
+            await UnitWork.SaveAsync();
+            return result;
+        }
+
+
+        /// <summary>
+        /// 获取报表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetReport(QueryoutsourcListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            var loginUser = loginContext.User;
+            var resport = UnitWork.Find<OutsourcReport>(null)
+                               .WhereIf(!string.IsNullOrWhiteSpace(request.BatchNo), q => q.BatchNo.Contains(request.BatchNo))
+                               .WhereIf(!string.IsNullOrWhiteSpace(request.Name), q => q.Name.Contains(request.Name))
+                               .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), q => q.CreateUser.Contains(request.CreateName))
+                               .WhereIf(request.Status != null, q => q.Status == request.Status)
+                               .WhereIf(!string.IsNullOrWhiteSpace(request.StartTime.ToString()), q => q.CreateTime > request.StartTime)
+                               .WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), q => q.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1));
+            if (request.PageType == 1)
+            {
+                resport = resport.Where(c => c.CreateUserId == loginUser.Id);
+            }
+            else if (request.PageType == 2)//待处理
+            {
+                resport = resport.Where(c => c.MakerList.Contains(loginUser.Id));
+            }
+            else if (request.PageType == 3)//已处理
+            {
+                resport = resport.Where(c => c.ProcessedList.Contains(loginUser.Id));
+            }
+            result.Count = await resport.CountAsync();
+            result.Data = await resport.OrderByDescending(c => c.CreateTime).Skip((request.page - 1) * request.limit).Take(request.limit).ToListAsync();
+            return result;
+        }
+
+        /// <summary>
+        /// 获取报表详情
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        public async Task<TableData> GetReportDetail(QueryoutsourcListReq request)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            List<string> userId = new List<string>();
+            if (!string.IsNullOrWhiteSpace(request.OrgName))
+            {
+                var orgId = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(c => c.Name.Contains(request.OrgName)).Select(c => c.Id).ToListAsync();
+                userId.AddRange(await UnitWork.Find<Relevance>(c => orgId.Contains(c.SecondId) && c.Key == Define.USERORG).Select(c => c.FirstId).ToListAsync());
+            }
+            var incomeSummry = await UnitWork.Find<IncomeSummary>(c => c.Year == DateTime.Now.Year && c.Month == DateTime.Now.Month && c.Type == 1).ToListAsync();
+            var catetory = await UnitWork.Find<Category>(c => c.TypeId == "SYS_SettlementOrg").Select(c => c.DtValue).ToListAsync();
+            var outsourcIds = await UnitWork.Find<OutsourcExpenses>(null)
+                //.WhereIf(serviceOrderId.Count > 0, o => serviceOrderId.Contains(o.ServiceOrderId.Value))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.ServiceOrderSapId), o => o.ServiceOrderSapId == int.Parse(request.ServiceOrderSapId))
+                .WhereIf(!string.IsNullOrWhiteSpace(request.Customer), o => o.TerminalCustomer.Contains(request.Customer) || o.TerminalCustomerId.Contains(request.Customer))
+                .Select(c => c.OutsourcId)
+                .Distinct()
+                .ToListAsync();
+
+            var query = UnitWork.Find<Outsourc>(c => c.OutsourcReportId == request.ReportId).Include(c => c.OutsourcExpenses)
+                                .WhereIf(userId.Count() > 0, c => userId.Contains(c.CreateUserId))
+                               .WhereIf(!string.IsNullOrWhiteSpace(request.CreateName), q => q.CreateUser.Contains(request.CreateName))
+                               .WhereIf(!string.IsNullOrWhiteSpace(request.StartTime.ToString()), q => q.CreateTime > request.StartTime)
+                               .WhereIf(!string.IsNullOrWhiteSpace(request.EndTime.ToString()), q => q.CreateTime < Convert.ToDateTime(request.EndTime).AddDays(1))
+                               .Where(o => outsourcIds.Contains(o.Id));
+
+            var outsourcList = await query.ToListAsync();
+            var serviceOrderIds = outsourcList.Select(o => o.OutsourcExpenses.FirstOrDefault()?.ServiceOrderId).ToList();
+            var serviceWorkOrder = await UnitWork.Find<ServiceWorkOrder>(s => serviceOrderIds.Contains(s.ServiceOrderId)).Select(c => new { c.CurrentUserNsapId, c.ServiceOrderId, c.FromTheme, c.ManufacturerSerialNumber, c.MaterialCode }).ToListAsync();
+            var flowInstanceList = await UnitWork.Find<FlowInstance>(f => outsourcList.Select(o => o.FlowInstanceId).ToList().Contains(f.Id)).ToListAsync();
+            var userIds = outsourcList.Select(o => o.CreateUserId).ToList();
+            var appUser = await UnitWork.Find<AppUserMap>(c => userIds.Contains(c.UserID)).ToListAsync();
+            var SelOrgName = await UnitWork.Find<OpenAuth.Repository.Domain.Org>(null).Select(o => new { o.Id, o.Name, o.CascadeId }).ToListAsync();
+            var Relevances = await UnitWork.Find<Relevance>(r => r.Key == Define.USERORG && userIds.Contains(r.FirstId)).Select(r => new { r.FirstId, r.SecondId }).ToListAsync();
+
+            //获取技术员等级
+            List<TechnicianGrades> grades = new List<TechnicianGrades>();
+            var appuserIds = appUser.Select(c => c.AppUserId).ToList();
+            var timespan = DatetimeUtil.ToUnixTimestampBySeconds(DateTime.Now.AddMinutes(5));
+            var text = $"NewareApiTokenDeadline:{timespan}";
+            var aes = Encryption.AESEncrypt(text);
+            var grade= _helper.Post(new
+            {
+                UserIds = appuserIds,
+            }, (string.IsNullOrEmpty(_appConfiguration.Value.AppVersion) ? string.Empty : _appConfiguration.Value.AppVersion + "/") + "Exam/GetTechnicianGrades", "EncryToken", aes);
+            JObject resObj = JObject.Parse(grade);
+            if (resObj["Data"] != null)
+            {
+                grades = JsonHelper.Instance.Deserialize<List<TechnicianGrades>>(resObj["Data"].ToString());
+            }
+
+            var outsourcObj = outsourcList.Select(o =>
+             {
+                 var orgName = SelOrgName.Where(s => s.Id.Equals(Relevances.Where(r => r.FirstId.Equals(o.CreateUserId)).FirstOrDefault()?.SecondId)).FirstOrDefault()?.Name;
+                 var outsourcexpensesObj = o.OutsourcExpenses.FirstOrDefault();
+                 var serviceWorkOrderObj = serviceWorkOrder.Where(s => s.ServiceOrderId == outsourcexpensesObj?.ServiceOrderId && s.CurrentUserNsapId.Equals(o.CreateUserId)).FirstOrDefault();
+
+                 return new
+                 {
+                     o.Id,
+                     o.ServiceMode,
+                     UpdateTime = Convert.ToDateTime(o.UpdateTime).ToString("yyyy.MM.dd HH:mm:ss"),
+                     CreateTime = Convert.ToDateTime(o.CreateTime).ToString("yyyy.MM.dd HH:mm:ss"),
+                     outsourcexpensesObj?.ServiceOrderSapId,
+                     outsourcexpensesObj?.TerminalCustomer,
+                     outsourcexpensesObj?.TerminalCustomerId,
+                     serviceWorkOrderObj?.FromTheme,
+                     serviceWorkOrderObj?.ManufacturerSerialNumber,
+                     serviceWorkOrderObj?.MaterialCode,
+                     StatusName = o.FlowInstanceId == null ? "未提交" : flowInstanceList.Where(f => f.Id.Equals(o.FlowInstanceId)).FirstOrDefault()?.IsFinish == FlowInstanceStatus.Rejected ? "驳回" : flowInstanceList.Where(f => f.Id.Equals(o.FlowInstanceId)).FirstOrDefault()?.ActivityName == "开始" ? "未提交" : flowInstanceList.Where(f => f.Id.Equals(o.FlowInstanceId)).FirstOrDefault()?.ActivityName == "结束" ? "已支付" : flowInstanceList.Where(f => f.Id.Equals(o.FlowInstanceId)).FirstOrDefault()?.ActivityName,
+                     PayTime = o.PayTime != null ? Convert.ToDateTime(o.PayTime).ToString("yyyy.MM.dd HH:mm:ss") : null,
+                     o.TotalMoney,
+                     CreateUser = orgName == null ? o.CreateUser : orgName + "-" + o.CreateUser,
+                     o.CreateUserId,
+                     o.Remark,
+                     IsRejected = o.IsRejected ? "是" : null,
+                     ServiceFee = o.OutsourcExpenses.Where(c => c.ExpenseType == 4).Sum(c => c.Money),
+                     WorkingHoursFee = o.OutsourcExpenses.Where(c => c.ExpenseType == 3).Sum(c => c.Money),
+                     TransportationFee = o.OutsourcExpenses.Where(c => c.ExpenseType == 1).Sum(c => c.Money),
+                     AccommodationFee = o.OutsourcExpenses.Where(c => c.ExpenseType == 2).Sum(c => c.Money),
+                     OtherFee = o.OutsourcExpenses.Where(c => c.ExpenseType == 5).Sum(c => c.Money),
+                     OrgName = orgName,
+                     AppUserId = appUser.Where(a => a.UserID == o.CreateUserId).FirstOrDefault()?.AppUserId
+                 };
+
+             }).ToList();
+
+            var outsourcResult = outsourcObj.GroupBy(c => c.CreateUser).Select(c => new
+            {
+                CreateUser = c.Key,
+                Ident = catetory.Contains(c.First().OrgName) ? "内部员工" : "独立运营",
+                ServiceCount = incomeSummry.Where(i => i.UserId == c.First().CreateUserId).FirstOrDefault()?.Quantity,
+                TechnicianGrade = grades.Where(g => g.AppUserId == c.First().AppUserId).FirstOrDefault()?.GradeName,
+                ServiceFee = c.Sum(s => s.ServiceFee),
+                WorkingHoursFee = c.Sum(s => s.WorkingHoursFee),
+                TransportationFee = c.Sum(s => s.TransportationFee),
+                AccommodationFee = c.Sum(s => s.AccommodationFee),
+                OtherFee = c.Sum(s => s.OtherFee),
+                TotalMoney = c.Sum(s => s.TotalMoney),
+                Detail = c
+            });
+            result.Data = outsourcResult;
+            return result;
+        }
+
+        /// <summary>
+        /// 通过报表
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task BatchAccraditationByReport(int id)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            var report = await UnitWork.Find<OutsourcReport>(c => c.Id == id).FirstOrDefaultAsync();
+            var outsourc = await UnitWork.Find<Outsourc>(c => c.OutsourcReportId == id).Select(c => c.Id).ToListAsync();
+            var list = outsourc.Select(c => new AccraditationOutsourcReq
+            {
+                IsReject = false,
+                OutsourcId = c.ToString()
+            }).ToList();
+            await BatchAccraditation(list);
+
+            var makerList = "";
+            if (report.Status == 3)
+            {
+                var roleId = await UnitWork.Find<Role>(c => c.Name == "出纳").FirstOrDefaultAsync();
+                var users = _revelanceApp.Get(Define.USERROLE, false, roleId?.Id);
+                makerList = GenericHelpers.ArrayToString(users, makerList);
+            }
+
+            report.ProcessedList += "," + loginContext.User.Id;
+            report.Status += 1;
+            await UnitWork.UpdateAsync<OutsourcReport>(c => c.Id == id, c => new OutsourcReport { MakerList = makerList, Status = report.Status, ProcessedList = report.ProcessedList });
+            await UnitWork.SaveAsync();
+        }
+
+
+        public async Task<List<OutsourcCondition>> OutsourcCondition(List<int> ids)
+        {
+            var outsourc = await UnitWork.Find<Outsourc>(c => ids.Contains(c.Id)).Select(c => new { c.Id, c.FlowInstanceId, c.OutsourcReportId }).ToListAsync();
+
+            var flowInstanceList = await UnitWork.Find<FlowInstance>(f => outsourc.Select(o => o.FlowInstanceId).ToList().Contains(f.Id)).Select(c => new { c.Id, c.IsFinish, c.ActivityName }).ToListAsync();
+
+            var result = outsourc.Select(o => new OutsourcCondition
+            {
+                Id = o.Id,
+                OutsourcReportId = o.OutsourcReportId,
+                StatusName = o.FlowInstanceId == null ? "未提交" : flowInstanceList.Where(f => f.Id.Equals(o.FlowInstanceId)).FirstOrDefault()?.IsFinish == FlowInstanceStatus.Rejected ? "驳回" : flowInstanceList.Where(f => f.Id.Equals(o.FlowInstanceId)).FirstOrDefault()?.ActivityName == "开始" ? "未提交" : flowInstanceList.Where(f => f.Id.Equals(o.FlowInstanceId)).FirstOrDefault()?.ActivityName == "结束" ? "已支付" : flowInstanceList.Where(f => f.Id.Equals(o.FlowInstanceId)).FirstOrDefault()?.ActivityName
+            }).ToList();
+            return result;
+        }
+        public OutsourcApp(IUnitWork unitWork, FlowInstanceApp flowInstanceApp, PendingApp pendingApp, WorkbenchApp workbenchApp,
+            QuotationApp quotationApp, ModuleFlowSchemeApp moduleFlowSchemeApp, RevelanceManagerApp app, IAuth auth, UserManagerApp userManagerApp, IOptions<AppSetting> appConfiguration) : base(unitWork, auth)
+        {
+            _appConfiguration = appConfiguration;
             _flowInstanceApp = flowInstanceApp;
             _moduleFlowSchemeApp = moduleFlowSchemeApp;
             _workbenchApp = workbenchApp;
             _quotationApp = quotationApp;
             _pendingApp = pendingApp;
             _userManagerApp = userManagerApp;
+            _revelanceApp = app;
+            _helper = new HttpHelper(_appConfiguration.Value.AppPushMsgUrl);
         }
     }
 }

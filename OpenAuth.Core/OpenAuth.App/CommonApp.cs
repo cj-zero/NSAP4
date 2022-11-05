@@ -917,7 +917,7 @@ namespace OpenAuth.App
                         {
                             Month = a.Name,
                             //Detail = b == null ? null : b.Child ,
-                            CS17 = b == null ? 0 : b.Child.Where(c => c.OrgName == "CS17").Sum(c => c.Money),
+                            cs17 = b == null ? 0 : b.Child.Where(c => c.OrgName == "CS17").Sum(c => c.Money),
                             CSYH = b == null ? 0 : b.Child.Where(c => c.OrgName == "CSYH").Sum(c => c.Money),
                             Other = b == null ? 0 : b.Child.Where(c => c.OrgName != "CSYH" && c.OrgName != "CS17").Sum(c => c.Money),
                             Total = b == null ? 0 : b.Child.Sum(c => c.Money),
@@ -993,6 +993,7 @@ namespace OpenAuth.App
             {
                 OrgName = userInfoOnly.Where(u => u.FirstId == c.First().CreateUserId).FirstOrDefault()?.Name,
                 UserName = c.Key,
+                UserId = c.First().CreateUserId,
                 Paid = c.Where(d => d.ActivityName == "结束").Sum(d => d.TotalMoney),
                 Paying = c.Where(d => d.ActivityName == "财务支付").Sum(d => d.TotalMoney),
                 Approval = c.Where(d => d.ActivityName != "财务支付" && d.ActivityName != "结束").Sum(d => d.TotalMoney),
@@ -1014,6 +1015,32 @@ namespace OpenAuth.App
                 }
             }
             result.Data = data;
+            return result;
+        }
+
+        /// <summary>
+        /// 个人历史结算
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        public async Task<TableData> SettlementAmountSingleDetail(QueryReportReq req)
+        {
+            var loginContext = _auth.GetCurrentUser();
+            if (loginContext == null)
+            {
+                throw new CommonException("登录已过期", Define.INVALID_TOKEN);
+            }
+            TableData result = new TableData();
+            var outsourc = await UnitWork.Find<Outsourc>(c => c.CreateUserId == req.CreateUserId)
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.Year), c => c.CreateTime.Value.Year == int.Parse(req.Year))
+                            .WhereIf(!string.IsNullOrWhiteSpace(req.Month), c => c.CreateTime.Value.Month == int.Parse(req.Month))
+                            .ToListAsync();
+            var outsourcObj = outsourc.GroupBy(c => c.CreateTime.Value.Month).Select(c => new { Month = c.Key, TotalMoney = c.Sum(s => s.TotalMoney) }).ToList();
+            var query = (from a in monthTemp
+                         join b in outsourcObj on a.ID equals b.Month into ab
+                         from b in ab.DefaultIfEmpty()
+                         select new { Month = a.Name, TotalMoney = b == null ? 0 : b.TotalMoney }).ToList();
+            result.Data = new { Detail = query, TotalMoney = outsourcObj.Sum(c => c.TotalMoney), ServiceCount = outsourc.Count() };
             return result;
         }
 

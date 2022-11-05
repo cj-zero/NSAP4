@@ -5,6 +5,7 @@ namespace OpenAuth.App.Request
 {
     public class QueryoutsourcListReq : PageReq
     {
+        public int Id { get; set; }
         /// <summary>
         /// 结算单id
         /// </summary>
@@ -91,5 +92,12 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string FromTheme { get; set; }
         public string StatusType { get; set; }
+
+        public string BatchNo { get; set; }
+        public string Name { get; set; }
+        public int? Status { get; set; }
+        public int? ReportId { get; set; }
+
+        public string OrgName { get; set; }
     }
 }
