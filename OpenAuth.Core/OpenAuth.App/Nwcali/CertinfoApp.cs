@@ -516,7 +516,7 @@ namespace OpenAuth.App
                                 });
                                 await UnitWork.UpdateAsync<NwcaliBaseInfo>(b => b.CertificateNumber == certNo, o => new NwcaliBaseInfo { ApprovalDirector = loginContext.User.Name, ApprovalDirectorId = loginContext.User.Id });
                                 await UnitWork.SaveAsync();
-                                //await CreateNwcailFile(certNo);
+                                await CreateNwcailFile(certNo);
                             }
                             else if (flowInstance.ActivityName.Equals("开始") && flowInstance.IsFinish == -1)
                             {
