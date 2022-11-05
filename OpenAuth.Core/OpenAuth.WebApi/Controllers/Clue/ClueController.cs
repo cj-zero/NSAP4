@@ -128,6 +128,23 @@ namespace OpenAuth.WebApi.Controllers.Clue
             return result;
         }
 
+        [HttpGet]
+        [Route("GetCluePattern")]
+        public async Task<Response> GetCluePattern(string pattern)
+        {
+            var result = new Response<List<CluePattern>>();
+            try
+            {
+                result.Result = await _clueApp.GetCluePattern(pattern);
+            }
+            catch (Exception ex)
+            {
+
+                result.Message = ex.Message;
+            }
+            return result;
+        }
+
         /// <summary>
         /// 线索状态轮转
         /// </summary>
