@@ -2163,9 +2163,9 @@ namespace OpenAuth.App
             }
             return flag;
         }
-        public List<TechnicianGrade> GetTechnicianGrade(int?[] userArr)
+        public List<TechnicianGrades> GetTechnicianGrade(int?[] userArr)
         {
-            var technicianLevelList = new List<TechnicianGrade>();
+            var technicianLevelList = new List<TechnicianGrades>();
             try
             {
                 var timespan = DatetimeUtil.ToUnixTimestampBySeconds(DateTime.Now.AddMinutes(5));
@@ -2180,7 +2180,7 @@ namespace OpenAuth.App
                 JObject resObj = JObject.Parse(grade);
                 if (resObj["Data"] != null)
                 {
-                    technicianLevelList = JsonHelper.Instance.Deserialize<List<TechnicianGrade>>(resObj["Data"].ToString());
+                    technicianLevelList = JsonHelper.Instance.Deserialize<List<TechnicianGrades>>(resObj["Data"].ToString());
                 }
             }
             catch (Exception ex)
@@ -9116,11 +9116,7 @@ namespace OpenAuth.App
             //await UnitWork.BatchAddAsync<ServiceWorkOrder, int>(serviceOrders.ToArray());
             await UnitWork.SaveAsync();
         }
-        public class TechnicianGrade
-        {
-            public int AppUserId { get; set; }
-            public string GradeName { get; set; }
-        }
+ 
     }
 
 }
