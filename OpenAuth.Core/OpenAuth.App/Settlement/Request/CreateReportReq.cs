@@ -20,6 +20,6 @@ namespace OpenAuth.App.Settlement.Request
     public class TechnicianGrades
     {
         public int AppUserId { get; set; }
-        public int GradeName { get; set; }
+        public string GradeName { get; set; }
     }
 }
