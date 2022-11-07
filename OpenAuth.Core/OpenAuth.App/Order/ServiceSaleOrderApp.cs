@@ -41,6 +41,7 @@ using Newtonsoft.Json;
 using OpenAuth.App.Client.Request;
 using SAPbobsCOM;
 using DocumentFormat.OpenXml.Math;
+using Serilog.Context;
 
 namespace OpenAuth.App.Order
 {
@@ -479,6 +480,10 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             {
                 U_FPLB = ",a.U_FPLB";
             }
+
+
+
+
             filefName.AppendFormat(" a.CardCode,a.CardName,a.CntctPrsn,b.SlpName,a.Currency,a.Balance,(ISNULL(ZipCode,'')+ISNULL(c.Name,'')+ISNULL(d.Name,'')+ISNULL(City,'')+ISNULL(CONVERT(VARCHAR(100),Building),'''')) AS Address,(ISNULL(MailZipCod,'')+ISNULL(e.Name,'')+ISNULL(f.Name,'')+ISNULL(MailCity,'')+ISNULL(CONVERT(VARCHAR(100),MailBuildi),'''')) AS Address2{0},a.SlpCode", U_FPLB);
             tableName.AppendFormat(" " + sboname + "OCRD a");
             tableName.AppendFormat(" LEFT JOIN " + sboname + "OSLP b ON a.SlpCode=b.SlpCode");
@@ -486,6 +491,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             tableName.AppendFormat(" LEFT JOIN " + sboname + "OCST d ON a.State1=c.Code");
             tableName.AppendFormat(" LEFT JOIN " + sboname + "OCRY e ON a.MailCountr=e.Code");
             tableName.AppendFormat(" LEFT JOIN " + sboname + "OCST f ON a.State1=f.Code");
+
             List<SqlParameter> sqlParameters = new List<SqlParameter>()
             {
                 new SqlParameter("@strFrom",tableName.ToString()),
@@ -1053,8 +1059,13 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             string filterString = string.Empty;
             //lims推广员），只能选对应产品的对应物料编码。lims软件的物料编码： S111-SERVICE-LIMS  && u.Type == "LIMS"
             var currentUser = _auth.GetCurrentUser().User;
-            var erpLims = UnitWork.Find<LimsInfo>(u => u.UserId == currentUser.Id && u.Type == "LIMS").ToList();
-            //var lims1 = UnitWork.FromSql<LimsInfo>(" SELECT * from client_limsinfo where Type =\"LIMS\" AND UserId =\"" + currentUser.Id + "\" ").ToList();
+            int slpCode = UnitWork.Find<sbo_user>(q => q.user_id == currentUser.User_Id).Select(q => q.sale_id).FirstOrDefault().Value;
+            var erpLims = UnitWork.Find<LimsInfo>(u => u.UserId == currentUser.Id && u.Type == "LIMS").FirstOrDefault();
+            var erpLimsClient = new List<LimsInfoMap>();
+            if (erpLims != null)
+            {
+                erpLimsClient.AddRange(UnitWork.Find<LimsInfoMap>(u => u.LimsInfoId == erpLims.Id).ToList());
+            }
 
 
             if (!string.IsNullOrEmpty(query.SortName) && !string.IsNullOrEmpty(query.SortOrder))
@@ -1065,9 +1076,19 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             {
                 filterString += string.Format("(m.ItemCode LIKE '%{0}%' OR m.ItemName LIKE '%{0}%') AND ", query.ItemCode.FilterWildCard());
             }
-            if (erpLims!=null)
+            if (erpLims!=null )
             {
-                filterString += string.Format(" (m.ItemCode = \"{0}\" ) AND  ", "S111-SERVICE-LIMS");
+                //judge the client belongs to the follower or not
+                if (erpLimsClient.Exists(a=>a.CardCode == query.CardCode))
+                {
+                    var relateClientSlpCode = UnitWork.Find<crm_ocrd>(x => x.CardCode == query.CardCode).FirstOrDefault();
+                    if (relateClientSlpCode.SlpCode != slpCode)
+                    {
+                        filterString += string.Format(" (m.ItemCode = \"{0}\" ) AND  ", "S111-SERVICE-LIMS");
+                    }
+                    
+                }
+                
             }
 
             if (query.TypeId == "1")

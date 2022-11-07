@@ -429,7 +429,7 @@ namespace OpenAuth.App
                     Tel1 = contactItem.Tel1,
                     Email = contactItem.Email,
                     Position = contactItem.Position,
-                    Address1 = contactItem.Address,
+                    Address2 = contactItem.Address,
                     CreateTime = DateTime.Now,
                     CreateUser = loginUser.Name,
                     IsDefault = contactItem.IsDefault
