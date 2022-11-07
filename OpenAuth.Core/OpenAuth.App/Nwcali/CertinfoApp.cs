@@ -594,6 +594,22 @@ namespace OpenAuth.App
             }
         }
 
+        public async Task CreateNwcailFileHelper2(int? docentry)
+        {
+            var manufacturerSerialNumber = await (from a in UnitWork.Find<store_oitl>(null)
+                                                  join b in UnitWork.Find<store_itl1>(null) on new { a.LogEntry, a.ItemCode } equals new { b.LogEntry, b.ItemCode } into ab
+                                                  from b in ab.DefaultIfEmpty()
+                                                  join c in UnitWork.Find<store_osrn>(null) on new { b.ItemCode, b.SysNumber } equals new { c.ItemCode, c.SysNumber } into bc
+                                                  from c in bc.DefaultIfEmpty()
+                                                  where a.DocType == 15 && a.BaseEntry == docentry && !string.IsNullOrWhiteSpace(c.MnfSerial)
+                                                  select c.MnfSerial).ToListAsync();
+            var res = await UnitWork.Find<NwcaliBaseInfo>(c => manufacturerSerialNumber.Contains(c.TesterSn) && !string.IsNullOrWhiteSpace(c.ApprovalDirectorId) && string.IsNullOrWhiteSpace(c.CNASPdfPath)).OrderByDescending(c => c.Time).ToListAsync();
+            foreach (var item in res)
+            {
+                await CreateNwcailFile(item.CertificateNumber);
+            }
+        }
+
         /// <summary>
         /// 批量生成证书文件
         /// </summary>
