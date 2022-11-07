@@ -43,6 +43,8 @@ using SAPbobsCOM;
 using DocumentFormat.OpenXml.Math;
 using Serilog.Context;
 using OpenAuth.App.ClientRelation.Response;
+using System.Reactive.Joins;
+using OpenAuth.App.Clue.ModelDto;
 
 namespace OpenAuth.App.Order
 {
@@ -1085,8 +1087,11 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 //judge the client belongs to the follower or not
                 if (erpLimsClient.Exists(a=>a.CardCode == query.CardCode))
                 {
-                    var relateClientSlpCode = UnitWork.Find<crm_ocrd>(x => x.CardCode == query.CardCode).FirstOrDefault();
-                    if (relateClientSlpCode.SlpCode != slpCode)
+                    StringBuilder strSql = new StringBuilder();
+                    strSql.AppendFormat("select SlpCode,CardCode from crm_ocrd u where u.CardCode = \"{0}\"  ", query.CardCode);
+                    var limslpcode = UnitWork.ExcuteSql<SaleSlp>(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null);
+                    //var relateClientSlpCode = UnitWork.Find<crm_ocrd>(x => x.CardCode == query.CardCode).FirstOrDefault();
+                    if (limslpcode.FirstOrDefault() != null && limslpcode.FirstOrDefault().SlpCode != slpCode)
                     {
                         filterString += string.Format(" (m.ItemCode = \"{0}\" ) AND  ", "S111-SERVICE-LIMS");
                     }
