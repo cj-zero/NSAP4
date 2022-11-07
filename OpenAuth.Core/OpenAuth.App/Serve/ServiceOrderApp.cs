@@ -2085,16 +2085,9 @@ namespace OpenAuth.App
                 && (string.IsNullOrWhiteSpace(req.QryFromTheme) || a.FromTheme.Contains(req.QryFromTheme))
                 && (req.CompleteDate == null || (a.CompleteDate > req.CompleteDate))
                 && (req.EndCompleteDate == null || (a.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1)))
-                ).OrderBy(a => a.Status).ToList(),
+                ).OrderBy(a => a.Status).Take(20).ToList(),
             }).ToList();
-            data.ForEach(c =>
-            {
-                if (c.VestInOrg == 1)
-                {
-                    c.MaterialTypes = c.ServiceWorkOrders.Select(s => s.MaterialCode.IndexOf("-") == -1 ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-"))).Distinct().ToList();
-                    //c.MaterialTypes = c.ServiceWorkOrders.Select(s => s.MaterialCode == "无序列号" ? "无序列号" : (s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")) == "" ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-")))).Distinct().ToList();
-                }
-            });
+           
             userId = new List<string>();
             foreach (var item in resultsql)
             {
@@ -2109,7 +2102,10 @@ namespace OpenAuth.App
             var technicianLevelList = GetTechnicianGrade(AppUserId.Select(a => a.AppUserId).ToArray());
             foreach (var item in data)
             {
-
+                if (item.VestInOrg == 1)
+                {
+                    item.MaterialTypes = item.ServiceWorkOrders.Select(s => s.MaterialCode.IndexOf("-") == -1 ? "无序列号" : s.MaterialCode.Substring(0, s.MaterialCode.IndexOf("-"))).Distinct().ToList();
+                }
                 foreach (var item2 in item.ServiceWorkOrders)
                 {
           
