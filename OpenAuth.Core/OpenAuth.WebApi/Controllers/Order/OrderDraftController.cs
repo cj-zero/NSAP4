@@ -398,7 +398,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                         // get related client
                         var erpLimsClient = new List<string>();
                         erpLimsClient.AddRange(UnitWork.Find<LimsInfoMap>(u => u.LimsInfoId == erpLims.Id).Select(u=>u.CardCode).ToList());
-                        filterString += string.Format(" ( LOCATE(a.CardCode , \"{0}\")  > 0 ) AND ", JsonConvert.SerializeObject(erpLimsClient).Replace(@"""", ""));
+                        filterString += string.Format(" ( CHARINDEX(a.CardCode , \'{0}\')  > 0 ) AND ", JsonConvert.SerializeObject(erpLimsClient).Replace(@"""", ""));
                     }
                     filterString += string.Format("(a.CardType='C' OR a.CardType='L') AND ");
                 }
