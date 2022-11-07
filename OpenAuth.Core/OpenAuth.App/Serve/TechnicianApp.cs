@@ -37,22 +37,53 @@ namespace OpenAuth.App.Serve
             TableData result = new TableData();
             List<string> listStr = new List<string> { "R8", "R9", "T1", "P5", "P6", "P8", "P26", "M6" };
             var orgList = UnitWork.Find<Repository.Domain.Org>(a => a.ParentName == "售后部" || listStr.Contains(a.Name))
-                .WhereIf(!string.IsNullOrWhiteSpace(req.Org), a => a.Name == req.Org)
+                .WhereIf(!string.IsNullOrWhiteSpace(req.Org), a => a.Name.Contains(req.Org))
                 .Select(a => a.Id).ToList();
-                
-            var userList = (from a in UnitWork.Find<User>(a => a.Status == 0).WhereIf(!string.IsNullOrWhiteSpace(req.Name), a => a.Name == req.Name)
+           
+            var userList = (from a in UnitWork.Find<User>(a => a.Status == 0).WhereIf(!string.IsNullOrWhiteSpace(req.Name), a => a.Name.Contains(req.Name) )
                             join b in UnitWork.Find<Relevance>(a => orgList.Contains(a.SecondId) && a.Key == Define.USERORG) on a.Id equals b.FirstId
                             select a).ToList();
 
-            var order = (UnitWork.Find<ServiceWorkOrder>(a => a.CurrentUserNsapId != null)
+
+            result.Count = userList.Count();
+
+            var order = (UnitWork.Find<ServiceWorkOrder>(a => a.CurrentUserNsapId != null&& (a.Status==7 || a.Status == 8))
                 .GroupBy(a => new { a.CurrentUserNsapId, a.ServiceOrderId })
                 .Select(a => new { a.Key.CurrentUserNsapId, a.Key.ServiceOrderId }))
                 .GroupBy(a => a.CurrentUserNsapId)
                 .Select(a => new { CurrentUserNsapId = a.Key, count = a.Count() });
 
-            var date = DateTime.Now;
-            var userId = userList.Select(a => a.Id).ToList();
+            List<string> userId = new List<string>();
 
+            var tempDeta = from a in userList
+                        join b in order on a.Id equals b.CurrentUserNsapId into n2
+                        from n3 in n2.DefaultIfEmpty()
+                           select new
+                        {
+                            a.Id,
+                            a.Name,
+                            Sex = a.Sex == 0 ? "男" : "女",
+                            a.EntryTime,
+                            count = n3?.count,
+                        };
+            if (req.Sort == "EntryTime")
+            {
+                if (req.SortType == "Desc")
+                    tempDeta = tempDeta.OrderByDescending(a => a.EntryTime);
+                else
+                    tempDeta = tempDeta.OrderBy(a => a.EntryTime);
+            }
+            else if (req.Sort == "Count")
+            {
+                if (req.SortType == "Asc")
+                    tempDeta = tempDeta.OrderBy(a => a.count);
+                else
+                    tempDeta = tempDeta.OrderByDescending(a => a.count);
+            }
+            tempDeta = tempDeta.Skip((req.page - 1) * req.limit)
+                    .Take(req.limit).ToList();
+
+            userId = tempDeta.Select(a => a.Id).ToList();
             //获取工资
             var nsapUserList = UnitWork.Find<NsapUserMap>(a => userId.Contains(a.UserID)).ToList();
             var nsapUserId = nsapUserList.Select(a => (uint)a.NsapUserId);
@@ -69,35 +100,30 @@ namespace OpenAuth.App.Serve
                             join c in UnitWork.Find<OpenAuth.Repository.Domain.Org>(null) on a.SecondId equals c.Id
                             select new { a.FirstId, c.Name }).ToList();
 
-            var data = from a in userList
-                       join u in AppUserId on a.Id equals u.UserID into u2
-                       from us  in u2.DefaultIfEmpty()
+            var date = DateTime.Now;
 
-                       join n in nsapUserList on a.Id     equals n.UserID into  n2
-                       from n3 in n2.DefaultIfEmpty()
+            var data = (from a in tempDeta
+                        join u in AppUserId on a.Id equals u.UserID into u2
+                        from us in u2.DefaultIfEmpty()
 
-                       join b in order on a.Id equals b.CurrentUserNsapId into c
-                       from temp in c.DefaultIfEmpty()
-                       select new
-                       {
-                           a.Id,
-                           us?.AppUserId,
-                           Name = userOrgList.FirstOrDefault(f => f.FirstId == a.Id)?.Name +"-"+  a.Name,
-                           Sex = a.Sex == 0 ? "男" : "女",
-                           a.EntryTime,
-                           Year = GetMonth(date, a.EntryTime),
-                           count = temp?.count,
-                           Grade = technicianLevelList.FirstOrDefault(a => a.AppUserId == us?.AppUserId)?.GradeName,//等级
-                           GradeList =  new { },
-                           Wages = DeSerialize(detail.FirstOrDefault(a => a.user_id == n3?.NsapUserId)?.full_salary)?.conversion_wages,//工资
-                           AgeWages = ""//月均收入
-                       };
+                        join n in nsapUserList on a.Id equals n.UserID into n2
+                        from n3 in n2.DefaultIfEmpty()
 
-
-            result.Count = data.Count();
-            result.Data = data.OrderBy(a => a.EntryTime)
-                .Skip((req.page - 1) * req.limit)
-                .Take(req.limit).ToList();
+                        select new
+                        {
+                            a.Id,
+                            us?.AppUserId,
+                            Name = userOrgList.FirstOrDefault(f => f.FirstId == a.Id)?.Name + "-" + a.Name,
+                           a.Sex,
+                            a.EntryTime,
+                            Year = GetMonth(date, a.EntryTime),
+                            a.count,
+                            Grade = technicianLevelList.FirstOrDefault(a => a.AppUserId == us?.AppUserId)?.GradeName,//等级
+                            GradeList = new { },
+                            Wages = DeSerialize(detail.FirstOrDefault(a => a.user_id == n3?.NsapUserId)?.full_salary)?.conversion_wages,//工资
+                            AgeWages = ""//月均收入
+                        }).ToList();
+            result.Data = data;
             return result;
         }
         public static NSAP.Entity.Admin.conversionWages DeSerialize(byte[] bytes)
