@@ -42,6 +42,7 @@ using OpenAuth.App.Client.Request;
 using SAPbobsCOM;
 using DocumentFormat.OpenXml.Math;
 using Serilog.Context;
+using OpenAuth.App.ClientRelation.Response;
 
 namespace OpenAuth.App.Order
 {
@@ -485,9 +486,6 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                 U_FPLB = ",a.U_FPLB";
             }
 
-
-
-
             filefName.AppendFormat(" a.CardCode,a.CardName,a.CntctPrsn,b.SlpName,a.Currency,a.Balance,(ISNULL(ZipCode,'')+ISNULL(c.Name,'')+ISNULL(d.Name,'')+ISNULL(City,'')+ISNULL(CONVERT(VARCHAR(100),Building),'''')) AS Address,(ISNULL(MailZipCod,'')+ISNULL(e.Name,'')+ISNULL(f.Name,'')+ISNULL(MailCity,'')+ISNULL(CONVERT(VARCHAR(100),MailBuildi),'''')) AS Address2{0},a.SlpCode", U_FPLB);
             tableName.AppendFormat(" " + sboname + "OCRD a");
             tableName.AppendFormat(" LEFT JOIN " + sboname + "OSLP b ON a.SlpCode=b.SlpCode");
@@ -512,9 +510,15 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             paramOut.Value = 0;
             paramOut.Direction = ParameterDirection.Output;
             sqlParameters.Add(paramOut);
-            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, $"sp_common_pager", CommandType.StoredProcedure, sqlParameters);
-            tableData.Data = dt.Tolist<CardCodeDto>();
-            tableData.Count = Convert.ToInt32(paramOut.Value);
+
+            var finalquery = "select " + filefName.ToString() + " from " + tableName.ToString() + " where " + filterQuery + "  order by " + sortSt + " OFFSET " + ((query.page -1 )* query.limit).ToString() + " ROWS  FETCH NEXT " + query.limit.ToString() + " ROWS ONLY  ";
+            var cardList = UnitWork.ExcuteSql<CardCodeDto>(ContextType.SapDbContextType, finalquery.ToString(), CommandType.Text, null);
+            tableData.Data = cardList;
+            tableData.Count = cardList.Count;
+
+            //DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, $"sp_common_pager", CommandType.StoredProcedure, sqlParameters);
+            //tableData.Data = dt.Tolist<CardCodeDto>();
+            //tableData.Count = Convert.ToInt32(paramOut.Value);
             return tableData;
         }
         /// <summary>
