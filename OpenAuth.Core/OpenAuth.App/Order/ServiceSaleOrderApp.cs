@@ -625,6 +625,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                     result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), -5, int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
                     if (int.Parse(result) > 0)
                     {
+                        var submitResult = "";
                         var par = SaveJobPara(result, orderReq.IsTemplate);
                         if (par == "1")
                         {
@@ -645,28 +646,29 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                                 thisinfo.OrderLastDate = DateTime.Now;
                                 thisinfo.FirstCreateDate = DateTime.Now;
                                 //设置报价单提交
+                               
                                 if (string.IsNullOrEmpty(orderReq.Order.U_New_ORDRID))
                                 {
-                                    result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, 0);
+                                    submitResult = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, 0);
                                 }
                                 else
                                 {
                                     if (orderReq.Order.U_New_ORDRID.Contains(","))
                                     {
                                         string[] orderids = orderReq.Order.U_New_ORDRID.Split(',');
-                                        result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, Convert.ToInt32(orderids[0]));
+                                        submitResult = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, Convert.ToInt32(orderids[0]));
                                     }
                                     else
                                     {
-                                        result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, Convert.ToInt32(orderReq.Order.U_New_ORDRID));
+                                        submitResult = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, Convert.ToInt32(orderReq.Order.U_New_ORDRID));
                                     }
                                 }
                                
                                 #endregion
                             }
-                            else { result = "0"; }
+                            else { submitResult = "0"; }
                         }
-                        else { result = "0"; }
+                        else { submitResult = "0"; }
                     }
                 }
                 else if (orderReq.Ations == OrderAtion.Resubmit)
