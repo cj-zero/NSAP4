@@ -21,6 +21,7 @@ using System.Data;
 using OpenAuth.Repository.Domain.Serve;
 using NSAP.Entity.Client;
 using OpenAuth.App.Order;
+using DotNetCore.CAP;
 
 namespace OpenAuth.App.Customer
 {
@@ -28,10 +29,12 @@ namespace OpenAuth.App.Customer
     {
         private readonly IHubContext<MessageHub> _hubContext;
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
-        public CustomerLimitApp(IUnitWork unitWork, IAuth auth, IHubContext<MessageHub> hubContext, ServiceSaleOrderApp serviceSaleOrderApp) : base(unitWork, auth)
+        private ICapPublisher _capBus;
+        public CustomerLimitApp(IUnitWork unitWork, IAuth auth, ICapPublisher capBus, IHubContext<MessageHub> hubContext, ServiceSaleOrderApp serviceSaleOrderApp) : base(unitWork, auth)
         {
             _hubContext = hubContext;
             _serviceSaleOrderApp = serviceSaleOrderApp;
+            _capBus = capBus;
         }
 
         public async Task<Infrastructure.Response> AddGroupRule(AddOrUpdateGroupRulesReq req)
@@ -783,7 +786,7 @@ namespace OpenAuth.App.Customer
 
         #region 定时任务
         /// <summary>
-        /// 拉取符合掉落规则的客户进入公海
+        /// 拉取符合掉落规则的客户进入redis
         /// </summary>
         /// <returns></returns>
         public async Task AsyncCustomerStatusService()
@@ -859,6 +862,7 @@ namespace OpenAuth.App.Customer
                                        from t in temp.DefaultIfEmpty()
                                        where slpInfo.Select(s => s).Contains(s.SlpCode)
                                        && !whiteList.Contains(c.CardCode)
+
                                        && t.CardCode == null
                                        orderby c.CreateDate
                                        select new { c.CardCode, c.CardName, c.CreateDate, s.SlpCode, s.SlpName }).Take(50).ToListAsync();
@@ -1137,32 +1141,26 @@ namespace OpenAuth.App.Customer
             {
                 clientOCRD client = new clientOCRD();
                 client.CardCode = item.CustomerNo;
-                client.SlpCode = "1054";
+                client.SlpCode = null;
                 client.SboId = "1";         //帐套
-                byte[] job_data = ByteExtension.ToSerialize(client);
-                string job_id = _serviceSaleOrderApp.WorkflowBuild("业务伙伴分配销售员", Convert.ToInt32(FuncID), userInfo.User.User_Id.Value, job_data, "业务伙伴分配销售员", 1, "", "", 0, 0, 0, "BOneAPI", "NSAP.B1Api.BOneOCRDAssign");
-                if (int.Parse(job_id) > 0)
+                //分配客户同步到SAP,3.0接口
+                _capBus.Publish("Serve.BOneOCRDAssign.Update", client);
+
+                moveinHistorys.Add(new CustomerMoveHistory
                 {
-                    string result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(job_id), userInfo.User.User_Id.Value, "业务伙伴分配销售员", "", 0);
-                    //如果成功,则将客户从公海中移出(如果有的话)
-                    if (result == "2")
-                    {
-                        moveinHistorys.Add(new CustomerMoveHistory
-                        {
-                            CardCode = item.CustomerNo,
-                            CardName = item.CustomerName,
-                            SlpCode = item.SlpCode,
-                            SlpName = item.SlpName,
-                            MoveInType = "按规则掉入",
-                            Remark = item.Remark,
-                            CreateTime = DateTime.Now,
-                            CreateUser = "系统",
-                            UpdateTime = DateTime.Now,
-                            UpdateUser = "系统"
-                        });
-                    }
-                }
+                    CardCode = item.CustomerNo,
+                    CardName = item.CustomerName,
+                    SlpCode = item.SlpCode,
+                    SlpName = item.SlpName,
+                    MoveInType = "按规则掉入",
+                    Remark = item.Remark,
+                    CreateTime = DateTime.Now,
+                    CreateUser = "系统",
+                    UpdateTime = DateTime.Now,
+                    UpdateUser = "系统"
+                });
             }
+
             await UnitWork.BatchAddAsync<CustomerMoveHistory, int>(moveinHistorys.ToArray());
             await UnitWork.SaveAsync();
 

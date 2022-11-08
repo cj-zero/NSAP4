@@ -23,6 +23,7 @@ using OpenAuth.App.ClientRelation;
 using User = OpenAuth.Repository.Domain.User;
 using OpenAuth.App.Clue.ModelDto;
 using OpenAuth.Repository.Domain.Serve;
+using DotNetCore.CAP;
 using Newtonsoft.Json;
 using OpenAuth.App.ClientRelation.Request;
 
@@ -34,13 +35,15 @@ namespace OpenAuth.App.Customer
         private readonly ServiceSaleOrderApp _serviceSaleOrderApp;
         private readonly ServiceBaseApp _serviceBaseApp;
         private readonly ClientRelationApp _clientRelationApp;
+        private ICapPublisher _capBus;
         public CustomerListApp(IUnitWork unitWork, IAuth auth,
-            UserManagerApp userManagerApp, ServiceSaleOrderApp serviceSaleOrderApp,ClientRelationApp clientRelationApp, ServiceBaseApp serviceBaseApp) : base(unitWork, auth)
+            UserManagerApp userManagerApp, ServiceSaleOrderApp serviceSaleOrderApp, ClientRelationApp clientRelationApp, ICapPublisher capBus, ServiceBaseApp serviceBaseApp) : base(unitWork, auth)
         {
             _userManagerApp = userManagerApp;
             _serviceSaleOrderApp = serviceSaleOrderApp;
             _serviceBaseApp = serviceBaseApp;
             _clientRelationApp = clientRelationApp;
+            _capBus = capBus;
         }
 
         /// <summary>
@@ -66,7 +69,7 @@ namespace OpenAuth.App.Customer
                          .WhereIf(!string.IsNullOrWhiteSpace(req.CardCode), c => c.CardCode == req.CardCode)
                          .WhereIf(!string.IsNullOrWhiteSpace(req.CardName), c => c.CardName.Contains(req.CardName))
                          .Where(q => !SpecialCodeList.Contains(q.CardCode))
-                        join s in UnitWork.Find<OSLP>(a=>a.SlpCode == slpCodeCurrent)
+                        join s in UnitWork.Find<OSLP>(a => a.SlpCode == slpCodeCurrent)
                         .WhereIf(!string.IsNullOrWhiteSpace(req.SlpName), s => s.SlpName.Contains(req.SlpName))
                         on c.SlpCode equals s.SlpCode
                         join g in UnitWork.Find<OCRG>(null) on (int)c.GroupCode equals g.GroupCode
@@ -935,42 +938,38 @@ namespace OpenAuth.App.Customer
                     client.CardCode = item.CustomerNo;
                     client.SlpCode = slpInfo.sale_id.ToString();
                     client.SboId = "1";         //帐套
-                    byte[] job_data = ByteExtension.ToSerialize(client);
-                    string job_id = _serviceSaleOrderApp.WorkflowBuild("业务伙伴分配销售员", Convert.ToInt32(FuncID), userId, job_data, "业务伙伴分配销售员", 1, "", "", 0, 0, 0, "BOneAPI", "NSAP.B1Api.BOneOCRDAssign");
-                    if (int.Parse(job_id) > 0)
+
+                    //分配客户同步到SAP,3.0接口
+                    _capBus.Publish("Serve.BOneOCRDAssign.Update", client);
+
+                    //加入历史归属表
+                    history.LogInstance = lastInstance;
+                    await UnitWork.AddAsync<CustomerSalerHistory>(history);
+                    //领取后,将客户从公海中移出
+                    await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == item.CustomerNo);
+
+                    //更新客户关系
+                    var clientRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == item.CustomerNo && a.IsActive == 0 && a.IsDelete == 0 && a.ScriptFlag == 0 && a.Flag != 2);
+                    var erpid = UnitWork.FindSingle<User>(u => u.User_Id == userId);
+                    if (clientRelation != null)
                     {
-                        string result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(job_id), userId, "业务伙伴分配销售员", "", 0);
-                        //如果成功,则将客户从公海中移出(如果有的话)
-                        if (result == "2")
+                        await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
                         {
-                            //加入历史归属表
-                            history.LogInstance = lastInstance;
-                            await UnitWork.AddAsync<CustomerSalerHistory>(history);
-                            //领取后,将客户从公海中移出
-                            await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == item.CustomerNo);
-
-                            //更新客户关系
-                            var clientRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == item.CustomerNo && a.IsActive == 0 && a.IsDelete == 0 && a.ScriptFlag == 0 && a.Flag != 2);
-                            var erpid = UnitWork.FindSingle<User>(u => u.User_Id == userId);
-                            if (clientRelation != null)
-                            {
-                                await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
-                                {
-                                    jobid = int.Parse(job_id),
-                                    userid = erpid.Id,
-                                    username = loginUser.Name,
-                                    ClientNo = item.CustomerNo,
-                                    ClientName = item.CustomerName,
-                                    flag = clientRelation.Flag,
-                                    OperateType = clientRelation.Flag == 1 ? 4 : 5,
-                                    job_userid = erpid.Id,
-                                    job_username = loginUser.Name
-                                });
-                            }
-
-                            await UnitWork.SaveAsync();
-                        }
+                            jobid = 1,
+                            userid = erpid.Id,
+                            username = loginUser.Name,
+                            ClientNo = item.CustomerNo,
+                            ClientName = item.CustomerName,
+                            flag = clientRelation.Flag,
+                            OperateType = clientRelation.Flag == 1 ? 4 : 5,
+                            job_userid = erpid.Id,
+                            job_username = loginUser.Name
+                        });
                     }
+
+                    await UnitWork.SaveAsync();
+
+
                     //var instance = await UnitWork.Find<OCRD>(c => c.CardCode == item.CustomerNo).FirstOrDefaultAsync();
                     //instance.SlpCode = slpInfo.sale_id;
                     //instance.UpdateDate = DateTime.Now;
@@ -1191,44 +1190,38 @@ namespace OpenAuth.App.Customer
                     client.CardCode = item.CustomerNo;
                     client.SlpCode = req.SlpCode.ToString();
                     client.SboId = "1";         //帐套
-                    byte[] job_data = ByteExtension.ToSerialize(client);
-                    string job_id = _serviceSaleOrderApp.WorkflowBuild("业务伙伴分配销售员", Convert.ToInt32(FuncID), userId, job_data, "业务伙伴分配销售员", 1, "", "", 0, 0, 0, "BOneAPI", "NSAP.B1Api.BOneOCRDAssign");
-                    if (int.Parse(job_id) > 0)
+                    //分配客户同步到SAP,3.0接口
+                    _capBus.Publish("Serve.BOneOCRDAssign.Update", client);
+
+                    //加入历史归属表
+                    history.LogInstance = lastInstance;
+                    await UnitWork.AddAsync<CustomerSalerHistory>(history);
+                    //领取后,将客户从公海中移出
+                    await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == item.CustomerNo);
+
+                    //更新客户关系
+                    //获取业务员4.0编号
+                    var saleidRaw = UnitWork.FindSingle<sbo_user>(s => s.sale_id == req.SlpCode);
+                    var erpid = UnitWork.FindSingle<User>(u => u.User_Id == saleidRaw.user_id);
+                    var clientRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == item.CustomerNo && a.IsActive == 0 && a.IsDelete == 0 && a.ScriptFlag == 0 && a.Flag != 2);
+                    if (clientRelation != null)
                     {
-                        string result = _serviceSaleOrderApp.WorkflowSubmit(int.Parse(job_id), userId, "业务伙伴分配销售员", "", 0);
-                        //如果成功,则将客户从公海中移出(如果有的话)
-                        if (result == "2")
+                        await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
                         {
-                            //加入历史归属表
-                            history.LogInstance = lastInstance;
-                            await UnitWork.AddAsync<CustomerSalerHistory>(history);
-                            //领取后,将客户从公海中移出
-                            await UnitWork.DeleteAsync<CustomerList>(c => c.CustomerNo == item.CustomerNo);
-
-                            //更新客户关系
-                            //获取业务员4.0编号
-                            var saleidRaw = UnitWork.FindSingle<sbo_user>(s => s.sale_id == req.SlpCode);
-                            var erpid = UnitWork.FindSingle<User>(u =>u.User_Id == saleidRaw.user_id);
-                            var clientRelation = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == item.CustomerNo && a.IsActive == 0 && a.IsDelete == 0 && a.ScriptFlag == 0 && a.Flag != 2);
-                            if (clientRelation != null)
-                            {
-                                await _clientRelationApp.ResignRelations(new ClientRelation.Request.ResignRelReq
-                                {
-                                    jobid = Convert.ToInt32(job_id),
-                                    userid = userId.ToString(),
-                                    username = loginUser.Name,
-                                    ClientNo = item.CustomerNo,
-                                    ClientName = item.CustomerName,
-                                    flag = clientRelation.Flag,
-                                    OperateType = clientRelation.Flag == 1 ? 4 : 5,
-                                    job_userid = erpid.Id,
-                                    job_username = req.SlpName
-                                });
-                            }
-
-                            await UnitWork.SaveAsync();
-                        }
+                            jobid = 1,
+                            userid = userId.ToString(),
+                            username = loginUser.Name,
+                            ClientNo = item.CustomerNo,
+                            ClientName = item.CustomerName,
+                            flag = clientRelation.Flag,
+                            OperateType = clientRelation.Flag == 1 ? 4 : 5,
+                            job_userid = erpid.Id,
+                            job_username = req.SlpName
+                        });
                     }
+
+                    await UnitWork.SaveAsync();
+
 
                     //var instance = await UnitWork.Find<OCRD>(c => c.CardCode == item.CustomerNo).FirstOrDefaultAsync();
                     //instance.SlpCode = req.SlpCode;

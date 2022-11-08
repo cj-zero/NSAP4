@@ -113,6 +113,14 @@ namespace OpenAuth.App.Client.Request
         /// 科目总余额结束
         /// </summary>
         public decimal? balanceTotalEnd { get; set; }
+        /// <summary>
+        /// 产品类型
+        /// </summary>
+        public string ProductType { get; set; }
+        /// <summary>
+        /// lims推广员名称
+        /// </summary>
+        public string LimsName { get; set; }
     }
     /// <summary>
     /// 查询所有技术员model
