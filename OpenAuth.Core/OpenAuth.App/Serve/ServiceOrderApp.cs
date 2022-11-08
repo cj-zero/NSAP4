@@ -2085,7 +2085,7 @@ namespace OpenAuth.App
                 && (string.IsNullOrWhiteSpace(req.QryFromTheme) || a.FromTheme.Contains(req.QryFromTheme))
                 && (req.CompleteDate == null || (a.CompleteDate > req.CompleteDate))
                 && (req.EndCompleteDate == null || (a.CompleteDate < Convert.ToDateTime(req.EndCompleteDate).AddDays(1)))
-                ).OrderBy(a => a.Status).Take(20).ToList(),
+                ).OrderBy(a => a.Status).ToList(),
             }).ToList();
            
             userId = new List<string>();
@@ -2121,6 +2121,7 @@ namespace OpenAuth.App
                     //item.TechnicianLevel =
                     }
                 }
+                item.ServiceWorkOrders = null;
             }
             //根据服务id进行分组,取最近的一次未完工原因提交记录
             var lastUncompletedId = UnitWork.Find<ServiceUnCompletedReasonHistory>(null)
@@ -2141,6 +2142,14 @@ namespace OpenAuth.App
             });
             result.Data = data;
             result.Count = query.Count();
+            return result;
+        }
+        public async Task<TableData> ServiceWorkOrderListDetail(int serviceOrderId)
+        {
+            TableData result = new TableData();
+
+            var data = UnitWork.Find<ServiceWorkOrder>(a => a.ServiceOrderId == serviceOrderId).ToList();
+            result.Data = data;
             return result;
         }
         public int GetIsContracting(string name)
