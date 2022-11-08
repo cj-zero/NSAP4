@@ -1095,7 +1095,13 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                     //var relateClientSlpCode = UnitWork.Find<crm_ocrd>(x => x.CardCode == query.CardCode).FirstOrDefault();
                     if (limslpcode.FirstOrDefault() != null && limslpcode.FirstOrDefault().SlpCode != slpCode)
                     {
-                        filterString += string.Format(" (m.ItemCode = \"{0}\" ) AND  ", "S111-SERVICE-LIMS");
+                        // get lims material code
+                        StringBuilder strSqlm = new StringBuilder();
+                        strSqlm.AppendFormat("select Name,SortNo from category where TypeId = \"{0}\" ", "LIMS");
+                        var limsList = UnitWork.ExcuteSql<SaleMaterial>(ContextType.DefaultContextType, strSqlm.ToString(), CommandType.Text, null);
+                        var limsName = limsList.Select(u => u.Name).ToList();
+                        //filterString += string.Format(" (m.ItemCode = \"{0}\" ) AND  ", "S111-SERVICE-LIMS");
+                        filterString += string.Format(" (LOCATE(m.ItemCode ,  \"{0}\" ) >0 ) AND  ", JsonConvert.SerializeObject(limsName).Replace(@"""", ""));
                     }
                     
                 }
