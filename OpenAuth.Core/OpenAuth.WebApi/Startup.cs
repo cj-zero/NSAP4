@@ -87,8 +87,12 @@ namespace OpenAuth.WebApi
                 foreach (var name in Directory.GetFiles(AppContext.BaseDirectory, "*.*",
                     SearchOption.AllDirectories).Where(f => Path.GetExtension(f).ToLower() == ".xml"))
                 {
-                    option.IncludeXmlComments(name, includeControllerXmlComments: true);
-                    logger.LogInformation($"find api file{name}");
+                    if (name.Contains("OpenAuth.WebApi"))
+                    {
+                        option.IncludeXmlComments(name, includeControllerXmlComments: true);
+                        logger.LogInformation($"find api file{name}");
+                    }
+                 
                 }
 
                 option.OperationFilter<GlobalHttpHeaderOperationFilter>(); // 添加httpHeader参数

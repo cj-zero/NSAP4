@@ -346,6 +346,30 @@ namespace OpenAuth.WebApi.Controllers
             }
             return result;
         }
+
+        /// <summary>
+        /// 个人历史结算
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> SettlementAmountSingleDetail([FromQuery] QueryReportReq request)
+        {
+            var result = new TableData();
+            try
+            {
+                return await _app.SettlementAmountSingleDetail(request);
+            }
+            catch (Exception ex)
+            {
+
+                result.Code = 500;
+                result.Message = ex.Message;
+                Log.Logger.Error($"地址：{Request.Path}，参数：{request.ToJson()}, 错误：{result.Message}");
+            }
+            return result;
+        }
+
         /// <summary>
         /// 部门或个人个代金额
         /// </summary>

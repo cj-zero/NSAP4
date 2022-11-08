@@ -209,6 +209,67 @@ namespace OpenAuth.WebApi.Controllers
             return File(data, "application/vnd.ms-excel");
         }
 
+
+        /// <summary>
+        /// 提交审核报表
+        /// </summary>
+        [HttpPost]
+        public async Task<Response> CreateReport(CreateReportReq req)
+        {
+            return await _app.CreateReport(req);
+        }
+
+        /// <summary>
+        /// 撤回报表
+        /// </summary>
+        [HttpPost]
+        public async Task<Response> RevocationReport(QueryoutsourcListReq req)
+        {
+            return await _app.RevocationReport(req.Id);
+        }
+
+        /// <summary>
+        /// 解散报表
+        /// </summary>
+        [HttpPost]
+        public async Task<Response> DissolutionReport(QueryoutsourcListReq req)
+        {
+            return await _app.DissolutionReport(req.Id);
+        }
+
+        /// <summary>
+        /// 获取报表
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetReport([FromQuery] QueryoutsourcListReq req)
+        {
+            return await _app.GetReport(req);
+        }
+
+        /// <summary>
+        /// 获取报表详情
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<TableData> GetReportDetail([FromQuery] QueryoutsourcListReq request)
+        {
+            return await _app.GetReportDetail(request);
+        }
+
+        /// <summary>
+        /// 通过报表
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task BatchAccraditationByReport(QueryoutsourcListReq req)
+        {
+            await _app.BatchAccraditationByReport(req.Id);
+        }
+
         //[HttpGet]
         //public async Task Test()
         //{

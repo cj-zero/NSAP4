@@ -64,5 +64,6 @@ namespace OpenAuth.App.Request
         /// </summary>
         public string ReportName { get; set; }
         public string Size { get; set; }
+        public string CreateUserId { get; set; }
     }
 }
