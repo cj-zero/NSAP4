@@ -2121,7 +2121,7 @@ namespace OpenAuth.App
                     //item.TechnicianLevel =
                     }
                 }
-                item.ServiceWorkOrders = null;
+                item.ServiceWorkOrders = item.ServiceWorkOrders.Take(1).ToList();
             }
             //根据服务id进行分组,取最近的一次未完工原因提交记录
             var lastUncompletedId = UnitWork.Find<ServiceUnCompletedReasonHistory>(null)
