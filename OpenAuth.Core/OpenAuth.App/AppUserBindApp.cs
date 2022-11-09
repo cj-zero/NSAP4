@@ -158,6 +158,11 @@ namespace OpenAuth.App
         /// <returns></returns>
         public async Task<TableData> UserList(AppUserReq model)
         {
+            List<string> department_ids = new List<string>();
+            if (!string.IsNullOrWhiteSpace(model.department_id))
+            {
+                department_ids = model.department_id.Split(",").ToList();
+            }
             var result = new TableData();
             List<string> user_ids = new List<string>();
             var query = await (from a in UnitWork.Find<AppUserMap>(null)
@@ -169,7 +174,7 @@ namespace OpenAuth.App
                                   .WhereIf(model.user_ids.Count > 0, c => model.user_ids.Contains(c.user_id.Value))
                                   .WhereIf(!string.IsNullOrWhiteSpace(model.username), c => c.user_name.Contains(model.username))
                                   .WhereIf(!string.IsNullOrWhiteSpace(model.department), c => c.department.Contains(model.department))
-                                  .WhereIf(!string.IsNullOrWhiteSpace(model.department_id),c=>c.department_id== model.department_id)
+                                  .WhereIf(!string.IsNullOrWhiteSpace(model.department_id),c=> department_ids.Contains(c.department_id))
                                   .ToListAsync();
             result.Count = query.Count;
             if (model.page_index > 0 && model.page_size > 0)
