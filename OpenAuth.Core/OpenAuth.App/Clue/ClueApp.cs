@@ -239,9 +239,9 @@ namespace OpenAuth.App
             var loginContext = _auth.GetCurrentUser();
             //get slpcode and name 
             string slpCode = UnitWork.Find<sbo_user>(q => q.user_id == loginContext.User.User_Id).Select(q => q.sale_id).FirstOrDefault().Value.ToString();
-            string userName = loginContext.User.Name;
+            string userId = loginContext.User.Id;
             StringBuilder strSql = new StringBuilder();
-            strSql.AppendFormat("select * from clueclientutility u where (LOCATE(u.UserTag , \"{0}\")  > 0 ||  LOCATE(u.UserTag , \"{1}\")  > 0) AND LOCATE(\"{2}\" ,u.name)  > 0 ", slpCode, userName,pattern);
+            strSql.AppendFormat("select * from clueclientutility u where (LOCATE(u.UserTag , \"{0}\")  > 0 ||  LOCATE(u.UserTag , \"{1}\")  > 0) AND LOCATE(\"{2}\" ,u.name)  > 0 ", slpCode, userId, pattern);
             var patternList = UnitWork.ExcuteSql<CluePattern>(ContextType.Nsap4ServeDbContextType, strSql.ToString(), CommandType.Text, null);
 
             result.AddRange(patternList);
@@ -415,6 +415,7 @@ namespace OpenAuth.App
                 Status = 0,
                 CreateTime = DateTime.Now,
                 CreateUser = loginUser.Name,
+                CreateUserId = loginUser.Id,
                 SerialNumber = !string.IsNullOrEmpty(await GetCardCode()) ? await GetCardCode() : "X00001",
             };
             var data = UnitWork.Add<OpenAuth.Repository.Domain.Serve.Clue, int>(clue);
