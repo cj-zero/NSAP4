@@ -94,6 +94,10 @@ namespace OpenAuth.App.Request
         [Required]
         public string WhsCode { get; set; }
         /// <summary>
+        /// 客户编号
+        /// </summary>
+        public string CardCode { get; set; }
+        /// <summary>
         /// 类型id
         /// </summary>
         public string TypeId { get; set; }

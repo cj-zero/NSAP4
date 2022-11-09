@@ -31,7 +31,10 @@ namespace OpenAuth.App.Clue.ModelDto
         /// 更新时间
         /// </summary>
         public DateTime? UpdateTime { get; set; }
-
+        /// <summary>
+        /// 归属业务员
+        /// </summary>
+        public string SlpName { get; set; }
         /// <summary>
         /// 跟进时间
         /// </summary>

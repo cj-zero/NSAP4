@@ -1,4 +1,5 @@
-﻿using System;
+﻿using OpenAuth.App.Client.Request;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -54,7 +55,17 @@ namespace OpenAuth.App.Clue.Request
         /// 是否认证
         /// </summary>
         public int IsCertification { get; set; } = 0;
+        /// <summary>
+        ///  联系人信息列表
+        /// </summary>
+        public List<ContPerson> ContPerList { get; set; }
 
+    }
+
+    /// <summary>
+    /// 联系人信息
+    /// </summary>
+    public class ContPerson {
 
         /// <summary>
         /// 联系人名称
@@ -69,24 +80,22 @@ namespace OpenAuth.App.Clue.Request
         /// </summary>
         public string Tel2 { get; set; }
         /// <summary>
-        /// 角色（0：决策者、1：普通人）
-        /// </summary>
-        public string Role { get; set; }
-        /// <summary>
         ///职位
         /// </summary>
         public string Position { get; set; }
         /// <summary>
         /// 详细地址（地址（省市））
         /// </summary>
-        public string Address1 { get; set; }
-        /// <summary>
-        /// 详细地址
-        /// </summary>
-        public string Address2 { get; set; }
+        public string Address { get; set; }
+
         /// <summary>
         /// 邮箱
         /// </summary>
         public string Email { get; set; }
+        /// <summary>
+        /// 是否默认
+        /// </summary>
+        public bool IsDefault { get; set; }
     }
+
 }

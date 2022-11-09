@@ -41,6 +41,10 @@ using Newtonsoft.Json;
 using OpenAuth.App.Client.Request;
 using SAPbobsCOM;
 using DocumentFormat.OpenXml.Math;
+using Serilog.Context;
+using OpenAuth.App.ClientRelation.Response;
+using System.Reactive.Joins;
+using OpenAuth.App.Clue.ModelDto;
 
 namespace OpenAuth.App.Order
 {
@@ -479,6 +483,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             {
                 U_FPLB = ",a.U_FPLB";
             }
+
             filefName.AppendFormat(" a.CardCode,a.CardName,a.CntctPrsn,b.SlpName,a.Currency,a.Balance,(ISNULL(ZipCode,'')+ISNULL(c.Name,'')+ISNULL(d.Name,'')+ISNULL(City,'')+ISNULL(CONVERT(VARCHAR(100),Building),'''')) AS Address,(ISNULL(MailZipCod,'')+ISNULL(e.Name,'')+ISNULL(f.Name,'')+ISNULL(MailCity,'')+ISNULL(CONVERT(VARCHAR(100),MailBuildi),'''')) AS Address2{0},a.SlpCode", U_FPLB);
             tableName.AppendFormat(" " + sboname + "OCRD a");
             tableName.AppendFormat(" LEFT JOIN " + sboname + "OSLP b ON a.SlpCode=b.SlpCode");
@@ -486,6 +491,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             tableName.AppendFormat(" LEFT JOIN " + sboname + "OCST d ON a.State1=c.Code");
             tableName.AppendFormat(" LEFT JOIN " + sboname + "OCRY e ON a.MailCountr=e.Code");
             tableName.AppendFormat(" LEFT JOIN " + sboname + "OCST f ON a.State1=f.Code");
+
             List<SqlParameter> sqlParameters = new List<SqlParameter>()
             {
                 new SqlParameter("@strFrom",tableName.ToString()),
@@ -502,9 +508,15 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             paramOut.Value = 0;
             paramOut.Direction = ParameterDirection.Output;
             sqlParameters.Add(paramOut);
-            DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, $"sp_common_pager", CommandType.StoredProcedure, sqlParameters);
-            tableData.Data = dt.Tolist<CardCodeDto>();
-            tableData.Count = Convert.ToInt32(paramOut.Value);
+
+            var finalquery = "select " + filefName.ToString() + " from " + tableName.ToString() + " where " + filterQuery + "  order by " + sortSt + " OFFSET " + ((query.page -1 )* query.limit).ToString() + " ROWS  FETCH NEXT " + query.limit.ToString() + " ROWS ONLY  ";
+            var cardList = UnitWork.ExcuteSql<CardCodeDto>(ContextType.SapDbContextType, finalquery.ToString(), CommandType.Text, null);
+            tableData.Data = cardList;
+            tableData.Count = cardList.Count;
+
+            //DataTable dt = UnitWork.ExcuteSqlTable(ContextType.SapDbContextType, $"sp_common_pager", CommandType.StoredProcedure, sqlParameters);
+            //tableData.Data = dt.Tolist<CardCodeDto>();
+            //tableData.Count = Convert.ToInt32(paramOut.Value);
             return tableData;
         }
         /// <summary>
@@ -609,6 +621,7 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                     result = OrderWorkflowBuild(jobname, funcId, userID, job_data, orderReq.Order.Remark, sboID, orderReq.Order.CardCode, orderReq.Order.CardName, (double.Parse(orderReq.Order.DocTotal.ToString()) > 0 ? double.Parse(orderReq.Order.DocTotal.ToString()) : 0), -5, int.Parse(orderReq.Order.BillBaseEntry), "BOneAPI", className);
                     if (int.Parse(result) > 0)
                     {
+                        var submitResult = "";
                         var par = SaveJobPara(result, orderReq.IsTemplate);
                         if (par == "1")
                         {
@@ -629,28 +642,29 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
                                 thisinfo.OrderLastDate = DateTime.Now;
                                 thisinfo.FirstCreateDate = DateTime.Now;
                                 //设置报价单提交
+                               
                                 if (string.IsNullOrEmpty(orderReq.Order.U_New_ORDRID))
                                 {
-                                    result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, 0);
+                                    submitResult = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, 0);
                                 }
                                 else
                                 {
                                     if (orderReq.Order.U_New_ORDRID.Contains(","))
                                     {
                                         string[] orderids = orderReq.Order.U_New_ORDRID.Split(',');
-                                        result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, Convert.ToInt32(orderids[0]));
+                                        submitResult = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, Convert.ToInt32(orderids[0]));
                                     }
                                     else
                                     {
-                                        result = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, Convert.ToInt32(orderReq.Order.U_New_ORDRID));
+                                        submitResult = Eshop_OrderStatusFlow(thisinfo, billDelivery.billSalesDetails, Convert.ToInt32(orderReq.Order.U_New_ORDRID));
                                     }
                                 }
                                
                                 #endregion
                             }
-                            else { result = "0"; }
+                            else { submitResult = "0"; }
                         }
-                        else { result = "0"; }
+                        else { submitResult = "0"; }
                     }
                 }
                 else if (orderReq.Ations == OrderAtion.Resubmit)
@@ -1053,8 +1067,19 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             string filterString = string.Empty;
             //lims推广员），只能选对应产品的对应物料编码。lims软件的物料编码： S111-SERVICE-LIMS  && u.Type == "LIMS"
             var currentUser = _auth.GetCurrentUser().User;
-            var erpLims = UnitWork.Find<LimsInfo>(u => u.UserId == currentUser.Id && u.Type == "LIMS").ToList();
-            //var lims1 = UnitWork.FromSql<LimsInfo>(" SELECT * from client_limsinfo where Type =\"LIMS\" AND UserId =\"" + currentUser.Id + "\" ").ToList();
+            int slpCode = UnitWork.Find<sbo_user>(q => q.user_id == currentUser.User_Id).Select(q => q.sale_id).FirstOrDefault().Value;
+            var erpLims = UnitWork.Find<LimsInfo>(u => u.UserId == currentUser.Id && u.Type == "LIMS").FirstOrDefault();
+            var erpYanXuan = UnitWork.Find<LimsInfo>(u => u.UserId == currentUser.Id && u.Type == "YANXUAN").FirstOrDefault();
+            var erpLimsClient = new List<LimsInfoMap>();
+            var erpYanXuanClient = new List<LimsInfoMap>();
+            if (erpLims != null)
+            {
+                erpLimsClient.AddRange(UnitWork.Find<LimsInfoMap>(u => u.LimsInfoId == erpLims.Id).ToList());
+            }
+            if (erpYanXuan != null)
+            {
+                erpYanXuanClient.AddRange(UnitWork.Find<LimsInfoMap>(u => u.LimsInfoId == erpYanXuan.Id).ToList());
+            }
 
 
             if (!string.IsNullOrEmpty(query.SortName) && !string.IsNullOrEmpty(query.SortOrder))
@@ -1065,10 +1090,67 @@ SELECT a.type_id FROM nsap_oa.file_type a LEFT JOIN nsap_base.base_func b ON a.f
             {
                 filterString += string.Format("(m.ItemCode LIKE '%{0}%' OR m.ItemName LIKE '%{0}%') AND ", query.ItemCode.FilterWildCard());
             }
-            if (erpLims!=null)
+            List<string> limsName = new List<string>();
+            List<string> yanxuanName = new List<string>();
+            #region lims and yanxuan filter
+            if (erpLims != null)
             {
-                filterString += string.Format(" (m.ItemCode = \"{0}\" ) AND  ", "S111-SERVICE-LIMS");
+                //judge the client belongs to the follower or not
+                if (erpLimsClient.Exists(a => a.CardCode == query.CardCode))
+                {
+                    StringBuilder strSql = new StringBuilder();
+                    strSql.AppendFormat("select SlpCode,CardCode from crm_ocrd u where u.CardCode = \"{0}\"  ", query.CardCode);
+                    var limslpcode = UnitWork.ExcuteSql<SaleSlp>(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null);
+                    //var relateClientSlpCode = UnitWork.Find<crm_ocrd>(x => x.CardCode == query.CardCode).FirstOrDefault();
+                    if (limslpcode.FirstOrDefault() != null && limslpcode.FirstOrDefault().SlpCode != slpCode)
+                    {
+                        // get lims material code
+                        StringBuilder strSqlm = new StringBuilder();
+                        strSqlm.AppendFormat("select Name,SortNo from category where TypeId = \"{0}\" ", "LIMS");
+                        var limsList = UnitWork.ExcuteSql<SaleMaterial>(ContextType.DefaultContextType, strSqlm.ToString(), CommandType.Text, null);
+                        limsName.AddRange(limsList.Select(u => u.Name).ToList());
+                    }
+
+                }
+
             }
+            if (erpYanXuan != null)
+            {
+                //judge the client belongs to the follower or not
+                if (erpYanXuanClient.Exists(a => a.CardCode == query.CardCode))
+                {
+                    StringBuilder strSql = new StringBuilder();
+                    strSql.AppendFormat("select SlpCode,CardCode from crm_ocrd u where u.CardCode = \"{0}\"  ", query.CardCode);
+                    var YanXuanlpcode = UnitWork.ExcuteSql<SaleSlp>(ContextType.NsapBoneDbContextType, strSql.ToString(), CommandType.Text, null);
+                    //var relateClientSlpCode = UnitWork.Find<crm_ocrd>(x => x.CardCode == query.CardCode).FirstOrDefault();
+                    if (YanXuanlpcode.FirstOrDefault() != null && YanXuanlpcode.FirstOrDefault().SlpCode != slpCode)
+                    {
+                        // get lims material code
+                        StringBuilder strSqlm = new StringBuilder();
+                        strSqlm.AppendFormat("select Name,SortNo from category where TypeId = \"{0}\" ", "YANXUAN");
+                        var yanxuanList = UnitWork.ExcuteSql<SaleMaterial>(ContextType.DefaultContextType, strSqlm.ToString(), CommandType.Text, null);
+                        yanxuanName.AddRange(yanxuanList.Select(u => u.Name).ToList());
+                    }
+
+                }
+
+            }
+            if (limsName.Count > 0 || yanxuanName.Count > 0)
+            {
+                if (limsName.Count > 0 && yanxuanName.Count == 0)
+                {
+                    filterString += string.Format(" (LOCATE(m.ItemCode ,  \"{0}\" ) >0 ) AND  ", JsonConvert.SerializeObject(limsName).Replace(@"""", ""));
+                }
+                if (yanxuanName.Count > 0 && limsName.Count == 0)
+                {
+                    filterString += string.Format(" (LOCATE(m.ItemCode ,  \"{0}\" ) >0 ) AND  ", JsonConvert.SerializeObject(yanxuanName).Replace(@"""", ""));
+                }
+                if (yanxuanName.Count > 0 && limsName.Count > 0)
+                {
+                    filterString += string.Format(" ( LOCATE(m.ItemCode ,  \"{0}\" ) >0  || LOCATE(m.ItemCode ,  \"{1}\" ) >0 ) AND  ", JsonConvert.SerializeObject(yanxuanName).Replace(@"""", ""),JsonConvert.SerializeObject(limsName).Replace(@"""", ""));
+                }
+            }
+            #endregion
 
             if (query.TypeId == "1")
             {

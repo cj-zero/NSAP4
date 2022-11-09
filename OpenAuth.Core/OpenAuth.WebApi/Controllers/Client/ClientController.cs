@@ -177,7 +177,7 @@ namespace OpenAuth.WebApi.Controllers.Client
                     , clientListReq.U_CardTypeStr, clientListReq.U_ClientSource, clientListReq.U_CompSector, clientListReq.U_TradeType, clientListReq.U_StaffScale,
                     clientListReq.CreateStartTime, clientListReq.CreateEndTime, clientListReq.DistributionStartTime, clientListReq.DistributionEndTime,
             clientListReq.dNotesBalStart, clientListReq.dNotesBalEnd, clientListReq.ordersBalStart, clientListReq.ordersBalEnd,
-            clientListReq.balanceStart, clientListReq.balanceEnd, clientListReq.balanceTotalStart, clientListReq.balanceTotalEnd, clientListReq.CardName ,out rowCount);
+            clientListReq.balanceStart, clientListReq.balanceEnd, clientListReq.balanceTotalStart, clientListReq.balanceTotalEnd, clientListReq.CardName, clientListReq.ProductType, clientListReq.LimsName, out rowCount);
                 result.Count = rowCount;
             }
             catch (Exception ex)
@@ -242,7 +242,7 @@ namespace OpenAuth.WebApi.Controllers.Client
             var result = new Response<clientOCRD>();
             try
             {
-                result.Result = _clientInfoApp.AlterAuditInfoNew(jobId,client);
+                result.Result = _clientInfoApp.AlterAuditInfoNew(jobId, client);
             }
             catch (Exception ex)
             {
@@ -269,7 +269,7 @@ namespace OpenAuth.WebApi.Controllers.Client
             var result = new Response<AuditCode>();
             try
             {
-                result.Result = _clientInfoApp.GetClueNo(req.jobId, req.CardCode, req.Technician, req.SlpName,req.Applicant);
+                result.Result = _clientInfoApp.GetClueNo(req.jobId, req.CardCode, req.Technician, req.SlpName, req.Applicant);
             }
             catch (Exception ex)
             {

@@ -501,6 +501,19 @@ namespace OpenAuth.App.Order.Request
             set;
         }
     }
+
+    public class SaleSlp
+    {
+        public int SlpCode { get; set; }
+        public string CardCode { get; set; }
+    }
+
+    public class SaleMaterial
+    {
+        public string Name { get; set; }
+        public int SortNo { get; set; }
+    }
+
     /// <summary>
     /// 订单操作类型
     /// </summary>

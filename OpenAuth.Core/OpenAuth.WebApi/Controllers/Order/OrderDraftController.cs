@@ -15,6 +15,7 @@ using OpenAuth.App.ProductModel;
 using OpenAuth.App.Request;
 using OpenAuth.App.Response;
 using OpenAuth.Repository;
+using OpenAuth.Repository.Domain;
 using OpenAuth.Repository.Extensions;
 using OpenAuth.Repository.Interface;
 using OpenAuth.WebApi.Comm;
@@ -333,6 +334,12 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 throw new CommonException("登录已过期", Define.INVALID_TOKEN);
             }
+
+
+            //judge follwer identity
+            var currentUser = _auth.GetCurrentUser();
+            var erpLims = UnitWork.Find<LimsInfo>(u => u.UserId == currentUser.User.Id && u.Type == "LIMS").FirstOrDefault();
+
             var result = new TableData();
             var userId = _serviceBaseApp.GetUserNaspId();
             var depId = UnitWork.ExcuteSql<ResultOrderDto>(ContextType.NsapBaseDbContext, $"SELECT dep_id value FROM base_user_detail WHERE user_id = {userId}", CommandType.Text, null).FirstOrDefault();
@@ -386,6 +393,13 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 if (type == "SQO")//销售报价单\订单
                 {
+                    if (erpLims!=null)
+                    {
+                        // get related client
+                        var erpLimsClient = new List<string>();
+                        erpLimsClient.AddRange(UnitWork.Find<LimsInfoMap>(u => u.LimsInfoId == erpLims.Id).Select(u=>u.CardCode).ToList());
+                        filterString += string.Format(" ( CHARINDEX(a.CardCode , \'{0}\')  > 0 ) AND ", JsonConvert.SerializeObject(erpLimsClient).Replace(@"""", ""));
+                    }
                     filterString += string.Format("(a.CardType='C' OR a.CardType='L') AND ");
                 }
                 else if (type == "SDR")//销售交货\退货,应收发票\贷项凭证

@@ -71,7 +71,7 @@ namespace OpenAuth.App.ClientRelation
             }
 
             var clientRel = await UnitWork.FindSingleAsync<OpenAuth.Repository.Domain.ClientRelation>(u => u.ClientNo == clientId && u.Operatorid == loginContext.User.Id && u.IsActive ==1 && u.ScriptFlag ==0 &&u.IsDelete ==0);
-            if (clientRel == null)
+            if (clientRel == null && !loginContext.Roles.Exists(a => a.Name == "公海管理员"))
             {
                 return rgp;
             }
@@ -79,11 +79,26 @@ namespace OpenAuth.App.ClientRelation
             StringBuilder strSql = new StringBuilder();
             strSql.AppendFormat("with recursive cte (ClientNo, ClientName,Flag,ParentNo,SubNo) as ( ");
             strSql.AppendFormat("  select     a.ClientNo, a.ClientName,a.Flag,a.ParentNo,a.SubNo  from  clientrelation a ");
-            strSql.AppendFormat("  where      a.IsDelete = 0 && a.IsActive =1 && a.ScriptFlag = 0 && a.OperatorId = \"{1}\" &&  (LOCATE(\"{0}\", a.SubNo) !=0 || LOCATE(\"{0}\", a.ParentNo) !=0) ", clientId, loginContext.User.Id);
+            if (!loginContext.Roles.Exists(a => a.Name == "公海管理员"))
+            {
+                strSql.AppendFormat("  where      a.IsDelete = 0 && a.IsActive =1 && a.ScriptFlag = 0 && a.OperatorId = \"{1}\" &&  (LOCATE(\"{0}\", a.SubNo) !=0 || LOCATE(\"{0}\", a.ParentNo) !=0) ", clientId, loginContext.User.Id);
+            }
+            else
+            {
+                strSql.AppendFormat("  where      a.IsDelete = 0 && a.IsActive =1 && a.ScriptFlag = 0  &&  (LOCATE(\"{0}\", a.SubNo) !=0 || LOCATE(\"{0}\", a.ParentNo) !=0) ", clientId);
+            }
+            
             strSql.AppendFormat("  union DISTINCT ");
             strSql.AppendFormat("  select     p.ClientNo, p.ClientName,p.Flag,p.ParentNo,p.SubNo from  clientrelation p ");
             strSql.AppendFormat("   inner join cte ");
-            strSql.AppendFormat("           on p.IsDelete = 0 && p.IsActive =1 && p.ScriptFlag = 0 && p.OperatorId = \"{0}\"  && (LOCATE(cte.ClientNo, p.SubNo)  !=0 || LOCATE(cte.ClientNo, p.ParentNo)  !=0)   limit 100", loginContext.User.Id);
+            if (loginContext.Roles.Exists(a => a.Name == "公海管理员"))
+            {
+                strSql.AppendFormat("           on p.IsDelete = 0 && p.IsActive =1 && p.ScriptFlag = 0   && (LOCATE(cte.ClientNo, p.SubNo)  !=0 || LOCATE(cte.ClientNo, p.ParentNo)  !=0)   limit 100 ");
+            }
+            else
+            {
+                strSql.AppendFormat("           on p.IsDelete = 0 && p.IsActive =1 && p.ScriptFlag = 0 && p.OperatorId = \"{0}\"  && (LOCATE(cte.ClientNo, p.SubNo)  !=0 || LOCATE(cte.ClientNo, p.ParentNo)  !=0)   limit 100 ", loginContext.User.Id);
+            }
             strSql.AppendFormat(" ) ");
             strSql.AppendFormat(" select * from cte; ");
             List<RawGraph> rawGraphList = new List<RawGraph>();
@@ -171,7 +186,7 @@ namespace OpenAuth.App.ClientRelation
             
             bool result = true;
             // check legit request  72 添加业务伙伴
-            _logger.LogError("审核通过，添加业务伙伴请求参数为" + JsonConvert.SerializeObject(job));
+            _logger.LogInformation("审核通过，添加业务伙伴请求参数为" + JsonConvert.SerializeObject(job));
             var legitJob = UnitWork.FindSingle<wfa_job>(a => a.job_id == job.JobId && a.sync_stat == 4 && (a.job_type_id == 72));
             if (legitJob == null)
             {
@@ -391,6 +406,37 @@ namespace OpenAuth.App.ClientRelation
 
                 var subList = JsonConvert.DeserializeObject<List<ClientRelJob>>(jobRelation.Terminals);
                 uptRelation.SubNo = JsonConvert.SerializeObject(subList.Select(a => a.customerNo).ToList());
+                //if SubNo not exists for which it is not created in 4.0,then deal with it 
+                var  exiSubList = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => uptRelation.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 ).Select(a=>a.ClientNo).ToList();
+                foreach (var addItem in subList)
+                {
+                    if (!exiSubList.Contains(addItem.customerNo))
+                    {
+                        JArray jsonAddPnode =  JsonConvert.DeserializeObject<JArray>("[]");
+                        jsonAddPnode.Add(uptRelation.ClientNo);
+                        addData.Add(new Repository.Domain.ClientRelation
+                        {
+                            ClientNo = addItem.customerNo,
+                            ClientName = addItem.customerName,
+                            ParentNo = JsonConvert.SerializeObject(jsonAddPnode),
+                            SubNo = "",
+                            Flag = 0,
+                            ScriptFlag = 0,
+                            IsDelete = 0,
+                            IsActive = 1,
+                            CreateDate = DateTime.Now,
+                            Creator = uptRelation.Creator,
+                            Creatorid = uptRelation.Creatorid,
+                            UpdateDate = DateTime.Now,
+                            Updaterid = uptRelation.Updaterid,
+                            Updater = uptRelation.Updater,
+                            Operatorid = uptRelation.Operatorid,
+                            Operator = uptRelation.Operator,
+                            JobId = uptRelation.JobId
+                        });
+                    }
+                }
+
                 //update parentNo
                 var afterParentNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => uptRelation.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == jobRelation.CreatorId && (a.ParentNo == null ||(a.ParentNo!=null && !a.ParentNo.Contains(uptRelation.ClientNo)) )).ToList();
 
@@ -577,10 +623,11 @@ namespace OpenAuth.App.ClientRelation
             var  finalSubnodes = subListNodes.Count ==0 ? "" : JsonConvert.SerializeObject(subListNodes);
 
             //update the script jobrelation
-            if (!string.IsNullOrEmpty(jobScript.EndCustomerName)&&jobScript.Initial == 1)
+            if (jobScript.Initial == 1)
             {
                 var jobrelations = UnitWork.FindSingle<OpenAuth.Repository.Domain.JobClientRelation>(a => a.Jobid == jobScript.JobId && a.IsDelete == 0);
                 jobrelations.Terminals = jobScript.EndCustomerName;
+                jobrelations.AffiliateData = jobScript.ClientName;
                 await UnitWork.UpdateAsync<JobClientRelation>(jobrelations);
             }
             
@@ -840,7 +887,7 @@ namespace OpenAuth.App.ClientRelation
         {
 
             bool result = true;
-            _logger.LogError("定时任务同步修改业务伙伴请求参数为" + JsonConvert.SerializeObject(resignReq));
+            _logger.LogInformation("定时任务同步修改业务伙伴请求参数为" + JsonConvert.SerializeObject(resignReq));
             //judge if it is legit ,check from the history
             var existRelhis = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelHistory>(a => a.ClientNo == resignReq.ClientNo && a.IsDelete == 0 && a.OperateType == 7 && a.JobId == resignReq.jobId );
             if (existRelhis != null)
@@ -852,15 +899,16 @@ namespace OpenAuth.App.ClientRelation
             List<OpenAuth.Repository.Domain.ClientRelation> updateData = new List<OpenAuth.Repository.Domain.ClientRelation>();
             List<OpenAuth.Repository.Domain.ClientRelation> addData = new List<OpenAuth.Repository.Domain.ClientRelation>();
             List<OpenAuth.Repository.Domain.ClientRelHistory> addHistoryData = new List<OpenAuth.Repository.Domain.ClientRelHistory>();
-            var existRel = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == resignReq.ClientNo && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0);
+            var existRel = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.ClientNo == resignReq.ClientNo && a.IsDelete == 0 && a.IsActive == 1 );
             if (existRel == null)
             {
-                //add to log file to explain why 
-                _logger.LogError("修改客户未找到对应表ClientRelation的记录,请求参数为：" + JsonConvert.SerializeObject(resignReq));
-                return true;
+                //edit from scrach
+                existRel = UnitWork.FindSingle<OpenAuth.Repository.Domain.ClientRelation>(a => a.JobId == resignReq.jobId && a.IsDelete == 0 && a.IsActive == 1);
             }
+
             if (string.IsNullOrEmpty(resignReq.TerminalList))
             {
+                
                 //fix terminal means just fix the name
                 addData.Add(new Repository.Domain.ClientRelation
                 {
@@ -885,7 +933,8 @@ namespace OpenAuth.App.ClientRelation
                 existRel.ClientName = resignReq.AffiliateData;
                 existRel.UpdateDate = DateTime.Now;
                 existRel.JobId = resignReq.jobId;
-                
+                existRel.ClientNo = resignReq.ClientNo;
+                existRel.ScriptFlag = 0;
                 updateData.Add(existRel);
             }
             else
@@ -938,6 +987,39 @@ namespace OpenAuth.App.ClientRelation
                 var subList = JsonConvert.DeserializeObject<List<ClientRelJob>>(resignReq.TerminalList);
                 afterNodes.AddRange(subList.Select(a => a.customerNo).ToList());
 
+                //if SubNo not exists for which it is not created in 4.0,then deal with it 
+                var exiSubList = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => afterNodes.Contains(a.ClientNo) && a.IsDelete == 0).Select(a => a.ClientNo).ToList();
+                foreach (var addItem in subList)
+                {
+                    if (!exiSubList.Contains(addItem.customerNo))
+                    {
+                        JArray jsonAddPnode = JsonConvert.DeserializeObject<JArray>("[]");
+                        jsonAddPnode.Add(resignReq.ClientNo);
+                        addData.Add(new Repository.Domain.ClientRelation
+                        {
+                            ClientNo = addItem.customerNo,
+                            ClientName = addItem.customerName,
+                            ParentNo = JsonConvert.SerializeObject(jsonAddPnode),
+                            SubNo = "",
+                            Flag = 0,
+                            ScriptFlag = 0,
+                            IsDelete = 0,
+                            IsActive = 1,
+                            CreateDate = DateTime.Now,
+                            Creator = existRel.Creator,
+                            Creatorid = existRel.Creatorid,
+                            UpdateDate = DateTime.Now,
+                            Updaterid = existRel.Updaterid,
+                            Updater = existRel.Updater,
+                            Operatorid = existRel.Operatorid,
+                            Operator = existRel.Operator,
+                            JobId = resignReq.jobId
+                        });
+                    }
+                }
+
+                existRel.ClientName = resignReq.AffiliateData;
+                existRel.ClientNo = resignReq.ClientNo;
                 //update parent node, more or less
                 var existNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => afterNodes.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == existRel.Operatorid && (a.ParentNo == null || (a.ParentNo != null && !a.ParentNo.Contains(existRel.ClientNo)))).ToList();
                 var detachedNodes = UnitWork.Find<OpenAuth.Repository.Domain.ClientRelation>(a => existRel.SubNo.Contains(a.ClientNo) && a.IsDelete == 0 && a.IsActive == 1 && a.ScriptFlag == 0 && a.Operatorid == existRel.Operatorid && !afterNodes.Contains(a.ClientNo)).ToList();
@@ -1071,6 +1153,8 @@ namespace OpenAuth.App.ClientRelation
                 existRel.Flag = 1;
                 existRel.UpdateDate = DateTime.Now;
                 existRel.JobId = resignReq.jobId;
+                
+                existRel.ScriptFlag = 0;
                 updateData.Add(existRel);
 
             }
@@ -1088,7 +1172,7 @@ namespace OpenAuth.App.ClientRelation
         public async Task<bool> SyncRelations()
         {
             // get latest 3 minutes updated job(jobtype = 72)
-            _logger.LogError("Job同步更新关系");
+            _logger.LogInformation("Job同步更新关系");
             var updatedRelationJob = UnitWork.Find<wfa_job>(a => a.job_type_id == 72 &&  a.sync_stat ==4 && a.upd_dt>=DateTime.Now.AddMinutes(-2) ).OrderBy(a=>a.upd_dt).ToList();
             if (updatedRelationJob.Count==0)
             {
@@ -1097,7 +1181,7 @@ namespace OpenAuth.App.ClientRelation
             else
             {
                 var jobidList = updatedRelationJob.Select(a => a.job_id).ToList();
-                _logger.LogError("Job同步更新关系,参数为" + JsonConvert.SerializeObject(jobidList));
+                _logger.LogInformation("Job同步更新关系,参数为" + JsonConvert.SerializeObject(jobidList));
             }
             foreach (var relationJob in updatedRelationJob)
             {

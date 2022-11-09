@@ -32,6 +32,7 @@ using Microsoft.EntityFrameworkCore.Internal;
 using static OpenAuth.App.Clue.ModelDto.KuaiBaosHelper;
 using OpenAuth.Repository.Domain;
 using Microsoft.Extensions.Logging;
+using OpenAuth.Repository.Domain.View;
 
 namespace OpenAuth.App
 {
@@ -110,18 +111,19 @@ namespace OpenAuth.App
                 exp = exp.And(t => t.Tags.Contains(clueListReq.Tag));
             }
             var clue = UnitWork.Find(exp).MapToList<Repository.Domain.Serve.Clue>();
-            var clueFollowUp = new List<ClueFollowUp>();
-            foreach (var item in clue)
-            {
-                var scon = UnitWork.Find<ClueFollowUp>(q => !q.IsDelete && q.ClueId == item.Id).MapToList<ClueFollowUp>().OrderByDescending(q => q.FollowUpTime).Take(1);
-                clueFollowUp.AddRange(scon);
-            }
+            //var clueFollowUp = new List<ClueFollowUp>();
+            //foreach (var item in clue)
+            //{
+            //    var scon = UnitWork.Find<ClueFollowUp>(q => !q.IsDelete && q.ClueId == item.Id).MapToList<ClueFollowUp>().OrderByDescending(q => q.FollowUpTime).Take(1);
+            //    clueFollowUp.AddRange(scon);
+            //}
             var clueContacts = UnitWork.Find<ClueContacts>(q => !q.IsDelete && q.IsDefault).MapToList<ClueContacts>();
             var queryAllCustomers = from a in clue
                                     join b in clueContacts on a.Id equals b.ClueId
 
                                     where !string.IsNullOrEmpty(clueListReq.Contacts) ? b.Name.Contains(clueListReq.Contacts) : true
                                     where !string.IsNullOrEmpty(clueListReq.Address) ? b.Address2.Contains(clueListReq.Address) : true
+                                    where !string.IsNullOrEmpty(clueListReq.slpName) ? b.CreateUser.Contains(clueListReq.slpName) : true
                                     orderby a.Id descending
                                     select new ClueListDto
                                     {
@@ -140,20 +142,49 @@ namespace OpenAuth.App
                                         Tel1 = b.Tel1,
                                         Address1 = b.Address1,
                                         Address2 = b.Address2,
-                                        Email = b.Email
+                                        Email = b.Email,
+                                        SlpName = a.CreateUser
                                     };
             rowcount = queryAllCustomers.Count();
-            var datas = queryAllCustomers.Skip((clueListReq.page - 1) * clueListReq.limit).Take(clueListReq.limit);
+            var datas = queryAllCustomers.Skip((clueListReq.page - 1) * clueListReq.limit).Take(clueListReq.limit).ToList();
+            //get dept 
+            var dataNameList = datas.Select(a=>a.SlpName).ToList();
+            //UnitWork.ExcuteSql<RawGraph>(ContextType.DefaultContextType, strSql.ToString(), CommandType.Text, null)
+            StringBuilder strSql = new StringBuilder();
+            strSql.AppendFormat("select * from userorgutility u where LOCATE(u.Name , \"{0}\")  > 0", JsonConvert.SerializeObject(dataNameList).Replace(@"""", ""));
+            var deptList = UnitWork.ExcuteSql<UserOrgUtilityView>(ContextType.DefaultContextType, strSql.ToString(), CommandType.Text, null);
+            foreach (var itemDept in datas)
+            {
+                var specDept = deptList.Where(a => a.Name == itemDept.SlpName).FirstOrDefault();
+                if (specDept!=null)
+                {
+                    itemDept.SlpName = specDept.deptName + "-" + itemDept.SlpName;
+                }
+            }
+
+            //opti
+            var followupIdList = datas.Select(a => a.Id).ToList();
+            var cluefollowups = UnitWork.Find<ClueFollowUp>(q => followupIdList.Contains(q.ClueId)).ToList();
             foreach (var item in datas)
             {
-                var cluefollowups = UnitWork.FindSingle<ClueFollowUp>(q => q.ClueId == item.Id);
-                if (cluefollowups != null)
+                if (cluefollowups.Exists(a=>a.ClueId == item.Id))
                 {
-                    item.FollowUpTime = cluefollowups.FollowUpTime.ToString();
-                    var subTime = (DateTime.Now.Subtract(cluefollowups.FollowUpTime));
+                    var exactFollow = cluefollowups.Where(a => a.ClueId == item.Id).FirstOrDefault();
+                    item.FollowUpTime = exactFollow.FollowUpTime.ToString();
+                    var subTime = (DateTime.Now.Subtract(exactFollow.FollowUpTime));
                     item.DaysNotFollowedUp = $"{subTime.Days}天";
                 }
             }
+            //foreach (var item in datas)
+            //{
+            //    var cluefollowups = UnitWork.FindSingle<ClueFollowUp>(q => q.ClueId == item.Id);
+            //    if (cluefollowups != null)
+            //    {
+            //        item.FollowUpTime = cluefollowups.FollowUpTime.ToString();
+            //        var subTime = (DateTime.Now.Subtract(cluefollowups.FollowUpTime));
+            //        item.DaysNotFollowedUp = $"{subTime.Days}天";
+            //    }
+            //}
             var list = datas.MapToList<ClueListDto>();
             return list;
         }
@@ -201,6 +232,21 @@ namespace OpenAuth.App
             return result;
         }
 
+
+        public async Task<List<CluePattern>> GetCluePattern(string pattern)
+        {
+            var result = new List<CluePattern>();
+            var loginContext = _auth.GetCurrentUser();
+            //get slpcode and name 
+            string slpCode = UnitWork.Find<sbo_user>(q => q.user_id == loginContext.User.User_Id).Select(q => q.sale_id).FirstOrDefault().Value.ToString();
+            string userName = loginContext.User.Name;
+            StringBuilder strSql = new StringBuilder();
+            strSql.AppendFormat("select * from clueclientutility u where (LOCATE(u.UserTag , \"{0}\")  > 0 ||  LOCATE(u.UserTag , \"{1}\")  > 0) AND LOCATE(\"{2}\" ,u.name)  > 0 ", slpCode, userName,pattern);
+            var patternList = UnitWork.ExcuteSql<CluePattern>(ContextType.Nsap4ServeDbContextType, strSql.ToString(), CommandType.Text, null);
+
+            result.AddRange(patternList);
+            return result;
+        }
 
         /// <summary>
         /// 线索状态轮转
@@ -373,23 +419,26 @@ namespace OpenAuth.App
             };
             var data = UnitWork.Add<OpenAuth.Repository.Domain.Serve.Clue, int>(clue);
             UnitWork.Save();
-            OpenAuth.Repository.Domain.Serve.ClueContacts cluecontacts = new Repository.Domain.Serve.ClueContacts
+            #region multiple contact person info
+            List<ClueContacts> clueContacts = new List<ClueContacts>();
+            foreach (var contactItem in addClueReq.ContPerList)
             {
-                ClueId = data.Id,
-                Name = addClueReq.Name,
-                Tel1 = addClueReq.Tel1,
-                Role = addClueReq.Role,
-                Email = addClueReq.Email,
-                Position = addClueReq.Position,
-                Address1 = addClueReq.Address1,
-                Address2 = addClueReq.Address2,
-                CreateTime = DateTime.Now,
-                CreateUser = loginUser.Name,
-                IsDefault = true
-            };
-            UnitWork.Add<OpenAuth.Repository.Domain.Serve.ClueContacts, int>(cluecontacts);
-            UnitWork.Save();
+                clueContacts.Add(new Repository.Domain.Serve.ClueContacts {
+                    ClueId = data.Id,
+                    Name = contactItem.Name,
+                    Tel1 = contactItem.Tel1,
+                    Email = contactItem.Email,
+                    Position = contactItem.Position,
+                    Address2 = contactItem.Address,
+                    CreateTime = DateTime.Now,
+                    CreateUser = loginUser.Name,
+                    IsDefault = contactItem.IsDefault
+                });
+            }
 
+            UnitWork.BatchAdd<OpenAuth.Repository.Domain.Serve.ClueContacts, int>(clueContacts.ToArray());
+            UnitWork.Save();
+            #endregion
             var log = new AddClueLogReq();
             log.ClueId = data.Id;
             log.LogType = 0;
