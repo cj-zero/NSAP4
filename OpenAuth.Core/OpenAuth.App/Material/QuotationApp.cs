@@ -886,6 +886,14 @@ namespace OpenAuth.App.Material
             Quotations.ServiceRelations = (await UnitWork.Find<User>(u => u.Id.Equals(Quotations.CreateUserId)).FirstOrDefaultAsync()).ServiceRelations;
             //var ocrds = await UnitWork.Find<OCRD>(o => ServiceOrders.TerminalCustomerId.Equals(o.CardCode)).FirstOrDefaultAsync();
             var result = new TableData();
+            var BlameBelongInfo = UnitWork.Find<BlameBelong>(a => a.OrderNo == ServiceOrders.U_SAP_ID && a.DocType == 1).FirstOrDefault();
+
+            List<FlowPathResp> FlowPathResp = new List<FlowPathResp>();
+            if (BlameBelongInfo != null && BlameBelongInfo.FlowInstanceId!=null)
+            {
+                FlowPathResp = await _flowInstanceApp.FlowPathRespList(null, BlameBelongInfo.FlowInstanceId);
+            }
+         
             if (Quotations.Status == 2)
             {
                 var ExpressageList = await UnitWork.Find<Expressage>(e => e.QuotationId.Equals(Quotations.Id)).Include(e => e.ExpressagePicture).Include(e => e.LogisticsRecords).ToListAsync();
@@ -954,7 +962,9 @@ namespace OpenAuth.App.Material
                         QuotationMergeMaterials,
                         ServiceOrders,
                         CustomerInformation,
-                        CommissionOrder
+                        CommissionOrder,
+                        BlameBelongInfo,
+                        FlowPathResp
                     };
                 }
                 else
@@ -966,7 +976,9 @@ namespace OpenAuth.App.Material
                         Quotations = Quotations,
                         QuotationMergeMaterials,
                         ServiceOrders,
-                        CustomerInformation
+                        CustomerInformation,
+                        BlameBelongInfo,
+                        FlowPathResp
                     };
                 }
             }
@@ -978,12 +990,13 @@ namespace OpenAuth.App.Material
                     Quotations = Quotations,
                     QuotationMergeMaterials,
                     ServiceOrders,
-                    CustomerInformation
+                    CustomerInformation,
+                    BlameBelongInfo,
+                    FlowPathResp
                 };
             }
             return result;
         }
-
         /// <summary>
         /// 报价单详情操作
         /// </summary>
