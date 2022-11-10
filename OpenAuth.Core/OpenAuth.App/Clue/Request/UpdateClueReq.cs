@@ -12,4 +12,10 @@ namespace OpenAuth.App.Clue.Request
         public int Id { get; set; }
 
     }
+
+    public class CluePatternReq
+    {
+       public string pattern { get; set; }
+    }
+
 }
