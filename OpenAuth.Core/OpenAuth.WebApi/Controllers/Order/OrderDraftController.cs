@@ -420,7 +420,7 @@ namespace OpenAuth.WebApi.Controllers.Order
                     }
                     if (limsFlag && YanXuanFlag)
                     {
-                        filterString += string.Format(" ( CHARINDEX(a.CardCode , \'{0}\')  > 0 || CHARINDEX(a.CardCode , '{1}')  > 0 ) AND ", JsonConvert.SerializeObject(erpLimsClient).Replace(@"""", ""), JsonConvert.SerializeObject(erpYanXuanClient).Replace(@"""", ""));
+                        filterString += string.Format(" ( CHARINDEX(a.CardCode , \'{0}\')  > 0  OR  CHARINDEX(a.CardCode , '{1}')  > 0 ) AND ", JsonConvert.SerializeObject(erpLimsClient).Replace(@"""", ""), JsonConvert.SerializeObject(erpYanXuanClient).Replace(@"""", ""));
                     }
                     filterString += string.Format("(a.CardType='C' OR a.CardType='L') AND ");
                 }
