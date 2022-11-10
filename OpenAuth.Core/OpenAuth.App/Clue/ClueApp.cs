@@ -473,16 +473,30 @@ namespace OpenAuth.App
                 result.Essential.StaffSize = clue.StaffSize;
                 result.Essential.WebSite = clue.WebSite;
                 result.Essential.Remark = clue.Remark;
-                var cluecontacts = UnitWork.FindSingle<Repository.Domain.Serve.ClueContacts>(q => q.ClueId == clueId && q.IsDefault);
+                var cluecontacts = UnitWork.Find<Repository.Domain.Serve.ClueContacts>(q => q.ClueId == clueId).ToList();
                 if (cluecontacts != null)
                 {
-                    result.Essential.Name = cluecontacts.Name;
-                    result.Essential.Tel1 = cluecontacts.Tel1;
-                    result.Essential.Address1 = cluecontacts.Address1;
-                    result.Essential.Address2 = cluecontacts.Address2;
-                    result.Essential.Role = cluecontacts.Role;
-                    result.Essential.Position = cluecontacts.Position;
-                    result.Essential.Email = cluecontacts.Email;
+                    foreach (var item in cluecontacts)
+                    {
+                        var itemContPerson = new ContPerson
+                        {
+                            Name = item.Name,
+                            Tel1 = item.Tel1,
+                            Tel2 = item.Tel2,
+                            Address = item.Address2,
+                            Email = item.Email,
+                            Position = item.Position,
+                            IsDefault = item.IsDefault
+                        };
+                        result.Essential.ContPerList.Add(itemContPerson);
+                    }
+                    //result.Essential.Name = cluecontacts.Name;
+                    //result.Essential.Tel1 = cluecontacts.Tel1;
+                    //result.Essential.Address1 = cluecontacts.Address1;
+                    //result.Essential.Address2 = cluecontacts.Address2;
+                    //result.Essential.Role = cluecontacts.Role;
+                    //result.Essential.Position = cluecontacts.Position;
+                    //result.Essential.Email = cluecontacts.Email;
                 }
                 var clueLogList = UnitWork.Find<Repository.Domain.Serve.ClueLog>(q => q.ClueId == clueId).OrderByDescending(q => q.CreateTime).MapToList<ClueLog>();
                 if (clueLogList.Count > 0 && clueLogList != null)
@@ -610,27 +624,55 @@ namespace OpenAuth.App
                 entity.IsCertification = updateClueReq.IsCertification;
                 entity.UpdateTime = DateTime.Now;
                 entity.UpdateUser = loginUser.Name;
-                var emodel = UnitWork.FindSingle<Repository.Domain.Serve.ClueContacts>(q => q.ClueId == updateClueReq.Id && q.IsDefault);
+                var emodel = UnitWork.Find<Repository.Domain.Serve.ClueContacts>(q => q.ClueId == updateClueReq.Id).ToList();
                 if (emodel != null)
                 {
-                    emodel.ClueId = updateClueReq.Id;
-                    if (emodel.Name != updateClueReq.Name) { mes += updateClueReq.Name + ":原客户名称'" + emodel.Name + "';"; }
-                    emodel.Name = updateClueReq.Name;
-                    if (emodel.Tel1 != updateClueReq.Tel1) { mes += updateClueReq.Tel1 + ":原联系电话一'" + emodel.Tel1 + "';"; }
-                    emodel.Tel1 = updateClueReq.Tel1;
-                    if (emodel.Role != updateClueReq.Role) { mes += updateClueReq.Role + ":原角色'" + emodel.Role + "'，（0：决策者、1：普通人）;"; }
-                    emodel.Role = updateClueReq.Role;
-                    if (emodel.Position != updateClueReq.Position) { mes += updateClueReq.Position + ":原职位'" + emodel.Position + "';"; }
-                    emodel.Position = updateClueReq.Position;
-                    if (emodel.Address1 != updateClueReq.Address1) { mes += updateClueReq.Address1 + ":原省市'" + emodel.Address1 + "';"; }
-                    emodel.Address1 = updateClueReq.Address1;
-                    if (emodel.Address2 != updateClueReq.Address2) { mes += updateClueReq.Address2 + ":原详细地址'" + emodel.Address2 + "';"; }
-                    emodel.Address2 = updateClueReq.Address2;
-                    if (emodel.Email != updateClueReq.Email) { mes += updateClueReq.Email + ":原邮箱'" + emodel.Email + "';"; }
-                    emodel.Email = updateClueReq.Email;
-                    emodel.UpdateTime = DateTime.Now;
-                    emodel.UpdateUser = loginUser.Name;
-                    emodel.IsDefault = true;
+
+                    //emodel.ClueId = updateClueReq.Id;
+                    //if (emodel.Name != updateClueReq.Name) { mes += updateClueReq.Name + ":原客户名称'" + emodel.Name + "';"; }
+                    //emodel.Name = updateClueReq.Name;
+                    //if (emodel.Tel1 != updateClueReq.Tel1) { mes += updateClueReq.Tel1 + ":原联系电话一'" + emodel.Tel1 + "';"; }
+                    //emodel.Tel1 = updateClueReq.Tel1;
+                    //if (emodel.Role != updateClueReq.Role) { mes += updateClueReq.Role + ":原角色'" + emodel.Role + "'，（0：决策者、1：普通人）;"; }
+                    //emodel.Role = updateClueReq.Role;
+                    //if (emodel.Position != updateClueReq.Position) { mes += updateClueReq.Position + ":原职位'" + emodel.Position + "';"; }
+                    //emodel.Position = updateClueReq.Position;
+                    //if (emodel.Address1 != updateClueReq.Address1) { mes += updateClueReq.Address1 + ":原省市'" + emodel.Address1 + "';"; }
+                    //emodel.Address1 = updateClueReq.Address1;
+                    //if (emodel.Address2 != updateClueReq.Address2) { mes += updateClueReq.Address2 + ":原详细地址'" + emodel.Address2 + "';"; }
+                    //emodel.Address2 = updateClueReq.Address2;
+                    //if (emodel.Email != updateClueReq.Email) { mes += updateClueReq.Email + ":原邮箱'" + emodel.Email + "';"; }
+                    //emodel.Email = updateClueReq.Email;
+                    //emodel.UpdateTime = DateTime.Now;
+                    //emodel.UpdateUser = loginUser.Name;
+                    //emodel.IsDefault = true;
+                    List<ClueContacts> clueContacts = new List<ClueContacts>();
+                    foreach (var contactItem in updateClueReq.ContPerList)
+                    {
+                        clueContacts.Add(new Repository.Domain.Serve.ClueContacts
+                        {
+                            ClueId = updateClueReq.Id,
+                            Name = contactItem.Name,
+                            Tel1 = contactItem.Tel1,
+                            Email = contactItem.Email,
+                            Position = contactItem.Position,
+                            Address2 = contactItem.Address,
+                            CreateTime = DateTime.Now,
+                            CreateUser = loginUser.Name,
+                            IsDefault = contactItem.IsDefault
+                        });
+                    }
+
+                    foreach (var ditem in emodel)
+                    {
+                        ditem.IsDelete = true;
+                    }
+
+                    UnitWork.BatchUpdate<OpenAuth.Repository.Domain.Serve.ClueContacts>(emodel.ToArray());
+                    UnitWork.BatchAdd<OpenAuth.Repository.Domain.Serve.ClueContacts, int>(clueContacts.ToArray());
+                    UnitWork.Save();
+
+
                     result = true;
                     if (result)
                     {
