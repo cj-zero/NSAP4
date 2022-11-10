@@ -339,6 +339,7 @@ namespace OpenAuth.WebApi.Controllers.Order
             //judge follwer identity
             var currentUser = _auth.GetCurrentUser();
             var erpLims = UnitWork.Find<LimsInfo>(u => u.UserId == currentUser.User.Id && u.Type == "LIMS").FirstOrDefault();
+            var erpYanXuan = UnitWork.Find<LimsInfo>(u => u.UserId == currentUser.User.Id && u.Type == "YANXUAN").FirstOrDefault();
 
             var result = new TableData();
             var userId = _serviceBaseApp.GetUserNaspId();
@@ -393,12 +394,33 @@ namespace OpenAuth.WebApi.Controllers.Order
             {
                 if (type == "SQO")//销售报价单\订单
                 {
+                    bool limsFlag = false;
+                    bool YanXuanFlag = false;
+                    var erpLimsClient = new List<string>();
+                    var erpYanXuanClient = new List<string>();
                     if (erpLims!=null)
                     {
                         // get related client
-                        var erpLimsClient = new List<string>();
                         erpLimsClient.AddRange(UnitWork.Find<LimsInfoMap>(u => u.LimsInfoId == erpLims.Id).Select(u=>u.CardCode).ToList());
+                        limsFlag = true;
+                        //filterString += string.Format(" ( CHARINDEX(a.CardCode , \'{0}\')  > 0 ) AND ", JsonConvert.SerializeObject(erpLimsClient).Replace(@"""", ""));
+                    }
+                    if (erpYanXuan != null)
+                    {
+                        erpYanXuanClient.AddRange(UnitWork.Find<LimsInfoMap>(u => u.LimsInfoId == erpYanXuan.Id).Select(u => u.CardCode).ToList());
+                        YanXuanFlag = true;
+                    }
+                    if (limsFlag&& !YanXuanFlag)
+                    {
                         filterString += string.Format(" ( CHARINDEX(a.CardCode , \'{0}\')  > 0 ) AND ", JsonConvert.SerializeObject(erpLimsClient).Replace(@"""", ""));
+                    }
+                    if (!limsFlag && YanXuanFlag)
+                    {
+                        filterString += string.Format(" ( CHARINDEX(a.CardCode , \'{0}\')  > 0 ) AND ", JsonConvert.SerializeObject(erpYanXuanClient).Replace(@"""", ""));
+                    }
+                    if (limsFlag && YanXuanFlag)
+                    {
+                        filterString += string.Format(" ( CHARINDEX(a.CardCode , \'{0}\')  > 0 || CHARINDEX(a.CardCode , '{1}')  > 0 ) AND ", JsonConvert.SerializeObject(erpLimsClient).Replace(@"""", ""), JsonConvert.SerializeObject(erpYanXuanClient).Replace(@"""", ""));
                     }
                     filterString += string.Format("(a.CardType='C' OR a.CardType='L') AND ");
                 }
