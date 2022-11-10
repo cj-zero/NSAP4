@@ -2204,6 +2204,7 @@ namespace OpenAuth.App.ContractManager
 
                 req.contractApply.ContractStatus = obj.ContractStatus;
                 req.contractApply.UpdateTime = DateTime.Now;
+                req.FlowInstanceId = obj.FlowInstanceId;
                 await UnitWork.UpdateAsync<ContractApply>(req.contractApply);
 
                 //操作历史记录
