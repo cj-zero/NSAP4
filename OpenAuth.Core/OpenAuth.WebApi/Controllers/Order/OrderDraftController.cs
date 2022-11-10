@@ -403,6 +403,14 @@ namespace OpenAuth.WebApi.Controllers.Order
                         erpLimsClient.AddRange(UnitWork.Find<LimsInfoMap>(u => u.LimsInfoId == erpLims.Id).Select(u=>u.CardCode).ToList());
                         filterString += string.Format(" ( CHARINDEX(a.CardCode , \'{0}\')  > 0 ) AND ", JsonConvert.SerializeObject(erpLimsClient).Replace(@"""", ""));
                     }
+                    if (!limsFlag && YanXuanFlag)
+                    {
+                        filterString += string.Format(" ( CHARINDEX(a.CardCode , \'{0}\')  > 0 ) AND ", JsonConvert.SerializeObject(erpYanXuanClient).Replace(@"""", ""));
+                    }
+                    if (limsFlag && YanXuanFlag)
+                    {
+                        filterString += string.Format(" ( CHARINDEX(a.CardCode , \'{0}\')  > 0  OR  CHARINDEX(a.CardCode , '{1}')  > 0 ) AND ", JsonConvert.SerializeObject(erpLimsClient).Replace(@"""", ""), JsonConvert.SerializeObject(erpYanXuanClient).Replace(@"""", ""));
+                    }
                     filterString += string.Format("(a.CardType='C' OR a.CardType='L') AND ");
                 }
                 else if (type == "SDR")//销售交货\退货,应收发票\贷项凭证
